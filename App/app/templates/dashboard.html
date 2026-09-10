@@ -45,7 +45,7 @@
 {% endmacro %}
 
 {{ page_header(
-  'Today',
+  'Overview',
   'Your reporting work, ordered by legal urgency and the next action.',
   actions='<form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>' ~
     ('<form method="post" action="/demo/reset" onsubmit="return confirm(&quot;Clear the built-in demo data?&quot;)"><button class="btn danger" type="submit">Clear demo data</button></form>' if demo_loaded else '')
@@ -64,7 +64,7 @@
         <button class="btn" type="submit">Or fill it with a demo apartment to click through</button>
         <div class="small muted" style="margin-top:6px">
           One property, four stays from a sample calendar, and two guests already reported to the
-          mock server. A dedicated reset action appears on Today.
+          mock server. A dedicated reset action appears on Overview.
         </div>
       </form>
     {% endif %}

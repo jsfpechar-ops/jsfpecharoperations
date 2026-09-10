@@ -58,6 +58,8 @@
       <a class="g-btn ghost slim" href="/l/{{ token }}/{{ reservation.id }}/edit/{{ person.id }}?lang={{ lang }}">
         {{ t('continue_filling') if not person.complete else t('edit') }}
       </a>
+    {% elif person.complete %}
+      <p class="g-intro" style="margin:12px 0 0">{{ t('form_locked_short') }}</p>
     {% endif %}
   </div>
 {% endfor %}

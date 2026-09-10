@@ -118,3 +118,47 @@ def new_permalink_token() -> str:
     """Short, unguessable, and readable enough to paste into a message."""
     alphabet = "abcdefghijkmnopqrstuvwxyz23456789"
     return "".join(secrets.choice(alphabet) for _ in range(10))
+
+
+def new_permalink_pin() -> str:
+    """Four-digit PIN guests enter before the registration form opens."""
+    return f"{secrets.randbelow(10000):04d}"
+
+
+PIN_COOKIE = "ubyhost_pin"
+_PIN_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+
+
+def _pin_serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-guest-pin")
+
+
+def issue_pin_session(token: str) -> str:
+    return _pin_serializer().dumps({"token": token})
+
+
+def pin_session_valid(request: Request, token: str) -> bool:
+    raw = request.cookies.get(PIN_COOKIE)
+    if not raw:
+        return False
+    try:
+        payload = _pin_serializer().loads(raw, max_age=_PIN_MAX_AGE)
+        return isinstance(payload, dict) and payload.get("token") == token
+    except BadSignature:
+        return False
+
+
+def attach_pin_session(response, token: str) -> None:
+    response.set_cookie(
+        PIN_COOKIE,
+        issue_pin_session(token),
+        max_age=_PIN_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        path="/",
+    )
+
+
+def clear_pin_session(response) -> None:
+    response.delete_cookie(PIN_COOKIE, path="/")

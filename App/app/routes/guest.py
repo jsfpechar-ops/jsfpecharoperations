@@ -21,7 +21,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 
-from .. import codelists, config, db, i18n, reporting, validation
+from .. import auth, codelists, config, db, i18n, reporting, validation
 from ..templating import render_guest
 
 router = APIRouter()
@@ -108,9 +108,38 @@ def _localize_issues(issues, lang: str):
 
 
 def _apartment_by_token(token: str):
-    return db.query_one(
-        "SELECT * FROM apartment WHERE permalink_token = ? AND active = 1", (token,)
+    row = db.query_one(
+        "SELECT * FROM apartment WHERE permalink_token = ? AND active = 1 "
+        "AND archived_at IS NULL",
+        (token,),
     )
+    if not row:
+        return None
+    if not row["permalink_pin"]:
+        pin = auth.new_permalink_pin()
+        db.update("apartment", row["id"], {"permalink_pin": pin})
+        return db.query_one("SELECT * FROM apartment WHERE id = ?", (row["id"],))
+    return row
+
+
+def _pin_page(request: Request, token: str, lang: str, error: str = ""):
+    context = _shared(request, token, lang)
+    context.update(
+        {
+            "error": error,
+            "return_to": request.url.path
+            + (("?" + str(request.url.query)) if request.url.query else ""),
+        }
+    )
+    return _with_lang(render_guest(request, "guest/pin.html", context), lang)
+
+
+def _require_pin(request: Request, token: str, lang: str):
+    if not config.GUEST_PIN_REQUIRED:
+        return None
+    if auth.pin_session_valid(request, token):
+        return None
+    return _pin_page(request, token, lang)
 
 
 def _visible_reservations(apartment) -> List[Any]:
@@ -153,6 +182,7 @@ def _unavailable(
         "stay_gone": ("stay_gone_title", "stay_gone_help"),
         "not_yours": ("not_yours_title", "not_yours_help"),
         "already_filed": ("already_filed_title", "already_filed_help"),
+        "form_locked": ("form_locked_title", "form_locked_help"),
     }
     title_key, body_key = titles.get(reason, titles["bad_link"])
     return render_guest(
@@ -251,7 +281,7 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
         "mine": is_mine,
         "name": f"{guest['first_name']} {guest['surname']}".strip() if is_mine else "",
         "complete": complete,
-        "locked": guest["submit_state"] == reporting.SENT,
+        "locked": reporting.guest_form_locked(guest, reservation),
     }
     if is_mine:
         doc = guest["doc_number"] or ""
@@ -293,6 +323,24 @@ def _set_declared_guests(reservation, count: int) -> None:
 
 # --- privacy notice ------------------------------------------------------
 
+@router.post("/l/{token}/pin")
+async def verify_pin(token: str, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    form = await request.form()
+    entered = (form.get("pin") or "").strip()
+    if entered != (apartment["permalink_pin"] or ""):
+        return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
+    return_to = (form.get("return_to") or _guest_link(token)).strip()
+    if not return_to.startswith(_guest_link(token)):
+        return_to = _guest_link(token) + _lang_q(lang)
+    response = RedirectResponse(return_to, status_code=303)
+    auth.attach_pin_session(response, token)
+    return _with_lang(response, lang)
+
+
 # Registered before /l/{token}/{reservation_id}, otherwise "privacy" is parsed
 # as a reservation id and the guest gets a validation error instead of a page.
 @router.get("/l/{token}/privacy")
@@ -301,6 +349,9 @@ def privacy_notice(token: str, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
     requested_back = (request.query_params.get("return_to") or "").strip()
     safe_prefix = _guest_link(token)
     back_url = (
@@ -326,6 +377,9 @@ def pick_stay(token: str, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
     reservations = _visible_reservations(apartment)
 
     # With a single candidate there is nothing to choose; go straight in.
@@ -354,6 +408,9 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
     reservation = _reservation_for_guest(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
@@ -506,6 +563,9 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
     reservation = _reservation_for_guest(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
@@ -548,9 +608,15 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     guest = db.query_one(
         "SELECT * FROM guest WHERE id = ? AND reservation_id = ?", (guest_id, reservation_id)
     )
-    if not guest or guest["submit_state"] == reporting.SENT:
-        # Once the police have the record, corrections go through the host.
+    if not guest:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    if guest["submit_state"] == reporting.SENT:
         return _unavailable(request, lang, "already_filed", 403, token)
+    if reporting.guest_form_locked(guest, reservation):
+        return _unavailable(request, lang, "form_locked", 403, token)
     return _with_lang(
         render_guest(
             request,
@@ -577,6 +643,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     reservation = _reservation_for_guest(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
 
     form = await request.form()
     translate = i18n.translator(lang)
@@ -595,6 +664,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         if existing and existing["submit_state"] == reporting.SENT:
             return _unavailable(request, lang, "already_filed", 403, token)
+        if existing and reporting.guest_form_locked(existing, reservation):
+            return _unavailable(request, lang, "form_locked", 403, token)
 
     child_in_passport = bool(form.get("child_in_passport"))
     raw = {

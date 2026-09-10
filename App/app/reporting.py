@@ -111,6 +111,19 @@ def guest_is_complete(guest, reservation) -> bool:
     return not validation.errors_only(guest_issues(guest, reservation))
 
 
+def guest_form_locked(guest, reservation) -> bool:
+    """Guests may not reopen a form once it is complete and signed.
+
+    After police reporting the record is final; before that, a completed and
+    signed form is still locked so another person cannot change it from the
+    guest link.
+    """
+    if guest["submit_state"] == SENT:
+        return True
+    signature = (guest["signature_png"] or "").strip()
+    return signature.startswith("data:image/") and guest_is_complete(guest, reservation)
+
+
 def expected_guest_count(reservation) -> Optional[int]:
     """Host override wins over what the lead guest declared."""
     if reservation["expected_guests_override"]:
