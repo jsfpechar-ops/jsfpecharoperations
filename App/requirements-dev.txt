@@ -1,0 +1,4 @@
+# Development-only dependencies (test runner and the HTTP client the FastAPI
+# TestClient needs). Runtime dependencies live in requirements.txt.
+pytest==9.1.1
+httpx==0.28.1
