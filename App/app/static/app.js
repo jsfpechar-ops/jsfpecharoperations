@@ -14,14 +14,49 @@
             ? navigator.clipboard.writeText(target.value)
             : Promise.resolve(document.execCommand("copy"));
           Promise.resolve(copied).then(function () {
-            var original = button.textContent;
-            button.textContent = "Copied";
-            setTimeout(function () { button.textContent = original; }, 1400);
+            button.classList.add("copied");
+            button.setAttribute("aria-label", "Copied");
+            setTimeout(function () {
+              button.classList.remove("copied");
+              button.setAttribute("aria-label", "Copy");
+            }, 1400);
           });
         } catch (error) {
           // The field stays selected so it can still be copied manually.
         }
       });
+    });
+  }
+
+  function initRowMenus() {
+    function closeAll(except) {
+      document.querySelectorAll(".row-menu-panel").forEach(function (panel) {
+        if (panel === except) return;
+        panel.hidden = true;
+        var trigger = panel.parentElement.querySelector(".row-menu-trigger");
+        if (trigger) trigger.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    document.querySelectorAll(".row-menu-trigger").forEach(function (trigger) {
+      var panel = trigger.parentElement.querySelector(".row-menu-panel");
+      if (!panel) return;
+      trigger.addEventListener("click", function (event) {
+        event.stopPropagation();
+        var open = !panel.hidden;
+        closeAll(open ? panel : null);
+        panel.hidden = open;
+        trigger.setAttribute("aria-expanded", open ? "false" : "true");
+      });
+    });
+
+    document.addEventListener("click", function (event) {
+      if (event.target.closest(".row-menu")) return;
+      closeAll(null);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeAll(null);
     });
   }
 
@@ -32,7 +67,7 @@
       }
 
       row.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea, label, form")) return;
+        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu")) return;
         openRow();
       });
 
@@ -134,6 +169,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
+    initRowMenus();
     initClickableRows();
     initSidebar();
     initTogglePanels();

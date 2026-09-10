@@ -74,6 +74,13 @@ def _form_str(form, key: str, default: str = "") -> str:
     return (value or default).strip() if isinstance(value, str) else default
 
 
+def _form_return_to(form, default: str) -> str:
+    value = _form_str(form, "return_to")
+    if value.startswith("/") and not value.startswith("//") and "\n" not in value and "\r" not in value:
+        return value
+    return default
+
+
 def _form_int(form, key: str) -> Optional[int]:
     raw = _form_str(form, key)
     try:
@@ -491,30 +498,39 @@ async def apartment_update(apartment_id: int, request: Request):
         if not pin:
             return _back(f"/apartments/{apartment_id}", err="PIN must be exactly four digits.")
         payload["permalink_pin"] = pin
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
     db.audit("apartment_updated", f"id={apartment_id}")
-    return _back(f"/apartments/{apartment_id}", msg="Saved.")
+    return _back(return_to, msg="Saved.")
 
 
 @router.post("/apartments/{apartment_id}/regenerate-pin")
-def regenerate_pin(apartment_id: int, request: Request):
+async def regenerate_pin(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     pin = auth.new_permalink_pin()
     db.update("apartment", apartment_id, {"permalink_pin": pin})
     db.audit("pin_rotated", f"apartment={apartment_id}")
-    return _back(f"/apartments/{apartment_id}", msg=f"New PIN generated: {pin}")
+    return _back(
+        _form_return_to(form, "/guest-links"),
+        msg=f"New PIN generated: {pin}",
+    )
 
 
 @router.post("/apartments/{apartment_id}/regenerate-link")
-def regenerate_link(apartment_id: int, request: Request):
+async def regenerate_link(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return _back("/apartments", err="No such apartment.")
     db.update(
         "apartment",
         apartment_id,
@@ -525,8 +541,75 @@ def regenerate_link(apartment_id: int, request: Request):
     )
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
-        f"/apartments/{apartment_id}",
+        _form_return_to(form, "/guest-links"),
         msg="New guest link and PIN generated. Update your automated messages on the booking portals.",
+    )
+
+
+UBYPORT_TEXT_FIELDS = (
+    "uby_idub",
+    "uby_mark",
+    "uby_name",
+    "uby_contact",
+    "uby_ws_user",
+)
+
+
+def _automation_payload(form) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {field: _form_str(form, field) for field in UBYPORT_TEXT_FIELDS}
+    payload["uby_mark"] = payload["uby_mark"].upper()
+    mode = _form_str(form, "automation_mode", "scheduled")
+    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
+    payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
+    purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
+    payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
+    return payload
+
+
+@router.get("/automation")
+def automation_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartments = db.query(
+        "SELECT * FROM apartment WHERE archived_at IS NULL ORDER BY internal_name"
+    )
+    rows = [
+        {
+            "apartment": apartment,
+            "issues": validation.errors_only(_apartment_issues(apartment)),
+            "has_password": bool(apartment["uby_ws_password_enc"]),
+        }
+        for apartment in apartments
+    ]
+    return render(
+        request,
+        "automation.html",
+        {
+            "rows": rows,
+            "purposes": codelists.purpose_options("en"),
+        },
+    )
+
+
+@router.post("/automation/{apartment_id}")
+async def automation_update(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return _back("/automation", err="No such apartment.")
+    form = await request.form()
+    payload = _automation_payload(form)
+    password = _form_str(form, "uby_ws_password")
+    if password:
+        payload["uby_ws_password_enc"] = db.encrypt_secret(password)
+    db.update("apartment", apartment_id, payload)
+    db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
+    return _back(
+        _form_return_to(form, f"/automation#apartment-{apartment_id}"),
+        msg=f"Saved settings for {apartment['internal_name']}.",
     )
 
 
@@ -627,10 +710,12 @@ def sync_now(request: Request):
 
 
 @router.post("/apartments/{apartment_id}/test-connection")
-def test_connection(apartment_id: int, request: Request):
+async def test_connection(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return _back("/apartments", err="No such apartment.")
@@ -643,25 +728,27 @@ def test_connection(apartment_id: int, request: Request):
             + (f", max batch {limit}" if limit else "")
             + ")."
         )
-        return _back(f"/apartments/{apartment_id}", msg=message)
+        return _back(return_to, msg=message)
     except (UbyportTransportError, UbyportError) as exc:
-        return _back(f"/apartments/{apartment_id}", err=str(exc))
+        return _back(return_to, err=str(exc))
 
 
 @router.post("/apartments/{apartment_id}/refresh-codelists")
-def refresh_codelists(apartment_id: int, request: Request):
+async def refresh_codelists(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     try:
         written = codelists.refresh_all(reporting.client_for(apartment))
     except (UbyportTransportError, UbyportError) as exc:
-        return _back(f"/apartments/{apartment_id}", err=f"Could not refresh code lists: {exc}")
+        return _back(return_to, err=f"Could not refresh code lists: {exc}")
     return _back(
-        f"/apartments/{apartment_id}",
+        return_to,
         msg=(
             f"Code lists refreshed from UbyPort: {written.get('staty', 0)} countries, "
             f"{written.get('ucely', 0)} purposes, {written.get('chyby', 0)} error codes."
@@ -1413,7 +1500,8 @@ def settings_view(request: Request):
                 "purposes": codelists.last_fetched(codelists.KIND_PURPOSES),
                 "errors": codelists.last_fetched(codelists.KIND_ERRORS),
             },
-            "audit": db.query("SELECT * FROM audit ORDER BY id DESC LIMIT 50"),
+            "audit": db.query("SELECT * FROM audit ORDER BY id DESC LIMIT 500"),
+            "audit_count": db.query_one("SELECT COUNT(*) AS n FROM audit")["n"],
             "poll_minutes": config.ICAL_POLL_MINUTES,
             "sweep_minutes": config.SUBMIT_SWEEP_MINUTES,
             "retention_years": housebook.RETENTION_YEARS,

@@ -2,7 +2,7 @@
 {% set nav = 'guest_links' %}
 {% block title %}Guest links{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, empty_state %}
+{% from "_components.html" import page_header, empty_state, copy_button %}
 
 {{ page_header(
   'Guest links',
@@ -24,19 +24,21 @@
       <label for="link-{{ apartment.id }}">Reusable apartment link</label>
       <div class="copyrow">
         <input type="text" id="link-{{ apartment.id }}" readonly value="{{ row.permalink }}">
-        <button class="btn primary" type="button" data-copy="link-{{ apartment.id }}">Copy</button>
+        {{ copy_button('link-' ~ apartment.id) }}
         <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="inline"
               onsubmit="return confirm('Generate a new link and PIN? Update your portal messages.')">
-          <button class="btn small" type="submit">New link</button>
+          <input type="hidden" name="return_to" value="/guest-links">
+          <button class="btn small" type="submit">Generate a new link</button>
         </form>
       </div>
       <label for="pin-{{ apartment.id }}" style="margin-top:14px">Access PIN</label>
       <div class="copyrow">
         <input type="text" id="pin-{{ apartment.id }}" readonly value="{{ row.pin }}" class="mono">
-        <button class="btn" type="button" data-copy="pin-{{ apartment.id }}">Copy</button>
+        {{ copy_button('pin-' ~ apartment.id) }}
         <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="inline"
               onsubmit="return confirm('Generate a new random PIN?')">
-          <button class="btn small" type="submit">New PIN</button>
+          <input type="hidden" name="return_to" value="/guest-links">
+          <button class="btn small" type="submit">Generate a new PIN</button>
         </form>
       </div>
       <p class="small muted">Guests must enter this PIN before the registration form opens.
