@@ -55,4 +55,27 @@
   </div>
 </div>
 {% endif %}
+
+{% if archived_rows %}
+<h2>Archived</h2>
+<p class="small muted">These properties are hidden from your dashboard and guest links. Their history is kept.</p>
+<div class="panel tight scroll-x">
+  <table>
+    <thead>
+      <tr><th>Property</th><th>Archived</th><th>Stays</th><th><span class="sr-only">Open</span></th></tr>
+    </thead>
+    <tbody>
+    {% for row in archived_rows %}
+      {% set apartment = row.apartment %}
+      <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link">
+        <td><a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a></td>
+        <td class="small muted">{{ apartment.archived_at[:10] }}</td>
+        <td class="num">{{ apartment.reservations }}</td>
+        <td class="row-arrow" aria-hidden="true">&rarr;</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
 {% endblock %}

@@ -3,7 +3,11 @@
 {% block title %}House book{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header %}
-{{ page_header('House book', 'The statutory guest register, retained for six years and exportable for inspection.') }}
+{{ page_header(
+  'House book',
+  'The statutory guest register, retained for six years and exportable for inspection.',
+  actions='<a class="btn" href="/housebook-sample.csv">Sample CSV</a>'
+) }}
 <p class="lede">
   Every guest record with the start and end of the stay.
   The law requires this to be kept for six years after the last entry and produced on request
@@ -29,10 +33,43 @@
     <label for="to">Stays until</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
-  <button class="btn" type="submit">Filter</button>
-  <a class="btn primary" href="/housebook.csv?apartment={{ apartment_id or '' }}&from={{ date_from }}&to={{ date_to }}">
-    Download CSV</a>
+  <div class="field filter-actions">
+    <button class="btn" type="submit">Filter</button>
+    <a class="btn primary" href="/housebook.csv?apartment={{ apartment_id or '' }}&from={{ date_from }}&to={{ date_to }}">
+      Download CSV</a>
+  </div>
 </form>
+
+<div class="panel">
+  <h2 style="margin-top:0">Import historical records</h2>
+  <div class="import-guide">
+    <p>If you kept a paper house book before using UbyHost, load those entries here for safekeeping.</p>
+    <ol>
+      <li><a href="/housebook-sample.csv">Download the sample CSV</a> — it shows every column with a filled-in example row.</li>
+      <li>Replace the example with your own records, or add more rows underneath.</li>
+      <li>Required columns: <span class="mono">Stay from</span>, <span class="mono">Stay to</span>, <span class="mono">Surname</span>, <span class="mono">Given name(s)</span>.</li>
+      <li>Dates can be <span class="mono">YYYY-MM-DD</span> or Czech <span class="mono">DD.MM.YYYY</span>.</li>
+    </ol>
+    <form method="post" action="/housebook/import" enctype="multipart/form-data" class="actions" style="margin-top:16px">
+      <div class="field" style="min-width:220px;margin:0">
+        <label for="import-apartment">Property</label>
+        <select id="import-apartment" name="apartment_id" required>
+          <option value="">— choose —</option>
+          {% for apartment in apartments %}
+            <option value="{{ apartment.id }}">{{ apartment.internal_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="min-width:260px;margin:0">
+        <label for="csv_file">CSV file</label>
+        <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+      </div>
+      <div class="field filter-actions" style="margin:0">
+        <button class="btn primary" type="submit">Import records</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 {% if rows %}
 <div class="panel tight scroll-x">
@@ -41,12 +78,12 @@
       <tr>
         <th>Stay</th><th>Apartment</th><th>Guest</th><th>Born</th><th>Nat.</th>
         <th>Document</th><th>Residence abroad</th><th>Purpose</th><th>Signed</th>
-        <th>Reported</th><th></th>
+        <th>Reported</th><th><span class="sr-only">Open</span></th>
       </tr>
     </thead>
     <tbody>
     {% for row in rows %}
-      <tr>
+      <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
         <td class="nowrap small">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
         <td class="small">{{ row.apartment }}</td>
         <td><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
@@ -64,9 +101,14 @@
           {% elif row.reported.startswith('NO') %}<span class="pill red">{{ row.reported }}</span>
           {% else %}<span class="pill amber">{{ row.reported }}</span>{% endif %}
         </td>
-        <td class="nowrap">
-          <a class="btn small" href="/guests/{{ row._guest_id }}">Open</a>
+        <td class="nowrap row-actions">
+          <a class="btn small" href="/guests/{{ row._guest_id }}?return_to=/housebook">Edit</a>
           <a class="btn small" href="/guests/{{ row._guest_id }}/form.pdf">PDF</a>
+          <form method="post" action="/guests/{{ row._guest_id }}/archive" class="inline">
+            <input type="hidden" name="return_to" value="/housebook">
+            <button class="btn small" type="submit">Archive</button>
+          </form>
+          <span class="row-arrow" aria-hidden="true">&rarr;</span>
         </td>
       </tr>
     {% endfor %}
@@ -76,5 +118,32 @@
 <p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}.</p>
 {% else %}
   <div class="panel empty">No entries match this filter. The house book fills as guest forms are completed.</div>
+{% endif %}
+
+{% if archived_rows %}
+<h2>Archived entries</h2>
+<p class="small muted">Mistaken imports or duplicates can be restored from here.</p>
+<div class="panel tight scroll-x">
+  <table>
+    <thead>
+      <tr><th>Stay</th><th>Apartment</th><th>Guest</th><th>Archived</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for row in archived_rows %}
+      <tr>
+        <td class="nowrap small">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+        <td>{{ row.apartment }}</td>
+        <td><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
+        <td class="small muted">{{ row.archived_at[:10] }}</td>
+        <td class="nowrap">
+          <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
+            <button class="btn small" type="submit">Restore</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endif %}
 {% endblock %}

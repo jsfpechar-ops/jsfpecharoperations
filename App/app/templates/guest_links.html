@@ -25,8 +25,23 @@
       <div class="copyrow">
         <input type="text" id="link-{{ apartment.id }}" readonly value="{{ row.permalink }}">
         <button class="btn primary" type="button" data-copy="link-{{ apartment.id }}">Copy</button>
+        <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="inline"
+              onsubmit="return confirm('Generate a new link and PIN? Update your portal messages.')">
+          <button class="btn small" type="submit">New link</button>
+        </form>
       </div>
-      <details class="technical" style="margin-top:18px">
+      <label for="pin-{{ apartment.id }}" style="margin-top:14px">Access PIN</label>
+      <div class="copyrow">
+        <input type="text" id="pin-{{ apartment.id }}" readonly value="{{ row.pin }}" class="mono">
+        <button class="btn" type="button" data-copy="pin-{{ apartment.id }}">Copy</button>
+        <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="inline"
+              onsubmit="return confirm('Generate a new random PIN?')">
+          <button class="btn small" type="submit">New PIN</button>
+        </form>
+      </div>
+      <p class="small muted">Guests must enter this PIN before the registration form opens.
+        To set a specific PIN, open <a href="/apartments/{{ apartment.id }}#communication">Property setup &rarr; Guest link</a>.</p>
+      <details class="message-details" open>
         <summary>Suggested portal message</summary>
         <pre class="message-template">Dear guests,
 
@@ -34,6 +49,8 @@ Czech law requires us to register every guest before arrival and report foreign 
 
 Please fill in one short form per person, including children:
 {{ row.permalink }}
+
+Access PIN: {{ row.pin }}
 
 The form explains why the information is required and how it is handled.
 
