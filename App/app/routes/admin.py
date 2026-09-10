@@ -105,6 +105,7 @@ def dashboard_rows(days_ahead: int = 21, days_back: int = 45) -> List[Dict[str, 
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND a.active = 1 AND a.archived_at IS NULL "
+        "AND r.archived_at IS NULL "
         "AND r.date_from BETWEEN ? AND ? "
         "ORDER BY r.date_from",
         (start, end),
@@ -690,7 +691,8 @@ def reservations_list(request: Request):
 
     today = date.today().isoformat()
     date_range = request.query_params.get("range", "")
-    if date_range not in RESERVATION_RANGES:
+    show_archive = date_range == "archive"
+    if date_range not in RESERVATION_RANGES and date_range != "archive":
         # Explicit dates win; otherwise show what is still ahead, because a
         # list that opens on last winter's bookings is useless.
         date_range = "custom" if (date_from or date_to) else "upcoming"
@@ -699,7 +701,7 @@ def reservations_list(request: Request):
     elif date_range == "past":
         # Departed stays only — a guest checking in today still belongs under Upcoming.
         date_from, date_to = "", (date.today() - timedelta(days=1)).isoformat()
-    elif date_range == "all":
+    elif date_range == "all" or date_range == "archive":
         date_from = date_to = ""
 
     sql = (
@@ -707,6 +709,10 @@ def reservations_list(request: Request):
         "WHERE 1 = 1"
     )
     params: List[Any] = []
+    if show_archive:
+        sql += " AND r.archived_at IS NOT NULL"
+    else:
+        sql += " AND r.archived_at IS NULL"
     if status != "all":
         sql += " AND r.status = ?"
         params.append(status)
@@ -748,6 +754,7 @@ def reservations_list(request: Request):
                 request.url.path + (f"?{request.url.query}" if request.url.query else ""),
                 safe="",
             ),
+            "show_archive": show_archive,
         },
     )
 
@@ -885,6 +892,36 @@ async def reservation_update(reservation_id: int, request: Request):
         payload["status"] = status
     db.update("reservation", reservation_id, payload)
     return _back(f"/reservations/{reservation_id}", msg="Saved.")
+
+
+@router.post("/reservations/{reservation_id}/archive")
+def reservation_archive(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    if reservation["archived_at"]:
+        return _back(f"/reservations/{reservation_id}", err="Already archived.")
+    db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
+    db.audit("reservation_archived", f"id={reservation_id}")
+    return _back("/reservations?range=archive", msg="Stay moved to archive. You can restore it from there.")
+
+
+@router.post("/reservations/{reservation_id}/unarchive")
+def reservation_unarchive(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    if not reservation["archived_at"]:
+        return _back(f"/reservations/{reservation_id}", err="Not archived.")
+    db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
+    db.audit("reservation_unarchived", f"id={reservation_id}")
+    return _back(f"/reservations/{reservation_id}", msg="Stay restored from archive.")
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -1057,6 +1094,45 @@ async def guest_update(guest_id: int, request: Request):
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
     return _back(f"/guests/{guest_id}", msg="Saved.")
+
+
+@router.post("/guests/{guest_id}/archive")
+async def guest_archive(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    if not guest:
+        return _back("/housebook", err="No such guest record.")
+    if guest["submit_state"] == reporting.SENT:
+        return _back(
+            f"/guests/{guest_id}",
+            err="This guest was already reported to the police; the record must stay in the house book.",
+        )
+    if guest["archived_at"]:
+        return _back(f"/guests/{guest_id}", err="Already archived.")
+    form = await request.form()
+    return_to = (form.get("return_to") or "/housebook").strip()
+    if not return_to.startswith("/") or return_to.startswith("//"):
+        return_to = "/housebook"
+    db.update("guest", guest_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
+    db.audit("guest_archived", f"id={guest_id}")
+    return _back(return_to, msg="House-book entry archived. Restore it from the archive below.")
+
+
+@router.post("/guests/{guest_id}/unarchive")
+def guest_unarchive(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    if not guest:
+        return _back("/housebook", err="No such guest record.")
+    if not guest["archived_at"]:
+        return _back(f"/guests/{guest_id}", err="Not archived.")
+    db.update("guest", guest_id, {"archived_at": None, "updated_at": db.utcnow()})
+    db.audit("guest_unarchived", f"id={guest_id}")
+    return _back("/housebook", msg="House-book entry restored.")
 
 
 @router.post("/guests/{guest_id}/delete")
@@ -1236,11 +1312,13 @@ def housebook_view(request: Request):
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
     rows = housebook.housebook_rows(apartment_id, date_from or None, date_to or None)
+    archived_rows = housebook.housebook_archived_rows(apartment_id)
     return render(
         request,
         "housebook.html",
         {
             "rows": rows,
+            "archived_rows": archived_rows,
             "columns": housebook.HOUSEBOOK_COLUMNS,
             "apartments": db.query("SELECT id, internal_name FROM apartment ORDER BY internal_name"),
             "apartment_id": apartment_id,

@@ -84,7 +84,7 @@ def housebook_rows(
         "FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status != 'ignored'"
+        "WHERE r.status != 'ignored' AND g.archived_at IS NULL"
     )
     params: List[Any] = []
     if apartment_id:
@@ -323,6 +323,37 @@ SAMPLE_HOUSEBOOK_ROW = {
     "reported_at": "2026-09-04",
     "stamp": "",
 }
+
+
+def housebook_archived_rows(apartment_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Archived house-book entries that can be restored."""
+    sql = (
+        "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id, "
+        "       a.internal_name, a.uby_idub "
+        "FROM guest g "
+        "JOIN reservation r ON r.id = g.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE g.archived_at IS NOT NULL"
+    )
+    params: List[Any] = []
+    if apartment_id:
+        sql += " AND a.id = ?"
+        params.append(apartment_id)
+    sql += " ORDER BY g.archived_at DESC, g.id DESC"
+    out: List[Dict[str, Any]] = []
+    for row in db.query(sql, params):
+        out.append(
+            {
+                "apartment": row["internal_name"],
+                "stay_from": row["stay_from"] or row["res_from"],
+                "stay_to": row["stay_to"] or row["res_to"],
+                "surname": row["surname"] or "",
+                "first_name": row["first_name"] or "",
+                "archived_at": row["archived_at"] or "",
+                "_guest_id": row["id"],
+            }
+        )
+    return out
 
 
 def sample_housebook_csv() -> bytes:
