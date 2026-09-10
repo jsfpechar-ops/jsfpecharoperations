@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set nav = 'apartments' %}
+{% block title %}Apartments{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header %}
+{{ page_header(
+  'Properties',
+  'Each accommodation facility has its own UbyPort registration, calendars, and guest link.',
+  actions='<a class="btn" href="/entities">Legal entities</a><a class="btn primary" href="/apartments/new">Add a property</a>'
+) }}
+
+{% if rows %}
+<div class="panel tight scroll-x">
+  <table>
+    <thead>
+      <tr><th>Property</th><th>Legal entity</th><th>IDUB</th><th>Calendars</th>
+        <th>Stays</th><th>Automation</th><th>Setup readiness</th><th><span class="sr-only">Open</span></th></tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+      {% set apartment = row.apartment %}
+      <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link"
+          aria-label="Open property {{ apartment.internal_name }}">
+        <td>
+          <a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a>
+          {% if not apartment.active %}<span class="pill grey">inactive</span>{% endif %}
+          {% if apartment.uby_name %}<div class="small muted">{{ apartment.uby_name }}</div>{% endif %}
+        </td>
+        <td>{{ row.apartment.entity_name or '—' }}</td>
+        <td class="mono">{{ apartment.uby_idub or '—' }}</td>
+        <td class="num">{{ apartment.feeds }}</td>
+        <td class="num">{{ apartment.reservations }}</td>
+        <td class="nowrap">
+          {% if apartment.automation_mode == 'immediate' %}<span class="pill blue">Immediate</span>
+          {% elif apartment.automation_mode == 'scheduled' %}<span class="pill blue">+{{ apartment.submit_after_hours }} h</span>
+          {% else %}<span class="pill grey">Manual</span>{% endif %}
+        </td>
+        <td>
+          {% if row.issues %}<span class="pill red">{{ row.issues | length }} to fix</span>
+          {% elif not apartment.feeds %}<span class="pill amber">Connect calendar</span>
+          {% else %}<span class="pill green">Can report</span>{% endif %}
+        </td>
+        <td class="row-arrow" aria-hidden="true">&rarr;</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="panel empty">
+  <p>No properties yet. Add the legal entity that operates them first, then create a property.</p>
+  <div class="actions" style="justify-content:center">
+    <a class="btn" href="/entities">Add a legal entity</a>
+    <a class="btn primary" href="/apartments/new">Add your first property</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% set nav = 'submissions' %}
+{% block title %}Report {{ submission.id }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, breadcrumb, submission_pill %}
+{{ breadcrumb([
+  {'label': 'Reports', 'url': '/submissions'},
+  {'label': 'Report #' ~ submission.id, 'url': ''}
+]) }}
+{{ page_header(
+  'Report #' ~ submission.id,
+  submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ') ~ ' · sent ' ~ submission.mode,
+  '/submissions',
+  'Back to reports'
+) }}
+
+<div class="split wide">
+  <div>
+    <div class="panel">
+      <dl class="kv">
+        <dt>Outcome</dt>
+        <dd>
+          {{ submission_pill(submission.state) }}
+        </dd>
+        <dt>Endpoint</dt><dd class="mono small">{{ submission.endpoint }}</dd>
+        <dt>Receipt stamp</dt><dd class="mono small">{{ submission.pseudo_stamp or '—' }}</dd>
+        <dt>Finished</dt><dd class="small">{{ (submission.finished_at or '')[:19].replace('T', ' ') or '—' }}</dd>
+      </dl>
+
+      {% if submission.error_text %}
+        <div class="banner err" style="margin-top:14px">
+          <div class="grow"><strong>Transport error</strong><small>{{ submission.error_text }}</small></div>
+        </div>
+      {% endif %}
+
+      {% if header_messages %}
+        <h3>Problems with the report header</h3>
+        <ul class="small">
+          {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
+        </ul>
+        <p class="small muted">Header errors come from the apartment settings, not the guest data.</p>
+      {% endif %}
+
+      <div class="actions">
+        {% if submission.receipt_pdf %}
+          <a class="btn primary" href="/submissions/{{ submission.id }}/receipt.pdf">Download the Doručenka</a>
+        {% endif %}
+        {% if submission.error_pdf %}
+          <a class="btn" href="/submissions/{{ submission.id }}/errors.pdf">Download the error report</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2>Guests in this transmission</h2>
+    <div class="panel tight scroll-x">
+      <table>
+        <thead><tr><th>#</th><th>Guest</th><th>Result</th><th></th></tr></thead>
+        <tbody>
+        {% for guest in guests %}
+          <tr>
+            <td class="num">{{ loop.index }}</td>
+            <td>
+              <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
+              <div class="small muted">{{ guest.nationality }} &middot; {{ guest.doc_number }}</div>
+            </td>
+            <td>
+              {% if guest.submit_state == 'sent' %}<span class="pill green">Accepted</span>
+              {% elif guest.submit_state == 'blocked' %}<span class="pill red">Rejected, final</span>
+              {% elif guest.submit_state == 'error' %}<span class="pill red">Rejected</span>
+              {% else %}<span class="pill grey">{{ guest.submit_state }}</span>{% endif %}
+              {% if guest.last_errors %}<div class="small" style="color:#c0362c">{{ guest.last_errors }}</div>{% endif %}
+            </td>
+            <td class="nowrap"><a class="btn small" href="/guests/{{ guest.id }}">Open</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <details class="panel technical">
+    <summary>Technical details</summary>
+    <h3>Raw exchange</h3>
+    <p class="small muted">Kept so a rejection can be traced to the exact field that caused it.</p>
+    <div class="actions" style="margin-top:8px">
+      <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">Request XML</a>
+      <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">Response XML</a>
+    </div>
+    {% if record_errors %}
+      <h3>Per-record error codes</h3>
+      <pre class="mono small" style="background:#f4f6f9;padding:10px;border-radius:7px;overflow:auto">{{ record_errors | join('\n') }}</pre>
+    {% endif %}
+  </details>
+</div>
+{% endblock %}

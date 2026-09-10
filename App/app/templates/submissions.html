@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set nav = 'submissions' %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, submission_pill, empty_state %}
+{{ page_header('Reports', 'Every UbyPort transmission and its Doručenka, retained as proof.') }}
+
+{% if rows %}
+<div class="panel tight scroll-x">
+  <table>
+    <thead>
+      <tr><th>When</th><th>Apartment</th><th>Mode</th><th>Guests</th><th>Outcome</th>
+        <th>Receipt stamp</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for submission in rows %}
+      <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link"
+          aria-label="Open report {{ submission.id }}">
+        <td class="nowrap small">{{ submission.created_at[:16].replace('T', ' ') }}</td>
+        <td>{{ submission.internal_name }}</td>
+        <td class="small">{{ submission.mode }}</td>
+        <td class="num">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
+        <td>{{ submission_pill(submission.state) }}</td>
+        <td class="mono small">{{ submission.pseudo_stamp or '—' }}</td>
+        <td class="nowrap">
+          {% if submission.receipt_pdf %}
+            <a class="btn small" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
+          {% endif %}
+          <a class="row-primary-link" href="/submissions/{{ submission.id }}">Details</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+  {{ empty_state('No reports yet', 'Completed guest records appear here after they are sent to UbyPort.', '/reservations', 'Open stays') }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% set nav = 'reservations' %}
+{% block title %}Stays{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, progress_pill %}
+{{ page_header('Stays', 'Calendar stays and manual bookings, earliest arrival first.') }}
+
+<div class="chips">
+  {% for value, label in [('upcoming', 'Upcoming & current'), ('past', 'Past'), ('all', 'All dates')] %}
+    <a class="chip {{ 'on' if date_range == value }}"
+       href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<form method="get" action="/reservations" class="filters panel">
+  <div class="field">
+    <label for="apartment">Apartment</label>
+    <select id="apartment" name="apartment">
+      <option value="">All</option>
+      {% for apartment in apartments %}
+        <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
+          {{ apartment.internal_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="status">Stay state</label>
+    <select id="status" name="status">
+      {% for value, label in [('active', 'Active'), ('cancelled', 'Cancelled'), ('ignored', 'Ignored'), ('all', 'All')] %}
+        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <details class="compact-filters" {% if date_range == 'custom' %}open{% endif %}>
+    <summary>More filters</summary>
+    <div class="filters" style="margin-top:10px">
+      <div class="field">
+        <label for="from">Staying on or after</label>
+        <input type="date" id="from" name="from" value="{{ date_from }}">
+      </div>
+      <div class="field">
+        <label for="to">Staying on or before</label>
+        <input type="date" id="to" name="to" value="{{ date_to }}">
+      </div>
+    </div>
+  </details>
+  <button class="btn primary" type="submit">Apply</button>
+  <a class="btn" href="/reservations?range=upcoming">Clear filters</a>
+</form>
+
+{% if rows %}
+<div class="panel tight scroll-x">
+  <table>
+    <thead>
+      <tr><th>Stay</th><th>Apartment</th><th>Source</th><th>Guests</th><th>Reporting</th><th>Deadline</th><th><span class="sr-only">Open</span></th></tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+      {% set reservation = row.reservation %}
+      {% set progress = row.progress %}
+      {% set check_in = parse_iso_date(reservation.date_from) %}
+      {% set check_out = parse_iso_date(reservation.date_to) %}
+      <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to }}"
+          tabindex="0" role="link"
+          aria-label="Open stay {{ reservation.date_from | date_cz }} to {{ reservation.date_to | date_cz }} at {{ reservation.internal_name }}">
+        <td class="nowrap">
+          <a class="row-primary-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}">
+            {{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}
+          </a>
+          <div class="small muted">
+            {{ nights(reservation.date_from, reservation.date_to) }} nights
+            {%- if check_in and check_out and check_in <= today() <= check_out %}
+              &middot; <span class="pill blue">in house</span>
+            {%- endif %}
+          </div>
+        </td>
+        <td>{{ reservation.internal_name }}</td>
+        <td class="small">
+          {{ reservation.summary or reservation.source }}
+          {% if reservation.reservation_url %}
+            <div><a class="small" href="{{ reservation.reservation_url }}" target="_blank" rel="noopener">portal &rarr;</a></div>
+          {% endif %}
+        </td>
+        <td class="num">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+        <td>
+          {% if reservation.status != 'active' %}<span class="pill grey">{{ reservation.status }}</span>
+          {% else %}{{ progress_pill(progress.status) }}{% endif %}
+        </td>
+        <td class="nowrap">
+          {% if check_in and reservation.status == 'active' %}
+            <span class="deadline {{ urgency(check_in) }}">{{ describe_time_left(check_in) }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="row-arrow" aria-hidden="true">&rarr;</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small muted">
+  {{ rows | length }} stay{{ '' if rows | length == 1 else 's' }}.
+  {% if truncated %}Only the first {{ limit }} are shown — narrow the dates to see the rest.{% endif %}
+</p>
+{% elif has_any %}
+  <div class="panel empty">
+    <p>No stay matches this filter.</p>
+    <a class="btn" href="/reservations?range=all">Show all dates</a>
+  </div>
+{% elif apartments %}
+  <div class="panel empty">
+    <p>No stays yet. Connect a calendar to an apartment, or add one by hand below.</p>
+    <a class="btn" href="/apartments">Go to apartments</a>
+  </div>
+{% else %}
+  <div class="panel empty">
+    <p>There are no apartments yet, so there is nothing to show.</p>
+    <a class="btn primary" href="/apartments/new">Add your first apartment</a>
+  </div>
+{% endif %}
+
+{% if apartments %}
+<details class="panel" {% if not has_any %}open{% endif %}>
+  <summary><strong>Add a stay by hand</strong></summary>
+  <p class="lede" style="margin-top:10px">For direct bookings, phone reservations, or anything not
+    on a connected calendar.</p>
+  <form method="post" action="/reservations">
+    <div class="grid">
+      <div class="field">
+        <label for="new_apartment">Apartment</label>
+        <select id="new_apartment" name="apartment_id" required>
+          {% for apartment in apartments %}
+            <option value="{{ apartment.id }}">{{ apartment.internal_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="date_from">Arrival</label>
+        <input type="date" id="date_from" name="date_from" required>
+      </div>
+      <div class="field">
+        <label for="date_to">Departure</label>
+        <input type="date" id="date_to" name="date_to" required>
+      </div>
+      <div class="field">
+        <label for="expected_guests">Number of guests <span class="opt">(optional)</span></label>
+        <input type="number" id="expected_guests" name="expected_guests" min="1" max="60">
+      </div>
+    </div>
+    <div class="grid two">
+      <div class="field">
+        <label for="summary">Label <span class="opt">(optional)</span></label>
+        <input type="text" id="summary" name="summary" placeholder="Direct booking – Novák">
+      </div>
+      <div class="field">
+        <label for="guest_email">Guest e-mail <span class="opt">(optional)</span></label>
+        <input type="email" id="guest_email" name="guest_email">
+      </div>
+    </div>
+    <div class="actions"><button class="btn primary" type="submit">Create stay</button></div>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

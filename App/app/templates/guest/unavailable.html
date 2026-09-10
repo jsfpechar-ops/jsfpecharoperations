@@ -1,0 +1,15 @@
+{% extends "guest/base.html" %}
+{% block content %}
+<div class="g-card">
+  <div class="g-big-ok">
+    <div class="mark neutral">?</div>
+    <h2>{{ t(title_key) }}</h2>
+    <p class="g-intro">{{ t(body_key) }}</p>
+    {% if restart_url %}
+      <a class="g-btn ghost" href="{{ restart_url }}">{{ t('start_over') }}</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if restart_url %}{% include "guest/_why.html" %}{% endif %}
+{% endblock %}

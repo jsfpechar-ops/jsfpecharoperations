@@ -1,0 +1,25 @@
+{% extends "guest/base.html" %}
+{% block content %}
+
+{% include "guest/_why.html" %}
+
+<h2 class="g-section">{{ t('pick_stay') }}</h2>
+<p class="g-intro">{{ t('pick_stay_help') }}</p>
+
+{% for row in rows %}
+  {% set reservation = row.reservation %}
+  <a class="g-stay {{ 'yours' if row.yours }}" href="/l/{{ token }}/{{ reservation.id }}?lang={{ lang }}">
+    <span class="dates">
+      <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+      <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+      {% if row.yours %}
+        <span class="g-badge">{{ t('your_stay_badge') }}</span>
+      {% else %}
+        <span class="g-badge quiet">{{ t('stay_not_started') }}</span>
+      {% endif %}
+    </span>
+    <span class="arrow" aria-hidden="true">&rarr;</span>
+  </a>
+{% endfor %}
+
+{% endblock %}

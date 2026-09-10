@@ -1,0 +1,716 @@
+"""Guest-facing routes reached through the apartment permalink.
+
+The permalink is the only workable trigger, because an iCal feed carries no
+e-mail address to write to. The host pastes one link into the automated
+message template on Airbnb or Booking.com; the guest opens it, finds their own
+stay among the few that start soon, and fills in the party.
+
+Access control is deliberately narrow: the token identifies the apartment, and
+only stays inside the host's visibility window are reachable through it, so an
+old guest cannot browse current bookings. A signed cookie remembers which
+records this browser created, so one member of a party never sees another
+guest's personal data.
+"""
+from __future__ import annotations
+
+from datetime import date, timedelta
+from typing import Any, Dict, List, Optional
+from urllib.parse import quote
+
+from fastapi import APIRouter, Request
+from fastapi.responses import RedirectResponse
+from itsdangerous import BadSignature, URLSafeSerializer
+
+from .. import codelists, config, db, i18n, reporting, validation
+from ..templating import render_guest
+
+router = APIRouter()
+
+LANG_COOKIE = "ubyhost_lang"
+OWNED_COOKIE = "ubyhost_owned"
+
+CS_VALIDATION_MESSAGES = {
+    "Date of birth is required.": "Datum narození je povinné.",
+    "Enter the full date as DD/MM/YYYY.": "Zadejte celé datum ve formátu DD/MM/RRRR.",
+    "Year must be 1900 or later.": "Rok musí být 1900 nebo pozdější.",
+    "Month must be between 01 and 12.": "Měsíc musí být mezi 01 a 12.",
+    "Day must be between 01 and 31.": "Den musí být mezi 01 a 31.",
+    "That date does not exist - please check day and month.": "Toto datum neexistuje – zkontrolujte den a měsíc.",
+    "Date of birth cannot be after your arrival date.": "Datum narození nemůže být po datu příjezdu.",
+    "Date of birth cannot be in the future.": "Datum narození nemůže být v budoucnosti.",
+    "Surname is required.": "Příjmení je povinné.",
+    "Given name looks missing - please check the passport.": "Křestní jméno zřejmě chybí – zkontrolujte pas.",
+    "Nationality is required.": "Státní příslušnost je povinná.",
+    "Travel document number is required.": "Číslo cestovního dokladu je povinné.",
+    "Street and number are required.": "Ulice a číslo jsou povinné.",
+    "City is required.": "Město je povinné.",
+    "Country is required.": "Země je povinná.",
+    "Unknown country code.": "Neznámý kód země.",
+    "Unknown purpose-of-stay code.": "Neznámý účel pobytu.",
+    "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
+}
+
+
+def _serializer() -> URLSafeSerializer:
+    return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-owned")
+
+
+def _language(request: Request) -> str:
+    return i18n.normalise_language(
+        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE) or ""
+    )
+
+
+def _owned_ids(request: Request) -> List[int]:
+    raw = request.cookies.get(OWNED_COOKIE)
+    if not raw:
+        return []
+    try:
+        value = _serializer().loads(raw)
+        return [int(v) for v in value] if isinstance(value, list) else []
+    except (BadSignature, ValueError, TypeError):
+        return []
+
+
+def _remember_owned(response, guest_ids: List[int]) -> None:
+    unique = sorted({int(g) for g in guest_ids})[-40:]
+    response.set_cookie(
+        OWNED_COOKIE,
+        _serializer().dumps(unique),
+        max_age=60 * 60 * 24 * 60,
+        httponly=True,
+        samesite="lax",
+        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        path="/",
+    )
+
+
+def _with_lang(response, lang: str):
+    response.set_cookie(
+        LANG_COOKIE,
+        lang,
+        max_age=60 * 60 * 24 * 60,
+        samesite="lax",
+        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        path="/",
+    )
+    return response
+
+
+def _localize_issues(issues, lang: str):
+    if lang != "cs":
+        return issues
+    localized = []
+    for issue in issues:
+        message = CS_VALIDATION_MESSAGES.get(issue.message, issue.message)
+        localized.append(validation.Issue(issue.field, message, issue.severity))
+    return localized
+
+
+def _apartment_by_token(token: str):
+    return db.query_one(
+        "SELECT * FROM apartment WHERE permalink_token = ? AND active = 1", (token,)
+    )
+
+
+def _visible_reservations(apartment) -> List[Any]:
+    """Stays a guest may see: arriving within the window, not yet departed."""
+    window = apartment["permalink_window_days"] or 3
+    horizon = (date.today() + timedelta(days=window)).isoformat()
+    return db.query(
+        "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
+        "AND date_from <= ? AND date_to >= ? ORDER BY date_from",
+        (apartment["id"], horizon, date.today().isoformat()),
+    )
+
+
+def _can_pick_other_stays(apartment) -> bool:
+    return len(_visible_reservations(apartment)) > 1
+
+
+def _reservation_for_guest(apartment, reservation_id: int):
+    for reservation in _visible_reservations(apartment):
+        if reservation["id"] == reservation_id:
+            return reservation
+    return None
+
+
+def _unavailable(
+    request: Request,
+    lang: str,
+    reason: str = "bad_link",
+    status_code: int = 404,
+    token: Optional[str] = None,
+):
+    """The one page a guest lands on when there is nothing to fill in.
+
+    It always says which of the three things happened, because "not found"
+    with no explanation is what makes a guest give up and message the host.
+    """
+    titles = {
+        "no_stays": ("no_stays", "no_stays_help"),
+        "bad_link": ("bad_link_title", "bad_link_help"),
+        "stay_gone": ("stay_gone_title", "stay_gone_help"),
+        "not_yours": ("not_yours_title", "not_yours_help"),
+        "already_filed": ("already_filed_title", "already_filed_help"),
+    }
+    title_key, body_key = titles.get(reason, titles["bad_link"])
+    return render_guest(
+        request,
+        "guest/unavailable.html",
+        {
+            "t": i18n.translator(lang),
+            "lang": lang,
+            "lang_urls": _lang_urls(request),
+            "title_key": title_key,
+            "body_key": body_key,
+            "restart_url": _guest_link(token) + _lang_q(lang) if token else None,
+            "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
+        },
+        status_code=status_code,
+    )
+
+
+def _guest_link(token: str, reservation_id: Optional[int] = None, suffix: str = "") -> str:
+    base = f"/l/{token}"
+    if reservation_id:
+        base += f"/{reservation_id}"
+    return base + suffix
+
+
+def _lang_q(lang: str, extra: str = "") -> str:
+    query = f"?lang={lang}"
+    return query + extra if extra else query
+
+
+def _lang_urls(request: Request, path: str = "") -> Dict[str, str]:
+    """Same page in the other language, keeping every other query parameter.
+
+    Dropping the query string here used to swallow flags like saved=1, so
+    switching language silently threw away the "details saved" confirmation.
+    """
+    keep = [(k, v) for k, v in request.query_params.multi_items() if k != "lang"]
+    target = path or request.url.path
+    out = {}
+    for code in i18n.LANGUAGES:
+        pairs = "".join(f"&{k}={quote(str(v))}" for k, v in keep)
+        out[code] = f"{target}?lang={code}{pairs}"
+    return out
+
+
+def _facility(apartment) -> str:
+    """How the property identifies itself to a guest.
+
+    Deliberately the name registered with the police, not the listing name on
+    a booking site: this is a legal form, and which portal the guest came
+    through has nothing to do with it.
+    """
+    if not apartment:
+        return ""
+    name = (apartment["uby_name"] or "").strip()
+    city = (apartment["city_en"] or "").strip()
+    return ", ".join(part for part in (name, city) if part)
+
+
+def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str, Any]:
+    """Context every guest page needs, whatever it is showing."""
+    return {
+        "token": token,
+        "lang": lang,
+        "t": i18n.translator(lang),
+        "lang_urls": _lang_urls(request),
+        "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang),
+        "facility": _facility(apartment),
+    }
+
+
+def _controller(apartment) -> Dict[str, str]:
+    """The GDPR data controller: the legal entity operating the apartment."""
+    entity = None
+    if apartment["legal_entity_id"]:
+        entity = db.query_one(
+            "SELECT * FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],)
+        )
+    if not entity:
+        return {}
+    return {
+        "name": entity["name"] or "",
+        "seat": entity["seat"] or "",
+        "ico": entity["ico"] or "",
+        "email": (entity["contact_email"] if "contact_email" in entity.keys() else "") or "",
+        "phone": (entity["contact_phone"] if "contact_phone" in entity.keys() else "") or "",
+    }
+
+
+def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[str, Any]:
+    is_mine = guest["id"] in owned
+    complete = reporting.guest_is_complete(guest, reservation)
+    row: Dict[str, Any] = {
+        "index": index,
+        "id": guest["id"],
+        "mine": is_mine,
+        "name": f"{guest['first_name']} {guest['surname']}".strip() if is_mine else "",
+        "complete": complete,
+        "locked": guest["submit_state"] == reporting.SENT,
+    }
+    if is_mine:
+        doc = guest["doc_number"] or ""
+        row["summary"] = {
+            "nationality": validation.country_name(guest["nationality"], lang),
+            "birth_date": validation.display_birth_date(guest["birth_date"])
+            or validation.format_birth_date(guest["birth_date"]),
+            "doc_number": "" if doc == validation.INPASS else doc,
+            "purpose": validation.purpose_label(guest["purpose"], lang),
+            "residence": validation.compose_residence(
+                guest["res_street"] or "",
+                guest["res_city"] or "",
+                guest["res_country"] or "",
+                lang,
+            ),
+        }
+    return row
+
+
+def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editing: bool) -> Optional[str]:
+    if editing or db.query_one("SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)):
+        return _guest_link(token, reservation_id) + _lang_q(lang)
+    if _can_pick_other_stays(apartment):
+        return _guest_link(token) + _lang_q(lang)
+    return None
+
+
+def _set_declared_guests(reservation, count: int) -> None:
+    if reservation["expected_guests_override"]:
+        return
+    if count < 1 or count > 60:
+        return
+    db.update(
+        "reservation",
+        reservation["id"],
+        {"declared_guests": count, "updated_at": db.utcnow()},
+    )
+
+
+# --- privacy notice ------------------------------------------------------
+
+# Registered before /l/{token}/{reservation_id}, otherwise "privacy" is parsed
+# as a reservation id and the guest gets a validation error instead of a page.
+@router.get("/l/{token}/privacy")
+def privacy_notice(token: str, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    requested_back = (request.query_params.get("return_to") or "").strip()
+    safe_prefix = _guest_link(token)
+    back_url = (
+        requested_back
+        if requested_back.startswith(safe_prefix) and not requested_back.startswith("//")
+        else _guest_link(token) + _lang_q(lang)
+    )
+    context = _shared(request, token, lang, apartment)
+    context.update(
+        {
+            "controller": _controller(apartment),
+            "back_url": back_url,
+        }
+    )
+    return _with_lang(render_guest(request, "guest/privacy.html", context), lang)
+
+
+# --- stay selection ------------------------------------------------------
+
+@router.get("/l/{token}")
+def pick_stay(token: str, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    reservations = _visible_reservations(apartment)
+
+    # With a single candidate there is nothing to choose; go straight in.
+    if len(reservations) == 1:
+        return _with_lang(
+            RedirectResponse(_guest_link(token, reservations[0]["id"]) + _lang_q(lang), status_code=303),
+            lang,
+        )
+    if not reservations:
+        return _with_lang(_unavailable(request, lang, "no_stays", 200, token), lang)
+
+    owned = set(_owned_ids(request))
+    rows = []
+    for reservation in reservations:
+        progress = reporting.reservation_progress(reservation)
+        yours = any(guest["id"] in owned for guest in progress["guests"])
+        rows.append({"reservation": reservation, "progress": progress, "yours": yours})
+    context = _shared(request, token, lang, apartment)
+    context.update({"apartment": apartment, "rows": rows})
+    return _with_lang(render_guest(request, "guest/pick.html", context), lang)
+
+
+@router.get("/l/{token}/{reservation_id}")
+def stay_overview(token: str, reservation_id: int, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    reservation = _reservation_for_guest(apartment, reservation_id)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+
+    progress = reporting.reservation_progress(reservation)
+    expected = progress["expected"]
+    owned = set(_owned_ids(request))
+
+    people = [
+        _person_row(index, guest, owned, reservation, lang)
+        for index, guest in enumerate(progress["guests"], start=1)
+    ]
+
+    # Empty stay: skip the hub and open the form. The hub is the summary
+    # after someone has actually submitted.
+    if not people:
+        return _with_lang(
+            RedirectResponse(_guest_link(token, reservation_id) + "/new" + _lang_q(lang), status_code=303),
+            lang,
+        )
+
+    remaining = (expected - progress["filled"]) if expected is not None else None
+    context = _shared(request, token, lang, apartment)
+    context.update(
+        {
+            "apartment": apartment,
+            "reservation": reservation,
+            "progress": progress,
+            "expected": expected,
+            "people": people,
+            "remaining": remaining,
+            "can_add": remaining is None or remaining > 0,
+            "can_raise_party": not reservation["expected_guests_override"],
+            "can_pick_other": _can_pick_other_stays(apartment),
+            "just_saved": request.query_params.get("saved") == "1",
+            "just_reported": (
+                request.query_params.get("saved") == "1"
+                and any(person["mine"] and person["locked"] for person in people)
+            ),
+        }
+    )
+    return _with_lang(render_guest(request, "guest/stay.html", context), lang)
+
+
+@router.post("/l/{token}/{reservation_id}/party")
+async def set_party_size(token: str, reservation_id: int, request: Request):
+    """The lead guest declares the headcount, since no feed provides it."""
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    reservation = _reservation_for_guest(apartment, reservation_id)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    form = await request.form()
+    try:
+        count = int((form.get("party_size") or "").strip())
+    except ValueError:
+        count = 0
+    if count < 1 or count > 60:
+        return _with_lang(
+            RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
+        )
+    _set_declared_guests(reservation, count)
+    return _with_lang(
+        RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
+    )
+
+
+@router.post("/l/{token}/{reservation_id}/another")
+async def add_another_person(token: str, reservation_id: int, request: Request):
+    """Raise the declared headcount by one so another guest can fill the form."""
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    reservation = _reservation_for_guest(apartment, reservation_id)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    if reservation["expected_guests_override"]:
+        return _with_lang(
+            RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303),
+            lang,
+        )
+    progress = reporting.reservation_progress(reservation)
+    current = progress["expected"] or progress["filled"] or 1
+    _set_declared_guests(reservation, min(current + 1, 60))
+    return _with_lang(
+        RedirectResponse(_guest_link(token, reservation_id) + "/new" + _lang_q(lang), status_code=303),
+        lang,
+    )
+
+
+# --- guest form ----------------------------------------------------------
+
+def _form_context(
+    request: Request,
+    apartment,
+    reservation,
+    guest,
+    lang: str,
+    issues=None,
+    values=None,
+    back_url: Optional[str] = None,
+) -> Dict[str, Any]:
+    token = apartment["permalink_token"]
+    progress = reporting.reservation_progress(reservation)
+    expected = progress["expected"]
+    remaining = (expected - progress["filled"]) if expected is not None else None
+    context = _shared(request, token, lang, apartment)
+    # This context is also rendered from the POST handler when validation
+    # fails, and request.url.path is then .../save - a URL that only answers
+    # POST. Point the language links at the form itself instead.
+    form_path = (
+        _guest_link(token, reservation["id"]) + f"/edit/{guest['id']}"
+        if guest
+        else _guest_link(token, reservation["id"]) + "/new"
+    )
+    context["lang_urls"] = _lang_urls(request, form_path)
+    context["privacy_url"] = (
+        _guest_link(token)
+        + "/privacy"
+        + _lang_q(lang, f"&return_to={quote(form_path + _lang_q(lang))}")
+    )
+    context.update(
+        {
+            "apartment": apartment,
+            "reservation": reservation,
+            "guest": guest,
+            "back_url": back_url,
+            "pick_url": _guest_link(token) + _lang_q(lang) if _can_pick_other_stays(apartment) else None,
+            "can_pick_other": _can_pick_other_stays(apartment),
+            "ask_party_size": expected is None and guest is None,
+            "person_number": progress["filled"] + 1 if guest is None else None,
+            "issues": issues or [],
+            "values": values or {},
+            "countries": codelists.nationality_options(lang),
+            "purposes": codelists.purpose_options(lang),
+            "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
+            "inpass": validation.INPASS,
+            "remaining": remaining,
+        }
+    )
+    return context
+
+
+@router.get("/l/{token}/{reservation_id}/new")
+def guest_form_new(token: str, reservation_id: int, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    reservation = _reservation_for_guest(apartment, reservation_id)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    progress = reporting.reservation_progress(reservation)
+    expected = progress["expected"]
+    remaining = (expected - progress["filled"]) if expected is not None else None
+    if remaining is not None and remaining <= 0:
+        return _with_lang(
+            RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303),
+            lang,
+        )
+    return _with_lang(
+        render_guest(
+            request,
+            "guest/form.html",
+            _form_context(
+                request,
+                apartment,
+                reservation,
+                None,
+                lang,
+                back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
+            ),
+        ),
+        lang,
+    )
+
+
+@router.get("/l/{token}/{reservation_id}/edit/{guest_id}")
+def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    reservation = _reservation_for_guest(apartment, reservation_id)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    if guest_id not in _owned_ids(request):
+        return _unavailable(request, lang, "not_yours", 403, token)
+    guest = db.query_one(
+        "SELECT * FROM guest WHERE id = ? AND reservation_id = ?", (guest_id, reservation_id)
+    )
+    if not guest or guest["submit_state"] == reporting.SENT:
+        # Once the police have the record, corrections go through the host.
+        return _unavailable(request, lang, "already_filed", 403, token)
+    return _with_lang(
+        render_guest(
+            request,
+            "guest/form.html",
+            _form_context(
+                request,
+                apartment,
+                reservation,
+                guest,
+                lang,
+                back_url=_form_back_url(token, apartment, reservation_id, lang, editing=True),
+            ),
+        ),
+        lang,
+    )
+
+
+@router.post("/l/{token}/{reservation_id}/save")
+async def guest_form_save(token: str, reservation_id: int, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    reservation = _reservation_for_guest(apartment, reservation_id)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+
+    form = await request.form()
+    translate = i18n.translator(lang)
+
+    guest_id = None
+    raw_id = (form.get("guest_id") or "").strip()
+    if raw_id.isdigit():
+        candidate = int(raw_id)
+        if candidate in _owned_ids(request):
+            guest_id = candidate
+
+    existing = None
+    if guest_id:
+        existing = db.query_one(
+            "SELECT * FROM guest WHERE id = ? AND reservation_id = ?", (guest_id, reservation_id)
+        )
+        if existing and existing["submit_state"] == reporting.SENT:
+            return _unavailable(request, lang, "already_filed", 403, token)
+
+    child_in_passport = bool(form.get("child_in_passport"))
+    raw = {
+        "surname": form.get("surname") or "",
+        "first_name": form.get("first_name") or "",
+        "birth_date": form.get("birth_date") or "",
+        "nationality": form.get("nationality") or "",
+        "doc_number": validation.INPASS if child_in_passport else (form.get("doc_number") or ""),
+        "visa_number": form.get("visa_number") or "",
+        "res_street": form.get("res_street") or "",
+        "res_city": form.get("res_city") or "",
+        "res_country": form.get("res_country") or "",
+        "purpose": form.get("purpose") or apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
+        "note": form.get("note") or "",
+    }
+    if child_in_passport:
+        parent_doc = validation.normalise_document(form.get("parent_doc_number") or "")
+        if parent_doc:
+            prefix = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
+            raw["note"] = (prefix + parent_doc + (" " + raw["note"] if raw["note"] else ""))[:255]
+
+    values = validation.normalise_guest(raw)
+    stay_from = (form.get("stay_from") or "").strip() or reservation["date_from"]
+    stay_to = (form.get("stay_to") or "").strip() or reservation["date_to"]
+    signature = (form.get("signature") or "").strip()
+    if not signature.startswith("data:image/") and existing and (existing["signature_png"] or "").startswith("data:image/"):
+        signature = existing["signature_png"]
+
+    party_raw = (form.get("party_size") or "").strip()
+    try:
+        party_size = int(party_raw)
+    except ValueError:
+        party_size = 0
+
+    issues = validation.validate_guest(
+        values, validation.parse_iso_date(stay_from), validation.parse_iso_date(stay_to)
+    )
+    if reporting.expected_guest_count(reservation) is None and not existing:
+        if party_size < 1 or party_size > 60:
+            issues.append(validation.Issue("party_size", translate("error_party_size")))
+    if not signature.startswith("data:image/"):
+        issues.append(validation.Issue("signature", translate("signature_missing")))
+    issues = _localize_issues(issues, lang)
+
+    if validation.errors_only(issues):
+        context = _form_context(
+            request,
+            apartment,
+            reservation,
+            existing,
+            lang,
+            issues=issues,
+            values=values,
+            back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
+        )
+        context["values"].update(
+            {
+                "stay_from": stay_from,
+                "stay_to": stay_to,
+                "child_in_passport": child_in_passport,
+                "parent_doc_number": form.get("parent_doc_number") or "",
+                "signature": signature,
+                "party_size": party_raw,
+            }
+        )
+        return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
+
+    if reporting.expected_guest_count(reservation) is None and not existing:
+        _set_declared_guests(reservation, party_size)
+
+    now = db.utcnow()
+    payload = dict(values)
+    payload.update(
+        {
+            "stay_from": stay_from,
+            "stay_to": stay_to,
+            "signature_png": signature,
+            "signed_at": now,
+            "filled_at": now,
+            "filled_ip": request.client.host if request.client else None,
+            "entered_by": "guest",
+            "updated_at": now,
+            "submit_state": (
+                reporting.NOT_REQUIRED
+                if not validation.guest_is_reportable(values["nationality"])
+                else reporting.PENDING
+            ),
+            "last_errors": None,
+        }
+    )
+
+    if existing:
+        db.update("guest", existing["id"], payload)
+        saved_id = existing["id"]
+    else:
+        is_first = not db.query_one(
+            "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
+        )
+        payload.update(
+            {"reservation_id": reservation_id, "is_lead": 1 if is_first else 0, "created_at": now}
+        )
+        saved_id = db.insert("guest", payload)
+
+    db.audit("guest_form_saved", f"guest={saved_id} reservation={reservation_id}", actor="guest")
+
+    # Immediate automation is allowed to fire as soon as the data is stored.
+    if apartment["automation_mode"] == "immediate":
+        try:
+            reporting.submit_for_apartment(
+                apartment["id"], only_guest_ids=[saved_id], mode="immediate"
+            )
+        except Exception:  # never let a reporting problem break the guest's flow
+            pass
+
+    response = RedirectResponse(
+        _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303
+    )
+    _remember_owned(response, _owned_ids(request) + [saved_id])
+    return _with_lang(response, lang)
