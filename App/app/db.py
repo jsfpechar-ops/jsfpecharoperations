@@ -189,6 +189,9 @@ def connect() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
+    # Self-heal older databases even if the server was already running when the
+    # file was replaced or restored from an older copy.
+    _add_missing_columns(conn)
     return conn
 
 
