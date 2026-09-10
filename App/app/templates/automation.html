@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% set nav = 'automation' %}
+{% block title %}Automation &amp; UbyPort{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header %}
+{{ page_header(
+  'Automation & UbyPort',
+  'When guest data is sent to the Foreign Police, and the web-service credentials for each property.'
+) }}
+
+{% if rows %}
+  {% for row in rows %}
+    {% set apartment = row.apartment %}
+    <section class="panel" id="apartment-{{ apartment.id }}">
+      <div class="section-heading" style="margin-top:0">
+        <h2>{{ apartment.internal_name }}</h2>
+        {% if row.issues %}
+          <span class="pill red">{{ row.issues | length }} to fix</span>
+        {% else %}
+          <span class="pill green">Ready</span>
+        {% endif %}
+      </div>
+      {% if apartment.uby_name %}<p class="small muted">{{ apartment.uby_name }}</p>{% endif %}
+
+      <form method="post" action="/automation/{{ apartment.id }}">
+        <input type="hidden" name="return_to" value="/automation#apartment-{{ apartment.id }}">
+
+        <h3>When to send to UbyPort</h3>
+        <p class="small muted">Rejected records are never silently retried — you always get an alert.</p>
+        <div class="grid two">
+          <div class="field">
+            <label for="automation_mode_{{ apartment.id }}">Send timing</label>
+            <select id="automation_mode_{{ apartment.id }}" name="automation_mode">
+              <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
+                Immediately after the guest submits the form</option>
+              <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
+                A set number of hours after check-in (recommended)</option>
+              <option value="manual" {% if apartment.automation_mode == 'manual' %}selected{% endif %}>
+                Only when I press send</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="submit_after_hours_{{ apartment.id }}">Hours after check-in</label>
+            <input type="number" id="submit_after_hours_{{ apartment.id }}" name="submit_after_hours"
+                   min="0" max="72" value="{{ apartment.submit_after_hours }}">
+          </div>
+        </div>
+        <div class="field" style="max-width:320px">
+          <label for="default_purpose_{{ apartment.id }}">Default purpose of stay</label>
+          <select id="default_purpose_{{ apartment.id }}" name="default_purpose">
+            {% for purpose in purposes %}
+              <option value="{{ purpose.code }}"
+                {% if apartment.default_purpose == purpose.code %}selected{% endif %}>{{ purpose.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <h3 style="margin-top:22px">UbyPort web-service credentials</h3>
+        <p class="small muted">
+          Not your normal UbyPort login — request web-service access from the Foreign Police
+          (<span class="mono">reguby@pcr.cz</span>).
+        </p>
+        <div class="grid">
+          <div class="field">
+            <label for="uby_idub_{{ apartment.id }}">IDUB</label>
+            <input type="text" id="uby_idub_{{ apartment.id }}" name="uby_idub" maxlength="14"
+                   value="{{ apartment.uby_idub or '' }}">
+          </div>
+          <div class="field">
+            <label for="uby_mark_{{ apartment.id }}">Facility abbreviation</label>
+            <input type="text" id="uby_mark_{{ apartment.id }}" name="uby_mark" maxlength="5"
+                   value="{{ apartment.uby_mark or '' }}">
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="field">
+            <label for="uby_name_{{ apartment.id }}">Facility name in UbyPort</label>
+            <input type="text" id="uby_name_{{ apartment.id }}" name="uby_name" maxlength="35"
+                   value="{{ apartment.uby_name or '' }}">
+          </div>
+          <div class="field">
+            <label for="uby_contact_{{ apartment.id }}">Contact at registration</label>
+            <input type="text" id="uby_contact_{{ apartment.id }}" name="uby_contact" maxlength="50"
+                   value="{{ apartment.uby_contact or '' }}">
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="field">
+            <label for="uby_ws_user_{{ apartment.id }}">Web-service login</label>
+            <input type="text" id="uby_ws_user_{{ apartment.id }}" name="uby_ws_user"
+                   value="{{ apartment.uby_ws_user or '' }}">
+          </div>
+          <div class="field">
+            <label for="uby_ws_password_{{ apartment.id }}">Web-service password</label>
+            <input type="password" id="uby_ws_password_{{ apartment.id }}" name="uby_ws_password"
+                   autocomplete="new-password"
+                   placeholder="{{ 'stored — leave blank to keep' if row.has_password else '' }}">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" type="submit">Save {{ apartment.internal_name }}</button>
+          <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/test-connection"
+                  formmethod="post">Test connection</button>
+          <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/refresh-codelists"
+                  formmethod="post">Refresh code lists</button>
+          <a class="btn small" href="/apartments/{{ apartment.id }}">Full property setup</a>
+        </div>
+      </form>
+    </section>
+  {% endfor %}
+{% else %}
+  <div class="panel empty">
+    <p>No active properties yet. Add a property first, then configure reporting here.</p>
+    <a class="btn primary" href="/apartments/new">Add a property</a>
+  </div>
+{% endif %}
+{% endblock %}

@@ -2,17 +2,53 @@
 {% set nav = 'housebook' %}
 {% block title %}House book{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
 {{ page_header(
   'House book',
   'The statutory guest register, retained for six years and exportable for inspection.',
-  actions='<a class="btn" href="/housebook-sample.csv">Sample CSV</a>'
+  actions=''
+    ~ ('<button class="btn" type="button" data-toggle-panel="import-housebook-panel">Import CSV</button>' if apartments else '')
+    ~ '<a class="btn" href="/housebook-sample.csv">Sample CSV</a>'
 ) }}
 <p class="lede">
   Every guest record with the start and end of the stay.
   The law requires this to be kept for six years after the last entry and produced on request
   during a police inspection.
 </p>
+
+{% if apartments %}
+<div id="import-housebook-panel" class="action-panel hidden">
+  <div class="panel">
+    <div class="section-heading" style="margin-top:0">
+      <h2>Import historical records</h2>
+      <button class="btn small" type="button" data-close-panel>Close</button>
+    </div>
+    <div class="import-guide">
+      <p>If you kept a paper house book before using UbyHost, load those entries here for safekeeping.</p>
+      <p class="small muted">Required columns: Stay from, Stay to, Surname, Given name(s). Dates can be YYYY-MM-DD or DD.MM.YYYY.
+        Download the <a href="/housebook-sample.csv">sample CSV</a> for the exact format.</p>
+    </div>
+    <form method="post" action="/housebook/import" enctype="multipart/form-data" class="filters" style="margin-top:14px">
+      <div class="field" style="min-width:220px;margin:0">
+        <label for="import-apartment">Property</label>
+        <select id="import-apartment" name="apartment_id" required>
+          <option value="">— choose —</option>
+          {% for apartment in apartments %}
+            <option value="{{ apartment.id }}">{{ apartment.internal_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="min-width:260px;margin:0">
+        <label for="csv_file">CSV file</label>
+        <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+      </div>
+      <div class="field filter-actions">
+        <button class="btn primary" type="submit">Import records</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <form method="get" action="/housebook" class="filters panel">
   <div class="field">
@@ -40,37 +76,6 @@
   </div>
 </form>
 
-<div class="panel">
-  <h2 style="margin-top:0">Import historical records</h2>
-  <div class="import-guide">
-    <p>If you kept a paper house book before using UbyHost, load those entries here for safekeeping.</p>
-    <ol>
-      <li><a href="/housebook-sample.csv">Download the sample CSV</a> — it shows every column with a filled-in example row.</li>
-      <li>Replace the example with your own records, or add more rows underneath.</li>
-      <li>Required columns: <span class="mono">Stay from</span>, <span class="mono">Stay to</span>, <span class="mono">Surname</span>, <span class="mono">Given name(s)</span>.</li>
-      <li>Dates can be <span class="mono">YYYY-MM-DD</span> or Czech <span class="mono">DD.MM.YYYY</span>.</li>
-    </ol>
-    <form method="post" action="/housebook/import" enctype="multipart/form-data" class="actions" style="margin-top:16px">
-      <div class="field" style="min-width:220px;margin:0">
-        <label for="import-apartment">Property</label>
-        <select id="import-apartment" name="apartment_id" required>
-          <option value="">— choose —</option>
-          {% for apartment in apartments %}
-            <option value="{{ apartment.id }}">{{ apartment.internal_name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field" style="min-width:260px;margin:0">
-        <label for="csv_file">CSV file</label>
-        <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
-      </div>
-      <div class="field filter-actions" style="margin:0">
-        <button class="btn primary" type="submit">Import records</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 {% if rows %}
 <div class="panel tight scroll-x">
   <table>
@@ -78,7 +83,7 @@
       <tr>
         <th>Stay</th><th>Apartment</th><th>Guest</th><th>Born</th><th>Nat.</th>
         <th>Document</th><th>Residence abroad</th><th>Purpose</th><th>Signed</th>
-        <th>Reported</th><th><span class="sr-only">Open</span></th>
+        <th>Reported</th><th><span class="sr-only">Actions</span></th>
       </tr>
     </thead>
     <tbody>
@@ -103,19 +108,20 @@
         </td>
         <td class="nowrap row-actions">
           <a class="btn small" href="/guests/{{ row._guest_id }}?return_to=/housebook">Edit</a>
-          <a class="btn small" href="/guests/{{ row._guest_id }}/form.pdf">PDF</a>
-          <form method="post" action="/guests/{{ row._guest_id }}/archive" class="inline">
-            <input type="hidden" name="return_to" value="/housebook">
-            <button class="btn small" type="submit">Archive</button>
-          </form>
-          <span class="row-arrow" aria-hidden="true">&rarr;</span>
+          {{ row_menu_begin() }}
+            <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">Download PDF</a>
+            <form method="post" action="/guests/{{ row._guest_id }}/archive" class="row-menu-form">
+              <input type="hidden" name="return_to" value="/housebook">
+              <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+            </form>
+          {{ row_menu_end() }}
         </td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
 </div>
-<p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}.</p>
+<p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}. CSV export includes active entries only.</p>
 {% else %}
   <div class="panel empty">No entries match this filter. The house book fills as guest forms are completed.</div>
 {% endif %}
