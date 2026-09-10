@@ -95,9 +95,14 @@
       {% endif %}
     </div>
 
-    <details class="panel technical">
-      <summary>Advanced diagnostics and recent activity</summary>
-      <h2>Recent activity</h2>
+    <details class="panel technical" open>
+      <summary>Advanced diagnostics and activity log</summary>
+      <p class="small muted">
+        Every important change is recorded here — saves, imports, archives, PIN rotations, and police submissions.
+        Archived properties, stays, and house-book entries can be restored from their Archive sections.
+        Only the six-year retention purge permanently deletes guest records.
+      </p>
+      <h2>Recent activity (last {{ audit_count }} events)</h2>
       <div class="scroll-x">
         <table>
           <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
