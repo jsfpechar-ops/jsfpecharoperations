@@ -193,7 +193,7 @@ def test_host_shell_is_workflow_grouped():
     try:
         page = TestClient(app).get("/")
         assert page.status_code == 200
-        assert "Operate" in page.text
+        assert "Operations" in page.text
         assert "Records" in page.text
         assert "Setup" in page.text
         assert 'id="app-sidebar"' in page.text

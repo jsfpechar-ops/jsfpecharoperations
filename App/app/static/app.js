@@ -28,11 +28,24 @@
     });
   }
 
+  function positionRowMenu(trigger, panel) {
+    panel.style.position = "fixed";
+    panel.style.zIndex = "100";
+    panel.hidden = false;
+    var rect = trigger.getBoundingClientRect();
+    var width = panel.offsetWidth || 168;
+    var left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
+    panel.style.left = left + "px";
+    panel.style.top = Math.min(rect.bottom + 4, window.innerHeight - panel.offsetHeight - 8) + "px";
+  }
+
   function initRowMenus() {
-    function closeAll(except) {
+    function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(function (panel) {
-        if (panel === except) return;
         panel.hidden = true;
+        panel.style.position = "";
+        panel.style.left = "";
+        panel.style.top = "";
         var trigger = panel.parentElement.querySelector(".row-menu-trigger");
         if (trigger) trigger.setAttribute("aria-expanded", "false");
       });
@@ -42,21 +55,75 @@
       var panel = trigger.parentElement.querySelector(".row-menu-panel");
       if (!panel) return;
       trigger.addEventListener("click", function (event) {
+        event.preventDefault();
         event.stopPropagation();
-        var open = !panel.hidden;
-        closeAll(open ? panel : null);
-        panel.hidden = open;
-        trigger.setAttribute("aria-expanded", open ? "false" : "true");
+        var wasOpen = !panel.hidden;
+        closeAll();
+        if (!wasOpen) {
+          positionRowMenu(trigger, panel);
+          trigger.setAttribute("aria-expanded", "true");
+        }
       });
     });
 
     document.addEventListener("click", function (event) {
       if (event.target.closest(".row-menu")) return;
-      closeAll(null);
+      closeAll();
     });
 
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") closeAll(null);
+      if (event.key === "Escape") closeAll();
+    });
+    window.addEventListener("resize", closeAll);
+    window.addEventListener("scroll", closeAll, true);
+  }
+
+  function syncAutomationHours(select) {
+    var hoursId = select.getAttribute("data-hours-target");
+    if (!hoursId) return;
+    var hours = document.getElementById(hoursId);
+    var field = hours ? hours.closest(".field") : null;
+    if (!hours || !field) return;
+    var scheduled = select.value === "scheduled";
+    hours.disabled = !scheduled;
+    field.classList.toggle("field-disabled", !scheduled);
+  }
+
+  function initAutomationFields() {
+    document.querySelectorAll("[data-automation-mode]").forEach(function (select) {
+      syncAutomationHours(select);
+      select.addEventListener("change", function () { syncAutomationHours(select); });
+    });
+  }
+
+  function initCsvExport() {
+    var dialog = document.getElementById("csv-export-dialog");
+    if (!dialog) return;
+    var form = document.getElementById("csv-export-form");
+    var pending = { base: "", params: "" };
+
+    document.querySelectorAll("[data-csv-export]").forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        pending.base = button.getAttribute("data-csv-export") || "";
+        pending.params = button.getAttribute("data-csv-params") || "";
+        if (typeof dialog.showModal === "function") dialog.showModal();
+      });
+    });
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var from = form.querySelector('[name="from"]').value;
+      var to = form.querySelector('[name="to"]').value;
+      if (!from || !to) return;
+      var url = pending.base + "?from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to);
+      if (pending.params) url += (url.indexOf("?") >= 0 ? "&" : "?") + pending.params;
+      window.location.assign(url);
+      dialog.close();
+    });
+
+    dialog.querySelectorAll("[data-csv-cancel]").forEach(function (button) {
+      button.addEventListener("click", function () { dialog.close(); });
     });
   }
 
@@ -175,5 +242,7 @@
     initTogglePanels();
     initDismissBanners();
     initDetailsLinks();
+    initAutomationFields();
+    initCsvExport();
   });
 })();

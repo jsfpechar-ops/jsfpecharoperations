@@ -71,8 +71,8 @@
   </div>
   <div class="field filter-actions">
     <button class="btn" type="submit">Filter</button>
-    <a class="btn primary" href="/housebook.csv?apartment={{ apartment_id or '' }}&from={{ date_from }}&to={{ date_to }}">
-      Download CSV</a>
+    <button class="btn primary" type="button" data-csv-export="/housebook.csv"
+            data-csv-params="apartment={{ apartment_id or '' }}">Download CSV</button>
   </div>
 </form>
 
@@ -102,14 +102,14 @@
         <td class="small">
           {% if row.reported == 'yes' %}<span class="pill green">yes</span>
             <div class="small muted">{{ row.reported_at[:10] }}</div>
-          {% elif row.reported.startswith('not required') %}<span class="pill grey">no duty</span>
+          {% elif row.reported.startswith('not required') %}<span class="pill grey">Exempt</span>
           {% elif row.reported.startswith('NO') %}<span class="pill red">{{ row.reported }}</span>
           {% else %}<span class="pill amber">{{ row.reported }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions">
-          <a class="btn small" href="/guests/{{ row._guest_id }}?return_to=/housebook">Edit</a>
           {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">Download PDF</a>
+            <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">Edit</a>
+            <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">PDF</a>
             <form method="post" action="/guests/{{ row._guest_id }}/archive" class="row-menu-form">
               <input type="hidden" name="return_to" value="/housebook">
               <button class="row-menu-item" type="submit" role="menuitem">Archive</button>

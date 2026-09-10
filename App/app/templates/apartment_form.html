@@ -139,9 +139,9 @@
     {% if editing %}
     <div class="actions">
       <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/test-connection"
-              formmethod="post">Test the connection</button>
+              formmethod="post" formnovalidate>Test the connection</button>
       <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/refresh-codelists"
-              formmethod="post">Refresh code lists from UbyPort</button>
+              formmethod="post" formnovalidate>Refresh code lists from UbyPort</button>
       <span class="small muted">
         Both use the saved credentials, so save first.
         {% if codelist_fetched %}Code lists cached {{ codelist_fetched[:10] }}.
@@ -160,7 +160,8 @@
     <div class="grid two">
       <div class="field">
         <label for="automation_mode">When to send to UbyPort</label>
-        <select id="automation_mode" name="automation_mode">
+        <select id="automation_mode" name="automation_mode"
+                data-automation-mode data-hours-target="submit_after_hours">
           <option value="immediate" {% if editing and apartment.automation_mode == 'immediate' %}selected{% endif %}>
             Immediately after the guest submits the form</option>
           <option value="scheduled"
@@ -346,7 +347,7 @@ Thank you.</pre>
     </div>
     <div class="field">
       <label for="label">Portal</label>
-      <input type="text" id="label" name="label" placeholder="Airbnb / Booking.com">
+      <input type="text" id="label" name="label" placeholder="Airbnb / Booking.com / Agoda / Vrbo">
     </div>
     <div class="field">
       <label for="own_name">Your name for it</label>
