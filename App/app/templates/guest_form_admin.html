@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% set nav = 'reservations' %}
+{% set editing = guest is not none %}
+{% block title %}{{ 'Edit guest' if editing else 'Add guest' }}{% endblock %}
+
+{% macro err_for(field) %}
+  {% for issue in issues if issue.field == field %}
+    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ issue.message }}</div>
+  {% endfor %}
+{% endmacro %}
+{% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
+
+{% block content %}
+{% from "_components.html" import page_header, breadcrumb %}
+{{ breadcrumb([
+  {'label': 'Stays', 'url': '/reservations'},
+  {'label': reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz), 'url': '/reservations/' ~ reservation.id},
+  {'label': 'Edit guest' if editing else 'Add guest', 'url': ''}
+]) }}
+{{ page_header(
+  'Edit guest' if editing else 'Add guest',
+  reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
+  '/reservations/' ~ reservation.id,
+  'Back to stay'
+) }}
+
+{% if editing and guest.submit_state in ('error', 'blocked') %}
+  <div class="banner critical">
+    <div class="grow">
+      <strong>UbyPort rejected this record.</strong>
+      <small>{{ guest.last_errors }}</small>
+      <small>Correct the data and save — that puts it back in the queue.</small>
+    </div>
+  </div>
+{% endif %}
+{% if editing and guest.submit_state == 'sent' %}
+  <div class="banner info">
+    <div class="grow">
+      <strong>Already reported to the Foreign Police{% if guest.submitted_at %} on {{ guest.submitted_at[:16].replace('T', ' ') }}{% endif %}.</strong>
+      <small>Editing changes the house book only. Sending it again creates a duplicate, which the
+        police count against you, so it needs a deliberate confirmation below.</small>
+    </div>
+  </div>
+{% endif %}
+
+<form method="post" action="{{ ('/guests/' ~ guest.id) if editing else ('/reservations/' ~ reservation.id ~ '/guests') }}">
+  <div class="panel">
+    <h2 style="margin-top:0">Identity</h2>
+    <div class="grid two">
+      <div class="field">
+        <label for="surname">Surname</label>
+        <input class="{{ bad('surname') }}" type="text" id="surname" name="surname" maxlength="50" required
+               value="{{ guest.surname or '' if editing else '' }}">
+        {{ err_for('surname') }}
+      </div>
+      <div class="field">
+        <label for="first_name">Given name(s)</label>
+        <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name" maxlength="24"
+               value="{{ guest.first_name or '' if editing else '' }}">
+        {{ err_for('first_name') }}
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="birth_date">Date of birth</label>
+        <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
+               placeholder="DDMMYYYY" maxlength="10"
+               value="{{ guest.birth_date or '' if editing else '' }}">
+        <div class="hint">DDMMYYYY. Use 00 for an unknown day or month.</div>
+        {{ err_for('birth_date') }}
+      </div>
+      <div class="field">
+        <label for="nationality">Nationality</label>
+        <select class="{{ bad('nationality') }}" id="nationality" name="nationality" required>
+          <option value="">— select —</option>
+          {% for country in countries %}
+            <option value="{{ country.code }}"
+              {% if editing and guest.nationality == country.code %}selected{% endif %}>
+              {{ country.label }} ({{ country.code }})</option>
+          {% endfor %}
+        </select>
+        <div class="hint">Czech nationals are recorded in the house book but never sent to the police.</div>
+        {{ err_for('nationality') }}
+      </div>
+      <div class="field">
+        <label for="doc_number">Travel document number</label>
+        <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
+               value="{{ guest.doc_number or '' if editing else '' }}">
+        <div class="hint">6–30 letters and digits, or INPASS for a child in a parent's passport.</div>
+        {{ err_for('doc_number') }}
+      </div>
+      <div class="field">
+        <label for="visa_number">Visa number <span class="opt">(optional)</span></label>
+        <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
+               value="{{ guest.visa_number or '' if editing else '' }}">
+        {{ err_for('visa_number') }}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-top:0">Permanent residence abroad</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="res_street">Street and number <span class="opt">(optional)</span></label>
+        <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street" maxlength="42"
+               value="{{ guest.res_street or '' if editing else '' }}">
+        {{ err_for('res_street') }}
+      </div>
+      <div class="field">
+        <label for="res_city">City</label>
+        <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city" maxlength="42"
+               value="{{ guest.res_city or '' if editing else '' }}">
+        {{ err_for('res_city') }}
+      </div>
+      <div class="field">
+        <label for="res_country">Country</label>
+        <select class="{{ bad('res_country') }}" id="res_country" name="res_country">
+          <option value="">— select —</option>
+          {% for country in countries %}
+            <option value="{{ country.code }}"
+              {% if editing and guest.res_country == country.code %}selected{% endif %}>
+              {{ country.label }} ({{ country.code }})</option>
+          {% endfor %}
+        </select>
+        {{ err_for('res_country') }}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-top:0">Stay</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="stay_from">Accommodated from</label>
+        <input type="date" id="stay_from" name="stay_from"
+               value="{{ (guest.stay_from if editing and guest.stay_from else reservation.date_from) }}">
+      </div>
+      <div class="field">
+        <label for="stay_to">Accommodated until</label>
+        <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"
+               value="{{ (guest.stay_to if editing and guest.stay_to else reservation.date_to) }}">
+        {{ err_for('stay_to') }}
+      </div>
+      <div class="field">
+        <label for="purpose">Purpose of stay</label>
+        <select id="purpose" name="purpose">
+          {% for purpose in purposes %}
+            <option value="{{ purpose.code }}"
+              {% if (editing and guest.purpose == purpose.code) or (not editing and purpose.code == reservation.default_purpose) %}selected{% endif %}>
+              {{ purpose.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="note">Note <span class="opt">(optional, max 255)</span></label>
+      <textarea class="{{ bad('note') }}" id="note" name="note" maxlength="255">{{ guest.note or '' if editing else '' }}</textarea>
+      {{ err_for('note') }}
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="submit">{{ 'Save changes' if editing else 'Add guest' }}</button>
+    <a class="btn" href="/reservations/{{ reservation.id }}">Cancel</a>
+    {% if editing %}
+      <a class="btn" href="/guests/{{ guest.id }}/form.pdf">Download signed form</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if editing %}
+<details class="panel danger-zone" style="margin-top:24px">
+  <summary>Advanced and dangerous actions</summary>
+<div style="margin-top:16px">
+  <h3 style="margin-top:0">Send this record again</h3>
+  <p class="small muted">
+    UbyPort files duplicates under errors that cannot be corrected, and repeatedly sending them
+    without reason can cost you web-service access. Only do this if you have a genuine reason —
+    for example the connection dropped mid-transfer and you are not sure the data arrived.
+  </p>
+  <form method="post" action="/guests/{{ guest.id }}/resend">
+    <div class="checkline" style="margin-bottom:12px">
+      <input type="checkbox" id="confirm_duplicate" name="confirm_duplicate" value="1">
+      <label for="confirm_duplicate">I understand this may create a duplicate record.</label>
+    </div>
+    <button class="btn danger" type="submit">Re-send to UbyPort</button>
+  </form>
+</div>
+
+{% if guest.submit_state != 'sent' %}
+<form method="post" action="/guests/{{ guest.id }}/delete" class="panel"
+      onsubmit="return confirm('Remove this guest record?')">
+  <h3 style="margin-top:0">Remove</h3>
+  <button class="btn danger" type="submit">Delete this guest</button>
+</form>
+{% endif %}
+</details>
+{% endif %}
+{% endblock %}

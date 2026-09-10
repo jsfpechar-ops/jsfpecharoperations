@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% set nav = 'dashboard' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, progress_pill %}
+
+{% macro queue_table(items, empty_text='Nothing needs attention here.') %}
+  {% if items %}
+  <div class="panel tight scroll-x">
+    <table>
+      <thead><tr><th>Stay</th><th>Deadline</th><th>Guests</th><th>Reporting</th><th><span class="sr-only">Open</span></th></tr></thead>
+      <tbody>
+      {% for row in items %}
+        {% set reservation = row.reservation %}
+        {% set progress = row.progress %}
+        <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link">
+          <td class="task-row-main">
+            <a class="task-title row-primary-link" href="/reservations/{{ reservation.id }}?return_to=/">
+              {{ reservation.internal_name }}
+            </a>
+            <div class="small muted">{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</div>
+            <div class="next-action">
+              {% if progress.status == 'failed' %}Review the rejection and correct the guest record.
+              {% elif progress.status == 'ready' %}Guest details are complete and ready to send.
+              {% elif progress.status == 'incomplete' %}Open the stay to finish missing guest details.
+              {% elif progress.status == 'awaiting_guest' %}Share the guest link or add the details yourself.
+              {% else %}Review this stay.{% endif %}
+            </div>
+          </td>
+          <td class="nowrap">
+            <span class="deadline {{ row.urgency }}">{{ describe_time_left(row.check_in) }}</span>
+            {% if row.deadline and row.urgency != 'future' %}<div class="small muted">by {{ row.deadline.strftime('%d.%m. %H:%M') }}</div>{% endif %}
+          </td>
+          <td class="nowrap">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+          <td>{{ progress_pill(progress.status) }}</td>
+          <td class="row-arrow" aria-hidden="true">&rarr;</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="panel empty small">{{ empty_text }}</div>
+  {% endif %}
+{% endmacro %}
+
+{{ page_header(
+  'Today',
+  'Your reporting work, ordered by legal urgency and the next action.',
+  actions='<form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>' ~
+    ('<form method="post" action="/demo/reset" onsubmit="return confirm(&quot;Clear the built-in demo data?&quot;)"><button class="btn danger" type="submit">Clear demo data</button></form>' if demo_loaded else '')
+) }}
+
+{% if last_sync %}<p class="small muted">Calendars last synced {{ last_sync[:16].replace('T', ' ') }} UTC.</p>{% endif %}
+
+{% if not apartments %}
+  <div class="panel empty">
+    <h2 style="margin-top:0">Nothing set up yet</h2>
+    <p>Add the company or sole trader that operates your apartments, then add the apartments
+      themselves and paste in your Airbnb or Booking.com calendar links.</p>
+    <a class="btn primary" href="/entities">Add a legal entity</a>
+    {% if ubyport_env == 'mock' %}
+      <form method="post" action="/demo" style="margin-top:18px">
+        <button class="btn" type="submit">Or fill it with a demo apartment to click through</button>
+        <div class="small muted" style="margin-top:6px">
+          One property, four stays from a sample calendar, and two guests already reported to the
+          mock server. A dedicated reset action appears on Today.
+        </div>
+      </form>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="stats" aria-label="Work summary">
+    <a class="stat stat-link {{ 'bad' if counts.overdue else '' }}" href="#needs-action">
+      <div class="n">{{ counts.overdue }}</div><div class="k">Past deadline</div>
+    </a>
+    <a class="stat stat-link warn" href="#needs-action">
+      <div class="n">{{ counts.attention }}</div><div class="k">Need action</div>
+    </a>
+    <a class="stat stat-link" href="#waiting">
+      <div class="n">{{ counts.awaiting }}</div><div class="k">Waiting for guest</div>
+    </a>
+    <a class="stat stat-link ok" href="#needs-action">
+      <div class="n">{{ counts.ready }}</div><div class="k">Ready to report</div>
+    </a>
+  </div>
+
+  {% if setup_warnings %}
+  <div class="panel">
+    <div class="section-heading" style="margin-top:0">
+      <h2>Finish setup</h2><a href="/apartments">View properties</a>
+    </div>
+    <p class="small muted">These properties cannot report until their registration details are complete.</p>
+    <div class="setup-list">
+    {% for warning in setup_warnings %}
+      <a class="setup-item plain" href="/apartments/{{ warning.apartment.id }}">
+        <span class="mark">!</span>
+        <span><strong>{{ warning.apartment.internal_name }}</strong><br>
+        <span class="small muted">{{ warning.issues | length }} item{{ '' if warning.issues | length == 1 else 's' }} to fix</span></span>
+      </a>
+    {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not rows %}
+  <div class="panel empty">
+    <p>No stays in the current window. Either the calendars have nothing booked, or they have
+      not been synced yet.</p>
+    <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars now</button></form>
+  </div>
+  {% else %}
+    <section id="needs-action">
+      <div class="section-heading"><h2>Needs action now</h2><a href="/reservations">View all stays</a></div>
+      {{ queue_table(queue_groups.needs_action, 'You are caught up. Nothing needs action now.') }}
+    </section>
+    <section id="waiting">
+      <div class="section-heading"><h2>Waiting for guests</h2></div>
+      {{ queue_table(queue_groups.waiting, 'No guest forms are currently outstanding.') }}
+    </section>
+    {% if queue_groups.upcoming %}
+      <section><div class="section-heading"><h2>Upcoming arrivals</h2></div>{{ queue_table(queue_groups.upcoming) }}</section>
+    {% endif %}
+    {% if queue_groups.completed %}
+      <section><div class="section-heading"><h2>Recently completed</h2><a href="/submissions">View reports</a></div>{{ queue_table(queue_groups.completed) }}</section>
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% endblock %}

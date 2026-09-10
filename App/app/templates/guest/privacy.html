@@ -1,0 +1,52 @@
+{% extends "guest/base.html" %}
+{% block content %}
+
+<a class="g-back" href="{{ back_url }}">&larr; {{ t('back') }}</a>
+
+<div class="g-card">
+  <h2>{{ t('privacy_title') }}</h2>
+  <p class="g-intro" style="margin-bottom:0">{{ t('privacy_intro') }}</p>
+</div>
+
+<div class="g-card g-legal">
+  <h3>{{ t('privacy_controller') }}</h3>
+  {% if controller and controller.name %}
+    <p class="controller">
+      <strong>{{ controller.name }}</strong>
+      {% if controller.seat %}<br>{{ controller.seat }}{% endif %}
+      {% if controller.ico %}<br>IČO {{ controller.ico }}{% endif %}
+    </p>
+    {% if controller.email or controller.phone %}
+      <p><strong>{{ t('privacy_contact') }}:</strong>
+        {% if controller.email %}<a href="mailto:{{ controller.email }}">{{ controller.email }}</a>{% endif %}
+        {% if controller.email and controller.phone %} &middot; {% endif %}
+        {% if controller.phone %}{{ controller.phone }}{% endif %}
+      </p>
+    {% endif %}
+  {% else %}
+    <p>{{ t('privacy_controller_missing') }}</p>
+  {% endif %}
+
+  <h3>{{ t('privacy_purpose') }}</h3>
+  <p>{{ t('privacy_purpose_body') }}</p>
+
+  <h3>{{ t('privacy_basis') }}</h3>
+  <p>{{ t('privacy_basis_body') }}</p>
+  <p>{{ t('privacy_required') }}</p>
+
+  <h3>{{ t('privacy_data') }}</h3>
+  <p>{{ t('privacy_data_body') }}</p>
+
+  <h3>{{ t('privacy_recipients') }}</h3>
+  <p>{{ t('privacy_recipients_body') }}</p>
+
+  <h3>{{ t('privacy_retention') }}</h3>
+  <p>{{ t('privacy_retention_body') }}</p>
+
+  <h3>{{ t('privacy_rights') }}</h3>
+  <p>{{ t('privacy_rights_body') }}</p>
+  <p>{{ t('privacy_complaint') }}</p>
+</div>
+
+<a class="g-btn ghost" href="{{ back_url }}">{{ t('back') }}</a>
+{% endblock %}

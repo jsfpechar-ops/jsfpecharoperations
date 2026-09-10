@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}UbyHost{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+{% if show_nav | default(true) %}
+<button class="mobile-nav-toggle" type="button" data-sidebar-toggle aria-controls="app-sidebar"
+        aria-expanded="false"><span aria-hidden="true">☰</span><span>Menu</span></button>
+<div class="sidebar-backdrop" data-sidebar-close></div>
+<aside class="sidebar" id="app-sidebar">
+  <div class="sidebar-brand">
+    <a class="brand plain" href="/">UbyHost</a>
+    <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
+  </div>
+  <nav class="sidebar-nav" aria-label="Main navigation">
+    <div class="nav-group">
+      <div class="nav-label">Operate</div>
+      <a href="/" class="{{ 'active' if nav == 'dashboard' }}"><span aria-hidden="true">⌂</span>Today</a>
+      <a href="/reservations" class="{{ 'active' if nav == 'reservations' }}"><span aria-hidden="true">▦</span>Stays</a>
+      <a href="/guest-links" class="{{ 'active' if nav == 'guest_links' }}"><span aria-hidden="true">↗</span>Guest links</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Records</div>
+      <a href="/submissions" class="{{ 'active' if nav == 'submissions' }}"><span aria-hidden="true">✓</span>Reports</a>
+      <a href="/housebook" class="{{ 'active' if nav == 'housebook' }}"><span aria-hidden="true">▤</span>House book</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Setup</div>
+      <a href="/apartments" class="{{ 'active' if nav in ('apartments', 'entities') }}"><span aria-hidden="true">⌂</span>Properties</a>
+      <a href="/settings" class="{{ 'active' if nav == 'settings' }}"><span aria-hidden="true">⚙</span>Settings</a>
+    </div>
+  </nav>
+  {% if password_is_set %}
+    <form class="sidebar-logout" method="post" action="/logout"><button class="nav-button" type="submit">Log out</button></form>
+  {% endif %}
+</aside>
+{% endif %}
+
+<main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
+  {% if flash %}<div class="banner ok"><div class="grow">{{ flash }}</div></div>{% endif %}
+  {% if flash_error %}<div class="banner err"><div class="grow">{{ flash_error }}</div></div>{% endif %}
+
+  {% for alert in open_alerts %}
+    <div class="banner {{ alert.level }}">
+      <div class="grow">
+        <strong>{{ alert.message }}</strong>
+        {% if alert.detail %}<small>{{ alert.detail }}</small>{% endif %}
+        {% if alert.reservation_id %}
+          <small><a href="/reservations/{{ alert.reservation_id }}">Open the stay &rarr;</a></small>
+        {% elif alert.apartment_id %}
+          <small><a href="/apartments/{{ alert.apartment_id }}">Open the apartment &rarr;</a></small>
+        {% endif %}
+      </div>
+      <form method="post" action="/alerts/{{ alert.id }}/dismiss">
+        <button class="btn small" type="submit">Dismiss</button>
+      </form>
+    </div>
+  {% endfor %}
+
+  {% block content %}{% endblock %}
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>

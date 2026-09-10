@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% set nav = 'apartments' %}
+{% set editing = apartment is not none %}
+{% block title %}{{ apartment.internal_name if editing else 'New apartment' }}{% endblock %}
+
+{% macro text_field(name, label, value, hint='', optional=false, maxlength=none, placeholder='') %}
+  <div class="field">
+    <label for="{{ name }}">{{ label }}{% if optional %} <span class="opt">(optional)</span>{% endif %}</label>
+    <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
+           {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+           {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}>
+    {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+{% from "_components.html" import page_header, breadcrumb %}
+{{ breadcrumb([
+  {'label': 'Properties', 'url': '/apartments'},
+  {'label': apartment.internal_name if editing else 'New property', 'url': ''}
+]) }}
+{{ page_header(
+  apartment.internal_name if editing else 'New property',
+  'Complete the sections below so guest registration and UbyPort reporting work reliably.',
+  '/apartments',
+  'Back to properties'
+) }}
+
+<nav class="section-nav" aria-label="Property setup sections">
+  <a href="#basics">1. Property</a>
+  <a href="#address">2. Address</a>
+  <a href="#ubyport">3. UbyPort</a>
+  <a href="#automation">4. Automation</a>
+  <a href="#communication">5. Guest communication</a>
+  {% if editing %}<a href="#calendars">6. Calendars</a>{% endif %}
+</nav>
+
+{% if issues %}
+  {% set blocking = issues | selectattr('is_error') | list %}
+  {% if blocking %}
+  <div class="banner warning">
+    <div class="grow">
+      <strong>This apartment cannot report to UbyPort yet.</strong>
+      <small>{% for issue in blocking %}{{ issue.message }} {% endfor %}</small>
+    </div>
+  </div>
+  {% endif %}
+{% endif %}
+
+<form method="post" action="{{ '/apartments/' ~ apartment.id if editing else '/apartments' }}">
+  <div class="panel" id="basics">
+    <h2 style="margin-top:0">Basic details</h2>
+    <div class="grid two">
+      {{ text_field('internal_name', 'Your name for this apartment', apartment.internal_name if editing else '',
+         'Only for your own orientation — guests never see it.') }}
+      {{ text_field('city_en', 'City name in English', apartment.city_en if editing else '',
+         'Shown to guests next to the registered facility name, e.g. "Prague".', true) }}
+    </div>
+    <div class="field" style="max-width:420px">
+      <label for="legal_entity_id">Operating legal entity</label>
+      <select id="legal_entity_id" name="legal_entity_id">
+        <option value="">— none —</option>
+        {% for entity in entities %}
+          <option value="{{ entity.id }}"
+            {% if editing and apartment.legal_entity_id == entity.id %}selected{% endif %}>{{ entity.name }}</option>
+        {% endfor %}
+      </select>
+      <div class="hint">The IČO registered in UbyPort for this address. It is also the data
+        controller named in the privacy notice guests are shown, so it cannot be left empty
+        if you want that notice to be complete.</div>
+    </div>
+    <div class="checkline" style="margin-top:6px">
+      <input type="checkbox" id="active" name="active" value="1"
+             {% if not editing or apartment.active %}checked{% endif %}>
+      <label for="active">Active — sync calendars and report guests for this apartment</label>
+    </div>
+  </div>
+
+  <div class="panel" id="address">
+    <h2 style="margin-top:0">Address of the accommodation facility</h2>
+    <p class="small muted" style="margin-top:-4px">
+      UbyPort stores the address as separate parts. Copy them from your registration
+      (<span class="mono">Žádost o registraci ubytovacího zařízení</span>) rather than retyping a
+      one-line address.
+    </p>
+    <div class="grid">
+      {{ text_field('addr_okres', 'District (okres)', apartment.addr_okres if editing else '',
+         'In Prague use the city district.', false, 32) }}
+      {{ text_field('addr_obec', 'Municipality (obec)', apartment.addr_obec if editing else '', '', false, 48) }}
+      {{ text_field('addr_obec_cast', 'Part of municipality', apartment.addr_obec_cast if editing else '',
+         '', true, 48) }}
+    </div>
+    <div class="grid">
+      {{ text_field('addr_street', 'Street', apartment.addr_street if editing else '', '', true, 48) }}
+      {{ text_field('addr_house_no', 'House number (č. popisné)', apartment.addr_house_no if editing else '',
+         'Up to 4 digits. For an evidence number use E123.', false, 5) }}
+      {{ text_field('addr_orient_no', 'Orientation number', apartment.addr_orient_no if editing else '',
+         'Up to 3 digits plus one optional letter.', true, 4) }}
+      {{ text_field('addr_zip', 'Postcode', apartment.addr_zip if editing else '', '5 digits.', false, 6) }}
+    </div>
+  </div>
+
+  <div class="panel" id="ubyport">
+    <h2 style="margin-top:0">UbyPort web-service credentials</h2>
+    <p class="small muted" style="margin-top:-4px">
+      These are <strong>not</strong> your normal UbyPort login. Web-service credentials are issued
+      separately per accommodation facility — request them from the Foreign Police by data box
+      <span class="mono">ybndqw9</span> or at <span class="mono">reguby@pcr.cz</span>.
+      Ask for web-service access and include the facility name, address, IDUB, and IČO in your request.
+    </p>
+    <div class="grid">
+      {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
+         '12–14 characters assigned at registration.', false, 14) }}
+      {{ text_field('uby_mark', 'Facility abbreviation (zkratka)', apartment.uby_mark if editing else '',
+         'Exactly five letters, e.g. AAKLI.', false, 5) }}
+    </div>
+    <div class="grid two">
+      {{ text_field('uby_name', 'Facility name in UbyPort', apartment.uby_name if editing else '',
+         'Max 35 characters, exactly as registered.', false, 35) }}
+      {{ text_field('uby_contact', 'Contact given at registration', apartment.uby_contact if editing else '',
+         'Usually the e-mail address.', true, 50) }}
+    </div>
+    <div class="grid two">
+      {{ text_field('uby_ws_user', 'Web-service login', apartment.uby_ws_user if editing else '',
+         'Starts with UBY-WS (production) or uby-tws (test).') }}
+      <div class="field">
+        <label for="uby_ws_password">Web-service password</label>
+        <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
+               placeholder="{{ 'stored — leave blank to keep' if has_password else '' }}">
+        <div class="hint">Encrypted before it is written to disk.</div>
+      </div>
+    </div>
+    {% if editing %}
+    <div class="actions">
+      <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/test-connection"
+              formmethod="post">Test the connection</button>
+      <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/refresh-codelists"
+              formmethod="post">Refresh code lists from UbyPort</button>
+      <span class="small muted">
+        Both use the saved credentials, so save first.
+        {% if codelist_fetched %}Code lists cached {{ codelist_fetched[:10] }}.
+        {% else %}Using the bundled country list until the first refresh.{% endif %}
+      </span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="panel" id="automation">
+    <h2 style="margin-top:0">Automation</h2>
+    <p class="small muted" style="margin-top:-4px">
+      The operating rules let you pick how much the app does on its own, and require that the
+      choice is yours. Whatever you choose, a rejected record is never silently retried.
+    </p>
+    <div class="grid two">
+      <div class="field">
+        <label for="automation_mode">When to send to UbyPort</label>
+        <select id="automation_mode" name="automation_mode">
+          <option value="immediate" {% if editing and apartment.automation_mode == 'immediate' %}selected{% endif %}>
+            Immediately after the guest submits the form</option>
+          <option value="scheduled"
+            {% if not editing or apartment.automation_mode == 'scheduled' %}selected{% endif %}>
+            A set number of hours after check-in (recommended)</option>
+          <option value="manual" {% if editing and apartment.automation_mode == 'manual' %}selected{% endif %}>
+            Only when I press send</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="submit_after_hours">Hours after check-in</label>
+        <input type="number" id="submit_after_hours" name="submit_after_hours" min="0" max="72"
+               value="{{ apartment.submit_after_hours if editing else 24 }}">
+        <div class="hint">24 hours leaves room for late arrivals while keeping two working days spare.</div>
+      </div>
+    </div>
+    <div class="field" style="max-width:320px">
+      <label for="default_purpose">Default purpose of stay</label>
+      <select id="default_purpose" name="default_purpose">
+        {% for purpose in purposes %}
+          <option value="{{ purpose.code }}"
+            {% if (editing and apartment.default_purpose == purpose.code) or (not editing and purpose.code == '10') %}selected{% endif %}>
+            {{ purpose.label }}</option>
+        {% endfor %}
+      </select>
+      <div class="hint">Pre-selected in the guest form. Tourism fits almost all short-term rentals.</div>
+    </div>
+  </div>
+
+  <div class="panel" id="communication">
+    <h2 style="margin-top:0">Guest link</h2>
+    {% if editing %}
+      <p class="small muted" style="margin-top:-4px">
+        There is exactly one link per apartment. The same string goes into every automated arrival
+        message — Airbnb, Booking.com, direct bookings — because the guest picks their own dates
+        when they open it. It never changes, so you set it up once and never touch it again.
+      </p>
+      <div class="copyrow" style="margin-bottom:12px">
+        <input type="text" id="permalink" readonly value="{{ permalink }}">
+        <button class="btn" type="button" data-copy="permalink">Copy</button>
+      </div>
+      <div class="field" style="max-width:280px">
+        <label for="permalink_window_days">Show stays starting within (days)</label>
+        <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
+               value="{{ apartment.permalink_window_days }}">
+        <div class="hint">Keep it close to your minimum stay so each guest sees only their own booking.</div>
+      </div>
+      <details class="raw">
+        <summary>Suggested message for every portal</summary>
+        <pre>Dear guests,
+
+Czech law treats this apartment as an accommodation facility, so before your arrival
+we have to register every guest and report foreign nationals to the Foreign Police.
+
+Please fill this in - two minutes, one form per person including children:
+{{ permalink }}
+
+The form explains what the law requires and how your data is handled.
+
+Thank you.</pre>
+      </details>
+      <p class="small muted">Paste the same text on Airbnb, Booking.com and in direct-booking
+        e-mails. There is nothing portal-specific to change.</p>
+    {% else %}
+      <p class="small muted">A unique guest link is generated once you save the apartment.</p>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-top:0">Arrival information shown after registration</h2>
+    <div class="grid two">
+      <div class="field">
+        <label for="checkin_info">Check-in</label>
+        <textarea id="checkin_info" name="checkin_info">{{ apartment.checkin_info or '' if editing else '' }}</textarea>
+      </div>
+      <div class="field">
+        <label for="checkout_info">Check-out</label>
+        <textarea id="checkout_info" name="checkout_info">{{ apartment.checkout_info or '' if editing else '' }}</textarea>
+      </div>
+    </div>
+    <div class="field">
+      <label for="notes">Private notes</label>
+      <textarea id="notes" name="notes">{{ apartment.notes or '' if editing else '' }}</textarea>
+      <div class="hint">Private: guests never see this field.</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="submit">{{ 'Save changes' if editing else 'Create apartment' }}</button>
+    <a class="btn" href="/apartments">Back to apartments</a>
+  </div>
+</form>
+
+{% if editing %}
+<h2 id="calendars">Calendars</h2>
+<p class="lede">Airbnb and Booking.com iCal feeds give dates only — no name, no e-mail, no headcount.
+  That is enough to know somebody is arriving, which is all the app needs to start chasing the data.</p>
+
+<div class="split wide">
+  <div>
+    {% if feeds %}
+    <div class="panel tight scroll-x">
+      <table>
+        <thead><tr><th>Name</th><th>Portal</th><th>Last sync</th><th>URL</th><th></th></tr></thead>
+        <tbody>
+        {% for feed in feeds %}
+          <tr>
+            <td><strong>{{ feed.own_name or '—' }}</strong></td>
+            <td>{{ feed.label or '—' }}</td>
+            <td class="nowrap">
+              {% if feed.last_status == 'ok' %}<span class="pill green">OK</span>
+              {% elif feed.last_status == 'error' %}<span class="pill red">Error</span>
+              {% else %}<span class="pill grey">Never</span>{% endif %}
+              {% if feed.last_sync_at %}<div class="small muted">{{ feed.last_sync_at[:16].replace('T', ' ') }}</div>{% endif %}
+              {% if feed.last_error %}<div class="small" style="color:#c0362c">{{ feed.last_error }}</div>{% endif %}
+            </td>
+            <td class="small mono" style="max-width:260px;overflow:hidden;text-overflow:ellipsis">{{ feed.url }}</td>
+            <td>
+              <form method="post" action="/feeds/{{ feed.id }}/delete" class="inline"
+                    onsubmit="return confirm('Disconnect this calendar feed? Existing stays are preserved.')">
+                <button class="btn small danger" type="submit">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="panel empty">No calendars connected yet.</div>
+    {% endif %}
+  </div>
+
+  <form method="post" action="/apartments/{{ apartment.id }}/feeds" class="panel">
+    <h2 style="margin-top:0">Connect a calendar</h2>
+    <div class="field">
+      <label for="url">iCal export URL</label>
+      <input type="url" id="url" name="url" required
+             placeholder="https://www.airbnb.com/calendar/ical/…">
+      <div class="hint">Airbnb: Calendar &rarr; Availability &rarr; Connect calendars. Booking.com:
+        Rates &amp; Availability &rarr; Sync calendars. Paste the whole link.</div>
+    </div>
+    <div class="field">
+      <label for="label">Portal</label>
+      <input type="text" id="label" name="label" placeholder="Airbnb / Booking.com">
+    </div>
+    <div class="field">
+      <label for="own_name">Your name for it</label>
+      <input type="text" id="own_name" name="own_name" placeholder="Airbnb – Vinohrady">
+    </div>
+    <div class="actions"><button class="btn primary" type="submit">Add and sync</button></div>
+  </form>
+</div>
+
+<div class="panel">
+  <h3 style="margin-top:0">Danger zone</h3>
+  <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link"
+        onsubmit="return confirm('Generate a new guest link? The current link stops working and you must update your booking portal messages.')">
+    <button class="btn danger" type="submit">Generate a new guest link</button>
+    <span class="small muted">Use this only if the old link leaked.</span>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% set nav = 'guest_links' %}
+{% block title %}Guest links{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, empty_state %}
+
+{{ page_header(
+  'Guest links',
+  'Reusable apartment links for portal messages. A guest chooses their dates after opening one.'
+) }}
+
+{% if rows %}
+  <div class="grid two">
+  {% for row in rows %}
+    {% set apartment = row.apartment %}
+    <section class="panel">
+      <div class="section-heading" style="margin-top:0">
+        <h2>{{ apartment.internal_name }}</h2>
+        {% if row.issues %}<span class="pill amber">{{ row.issues | length }} setup item{{ '' if row.issues | length == 1 else 's' }}</span>
+        {% else %}<span class="pill green">Ready</span>{% endif %}
+      </div>
+      <p class="small muted">{{ apartment.uby_name or 'Facility name not set' }}
+        {% if apartment.city_en %}&middot; {{ apartment.city_en }}{% endif %}</p>
+      <label for="link-{{ apartment.id }}">Reusable apartment link</label>
+      <div class="copyrow">
+        <input type="text" id="link-{{ apartment.id }}" readonly value="{{ row.permalink }}">
+        <button class="btn primary" type="button" data-copy="link-{{ apartment.id }}">Copy</button>
+      </div>
+      <details class="technical" style="margin-top:18px">
+        <summary>Suggested portal message</summary>
+        <pre class="message-template">Dear guests,
+
+Czech law requires us to register every guest before arrival and report foreign nationals to the Foreign Police.
+
+Please fill in one short form per person, including children:
+{{ row.permalink }}
+
+The form explains why the information is required and how it is handled.
+
+Thank you.</pre>
+      </details>
+      <div class="actions">
+        <a class="btn small" href="/apartments/{{ apartment.id }}">Property setup</a>
+      </div>
+    </section>
+  {% endfor %}
+  </div>
+{% else %}
+  {{ empty_state('No guest links yet', 'Create a property first; its reusable link is generated automatically.', '/apartments/new', 'Add a property') }}
+{% endif %}
+{% endblock %}

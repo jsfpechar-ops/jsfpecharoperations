@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% set nav = 'entities' %}
+{% block title %}Legal entities{% endblock %}
+
+{% macro entity_fields(prefix, entity) %}
+  <div class="field">
+    <label for="{{ prefix }}name">Name</label>
+    <input type="text" id="{{ prefix }}name" name="name" required
+           value="{{ entity.name if entity else '' }}"
+           placeholder="As in the commercial or trade register">
+  </div>
+  <div class="field">
+    <label for="{{ prefix }}seat">Registered seat</label>
+    <input type="text" id="{{ prefix }}seat" name="seat" value="{{ entity.seat or '' if entity else '' }}"
+           placeholder="Street, number, postcode, city">
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label for="{{ prefix }}ico">IČO</label>
+      <input type="text" id="{{ prefix }}ico" name="ico" inputmode="numeric"
+             value="{{ entity.ico or '' if entity else '' }}">
+    </div>
+    <div class="field">
+      <label for="{{ prefix }}dic">DIČ <span class="opt">(optional)</span></label>
+      <input type="text" id="{{ prefix }}dic" name="dic" value="{{ entity.dic or '' if entity else '' }}">
+    </div>
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label for="{{ prefix }}contact_email">Contact e-mail for data requests</label>
+      <input type="email" id="{{ prefix }}contact_email" name="contact_email"
+             value="{{ entity.contact_email or '' if entity else '' }}">
+    </div>
+    <div class="field">
+      <label for="{{ prefix }}contact_phone">Phone <span class="opt">(optional)</span></label>
+      <input type="text" id="{{ prefix }}contact_phone" name="contact_phone"
+             value="{{ entity.contact_phone or '' if entity else '' }}">
+    </div>
+  </div>
+{% endmacro %}
+
+{% block content %}
+{% from "_components.html" import page_header, breadcrumb %}
+{{ breadcrumb([
+  {'label': 'Properties', 'url': '/apartments'},
+  {'label': 'Legal entities', 'url': ''}
+]) }}
+{{ page_header('Legal entities', 'The company or sole trader that operates a property and controls guest data.', '/apartments', 'Back to properties') }}
+<p class="lede">The IČO holds
+  the UbyPort registration and pays the accommodation fee. It is also the data controller shown to
+  guests in the privacy notice, so keep the seat and contact e-mail current. One person can run
+  several.</p>
+
+<div class="split wide">
+  <div>
+    {% if entities %}
+    <div class="panel tight scroll-x">
+      <table>
+        <thead><tr><th>Name</th><th>Registered seat</th><th>IČO</th><th>Contact</th>
+          <th>Apartments</th><th></th></tr></thead>
+        <tbody>
+        {% for entity in entities %}
+          <tr>
+            <td><strong>{{ entity.name }}</strong></td>
+            <td>{{ entity.seat or '—' }}</td>
+            <td class="mono">{{ entity.ico or '—' }}</td>
+            <td class="small">
+              {% if entity.contact_email %}{{ entity.contact_email }}
+              {% else %}<span class="pill amber">missing</span>{% endif %}
+            </td>
+            <td class="num">{{ entity.apartments }}</td>
+            <td class="nowrap">
+              <a class="btn small" href="#edit-{{ entity.id }}" data-open-details>Edit</a>
+              {% if not entity.apartments %}
+              <form method="post" action="/entities/{{ entity.id }}/delete" class="inline"
+                    onsubmit="return confirm('Delete this legal entity? This cannot be undone.')">
+                <button class="btn small danger" type="submit">Delete</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% for entity in entities %}
+      <details class="panel" id="edit-{{ entity.id }}">
+        <summary><strong>Edit {{ entity.name }}</strong></summary>
+        <form method="post" action="/entities/{{ entity.id }}" style="margin-top:12px">
+          {{ entity_fields('e' ~ entity.id ~ '_', entity) }}
+          <div class="actions"><button class="btn primary" type="submit">Save</button></div>
+        </form>
+      </details>
+    {% endfor %}
+    {% else %}
+      <div class="panel empty">No legal entities yet. Add the first one on the right.</div>
+    {% endif %}
+  </div>
+
+  <form method="post" action="/entities" class="panel">
+    <h2 style="margin-top:0">Add a legal entity</h2>
+    {{ entity_fields('new_', none) }}
+    <div class="actions"><button class="btn primary" type="submit">Add</button></div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "guest/base.html" %}
+
+{% macro val(name, fallback='') %}{{ values.get(name) if values.get(name) is not none else (guest[name] if guest and name in guest.keys() and guest[name] else fallback) }}{% endmacro %}
+{% macro err_for(field) %}
+  {% for issue in issues if issue.field == field %}
+    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ issue.message }}</div>
+  {% endfor %}
+{% endmacro %}
+{% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
+
+{% block content %}
+{% if back_url %}
+  <a class="g-back" href="{{ back_url }}">&larr; {{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
+{% elif can_pick_other %}
+  <a class="g-back" href="{{ pick_url }}">&larr; {{ t('wrong_dates') }}</a>
+{% endif %}
+
+{% if issues | selectattr('is_error') | list %}
+  <div class="g-err">
+    <strong>{{ t('fix_errors') }}</strong>
+    <ul>
+      {% for issue in issues if issue.is_error %}<li>{{ issue.message }}</li>{% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+{% include "guest/_why.html" %}
+
+<div class="g-card g-stay-summary">
+  <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+  <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+</div>
+
+<form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}">
+  {% if guest %}<input type="hidden" name="guest_id" value="{{ guest.id }}">{% endif %}
+  <input type="hidden" name="stay_from"
+         value="{{ values.get('stay_from') or (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
+  <input type="hidden" name="stay_to"
+         value="{{ values.get('stay_to') or (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
+
+  <div class="g-card">
+    <h2>
+      {{ t('your_details') }}
+      {% if person_number and person_number > 1 %}
+        <span class="g-chip">{{ t('person') }} {{ person_number }}</span>
+      {% endif %}
+    </h2>
+
+    {% if ask_party_size %}
+      <div class="g-field">
+        <label for="party_size">{{ t('party_question') }}</label>
+        <input type="number" id="party_size" name="party_size" min="1" max="60" required
+               inputmode="numeric" autocomplete="off"
+               value="{{ values.get('party_size', '') }}">
+        <div class="hint">{{ t('party_help') }}</div>
+        {{ err_for('party_size') }}
+      </div>
+    {% endif %}
+
+    <div class="g-row">
+      <div class="g-field">
+        <label for="first_name">{{ t('first_name') }}</label>
+        <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name" maxlength="24"
+               autocomplete="given-name" required value="{{ val('first_name') }}">
+        {{ err_for('first_name') }}
+      </div>
+      <div class="g-field">
+        <label for="surname">{{ t('surname') }}</label>
+        <input class="{{ bad('surname') }}" type="text" id="surname" name="surname" maxlength="50" required
+               autocomplete="family-name" value="{{ val('surname') }}">
+        {{ err_for('surname') }}
+      </div>
+    </div>
+
+    <div class="g-row">
+      <div class="g-field">
+        <label for="birth_date">{{ t('birth_date') }}</label>
+        <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
+               inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" required
+               autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
+        <div class="hint">{{ t('birth_date_help') }}</div>
+        {{ err_for('birth_date') }}
+      </div>
+      <div class="g-field">
+        <label for="nationality">{{ t('nationality') }}</label>
+        <select class="{{ bad('nationality') }}" id="nationality" name="nationality" required>
+          <option value="">—</option>
+          {% for country in countries %}
+            <option value="{{ country.code }}" {% if val('nationality') == country.code %}selected{% endif %}>
+              {{ country.label }}</option>
+          {% endfor %}
+        </select>
+        {{ err_for('nationality') }}
+      </div>
+    </div>
+
+    <div class="g-field" id="doc-wrap">
+      <label for="doc_number">{{ t('doc_number') }}</label>
+      <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
+             autocapitalize="characters" value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
+      <div class="hint">{{ t('doc_number_help') }}</div>
+      {{ err_for('doc_number') }}
+    </div>
+
+    <div class="g-field">
+      <div class="checkline" style="display:flex;gap:9px;align-items:flex-start">
+        <input type="checkbox" id="child_in_passport" name="child_in_passport" value="1"
+               style="width:auto;margin-top:4px"
+               {% if values.get('child_in_passport') or (guest and guest.doc_number == inpass) %}checked{% endif %}>
+        <label for="child_in_passport" style="font-weight:600;margin:0">{{ t('child_title') }}</label>
+      </div>
+      <div class="hint">{{ t('child_help') }}</div>
+    </div>
+
+    <div class="g-field" id="parent-doc-wrap" style="display:none">
+      <label for="parent_doc_number">{{ t('parent_doc') }}</label>
+      <input type="text" id="parent_doc_number" name="parent_doc_number" maxlength="30"
+             autocapitalize="characters" value="{{ values.get('parent_doc_number', '') }}">
+      {{ err_for('note') }}
+    </div>
+
+    <div class="g-field">
+      <label for="visa_number">{{ t('visa_number') }} <span class="opt">({{ t('optional') }})</span></label>
+      <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
+             autocapitalize="characters" value="{{ val('visa_number') }}">
+      <div class="hint">{{ t('visa_help') }}</div>
+      {{ err_for('visa_number') }}
+    </div>
+
+    <div class="g-field">
+      <label for="purpose">{{ t('purpose') }}</label>
+      <select id="purpose" name="purpose">
+        {% for purpose in purposes %}
+          <option value="{{ purpose.code }}"
+            {% if (val('purpose') or default_purpose) == purpose.code %}selected{% endif %}>
+            {{ purpose.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="g-card">
+    <h2>{{ t('residence_title') }}</h2>
+    <p class="g-intro">{{ t('residence_help') }}</p>
+    <div class="g-field">
+      <label for="res_street">{{ t('res_street') }}</label>
+      <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street" maxlength="42"
+             autocomplete="street-address" required value="{{ val('res_street') }}">
+      {{ err_for('res_street') }}
+    </div>
+    <div class="g-row">
+      <div class="g-field">
+        <label for="res_city">{{ t('res_city') }}</label>
+        <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city" maxlength="42"
+               autocomplete="address-level2" required value="{{ val('res_city') }}">
+        {{ err_for('res_city') }}
+      </div>
+      <div class="g-field">
+        <label for="res_country">{{ t('res_country') }}</label>
+        <select class="{{ bad('res_country') }}" id="res_country" name="res_country" required>
+          <option value="">—</option>
+          {% for country in countries %}
+            <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
+              {{ country.label }}</option>
+          {% endfor %}
+        </select>
+        {{ err_for('res_country') }}
+      </div>
+    </div>
+  </div>
+
+  <div class="g-card">
+    <h2>{{ t('signature') }}</h2>
+    <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
+    <div class="g-sign">
+      <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('signature') }}"
+              aria-describedby="sig-help sig-status"></canvas>
+      <div class="bar">
+        <span id="sig-status" class="err" role="alert" aria-live="polite"
+              data-missing="{{ t('signature_missing') }}"
+              data-kept="{{ t('signature_kept') }}"></span>
+        <button type="button" id="sig-clear">{{ t('signature_clear') }}</button>
+      </div>
+    </div>
+    <input type="hidden" id="signature" name="signature"
+           value="{{ values.get('signature') or (guest.signature_png if guest and guest.signature_png else '') }}">
+    {{ err_for('signature') }}
+  </div>
+
+  <button class="g-btn" type="submit">{{ t('submit') }}</button>
+</form>
+{% endblock %}

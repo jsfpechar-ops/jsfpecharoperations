@@ -1,0 +1,72 @@
+{% macro page_header(title, description='', back_url='', back_label='', eyebrow='', actions='') %}
+  <header class="page-header">
+    <div class="page-header-main">
+      {% if back_url %}
+        <a class="back-link" href="{{ back_url }}">&larr; {{ back_label or 'Back' }}</a>
+      {% endif %}
+      {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
+      <h1>{{ title }}</h1>
+      {% if description %}<p class="lede">{{ description }}</p>{% endif %}
+    </div>
+    {% if actions %}<div class="page-actions">{{ actions | safe }}</div>{% endif %}
+  </header>
+{% endmacro %}
+
+{% macro breadcrumb(items) %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      {% for item in items %}
+        <li>
+          {% if item.url and not loop.last %}<a href="{{ item.url }}">{{ item.label }}</a>
+          {% else %}<span {% if loop.last %}aria-current="page"{% endif %}>{{ item.label }}</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </nav>
+{% endmacro %}
+
+{% macro progress_pill(status, compact=false) %}
+  {% set labels = {
+    'failed': 'Rejected',
+    'reported': 'Reported',
+    'ready': 'Ready to report',
+    'incomplete': 'Incomplete',
+    'not_required': 'No duty',
+    'awaiting_guest': 'Waiting for guest'
+  } %}
+  {% set tones = {
+    'failed': 'red',
+    'reported': 'green',
+    'ready': 'blue',
+    'incomplete': 'amber',
+    'not_required': 'grey',
+    'awaiting_guest': 'grey'
+  } %}
+  <span class="pill {{ tones.get(status, 'grey') }}">{{ labels.get(status, status) }}</span>
+{% endmacro %}
+
+{% macro submission_pill(state) %}
+  {% set labels = {
+    'ok': 'Accepted',
+    'partial': 'Partly accepted',
+    'transport_error': 'Not delivered',
+    'running': 'In progress',
+    'failed': 'Rejected'
+  } %}
+  {% set tones = {
+    'ok': 'green',
+    'partial': 'amber',
+    'transport_error': 'red',
+    'running': 'grey',
+    'failed': 'red'
+  } %}
+  <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
+{% endmacro %}
+
+{% macro empty_state(title, body='', action_url='', action_label='') %}
+  <div class="panel empty">
+    <h2>{{ title }}</h2>
+    {% if body %}<p>{{ body }}</p>{% endif %}
+    {% if action_url %}<a class="btn primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+  </div>
+{% endmacro %}

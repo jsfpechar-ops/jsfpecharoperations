@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>{{ t('title') }}</title>
+  <link rel="icon" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/guest.css">
+</head>
+<body>
+<div class="g-wrap">
+  <div class="g-head">
+    <div class="g-title">
+      <h1>{{ t('title') }}</h1>
+      {% if facility %}<p class="g-facility">{{ facility }}</p>{% endif %}
+    </div>
+    {% if lang_urls %}
+    <div class="g-lang" role="group" aria-label="{{ 'Jazyk' if lang == 'cs' else 'Language' }}">
+      <a href="{{ lang_urls.en }}" class="{{ 'on' if lang == 'en' }}" hreflang="en">EN</a>
+      <a href="{{ lang_urls.cs }}" class="{{ 'on' if lang == 'cs' }}" hreflang="cs">CS</a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if flash %}<div class="g-ok">{{ flash }}</div>{% endif %}
+  {% if flash_error %}<div class="g-err">{{ flash_error }}</div>{% endif %}
+
+  {% block content %}{% endblock %}
+
+  <div class="g-foot">
+    <p>{{ t('privacy') }}</p>
+    {% if privacy_url %}<p><a href="{{ privacy_url }}">{{ t('privacy_link') }}</a></p>{% endif %}
+  </div>
+</div>
+<script src="/static/signature.js"></script>
+</body>
+</html>
