@@ -38,8 +38,15 @@ def _back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
         query.append(f"msg={quote(msg)}")
     if err:
         query.append(f"err={quote(err)}")
-    suffix = ("?" if "?" not in path else "&") + "&".join(query) if query else ""
-    return RedirectResponse(path + suffix, status_code=303)
+    if not query:
+        return RedirectResponse(path, status_code=303)
+    qs = "&".join(query)
+    if "#" in path:
+        base, fragment = path.split("#", 1)
+        sep = "&" if "?" in base else "?"
+        return RedirectResponse(f"{base}{sep}{qs}#{fragment}", status_code=303)
+    sep = "&" if "?" in path else "?"
+    return RedirectResponse(f"{path}{sep}{qs}", status_code=303)
 
 
 def _ensure_apartment_pin(apartment):

@@ -139,9 +139,9 @@
     {% if editing %}
     <div class="actions">
       <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/test-connection"
-              formmethod="post">Test the connection</button>
+              formmethod="post" formnovalidate>Test the connection</button>
       <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/refresh-codelists"
-              formmethod="post">Refresh code lists from UbyPort</button>
+              formmethod="post" formnovalidate>Refresh code lists from UbyPort</button>
       <span class="small muted">
         Both use the saved credentials, so save first.
         {% if codelist_fetched %}Code lists cached {{ codelist_fetched[:10] }}.
@@ -347,7 +347,7 @@ Thank you.</pre>
     </div>
     <div class="field">
       <label for="label">Portal</label>
-      <input type="text" id="label" name="label" placeholder="Airbnb / Booking.com">
+      <input type="text" id="label" name="label" placeholder="Airbnb / Booking.com / Agoda / Vrbo">
     </div>
     <div class="field">
       <label for="own_name">Your name for it</label>
