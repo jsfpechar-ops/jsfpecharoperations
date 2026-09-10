@@ -446,6 +446,10 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .import-guide ol { margin: 8px 0 0; padding-left: 18px; }
 .import-guide li { margin-bottom: 6px; }
 
+.action-panel { margin-bottom: 18px; }
+.action-panel.hidden { display: none; }
+.setup-item .grow { flex: 1; min-width: 0; }
+
 @media (max-width: 760px) {
   :root { --sidebar: 220px; }
   .wrap.with-sidebar { padding: 20px 14px 60px; }

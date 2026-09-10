@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import config, db, scheduler
+from . import auth, config, db, scheduler
 from .routes import admin, guest
 
 logging.basicConfig(

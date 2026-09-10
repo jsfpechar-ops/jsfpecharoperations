@@ -21,6 +21,7 @@ from .. import (
     housebook,
     icalsync,
     reporting,
+    stays_import,
     validation,
 )
 from ..templating import render
@@ -39,6 +40,15 @@ def _back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
         query.append(f"err={quote(err)}")
     suffix = ("?" if "?" not in path else "&") + "&".join(query) if query else ""
     return RedirectResponse(path + suffix, status_code=303)
+
+
+def _ensure_apartment_pin(apartment):
+    """Backfill a PIN for apartments created before PIN support existed."""
+    if apartment and not apartment["permalink_pin"]:
+        pin = auth.new_permalink_pin()
+        db.update("apartment", apartment["id"], {"permalink_pin": pin})
+        return db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment["id"],))
+    return apartment
 
 
 def _safe_return_to(request: Request, default: str) -> str:
@@ -260,15 +270,17 @@ def guest_links(request: Request):
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
         "WHERE a.active = 1 AND a.archived_at IS NULL ORDER BY a.internal_name"
     )
-    rows = [
-        {
-            "apartment": apartment,
-            "issues": validation.errors_only(_apartment_issues(apartment)),
-            "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
-            "pin": apartment["permalink_pin"] or "",
-        }
-        for apartment in apartments
-    ]
+    rows = []
+    for apartment in apartments:
+        apartment = _ensure_apartment_pin(apartment)
+        rows.append(
+            {
+                "apartment": apartment,
+                "issues": validation.errors_only(_apartment_issues(apartment)),
+                "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+                "pin": apartment["permalink_pin"] or "",
+            }
+        )
     return render(request, "guest_links.html", {"rows": rows})
 
 
@@ -393,8 +405,6 @@ APARTMENT_TEXT_FIELDS = (
     "uby_name",
     "uby_contact",
     "uby_ws_user",
-    "checkin_info",
-    "checkout_info",
     "notes",
 )
 
@@ -438,7 +448,9 @@ def apartment_detail(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = _ensure_apartment_pin(
+        db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    )
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
@@ -472,9 +484,29 @@ async def apartment_update(apartment_id: int, request: Request):
     password = _form_str(form, "uby_ws_password")
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
+    pin_raw = _form_str(form, "permalink_pin")
+    if pin_raw:
+        pin = auth.normalise_permalink_pin(pin_raw)
+        if not pin:
+            return _back(f"/apartments/{apartment_id}", err="PIN must be exactly four digits.")
+        payload["permalink_pin"] = pin
     db.update("apartment", apartment_id, payload)
     db.audit("apartment_updated", f"id={apartment_id}")
     return _back(f"/apartments/{apartment_id}", msg="Saved.")
+
+
+@router.post("/apartments/{apartment_id}/regenerate-pin")
+def regenerate_pin(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return _back("/apartments", err="No such apartment.")
+    pin = auth.new_permalink_pin()
+    db.update("apartment", apartment_id, {"permalink_pin": pin})
+    db.audit("pin_rotated", f"apartment={apartment_id}")
+    return _back(f"/apartments/{apartment_id}", msg=f"New PIN generated: {pin}")
 
 
 @router.post("/apartments/{apartment_id}/regenerate-link")
@@ -751,6 +783,41 @@ async def reservation_create(request: Request):
         },
     )
     return _back(f"/reservations/{reservation_id}", msg="Stay created.")
+
+
+@router.get("/reservations-sample.csv")
+def reservations_sample_download(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return Response(
+        stays_import.sample_csv(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="stays-vzor.csv"'},
+    )
+
+
+@router.post("/reservations/import")
+async def reservations_import(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    upload = form.get("csv_file")
+    if not upload or not getattr(upload, "filename", ""):
+        return _back("/reservations", err="Choose a CSV file to import.")
+    content = await upload.read()
+    if not content:
+        return _back("/reservations", err="The file is empty.")
+    result = stays_import.import_csv(content)
+    if result["imported"]:
+        detail = f"Imported {result['imported']} stay(s)."
+        if result["skipped"]:
+            detail += f" Skipped {result['skipped']} row(s)."
+        if result["errors"]:
+            detail += " " + result["errors"][0]
+        return _back("/reservations", msg=detail)
+    return _back("/reservations", err=result["errors"][0] if result["errors"] else "Nothing imported.")
 
 
 @router.get("/reservations/{reservation_id}")
@@ -1208,6 +1275,18 @@ async def housebook_import(request: Request):
             detail += " " + result["errors"][0]
         return _back("/housebook", msg=detail)
     return _back("/housebook", err=result["errors"][0] if result["errors"] else "Nothing imported.")
+
+
+@router.get("/housebook-sample.csv")
+def housebook_sample_download(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return Response(
+        housebook.sample_housebook_csv(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="domovni-kniha-vzor.csv"'},
+    )
 
 
 @router.get("/housebook.csv")

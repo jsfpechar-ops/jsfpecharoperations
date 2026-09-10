@@ -3,7 +3,11 @@
 {% block title %}House book{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header %}
-{{ page_header('House book', 'The statutory guest register, retained for six years and exportable for inspection.') }}
+{{ page_header(
+  'House book',
+  'The statutory guest register, retained for six years and exportable for inspection.',
+  actions='<a class="btn" href="/housebook-sample.csv">Sample CSV</a>'
+) }}
 <p class="lede">
   Every guest record with the start and end of the stay.
   The law requires this to be kept for six years after the last entry and produced on request
@@ -34,15 +38,15 @@
     Download CSV</a>
 </form>
 
-<details class="panel">
-  <summary><strong>Import historical records from CSV</strong></summary>
-  <div class="import-guide" style="margin-top:12px">
-    <p>If you kept a paper house book before using UbyHost, you can load those entries here for safekeeping.</p>
+<div class="panel">
+  <h2 style="margin-top:0">Import historical records</h2>
+  <div class="import-guide">
+    <p>If you kept a paper house book before using UbyHost, load those entries here for safekeeping.</p>
     <ol>
-      <li>Export an existing entry from this page to see the column format, or prepare a semicolon-separated file with the same headers.</li>
+      <li><a href="/housebook-sample.csv">Download the sample CSV</a> — it shows every column with a filled-in example row.</li>
+      <li>Replace the example with your own records, or add more rows underneath.</li>
       <li>Required columns: <span class="mono">Stay from</span>, <span class="mono">Stay to</span>, <span class="mono">Surname</span>, <span class="mono">Given name(s)</span>.</li>
       <li>Dates can be <span class="mono">YYYY-MM-DD</span> or Czech <span class="mono">DD.MM.YYYY</span>.</li>
-      <li>Choose which property the old records belong to, then upload the file.</li>
     </ol>
     <form method="post" action="/housebook/import" enctype="multipart/form-data" class="actions" style="margin-top:16px">
       <div class="field" style="min-width:220px;margin:0">
@@ -61,7 +65,7 @@
       <button class="btn primary" type="submit">Import records</button>
     </form>
   </div>
-</details>
+</div>
 
 {% if rows %}
 <div class="panel tight scroll-x">

@@ -304,6 +304,32 @@ def import_csv(content: bytes, apartment_id: int) -> Dict[str, Any]:
     return {"imported": imported, "skipped": skipped, "errors": errors[:8]}
 
 
+SAMPLE_HOUSEBOOK_ROW = {
+    "apartment": "My apartment",
+    "idub": "100227887600",
+    "stay_from": "2026-09-03",
+    "stay_to": "2026-09-10",
+    "surname": "SMITH",
+    "first_name": "John Paul",
+    "birth_date": "15.03.1985",
+    "nationality": "GBR",
+    "doc_number": "123456789",
+    "visa_number": "",
+    "residence": "Baker Street 221B, London, GBR",
+    "purpose": "10 - TURISTIKA",
+    "note": "",
+    "signed": "yes",
+    "reported": "yes",
+    "reported_at": "2026-09-04",
+    "stamp": "",
+}
+
+
+def sample_housebook_csv() -> bytes:
+    """Filled example guests can copy when importing a paper house book."""
+    return housebook_csv([SAMPLE_HOUSEBOOK_ROW])
+
+
 def housebook_csv(rows: List[Dict[str, Any]]) -> bytes:
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)

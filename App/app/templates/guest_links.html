@@ -31,7 +31,8 @@
         <input type="text" id="pin-{{ apartment.id }}" readonly value="{{ row.pin }}" class="mono">
         <button class="btn" type="button" data-copy="pin-{{ apartment.id }}">Copy</button>
       </div>
-      <p class="small muted">Guests must enter this PIN before the registration form opens.</p>
+      <p class="small muted">Guests must enter this PIN before the registration form opens.
+        Change it under <a href="/apartments/{{ apartment.id }}#communication">Property setup &rarr; Guest link</a>.</p>
       <details class="technical" style="margin-top:18px">
         <summary>Suggested portal message</summary>
         <pre class="message-template">Dear guests,

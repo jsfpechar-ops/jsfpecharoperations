@@ -125,6 +125,14 @@ def new_permalink_pin() -> str:
     return f"{secrets.randbelow(10000):04d}"
 
 
+def normalise_permalink_pin(value: str) -> Optional[str]:
+    """Return a valid four-digit PIN or None."""
+    value = (value or "").strip()
+    if len(value) == 4 and value.isdigit():
+        return value
+    return None
+
+
 PIN_COOKIE = "ubyhost_pin"
 _PIN_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 

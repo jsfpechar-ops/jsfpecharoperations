@@ -90,6 +90,27 @@
     });
   }
 
+  function initTogglePanels() {
+    document.querySelectorAll("[data-toggle-panel]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var panelId = button.getAttribute("data-toggle-panel");
+        var panel = document.getElementById(panelId);
+        if (!panel) return;
+        var open = !panel.classList.contains("hidden");
+        document.querySelectorAll(".action-panel").forEach(function (item) {
+          item.classList.add("hidden");
+        });
+        if (!open) panel.classList.remove("hidden");
+      });
+    });
+    document.querySelectorAll("[data-close-panel]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var panel = button.closest(".action-panel");
+        if (panel) panel.classList.add("hidden");
+      });
+    });
+  }
+
   function initDetailsLinks() {
     function openTarget(hash) {
       if (!hash || hash.charAt(0) !== "#") return;
@@ -106,6 +127,7 @@
     initCopy();
     initClickableRows();
     initSidebar();
+    initTogglePanels();
     initDetailsLinks();
   });
 })();

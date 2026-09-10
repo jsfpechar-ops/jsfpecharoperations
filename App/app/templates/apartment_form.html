@@ -31,7 +31,7 @@
   <a href="#address">2. Address</a>
   <a href="#ubyport">3. UbyPort</a>
   <a href="#automation">4. Automation</a>
-  <a href="#communication">5. Guest communication</a>
+  <a href="#communication">5. Guest link</a>
   {% if editing %}<a href="#calendars">6. Calendars</a>{% endif %}
 </nav>
 
@@ -196,12 +196,15 @@
         <input type="text" id="permalink" readonly value="{{ permalink }}">
         <button class="btn" type="button" data-copy="permalink">Copy</button>
       </div>
-      <label for="guest-pin">Access PIN</label>
-      <div class="copyrow" style="margin-bottom:12px">
-        <input type="text" id="guest-pin" readonly value="{{ pin }}" class="mono">
-        <button class="btn" type="button" data-copy="guest-pin">Copy</button>
+      <div class="field" style="max-width:200px">
+        <label for="permalink_pin">Access PIN</label>
+        <div class="copyrow">
+          <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
+                 inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
+          <button class="btn" type="button" data-copy="permalink_pin">Copy</button>
+        </div>
+        <div class="hint">Four digits guests enter before the form opens. Change it here, or generate a random one below.</div>
       </div>
-      <p class="small muted">Guests must enter this PIN before the registration form opens.</p>
       <div class="field" style="max-width:280px">
         <label for="permalink_window_days">Show stays starting within (days)</label>
         <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
@@ -226,27 +229,57 @@ Thank you.</pre>
       </details>
       <p class="small muted">Paste the same text on Airbnb, Booking.com and in direct-booking
         e-mails. There is nothing portal-specific to change.</p>
+      <div class="setup-list" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
+        <div class="setup-item" style="border:0;padding:0 0 14px">
+          <div class="grow">
+            <strong>Generate a new guest link</strong>
+            <div class="small muted">Only if the old link leaked. This also creates a new PIN — update your portal messages.</div>
+          </div>
+          <button class="btn small" type="submit" formmethod="post"
+                  formaction="/apartments/{{ apartment.id }}/regenerate-link"
+                  onclick="return confirm('Generate a new guest link and PIN? The current link and PIN stop working.')">New link</button>
+        </div>
+        <div class="setup-item" style="border:0;padding:0 0 14px">
+          <div class="grow">
+            <strong>Generate a new PIN only</strong>
+            <div class="small muted">Keep the same link but change the PIN guests must enter.</div>
+          </div>
+          <button class="btn small" type="submit" formmethod="post"
+                  formaction="/apartments/{{ apartment.id }}/regenerate-pin"
+                  onclick="return confirm('Generate a new random PIN?')">New PIN</button>
+        </div>
+        {% if apartment.archived_at %}
+        <div class="setup-item" style="border:0;padding:0">
+          <div class="grow">
+            <strong>Archived {{ apartment.archived_at[:10] }}</strong>
+            <div class="small muted">Hidden from the dashboard and guest links. History is kept.</div>
+          </div>
+          <button class="btn small" type="submit" formmethod="post"
+                  formaction="/apartments/{{ apartment.id }}/unarchive">Restore</button>
+        </div>
+        {% else %}
+        <div class="setup-item" style="border:0;padding:0">
+          <div class="grow">
+            <strong>Archive this property</strong>
+            <div class="small muted">Hide it without deleting records. Useful for duplicate or unused apartments.</div>
+          </div>
+          <button class="btn small" type="submit" formmethod="post"
+                  formaction="/apartments/{{ apartment.id }}/archive"
+                  onclick="return confirm('Archive this property? It will disappear from your dashboard and guest links.')">Archive</button>
+        </div>
+        {% endif %}
+      </div>
     {% else %}
-      <p class="small muted">A unique guest link is generated once you save the apartment.</p>
+      <p class="small muted">A unique guest link and PIN are generated once you save the apartment.</p>
     {% endif %}
   </div>
 
   <div class="panel">
-    <h2 style="margin-top:0">Arrival information shown after registration</h2>
-    <div class="grid two">
-      <div class="field">
-        <label for="checkin_info">Check-in</label>
-        <textarea id="checkin_info" name="checkin_info">{{ apartment.checkin_info or '' if editing else '' }}</textarea>
-      </div>
-      <div class="field">
-        <label for="checkout_info">Check-out</label>
-        <textarea id="checkout_info" name="checkout_info">{{ apartment.checkout_info or '' if editing else '' }}</textarea>
-      </div>
-    </div>
+    <h2 style="margin-top:0">Private notes</h2>
     <div class="field">
-      <label for="notes">Private notes</label>
+      <label for="notes">Your notes</label>
       <textarea id="notes" name="notes">{{ apartment.notes or '' if editing else '' }}</textarea>
-      <div class="hint">Private: guests never see this field.</div>
+      <div class="hint">Only you see this — never shown to guests.</div>
     </div>
   </div>
 
@@ -317,25 +350,5 @@ Thank you.</pre>
   </form>
 </div>
 
-<div class="panel">
-  <h3 style="margin-top:0">Danger zone</h3>
-  <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link"
-        onsubmit="return confirm('Generate a new guest link and PIN? The current link and PIN stop working and you must update your booking portal messages.')">
-    <button class="btn danger" type="submit">Generate a new guest link</button>
-    <span class="small muted">Creates a new link and PIN. Use this only if the old link leaked.</span>
-  </form>
-  {% if apartment.archived_at %}
-    <form method="post" action="/apartments/{{ apartment.id }}/unarchive" style="margin-top:14px">
-      <button class="btn" type="submit">Restore from archive</button>
-      <span class="small muted">Archived {{ apartment.archived_at[:10] }}.</span>
-    </form>
-  {% else %}
-    <form method="post" action="/apartments/{{ apartment.id }}/archive" style="margin-top:14px"
-          onsubmit="return confirm('Archive this property? It will disappear from your dashboard and guest links, but all history is kept.')">
-      <button class="btn danger" type="submit">Archive property</button>
-      <span class="small muted">Hides the property without deleting its records. You can restore it later.</span>
-    </form>
-  {% endif %}
-</div>
 {% endif %}
 {% endblock %}
