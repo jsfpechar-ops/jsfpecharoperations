@@ -1,0 +1,11 @@
+# Python virtual environment
+App/.venv/
+.venv/
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Screenshot output from tools/walkthrough.py
+.screenshots/
