@@ -25,6 +25,10 @@ def raise_alert(
 ) -> None:
     """Record an alert, refreshing the message if the same one is already open."""
     key = dedupe_key or f"{kind}:{apartment_id}:{reservation_id}:{message}"
+    if db.query_one(
+        "SELECT id FROM alert WHERE dedupe_key = ? AND user_dismissed = 1 LIMIT 1", (key,)
+    ):
+        return
     existing = db.query_one(
         "SELECT id FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
     )
@@ -57,8 +61,11 @@ def resolve(dedupe_key: str) -> None:
     )
 
 
-def resolve_by_id(alert_id: int) -> None:
-    db.execute("UPDATE alert SET resolved_at = ? WHERE id = ?", (db.utcnow(), alert_id))
+def resolve_by_id(alert_id: int, user_dismissed: bool = False) -> None:
+    db.execute(
+        "UPDATE alert SET resolved_at = ?, user_dismissed = ? WHERE id = ?",
+        (db.utcnow(), 1 if user_dismissed else 0, alert_id),
+    )
 
 
 def resolve_kind(kind: str, apartment_id: Optional[int] = None) -> None:

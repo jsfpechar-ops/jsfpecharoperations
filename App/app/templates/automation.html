@@ -30,7 +30,8 @@
         <div class="grid two">
           <div class="field">
             <label for="automation_mode_{{ apartment.id }}">Send timing</label>
-            <select id="automation_mode_{{ apartment.id }}" name="automation_mode">
+            <select id="automation_mode_{{ apartment.id }}" name="automation_mode"
+                    data-automation-mode data-hours-target="submit_after_hours_{{ apartment.id }}">
               <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
                 Immediately after the guest submits the form</option>
               <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
@@ -101,11 +102,12 @@
         <div class="actions">
           <button class="btn primary" type="submit">Save {{ apartment.internal_name }}</button>
           <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/test-connection"
-                  formmethod="post">Test connection</button>
+                  formmethod="post" formnovalidate>Test connection</button>
           <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/refresh-codelists"
-                  formmethod="post">Refresh code lists</button>
+                  formmethod="post" formnovalidate>Refresh code lists</button>
           <a class="btn small" href="/apartments/{{ apartment.id }}">Full property setup</a>
         </div>
+        <p class="small muted">Test connection and refresh code lists use your last saved credentials — save first if you changed them.</p>
       </form>
     </section>
   {% endfor %}
