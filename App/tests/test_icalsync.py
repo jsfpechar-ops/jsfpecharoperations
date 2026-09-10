@@ -86,6 +86,25 @@ def test_missing_dtend_becomes_one_night():
     assert event["date_to"] == "2026-09-11"
 
 
+def test_cancelled_status_is_flagged():
+    ics = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20260910\nDTEND;VALUE=DATE:20260912\n"
+        "UID:cancelled@airbnb.com\nSUMMARY:Reserved\nSTATUS:CANCELLED\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    event = icalsync.parse_events(ics)[0]
+    assert event["is_cancelled"] is True
+
+
+def test_platform_detection_for_major_otas():
+    assert icalsync.platform_of("https://www.airbnb.com/calendar/ical/abc.ics") == "airbnb"
+    assert icalsync.platform_of("https://admin.booking.com/hotel/ical/abc") == "booking"
+    assert icalsync.platform_of("https://ycs.agoda.com/ical/abc.ics") == "agoda"
+    assert icalsync.platform_of("https://www.vrbo.com/ical/abc") == "vrbo"
+    assert icalsync.platform_of("https://unknown.example/feed.ics") == "ical"
+
+
 def test_event_without_uid_gets_a_stable_synthetic_one():
     ics = (
         "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
