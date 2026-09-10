@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}Stay {{ reservation.date_from }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, progress_pill, submission_pill %}
+{% from "_components.html" import page_header, breadcrumb, progress_pill, submission_pill, row_menu_begin, row_menu_end %}
 
 {{ breadcrumb([
   {'label': 'Stays', 'url': return_to},
@@ -129,7 +129,7 @@
                   <span class="pill green">Reported</span>
                   {% if guest.submitted_at %}<div class="small muted">{{ guest.submitted_at[:16].replace('T', ' ') }}</div>{% endif %}
                 {% elif guest.submit_state == 'not_required' %}
-                  <span class="pill grey">No duty</span>
+                  <span class="pill grey">Exempt</span>
                 {% elif guest.submit_state == 'error' %}
                   <span class="pill red">Rejected</span>
                 {% elif guest.submit_state == 'blocked' %}
@@ -143,9 +143,14 @@
                   <div class="small" style="color:#c0362c">{{ guest.last_errors }}</div>
                 {% endif %}
               </td>
-              <td class="nowrap">
-                <a class="btn small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">Edit</a>
-                <a class="btn small" href="/guests/{{ guest.id }}/form.pdf">PDF</a>
+              <td class="nowrap row-actions">
+                {{ row_menu_begin() }}
+                  <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">Edit</a>
+                  <form method="post" action="/guests/{{ guest.id }}/archive" class="row-menu-form">
+                    <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+                    <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+                  </form>
+                {{ row_menu_end() }}
               </td>
             </tr>
           {% endfor %}
@@ -171,11 +176,13 @@
               <td class="nowrap small">{{ submission.created_at[:16].replace('T', ' ') }}</td>
               <td>{{ submission_pill(submission.state) }}</td>
               <td class="mono small">{{ submission.pseudo_stamp or '—' }}</td>
-              <td class="nowrap">
-                {% if submission.receipt_pdf %}
-                  <a class="btn small" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
-                {% endif %}
-                <a class="btn small" href="/submissions/{{ submission.id }}">Details</a>
+              <td class="nowrap row-actions">
+                {{ row_menu_begin() }}
+                  <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">Edit</a>
+                  {% if submission.receipt_pdf %}
+                    <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">Doručenka</a>
+                  {% endif %}
+                {{ row_menu_end() }}
               </td>
             </tr>
           {% endfor %}

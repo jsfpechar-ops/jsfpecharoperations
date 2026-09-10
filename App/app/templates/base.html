@@ -23,7 +23,7 @@
   </div>
   <nav class="sidebar-nav" aria-label="Main navigation">
     <div class="nav-group">
-      <div class="nav-label">Operate</div>
+      <div class="nav-label">Operations</div>
       <a href="/" class="{{ 'active' if nav == 'dashboard' }}"><span aria-hidden="true">◉</span>Overview</a>
       <a href="/reservations" class="{{ 'active' if nav == 'reservations' }}"><span aria-hidden="true">▦</span>Stays</a>
       <a href="/guest-links" class="{{ 'active' if nav == 'guest_links' }}"><span aria-hidden="true">↗</span>Guest links</a>
@@ -79,6 +79,28 @@
 
   {% block content %}{% endblock %}
 </main>
+
+<dialog id="csv-export-dialog" class="csv-export-dialog">
+  <form id="csv-export-form">
+    <h2 style="margin-top:0">Download CSV</h2>
+    <p class="small muted">Choose the date range to include in the export.</p>
+    <div class="grid two">
+      <div class="field">
+        <label for="csv_export_from">From</label>
+        <input type="date" id="csv_export_from" name="from" required>
+      </div>
+      <div class="field">
+        <label for="csv_export_to">Until</label>
+        <input type="date" id="csv_export_to" name="to" required>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn" type="button" data-csv-cancel>Cancel</button>
+      <button class="btn primary" type="submit">Download</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="/static/app.js"></script>
 </body>
 </html>

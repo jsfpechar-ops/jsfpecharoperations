@@ -1479,7 +1479,7 @@ def dismiss_alert(alert_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    alerts.resolve_by_id(alert_id)
+    alerts.resolve_by_id(alert_id, user_dismissed=True)
     referer = request.headers.get("referer") or "/"
     return RedirectResponse(referer, status_code=303)
 

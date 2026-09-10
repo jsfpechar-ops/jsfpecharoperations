@@ -170,20 +170,19 @@
           {% else %}—{% endif %}
         </td>
         <td class="nowrap row-actions">
-          {% if show_archive %}
-            {{ row_menu_begin() }}
+          {{ row_menu_begin() }}
+            <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}" role="menuitem">Edit</a>
+            {% if show_archive %}
               <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
                 <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
               </form>
-            {{ row_menu_end() }}
-          {% else %}
-            {{ row_menu_begin() }}
+            {% else %}
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
                     onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
                 <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
               </form>
-            {{ row_menu_end() }}
-          {% endif %}
+            {% endif %}
+          {{ row_menu_end() }}
         </td>
       </tr>
     {% endfor %}
