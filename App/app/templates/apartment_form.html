@@ -14,7 +14,7 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb %}
+{% from "_components.html" import page_header, breadcrumb, copy_button %}
 {{ breadcrumb([
   {'label': 'Properties', 'url': '/apartments'},
   {'label': apartment.internal_name if editing else 'New property', 'url': ''}
@@ -29,10 +29,15 @@
 <nav class="section-nav" aria-label="Property setup sections">
   <a href="#basics">1. Property</a>
   <a href="#address">2. Address</a>
-  <a href="#ubyport">3. UbyPort</a>
-  <a href="#automation">4. Automation</a>
-  <a href="#communication">5. Guest link</a>
-  {% if editing %}<a href="#calendars">6. Calendars</a>{% endif %}
+  {% if editing %}
+    <a href="/automation#apartment-{{ apartment.id }}">3. Automation &amp; UbyPort</a>
+    <a href="#communication">4. Guest link</a>
+    <a href="#calendars">5. Calendars</a>
+  {% else %}
+    <a href="#ubyport">3. UbyPort</a>
+    <a href="#automation">4. Automation</a>
+    <a href="#communication">5. Guest link</a>
+  {% endif %}
 </nav>
 
 {% if issues %}
@@ -48,6 +53,7 @@
 {% endif %}
 
 <form method="post" action="{{ '/apartments/' ~ apartment.id if editing else '/apartments' }}">
+  {% if editing %}<input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}">{% endif %}
   <div class="panel" id="basics">
     <h2 style="margin-top:0">Basic details</h2>
     <div class="grid two">
@@ -194,14 +200,14 @@
       </p>
       <div class="copyrow" style="margin-bottom:12px">
         <input type="text" id="permalink" readonly value="{{ permalink }}">
-        <button class="btn" type="button" data-copy="permalink">Copy</button>
+        {{ copy_button('permalink') }}
       </div>
       <div class="field" style="max-width:200px">
         <label for="permalink_pin">Access PIN</label>
         <div class="copyrow">
           <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
                  inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
-          <button class="btn" type="button" data-copy="permalink_pin">Copy</button>
+          {{ copy_button('permalink_pin') }}
         </div>
         <div class="hint">Four digits guests enter before the form opens. Change it here, or generate a random one below.</div>
       </div>
@@ -237,7 +243,7 @@ Thank you.</pre>
           </div>
           <button class="btn small" type="submit" formmethod="post"
                   formaction="/apartments/{{ apartment.id }}/regenerate-link"
-                  onclick="return confirm('Generate a new guest link and PIN? The current link and PIN stop working.')">New link</button>
+                  onclick="return confirm('Generate a new guest link and PIN? The current link and PIN stop working.')">Generate a new link</button>
         </div>
         <div class="setup-item" style="border:0;padding:0 0 14px">
           <div class="grow">
@@ -246,7 +252,7 @@ Thank you.</pre>
           </div>
           <button class="btn small" type="submit" formmethod="post"
                   formaction="/apartments/{{ apartment.id }}/regenerate-pin"
-                  onclick="return confirm('Generate a new random PIN?')">New PIN</button>
+                  onclick="return confirm('Generate a new random PIN?')">Generate a new PIN</button>
         </div>
         {% if apartment.archived_at %}
         <div class="setup-item" style="border:0;padding:0">

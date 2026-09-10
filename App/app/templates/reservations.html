@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}Stays{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end %}
 {{ page_header(
   'Stays',
   'Calendar stays and manual bookings, earliest arrival first.',
@@ -68,12 +68,14 @@
       <p>Upload a semicolon-separated file with one stay per row. Download the <a href="/reservations-sample.csv">sample CSV</a> to see the exact format.</p>
       <p class="small muted">Required columns: Apartment, Arrival, Departure. Apartment names must match your properties exactly.</p>
     </div>
-    <form method="post" action="/reservations/import" enctype="multipart/form-data" class="actions" style="margin-top:14px">
+    <form method="post" action="/reservations/import" enctype="multipart/form-data" class="filters" style="margin-top:14px">
       <div class="field" style="min-width:260px;margin:0">
         <label for="stays_csv_file">CSV file</label>
         <input type="file" id="stays_csv_file" name="csv_file" accept=".csv,text/csv" required>
       </div>
-      <button class="btn primary" type="submit">Import stays</button>
+      <div class="field filter-actions">
+        <button class="btn primary" type="submit">Import stays</button>
+      </div>
     </form>
   </div>
 </div>
@@ -169,15 +171,18 @@
         </td>
         <td class="nowrap row-actions">
           {% if show_archive %}
-            <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="inline">
-              <button class="btn small" type="submit">Restore</button>
-            </form>
+            {{ row_menu_begin() }}
+              <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
+                <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
+              </form>
+            {{ row_menu_end() }}
           {% else %}
-            <form method="post" action="/reservations/{{ reservation.id }}/archive" class="inline"
-                  onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
-              <button class="btn small" type="submit">Archive</button>
-            </form>
-            <span class="row-arrow" aria-hidden="true">&rarr;</span>
+            {{ row_menu_begin() }}
+              <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
+                    onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
+                <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+              </form>
+            {{ row_menu_end() }}
           {% endif %}
         </td>
       </tr>
