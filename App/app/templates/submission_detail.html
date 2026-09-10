@@ -57,7 +57,7 @@
         <thead><tr><th>#</th><th>Guest</th><th>Result</th><th></th></tr></thead>
         <tbody>
         {% for guest in guests %}
-          <tr>
+          <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
             <td class="num">{{ loop.index }}</td>
             <td>
               <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
@@ -70,7 +70,7 @@
               {% else %}<span class="pill grey">{{ guest.submit_state }}</span>{% endif %}
               {% if guest.last_errors %}<div class="small" style="color:#c0362c">{{ guest.last_errors }}</div>{% endif %}
             </td>
-            <td class="nowrap"><a class="btn small" href="/guests/{{ guest.id }}">Open</a></td>
+            <td class="row-arrow" aria-hidden="true">&rarr;</td>
           </tr>
         {% endfor %}
         </tbody>

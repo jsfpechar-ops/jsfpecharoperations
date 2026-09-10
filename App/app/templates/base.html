@@ -7,20 +7,24 @@
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/app.css">
 </head>
-<body>
+<body class="layout-host">
 {% if show_nav | default(true) %}
-<button class="mobile-nav-toggle" type="button" data-sidebar-toggle aria-controls="app-sidebar"
-        aria-expanded="false"><span aria-hidden="true">☰</span><span>Menu</span></button>
-<div class="sidebar-backdrop" data-sidebar-close></div>
+<button class="sidebar-expand" type="button" data-sidebar-expand aria-label="Expand sidebar">
+  <span aria-hidden="true">☰</span>
+</button>
 <aside class="sidebar" id="app-sidebar">
   <div class="sidebar-brand">
     <a class="brand plain" href="/">UbyHost</a>
-    <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
+    <div class="sidebar-brand-actions">
+      <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
+      <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true"
+              aria-label="Collapse sidebar"><span aria-hidden="true">‹</span></button>
+    </div>
   </div>
   <nav class="sidebar-nav" aria-label="Main navigation">
     <div class="nav-group">
       <div class="nav-label">Operate</div>
-      <a href="/" class="{{ 'active' if nav == 'dashboard' }}"><span aria-hidden="true">⌂</span>Today</a>
+      <a href="/" class="{{ 'active' if nav == 'dashboard' }}"><span aria-hidden="true">◉</span>Overview</a>
       <a href="/reservations" class="{{ 'active' if nav == 'reservations' }}"><span aria-hidden="true">▦</span>Stays</a>
       <a href="/guest-links" class="{{ 'active' if nav == 'guest_links' }}"><span aria-hidden="true">↗</span>Guest links</a>
     </div>
@@ -42,8 +46,18 @@
 {% endif %}
 
 <main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
-  {% if flash %}<div class="banner ok"><div class="grow">{{ flash }}</div></div>{% endif %}
-  {% if flash_error %}<div class="banner err"><div class="grow">{{ flash_error }}</div></div>{% endif %}
+  {% if flash %}
+    <div class="banner ok dismissible-banner">
+      <div class="grow">{{ flash }}</div>
+      <button class="btn small" type="button" data-dismiss-banner>Dismiss</button>
+    </div>
+  {% endif %}
+  {% if flash_error %}
+    <div class="banner err dismissible-banner">
+      <div class="grow">{{ flash_error }}</div>
+      <button class="btn small" type="button" data-dismiss-banner>Dismiss</button>
+    </div>
+  {% endif %}
 
   {% for alert in open_alerts %}
     <div class="banner {{ alert.level }}">

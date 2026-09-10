@@ -58,6 +58,8 @@
       <a class="g-btn ghost slim" href="/l/{{ token }}/{{ reservation.id }}/edit/{{ person.id }}?lang={{ lang }}">
         {{ t('continue_filling') if not person.complete else t('edit') }}
       </a>
+    {% elif person.complete %}
+      <p class="g-intro" style="margin:12px 0 0">{{ t('form_locked_short') }}</p>
     {% endif %}
   </div>
 {% endfor %}
@@ -81,18 +83,6 @@
 
 {% if remaining is none or remaining > 0 %}
   <a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a>
-{% endif %}
-
-{% if remaining is not none and remaining <= 0 and (apartment.checkin_info or apartment.checkout_info) %}
-  <div class="g-card">
-    <h2>{{ t('stay_dates') }}</h2>
-    {% if apartment.checkin_info %}
-      <h3>{{ t('check_in') }}</h3><p class="g-intro">{{ apartment.checkin_info }}</p>
-    {% endif %}
-    {% if apartment.checkout_info %}
-      <h3>{{ t('check_out') }}</h3><p class="g-intro">{{ apartment.checkout_info }}</p>
-    {% endif %}
-  </div>
 {% endif %}
 
 {% endblock %}

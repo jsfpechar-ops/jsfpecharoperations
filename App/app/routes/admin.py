@@ -21,6 +21,7 @@ from .. import (
     housebook,
     icalsync,
     reporting,
+    stays_import,
     validation,
 )
 from ..templating import render
@@ -39,6 +40,15 @@ def _back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
         query.append(f"err={quote(err)}")
     suffix = ("?" if "?" not in path else "&") + "&".join(query) if query else ""
     return RedirectResponse(path + suffix, status_code=303)
+
+
+def _ensure_apartment_pin(apartment):
+    """Backfill a PIN for apartments created before PIN support existed."""
+    if apartment and not apartment["permalink_pin"]:
+        pin = auth.new_permalink_pin()
+        db.update("apartment", apartment["id"], {"permalink_pin": pin})
+        return db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment["id"],))
+    return apartment
 
 
 def _safe_return_to(request: Request, default: str) -> str:
@@ -94,7 +104,9 @@ def dashboard_rows(days_ahead: int = 21, days_back: int = 45) -> List[Dict[str, 
     rows = db.query(
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status = 'active' AND a.active = 1 AND r.date_from BETWEEN ? AND ? "
+        "WHERE r.status = 'active' AND a.active = 1 AND a.archived_at IS NULL "
+        "AND r.archived_at IS NULL "
+        "AND r.date_from BETWEEN ? AND ? "
         "ORDER BY r.date_from",
         (start, end),
     )
@@ -137,7 +149,7 @@ def load_demo(request: Request):
     apartment_id = demo.seed()
     if not apartment_id:
         return _back("/", err="Demo data is only available on an empty install in mock mode.")
-    return _back("/", msg="Demo property loaded. Use “Clear demo data” on Today when finished.")
+    return _back("/", msg="Demo property loaded. Use “Clear demo data” on Overview when finished.")
 
 
 @router.post("/demo/reset")
@@ -183,7 +195,9 @@ def dashboard(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartments = db.query("SELECT * FROM apartment ORDER BY internal_name")
+    apartments = db.query(
+        "SELECT * FROM apartment WHERE archived_at IS NULL ORDER BY internal_name"
+    )
     rows = dashboard_rows()
     needs_action = [
         row for row in rows
@@ -255,16 +269,19 @@ def guest_links(request: Request):
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.active = 1 ORDER BY a.internal_name"
+        "WHERE a.active = 1 AND a.archived_at IS NULL ORDER BY a.internal_name"
     )
-    rows = [
-        {
-            "apartment": apartment,
-            "issues": validation.errors_only(_apartment_issues(apartment)),
-            "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
-        }
-        for apartment in apartments
-    ]
+    rows = []
+    for apartment in apartments:
+        apartment = _ensure_apartment_pin(apartment)
+        rows.append(
+            {
+                "apartment": apartment,
+                "issues": validation.errors_only(_apartment_issues(apartment)),
+                "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+                "pin": apartment["permalink_pin"] or "",
+            }
+        )
     return render(request, "guest_links.html", {"rows": rows})
 
 
@@ -340,12 +357,22 @@ def apartments_list(request: Request):
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "ORDER BY a.internal_name"
+        "WHERE a.archived_at IS NULL ORDER BY a.internal_name"
+    )
+    archived = db.query(
+        "SELECT a.*, e.name AS entity_name, "
+        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
+        "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
+        "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
+        "WHERE a.archived_at IS NOT NULL ORDER BY a.archived_at DESC"
     )
     enriched = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in rows
     ]
-    return render(request, "apartments.html", {"rows": enriched})
+    archived_rows = [
+        {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
+    ]
+    return render(request, "apartments.html", {"rows": enriched, "archived_rows": archived_rows})
 
 
 @router.get("/apartments/new")
@@ -379,8 +406,6 @@ APARTMENT_TEXT_FIELDS = (
     "uby_name",
     "uby_contact",
     "uby_ws_user",
-    "checkin_info",
-    "checkout_info",
     "notes",
 )
 
@@ -410,6 +435,7 @@ async def apartment_create(request: Request):
     if not payload["internal_name"]:
         return _back("/apartments/new", err="Give the apartment a name.")
     payload["permalink_token"] = auth.new_permalink_token()
+    payload["permalink_pin"] = auth.new_permalink_pin()
     payload["created_at"] = db.utcnow()
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
@@ -423,7 +449,9 @@ def apartment_detail(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = _ensure_apartment_pin(
+        db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    )
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
@@ -437,6 +465,7 @@ def apartment_detail(apartment_id: int, request: Request):
             "issues": _apartment_issues(apartment),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+            "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
         },
@@ -456,9 +485,29 @@ async def apartment_update(apartment_id: int, request: Request):
     password = _form_str(form, "uby_ws_password")
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
+    pin_raw = _form_str(form, "permalink_pin")
+    if pin_raw:
+        pin = auth.normalise_permalink_pin(pin_raw)
+        if not pin:
+            return _back(f"/apartments/{apartment_id}", err="PIN must be exactly four digits.")
+        payload["permalink_pin"] = pin
     db.update("apartment", apartment_id, payload)
     db.audit("apartment_updated", f"id={apartment_id}")
     return _back(f"/apartments/{apartment_id}", msg="Saved.")
+
+
+@router.post("/apartments/{apartment_id}/regenerate-pin")
+def regenerate_pin(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return _back("/apartments", err="No such apartment.")
+    pin = auth.new_permalink_pin()
+    db.update("apartment", apartment_id, {"permalink_pin": pin})
+    db.audit("pin_rotated", f"apartment={apartment_id}")
+    return _back(f"/apartments/{apartment_id}", msg=f"New PIN generated: {pin}")
 
 
 @router.post("/apartments/{apartment_id}/regenerate-link")
@@ -466,12 +515,57 @@ def regenerate_link(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    db.update("apartment", apartment_id, {"permalink_token": auth.new_permalink_token()})
+    db.update(
+        "apartment",
+        apartment_id,
+        {
+            "permalink_token": auth.new_permalink_token(),
+            "permalink_pin": auth.new_permalink_pin(),
+        },
+    )
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
         f"/apartments/{apartment_id}",
-        msg="New guest link generated. Update your automated messages on the booking portals.",
+        msg="New guest link and PIN generated. Update your automated messages on the booking portals.",
     )
+
+
+@router.post("/apartments/{apartment_id}/archive")
+def archive_apartment(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return _back("/apartments", err="No such apartment.")
+    if apartment["archived_at"]:
+        return _back(f"/apartments/{apartment_id}", err="Already archived.")
+    db.update(
+        "apartment",
+        apartment_id,
+        {"archived_at": db.utcnow(), "active": 0},
+    )
+    db.audit("apartment_archived", f"id={apartment_id}")
+    return _back("/apartments", msg=f"“{apartment['internal_name']}” archived. Its history is kept.")
+
+
+@router.post("/apartments/{apartment_id}/unarchive")
+def unarchive_apartment(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return _back("/apartments", err="No such apartment.")
+    if not apartment["archived_at"]:
+        return _back(f"/apartments/{apartment_id}", err="Not archived.")
+    db.update(
+        "apartment",
+        apartment_id,
+        {"archived_at": None, "active": 1},
+    )
+    db.audit("apartment_unarchived", f"id={apartment_id}")
+    return _back(f"/apartments/{apartment_id}", msg="Property restored from archive.")
 
 
 @router.post("/apartments/{apartment_id}/feeds")
@@ -597,7 +691,8 @@ def reservations_list(request: Request):
 
     today = date.today().isoformat()
     date_range = request.query_params.get("range", "")
-    if date_range not in RESERVATION_RANGES:
+    show_archive = date_range == "archive"
+    if date_range not in RESERVATION_RANGES and date_range != "archive":
         # Explicit dates win; otherwise show what is still ahead, because a
         # list that opens on last winter's bookings is useless.
         date_range = "custom" if (date_from or date_to) else "upcoming"
@@ -606,7 +701,7 @@ def reservations_list(request: Request):
     elif date_range == "past":
         # Departed stays only — a guest checking in today still belongs under Upcoming.
         date_from, date_to = "", (date.today() - timedelta(days=1)).isoformat()
-    elif date_range == "all":
+    elif date_range == "all" or date_range == "archive":
         date_from = date_to = ""
 
     sql = (
@@ -614,6 +709,10 @@ def reservations_list(request: Request):
         "WHERE 1 = 1"
     )
     params: List[Any] = []
+    if show_archive:
+        sql += " AND r.archived_at IS NOT NULL"
+    else:
+        sql += " AND r.archived_at IS NULL"
     if status != "all":
         sql += " AND r.status = ?"
         params.append(status)
@@ -655,6 +754,7 @@ def reservations_list(request: Request):
                 request.url.path + (f"?{request.url.query}" if request.url.query else ""),
                 safe="",
             ),
+            "show_archive": show_archive,
         },
     )
 
@@ -690,6 +790,41 @@ async def reservation_create(request: Request):
         },
     )
     return _back(f"/reservations/{reservation_id}", msg="Stay created.")
+
+
+@router.get("/reservations-sample.csv")
+def reservations_sample_download(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return Response(
+        stays_import.sample_csv(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="stays-vzor.csv"'},
+    )
+
+
+@router.post("/reservations/import")
+async def reservations_import(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    upload = form.get("csv_file")
+    if not upload or not getattr(upload, "filename", ""):
+        return _back("/reservations", err="Choose a CSV file to import.")
+    content = await upload.read()
+    if not content:
+        return _back("/reservations", err="The file is empty.")
+    result = stays_import.import_csv(content)
+    if result["imported"]:
+        detail = f"Imported {result['imported']} stay(s)."
+        if result["skipped"]:
+            detail += f" Skipped {result['skipped']} row(s)."
+        if result["errors"]:
+            detail += " " + result["errors"][0]
+        return _back("/reservations", msg=detail)
+    return _back("/reservations", err=result["errors"][0] if result["errors"] else "Nothing imported.")
 
 
 @router.get("/reservations/{reservation_id}")
@@ -757,6 +892,36 @@ async def reservation_update(reservation_id: int, request: Request):
         payload["status"] = status
     db.update("reservation", reservation_id, payload)
     return _back(f"/reservations/{reservation_id}", msg="Saved.")
+
+
+@router.post("/reservations/{reservation_id}/archive")
+def reservation_archive(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    if reservation["archived_at"]:
+        return _back(f"/reservations/{reservation_id}", err="Already archived.")
+    db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
+    db.audit("reservation_archived", f"id={reservation_id}")
+    return _back("/reservations?range=archive", msg="Stay moved to archive. You can restore it from there.")
+
+
+@router.post("/reservations/{reservation_id}/unarchive")
+def reservation_unarchive(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    if not reservation["archived_at"]:
+        return _back(f"/reservations/{reservation_id}", err="Not archived.")
+    db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
+    db.audit("reservation_unarchived", f"id={reservation_id}")
+    return _back(f"/reservations/{reservation_id}", msg="Stay restored from archive.")
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -929,6 +1094,45 @@ async def guest_update(guest_id: int, request: Request):
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
     return _back(f"/guests/{guest_id}", msg="Saved.")
+
+
+@router.post("/guests/{guest_id}/archive")
+async def guest_archive(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    if not guest:
+        return _back("/housebook", err="No such guest record.")
+    if guest["submit_state"] == reporting.SENT:
+        return _back(
+            f"/guests/{guest_id}",
+            err="This guest was already reported to the police; the record must stay in the house book.",
+        )
+    if guest["archived_at"]:
+        return _back(f"/guests/{guest_id}", err="Already archived.")
+    form = await request.form()
+    return_to = (form.get("return_to") or "/housebook").strip()
+    if not return_to.startswith("/") or return_to.startswith("//"):
+        return_to = "/housebook"
+    db.update("guest", guest_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
+    db.audit("guest_archived", f"id={guest_id}")
+    return _back(return_to, msg="House-book entry archived. Restore it from the archive below.")
+
+
+@router.post("/guests/{guest_id}/unarchive")
+def guest_unarchive(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    if not guest:
+        return _back("/housebook", err="No such guest record.")
+    if not guest["archived_at"]:
+        return _back(f"/guests/{guest_id}", err="Not archived.")
+    db.update("guest", guest_id, {"archived_at": None, "updated_at": db.utcnow()})
+    db.audit("guest_unarchived", f"id={guest_id}")
+    return _back("/housebook", msg="House-book entry restored.")
 
 
 @router.post("/guests/{guest_id}/delete")
@@ -1108,11 +1312,13 @@ def housebook_view(request: Request):
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
     rows = housebook.housebook_rows(apartment_id, date_from or None, date_to or None)
+    archived_rows = housebook.housebook_archived_rows(apartment_id)
     return render(
         request,
         "housebook.html",
         {
             "rows": rows,
+            "archived_rows": archived_rows,
             "columns": housebook.HOUSEBOOK_COLUMNS,
             "apartments": db.query("SELECT id, internal_name FROM apartment ORDER BY internal_name"),
             "apartment_id": apartment_id,
@@ -1120,6 +1326,44 @@ def housebook_view(request: Request):
             "date_to": date_to,
             "retention_years": housebook.RETENTION_YEARS,
         },
+    )
+
+
+@router.post("/housebook/import")
+async def housebook_import(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    apartment_id = _form_int(form, "apartment_id")
+    upload = form.get("csv_file")
+    if not apartment_id:
+        return _back("/housebook", err="Choose which property the records belong to.")
+    if not upload or not getattr(upload, "filename", ""):
+        return _back("/housebook", err="Choose a CSV file to import.")
+    content = await upload.read()
+    if not content:
+        return _back("/housebook", err="The file is empty.")
+    result = housebook.import_csv(content, apartment_id)
+    if result["imported"]:
+        detail = f"Imported {result['imported']} record(s)."
+        if result["skipped"]:
+            detail += f" Skipped {result['skipped']} row(s)."
+        if result["errors"]:
+            detail += " " + result["errors"][0]
+        return _back("/housebook", msg=detail)
+    return _back("/housebook", err=result["errors"][0] if result["errors"] else "Nothing imported.")
+
+
+@router.get("/housebook-sample.csv")
+def housebook_sample_download(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return Response(
+        housebook.sample_housebook_csv(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="domovni-kniha-vzor.csv"'},
     )
 
 

@@ -91,6 +91,7 @@ def seed() -> Optional[int]:
             "default_purpose": "10",
             "checkin_info": "Self check-in. Key box code arrives on the morning of arrival.",
             "permalink_token": auth.new_permalink_token(),
+            "permalink_pin": auth.new_permalink_pin(),
             "active": 1,
             "created_at": db.utcnow(),
         },

@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import config, db, scheduler
+from . import auth, config, db, scheduler
 from .routes import admin, guest
 
 logging.basicConfig(
@@ -21,6 +21,11 @@ log = logging.getLogger("ubyhost")
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     db.init_db()
+    missing_pins = db.query(
+        "SELECT id FROM apartment WHERE permalink_pin IS NULL OR permalink_pin = ''"
+    )
+    for row in missing_pins:
+        db.update("apartment", row["id"], {"permalink_pin": auth.new_permalink_pin()})
     log.info("database ready at %s", config.DB_PATH)
     log.info("UbyPort target: %s (%s)", config.endpoint_for(), config.UBYPORT_ENV)
     if config.UBYPORT_ENV == "mock":
