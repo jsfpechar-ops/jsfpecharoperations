@@ -262,13 +262,6 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
   text-decoration: none;
 }
 .clickable-row:hover .row-primary-link { color: var(--accent); }
-.row-arrow {
-  color: var(--accent);
-  font-size: 20px;
-  font-weight: 700;
-  text-align: right;
-  vertical-align: middle;
-}
 
 .pill {
   display: inline-block;
@@ -375,17 +368,28 @@ textarea { min-height: 74px; resize: vertical; }
 .row-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
 .row-menu { position: relative; display: inline-flex; }
 .row-menu-panel {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 4px);
-  min-width: 160px;
+  min-width: 168px;
   padding: 6px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--panel-solid);
-  box-shadow: var(--shadow);
-  z-index: 20;
+  box-shadow: 0 8px 32px rgba(15, 23, 36, 0.16);
+  z-index: 100;
 }
+.field-disabled label,
+.field-disabled .hint { color: #9aa6b5; }
+.field-disabled input,
+.field-disabled select { opacity: 0.55; background: rgba(15, 23, 36, 0.04); pointer-events: none; }
+.csv-export-dialog {
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0;
+  max-width: 420px;
+  width: calc(100% - 32px);
+  box-shadow: var(--shadow);
+}
+.csv-export-dialog::backdrop { background: rgba(15, 23, 36, 0.35); }
+.csv-export-dialog form { padding: 22px; margin: 0; }
 .row-menu-panel[hidden] { display: none; }
 .row-menu-form { display: block; margin: 0; }
 .row-menu-item {

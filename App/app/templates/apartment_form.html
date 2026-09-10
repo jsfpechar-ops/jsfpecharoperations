@@ -160,7 +160,8 @@
     <div class="grid two">
       <div class="field">
         <label for="automation_mode">When to send to UbyPort</label>
-        <select id="automation_mode" name="automation_mode">
+        <select id="automation_mode" name="automation_mode"
+                data-automation-mode data-hours-target="submit_after_hours">
           <option value="immediate" {% if editing and apartment.automation_mode == 'immediate' %}selected{% endif %}>
             Immediately after the guest submits the form</option>
           <option value="scheduled"

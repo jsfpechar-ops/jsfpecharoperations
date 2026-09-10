@@ -2,7 +2,7 @@
 {% set nav = 'submissions' %}
 {% block title %}Report {{ submission.id }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, submission_pill %}
+{% from "_components.html" import page_header, breadcrumb, submission_pill, row_menu_begin, row_menu_end %}
 {{ breadcrumb([
   {'label': 'Reports', 'url': '/submissions'},
   {'label': 'Report #' ~ submission.id, 'url': ''}
@@ -70,7 +70,11 @@
               {% else %}<span class="pill grey">{{ guest.submit_state }}</span>{% endif %}
               {% if guest.last_errors %}<div class="small" style="color:#c0362c">{{ guest.last_errors }}</div>{% endif %}
             </td>
-            <td class="row-arrow" aria-hidden="true">&rarr;</td>
+            <td class="nowrap row-actions">
+              {{ row_menu_begin() }}
+                <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">Edit</a>
+              {{ row_menu_end() }}
+            </td>
           </tr>
         {% endfor %}
         </tbody>

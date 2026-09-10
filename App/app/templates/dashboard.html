@@ -2,13 +2,13 @@
 {% set nav = 'dashboard' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end %}
 
 {% macro queue_table(items, empty_text='Nothing needs attention here.') %}
   {% if items %}
   <div class="panel tight scroll-x">
     <table>
-      <thead><tr><th>Stay</th><th>Deadline</th><th>Guests</th><th>Reporting</th><th><span class="sr-only">Open</span></th></tr></thead>
+      <thead><tr><th>Stay</th><th>Deadline</th><th>Guests</th><th>Reporting</th><th><span class="sr-only">Actions</span></th></tr></thead>
       <tbody>
       {% for row in items %}
         {% set reservation = row.reservation %}
@@ -33,7 +33,15 @@
           </td>
           <td class="nowrap">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
           <td>{{ progress_pill(progress.status) }}</td>
-          <td class="row-arrow" aria-hidden="true">&rarr;</td>
+          <td class="nowrap row-actions">
+            {{ row_menu_begin() }}
+              <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">Edit</a>
+              <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
+                    onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
+                <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+              </form>
+            {{ row_menu_end() }}
+          </td>
         </tr>
       {% endfor %}
       </tbody>
