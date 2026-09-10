@@ -215,6 +215,8 @@ ADDED_COLUMNS = (
     ("legal_entity", "contact_phone", "TEXT"),
     ("apartment", "permalink_pin", "TEXT"),
     ("apartment", "archived_at", "TEXT"),
+    ("reservation", "archived_at", "TEXT"),
+    ("guest", "archived_at", "TEXT"),
 )
 
 

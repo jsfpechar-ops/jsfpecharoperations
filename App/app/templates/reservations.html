@@ -80,13 +80,18 @@
 {% endif %}
 
 <div class="chips">
-  {% for value, label in [('upcoming', 'Upcoming & current'), ('past', 'Past'), ('all', 'All dates')] %}
+  {% for value, label in [('upcoming', 'Upcoming & current'), ('past', 'Past'), ('all', 'All dates'), ('archive', 'Archive')] %}
     <a class="chip {{ 'on' if date_range == value }}"
        href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ label }}</a>
   {% endfor %}
 </div>
 
+{% if show_archive %}
+<p class="small muted">Archived stays are hidden from your daily work but kept for reference. Restore any entry you archived by mistake.</p>
+{% endif %}
+
 <form method="get" action="/reservations" class="filters panel">
+  <input type="hidden" name="range" value="{{ date_range }}">
   <div class="field">
     <label for="apartment">Apartment</label>
     <select id="apartment" name="apartment">
@@ -113,8 +118,10 @@
     <label for="to">Staying on or before</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
-  <button class="btn primary" type="submit">Apply</button>
-  <a class="btn" href="/reservations?range=upcoming">Clear filters</a>
+  <div class="field filter-actions">
+    <button class="btn primary" type="submit">Apply</button>
+    <a class="btn" href="/reservations?range=upcoming">Clear</a>
+  </div>
 </form>
 
 {% if rows %}
@@ -160,7 +167,19 @@
             <span class="deadline {{ urgency(check_in) }}">{{ describe_time_left(check_in) }}</span>
           {% else %}—{% endif %}
         </td>
-        <td class="row-arrow" aria-hidden="true">&rarr;</td>
+        <td class="nowrap row-actions">
+          {% if show_archive %}
+            <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="inline">
+              <button class="btn small" type="submit">Restore</button>
+            </form>
+          {% else %}
+            <form method="post" action="/reservations/{{ reservation.id }}/archive" class="inline"
+                  onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
+              <button class="btn small" type="submit">Archive</button>
+            </form>
+            <span class="row-arrow" aria-hidden="true">&rarr;</span>
+          {% endif %}
+        </td>
       </tr>
     {% endfor %}
     </tbody>
@@ -170,6 +189,8 @@
   {{ rows | length }} stay{{ '' if rows | length == 1 else 's' }}.
   {% if truncated %}Only the first {{ limit }} are shown — narrow the dates to see the rest.{% endif %}
 </p>
+{% elif show_archive %}
+  <div class="panel empty">No archived stays. Mistakes from manual entry can be archived from any stay row.</div>
 {% elif has_any %}
   <div class="panel empty">
     <p>No stay matches this filter.</p>

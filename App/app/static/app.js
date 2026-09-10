@@ -123,11 +123,21 @@
     openTarget(window.location.hash);
   }
 
+  function initDismissBanners() {
+    document.querySelectorAll("[data-dismiss-banner]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var banner = button.closest(".dismissible-banner, .banner");
+        if (banner) banner.remove();
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initClickableRows();
     initSidebar();
     initTogglePanels();
+    initDismissBanners();
     initDetailsLinks();
   });
 })();

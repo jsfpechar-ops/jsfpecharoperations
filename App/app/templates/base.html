@@ -46,8 +46,18 @@
 {% endif %}
 
 <main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
-  {% if flash %}<div class="banner ok"><div class="grow">{{ flash }}</div></div>{% endif %}
-  {% if flash_error %}<div class="banner err"><div class="grow">{{ flash_error }}</div></div>{% endif %}
+  {% if flash %}
+    <div class="banner ok dismissible-banner">
+      <div class="grow">{{ flash }}</div>
+      <button class="btn small" type="button" data-dismiss-banner>Dismiss</button>
+    </div>
+  {% endif %}
+  {% if flash_error %}
+    <div class="banner err dismissible-banner">
+      <div class="grow">{{ flash_error }}</div>
+      <button class="btn small" type="button" data-dismiss-banner>Dismiss</button>
+    </div>
+  {% endif %}
 
   {% for alert in open_alerts %}
     <div class="banner {{ alert.level }}">

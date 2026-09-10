@@ -67,6 +67,16 @@
           </button>
         </form>
         <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">Add a guest by hand</a>
+        {% if reservation.archived_at %}
+          <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="inline">
+            <button class="btn" type="submit">Restore from archive</button>
+          </form>
+        {% else %}
+          <form method="post" action="/reservations/{{ reservation.id }}/archive" class="inline"
+                onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
+            <button class="btn" type="submit">Archive stay</button>
+          </form>
+        {% endif %}
       </div>
       {% if not progress.reportable %}
         <div class="small muted" style="margin-top:8px">

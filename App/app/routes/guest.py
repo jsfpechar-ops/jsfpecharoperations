@@ -148,6 +148,7 @@ def _visible_reservations(apartment) -> List[Any]:
     horizon = (date.today() + timedelta(days=window)).isoformat()
     return db.query(
         "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
+        "AND archived_at IS NULL "
         "AND date_from <= ? AND date_to >= ? ORDER BY date_from",
         (apartment["id"], horizon, date.today().isoformat()),
     )

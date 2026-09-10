@@ -33,9 +33,11 @@
     <label for="to">Stays until</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
-  <button class="btn" type="submit">Filter</button>
-  <a class="btn primary" href="/housebook.csv?apartment={{ apartment_id or '' }}&from={{ date_from }}&to={{ date_to }}">
-    Download CSV</a>
+  <div class="field filter-actions">
+    <button class="btn" type="submit">Filter</button>
+    <a class="btn primary" href="/housebook.csv?apartment={{ apartment_id or '' }}&from={{ date_from }}&to={{ date_to }}">
+      Download CSV</a>
+  </div>
 </form>
 
 <div class="panel">
@@ -62,7 +64,9 @@
         <label for="csv_file">CSV file</label>
         <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
       </div>
-      <button class="btn primary" type="submit">Import records</button>
+      <div class="field filter-actions" style="margin:0">
+        <button class="btn primary" type="submit">Import records</button>
+      </div>
     </form>
   </div>
 </div>
@@ -98,7 +102,12 @@
           {% else %}<span class="pill amber">{{ row.reported }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions">
+          <a class="btn small" href="/guests/{{ row._guest_id }}?return_to=/housebook">Edit</a>
           <a class="btn small" href="/guests/{{ row._guest_id }}/form.pdf">PDF</a>
+          <form method="post" action="/guests/{{ row._guest_id }}/archive" class="inline">
+            <input type="hidden" name="return_to" value="/housebook">
+            <button class="btn small" type="submit">Archive</button>
+          </form>
           <span class="row-arrow" aria-hidden="true">&rarr;</span>
         </td>
       </tr>
@@ -109,5 +118,32 @@
 <p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}.</p>
 {% else %}
   <div class="panel empty">No entries match this filter. The house book fills as guest forms are completed.</div>
+{% endif %}
+
+{% if archived_rows %}
+<h2>Archived entries</h2>
+<p class="small muted">Mistaken imports or duplicates can be restored from here.</p>
+<div class="panel tight scroll-x">
+  <table>
+    <thead>
+      <tr><th>Stay</th><th>Apartment</th><th>Guest</th><th>Archived</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for row in archived_rows %}
+      <tr>
+        <td class="nowrap small">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+        <td>{{ row.apartment }}</td>
+        <td><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
+        <td class="small muted">{{ row.archived_at[:10] }}</td>
+        <td class="nowrap">
+          <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
+            <button class="btn small" type="submit">Restore</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endif %}
 {% endblock %}
