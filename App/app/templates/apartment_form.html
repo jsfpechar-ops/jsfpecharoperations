@@ -196,6 +196,12 @@
         <input type="text" id="permalink" readonly value="{{ permalink }}">
         <button class="btn" type="button" data-copy="permalink">Copy</button>
       </div>
+      <label for="guest-pin">Access PIN</label>
+      <div class="copyrow" style="margin-bottom:12px">
+        <input type="text" id="guest-pin" readonly value="{{ pin }}" class="mono">
+        <button class="btn" type="button" data-copy="guest-pin">Copy</button>
+      </div>
+      <p class="small muted">Guests must enter this PIN before the registration form opens.</p>
       <div class="field" style="max-width:280px">
         <label for="permalink_window_days">Show stays starting within (days)</label>
         <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
@@ -211,6 +217,8 @@ we have to register every guest and report foreign nationals to the Foreign Poli
 
 Please fill this in - two minutes, one form per person including children:
 {{ permalink }}
+
+Access PIN: {{ pin }}
 
 The form explains what the law requires and how your data is handled.
 
@@ -312,10 +320,22 @@ Thank you.</pre>
 <div class="panel">
   <h3 style="margin-top:0">Danger zone</h3>
   <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link"
-        onsubmit="return confirm('Generate a new guest link? The current link stops working and you must update your booking portal messages.')">
+        onsubmit="return confirm('Generate a new guest link and PIN? The current link and PIN stop working and you must update your booking portal messages.')">
     <button class="btn danger" type="submit">Generate a new guest link</button>
-    <span class="small muted">Use this only if the old link leaked.</span>
+    <span class="small muted">Creates a new link and PIN. Use this only if the old link leaked.</span>
   </form>
+  {% if apartment.archived_at %}
+    <form method="post" action="/apartments/{{ apartment.id }}/unarchive" style="margin-top:14px">
+      <button class="btn" type="submit">Restore from archive</button>
+      <span class="small muted">Archived {{ apartment.archived_at[:10] }}.</span>
+    </form>
+  {% else %}
+    <form method="post" action="/apartments/{{ apartment.id }}/archive" style="margin-top:14px"
+          onsubmit="return confirm('Archive this property? It will disappear from your dashboard and guest links, but all history is kept.')">
+      <button class="btn danger" type="submit">Archive property</button>
+      <span class="small muted">Hides the property without deleting its records. You can restore it later.</span>
+    </form>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

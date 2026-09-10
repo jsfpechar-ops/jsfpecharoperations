@@ -74,6 +74,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "For legal accuracy, a reported record cannot be changed from this form. "
             "Please message your host if anything needs correcting."
         ),
+        "form_locked_title": "This form is locked",
+        "form_locked_help": (
+            "Your details were saved and signed. To protect your information, the form "
+            "cannot be changed from this link. Please message your host if anything needs "
+            "correcting."
+        ),
+        "form_locked_short": "Saved and locked — contact your host to change anything.",
+        "pin_title": "Enter the access PIN",
+        "pin_help": (
+            "Your host sent a four-digit PIN together with the registration link. "
+            "Enter it to open the form."
+        ),
+        "pin_label": "PIN",
+        "pin_submit": "Continue",
+        "pin_wrong": "That PIN is not correct. Check the message from your host.",
         "start_over": "Start again",
         "nights": "nights",
         "arrive": "Arrival",
@@ -274,6 +289,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Kvůli správnosti zákonného záznamu nelze oznámené údaje v tomto formuláři měnit. "
             "Potřebujete-li opravu, napište ubytovateli."
         ),
+        "form_locked_title": "Formulář je uzamčen",
+        "form_locked_help": (
+            "Vaše údaje byly uloženy a podepsány. Abychom chránili vaše informace, "
+            "formulář už z tohoto odkazu nelze měnit. Potřebujete-li opravu, napište ubytovateli."
+        ),
+        "form_locked_short": "Uloženo a uzamčeno — pro změnu kontaktujte ubytovatele.",
+        "pin_title": "Zadejte přístupový PIN",
+        "pin_help": (
+            "Ubytovatel vám spolu s odkazem poslal čtyřmístný PIN. "
+            "Zadejte ho pro otevření formuláře."
+        ),
+        "pin_label": "PIN",
+        "pin_submit": "Pokračovat",
+        "pin_wrong": "PIN není správný. Zkontrolujte zprávu od ubytovatele.",
         "start_over": "Začít znovu",
         "nights": "nocí",
         "arrive": "Příjezd",

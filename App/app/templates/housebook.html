@@ -34,6 +34,35 @@
     Download CSV</a>
 </form>
 
+<details class="panel">
+  <summary><strong>Import historical records from CSV</strong></summary>
+  <div class="import-guide" style="margin-top:12px">
+    <p>If you kept a paper house book before using UbyHost, you can load those entries here for safekeeping.</p>
+    <ol>
+      <li>Export an existing entry from this page to see the column format, or prepare a semicolon-separated file with the same headers.</li>
+      <li>Required columns: <span class="mono">Stay from</span>, <span class="mono">Stay to</span>, <span class="mono">Surname</span>, <span class="mono">Given name(s)</span>.</li>
+      <li>Dates can be <span class="mono">YYYY-MM-DD</span> or Czech <span class="mono">DD.MM.YYYY</span>.</li>
+      <li>Choose which property the old records belong to, then upload the file.</li>
+    </ol>
+    <form method="post" action="/housebook/import" enctype="multipart/form-data" class="actions" style="margin-top:16px">
+      <div class="field" style="min-width:220px;margin:0">
+        <label for="import-apartment">Property</label>
+        <select id="import-apartment" name="apartment_id" required>
+          <option value="">— choose —</option>
+          {% for apartment in apartments %}
+            <option value="{{ apartment.id }}">{{ apartment.internal_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="min-width:260px;margin:0">
+        <label for="csv_file">CSV file</label>
+        <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
+      </div>
+      <button class="btn primary" type="submit">Import records</button>
+    </form>
+  </div>
+</details>
+
 {% if rows %}
 <div class="panel tight scroll-x">
   <table>
@@ -41,12 +70,12 @@
       <tr>
         <th>Stay</th><th>Apartment</th><th>Guest</th><th>Born</th><th>Nat.</th>
         <th>Document</th><th>Residence abroad</th><th>Purpose</th><th>Signed</th>
-        <th>Reported</th><th></th>
+        <th>Reported</th><th><span class="sr-only">Open</span></th>
       </tr>
     </thead>
     <tbody>
     {% for row in rows %}
-      <tr>
+      <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
         <td class="nowrap small">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
         <td class="small">{{ row.apartment }}</td>
         <td><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
@@ -64,9 +93,9 @@
           {% elif row.reported.startswith('NO') %}<span class="pill red">{{ row.reported }}</span>
           {% else %}<span class="pill amber">{{ row.reported }}</span>{% endif %}
         </td>
-        <td class="nowrap">
-          <a class="btn small" href="/guests/{{ row._guest_id }}">Open</a>
+        <td class="nowrap row-actions">
           <a class="btn small" href="/guests/{{ row._guest_id }}/form.pdf">PDF</a>
+          <span class="row-arrow" aria-hidden="true">&rarr;</span>
         </td>
       </tr>
     {% endfor %}

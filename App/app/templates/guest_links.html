@@ -26,6 +26,12 @@
         <input type="text" id="link-{{ apartment.id }}" readonly value="{{ row.permalink }}">
         <button class="btn primary" type="button" data-copy="link-{{ apartment.id }}">Copy</button>
       </div>
+      <label for="pin-{{ apartment.id }}" style="margin-top:14px">Access PIN</label>
+      <div class="copyrow">
+        <input type="text" id="pin-{{ apartment.id }}" readonly value="{{ row.pin }}" class="mono">
+        <button class="btn" type="button" data-copy="pin-{{ apartment.id }}">Copy</button>
+      </div>
+      <p class="small muted">Guests must enter this PIN before the registration form opens.</p>
       <details class="technical" style="margin-top:18px">
         <summary>Suggested portal message</summary>
         <pre class="message-template">Dear guests,
@@ -34,6 +40,8 @@ Czech law requires us to register every guest before arrival and report foreign 
 
 Please fill in one short form per person, including children:
 {{ row.permalink }}
+
+Access PIN: {{ row.pin }}
 
 The form explains why the information is required and how it is handled.
 

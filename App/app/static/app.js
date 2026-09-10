@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
+
   function initCopy() {
     document.querySelectorAll("[data-copy]").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -30,7 +32,7 @@
       }
 
       row.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea, label")) return;
+        if (event.target.closest("a, button, input, select, textarea, label, form")) return;
         openRow();
       });
 
@@ -44,21 +46,47 @@
   }
 
   function initSidebar() {
-    var toggle = document.querySelector("[data-sidebar-toggle]");
-    var close = document.querySelector("[data-sidebar-close]");
-    if (!toggle) return;
+    var collapse = document.querySelector("[data-sidebar-collapse]");
+    var expand = document.querySelector("[data-sidebar-expand]");
+    if (!collapse && !expand) return;
 
-    function setOpen(open) {
-      document.body.classList.toggle("sidebar-open", open);
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    function setCollapsed(collapsed) {
+      document.body.classList.toggle("sidebar-collapsed", collapsed);
+      if (collapse) {
+        collapse.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        collapse.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+      }
+      try {
+        localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+      } catch (error) {
+        // Private browsing may block storage.
+      }
     }
 
-    toggle.addEventListener("click", function () {
-      setOpen(!document.body.classList.contains("sidebar-open"));
-    });
-    if (close) close.addEventListener("click", function () { setOpen(false); });
+    var stored = null;
+    try {
+      stored = localStorage.getItem(SIDEBAR_KEY);
+    } catch (error) {
+      stored = null;
+    }
+    if (stored === "1") {
+      setCollapsed(true);
+    }
+
+    if (collapse) {
+      collapse.addEventListener("click", function () {
+        setCollapsed(!document.body.classList.contains("sidebar-collapsed"));
+      });
+    }
+    if (expand) {
+      expand.addEventListener("click", function () {
+        setCollapsed(false);
+      });
+    }
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape" && !document.body.classList.contains("sidebar-collapsed")) {
+        setCollapsed(true);
+      }
     });
   }
 
