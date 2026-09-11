@@ -770,7 +770,12 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         saved_id = db.insert("guest", payload)
 
-    db.audit("guest_form_saved", f"guest={saved_id} reservation={reservation_id}", actor="guest")
+    db.audit(
+        "guest_form_saved",
+        f"guest={saved_id} reservation={reservation_id}",
+        actor="guest",
+        owner_user_id=apartment["owner_user_id"],
+    )
 
     # Immediate automation is allowed to fire as soon as the data is stored.
     reporting.try_immediate_submit(apartment["id"], saved_id)

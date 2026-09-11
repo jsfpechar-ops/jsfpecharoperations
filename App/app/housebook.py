@@ -76,6 +76,7 @@ def housebook_rows(
     apartment_id: Optional[int] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Chronological house-book entries, newest stay last."""
     sql = (
@@ -84,9 +85,10 @@ def housebook_rows(
         "FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status != 'ignored' AND g.archived_at IS NULL"
+        "WHERE r.status != 'ignored' AND g.archived_at IS NULL "
+        "AND (? IS NULL OR a.owner_user_id = ?)"
     )
-    params: List[Any] = []
+    params: List[Any] = [owner_user_id, owner_user_id]
     if apartment_id:
         sql += " AND a.id = ?"
         params.append(apartment_id)
@@ -325,7 +327,9 @@ SAMPLE_HOUSEBOOK_ROW = {
 }
 
 
-def housebook_archived_rows(apartment_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def housebook_archived_rows(
+    apartment_id: Optional[int] = None, owner_user_id: Optional[int] = None
+) -> List[Dict[str, Any]]:
     """Archived house-book entries that can be restored."""
     sql = (
         "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id, "
@@ -333,9 +337,9 @@ def housebook_archived_rows(apartment_id: Optional[int] = None) -> List[Dict[str
         "FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE g.archived_at IS NOT NULL"
+        "WHERE g.archived_at IS NOT NULL AND (? IS NULL OR a.owner_user_id = ?)"
     )
-    params: List[Any] = []
+    params: List[Any] = [owner_user_id, owner_user_id]
     if apartment_id:
         sql += " AND a.id = ?"
         params.append(apartment_id)
@@ -543,18 +547,24 @@ def retention_cutoff(today: Optional[date] = None) -> date:
         return date(today.year - RETENTION_YEARS, today.month, today.day - 1)
 
 
-def expired_guest_ids(today: Optional[date] = None) -> List[int]:
+def expired_guest_ids(
+    today: Optional[date] = None, owner_user_id: Optional[int] = None
+) -> List[int]:
     """Guest records whose stay ended more than six years ago."""
     rows = db.query(
         "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
-        "WHERE COALESCE(g.stay_to, r.date_to) < ?",
-        (retention_cutoff(today).isoformat(),),
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE COALESCE(g.stay_to, r.date_to) < ? "
+        "AND (? IS NULL OR a.owner_user_id = ?)",
+        (retention_cutoff(today).isoformat(), owner_user_id, owner_user_id),
     )
     return [row["id"] for row in rows]
 
 
-def purge_expired(today: Optional[date] = None) -> int:
-    ids = expired_guest_ids(today)
+def purge_expired(
+    today: Optional[date] = None, owner_user_id: Optional[int] = None
+) -> int:
+    ids = expired_guest_ids(today, owner_user_id=owner_user_id)
     if not ids:
         return 0
     marks = ", ".join("?" for _ in ids)

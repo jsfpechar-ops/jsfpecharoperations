@@ -11,6 +11,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
 
 from .. import (
+    access,
     alerts,
     auth,
     codelists,
@@ -111,7 +112,9 @@ def _query_date(request: Request, key: str) -> str:
     return parsed.isoformat() if parsed else ""
 
 
-def dashboard_rows(days_ahead: int = 21, days_back: int = 45) -> List[Dict[str, Any]]:
+def dashboard_rows(
+    days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
+) -> List[Dict[str, Any]]:
     """Every stay worth looking at, ordered by how urgent it is."""
     start = (date.today() - timedelta(days=days_back)).isoformat()
     end = (date.today() + timedelta(days=days_ahead)).isoformat()
@@ -119,10 +122,10 @@ def dashboard_rows(days_ahead: int = 21, days_back: int = 45) -> List[Dict[str, 
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND a.active = 1 AND a.archived_at IS NULL "
-        "AND r.archived_at IS NULL "
+        "AND r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
         "AND r.date_from BETWEEN ? AND ? "
         "ORDER BY r.date_from",
-        (start, end),
+        (owner_user_id, owner_user_id, start, end),
     )
     out: List[Dict[str, Any]] = []
     for reservation in rows:
@@ -163,7 +166,7 @@ def load_demo(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment_id = demo.seed()
+    apartment_id = demo.seed(access.owner_id(request))
     if not apartment_id:
         return _back("/", err="Demo data is only available on an empty install in mock mode.")
     return _back("/", msg="Demo property loaded. Use “Clear demo data” on Overview when finished.")
@@ -174,14 +177,14 @@ def reset_demo(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not demo.clear():
+    if not demo.clear(access.owner_id(request)):
         return _back("/", err="The built-in demo dataset was not found.")
     return _back("/", msg="Demo data cleared.")
 
 
 @router.get("/login")
 def login_form(request: Request):
-    if not auth.password_is_set():
+    if auth.current_user(request):
         return RedirectResponse("/", status_code=303)
     return render(request, "login.html", {})
 
@@ -189,12 +192,20 @@ def login_form(request: Request):
 @router.post("/login")
 async def login_submit(request: Request):
     form = await request.form()
-    if not auth.check_login(_form_str(form, "password")):
-        db.audit("login_failed", request.client.host if request.client else "")
-        return render(request, "login.html", {"error": "Wrong password."}, status_code=401)
-    response = RedirectResponse("/", status_code=303)
-    auth.attach_session(response, auth.issue_session())
-    db.audit("login")
+    account = auth.authenticate(_form_str(form, "username"), _form_str(form, "password"))
+    if not account:
+        db.audit("login_failed", request.client.host if request.client else "", actor="anonymous")
+        return render(
+            request, "login.html", {"error": "That username or password is not correct."},
+            status_code=401,
+        )
+    target = "/account/password" if account["must_change_password"] else "/"
+    next_path = _form_str(form, "next")
+    if next_path.startswith("/") and not next_path.startswith("//") and not account["must_change_password"]:
+        target = next_path
+    response = RedirectResponse(target, status_code=303)
+    auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
+    db.audit("login", actor=account["username"], owner_user_id=account["id"])
     return response
 
 
@@ -205,6 +216,180 @@ def logout():
     return response
 
 
+@router.get("/account/password")
+def account_password_form(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return render(request, "account_password.html", {})
+
+
+@router.post("/account/password")
+async def account_password_update(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    form = await request.form()
+    if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
+        return render(
+            request, "account_password.html", {"error": "Current password is wrong."},
+            status_code=400,
+        )
+    new_password = _form_str(form, "new_password")
+    if new_password != _form_str(form, "confirm_password"):
+        return render(
+            request, "account_password.html", {"error": "The new passwords do not match."},
+            status_code=400,
+        )
+    try:
+        auth.set_account_password(account["id"], new_password)
+    except ValueError as exc:
+        return render(request, "account_password.html", {"error": str(exc)}, status_code=400)
+    refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
+    response = _back("/", msg="Password changed.")
+    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
+    db.audit("password_changed", actor=account["username"], owner_user_id=account["id"])
+    return response
+
+
+@router.get("/admin/users")
+def users_admin(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    if not account or account["role"] != "admin":
+        return Response("Administrators only.", status_code=403)
+    users = db.query(
+        "SELECT u.id, u.username, u.display_name, u.role, u.active, "
+        "u.must_change_password, u.created_at, u.last_login_at, "
+        "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
+        "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
+    )
+    return render(request, "users.html", {"users": users})
+
+
+@router.post("/admin/users")
+async def user_create(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    if not account or account["role"] != "admin":
+        return Response("Administrators only.", status_code=403)
+    form = await request.form()
+    password = _form_str(form, "password")
+    if password != _form_str(form, "confirm_password"):
+        return _back("/admin/users", err="The passwords do not match.")
+    try:
+        user_id = auth.create_account(
+            _form_str(form, "username"),
+            password,
+            _form_str(form, "display_name"),
+            role="host",
+            must_change_password=True,
+        )
+    except ValueError as exc:
+        return _back("/admin/users", err=str(exc))
+    except Exception as exc:
+        if "UNIQUE constraint failed" in str(exc):
+            return _back("/admin/users", err="That username is already in use.")
+        raise
+    db.audit(
+        "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
+    )
+    return _back("/admin/users", msg="User created. Give them the initial password securely.")
+
+
+@router.post("/admin/users/{user_id}/password")
+async def user_password_reset(user_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not account or account["role"] != "admin" or not target:
+        return Response("Administrators only.", status_code=403)
+    if user_id == account["id"]:
+        return _back("/account/password", err="Change your own password from your account page.")
+    form = await request.form()
+    password = _form_str(form, "password")
+    if password != _form_str(form, "confirm_password"):
+        return _back("/admin/users", err="The passwords do not match.")
+    try:
+        auth.set_account_password(user_id, password, must_change=True)
+    except ValueError as exc:
+        return _back("/admin/users", err=str(exc))
+    db.audit(
+        "password_reset", actor=account["username"], owner_user_id=user_id
+    )
+    return _back("/admin/users", msg=f"Password reset for {target['username']}.")
+
+
+@router.post("/admin/users/{user_id}/impersonate")
+def user_impersonate(user_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    target = db.query_one(
+        "SELECT * FROM user_account WHERE id = ? AND active = 1", (user_id,)
+    )
+    if not account or account["role"] != "admin" or not target:
+        return Response("Administrators only.", status_code=403)
+    response = RedirectResponse("/", status_code=303)
+    auth.attach_session(
+        response,
+        auth.issue_session(account["id"], account["session_version"], workspace_user_id=user_id),
+    )
+    db.audit(
+        "impersonation_started",
+        f"admin={account['username']}",
+        actor=account["username"],
+        owner_user_id=user_id,
+    )
+    return response
+
+
+@router.post("/admin/users/{user_id}/toggle")
+def user_toggle(user_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not account or account["role"] != "admin" or not target:
+        return Response("Administrators only.", status_code=403)
+    if user_id == account["id"]:
+        return _back("/admin/users", err="You cannot disable your own administrator account.")
+    active = 0 if target["active"] else 1
+    db.execute(
+        "UPDATE user_account SET active = ?, session_version = session_version + 1 WHERE id = ?",
+        (active, user_id),
+    )
+    db.audit(
+        "user_enabled" if active else "user_disabled",
+        actor=account["username"],
+        owner_user_id=user_id,
+    )
+    return _back("/admin/users", msg=f"{target['username']} {'enabled' if active else 'disabled'}.")
+
+
+@router.post("/admin/stop-impersonating")
+def stop_impersonating(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    if not account or account["role"] != "admin":
+        return Response("Administrators only.", status_code=403)
+    response = RedirectResponse("/admin/users", status_code=303)
+    auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
+    db.audit("impersonation_stopped", actor=account["username"], owner_user_id=account["id"])
+    return response
+
+
 # --- dashboard -----------------------------------------------------------
 
 @router.get("/")
@@ -212,10 +397,9 @@ def dashboard(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartments = db.query(
-        "SELECT * FROM apartment WHERE archived_at IS NULL ORDER BY internal_name"
-    )
-    rows = dashboard_rows()
+    owner_user_id = access.owner_id(request)
+    apartments = access.apartments(request)
+    rows = dashboard_rows(owner_user_id=owner_user_id)
     needs_action = [
         row for row in rows
         if row["progress"]["status"] in ("failed", "incomplete", "ready")
@@ -290,7 +474,9 @@ def guest_links(request: Request):
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.active = 1 AND a.archived_at IS NULL ORDER BY a.internal_name"
+        "WHERE a.active = 1 AND a.archived_at IS NULL AND a.owner_user_id = ? "
+        "ORDER BY a.internal_name",
+        (access.owner_id(request),),
     )
     rows = []
     for apartment in apartments:
@@ -315,7 +501,8 @@ def entities(request: Request):
         return guard
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
-        "FROM legal_entity e ORDER BY e.name"
+        "FROM legal_entity e WHERE e.owner_user_id = ? ORDER BY e.name",
+        (access.owner_id(request),),
     )
     return render(request, "entities.html", {"entities": rows})
 
@@ -333,6 +520,7 @@ async def create_entity(request: Request):
     if not payload["name"]:
         return _back("/entities", err="Name is required.")
     payload["created_at"] = db.utcnow()
+    payload["owner_user_id"] = access.owner_id(request)
     db.insert("legal_entity", payload)
     return _back("/entities", msg=f"Added {payload['name']}.")
 
@@ -344,7 +532,7 @@ async def update_entity(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not db.query_one("SELECT 1 AS x FROM legal_entity WHERE id = ?", (entity_id,)):
+    if not access.entity(request, entity_id):
         return _back("/entities", err="No such legal entity.")
     form = await request.form()
     payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
@@ -359,7 +547,12 @@ def delete_entity(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    used = db.query_one("SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ?", (entity_id,))
+    if not access.entity(request, entity_id):
+        return _back("/entities", err="No such legal entity.")
+    used = db.query_one(
+        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id = ?",
+        (entity_id, access.owner_id(request)),
+    )
     if used and used["n"]:
         return _back("/entities", err="Detach the apartments from this entity first.")
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
@@ -378,14 +571,16 @@ def apartments_list(request: Request):
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.archived_at IS NULL ORDER BY a.internal_name"
+        "WHERE a.archived_at IS NULL AND a.owner_user_id = ? ORDER BY a.internal_name",
+        (access.owner_id(request),),
     )
     archived = db.query(
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.archived_at IS NOT NULL ORDER BY a.archived_at DESC"
+        "WHERE a.archived_at IS NOT NULL AND a.owner_user_id = ? ORDER BY a.archived_at DESC",
+        (access.owner_id(request),),
     )
     enriched = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in rows
@@ -406,7 +601,7 @@ def apartment_new(request: Request):
         "apartment_form.html",
         {
             "apartment": None,
-            "entities": db.query("SELECT * FROM legal_entity ORDER BY name"),
+            "entities": access.entities(request),
             "purposes": codelists.purpose_options("en"),
         },
     )
@@ -460,6 +655,9 @@ async def apartment_create(request: Request):
     payload["permalink_token"] = auth.new_permalink_token()
     payload["permalink_pin"] = auth.new_permalink_pin()
     payload["created_at"] = db.utcnow()
+    payload["owner_user_id"] = access.owner_id(request)
+    if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
+        return _back("/apartments/new", err="No such legal entity.")
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
@@ -473,7 +671,7 @@ def apartment_detail(apartment_id: int, request: Request):
     if guard:
         return guard
     apartment = _ensure_apartment_pin(
-        db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+        access.apartment(request, apartment_id)
     )
     if not apartment:
         return _back("/apartments", err="No such apartment.")
@@ -483,7 +681,7 @@ def apartment_detail(apartment_id: int, request: Request):
         "apartment_form.html",
         {
             "apartment": apartment,
-            "entities": db.query("SELECT * FROM legal_entity ORDER BY name"),
+            "entities": access.entities(request),
             "feeds": feeds,
             "issues": _apartment_issues(apartment),
             "purposes": codelists.purpose_options("en"),
@@ -500,11 +698,13 @@ async def apartment_update(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     form = await request.form()
     payload = _apartment_payload(form)
+    if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
+        return _back(f"/apartments/{apartment_id}", err="No such legal entity.")
     for key in ("automation_mode", "submit_after_hours", "default_purpose"):
         payload.pop(key, None)
     password = _form_str(form, "uby_ws_password")
@@ -528,7 +728,7 @@ async def regenerate_pin(apartment_id: int, request: Request):
     if guard:
         return guard
     form = await request.form()
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     pin = auth.new_permalink_pin()
@@ -546,7 +746,7 @@ async def regenerate_link(apartment_id: int, request: Request):
     if guard:
         return guard
     form = await request.form()
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     db.update(
@@ -589,9 +789,7 @@ def automation_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartments = db.query(
-        "SELECT * FROM apartment WHERE archived_at IS NULL ORDER BY internal_name"
-    )
+    apartments = access.apartments(request)
     rows = [
         {
             "apartment": apartment,
@@ -615,7 +813,7 @@ async def automation_update(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/automation", err="No such apartment.")
     form = await request.form()
@@ -636,7 +834,7 @@ def archive_apartment(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     if apartment["archived_at"]:
@@ -655,7 +853,7 @@ def unarchive_apartment(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     if not apartment["archived_at"]:
@@ -674,6 +872,8 @@ async def add_feed(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if not access.apartment(request, apartment_id):
+        return _back("/apartments", err="No such apartment.")
     form = await request.form()
     url = _form_str(form, "url")
     if not url.lower().startswith(("http://", "https://")):
@@ -703,7 +903,7 @@ def delete_feed(feed_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    feed = db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+    feed = access.feed(request, feed_id)
     if not feed:
         return _back("/apartments", err="No such calendar.")
     db.execute("DELETE FROM ical_feed WHERE id = ?", (feed_id,))
@@ -715,8 +915,9 @@ def sync_now(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    totals = icalsync.sync_all()
-    reporting.check_deadlines()
+    owner_user_id = access.owner_id(request)
+    totals = icalsync.sync_all(owner_user_id=owner_user_id)
+    reporting.check_deadlines(owner_user_id=owner_user_id)
     return _back(
         "/",
         msg=(
@@ -734,7 +935,7 @@ async def test_connection(apartment_id: int, request: Request):
         return guard
     form = await request.form()
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     client = reporting.client_for(apartment)
@@ -758,7 +959,7 @@ async def refresh_codelists(apartment_id: int, request: Request):
         return guard
     form = await request.form()
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     try:
@@ -811,9 +1012,10 @@ def reservations_list(request: Request):
 
     sql = (
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
-        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id WHERE 1 = 1"
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE a.owner_user_id = ?"
     )
-    params: List[Any] = []
+    params: List[Any] = [access.owner_id(request)]
     if show_archive:
         sql += " AND r.archived_at IS NOT NULL"
     else:
@@ -839,7 +1041,7 @@ def reservations_list(request: Request):
     reservations = db.query(sql, params)
     rows = []
     for row in reservations:
-        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
+        apartment = access.apartment(request, row["apartment_id"])
         progress = reporting.reservation_progress(row)
         rows.append(
             {
@@ -856,14 +1058,18 @@ def reservations_list(request: Request):
             "rows": rows,
             "ready_send_count": ready_send_count,
             "status": status,
-            "apartments": db.query("SELECT id, internal_name FROM apartment ORDER BY internal_name"),
+            "apartments": access.apartments(request, "id, internal_name"),
             "apartment_id": apartment_id,
             "date_from": date_from,
             "date_to": date_to,
             "date_range": date_range,
             "truncated": len(rows) >= RESERVATION_LIMIT,
             "limit": RESERVATION_LIMIT,
-            "has_any": bool(db.query_one("SELECT 1 AS x FROM reservation LIMIT 1")),
+            "has_any": bool(db.query_one(
+                "SELECT 1 AS x FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+                "WHERE a.owner_user_id = ? LIMIT 1",
+                (access.owner_id(request),),
+            )),
             "return_to": quote(
                 request.url.path + (f"?{request.url.query}" if request.url.query else ""),
                 safe="",
@@ -884,6 +1090,8 @@ async def reservation_create(request: Request):
     date_to = _form_str(form, "date_to")
     if not (apartment_id and date_from and date_to):
         return _back("/reservations", err="Apartment and both dates are required.")
+    if not access.apartment(request, apartment_id):
+        return _back("/reservations", err="No such apartment.")
     if date_to <= date_from:
         return _back("/reservations", err="The departure date must be after the arrival date.")
     reservation_id = db.insert(
@@ -933,6 +1141,7 @@ def reservations_export(request: Request):
             date_from=date_from,
             date_to=date_to,
             apartment_id=_query_int(request, "apartment"),
+            owner_user_id=access.owner_id(request),
         ),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="stays-{stamp}.csv"'},
@@ -951,7 +1160,7 @@ async def reservations_import(request: Request):
     content = await upload.read()
     if not content:
         return _back("/reservations", err="The file is empty.")
-    result = stays_import.import_csv(content)
+    result = stays_import.import_csv(content, owner_user_id=access.owner_id(request))
     if result["imported"]:
         detail = f"Imported {result['imported']} stay(s)."
         if result["skipped"]:
@@ -972,7 +1181,9 @@ async def reservations_submit_ready(request: Request):
     return_to = _form_str(form, "return_to") or "/reservations"
     reservations = db.query(
         "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 AND a.archived_at IS NULL"
+        "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
+        "AND a.archived_at IS NULL AND a.owner_user_id = ?",
+        (access.owner_id(request),),
     )
     sent_stays = 0
     sent_guests = 0
@@ -1013,13 +1224,14 @@ def reservation_detail(reservation_id: int, request: Request):
         return guard
     reservation = db.query_one(
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
-        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
-        (reservation_id,),
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.id = ? AND a.owner_user_id = ?",
+        (reservation_id, access.owner_id(request)),
     )
     if not reservation:
         return _back("/reservations", err="No such stay.")
     progress = reporting.reservation_progress(reservation)
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    apartment = access.apartment(request, reservation["apartment_id"])
     send_controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
     guest_rows = []
     for guest in progress["guests"]:
@@ -1062,6 +1274,8 @@ async def reservation_update(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if not access.reservation(request, reservation_id):
+        return _back("/reservations", err="No such stay.")
     form = await request.form()
     payload: Dict[str, Any] = {
         "expected_guests_override": _form_int(form, "expected_guests_override"),
@@ -1081,7 +1295,7 @@ def reservation_archive(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err="No such stay.")
     if reservation["archived_at"]:
@@ -1096,7 +1310,7 @@ def reservation_unarchive(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err="No such stay.")
     if not reservation["archived_at"]:
@@ -1111,10 +1325,10 @@ async def reservation_submit(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err="No such stay.")
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    apartment = access.apartment(request, reservation["apartment_id"])
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
     if not controls.get("send_enabled"):
@@ -1189,8 +1403,9 @@ def guest_new(reservation_id: int, request: Request):
         return guard
     reservation = db.query_one(
         "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
-        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
-        (reservation_id,),
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.id = ? AND a.owner_user_id = ?",
+        (reservation_id, access.owner_id(request)),
     )
     if not reservation:
         return _back("/reservations", err="No such stay.")
@@ -1212,7 +1427,7 @@ async def guest_create(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err="No such stay.")
     form = await request.form()
@@ -1245,7 +1460,7 @@ def guest_edit(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    guest = access.guest(request, guest_id)
     if not guest:
         return _back("/reservations", err="No such guest.")
     reservation = db.query_one(
@@ -1271,7 +1486,7 @@ async def guest_update(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    guest = access.guest(request, guest_id)
     if not guest:
         return _back("/reservations", err="No such guest.")
     form = await request.form()
@@ -1296,7 +1511,7 @@ async def guest_archive(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    guest = access.guest(request, guest_id)
     if not guest:
         return _back("/housebook", err="No such guest record.")
     if guest["submit_state"] == reporting.SENT:
@@ -1320,7 +1535,7 @@ def guest_unarchive(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    guest = access.guest(request, guest_id)
     if not guest:
         return _back("/housebook", err="No such guest record.")
     if not guest["archived_at"]:
@@ -1335,7 +1550,7 @@ def guest_delete(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    guest = access.guest(request, guest_id)
     if not guest:
         return _back("/reservations", err="No such guest.")
     if guest["submit_state"] == reporting.SENT:
@@ -1360,7 +1575,7 @@ async def guest_resend(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    guest = access.guest(request, guest_id)
     if not guest:
         return _back("/reservations", err="No such guest.")
     form = await request.form()
@@ -1390,6 +1605,8 @@ def guest_form_pdf(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if not access.guest(request, guest_id):
+        return _back("/reservations", err="No such guest.")
     try:
         pdf = housebook.registration_form_pdf(guest_id)
     except ValueError:
@@ -1410,7 +1627,8 @@ def submissions_list(request: Request):
         return guard
     rows = db.query(
         "SELECT s.*, a.internal_name FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "ORDER BY s.created_at DESC LIMIT 200"
+        "WHERE a.owner_user_id = ? ORDER BY s.created_at DESC LIMIT 200",
+        (access.owner_id(request),),
     )
     return render(request, "submissions.html", {"rows": rows})
 
@@ -1422,8 +1640,8 @@ def submission_detail(submission_id: int, request: Request):
         return guard
     submission = db.query_one(
         "SELECT s.*, a.internal_name FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE s.id = ?",
-        (submission_id,),
+        "WHERE s.id = ? AND a.owner_user_id = ?",
+        (submission_id, access.owner_id(request)),
     )
     if not submission:
         return _back("/submissions", err="No such submission.")
@@ -1472,7 +1690,8 @@ def submission_receipt(submission_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,))
+    owned = access.submission(request, submission_id)
+    row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     return _pdf_response(row["receipt_pdf"] if row else None, f"dorucenka-{submission_id}.pdf")
 
 
@@ -1481,7 +1700,8 @@ def submission_errors(submission_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,))
+    owned = access.submission(request, submission_id)
+    row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     return _pdf_response(row["error_pdf"] if row else None, f"dorucenka-chyby-{submission_id}.pdf")
 
 
@@ -1492,7 +1712,11 @@ def submission_xml(submission_id: int, which: str, request: Request):
         return guard
     if which not in ("request", "response"):
         return Response("Unknown document.", status_code=404, media_type="text/plain")
-    row = db.query_one(f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,))
+    owned = access.submission(request, submission_id)
+    row = (
+        db.query_one(f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,))
+        if owned else None
+    )
     return Response((row["body"] if row else "") or "", media_type="application/xml")
 
 
@@ -1506,8 +1730,13 @@ def housebook_view(request: Request):
     apartment_id = _query_int(request, "apartment")
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
-    rows = housebook.housebook_rows(apartment_id, date_from or None, date_to or None)
-    archived_rows = housebook.housebook_archived_rows(apartment_id)
+    owner_user_id = access.owner_id(request)
+    rows = housebook.housebook_rows(
+        apartment_id, date_from or None, date_to or None, owner_user_id=owner_user_id
+    )
+    archived_rows = housebook.housebook_archived_rows(
+        apartment_id, owner_user_id=owner_user_id
+    )
     return render(
         request,
         "housebook.html",
@@ -1515,7 +1744,7 @@ def housebook_view(request: Request):
             "rows": rows,
             "archived_rows": archived_rows,
             "columns": housebook.HOUSEBOOK_COLUMNS,
-            "apartments": db.query("SELECT id, internal_name FROM apartment ORDER BY internal_name"),
+            "apartments": access.apartments(request, "id, internal_name"),
             "apartment_id": apartment_id,
             "date_from": date_from,
             "date_to": date_to,
@@ -1534,6 +1763,8 @@ async def housebook_import(request: Request):
     upload = form.get("csv_file")
     if not apartment_id:
         return _back("/housebook", err="Choose which property the records belong to.")
+    if not access.apartment(request, apartment_id):
+        return _back("/housebook", err="No such property.")
     if not upload or not getattr(upload, "filename", ""):
         return _back("/housebook", err="Choose a CSV file to import.")
     content = await upload.read()
@@ -1571,6 +1802,7 @@ def housebook_download(request: Request):
         _query_int(request, "apartment"),
         _query_date(request, "from") or None,
         _query_date(request, "to") or None,
+        owner_user_id=access.owner_id(request),
     )
     stamp = datetime.now().strftime("%Y%m%d")
     return Response(
@@ -1587,6 +1819,8 @@ def dismiss_alert(alert_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    if not access.alert(request, alert_id):
+        return Response("No such alert.", status_code=404)
     alerts.resolve_by_id(alert_id, user_dismissed=True)
     referer = request.headers.get("referer") or "/"
     return RedirectResponse(referer, status_code=303)
@@ -1602,26 +1836,37 @@ def settings_view(request: Request):
         "settings.html",
         {
             "endpoint": config.endpoint_for(),
-            "password_is_set": auth.password_is_set(),
             "codelists": {
                 "countries": codelists.last_fetched(codelists.KIND_COUNTRIES),
                 "purposes": codelists.last_fetched(codelists.KIND_PURPOSES),
                 "errors": codelists.last_fetched(codelists.KIND_ERRORS),
             },
-            "audit": db.query("SELECT * FROM audit ORDER BY id DESC LIMIT 500"),
-            "audit_count": db.query_one("SELECT COUNT(*) AS n FROM audit")["n"],
+            "audit": db.query(
+                "SELECT * FROM audit WHERE owner_user_id = ? ORDER BY id DESC LIMIT 500",
+                (access.owner_id(request),),
+            ),
+            "audit_count": db.query_one(
+                "SELECT COUNT(*) AS n FROM audit WHERE owner_user_id = ?",
+                (access.owner_id(request),),
+            )["n"],
             "poll_minutes": config.ICAL_POLL_MINUTES,
             "sweep_minutes": config.SUBMIT_SWEEP_MINUTES,
             "retention_years": housebook.RETENTION_YEARS,
             "retention_cutoff": housebook.retention_cutoff(),
-            "expired_records": len(housebook.expired_guest_ids()),
+            "expired_records": len(
+                housebook.expired_guest_ids(owner_user_id=access.owner_id(request))
+            ),
             "entities_without_contact": db.query(
                 "SELECT id, name FROM legal_entity "
-                "WHERE contact_email IS NULL OR TRIM(contact_email) = '' ORDER BY name"
+                "WHERE owner_user_id = ? AND "
+                "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
+                (access.owner_id(request),),
             ),
             "apartments_without_entity": db.query(
                 "SELECT id, internal_name FROM apartment "
-                "WHERE legal_entity_id IS NULL AND active = 1 ORDER BY internal_name"
+                "WHERE owner_user_id = ? AND legal_entity_id IS NULL AND active = 1 "
+                "ORDER BY internal_name",
+                (access.owner_id(request),),
             ),
             "guest_pin_required": config.GUEST_PIN_REQUIRED,
         },
@@ -1634,34 +1879,7 @@ def purge_expired_records(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    deleted = housebook.purge_expired()
+    deleted = housebook.purge_expired(owner_user_id=access.owner_id(request))
     if not deleted:
         return _back("/settings", msg="Nothing to delete - no record is past the retention period.")
     return _back("/settings", msg=f"Deleted {deleted} guest record(s) past the retention period.")
-
-
-@router.post("/settings/password")
-async def change_password(request: Request):
-    """Locking the app is optional; this is where a host opts in or out."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    form = await request.form()
-    new = _form_str(form, "new_password")
-    if auth.password_is_set() and not auth.check_login(_form_str(form, "current_password")):
-        return _back("/settings", err="Current password is wrong.")
-    if not new:
-        if not auth.password_is_set():
-            return _back("/settings", err="Enter a password, or leave the lock off.")
-        if not form.get("confirm_unlock"):
-            return _back("/settings", err="Confirm that you want to remove the app lock.")
-        auth.clear_password()
-        response = _back("/settings", msg="Password removed - the app no longer asks for one.")
-        auth.clear_session(response)
-        return response
-    if len(new) < 10:
-        return _back("/settings", err="Use at least 10 characters.")
-    auth.set_password(new)
-    response = _back("/settings", msg="Password set. You will be asked for it from now on.")
-    auth.attach_session(response, auth.issue_session())
-    return response

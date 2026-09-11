@@ -61,8 +61,15 @@ templates.env.globals.update(
 def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
     data = dict(context or {})
     data["request"] = request
-    data.setdefault("password_is_set", auth.password_is_set())
-    data.setdefault("open_alerts", alerts.open_alerts())
+    data.setdefault("current_user", auth.current_user(request))
+    data.setdefault("workspace_user", auth.workspace_user(request))
+    workspace = data["workspace_user"]
+    data.setdefault(
+        "open_alerts",
+        alerts.open_alerts(workspace["id"]) if workspace else (
+            [] if auth.accounts_exist() else alerts.open_alerts()
+        ),
+    )
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
     return templates.TemplateResponse(name, data, status_code=status_code)

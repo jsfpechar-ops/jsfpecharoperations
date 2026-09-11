@@ -346,8 +346,10 @@ def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
     return stats
 
 
-def sync_all(apartment_id: Optional[int] = None) -> Dict[str, Any]:
-    """Sync every active feed, optionally limited to one apartment."""
+def sync_all(
+    apartment_id: Optional[int] = None, owner_user_id: Optional[int] = None
+) -> Dict[str, Any]:
+    """Sync active feeds, optionally limited to one apartment or owner."""
     if apartment_id:
         feeds = db.query(
             "SELECT * FROM ical_feed WHERE active = 1 AND apartment_id = ?", (apartment_id,)
@@ -355,7 +357,9 @@ def sync_all(apartment_id: Optional[int] = None) -> Dict[str, Any]:
     else:
         feeds = db.query(
             "SELECT f.* FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
-            "WHERE f.active = 1 AND a.active = 1"
+            "WHERE f.active = 1 AND a.active = 1 "
+            "AND (? IS NULL OR a.owner_user_id = ?)",
+            (owner_user_id, owner_user_id),
         )
     totals = {"feeds": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0}
     for feed in feeds:

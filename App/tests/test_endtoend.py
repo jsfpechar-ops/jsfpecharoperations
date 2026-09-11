@@ -15,10 +15,10 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from app import codelists, db, reporting
+from app import auth, codelists, db, reporting
 from app.main import app
 
-PASSWORD = "correct-horse-battery"
+PASSWORD = "Correct-Horse-Battery-123"
 
 # A one-pixel PNG is enough to stand for a drawn signature.
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -622,32 +622,31 @@ def test_28_the_audit_trail_records_what_happened(host):
     assert "guest_form_saved" in page.text
 
 
-def test_29_the_lock_is_opt_in_and_can_be_switched_back_off(host):
-    """Only needed if the app is put somewhere other people can reach."""
-    assert host.post("/settings/password", data={"new_password": "short"},
-                     follow_redirects=False).status_code == 303
-    assert not db.get_setting("admin_password")
-
-    host.post("/settings/password", data={"new_password": PASSWORD}, follow_redirects=False)
-    assert db.get_setting("admin_password")
-
-    stranger = TestClient(app)
-    assert stranger.get("/", follow_redirects=False).status_code == 303
-    assert stranger.post("/login", data={"password": "wrong"}).status_code == 401
-    assert stranger.post(
-        "/login", data={"password": PASSWORD}, follow_redirects=False
-    ).status_code == 303
-    assert 'action="/logout"' in stranger.get("/").text
-
-    # A guest link keeps working while the host side is locked.
-    apartment = db.query_one("SELECT * FROM apartment")
-    assert TestClient(app).get(f"/l/{apartment['permalink_token']}",
-                               follow_redirects=True).status_code == 200
-
-    host.post(
-        "/settings/password",
-            data={"current_password": PASSWORD, "new_password": "", "confirm_unlock": "1"},
-        follow_redirects=False,
+def test_29_host_accounts_require_username_and_password(host):
+    user_id = auth.create_account(
+        "test-admin", PASSWORD, "Test admin", role="admin", must_change_password=False
     )
-    assert not db.get_setting("admin_password")
-    assert TestClient(app).get("/", follow_redirects=False).status_code == 200
+    try:
+        stranger = TestClient(app)
+        assert stranger.get("/", follow_redirects=False).status_code == 303
+        assert stranger.post(
+            "/login", data={"username": "test-admin", "password": "wrong"}
+        ).status_code == 401
+        assert stranger.post(
+            "/login",
+            data={"username": "test-admin", "password": PASSWORD},
+            follow_redirects=False,
+        ).status_code == 303
+        assert 'action="/logout"' in stranger.get("/").text
+
+        stored = db.query_one("SELECT password_hash FROM user_account WHERE id = ?", (user_id,))
+        assert PASSWORD not in stored["password_hash"]
+        assert auth.verify_password(PASSWORD, stored["password_hash"])
+
+        # Guest links do not require a host account.
+        apartment = db.query_one("SELECT * FROM apartment")
+        assert TestClient(app).get(
+            f"/l/{apartment['permalink_token']}", follow_redirects=True
+        ).status_code == 200
+    finally:
+        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))

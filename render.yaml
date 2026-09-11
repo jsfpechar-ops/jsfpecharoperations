@@ -23,6 +23,10 @@ services:
         value: http://127.0.0.1:8081/ws_uby/ws_uby.svc
       - key: UBYHOST_SECRET_KEY
         generateValue: true
+      - key: UBYHOST_ADMIN_USERNAME
+        value: admin
+      - key: UBYHOST_ADMIN_PASSWORD
+        generateValue: true
       - key: UBYHOST_PUBLIC_BASE_URL
         fromService:
           type: web
