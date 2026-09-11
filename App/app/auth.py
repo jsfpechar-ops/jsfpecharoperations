@@ -222,6 +222,22 @@ def set_account_password(user_id: int, password: str, must_change: bool = False)
     )
 
 
+def login_setup_hint() -> str:
+    """Plain-language help for the first administrator on a fresh install."""
+    if not config.BOOTSTRAP_ADMIN:
+        return ""
+    username = normalise_username(config.ADMIN_USERNAME) or "admin"
+    if config.ADMIN_PASSWORD:
+        return (
+            f"First deployment: log in as {username} using the value of "
+            "UBYHOST_ADMIN_PASSWORD in your hosting dashboard (for example Render → Environment)."
+        )
+    return (
+        f"First deployment: log in as {username}. If you did not set a password, "
+        "check the server log or data/initial_admin_credentials on the machine."
+    )
+
+
 def ensure_bootstrap_admin() -> Optional[str]:
     """Create the first administrator and claim all legacy unowned records."""
     if accounts_exist() or not config.BOOTSTRAP_ADMIN:
