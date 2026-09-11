@@ -22,9 +22,9 @@
             <div class="next-action">
               {% if progress.status == 'failed' %}Open the stay, fix the rejection, and send again.
               {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}Guest details are complete — they will send automatically when guests submit.
-              {% elif progress.status == 'ready' %}Guest details are complete. Send when you are ready.
-              {% elif progress.status == 'incomplete' %}Some guest details are still missing.
-              {% elif progress.status == 'awaiting_guest' %}Share the guest link, or add the details yourself.
+              {% elif progress.status == 'ready' %}Guest details are complete. Open the stay and send when ready.
+              {% elif progress.status == 'incomplete' %}Open the stay to finish missing guest details.
+              {% elif progress.status == 'awaiting_guest' %}Share the guest link or add the details yourself.
               {% else %}Open the stay and check what is missing.{% endif %}
             </div>
           </td>
