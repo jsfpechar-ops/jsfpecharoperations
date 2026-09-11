@@ -10,15 +10,30 @@ from __future__ import annotations
 
 import base64
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
 
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+def _find_chrome() -> str:
+    candidates = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "google-chrome",
+        "chromium",
+        "chromium-browser",
+    ]
+    for candidate in candidates:
+        if Path(candidate).exists() or shutil.which(candidate):
+            return candidate
+    raise SystemExit("No Chrome or Chromium binary found for rendering screenshots.")
+
+
+CHROME = _find_chrome()
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080"
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else ".screenshots")
 PASSWORD = "testpassword123"
@@ -35,49 +50,81 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
 ).decode()
 
 
+def render(html: str, target: Path, width: int = 1440, height: int = 1000) -> None:
+    """Write one HTML string to a PNG with headless Chrome."""
+    html = html.replace('href="/static/', f'href="{BASE}/static/')
+    html = html.replace('src="/static/', f'src="{BASE}/static/')
+    with tempfile.TemporaryDirectory() as profile:
+        page = Path(profile) / "page.html"
+        page.write_text(html)
+        process = subprocess.Popen(
+            [
+                CHROME,
+                "--headless=new",
+                # Containers have no sandbox namespace and a tiny /dev/shm.
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--hide-scrollbars",
+                "--no-first-run",
+                "--disable-crash-reporter",
+                "--disable-breakpad",
+                "--disable-extensions",
+                "--disable-sync",
+                f"--user-data-dir={profile}/chrome",
+                f"--window-size={width},{height}",
+                "--screenshot=" + str(target),
+                page.as_uri(),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        # Headless Chrome writes the PNG and then sometimes fails to exit when
+        # there is no session bus, so wait for a PNG that has stopped growing
+        # rather than for the process.
+        deadline = time.monotonic() + 60
+        last = -1
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                break
+            size = target.stat().st_size if target.exists() else 0
+            if size and size == last:
+                break
+            last = size
+            time.sleep(0.4)
+        if process.poll() is None:
+            process.kill()
+        process.wait(timeout=10)
+        if not target.exists():
+            raise SystemExit(f"Chrome produced no screenshot for {target.name}")
+
+
 def shot(path: str, name: str, width: int = 1440, height: int = 1000) -> None:
     """Render one page with the session cookies and save a PNG."""
     global step
     step += 1
     target = OUT / f"{step:02d}-{name}.png"
     cookies = "; ".join(f"{c.name}={c.value}" for c in session.cookies)
-    with tempfile.TemporaryDirectory() as profile:
-        # Chrome cannot be handed cookies on the command line, so the page is
-        # fetched here and written to a file that Chrome then renders.
-        html = session.get(BASE + path).text
-        html = html.replace('href="/static/', f'href="{BASE}/static/')
-        html = html.replace('src="/static/', f'src="{BASE}/static/')
-        page = Path(profile) / "page.html"
-        page.write_text(html)
-        subprocess.run(
-            [
-                CHROME,
-                "--headless=new",
-                "--disable-gpu",
-                "--hide-scrollbars",
-                f"--user-data-dir={profile}/chrome",
-                f"--window-size={width},{height}",
-                "--screenshot=" + str(target),
-                page.as_uri(),
-            ],
-            capture_output=True,
-            timeout=90,
-        )
+    # Chrome cannot be handed cookies on the command line, so the page is
+    # fetched here and written to a file that Chrome then renders.
+    render(session.get(BASE + path).text, target, width, height)
     size = target.stat().st_size if target.exists() else 0
     print(f"  {target}  ({size // 1024} kB)  <- {path} [cookies: {len(cookies) > 0}]")
 
 
-def post(path: str, data: dict, expect=(200, 303)) -> requests.Response:
+def post(path: str, data: dict | None = None, expect=(200, 303)) -> requests.Response:
     response = session.post(BASE + path, data=data, allow_redirects=False)
     assert response.status_code in expect, f"POST {path} -> {response.status_code}"
     return response
 
 
 def main() -> None:
-    print("1. first-run setup")
-    shot("/setup", "setup")
-    post("/setup", {"password": PASSWORD, "password_confirm": PASSWORD})
+    # The app ships unlocked, so there is no first-run wall to walk through.
+    # Locking it is an opt-in step on the settings page.
+    print("1. empty dashboard and the optional password lock")
     shot("/", "dashboard-empty")
+    post("/settings/password", {"password": PASSWORD, "password_confirm": PASSWORD})
+    shot("/settings", "settings-locked")
 
     print("2. legal entity")
     post("/entities", {
@@ -140,7 +187,26 @@ def main() -> None:
     print(f"   guest landed on {landing.url}")
     guest_shot(guest, f"/l/{token}", "guest-landing")
 
-    reservation_id = int(re.search(r"/l/[^/]+/(\d+)", landing.url).group(1))
+    # Guest links are PIN-gated by default, so clear the gate the way a guest
+    # would after reading the PIN in their arrival message.
+    if 'name="pin"' in landing.text:
+        links = session.get(BASE + "/guest-links").text
+        pin = re.search(
+            rf'id="pin-{apartment_id}"[^>]*value="(\d{{4}})"', links
+        ).group(1)
+        print(f"   entering guest PIN {pin}")
+        guest.post(f"{BASE}/l/{token}/pin", data={"pin": pin, "return_to": f"/l/{token}"},
+                   allow_redirects=False)
+        landing = guest.get(f"{BASE}/l/{token}", allow_redirects=True)
+        guest_shot(guest, f"/l/{token}", "guest-landing-unlocked")
+
+    # With one upcoming stay the link opens it directly; with several the guest
+    # gets a picker first, so take the stay id from whichever page we landed on.
+    found = re.search(r"/l/[^/]+/(\d+)", landing.url) or re.search(
+        r'href="/l/[^/"]+/(\d+)', landing.text
+    )
+    assert found, f"no stay to fill in at {landing.url}"
+    reservation_id = int(found.group(1))
     guest.post(f"{BASE}/l/{token}/{reservation_id}/party", data={"party_size": "2"},
                allow_redirects=False)
     guest_shot(guest, f"/l/{token}/{reservation_id}", "guest-stay-overview")
@@ -219,16 +285,7 @@ def render_html(html: str, name: str) -> None:
     global step
     step += 1
     target = OUT / f"{step:02d}-{name}.png"
-    html = html.replace('href="/static/', f'href="{BASE}/static/')
-    html = html.replace('src="/static/', f'src="{BASE}/static/')
-    with tempfile.TemporaryDirectory() as profile:
-        page = Path(profile) / "page.html"
-        page.write_text(html)
-        subprocess.run([
-            CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-            f"--user-data-dir={profile}/chrome", "--window-size=1440,1000",
-            "--screenshot=" + str(target), page.as_uri(),
-        ], capture_output=True, timeout=90)
+    render(html, target)
     print(f"  {target}")
 
 

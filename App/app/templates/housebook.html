@@ -5,16 +5,12 @@
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
 {{ page_header(
   'House book',
-  'The statutory guest register, retained for six years and exportable for inspection.',
+  'Every guest record with the dates of their stay. The law requires this register to be kept for
+   six years after the last entry and produced on request during a police inspection.',
   actions=''
     ~ ('<button class="btn" type="button" data-toggle-panel="import-housebook-panel">Import CSV</button>' if apartments else '')
     ~ '<a class="btn" href="/housebook-sample.csv">Sample CSV</a>'
 ) }}
-<p class="lede">
-  Every guest record with the start and end of the stay.
-  The law requires this to be kept for six years after the last entry and produced on request
-  during a police inspection.
-</p>
 
 {% if apartments %}
 <div id="import-housebook-panel" class="action-panel hidden">

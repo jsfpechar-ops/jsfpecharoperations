@@ -94,16 +94,22 @@
   {% set labels = {
     'ok': 'Accepted',
     'partial': 'Partly accepted',
+    'error': 'Rejected',
+    'failed': 'Rejected',
     'transport_error': 'Not delivered',
+    'not_configured': 'Setup incomplete',
     'running': 'In progress',
-    'failed': 'Rejected'
+    'noop': 'Nothing to send'
   } %}
   {% set tones = {
     'ok': 'green',
     'partial': 'amber',
+    'error': 'red',
+    'failed': 'red',
     'transport_error': 'red',
+    'not_configured': 'amber',
     'running': 'grey',
-    'failed': 'red'
+    'noop': 'grey'
   } %}
   <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
 {% endmacro %}
