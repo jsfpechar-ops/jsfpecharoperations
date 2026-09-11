@@ -9,7 +9,9 @@
 ]) }}
 {{ page_header(
   'Report #' ~ submission.id,
-  submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ') ~ ' · sent ' ~ submission.mode,
+  submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ')
+    ~ ' · ' ~ {'immediate': 'sent immediately', 'scheduled': 'sent on a schedule',
+               'manual': 'sent by hand'}.get(submission.mode, 'sent ' ~ submission.mode),
   '/submissions',
   'Back to reports'
 ) }}
