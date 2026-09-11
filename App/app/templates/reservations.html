@@ -2,13 +2,13 @@
 {% set nav = 'reservations' %}
 {% block title %}Stays{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu %}
+{% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set header_actions %}
   {{ bulk_send_ready(ready_send_count, return_to) }}
   {% if apartments %}
     <button class="btn" type="button" data-toggle-panel="add-stay-panel">Add stay</button>
-    <button class="btn" type="button" data-toggle-panel="import-stays-panel">Import CSV</button>
-    <a class="btn" href="/reservations-sample.csv">Sample CSV</a>
+    {{ csv_actions_menu(csv_export_params) }}
   {% endif %}
 {% endset %}
 {{ page_header(

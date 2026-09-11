@@ -252,13 +252,11 @@ def dashboard(request: Request):
         issues = validation.errors_only(_apartment_issues(apartment))
         if issues:
             setup_warnings.append({"apartment": apartment, "issues": issues})
-    ready_send_count = reporting.count_sendable_stays([row["reservation"] for row in rows])
     return render(
         request,
         "dashboard.html",
         {
             "rows": rows,
-            "ready_send_count": ready_send_count,
             "queue_groups": {
                 "needs_action": needs_action,
                 "waiting": waiting,
@@ -912,6 +910,27 @@ def reservations_sample_download(request: Request):
     )
 
 
+@router.get("/reservations.csv")
+def reservations_export(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    date_from = _query_date(request, "from")
+    date_to = _query_date(request, "to")
+    if not (date_from and date_to):
+        return _back("/reservations", err="Choose a date range for the export.")
+    stamp = datetime.now().strftime("%Y%m%d")
+    return Response(
+        stays_import.export_csv(
+            date_from=date_from,
+            date_to=date_to,
+            apartment_id=_query_int(request, "apartment"),
+        ),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="stays-{stamp}.csv"'},
+    )
+
+
 @router.post("/reservations/import")
 async def reservations_import(request: Request):
     guard = auth.require_login(request)
@@ -972,7 +991,10 @@ async def reservations_submit_ready(request: Request):
             sent_stays += 1
             sent_guests += batch_sent
     if not sent_guests:
-        return _back(return_to, err="No stays were ready to send. Review and mark stays first if you use manual mode.")
+        return _back(
+            return_to,
+            err="No stays were ready to send. Complete guest forms for foreign nationals first.",
+        )
     return _back(return_to, msg=f"Sent {sent_guests} guest record(s) across {sent_stays} stay(s).")
 
 
@@ -1074,39 +1096,6 @@ def reservation_unarchive(reservation_id: int, request: Request):
     db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("reservation_unarchived", f"id={reservation_id}")
     return _back(f"/reservations/{reservation_id}", msg="Stay restored from archive.")
-
-
-@router.post("/reservations/{reservation_id}/review")
-async def reservation_review(reservation_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
-    if not reservation:
-        return _back("/reservations", err="No such stay.")
-    form = await request.form()
-    return_to = _form_str(form, "return_to") or f"/reservations/{reservation_id}"
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
-    progress = reporting.reservation_progress(reservation)
-    controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
-    if controls.get("review_mode") != "mark":
-        target = f"/reservations/{reservation_id}?return_to={quote(return_to)}#guests"
-        return _back(target, msg="Open each guest and check the details before sending.")
-    db.update(
-        "reservation",
-        reservation_id,
-        {"report_reviewed_at": db.utcnow(), "updated_at": db.utcnow()},
-    )
-    db.audit("reservation_reviewed", f"id={reservation_id}")
-    if return_to.startswith("/reservations") and "#" not in return_to and "?" not in return_to:
-        return _back(
-            return_to,
-            msg="Stay marked as reviewed. The Send button is now active for this row.",
-        )
-    return _back(
-        f"/reservations/{reservation_id}?return_to={quote(return_to)}#guests",
-        msg="Stay marked as reviewed. You can now send to UbyPort.",
-    )
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -1238,7 +1227,6 @@ async def guest_create(reservation_id: int, request: Request):
         }
     )
     guest_id = db.insert("guest", payload)
-    db.update("reservation", reservation_id, {"report_reviewed_at": None, "updated_at": db.utcnow()})
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
     reporting.maybe_submit_after_host_save(reservation["apartment_id"], guest_id)
     return _back(f"/reservations/{reservation_id}", msg="Guest added.")
@@ -1288,11 +1276,6 @@ async def guest_update(guest_id: int, request: Request):
         payload["submit_state"] = reporting.PENDING
         payload["last_errors"] = None
     db.update("guest", guest_id, payload)
-    db.update(
-        "reservation",
-        guest["reservation_id"],
-        {"report_reviewed_at": None, "updated_at": db.utcnow()},
-    )
     db.audit("guest_updated", f"id={guest_id} by=host")
     reservation_row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],))
     if reservation_row:

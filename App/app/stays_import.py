@@ -132,3 +132,44 @@ def import_csv(content: bytes) -> Dict[str, Any]:
     if imported:
         db.audit("stays_import", f"rows={imported}")
     return {"imported": imported, "skipped": skipped, "errors": errors[:8]}
+
+
+def export_csv(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    apartment_id: Optional[int] = None,
+) -> bytes:
+    """Export stays in the same format used for CSV import."""
+    sql = (
+        "SELECT r.*, a.internal_name AS apartment_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.archived_at IS NULL"
+    )
+    params: List[Any] = []
+    if apartment_id:
+        sql += " AND r.apartment_id = ?"
+        params.append(apartment_id)
+    if date_from:
+        sql += " AND r.date_to >= ?"
+        params.append(date_from)
+    if date_to:
+        sql += " AND r.date_from <= ?"
+        params.append(date_to)
+    sql += " ORDER BY r.date_from, a.internal_name"
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+    writer.writerow([label for _key, label in STAY_COLUMNS])
+    for row in db.query(sql, params):
+        guests = row["expected_guests_override"] or row["declared_guests"]
+        writer.writerow(
+            [
+                row["apartment_name"],
+                row["date_from"],
+                row["date_to"],
+                str(guests) if guests else "",
+                row["summary"] or "",
+                row["guest_email"] or "",
+            ]
+        )
+    return b"\xef\xbb\xbf" + buffer.getvalue().encode("utf-8")
