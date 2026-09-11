@@ -21,11 +21,18 @@ log = logging.getLogger("ubyhost")
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     db.init_db()
-    generated_admin_password = auth.ensure_bootstrap_admin()
-    if generated_admin_password:
+    bootstrap_password = auth.ensure_bootstrap_admin()
+    admin_username = auth.normalise_username(config.ADMIN_USERNAME) or "admin"
+    if bootstrap_password:
         log.warning(
-            "Created the first administrator. The one-time credentials are in %s",
+            "Created the first administrator (%s). One-time password saved to %s",
+            admin_username,
             config.DATA_DIR / "initial_admin_credentials",
+        )
+    elif bootstrap_password == "":
+        log.info(
+            "Created the first administrator (%s). Log in using UBYHOST_ADMIN_PASSWORD.",
+            admin_username,
         )
     missing_pins = db.query(
         "SELECT id FROM apartment WHERE permalink_pin IS NULL OR permalink_pin = ''"
