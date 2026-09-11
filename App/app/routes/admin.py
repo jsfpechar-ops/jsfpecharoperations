@@ -5,7 +5,7 @@ import base64
 import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
@@ -977,7 +977,7 @@ async def refresh_codelists(apartment_id: int, request: Request):
 
 # --- reservations --------------------------------------------------------
 
-RESERVATION_LIMIT = 500
+RESERVATION_PAGE_SIZE = 50
 
 # Presets are what a host actually asks for; the two date boxes cover the rest.
 RESERVATION_RANGES = ("upcoming", "past", "all")
@@ -1037,8 +1037,12 @@ def reservations_list(request: Request):
         else:
             sql += " AND r.date_from <= ?"
         params.append(date_to)
-    sql += f" ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT {RESERVATION_LIMIT}"
-    reservations = db.query(sql, params)
+    total = int(db.query_one(f"SELECT COUNT(*) AS n FROM ({sql})", params)["n"])
+    page_count = max(1, (total + RESERVATION_PAGE_SIZE - 1) // RESERVATION_PAGE_SIZE)
+    page = max(1, min(_query_int(request, "page") or 1, page_count))
+    offset = (page - 1) * RESERVATION_PAGE_SIZE
+    sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
+    reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
     rows = []
     for row in reservations:
         apartment = access.apartment(request, row["apartment_id"])
@@ -1051,6 +1055,11 @@ def reservations_list(request: Request):
             }
         )
     ready_send_count = reporting.count_sendable_stays([item["reservation"] for item in rows])
+    query_params = [(key, value) for key, value in request.query_params.multi_items() if key != "page"]
+
+    def page_url(number: int) -> str:
+        return "/reservations?" + urlencode([*query_params, ("page", number)])
+
     return render(
         request,
         "reservations.html",
@@ -1063,8 +1072,12 @@ def reservations_list(request: Request):
             "date_from": date_from,
             "date_to": date_to,
             "date_range": date_range,
-            "truncated": len(rows) >= RESERVATION_LIMIT,
-            "limit": RESERVATION_LIMIT,
+            "total": total,
+            "page": page,
+            "page_count": page_count,
+            "page_size": RESERVATION_PAGE_SIZE,
+            "previous_page_url": page_url(page - 1) if page > 1 else "",
+            "next_page_url": page_url(page + 1) if page < page_count else "",
             "has_any": bool(db.query_one(
                 "SELECT 1 AS x FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
                 "WHERE a.owner_user_id IS ? LIMIT 1",
@@ -1664,7 +1677,10 @@ def submission_detail(submission_id: int, request: Request):
             "submission": submission,
             "guests": guests,
             "header_messages": header_messages,
-            "record_errors": json.loads(submission["record_errors"] or "[]"),
+            "record_errors": [
+                error for error in json.loads(submission["record_errors"] or "[]")
+                if str(error).strip(" ;")
+            ],
         },
     )
 
@@ -1822,6 +1838,8 @@ def dismiss_alert(alert_id: int, request: Request):
     if not access.alert(request, alert_id):
         return Response("No such alert.", status_code=404)
     alerts.resolve_by_id(alert_id, user_dismissed=True)
+    if request.headers.get("x-requested-with") == "fetch":
+        return Response(status_code=204)
     referer = request.headers.get("referer") or "/"
     return RedirectResponse(referer, status_code=303)
 

@@ -2,7 +2,7 @@
 {% set nav = 'submissions' %}
 {% block title %}Reports{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, submission_pill, empty_state, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, submission_pill, empty_state %}
 {{ page_header('Reports', 'Every UbyPort transmission and its Doručenka, retained as proof.') }}
 
 {% if rows %}
@@ -23,12 +23,10 @@
         <td data-label="Outcome">{{ submission_pill(submission.state) }}</td>
         <td class="mono small" data-label="Receipt stamp">{{ submission.pseudo_stamp or '—' }}</td>
         <td class="nowrap row-actions" data-label="">
-          {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">Edit</a>
-            {% if submission.receipt_pdf %}
-              <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">Doručenka</a>
-            {% endif %}
-          {{ row_menu_end() }}
+          {% if submission.receipt_pdf %}
+            <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
+          {% endif %}
+          <a class="btn small" href="/submissions/{{ submission.id }}">View details</a>
         </td>
       </tr>
     {% endfor %}
