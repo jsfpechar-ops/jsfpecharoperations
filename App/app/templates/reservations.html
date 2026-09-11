@@ -127,7 +127,9 @@
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
   <div class="field filter-actions">
-    <button class="btn primary filter-apply" type="submit">Apply</button>
+    {# When scripts are unavailable this submitter overrides the hidden preset,
+       so manually entered dates still win. #}
+    <button class="btn primary filter-apply" type="submit" name="range" value="custom">Apply</button>
     <a class="btn ghost" href="/reservations?range=upcoming">Clear</a>
   </div>
 </form>

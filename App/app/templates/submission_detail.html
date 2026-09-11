@@ -89,15 +89,15 @@
     <p class="small muted">The exact computer messages exchanged with UbyPort. You normally only
       need these when support is investigating a rejected report.</p>
     <h3>Messages exchanged</h3>
-    <div class="actions" style="margin-top:8px">
-      <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">
-        What UbyHost sent
-        <span class="help-dot" title="Downloads the original data UbyHost sent to UbyPort. Support may ask for it when investigating a rejection." aria-label="About the sent message">?</span>
-      </a>
-      <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">
-        What UbyPort replied
-        <span class="help-dot" title="Downloads UbyPort's exact reply, including technical acceptance or rejection codes." aria-label="About the reply">?</span>
-      </a>
+    <div class="technical-downloads">
+      <span class="technical-download">
+        <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">What UbyHost sent</a>
+        <span class="help-dot" tabindex="0" title="Downloads the original data UbyHost sent to UbyPort. Support may ask for it when investigating a rejection." aria-label="About the sent message">?</span>
+      </span>
+      <span class="technical-download">
+        <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">What UbyPort replied</a>
+        <span class="help-dot" tabindex="0" title="Downloads UbyPort's exact reply, including technical acceptance or rejection codes." aria-label="About the reply">?</span>
+      </span>
     </div>
     {% if record_errors %}
       <h3>Guest record error codes

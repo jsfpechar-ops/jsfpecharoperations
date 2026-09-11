@@ -212,11 +212,11 @@
           <td data-label="Outcome">{{ submission_pill(submission.state) }}</td>
           <td class="mono small" data-label="Receipt stamp">{{ submission.pseudo_stamp or '—' }}</td>
           <td class="nowrap row-actions" data-label="">
+            {% if submission.receipt_pdf %}
+              <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
+            {% endif %}
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">Open report</a>
-              {% if submission.receipt_pdf %}
-                <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">Doručenka</a>
-              {% endif %}
             {{ row_menu_end() }}
           </td>
         </tr>

@@ -375,6 +375,10 @@
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
       form.querySelectorAll("select, input[type=date]").forEach(function (input) {
         input.addEventListener("change", function () {
+          if (input.type === "date") {
+            var range = form.querySelector('input[name="range"]');
+            if (range) range.value = "custom";
+          }
           form.requestSubmit ? form.requestSubmit() : form.submit();
         });
       });

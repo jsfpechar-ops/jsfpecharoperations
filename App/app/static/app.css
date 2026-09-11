@@ -785,6 +785,14 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   font-weight: 750;
   cursor: help;
 }
+.technical-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 8px;
+}
+.technical-download { display: inline-flex; align-items: center; }
+.help-dot:focus-visible { outline: 3px solid var(--brand-ring); outline-offset: 2px; }
 .action-menu .menu-caret { font-size: 10px; opacity: 0.6; }
 .page-actions .action-menu .row-menu-panel { min-width: 210px; }
 
