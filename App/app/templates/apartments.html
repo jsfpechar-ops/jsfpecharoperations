@@ -11,7 +11,7 @@
 
 {% if rows %}
 <div class="panel tight scroll-x">
-  <table>
+  <table class="table-cards">
     <thead>
       <tr><th>Property</th><th>Legal entity</th><th>IDUB</th><th>Calendars</th>
         <th>Stays</th><th>Automation</th><th>Setup readiness</th><th><span class="sr-only">Actions</span></th></tr>
@@ -21,26 +21,26 @@
       {% set apartment = row.apartment %}
       <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link"
           aria-label="Open property {{ apartment.internal_name }}">
-        <td>
+        <td data-label="Property">
           <a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a>
-          {% if not apartment.active %}<span class="pill grey">inactive</span>{% endif %}
+          {% if not apartment.active %}<span class="pill grey">Inactive</span>{% endif %}
           {% if apartment.uby_name %}<div class="small muted">{{ apartment.uby_name }}</div>{% endif %}
         </td>
-        <td>{{ row.apartment.entity_name or '—' }}</td>
-        <td class="mono">{{ apartment.uby_idub or '—' }}</td>
-        <td class="num">{{ apartment.feeds }}</td>
-        <td class="num">{{ apartment.reservations }}</td>
-        <td class="nowrap">
+        <td data-label="Legal entity">{{ row.apartment.entity_name or '—' }}</td>
+        <td class="mono" data-label="IDUB">{{ apartment.uby_idub or '—' }}</td>
+        <td class="num" data-label="Calendars">{{ apartment.feeds }}</td>
+        <td class="num" data-label="Stays">{{ apartment.reservations }}</td>
+        <td class="nowrap" data-label="Automation">
           {% if apartment.automation_mode == 'immediate' %}<span class="pill blue">Immediate</span>
           {% elif apartment.automation_mode == 'scheduled' %}<span class="pill blue">+{{ apartment.submit_after_hours }} h</span>
           {% else %}<span class="pill grey">Manual</span>{% endif %}
         </td>
-        <td>
+        <td data-label="Setup readiness">
           {% if row.issues %}<span class="pill red">{{ row.issues | length }} to fix</span>
           {% elif not apartment.feeds %}<span class="pill amber">Connect calendar</span>
           {% else %}<span class="pill green">Can report</span>{% endif %}
         </td>
-        <td class="nowrap row-actions">
+        <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">Edit</a>
             <form method="post" action="/apartments/{{ apartment.id }}/archive" class="row-menu-form"
@@ -68,7 +68,7 @@
 <h2>Archived</h2>
 <p class="small muted">These properties are hidden from your dashboard and guest links. Their history is kept.</p>
 <div class="panel tight scroll-x">
-  <table>
+  <table class="table-cards">
     <thead>
       <tr><th>Property</th><th>Archived</th><th>Stays</th><th><span class="sr-only">Actions</span></th></tr>
     </thead>
@@ -76,10 +76,10 @@
     {% for row in archived_rows %}
       {% set apartment = row.apartment %}
       <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link">
-        <td><a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a></td>
-        <td class="small muted">{{ apartment.archived_at[:10] }}</td>
-        <td class="num">{{ apartment.reservations }}</td>
-        <td class="nowrap row-actions">
+        <td data-label="Property"><a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a></td>
+        <td class="small muted" data-label="Archived">{{ apartment.archived_at[:10] }}</td>
+        <td class="num" data-label="Stays">{{ apartment.reservations }}</td>
+        <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">Edit</a>
             <form method="post" action="/apartments/{{ apartment.id }}/unarchive" class="row-menu-form">

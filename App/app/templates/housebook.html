@@ -5,16 +5,12 @@
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
 {{ page_header(
   'House book',
-  'The statutory guest register, retained for six years and exportable for inspection.',
+  'Every guest record with the dates of their stay. The law requires this register to be kept for
+   six years after the last entry and produced on request during a police inspection.',
   actions=''
     ~ ('<button class="btn" type="button" data-toggle-panel="import-housebook-panel">Import CSV</button>' if apartments else '')
     ~ '<a class="btn" href="/housebook-sample.csv">Sample CSV</a>'
 ) }}
-<p class="lede">
-  Every guest record with the start and end of the stay.
-  The law requires this to be kept for six years after the last entry and produced on request
-  during a police inspection.
-</p>
 
 {% if apartments %}
 <div id="import-housebook-panel" class="action-panel hidden">
@@ -50,7 +46,7 @@
 </div>
 {% endif %}
 
-<form method="get" action="/housebook" class="filters panel">
+<form method="get" action="/housebook" class="filters panel" data-auto-submit>
   <div class="field">
     <label for="apartment">Apartment</label>
     <select id="apartment" name="apartment">
@@ -70,43 +66,49 @@
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
   <div class="field filter-actions">
-    <button class="btn" type="submit">Filter</button>
-    <button class="btn primary" type="button" data-csv-export="/housebook.csv"
+    <button class="btn filter-apply" type="submit">Filter</button>
+    <button class="btn" type="button" data-csv-export="/housebook.csv"
             data-csv-params="apartment={{ apartment_id or '' }}">Download CSV</button>
   </div>
 </form>
 
 {% if rows %}
 <div class="panel tight scroll-x">
-  <table>
+  <table class="table-cards">
     <thead>
       <tr>
-        <th>Stay</th><th>Apartment</th><th>Guest</th><th>Born</th><th>Nat.</th>
-        <th>Document</th><th>Residence abroad</th><th>Purpose</th><th>Signed</th>
+        <th>Stay</th><th>Apartment</th><th class="col-name">Guest</th><th>Born</th><th>Nat.</th>
+        <th>Document</th><th class="col-address">Residence abroad</th>
+        <th class="col-purpose">Purpose</th><th>Signed</th>
         <th>Reported</th><th><span class="sr-only">Actions</span></th>
       </tr>
     </thead>
     <tbody>
     {% for row in rows %}
       <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
-        <td class="nowrap small">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
-        <td class="small">{{ row.apartment }}</td>
-        <td><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
-        <td class="nowrap small">{{ row.birth_date }}</td>
-        <td class="small">{{ row.nationality }}</td>
-        <td class="mono small">{{ row.doc_number }}{% if row.visa_number %}<br>visa {{ row.visa_number }}{% endif %}</td>
-        <td class="small">{{ row.residence or '—' }}</td>
-        <td class="small">{{ row.purpose }}</td>
-        <td class="small">{% if row.signed == 'yes' %}<span class="pill green">yes</span>
-          {% else %}<span class="pill amber">no</span>{% endif %}</td>
-        <td class="small">
-          {% if row.reported == 'yes' %}<span class="pill green">yes</span>
+        <td class="nowrap small" data-label="Stay">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+        <td class="small" data-label="Apartment">{{ row.apartment }}</td>
+        {# Two deliberate lines beat three ragged ones in a column this narrow. #}
+        <td class="col-name" data-label="Guest"><strong>{{ row.surname }}</strong><br>
+          <span class="small">{{ row.first_name }}</span></td>
+        <td class="nowrap small" data-label="Born">{{ row.birth_date }}</td>
+        <td class="small" data-label="Nationality">{{ row.nationality }}</td>
+        <td class="mono small" data-label="Document">{{ row.doc_number }}{% if row.visa_number %}<br>visa {{ row.visa_number }}{% endif %}</td>
+        <td class="small col-address" data-label="Residence abroad">{{ row.residence or '—' }}</td>
+        <td class="small col-purpose" data-label="Purpose">{{ row.purpose }}</td>
+        <td class="small nowrap" data-label="Signed">{% if row.signed == 'yes' %}<span class="pill green">Signed</span>
+          {% else %}<span class="pill amber">Not signed</span>{% endif %}</td>
+        {# The stored values double as the CSV column, which the importer reads
+           back, so they stay as they are and only the label changes here. #}
+        <td class="small nowrap" data-label="Reported">
+          {% if row.reported == 'yes' %}<span class="pill green">Reported</span>
             <div class="small muted">{{ row.reported_at[:10] }}</div>
           {% elif row.reported.startswith('not required') %}<span class="pill grey">Exempt</span>
-          {% elif row.reported.startswith('NO') %}<span class="pill red">{{ row.reported }}</span>
-          {% else %}<span class="pill amber">{{ row.reported }}</span>{% endif %}
+          {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="pill red">Rejected, final</span>
+          {% elif row.reported.startswith('NO') %}<span class="pill red">Rejected</span>
+          {% else %}<span class="pill amber">Not yet sent</span>{% endif %}
         </td>
-        <td class="nowrap row-actions">
+        <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">Edit</a>
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">PDF</a>
@@ -130,18 +132,18 @@
 <h2>Archived entries</h2>
 <p class="small muted">Mistaken imports or duplicates can be restored from here.</p>
 <div class="panel tight scroll-x">
-  <table>
+  <table class="table-cards">
     <thead>
       <tr><th>Stay</th><th>Apartment</th><th>Guest</th><th>Archived</th><th></th></tr>
     </thead>
     <tbody>
     {% for row in archived_rows %}
       <tr>
-        <td class="nowrap small">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
-        <td>{{ row.apartment }}</td>
-        <td><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
-        <td class="small muted">{{ row.archived_at[:10] }}</td>
-        <td class="nowrap">
+        <td class="nowrap small" data-label="Stay">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+        <td data-label="Apartment">{{ row.apartment }}</td>
+        <td data-label="Guest"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
+        <td class="small muted" data-label="Archived">{{ row.archived_at[:10] }}</td>
+        <td class="nowrap" data-label="">
           <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
             <button class="btn small" type="submit">Restore</button>
           </form>
