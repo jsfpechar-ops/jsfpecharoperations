@@ -2,7 +2,8 @@
 {% set nav = 'apartments' %}
 {% block title %}Apartments{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner %}
+{{ onboarding_banner(onboarding) }}
 {{ page_header(
   'Properties',
   'Each accommodation facility has its own UbyPort registration, calendars, and guest link.',

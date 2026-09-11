@@ -528,7 +528,13 @@ async def create_entity(request: Request):
         return _back("/entities", err="Name is required.")
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
-    db.insert("legal_entity", payload)
+    entity_id = db.insert("legal_entity", payload)
+    apartments = access.apartments(request)
+    if not apartments:
+        return _back(
+            f"/apartments/new?legal_entity_id={entity_id}",
+            msg=f"Added {payload['name']}. Next, add your first property.",
+        )
     return _back("/entities", msg=f"Added {payload['name']}.")
 
 
@@ -603,12 +609,17 @@ def apartment_new(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    selected_entity_id = _query_int(request, "legal_entity_id")
+    entities = access.entities(request)
+    if selected_entity_id and not any(entity["id"] == selected_entity_id for entity in entities):
+        selected_entity_id = None
     return render(
         request,
         "apartment_form.html",
         {
             "apartment": None,
-            "entities": access.entities(request),
+            "entities": entities,
+            "selected_entity_id": selected_entity_id,
             "purposes": codelists.purpose_options("en"),
         },
     )
@@ -669,7 +680,10 @@ async def apartment_create(request: Request):
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
     db.audit("apartment_created", f"id={apartment_id}")
-    return _back(f"/apartments/{apartment_id}", msg="Apartment created.")
+    return _back(
+        f"/apartments/{apartment_id}#calendars",
+        msg="Property created. Next, paste your Airbnb or Booking.com calendar link.",
+    )
 
 
 @router.get("/apartments/{apartment_id}")

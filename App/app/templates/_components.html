@@ -122,6 +122,53 @@
   </div>
 {% endmacro %}
 
+{% macro onboarding_banner(onboarding) %}
+  {% if onboarding and onboarding.current and not onboarding.finished %}
+    <div class="onboarding-banner" role="status">
+      <div>
+        <strong>Setup step {{ onboarding.completed + 1 }} of {{ onboarding.total }}: {{ onboarding.current.title }}</strong>
+        <small>{{ onboarding.current.detail }}</small>
+      </div>
+      <a class="btn primary small" href="{{ onboarding.current.url }}">{{ onboarding.current.action }}</a>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro onboarding_welcome(onboarding) %}
+  <div class="panel onboarding-welcome">
+    <img class="onboarding-logo" src="/static/ubyhost-logo.jpg" alt="UbyHost">
+    <h2>Welcome to UbyHost</h2>
+    <p class="lede">Let’s get your first property ready for guest reporting. Follow the steps below — most hosts finish in a few minutes.</p>
+    <div class="onboarding-steps" aria-label="Setup steps">
+      {% for step in onboarding.steps %}
+        <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
+          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
+          <div>
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.detail }}</p>
+          </div>
+          {% if not step.done and onboarding.current and step.id == onboarding.current.id %}
+            <a class="btn primary small" href="{{ step.url }}">{{ step.action }}</a>
+          {% elif step.done %}
+            <span class="pill green">Done</span>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+    {% if onboarding.current %}
+      <a class="btn primary" href="{{ onboarding.current.url }}">Continue: {{ onboarding.current.action }}</a>
+    {% endif %}
+    {% if ubyport_env == 'mock' %}
+      <div class="onboarding-demo">
+        <form method="post" action="/demo">
+          <button class="btn" type="submit">Or explore with demo data first</button>
+        </form>
+        <p class="small muted" style="margin-top:8px">One property, sample stays, and guests already reported to the mock server.</p>
+      </div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
 {% macro copy_icon() %}
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
   <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>

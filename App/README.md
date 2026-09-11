@@ -56,17 +56,40 @@ includes `App/requirements.txt`.)
    open the URL, sign in, click **Load demo data**, and explore.
 
 The free tier sleeps after ~15 minutes of idle time; the first request after
-that may take 30–60 seconds to wake up. Data is stored in SQLite on the
-container disk and is reset when Render redeploys — fine for a preview, not
-for production.
+that may take 30–60 seconds to wake up. **Data is stored in SQLite on the
+container disk and is wiped on every redeploy** — that is why you keep having
+to copy a new password and set it again. Fine for a quick preview, not for
+real use.
+
+### Keeping your login and data
+
+UbyHost is a Python server with SQLite. It needs a host that keeps a writable
+disk between restarts:
+
+| Option | Notes |
+|--------|-------|
+| **Render Starter + disk** | Uncomment the `disk` block in `render.yaml`, upgrade off the free plan, mount at `App/data`. |
+| **[Fly.io](https://fly.io)** | Run the Docker image with a persistent volume on `/data` and set `UBYHOST_DATA_DIR=/data`. |
+| **[Railway](https://railway.app)** | Attach a volume for `App/data`. |
+| **Small VPS** (Hetzner, etc.) | Cheapest long-term option; run uvicorn behind nginx. |
+
+**Cloudflare Pages is not suitable** — it only serves static sites and cannot
+run this FastAPI application or SQLite database.
 
 Host pages always require an account. Guest registration links still work
 without a host login.
 
 To point at the real UbyPort test service later, change `UBYHOST_UBYPORT_ENV` to
 `test` in the Render dashboard and add your web-service credentials per
-apartment. You will also need a persistent disk or external database; the free
-tier is intended for mock demos only.
+apartment.
+
+### Name and branding
+
+**UbyHost** is a host-facing tool for preparing guest data and sending it to the
+Czech Foreign Police **UbyPort** web service. It is a separate product name for
+your side of the workflow, not a government system. If you plan commercial use,
+confirm trademark and naming with your lawyer; the police registration system
+remains UbyPort.
 
 ## How it works
 
