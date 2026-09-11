@@ -28,27 +28,56 @@
     });
   }
 
+  function rowMenuHome(panel) {
+    if (!panel._rowMenuHome) {
+      panel._rowMenuHome = panel.parentElement;
+    }
+    return panel._rowMenuHome;
+  }
+
+  function rowMenuTrigger(panel) {
+    if (panel._rowMenuTrigger) return panel._rowMenuTrigger;
+    var home = rowMenuHome(panel);
+    return home ? home.querySelector(".row-menu-trigger") : null;
+  }
+
+  function closeRowMenu(panel) {
+    panel.hidden = true;
+    panel.classList.remove("is-open");
+    panel.style.position = "";
+    panel.style.left = "";
+    panel.style.top = "";
+    panel.style.zIndex = "";
+    var home = rowMenuHome(panel);
+    if (home && panel.parentElement !== home) {
+      home.appendChild(panel);
+    }
+    var trigger = rowMenuTrigger(panel);
+    if (trigger) trigger.setAttribute("aria-expanded", "false");
+    panel._rowMenuTrigger = null;
+  }
+
   function positionRowMenu(trigger, panel) {
-    panel.style.position = "fixed";
-    panel.style.zIndex = "100";
+    rowMenuHome(panel);
+    panel._rowMenuTrigger = trigger;
+    if (panel.parentElement !== document.body) {
+      document.body.appendChild(panel);
+    }
     panel.hidden = false;
+    panel.classList.add("is-open");
+    panel.style.position = "fixed";
+    panel.style.zIndex = "10000";
     var rect = trigger.getBoundingClientRect();
     var width = panel.offsetWidth || 168;
     var left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
+    var top = Math.min(rect.bottom + 4, window.innerHeight - panel.offsetHeight - 8);
     panel.style.left = left + "px";
-    panel.style.top = Math.min(rect.bottom + 4, window.innerHeight - panel.offsetHeight - 8) + "px";
+    panel.style.top = top + "px";
   }
 
   function initRowMenus() {
     function closeAll() {
-      document.querySelectorAll(".row-menu-panel").forEach(function (panel) {
-        panel.hidden = true;
-        panel.style.position = "";
-        panel.style.left = "";
-        panel.style.top = "";
-        var trigger = panel.parentElement.querySelector(".row-menu-trigger");
-        if (trigger) trigger.setAttribute("aria-expanded", "false");
-      });
+      document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
     }
 
     document.querySelectorAll(".row-menu-trigger").forEach(function (trigger) {
@@ -57,7 +86,7 @@
       trigger.addEventListener("click", function (event) {
         event.preventDefault();
         event.stopPropagation();
-        var wasOpen = !panel.hidden;
+        var wasOpen = panel.classList.contains("is-open");
         closeAll();
         if (!wasOpen) {
           positionRowMenu(trigger, panel);
@@ -67,7 +96,7 @@
     });
 
     document.addEventListener("click", function (event) {
-      if (event.target.closest(".row-menu")) return;
+      if (event.target.closest(".row-menu, .row-menu-panel")) return;
       closeAll();
     });
 
