@@ -18,7 +18,7 @@
           aria-label="Open report {{ submission.id }}">
         <td class="nowrap small" data-label="When">{{ submission.created_at[:16].replace('T', ' ') }}</td>
         <td data-label="Apartment">{{ submission.internal_name }}</td>
-        <td class="small" data-label="Mode">{{ submission.mode }}</td>
+        <td class="small" data-label="Mode">{{ submission.mode | replace('_', ' ') | capitalize }}</td>
         <td class="num" data-label="Guests">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
         <td data-label="Outcome">{{ submission_pill(submission.state) }}</td>
         <td class="mono small" data-label="Receipt stamp">{{ submission.pseudo_stamp or '—' }}</td>

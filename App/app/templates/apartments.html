@@ -23,7 +23,7 @@
           aria-label="Open property {{ apartment.internal_name }}">
         <td data-label="Property">
           <a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a>
-          {% if not apartment.active %}<span class="pill grey">inactive</span>{% endif %}
+          {% if not apartment.active %}<span class="pill grey">Inactive</span>{% endif %}
           {% if apartment.uby_name %}<div class="small muted">{{ apartment.uby_name }}</div>{% endif %}
         </td>
         <td data-label="Legal entity">{{ row.apartment.entity_name or '—' }}</td>

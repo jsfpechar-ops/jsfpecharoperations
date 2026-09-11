@@ -56,17 +56,17 @@
     {% if entities %}
     <div class="panel tight scroll-x">
       <table class="table-cards">
-        <thead><tr><th>Name</th><th>Registered seat</th><th>IČO</th><th>Contact</th>
+        <thead><tr><th class="col-name">Name</th><th>Registered seat</th><th>IČO</th><th>Contact</th>
           <th>Apartments</th><th></th></tr></thead>
         <tbody>
         {% for entity in entities %}
           <tr>
-            <td data-label="Name"><strong>{{ entity.name }}</strong></td>
+            <td class="col-name" data-label="Name"><strong>{{ entity.name }}</strong></td>
             <td data-label="Registered seat">{{ entity.seat or '—' }}</td>
             <td class="mono" data-label="IČO">{{ entity.ico or '—' }}</td>
             <td class="small" data-label="Contact">
               {% if entity.contact_email %}{{ entity.contact_email }}
-              {% else %}<span class="pill amber">missing</span>{% endif %}
+              {% else %}<span class="pill amber">Missing</span>{% endif %}
             </td>
             <td class="num" data-label="Apartments">{{ entity.apartments }}</td>
             <td class="nowrap row-actions" data-label="">

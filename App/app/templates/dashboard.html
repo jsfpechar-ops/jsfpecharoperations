@@ -131,16 +131,16 @@
   {% endif %}
 
   <div class="stats" aria-label="Work summary">
-    <a class="stat stat-link {{ 'bad' if counts.overdue else '' }}" href="#needs-action">
+    <a class="stat stat-link {{ 'bad' if counts.overdue else 'zero' }}" href="#needs-action">
       <div class="n">{{ counts.overdue }}</div><div class="k">Past deadline</div>
     </a>
-    <a class="stat stat-link warn" href="#needs-action">
+    <a class="stat stat-link {{ 'warn' if counts.attention else 'zero' }}" href="#needs-action">
       <div class="n">{{ counts.attention }}</div><div class="k">Need action</div>
     </a>
-    <a class="stat stat-link" href="#waiting">
+    <a class="stat stat-link {{ '' if counts.awaiting else 'zero' }}" href="#waiting">
       <div class="n">{{ counts.awaiting }}</div><div class="k">Waiting for guest</div>
     </a>
-    <a class="stat stat-link ok" href="#needs-action">
+    <a class="stat stat-link {{ 'ok' if counts.ready else 'zero' }}" href="#needs-action">
       <div class="n">{{ counts.ready }}</div><div class="k">Ready to report</div>
     </a>
   </div>

@@ -389,6 +389,9 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 .stat.bad .n { color: var(--bad); }
 .stat.warn .n { color: var(--warn); }
 .stat.ok .n { color: var(--ok); }
+/* A count of nothing is not news. Fading the zeros leaves only the numbers
+   that actually want the host's attention. */
+.stat.zero .n { color: var(--line-2); }
 
 /* --- focus card: the one thing to do next ------------------------------ */
 
@@ -449,6 +452,12 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .row-primary-link { color: var(--ink); font-weight: 650; text-decoration: none; }
 .clickable-row:hover .row-primary-link { color: var(--brand); }
 .scroll-x { overflow-x: auto; }
+/* Eleven columns of legal record. The columns holding free text need a width
+   floor of their own, or the browser spends the room on the short ones and
+   folds every name onto three lines. Past that the table scrolls sideways. */
+.col-name { min-width: 122px; }
+.col-address { min-width: 176px; }
+.col-purpose { min-width: 100px; }
 
 /* --- status pills ------------------------------------------------------ */
 
@@ -999,6 +1008,7 @@ details.raw pre {
    work stays usable without pinch-zooming. */
 @media (max-width: 720px) {
   .table-cards thead { display: none; }
+  .col-name, .col-address, .col-purpose { min-width: 0; }
   /* The row becomes the card and each cell becomes a labelled fact, laid out
      like .guest-facts so both halves of the app read the same way. Two facts
      fit side by side; the identifying cell and the actions span the width. */
