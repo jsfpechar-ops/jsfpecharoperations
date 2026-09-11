@@ -1,0 +1,30 @@
+# Render Blueprint — deploy UbyHost as a free demo (mock UbyPort, no real police traffic).
+# Connect this repo in Render → New → Blueprint, or merge and use "Apply" on the dashboard.
+services:
+  - type: web
+    name: ubyhost
+    runtime: python
+    region: frankfurt
+    plan: free
+    rootDir: App
+    buildCommand: pip install -r requirements.txt
+    startCommand: ./render_start.sh
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: UBYHOST_UBYPORT_ENV
+        value: mock
+      - key: UBYHOST_ENABLE_SCHEDULER
+        value: "1"
+      - key: UBYHOST_GUEST_PIN
+        value: "0"
+      - key: UBYHOST_MOCK_URL
+        value: http://127.0.0.1:8081/ws_uby/ws_uby.svc
+      - key: UBYHOST_SECRET_KEY
+        generateValue: true
+      - key: UBYHOST_PUBLIC_BASE_URL
+        fromService:
+          type: web
+          name: ubyhost
+          envVarKey: RENDER_EXTERNAL_URL
