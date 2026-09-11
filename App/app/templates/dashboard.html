@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready %}
 
 {% macro queue_table(items, empty_text='Nothing needs attention here.') %}
   {% if items %}
@@ -54,11 +54,19 @@
   {% endif %}
 {% endmacro %}
 
+{% set header_actions %}
+  {{ bulk_send_ready(ready_send_count, '/') }}
+  <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
+  {% if demo_loaded %}
+    <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">
+      <button class="btn danger" type="submit">Clear demo data</button>
+    </form>
+  {% endif %}
+{% endset %}
 {{ page_header(
   'Overview',
   'Your reporting work, ordered by legal urgency and the next action.',
-  actions='<form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>' ~
-    ('<form method="post" action="/demo/reset" onsubmit="return confirm(&quot;Clear the built-in demo data?&quot;)"><button class="btn danger" type="submit">Clear demo data</button></form>' if demo_loaded else '')
+  actions=header_actions
 ) }}
 
 {% if last_sync %}<p class="small muted">Calendars last synced {{ last_sync[:16].replace('T', ' ') }} UTC.</p>{% endif %}

@@ -382,11 +382,22 @@ textarea { min-height: 74px; resize: vertical; }
   cursor: not-allowed;
   transform: none;
 }
-.row-actions .btn.small.row-action-review.is-reviewed {
-  color: var(--ok);
-  border-color: rgba(13, 138, 79, 0.28);
+.row-actions .btn.small.row-action-review,
+.row-actions .btn.small.primary.row-action-review {
+  font-weight: 650;
+}
+.row-actions .btn.small.row-action-reviewed {
+  color: #0a5c35;
+  background: rgba(13, 138, 79, 0.14);
+  border-color: rgba(13, 138, 79, 0.35);
+  font-weight: 650;
   text-decoration: none;
 }
+.row-actions .btn.small.row-action-reviewed:hover {
+  background: rgba(13, 138, 79, 0.22);
+  color: #084a2b;
+}
+.row-actions .row-action-form { display: inline-flex; margin: 0; }
 .row-menu { position: relative; display: inline-flex; }
 .row-menu-panel {
   min-width: 168px;

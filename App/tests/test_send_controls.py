@@ -72,13 +72,30 @@ def test_manual_mode_requires_review_before_send():
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress)
     assert progress["status"] == "ready"
+    assert controls["review_mode"] == "mark"
     assert controls["send_enabled"] is False
     assert controls["requires_review"] is True
 
     db.update("reservation", reservation["id"], {"report_reviewed_at": db.utcnow()})
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
     controls = reporting.send_controls(reservation, apartment, reporting.reservation_progress(reservation))
+    assert controls["review_mode"] == "done"
     assert controls["send_enabled"] is True
+
+
+def test_incomplete_stay_offers_open_review_link():
+    apartment, reservation, guest_id = _seed("manual", "tok-incomplete")
+    db.update(
+        "guest",
+        guest_id,
+        {"surname": "", "first_name": "", "birth_date": "", "doc_number": ""},
+    )
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    controls = reporting.send_controls(
+        reservation, apartment, reporting.reservation_progress(reservation)
+    )
+    assert controls["review_mode"] == "open"
+    assert controls["send_visible"] is False
 
 
 def test_immediate_mode_disables_manual_send_button():
