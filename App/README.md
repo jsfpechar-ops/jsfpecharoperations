@@ -23,6 +23,33 @@ UbyPort server** alongside the app, so nothing is sent to the police until you
 say so. On the empty dashboard there is a button that loads a demo apartment
 with a sample calendar, so you can click through the whole thing immediately.
 
+## Deploy on Render (free demo)
+
+Put a mock demo online in a few minutes — nothing is sent to the real Foreign
+Police.
+
+1. Push this repository to GitHub (or fork it).
+2. Open [Render](https://render.com/) and sign up (no card needed for the free
+   web service).
+3. **New → Blueprint** → connect the repo → Render reads `render.yaml` at the
+   repo root.
+4. Click **Apply**. Render builds `App/`, starts the mock UbyPort server, and
+   gives you a URL like `https://ubyhost.onrender.com`.
+5. Open the URL, click **Load demo data** on the dashboard, and explore.
+
+The free tier sleeps after ~15 minutes of idle time; the first request after
+that may take 30–60 seconds to wake up. Data is stored in SQLite on the
+container disk and is reset when Render redeploys — fine for a preview, not
+for production.
+
+**Before sharing the link publicly**, open **Settings → Lock this app** and set
+a password. Guest links still work without a host password.
+
+To point at the real UbyPort test service later, change `UBYHOST_UBYPORT_ENV` to
+`test` in the Render dashboard and add your web-service credentials per
+apartment. You will also need a persistent disk or external database; the free
+tier is intended for mock demos only.
+
 ## How it works
 
 ```
