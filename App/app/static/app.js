@@ -2,6 +2,13 @@
   "use strict";
 
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
+  var NAV_BREAKPOINT = 960;
+
+  document.documentElement.classList.add("has-js");
+
+  function isCompact() {
+    return window.innerWidth <= NAV_BREAKPOINT;
+  }
 
   function initCopy() {
     document.querySelectorAll("[data-copy]").forEach(function (button) {
@@ -15,11 +22,15 @@
             : Promise.resolve(document.execCommand("copy"));
           Promise.resolve(copied).then(function () {
             button.classList.add("copied");
+            var label = button.getAttribute("data-copied-label");
+            var original = button.textContent;
+            if (label) button.textContent = label;
             button.setAttribute("aria-label", "Copied");
             setTimeout(function () {
               button.classList.remove("copied");
+              if (label) button.textContent = original;
               button.setAttribute("aria-label", "Copy");
-            }, 1400);
+            }, 1600);
           });
         } catch (error) {
           // The field stays selected so it can still be copied manually.
@@ -68,9 +79,9 @@
     panel.style.position = "fixed";
     panel.style.zIndex = "10000";
     var rect = trigger.getBoundingClientRect();
-    var width = panel.offsetWidth || 168;
+    var width = panel.offsetWidth || 180;
     var left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
-    var top = Math.min(rect.bottom + 4, window.innerHeight - panel.offsetHeight - 8);
+    var top = Math.min(rect.bottom + 6, window.innerHeight - panel.offsetHeight - 8);
     panel.style.left = left + "px";
     panel.style.top = top + "px";
   }
@@ -201,16 +212,25 @@
     });
   }
 
-  function initSidebar() {
+  /* The menu behaves like a drawer on a phone and like a collapsible rail on a
+     desktop, so the same markup serves both without a second navigation. */
+  function initNavigation() {
     var collapse = document.querySelector("[data-sidebar-collapse]");
     var expand = document.querySelector("[data-sidebar-expand]");
-    if (!collapse && !expand) return;
+    var toggles = document.querySelectorAll("[data-nav-toggle]");
+    var closers = document.querySelectorAll("[data-nav-close]");
+
+    function setDrawer(open) {
+      document.body.classList.toggle("nav-open", open);
+      toggles.forEach(function (button) {
+        button.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
 
     function setCollapsed(collapsed) {
       document.body.classList.toggle("sidebar-collapsed", collapsed);
       if (collapse) {
         collapse.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        collapse.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
       }
       try {
         localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
@@ -225,24 +245,27 @@
     } catch (error) {
       stored = null;
     }
-    if (stored === "1") {
-      setCollapsed(true);
-    }
+    if (stored === "1") document.body.classList.add("sidebar-collapsed");
 
-    if (collapse) {
-      collapse.addEventListener("click", function () {
-        setCollapsed(!document.body.classList.contains("sidebar-collapsed"));
+    if (collapse) collapse.addEventListener("click", function () { setCollapsed(true); });
+    if (expand) expand.addEventListener("click", function () { setCollapsed(false); });
+
+    toggles.forEach(function (button) {
+      button.addEventListener("click", function () {
+        setDrawer(!document.body.classList.contains("nav-open"));
       });
-    }
-    if (expand) {
-      expand.addEventListener("click", function () {
-        setCollapsed(false);
-      });
-    }
+    });
+    closers.forEach(function (button) {
+      button.addEventListener("click", function () { setDrawer(false); });
+    });
+
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && !document.body.classList.contains("sidebar-collapsed")) {
-        setCollapsed(true);
+      if (event.key === "Escape" && document.body.classList.contains("nav-open")) {
+        setDrawer(false);
       }
+    });
+    window.addEventListener("resize", function () {
+      if (!isCompact()) setDrawer(false);
     });
   }
 
@@ -256,7 +279,12 @@
         document.querySelectorAll(".action-panel").forEach(function (item) {
           item.classList.add("hidden");
         });
-        if (!open) panel.classList.remove("hidden");
+        if (!open) {
+          panel.classList.remove("hidden");
+          var focusable = panel.querySelector("input, select, textarea, button");
+          if (focusable) focusable.focus({ preventScroll: true });
+          panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
       });
     });
     document.querySelectorAll("[data-close-panel]").forEach(function (button) {
@@ -288,16 +316,46 @@
     });
   }
 
+  /* Confirmations of something you just did should not push the page down;
+     they appear over it and leave on their own. */
+  function initToasts() {
+    document.querySelectorAll("[data-toast]").forEach(function (toast) {
+      function dismiss() {
+        toast.classList.add("leaving");
+        setTimeout(function () { toast.remove(); }, 220);
+      }
+      var close = toast.querySelector("[data-toast-close]");
+      if (close) close.addEventListener("click", dismiss);
+      if (!toast.hasAttribute("data-toast-sticky")) {
+        setTimeout(dismiss, 4200);
+      }
+    });
+  }
+
+  /* Changing a filter is the intent; making you press Apply afterwards is
+     a click the app can take on itself. */
+  function initAutoFilters() {
+    document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
+      form.querySelectorAll("select, input[type=date]").forEach(function (input) {
+        input.addEventListener("change", function () {
+          form.requestSubmit ? form.requestSubmit() : form.submit();
+        });
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initBirthDateInputs();
     initRowMenus();
     initClickableRows();
-    initSidebar();
+    initNavigation();
     initTogglePanels();
     initDismissBanners();
     initDetailsLinks();
     initAutomationFields();
     initCsvExport();
+    initToasts();
+    initAutoFilters();
   });
 })();

@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header-main">
       {% if back_url %}
-        <a class="back-link" href="{{ back_url }}">&larr; {{ back_label or 'Back' }}</a>
+        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or 'Back' }}</a>
       {% endif %}
       {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
       <h1>{{ title }}</h1>
@@ -58,7 +58,7 @@
   {% if controls.get('send_visible') %}
     <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline row-action-form">
       <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn small row-action-send{% if controls.get('send_enabled') %} primary{% endif %}" type="submit"
+      <button class="btn small row-action-send{% if controls.get('send_enabled') %} accent{% endif %}" type="submit"
               {% if not controls.get('send_enabled') %}disabled{% endif %}
               title="{{ controls.get('send_hint', '') }}" aria-label="Send to police">{{ 'Send' if controls.get('send_enabled') else 'Auto' }}</button>
     </form>
@@ -68,7 +68,7 @@
 {% macro bulk_send_ready(count, return_to) %}
   <form method="post" action="/reservations/submit-ready" class="inline">
     <input type="hidden" name="return_to" value="{{ return_to }}">
-    <button class="btn send-all{% if count %} on{% endif %}" type="submit"
+    <button class="btn send-all" type="submit"
             {% if not count %}disabled{% endif %}
             title="{% if count %}Send every stay with completed guest forms ready for police reporting{% else %}No stays have completed guest forms ready to send{% endif %}">
       Send all ready{% if count %} ({{ count }}){% endif %}
@@ -125,6 +125,13 @@
 
 {% macro copy_button(target_id) %}
   <button class="btn-icon" type="button" data-copy="{{ target_id }}" aria-label="Copy">{{ copy_icon() }}</button>
+{% endmacro %}
+
+{# Copy a value straight from a list row, so chasing a guest is one click. #}
+{% macro copy_inline(target_id, value, label='Copy link') %}
+  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
+  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copied-label="Copied"
+          title="Copy the guest link for this stay">{{ label }}</button>
 {% endmacro %}
 
 {% macro row_menu_begin() %}

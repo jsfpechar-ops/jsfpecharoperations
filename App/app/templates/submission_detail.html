@@ -53,24 +53,24 @@
 
     <h2>Guests in this transmission</h2>
     <div class="panel tight scroll-x">
-      <table>
+      <table class="table-cards">
         <thead><tr><th>#</th><th>Guest</th><th>Result</th><th></th></tr></thead>
         <tbody>
         {% for guest in guests %}
           <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
-            <td class="num">{{ loop.index }}</td>
-            <td>
+            <td class="num" data-label="#">{{ loop.index }}</td>
+            <td data-label="Guest">
               <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
               <div class="small muted">{{ guest.nationality }} &middot; {{ guest.doc_number }}</div>
             </td>
-            <td>
+            <td data-label="Result">
               {% if guest.submit_state == 'sent' %}<span class="pill green">Accepted</span>
               {% elif guest.submit_state == 'blocked' %}<span class="pill red">Rejected, final</span>
               {% elif guest.submit_state == 'error' %}<span class="pill red">Rejected</span>
               {% else %}<span class="pill grey">{{ guest.submit_state }}</span>{% endif %}
-              {% if guest.last_errors %}<div class="small" style="color:#c0362c">{{ guest.last_errors }}</div>{% endif %}
+              {% if guest.last_errors %}<div class="small err-text">{{ guest.last_errors }}</div>{% endif %}
             </td>
-            <td class="nowrap row-actions">
+            <td class="nowrap row-actions" data-label="">
               {{ row_menu_begin() }}
                 <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">Edit</a>
               {{ row_menu_end() }}
@@ -92,7 +92,7 @@
     </div>
     {% if record_errors %}
       <h3>Per-record error codes</h3>
-      <pre class="mono small" style="background:#f4f6f9;padding:10px;border-radius:7px;overflow:auto">{{ record_errors | join('\n') }}</pre>
+      <pre class="mono small code-block">{{ record_errors | join('\n') }}</pre>
     {% endif %}
   </details>
 </div>

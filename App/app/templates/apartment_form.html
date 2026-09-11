@@ -330,22 +330,22 @@ Thank you.</pre>
   <div>
     {% if feeds %}
     <div class="panel tight scroll-x">
-      <table>
+      <table class="table-cards">
         <thead><tr><th>Name</th><th>Portal</th><th>Last sync</th><th>URL</th><th></th></tr></thead>
         <tbody>
         {% for feed in feeds %}
           <tr>
-            <td><strong>{{ feed.own_name or '—' }}</strong></td>
-            <td>{{ feed.label or '—' }}</td>
-            <td class="nowrap">
+            <td data-label="Name"><strong>{{ feed.own_name or '—' }}</strong></td>
+            <td data-label="Portal">{{ feed.label or '—' }}</td>
+            <td class="nowrap" data-label="Last sync">
               {% if feed.last_status == 'ok' %}<span class="pill green">OK</span>
               {% elif feed.last_status == 'error' %}<span class="pill red">Error</span>
               {% else %}<span class="pill grey">Never</span>{% endif %}
               {% if feed.last_sync_at %}<div class="small muted">{{ feed.last_sync_at[:16].replace('T', ' ') }}</div>{% endif %}
-              {% if feed.last_error %}<div class="small" style="color:#c0362c">{{ feed.last_error }}</div>{% endif %}
+              {% if feed.last_error %}<div class="small err-text">{{ feed.last_error }}</div>{% endif %}
             </td>
-            <td class="small mono" style="max-width:260px;overflow:hidden;text-overflow:ellipsis">{{ feed.url }}</td>
-            <td>
+            <td class="small mono truncate" data-label="URL">{{ feed.url }}</td>
+            <td class="row-actions" data-label="">
               <form method="post" action="/feeds/{{ feed.id }}/delete" class="inline"
                     onsubmit="return confirm('Disconnect this calendar feed? Existing stays are preserved.')">
                 <button class="btn small danger" type="submit">Remove</button>

@@ -11,7 +11,7 @@
 {% set header_actions %}
   <div class="copyrow">
     <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
-    <button class="btn primary" type="button" data-copy="stay-link">Copy guest link for this stay</button>
+    <button class="btn primary" type="button" data-copy="stay-link" data-copied-label="Link copied">Copy guest link for this stay</button>
   </div>
 {% endset %}
 {{ page_header(
@@ -23,16 +23,49 @@
   header_actions
 ) }}
 
+{# The one action the law is waiting for stays in reach while you scroll. #}
+<div class="action-bar">
+  <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+    <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+    <button class="btn accent" type="submit"
+      {% if not send_controls.send_enabled %}disabled{% endif %}
+      title="{{ send_controls.send_hint }}">
+      Send to UbyPort now
+    </button>
+  </form>
+  <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">Add a guest by hand</a>
+  <span class="bar-note">
+    {% if send_controls.send_enabled %}
+      {{ send_controls.pending_count }} guest record(s) ready to report.
+    {% else %}
+      {{ send_controls.send_hint }}
+    {% endif %}
+  </span>
+  {{ row_menu_begin() }}
+    {% if reservation.archived_at %}
+      <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
+        <button class="row-menu-item" type="submit" role="menuitem">Restore from archive</button>
+      </form>
+    {% else %}
+      <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
+            onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
+        <button class="row-menu-item" type="submit" role="menuitem">Archive stay</button>
+      </form>
+    {% endif %}
+    <a class="row-menu-item" href="/guest-links" role="menuitem">Guest links &amp; templates</a>
+  {{ row_menu_end() }}
+</div>
+
 <div class="split wide">
   <div>
-    <div class="panel detail-hero">
+    <div class="panel tight detail-hero">
         <div class="detail-metric">
           <div class="metric-label">Reporting deadline</div>
-          <div class="deadline {{ urgency_level }}" style="font-size:19px">
+          <div class="deadline {{ urgency_level }}" style="font-size:21px;font-weight:700;margin-top:6px">
             {{ describe_time_left(check_in) if check_in else '—' }}
           </div>
           {% if deadline %}
-            <div class="small muted">Three working days after check-in ends
+            <div class="small muted" style="margin-top:4px">Three working days after check-in ends
               {{ deadline.strftime('%d.%m.%Y at %H:%M') }}.</div>
           {% endif %}
         </div>
@@ -41,14 +74,14 @@
           <div class="metric-value">
             {{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}
           </div>
-          <div class="small muted">
+          <div class="small muted" style="margin-top:4px">
             {{ progress.sent | length }} reported &middot;
             {{ progress.reportable | length }} subject to the duty
           </div>
         </div>
         <div class="detail-metric">
           <div class="metric-label">Reporting</div>
-          <div class="metric-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
+          <div class="metric-value" style="font-size:15px">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
           <div class="small muted" style="margin-top:6px">
             {% if progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
               Guest forms are complete. New guest submissions send automatically; host entries send on save.
@@ -66,37 +99,10 @@
         </div>
     </div>
 
-    <div class="panel">
-      <div class="actions" style="margin-top:0">
-        <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
-          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-          <button class="btn primary" type="submit"
-            {% if not send_controls.send_enabled %}disabled{% endif %}
-            title="{{ send_controls.send_hint }}">
-            Send to UbyPort now
-          </button>
-        </form>
-        <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">Add a guest by hand</a>
-        {% if reservation.archived_at %}
-          <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="inline">
-            <button class="btn" type="submit">Restore from archive</button>
-          </form>
-        {% else %}
-          <form method="post" action="/reservations/{{ reservation.id }}/archive" class="inline"
-                onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
-            <button class="btn" type="submit">Archive stay</button>
-          </form>
-        {% endif %}
-      </div>
-      {% if send_controls.send_hint and not send_controls.send_enabled %}
-        <div class="small muted" style="margin-top:8px">{{ send_controls.send_hint }}</div>
-      {% endif %}
-    </div>
-
     <h2 id="guests">Guests</h2>
     {% if guest_rows %}
       <div class="panel tight scroll-x">
-        <table>
+        <table class="table-cards">
           <thead>
             <tr><th>Name</th><th>Nationality</th><th>Document</th><th>Residence abroad</th>
               <th>Purpose</th><th>Dates</th><th>Reported</th><th></th></tr>
@@ -105,9 +111,9 @@
           {% for row in guest_rows %}
             {% set guest = row.guest %}
             <tr>
-              <td>
+              <td data-label="Name">
                 <strong>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</strong>
-                {% if guest.is_lead %}<span class="pill grey">lead</span>{% endif %}
+                {% if guest.is_lead %}<span class="pill grey no-dot">lead</span>{% endif %}
                 <div class="small muted">
                   born {{ format_birth_date(guest.birth_date) or '—' }}
                   &middot; {{ 'signed' if guest.signature_png else 'not signed' }}
@@ -118,33 +124,33 @@
                 {% endif %}
                 {% if row.issues %}
                   {% for issue in row.issues %}
-                    <div class="small" style="color:{{ '#c0362c' if issue.is_error else '#b26a00' }}">
+                    <div class="small" style="color:{{ 'var(--bad)' if issue.is_error else 'var(--warn)' }}">
                       {{ issue.message }}</div>
                   {% endfor %}
                 {% endif %}
               </td>
-              <td class="nowrap">
+              <td class="nowrap" data-label="Nationality">
                 {{ guest.nationality or '—' }}
                 <div class="small muted">{{ country_name(guest.nationality or '', 'en') }}</div>
               </td>
-              <td class="small">
+              <td class="small" data-label="Document">
                 <div class="mono">{{ guest.doc_number or '—' }}</div>
                 {% if guest.visa_number %}
                   <div class="small muted">Visa {{ guest.visa_number }}</div>
                 {% endif %}
               </td>
-              <td class="small">
+              <td class="small" data-label="Residence abroad">
                 {% if guest.res_street or guest.res_city or guest.res_country %}
                   {{ guest.res_street or '—' }}<br>
                   {{ guest.res_city or '' }}{% if guest.res_city and guest.res_country %}, {% endif %}{{ country_name(guest.res_country or '', 'en') }}
                 {% else %}—{% endif %}
               </td>
-              <td class="small">{{ purpose_label(guest.purpose or '', 'en') or '—' }}</td>
-              <td class="nowrap small">
+              <td class="small" data-label="Purpose">{{ purpose_label(guest.purpose or '', 'en') or '—' }}</td>
+              <td class="nowrap small" data-label="Dates">
                 {{ (guest.stay_from or reservation.date_from) | date_cz }}<br>
                 {{ (guest.stay_to or reservation.date_to) | date_cz }}
               </td>
-              <td class="nowrap">
+              <td class="nowrap" data-label="Reported">
                 {% if guest.submit_state == 'sent' %}
                   <span class="pill green">Reported</span>
                   {% if guest.submitted_at %}<div class="small muted">{{ guest.submitted_at[:16].replace('T', ' ') }}</div>{% endif %}
@@ -160,12 +166,12 @@
                   <span class="pill blue">Ready</span>
                 {% endif %}
                 {% if guest.last_errors %}
-                  <div class="small" style="color:#c0362c">{{ guest.last_errors }}</div>
+                  <div class="small" style="color:var(--bad)">{{ guest.last_errors }}</div>
                 {% endif %}
               </td>
-              <td class="nowrap row-actions">
+              <td class="nowrap row-actions" data-label="">
                 {{ row_menu_begin() }}
-                  <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">Edit</a>
+                  <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">Edit details</a>
                   <form method="post" action="/guests/{{ guest.id }}/archive" class="row-menu-form">
                     <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
                     <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
@@ -180,25 +186,26 @@
     {% else %}
       <div class="panel empty">
         <p>No guest has filled in the form yet.</p>
-        <p class="small">Send the guest link, or add the details yourself.</p>
+        <p class="small">Copy the guest link above, or add the details yourself.</p>
+        <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">Add a guest by hand</a>
       </div>
     {% endif %}
 
     {% if submissions %}
       <h2>Reports sent for this stay</h2>
       <div class="panel tight scroll-x">
-        <table>
+        <table class="table-cards">
           <thead><tr><th>When</th><th>Outcome</th><th>Receipt stamp</th><th></th></tr></thead>
           <tbody>
           {% for submission in submissions %}
             <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link"
                 aria-label="Open report {{ submission.id }}">
-              <td class="nowrap small">{{ submission.created_at[:16].replace('T', ' ') }}</td>
-              <td>{{ submission_pill(submission.state) }}</td>
-              <td class="mono small">{{ submission.pseudo_stamp or '—' }}</td>
-              <td class="nowrap row-actions">
+              <td class="nowrap small" data-label="When">{{ submission.created_at[:16].replace('T', ' ') }}</td>
+              <td data-label="Outcome">{{ submission_pill(submission.state) }}</td>
+              <td class="mono small" data-label="Receipt stamp">{{ submission.pseudo_stamp or '—' }}</td>
+              <td class="nowrap row-actions" data-label="">
                 {{ row_menu_begin() }}
-                  <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">Edit</a>
+                  <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">Open report</a>
                   {% if submission.receipt_pdf %}
                     <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">Doručenka</a>
                   {% endif %}

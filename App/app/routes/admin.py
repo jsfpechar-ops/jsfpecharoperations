@@ -252,11 +252,15 @@ def dashboard(request: Request):
         issues = validation.errors_only(_apartment_issues(apartment))
         if issues:
             setup_warnings.append({"apartment": apartment, "issues": issues})
+    # dashboard_rows() is already sorted by legal urgency, so the first row that
+    # needs work is the one thing worth putting at the top of the page.
+    focus = next(iter(needs_action), None) or next(iter(waiting), None)
     return render(
         request,
         "dashboard.html",
         {
             "rows": rows,
+            "focus": focus,
             "queue_groups": {
                 "needs_action": needs_action,
                 "waiting": waiting,
@@ -806,7 +810,7 @@ def reservations_list(request: Request):
         date_from = date_to = ""
 
     sql = (
-        "SELECT r.*, a.internal_name, a.automation_mode, a.submit_after_hours "
+        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id WHERE 1 = 1"
     )
     params: List[Any] = []

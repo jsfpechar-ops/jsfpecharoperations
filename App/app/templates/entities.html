@@ -55,21 +55,21 @@
   <div>
     {% if entities %}
     <div class="panel tight scroll-x">
-      <table>
+      <table class="table-cards">
         <thead><tr><th>Name</th><th>Registered seat</th><th>IČO</th><th>Contact</th>
           <th>Apartments</th><th></th></tr></thead>
         <tbody>
         {% for entity in entities %}
           <tr>
-            <td><strong>{{ entity.name }}</strong></td>
-            <td>{{ entity.seat or '—' }}</td>
-            <td class="mono">{{ entity.ico or '—' }}</td>
-            <td class="small">
+            <td data-label="Name"><strong>{{ entity.name }}</strong></td>
+            <td data-label="Registered seat">{{ entity.seat or '—' }}</td>
+            <td class="mono" data-label="IČO">{{ entity.ico or '—' }}</td>
+            <td class="small" data-label="Contact">
               {% if entity.contact_email %}{{ entity.contact_email }}
               {% else %}<span class="pill amber">missing</span>{% endif %}
             </td>
-            <td class="num">{{ entity.apartments }}</td>
-            <td class="nowrap">
+            <td class="num" data-label="Apartments">{{ entity.apartments }}</td>
+            <td class="nowrap row-actions" data-label="">
               <a class="btn small" href="#edit-{{ entity.id }}" data-open-details>Edit</a>
               {% if not entity.apartments %}
               <form method="post" action="/entities/{{ entity.id }}/delete" class="inline"
