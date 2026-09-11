@@ -6,15 +6,16 @@
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260911m">
+  <link rel="stylesheet" href="/static/app.css?v=20260911n">
 </head>
 <body class="layout-host">
+{% from "_components.html" import nav_icon %}
 {% if show_nav | default(true) %}
 <header class="appbar">
   <button class="nav-toggle" type="button" data-nav-toggle aria-label="Open menu" aria-expanded="false">
     <span aria-hidden="true">☰</span>
   </button>
-  <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-logo.jpg" alt="UbyHost"></a>
+  <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-mark.png" alt="UbyHost"></a>
   <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
 </header>
 <button class="nav-backdrop" type="button" data-nav-close aria-label="Close menu"></button>
@@ -24,7 +25,8 @@
 <aside class="sidebar" id="app-sidebar">
   <div class="sidebar-brand">
     <a class="brand plain" href="/">
-      <img class="brand-logo" src="/static/ubyhost-logo.jpg" alt="UbyHost">
+      <img class="brand-logo" src="/static/ubyhost-mark.png" alt="UbyHost">
+      <span class="brand-word">UbyHost</span>
     </a>
     <div class="sidebar-brand-actions">
       <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
@@ -32,26 +34,39 @@
               aria-label="Hide menu"><span aria-hidden="true">‹</span></button>
     </div>
   </div>
+  {% if current_user and workspace_user %}
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar" aria-hidden="true">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</div>
+      <div class="sidebar-user-meta">
+        <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>
+        <span>
+          {% if current_user.id == workspace_user.id and current_user.role == 'admin' %}
+            Administrator
+          {% else %}
+            @{{ workspace_user.username }}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  {% endif %}
   <nav class="sidebar-nav" aria-label="Main navigation">
     <div class="nav-group">
       <div class="nav-label">Operations</div>
-      <a href="/" class="{{ 'active' if nav == 'dashboard' }}"><span aria-hidden="true">◉</span>Overview</a>
-      <a href="/reservations" class="{{ 'active' if nav == 'reservations' }}"><span aria-hidden="true">▦</span>Stays</a>
-      <a href="/guest-links" class="{{ 'active' if nav == 'guest_links' }}"><span aria-hidden="true">↗</span>Guest links</a>
+      <a href="/" class="{{ 'active' if nav == 'dashboard' }}">{{ nav_icon('overview') }}Overview</a>
+      <a href="/reservations" class="{{ 'active' if nav == 'reservations' }}">{{ nav_icon('calendar') }}Stays</a>
     </div>
     <div class="nav-group">
       <div class="nav-label">Records</div>
-      <a href="/submissions" class="{{ 'active' if nav == 'submissions' }}"><span aria-hidden="true">✓</span>Reports</a>
-      <a href="/housebook" class="{{ 'active' if nav == 'housebook' }}"><span aria-hidden="true">▤</span>House book</a>
+      <a href="/submissions" class="{{ 'active' if nav == 'submissions' }}">{{ nav_icon('report') }}Reports</a>
+      <a href="/housebook" class="{{ 'active' if nav == 'housebook' }}">{{ nav_icon('book') }}House book</a>
     </div>
     <div class="nav-group">
       <div class="nav-label">Setup</div>
-      <a href="/apartments" class="{{ 'active' if nav == 'apartments' }}"><span aria-hidden="true">⌂</span>Properties</a>
-      <a href="/entities" class="{{ 'active' if nav == 'entities' }}"><span aria-hidden="true">◈</span>Legal entities</a>
-      <a href="/automation" class="{{ 'active' if nav == 'automation' }}"><span aria-hidden="true">⟳</span>Automation</a>
-      <a href="/settings" class="{{ 'active' if nav == 'settings' }}"><span aria-hidden="true">⚙</span>Settings</a>
+      <a href="/apartments" class="{{ 'active' if nav == 'apartments' }}">{{ nav_icon('property') }}Properties</a>
+      <a href="/entities" class="{{ 'active' if nav == 'entities' }}">{{ nav_icon('entity') }}Legal entities</a>
+      <a href="/settings" class="{{ 'active' if nav == 'settings' }}">{{ nav_icon('settings') }}Settings</a>
       {% if current_user and current_user.role == 'admin' %}
-        <a href="/admin/users" class="{{ 'active' if nav == 'users' }}"><span aria-hidden="true">♙</span>Users</a>
+        <a href="/admin/users" class="{{ 'active' if nav == 'users' }}">{{ nav_icon('users') }}Users</a>
       {% endif %}
     </div>
   </nav>
@@ -63,12 +78,16 @@
 
 <main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
   {% if current_user and workspace_user and current_user.id != workspace_user.id %}
-    <div class="impersonation-bar">
-      Viewing <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>'s workspace
+    <aside class="impersonation-bar" role="status" aria-live="polite">
+      <div class="impersonation-copy">
+        <span class="impersonation-eyebrow">Previewing workspace</span>
+        <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>
+        <span class="impersonation-handle">@{{ workspace_user.username }}</span>
+      </div>
       <form method="post" action="/admin/stop-impersonating">
-        <button class="btn small" type="submit">Return to admin</button>
+        <button class="btn small" type="submit">Exit preview</button>
       </form>
-    </div>
+    </aside>
   {% endif %}
   {% block content %}{% endblock %}
 </main>
@@ -138,6 +157,6 @@
   </form>
 </dialog>
 
-<script src="/static/app.js?v=20260911j"></script>
+<script src="/static/app.js?v=20260911n"></script>
 </body>
 </html>

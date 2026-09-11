@@ -158,8 +158,8 @@ def test_admin_can_open_a_host_workspace_without_knowing_the_password():
         assert response.status_code == 303
         workspace = admin.get("/")
         assert "Host workspace flat" in workspace.text
-        assert "Viewing" in workspace.text
-        assert "Return to admin" in workspace.text
+        assert "Previewing workspace" in workspace.text
+        assert "Exit preview" in workspace.text
 
         admin.post("/admin/stop-impersonating", follow_redirects=False)
         assert admin.get("/admin/users").status_code == 200

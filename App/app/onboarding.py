@@ -83,7 +83,11 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
                 and feed_count > 0
                 and not setup_issues
             ),
-            "url": "/guest-links",
+            "url": (
+                f"/apartments/{first_apartment['id']}#communication"
+                if first_apartment
+                else "/apartments"
+            ),
             "action": "Copy guest link",
         },
     ]
