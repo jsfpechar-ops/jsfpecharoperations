@@ -15,10 +15,10 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from app import codelists, db, reporting
+from app import auth, codelists, db, reporting
 from app.main import app
 
-PASSWORD = "correct-horse-battery"
+PASSWORD = "Correct-Horse-Battery-123"
 
 # A one-pixel PNG is enough to stand for a drawn signature.
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -82,24 +82,40 @@ def feed_url(tmp_path_factory):
 @pytest.fixture(scope="module")
 def client(mock_ubyport):
     db.init_db()
+    account = db.query_one("SELECT * FROM user_account WHERE username = 'e2e-admin'")
+    if not account:
+        account_id = auth.create_account(
+            "e2e-admin", PASSWORD, "End-to-end admin", role="admin",
+            must_change_password=False,
+        )
+    else:
+        account_id = account["id"]
     with TestClient(app) as test_client:
+        response = test_client.post(
+            "/login",
+            data={"username": "e2e-admin", "password": PASSWORD},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
         yield test_client
+    db.execute("UPDATE apartment SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE legal_entity SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE alert SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE audit SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (account_id,))
 
 
 @pytest.fixture(scope="module")
 def host(client):
-    """The host side needs no sign-in, so this is just the browser."""
+    """An authenticated administrator browser."""
     return client
 
 
-def test_01_the_app_opens_straight_onto_the_dashboard(host):
-    """There is no account and no setup wizard to get past."""
+def test_01_the_app_opens_onto_the_authenticated_dashboard(host):
     page = host.get("/", follow_redirects=False)
     assert page.status_code == 200
     assert "UbyHost" in page.text
-    # Nothing to log out of, so the button is not there.
-    assert 'action="/logout"' not in page.text
-    # And the login page does not stand in the way either.
+    assert 'action="/logout"' in page.text
     assert host.get("/login", follow_redirects=False).status_code == 303
 
 
@@ -622,32 +638,33 @@ def test_28_the_audit_trail_records_what_happened(host):
     assert "guest_form_saved" in page.text
 
 
-def test_29_the_lock_is_opt_in_and_can_be_switched_back_off(host):
-    """Only needed if the app is put somewhere other people can reach."""
-    assert host.post("/settings/password", data={"new_password": "short"},
-                     follow_redirects=False).status_code == 303
-    assert not db.get_setting("admin_password")
-
-    host.post("/settings/password", data={"new_password": PASSWORD}, follow_redirects=False)
-    assert db.get_setting("admin_password")
-
-    stranger = TestClient(app)
-    assert stranger.get("/", follow_redirects=False).status_code == 303
-    assert stranger.post("/login", data={"password": "wrong"}).status_code == 401
-    assert stranger.post(
-        "/login", data={"password": PASSWORD}, follow_redirects=False
-    ).status_code == 303
-    assert 'action="/logout"' in stranger.get("/").text
-
-    # A guest link keeps working while the host side is locked.
-    apartment = db.query_one("SELECT * FROM apartment")
-    assert TestClient(app).get(f"/l/{apartment['permalink_token']}",
-                               follow_redirects=True).status_code == 200
-
-    host.post(
-        "/settings/password",
-            data={"current_password": PASSWORD, "new_password": "", "confirm_unlock": "1"},
-        follow_redirects=False,
+def test_29_host_accounts_require_username_and_password(host):
+    user_id = auth.create_account(
+        "test-admin", PASSWORD, "Test admin", role="admin", must_change_password=False
     )
-    assert not db.get_setting("admin_password")
-    assert TestClient(app).get("/", follow_redirects=False).status_code == 200
+    try:
+        stranger = TestClient(app)
+        assert stranger.get("/", follow_redirects=False).status_code == 303
+        assert stranger.post(
+            "/login", data={"username": "test-admin", "password": "wrong"}
+        ).status_code == 401
+        assert stranger.post(
+            "/login",
+            data={"username": "test-admin", "password": PASSWORD},
+            follow_redirects=False,
+        ).status_code == 303
+        assert 'action="/logout"' in stranger.get("/").text
+
+        stored = db.query_one("SELECT password_hash FROM user_account WHERE id = ?", (user_id,))
+        assert PASSWORD not in stored["password_hash"]
+        assert auth.verify_password(PASSWORD, stored["password_hash"])
+
+        # Guest links do not require a host account.
+        apartment = db.query_one("SELECT * FROM apartment")
+        assert TestClient(app).get(
+            f"/l/{apartment['permalink_token']}", follow_redirects=True
+        ).status_code == 200
+    finally:
+        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
+        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
+        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))

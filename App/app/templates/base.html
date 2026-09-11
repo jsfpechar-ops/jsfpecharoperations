@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f4f3ef">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260911h">
+  <link rel="stylesheet" href="/static/app.css?v=20260911j">
 </head>
 <body class="layout-host">
 {% if show_nav | default(true) %}
@@ -50,15 +50,26 @@
       <a href="/entities" class="{{ 'active' if nav == 'entities' }}"><span aria-hidden="true">◈</span>Legal entities</a>
       <a href="/automation" class="{{ 'active' if nav == 'automation' }}"><span aria-hidden="true">⟳</span>Automation</a>
       <a href="/settings" class="{{ 'active' if nav == 'settings' }}"><span aria-hidden="true">⚙</span>Settings</a>
+      {% if current_user and current_user.role == 'admin' %}
+        <a href="/admin/users" class="{{ 'active' if nav == 'users' }}"><span aria-hidden="true">♙</span>Users</a>
+      {% endif %}
     </div>
   </nav>
-  {% if password_is_set %}
+  {% if current_user %}
     <form class="sidebar-logout" method="post" action="/logout"><button class="nav-button" type="submit">Log out</button></form>
   {% endif %}
 </aside>
 {% endif %}
 
 <main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
+  {% if current_user and workspace_user and current_user.id != workspace_user.id %}
+    <div class="impersonation-bar">
+      Viewing <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>'s workspace
+      <form method="post" action="/admin/stop-impersonating">
+        <button class="btn small" type="submit">Return to admin</button>
+      </form>
+    </div>
+  {% endif %}
   {% block content %}{% endblock %}
 </main>
 
@@ -127,6 +138,6 @@
   </form>
 </dialog>
 
-<script src="/static/app.js?v=20260911h"></script>
+<script src="/static/app.js?v=20260911j"></script>
 </body>
 </html>

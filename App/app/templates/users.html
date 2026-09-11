@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% set nav = 'users' %}
+{% block title %}Users{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header %}
+{{ page_header(
+  'Users',
+  'Create a private workspace for each host. Passwords are hashed and can be reset, never viewed.'
+) }}
+
+<div class="split wide">
+  <section>
+    <div class="panel tight scroll-x">
+      <table class="table-cards">
+        <thead><tr><th>User</th><th>Role</th><th>Properties</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for user in users %}
+          <tr>
+            <td data-label="User">
+              <strong>{{ user.display_name or user.username }}</strong>
+              <div class="small muted mono">{{ user.username }}</div>
+            </td>
+            <td data-label="Role">{{ user.role | capitalize }}</td>
+            <td data-label="Properties">{{ user.apartment_count }}</td>
+            <td data-label="Status">
+              {% if not user.active %}<span class="pill grey">Disabled</span>
+              {% elif user.must_change_password %}<span class="pill amber">Temporary password</span>
+              {% else %}<span class="pill green">Active</span>{% endif %}
+            </td>
+            <td class="row-actions" data-label="">
+              {% if user.id != current_user.id %}
+                <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="inline">
+                  <button class="btn small" type="submit">Open workspace</button>
+                </form>
+                <form method="post" action="/admin/users/{{ user.id }}/toggle" class="inline">
+                  <button class="btn small" type="submit">{{ 'Disable' if user.active else 'Enable' }}</button>
+                </form>
+              {% endif %}
+              {% if user.id != current_user.id %}
+                <details class="inline reset-popover">
+                  <summary class="btn small">Reset password</summary>
+                  <form method="post" action="/admin/users/{{ user.id }}/password" class="popover-form">
+                    <label for="password-{{ user.id }}">Temporary password</label>
+                    <input type="password" id="password-{{ user.id }}" name="password" minlength="12"
+                           required autocomplete="new-password">
+                    <label for="confirm-{{ user.id }}">Repeat password</label>
+                    <input type="password" id="confirm-{{ user.id }}" name="confirm_password"
+                           minlength="12" required autocomplete="new-password">
+                    <button class="btn primary small" type="submit">Reset</button>
+                  </form>
+                </details>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <h2 style="margin-top:0">Create a host</h2>
+    <p class="small muted">Give the temporary password privately. They must replace it at first login.</p>
+    <form method="post" action="/admin/users">
+      <div class="field">
+        <label for="display_name">Name</label>
+        <input type="text" id="display_name" name="display_name" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required minlength="3" maxlength="32"
+               pattern="[a-z0-9][a-z0-9._-]{2,31}" autocapitalize="none" spellcheck="false"
+               autocomplete="off">
+        <div class="hint">Lowercase letters, numbers, dots, dashes, and underscores.</div>
+      </div>
+      <div class="field">
+        <label for="password">Temporary password</label>
+        <input type="password" id="password" name="password" minlength="12" required
+               autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="confirm_password">Repeat password</label>
+        <input type="password" id="confirm_password" name="confirm_password" minlength="12" required
+               autocomplete="new-password">
+      </div>
+      <button class="btn primary" type="submit">Create host</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

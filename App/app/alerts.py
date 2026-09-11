@@ -22,8 +22,19 @@ def raise_alert(
     dedupe_key: Optional[str] = None,
     apartment_id: Optional[int] = None,
     reservation_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
 ) -> None:
     """Record an alert, refreshing the message if the same one is already open."""
+    if owner_user_id is None and apartment_id:
+        apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+        owner_user_id = apartment["owner_user_id"] if apartment else None
+    if owner_user_id is None and reservation_id:
+        reservation = db.query_one(
+            "SELECT a.owner_user_id FROM reservation r "
+            "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+            (reservation_id,),
+        )
+        owner_user_id = reservation["owner_user_id"] if reservation else None
     key = dedupe_key or f"{kind}:{apartment_id}:{reservation_id}:{message}"
     if db.query_one(
         "SELECT id FROM alert WHERE dedupe_key = ? AND user_dismissed = 1 LIMIT 1", (key,)
@@ -46,6 +57,7 @@ def raise_alert(
             "kind": kind,
             "apartment_id": apartment_id,
             "reservation_id": reservation_id,
+            "owner_user_id": owner_user_id,
             "dedupe_key": key,
             "message": message,
             "detail": detail,
@@ -82,8 +94,12 @@ def resolve_kind(kind: str, apartment_id: Optional[int] = None) -> None:
         )
 
 
-def open_alerts() -> List:
-    rows = db.query("SELECT * FROM alert WHERE resolved_at IS NULL ORDER BY created_at DESC")
+def open_alerts(owner_user_id: Optional[int] = None) -> List:
+    rows = db.query(
+        "SELECT * FROM alert WHERE resolved_at IS NULL AND (? IS NULL OR owner_user_id = ?) "
+        "ORDER BY created_at DESC",
+        (owner_user_id, owner_user_id),
+    )
     return sorted(rows, key=lambda r: LEVEL_ORDER.get(r["level"], 9))
 
 
