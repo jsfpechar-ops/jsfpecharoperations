@@ -15,10 +15,21 @@
       button.addEventListener("click", function () {
         var target = document.getElementById(button.getAttribute("data-copy"));
         if (!target) return;
-        target.select();
+        // Works for form fields and for blocks of text such as the portal
+        // message, so a host never has to select a paragraph by hand.
+        var text = typeof target.value === "string" ? target.value : target.textContent;
+        if (typeof target.select === "function") {
+          target.select();
+        } else if (window.getSelection && document.createRange) {
+          var range = document.createRange();
+          range.selectNodeContents(target);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
         try {
           var copied = navigator.clipboard
-            ? navigator.clipboard.writeText(target.value)
+            ? navigator.clipboard.writeText(text)
             : Promise.resolve(document.execCommand("copy"));
           Promise.resolve(copied).then(function () {
             button.classList.add("copied");

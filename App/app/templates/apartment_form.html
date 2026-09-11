@@ -218,9 +218,9 @@
         <input type="text" id="permalink" readonly value="{{ permalink }}">
         {{ copy_button('permalink') }}
       </div>
-      <div class="field" style="max-width:200px">
+      <div class="field" style="max-width:280px">
         <label for="permalink_pin">Access PIN</label>
-        <div class="copyrow">
+        <div class="copyrow pin-row">
           <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
                  inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
           {{ copy_button('permalink_pin') }}

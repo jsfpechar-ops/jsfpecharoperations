@@ -732,8 +732,18 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; color: var(--ink-2); }
 
-.copyrow { display: flex; gap: 8px; align-items: center; }
-.copyrow input { flex: 1; font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; }
+.copyrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.copyrow input { flex: 1 1 220px; min-width: 0; font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; }
+.copyrow.pin-row input { flex: 0 0 110px; text-align: center; letter-spacing: 0.12em; }
+
+/* A guest-link card carries a full URL, a PIN, and a message to paste, so it
+   needs real width. Two up on a laptop, one up on a phone. */
+.link-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+.link-card { display: flex; flex-direction: column; }
+.link-card .message-details { margin-top: auto; }
+@media (max-width: 560px) {
+  .link-cards { grid-template-columns: 1fr; }
+}
 
 .section-heading {
   display: flex;

@@ -140,9 +140,9 @@
           title="Copy the guest link for this stay">{{ label }}</button>
 {% endmacro %}
 
-{% macro row_menu_begin() %}
+{% macro row_menu_begin(label='More actions') %}
 <div class="row-menu">
-  <button class="btn-icon row-menu-trigger" type="button" aria-label="More actions" aria-expanded="false" aria-haspopup="true">
+  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label }}" aria-expanded="false" aria-haspopup="true">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
       <circle cx="3.25" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.75" cy="8" r="1.25"/>
     </svg>

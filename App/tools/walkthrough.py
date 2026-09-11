@@ -120,11 +120,11 @@ def post(path: str, data: dict | None = None, expect=(200, 303)) -> requests.Res
 
 def main() -> None:
     # The app ships unlocked, so there is no first-run wall to walk through.
-    # Locking it is an opt-in step on the settings page.
-    print("1. empty dashboard and the optional password lock")
+    # Locking it is opt-in on the settings page, and doing it here would just
+    # put a login screen between this script and every later page.
+    print("1. empty dashboard and login screen")
     shot("/", "dashboard-empty")
-    post("/settings/password", {"password": PASSWORD, "password_confirm": PASSWORD})
-    shot("/settings", "settings-locked")
+    shot("/login", "login")
 
     print("2. legal entity")
     post("/entities", {

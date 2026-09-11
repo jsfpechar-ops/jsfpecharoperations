@@ -2,7 +2,7 @@
 {% set nav = 'guest_links' %}
 {% block title %}Guest links{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, empty_state, copy_button %}
+{% from "_components.html" import page_header, empty_state, copy_button, row_menu_begin, row_menu_end %}
 
 {{ page_header(
   'Guest links',
@@ -10,10 +10,11 @@
 ) }}
 
 {% if rows %}
-  <div class="grid two">
+  {# Wide cards: each one holds a full URL, a PIN, and a message to paste. #}
+  <div class="link-cards">
   {% for row in rows %}
     {% set apartment = row.apartment %}
-    <section class="panel">
+    <section class="panel link-card">
       <div class="section-heading" style="margin-top:0">
         <h2>{{ apartment.internal_name }}</h2>
         {% if row.issues %}<span class="pill amber">{{ row.issues | length }} setup item{{ '' if row.issues | length == 1 else 's' }}</span>
@@ -21,31 +22,23 @@
       </div>
       <p class="small muted">{{ apartment.uby_name or 'Facility name not set' }}
         {% if apartment.city_en %}&middot; {{ apartment.city_en }}{% endif %}</p>
+
       <label for="link-{{ apartment.id }}">Reusable apartment link</label>
       <div class="copyrow">
         <input type="text" id="link-{{ apartment.id }}" readonly value="{{ row.permalink }}">
         {{ copy_button('link-' ~ apartment.id) }}
-        <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="inline"
-              onsubmit="return confirm('Generate a new link and PIN? Update your portal messages.')">
-          <input type="hidden" name="return_to" value="/guest-links">
-          <button class="btn small" type="submit">Generate a new link</button>
-        </form>
       </div>
+
       <label for="pin-{{ apartment.id }}" style="margin-top:14px">Access PIN</label>
-      <div class="copyrow">
+      <div class="copyrow pin-row">
         <input type="text" id="pin-{{ apartment.id }}" readonly value="{{ row.pin }}" class="mono">
         {{ copy_button('pin-' ~ apartment.id) }}
-        <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="inline"
-              onsubmit="return confirm('Generate a new random PIN?')">
-          <input type="hidden" name="return_to" value="/guest-links">
-          <button class="btn small" type="submit">Generate a new PIN</button>
-        </form>
+        <span class="small muted">Guests enter this before the form opens.</span>
       </div>
-      <p class="small muted">Guests must enter this PIN before the registration form opens.
-        To set a specific PIN, open <a href="/apartments/{{ apartment.id }}#communication">Property setup &rarr; Guest link</a>.</p>
+
       <details class="message-details" open>
         <summary>Suggested portal message</summary>
-        <pre class="message-template">Dear guests,
+        <pre class="message-template" id="message-{{ apartment.id }}">Dear guests,
 
 Czech law requires us to register every guest before arrival and report foreign nationals to the Foreign Police.
 
@@ -57,9 +50,27 @@ Access PIN: {{ row.pin }}
 The form explains why the information is required and how it is handled.
 
 Thank you.</pre>
+        <div class="actions">
+          <button class="btn small" type="button" data-copy="message-{{ apartment.id }}"
+                  data-copied-label="Message copied">Copy this message</button>
+        </div>
       </details>
+
       <div class="actions">
         <a class="btn small" href="/apartments/{{ apartment.id }}">Property setup</a>
+        {{ row_menu_begin('Link and PIN options') }}
+          <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">Set a specific PIN</a>
+          <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="row-menu-form"
+                onsubmit="return confirm('Generate a new random PIN?')">
+            <input type="hidden" name="return_to" value="/guest-links">
+            <button class="row-menu-item" type="submit" role="menuitem">Generate a new PIN</button>
+          </form>
+          <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="row-menu-form"
+                onsubmit="return confirm('Generate a new link and PIN? Update your portal messages.')">
+            <input type="hidden" name="return_to" value="/guest-links">
+            <button class="row-menu-item" type="submit" role="menuitem">Generate a new link</button>
+          </form>
+        {{ row_menu_end() }}
       </div>
     </section>
   {% endfor %}
