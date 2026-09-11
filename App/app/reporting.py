@@ -209,23 +209,19 @@ def status_label(status: str, automation_mode: Optional[str] = None) -> str:
 
 
 def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str, Any]:
-    """Whether Send / Review actions should appear on a stay row."""
+    """Whether Send actions should appear on a stay row."""
     mode = apartment["automation_mode"]
-    reviewed = bool(reservation["report_reviewed_at"])
     pending = pending_reportable(progress["reportable"])
     has_pending = bool(pending)
     can_send = progress["status"] in ("ready", "failed") and has_pending
     auto_immediate = mode == "immediate"
-    requires_review = mode == "manual"
 
     send_enabled = can_send and not auto_immediate
-    if requires_review and not reviewed:
-        send_enabled = False
 
     if auto_immediate:
         send_hint = "Sends automatically when a guest completes their form"
-    elif requires_review and not reviewed:
-        send_hint = "Review guest details first, then send"
+    elif not has_pending and progress["status"] in ("not_required", "reported"):
+        send_hint = "Nothing to send: no guest record is subject to the reporting duty"
     elif not has_pending:
         send_hint = "Nothing left to send for this stay"
     elif not can_send:
@@ -233,41 +229,13 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     else:
         send_hint = "Send completed guest records to UbyPort now"
 
-    needs_attention = progress["status"] not in ("reported", "not_required")
-    active_stay = reservation["status"] == "active" and not reservation["archived_at"]
-
-    if not active_stay or not needs_attention:
-        review_mode = "none"
-    elif reviewed:
-        review_mode = "done"
-    elif progress["status"] in ("ready", "failed") and requires_review:
-        review_mode = "mark"
-    elif progress["status"] in ("ready", "failed", "incomplete", "awaiting_guest"):
-        review_mode = "open"
-    else:
-        review_mode = "none"
-
-    if review_mode == "mark":
-        review_hint = "Confirm you have checked every guest detail, then send"
-    elif review_mode == "open":
-        review_hint = "Open the stay and complete or check guest details"
-    elif review_mode == "done":
-        review_hint = "Reviewed — open guest details or send now"
-    else:
-        review_hint = ""
-
     send_visible = has_pending and progress["status"] in ("ready", "failed")
 
     return {
         "send_enabled": send_enabled,
         "send_visible": send_visible or (auto_immediate and has_pending),
         "send_hint": send_hint,
-        "review_visible": review_mode != "none",
-        "review_mode": review_mode,
-        "review_hint": review_hint,
-        "reviewed": reviewed,
         "auto_immediate": auto_immediate,
-        "requires_review": requires_review,
         "pending_count": len(pending),
     }
 
