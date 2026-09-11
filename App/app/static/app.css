@@ -306,7 +306,11 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
   color: var(--muted);
 }
 .env-badge.prod { background: var(--bad-soft); color: var(--bad); }
+.env-badge.test { background: var(--warn-soft); color: var(--warn); }
 .env-badge.mock { background: var(--warn-soft); color: var(--warn); }
+.env-badge.production { background: var(--bad-soft); color: var(--bad); }
+.env-badge.staging { background: var(--accent-soft); color: var(--accent); }
+.env-badge.local { background: var(--muted-soft, #eee); color: var(--muted); }
 
 .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 24px 96px; }
 .wrap.with-sidebar {

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -40,11 +41,20 @@ async def lifespan(_app: FastAPI):
     for row in missing_pins:
         db.update("apartment", row["id"], {"permalink_pin": auth.new_permalink_pin()})
     log.info("database ready at %s", config.DB_PATH)
-    log.info("UbyPort target: %s (%s)", config.endpoint_for(), config.UBYPORT_ENV)
+    log.info(
+        "deployment=%s ubyport=%s endpoint=%s",
+        config.DEPLOYMENT,
+        config.UBYPORT_ENV,
+        config.endpoint_for(),
+    )
     if config.UBYPORT_ENV == "mock":
         log.warning(
             "Running against the MOCK UbyPort server - nothing is reported to the police. "
             "Set UBYHOST_UBYPORT_ENV=test or prod when you have credentials."
+        )
+    elif config.DEPLOYMENT == "production" and config.UBYPORT_ENV == "prod":
+        log.warning(
+            "LIVE production reporting is active — submissions go to the real police register."
         )
     scheduler.start()
     try:
@@ -61,7 +71,14 @@ app.include_router(admin.router)
 
 @app.get("/healthz", include_in_schema=False)
 def healthz():
-    return {"status": "ok", "ubyport_env": config.UBYPORT_ENV}
+    data_writable = os.access(config.DATA_DIR, os.W_OK)
+    return {
+        "status": "ok" if data_writable else "degraded",
+        "version": __import__("app").__version__,
+        "deployment": config.DEPLOYMENT,
+        "ubyport_env": config.UBYPORT_ENV,
+        "data_dir_writable": data_writable,
+    }
 
 
 @app.get("/favicon.ico", include_in_schema=False)
