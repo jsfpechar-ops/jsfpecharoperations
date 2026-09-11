@@ -64,9 +64,10 @@
       <div class="field">
         <label for="birth_date">Date of birth</label>
         <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
-               placeholder="DDMMYYYY" maxlength="10"
-               value="{{ guest.birth_date or '' if editing else '' }}">
-        <div class="hint">DDMMYYYY. Use 00 for an unknown day or month.</div>
+               data-birth-date inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10"
+               autocomplete="bday"
+               value="{{ display_birth_date(guest.birth_date) if editing else '' }}">
+        <div class="hint">Type the 8 digits from the passport — slashes are added automatically. Use 00 for an unknown day or month.</div>
         {{ err_for('birth_date') }}
       </div>
       <div class="field">

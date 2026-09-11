@@ -365,7 +365,28 @@ textarea { min-height: 74px; resize: vertical; }
 .btn-icon:hover { background: #fff; border-color: rgba(0, 113, 227, 0.35); color: var(--accent); }
 .btn-icon.copied { color: var(--ok); border-color: rgba(13, 138, 79, 0.35); }
 
-.row-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+.row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+.row-actions .btn.small {
+  padding: 5px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.row-actions .btn.small.row-action-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.row-actions .btn.small.row-action-review.is-reviewed {
+  color: var(--ok);
+  border-color: rgba(13, 138, 79, 0.28);
+  text-decoration: none;
+}
 .row-menu { position: relative; display: inline-flex; }
 .row-menu-panel {
   min-width: 168px;

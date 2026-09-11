@@ -25,7 +25,7 @@
   </nav>
 {% endmacro %}
 
-{% macro progress_pill(status, compact=false) %}
+{% macro progress_pill(status, automation_mode=none, compact=false) %}
   {% set labels = {
     'failed': 'Rejected',
     'reported': 'Reported',
@@ -34,6 +34,15 @@
     'not_required': 'Exempt',
     'awaiting_guest': 'Waiting for guest'
   } %}
+  {% if status == 'ready' and automation_mode == 'immediate' %}
+    {% set label = 'Ready — auto-send' %}
+  {% elif status == 'ready' and automation_mode == 'manual' %}
+    {% set label = 'Ready — send manually' %}
+  {% elif status == 'ready' and automation_mode == 'scheduled' %}
+    {% set label = 'Ready — scheduled' %}
+  {% else %}
+    {% set label = labels.get(status, status) %}
+  {% endif %}
   {% set tones = {
     'failed': 'red',
     'reported': 'green',
@@ -42,7 +51,30 @@
     'not_required': 'grey',
     'awaiting_guest': 'grey'
   } %}
-  <span class="pill {{ tones.get(status, 'grey') }}">{{ labels.get(status, status) }}</span>
+  <span class="pill {{ tones.get(status, 'grey') }}">{{ label }}</span>
+{% endmacro %}
+
+{% macro row_reporting_actions(reservation, controls, return_to) %}
+  {% if controls.get('review_visible') %}
+    {% if controls.get('reviewed') %}
+      <a class="btn small row-action-review is-reviewed" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}#guests"
+         title="Reviewed — open guest details" aria-label="Reviewed — open guest details">Reviewed</a>
+    {% else %}
+      <form method="post" action="/reservations/{{ reservation.id }}/review" class="inline">
+        <input type="hidden" name="return_to" value="{{ return_to }}">
+        <button class="btn small row-action-review" type="submit"
+                title="Mark as reviewed after checking guest details" aria-label="Mark as reviewed">Review</button>
+      </form>
+    {% endif %}
+  {% endif %}
+  {% if controls.get('send_visible') %}
+    <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+      <input type="hidden" name="return_to" value="{{ return_to }}">
+      <button class="btn small primary row-action-send" type="submit"
+              {% if not controls.get('send_enabled') %}disabled{% endif %}
+              title="{{ controls.get('send_hint', '') }}" aria-label="Send to police">{{ 'Send' if controls.get('send_enabled') else 'Auto' }}</button>
+    </form>
+  {% endif %}
 {% endmacro %}
 
 {% macro submission_pill(state) %}

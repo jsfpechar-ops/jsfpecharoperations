@@ -75,6 +75,31 @@
     panel.style.top = top + "px";
   }
 
+  function initBirthDateInputs() {
+    function formatDigits(digits) {
+      var out = digits.slice(0, 2);
+      if (digits.length > 2) out += "/" + digits.slice(2, 4);
+      if (digits.length > 4) out += "/" + digits.slice(4, 8);
+      return out;
+    }
+
+    document.querySelectorAll("[data-birth-date]").forEach(function (input) {
+      function apply(value) {
+        var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+        var formatted = formatDigits(digits);
+        if (input.value !== formatted) input.value = formatted;
+      }
+
+      input.addEventListener("input", function () { apply(input.value); });
+      input.addEventListener("paste", function (event) {
+        event.preventDefault();
+        var text = (event.clipboardData || window.clipboardData).getData("text");
+        apply(text);
+      });
+      apply(input.value);
+    });
+  }
+
   function initRowMenus() {
     function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
@@ -265,6 +290,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
+    initBirthDateInputs();
     initRowMenus();
     initClickableRows();
     initSidebar();
