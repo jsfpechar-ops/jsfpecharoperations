@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}Overview{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_welcome %}
 
 {% macro queue_table(items, empty_text='Nothing needs attention here.') %}
   {% if items %}
@@ -74,22 +74,10 @@
 ) }}
 
 {% if not apartments %}
-  <div class="panel empty">
-    <h2 style="margin-top:0">Nothing set up yet</h2>
-    <p>Add the company or sole trader that operates your apartments, then add the apartments
-      themselves and paste in your Airbnb or Booking.com calendar links.</p>
-    <a class="btn primary" href="/entities">Add a legal entity</a>
-    {% if ubyport_env == 'mock' %}
-      <form method="post" action="/demo" style="margin-top:18px">
-        <button class="btn" type="submit">Or fill it with a demo apartment to click through</button>
-        <div class="small muted" style="margin-top:8px">
-          One property, four stays from a sample calendar, and two guests already reported to the
-          mock server. A dedicated reset action appears on Overview.
-        </div>
-      </form>
-    {% endif %}
-  </div>
+  {{ onboarding_welcome(onboarding) }}
 {% else %}
+
+  {{ onboarding_banner(onboarding) }}
 
   {# One card for the single most urgent thing, with its action already on it. #}
   {% if focus %}

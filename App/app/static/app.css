@@ -4,29 +4,29 @@
    a glance at a row tells you what the law still wants from you. */
 
 :root {
-  /* Surfaces: warm neutrals read as paper rather than as a cold dashboard. */
-  --bg: #f4f3ef;
-  --bg-tint: #eeefe9;
+  /* Surfaces: warm paper tones matched to the UbyHost logo. */
+  --bg: #faf6f2;
+  --bg-tint: #f3ebe4;
   --surface: #ffffff;
-  --surface-2: #faf9f6;
-  --surface-3: #f3f2ee;
+  --surface-2: #fcf8f5;
+  --surface-3: #f6efe8;
 
   /* Ink */
-  --ink: #16191b;
-  --ink-2: #353b3f;
-  --muted: #6b7378;
-  --faint: #979ea3;
+  --ink: #1f1a18;
+  --ink-2: #3f3834;
+  --muted: #736a64;
+  --faint: #9a9089;
 
   /* Hairlines */
-  --line: #e6e3dc;
-  --line-2: #d8d4cb;
+  --line: #e8ddd5;
+  --line-2: #dacfc6;
 
-  /* One accent. Blue means "your turn to act". */
-  --brand: #1f56d6;
-  --brand-ink: #16409f;
-  --brand-hover: #1a48b6;
-  --brand-soft: #eef2fd;
-  --brand-ring: rgba(31, 86, 214, 0.2);
+  /* Coral accent from the UbyHost mark. */
+  --brand: #c85a52;
+  --brand-ink: #9f443d;
+  --brand-hover: #b54f48;
+  --brand-soft: #fdf1ef;
+  --brand-ring: rgba(200, 90, 82, 0.22);
 
   /* Status */
   --ok: #0f7a4a;
@@ -674,8 +674,8 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .btn:active { transform: scale(0.985); }
 
 /* Dark = the main action of a form or page. */
-.btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
-.btn.primary:hover { background: #24292c; border-color: #24292c; }
+.btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn.primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
 
 /* Blue = send to the police. The one thing the law is waiting for. */
 .btn.accent, .btn.send-all {
@@ -796,6 +796,8 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   cursor: pointer;
 }
 .row-menu-item:hover { background: var(--brand-soft); color: var(--brand-ink); }
+.row-menu-item.danger { color: var(--bad); }
+.row-menu-item.danger:hover { background: var(--bad-soft); color: var(--bad); }
 /* A supporting item, set below a hairline so it does not compete with the
    actions above it. */
 .row-menu-item.quiet {
@@ -1187,11 +1189,134 @@ details.raw pre {
   .action-bar { position: static; }
 }
 
+/* --- onboarding -------------------------------------------------------- */
+
+.onboarding-welcome {
+  text-align: center;
+  padding: 42px 28px 36px;
+  background:
+    radial-gradient(ellipse at top, rgba(200, 90, 82, 0.08), transparent 58%),
+    var(--surface);
+}
+
+.onboarding-logo {
+  display: block;
+  width: min(220px, 72vw);
+  height: auto;
+  margin: 0 auto 18px;
+}
+
+.onboarding-welcome h2 {
+  margin: 0 0 10px;
+  font-size: clamp(26px, 5vw, 32px);
+  letter-spacing: -0.03em;
+}
+
+.onboarding-welcome .lede {
+  max-width: 52ch;
+  margin: 0 auto 24px;
+}
+
+.onboarding-steps {
+  display: grid;
+  gap: 10px;
+  max-width: 640px;
+  margin: 0 auto 24px;
+  text-align: left;
+}
+
+.onboarding-step {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.onboarding-step.is-current {
+  border-color: rgba(200, 90, 82, 0.35);
+  background: var(--brand-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.onboarding-step.is-done { opacity: 0.82; }
+
+.onboarding-step-index {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.onboarding-step.is-done .onboarding-step-index {
+  background: var(--ok-soft);
+  border-color: rgba(15, 122, 74, 0.25);
+  color: var(--ok);
+}
+
+.onboarding-step.is-current .onboarding-step-index {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.onboarding-step h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.onboarding-step p {
+  margin: 3px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.onboarding-banner {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border: 1px solid rgba(200, 90, 82, 0.22);
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--brand-soft), var(--surface));
+}
+
+.onboarding-banner strong { display: block; font-size: 14px; }
+.onboarding-banner small { color: var(--muted); }
+
+.onboarding-demo {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.brand-logo {
+  display: block;
+  height: 28px;
+  width: auto;
+}
+
+.sidebar-brand .brand-logo { height: 24px; }
+
+.appbar .brand-logo { height: 22px; }
+
 /* --- auth pages (login, first password) -------------------------------- */
 
 .auth-page {
   min-height: 100vh;
-  background: #ffffff;
+  background: var(--bg);
   color: var(--ink);
 }
 
@@ -1207,17 +1332,11 @@ details.raw pre {
   margin-bottom: 28px;
 }
 
-.auth-mark {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 7px;
-  background: var(--ink);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
+.auth-logo {
+  display: block;
+  width: min(200px, 70vw);
+  height: auto;
+  margin: 0 auto;
 }
 
 .auth-card { text-align: center; }

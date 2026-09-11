@@ -40,12 +40,13 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb %}
+{% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end %}
 {{ breadcrumb([
   {'label': 'Properties', 'url': '/apartments'},
   {'label': 'Legal entities', 'url': ''}
 ]) }}
 {{ page_header('Legal entities', 'The company or sole trader that operates a property and controls guest data.', '/apartments', 'Back to properties') }}
+{{ onboarding_banner(onboarding) }}
 <p class="lede">The IČO holds
   the UbyPort registration and pays the accommodation fee. It is also the data controller shown to
   guests in the privacy notice, so keep the seat and contact e-mail current. One person can run
@@ -70,13 +71,15 @@
             </td>
             <td class="num" data-label="Apartments">{{ entity.apartments }}</td>
             <td class="nowrap row-actions" data-label="">
-              <a class="btn small" href="#edit-{{ entity.id }}" data-open-details>Edit</a>
-              {% if not entity.apartments %}
-              <form method="post" action="/entities/{{ entity.id }}/delete" class="inline"
-                    onsubmit="return confirm('Delete this legal entity? This cannot be undone.')">
-                <button class="btn small danger" type="submit">Delete</button>
-              </form>
-              {% endif %}
+              {{ row_menu_begin() }}
+                <a class="row-menu-item" href="#edit-{{ entity.id }}" data-open-details role="menuitem">Edit</a>
+                {% if not entity.apartments %}
+                <form method="post" action="/entities/{{ entity.id }}/delete" class="row-menu-form"
+                      onsubmit="return confirm('Delete this legal entity? This cannot be undone.')">
+                  <button class="row-menu-item danger" type="submit" role="menuitem">Delete</button>
+                </form>
+                {% endif %}
+              {{ row_menu_end() }}
             </td>
           </tr>
         {% endfor %}

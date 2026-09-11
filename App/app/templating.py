@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 
-from . import __version__, alerts, auth, config, deadlines, reporting, validation
+from . import __version__, alerts, auth, config, deadlines, onboarding, reporting, validation
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
@@ -72,6 +72,8 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     )
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
+    if workspace and workspace["id"]:
+        data.setdefault("onboarding", onboarding.progress(workspace["id"]))
     return templates.TemplateResponse(name, data, status_code=status_code)
 
 
