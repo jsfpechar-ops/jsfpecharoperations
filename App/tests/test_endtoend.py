@@ -665,4 +665,6 @@ def test_29_host_accounts_require_username_and_password(host):
             f"/l/{apartment['permalink_token']}", follow_redirects=True
         ).status_code == 200
     finally:
+        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
+        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
