@@ -2,14 +2,25 @@
 {% set nav = 'reservations' %}
 {% block title %}Stays{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions %}
+{% set header_actions %}
+  {% if ready_send_count %}
+    <form method="post" action="/reservations/submit-ready" class="inline">
+      <input type="hidden" name="return_to" value="{{ return_to }}">
+      <button class="btn primary" type="submit"
+              title="Send every stay that is reviewed and ready">Send all ready ({{ ready_send_count }})</button>
+    </form>
+  {% endif %}
+  {% if apartments %}
+    <button class="btn" type="button" data-toggle-panel="add-stay-panel">Add stay</button>
+    <button class="btn" type="button" data-toggle-panel="import-stays-panel">Import CSV</button>
+    <a class="btn" href="/reservations-sample.csv">Sample CSV</a>
+  {% endif %}
+{% endset %}
 {{ page_header(
   'Stays',
   'Calendar stays and manual bookings, earliest arrival first.',
-  actions=''
-    ~ ('<button class="btn primary" type="button" data-toggle-panel="add-stay-panel">Add stay</button>' if apartments else '')
-    ~ ('<button class="btn" type="button" data-toggle-panel="import-stays-panel">Import CSV</button>' if apartments else '')
-    ~ ('<a class="btn" href="/reservations-sample.csv">Sample CSV</a>' if apartments else '')
+  actions=header_actions
 ) }}
 
 {% if apartments %}
@@ -162,7 +173,7 @@
         <td class="num">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
         <td>
           {% if reservation.status != 'active' %}<span class="pill grey">{{ reservation.status }}</span>
-          {% else %}{{ progress_pill(progress.status) }}{% endif %}
+          {% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}
         </td>
         <td class="nowrap">
           {% if check_in and reservation.status == 'active' %}
@@ -170,6 +181,7 @@
           {% else %}—{% endif %}
         </td>
         <td class="nowrap row-actions">
+          {{ row_reporting_actions(reservation, row.controls, return_to) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}" role="menuitem">Edit</a>
             {% if show_archive %}

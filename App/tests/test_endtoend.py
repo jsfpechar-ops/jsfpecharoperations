@@ -490,6 +490,8 @@ def test_25_manual_mode_waits_for_the_host(host, mock_ubyport):
         "submit_state"
     ] == reporting.PENDING
 
+    reviewed = host.post(f"/reservations/{reservation_id}/review", follow_redirects=False)
+    assert reviewed.status_code == 303
     response = host.post(f"/reservations/{reservation_id}/submit", follow_redirects=False)
     assert response.status_code == 303
     after = db.query_one("SELECT * FROM guest WHERE id = ?", (guest["id"],))
@@ -566,6 +568,7 @@ def test_26_a_field_error_is_reported_back_as_correctable(host, mock_ubyport):
         "submit_state"
     ] == reporting.PENDING
 
+    host.post(f"/reservations/{MANUAL_STAY['id']}/review", follow_redirects=False)
     host.post(f"/reservations/{MANUAL_STAY['id']}/submit", follow_redirects=False)
     assert db.query_one("SELECT submit_state FROM guest WHERE id = ?", (guest_id,))[
         "submit_state"

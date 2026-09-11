@@ -133,10 +133,13 @@ def dashboard_rows(days_ahead: int = 21, days_back: int = 45) -> List[Dict[str, 
         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
             if check_in and check_in < date.today() - timedelta(days=3):
                 continue
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+        controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
         out.append(
             {
                 "reservation": reservation,
                 "progress": progress,
+                "controls": controls,
                 "urgency": level,
                 "check_in": check_in,
                 "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
@@ -799,8 +802,8 @@ def reservations_list(request: Request):
         date_from = date_to = ""
 
     sql = (
-        "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE 1 = 1"
+        "SELECT r.*, a.internal_name, a.automation_mode, a.submit_after_hours "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id WHERE 1 = 1"
     )
     params: List[Any] = []
     if show_archive:
@@ -826,15 +829,24 @@ def reservations_list(request: Request):
         params.append(date_to)
     sql += f" ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT {RESERVATION_LIMIT}"
     reservations = db.query(sql, params)
-    rows = [
-        {"reservation": row, "progress": reporting.reservation_progress(row)}
-        for row in reservations
-    ]
+    rows = []
+    for row in reservations:
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
+        progress = reporting.reservation_progress(row)
+        rows.append(
+            {
+                "reservation": row,
+                "progress": progress,
+                "controls": reporting.send_controls(row, apartment, progress) if apartment else {},
+            }
+        )
+    ready_send_count = reporting.count_sendable_stays([item["reservation"] for item in rows])
     return render(
         request,
         "reservations.html",
         {
             "rows": rows,
+            "ready_send_count": ready_send_count,
             "status": status,
             "apartments": db.query("SELECT id, internal_name FROM apartment ORDER BY internal_name"),
             "apartment_id": apartment_id,
@@ -921,6 +933,47 @@ async def reservations_import(request: Request):
     return _back("/reservations", err=result["errors"][0] if result["errors"] else "Nothing imported.")
 
 
+@router.post("/reservations/submit-ready")
+async def reservations_submit_ready(request: Request):
+    """Send every stay that is ready and allowed to go out now."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    return_to = _form_str(form, "return_to") or "/reservations"
+    reservations = db.query(
+        "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 AND a.archived_at IS NULL"
+    )
+    sent_stays = 0
+    sent_guests = 0
+    for reservation in reservations:
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+        if not apartment:
+            continue
+        progress = reporting.reservation_progress(reservation)
+        if not reporting.send_controls(reservation, apartment, progress)["send_enabled"]:
+            continue
+        guest_ids = [guest["id"] for guest in progress["reportable"] if guest["submit_state"] != reporting.SENT]
+        if not guest_ids:
+            continue
+        results = reporting.submit_for_apartment(
+            reservation["apartment_id"],
+            only_guest_ids=guest_ids,
+            mode="manual_bulk",
+            ignore_automation=True,
+        )
+        if not results:
+            continue
+        batch_sent = sum(r.get("submitted", 0) for r in results)
+        if batch_sent:
+            sent_stays += 1
+            sent_guests += batch_sent
+    if not sent_guests:
+        return _back(return_to, err="No stays were ready to send. Review and mark stays first if you use manual mode.")
+    return _back(return_to, msg=f"Sent {sent_guests} guest record(s) across {sent_stays} stay(s).")
+
+
 @router.get("/reservations/{reservation_id}")
 def reservation_detail(reservation_id: int, request: Request):
     guard = auth.require_login(request)
@@ -934,6 +987,8 @@ def reservation_detail(reservation_id: int, request: Request):
     if not reservation:
         return _back("/reservations", err="No such stay.")
     progress = reporting.reservation_progress(reservation)
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    send_controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
     guest_rows = []
     for guest in progress["guests"]:
         guest_rows.append(
@@ -956,6 +1011,7 @@ def reservation_detail(reservation_id: int, request: Request):
         {
             "reservation": reservation,
             "progress": progress,
+            "send_controls": send_controls,
             "guest_rows": guest_rows,
             "check_in": check_in,
             "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
@@ -1018,6 +1074,25 @@ def reservation_unarchive(reservation_id: int, request: Request):
     return _back(f"/reservations/{reservation_id}", msg="Stay restored from archive.")
 
 
+@router.post("/reservations/{reservation_id}/review")
+async def reservation_review(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    form = await request.form()
+    return_to = _form_str(form, "return_to") or f"/reservations/{reservation_id}"
+    db.update(
+        "reservation",
+        reservation_id,
+        {"report_reviewed_at": db.utcnow(), "updated_at": db.utcnow()},
+    )
+    db.audit("reservation_reviewed", f"id={reservation_id}")
+    return _back(return_to, msg="Stay marked as reviewed. You can now send to UbyPort.")
+
+
 @router.post("/reservations/{reservation_id}/submit")
 async def reservation_submit(reservation_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1026,8 +1101,17 @@ async def reservation_submit(reservation_id: int, request: Request):
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
     if not reservation:
         return _back("/reservations", err="No such stay.")
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
+    if not controls.get("send_enabled"):
+        return _back(
+            f"/reservations/{reservation_id}",
+            err=controls.get("send_hint") or "This stay cannot be sent right now.",
+        )
     form = await request.form()
     allow_resend = bool(form.get("allow_resend"))
+    return_to = _form_str(form, "return_to") or f"/reservations/{reservation_id}"
     guest_ids = [
         guest["id"]
         for guest in db.query("SELECT id FROM guest WHERE reservation_id = ?", (reservation_id,))
@@ -1041,23 +1125,23 @@ async def reservation_submit(reservation_id: int, request: Request):
     )
     if not results:
         return _back(
-            f"/reservations/{reservation_id}",
+            return_to,
             err="Nothing was sendable: every guest is either incomplete, already reported, or not reportable.",
         )
     first = results[0]
     if first.get("state") == "not_configured":
-        return _back(f"/reservations/{reservation_id}", err=f"UbyPort settings incomplete: {first['error']}")
+        return _back(return_to, err=f"UbyPort settings incomplete: {first['error']}")
     if first.get("state") == "transport_error":
-        return _back(f"/reservations/{reservation_id}", err=f"Could not reach UbyPort: {first.get('error')}")
+        return _back(return_to, err=f"Could not reach UbyPort: {first.get('error')}")
     sent = sum(r.get("submitted", 0) for r in results)
     failed = sum(r.get("failed", 0) + r.get("blocked", 0) for r in results)
     if failed:
         return _back(
-            f"/reservations/{reservation_id}",
+            return_to,
             msg=f"{sent} guest(s) accepted.",
             err=f"{failed} guest(s) were rejected - open the Doručenka for details.",
         )
-    return _back(f"/reservations/{reservation_id}", msg=f"{sent} guest(s) reported to UbyPort.")
+    return _back(return_to, msg=f"{sent} guest(s) reported to UbyPort.")
 
 
 # --- guests --------------------------------------------------------------
@@ -1138,7 +1222,9 @@ async def guest_create(reservation_id: int, request: Request):
         }
     )
     guest_id = db.insert("guest", payload)
+    db.update("reservation", reservation_id, {"report_reviewed_at": None, "updated_at": db.utcnow()})
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
+    reporting.maybe_submit_after_host_save(reservation["apartment_id"], guest_id)
     return _back(f"/reservations/{reservation_id}", msg="Guest added.")
 
 
@@ -1186,7 +1272,15 @@ async def guest_update(guest_id: int, request: Request):
         payload["submit_state"] = reporting.PENDING
         payload["last_errors"] = None
     db.update("guest", guest_id, payload)
+    db.update(
+        "reservation",
+        guest["reservation_id"],
+        {"report_reviewed_at": None, "updated_at": db.utcnow()},
+    )
     db.audit("guest_updated", f"id={guest_id} by=host")
+    reservation_row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],))
+    if reservation_row:
+        reporting.maybe_submit_after_host_save(reservation_row["apartment_id"], guest_id)
     return _back(f"/guests/{guest_id}", msg="Saved.")
 
 

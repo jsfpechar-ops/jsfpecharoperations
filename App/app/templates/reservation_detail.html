@@ -48,12 +48,20 @@
         </div>
         <div class="detail-metric">
           <div class="metric-label">Reporting</div>
-          <div class="metric-value">{{ progress_pill(progress.status) }}</div>
+          <div class="metric-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
           <div class="small muted" style="margin-top:6px">
-            Automation:
-            {% if reservation.automation_mode == 'immediate' %}immediately on submit
-            {% elif reservation.automation_mode == 'scheduled' %}{{ reservation.submit_after_hours }} h after check-in
-            {% else %}manual only{% endif %}
+            {% if progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
+              Guest forms are complete. New guest submissions send automatically; host entries send on save.
+            {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
+              Guest forms are complete. Review them, then send manually.
+            {% elif progress.status == 'ready' and reservation.automation_mode == 'scheduled' %}
+              Guest forms are complete. They will send {{ reservation.submit_after_hours }} h after check-in, or use Send now.
+            {% else %}
+              Automation:
+              {% if reservation.automation_mode == 'immediate' %}immediately on submit
+              {% elif reservation.automation_mode == 'scheduled' %}{{ reservation.submit_after_hours }} h after check-in
+              {% else %}manual only{% endif %}
+            {% endif %}
           </div>
         </div>
     </div>
@@ -61,11 +69,21 @@
     <div class="panel">
       <div class="actions" style="margin-top:0">
         <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
           <button class="btn primary" type="submit"
-            {% if not progress.reportable or progress.sent | length == progress.reportable | length %}disabled{% endif %}>
+            {% if not send_controls.send_enabled %}disabled{% endif %}
+            title="{{ send_controls.send_hint }}">
             Send to UbyPort now
           </button>
         </form>
+        {% if send_controls.review_visible and not send_controls.reviewed %}
+          <form method="post" action="/reservations/{{ reservation.id }}/review" class="inline">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+            <button class="btn" type="submit">Mark as reviewed</button>
+          </form>
+        {% elif send_controls.reviewed %}
+          <span class="pill green">Reviewed</span>
+        {% endif %}
         <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">Add a guest by hand</a>
         {% if reservation.archived_at %}
           <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="inline">
@@ -85,7 +103,7 @@
       {% endif %}
     </div>
 
-    <h2>Guests</h2>
+    <h2 id="guests">Guests</h2>
     {% if guest_rows %}
       <div class="panel tight scroll-x">
         <table>

@@ -187,6 +187,105 @@ STATUS_LABELS = {
 }
 
 
+def pending_reportable(guests: List[Any]) -> List[Any]:
+    """Reportable guests that have not yet been accepted by UbyPort."""
+    return [
+        guest
+        for guest in guests
+        if validation.guest_is_reportable(guest["nationality"])
+        and guest["submit_state"] not in (SENT, BLOCKED)
+    ]
+
+
+def status_label(status: str, automation_mode: Optional[str] = None) -> str:
+    """Human label for a stay's reporting status, with automation context."""
+    if status == "ready" and automation_mode == "immediate":
+        return "Ready — auto-send"
+    if status == "ready" and automation_mode == "manual":
+        return "Ready — send manually"
+    if status == "ready" and automation_mode == "scheduled":
+        return "Ready — scheduled send"
+    return STATUS_LABELS.get(status, status)
+
+
+def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str, Any]:
+    """Whether Send / Review actions should appear on a stay row."""
+    mode = apartment["automation_mode"]
+    reviewed = bool(reservation["report_reviewed_at"])
+    pending = pending_reportable(progress["reportable"])
+    has_pending = bool(pending)
+    can_send = progress["status"] in ("ready", "failed") and has_pending
+    auto_immediate = mode == "immediate"
+    requires_review = mode == "manual"
+
+    send_enabled = can_send and not auto_immediate
+    if requires_review and not reviewed:
+        send_enabled = False
+
+    if auto_immediate:
+        send_hint = "Sends automatically when a guest completes their form"
+    elif requires_review and not reviewed:
+        send_hint = "Review guest details first, then send"
+    elif not has_pending:
+        send_hint = "Nothing left to send for this stay"
+    elif not can_send:
+        send_hint = "Complete guest details before sending"
+    else:
+        send_hint = "Send completed guest records to UbyPort now"
+
+    review_visible = (
+        reservation["status"] == "active"
+        and not reservation["archived_at"]
+        and progress["status"] in ("ready", "incomplete", "failed")
+        and bool(progress["guests"])
+    )
+
+    return {
+        "send_enabled": send_enabled,
+        "send_visible": can_send or (auto_immediate and has_pending),
+        "send_hint": send_hint,
+        "review_visible": review_visible,
+        "reviewed": reviewed,
+        "auto_immediate": auto_immediate,
+        "requires_review": requires_review,
+        "pending_count": len(pending),
+    }
+
+
+def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
+    """Immediate automation also applies when the host enters guest details."""
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment or apartment["automation_mode"] != "immediate":
+        return
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    if not guest:
+        return
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
+    if not reservation or reservation["status"] != "active":
+        return
+    if not guest_is_complete(guest, reservation) or not validation.guest_is_reportable(guest["nationality"]):
+        return
+    if guest["submit_state"] == SENT:
+        return
+    try:
+        submit_for_apartment(apartment_id, only_guest_ids=[guest_id], mode="immediate", ignore_automation=True)
+    except Exception:
+        pass
+
+
+def count_sendable_stays(reservations: List[Any]) -> int:
+    """How many stays can be sent right now with the bulk action."""
+    count = 0
+    for reservation in reservations:
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+        if not apartment or not apartment["active"]:
+            continue
+        progress = reservation_progress(reservation)
+        if send_controls(reservation, apartment, progress)["send_enabled"]:
+            count += 1
+    return count
+
+
 def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
     """Whether the apartment's automation setting says to send this now."""
     now = now or datetime.now()
