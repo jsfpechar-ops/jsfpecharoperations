@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f4f3ef">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260911f">
+  <link rel="stylesheet" href="/static/app.css?v=20260911g">
 </head>
 <body class="layout-host">
 {% if show_nav | default(true) %}
@@ -59,25 +59,35 @@
 {% endif %}
 
 <main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
-  {% for alert in open_alerts %}
-    <div class="banner {{ alert.level }}">
-      <div class="grow">
-        <strong>{{ alert.message }}</strong>
-        {% if alert.detail %}<small>{{ alert.detail }}</small>{% endif %}
-        {% if alert.reservation_id %}
-          <small><a href="/reservations/{{ alert.reservation_id }}">Open the stay &rarr;</a></small>
-        {% elif alert.apartment_id %}
-          <small><a href="/apartments/{{ alert.apartment_id }}">Open the apartment &rarr;</a></small>
-        {% endif %}
-      </div>
-      <form method="post" action="/alerts/{{ alert.id }}/dismiss">
-        <button class="btn small" type="submit">Dismiss</button>
-      </form>
-    </div>
-  {% endfor %}
-
   {% block content %}{% endblock %}
 </main>
+
+{% if open_alerts %}
+<aside class="notification-stack" aria-label="Notifications" aria-live="polite">
+  {% for alert in open_alerts %}
+    <article class="notification-bubble {{ alert.level }}" data-notification>
+      {% if alert.reservation_id %}
+        <a class="notification-link" href="/reservations/{{ alert.reservation_id }}">
+      {% elif alert.apartment_id %}
+        <a class="notification-link" href="/apartments/{{ alert.apartment_id }}">
+      {% else %}
+        <div class="notification-link">
+      {% endif %}
+          <span class="notification-icon" aria-hidden="true">!</span>
+          <span class="grow">
+            <strong>{{ alert.message }}</strong>
+            {% if alert.detail %}<small>{{ alert.detail }}</small>{% endif %}
+            {% if alert.reservation_id %}<small class="notification-action">Open the stay</small>
+            {% elif alert.apartment_id %}<small class="notification-action">Open the property</small>{% endif %}
+          </span>
+      {% if alert.reservation_id or alert.apartment_id %}</a>{% else %}</div>{% endif %}
+      <form method="post" action="/alerts/{{ alert.id }}/dismiss" data-notification-dismiss>
+        <button type="submit" aria-label="Dismiss notification">&times;</button>
+      </form>
+    </article>
+  {% endfor %}
+</aside>
+{% endif %}
 
 {% if flash or flash_error %}
 <div class="toast-stack" role="status" aria-live="polite">
@@ -117,6 +127,6 @@
   </form>
 </dialog>
 
-<script src="/static/app.js?v=20260911f"></script>
+<script src="/static/app.js?v=20260911g"></script>
 </body>
 </html>

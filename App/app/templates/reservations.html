@@ -202,9 +202,18 @@
   </table>
 </div>
 <p class="small muted">
-  {{ rows | length }} stay{{ '' if rows | length == 1 else 's' }}.
-  {% if truncated %}Only the first {{ limit }} are shown — narrow the dates to see the rest.{% endif %}
+  Showing {{ ((page - 1) * page_size) + 1 }}–{{ [page * page_size, total] | min }}
+  of {{ total }} stay{{ '' if total == 1 else 's' }}.
 </p>
+{% if page_count > 1 %}
+  <nav class="pagination" aria-label="Stays pages">
+    {% if previous_page_url %}<a class="btn" href="{{ previous_page_url }}">&larr; Previous</a>
+    {% else %}<span class="btn disabled" aria-disabled="true">&larr; Previous</span>{% endif %}
+    <span class="pagination-label">Page {{ page }} of {{ page_count }}</span>
+    {% if next_page_url %}<a class="btn" href="{{ next_page_url }}">Next &rarr;</a>
+    {% else %}<span class="btn disabled" aria-disabled="true">Next &rarr;</span>{% endif %}
+  </nav>
+{% endif %}
 {% elif show_archive %}
   <div class="panel empty">No archived stays. Mistakes from manual entry can be archived from any stay row.</div>
 {% elif has_any %}

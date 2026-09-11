@@ -363,6 +363,77 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
 
+/* Alerts behave like phone notifications: they arrive above the page instead
+   of moving it, the whole message opens the relevant item, and × dismisses it
+   without a navigation. */
+.notification-stack {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 70;
+  display: grid;
+  gap: 10px;
+  width: min(390px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.notification-bubble {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: notification-in 0.32s var(--ease);
+}
+.notification-bubble.leaving { animation: notification-out 0.22s ease forwards; }
+.notification-link {
+  display: flex;
+  gap: 12px;
+  padding: 14px 42px 14px 14px;
+  color: var(--ink);
+  text-decoration: none;
+}
+a.notification-link:hover { background: var(--surface-2); }
+.notification-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: var(--bad);
+  color: #fff;
+  font-weight: 750;
+}
+.notification-bubble.warning .notification-icon { background: var(--warn); }
+.notification-bubble.info .notification-icon { background: var(--brand); }
+.notification-bubble strong { display: block; font-size: 14px; line-height: 1.35; }
+.notification-bubble small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.4; }
+.notification-bubble .notification-action { color: var(--brand); font-weight: 650; }
+.notification-bubble form { position: absolute; top: 9px; right: 9px; }
+.notification-bubble form button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+.notification-bubble form button:hover { background: var(--surface-3); color: var(--ink); }
+@keyframes notification-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+}
+@keyframes notification-out {
+  to { opacity: 0; transform: translateX(24px) scale(0.97); }
+}
+
 /* --- metric tiles ------------------------------------------------------ */
 
 .stats {
@@ -598,6 +669,16 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .btn:disabled:hover { background: var(--surface); border-color: var(--line-2); }
 
 .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 20px; }
+.btn.disabled { opacity: 0.45; pointer-events: none; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 20px 0;
+}
+.pagination-label { color: var(--muted); font-size: 13.5px; font-weight: 600; }
 
 .btn-icon {
   display: inline-flex;
@@ -689,6 +770,20 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   border-radius: 0;
   color: var(--muted);
   font-size: 13.5px;
+}
+
+.help-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: help;
 }
 .action-menu .menu-caret { font-size: 10px; opacity: 0.6; }
 .page-actions .action-menu .row-menu-panel { min-width: 210px; }
@@ -1007,6 +1102,8 @@ details.raw pre {
 /* Stacked table rows: on a phone a row becomes a small card, so the daily
    work stays usable without pinch-zooming. */
 @media (max-width: 720px) {
+  .notification-stack { top: 10px; right: 10px; width: calc(100vw - 20px); }
+  .pagination { justify-content: space-between; }
   .table-cards thead { display: none; }
   .col-name, .col-address, .col-purpose { min-width: 0; }
   /* The row becomes the card and each cell becomes a labelled fact, laid out
