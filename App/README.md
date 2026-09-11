@@ -35,6 +35,12 @@ Police.
    repo root.
 4. Click **Apply**. Render builds `App/`, starts the mock UbyPort server, and
    gives you a URL like `https://ubyhost.onrender.com`.
+
+If you created the service manually instead of via Blueprint, open **Settings**
+and set **Root Directory** to `App`, **Build Command** to
+`pip install -r requirements.txt`, and **Start Command** to `./render_start.sh`.
+(Without Root Directory, the repo root also has a `requirements.txt` that
+includes `App/requirements.txt`.)
 5. Open the URL, click **Load demo data** on the dashboard, and explore.
 
 The free tier sleeps after ~15 minutes of idle time; the first request after
