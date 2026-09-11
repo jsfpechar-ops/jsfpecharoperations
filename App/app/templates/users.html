@@ -28,10 +28,10 @@
               {% else %}<span class="pill green">Active</span>{% endif %}
             </td>
             <td class="row-actions" data-label="">
-              <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="inline">
-                <button class="btn small" type="submit">Open workspace</button>
-              </form>
               {% if user.id != current_user.id %}
+                <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="inline">
+                  <button class="btn small" type="submit">Open workspace</button>
+                </form>
                 <form method="post" action="/admin/users/{{ user.id }}/toggle" class="inline">
                   <button class="btn small" type="submit">{{ 'Disable' if user.active else 'Enable' }}</button>
                 </form>

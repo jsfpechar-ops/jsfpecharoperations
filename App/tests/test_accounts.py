@@ -5,7 +5,7 @@ import base64
 
 from fastapi.testclient import TestClient
 
-from app import auth, db
+from app import auth, config, db
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
@@ -194,3 +194,33 @@ def test_temporary_password_must_be_replaced_and_invalidates_old_sessions():
         assert row["must_change_password"] == 0
     finally:
         _clean_accounts()
+
+
+def test_bootstrap_admin_claims_existing_data(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "migration.db")
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(config, "BOOTSTRAP_ADMIN", True)
+    monkeypatch.setattr(config, "ADMIN_USERNAME", "first-admin")
+    monkeypatch.setattr(config, "ADMIN_PASSWORD", PASSWORD)
+    db.init_db()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Legacy flat",
+            "permalink_token": "legacymigration",
+            "automation_mode": "manual",
+            "submit_after_hours": 24,
+            "permalink_window_days": 3,
+            "default_purpose": "10",
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+
+    assert auth.ensure_bootstrap_admin() == ""
+    admin = db.query_one("SELECT * FROM user_account WHERE username = 'first-admin'")
+    assert admin["role"] == "admin"
+    assert auth.verify_password(PASSWORD, admin["password_hash"])
+    assert db.query_one(
+        "SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,)
+    )["owner_user_id"] == admin["id"]
