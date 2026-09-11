@@ -53,7 +53,7 @@
             {% if progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
               Guest forms are complete. New guest submissions send automatically; host entries send on save.
             {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
-              Guest forms are complete. Review them, then send manually.
+              Guest forms are complete. Check the details below, then send when ready.
             {% elif progress.status == 'ready' and reservation.automation_mode == 'scheduled' %}
               Guest forms are complete. They will send {{ reservation.submit_after_hours }} h after check-in, or use Send now.
             {% else %}
@@ -76,14 +76,6 @@
             Send to UbyPort now
           </button>
         </form>
-        {% if send_controls.review_visible and not send_controls.reviewed %}
-          <form method="post" action="/reservations/{{ reservation.id }}/review" class="inline">
-            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-            <button class="btn" type="submit">Mark as reviewed</button>
-          </form>
-        {% elif send_controls.reviewed %}
-          <span class="pill green">Reviewed</span>
-        {% endif %}
         <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">Add a guest by hand</a>
         {% if reservation.archived_at %}
           <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="inline">
@@ -96,10 +88,8 @@
           </form>
         {% endif %}
       </div>
-      {% if not progress.reportable %}
-        <div class="small muted" style="margin-top:8px">
-          Nothing to send: no completed guest record is subject to the reporting duty.
-        </div>
+      {% if send_controls.send_hint and not send_controls.send_enabled %}
+        <div class="small muted" style="margin-top:8px">{{ send_controls.send_hint }}</div>
       {% endif %}
     </div>
 
@@ -108,24 +98,24 @@
       <div class="panel tight scroll-x">
         <table>
           <thead>
-            <tr><th>Name</th><th>Nationality</th><th>Document</th><th>Dates</th>
-              <th>Reported</th><th></th></tr>
+            <tr><th>Name</th><th>Nationality</th><th>Document</th><th>Residence abroad</th>
+              <th>Purpose</th><th>Dates</th><th>Reported</th><th></th></tr>
           </thead>
           <tbody>
           {% for row in guest_rows %}
             {% set guest = row.guest %}
-            <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}"
-                tabindex="0" role="link" aria-label="Open guest {{ guest.surname }} {{ guest.first_name }}">
+            <tr>
               <td>
-                <a class="row-primary-link" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
-                  {{ guest.surname or '—' }} {{ guest.first_name or '' }}
-                </a>
+                <strong>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</strong>
                 {% if guest.is_lead %}<span class="pill grey">lead</span>{% endif %}
                 <div class="small muted">
                   born {{ format_birth_date(guest.birth_date) or '—' }}
                   &middot; {{ 'signed' if guest.signature_png else 'not signed' }}
                   &middot; entered by {{ guest.entered_by }}
                 </div>
+                {% if guest.note %}
+                  <div class="small muted">Note: {{ guest.note }}</div>
+                {% endif %}
                 {% if row.issues %}
                   {% for issue in row.issues %}
                     <div class="small" style="color:{{ '#c0362c' if issue.is_error else '#b26a00' }}">
@@ -137,7 +127,19 @@
                 {{ guest.nationality or '—' }}
                 <div class="small muted">{{ country_name(guest.nationality or '', 'en') }}</div>
               </td>
-              <td class="mono small">{{ guest.doc_number or '—' }}</td>
+              <td class="small">
+                <div class="mono">{{ guest.doc_number or '—' }}</div>
+                {% if guest.visa_number %}
+                  <div class="small muted">Visa {{ guest.visa_number }}</div>
+                {% endif %}
+              </td>
+              <td class="small">
+                {% if guest.res_street or guest.res_city or guest.res_country %}
+                  {{ guest.res_street or '—' }}<br>
+                  {{ guest.res_city or '' }}{% if guest.res_city and guest.res_country %}, {% endif %}{{ country_name(guest.res_country or '', 'en') }}
+                {% else %}—{% endif %}
+              </td>
+              <td class="small">{{ purpose_label(guest.purpose or '', 'en') or '—' }}</td>
               <td class="nowrap small">
                 {{ (guest.stay_from or reservation.date_from) | date_cz }}<br>
                 {{ (guest.stay_to or reservation.date_to) | date_cz }}

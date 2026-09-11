@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions %}
 
 {% macro queue_table(items, empty_text='Nothing needs attention here.') %}
   {% if items %}
@@ -22,7 +22,7 @@
             <div class="next-action">
               {% if progress.status == 'failed' %}Review the rejection and correct the guest record.
               {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}Guest details are complete — they will send automatically when guests submit.
-              {% elif progress.status == 'ready' %}Guest details are complete. Review, then send when you are ready.
+              {% elif progress.status == 'ready' %}Guest details are complete. Open the stay and send when ready.
               {% elif progress.status == 'incomplete' %}Open the stay to finish missing guest details.
               {% elif progress.status == 'awaiting_guest' %}Share the guest link or add the details yourself.
               {% else %}Review this stay.{% endif %}
@@ -55,7 +55,6 @@
 {% endmacro %}
 
 {% set header_actions %}
-  {{ bulk_send_ready(ready_send_count, '/') }}
   <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
   {% if demo_loaded %}
     <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">

@@ -1,4 +1,4 @@
-"""Send / review action rules for stay rows."""
+"""Send action rules for stay rows."""
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -67,23 +67,16 @@ def _seed(mode: str = "manual", token: str = "tok"):
     return apartment, reservation, guest_id
 
 
-def test_manual_mode_requires_review_before_send():
+def test_manual_mode_allows_send_when_guest_complete():
     apartment, reservation, _guest_id = _seed("manual", "tok-manual")
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress)
     assert progress["status"] == "ready"
-    assert controls["review_mode"] == "mark"
-    assert controls["send_enabled"] is False
-    assert controls["requires_review"] is True
-
-    db.update("reservation", reservation["id"], {"report_reviewed_at": db.utcnow()})
-    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
-    controls = reporting.send_controls(reservation, apartment, reporting.reservation_progress(reservation))
-    assert controls["review_mode"] == "done"
     assert controls["send_enabled"] is True
+    assert controls["send_visible"] is True
 
 
-def test_incomplete_stay_offers_open_review_link():
+def test_incomplete_stay_hides_send_button():
     apartment, reservation, guest_id = _seed("manual", "tok-incomplete")
     db.update(
         "guest",
@@ -94,8 +87,8 @@ def test_incomplete_stay_offers_open_review_link():
     controls = reporting.send_controls(
         reservation, apartment, reporting.reservation_progress(reservation)
     )
-    assert controls["review_mode"] == "open"
     assert controls["send_visible"] is False
+    assert controls["send_enabled"] is False
 
 
 def test_immediate_mode_disables_manual_send_button():
@@ -104,6 +97,22 @@ def test_immediate_mode_disables_manual_send_button():
     controls = reporting.send_controls(reservation, apartment, progress)
     assert controls["send_enabled"] is False
     assert controls["auto_immediate"] is True
+
+
+def test_czech_guest_explains_nothing_to_send():
+    apartment, reservation, guest_id = _seed("manual", "tok-czech")
+    db.update("guest", guest_id, {"nationality": "CZE", "submit_state": reporting.NOT_REQUIRED})
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["status"] == "not_required"
+    assert controls["send_enabled"] is False
+    assert "reporting duty" in controls["send_hint"]
+
+
+def test_count_sendable_stays_includes_ready_manual_stays():
+    apartment, reservation, _guest_id = _seed("manual", "tok-count")
+    assert reporting.count_sendable_stays([reservation]) == 1
 
 
 def test_status_label_reflects_automation():
