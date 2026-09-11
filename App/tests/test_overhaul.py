@@ -5,6 +5,7 @@ import re
 from fastapi.testclient import TestClient
 
 from app import db
+from app import alerts
 from app import demo
 from app import housebook
 from app.main import app
@@ -136,6 +137,76 @@ def test_reservations_bad_query_params_do_not_500():
         assert page.status_code == 200
     finally:
         _cleanup()
+
+
+def test_reservations_paginate_and_preserve_filters():
+    apartment_id, _stays, _past = _seed_stays()
+    try:
+        now = db.utcnow()
+        today = date.today()
+        for offset in range(40, 88):
+            db.insert(
+                "reservation",
+                {
+                    "apartment_id": apartment_id,
+                    "source": "manual",
+                    "uid": f"page-{offset}",
+                    "date_from": (today + timedelta(days=offset)).isoformat(),
+                    "date_to": (today + timedelta(days=offset + 1)).isoformat(),
+                    "summary": f"Page stay {offset}",
+                    "status": "active",
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+
+        first = TestClient(app).get(f"/reservations?range=all&apartment={apartment_id}")
+        assert "Showing 1–50 of 52 stays." in first.text
+        assert f"/reservations?range=all&amp;apartment={apartment_id}&amp;page=2" in first.text
+
+        second = TestClient(app).get(
+            f"/reservations?range=all&apartment={apartment_id}&page=2"
+        )
+        assert "Showing 51–52 of 52 stays." in second.text
+        assert "Page 2 of 2" in second.text
+    finally:
+        _cleanup()
+
+
+def test_manual_dates_override_the_selected_preset_without_javascript():
+    apartment_id, _stays, past = _seed_stays()
+    try:
+        old_from = (date.today() - timedelta(days=31)).isoformat()
+        old_to = (date.today() - timedelta(days=26)).isoformat()
+        page = TestClient(app).get(
+            f"/reservations?range=upcoming&apartment={apartment_id}"
+            f"&from={old_from}&to={old_to}&range=custom"
+        )
+        assert page.status_code == 200
+        assert f'data-href="/reservations/{past}' in page.text
+        assert "Airbnb reservation" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_alert_dismiss_fetch_is_instant_and_permanent():
+    db.init_db()
+    key = "overhaul-test-alert"
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+    try:
+        alerts.raise_alert("warning", "test", "A test alert", dedupe_key=key)
+        alert = db.query_one("SELECT id FROM alert WHERE dedupe_key = ?", (key,))
+        response = TestClient(app).post(
+            f"/alerts/{alert['id']}/dismiss",
+            headers={"X-Requested-With": "fetch"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 204
+        row = db.query_one("SELECT resolved_at, user_dismissed FROM alert WHERE id = ?", (alert["id"],))
+        assert row["resolved_at"]
+        assert row["user_dismissed"] == 1
+    finally:
+        db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
 
 
 def test_reservation_rows_are_full_click_targets():
