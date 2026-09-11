@@ -151,6 +151,26 @@
     {% endif %}
   </div>
 
+  {% if editing %}
+  <div class="panel" id="automation">
+    <h2 style="margin-top:0">Automation</h2>
+    <p class="small muted" style="margin-top:-4px">
+      Send timing, UbyPort credentials, and the default purpose of stay are configured on the
+      <a href="/automation#apartment-{{ apartment.id }}">Automation &amp; UbyPort</a> page so
+      there is one place to manage reporting for this property.
+    </p>
+    <dl class="kv">
+      <dt>Send timing</dt>
+      <dd>
+        {% if apartment.automation_mode == 'immediate' %}Immediately after guest submit
+        {% elif apartment.automation_mode == 'manual' %}Only when you press send
+        {% else %}{{ apartment.submit_after_hours }} h after check-in{% endif %}
+      </dd>
+      <dt>Default purpose</dt><dd>{{ purpose_label(apartment.default_purpose or '10', 'en') }}</dd>
+    </dl>
+    <a class="btn" href="/automation#apartment-{{ apartment.id }}">Open automation settings</a>
+  </div>
+  {% else %}
   <div class="panel" id="automation">
     <h2 style="margin-top:0">Automation</h2>
     <p class="small muted" style="margin-top:-4px">
@@ -162,19 +182,14 @@
         <label for="automation_mode">When to send to UbyPort</label>
         <select id="automation_mode" name="automation_mode"
                 data-automation-mode data-hours-target="submit_after_hours">
-          <option value="immediate" {% if editing and apartment.automation_mode == 'immediate' %}selected{% endif %}>
-            Immediately after the guest submits the form</option>
-          <option value="scheduled"
-            {% if not editing or apartment.automation_mode == 'scheduled' %}selected{% endif %}>
-            A set number of hours after check-in (recommended)</option>
-          <option value="manual" {% if editing and apartment.automation_mode == 'manual' %}selected{% endif %}>
-            Only when I press send</option>
+          <option value="immediate">Immediately after the guest submits the form</option>
+          <option value="scheduled" selected>A set number of hours after check-in (recommended)</option>
+          <option value="manual">Only when I press send</option>
         </select>
       </div>
       <div class="field">
         <label for="submit_after_hours">Hours after check-in</label>
-        <input type="number" id="submit_after_hours" name="submit_after_hours" min="0" max="72"
-               value="{{ apartment.submit_after_hours if editing else 24 }}">
+        <input type="number" id="submit_after_hours" name="submit_after_hours" min="0" max="72" value="24">
         <div class="hint">24 hours leaves room for late arrivals while keeping two working days spare.</div>
       </div>
     </div>
@@ -182,14 +197,14 @@
       <label for="default_purpose">Default purpose of stay</label>
       <select id="default_purpose" name="default_purpose">
         {% for purpose in purposes %}
-          <option value="{{ purpose.code }}"
-            {% if (editing and apartment.default_purpose == purpose.code) or (not editing and purpose.code == '10') %}selected{% endif %}>
+          <option value="{{ purpose.code }}" {% if purpose.code == '10' %}selected{% endif %}>
             {{ purpose.label }}</option>
         {% endfor %}
       </select>
       <div class="hint">Pre-selected in the guest form. Tourism fits almost all short-term rentals.</div>
     </div>
   </div>
+  {% endif %}
 
   <div class="panel" id="communication">
     <h2 style="margin-top:0">Guest link</h2>
@@ -217,6 +232,16 @@
         <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
                value="{{ apartment.permalink_window_days }}">
         <div class="hint">Keep it close to your minimum stay so each guest sees only their own booking.</div>
+      </div>
+      <div class="field">
+        <label for="checkin_info">Check-in instructions <span class="opt">(optional)</span></label>
+        <textarea id="checkin_info" name="checkin_info" rows="2">{{ apartment.checkin_info or '' }}</textarea>
+        <div class="hint">Shown to guests on their stay page — key box codes, arrival times, and so on.</div>
+      </div>
+      <div class="field">
+        <label for="checkout_info">Check-out instructions <span class="opt">(optional)</span></label>
+        <textarea id="checkout_info" name="checkout_info" rows="2">{{ apartment.checkout_info or '' }}</textarea>
+        <div class="hint">Shown alongside check-in info when guests open their stay.</div>
       </div>
       <details class="message-details" open>
         <summary>Suggested message for every portal</summary>
