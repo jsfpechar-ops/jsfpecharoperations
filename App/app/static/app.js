@@ -327,6 +327,32 @@
     });
   }
 
+  function initNotifications() {
+    document.querySelectorAll("form[data-notification-dismiss]").forEach(function (form) {
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var notification = form.closest("[data-notification]");
+        var data = new FormData(form);
+        fetch(form.action, {
+          method: "POST",
+          body: data,
+          credentials: "same-origin",
+          headers: { "X-Requested-With": "fetch" }
+        }).then(function (response) {
+          if (!response.ok) throw new Error("Dismiss failed");
+          if (notification) {
+            notification.classList.add("leaving");
+            setTimeout(function () { notification.remove(); }, 230);
+          }
+        }).catch(function () {
+          // Keep the ordinary form as a dependable fallback if the network or
+          // browser does not support the smooth path.
+          form.submit();
+        });
+      });
+    });
+  }
+
   /* Confirmations of something you just did should not push the page down;
      they appear over it and leave on their own. */
   function initToasts() {
@@ -349,6 +375,10 @@
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
       form.querySelectorAll("select, input[type=date]").forEach(function (input) {
         input.addEventListener("change", function () {
+          if (input.type === "date") {
+            var range = form.querySelector('input[name="range"]');
+            if (range) range.value = "custom";
+          }
           form.requestSubmit ? form.requestSubmit() : form.submit();
         });
       });
@@ -363,6 +393,7 @@
     initNavigation();
     initTogglePanels();
     initDismissBanners();
+    initNotifications();
     initDetailsLinks();
     initAutomationFields();
     initCsvExport();
