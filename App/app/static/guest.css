@@ -166,7 +166,19 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   border-radius: var(--g-pill);
   padding: 3px 9px;
 }
-.g-badge.quiet { color: var(--g-muted); background: var(--g-surface-2); border: 1px solid var(--g-line); }
+/* The whole row is already the button, so this label stays plain text. Given
+   pill chrome it reads as a second, competing target next to the arrow. */
+.g-badge.quiet {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--g-muted);
+  font-weight: 550;
+}
+.g-badge.quiet::before { content: "\00b7"; margin: 0 7px; }
+.g-stay:hover .g-badge.quiet { color: var(--g-accent); }
 
 .g-stay-summary {
   display: flex;
@@ -429,6 +441,32 @@ select {
 .g-details li { margin-bottom: 7px; }
 .g-details p { font-size: 14px; color: var(--g-muted); }
 .g-law { font-style: italic; margin: 12px 0 0; }
+
+/* The same explainer, folded away on the form so the first question is on
+   screen without scrolling past an essay. */
+.g-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--g-accent);
+  font-size: 14px;
+  font-weight: 650;
+}
+.g-fold > summary::-webkit-details-marker { display: none; }
+.g-fold > summary::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.16s var(--g-ease);
+}
+.g-fold[open] > summary::before { transform: rotate(45deg); }
+.g-fold[open] > summary { margin-bottom: 11px; }
 
 .g-chip {
   display: inline-block;
