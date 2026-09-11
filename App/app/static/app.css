@@ -374,7 +374,10 @@ textarea { min-height: 74px; resize: vertical; }
   border: 1px solid var(--line);
   background: var(--panel-solid);
   box-shadow: 0 8px 32px rgba(15, 23, 36, 0.16);
-  z-index: 100;
+  z-index: 10000;
+}
+.row-menu-panel.is-open {
+  position: fixed;
 }
 .field-disabled label,
 .field-disabled .hint { color: #9aa6b5; }
