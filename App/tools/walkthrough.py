@@ -176,7 +176,7 @@ def main() -> None:
     (OUT / "guest-validation.html").write_text(bad.text)
     render_html(bad.text, "guest-form-validation")
 
-    print("7. host review")
+    print("7. host dashboard after report")
     shot("/", "dashboard-reported")
     shot(f"/reservations/{reservation_id}", "reservation-detail")
     shot("/submissions", "submissions")

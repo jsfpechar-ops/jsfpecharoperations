@@ -424,6 +424,8 @@ APARTMENT_TEXT_FIELDS = (
     "uby_contact",
     "uby_ws_user",
     "notes",
+    "checkin_info",
+    "checkout_info",
 )
 
 
@@ -499,6 +501,8 @@ async def apartment_update(apartment_id: int, request: Request):
         return _back("/apartments", err="No such apartment.")
     form = await request.form()
     payload = _apartment_payload(form)
+    for key in ("automation_mode", "submit_after_hours", "default_purpose"):
+        payload.pop(key, None)
     password = _form_str(form, "uby_ws_password")
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
@@ -1615,6 +1619,7 @@ def settings_view(request: Request):
                 "SELECT id, internal_name FROM apartment "
                 "WHERE legal_entity_id IS NULL AND active = 1 ORDER BY internal_name"
             ),
+            "guest_pin_required": config.GUEST_PIN_REQUIRED,
         },
     )
 

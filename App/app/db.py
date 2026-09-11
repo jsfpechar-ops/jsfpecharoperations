@@ -219,7 +219,6 @@ ADDED_COLUMNS = (
     ("apartment", "permalink_pin", "TEXT"),
     ("apartment", "archived_at", "TEXT"),
     ("reservation", "archived_at", "TEXT"),
-    ("reservation", "report_reviewed_at", "TEXT"),
     ("guest", "archived_at", "TEXT"),
     ("alert", "user_dismissed", "INTEGER NOT NULL DEFAULT 0"),
 )

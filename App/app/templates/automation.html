@@ -26,7 +26,11 @@
         <input type="hidden" name="return_to" value="/automation#apartment-{{ apartment.id }}">
 
         <h3>When to send to UbyPort</h3>
-        <p class="small muted">Rejected records are never silently retried — you always get an alert.</p>
+        <p class="small muted">
+          Rejected records are never silently retried — you always get an alert.
+          If you choose <strong>only when I press send</strong>, use <strong>Send</strong> on each stay
+          or the green <strong>Send all ready</strong> button on the Stays page.
+        </p>
         <div class="grid two">
           <div class="field">
             <label for="automation_mode_{{ apartment.id }}">Send timing</label>

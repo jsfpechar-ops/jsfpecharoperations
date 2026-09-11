@@ -773,13 +773,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     db.audit("guest_form_saved", f"guest={saved_id} reservation={reservation_id}", actor="guest")
 
     # Immediate automation is allowed to fire as soon as the data is stored.
-    if apartment["automation_mode"] == "immediate":
-        try:
-            reporting.submit_for_apartment(
-                apartment["id"], only_guest_ids=[saved_id], mode="immediate"
-            )
-        except Exception:  # never let a reporting problem break the guest's flow
-            pass
+    reporting.try_immediate_submit(apartment["id"], saved_id)
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303

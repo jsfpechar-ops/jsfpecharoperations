@@ -40,6 +40,20 @@
     </div>
 
     <div class="panel">
+      <h2 style="margin-top:0">Guest form access</h2>
+      <dl class="kv">
+        <dt>PIN before the form</dt>
+        <dd>{{ 'Required (four digits per property)' if guest_pin_required else 'Off' }}</dd>
+      </dl>
+      <p class="small muted">
+        Each property has its own PIN on the guest-link settings page. Whether a PIN is required at
+        all is controlled by the
+        <span class="mono">UBYHOST_GUEST_PIN</span> environment variable — set it to
+        <span class="mono">0</span> to disable PINs everywhere, then restart the app.
+      </p>
+    </div>
+
+    <div class="panel">
       <h2 style="margin-top:0">Cached UbyPort code lists</h2>
       <dl class="kv">
         <dt>Countries</dt><dd>{{ codelists.countries[:19].replace('T', ' ') if codelists.countries else 'using the bundled list' }}</dd>
