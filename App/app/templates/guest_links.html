@@ -51,7 +51,9 @@ The form explains why the information is required and how it is handled.
 
 Thank you.</pre>
         <div class="actions">
-          <button class="btn small" type="button" data-copy="message-{{ apartment.id }}"
+          {# Pasting this whole block into a portal is the job of this page, so it
+             gets the card's strongest button. #}
+          <button class="btn small primary" type="button" data-copy="message-{{ apartment.id }}"
                   data-copied-label="Message copied">Copy this message</button>
         </div>
       </details>

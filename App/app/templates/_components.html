@@ -82,10 +82,10 @@
     CSV <span class="menu-caret" aria-hidden="true">▾</span>
   </button>
   <div class="row-menu-panel" role="menu" hidden>
-    <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-stays-panel">Import stays</button>
-    <a class="row-menu-item" href="/reservations-sample.csv" role="menuitem">Download sample CSV</a>
     <button class="row-menu-item" type="button" role="menuitem"
             data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}">Export stays</button>
+    <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-stays-panel">Import stays</button>
+    <a class="row-menu-item quiet" href="/reservations-sample.csv" role="menuitem">Download sample CSV</a>
   </div>
 </div>
 {% endmacro %}

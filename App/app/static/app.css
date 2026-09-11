@@ -671,6 +671,16 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   cursor: pointer;
 }
 .row-menu-item:hover { background: var(--brand-soft); color: var(--brand-ink); }
+/* A supporting item, set below a hairline so it does not compete with the
+   actions above it. */
+.row-menu-item.quiet {
+  margin-top: 5px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
 .action-menu .menu-caret { font-size: 10px; opacity: 0.6; }
 .page-actions .action-menu .row-menu-panel { min-width: 210px; }
 
@@ -712,7 +722,7 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   padding-bottom: 0;
 }
 .filters input[type=date], .filters input[type=text], .filters select { height: 44px; }
-.compact-filters summary { cursor: pointer; color: var(--brand); font-size: 13.5px; font-weight: 600; }
+.compact-filters summary { color: var(--brand); font-size: 13.5px; font-weight: 600; }
 /* With scripting the filters apply themselves, so Apply is only a fallback. */
 .has-js form[data-auto-submit] .filter-apply { display: none; }
 
@@ -738,8 +748,14 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
    needs real width. Two up on a laptop, one up on a phone. */
 .link-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
 .link-card { display: flex; flex-direction: column; }
-/* Push the trailing actions down so cards of unequal height still line up. */
-.link-card > .actions:last-child { margin-top: auto; padding-top: 14px; }
+/* Push the trailing actions down so cards of unequal height still line up, and
+   rule them off so they read as a card footer rather than a second button row. */
+.link-card > .actions:last-child {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.message-details .actions { margin-top: 12px; }
 @media (max-width: 560px) {
   .link-cards { grid-template-columns: 1fr; }
 }
@@ -859,14 +875,31 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 a.setup-item { color: inherit; text-decoration: none; }
 a.setup-item:hover .grow strong { color: var(--brand); }
 
-details.panel > summary { cursor: pointer; font-size: 15.5px; font-weight: 600; color: var(--ink); }
+/* One disclosure affordance everywhere: a chevron that turns. The browser
+   default triangle is drawn differently by each engine and reads as debug UI. */
+summary { display: flex; align-items: center; gap: 9px; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  opacity: 0.45;
+  transform: rotate(-45deg);
+  transition: transform 0.16s var(--ease);
+}
+details[open] > summary::before { transform: rotate(45deg); }
+
+details.panel > summary { font-size: 15.5px; font-weight: 600; color: var(--ink); }
 details.panel[open] > summary { margin-bottom: 8px; }
-.technical summary, .danger-zone summary, .message-details summary { font-weight: 650; cursor: pointer; }
+.technical summary, .danger-zone summary, .message-details summary { font-weight: 650; }
 .message-details { margin-top: 20px; }
 .message-details[open] .message-template { margin-top: 10px; }
 .danger-zone { border-color: rgba(195, 47, 36, 0.22); box-shadow: none; }
 
-details.raw summary { cursor: pointer; font-weight: 600; font-size: 13.5px; margin-top: 10px; }
+details.raw summary { font-weight: 600; font-size: 13.5px; margin-top: 10px; }
 details.raw pre {
   background: #14181a;
   color: #d8e0e6;
