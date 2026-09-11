@@ -1,18 +1,30 @@
+{% set why_detail %}
+  <ul>
+    <li>{{ t('why_point_report') }}</li>
+    <li>{{ t('why_point_book') }}</li>
+    <li>{{ t('why_point_czech') }}</li>
+    <li>{{ t('why_point_sign') }}</li>
+    <li>{{ t('why_point_nothing_else') }}</li>
+  </ul>
+  <p class="g-law">{{ t('why_law') }}</p>
+  {% if privacy_url %}
+    <p style="margin-bottom:0"><a href="{{ privacy_url }}">{{ t('privacy_link') }} &rarr;</a></p>
+  {% endif %}
+{% endset %}
 <div class="g-card g-why">
   <h2>{{ t('why_title') }}</h2>
   <p class="g-intro" style="margin-bottom:0">{{ t('legal_intro') }}</p>
-  <div class="g-details">
-    <h3>{{ t('why_more') }}</h3>
-    <ul>
-      <li>{{ t('why_point_report') }}</li>
-      <li>{{ t('why_point_book') }}</li>
-      <li>{{ t('why_point_czech') }}</li>
-      <li>{{ t('why_point_sign') }}</li>
-      <li>{{ t('why_point_nothing_else') }}</li>
-    </ul>
-    <p class="g-law">{{ t('why_law') }}</p>
-    {% if privacy_url %}
-      <p style="margin-bottom:0"><a href="{{ privacy_url }}">{{ t('privacy_link') }} &rarr;</a></p>
-    {% endif %}
-  </div>
+  {% if why_compact %}
+    {# On the form the guest's job is the fields, so the detail folds away and
+       the first question is on screen without scrolling past an essay. #}
+    <details class="g-details g-fold">
+      <summary>{{ t('why_more') }}</summary>
+      {{ why_detail }}
+    </details>
+  {% else %}
+    <div class="g-details">
+      <h3>{{ t('why_more') }}</h3>
+      {{ why_detail }}
+    </div>
+  {% endif %}
 </div>

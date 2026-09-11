@@ -24,6 +24,7 @@
   </div>
 {% endif %}
 
+{% set why_compact = true %}
 {% include "guest/_why.html" %}
 
 <div class="g-card g-stay-summary">
@@ -103,13 +104,14 @@
     </div>
 
     <div class="g-field">
-      <div class="checkline" style="display:flex;gap:9px;align-items:flex-start">
+      <label class="checkline" for="child_in_passport">
         <input type="checkbox" id="child_in_passport" name="child_in_passport" value="1"
-               style="width:auto;margin-top:4px"
                {% if values.get('child_in_passport') or (guest and guest.doc_number == inpass) %}checked{% endif %}>
-        <label for="child_in_passport" style="font-weight:600;margin:0">{{ t('child_title') }}</label>
-      </div>
-      <div class="hint">{{ t('child_help') }}</div>
+        <span>
+          {{ t('child_title') }}
+          <small>{{ t('child_help') }}</small>
+        </span>
+      </label>
     </div>
 
     <div class="g-field" id="parent-doc-wrap" style="display:none">

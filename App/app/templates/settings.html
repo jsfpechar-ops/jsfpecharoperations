@@ -118,15 +118,15 @@
       </p>
       <h2>Recent activity (last {{ audit_count }} events)</h2>
       <div class="scroll-x">
-        <table>
+        <table class="table-cards">
           <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
           <tbody>
           {% for entry in audit %}
             <tr>
-              <td class="nowrap small">{{ entry.at[:19].replace('T', ' ') }}</td>
-              <td class="small">{{ entry.actor }}</td>
-              <td class="small">{{ entry.action }}</td>
-              <td class="small muted">{{ entry.detail }}</td>
+              <td class="nowrap small" data-label="When">{{ entry.at[:19].replace('T', ' ') }}</td>
+              <td class="small" data-label="Who">{{ entry.actor }}</td>
+              <td class="small" data-label="Action">{{ entry.action }}</td>
+              <td class="small muted" data-label="Detail">{{ entry.detail }}</td>
             </tr>
           {% else %}
             <tr><td colspan="4" class="muted small">Nothing logged yet.</td></tr>

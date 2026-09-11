@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% set nav = 'dashboard' %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Overview{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline %}
 
 {% macro queue_table(items, empty_text='Nothing needs attention here.') %}
   {% if items %}
   <div class="panel tight scroll-x">
-    <table>
+    <table class="table-cards">
       <thead><tr><th>Stay</th><th>Deadline</th><th>Guests</th><th>Reporting</th><th><span class="sr-only">Actions</span></th></tr></thead>
       <tbody>
       {% for row in items %}
         {% set reservation = row.reservation %}
         {% set progress = row.progress %}
         <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link">
-          <td class="task-row-main">
+          <td class="task-row-main" data-label="Stay">
             <a class="task-title row-primary-link" href="/reservations/{{ reservation.id }}?return_to=/">
               {{ reservation.internal_name }}
             </a>
@@ -28,16 +28,21 @@
               {% else %}Open the stay and check what is missing.{% endif %}
             </div>
           </td>
-          <td class="nowrap">
+          <td class="nowrap" data-label="Deadline">
             <span class="deadline {{ row.urgency }}">{{ describe_time_left(row.check_in) }}</span>
             {% if row.deadline and row.urgency != 'future' %}<div class="small muted">by {{ row.deadline.strftime('%d.%m. %H:%M') }}</div>{% endif %}
           </td>
-          <td class="nowrap">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
-          <td>{{ progress_pill(progress.status, reservation.automation_mode) }}</td>
-          <td class="nowrap row-actions">
+          <td class="nowrap" data-label="Guests">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+          <td data-label="Reporting">{{ progress_pill(progress.status, reservation.automation_mode) }}</td>
+          <td class="nowrap row-actions" data-label="">
             {{ row_reporting_actions(reservation, row.controls, '/') }}
+            {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
+              {{ copy_inline('queue-link-' ~ reservation.id,
+                  public_base_url ~ '/l/' ~ reservation.permalink_token ~ '/' ~ reservation.id) }}
+            {% endif %}
             {{ row_menu_begin() }}
-              <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">Edit</a>
+              <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">Open stay</a>
+              <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">Add a guest</a>
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
                     onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
                 <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
@@ -58,7 +63,7 @@
   <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
   {% if demo_loaded %}
     <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">
-      <button class="btn danger" type="submit">Clear demo data</button>
+      <button class="btn ghost" type="submit">Clear demo data</button>
     </form>
   {% endif %}
 {% endset %}
@@ -67,8 +72,6 @@
   'Your reporting work, ordered by legal urgency and the next action.',
   actions=header_actions
 ) }}
-
-{% if last_sync %}<p class="small muted">Calendars last synced {{ last_sync[:16].replace('T', ' ') }} UTC.</p>{% endif %}
 
 {% if not apartments %}
   <div class="panel empty">
@@ -79,7 +82,7 @@
     {% if ubyport_env == 'mock' %}
       <form method="post" action="/demo" style="margin-top:18px">
         <button class="btn" type="submit">Or fill it with a demo apartment to click through</button>
-        <div class="small muted" style="margin-top:6px">
+        <div class="small muted" style="margin-top:8px">
           One property, four stays from a sample calendar, and two guests already reported to the
           mock server. A dedicated reset action appears on Overview.
         </div>
@@ -87,20 +90,62 @@
     {% endif %}
   </div>
 {% else %}
+
+  {# One card for the single most urgent thing, with its action already on it. #}
+  {% if focus %}
+    {% set f_res = focus.reservation %}
+    {% set f_progress = focus.progress %}
+    <section class="focus-card {{ 'is-overdue' if focus.urgency in ('overdue', 'urgent') }}"
+             aria-label="Next action">
+      <div class="focus-main">
+        <div class="focus-eyebrow"><span class="dot"></span>
+          {% if focus.urgency == 'overdue' %}Past the deadline
+          {% elif focus.urgency == 'urgent' %}Due now
+          {% else %}Next up{% endif %}
+        </div>
+        <p class="focus-title">
+          <a href="/reservations/{{ f_res.id }}?return_to=/">{{ f_res.internal_name }}</a>
+        </p>
+        <div class="focus-meta">
+          <span>{{ f_res.date_from | date_cz }} &ndash; {{ f_res.date_to | date_cz }}</span>
+          <span class="deadline {{ focus.urgency }}">{{ describe_time_left(focus.check_in) }}</span>
+          {{ progress_pill(f_progress.status, f_res.automation_mode) }}
+          <span class="muted">{{ f_progress.filled }} / {{ f_progress.expected if f_progress.expected is not none else '?' }} guest forms</span>
+        </div>
+      </div>
+      <div class="focus-actions">
+        {% if focus.controls.get('send_enabled') %}
+          <form method="post" action="/reservations/{{ f_res.id }}/submit" class="inline">
+            <input type="hidden" name="return_to" value="/">
+            <button class="btn accent" type="submit">Send to UbyPort now</button>
+          </form>
+        {% elif f_progress.status in ('awaiting_guest', 'incomplete') and f_res.permalink_token %}
+          {{ copy_inline('focus-link',
+              public_base_url ~ '/l/' ~ f_res.permalink_token ~ '/' ~ f_res.id, 'Copy guest link') }}
+          <a class="btn" href="/reservations/{{ f_res.id }}/guests/new">Add a guest by hand</a>
+        {% endif %}
+        <a class="btn {{ 'primary' if not focus.controls.get('send_enabled') else '' }}"
+           href="/reservations/{{ f_res.id }}?return_to=/">Open the stay</a>
+      </div>
+    </section>
+  {% endif %}
+
   <div class="stats" aria-label="Work summary">
-    <a class="stat stat-link {{ 'bad' if counts.overdue else '' }}" href="#needs-action">
+    <a class="stat stat-link {{ 'bad' if counts.overdue else 'zero' }}" href="#needs-action">
       <div class="n">{{ counts.overdue }}</div><div class="k">Past deadline</div>
     </a>
-    <a class="stat stat-link warn" href="#needs-action">
+    <a class="stat stat-link {{ 'warn' if counts.attention else 'zero' }}" href="#needs-action">
       <div class="n">{{ counts.attention }}</div><div class="k">Need action</div>
     </a>
-    <a class="stat stat-link" href="#waiting">
+    <a class="stat stat-link {{ '' if counts.awaiting else 'zero' }}" href="#waiting">
       <div class="n">{{ counts.awaiting }}</div><div class="k">Waiting for guest</div>
     </a>
-    <a class="stat stat-link ok" href="#needs-action">
+    <a class="stat stat-link {{ 'ok' if counts.ready else 'zero' }}" href="#needs-action">
       <div class="n">{{ counts.ready }}</div><div class="k">Ready to report</div>
     </a>
   </div>
+
+  {% if last_sync %}<p class="small muted">Calendars last synced {{ last_sync[:16].replace('T', ' ') }} UTC.</p>{% endif %}
 
   {% if setup_warnings %}
   <div class="panel">
@@ -112,7 +157,7 @@
     {% for warning in setup_warnings %}
       <a class="setup-item plain" href="/apartments/{{ warning.apartment.id }}">
         <span class="mark">!</span>
-        <span><strong>{{ warning.apartment.internal_name }}</strong><br>
+        <span class="grow"><strong>{{ warning.apartment.internal_name }}</strong><br>
         <span class="small muted">{{ warning.issues | length }} item{{ '' if warning.issues | length == 1 else 's' }} to fix</span></span>
       </a>
     {% endfor %}
@@ -124,7 +169,7 @@
   <div class="panel empty">
     <p>No stays in the current window. Either the calendars have nothing booked, or they have
       not been synced yet.</p>
-    <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars now</button></form>
+    <form method="post" action="/sync"><button class="btn primary" type="submit">Sync calendars now</button></form>
   </div>
   {% else %}
     <section id="needs-action">

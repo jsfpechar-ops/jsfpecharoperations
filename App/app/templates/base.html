@@ -3,22 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f3ef">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260911c">
+  <link rel="stylesheet" href="/static/app.css?v=20260911f">
 </head>
 <body class="layout-host">
 {% if show_nav | default(true) %}
-<button class="sidebar-expand" type="button" data-sidebar-expand aria-label="Expand sidebar">
+<header class="appbar">
+  <button class="nav-toggle" type="button" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+    <span aria-hidden="true">☰</span>
+  </button>
+  <a class="brand plain" href="/">UbyHost</a>
+  <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
+</header>
+<button class="nav-backdrop" type="button" data-nav-close aria-label="Close menu"></button>
+<button class="sidebar-expand" type="button" data-sidebar-expand aria-label="Show menu">
   <span aria-hidden="true">☰</span>
 </button>
 <aside class="sidebar" id="app-sidebar">
   <div class="sidebar-brand">
-    <a class="brand plain" href="/">UbyHost</a>
+    <a class="brand plain" href="/">
+      <span class="brand-mark" aria-hidden="true">U</span>UbyHost
+    </a>
     <div class="sidebar-brand-actions">
       <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
       <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true"
-              aria-label="Collapse sidebar"><span aria-hidden="true">‹</span></button>
+              aria-label="Hide menu"><span aria-hidden="true">‹</span></button>
     </div>
   </div>
   <nav class="sidebar-nav" aria-label="Main navigation">
@@ -48,19 +59,6 @@
 {% endif %}
 
 <main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
-  {% if flash %}
-    <div class="banner ok dismissible-banner">
-      <div class="grow">{{ flash }}</div>
-      <button class="btn small" type="button" data-dismiss-banner>Dismiss</button>
-    </div>
-  {% endif %}
-  {% if flash_error %}
-    <div class="banner err dismissible-banner">
-      <div class="grow">{{ flash_error }}</div>
-      <button class="btn small" type="button" data-dismiss-banner>Dismiss</button>
-    </div>
-  {% endif %}
-
   {% for alert in open_alerts %}
     <div class="banner {{ alert.level }}">
       <div class="grow">
@@ -80,6 +78,23 @@
 
   {% block content %}{% endblock %}
 </main>
+
+{% if flash or flash_error %}
+<div class="toast-stack" role="status" aria-live="polite">
+  {% if flash %}
+    <div class="toast" data-toast>
+      <span class="grow">{{ flash }}</span>
+      <button type="button" data-toast-close aria-label="Dismiss">&times;</button>
+    </div>
+  {% endif %}
+  {% if flash_error %}
+    <div class="toast err" data-toast data-toast-sticky>
+      <span class="grow">{{ flash_error }}</span>
+      <button type="button" data-toast-close aria-label="Dismiss">&times;</button>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
 
 <dialog id="csv-export-dialog" class="csv-export-dialog">
   <form id="csv-export-form">
@@ -102,6 +117,6 @@
   </form>
 </dialog>
 
-<script src="/static/app.js?v=20260911d"></script>
+<script src="/static/app.js?v=20260911f"></script>
 </body>
 </html>
