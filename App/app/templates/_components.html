@@ -55,26 +55,38 @@
 {% endmacro %}
 
 {% macro row_reporting_actions(reservation, controls, return_to) %}
-  {% if controls.get('review_visible') %}
-    {% if controls.get('reviewed') %}
-      <a class="btn small row-action-review is-reviewed" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}#guests"
-         title="Reviewed — open guest details" aria-label="Reviewed — open guest details">Reviewed</a>
-    {% else %}
-      <form method="post" action="/reservations/{{ reservation.id }}/review" class="inline">
-        <input type="hidden" name="return_to" value="{{ return_to }}">
-        <button class="btn small row-action-review" type="submit"
-                title="Mark as reviewed after checking guest details" aria-label="Mark as reviewed">Review</button>
-      </form>
-    {% endif %}
+  {% if controls.get('review_mode') == 'done' %}
+    <a class="btn small row-action-reviewed" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}#guests"
+       title="{{ controls.get('review_hint', '') }}" aria-label="Reviewed">Reviewed ✓</a>
+  {% elif controls.get('review_mode') == 'mark' %}
+    <form method="post" action="/reservations/{{ reservation.id }}/review" class="inline row-action-form">
+      <input type="hidden" name="return_to" value="{{ return_to }}">
+      <button class="btn small primary row-action-review" type="submit"
+              title="{{ controls.get('review_hint', '') }}" aria-label="Mark stay as reviewed">Review</button>
+    </form>
+  {% elif controls.get('review_mode') == 'open' %}
+    <a class="btn small primary row-action-review" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}#guests"
+       title="{{ controls.get('review_hint', '') }}" aria-label="Open stay to review guests">Review</a>
   {% endif %}
   {% if controls.get('send_visible') %}
-    <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+    <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline row-action-form">
       <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn small primary row-action-send" type="submit"
+      <button class="btn small row-action-send{% if controls.get('send_enabled') %} primary{% endif %}" type="submit"
               {% if not controls.get('send_enabled') %}disabled{% endif %}
               title="{{ controls.get('send_hint', '') }}" aria-label="Send to police">{{ 'Send' if controls.get('send_enabled') else 'Auto' }}</button>
     </form>
   {% endif %}
+{% endmacro %}
+
+{% macro bulk_send_ready(count, return_to) %}
+  <form method="post" action="/reservations/submit-ready" class="inline">
+    <input type="hidden" name="return_to" value="{{ return_to }}">
+    <button class="btn{% if count %} primary{% endif %}" type="submit"
+            {% if not count %}disabled{% endif %}
+            title="{% if count %}Send every reviewed stay that is ready now{% else %}No stays are reviewed and ready to send yet{% endif %}">
+      Send all ready{% if count %} ({{ count }}){% endif %}
+    </button>
+  </form>
 {% endmacro %}
 
 {% macro submission_pill(state) %}

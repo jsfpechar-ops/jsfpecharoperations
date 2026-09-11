@@ -252,11 +252,13 @@ def dashboard(request: Request):
         issues = validation.errors_only(_apartment_issues(apartment))
         if issues:
             setup_warnings.append({"apartment": apartment, "issues": issues})
+    ready_send_count = reporting.count_sendable_stays([row["reservation"] for row in rows])
     return render(
         request,
         "dashboard.html",
         {
             "rows": rows,
+            "ready_send_count": ready_send_count,
             "queue_groups": {
                 "needs_action": needs_action,
                 "waiting": waiting,
@@ -1084,13 +1086,27 @@ async def reservation_review(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     form = await request.form()
     return_to = _form_str(form, "return_to") or f"/reservations/{reservation_id}"
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
+    if controls.get("review_mode") != "mark":
+        target = f"/reservations/{reservation_id}?return_to={quote(return_to)}#guests"
+        return _back(target, msg="Open each guest and check the details before sending.")
     db.update(
         "reservation",
         reservation_id,
         {"report_reviewed_at": db.utcnow(), "updated_at": db.utcnow()},
     )
     db.audit("reservation_reviewed", f"id={reservation_id}")
-    return _back(return_to, msg="Stay marked as reviewed. You can now send to UbyPort.")
+    if return_to.startswith("/reservations") and "#" not in return_to and "?" not in return_to:
+        return _back(
+            return_to,
+            msg="Stay marked as reviewed. The Send button is now active for this row.",
+        )
+    return _back(
+        f"/reservations/{reservation_id}?return_to={quote(return_to)}#guests",
+        msg="Stay marked as reviewed. You can now send to UbyPort.",
+    )
 
 
 @router.post("/reservations/{reservation_id}/submit")

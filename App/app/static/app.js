@@ -188,7 +188,7 @@
       }
 
       row.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu")) return;
+        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu, .row-actions")) return;
         openRow();
       });
 

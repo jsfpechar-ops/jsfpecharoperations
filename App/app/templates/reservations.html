@@ -2,15 +2,9 @@
 {% set nav = 'reservations' %}
 {% block title %}Stays{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready %}
 {% set header_actions %}
-  {% if ready_send_count %}
-    <form method="post" action="/reservations/submit-ready" class="inline">
-      <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn primary" type="submit"
-              title="Send every stay that is reviewed and ready">Send all ready ({{ ready_send_count }})</button>
-    </form>
-  {% endif %}
+  {{ bulk_send_ready(ready_send_count, return_to) }}
   {% if apartments %}
     <button class="btn" type="button" data-toggle-panel="add-stay-panel">Add stay</button>
     <button class="btn" type="button" data-toggle-panel="import-stays-panel">Import CSV</button>
