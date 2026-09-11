@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4f3ef">
+  <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260911k">
+  <link rel="stylesheet" href="/static/app.css?v=20260911m">
 </head>
 <body class="layout-host">
 {% if show_nav | default(true) %}
@@ -14,7 +14,7 @@
   <button class="nav-toggle" type="button" data-nav-toggle aria-label="Open menu" aria-expanded="false">
     <span aria-hidden="true">☰</span>
   </button>
-  <a class="brand plain" href="/">UbyHost</a>
+  <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-logo.jpg" alt="UbyHost"></a>
   <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
 </header>
 <button class="nav-backdrop" type="button" data-nav-close aria-label="Close menu"></button>
@@ -24,7 +24,7 @@
 <aside class="sidebar" id="app-sidebar">
   <div class="sidebar-brand">
     <a class="brand plain" href="/">
-      <span class="brand-mark" aria-hidden="true">U</span>UbyHost
+      <img class="brand-logo" src="/static/ubyhost-logo.jpg" alt="UbyHost">
     </a>
     <div class="sidebar-brand-actions">
       <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>

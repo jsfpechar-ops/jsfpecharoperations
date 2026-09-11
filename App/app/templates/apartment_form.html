@@ -68,7 +68,8 @@
         <option value="">— none —</option>
         {% for entity in entities %}
           <option value="{{ entity.id }}"
-            {% if editing and apartment.legal_entity_id == entity.id %}selected{% endif %}>{{ entity.name }}</option>
+            {% if (editing and apartment.legal_entity_id == entity.id)
+               or (not editing and selected_entity_id == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
         {% endfor %}
       </select>
       <div class="hint">The IČO registered in UbyPort for this address. It is also the data
