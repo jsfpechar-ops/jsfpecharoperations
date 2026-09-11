@@ -1,22 +1,36 @@
-{% extends "base.html" %}
-{% set show_nav = false %}
-{% set wrap_class = 'narrow' %}
+{% extends "auth_base.html" %}
 {% block title %}Log in{% endblock %}
-{% block content %}
-<h1>UbyHost</h1>
-<p class="lede">Log in to manage your guest reporting.</p>
-{% if error %}<div class="banner err"><div class="grow">{{ error }}</div></div>{% endif %}
-<form method="post" action="/login" class="panel">
-  <input type="hidden" name="next" value="{{ request.query_params.get('next', '') }}">
-  <div class="field">
-    <label for="username">Username</label>
-    <input type="text" id="username" name="username" required autofocus
-           autocomplete="username" autocapitalize="none" spellcheck="false">
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">Your guest reporting workspace.</h1>
+  <p class="auth-lede">Log in to your UbyHost account</p>
+
+  {% if error %}
+    <div class="auth-alert" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/login" class="auth-form">
+    <input type="hidden" name="next" value="{{ request.query_params.get('next', '') }}">
+    <div class="auth-field">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required autofocus
+             value="{{ username | default('', true) }}"
+             autocomplete="username" autocapitalize="none" spellcheck="false"
+             placeholder="Enter your username…">
+    </div>
+    <div class="auth-field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required
+             autocomplete="current-password" placeholder="Enter your password…">
+    </div>
+    <button class="auth-submit" type="submit">Continue</button>
+  </form>
+
+  <div class="auth-foot">
+    <p><strong>No public sign-up.</strong> UbyHost is invite-only. Ask your administrator for an account, or use the first-admin credentials from your deployment.</p>
+    {% if setup_hint %}
+      <p class="auth-setup-hint">{{ setup_hint }}</p>
+    {% endif %}
   </div>
-  <div class="field">
-    <label for="password">Password</label>
-    <input type="password" id="password" name="password" required autocomplete="current-password">
-  </div>
-  <div class="actions"><button class="btn primary" type="submit">Log in</button></div>
-</form>
+</section>
 {% endblock %}

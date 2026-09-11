@@ -186,17 +186,24 @@ def reset_demo(request: Request):
 def login_form(request: Request):
     if auth.current_user(request):
         return RedirectResponse("/", status_code=303)
-    return render(request, "login.html", {})
+    return render(request, "login.html", {"setup_hint": auth.login_setup_hint()})
 
 
 @router.post("/login")
 async def login_submit(request: Request):
     form = await request.form()
-    account = auth.authenticate(_form_str(form, "username"), _form_str(form, "password"))
+    username = _form_str(form, "username")
+    account = auth.authenticate(username, _form_str(form, "password"))
     if not account:
         db.audit("login_failed", request.client.host if request.client else "", actor="anonymous")
         return render(
-            request, "login.html", {"error": "That username or password is not correct."},
+            request,
+            "login.html",
+            {
+                "error": "That username or password is not correct.",
+                "username": username,
+                "setup_hint": auth.login_setup_hint(),
+            },
             status_code=401,
         )
     target = "/account/password" if account["must_change_password"] else "/"
