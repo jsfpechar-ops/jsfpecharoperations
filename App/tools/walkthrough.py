@@ -9,6 +9,7 @@ be reviewed. Run it against a throwaway database.
 from __future__ import annotations
 
 import base64
+import os
 import re
 import shutil
 import subprocess
@@ -119,9 +120,30 @@ def post(path: str, data: dict | None = None, expect=(200, 303)) -> requests.Res
 
 
 def main() -> None:
-    # The app ships unlocked, so there is no first-run wall to walk through.
-    # Locking it is opt-in on the settings page, and doing it here would just
-    # put a login screen between this script and every later page.
+    landing = session.get(BASE + "/", allow_redirects=False)
+    if landing.status_code == 303 and landing.headers.get("location", "").startswith("/login"):
+        username = os.environ.get("UBYHOST_ADMIN_USERNAME", "admin")
+        password = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
+        if not password:
+            credentials = Path(os.environ.get("UBYHOST_DATA_DIR", "data")) / "initial_admin_credentials"
+            if credentials.exists():
+                values = dict(
+                    line.split("=", 1) for line in credentials.read_text().splitlines() if "=" in line
+                )
+                username = values.get("username", username)
+                password = values.get("password", "")
+        if not password:
+            raise SystemExit(
+                "Host login is enabled. Set UBYHOST_ADMIN_USERNAME and UBYHOST_ADMIN_PASSWORD."
+            )
+        logged_in = session.post(
+            BASE + "/login",
+            data={"username": username, "password": password},
+            allow_redirects=False,
+        )
+        if logged_in.status_code != 303:
+            raise SystemExit("Could not log in with the configured walkthrough credentials.")
+
     print("1. empty dashboard and login screen")
     shot("/", "dashboard-empty")
     shot("/login", "login")

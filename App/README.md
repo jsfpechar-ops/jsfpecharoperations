@@ -14,9 +14,20 @@ is missing or the police refuse a record.
 ./run.sh
 ```
 
-Then open <http://127.0.0.1:8080>. There is no account and no sign-in; the app
-runs on your machine and opens straight onto the dashboard. If you put it
-somewhere other people can reach, turn on the optional password in Settings.
+Then open <http://127.0.0.1:8080>. On first start, UbyHost creates the `admin`
+account and writes its one-time password to
+`data/initial_admin_credentials`. Sign in and replace that password immediately.
+
+For a deployed environment, set both values before the first start:
+
+```bash
+UBYHOST_ADMIN_USERNAME=admin
+UBYHOST_ADMIN_PASSWORD='a-long-unique-password'
+```
+
+The initial administrator can create host accounts under **Settings → Users**.
+Each host gets a private workspace for their own properties and must replace
+the temporary password on first login.
 
 The first run installs its dependencies into `.venv/` and starts a **mock
 UbyPort server** alongside the app, so nothing is sent to the police until you
@@ -41,15 +52,16 @@ and set **Root Directory** to `App`, **Build Command** to
 `pip install -r requirements.txt`, and **Start Command** to `./render_start.sh`.
 (Without Root Directory, the repo root also has a `requirements.txt` that
 includes `App/requirements.txt`.)
-5. Open the URL, click **Load demo data** on the dashboard, and explore.
+5. Set `UBYHOST_ADMIN_USERNAME` and `UBYHOST_ADMIN_PASSWORD` in Render, then
+   open the URL, sign in, click **Load demo data**, and explore.
 
 The free tier sleeps after ~15 minutes of idle time; the first request after
 that may take 30–60 seconds to wake up. Data is stored in SQLite on the
 container disk and is reset when Render redeploys — fine for a preview, not
 for production.
 
-**Before sharing the link publicly**, open **Settings → Lock this app** and set
-a password. Guest links still work without a host password.
+Host pages always require an account. Guest registration links still work
+without a host login.
 
 To point at the real UbyPort test service later, change `UBYHOST_UBYPORT_ENV` to
 `test` in the Render dashboard and add your web-service credentials per

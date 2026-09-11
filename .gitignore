@@ -9,3 +9,8 @@ __pycache__/
 
 # Screenshot output from tools/walkthrough.py
 .screenshots/
+
+# Runtime data and secrets. These belong on the server's persistent volume,
+# never in source control.
+App/data/*
+!App/data/.gitkeep

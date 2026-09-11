@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("UBYHOST_DATA_DIR", tempfile.mkdtemp(prefix="ubyhost-smoke-"))
 os.environ["UBYHOST_UBYPORT_ENV"] = "mock"
 os.environ["UBYHOST_ENABLE_SCHEDULER"] = "0"
+os.environ["UBYHOST_BOOTSTRAP_ADMIN"] = "0"
 os.environ["UBYHOST_GUEST_PIN"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402

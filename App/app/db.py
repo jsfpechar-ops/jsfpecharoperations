@@ -5,6 +5,7 @@ import base64
 import hashlib
 import sqlite3
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -12,10 +13,25 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from . import config
 
+_current_owner_id: ContextVar[Optional[int]] = ContextVar("ubyhost_owner_id", default=None)
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS user_account (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    username             TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    display_name         TEXT,
+    password_hash        TEXT NOT NULL,
+    role                 TEXT NOT NULL DEFAULT 'host' CHECK (role IN ('admin', 'host')),
+    active               INTEGER NOT NULL DEFAULT 1,
+    must_change_password INTEGER NOT NULL DEFAULT 1,
+    session_version      INTEGER NOT NULL DEFAULT 1,
+    created_at           TEXT NOT NULL,
+    last_login_at        TEXT
 );
 
 CREATE TABLE IF NOT EXISTS legal_entity (
@@ -26,12 +42,14 @@ CREATE TABLE IF NOT EXISTS legal_entity (
     dic           TEXT,
     contact_email TEXT,
     contact_phone TEXT,
+    owner_user_id INTEGER REFERENCES user_account(id),
     created_at    TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS apartment (
     id                    INTEGER PRIMARY KEY AUTOINCREMENT,
     legal_entity_id       INTEGER REFERENCES legal_entity(id),
+    owner_user_id         INTEGER REFERENCES user_account(id),
     internal_name         TEXT NOT NULL,
     city_en               TEXT,
     addr_okres            TEXT,
@@ -148,6 +166,7 @@ CREATE TABLE IF NOT EXISTS alert (
     kind           TEXT NOT NULL,
     apartment_id   INTEGER,
     reservation_id INTEGER,
+    owner_user_id  INTEGER REFERENCES user_account(id),
     dedupe_key     TEXT,
     message        TEXT NOT NULL,
     detail         TEXT,
@@ -170,12 +189,16 @@ CREATE TABLE IF NOT EXISTS audit (
     at     TEXT NOT NULL,
     actor  TEXT,
     action TEXT NOT NULL,
-    detail TEXT
+    detail TEXT,
+    owner_user_id INTEGER REFERENCES user_account(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_res_apartment_dates ON reservation (apartment_id, date_from);
 CREATE INDEX IF NOT EXISTS idx_guest_reservation   ON guest (reservation_id);
 CREATE INDEX IF NOT EXISTS idx_guest_state         ON guest (submit_state);
+CREATE INDEX IF NOT EXISTS idx_apartment_owner     ON apartment (owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_entity_owner        ON legal_entity (owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_alert_owner         ON alert (owner_user_id, resolved_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_dedupe ON alert (dedupe_key) WHERE resolved_at IS NULL;
 """
 
@@ -216,11 +239,15 @@ def cursor():
 ADDED_COLUMNS = (
     ("legal_entity", "contact_email", "TEXT"),
     ("legal_entity", "contact_phone", "TEXT"),
+    ("legal_entity", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
+    ("apartment", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
     ("apartment", "permalink_pin", "TEXT"),
     ("apartment", "archived_at", "TEXT"),
     ("reservation", "archived_at", "TEXT"),
     ("guest", "archived_at", "TEXT"),
     ("alert", "user_dismissed", "INTEGER NOT NULL DEFAULT 0"),
+    ("alert", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
+    ("audit", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
 )
 
 
@@ -290,8 +317,25 @@ def set_setting(key: str, value: Optional[str]) -> None:
     )
 
 
-def audit(action: str, detail: str = "", actor: str = "host") -> None:
-    insert("audit", {"at": utcnow(), "actor": actor, "action": action, "detail": detail})
+def set_current_owner(owner_user_id: Optional[int]) -> None:
+    _current_owner_id.set(owner_user_id)
+
+
+def audit(
+    action: str, detail: str = "", actor: str = "host", owner_user_id: Optional[int] = None
+) -> None:
+    if owner_user_id is None:
+        owner_user_id = _current_owner_id.get()
+    insert(
+        "audit",
+        {
+            "at": utcnow(),
+            "actor": actor,
+            "action": action,
+            "detail": detail,
+            "owner_user_id": owner_user_id,
+        },
+    )
 
 
 # --- secret handling -----------------------------------------------------

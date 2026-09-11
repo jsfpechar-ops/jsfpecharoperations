@@ -49,11 +49,14 @@ def _guest(reservation_id: int, is_lead: bool, **fields) -> int:
     )
 
 
-def seed() -> Optional[int]:
+def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
     """Create one apartment with stays and guests. Returns the apartment id."""
     if config.UBYPORT_ENV != "mock":
         return None
-    if db.query_one("SELECT 1 AS x FROM apartment"):
+    if db.query_one(
+        "SELECT 1 AS x FROM apartment WHERE (? IS NULL OR owner_user_id = ?)",
+        (owner_user_id, owner_user_id),
+    ):
         return None
 
     entity_id = db.insert(
@@ -63,6 +66,7 @@ def seed() -> Optional[int]:
             "ico": "12345678",
             "seat": "Korunní 1234/12a, 120 00 Praha 2",
             "contact_email": "host@example.com",
+            "owner_user_id": owner_user_id,
             "created_at": db.utcnow(),
         },
     )
@@ -70,6 +74,7 @@ def seed() -> Optional[int]:
         "apartment",
         {
             "legal_entity_id": entity_id,
+            "owner_user_id": owner_user_id,
             "internal_name": "Vinohrady Studio (demo)",
             "city_en": "Prague",
             "uby_idub": "100227887600",
@@ -161,24 +166,28 @@ def seed() -> Optional[int]:
             res_country="ITA", purpose="01",
         )
 
-    reporting.check_deadlines()
-    db.audit("demo_seeded", f"apartment={apartment_id}")
+    reporting.check_deadlines(owner_user_id=owner_user_id)
+    db.audit("demo_seeded", f"apartment={apartment_id}", owner_user_id=owner_user_id)
     return apartment_id
 
 
-def clear() -> bool:
+def clear(owner_user_id: Optional[int] = None) -> bool:
     """Remove only the built-in mock demo dataset, never user or production data."""
     if config.UBYPORT_ENV != "mock":
         return False
-    entity = db.query_one("SELECT * FROM legal_entity WHERE name = ?", (DEMO_ENTITY,))
+    entity = db.query_one(
+        "SELECT * FROM legal_entity WHERE name = ? AND (? IS NULL OR owner_user_id = ?)",
+        (DEMO_ENTITY, owner_user_id, owner_user_id),
+    )
     apartment = db.query_one(
-        "SELECT * FROM apartment WHERE internal_name = ? AND legal_entity_id = ?",
-        ("Vinohrady Studio (demo)", entity["id"] if entity else -1),
+        "SELECT * FROM apartment WHERE internal_name = ? AND legal_entity_id = ? "
+        "AND (? IS NULL OR owner_user_id = ?)",
+        ("Vinohrady Studio (demo)", entity["id"] if entity else -1, owner_user_id, owner_user_id),
     )
     if not entity or not apartment:
         return False
     db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity["id"],))
-    db.audit("demo_cleared")
+    db.audit("demo_cleared", owner_user_id=owner_user_id)
     return True

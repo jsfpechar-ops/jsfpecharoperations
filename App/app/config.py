@@ -61,6 +61,13 @@ ENABLE_SCHEDULER = os.environ.get("UBYHOST_ENABLE_SCHEDULER", "1") not in ("0", 
 
 GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "false", "no")
 
+# A first administrator is created once on startup. Set both values in a
+# deployed environment; when the password is omitted a random one is written
+# once to DATA_DIR/initial_admin_credentials with owner-only permissions.
+BOOTSTRAP_ADMIN = os.environ.get("UBYHOST_BOOTSTRAP_ADMIN", "1") not in ("0", "false", "no")
+ADMIN_USERNAME = os.environ.get("UBYHOST_ADMIN_USERNAME", "admin").strip().lower()
+ADMIN_PASSWORD = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
+
 TIMEZONE = "Europe/Prague"
 
 

@@ -45,7 +45,7 @@ def sample_csv() -> bytes:
     return b"\xef\xbb\xbf" + buffer.getvalue().encode("utf-8")
 
 
-def import_csv(content: bytes) -> Dict[str, Any]:
+def import_csv(content: bytes, owner_user_id: Optional[int] = None) -> Dict[str, Any]:
     text = content.decode("utf-8-sig", errors="replace")
     reader = csv.reader(io.StringIO(text), delimiter=";")
     rows = list(reader)
@@ -74,7 +74,11 @@ def import_csv(content: bytes) -> Dict[str, Any]:
 
     apartments = {
         row["internal_name"].strip().lower(): row["id"]
-        for row in db.query("SELECT id, internal_name FROM apartment WHERE archived_at IS NULL")
+        for row in db.query(
+            "SELECT id, internal_name FROM apartment WHERE archived_at IS NULL "
+            "AND (? IS NULL OR owner_user_id = ?)",
+            (owner_user_id, owner_user_id),
+        )
     }
     imported = 0
     skipped = 0
@@ -138,14 +142,15 @@ def export_csv(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     apartment_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
 ) -> bytes:
     """Export stays in the same format used for CSV import."""
     sql = (
         "SELECT r.*, a.internal_name AS apartment_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.archived_at IS NULL"
+        "WHERE r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?)"
     )
-    params: List[Any] = []
+    params: List[Any] = [owner_user_id, owner_user_id]
     if apartment_id:
         sql += " AND r.apartment_id = ?"
         params.append(apartment_id)

@@ -138,38 +138,16 @@
   </div>
 
   <div>
-    <form method="post" action="/settings/password" class="panel">
-      <h2 style="margin-top:0">Lock this app{% if not password_is_set %} (off){% endif %}</h2>
-      <p class="small muted">
-        {% if password_is_set %}
-          A password is required to open the host pages. Save an empty field to switch the lock off.
-        {% else %}
-          The app is open: anyone who can reach this address sees your bookings. That is fine on your
-          own machine. Set a password only if it runs somewhere others can reach.
-        {% endif %}
-      </p>
-      {% if password_is_set %}
-      <div class="field">
-        <label for="current_password">Current password</label>
-        <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
-      </div>
+    <div class="panel">
+      <h2 style="margin-top:0">Your account</h2>
+      <p><strong>{{ current_user.display_name or current_user.username }}</strong><br>
+        <span class="small muted mono">{{ current_user.username }}</span></p>
+      <p class="small muted">Passwords are stored as one-way hashes. Changing yours signs out other sessions.</p>
+      <a class="btn" href="/account/password">Change password</a>
+      {% if current_user.role == 'admin' %}
+        <a class="btn" href="/admin/users">Manage users</a>
       {% endif %}
-      <div class="field">
-        <label for="new_password">{% if password_is_set %}New password{% else %}Password{% endif %}</label>
-        <input type="password" id="new_password" name="new_password" minlength="10" autocomplete="new-password">
-      </div>
-      {% if password_is_set %}
-      <div class="checkline">
-        <input type="checkbox" id="confirm_unlock" name="confirm_unlock" value="1">
-        <label for="confirm_unlock">If the new password is blank, remove the lock and make host pages accessible to anyone who can reach this address.</label>
-      </div>
-      {% endif %}
-      <div class="actions">
-        <button class="btn primary" type="submit">
-          {% if password_is_set %}Save{% else %}Turn the lock on{% endif %}
-        </button>
-      </div>
-    </form>
+    </div>
 
     <div class="panel">
       <h3 style="margin-top:0">Version</h3>
