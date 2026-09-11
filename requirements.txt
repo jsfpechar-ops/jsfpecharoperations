@@ -1,0 +1,2 @@
+# Render and other hosts that build from the repo root (not App/).
+-r App/requirements.txt
