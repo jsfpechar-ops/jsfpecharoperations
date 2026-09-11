@@ -240,8 +240,8 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     }
 
 
-def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
-    """Immediate automation also applies when the host enters guest details."""
+def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
+    """Immediate automation after a guest record is saved (guest or host)."""
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment or apartment["automation_mode"] != "immediate":
         return
@@ -257,8 +257,20 @@ def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
         return
     try:
         submit_for_apartment(apartment_id, only_guest_ids=[guest_id], mode="immediate", ignore_automation=True)
-    except Exception:
-        pass
+    except Exception as exc:
+        alerts.raise_alert(
+            "warning",
+            "submission_immediate",
+            f"{apartment['internal_name']}: auto-send failed after the form was saved.",
+            str(exc),
+            dedupe_key=f"submission_immediate:{apartment_id}",
+            apartment_id=apartment_id,
+        )
+
+
+def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
+    """Immediate automation also applies when the host enters guest details."""
+    try_immediate_submit(apartment_id, guest_id)
 
 
 def count_sendable_stays(reservations: List[Any]) -> int:

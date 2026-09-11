@@ -44,6 +44,8 @@ body {
   box-shadow: 0 8px 32px rgba(15, 23, 36, 0.06);
 }
 .g-card h2 { font-size: 16px; margin: 0 0 8px; }
+.g-host-info p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.5; }
+.g-host-info strong { display: block; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--g-muted); }
 .g-intro { font-size: 14.5px; color: var(--g-muted); margin: 0 0 16px; }
 
 .g-stay {

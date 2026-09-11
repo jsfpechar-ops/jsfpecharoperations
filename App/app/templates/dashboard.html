@@ -20,12 +20,12 @@
             </a>
             <div class="small muted">{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</div>
             <div class="next-action">
-              {% if progress.status == 'failed' %}Review the rejection and correct the guest record.
+              {% if progress.status == 'failed' %}Open the stay, fix the rejection, and send again.
               {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}Guest details are complete — they will send automatically when guests submit.
               {% elif progress.status == 'ready' %}Guest details are complete. Open the stay and send when ready.
               {% elif progress.status == 'incomplete' %}Open the stay to finish missing guest details.
               {% elif progress.status == 'awaiting_guest' %}Share the guest link or add the details yourself.
-              {% else %}Review this stay.{% endif %}
+              {% else %}Open the stay and check what is missing.{% endif %}
             </div>
           </td>
           <td class="nowrap">

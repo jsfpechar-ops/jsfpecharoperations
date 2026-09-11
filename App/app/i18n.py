@@ -101,7 +101,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "add_person": "Add a person",
         "add_first_person": "Start with your own details",
         "saved_title": "Details saved",
-        "saved_body": "Thank you. Please review what you submitted below.",
+        "saved_body": "Thank you. Please check what you submitted below.",
         "reported_title": "Details submitted and reported",
         "reported_body": (
             "Thank you. Your host has already reported this record. Contact your host if "
@@ -119,6 +119,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "All guest details for this stay have been submitted. There is nothing more you "
             "need to do."
         ),
+        "checkin_info": "Check-in",
+        "checkout_info": "Check-out",
         "still_missing": "Still missing details for %(n)s person(s).",
         "add_another": "Add another person",
         "continue_filling": "Continue filling in",
@@ -330,6 +332,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "edit": "Upravit",
         "all_done_title": "Děkujeme, vše je vyplněno",
         "all_done_body": "Údaje všech ubytovaných jsou odeslány. Nic dalšího už není potřeba.",
+        "checkin_info": "Příjezd",
+        "checkout_info": "Odjezd",
         "still_missing": "Chybí ještě údaje %(n)s osob(y).",
         "add_another": "Přidat další osobu",
         "continue_filling": "Pokračovat ve vyplnění",
