@@ -2,7 +2,7 @@
 {% set nav = 'users' %}
 {% block title %}Users{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
 {{ page_header(
   'Users',
   'Create a private workspace for each host. Passwords are hashed and can be reset, never viewed.'
@@ -11,8 +11,8 @@
 <div class="split wide">
   <section>
     <div class="panel tight scroll-x">
-      <table class="table-cards">
-        <thead><tr><th>User</th><th>Role</th><th>Properties</th><th>Status</th><th></th></tr></thead>
+      <table class="table-cards user-table">
+        <thead><tr><th>User</th><th>Role</th><th>Properties</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
         <tbody>
         {% for user in users %}
           <tr>
@@ -29,26 +29,17 @@
             </td>
             <td class="row-actions" data-label="">
               {% if user.id != current_user.id %}
-                <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="inline">
-                  <button class="btn small" type="submit">Open workspace</button>
-                </form>
-                <form method="post" action="/admin/users/{{ user.id }}/toggle" class="inline">
-                  <button class="btn small" type="submit">{{ 'Disable' if user.active else 'Enable' }}</button>
-                </form>
-              {% endif %}
-              {% if user.id != current_user.id %}
-                <details class="inline reset-popover">
-                  <summary class="btn small">Reset password</summary>
-                  <form method="post" action="/admin/users/{{ user.id }}/password" class="popover-form">
-                    <label for="password-{{ user.id }}">Temporary password</label>
-                    <input type="password" id="password-{{ user.id }}" name="password" minlength="12"
-                           required autocomplete="new-password">
-                    <label for="confirm-{{ user.id }}">Repeat password</label>
-                    <input type="password" id="confirm-{{ user.id }}" name="confirm_password"
-                           minlength="12" required autocomplete="new-password">
-                    <button class="btn primary small" type="submit">Reset</button>
+                {{ row_menu_begin('User actions') }}
+                  <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
+                    <button class="row-menu-item" type="submit" role="menuitem">Open workspace</button>
                   </form>
-                </details>
+                  <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form">
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ 'Disable' if user.active else 'Enable' }}</button>
+                  </form>
+                  <button class="row-menu-item" type="button" role="menuitem"
+                          data-reset-password data-user-id="{{ user.id }}"
+                          data-user-label="{{ user.display_name or user.username }}">Reset password</button>
+                {{ row_menu_end() }}
               {% endif %}
             </td>
           </tr>
@@ -87,4 +78,23 @@
     </form>
   </aside>
 </div>
+
+<dialog id="reset-password-dialog" class="admin-dialog">
+  <form method="post" id="reset-password-form" class="admin-dialog-form">
+    <h2 style="margin-top:0">Reset password</h2>
+    <p class="small muted">Set a temporary password for <strong id="reset-password-label"></strong>. They must replace it at next login.</p>
+    <div class="field">
+      <label for="reset_password_value">Temporary password</label>
+      <input type="password" id="reset_password_value" name="password" minlength="12" required autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label for="reset_password_confirm">Repeat password</label>
+      <input type="password" id="reset_password_confirm" name="confirm_password" minlength="12" required autocomplete="new-password">
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" data-reset-password-cancel>Cancel</button>
+      <button class="btn primary" type="submit">Save password</button>
+    </div>
+  </form>
+</dialog>
 {% endblock %}

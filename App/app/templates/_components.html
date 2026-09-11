@@ -76,6 +76,26 @@
   </form>
 {% endmacro %}
 
+{% macro nav_icon(name) %}
+  {% if name == 'overview' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+  {% elif name == 'calendar' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="4.5" width="14" height="12.5" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 8.5h14M7 2.5v3M13 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'report' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5"/><path d="M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'book' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 4.5c0-1 .8-1.5 2-1.5h8c1.2 0 2 .5 2 1.5v11c0 1-.8 1.5-2 1.5H6c-1.2 0-2-.5-2-1.5v-11Z" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.5v11M12 4.5v11" stroke="currentColor" stroke-width="1.5"/></svg>
+  {% elif name == 'property' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z" stroke="currentColor" stroke-width="1.5"/><path d="M8 17v-5h4v5" stroke="currentColor" stroke-width="1.5"/></svg>
+  {% elif name == 'entity' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3.5" y="5.5" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 5.5V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M7.5 10h5M7.5 13h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'settings' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 3.5v1.6M10 14.9v1.6M4.2 6.2l1.1 1.1M14.7 14.7l1.1 1.1M3.5 10h1.6M14.9 10h1.6M4.2 13.8l1.1-1.1M14.7 5.3l1.1-1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'users' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="7" r="2.75" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% endif %}
+{% endmacro %}
+
 {% macro csv_actions_menu(export_params='') %}
 <div class="action-menu row-menu">
   <button class="btn row-menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">
@@ -85,7 +105,23 @@
     <button class="row-menu-item" type="button" role="menuitem"
             data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}">Export stays</button>
     <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-stays-panel">Import stays</button>
-    <a class="row-menu-item quiet" href="/reservations-sample.csv" role="menuitem">Download sample CSV</a>
+    <a class="row-menu-item quiet" href="/reservations-sample.csv" role="menuitem">Sample CSV</a>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro housebook_csv_menu(export_params='', has_apartments=false) %}
+<div class="action-menu row-menu">
+  <button class="btn row-menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">
+    CSV <span class="menu-caret" aria-hidden="true">▾</span>
+  </button>
+  <div class="row-menu-panel" role="menu" hidden>
+    <button class="row-menu-item" type="button" role="menuitem"
+            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}">Download CSV</button>
+    {% if has_apartments %}
+      <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-housebook-panel">Import CSV</button>
+      <a class="row-menu-item quiet" href="/housebook-sample.csv" role="menuitem">Sample CSV</a>
+    {% endif %}
   </div>
 </div>
 {% endmacro %}
@@ -136,7 +172,7 @@
 
 {% macro onboarding_welcome(onboarding) %}
   <div class="panel onboarding-welcome">
-    <img class="onboarding-logo" src="/static/ubyhost-logo.jpg" alt="UbyHost">
+    <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="UbyHost">
     <h2>Welcome to UbyHost</h2>
     <p class="lede">Let’s get your first property ready for guest reporting. Follow the steps below — most hosts finish in a few minutes.</p>
     <div class="onboarding-steps" aria-label="Setup steps">

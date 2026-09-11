@@ -2,14 +2,13 @@
 {% set nav = 'housebook' %}
 {% block title %}House book{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu %}
+{% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
 {{ page_header(
   'House book',
   'Every guest record with the dates of their stay. The law requires this register to be kept for
    six years after the last entry and produced on request during a police inspection.',
-  actions=''
-    ~ ('<button class="btn" type="button" data-toggle-panel="import-housebook-panel">Import CSV</button>' if apartments else '')
-    ~ '<a class="btn" href="/housebook-sample.csv">Sample CSV</a>'
+  actions=housebook_csv_menu(housebook_csv_params, apartments)
 ) }}
 
 {% if apartments %}
@@ -67,8 +66,6 @@
   </div>
   <div class="field filter-actions">
     <button class="btn filter-apply" type="submit">Filter</button>
-    <button class="btn" type="button" data-csv-export="/housebook.csv"
-            data-csv-params="apartment={{ apartment_id or '' }}">Download CSV</button>
   </div>
 </form>
 
