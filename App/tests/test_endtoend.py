@@ -82,24 +82,40 @@ def feed_url(tmp_path_factory):
 @pytest.fixture(scope="module")
 def client(mock_ubyport):
     db.init_db()
+    account = db.query_one("SELECT * FROM user_account WHERE username = 'e2e-admin'")
+    if not account:
+        account_id = auth.create_account(
+            "e2e-admin", PASSWORD, "End-to-end admin", role="admin",
+            must_change_password=False,
+        )
+    else:
+        account_id = account["id"]
     with TestClient(app) as test_client:
+        response = test_client.post(
+            "/login",
+            data={"username": "e2e-admin", "password": PASSWORD},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
         yield test_client
+    db.execute("UPDATE apartment SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE legal_entity SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE alert SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE audit SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (account_id,))
 
 
 @pytest.fixture(scope="module")
 def host(client):
-    """The host side needs no sign-in, so this is just the browser."""
+    """An authenticated administrator browser."""
     return client
 
 
-def test_01_the_app_opens_straight_onto_the_dashboard(host):
-    """There is no account and no setup wizard to get past."""
+def test_01_the_app_opens_onto_the_authenticated_dashboard(host):
     page = host.get("/", follow_redirects=False)
     assert page.status_code == 200
     assert "UbyHost" in page.text
-    # Nothing to log out of, so the button is not there.
-    assert 'action="/logout"' not in page.text
-    # And the login page does not stand in the way either.
+    assert 'action="/logout"' in page.text
     assert host.get("/login", follow_redirects=False).status_code == 303
 
 

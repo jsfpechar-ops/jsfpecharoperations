@@ -18,14 +18,14 @@ def owner_id(request: Request) -> int | None:
 
 def apartment(request: Request, apartment_id: int):
     return db.query_one(
-        "SELECT * FROM apartment WHERE id = ? AND owner_user_id = ?",
+        "SELECT * FROM apartment WHERE id = ? AND owner_user_id IS ?",
         (apartment_id, owner_id(request)),
     )
 
 
 def entity(request: Request, entity_id: int):
     return db.query_one(
-        "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id = ?",
+        "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id IS ?",
         (entity_id, owner_id(request)),
     )
 
@@ -33,7 +33,7 @@ def entity(request: Request, entity_id: int):
 def reservation(request: Request, reservation_id: int):
     return db.query_one(
         "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.id = ? AND a.owner_user_id = ?",
+        "WHERE r.id = ? AND a.owner_user_id IS ?",
         (reservation_id, owner_id(request)),
     )
 
@@ -43,7 +43,7 @@ def guest(request: Request, guest_id: int):
         "SELECT g.* FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE g.id = ? AND a.owner_user_id = ?",
+        "WHERE g.id = ? AND a.owner_user_id IS ?",
         (guest_id, owner_id(request)),
     )
 
@@ -51,7 +51,7 @@ def guest(request: Request, guest_id: int):
 def submission(request: Request, submission_id: int):
     return db.query_one(
         "SELECT s.* FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE s.id = ? AND a.owner_user_id = ?",
+        "WHERE s.id = ? AND a.owner_user_id IS ?",
         (submission_id, owner_id(request)),
     )
 
@@ -59,20 +59,20 @@ def submission(request: Request, submission_id: int):
 def feed(request: Request, feed_id: int):
     return db.query_one(
         "SELECT f.* FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
-        "WHERE f.id = ? AND a.owner_user_id = ?",
+        "WHERE f.id = ? AND a.owner_user_id IS ?",
         (feed_id, owner_id(request)),
     )
 
 
 def alert(request: Request, alert_id: int):
     return db.query_one(
-        "SELECT * FROM alert WHERE id = ? AND owner_user_id = ?",
+        "SELECT * FROM alert WHERE id = ? AND owner_user_id IS ?",
         (alert_id, owner_id(request)),
     )
 
 
 def apartments(request: Request, columns: str = "*", include_archived: bool = False):
-    sql = f"SELECT {columns} FROM apartment WHERE owner_user_id = ?"
+    sql = f"SELECT {columns} FROM apartment WHERE owner_user_id IS ?"
     if not include_archived:
         sql += " AND archived_at IS NULL"
     sql += " ORDER BY internal_name"
@@ -81,6 +81,6 @@ def apartments(request: Request, columns: str = "*", include_archived: bool = Fa
 
 def entities(request: Request):
     return db.query(
-        "SELECT * FROM legal_entity WHERE owner_user_id = ? ORDER BY name",
+        "SELECT * FROM legal_entity WHERE owner_user_id IS ? ORDER BY name",
         (owner_id(request),),
     )

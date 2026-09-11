@@ -474,7 +474,7 @@ def guest_links(request: Request):
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.active = 1 AND a.archived_at IS NULL AND a.owner_user_id = ? "
+        "WHERE a.active = 1 AND a.archived_at IS NULL AND a.owner_user_id IS ? "
         "ORDER BY a.internal_name",
         (access.owner_id(request),),
     )
@@ -501,7 +501,7 @@ def entities(request: Request):
         return guard
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
-        "FROM legal_entity e WHERE e.owner_user_id = ? ORDER BY e.name",
+        "FROM legal_entity e WHERE e.owner_user_id IS ? ORDER BY e.name",
         (access.owner_id(request),),
     )
     return render(request, "entities.html", {"entities": rows})
@@ -550,7 +550,7 @@ def delete_entity(entity_id: int, request: Request):
     if not access.entity(request, entity_id):
         return _back("/entities", err="No such legal entity.")
     used = db.query_one(
-        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id = ?",
+        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
         (entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
@@ -571,7 +571,7 @@ def apartments_list(request: Request):
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.archived_at IS NULL AND a.owner_user_id = ? ORDER BY a.internal_name",
+        "WHERE a.archived_at IS NULL AND a.owner_user_id IS ? ORDER BY a.internal_name",
         (access.owner_id(request),),
     )
     archived = db.query(
@@ -579,7 +579,7 @@ def apartments_list(request: Request):
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.archived_at IS NOT NULL AND a.owner_user_id = ? ORDER BY a.archived_at DESC",
+        "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? ORDER BY a.archived_at DESC",
         (access.owner_id(request),),
     )
     enriched = [
@@ -1013,7 +1013,7 @@ def reservations_list(request: Request):
     sql = (
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE a.owner_user_id = ?"
+        "WHERE a.owner_user_id IS ?"
     )
     params: List[Any] = [access.owner_id(request)]
     if show_archive:
@@ -1067,7 +1067,7 @@ def reservations_list(request: Request):
             "limit": RESERVATION_LIMIT,
             "has_any": bool(db.query_one(
                 "SELECT 1 AS x FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-                "WHERE a.owner_user_id = ? LIMIT 1",
+                "WHERE a.owner_user_id IS ? LIMIT 1",
                 (access.owner_id(request),),
             )),
             "return_to": quote(
@@ -1182,7 +1182,7 @@ async def reservations_submit_ready(request: Request):
     reservations = db.query(
         "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
-        "AND a.archived_at IS NULL AND a.owner_user_id = ?",
+        "AND a.archived_at IS NULL AND a.owner_user_id IS ?",
         (access.owner_id(request),),
     )
     sent_stays = 0
@@ -1225,7 +1225,7 @@ def reservation_detail(reservation_id: int, request: Request):
     reservation = db.query_one(
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.id = ? AND a.owner_user_id = ?",
+        "WHERE r.id = ? AND a.owner_user_id IS ?",
         (reservation_id, access.owner_id(request)),
     )
     if not reservation:
@@ -1404,7 +1404,7 @@ def guest_new(reservation_id: int, request: Request):
     reservation = db.query_one(
         "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.id = ? AND a.owner_user_id = ?",
+        "WHERE r.id = ? AND a.owner_user_id IS ?",
         (reservation_id, access.owner_id(request)),
     )
     if not reservation:
@@ -1627,7 +1627,7 @@ def submissions_list(request: Request):
         return guard
     rows = db.query(
         "SELECT s.*, a.internal_name FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE a.owner_user_id = ? ORDER BY s.created_at DESC LIMIT 200",
+        "WHERE a.owner_user_id IS ? ORDER BY s.created_at DESC LIMIT 200",
         (access.owner_id(request),),
     )
     return render(request, "submissions.html", {"rows": rows})
@@ -1640,7 +1640,7 @@ def submission_detail(submission_id: int, request: Request):
         return guard
     submission = db.query_one(
         "SELECT s.*, a.internal_name FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE s.id = ? AND a.owner_user_id = ?",
+        "WHERE s.id = ? AND a.owner_user_id IS ?",
         (submission_id, access.owner_id(request)),
     )
     if not submission:
@@ -1842,11 +1842,11 @@ def settings_view(request: Request):
                 "errors": codelists.last_fetched(codelists.KIND_ERRORS),
             },
             "audit": db.query(
-                "SELECT * FROM audit WHERE owner_user_id = ? ORDER BY id DESC LIMIT 500",
+                "SELECT * FROM audit WHERE owner_user_id IS ? ORDER BY id DESC LIMIT 500",
                 (access.owner_id(request),),
             ),
             "audit_count": db.query_one(
-                "SELECT COUNT(*) AS n FROM audit WHERE owner_user_id = ?",
+                "SELECT COUNT(*) AS n FROM audit WHERE owner_user_id IS ?",
                 (access.owner_id(request),),
             )["n"],
             "poll_minutes": config.ICAL_POLL_MINUTES,
@@ -1858,13 +1858,13 @@ def settings_view(request: Request):
             ),
             "entities_without_contact": db.query(
                 "SELECT id, name FROM legal_entity "
-                "WHERE owner_user_id = ? AND "
+                "WHERE owner_user_id IS ? AND "
                 "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
                 (access.owner_id(request),),
             ),
             "apartments_without_entity": db.query(
                 "SELECT id, internal_name FROM apartment "
-                "WHERE owner_user_id = ? AND legal_entity_id IS NULL AND active = 1 "
+                "WHERE owner_user_id IS ? AND legal_entity_id IS NULL AND active = 1 "
                 "ORDER BY internal_name",
                 (access.owner_id(request),),
             ),
