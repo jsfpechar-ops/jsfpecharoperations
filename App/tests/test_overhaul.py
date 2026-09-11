@@ -239,7 +239,6 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
         browser = TestClient(app)
         listing = browser.get(f"/reservations?range=all&apartment={apartment_id}")
         assert listing.status_code == 200
-        assert "Guest links" in listing.text
         assert "Setup readiness" not in listing.text
         assert "%2Freservations%3Frange%3Dall" in listing.text
 

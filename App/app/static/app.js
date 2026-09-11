@@ -385,6 +385,30 @@
     });
   }
 
+  function initResetPasswordDialog() {
+    var dialog = document.getElementById("reset-password-dialog");
+    var form = document.getElementById("reset-password-form");
+    var label = document.getElementById("reset-password-label");
+    if (!dialog || !form || !label) return;
+
+    document.querySelectorAll("[data-reset-password]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var userId = button.getAttribute("data-user-id");
+        var userLabel = button.getAttribute("data-user-label") || "this user";
+        if (!userId) return;
+        form.action = "/admin/users/" + userId + "/password";
+        label.textContent = userLabel;
+        form.reset();
+        document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
+        if (typeof dialog.showModal === "function") dialog.showModal();
+      });
+    });
+
+    dialog.querySelectorAll("[data-reset-password-cancel]").forEach(function (button) {
+      button.addEventListener("click", function () { dialog.close(); });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initBirthDateInputs();
@@ -399,5 +423,6 @@
     initCsvExport();
     initToasts();
     initAutoFilters();
+    initResetPasswordDialog();
   });
 })();
