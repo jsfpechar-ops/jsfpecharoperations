@@ -219,7 +219,12 @@ async def login_submit(request: Request):
         auth.issue_session(account["id"], account["session_version"], remember=remember),
         remember=remember,
     )
-    db.audit("login", actor=account["username"], owner_user_id=account["id"])
+    db.audit(
+        "login",
+        detail=f"terms_v{config.TERMS_VERSION} accepted",
+        actor=account["username"],
+        owner_user_id=account["id"],
+    )
     return response
 
 

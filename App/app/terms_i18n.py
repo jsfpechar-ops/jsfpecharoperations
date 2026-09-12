@@ -13,6 +13,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.effective": "Effective date: 12 September 2026. Version 1.0.",
         "terms.operator_title": "Service provider",
         "terms.footer_link": "Terms of Service",
+        "terms.footer_short": "Terms",
         "terms.cross_legal": "Legal notice (operator identity)",
         "terms.review_title": "Professional review",
         "terms.review_body": (
@@ -296,6 +297,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.effective": "Účinnost od: 12. září 2026. Verze 1.0.",
         "terms.operator_title": "Poskytovatel služby",
         "terms.footer_link": "Obchodní podmínky",
+        "terms.footer_short": "Podmínky",
         "terms.cross_legal": "Právní informace (identita provozovatele)",
         "terms.review_title": "Odborná kontrola",
         "terms.review_body": (
