@@ -1270,13 +1270,14 @@ def reservations_export(request: Request):
     if not (date_from and date_to):
         return _back("/reservations", err="Choose a date range for the export.")
     stamp = datetime.now().strftime("%Y%m%d")
+    sql, params = stays_import._export_sql(
+        date_from=date_from,
+        date_to=date_to,
+        apartment_id=_query_int(request, "apartment"),
+        owner_user_id=access.owner_id(request),
+    )
     return StreamingResponse(
-        stays_import.iter_export_csv(
-            date_from=date_from,
-            date_to=date_to,
-            apartment_id=_query_int(request, "apartment"),
-            owner_user_id=access.owner_id(request),
-        ),
+        stays_import.iter_export_csv_rows(db.query(sql, params)),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="stays-{stamp}.csv"'},
     )
@@ -2131,13 +2132,14 @@ def housebook_download(request: Request):
     if guard:
         return guard
     stamp = datetime.now().strftime("%Y%m%d")
+    rows = housebook.housebook_rows(
+        _query_int(request, "apartment"),
+        _query_date(request, "from") or None,
+        _query_date(request, "to") or None,
+        owner_user_id=access.owner_id(request),
+    )
     return StreamingResponse(
-        housebook.iter_housebook_csv(
-            _query_int(request, "apartment"),
-            _query_date(request, "from") or None,
-            _query_date(request, "to") or None,
-            owner_user_id=access.owner_id(request),
-        ),
+        housebook.iter_housebook_csv_rows(rows),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="domovni-kniha-{stamp}.csv"'},
     )

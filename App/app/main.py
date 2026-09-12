@@ -10,7 +10,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import auth, config, db, host_i18n, scheduler
-from .routes import admin, guest
+from .routes import admin, guest, legal
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -80,6 +80,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), name="static")
 app.include_router(guest.router)
 app.include_router(admin.router)
+app.include_router(legal.router)
 
 
 @app.get("/sample-airbnb.ics", include_in_schema=False)

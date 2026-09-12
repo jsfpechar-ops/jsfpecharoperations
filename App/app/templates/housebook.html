@@ -141,7 +141,7 @@
     </tbody>
   </table>
 </div>
-<p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}. CSV export uses the current filter.</p>
+<p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}. {{ t('housebook.filter_footer') }}</p>
 {% else %}
   <div class="panel empty">No entries match this filter. The house book fills as guest forms are completed.</div>
 {% endif %}

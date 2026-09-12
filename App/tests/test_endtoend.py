@@ -4,6 +4,7 @@ Nothing here is mocked out inside the application. The only stand-in is the
 police service itself, which runs as a real HTTP server in another process.
 """
 import base64
+import html
 import json
 import os
 import re
@@ -486,7 +487,8 @@ def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch
     rows = housebook.housebook_rows()
     assert rows, "house book should list every guest from earlier tests"
     assert "Import paper records" in page.text
-    assert "Import template" in page.text
+    assert "Download import template" in page.text
+    assert "Import & export" in html.unescape(page.text)
 
     fd, path = tempfile.mkstemp(suffix=".zip")
     os.close(fd)

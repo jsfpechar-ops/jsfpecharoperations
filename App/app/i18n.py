@@ -293,6 +293,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "any officer inspecting the house book. The data stays within the EU. It is never "
             "sold, sent to the site you booked through, or used for marketing."
         ),
+        "privacy_processor": "Who runs this website",
+        "privacy_processor_body": (
+            "The UbyHost software is operated by Josef Pechar, IČO 24005169, Kubelíkova 697/13, "
+            "13000 Praha 3, who processes data only on the accommodation provider's instructions to "
+            "run the registration form and store records. For questions about the software itself, "
+            "contact the operator; for your personal data rights, contact the accommodation provider above."
+        ),
         "privacy_retention": "How long it is kept",
         "privacy_retention_body": (
             "Six years from the last entry in the house book, which is the period § 101 "
@@ -586,6 +593,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Policii České republiky, Ředitelství služby cizinecké policie, a kontrolnímu "
             "orgánu při nahlédnutí do domovní knihy. Údaje zůstávají v EU. Neprodávají se, "
             "neposílají rezervačnímu portálu ani se nepoužívají k marketingu."
+        ),
+        "privacy_processor": "Kdo provozuje tento web",
+        "privacy_processor_body": (
+            "Software UbyHost provozuje Josef Pechar, IČO 24005169, Kubelíkova 697/13, 13000 Praha 3, "
+            "který údaje zpracovává pouze na pokyn poskytovatele ubytování kvůli chodu registračního "
+            "formuláře a uložení záznamů. Na software se obracejte na provozovatele; na práva k "
+            "osobním údajům na poskytovatele ubytování uvedeného výše."
         ),
         "privacy_retention": "Jak dlouho se uchovávají",
         "privacy_retention_body": (

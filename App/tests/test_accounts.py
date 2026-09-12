@@ -384,6 +384,14 @@ def test_csv_exports_stream_without_buffering_entire_file():
         _clean_accounts()
 
 
+def test_legal_page_shows_operator_identity():
+    response = TestClient(app).get("/legal")
+    assert response.status_code == 200
+    assert "Josef Pechar" in response.text
+    assert "24005169" in response.text
+    assert "Kubelíkova" in response.text
+
+
 def test_submissions_receipts_zip_downloads_bulk_dorucenky():
     db.init_db()
     _clean_accounts()
@@ -403,7 +411,7 @@ def test_submissions_receipts_zip_downloads_bulk_dorucenky():
         client = _login("boundary-receipts")
         page = client.get("/submissions")
         assert page.status_code == 200
-        assert "Download all Doručenky" in page.text
+        assert "Download Doručenky" in page.text
 
         response = client.get("/submissions/receipts.zip")
         assert response.status_code == 200

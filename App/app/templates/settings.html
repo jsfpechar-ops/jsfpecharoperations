@@ -160,6 +160,20 @@
     </div>
 
     <div class="panel">
+      <h3 style="margin-top:0">{{ t('legal.settings_title') }}</h3>
+      <p class="small muted">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
+      <dl class="kv small">
+        <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
+        {% if operator().email %}
+          <dt>{{ t('legal.operator_contact') }}</dt><dd><a href="mailto:{{ operator().email }}">{{ operator().email }}</a></dd>
+        {% else %}
+          <dt>{{ t('legal.operator_contact') }}</dt><dd class="muted">{{ t('legal.settings_contact_missing') }}</dd>
+        {% endif %}
+      </dl>
+      <a class="btn small" href="/legal">{{ t('legal.footer_link') }}</a>
+    </div>
+
+    <div class="panel">
       <h3 style="margin-top:0">Version</h3>
       <p class="small muted">UbyHost {{ app_version }}</p>
     </div>

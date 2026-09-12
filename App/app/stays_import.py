@@ -163,14 +163,8 @@ def _export_sql(
     return sql, params
 
 
-def iter_export_csv(
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    apartment_id: Optional[int] = None,
-    owner_user_id: Optional[int] = None,
-) -> Iterator[bytes]:
-    """Stream stays CSV row-by-row instead of buffering the whole file."""
-    sql, params = _export_sql(date_from, date_to, apartment_id, owner_user_id)
+def iter_export_csv_rows(rows: List[Any]) -> Iterator[bytes]:
+    """Stream an already-fetched stays export row-by-row."""
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
     yield b"\xef\xbb\xbf"
@@ -178,7 +172,7 @@ def iter_export_csv(
     yield buffer.getvalue().encode("utf-8")
     buffer.seek(0)
     buffer.truncate(0)
-    for row in db.query(sql, params):
+    for row in rows:
         guests = row["expected_guests_override"] or row["declared_guests"]
         writer.writerow(
             [
@@ -193,6 +187,17 @@ def iter_export_csv(
         yield buffer.getvalue().encode("utf-8")
         buffer.seek(0)
         buffer.truncate(0)
+
+
+def iter_export_csv(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    apartment_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
+) -> Iterator[bytes]:
+    """Stream stays CSV row-by-row instead of buffering the whole file."""
+    sql, params = _export_sql(date_from, date_to, apartment_id, owner_user_id)
+    yield from iter_export_csv_rows(list(db.query(sql, params)))
 
 
 def export_csv(

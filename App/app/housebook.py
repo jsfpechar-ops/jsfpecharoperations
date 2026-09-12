@@ -377,14 +377,8 @@ def sample_housebook_csv() -> bytes:
     return housebook_csv([SAMPLE_HOUSEBOOK_ROW])
 
 
-def iter_housebook_csv(
-    apartment_id: Optional[int] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    owner_user_id: Optional[int] = None,
-) -> Iterator[bytes]:
-    """Stream house-book CSV row-by-row instead of buffering the whole file."""
-    sql, params = _housebook_sql(apartment_id, date_from, date_to, owner_user_id)
+def iter_housebook_csv_rows(rows: List[Dict[str, Any]]) -> Iterator[bytes]:
+    """Stream an already-fetched house-book export row-by-row."""
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
     yield b"\xef\xbb\xbf"
@@ -392,12 +386,23 @@ def iter_housebook_csv(
     yield buffer.getvalue().encode("utf-8")
     buffer.seek(0)
     buffer.truncate(0)
-    for row in db.query(sql, params):
-        export_row = _housebook_export_row(row)
+    for export_row in rows:
         writer.writerow([export_row.get(key, "") for key, _label in HOUSEBOOK_COLUMNS])
         yield buffer.getvalue().encode("utf-8")
         buffer.seek(0)
         buffer.truncate(0)
+
+
+def iter_housebook_csv(
+    apartment_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
+) -> Iterator[bytes]:
+    """Stream house-book CSV row-by-row instead of buffering the whole file."""
+    yield from iter_housebook_csv_rows(
+        housebook_rows(apartment_id, date_from, date_to, owner_user_id)
+    )
 
 
 def housebook_csv(rows: List[Dict[str, Any]]) -> bytes:

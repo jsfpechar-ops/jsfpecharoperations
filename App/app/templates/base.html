@@ -75,6 +75,9 @@
         <span class="sidebar-help-icon" aria-hidden="true">?</span>
         {{ t('nav.guide') }}
       </a>
+      <a class="sidebar-help" href="/legal">
+        {{ t('legal.footer_link') }}
+      </a>
       <div class="sidebar-footer-row">
         <form method="post" action="/language" class="lang-switch compact">
           <input type="hidden" name="next" value="{{ request.url.path }}">
@@ -152,8 +155,8 @@
 
 <dialog id="csv-export-dialog" class="csv-export-dialog">
   <form id="csv-export-form">
-    <h2 style="margin-top:0">Download CSV</h2>
-    <p class="small muted">Choose the date range to include in the export.</p>
+    <h2 style="margin-top:0">{{ t('data.export_csv_title') }}</h2>
+    <p class="small muted">{{ t('data.export_csv_help') }}</p>
     <div class="grid two">
       <div class="field">
         <label for="csv_export_from">From</label>
@@ -165,8 +168,8 @@
       </div>
     </div>
     <div class="actions" style="margin-top:14px">
-      <button class="btn" type="button" data-csv-cancel>Cancel</button>
-      <button class="btn primary" type="submit">Download</button>
+      <button class="btn" type="button" data-csv-cancel>{{ t('data.export_csv_cancel') }}</button>
+      <button class="btn primary" type="submit">{{ t('data.export_csv_download') }}</button>
     </div>
   </form>
 </dialog>

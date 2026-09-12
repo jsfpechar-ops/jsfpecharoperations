@@ -1796,6 +1796,17 @@ details.raw pre {
 
 .auth-submit:hover { background: var(--brand-hover); }
 
+.auth-foot-legal {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 12.5px;
+}
+
+.auth-foot-legal a { color: var(--muted); text-decoration: none; }
+.auth-foot-legal a:hover { color: var(--brand); }
+
 .auth-foot {
   margin-top: 28px;
   padding-top: 22px;

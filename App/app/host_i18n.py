@@ -50,14 +50,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "submit real data yourself."
         ),
         "demo.clear": "Clear demo data",
-        "csv.export_stays": "Export stays",
-        "csv.import_stays": "Import stays",
-        "csv.sample_stays": "Sample CSV",
-        "csv.download": "Download CSV",
-        "csv.import": "Import CSV",
-        "csv.sample_housebook": "Import template (paper records)",
-        "csv.download_pdfs": "Download PDFs for inspection",
-        "reports.download_receipts": "Download all Doručenky (ZIP)",
+        "data.menu": "Import & export",
+        "data.export_csv_title": "Export CSV",
+        "data.export_csv_help": "Choose the date range to include in the export.",
+        "data.export_csv_download": "Download",
+        "data.export_csv_cancel": "Cancel",
+        "csv.export_stays": "Export stays (CSV)",
+        "csv.import_stays": "Import stays (CSV)",
+        "csv.sample_stays": "Download sample file",
+        "csv.download": "Export spreadsheet (CSV)",
+        "csv.import": "Import paper records (CSV)",
+        "csv.sample_housebook": "Download import template",
+        "csv.download_pdfs": "Download PDF bundle (inspection)",
+        "reports.download_receipts": "Download Doručenky (ZIP)",
         "reports.download_receipts_hint": "One PDF per successful transmission, built on disk to stay lightweight.",
         "housebook.legal_title": "Your legal duty — read this",
         "housebook.legal_body": (
@@ -84,7 +89,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "PDF bundle builds one guest form at a time on the server (low memory). Narrow the filter "
             "if you have many entries — max %(limit)s per download."
         ),
-        "csv.button": "CSV",
+        "housebook.filter_footer": "Exports use the current filter.",
+        "csv.button": "Import & export",
         "host.signature_title": "Guest signature",
         "host.signature_help": (
             "Required by Czech law (§ 101–103, Act 326/1999 Coll.). The guest must sign, or you must "
@@ -180,8 +186,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Stays arrive from calendars or manual entry. Open a row to add guests, copy the guest link, "
             "or send completed records."
         ),
-        "guide.stays.csv": "Use CSV in the filter bar to import past stays or export for your records.",
-        "guide.stays.caption": "CSV lives in the bottom-right of the filter panel on Stays and House book.",
+        "guide.stays.csv": "Use Import & export in the filter bar to import past stays or export for your records.",
+        "guide.stays.caption": "Import & export lives in the bottom-right of the filter panel on Stays and House book.",
         "guide.guests.body": (
             "Each stay gets a link guests open on their phone. They pick their dates, enter passport "
             "details, and sign. Czech guests still go in the house book but are not reported to the police."
@@ -213,7 +219,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.housebook.body": (
             "The house book lists every guest — Czech and foreign. Export CSV or download PDFs for "
-            "inspections; import older paper records from the CSV menu in the filters."
+            "inspections; import older paper records from Import & export in the filters."
         ),
         "guide.nav.legal": "Your legal duties",
         "guide.legal.lede": (
@@ -250,11 +256,48 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.legal.disclaimer_title": "About UbyHost (important)",
         "guide.legal.disclaimer_body": (
-            "UbyHost is a technical tool provided as-is. It does not provide legal advice, does not act "
-            "as your data controller, and does not guarantee acceptance by the police or UbyPort. You "
-            "remain responsible for correct data, timely reporting, signed forms, backups, and "
-            "presenting records at inspection. When in doubt, contact the Foreign Police "
-            "(reguby@pcr.cz) or a qualified adviser."
+            "UbyHost is software operated by Josef Pechar, IČO 24005169 (see Legal notice). It is "
+            "provided as-is, does not provide legal advice, does not act as your data controller, and "
+            "does not guarantee acceptance by the police or UbyPort. You remain responsible for correct "
+            "data, timely reporting, signed forms, backups, and presenting records at inspection. "
+            "When in doubt, contact the Foreign Police (reguby@pcr.cz) or a qualified adviser."
+        ),
+        "legal.page_title": "Legal notice",
+        "legal.page_lede": "Who operates UbyHost and how that relates to your duties as a host.",
+        "legal.operator_title": "Software operator",
+        "legal.operator_name": "Name",
+        "legal.operator_address": "Registered address",
+        "legal.operator_contact": "Contact",
+        "legal.operator_registry": "Public register",
+        "legal.roles_title": "Two different roles",
+        "legal.roles_body": (
+            "You (or the legal entity on each property) are the data controller for guest personal data "
+            "and the accommodation provider under Czech law. Josef Pechar, IČO 24005169, operates the "
+            "UbyHost software only. When you use the hosted service, the operator processes guest data "
+            "on your instructions to run the application, store records, and transmit reports to UbyPort."
+        ),
+        "legal.software_title": "What UbyHost is",
+        "legal.software_body": (
+            "UbyHost is a technical tool for house books, guest forms, and UbyPort reporting. It is not "
+            "legal advice, not a substitute for paper records you must keep, and not a guarantee that the "
+            "police will accept any submission. Each host remains responsible for accuracy, deadlines, "
+            "signatures, retention, and inspection."
+        ),
+        "legal.disclaimer_title": "Disclaimer",
+        "legal.disclaimer_body": (
+            "The software is provided without warranty to the extent permitted by law. Liability is limited "
+            "to mandatory statutory rules. Nothing here changes who must register guests or keep the house "
+            "book — that remains the accommodation provider."
+        ),
+        "legal.back_login": "Back to login",
+        "legal.footer_link": "Legal notice",
+        "legal.settings_title": "Software operator",
+        "legal.settings_body": (
+            "UbyHost is operated by %(name)s, IČO %(ico)s. Guest data controllers are your legal entities "
+            "configured per property."
+        ),
+        "legal.settings_contact_missing": (
+            "Set UBYHOST_OPERATOR_EMAIL in the server environment for a public support address."
         ),
         "guide.demo.body": (
             "Load demo data anytime to explore with a sample flat. Demo guests are never sent to the real "
@@ -300,14 +343,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "neodešlete skutečná data."
         ),
         "demo.clear": "Smazat ukázková data",
-        "csv.export_stays": "Export pobytů",
-        "csv.import_stays": "Import pobytů",
-        "csv.sample_stays": "Vzorové CSV",
-        "csv.download": "Stáhnout CSV",
-        "csv.import": "Importovat CSV",
-        "csv.sample_housebook": "Vzor pro import (papírová evidence)",
-        "csv.download_pdfs": "Stáhnout PDF pro kontrolu",
-        "reports.download_receipts": "Stáhnout všechny doručenky (ZIP)",
+        "data.menu": "Import a export",
+        "data.export_csv_title": "Export CSV",
+        "data.export_csv_help": "Vyberte rozsah dat, který chcete exportovat.",
+        "data.export_csv_download": "Stáhnout",
+        "data.export_csv_cancel": "Zrušit",
+        "csv.export_stays": "Export pobytů (CSV)",
+        "csv.import_stays": "Import pobytů (CSV)",
+        "csv.sample_stays": "Stáhnout vzorový soubor",
+        "csv.download": "Export tabulky (CSV)",
+        "csv.import": "Import papírové evidence (CSV)",
+        "csv.sample_housebook": "Stáhnout vzor pro import",
+        "csv.download_pdfs": "Stáhnout balíček PDF (kontrola)",
+        "reports.download_receipts": "Stáhnout doručenky (ZIP)",
         "reports.download_receipts_hint": "Jedno PDF za každé úspěšné odeslání, sestavené na disku bez zbytečné paměti.",
         "housebook.legal_title": "Vaše zákonná povinnost — přečtěte",
         "housebook.legal_body": (
@@ -326,15 +374,16 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "obrazovka nemusí stačit."
         ),
         "housebook.legal_import": (
-            "Vedli jste papírovou domovní knihu? Importem z CSV doplníte starší záznamy bez přepisování — "
-            "vzor souboru najdete v menu CSV."
+            "Vedli jste papírovou domovní knihu? Importem doplníte starší záznamy bez přepisování — "
+            "vzor souboru najdete v menu Import a export."
         ),
         "housebook.import_paper": "Importovat papírovou evidenci",
         "housebook.pdf_hint": (
             "Balíček PDF se na serveru skládá postupně po jednom hostu (nízká spotřeba paměti). Při "
             "velkém počtu záznamů zužte filtr — max. %(limit)s na jedno stažení."
         ),
-        "csv.button": "CSV",
+        "housebook.filter_footer": "Exporty používají aktuální filtr.",
+        "csv.button": "Import a export",
         "host.signature_title": "Podpis hosta",
         "host.signature_help": (
             "Vyžaduje zákon (§ 101–103, zákon č. 326/1999 Sb.). Host se musí podepsat, nebo musíte "
@@ -428,8 +477,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.stays.body": (
             "Pobyty přicházejí z kalendářů nebo ručního zadání. Otevřete řádek pro hosty, odkaz nebo odeslání."
         ),
-        "guide.stays.csv": "CSV v panelu filtrů slouží k importu starších pobytů nebo exportu.",
-        "guide.stays.caption": "CSV je vpravo dole v panelu filtrů u Pobytů a Domovní knihy.",
+        "guide.stays.csv": "Import a export v panelu filtrů slouží k importu starších pobytů nebo exportu.",
+        "guide.stays.caption": "Import a export je vpravo dole v panelu filtrů u Pobytů a Domovní knihy.",
         "guide.guests.body": (
             "Každý pobyt má odkaz pro hosty na telefonu. Vyberou datum, vyplní pas a podepíší se."
         ),
@@ -493,10 +542,48 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.legal.disclaimer_title": "O UbyHostu (důležité)",
         "guide.legal.disclaimer_body": (
-            "UbyHost je technický nástroj poskytovaný tak, jak je. Neposkytuje právní poradenství, "
+            "UbyHost provozuje Josef Pechar, IČO 24005169 (viz Právní informace). Je to technický "
+            "nástroj poskytovaný tak, jak je. Neposkytuje právní poradenství, "
             "není správcem údajů a nezaručuje přijetí policií nebo UbyPortem. Odpovídáte za správnost "
             "dat, včasné hlášení, podepsané formuláře, zálohy a předložení evidence při kontrole. "
             "V pochybnostech kontaktujte cizineckou policii (reguby@pcr.cz) nebo odborného poradce."
+        ),
+        "legal.page_title": "Právní informace",
+        "legal.page_lede": "Kdo provozuje UbyHost a jak to souvisí s vaší odpovědností jako ubytovatele.",
+        "legal.operator_title": "Provozovatel software",
+        "legal.operator_name": "Jméno",
+        "legal.operator_address": "Sídlo",
+        "legal.operator_contact": "Kontakt",
+        "legal.operator_registry": "Veřejný rejstřík",
+        "legal.roles_title": "Dvě různé role",
+        "legal.roles_body": (
+            "Vy (nebo právnická osoba u každého ubytování) jste správcem osobních údajů hostů a "
+            "poskytovatelem ubytování podle českého práva. Josef Pechar, IČO 24005169, provozuje "
+            "pouze software UbyHost. Při používání hostované služby zpracovává údaje hostů na váš pokyn "
+            "kvůli chodu aplikace, uložení záznamů a odeslání hlášení do UbyPortu."
+        ),
+        "legal.software_title": "Co je UbyHost",
+        "legal.software_body": (
+            "UbyHost je technický nástroj pro domovní knihu, formuláře hostů a hlášení do UbyPortu. "
+            "Není právní poradenství, nenahrazuje papírovou evidenci, kterou musíte uchovávat, a "
+            "nezaručuje přijetí hlášení policií. Za správnost, lhůty, podpisy, uchovávání a kontrolu "
+            "odpovídá vždy ubytovatel."
+        ),
+        "legal.disclaimer_title": "Vyloučení odpovědnosti",
+        "legal.disclaimer_body": (
+            "Software je poskytován bez záruky v rozsahu povoleném zákonem. Odpovědnost je omezena "
+            "povinnými zákonnými pravidly. Tím se nemění, kdo musí hosty registrovat a vést domovní "
+            "knihu — to zůstává na poskytovateli ubytování."
+        ),
+        "legal.back_login": "Zpět na přihlášení",
+        "legal.footer_link": "Právní informace",
+        "legal.settings_title": "Provozovatel software",
+        "legal.settings_body": (
+            "UbyHost provozuje %(name)s, IČO %(ico)s. Správci údajů hostů jsou vaše právnické osoby "
+            "nastavené u jednotlivých ubytování."
+        ),
+        "legal.settings_contact_missing": (
+            "Pro veřejný kontakt nastavte UBYHOST_OPERATOR_EMAIL v prostředí serveru."
         ),
         "guide.demo.body": (
             "Ukázková data lze načíst kdykoli. Na skutečnou policii se nikdy neodešlou."

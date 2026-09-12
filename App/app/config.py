@@ -73,6 +73,20 @@ ADMIN_PASSWORD = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
 
 TIMEZONE = "Europe/Prague"
 
+# Software operator (shown in legal notices). Override via environment in production.
+OPERATOR_NAME = os.environ.get("UBYHOST_OPERATOR_NAME", "Josef Pechar")
+OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "24005169")
+OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "CZ0101190518")
+OPERATOR_ADDRESS = os.environ.get(
+    "UBYHOST_OPERATOR_ADDRESS",
+    "Kubelíkova 697/13, 13000 Praha 3",
+)
+OPERATOR_EMAIL = os.environ.get("UBYHOST_OPERATOR_EMAIL", "").strip()
+OPERATOR_REGISTRY_URL = os.environ.get(
+    "UBYHOST_OPERATOR_REGISTRY_URL",
+    "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/24005169",
+)
+
 
 def endpoint_for(env: str = None) -> str:
     return UBYPORT_ENDPOINTS.get((env or UBYPORT_ENV), UBYPORT_ENDPOINTS["mock"])
