@@ -63,7 +63,7 @@
   <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
   {% if demo_loaded %}
     <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">
-      <button class="btn ghost" type="submit">Clear demo data</button>
+      <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
     </form>
   {% endif %}
 {% endset %}

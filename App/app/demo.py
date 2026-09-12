@@ -15,12 +15,26 @@ from . import auth, codelists, config, db, icalsync, reporting, validation
 log = logging.getLogger("ubyhost.demo")
 
 DEMO_ENTITY = "Josef Novák (demo)"
+DEMO_APARTMENT = "Vinohrady Studio (demo)"
+
+
+def is_demo_apartment(apartment) -> bool:
+    if not apartment:
+        return False
+    if apartment["internal_name"] == DEMO_APARTMENT:
+        return True
+    entity = db.query_one(
+        "SELECT name FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],)
+    )
+    return bool(entity and entity["name"] == DEMO_ENTITY)
 
 
 def sample_calendar_url() -> str:
-    """The sample feed lives on the mock server, next to the SOAP endpoint."""
-    parsed = urlparse(config.endpoint_for("mock"))
-    return f"{parsed.scheme}://{parsed.netloc}/sample-airbnb.ics"
+    """Sample feed on the mock server locally, or bundled with the app in production."""
+    if config.UBYPORT_ENV == "mock":
+        parsed = urlparse(config.endpoint_for("mock"))
+        return f"{parsed.scheme}://{parsed.netloc}/sample-airbnb.ics"
+    return f"{config.PUBLIC_BASE_URL}/sample-airbnb.ics"
 
 
 def _guest(reservation_id: int, is_lead: bool, **fields) -> int:
@@ -51,8 +65,6 @@ def _guest(reservation_id: int, is_lead: bool, **fields) -> int:
 
 def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
     """Create one apartment with stays and guests. Returns the apartment id."""
-    if config.UBYPORT_ENV != "mock":
-        return None
     if db.query_one(
         "SELECT 1 AS x FROM apartment WHERE (? IS NULL OR owner_user_id = ?)",
         (owner_user_id, owner_user_id),
@@ -75,7 +87,7 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         {
             "legal_entity_id": entity_id,
             "owner_user_id": owner_user_id,
-            "internal_name": "Vinohrady Studio (demo)",
+            "internal_name": DEMO_APARTMENT,
             "city_en": "Prague",
             "uby_idub": "100227887600",
             "uby_mark": "CZGFW",
@@ -144,12 +156,13 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
             doc_number="P7654321", res_street="Baker Street 221B", res_city="London",
             res_country="GBR", purpose="10",
         )
-        try:
-            reporting.submit_for_apartment(
-                apartment_id, mode="demo", ignore_automation=True
-            )
-        except Exception as exc:
-            log.warning("demo: could not report to the mock server (%s)", exc)
+        if config.UBYPORT_ENV == "mock":
+            try:
+                reporting.submit_for_apartment(
+                    apartment_id, mode="demo", ignore_automation=True
+                )
+            except Exception as exc:
+                log.warning("demo: could not report to the mock server (%s)", exc)
 
     # A stay that arrived today with only one of three forms in: this is the
     # state the host actually needs to see and chase.
@@ -172,9 +185,7 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
 
 
 def clear(owner_user_id: Optional[int] = None) -> bool:
-    """Remove only the built-in mock demo dataset, never user or production data."""
-    if config.UBYPORT_ENV != "mock":
-        return False
+    """Remove only the built-in demo dataset, never user production data."""
     entity = db.query_one(
         "SELECT * FROM legal_entity WHERE name = ? AND (? IS NULL OR owner_user_id = ?)",
         (DEMO_ENTITY, owner_user_id, owner_user_id),
@@ -182,7 +193,7 @@ def clear(owner_user_id: Optional[int] = None) -> bool:
     apartment = db.query_one(
         "SELECT * FROM apartment WHERE internal_name = ? AND legal_entity_id = ? "
         "AND (? IS NULL OR owner_user_id = ?)",
-        ("Vinohrady Studio (demo)", entity["id"] if entity else -1, owner_user_id, owner_user_id),
+        (DEMO_APARTMENT, entity["id"] if entity else -1, owner_user_id, owner_user_id),
     )
     if not entity or not apartment:
         return False

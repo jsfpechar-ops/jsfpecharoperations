@@ -8,8 +8,8 @@
   {{ bulk_send_ready(ready_send_count, return_to) }}
   {% if apartments %}
     <button class="btn" type="button" data-toggle-panel="add-stay-panel">Add stay</button>
-    {{ csv_actions_menu(csv_export_params) }}
   {% endif %}
+  {{ csv_actions_menu(csv_export_params, apartments|length > 0) }}
 {% endset %}
 {{ page_header(
   'Stays',
@@ -231,7 +231,13 @@
 {% else %}
   <div class="panel empty">
     <p>There are no apartments yet, so there is nothing to show.</p>
-    <a class="btn primary" href="/apartments/new">Add your first apartment</a>
+    <div class="actions" style="justify-content:center;margin-top:14px">
+      <a class="btn primary" href="/apartments/new">Add your first apartment</a>
+      <form method="post" action="/demo" class="inline">
+        <button class="btn" type="submit">{{ t('demo.load') }}</button>
+      </form>
+    </div>
+    <p class="small muted" style="margin-top:12px">{{ t('demo.load_detail') }}</p>
   </div>
 {% endif %}
 {% endblock %}
