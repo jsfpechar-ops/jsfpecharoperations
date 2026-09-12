@@ -87,6 +87,9 @@ OPERATOR_REGISTRY_URL = os.environ.get(
     "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/***REMOVED***",
 )
 
+# Bumped when Terms of Service change materially (logged on host login).
+TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.0")
+
 
 def endpoint_for(env: str = None) -> str:
     return UBYPORT_ENDPOINTS.get((env or UBYPORT_ENV), UBYPORT_ENDPOINTS["mock"])
