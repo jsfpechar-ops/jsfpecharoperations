@@ -172,14 +172,26 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_clear": "Clear",
         "signature_missing": "Please sign before submitting.",
         "signature_kept": "Signature already saved. Sign again only if you need to change it.",
-        "passport_photo_title": "Passport or ID photo",
+        "passport_photo_title": "Passport or ID document",
         "passport_photo_help": (
             "Your host must check your details against your travel document by law. "
-            "Upload a clear photo of the ID page. Only your host can see it, and it is "
-            "deleted as soon as they confirm the details."
+            "Take a photo of the ID page, or upload a PDF (for example a registration form "
+            "with up to 11 guests). Only your host can see it, and it is deleted as soon as "
+            "they confirm the details."
         ),
-        "passport_photo_label": "Photo of passport ID page",
-        "passport_photo_hint": "JPEG, PNG, or WebP, up to 5 MB. No need to include every page.",
+        "passport_photo_label": "Passport or ID document",
+        "passport_photo_take": "Take photo",
+        "passport_photo_choose": "Choose file",
+        "passport_photo_selected": "Selected: %(name)s",
+        "passport_photo_hint": (
+            "Photo: JPEG, PNG, or WebP, up to 5 MB. PDF: up to 15 MB "
+            "(e.g. a multi-guest registration form)."
+        ),
+        "passport_photo_too_large_image": "The photo is too large. Use a file under 5 MB.",
+        "passport_photo_too_large_pdf": "The PDF is too large. Use a file under 15 MB.",
+        "passport_photo_bad_type": (
+            "Use a JPEG, PNG, or WebP photo, or a PDF registration form."
+        ),
         "passport_photo_missing": "Please upload a photo of your passport or ID card.",
         "legal_notice_title": "Legal information",
         "legal_notice_intro": (
@@ -201,10 +213,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_passport_title": "Passport photo (foreign nationals)",
         "legal_notice_passport_body": (
-            "Non-Czech guests must upload a clear photo of the ID page. Your host compares it "
-            "to the details you enter. The image is stored temporarily, visible only to your "
-            "host in this app, and deleted as soon as they confirm the match. It is not kept "
-            "after verification and is not sent to the police."
+            "Non-Czech guests must upload a clear photo of the ID page or a PDF registration "
+            "form. Your host compares it to the details you enter. The file is stored "
+            "temporarily, visible only to your host in this app, and deleted as soon as they "
+            "confirm the match. It is not kept after verification and is not sent to the police."
         ),
         "legal_notice_reporting_title": "Police reporting and house book",
         "legal_notice_reporting_body": (
@@ -267,13 +279,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "number where one was issued, permanent home address abroad, purpose of stay, the "
             "start and end of your stay, and your signature."
         ),
-        "privacy_passport_photo_title": "Temporary passport photo",
+        "privacy_passport_photo_title": "Temporary passport photo or PDF",
         "privacy_passport_photo_body": (
             "If you are not a Czech citizen, you may upload a photograph of your passport or ID "
-            "page so the host can verify your details. The image is processed only for that "
-            "check, stored on the host's secure system, accessible only to the host, and "
-            "deleted immediately after verification. It is not transmitted to the police and "
-            "is not kept longer than necessary for the check."
+            "page, or a PDF registration form, so the host can verify your details. The file is "
+            "processed only for that check, stored on the host's secure system, accessible only "
+            "to the host, and deleted immediately after verification. It is not transmitted to "
+            "the police and is not kept longer than necessary for the check."
         ),
         "privacy_recipients": "Who receives it",
         "privacy_recipients_body": (
@@ -459,14 +471,25 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_clear": "Vymazat",
         "signature_missing": "Před odesláním se prosím podepište.",
         "signature_kept": "Podpis je uložený. Podepište se znovu jen pokud ho chcete změnit.",
-        "passport_photo_title": "Fotografie pasu nebo průkazu",
+        "passport_photo_title": "Pas nebo průkaz totožnosti",
         "passport_photo_help": (
             "Hostitel musí ze zákona zkontrolovat vaše údaje proti cestovnímu dokladu. "
-            "Nahrajte čitelnou fotografii stránky s údaji. Uvidí ji jen hostitel a po "
-            "ověření bude smazána."
+            "Vyfoťte stránku s údaji nebo nahrajte PDF (např. registrační formulář až pro "
+            "11 hostů). Uvidí ho jen hostitel a po ověření bude smazán."
         ),
-        "passport_photo_label": "Fotografie stránky s údaji v pasu",
-        "passport_photo_hint": "JPEG, PNG nebo WebP, max. 5 MB.",
+        "passport_photo_label": "Pas nebo průkaz totožnosti",
+        "passport_photo_take": "Vyfotit",
+        "passport_photo_choose": "Vybrat soubor",
+        "passport_photo_selected": "Vybráno: %(name)s",
+        "passport_photo_hint": (
+            "Fotografie: JPEG, PNG nebo WebP, max. 5 MB. PDF: max. 15 MB "
+            "(např. registrační formulář pro více hostů)."
+        ),
+        "passport_photo_too_large_image": "Fotografie je příliš velká. Maximálně 5 MB.",
+        "passport_photo_too_large_pdf": "PDF je příliš velké. Maximálně 15 MB.",
+        "passport_photo_bad_type": (
+            "Použijte fotografii JPEG, PNG nebo WebP, nebo PDF registrační formulář."
+        ),
         "passport_photo_missing": "Nahrajte prosím fotografii pasu nebo občanského průkazu.",
         "legal_notice_title": "Právní informace",
         "legal_notice_intro": (
@@ -487,9 +510,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_passport_title": "Fotografie pasu (cizinci)",
         "legal_notice_passport_body": (
-            "Cizinci musí nahrát čitelnou fotografii stránky s údaji. Hostitel ji porovná s "
-            "vyplněnými poli. Obrázek je uložen dočasně, vidí ho jen hostitel v této aplikaci, "
-            "a po potvrzení shody je smazán. Po ověření se neuchovává a neposílá se policii."
+            "Cizinci musí nahrát čitelnou fotografii stránky s údaji nebo PDF registrační "
+            "formulář. Hostitel ho porovná s vyplněnými poli. Soubor je uložen dočasně, vidí "
+            "ho jen hostitel v této aplikaci, a po potvrzení shody je smazán. Po ověření se "
+            "neuchovává a neposílá se policii."
         ),
         "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
         "legal_notice_reporting_body": (
@@ -549,12 +573,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "číslo víza (bylo-li vydáno), trvalé bydliště v zahraničí, účel pobytu, počátek a "
             "konec pobytu a podpis."
         ),
-        "privacy_passport_photo_title": "Dočasná fotografie pasu",
+        "privacy_passport_photo_title": "Dočasná fotografie pasu nebo PDF",
         "privacy_passport_photo_body": (
-            "Pokud nejste občanem ČR, můžete nahrát fotografii stránky pasu nebo průkazu, aby "
-            "hostitel ověřil údaje. Obrázek slouží jen k této kontrole, ukládá se v zabezpečeném "
-            "systému hostitele, je přístupný pouze hostiteli a po ověření je okamžitě smazán. "
-            "Nepředává se policii a neuchovává se déle, než je nutné pro kontrolu."
+            "Pokud nejste občanem ČR, můžete nahrát fotografii stránky pasu nebo průkazu, "
+            "nebo PDF registrační formulář, aby hostitel ověřil údaje. Soubor slouží jen k této "
+            "kontrole, ukládá se v zabezpečeném systému hostitele, je přístupný pouze hostiteli "
+            "a po ověření je okamžitě smazán. Nepředává se policii a neuchovává se déle, než je "
+            "nutné pro kontrolu."
         ),
         "privacy_recipients": "Komu se předávají",
         "privacy_recipients_body": (

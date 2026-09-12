@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
-from app import db
+from app import db, passport_photos
 from app.main import app
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -15,6 +15,16 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
     )
 ).decode()
 PNG_BYTES = base64.b64decode(SIGNATURE.split(",", 1)[1])
+MINIMAL_PDF = (
+    b"%PDF-1.4\n"
+    b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+    b"3 0 obj<</Type/Page/MediaBox[0 0 3 3]>>endobj\n"
+    b"trailer<</Size 4/Root 1 0 R>>\n"
+    b"startxref\n"
+    b"149\n"
+    b"%%EOF\n"
+)
 
 TOKEN = "navflowtoken"
 
@@ -193,5 +203,26 @@ def test_czech_guest_validation_is_localized():
         assert page.status_code == 422
         assert "Příjmení je povinné." in page.text
         assert "Surname is required." not in page.text
+    finally:
+        _cleanup()
+
+
+def test_guest_form_accepts_pdf_passport_attachment():
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(),
+            files={"passport_photo": ("registration.pdf", MINIMAL_PDF, "application/pdf")},
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303, saved.text
+        guest = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (wrong,))
+        assert guest["passport_photo_at"]
+        assert passport_photos.is_pdf_attachment(guest["id"])
+        payload = passport_photos.read_photo(guest["id"])
+        assert payload is not None
+        assert payload[1] == "application/pdf"
     finally:
         _cleanup()

@@ -360,7 +360,43 @@ select {
   box-shadow: none;
 }
 .g-btn.ghost:hover { background: var(--g-surface-2); }
+.g-btn.secondary {
+  background: var(--g-surface);
+  color: var(--g-ink);
+  border-color: var(--g-line-2);
+  box-shadow: none;
+}
+.g-btn.secondary:hover { background: var(--g-surface-2); }
 .g-btn.slim { padding: 11px 16px; font-size: 15px; }
+
+.passport-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+.passport-upload-actions .g-btn {
+  flex: 1 1 140px;
+  width: auto;
+  margin: 0;
+  box-shadow: none;
+}
+.g-label {
+  display: block;
+  font-weight: 650;
+  color: var(--g-ink);
+  margin-bottom: 4px;
+}
+.passport-file-name {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--g-muted);
+  word-break: break-word;
+}
+.passport-file-err {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
 
 /* --- notices ----------------------------------------------------------- */
 
