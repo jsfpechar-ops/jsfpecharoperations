@@ -240,6 +240,7 @@ ADDED_COLUMNS = (
     ("legal_entity", "contact_email", "TEXT"),
     ("legal_entity", "contact_phone", "TEXT"),
     ("legal_entity", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
+    ("legal_entity", "archived_at", "TEXT"),
     ("apartment", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
     ("apartment", "permalink_pin", "TEXT"),
     ("apartment", "archived_at", "TEXT"),

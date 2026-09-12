@@ -1,13 +1,24 @@
 {% extends "base.html" %}
 {% set nav = 'settings' %}
-{% block title %}Settings{% endblock %}
+{% block title %}{{ t('nav.settings') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header %}
-{{ page_header('Settings', 'System status, security, data protection, and diagnostics.') }}
+{{ page_header(t('nav.settings'), 'System status, security, data protection, and diagnostics.') }}
+
+<nav class="section-nav settings-nav" aria-label="{{ t('nav.settings') }}">
+  <a href="#settings-overview">{{ t('settings.nav.overview') }}</a>
+  <a href="#settings-retention">{{ t('settings.nav.retention') }}</a>
+  <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
+  <a href="#settings-audit">{{ t('settings.nav.audit') }}</a>
+  <a href="#settings-ubyport">{{ t('settings.nav.ubyport') }}</a>
+  <a href="#settings-legal">{{ t('settings.nav.legal') }}</a>
+  <a href="#settings-account">{{ t('settings.nav.account') }}</a>
+  <a href="#settings-version">{{ t('settings.nav.version') }}</a>
+</nav>
 
 <div class="split wide">
   <div>
-    <div class="panel">
+    <div class="panel" id="settings-overview">
       <h2 style="margin-top:0">Where reports go</h2>
       <dl class="kv">
         <dt>Deployment</dt><dd><span class="env-badge {{ deployment_tier }}">{{ deployment_tier }}</span></dd>
@@ -40,7 +51,7 @@
       </p>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="settings-ubyport">
       <h2 style="margin-top:0">Guest form access</h2>
       <dl class="kv">
         <dt>PIN before the form</dt>
@@ -52,10 +63,8 @@
         <span class="mono">UBYHOST_GUEST_PIN</span> environment variable — set it to
         <span class="mono">0</span> to disable PINs everywhere, then restart the app.
       </p>
-    </div>
 
-    <div class="panel">
-      <h2 style="margin-top:0">Cached UbyPort code lists</h2>
+      <h3 style="margin-top:20px">Cached UbyPort code lists</h3>
       <dl class="kv">
         <dt>Countries</dt><dd>{{ codelists.countries[:19].replace('T', ' ') if codelists.countries else 'using the bundled list' }}</dd>
         <dt>Purposes of stay</dt><dd>{{ codelists.purposes[:19].replace('T', ' ') if codelists.purposes else 'using the bundled list' }}</dd>
@@ -67,8 +76,14 @@
       </p>
     </div>
 
-    <div class="panel">
-      <h2 style="margin-top:0">Data protection</h2>
+    <div class="panel" id="settings-archive">
+      <h2 style="margin-top:0">{{ t('settings.nav.archive') }}</h2>
+      <p class="small muted">{{ t('settings.archive_hint_extended') }}</p>
+      <a class="btn" href="/settings/archived">{{ t('settings.archive_link') }}</a>
+    </div>
+
+    <div class="panel" id="settings-retention">
+      <h2 style="margin-top:0">{{ t('settings.nav.retention') }}</h2>
       <p class="small muted" style="margin-top:-4px">
         Guest data is processed under Article 6(1)(c) GDPR — a legal obligation, not consent —
         namely §§ 101–103 of Act No. 326/1999 Coll. Guests are shown a notice covering all of
@@ -80,7 +95,7 @@
         <dt>Records past that date</dt><dd><strong>{{ expired_records }}</strong></dd>
       </dl>
       <form method="post" action="/settings/purge-expired"
-            onsubmit="return confirm('Permanently delete every guest record whose stay ended more than {{ retention_years }} years ago? This cannot be undone.')">
+            data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="btn {{ 'danger' if expired_records else '' }}" type="submit"
                 {% if not expired_records %}disabled{% endif %}>
           Delete {{ expired_records }} expired record(s)
@@ -110,11 +125,11 @@
       {% endif %}
     </div>
 
-    <details class="panel technical" open>
-      <summary>Advanced diagnostics and activity log</summary>
+    <details class="panel technical" open id="settings-audit">
+      <summary>{{ t('settings.nav.audit') }}</summary>
       <p class="small muted">
         Every important change is recorded here — saves, imports, archives, PIN rotations, and police submissions.
-        Archived properties, stays, and house-book entries can be restored from their Archive sections.
+        Archived items can be restored from <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>.
         Only the six-year retention purge permanently deletes guest records.
       </p>
       <h2>Recent activity (last {{ audit_count }} events)</h2>
@@ -139,8 +154,8 @@
   </div>
 
   <div>
-    <div class="panel">
-      <h2 style="margin-top:0">Your account</h2>
+    <div class="panel" id="settings-account">
+      <h2 style="margin-top:0">{{ t('settings.nav.account') }}</h2>
       <p><strong>{{ current_user.display_name or current_user.username }}</strong><br>
         <span class="small muted mono">{{ current_user.username }}</span></p>
       <p class="small muted">Passwords are stored as one-way hashes. Changing yours signs out other sessions.</p>
@@ -150,8 +165,22 @@
       {% endif %}
     </div>
 
-    <div class="panel">
-      <h3 style="margin-top:0">Version</h3>
+    <div class="panel" id="settings-legal">
+      <h2 style="margin-top:0">{{ t('legal.settings_title') }}</h2>
+      <p class="small muted">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
+      <dl class="kv small">
+        <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
+        {% if operator().email %}
+          <dt>{{ t('legal.operator_contact') }}</dt><dd><a href="mailto:{{ operator().email }}">{{ operator().email }}</a></dd>
+        {% else %}
+          <dt>{{ t('legal.operator_contact') }}</dt><dd class="muted">{{ t('legal.settings_contact_missing') }}</dd>
+        {% endif %}
+      </dl>
+      <a class="btn small" href="/legal">{{ t('legal.footer_link') }}</a>
+    </div>
+
+    <div class="panel" id="settings-version">
+      <h3 style="margin-top:0">{{ t('settings.nav.version') }}</h3>
       <p class="small muted">UbyHost {{ app_version }}</p>
     </div>
   </div>

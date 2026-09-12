@@ -13,7 +13,10 @@ The rules this file exists to honour, all from the Ubyport operating rules:
 """
 from __future__ import annotations
 
+import base64
 import json
+import re
+import zipfile
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -291,11 +294,11 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     send_enabled = can_send and not auto_immediate
 
     if progress["status"] == "awaiting_verification":
-        send_hint = "Check each passport photo and confirm the details before reporting"
+        send_hint_key = "hint.awaiting_verification"
     elif auto_immediate:
-        send_hint = "Sends automatically after you verify each guest against their passport"
+        send_hint_key = "hint.auto_immediate"
     elif not has_pending and progress["status"] in ("not_required", "reported"):
-        send_hint = "Nothing to send: no guest record is subject to the reporting duty"
+        send_hint_key = "hint.nothing_duty"
     elif not has_pending:
         unsigned_foreign = [
             guest
@@ -305,22 +308,22 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
         ]
         unverified_foreign = progress.get("unverified") or []
         if unsigned_foreign:
-            send_hint = "Every foreign guest must sign before reporting to UbyPort"
+            send_hint_key = "hint.need_signature"
         elif unverified_foreign:
-            send_hint = "Verify each guest against their passport before reporting"
+            send_hint_key = "hint.need_verification"
         else:
-            send_hint = "Nothing left to send for this stay"
+            send_hint_key = "hint.nothing_left"
     elif not can_send:
-        send_hint = "Complete guest details, signatures, and passport checks before sending"
+        send_hint_key = "hint.not_ready"
     else:
-        send_hint = "Send completed guest records to UbyPort now"
+        send_hint_key = "hint.ready_to_send"
 
     send_visible = has_pending and progress["status"] in ("ready", "failed")
 
     return {
         "send_enabled": send_enabled,
         "send_visible": send_visible or (auto_immediate and has_pending),
-        "send_hint": send_hint,
+        "send_hint_key": send_hint_key,
         "auto_immediate": auto_immediate,
         "pending_count": len(pending),
     }
@@ -726,3 +729,29 @@ def check_deadlines(
         else:
             alerts.resolve(key)
     return raised
+
+
+MAX_RECEIPT_DOWNLOADS = 100
+
+
+def receipt_zip_name(row: Any) -> str:
+    stamp = re.sub(r"[^\w.\-]+", "_", (row["pseudo_stamp"] or str(row["id"]))[:36])
+    date_part = (row["created_at"] or "")[:10] or "report"
+    return f"dorucenka-{date_part}-{row['id']}-{stamp}.pdf"
+
+
+def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
+    """Write Doručenka PDFs to a zip on disk, one file at a time."""
+    count = 0
+    with zipfile.ZipFile(dest_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for row in rows:
+            raw_b64 = row["receipt_pdf"]
+            if not raw_b64:
+                continue
+            try:
+                raw = base64.b64decode(raw_b64)
+            except Exception:
+                continue
+            archive.writestr(receipt_zip_name(row), raw)
+            count += 1
+    return count

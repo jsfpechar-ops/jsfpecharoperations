@@ -9,7 +9,7 @@ from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context
 
-from . import __version__, alerts, auth, config, deadlines, host_i18n, onboarding, reporting, validation
+from . import __version__, alerts, auth, config, deadlines, host_i18n, onboarding, operator, reporting, validation
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
@@ -49,6 +49,7 @@ templates.env.filters["from_json"] = _from_json
 templates.env.globals["t"] = _template_translate
 templates.env.globals.update(
     app_version=__version__,
+    operator=operator.details,
     deployment_tier=config.DEPLOYMENT,
     ubyport_env=config.UBYPORT_ENV,
     public_base_url=config.PUBLIC_BASE_URL,

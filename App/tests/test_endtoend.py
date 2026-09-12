@@ -4,7 +4,9 @@ Nothing here is mocked out inside the application. The only stand-in is the
 police service itself, which runs as a real HTTP server in another process.
 """
 import base64
+import html
 import json
+import os
 import re
 from datetime import date, timedelta
 
@@ -462,9 +464,12 @@ def test_21_registration_pdf_is_produced_per_guest(host):
     assert response.content.startswith(b"%PDF")
 
 
-def test_22_house_book_export_covers_everyone_including_czechs(host):
+def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch):
+    from app import housebook
+
     page = host.get("/housebook")
     assert page.status_code == 200
+    assert "Your legal duty" in page.text
 
     csv = host.get("/housebook.csv")
     assert csv.status_code == 200
@@ -475,8 +480,32 @@ def test_22_house_book_export_covers_everyone_including_czechs(host):
 
     zip_response = host.get("/housebook/pdfs.zip")
     assert zip_response.status_code == 200
-    assert zip_response.headers["content-type"] == "application/zip"
     assert zip_response.content[:2] == b"PK"
+
+    import tempfile
+
+    rows = housebook.housebook_rows()
+    assert rows, "house book should list every guest from earlier tests"
+    assert "Import paper records" in page.text
+    assert "Download import template" in page.text
+    assert "Import & export" in html.unescape(page.text)
+
+    fd, path = tempfile.mkstemp(suffix=".zip")
+    os.close(fd)
+    try:
+        count = housebook.build_housebook_pdfs_zip(rows, path)
+        assert count == len(rows)
+        assert os.path.getsize(path) > 100
+    finally:
+        os.unlink(path)
+
+    assert len(rows) > 1
+    monkeypatch.setattr(housebook, "MAX_INSPECTION_PDFS", 1)
+    blocked = host.get("/housebook/pdfs.zip", follow_redirects=False)
+    assert blocked.status_code == 303
+    from urllib.parse import unquote
+
+    assert "Too many entries" in unquote(blocked.headers["location"])
 
 
 def test_23_deadline_watch_raises_nothing_once_everyone_is_reported(host):

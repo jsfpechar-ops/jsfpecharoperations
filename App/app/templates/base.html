@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/static/app.css?v=20260912f">
 </head>
 <body class="layout-host">
+<a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
 {% from "_components.html" import nav_icon %}
 {% if show_nav | default(true) %}
 <header class="appbar">
@@ -75,6 +76,9 @@
         <span class="sidebar-help-icon" aria-hidden="true">?</span>
         {{ t('nav.guide') }}
       </a>
+      <a class="sidebar-help" href="/legal">
+        {{ t('legal.footer_link') }}
+      </a>
       <div class="sidebar-footer-row">
         <form method="post" action="/language" class="lang-switch compact">
           <input type="hidden" name="next" value="{{ request.url.path }}">
@@ -90,7 +94,7 @@
 </aside>
 {% endif %}
 
-<main class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
+<main id="main-content" class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
   {% if current_user and workspace_user and current_user.id != workspace_user.id %}
     <aside class="impersonation-bar" role="status" aria-live="polite">
       <div class="impersonation-copy">
@@ -150,23 +154,34 @@
 </div>
 {% endif %}
 
+<dialog id="confirm-dialog" class="admin-dialog">
+  <form method="post" id="confirm-form" class="admin-dialog-form">
+    <h2 id="confirm-title" style="margin-top:0"></h2>
+    <p id="confirm-body" class="small muted"></p>
+    <div class="actions">
+      <button class="btn" type="button" data-confirm-cancel>{{ t('confirm.cancel') }}</button>
+      <button class="btn primary" type="submit">{{ t('confirm.proceed') }}</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="csv-export-dialog" class="csv-export-dialog">
   <form id="csv-export-form">
-    <h2 style="margin-top:0">Download CSV</h2>
-    <p class="small muted">Choose the date range to include in the export.</p>
+    <h2 style="margin-top:0">{{ t('data.export_csv_title') }}</h2>
+    <p class="small muted">{{ t('data.export_csv_help') }}</p>
     <div class="grid two">
       <div class="field">
-        <label for="csv_export_from">From</label>
+        <label for="csv_export_from">{{ t('common.from') }}</label>
         <input type="date" id="csv_export_from" name="from" required>
       </div>
       <div class="field">
-        <label for="csv_export_to">Until</label>
+        <label for="csv_export_to">{{ t('common.until') }}</label>
         <input type="date" id="csv_export_to" name="to" required>
       </div>
     </div>
     <div class="actions" style="margin-top:14px">
-      <button class="btn" type="button" data-csv-cancel>Cancel</button>
-      <button class="btn primary" type="submit">Download</button>
+      <button class="btn" type="button" data-csv-cancel>{{ t('data.export_csv_cancel') }}</button>
+      <button class="btn primary" type="submit">{{ t('data.export_csv_download') }}</button>
     </div>
   </form>
 </dialog>
@@ -186,6 +201,6 @@
 </dialog>
 {% endif %}
 
-<script src="/static/app.js?v=20260912d"></script>
+<script src="/static/app.js?v=20260912g"></script>
 </body>
 </html>

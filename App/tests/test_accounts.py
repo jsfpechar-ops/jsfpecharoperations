@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+from urllib.parse import unquote
 
 from fastapi.testclient import TestClient
 
@@ -224,3 +225,199 @@ def test_bootstrap_admin_claims_existing_data(monkeypatch, tmp_path):
     assert db.query_one(
         "SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,)
     )["owner_user_id"] == admin["id"]
+
+
+def test_generate_password_meets_policy():
+    for _ in range(20):
+        password = auth.generate_password()
+        assert not auth.password_error(password)
+
+
+def test_admin_create_host_generates_password_when_missing():
+    db.init_db()
+    _clean_accounts()
+    admin_id = _account("boundary-admin", role="admin")
+    try:
+        admin = _login("boundary-admin")
+        response = admin.post(
+            "/admin/users",
+            data={"username": "boundary-auto", "display_name": "Auto Host"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        location = unquote(response.headers["location"])
+        assert "Temporary password:" in location
+        row = db.query_one(
+            "SELECT * FROM user_account WHERE username = ?", ("boundary-auto",)
+        )
+        assert row is not None
+        assert row["must_change_password"] == 1
+    finally:
+        _clean_accounts()
+
+
+def test_legal_entity_rows_are_clickable_and_can_be_archived():
+    db.init_db()
+    _clean_accounts()
+    admin_id = _account("boundary-admin", role="admin")
+    entity_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Archive Test s.r.o.",
+            "owner_user_id": admin_id,
+            "created_at": db.utcnow(),
+        },
+    )
+    try:
+        admin = _login("boundary-admin")
+        page = admin.get("/entities")
+        assert 'class="clickable-row"' in page.text
+        assert 'data-href="/entities?edit=' in page.text
+
+        archived = admin.post(
+            f"/entities/{entity_id}/archive",
+            follow_redirects=False,
+        )
+        assert archived.status_code == 303
+        row = db.query_one("SELECT archived_at FROM legal_entity WHERE id = ?", (entity_id,))
+        assert row["archived_at"]
+
+        restored = admin.post(
+            f"/entities/{entity_id}/unarchive",
+            follow_redirects=False,
+        )
+        assert restored.status_code == 303
+        row = db.query_one("SELECT archived_at FROM legal_entity WHERE id = ?", (entity_id,))
+        assert row["archived_at"] is None
+    finally:
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
+        _clean_accounts()
+
+
+def test_settings_archived_hub_lists_and_restores_entities():
+    db.init_db()
+    _clean_accounts()
+    admin_id = _account("boundary-admin", role="admin")
+    entity_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Hub Archive s.r.o.",
+            "owner_user_id": admin_id,
+            "created_at": db.utcnow(),
+            "archived_at": db.utcnow(),
+        },
+    )
+    try:
+        admin = _login("boundary-admin")
+        page = admin.get("/settings/archived")
+        assert page.status_code == 200
+        assert "Hub Archive s.r.o." in page.text
+        assert "Legal entities (1)" in page.text
+
+        settings = admin.get("/settings")
+        assert "Open archive hub" in settings.text
+
+        restored = admin.post(
+            f"/entities/{entity_id}/unarchive",
+            data={"return_to": "/settings/archived"},
+            follow_redirects=False,
+        )
+        assert restored.status_code == 303
+        assert restored.headers["location"].startswith("/settings/archived")
+    finally:
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
+        _clean_accounts()
+
+
+def test_remember_me_sets_thirty_day_session_cookie():
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-remember")
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/login",
+            data={"username": "boundary-remember", "password": PASSWORD, "remember": "1"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        cookie = response.cookies.get(auth.SESSION_COOKIE)
+        assert cookie
+        set_cookie = response.headers.get_list("set-cookie")
+        session_header = next(h for h in set_cookie if h.startswith(f"{auth.SESSION_COOKIE}="))
+        assert f"Max-Age={auth.SESSION_REMEMBER_MAX_AGE}" in session_header
+        assert "HttpOnly" in session_header
+        assert "SameSite=strict" in session_header
+
+        payload = auth._session_payload(cookie)
+        assert payload and payload.get("rm") == 1
+        assert auth.session_max_age(payload) == auth.SESSION_REMEMBER_MAX_AGE
+    finally:
+        _clean_accounts()
+
+
+def test_csv_exports_stream_without_buffering_entire_file():
+    """StreamingResponse endpoints should return CSV attachments."""
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-csv")
+    try:
+        client = TestClient(app)
+        client.post(
+            "/login",
+            data={"username": "boundary-csv", "password": PASSWORD},
+            follow_redirects=False,
+        )
+        housebook_csv = client.get("/housebook.csv")
+        assert housebook_csv.status_code == 200
+        assert "text/csv" in housebook_csv.headers["content-type"]
+        assert housebook_csv.content.startswith(b"\xef\xbb\xbf")
+
+        stays_csv = client.get(
+            "/reservations.csv",
+            params={"from": "2020-01-01", "to": "2035-12-31"},
+        )
+        assert stays_csv.status_code == 200
+        assert "text/csv" in stays_csv.headers["content-type"]
+        assert stays_csv.content.startswith(b"\xef\xbb\xbf")
+    finally:
+        _clean_accounts()
+
+
+def test_legal_page_shows_operator_identity():
+    response = TestClient(app).get("/legal")
+    assert response.status_code == 200
+    assert "Josef Pechar" in response.text
+    assert "24005169" in response.text
+    assert "Kubelíkova" in response.text
+
+
+def test_submissions_receipts_zip_downloads_bulk_dorucenky():
+    db.init_db()
+    _clean_accounts()
+    owner_id = _account("boundary-receipts")
+    apartment_id = _apartment(owner_id, "Receipt flat", "boundaryreceipts")
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment_id,
+            "created_at": db.utcnow(),
+            "state": "ok",
+            "receipt_pdf": base64.b64encode(b"%PDF-1.4 dorucenka").decode(),
+            "pseudo_stamp": "ABC-123",
+        },
+    )
+    try:
+        client = _login("boundary-receipts")
+        page = client.get("/submissions")
+        assert page.status_code == 200
+        assert "Download Doručenky" in page.text
+
+        response = client.get("/submissions/receipts.zip")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("application/zip")
+        assert len(response.content) > 20
+        assert response.content[:2] == b"PK"
+    finally:
+        db.execute("DELETE FROM submission WHERE id = ?", (submission_id,))
+        _clean_accounts()
