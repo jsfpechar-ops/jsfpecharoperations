@@ -1,0 +1,22 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render production deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "${RENDER_DEPLOY_HOOK}" ]; then
+            echo "RENDER_DEPLOY_HOOK not set — skipping (enable autoDeploy on Render or add the secret)."
+            exit 0
+          fi
+          curl -fsSL -X POST "${RENDER_DEPLOY_HOOK}"

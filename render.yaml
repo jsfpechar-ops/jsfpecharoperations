@@ -61,7 +61,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: ./render_start.sh
     healthCheckPath: /healthz
-    autoDeploy: false
+    autoDeploy: true
     disk:
       name: ubyhost-data
       mountPath: /opt/render/project/src/App/data
