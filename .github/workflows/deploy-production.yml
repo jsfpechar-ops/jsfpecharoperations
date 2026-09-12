@@ -16,7 +16,12 @@ jobs:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           if [ -z "${RENDER_DEPLOY_HOOK}" ]; then
-            echo "RENDER_DEPLOY_HOOK not set — skipping (enable autoDeploy on Render or add the secret)."
+            echo "::warning::RENDER_DEPLOY_HOOK is not set."
+            echo "Production will not deploy from CI until you add the deploy hook URL from"
+            echo "Render → ubyhost → Settings → Deploy Hook as a GitHub Actions secret."
+            echo "You can also enable autoDeploy on the ubyhost service (branch: main)."
             exit 0
           fi
+          echo "Deploying ubyhost (production) from main…"
           curl -fsSL -X POST "${RENDER_DEPLOY_HOOK}"
+          echo "Production deploy hook triggered."
