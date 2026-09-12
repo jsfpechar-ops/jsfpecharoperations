@@ -327,3 +327,58 @@ def test_settings_archived_hub_lists_and_restores_entities():
     finally:
         db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
         _clean_accounts()
+
+
+def test_remember_me_sets_thirty_day_session_cookie():
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-remember")
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/login",
+            data={"username": "boundary-remember", "password": PASSWORD, "remember": "1"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        cookie = response.cookies.get(auth.SESSION_COOKIE)
+        assert cookie
+        set_cookie = response.headers.get_list("set-cookie")
+        session_header = next(h for h in set_cookie if h.startswith(f"{auth.SESSION_COOKIE}="))
+        assert f"Max-Age={auth.SESSION_REMEMBER_MAX_AGE}" in session_header
+        assert "HttpOnly" in session_header
+        assert "SameSite=strict" in session_header
+
+        payload = auth._session_payload(cookie)
+        assert payload and payload.get("rm") == 1
+        assert auth.session_max_age(payload) == auth.SESSION_REMEMBER_MAX_AGE
+    finally:
+        _clean_accounts()
+
+
+def test_csv_exports_stream_without_buffering_entire_file():
+    """StreamingResponse endpoints should return CSV attachments."""
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-csv")
+    try:
+        client = TestClient(app)
+        client.post(
+            "/login",
+            data={"username": "boundary-csv", "password": PASSWORD},
+            follow_redirects=False,
+        )
+        housebook_csv = client.get("/housebook.csv")
+        assert housebook_csv.status_code == 200
+        assert "text/csv" in housebook_csv.headers["content-type"]
+        assert housebook_csv.content.startswith(b"\xef\xbb\xbf")
+
+        stays_csv = client.get(
+            "/reservations.csv",
+            params={"from": "2020-01-01", "to": "2035-12-31"},
+        )
+        assert stays_csv.status_code == 200
+        assert "text/csv" in stays_csv.headers["content-type"]
+        assert stays_csv.content.startswith(b"\xef\xbb\xbf")
+    finally:
+        _clean_accounts()
