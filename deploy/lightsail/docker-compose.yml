@@ -48,7 +48,8 @@ services:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
+      - ./caddy/certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:

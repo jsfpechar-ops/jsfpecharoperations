@@ -16,6 +16,10 @@ Use **Frankfurt (`eu-central-1`)** or your nearest EU region. Enable the **stati
 IP** (included). Do **not** buy Lightsail managed MySQL — UbyHost uses SQLite on
 disk.
 
+**Recommended domain setup:** register on **Cloudflare** (or point `.cz`
+nameservers there) and follow **[CLOUDFLARE.md](CLOUDFLARE.md)** for proxied DNS,
+origin TLS, and `CLOUDFLARE_PROXY=1` in `.env`.
+
 ## Architecture
 
 ```
@@ -37,8 +41,9 @@ Internet → :443 Caddy (auto TLS) → ubyhost:8080 (FastAPI)
 
 ### 2. Point DNS
 
-Create an **A record** for your domain → static IP. Wait for DNS to propagate
-before the first deploy (Caddy needs the name to issue a certificate).
+Create a **proxied** A record in Cloudflare → static IP (see
+**[CLOUDFLARE.md](CLOUDFLARE.md)**). Wait for DNS to propagate before the first
+deploy.
 
 ### 3. Bootstrap the server
 
@@ -164,7 +169,7 @@ No code changes required.
 
 | Symptom | Fix |
 |---------|-----|
-| Caddy won’t get a certificate | DNS A record must point to this IP; ports 80/443 open |
+| Caddy / SSL errors | Cloudflare: Full (strict) + origin certs; or `CLOUDFLARE_PROXY=0` for Let's Encrypt |
 | `healthz` shows `deployment: local` | Set `UBYHOST_DEPLOYMENT=production` in `.env`, redeploy |
 | Out of memory | Upgrade to Small plan or export PDFs in smaller date ranges |
 | Guest links wrong host | `UBYHOST_PUBLIC_BASE_URL` must match your HTTPS domain exactly |

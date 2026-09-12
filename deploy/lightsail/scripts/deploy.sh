@@ -22,6 +22,24 @@ for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL UBYHOST_ADMIN_PASSW
   fi
 done
 
+if [ "${UBYHOST_PUBLIC_BASE_URL#https://}" = "${UBYHOST_PUBLIC_BASE_URL}" ]; then
+  echo "WARNING: UBYHOST_PUBLIC_BASE_URL should use https:// in production." >&2
+fi
+
+if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
+  echo "==> Cloudflare proxy mode (origin certificate)"
+  for cert in caddy/certs/origin.pem caddy/certs/origin-key.pem; do
+    if [ ! -f "${cert}" ]; then
+      echo "Missing ${cert} — see docs/CLOUDFLARE.md and caddy/certs/README.md" >&2
+      exit 1
+    fi
+  done
+  cp caddy/Caddyfile.cloudflare caddy/Caddyfile.active
+else
+  echo "==> Direct TLS mode (Let's Encrypt via Caddy)"
+  cp caddy/Caddyfile.acme caddy/Caddyfile.active
+fi
+
 if [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
   echo "Generating UBYHOST_SECRET_KEY in .env"
   KEY="$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")"
@@ -59,4 +77,7 @@ docker compose exec -T ubyhost python -c \
   "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
 echo ""
 echo "Public URL: ${UBYHOST_PUBLIC_BASE_URL}"
+if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
+  echo "Cloudflare: ensure DNS is proxied (orange cloud) and SSL/TLS is Full (strict)."
+fi
 echo "Run ./scripts/logs.sh to tail logs."
