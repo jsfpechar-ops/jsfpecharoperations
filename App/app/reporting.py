@@ -199,8 +199,10 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
 
 def status_label(status: str, automation_mode: Optional[str] = None) -> str:
     """Human label for a stay's reporting status, with automation context."""
+    if status in ("awaiting_guest", "incomplete") and automation_mode == "immediate":
+        return "Waiting for signature"
     if status == "ready" and automation_mode == "immediate":
-        return "Ready — auto-send"
+        return "Forms complete — auto-send"
     if status == "ready" and automation_mode == "manual":
         return "Ready — send manually"
     if status == "ready" and automation_mode == "scheduled":

@@ -61,11 +61,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "send.this_stay": "Send this stay",
         "send.all_ready": "Send all ready stays",
         "send.all_ready_hint": "Reports every stay that is complete and waiting for your approval",
-        "send.guests_count": "Send %(count)s guest(s) on this stay",
+        "send.filled_forms": "Send filled forms",
+        "send.filled_forms_hint": "Submit every completed guest form on this stay to UbyPort",
         "status.ready_manual": "Ready — you send",
         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
-        "status.ready_immediate": "Ready — auto-send",
-        "status.ready_immediate_tip": "Sends automatically when each guest signs. No button needed unless something failed.",
+        "status.ready_immediate": "Forms complete — auto-send",
+        "status.ready_immediate_tip": "Guest forms are done. UbyPort submission happens automatically.",
+        "status.waiting_signature": "Waiting for signature",
+        "status.waiting_signature_tip": "Guest forms are not signed yet. Sends automatically once each guest signs.",
         "status.ready_scheduled": "Ready — scheduled",
         "status.ready_scheduled_tip": "Will go out automatically after the delay set on the property.",
         "status.demo_preview": "Preview only",
@@ -118,8 +121,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Each property chooses how completed guest records reach UbyPort:",
         "guide.reporting.caption": (
-            "Ready — you send means guest forms are done but your property waits for you to click Send. "
-            "Ready — auto-send goes out when guests sign."
+            "Waiting for signature means guests still need to sign. Forms complete — auto-send means "
+            "everything is filled in and UbyPort submission happens automatically."
         ),
         "guide.reporting.immediate": "Immediate",
         "guide.reporting.immediate_detail": "Sent as soon as the guest signs.",
@@ -191,11 +194,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "send.this_stay": "Odeslat tento pobyt",
         "send.all_ready": "Odeslat všechny připravené",
         "send.all_ready_hint": "Odešle každý pobyt, který je kompletní a čeká na vaše potvrzení",
-        "send.guests_count": "Odeslat %(count)s host(y) na tomto pobytu",
+        "send.filled_forms": "Odeslat vyplněné formuláře",
+        "send.filled_forms_hint": "Odešle každý hotový formulář hosta na tomto pobytu do UbyPortu",
         "status.ready_manual": "Připraveno — ručně",
         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
-        "status.ready_immediate": "Připraveno — automaticky",
-        "status.ready_immediate_tip": "Odešle se po podpisu hosta. Tlačítko není potřeba, pokud vše proběhlo.",
+        "status.ready_immediate": "Formuláře hotové — automaticky",
+        "status.ready_immediate_tip": "Formuláře jsou vyplněné. Odeslání do UbyPortu proběhne automaticky.",
+        "status.waiting_signature": "Čeká na podpis",
+        "status.waiting_signature_tip": "Formuláře ještě nejsou podepsané. Po podpisu hosta se odešle automaticky.",
         "status.ready_scheduled": "Připraveno — naplánováno",
         "status.ready_scheduled_tip": "Odejde automaticky po zvolené prodlevě od příjezdu.",
         "status.demo_preview": "Jen náhled",
@@ -246,8 +252,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Každé ubytování volí, jak se hotová hlášení dostanou do UbyPortu:",
         "guide.reporting.caption": (
-            "Připraveno — ručně znamená hotové formuláře, ale čeká na vaše Odeslat. "
-            "Připraveno — automaticky odejde po podpisu hosta."
+            "Čeká na podpis znamená, že host ještě nepodepsal. Formuláře hotové — automaticky znamená, "
+            "že je vše vyplněné a odeslání do UbyPortu proběhne samo."
         ),
         "guide.reporting.immediate": "Okamžité",
         "guide.reporting.immediate_detail": "Odešle se hned po podpisu hosta.",

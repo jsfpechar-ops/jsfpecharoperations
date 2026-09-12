@@ -534,12 +534,20 @@ def entities(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    owner_user_id = access.owner_id(request)
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
         "FROM legal_entity e WHERE e.owner_user_id IS ? ORDER BY e.name",
-        (access.owner_id(request),),
+        (owner_user_id,),
     )
-    return render(request, "entities.html", {"entities": rows})
+    edit_entity = None
+    edit_id = request.query_params.get("edit")
+    if edit_id and edit_id.isdigit():
+        edit_entity = db.query_one(
+            "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id IS ?",
+            (int(edit_id), owner_user_id),
+        )
+    return render(request, "entities.html", {"entities": rows, "edit_entity": edit_entity})
 
 
 ENTITY_FIELDS = ("name", "seat", "ico", "dic", "contact_email", "contact_phone")

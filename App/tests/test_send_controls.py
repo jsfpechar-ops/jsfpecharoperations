@@ -116,5 +116,6 @@ def test_count_sendable_stays_includes_ready_manual_stays():
 
 
 def test_status_label_reflects_automation():
-    assert reporting.status_label("ready", "immediate") == "Ready — auto-send"
+    assert reporting.status_label("ready", "immediate") == "Forms complete — auto-send"
+    assert reporting.status_label("awaiting_guest", "immediate") == "Waiting for signature"
     assert reporting.status_label("ready", "manual") == "Ready — send manually"

@@ -37,6 +37,9 @@
   {% if is_demo and status == 'ready' %}
     {% set label = t('status.demo_preview') %}
     {% set tip = t('status.demo_preview_tip') %}
+  {% elif automation_mode == 'immediate' and status in ('awaiting_guest', 'incomplete') %}
+    {% set label = t('status.waiting_signature') %}
+    {% set tip = t('status.waiting_signature_tip') %}
   {% elif status == 'ready' and automation_mode == 'immediate' %}
     {% set label = t('status.ready_immediate') %}
     {% set tip = t('status.ready_immediate_tip') %}

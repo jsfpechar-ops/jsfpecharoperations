@@ -296,7 +296,10 @@ a.plain { color: inherit; text-decoration: none; }
   align-items: center;
   gap: 8px;
 }
-.sidebar-footer-row .lang-switch.compact { flex: 1; min-width: 0; }
+.sidebar-footer-row .lang-switch.compact {
+  flex: 0 0 auto;
+  width: fit-content;
+}
 .sidebar-logout { margin: 0; padding: 0; flex-shrink: 0; }
 .sidebar-logout .nav-button {
   cursor: pointer;
@@ -708,6 +711,10 @@ a.notification-link:hover { background: var(--surface-2); }
 .focus-title a:hover { color: var(--brand); }
 .focus-meta { color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
 .focus-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.focus-actions .btn.accent { white-space: nowrap; }
+.sync-action { display: grid; gap: 4px; justify-items: end; text-align: right; }
+.sync-action .sync-hint { margin: 0; font-size: 12px; line-height: 1.35; }
+.entity-edit-panel { margin-bottom: 16px; }
 
 /* --- tables ------------------------------------------------------------ */
 
@@ -1046,12 +1053,12 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   padding-bottom: 0;
 }
 .filters .filter-actions-end {
-  flex: 1 1 100%;
+  flex: 0 0 auto;
   max-width: none;
   justify-content: flex-end;
-  align-items: center;
-  margin-left: 0;
-  padding-top: 2px;
+  align-items: flex-end;
+  margin-left: auto;
+  padding-top: 0;
 }
 .filters .csv-in-filter .row-menu-trigger { height: 44px; }
 .filters input[type=date], .filters input[type=text], .filters select { height: 44px; }
