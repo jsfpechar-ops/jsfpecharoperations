@@ -21,8 +21,8 @@ GitHub (main)
     ├── CI (pytest + smoke) on every PR
     │
     └── Render Blueprint (render.yaml)
-            ├── ubyhost-staging   mock + auto-deploy
-            └── ubyhost           test/prod + manual deploy + disk
+            ├── ubyhost-staging   mock + manual deploy (optional)
+            └── ubyhost           test/prod + auto-deploy from main + disk
 ```
 
 ## First-time setup on Render
@@ -30,14 +30,15 @@ GitHub (main)
 1. Push this repository to GitHub.
 2. In [Render](https://render.com/): **New → Blueprint** → connect the repo.
 3. Click **Apply**. Two web services are created:
-   - `ubyhost-staging` — safe playground (auto-deploys from `main`).
-   - `ubyhost` — production shell (auto-deploy **off** until you are ready).
+   - `ubyhost-staging` — safe playground (manual deploy; staging auto-deploy is off in the blueprint).
+   - `ubyhost` — production (auto-deploys from `main` when CI passes).
 4. On **`ubyhost` (production)** only, open **Environment** and set:
    - `UBYHOST_ADMIN_USERNAME` — your admin login (e.g. `admin`).
    - `UBYHOST_ADMIN_PASSWORD` — a long unique password (not shared with staging).
 5. Leave `UBYHOST_UBYPORT_ENV=test` until the [production checklist](PRODUCTION_CHECKLIST.md)
    is complete.
-6. Deploy production manually the first time: **Manual Deploy → Deploy latest commit**.
+6. Add GitHub secret **`RENDER_DEPLOY_HOOK`**: Render → **ubyhost** → Settings → **Deploy Hook** → copy URL.
+   CI triggers production on every green `main` build. First deploy: **Manual Deploy → Deploy latest commit** if needed.
 
 Verify both services: `curl https://<host>/healthz` should return JSON with
 `deployment` and `ubyport_env`.
@@ -47,10 +48,8 @@ Verify both services: `curl https://<host>/healthz` should return JSON with
 Use this whenever you ship a change that affects hosts or guests.
 
 1. **Merge to `main`** — GitHub Actions must pass (tests + smoke).
-2. **Staging** — `ubyhost-staging` auto-deploys. Click through the feature on the
-   staging URL; use **Load demo data** if you need a full walkthrough.
-3. **Production** — when satisfied, on the `ubyhost` service:
-   - **Manual Deploy → Deploy latest commit** (or enable auto-deploy once you trust CI).
+2. **Production** — `ubyhost` auto-deploys from `main` (or CI hits `RENDER_DEPLOY_HOOK`).
+3. **Staging** (optional) — deploy `ubyhost-staging` manually when you want a mock playground.
 4. **Smoke production** — sign in, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`

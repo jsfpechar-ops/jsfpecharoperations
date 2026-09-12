@@ -466,3 +466,25 @@ def test_submissions_receipts_zip_downloads_bulk_dorucenky():
     finally:
         db.execute("DELETE FROM submission WHERE id = ?", (submission_id,))
         _clean_accounts()
+
+
+def test_non_remember_sessions_expire_after_twelve_hours(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    user_id = _account("boundary-session")
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    base = 1_700_000_000.0
+    monkeypatch.setattr("itsdangerous.timed.time.time", lambda: base)
+    try:
+        token = auth.issue_session(account["id"], account["session_version"], remember=False)
+        remember_token = auth.issue_session(account["id"], account["session_version"], remember=True)
+        assert auth._session_payload(token) is not None
+        assert auth._session_payload(remember_token) is not None
+
+        monkeypatch.setattr(
+            "itsdangerous.timed.time.time", lambda: base + auth.SESSION_MAX_AGE + 60
+        )
+        assert auth._session_payload(token) is None
+        assert auth._session_payload(remember_token) is not None
+    finally:
+        _clean_accounts()
