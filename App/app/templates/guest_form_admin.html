@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set nav = 'reservations' %}
-{% set editing = guest is not none %}
+{% set editing = editing | default(guest is not none) %}
 {% block title %}{{ 'Edit guest' if editing else 'Add guest' }}{% endblock %}
 
 {% macro err_for(field) %}
@@ -9,6 +9,7 @@
   {% endfor %}
 {% endmacro %}
 {% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
+{% macro field_val(name) %}{{ guest[name] if guest and guest[name] is not none else '' }}{% endmacro %}
 
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb %}
@@ -50,13 +51,13 @@
       <div class="field">
         <label for="surname">Surname</label>
         <input class="{{ bad('surname') }}" type="text" id="surname" name="surname" maxlength="50" required
-               value="{{ guest.surname or '' if editing else '' }}">
+               value="{{ field_val('surname') }}">
         {{ err_for('surname') }}
       </div>
       <div class="field">
         <label for="first_name">Given name(s)</label>
         <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name" maxlength="24"
-               value="{{ guest.first_name or '' if editing else '' }}">
+               value="{{ field_val('first_name') }}">
         {{ err_for('first_name') }}
       </div>
     </div>
@@ -64,9 +65,10 @@
       <div class="field">
         <label for="birth_date">Date of birth</label>
         <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
-               placeholder="DDMMYYYY" maxlength="10"
-               value="{{ guest.birth_date or '' if editing else '' }}">
-        <div class="hint">DDMMYYYY. Use 00 for an unknown day or month.</div>
+               data-birth-date inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10"
+               autocomplete="bday"
+               value="{{ display_birth_date(guest.birth_date) if guest and guest.birth_date else '' }}">
+        <div class="hint">Type the 8 digits from the passport — slashes are added automatically. Use 00 for an unknown day or month.</div>
         {{ err_for('birth_date') }}
       </div>
       <div class="field">
@@ -75,7 +77,7 @@
           <option value="">— select —</option>
           {% for country in countries %}
             <option value="{{ country.code }}"
-              {% if editing and guest.nationality == country.code %}selected{% endif %}>
+              {% if guest and guest.nationality == country.code %}selected{% endif %}>
               {{ country.label }} ({{ country.code }})</option>
           {% endfor %}
         </select>
@@ -85,14 +87,14 @@
       <div class="field">
         <label for="doc_number">Travel document number</label>
         <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
-               value="{{ guest.doc_number or '' if editing else '' }}">
+               value="{{ field_val('doc_number') }}">
         <div class="hint">6–30 letters and digits, or INPASS for a child in a parent's passport.</div>
         {{ err_for('doc_number') }}
       </div>
       <div class="field">
         <label for="visa_number">Visa number <span class="opt">(optional)</span></label>
         <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
-               value="{{ guest.visa_number or '' if editing else '' }}">
+               value="{{ field_val('visa_number') }}">
         {{ err_for('visa_number') }}
       </div>
     </div>
@@ -104,13 +106,13 @@
       <div class="field">
         <label for="res_street">Street and number <span class="opt">(optional)</span></label>
         <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street" maxlength="42"
-               value="{{ guest.res_street or '' if editing else '' }}">
+               value="{{ field_val('res_street') }}">
         {{ err_for('res_street') }}
       </div>
       <div class="field">
         <label for="res_city">City</label>
         <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city" maxlength="42"
-               value="{{ guest.res_city or '' if editing else '' }}">
+               value="{{ field_val('res_city') }}">
         {{ err_for('res_city') }}
       </div>
       <div class="field">
@@ -119,7 +121,7 @@
           <option value="">— select —</option>
           {% for country in countries %}
             <option value="{{ country.code }}"
-              {% if editing and guest.res_country == country.code %}selected{% endif %}>
+              {% if guest and guest.res_country == country.code %}selected{% endif %}>
               {{ country.label }} ({{ country.code }})</option>
           {% endfor %}
         </select>
@@ -134,12 +136,12 @@
       <div class="field">
         <label for="stay_from">Accommodated from</label>
         <input type="date" id="stay_from" name="stay_from"
-               value="{{ (guest.stay_from if editing and guest.stay_from else reservation.date_from) }}">
+               value="{{ (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
       </div>
       <div class="field">
         <label for="stay_to">Accommodated until</label>
         <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"
-               value="{{ (guest.stay_to if editing and guest.stay_to else reservation.date_to) }}">
+               value="{{ (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
         {{ err_for('stay_to') }}
       </div>
       <div class="field">
@@ -147,7 +149,7 @@
         <select id="purpose" name="purpose">
           {% for purpose in purposes %}
             <option value="{{ purpose.code }}"
-              {% if (editing and guest.purpose == purpose.code) or (not editing and purpose.code == reservation.default_purpose) %}selected{% endif %}>
+              {% if (guest and guest.purpose == purpose.code) or (not guest and purpose.code == reservation.default_purpose) %}selected{% endif %}>
               {{ purpose.label }}</option>
           {% endfor %}
         </select>
@@ -155,21 +157,76 @@
     </div>
     <div class="field">
       <label for="note">Note <span class="opt">(optional, max 255)</span></label>
-      <textarea class="{{ bad('note') }}" id="note" name="note" maxlength="255">{{ guest.note or '' if editing else '' }}</textarea>
+      <textarea class="{{ bad('note') }}" id="note" name="note" maxlength="255">{{ field_val('note') }}</textarea>
       {{ err_for('note') }}
     </div>
+  </div>
+
+  {% if editing and needs_verification %}
+  <div class="panel verify-panel">
+    <h2 style="margin-top:0">{{ t('host.verify_title') }}</h2>
+    <p class="small muted">{{ t('host.verify_help') }}</p>
+    {% if has_passport_photo %}
+      <div class="passport-preview">
+        {% if passport_is_pdf %}
+          <iframe class="passport-preview-pdf" src="/guests/{{ guest.id }}/passport-photo"
+                  title="Passport PDF for verification"></iframe>
+        {% else %}
+          <img src="/guests/{{ guest.id }}/passport-photo" alt="Passport photo for verification">
+        {% endif %}
+      </div>
+      <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form">
+        <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
+        <div class="checkline" style="margin:12px 0">
+          <input type="checkbox" id="confirm_verify" name="confirm_verify" value="1" required>
+          <label for="confirm_verify">{{ t('host.verify_confirm') }}</label>
+        </div>
+        <button class="btn primary" type="submit">{{ t('host.verify_button') }}</button>
+      </form>
+      <p class="legal-fineprint">{{ t('host.verify_footnote') }}</p>
+    {% else %}
+      <p class="small muted">{{ t('host.verify_waiting_photo') }}</p>
+    {% endif %}
+  </div>
+  {% elif editing and guest.identity_verified_at and guest.nationality != 'CZE' %}
+  <div class="panel quiet">
+    <p class="small muted" style="margin:0">{{ t('host.verify_done') }}
+      {{ guest.identity_verified_at[:16].replace('T', ' ') }}.</p>
+  </div>
+  {% elif not editing %}
+  <div class="panel quiet">
+    <p class="small muted" style="margin:0">{{ t('host.verify_host_entry') }}</p>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <h2 style="margin-top:0">{{ t('host.signature_title') }}</h2>
+    <p class="small muted">{{ t('host.signature_help') }}</p>
+    <div class="signature-pad">
+      <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('host.signature_title') }}"
+              aria-describedby="sig-help sig-status"></canvas>
+      <div class="signature-pad-bar">
+        <span id="sig-status" class="err" role="alert" aria-live="polite"
+              data-missing="{{ t('host.signature_missing') }}"
+              data-kept="{{ t('host.signature_kept') }}"></span>
+        <button type="button" id="sig-clear">{{ t('host.signature_clear') }}</button>
+      </div>
+    </div>
+    <input type="hidden" id="signature" name="signature"
+           value="{{ guest.signature_png if guest and guest.signature_png and guest.signature_png.startswith('data:image/') else '' }}">
+    {{ err_for('signature') }}
   </div>
 
   <div class="actions">
     <button class="btn primary" type="submit">{{ 'Save changes' if editing else 'Add guest' }}</button>
     <a class="btn" href="/reservations/{{ reservation.id }}">Cancel</a>
-    {% if editing %}
+    {% if editing and guest.id %}
       <a class="btn" href="/guests/{{ guest.id }}/form.pdf">Download signed form</a>
     {% endif %}
   </div>
 </form>
 
-{% if editing %}
+{% if editing and guest.id %}
 <details class="panel danger-zone" style="margin-top:24px">
   <summary>Advanced and dangerous actions</summary>
 <div style="margin-top:16px">
@@ -197,4 +254,5 @@
 {% endif %}
 </details>
 {% endif %}
+<script src="/static/signature.js?v=20260912d"></script>
 {% endblock %}

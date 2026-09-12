@@ -13,8 +13,10 @@ import base64
 import csv
 import io
 import os
+import re
+import zipfile
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import reportlab
 from reportlab.lib.pagesizes import A4
@@ -24,9 +26,11 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
-from . import db, validation
+from . import db, reporting, validation
 
 RETENTION_YEARS = 6
+# Police-inspection ZIPs are built one PDF at a time on disk — not held in RAM.
+MAX_INSPECTION_PDFS = 100
 
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
@@ -72,21 +76,22 @@ HOUSEBOOK_COLUMNS = [
 ]
 
 
-def housebook_rows(
+def _housebook_sql(
     apartment_id: Optional[int] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Chronological house-book entries, newest stay last."""
+    owner_user_id: Optional[int] = None,
+) -> tuple[str, List[Any]]:
     sql = (
         "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id, "
         "       a.internal_name, a.uby_idub "
         "FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status != 'ignored' AND g.archived_at IS NULL"
+        "WHERE r.status != 'ignored' AND g.archived_at IS NULL "
+        "AND (? IS NULL OR a.owner_user_id = ?)"
     )
-    params: List[Any] = []
+    params: List[Any] = [owner_user_id, owner_user_id]
     if apartment_id:
         sql += " AND a.id = ?"
         params.append(apartment_id)
@@ -97,45 +102,54 @@ def housebook_rows(
         sql += " AND COALESCE(g.stay_from, r.date_from) <= ?"
         params.append(date_to)
     sql += " ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
+    return sql, params
 
-    out: List[Dict[str, Any]] = []
-    for row in db.query(sql, params):
-        reported = {
-            "sent": "yes",
-            "not_required": "not required (Czech national)",
-            "error": "NO - rejected",
-            "blocked": "NO - rejected, cannot be corrected",
-            "pending": "not yet",
-        }.get(row["submit_state"], row["submit_state"])
-        stamp = ""
-        if row["submission_id"]:
-            sub = db.query_one("SELECT pseudo_stamp FROM submission WHERE id = ?", (row["submission_id"],))
-            stamp = (sub["pseudo_stamp"] if sub else "") or ""
-        out.append(
-            {
-                "apartment": row["internal_name"],
-                "idub": row["uby_idub"] or "",
-                "stay_from": row["stay_from"] or row["res_from"],
-                "stay_to": row["stay_to"] or row["res_to"],
-                "surname": row["surname"] or "",
-                "first_name": row["first_name"] or "",
-                "birth_date": validation.format_birth_date(row["birth_date"]),
-                "nationality": row["nationality"] or "",
-                "doc_number": row["doc_number"] or "",
-                "visa_number": row["visa_number"] or "",
-                "residence": validation.compose_residence(
-                    row["res_street"] or "", row["res_city"] or "", (row["res_country"] or "").upper()
-                ),
-                "purpose": validation.purpose_label(row["purpose"] or "", "cs"),
-                "note": row["note"] or "",
-                "signed": "yes" if row["signature_png"] else "no",
-                "reported": reported,
-                "reported_at": row["submitted_at"] or "",
-                "stamp": stamp,
-                "_guest_id": row["id"],
-            }
-        )
-    return out
+
+def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    reported = {
+        "sent": "yes",
+        "not_required": "not required (Czech national)",
+        "error": "NO - rejected",
+        "blocked": "NO - rejected, cannot be corrected",
+        "pending": "not yet",
+    }.get(row["submit_state"], row["submit_state"])
+    stamp = ""
+    if row["submission_id"]:
+        sub = db.query_one("SELECT pseudo_stamp FROM submission WHERE id = ?", (row["submission_id"],))
+        stamp = (sub["pseudo_stamp"] if sub else "") or ""
+    return {
+        "apartment": row["internal_name"],
+        "idub": row["uby_idub"] or "",
+        "stay_from": row["stay_from"] or row["res_from"],
+        "stay_to": row["stay_to"] or row["res_to"],
+        "surname": row["surname"] or "",
+        "first_name": row["first_name"] or "",
+        "birth_date": validation.format_birth_date(row["birth_date"]),
+        "nationality": row["nationality"] or "",
+        "doc_number": row["doc_number"] or "",
+        "visa_number": row["visa_number"] or "",
+        "residence": validation.compose_residence(
+            row["res_street"] or "", row["res_city"] or "", (row["res_country"] or "").upper()
+        ),
+        "purpose": validation.purpose_label(row["purpose"] or "", "cs"),
+        "note": row["note"] or "",
+        "signed": "yes" if reporting.guest_has_signature(row) else "no",
+        "reported": reported,
+        "reported_at": row["submitted_at"] or "",
+        "stamp": stamp,
+        "_guest_id": row["id"],
+    }
+
+
+def housebook_rows(
+    apartment_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Chronological house-book entries, newest stay last."""
+    sql, params = _housebook_sql(apartment_id, date_from, date_to, owner_user_id)
+    return [_housebook_export_row(row) for row in db.query(sql, params)]
 
 
 def _parse_import_date(value: str) -> Optional[str]:
@@ -325,7 +339,9 @@ SAMPLE_HOUSEBOOK_ROW = {
 }
 
 
-def housebook_archived_rows(apartment_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def housebook_archived_rows(
+    apartment_id: Optional[int] = None, owner_user_id: Optional[int] = None
+) -> List[Dict[str, Any]]:
     """Archived house-book entries that can be restored."""
     sql = (
         "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id, "
@@ -333,9 +349,9 @@ def housebook_archived_rows(apartment_id: Optional[int] = None) -> List[Dict[str
         "FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE g.archived_at IS NOT NULL"
+        "WHERE g.archived_at IS NOT NULL AND (? IS NULL OR a.owner_user_id = ?)"
     )
-    params: List[Any] = []
+    params: List[Any] = [owner_user_id, owner_user_id]
     if apartment_id:
         sql += " AND a.id = ?"
         params.append(apartment_id)
@@ -359,6 +375,34 @@ def housebook_archived_rows(apartment_id: Optional[int] = None) -> List[Dict[str
 def sample_housebook_csv() -> bytes:
     """Filled example guests can copy when importing a paper house book."""
     return housebook_csv([SAMPLE_HOUSEBOOK_ROW])
+
+
+def iter_housebook_csv_rows(rows: List[Dict[str, Any]]) -> Iterator[bytes]:
+    """Stream an already-fetched house-book export row-by-row."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+    yield b"\xef\xbb\xbf"
+    writer.writerow([label for _key, label in HOUSEBOOK_COLUMNS])
+    yield buffer.getvalue().encode("utf-8")
+    buffer.seek(0)
+    buffer.truncate(0)
+    for export_row in rows:
+        writer.writerow([export_row.get(key, "") for key, _label in HOUSEBOOK_COLUMNS])
+        yield buffer.getvalue().encode("utf-8")
+        buffer.seek(0)
+        buffer.truncate(0)
+
+
+def iter_housebook_csv(
+    apartment_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
+) -> Iterator[bytes]:
+    """Stream house-book CSV row-by-row instead of buffering the whole file."""
+    yield from iter_housebook_csv_rows(
+        housebook_rows(apartment_id, date_from, date_to, owner_user_id)
+    )
 
 
 def housebook_csv(rows: List[Dict[str, Any]]) -> bytes:
@@ -385,6 +429,46 @@ def _draw_field(pdf, x: float, y: float, label: str, value: str, width: float) -
     pdf.drawString(x, y, text)
     pdf.setStrokeGray(0.75)
     pdf.line(x, y - 3, x + width, y - 3)
+
+
+def _pdf_entry_name(row: Dict[str, Any]) -> str:
+    parts = [
+        str(row.get("stay_from") or ""),
+        str(row.get("surname") or ""),
+        str(row.get("first_name") or ""),
+    ]
+    stem = "-".join(part for part in parts if part).strip("-") or f"guest-{row['_guest_id']}"
+    stem = re.sub(r"[^\w.\-]+", "_", stem, flags=re.UNICODE)
+    return f"{stem[:96]}.pdf"
+
+
+def build_housebook_pdfs_zip(rows: List[Dict[str, Any]], dest_path: str) -> int:
+    """Write signed registration forms to a zip file on disk, one PDF at a time.
+
+    Keeps memory use low: only one guest PDF is rendered at a time instead of
+    buffering the whole archive in RAM.
+    """
+    count = 0
+    with zipfile.ZipFile(dest_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for row in rows:
+            guest_id = row.get("_guest_id")
+            if not guest_id:
+                continue
+            archive.writestr(_pdf_entry_name(row), registration_form_pdf(int(guest_id)))
+            count += 1
+    return count
+
+
+def housebook_pdfs_zip(rows: List[Dict[str, Any]]) -> bytes:
+    """In-memory zip for tests. Production uses build_housebook_pdfs_zip on disk."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for row in rows:
+            guest_id = row.get("_guest_id")
+            if not guest_id:
+                continue
+            archive.writestr(_pdf_entry_name(row), registration_form_pdf(int(guest_id)))
+    return buffer.getvalue()
 
 
 def registration_form_pdf(guest_id: int) -> bytes:
@@ -543,18 +627,24 @@ def retention_cutoff(today: Optional[date] = None) -> date:
         return date(today.year - RETENTION_YEARS, today.month, today.day - 1)
 
 
-def expired_guest_ids(today: Optional[date] = None) -> List[int]:
+def expired_guest_ids(
+    today: Optional[date] = None, owner_user_id: Optional[int] = None
+) -> List[int]:
     """Guest records whose stay ended more than six years ago."""
     rows = db.query(
         "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
-        "WHERE COALESCE(g.stay_to, r.date_to) < ?",
-        (retention_cutoff(today).isoformat(),),
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE COALESCE(g.stay_to, r.date_to) < ? "
+        "AND (? IS NULL OR a.owner_user_id = ?)",
+        (retention_cutoff(today).isoformat(), owner_user_id, owner_user_id),
     )
     return [row["id"] for row in rows]
 
 
-def purge_expired(today: Optional[date] = None) -> int:
-    ids = expired_guest_ids(today)
+def purge_expired(
+    today: Optional[date] = None, owner_user_id: Optional[int] = None
+) -> int:
+    ids = expired_guest_ids(today, owner_user_id=owner_user_id)
     if not ids:
         return 0
     marks = ", ".join("?" for _ in ids)

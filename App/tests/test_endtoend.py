@@ -4,7 +4,9 @@ Nothing here is mocked out inside the application. The only stand-in is the
 police service itself, which runs as a real HTTP server in another process.
 """
 import base64
+import html
 import json
+import os
 import re
 from datetime import date, timedelta
 
@@ -15,10 +17,10 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from app import codelists, db, reporting
+from app import auth, codelists, db, reporting
 from app.main import app
 
-PASSWORD = "correct-horse-battery"
+PASSWORD = "Correct-Horse-Battery-123"
 
 # A one-pixel PNG is enough to stand for a drawn signature.
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -28,6 +30,7 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
         "6082".replace("od", "0d")
     )
 ).decode()
+PNG_BYTES = base64.b64decode(SIGNATURE.split(",", 1)[1])
 
 
 def ics_for(start: date, nights: int = 4) -> str:
@@ -82,30 +85,46 @@ def feed_url(tmp_path_factory):
 @pytest.fixture(scope="module")
 def client(mock_ubyport):
     db.init_db()
+    account = db.query_one("SELECT * FROM user_account WHERE username = 'e2e-admin'")
+    if not account:
+        account_id = auth.create_account(
+            "e2e-admin", PASSWORD, "End-to-end admin", role="admin",
+            must_change_password=False,
+        )
+    else:
+        account_id = account["id"]
     with TestClient(app) as test_client:
+        response = test_client.post(
+            "/login",
+            data={"username": "e2e-admin", "password": PASSWORD},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
         yield test_client
+    db.execute("UPDATE apartment SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE legal_entity SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE alert SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("UPDATE audit SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (account_id,))
 
 
 @pytest.fixture(scope="module")
 def host(client):
-    """The host side needs no sign-in, so this is just the browser."""
+    """An authenticated administrator browser."""
     return client
 
 
-def test_01_the_app_opens_straight_onto_the_dashboard(host):
-    """There is no account and no setup wizard to get past."""
+def test_01_the_app_opens_onto_the_authenticated_dashboard(host):
     page = host.get("/", follow_redirects=False)
     assert page.status_code == 200
     assert "UbyHost" in page.text
-    # Nothing to log out of, so the button is not there.
-    assert 'action="/logout"' not in page.text
-    # And the login page does not stand in the way either.
+    assert 'action="/logout"' in page.text
     assert host.get("/login", follow_redirects=False).status_code == 303
 
 
 def test_02_an_empty_install_offers_the_demo(host):
     page = host.get("/")
-    assert "Nothing set up yet" in page.text
+    assert "Welcome to UbyHost" in page.text
     assert 'action="/demo"' in page.text
 
 
@@ -246,9 +265,42 @@ def guest_form_data(**overrides):
         "res_country": "GBR",
         "purpose": "10",
         "signature": SIGNATURE,
+        "legal_ack": "1",
     }
     data.update(overrides)
     return data
+
+
+def passport_files(nationality: str = "GBR"):
+    if nationality == "CZE":
+        return None
+    return {"passport_photo": ("passport.png", PNG_BYTES, "image/png")}
+
+
+def save_guest_form(browser, stay, host=None, verify: bool = True, **overrides):
+    nationality = overrides.get("nationality", guest_form_data()["nationality"])
+    data = guest_form_data(**overrides)
+    kwargs = {"data": data, "follow_redirects": False}
+    files = passport_files(nationality)
+    if files:
+        kwargs["files"] = files
+    response = browser.post(permalink(stay) + "/save", **kwargs)
+    if verify and host and nationality != "CZE" and response.status_code == 303:
+        guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
+        host.post(
+            f"/guests/{guest['id']}/verify-identity",
+            data={"return_to": f"/guests/{guest['id']}"},
+            follow_redirects=False,
+        )
+    return response
+
+
+def host_verifies_guest(host, guest_id: int) -> None:
+    host.post(
+        f"/guests/{guest_id}/verify-identity",
+        data={"return_to": f"/guests/{guest_id}"},
+        follow_redirects=False,
+    )
 
 
 def test_12_incomplete_form_is_refused_before_it_reaches_the_police(client):
@@ -260,12 +312,10 @@ def test_12_incomplete_form_is_refused_before_it_reaches_the_police(client):
     assert not db.query("SELECT * FROM guest")
 
 
-def test_13_completed_form_is_reported_immediately_and_accepted(client):
+def test_13_completed_form_is_reported_after_passport_verification(client, host):
     stay = db.query_one("SELECT * FROM reservation")
     guest_browser = TestClient(app)
-    response = guest_browser.post(
-        permalink(stay) + "/save", data=guest_form_data(), follow_redirects=False
-    )
+    response = save_guest_form(guest_browser, stay, host=host)
     assert response.status_code == 303, response.text
 
     guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
@@ -274,8 +324,9 @@ def test_13_completed_form_is_reported_immediately_and_accepted(client):
     assert guest["signature_png"].startswith("data:image/")
     assert guest["signed_at"]
     assert guest["is_lead"] == 1
+    assert guest["identity_verified_at"]
 
-    # automation_mode is "immediate", so the record went out on save.
+    # Immediate mode sends only after the host verifies the passport photo.
     assert guest["submit_state"] == reporting.SENT, guest["last_errors"]
     assert guest["submitted_at"], "rule 10.5(3) requires the time of the successful notification"
 
@@ -345,18 +396,17 @@ def test_17_a_deliberate_resend_is_rejected_as_a_duplicate(host):
     ), "the host has to learn that the record bounced"
 
 
-def test_18_a_second_guest_completes_the_party(client):
+def test_18_a_second_guest_completes_the_party(client, host):
     stay = db.query_one("SELECT * FROM reservation")
     guest_browser = TestClient(app)
-    response = guest_browser.post(
-        permalink(stay) + "/save",
-        data=guest_form_data(
-            surname="Smithová",
-            first_name="Anna",
-            birth_date="15.03.1992",
-            doc_number="P7654321",
-        ),
-        follow_redirects=False,
+    response = save_guest_form(
+        guest_browser,
+        stay,
+        host=host,
+        surname="Smithová",
+        first_name="Anna",
+        birth_date="15.03.1992",
+        doc_number="P7654321",
     )
     assert response.status_code == 303, response.text
 
@@ -414,9 +464,12 @@ def test_21_registration_pdf_is_produced_per_guest(host):
     assert response.content.startswith(b"%PDF")
 
 
-def test_22_house_book_export_covers_everyone_including_czechs(host):
+def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch):
+    from app import housebook
+
     page = host.get("/housebook")
     assert page.status_code == 200
+    assert "Your legal duty" in page.text
 
     csv = host.get("/housebook.csv")
     assert csv.status_code == 200
@@ -424,6 +477,35 @@ def test_22_house_book_export_covers_everyone_including_czechs(host):
     assert text.count("\n") >= 4  # header plus three guests
     assert "SMITH" in text
     assert "DVOŘÁK" in text, "Czech nationals belong in the house book even so"
+
+    zip_response = host.get("/housebook/pdfs.zip")
+    assert zip_response.status_code == 200
+    assert zip_response.content[:2] == b"PK"
+
+    import tempfile
+
+    rows = housebook.housebook_rows()
+    assert rows, "house book should list every guest from earlier tests"
+    assert "Import paper records" in page.text
+    assert "Download import template" in page.text
+    assert "Import & export" in html.unescape(page.text)
+
+    fd, path = tempfile.mkstemp(suffix=".zip")
+    os.close(fd)
+    try:
+        count = housebook.build_housebook_pdfs_zip(rows, path)
+        assert count == len(rows)
+        assert os.path.getsize(path) > 100
+    finally:
+        os.unlink(path)
+
+    assert len(rows) > 1
+    monkeypatch.setattr(housebook, "MAX_INSPECTION_PDFS", 1)
+    blocked = host.get("/housebook/pdfs.zip", follow_redirects=False)
+    assert blocked.status_code == 303
+    from urllib.parse import unquote
+
+    assert "Too many entries" in unquote(blocked.headers["location"])
 
 
 def test_23_deadline_watch_raises_nothing_once_everyone_is_reported(host):
@@ -477,13 +559,23 @@ def test_25_manual_mode_waits_for_the_host(host, mock_ubyport):
     guest_browser = TestClient(app)
     guest_browser.post(
         f"/l/{apartment['permalink_token']}/{reservation_id}/save",
-        data=guest_form_data(surname="Rossi", first_name="Marco", doc_number="YA1122334",
-                             nationality="ITA", res_city="Roma", res_country="ITA",
-                             res_street="Via Roma 1"),
+        data=guest_form_data(
+            surname="Rossi",
+            first_name="Marco",
+            doc_number="YA1122334",
+            nationality="ITA",
+            res_city="Roma",
+            res_country="ITA",
+            res_street="Via Roma 1",
+        ),
+        files=passport_files("ITA"),
         follow_redirects=False,
     )
     guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
     assert guest["submit_state"] == reporting.PENDING, "manual mode must not send by itself"
+    host_verifies_guest(host, guest["id"])
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest["id"],))
+    assert guest["submit_state"] == reporting.PENDING, "manual mode still waits for host send"
 
     reporting.sweep()
     assert db.query_one("SELECT submit_state FROM guest WHERE id = ?", (guest["id"],))[
@@ -508,6 +600,7 @@ def host_adds_guest(host, reservation_id: int, **overrides) -> int:
         "res_city": "Boston",
         "res_country": "USA",
         "purpose": "10",
+        "signature": SIGNATURE,
     }
     data.update(overrides)
     response = host.post(
@@ -558,6 +651,7 @@ def test_26_a_field_error_is_reported_back_as_correctable(host, mock_ubyport):
             "res_city": "Boston",
             "res_country": "USA",
             "purpose": "10",
+            "signature": SIGNATURE,
         },
         follow_redirects=False,
     )
@@ -622,32 +716,33 @@ def test_28_the_audit_trail_records_what_happened(host):
     assert "guest_form_saved" in page.text
 
 
-def test_29_the_lock_is_opt_in_and_can_be_switched_back_off(host):
-    """Only needed if the app is put somewhere other people can reach."""
-    assert host.post("/settings/password", data={"new_password": "short"},
-                     follow_redirects=False).status_code == 303
-    assert not db.get_setting("admin_password")
-
-    host.post("/settings/password", data={"new_password": PASSWORD}, follow_redirects=False)
-    assert db.get_setting("admin_password")
-
-    stranger = TestClient(app)
-    assert stranger.get("/", follow_redirects=False).status_code == 303
-    assert stranger.post("/login", data={"password": "wrong"}).status_code == 401
-    assert stranger.post(
-        "/login", data={"password": PASSWORD}, follow_redirects=False
-    ).status_code == 303
-    assert 'action="/logout"' in stranger.get("/").text
-
-    # A guest link keeps working while the host side is locked.
-    apartment = db.query_one("SELECT * FROM apartment")
-    assert TestClient(app).get(f"/l/{apartment['permalink_token']}",
-                               follow_redirects=True).status_code == 200
-
-    host.post(
-        "/settings/password",
-            data={"current_password": PASSWORD, "new_password": "", "confirm_unlock": "1"},
-        follow_redirects=False,
+def test_29_host_accounts_require_username_and_password(host):
+    user_id = auth.create_account(
+        "test-admin", PASSWORD, "Test admin", role="admin", must_change_password=False
     )
-    assert not db.get_setting("admin_password")
-    assert TestClient(app).get("/", follow_redirects=False).status_code == 200
+    try:
+        stranger = TestClient(app)
+        assert stranger.get("/", follow_redirects=False).status_code == 303
+        assert stranger.post(
+            "/login", data={"username": "test-admin", "password": "wrong"}
+        ).status_code == 401
+        assert stranger.post(
+            "/login",
+            data={"username": "test-admin", "password": PASSWORD},
+            follow_redirects=False,
+        ).status_code == 303
+        assert 'action="/logout"' in stranger.get("/").text
+
+        stored = db.query_one("SELECT password_hash FROM user_account WHERE id = ?", (user_id,))
+        assert PASSWORD not in stored["password_hash"]
+        assert auth.verify_password(PASSWORD, stored["password_hash"])
+
+        # Guest links do not require a host account.
+        apartment = db.query_one("SELECT * FROM apartment")
+        assert TestClient(app).get(
+            f"/l/{apartment['permalink_token']}", follow_redirects=True
+        ).status_code == 200
+    finally:
+        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
+        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
+        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))

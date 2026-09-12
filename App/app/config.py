@@ -37,6 +37,9 @@ SECRET_KEY = _load_secret()
 # "mock" | "test" | "prod".  Controls which UbyPort endpoint submissions go to.
 UBYPORT_ENV = os.environ.get("UBYHOST_UBYPORT_ENV", "mock").lower()
 
+# Logical deployment tier shown in the UI and health checks: local | staging | production.
+DEPLOYMENT = os.environ.get("UBYHOST_DEPLOYMENT", "local").lower()
+
 UBYPORT_ENDPOINTS = {
     "test": "https://ubyport.pcr.cz/ws_uby_test/ws_uby.svc",
     "prod": "https://ubyport.pcr.cz/ws_uby/ws_uby.svc",
@@ -61,7 +64,28 @@ ENABLE_SCHEDULER = os.environ.get("UBYHOST_ENABLE_SCHEDULER", "1") not in ("0", 
 
 GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "false", "no")
 
+# A first administrator is created once on startup. Set both values in a
+# deployed environment; when the password is omitted a random one is written
+# once to DATA_DIR/initial_admin_credentials with owner-only permissions.
+BOOTSTRAP_ADMIN = os.environ.get("UBYHOST_BOOTSTRAP_ADMIN", "1") not in ("0", "false", "no")
+ADMIN_USERNAME = os.environ.get("UBYHOST_ADMIN_USERNAME", "admin").strip().lower()
+ADMIN_PASSWORD = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
+
 TIMEZONE = "Europe/Prague"
+
+# Software operator (shown in legal notices). Override via environment in production.
+OPERATOR_NAME = os.environ.get("UBYHOST_OPERATOR_NAME", "Josef Pechar")
+OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "24005169")
+OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "CZ0101190518")
+OPERATOR_ADDRESS = os.environ.get(
+    "UBYHOST_OPERATOR_ADDRESS",
+    "Kubelíkova 697/13, 13000 Praha 3",
+)
+OPERATOR_EMAIL = os.environ.get("UBYHOST_OPERATOR_EMAIL", "").strip()
+OPERATOR_REGISTRY_URL = os.environ.get(
+    "UBYHOST_OPERATOR_REGISTRY_URL",
+    "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/24005169",
+)
 
 
 def endpoint_for(env: str = None) -> str:

@@ -5,6 +5,7 @@ It uses a scratch database, so it never touches real data.
 """
 from __future__ import annotations
 
+import base64
 import os
 import sys
 import tempfile
@@ -15,6 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("UBYHOST_DATA_DIR", tempfile.mkdtemp(prefix="ubyhost-smoke-"))
 os.environ["UBYHOST_UBYPORT_ENV"] = "mock"
 os.environ["UBYHOST_ENABLE_SCHEDULER"] = "0"
+os.environ["UBYHOST_BOOTSTRAP_ADMIN"] = "0"
+os.environ["UBYHOST_GUEST_PIN"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -23,6 +26,12 @@ from app.main import app  # noqa: E402
 
 FAILURES = []
 CHECKED = 0
+
+# Minimal valid PNG for passport-photo upload in guest form smoke.
+PNG_BYTES = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
+    "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
 
 
 def check(client, path, expect=(200,), must_contain=(), must_not_contain=(), label=""):
@@ -141,8 +150,13 @@ def main():
         "/housebook",
         "/housebook?apartment=oops&from=oops",
         "/settings",
+        "/automation",
     ):
         check(host, path)
+
+    check(host, "/", must_contain=["Operations"], must_not_contain=["row-arrow"])
+    check(host, "/housebook", must_contain=["data-csv-export"])
+    check(host, "/guest-links", must_contain=["Generate a new PIN"])
 
     stays_page = check(host, "/reservations?range=all").text
     order = [
@@ -164,7 +178,13 @@ def main():
     check(
         guest,
         f"/l/{token}/privacy",
-        must_contain=["Smoke s.r.o.", "privacy@example.com", "6(1)(c)", "uoou.gov.cz"],
+        must_contain=[
+            "Smoke s.r.o.",
+            "privacy@example.com",
+            "6(1)(c)",
+            "uoou.gov.cz",
+            "Temporary passport photo",
+        ],
     )
     # A separate browser, because ?lang=cs sets a sticky cookie.
     czech = TestClient(app)
@@ -173,7 +193,7 @@ def main():
     check(
         guest,
         f"/l/{token}/{stay_a}",
-        must_contain=['name="surname"', "Czech law"],
+        must_contain=['name="surname"', "Czech law", "Legal information", "legal_ack"],
         must_not_contain=["Airbnb", "Booking.com"],
     )
     check(guest, f"/l/{token}/999999", expect=(404,), must_contain=["no longer open"])
@@ -196,16 +216,23 @@ def main():
             "purpose": "10",
             "party_size": "2",
             "signature": signature,
+            "legal_ack": "1",
         },
+        files={"passport_photo": ("passport.png", PNG_BYTES, "image/png")},
         follow_redirects=True,
     )
     if saved.status_code != 200:
         FAILURES.append(f"guest save: HTTP {saved.status_code}")
-    elif "Details saved" not in saved.text:
+    elif "Details saved" not in saved.text and "Details submitted and reported" not in saved.text:
         FAILURES.append("guest save: no confirmation shown")
     check(guest, f"/l/{token}/{stay_a}", must_contain=["1 of 2 people completed"])
     check(guest, f"/l/{token}/{stay_a}/new", must_contain=['name="surname"', "Person 2"])
-    check(czech, f"/l/{token}/{stay_a}?saved=1", must_contain=["Údaje uloženy"])
+    czech_saved = czech.get(f"/l/{token}/{stay_a}?saved=1&lang=cs", follow_redirects=True)
+    if czech_saved.status_code != 200 or (
+        "Údaje uloženy" not in czech_saved.text
+        and "Údaje byly odeslány a oznámeny" not in czech_saved.text
+    ):
+        FAILURES.append("czech guest save banner: missing confirmation")
 
     print(f"\n{CHECKED} pages checked")
     if FAILURES:

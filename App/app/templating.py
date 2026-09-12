@@ -7,8 +7,9 @@ from typing import Any, Dict, Optional
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from jinja2 import pass_context
 
-from . import __version__, alerts, auth, config, deadlines, reporting, validation
+from . import __version__, alerts, auth, config, deadlines, host_i18n, onboarding, operator, reporting, validation
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
@@ -35,11 +36,21 @@ def _from_json(value: Optional[str]) -> Any:
         return []
 
 
+@pass_context
+def _template_translate(context, key: str, **kwargs) -> str:
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    return host_i18n.translate(lang, key, **kwargs)
+
+
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["from_json"] = _from_json
+templates.env.globals["t"] = _template_translate
 templates.env.globals.update(
     app_version=__version__,
+    operator=operator.details,
+    deployment_tier=config.DEPLOYMENT,
     ubyport_env=config.UBYPORT_ENV,
     public_base_url=config.PUBLIC_BASE_URL,
     describe_time_left=deadlines.describe_time_left,
@@ -61,10 +72,23 @@ templates.env.globals.update(
 def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
     data = dict(context or {})
     data["request"] = request
-    data.setdefault("password_is_set", auth.password_is_set())
-    data.setdefault("open_alerts", alerts.open_alerts())
+    data["lang"] = host_i18n.lang_from_request(request)
+    data.setdefault("current_user", auth.current_user(request))
+    data.setdefault("workspace_user", auth.workspace_user(request))
+    workspace = data["workspace_user"]
+    data.setdefault(
+        "open_alerts",
+        alerts.open_alerts(workspace["id"]) if workspace else (
+            [] if auth.accounts_exist() else alerts.open_alerts()
+        ),
+    )
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
+    data.setdefault("celebration_milestone", None)
+    data.setdefault("sent_guest_count", 0)
+    data.setdefault("minutes_saved", 0)
+    if workspace and workspace["id"]:
+        data.setdefault("onboarding", onboarding.progress(workspace["id"]))
     return templates.TemplateResponse(name, data, status_code=status_code)
 
 

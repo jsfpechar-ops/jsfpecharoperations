@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import csv
 import io
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from . import db
 
@@ -45,7 +45,7 @@ def sample_csv() -> bytes:
     return b"\xef\xbb\xbf" + buffer.getvalue().encode("utf-8")
 
 
-def import_csv(content: bytes) -> Dict[str, Any]:
+def import_csv(content: bytes, owner_user_id: Optional[int] = None) -> Dict[str, Any]:
     text = content.decode("utf-8-sig", errors="replace")
     reader = csv.reader(io.StringIO(text), delimiter=";")
     rows = list(reader)
@@ -74,7 +74,11 @@ def import_csv(content: bytes) -> Dict[str, Any]:
 
     apartments = {
         row["internal_name"].strip().lower(): row["id"]
-        for row in db.query("SELECT id, internal_name FROM apartment WHERE archived_at IS NULL")
+        for row in db.query(
+            "SELECT id, internal_name FROM apartment WHERE archived_at IS NULL "
+            "AND (? IS NULL OR owner_user_id = ?)",
+            (owner_user_id, owner_user_id),
+        )
     }
     imported = 0
     skipped = 0
@@ -132,3 +136,77 @@ def import_csv(content: bytes) -> Dict[str, Any]:
     if imported:
         db.audit("stays_import", f"rows={imported}")
     return {"imported": imported, "skipped": skipped, "errors": errors[:8]}
+
+
+def _export_sql(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    apartment_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
+) -> tuple[str, List[Any]]:
+    sql = (
+        "SELECT r.*, a.internal_name AS apartment_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?)"
+    )
+    params: List[Any] = [owner_user_id, owner_user_id]
+    if apartment_id:
+        sql += " AND r.apartment_id = ?"
+        params.append(apartment_id)
+    if date_from:
+        sql += " AND r.date_to >= ?"
+        params.append(date_from)
+    if date_to:
+        sql += " AND r.date_from <= ?"
+        params.append(date_to)
+    sql += " ORDER BY r.date_from, a.internal_name"
+    return sql, params
+
+
+def iter_export_csv_rows(rows: List[Any]) -> Iterator[bytes]:
+    """Stream an already-fetched stays export row-by-row."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+    yield b"\xef\xbb\xbf"
+    writer.writerow([label for _key, label in STAY_COLUMNS])
+    yield buffer.getvalue().encode("utf-8")
+    buffer.seek(0)
+    buffer.truncate(0)
+    for row in rows:
+        guests = row["expected_guests_override"] or row["declared_guests"]
+        writer.writerow(
+            [
+                row["apartment_name"],
+                row["date_from"],
+                row["date_to"],
+                str(guests) if guests else "",
+                row["summary"] or "",
+                row["guest_email"] or "",
+            ]
+        )
+        yield buffer.getvalue().encode("utf-8")
+        buffer.seek(0)
+        buffer.truncate(0)
+
+
+def iter_export_csv(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    apartment_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
+) -> Iterator[bytes]:
+    """Stream stays CSV row-by-row instead of buffering the whole file."""
+    sql, params = _export_sql(date_from, date_to, apartment_id, owner_user_id)
+    yield from iter_export_csv_rows(list(db.query(sql, params)))
+
+
+def export_csv(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    apartment_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
+) -> bytes:
+    """Export stays in the same format used for CSV import."""
+    return b"".join(
+        iter_export_csv(date_from, date_to, apartment_id, owner_user_id)
+    )

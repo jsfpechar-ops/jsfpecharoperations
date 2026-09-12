@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% set nav = 'users' %}
+{% block title %}Users{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
+{{ page_header(
+  'Users',
+  'Create a private workspace for each host. Passwords are hashed and can be reset, never viewed.'
+) }}
+
+<div class="split wide">
+  <section>
+    <div class="panel tight scroll-x">
+      <table class="table-cards user-table">
+        <thead><tr><th>User</th><th>Role</th><th>Properties</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+        {% for user in users %}
+          <tr>
+            <td data-label="User">
+              <strong>{{ user.display_name or user.username }}</strong>
+              <div class="small muted mono">{{ user.username }}</div>
+            </td>
+            <td data-label="Role">{{ user.role | capitalize }}</td>
+            <td data-label="Properties">{{ user.apartment_count }}</td>
+            <td data-label="Status">
+              {% if not user.active %}<span class="pill grey">Disabled</span>
+              {% elif user.must_change_password %}<span class="pill amber">Temporary password</span>
+              {% else %}<span class="pill green">Active</span>{% endif %}
+            </td>
+            <td class="row-actions" data-label="">
+              {% if user.id != current_user.id %}
+                {{ row_menu_begin('User actions') }}
+                  <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
+                    <button class="row-menu-item" type="submit" role="menuitem">Open workspace</button>
+                  </form>
+                  <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form">
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ 'Disable' if user.active else 'Enable' }}</button>
+                  </form>
+                  <button class="row-menu-item" type="button" role="menuitem"
+                          data-reset-password data-user-id="{{ user.id }}"
+                          data-user-label="{{ user.display_name or user.username }}">Reset password</button>
+                {{ row_menu_end() }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <h2 style="margin-top:0">Create a host</h2>
+    <p class="small muted">A secure temporary password is generated for you. Copy it before creating the account.</p>
+    <form method="post" action="/admin/users">
+      <div class="field">
+        <label for="display_name">Name</label>
+        <input type="text" id="display_name" name="display_name" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required minlength="3" maxlength="32"
+               pattern="[a-z0-9][a-z0-9._-]{2,31}" autocapitalize="none" spellcheck="false"
+               autocomplete="off">
+        <div class="hint">Lowercase letters, numbers, dots, dashes, and underscores.</div>
+      </div>
+      <div class="field">
+        <label for="password">Temporary password</label>
+        <div class="password-generate">
+          <input type="text" id="password" name="password" class="mono" required readonly
+                 autocomplete="off" spellcheck="false" data-generated-password>
+          <button class="btn small ghost" type="button" data-generate-password>Regenerate</button>
+          <button class="btn small ghost" type="button" data-copy="password">Copy</button>
+        </div>
+        <div class="hint">They must replace it at first login.</div>
+      </div>
+      <button class="btn primary" type="submit">Create host</button>
+    </form>
+  </aside>
+</div>
+
+<dialog id="reset-password-dialog" class="admin-dialog">
+  <form method="post" id="reset-password-form" class="admin-dialog-form">
+    <h2 style="margin-top:0">Reset password</h2>
+    <p class="small muted">A new temporary password for <strong id="reset-password-label"></strong>. Copy it before saving.</p>
+    <div class="field">
+      <label for="reset_password_value">Temporary password</label>
+      <div class="password-generate">
+        <input type="text" id="reset_password_value" name="password" class="mono" required readonly
+               autocomplete="off" spellcheck="false" data-generated-password>
+        <button class="btn small ghost" type="button" data-generate-password>Regenerate</button>
+        <button class="btn small ghost" type="button" data-copy="reset_password_value">Copy</button>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" data-reset-password-cancel>Cancel</button>
+      <button class="btn primary" type="submit">Save password</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}

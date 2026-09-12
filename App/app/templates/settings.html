@@ -10,7 +10,8 @@
     <div class="panel">
       <h2 style="margin-top:0">Where reports go</h2>
       <dl class="kv">
-        <dt>Environment</dt><dd><span class="env-badge {{ ubyport_env }}">{{ ubyport_env }}</span></dd>
+        <dt>Deployment</dt><dd><span class="env-badge {{ deployment_tier }}">{{ deployment_tier }}</span></dd>
+        <dt>UbyPort target</dt><dd><span class="env-badge {{ ubyport_env }}">{{ ubyport_env }}</span></dd>
         <dt>Endpoint</dt><dd class="mono small">{{ endpoint }}</dd>
         <dt>Calendar polling</dt><dd>every {{ poll_minutes }} minutes</dd>
         <dt>Submission sweep</dt><dd>every {{ sweep_minutes }} minutes</dd>
@@ -40,6 +41,20 @@
     </div>
 
     <div class="panel">
+      <h2 style="margin-top:0">Guest form access</h2>
+      <dl class="kv">
+        <dt>PIN before the form</dt>
+        <dd>{{ 'Required (four digits per property)' if guest_pin_required else 'Off' }}</dd>
+      </dl>
+      <p class="small muted">
+        Each property has its own PIN on the guest-link settings page. Whether a PIN is required at
+        all is controlled by the
+        <span class="mono">UBYHOST_GUEST_PIN</span> environment variable — set it to
+        <span class="mono">0</span> to disable PINs everywhere, then restart the app.
+      </p>
+    </div>
+
+    <div class="panel">
       <h2 style="margin-top:0">Cached UbyPort code lists</h2>
       <dl class="kv">
         <dt>Countries</dt><dd>{{ codelists.countries[:19].replace('T', ' ') if codelists.countries else 'using the bundled list' }}</dd>
@@ -50,6 +65,15 @@
         Refresh these from any apartment's settings page. The error code book is what turns a bare
         "112" from UbyPort into a readable explanation, so it is worth fetching once credentials work.
       </p>
+    </div>
+
+    <div class="panel">
+      <h2 style="margin-top:0">Archived items</h2>
+      <p class="small muted" style="margin-top:-4px">
+        Stays, properties, house-book entries, and legal entities you archived are collected in one place.
+        Restore anything you hid by mistake. The retention purge below is the only way guest records are permanently deleted.
+      </p>
+      <a class="btn" href="/settings/archived">View archive</a>
     </div>
 
     <div class="panel">
@@ -99,20 +123,20 @@
       <summary>Advanced diagnostics and activity log</summary>
       <p class="small muted">
         Every important change is recorded here — saves, imports, archives, PIN rotations, and police submissions.
-        Archived properties, stays, and house-book entries can be restored from their Archive sections.
+        Archived items can be restored from <a href="/settings/archived">Settings → Archived</a>.
         Only the six-year retention purge permanently deletes guest records.
       </p>
       <h2>Recent activity (last {{ audit_count }} events)</h2>
       <div class="scroll-x">
-        <table>
+        <table class="table-cards">
           <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
           <tbody>
           {% for entry in audit %}
             <tr>
-              <td class="nowrap small">{{ entry.at[:19].replace('T', ' ') }}</td>
-              <td class="small">{{ entry.actor }}</td>
-              <td class="small">{{ entry.action }}</td>
-              <td class="small muted">{{ entry.detail }}</td>
+              <td class="nowrap small" data-label="When">{{ entry.at[:19].replace('T', ' ') }}</td>
+              <td class="small" data-label="Who">{{ entry.actor }}</td>
+              <td class="small" data-label="Action">{{ entry.action }}</td>
+              <td class="small muted" data-label="Detail">{{ entry.detail }}</td>
             </tr>
           {% else %}
             <tr><td colspan="4" class="muted small">Nothing logged yet.</td></tr>
@@ -124,38 +148,31 @@
   </div>
 
   <div>
-    <form method="post" action="/settings/password" class="panel">
-      <h2 style="margin-top:0">Lock this app{% if not password_is_set %} (off){% endif %}</h2>
-      <p class="small muted">
-        {% if password_is_set %}
-          A password is required to open the host pages. Save an empty field to switch the lock off.
+    <div class="panel">
+      <h2 style="margin-top:0">Your account</h2>
+      <p><strong>{{ current_user.display_name or current_user.username }}</strong><br>
+        <span class="small muted mono">{{ current_user.username }}</span></p>
+      <p class="small muted">Passwords are stored as one-way hashes. Changing yours signs out other sessions.</p>
+      <a class="btn" href="/account/password">Change password</a>
+      {% if current_user.role == 'admin' %}
+        <a class="btn" href="/admin/users">Manage users</a>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-top:0">{{ t('legal.settings_title') }}</h3>
+      <p class="small muted">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
+      <dl class="kv small">
+        <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
+        {% if operator().email %}
+          <dt>{{ t('legal.operator_contact') }}</dt><dd><a href="mailto:{{ operator().email }}">{{ operator().email }}</a></dd>
         {% else %}
-          The app is open: anyone who can reach this address sees your bookings. That is fine on your
-          own machine. Set a password only if it runs somewhere others can reach.
+          <dt>{{ t('legal.operator_contact') }}</dt><dd class="muted">{{ t('legal.settings_contact_missing') }}</dd>
         {% endif %}
-      </p>
-      {% if password_is_set %}
-      <div class="field">
-        <label for="current_password">Current password</label>
-        <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
-      </div>
-      {% endif %}
-      <div class="field">
-        <label for="new_password">{% if password_is_set %}New password{% else %}Password{% endif %}</label>
-        <input type="password" id="new_password" name="new_password" minlength="10" autocomplete="new-password">
-      </div>
-      {% if password_is_set %}
-      <div class="checkline">
-        <input type="checkbox" id="confirm_unlock" name="confirm_unlock" value="1">
-        <label for="confirm_unlock">If the new password is blank, remove the lock and make host pages accessible to anyone who can reach this address.</label>
-      </div>
-      {% endif %}
-      <div class="actions">
-        <button class="btn primary" type="submit">
-          {% if password_is_set %}Save{% else %}Turn the lock on{% endif %}
-        </button>
-      </div>
-    </form>
+      </dl>
+      <a class="btn small" href="/legal">{{ t('legal.footer_link') }}</a>
+      <a class="btn small" href="/terms">{{ t('terms.footer_link') }}</a>
+    </div>
 
     <div class="panel">
       <h3 style="margin-top:0">Version</h3>

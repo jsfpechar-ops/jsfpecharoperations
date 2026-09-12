@@ -9,7 +9,9 @@
 ]) }}
 {{ page_header(
   'Report #' ~ submission.id,
-  submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ') ~ ' · sent ' ~ submission.mode,
+  submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ')
+    ~ ' · ' ~ {'immediate': 'sent immediately', 'scheduled': 'sent on a schedule',
+               'manual': 'sent by hand'}.get(submission.mode, 'sent ' ~ submission.mode),
   '/submissions',
   'Back to reports'
 ) }}
@@ -53,24 +55,24 @@
 
     <h2>Guests in this transmission</h2>
     <div class="panel tight scroll-x">
-      <table>
+      <table class="table-cards">
         <thead><tr><th>#</th><th>Guest</th><th>Result</th><th></th></tr></thead>
         <tbody>
         {% for guest in guests %}
           <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
-            <td class="num">{{ loop.index }}</td>
-            <td>
+            <td class="num" data-label="#">{{ loop.index }}</td>
+            <td data-label="Guest">
               <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
               <div class="small muted">{{ guest.nationality }} &middot; {{ guest.doc_number }}</div>
             </td>
-            <td>
+            <td data-label="Result">
               {% if guest.submit_state == 'sent' %}<span class="pill green">Accepted</span>
               {% elif guest.submit_state == 'blocked' %}<span class="pill red">Rejected, final</span>
               {% elif guest.submit_state == 'error' %}<span class="pill red">Rejected</span>
               {% else %}<span class="pill grey">{{ guest.submit_state }}</span>{% endif %}
-              {% if guest.last_errors %}<div class="small" style="color:#c0362c">{{ guest.last_errors }}</div>{% endif %}
+              {% if guest.last_errors %}<div class="small err-text">{{ guest.last_errors }}</div>{% endif %}
             </td>
-            <td class="nowrap row-actions">
+            <td class="nowrap row-actions" data-label="">
               {{ row_menu_begin() }}
                 <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">Edit</a>
               {{ row_menu_end() }}
@@ -84,15 +86,24 @@
 
   <details class="panel technical">
     <summary>Technical details</summary>
-    <h3>Raw exchange</h3>
-    <p class="small muted">Kept so a rejection can be traced to the exact field that caused it.</p>
-    <div class="actions" style="margin-top:8px">
-      <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">Request XML</a>
-      <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">Response XML</a>
+    <p class="small muted">The exact computer messages exchanged with UbyPort. You normally only
+      need these when support is investigating a rejected report.</p>
+    <h3>Messages exchanged</h3>
+    <div class="technical-downloads">
+      <span class="technical-download">
+        <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">What UbyHost sent</a>
+        <span class="help-dot" tabindex="0" title="Downloads the original data UbyHost sent to UbyPort. Support may ask for it when investigating a rejection." aria-label="About the sent message">?</span>
+      </span>
+      <span class="technical-download">
+        <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">What UbyPort replied</a>
+        <span class="help-dot" tabindex="0" title="Downloads UbyPort's exact reply, including technical acceptance or rejection codes." aria-label="About the reply">?</span>
+      </span>
     </div>
     {% if record_errors %}
-      <h3>Per-record error codes</h3>
-      <pre class="mono small" style="background:#f4f6f9;padding:10px;border-radius:7px;overflow:auto">{{ record_errors | join('\n') }}</pre>
+      <h3>Guest record error codes
+        <span class="help-dot" title="UbyPort returns one code for each guest it could not accept. These codes help support locate the exact problem." aria-label="About guest error codes">?</span>
+      </h3>
+      <pre class="mono small code-block">{{ record_errors | join('\n') }}</pre>
     {% endif %}
   </details>
 </div>

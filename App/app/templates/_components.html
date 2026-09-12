@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header-main">
       {% if back_url %}
-        <a class="back-link" href="{{ back_url }}">&larr; {{ back_label or 'Back' }}</a>
+        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or 'Back' }}</a>
       {% endif %}
       {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
       <h1>{{ title }}</h1>
@@ -25,15 +25,38 @@
   </nav>
 {% endmacro %}
 
-{% macro progress_pill(status, compact=false) %}
+{% macro progress_pill(status, automation_mode=none, compact=false, is_demo=false) %}
   {% set labels = {
     'failed': 'Rejected',
     'reported': 'Reported',
     'ready': 'Ready to report',
     'incomplete': 'Incomplete',
     'not_required': 'Exempt',
-    'awaiting_guest': 'Waiting for guest'
+    'awaiting_guest': 'Waiting for guest',
+    'awaiting_verification': 'Verify passport'
   } %}
+  {% if is_demo and status == 'ready' %}
+    {% set label = t('status.demo_preview') %}
+    {% set tip = t('status.demo_preview_tip') %}
+  {% elif status == 'awaiting_verification' %}
+    {% set label = t('status.awaiting_verification') %}
+    {% set tip = t('status.awaiting_verification_tip') %}
+  {% elif automation_mode == 'immediate' and status in ('awaiting_guest', 'incomplete') %}
+    {% set label = t('status.waiting_guest') %}
+    {% set tip = t('status.waiting_guest_tip') %}
+  {% elif status == 'ready' and automation_mode == 'immediate' %}
+    {% set label = t('status.ready_immediate') %}
+    {% set tip = t('status.ready_immediate_tip') %}
+  {% elif status == 'ready' and automation_mode == 'manual' %}
+    {% set label = t('status.ready_manual') %}
+    {% set tip = t('status.ready_manual_tip') %}
+  {% elif status == 'ready' and automation_mode == 'scheduled' %}
+    {% set label = t('status.ready_scheduled') %}
+    {% set tip = t('status.ready_scheduled_tip') %}
+  {% else %}
+    {% set label = labels.get(status, status) %}
+    {% set tip = '' %}
+  {% endif %}
   {% set tones = {
     'failed': 'red',
     'reported': 'green',
@@ -42,23 +65,106 @@
     'not_required': 'grey',
     'awaiting_guest': 'grey'
   } %}
-  <span class="pill {{ tones.get(status, 'grey') }}">{{ labels.get(status, status) }}</span>
+  <span class="pill {{ tones.get(status, 'grey') }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
+{% endmacro %}
+
+{% macro row_reporting_actions(reservation, controls, return_to) %}
+  {% if controls.get('send_visible') %}
+    <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline row-action-form">
+      <input type="hidden" name="return_to" value="{{ return_to }}">
+      <button class="btn small row-action-send{% if controls.get('send_enabled') %} accent{% endif %}" type="submit"
+              {% if not controls.get('send_enabled') %}disabled{% endif %}
+              title="{{ controls.get('send_hint', '') }}" aria-label="Send to police">{{ 'Send' if controls.get('send_enabled') else 'Auto' }}</button>
+    </form>
+  {% endif %}
+{% endmacro %}
+
+{% macro bulk_send_ready(count, return_to) %}
+  <form method="post" action="/reservations/submit-ready" class="inline send-all-form">
+    <input type="hidden" name="return_to" value="{{ return_to }}">
+    <button class="btn send-all" type="submit"
+            {% if not count %}disabled{% endif %}
+            title="{{ t('send.all_ready_hint') }}">
+      {{ t('send.all_ready') }}{% if count %} ({{ count }}){% endif %}
+    </button>
+  </form>
+{% endmacro %}
+
+{% macro nav_icon(name) %}
+  {% if name == 'overview' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+  {% elif name == 'calendar' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="4.5" width="14" height="12.5" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 8.5h14M7 2.5v3M13 2.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'report' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5.5 3.5h6l3.5 3.5v9.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5"/><path d="M11.5 3.5v4h4M7.5 11h5M7.5 14h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'book' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4.5" y="3.5" width="11" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v13" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 8h4M10.5 11h3M10.5 14h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'property' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 9 10 3.5 16.5 9V16a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V9Z" stroke="currentColor" stroke-width="1.5"/><path d="M8 17v-5h4v5" stroke="currentColor" stroke-width="1.5"/></svg>
+  {% elif name == 'entity' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3.5" y="5.5" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 5.5V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M7.5 10h5M7.5 13h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'settings' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 3.5v1.6M10 14.9v1.6M4.2 6.2l1.1 1.1M14.7 14.7l1.1 1.1M3.5 10h1.6M14.9 10h1.6M4.2 13.8l1.1-1.1M14.7 5.3l1.1-1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% elif name == 'users' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="7" r="2.75" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 16.5c0-2.8 2.2-4.5 5.5-4.5s5.5 1.7 5.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  {% endif %}
+{% endmacro %}
+
+{% macro csv_actions_menu(export_params='', can_import=false, compact=false) %}
+<div class="action-menu row-menu{% if compact %} csv-in-filter{% endif %}">
+  <button class="btn row-menu-trigger{% if compact %} small{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">
+    {{ t('data.menu') }} <span class="menu-caret" aria-hidden="true">▾</span>
+  </button>
+  <div class="row-menu-panel" role="menu" hidden>
+    <button class="row-menu-item" type="button" role="menuitem"
+            data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}">{{ t('csv.export_stays') }}</button>
+    {% if can_import %}
+      <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-stays-panel">{{ t('csv.import_stays') }}</button>
+    {% endif %}
+    <a class="row-menu-item quiet" href="/reservations-sample.csv" role="menuitem">{{ t('csv.sample_stays') }}</a>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro housebook_csv_menu(export_params='', can_import=false, compact=false, pdf_params='') %}
+<div class="action-menu row-menu{% if compact %} csv-in-filter{% endif %}">
+  <button class="btn row-menu-trigger{% if compact %} small{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">
+    {{ t('data.menu') }} <span class="menu-caret" aria-hidden="true">▾</span>
+  </button>
+  <div class="row-menu-panel" role="menu" hidden>
+    <button class="row-menu-item" type="button" role="menuitem"
+            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}">{{ t('csv.download') }}</button>
+    {% if pdf_params %}
+      <a class="row-menu-item" href="/housebook/pdfs.zip?{{ pdf_params }}" role="menuitem">{{ t('csv.download_pdfs') }}</a>
+    {% endif %}
+    {% if can_import %}
+      <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-housebook-panel">{{ t('csv.import') }}</button>
+      <a class="row-menu-item quiet" href="/housebook-sample.csv" role="menuitem">{{ t('csv.sample_housebook') }}</a>
+    {% endif %}
+  </div>
+</div>
 {% endmacro %}
 
 {% macro submission_pill(state) %}
   {% set labels = {
     'ok': 'Accepted',
     'partial': 'Partly accepted',
+    'error': 'Rejected',
+    'failed': 'Rejected',
     'transport_error': 'Not delivered',
+    'not_configured': 'Setup incomplete',
     'running': 'In progress',
-    'failed': 'Rejected'
+    'noop': 'Nothing to send'
   } %}
   {% set tones = {
     'ok': 'green',
     'partial': 'amber',
+    'error': 'red',
+    'failed': 'red',
     'transport_error': 'red',
+    'not_configured': 'amber',
     'running': 'grey',
-    'failed': 'red'
+    'noop': 'grey'
   } %}
   <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
 {% endmacro %}
@@ -68,6 +174,51 @@
     <h2>{{ title }}</h2>
     {% if body %}<p>{{ body }}</p>{% endif %}
     {% if action_url %}<a class="btn primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro onboarding_banner(onboarding) %}
+  {% if onboarding and onboarding.current and not onboarding.finished %}
+    <div class="onboarding-banner" role="status">
+      <div>
+        <strong>Setup step {{ onboarding.completed + 1 }} of {{ onboarding.total }}: {{ onboarding.current.title }}</strong>
+        <small>{{ onboarding.current.detail }}</small>
+      </div>
+      <a class="btn primary small" href="{{ onboarding.current.url }}">{{ onboarding.current.action }}</a>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro onboarding_welcome(onboarding) %}
+  <div class="panel onboarding-welcome">
+    <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="UbyHost">
+    <h2>Welcome to UbyHost</h2>
+    <p class="lede">Let’s get your first property ready for guest reporting. Follow the steps below — most hosts finish in a few minutes.</p>
+    <div class="onboarding-steps" aria-label="Setup steps">
+      {% for step in onboarding.steps %}
+        <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
+          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
+          <div>
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.detail }}</p>
+          </div>
+          {% if not step.done and onboarding.current and step.id == onboarding.current.id %}
+            <a class="btn primary small" href="{{ step.url }}">{{ step.action }}</a>
+          {% elif step.done %}
+            <span class="pill green">Done</span>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+    {% if onboarding.current %}
+      <a class="btn primary" href="{{ onboarding.current.url }}">Continue: {{ onboarding.current.action }}</a>
+    {% endif %}
+    <div class="onboarding-demo">
+      <form method="post" action="/demo">
+        <button class="btn" type="submit">{{ t('demo.load') }}</button>
+      </form>
+      <p class="small muted" style="margin-top:8px">{{ t('demo.load_detail') }}</p>
+    </div>
   </div>
 {% endmacro %}
 
@@ -82,9 +233,16 @@
   <button class="btn-icon" type="button" data-copy="{{ target_id }}" aria-label="Copy">{{ copy_icon() }}</button>
 {% endmacro %}
 
-{% macro row_menu_begin() %}
+{# Copy a value straight from a list row, so chasing a guest is one click. #}
+{% macro copy_inline(target_id, value, label='Copy link') %}
+  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
+  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copied-label="Copied"
+          title="Copy the guest link for this stay">{{ label }}</button>
+{% endmacro %}
+
+{% macro row_menu_begin(label='More actions') %}
 <div class="row-menu">
-  <button class="btn-icon row-menu-trigger" type="button" aria-label="More actions" aria-expanded="false" aria-haspopup="true">
+  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label }}" aria-expanded="false" aria-haspopup="true">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
       <circle cx="3.25" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.75" cy="8" r="1.25"/>
     </svg>

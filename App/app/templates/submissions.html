@@ -2,12 +2,24 @@
 {% set nav = 'submissions' %}
 {% block title %}Reports{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, submission_pill, empty_state, row_menu_begin, row_menu_end %}
-{{ page_header('Reports', 'Every UbyPort transmission and its Doručenka, retained as proof.') }}
+{% from "_components.html" import page_header, submission_pill, empty_state %}
+{% set header_actions %}
+  {% if receipt_count %}
+    <a class="btn" href="/submissions/receipts.zip">{{ t('reports.download_receipts') }}</a>
+  {% endif %}
+{% endset %}
+{{ page_header(
+  'Reports',
+  'Every UbyPort transmission and its Doručenka, retained as proof.',
+  actions=header_actions if receipt_count else ''
+) }}
+{% if receipt_count %}
+  <p class="small muted">{{ t('reports.download_receipts_hint') }}</p>
+{% endif %}
 
 {% if rows %}
 <div class="panel tight scroll-x">
-  <table>
+  <table class="table-cards">
     <thead>
       <tr><th>When</th><th>Apartment</th><th>Mode</th><th>Guests</th><th>Outcome</th>
         <th>Receipt stamp</th><th></th></tr>
@@ -16,19 +28,17 @@
     {% for submission in rows %}
       <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link"
           aria-label="Open report {{ submission.id }}">
-        <td class="nowrap small">{{ submission.created_at[:16].replace('T', ' ') }}</td>
-        <td>{{ submission.internal_name }}</td>
-        <td class="small">{{ submission.mode }}</td>
-        <td class="num">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
-        <td>{{ submission_pill(submission.state) }}</td>
-        <td class="mono small">{{ submission.pseudo_stamp or '—' }}</td>
-        <td class="nowrap row-actions">
-          {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">Edit</a>
-            {% if submission.receipt_pdf %}
-              <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">Doručenka</a>
-            {% endif %}
-          {{ row_menu_end() }}
+        <td class="nowrap small" data-label="When">{{ submission.created_at[:16].replace('T', ' ') }}</td>
+        <td data-label="Apartment">{{ submission.internal_name }}</td>
+        <td class="small" data-label="Mode">{{ submission.mode | replace('_', ' ') | capitalize }}</td>
+        <td class="num" data-label="Guests">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
+        <td data-label="Outcome">{{ submission_pill(submission.state) }}</td>
+        <td class="mono small" data-label="Receipt stamp">{{ submission.pseudo_stamp or '—' }}</td>
+        <td class="nowrap row-actions" data-label="">
+          {% if submission.receipt_pdf %}
+            <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
+          {% endif %}
+          <a class="btn small" href="/submissions/{{ submission.id }}">View details</a>
         </td>
       </tr>
     {% endfor %}

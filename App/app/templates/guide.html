@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% set nav = 'guide' %}
+{% block title %}{{ t('guide.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header %}
+{{ page_header(t('guide.title'), t('guide.lede')) }}
+
+<div class="guide-layout">
+  <nav class="guide-nav panel" aria-label="{{ t('guide.title') }}">
+    <a href="#overview" class="guide-nav-link">{{ t('guide.nav.overview') }}</a>
+    <a href="#setup" class="guide-nav-link">{{ t('guide.nav.setup') }}</a>
+    <a href="#stays" class="guide-nav-link">{{ t('guide.nav.stays') }}</a>
+    <a href="#guests" class="guide-nav-link">{{ t('guide.nav.guests') }}</a>
+    <a href="#reporting" class="guide-nav-link">{{ t('guide.nav.reporting') }}</a>
+    <a href="#housebook" class="guide-nav-link">{{ t('guide.nav.housebook') }}</a>
+    <a href="#legal" class="guide-nav-link">{{ t('guide.nav.legal') }}</a>
+    <a href="#demo" class="guide-nav-link">{{ t('guide.nav.demo') }}</a>
+  </nav>
+
+  <div class="guide-content">
+    <section class="guide-section panel" id="overview">
+      <h2>{{ t('guide.nav.overview') }}</h2>
+      <p>{{ t('guide.overview.body') }}</p>
+      <figure class="guide-figure">
+        <img src="/static/guide/overview-next-up.png" alt="Overview with next-up stay card and send action">
+        <figcaption>{{ t('guide.overview.caption') }}</figcaption>
+      </figure>
+    </section>
+
+    <section class="guide-section panel" id="setup">
+      <h2>{{ t('guide.nav.setup') }}</h2>
+      <ol class="guide-steps">
+        <li><strong>{{ t('guide.setup.step1_title') }}</strong> — {{ t('guide.setup.step1') }}</li>
+        <li><strong>{{ t('guide.setup.step2_title') }}</strong> — {{ t('guide.setup.step2') }}</li>
+        <li><strong>{{ t('guide.setup.step3_title') }}</strong> — {{ t('guide.setup.step3') }}</li>
+        <li><strong>{{ t('guide.setup.step4_title') }}</strong> — {{ t('guide.setup.step4') }}</li>
+        <li><strong>{{ t('guide.setup.step5_title') }}</strong> — {{ t('guide.setup.step5') }}</li>
+      </ol>
+    </section>
+
+    <section class="guide-section panel" id="stays">
+      <h2>{{ t('guide.nav.stays') }}</h2>
+      <p>{{ t('guide.stays.body') }}</p>
+      <p class="small muted">{{ t('guide.stays.csv') }}</p>
+      <figure class="guide-figure">
+        <img src="/static/guide/housebook-filters.png" alt="Filter bar with Import and export in the corner">
+        <figcaption>{{ t('guide.stays.caption') }}</figcaption>
+      </figure>
+    </section>
+
+    <section class="guide-section panel" id="guests">
+      <h2>{{ t('guide.nav.guests') }}</h2>
+      <p>{{ t('guide.guests.body') }}</p>
+      <div class="guide-shot guest" aria-hidden="true">
+        <div class="guide-shot-phone">
+          <div class="guide-shot-line"></div>
+          <div class="guide-shot-line wide"></div>
+          <div class="guide-shot-line"></div>
+          <div class="guide-shot-btn"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section panel" id="reporting">
+      <h2>{{ t('guide.nav.reporting') }}</h2>
+      <p>{{ t('guide.reporting.body') }}</p>
+      <figure class="guide-figure">
+        <img src="/static/guide/reporting-status.png" alt="Reporting status badges on a stay">
+        <figcaption>{{ t('guide.reporting.caption') }}</figcaption>
+      </figure>
+      <dl class="kv">
+        <dt>{{ t('guide.reporting.immediate') }}</dt>
+        <dd>{{ t('guide.reporting.immediate_detail') }}</dd>
+        <dt>{{ t('guide.reporting.scheduled') }}</dt>
+        <dd>{{ t('guide.reporting.scheduled_detail') }}</dd>
+        <dt>{{ t('guide.reporting.manual') }}</dt>
+        <dd>{{ t('guide.reporting.manual_detail') }}</dd>
+      </dl>
+      <p class="small muted">{{ t('guide.reporting.bulk') }}</p>
+    </section>
+
+    <section class="guide-section panel" id="housebook">
+      <h2>{{ t('guide.nav.housebook') }}</h2>
+      <p>{{ t('guide.housebook.body') }}</p>
+      <p class="small muted">{{ t('housebook.legal_footnote') }}</p>
+    </section>
+
+    <section class="guide-section panel guide-legal" id="legal">
+      <h2>{{ t('guide.nav.legal') }}</h2>
+      <p class="lede">{{ t('guide.legal.lede') }}</p>
+      <h3>{{ t('guide.legal.housebook_title') }}</h3>
+      <p>{{ t('guide.legal.housebook_body') }}</p>
+      <h3>{{ t('guide.legal.paper_title') }}</h3>
+      <p>{{ t('guide.legal.paper_body') }}</p>
+      <h3>{{ t('guide.legal.signature_title') }}</h3>
+      <p>{{ t('guide.legal.signature_body') }}</p>
+      <h3>{{ t('guide.legal.verification_title') }}</h3>
+      <p>{{ t('guide.legal.verification_body') }}</p>
+      <h3>{{ t('guide.legal.reporting_title') }}</h3>
+      <p>{{ t('guide.legal.reporting_body') }}</p>
+      <h3>{{ t('guide.legal.retention_title') }}</h3>
+      <p>{{ t('guide.legal.retention_body') }}</p>
+      <div class="legal-disclaimer panel quiet">
+        <h3 style="margin-top:0">{{ t('guide.legal.disclaimer_title') }}</h3>
+        <p class="small muted" style="margin-bottom:0">{{ t('guide.legal.disclaimer_body') }}</p>
+      </div>
+    </section>
+
+    <section class="guide-section panel" id="demo">
+      <h2>{{ t('guide.nav.demo') }}</h2>
+      <p>{{ t('guide.demo.body') }}</p>
+      <form method="post" action="/demo" class="inline">
+        <button class="btn primary" type="submit">{{ t('demo.load') }}</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

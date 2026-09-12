@@ -21,7 +21,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 
-from .. import auth, codelists, config, db, i18n, reporting, validation
+from .. import auth, codelists, config, db, i18n, passport_photos, reporting, validation
 from ..templating import render_guest
 
 router = APIRouter()
@@ -48,6 +48,19 @@ CS_VALIDATION_MESSAGES = {
     "Unknown country code.": "Neznámý kód země.",
     "Unknown purpose-of-stay code.": "Neznámý účel pobytu.",
     "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
+}
+
+CS_PASSPORT_UPLOAD_MESSAGES = {
+    "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
+    "(for example a registration form with up to 11 guests).": (
+        "Nahrajte fotografii pasu (JPEG, PNG, WebP) nebo PDF "
+        "(např. registrační formulář až pro 11 hostů)."
+    ),
+    "The uploaded file looks empty.": "Nahraný soubor vypadá prázdně.",
+    "The PDF is too large. Use a file under 15 MB.": "PDF je příliš velké. Maximálně 15 MB.",
+    "The file does not look like a valid PDF.": "Soubor nevypadá jako platné PDF.",
+    "The photo is too large. Use a file under 5 MB.": "Fotografie je příliš velká. Maximálně 5 MB.",
+    "The file does not look like a valid image.": "Soubor nevypadá jako platný obrázek.",
 }
 
 
@@ -553,6 +566,11 @@ def _form_context(
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
             "inpass": validation.INPASS,
             "remaining": remaining,
+            "has_existing_passport_photo": bool(
+                guest
+                and guest["passport_photo_at"]
+                and passport_photos.has_photo(int(guest["id"]))
+            ),
         }
     )
     return context
@@ -709,6 +727,32 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             issues.append(validation.Issue("party_size", translate("error_party_size")))
     if not signature.startswith("data:image/"):
         issues.append(validation.Issue("signature", translate("signature_missing")))
+    if not form.get("legal_ack"):
+        issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
+
+    passport_upload = form.get("passport_photo")
+    passport_bytes = None
+    passport_type = None
+    if validation.guest_is_reportable(values["nationality"]):
+        has_existing_photo = (
+            existing
+            and existing["passport_photo_at"]
+            and passport_photos.has_photo(existing["id"])
+        )
+        if passport_upload and hasattr(passport_upload, "read"):
+            try:
+                passport_bytes = await passport_upload.read()
+                passport_type = passport_photos.validate_upload(
+                    passport_bytes, passport_upload.content_type or ""
+                )
+            except ValueError as exc:
+                msg = str(exc)
+                if lang == "cs":
+                    msg = CS_PASSPORT_UPLOAD_MESSAGES.get(msg, msg)
+                issues.append(validation.Issue("passport_photo", msg))
+        elif not has_existing_photo:
+            issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))
+
     issues = _localize_issues(issues, lang)
 
     if validation.errors_only(issues):
@@ -730,6 +774,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "parent_doc_number": form.get("parent_doc_number") or "",
                 "signature": signature,
                 "party_size": party_raw,
+                "legal_ack": form.get("legal_ack") or "",
             }
         )
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
@@ -770,16 +815,20 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         saved_id = db.insert("guest", payload)
 
-    db.audit("guest_form_saved", f"guest={saved_id} reservation={reservation_id}", actor="guest")
+    if passport_bytes and passport_type:
+        passport_photos.save_photo(saved_id, passport_bytes, passport_type)
+        db.update(
+            "guest",
+            saved_id,
+            {"passport_photo_at": now, "updated_at": now},
+        )
 
-    # Immediate automation is allowed to fire as soon as the data is stored.
-    if apartment["automation_mode"] == "immediate":
-        try:
-            reporting.submit_for_apartment(
-                apartment["id"], only_guest_ids=[saved_id], mode="immediate"
-            )
-        except Exception:  # never let a reporting problem break the guest's flow
-            pass
+    db.audit(
+        "guest_form_saved",
+        f"guest={saved_id} reservation={reservation_id}",
+        actor="guest",
+        owner_user_id=apartment["owner_user_id"],
+    )
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303

@@ -14,14 +14,59 @@ is missing or the police refuse a record.
 ./run.sh
 ```
 
-Then open <http://127.0.0.1:8080>. There is no account and no sign-in; the app
-runs on your machine and opens straight onto the dashboard. If you put it
-somewhere other people can reach, turn on the optional password in Settings.
+Then open <http://127.0.0.1:8080>. On first start, UbyHost creates the `admin`
+account and writes its one-time password to
+`data/initial_admin_credentials`. Sign in and replace that password immediately.
+
+For a deployed environment, set both values before the first start:
+
+```bash
+UBYHOST_ADMIN_USERNAME=admin
+UBYHOST_ADMIN_PASSWORD='a-long-unique-password'
+```
+
+The initial administrator can create host accounts under **Settings → Users**.
+Each host gets a private workspace for their own properties and must replace
+the temporary password on first login.
 
 The first run installs its dependencies into `.venv/` and starts a **mock
 UbyPort server** alongside the app, so nothing is sent to the police until you
 say so. On the empty dashboard there is a button that loads a demo apartment
 with a sample calendar, so you can click through the whole thing immediately.
+
+## Deploy
+
+The repo ships a **two-environment** Render blueprint:
+
+| Service | Purpose |
+|---------|---------|
+| `ubyhost-staging` | Mock UbyPort, free tier, auto-deploy — safe for testing |
+| `ubyhost` | Production, Starter + disk, manual deploy, real police reporting |
+
+Full runbooks: **[docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)** and
+**[docs/PRODUCTION_CHECKLIST.md](../docs/PRODUCTION_CHECKLIST.md)**.
+
+Quick start (staging demo):
+
+1. Push to GitHub → Render **New → Blueprint** → Apply `render.yaml`.
+2. Open `https://ubyhost-staging.onrender.com`, sign in with the generated admin
+   password (Render → Environment), click **Load demo data**.
+
+Production requires setting `UBYHOST_ADMIN_USERNAME` / `UBYHOST_ADMIN_PASSWORD` on
+the `ubyhost` service, UBY-WS credentials per apartment, and promoting through
+`UBYHOST_UBYPORT_ENV=test` before `prod`.
+
+**Cloudflare Pages is not suitable** — it cannot run this FastAPI app or SQLite.
+
+Docker: `docker build -t ubyhost .` from the repo root (see `Dockerfile`).
+
+### Name and branding
+
+**UbyHost** is a host-facing tool for preparing guest data and sending it to the
+Czech Foreign Police **UbyPort** web service. It is a separate product name for
+your side of the workflow, not a government system. If you plan commercial use,
+confirm trademark and naming with your lawyer; the police registration system
+remains UbyPort.
 
 ## How it works
 

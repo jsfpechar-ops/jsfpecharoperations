@@ -1,0 +1,71 @@
+# UbyHost on AWS Lightsail — production stack.
+# Run from this directory after copying .env.example → .env.
+#
+#   ./scripts/deploy.sh
+#
+# Requires: Docker Engine 24+ and Compose v2.
+name: ubyhost
+
+services:
+  ubyhost:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: ubyhost:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      UBYHOST_DATA_DIR: /data
+      PORT: "8080"
+    volumes:
+      - ubyhost-data:/data
+    expose:
+      - "8080"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    mem_limit: 768m
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro
+      - ./caddy/certs:/etc/caddy/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      ubyhost:
+        condition: service_healthy
+    networks:
+      - web
+
+volumes:
+  ubyhost-data:
+    name: ubyhost-data
+  caddy-data:
+    name: ubyhost-caddy-data
+  caddy-config:
+    name: ubyhost-caddy-config
+
+networks:
+  web:
+    name: ubyhost-web

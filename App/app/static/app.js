@@ -2,24 +2,46 @@
   "use strict";
 
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
+  var NAV_BREAKPOINT = 960;
+
+  document.documentElement.classList.add("has-js");
+
+  function isCompact() {
+    return window.innerWidth <= NAV_BREAKPOINT;
+  }
 
   function initCopy() {
     document.querySelectorAll("[data-copy]").forEach(function (button) {
       button.addEventListener("click", function () {
         var target = document.getElementById(button.getAttribute("data-copy"));
         if (!target) return;
-        target.select();
+        // Works for form fields and for blocks of text such as the portal
+        // message, so a host never has to select a paragraph by hand.
+        var text = typeof target.value === "string" ? target.value : target.textContent;
+        if (typeof target.select === "function") {
+          target.select();
+        } else if (window.getSelection && document.createRange) {
+          var range = document.createRange();
+          range.selectNodeContents(target);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
         try {
           var copied = navigator.clipboard
-            ? navigator.clipboard.writeText(target.value)
+            ? navigator.clipboard.writeText(text)
             : Promise.resolve(document.execCommand("copy"));
           Promise.resolve(copied).then(function () {
             button.classList.add("copied");
+            var label = button.getAttribute("data-copied-label");
+            var original = button.textContent;
+            if (label) button.textContent = label;
             button.setAttribute("aria-label", "Copied");
             setTimeout(function () {
               button.classList.remove("copied");
+              if (label) button.textContent = original;
               button.setAttribute("aria-label", "Copy");
-            }, 1400);
+            }, 1600);
           });
         } catch (error) {
           // The field stays selected so it can still be copied manually.
@@ -28,27 +50,81 @@
     });
   }
 
+  function rowMenuHome(panel) {
+    if (!panel._rowMenuHome) {
+      panel._rowMenuHome = panel.parentElement;
+    }
+    return panel._rowMenuHome;
+  }
+
+  function rowMenuTrigger(panel) {
+    if (panel._rowMenuTrigger) return panel._rowMenuTrigger;
+    var home = rowMenuHome(panel);
+    return home ? home.querySelector(".row-menu-trigger") : null;
+  }
+
+  function closeRowMenu(panel) {
+    panel.hidden = true;
+    panel.classList.remove("is-open");
+    panel.style.position = "";
+    panel.style.left = "";
+    panel.style.top = "";
+    panel.style.zIndex = "";
+    var home = rowMenuHome(panel);
+    if (home && panel.parentElement !== home) {
+      home.appendChild(panel);
+    }
+    var trigger = rowMenuTrigger(panel);
+    if (trigger) trigger.setAttribute("aria-expanded", "false");
+    panel._rowMenuTrigger = null;
+  }
+
   function positionRowMenu(trigger, panel) {
-    panel.style.position = "fixed";
-    panel.style.zIndex = "100";
+    rowMenuHome(panel);
+    panel._rowMenuTrigger = trigger;
+    if (panel.parentElement !== document.body) {
+      document.body.appendChild(panel);
+    }
     panel.hidden = false;
+    panel.classList.add("is-open");
+    panel.style.position = "fixed";
+    panel.style.zIndex = "10000";
     var rect = trigger.getBoundingClientRect();
-    var width = panel.offsetWidth || 168;
+    var width = panel.offsetWidth || 180;
     var left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
+    var top = Math.min(rect.bottom + 6, window.innerHeight - panel.offsetHeight - 8);
     panel.style.left = left + "px";
-    panel.style.top = Math.min(rect.bottom + 4, window.innerHeight - panel.offsetHeight - 8) + "px";
+    panel.style.top = top + "px";
+  }
+
+  function initBirthDateInputs() {
+    function formatDigits(digits) {
+      var out = digits.slice(0, 2);
+      if (digits.length > 2) out += "/" + digits.slice(2, 4);
+      if (digits.length > 4) out += "/" + digits.slice(4, 8);
+      return out;
+    }
+
+    document.querySelectorAll("[data-birth-date]").forEach(function (input) {
+      function apply(value) {
+        var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+        var formatted = formatDigits(digits);
+        if (input.value !== formatted) input.value = formatted;
+      }
+
+      input.addEventListener("input", function () { apply(input.value); });
+      input.addEventListener("paste", function (event) {
+        event.preventDefault();
+        var text = (event.clipboardData || window.clipboardData).getData("text");
+        apply(text);
+      });
+      apply(input.value);
+    });
   }
 
   function initRowMenus() {
     function closeAll() {
-      document.querySelectorAll(".row-menu-panel").forEach(function (panel) {
-        panel.hidden = true;
-        panel.style.position = "";
-        panel.style.left = "";
-        panel.style.top = "";
-        var trigger = panel.parentElement.querySelector(".row-menu-trigger");
-        if (trigger) trigger.setAttribute("aria-expanded", "false");
-      });
+      document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
     }
 
     document.querySelectorAll(".row-menu-trigger").forEach(function (trigger) {
@@ -57,7 +133,7 @@
       trigger.addEventListener("click", function (event) {
         event.preventDefault();
         event.stopPropagation();
-        var wasOpen = !panel.hidden;
+        var wasOpen = panel.classList.contains("is-open");
         closeAll();
         if (!wasOpen) {
           positionRowMenu(trigger, panel);
@@ -67,7 +143,7 @@
     });
 
     document.addEventListener("click", function (event) {
-      if (event.target.closest(".row-menu")) return;
+      if (event.target.closest(".row-menu, .row-menu-panel")) return;
       closeAll();
     });
 
@@ -134,7 +210,7 @@
       }
 
       row.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu")) return;
+        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu, .row-actions")) return;
         openRow();
       });
 
@@ -147,16 +223,25 @@
     });
   }
 
-  function initSidebar() {
+  /* The menu behaves like a drawer on a phone and like a collapsible rail on a
+     desktop, so the same markup serves both without a second navigation. */
+  function initNavigation() {
     var collapse = document.querySelector("[data-sidebar-collapse]");
     var expand = document.querySelector("[data-sidebar-expand]");
-    if (!collapse && !expand) return;
+    var toggles = document.querySelectorAll("[data-nav-toggle]");
+    var closers = document.querySelectorAll("[data-nav-close]");
+
+    function setDrawer(open) {
+      document.body.classList.toggle("nav-open", open);
+      toggles.forEach(function (button) {
+        button.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
 
     function setCollapsed(collapsed) {
       document.body.classList.toggle("sidebar-collapsed", collapsed);
       if (collapse) {
         collapse.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        collapse.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
       }
       try {
         localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
@@ -171,24 +256,27 @@
     } catch (error) {
       stored = null;
     }
-    if (stored === "1") {
-      setCollapsed(true);
-    }
+    if (stored === "1") document.body.classList.add("sidebar-collapsed");
 
-    if (collapse) {
-      collapse.addEventListener("click", function () {
-        setCollapsed(!document.body.classList.contains("sidebar-collapsed"));
+    if (collapse) collapse.addEventListener("click", function () { setCollapsed(true); });
+    if (expand) expand.addEventListener("click", function () { setCollapsed(false); });
+
+    toggles.forEach(function (button) {
+      button.addEventListener("click", function () {
+        setDrawer(!document.body.classList.contains("nav-open"));
       });
-    }
-    if (expand) {
-      expand.addEventListener("click", function () {
-        setCollapsed(false);
-      });
-    }
+    });
+    closers.forEach(function (button) {
+      button.addEventListener("click", function () { setDrawer(false); });
+    });
+
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && !document.body.classList.contains("sidebar-collapsed")) {
-        setCollapsed(true);
+      if (event.key === "Escape" && document.body.classList.contains("nav-open")) {
+        setDrawer(false);
       }
+    });
+    window.addEventListener("resize", function () {
+      if (!isCompact()) setDrawer(false);
     });
   }
 
@@ -202,7 +290,12 @@
         document.querySelectorAll(".action-panel").forEach(function (item) {
           item.classList.add("hidden");
         });
-        if (!open) panel.classList.remove("hidden");
+        if (!open) {
+          panel.classList.remove("hidden");
+          var focusable = panel.querySelector("input, select, textarea, button");
+          if (focusable) focusable.focus({ preventScroll: true });
+          panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
       });
     });
     document.querySelectorAll("[data-close-panel]").forEach(function (button) {
@@ -234,15 +327,148 @@
     });
   }
 
+  function initNotifications() {
+    document.querySelectorAll("form[data-notification-dismiss]").forEach(function (form) {
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var notification = form.closest("[data-notification]");
+        var data = new FormData(form);
+        fetch(form.action, {
+          method: "POST",
+          body: data,
+          credentials: "same-origin",
+          headers: { "X-Requested-With": "fetch" }
+        }).then(function (response) {
+          if (!response.ok) throw new Error("Dismiss failed");
+          if (notification) {
+            notification.classList.add("leaving");
+            setTimeout(function () { notification.remove(); }, 230);
+          }
+        }).catch(function () {
+          // Keep the ordinary form as a dependable fallback if the network or
+          // browser does not support the smooth path.
+          form.submit();
+        });
+      });
+    });
+  }
+
+  /* Confirmations of something you just did should not push the page down;
+     they appear over it and leave on their own. */
+  function initToasts() {
+    document.querySelectorAll("[data-toast]").forEach(function (toast) {
+      function dismiss() {
+        toast.classList.add("leaving");
+        setTimeout(function () { toast.remove(); }, 220);
+      }
+      var close = toast.querySelector("[data-toast-close]");
+      if (close) close.addEventListener("click", dismiss);
+      if (!toast.hasAttribute("data-toast-sticky")) {
+        setTimeout(dismiss, 4200);
+      }
+    });
+  }
+
+  /* Changing a filter is the intent; making you press Apply afterwards is
+     a click the app can take on itself. */
+  function initAutoFilters() {
+    document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
+      form.querySelectorAll("select, input[type=date]").forEach(function (input) {
+        input.addEventListener("change", function () {
+          if (input.type === "date") {
+            var range = form.querySelector('input[name="range"]');
+            if (range) range.value = "custom";
+          }
+          form.requestSubmit ? form.requestSubmit() : form.submit();
+        });
+      });
+    });
+  }
+
+  function randomPassword() {
+    var chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    var extra = "-_";
+    var out = "";
+    if (window.crypto && window.crypto.getRandomValues) {
+      var bytes = new Uint8Array(20);
+      window.crypto.getRandomValues(bytes);
+      for (var i = 0; i < bytes.length; i += 1) {
+        out += chars.charAt(bytes[i] % chars.length);
+      }
+      out += extra.charAt(bytes[0] % extra.length);
+      out += String((bytes[1] % 9) + 1);
+    } else {
+      while (out.length < 18) out += chars.charAt(Math.floor(Math.random() * chars.length));
+      out += "_7";
+    }
+    return out;
+  }
+
+  function fillGeneratedPassword(input) {
+    if (!input) return;
+    input.value = randomPassword();
+  }
+
+  function initGeneratedPasswords() {
+    document.querySelectorAll("[data-generated-password]").forEach(function (input) {
+      if (!input.value) fillGeneratedPassword(input);
+    });
+
+    document.querySelectorAll("[data-generate-password]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var field = button.closest(".password-generate");
+        if (!field) return;
+        var input = field.querySelector("[data-generated-password]");
+        fillGeneratedPassword(input);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      });
+    });
+  }
+
+  function initResetPasswordDialog() {
+    var dialog = document.getElementById("reset-password-dialog");
+    var form = document.getElementById("reset-password-form");
+    var label = document.getElementById("reset-password-label");
+    if (!dialog || !form || !label) return;
+
+    document.querySelectorAll("[data-reset-password]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var userId = button.getAttribute("data-user-id");
+        var userLabel = button.getAttribute("data-user-label") || "this user";
+        if (!userId) return;
+        form.action = "/admin/users/" + userId + "/password";
+        label.textContent = userLabel;
+        form.reset();
+        var passwordInput = form.querySelector("[data-generated-password]");
+        fillGeneratedPassword(passwordInput);
+        document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
+        if (typeof dialog.showModal === "function") dialog.showModal();
+      });
+    });
+
+    dialog.querySelectorAll("[data-reset-password-cancel]").forEach(function (button) {
+      button.addEventListener("click", function () { dialog.close(); });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
+    initBirthDateInputs();
     initRowMenus();
     initClickableRows();
-    initSidebar();
+    initNavigation();
     initTogglePanels();
     initDismissBanners();
+    initNotifications();
     initDetailsLinks();
     initAutomationFields();
     initCsvExport();
+    initToasts();
+    initAutoFilters();
+    initGeneratedPasswords();
+    initResetPasswordDialog();
   });
 })();

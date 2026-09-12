@@ -13,11 +13,14 @@ The rules this file exists to honour, all from the Ubyport operating rules:
 """
 from __future__ import annotations
 
+import base64
 import json
+import re
+import zipfile
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import alerts, codelists, config, db, deadlines, validation
+from . import alerts, codelists, config, db, deadlines, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
 
@@ -102,9 +105,70 @@ def guest_dict(guest) -> Dict[str, Optional[str]]:
     }
 
 
+def guest_has_signature(guest) -> bool:
+    """True when the record has a drawn signature or a declared paper import."""
+    signature = (guest["signature_png"] or "").strip()
+    if signature == "imported":
+        return True
+    return signature.startswith("data:image/")
+
+
+def guest_identity_verified(guest) -> bool:
+    """True when the host has confirmed the record against a travel document."""
+    if not validation.guest_is_reportable(guest["nationality"]):
+        return True
+    return bool(guest["identity_verified_at"])
+
+
+def _guest_entered_by(guest) -> str:
+    try:
+        return guest["entered_by"] or "guest"
+    except (KeyError, IndexError, TypeError):
+        return "guest"
+
+
+def guest_has_passport_photo(guest) -> bool:
+    """True when a temporary passport photo is on file for host review."""
+    if not validation.guest_is_reportable(guest["nationality"]):
+        return False
+    if _guest_entered_by(guest) == "host":
+        return False
+    try:
+        guest_id = guest["id"]
+    except (KeyError, IndexError, TypeError):
+        return False
+    if not guest_id:
+        return False
+    return bool(guest["passport_photo_at"]) and passport_photos.has_photo(int(guest_id))
+
+
+def guest_needs_passport_photo(guest) -> bool:
+    """Online check-ins from foreigners must include a passport photo for review."""
+    return (
+        validation.guest_is_reportable(guest["nationality"])
+        and _guest_entered_by(guest) != "host"
+        and not guest_identity_verified(guest)
+    )
+
+
 def guest_issues(guest, reservation) -> List[validation.Issue]:
     start, end = _stay_dates(guest, reservation)
-    return validation.validate_guest(guest_dict(guest), start, end)
+    issues = validation.validate_guest(guest_dict(guest), start, end)
+    if not guest_has_signature(guest):
+        issues.append(
+            validation.Issue(
+                "signature",
+                "A guest signature is required. Use the guest link or sign on the host form.",
+            )
+        )
+    if guest_needs_passport_photo(guest) and not guest_has_passport_photo(guest):
+        issues.append(
+            validation.Issue(
+                "passport_photo",
+                "A passport photo is required so the host can verify your details before reporting.",
+            )
+        )
+    return issues
 
 
 def guest_is_complete(guest, reservation) -> bool:
@@ -139,6 +203,7 @@ def reservation_progress(reservation) -> Dict[str, Any]:
     expected = expected_guest_count(reservation)
     complete = [g for g in guests if guest_is_complete(g, reservation)]
     reportable = [g for g in complete if validation.guest_is_reportable(g["nationality"])]
+    unverified = [g for g in reportable if not guest_identity_verified(g)]
     sent = [g for g in guests if g["submit_state"] == SENT]
     failed = [g for g in guests if g["submit_state"] in (ERROR, BLOCKED)]
     incomplete = [g for g in guests if not guest_is_complete(g, reservation)]
@@ -155,6 +220,8 @@ def reservation_progress(reservation) -> Dict[str, Any]:
         status = "incomplete"
     elif incomplete:
         status = "incomplete"
+    elif unverified:
+        status = "awaiting_verification"
     elif reportable and len(sent) < len(reportable):
         status = "ready"
     elif reportable and len(sent) == len(reportable):
@@ -171,6 +238,7 @@ def reservation_progress(reservation) -> Dict[str, Any]:
         "missing": missing,
         "incomplete": incomplete,
         "reportable": reportable,
+        "unverified": unverified,
         "sent": sent,
         "failed": failed,
         "status": status,
@@ -180,11 +248,138 @@ def reservation_progress(reservation) -> Dict[str, Any]:
 STATUS_LABELS = {
     "awaiting_guest": "Waiting for guest",
     "incomplete": "Incomplete",
+    "awaiting_verification": "Awaiting passport check",
     "ready": "Ready to report",
     "reported": "Reported",
     "not_required": "No reporting duty",
     "failed": "Rejected",
 }
+
+
+def pending_reportable(guests: List[Any]) -> List[Any]:
+    """Reportable guests that have not yet been accepted by UbyPort."""
+    return [
+        guest
+        for guest in guests
+        if validation.guest_is_reportable(guest["nationality"])
+        and guest_has_signature(guest)
+        and guest_identity_verified(guest)
+        and guest["submit_state"] not in (SENT, BLOCKED)
+    ]
+
+
+def status_label(status: str, automation_mode: Optional[str] = None) -> str:
+    """Human label for a stay's reporting status, with automation context."""
+    if status == "awaiting_verification":
+        return "Verify passport before reporting"
+    if status in ("awaiting_guest", "incomplete") and automation_mode == "immediate":
+        return "Waiting for guest"
+    if status == "ready" and automation_mode == "immediate":
+        return "Verified — auto-send after you confirm"
+    if status == "ready" and automation_mode == "manual":
+        return "Ready — send manually"
+    if status == "ready" and automation_mode == "scheduled":
+        return "Ready — scheduled send"
+    return STATUS_LABELS.get(status, status)
+
+
+def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str, Any]:
+    """Whether Send actions should appear on a stay row."""
+    mode = apartment["automation_mode"]
+    pending = pending_reportable(progress["reportable"])
+    has_pending = bool(pending)
+    can_send = progress["status"] in ("ready", "failed") and has_pending
+    auto_immediate = mode == "immediate"
+
+    send_enabled = can_send and not auto_immediate
+
+    if progress["status"] == "awaiting_verification":
+        send_hint = "Check each passport photo and confirm the details before reporting"
+    elif auto_immediate:
+        send_hint = "Sends automatically after you verify each guest against their passport"
+    elif not has_pending and progress["status"] in ("not_required", "reported"):
+        send_hint = "Nothing to send: no guest record is subject to the reporting duty"
+    elif not has_pending:
+        unsigned_foreign = [
+            guest
+            for guest in progress.get("guests", [])
+            if validation.guest_is_reportable(guest["nationality"])
+            and not guest_has_signature(guest)
+        ]
+        unverified_foreign = progress.get("unverified") or []
+        if unsigned_foreign:
+            send_hint = "Every foreign guest must sign before reporting to UbyPort"
+        elif unverified_foreign:
+            send_hint = "Verify each guest against their passport before reporting"
+        else:
+            send_hint = "Nothing left to send for this stay"
+    elif not can_send:
+        send_hint = "Complete guest details, signatures, and passport checks before sending"
+    else:
+        send_hint = "Send completed guest records to UbyPort now"
+
+    send_visible = has_pending and progress["status"] in ("ready", "failed")
+
+    return {
+        "send_enabled": send_enabled,
+        "send_visible": send_visible or (auto_immediate and has_pending),
+        "send_hint": send_hint,
+        "auto_immediate": auto_immediate,
+        "pending_count": len(pending),
+    }
+
+
+def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
+    """Immediate automation after the host verifies identity (never on raw guest save)."""
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment or apartment["automation_mode"] != "immediate":
+        return
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    if not guest:
+        return
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
+    if not reservation or reservation["status"] != "active":
+        return
+    if not guest_is_complete(guest, reservation) or not validation.guest_is_reportable(guest["nationality"]):
+        return
+    if not guest_identity_verified(guest):
+        return
+    if guest["submit_state"] == SENT:
+        return
+    try:
+        submit_for_apartment(apartment_id, only_guest_ids=[guest_id], mode="immediate", ignore_automation=True)
+    except Exception as exc:
+        alerts.raise_alert(
+            "warning",
+            "submission_immediate",
+            f"{apartment['internal_name']}: auto-send failed after the form was saved.",
+            str(exc),
+            dedupe_key=f"submission_immediate:{apartment_id}",
+            apartment_id=apartment_id,
+        )
+
+
+def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
+    """Host-entered records are verified on save; immediate mode may send then."""
+    try_immediate_submit(apartment_id, guest_id)
+
+
+def maybe_submit_after_verify(apartment_id: int, guest_id: int) -> None:
+    """Immediate automation fires once the host confirms passport details."""
+    try_immediate_submit(apartment_id, guest_id)
+
+
+def count_sendable_stays(reservations: List[Any]) -> int:
+    """How many stays can be sent right now with the bulk action."""
+    count = 0
+    for reservation in reservations:
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+        if not apartment or not apartment["active"]:
+            continue
+        progress = reservation_progress(reservation)
+        if send_controls(reservation, apartment, progress)["send_enabled"]:
+            count += 1
+    return count
 
 
 def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
@@ -255,6 +450,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if guest["submit_state"] == BLOCKED and not allow_resend:
             continue
         if not guest_is_complete(guest, reservation):
+            continue
+        if not guest_identity_verified(guest):
             continue
         if not ignore_automation and not due_for_automatic_send(apartment, reservation):
             continue
@@ -416,6 +613,7 @@ def submit_batch(
         "ubyport_submit",
         f"apartment={apartment['id']} submission={submission_id} state={state} "
         f"accepted={accepted_count} failed={failed_count} blocked={blocked_count}",
+        owner_user_id=apartment["owner_user_id"],
     )
     return {
         "submitted": accepted_count,
@@ -439,6 +637,11 @@ def submit_for_apartment(
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return []
+
+    from . import demo
+
+    if demo.is_demo_apartment(apartment):
+        return [{"state": "noop", "error": "Demo data is for preview only and is never sent to the police."}]
 
     ap_dict = dict(apartment)
     ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
@@ -466,10 +669,14 @@ def submit_for_apartment(
     return results
 
 
-def sweep() -> Dict[str, Any]:
-    """Scheduled pass over every active apartment."""
+def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
+    """Scheduled pass over active apartments, optionally for one workspace."""
     summary = {"apartments": 0, "submitted": 0, "failed": 0}
-    for apartment in db.query("SELECT * FROM apartment WHERE active = 1 AND automation_mode != 'manual'"):
+    for apartment in db.query(
+        "SELECT * FROM apartment WHERE active = 1 AND automation_mode != 'manual' "
+        "AND (? IS NULL OR owner_user_id = ?)",
+        (owner_user_id, owner_user_id),
+    ):
         summary["apartments"] += 1
         for result in submit_for_apartment(apartment["id"], mode="auto"):
             summary["submitted"] += result.get("submitted", 0)
@@ -479,7 +686,9 @@ def sweep() -> Dict[str, Any]:
 
 # --- deadline monitoring -------------------------------------------------
 
-def check_deadlines(now: Optional[datetime] = None) -> int:
+def check_deadlines(
+    now: Optional[datetime] = None, owner_user_id: Optional[int] = None
+) -> int:
     """Alert on stays that are running out of legal time with data missing.
 
     This is the part the host asked for: not "here is a list of bookings" but
@@ -490,8 +699,9 @@ def check_deadlines(now: Optional[datetime] = None) -> int:
     horizon = (now.date() - timedelta(days=30)).isoformat()
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status = 'active' AND a.active = 1 AND r.date_from >= ? AND r.date_from <= ?",
-        (horizon, now.date().isoformat()),
+        "WHERE r.status = 'active' AND a.active = 1 "
+        "AND (? IS NULL OR a.owner_user_id = ?) AND r.date_from >= ? AND r.date_from <= ?",
+        (owner_user_id, owner_user_id, horizon, now.date().isoformat()),
     )
     for reservation in rows:
         start = validation.parse_iso_date(reservation["date_from"])
@@ -519,3 +729,29 @@ def check_deadlines(now: Optional[datetime] = None) -> int:
         else:
             alerts.resolve(key)
     return raised
+
+
+MAX_RECEIPT_DOWNLOADS = 100
+
+
+def receipt_zip_name(row: Any) -> str:
+    stamp = re.sub(r"[^\w.\-]+", "_", (row["pseudo_stamp"] or str(row["id"]))[:36])
+    date_part = (row["created_at"] or "")[:10] or "report"
+    return f"dorucenka-{date_part}-{row['id']}-{stamp}.pdf"
+
+
+def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
+    """Write Doručenka PDFs to a zip on disk, one file at a time."""
+    count = 0
+    with zipfile.ZipFile(dest_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for row in rows:
+            raw_b64 = row["receipt_pdf"]
+            if not raw_b64:
+                continue
+            try:
+                raw = base64.b64decode(raw_b64)
+            except Exception:
+                continue
+            archive.writestr(receipt_zip_name(row), raw)
+            count += 1
+    return count

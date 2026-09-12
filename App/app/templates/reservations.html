@@ -2,14 +2,18 @@
 {% set nav = 'reservations' %}
 {% block title %}Stays{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline %}
+{% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
+{% set header_actions %}
+  {{ bulk_send_ready(ready_send_count, return_to) }}
+  {% if apartments %}
+    <button class="btn" type="button" data-toggle-panel="add-stay-panel">Add stay</button>
+  {% endif %}
+{% endset %}
 {{ page_header(
   'Stays',
   'Calendar stays and manual bookings, earliest arrival first.',
-  actions=''
-    ~ ('<button class="btn primary" type="button" data-toggle-panel="add-stay-panel">Add stay</button>' if apartments else '')
-    ~ ('<button class="btn" type="button" data-toggle-panel="import-stays-panel">Import CSV</button>' if apartments else '')
-    ~ ('<a class="btn" href="/reservations-sample.csv">Sample CSV</a>' if apartments else '')
+  actions=header_actions
 ) }}
 
 {% if apartments %}
@@ -17,7 +21,7 @@
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
       <h2>Add a stay by hand</h2>
-      <button class="btn small" type="button" data-close-panel>Close</button>
+      <button class="btn small ghost" type="button" data-close-panel>Close</button>
     </div>
     <p class="small muted">For direct bookings, phone reservations, or anything not on a connected calendar.</p>
     <form method="post" action="/reservations">
@@ -62,7 +66,7 @@
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
       <h2>Import stays from CSV</h2>
-      <button class="btn small" type="button" data-close-panel>Close</button>
+      <button class="btn small ghost" type="button" data-close-panel>Close</button>
     </div>
     <div class="import-guide">
       <p>Upload a semicolon-separated file with one stay per row. Download the <a href="/reservations-sample.csv">sample CSV</a> to see the exact format.</p>
@@ -92,7 +96,8 @@
 <p class="small muted">Archived stays are hidden from your daily work but kept for reference. Restore any entry you archived by mistake.</p>
 {% endif %}
 
-<form method="get" action="/reservations" class="filters panel">
+{# Changing a filter applies it; Apply only exists for browsers without scripting. #}
+<form method="get" action="/reservations" class="filters panel" data-auto-submit>
   <input type="hidden" name="range" value="{{ date_range }}">
   <div class="field">
     <label for="apartment">Apartment</label>
@@ -120,15 +125,18 @@
     <label for="to">Staying on or before</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
-  <div class="field filter-actions">
-    <button class="btn primary" type="submit">Apply</button>
-    <a class="btn" href="/reservations?range=upcoming">Clear</a>
+  <div class="field filter-actions filter-actions-end">
+    {# When scripts are unavailable this submitter overrides the hidden preset,
+       so manually entered dates still win. #}
+    <button class="btn primary filter-apply" type="submit" name="range" value="custom">Apply</button>
+    <a class="btn ghost" href="/reservations?range=upcoming">Clear</a>
+    {{ csv_actions_menu(csv_export_params, apartments|length > 0, true) }}
   </div>
 </form>
 
 {% if rows %}
 <div class="panel tight scroll-x">
-  <table>
+  <table class="table-cards">
     <thead>
       <tr><th>Stay</th><th>Apartment</th><th>Source</th><th>Guests</th><th>Reporting</th><th>Deadline</th><th><span class="sr-only">Open</span></th></tr>
     </thead>
@@ -141,37 +149,43 @@
       <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to }}"
           tabindex="0" role="link"
           aria-label="Open stay {{ reservation.date_from | date_cz }} to {{ reservation.date_to | date_cz }} at {{ reservation.internal_name }}">
-        <td class="nowrap">
+        <td class="nowrap" data-label="Stay">
           <a class="row-primary-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}">
             {{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}
           </a>
           <div class="small muted">
             {{ nights(reservation.date_from, reservation.date_to) }} nights
             {%- if check_in and check_out and check_in <= today() <= check_out %}
-              &middot; <span class="pill blue">in house</span>
+              &middot; <span class="pill blue">In house</span>
             {%- endif %}
           </div>
         </td>
-        <td>{{ reservation.internal_name }}</td>
-        <td class="small">
+        <td data-label="Apartment">{{ reservation.internal_name }}</td>
+        <td class="small" data-label="Source">
           {{ reservation.summary or reservation.source }}
           {% if reservation.reservation_url %}
             <div><a class="small" href="{{ reservation.reservation_url }}" target="_blank" rel="noopener">portal &rarr;</a></div>
           {% endif %}
         </td>
-        <td class="num">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
-        <td>
+        <td class="num" data-label="Guests">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+        <td data-label="Reporting">
           {% if reservation.status != 'active' %}<span class="pill grey">{{ reservation.status }}</span>
-          {% else %}{{ progress_pill(progress.status) }}{% endif %}
+          {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}{% endif %}
         </td>
-        <td class="nowrap">
+        <td class="nowrap" data-label="Deadline">
           {% if check_in and reservation.status == 'active' %}
             <span class="deadline {{ urgency(check_in) }}">{{ describe_time_left(check_in) }}</span>
           {% else %}—{% endif %}
         </td>
-        <td class="nowrap row-actions">
+        <td class="nowrap row-actions" data-label="">
+          {{ row_reporting_actions(reservation, row.controls, return_to) }}
+          {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
+            {{ copy_inline('stay-link-' ~ reservation.id,
+                public_base_url ~ '/l/' ~ reservation.permalink_token ~ '/' ~ reservation.id) }}
+          {% endif %}
           {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}" role="menuitem">Edit</a>
+            <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}" role="menuitem">Open stay</a>
+            <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">Add a guest</a>
             {% if show_archive %}
               <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
                 <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
@@ -190,9 +204,18 @@
   </table>
 </div>
 <p class="small muted">
-  {{ rows | length }} stay{{ '' if rows | length == 1 else 's' }}.
-  {% if truncated %}Only the first {{ limit }} are shown — narrow the dates to see the rest.{% endif %}
+  Showing {{ ((page - 1) * page_size) + 1 }}–{{ [page * page_size, total] | min }}
+  of {{ total }} stay{{ '' if total == 1 else 's' }}.
 </p>
+{% if page_count > 1 %}
+  <nav class="pagination" aria-label="Stays pages">
+    {% if previous_page_url %}<a class="btn" href="{{ previous_page_url }}">&larr; Previous</a>
+    {% else %}<span class="btn disabled" aria-disabled="true">&larr; Previous</span>{% endif %}
+    <span class="pagination-label">Page {{ page }} of {{ page_count }}</span>
+    {% if next_page_url %}<a class="btn" href="{{ next_page_url }}">Next &rarr;</a>
+    {% else %}<span class="btn disabled" aria-disabled="true">Next &rarr;</span>{% endif %}
+  </nav>
+{% endif %}
 {% elif show_archive %}
   <div class="panel empty">No archived stays. Mistakes from manual entry can be archived from any stay row.</div>
 {% elif has_any %}
@@ -208,7 +231,13 @@
 {% else %}
   <div class="panel empty">
     <p>There are no apartments yet, so there is nothing to show.</p>
-    <a class="btn primary" href="/apartments/new">Add your first apartment</a>
+    <div class="actions" style="justify-content:center;margin-top:14px">
+      <a class="btn primary" href="/apartments/new">Add your first apartment</a>
+      <form method="post" action="/demo" class="inline">
+        <button class="btn" type="submit">{{ t('demo.load') }}</button>
+      </form>
+    </div>
+    <p class="small muted" style="margin-top:12px">{{ t('demo.load_detail') }}</p>
   </div>
 {% endif %}
 {% endblock %}
