@@ -1,13 +1,23 @@
 """Guest PIN gate must cover every mutating route, not only GET pages."""
 from __future__ import annotations
 
+import base64
 from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db
+from app import auth, db, passport_photos
 from app.main import app
+
+SIGNATURE = "data:image/png;base64," + base64.b64encode(
+    bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000a49444154789c6300010000050001od7a1f0000000049454e44ae42"
+        "6082".replace("od", "0d")
+    )
+).decode()
+PNG_BYTES = base64.b64decode(SIGNATURE.split(",", 1)[1])
 
 TOKEN = "pingate-token"
 PIN = "4321"
@@ -23,6 +33,12 @@ def _cleanup():
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     if not apartment:
         return
+    guests = db.query("SELECT id FROM guest WHERE reservation_id IN "
+                      "(SELECT id FROM reservation WHERE apartment_id = ?)", (apartment["id"],))
+    for guest in guests:
+        passport_photos.delete_photo(guest["id"])
+    db.execute("DELETE FROM guest WHERE reservation_id IN "
+               "(SELECT id FROM reservation WHERE apartment_id = ?)", (apartment["id"],))
     db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
     db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
@@ -123,8 +139,10 @@ def test_edit_form_requires_pin_before_owned_cookie(pin_required):
                 "res_country": "GBR",
                 "purpose": "10",
                 "party_size": "1",
-                "signature": "data:image/png;base64,AA==",
+                "signature": SIGNATURE,
+                "legal_ack": "1",
             },
+            files={"passport_photo": ("passport.png", PNG_BYTES, "image/png")},
             follow_redirects=False,
         )
         assert saved.status_code == 303
