@@ -1,0 +1,8 @@
+{
+	email {env.ACME_EMAIL}
+}
+
+{env.UBYHOST_DOMAIN} {
+	encode gzip
+	reverse_proxy ubyhost:8080
+}
