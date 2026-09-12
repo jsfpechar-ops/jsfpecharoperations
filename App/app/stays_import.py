@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import csv
 import io
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from . import db
 
@@ -138,13 +138,12 @@ def import_csv(content: bytes, owner_user_id: Optional[int] = None) -> Dict[str,
     return {"imported": imported, "skipped": skipped, "errors": errors[:8]}
 
 
-def export_csv(
+def _export_sql(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     apartment_id: Optional[int] = None,
     owner_user_id: Optional[int] = None,
-) -> bytes:
-    """Export stays in the same format used for CSV import."""
+) -> tuple[str, List[Any]]:
     sql = (
         "SELECT r.*, a.internal_name AS apartment_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
@@ -161,10 +160,24 @@ def export_csv(
         sql += " AND r.date_from <= ?"
         params.append(date_to)
     sql += " ORDER BY r.date_from, a.internal_name"
+    return sql, params
 
+
+def iter_export_csv(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    apartment_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
+) -> Iterator[bytes]:
+    """Stream stays CSV row-by-row instead of buffering the whole file."""
+    sql, params = _export_sql(date_from, date_to, apartment_id, owner_user_id)
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+    yield b"\xef\xbb\xbf"
     writer.writerow([label for _key, label in STAY_COLUMNS])
+    yield buffer.getvalue().encode("utf-8")
+    buffer.seek(0)
+    buffer.truncate(0)
     for row in db.query(sql, params):
         guests = row["expected_guests_override"] or row["declared_guests"]
         writer.writerow(
@@ -177,4 +190,18 @@ def export_csv(
                 row["guest_email"] or "",
             ]
         )
-    return b"\xef\xbb\xbf" + buffer.getvalue().encode("utf-8")
+        yield buffer.getvalue().encode("utf-8")
+        buffer.seek(0)
+        buffer.truncate(0)
+
+
+def export_csv(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    apartment_id: Optional[int] = None,
+    owner_user_id: Optional[int] = None,
+) -> bytes:
+    """Export stays in the same format used for CSV import."""
+    return b"".join(
+        iter_export_csv(date_from, date_to, apartment_id, owner_user_id)
+    )

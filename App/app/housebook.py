@@ -16,7 +16,7 @@ import os
 import re
 import zipfile
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import reportlab
 from reportlab.lib.pagesizes import A4
@@ -76,13 +76,12 @@ HOUSEBOOK_COLUMNS = [
 ]
 
 
-def housebook_rows(
+def _housebook_sql(
     apartment_id: Optional[int] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     owner_user_id: Optional[int] = None,
-) -> List[Dict[str, Any]]:
-    """Chronological house-book entries, newest stay last."""
+) -> tuple[str, List[Any]]:
     sql = (
         "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id, "
         "       a.internal_name, a.uby_idub "
@@ -103,45 +102,54 @@ def housebook_rows(
         sql += " AND COALESCE(g.stay_from, r.date_from) <= ?"
         params.append(date_to)
     sql += " ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
+    return sql, params
 
-    out: List[Dict[str, Any]] = []
-    for row in db.query(sql, params):
-        reported = {
-            "sent": "yes",
-            "not_required": "not required (Czech national)",
-            "error": "NO - rejected",
-            "blocked": "NO - rejected, cannot be corrected",
-            "pending": "not yet",
-        }.get(row["submit_state"], row["submit_state"])
-        stamp = ""
-        if row["submission_id"]:
-            sub = db.query_one("SELECT pseudo_stamp FROM submission WHERE id = ?", (row["submission_id"],))
-            stamp = (sub["pseudo_stamp"] if sub else "") or ""
-        out.append(
-            {
-                "apartment": row["internal_name"],
-                "idub": row["uby_idub"] or "",
-                "stay_from": row["stay_from"] or row["res_from"],
-                "stay_to": row["stay_to"] or row["res_to"],
-                "surname": row["surname"] or "",
-                "first_name": row["first_name"] or "",
-                "birth_date": validation.format_birth_date(row["birth_date"]),
-                "nationality": row["nationality"] or "",
-                "doc_number": row["doc_number"] or "",
-                "visa_number": row["visa_number"] or "",
-                "residence": validation.compose_residence(
-                    row["res_street"] or "", row["res_city"] or "", (row["res_country"] or "").upper()
-                ),
-                "purpose": validation.purpose_label(row["purpose"] or "", "cs"),
-                "note": row["note"] or "",
-                "signed": "yes" if reporting.guest_has_signature(row) else "no",
-                "reported": reported,
-                "reported_at": row["submitted_at"] or "",
-                "stamp": stamp,
-                "_guest_id": row["id"],
-            }
-        )
-    return out
+
+def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    reported = {
+        "sent": "yes",
+        "not_required": "not required (Czech national)",
+        "error": "NO - rejected",
+        "blocked": "NO - rejected, cannot be corrected",
+        "pending": "not yet",
+    }.get(row["submit_state"], row["submit_state"])
+    stamp = ""
+    if row["submission_id"]:
+        sub = db.query_one("SELECT pseudo_stamp FROM submission WHERE id = ?", (row["submission_id"],))
+        stamp = (sub["pseudo_stamp"] if sub else "") or ""
+    return {
+        "apartment": row["internal_name"],
+        "idub": row["uby_idub"] or "",
+        "stay_from": row["stay_from"] or row["res_from"],
+        "stay_to": row["stay_to"] or row["res_to"],
+        "surname": row["surname"] or "",
+        "first_name": row["first_name"] or "",
+        "birth_date": validation.format_birth_date(row["birth_date"]),
+        "nationality": row["nationality"] or "",
+        "doc_number": row["doc_number"] or "",
+        "visa_number": row["visa_number"] or "",
+        "residence": validation.compose_residence(
+            row["res_street"] or "", row["res_city"] or "", (row["res_country"] or "").upper()
+        ),
+        "purpose": validation.purpose_label(row["purpose"] or "", "cs"),
+        "note": row["note"] or "",
+        "signed": "yes" if reporting.guest_has_signature(row) else "no",
+        "reported": reported,
+        "reported_at": row["submitted_at"] or "",
+        "stamp": stamp,
+        "_guest_id": row["id"],
+    }
+
+
+def housebook_rows(
+    apartment_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Chronological house-book entries, newest stay last."""
+    sql, params = _housebook_sql(apartment_id, date_from, date_to, owner_user_id)
+    return [_housebook_export_row(row) for row in db.query(sql, params)]
 
 
 def _parse_import_date(value: str) -> Optional[str]:
@@ -367,6 +375,29 @@ def housebook_archived_rows(
 def sample_housebook_csv() -> bytes:
     """Filled example guests can copy when importing a paper house book."""
     return housebook_csv([SAMPLE_HOUSEBOOK_ROW])
+
+
+def iter_housebook_csv(
+    apartment_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    owner_user_id: Optional[int] = None,
+) -> Iterator[bytes]:
+    """Stream house-book CSV row-by-row instead of buffering the whole file."""
+    sql, params = _housebook_sql(apartment_id, date_from, date_to, owner_user_id)
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
+    yield b"\xef\xbb\xbf"
+    writer.writerow([label for _key, label in HOUSEBOOK_COLUMNS])
+    yield buffer.getvalue().encode("utf-8")
+    buffer.seek(0)
+    buffer.truncate(0)
+    for row in db.query(sql, params):
+        export_row = _housebook_export_row(row)
+        writer.writerow([export_row.get(key, "") for key, _label in HOUSEBOOK_COLUMNS])
+        yield buffer.getvalue().encode("utf-8")
+        buffer.seek(0)
+        buffer.truncate(0)
 
 
 def housebook_csv(rows: List[Dict[str, Any]]) -> bytes:

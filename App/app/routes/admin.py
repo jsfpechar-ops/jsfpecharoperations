@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, BackgroundTasks, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response, StreamingResponse
 
 from .. import (
     access,
@@ -1268,8 +1268,8 @@ def reservations_export(request: Request):
     if not (date_from and date_to):
         return _back("/reservations", err="Choose a date range for the export.")
     stamp = datetime.now().strftime("%Y%m%d")
-    return Response(
-        stays_import.export_csv(
+    return StreamingResponse(
+        stays_import.iter_export_csv(
             date_from=date_from,
             date_to=date_to,
             apartment_id=_query_int(request, "apartment"),
@@ -2067,15 +2067,14 @@ def housebook_download(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    rows = housebook.housebook_rows(
-        _query_int(request, "apartment"),
-        _query_date(request, "from") or None,
-        _query_date(request, "to") or None,
-        owner_user_id=access.owner_id(request),
-    )
     stamp = datetime.now().strftime("%Y%m%d")
-    return Response(
-        housebook.housebook_csv(rows),
+    return StreamingResponse(
+        housebook.iter_housebook_csv(
+            _query_int(request, "apartment"),
+            _query_date(request, "from") or None,
+            _query_date(request, "to") or None,
+            owner_user_id=access.owner_id(request),
+        ),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="domovni-kniha-{stamp}.csv"'},
     )
@@ -2137,6 +2136,102 @@ def dismiss_alert(alert_id: int, request: Request):
         return Response(status_code=204)
     referer = request.headers.get("referer") or "/"
     return RedirectResponse(referer, status_code=303)
+
+
+ARCHIVED_TYPES = ("all", "stays", "properties", "housebook", "entities")
+
+
+@router.get("/settings/archived")
+def settings_archived_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    item_type = request.query_params.get("type", "all")
+    if item_type not in ARCHIVED_TYPES:
+        item_type = "all"
+
+    counts = {
+        "stays": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM reservation r "
+                "JOIN apartment a ON a.id = r.apartment_id "
+                "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+        "properties": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM apartment "
+                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+        "housebook": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM guest g "
+                "JOIN reservation r ON r.id = g.reservation_id "
+                "JOIN apartment a ON a.id = r.apartment_id "
+                "WHERE g.archived_at IS NOT NULL AND a.owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+        "entities": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM legal_entity "
+                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+    }
+    counts["all"] = counts["stays"] + counts["properties"] + counts["housebook"] + counts["entities"]
+
+    archived_stays: List[Dict[str, Any]] = []
+    archived_properties: List[Dict[str, Any]] = []
+    archived_housebook: List[Dict[str, Any]] = []
+    archived_entities: List[Dict[str, Any]] = []
+
+    if item_type in ("all", "stays"):
+        archived_stays = db.query(
+            "SELECT r.*, a.internal_name FROM reservation r "
+            "JOIN apartment a ON a.id = r.apartment_id "
+            "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ? "
+            "ORDER BY r.archived_at DESC, r.id DESC",
+            (owner_id,),
+        )
+    if item_type in ("all", "properties"):
+        archived_properties = db.query(
+            "SELECT a.*, "
+            "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id) AS reservations "
+            "FROM apartment a "
+            "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? "
+            "ORDER BY a.archived_at DESC",
+            (owner_id,),
+        )
+    if item_type in ("all", "housebook"):
+        archived_housebook = housebook.housebook_archived_rows(owner_user_id=owner_id)
+    if item_type in ("all", "entities"):
+        archived_entities = db.query(
+            "SELECT e.*, "
+            "  (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
+            "FROM legal_entity e "
+            "WHERE e.archived_at IS NOT NULL AND e.owner_user_id IS ? "
+            "ORDER BY e.archived_at DESC",
+            (owner_id,),
+        )
+
+    return render(
+        request,
+        "settings_archived.html",
+        {
+            "item_type": item_type,
+            "counts": counts,
+            "archived_stays": archived_stays,
+            "archived_properties": archived_properties,
+            "archived_housebook": archived_housebook,
+            "archived_entities": archived_entities,
+        },
+    )
 
 
 @router.get("/settings")
