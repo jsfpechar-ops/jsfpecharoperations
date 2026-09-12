@@ -22,6 +22,7 @@
       {% block auth_body %}{% endblock %}
       <footer class="auth-foot-legal small muted">
         <a href="/legal">{{ t('legal.footer_link') }}</a>
+        &middot; <a href="/terms">{{ t('terms.footer_link') }}</a>
         {% if operator().email %}
           &middot; <a href="mailto:{{ operator().email }}">{{ operator().email }}</a>
         {% endif %}

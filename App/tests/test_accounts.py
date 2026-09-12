@@ -392,6 +392,27 @@ def test_legal_page_shows_operator_identity():
     assert "Kubelíkova" in response.text
 
 
+def test_terms_page_shows_operator_identity():
+    response = TestClient(app).get("/terms")
+    assert response.status_code == 200
+    assert "Josef Pechar" in response.text
+    assert "24005169" in response.text
+    assert "Kubelíkova" in response.text
+    assert "Terms of Service" in response.text or "Obchodní podmínky" in response.text
+
+
+def test_login_page_links_to_terms():
+    response = TestClient(app).get("/login")
+    assert response.status_code == 200
+    assert 'href="/terms"' in response.text
+
+
+def test_legal_page_links_to_terms():
+    response = TestClient(app).get("/legal")
+    assert response.status_code == 200
+    assert 'href="/terms"' in response.text
+
+
 def test_submissions_receipts_zip_downloads_bulk_dorucenky():
     db.init_db()
     _clean_accounts()
