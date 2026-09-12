@@ -13,6 +13,7 @@
     <a href="#guests" class="guide-nav-link">{{ t('guide.nav.guests') }}</a>
     <a href="#reporting" class="guide-nav-link">{{ t('guide.nav.reporting') }}</a>
     <a href="#housebook" class="guide-nav-link">{{ t('guide.nav.housebook') }}</a>
+    <a href="#legal" class="guide-nav-link">{{ t('guide.nav.legal') }}</a>
     <a href="#demo" class="guide-nav-link">{{ t('guide.nav.demo') }}</a>
   </nav>
 
@@ -81,6 +82,26 @@
     <section class="guide-section panel" id="housebook">
       <h2>{{ t('guide.nav.housebook') }}</h2>
       <p>{{ t('guide.housebook.body') }}</p>
+      <p class="small muted">{{ t('housebook.legal_footnote') }}</p>
+    </section>
+
+    <section class="guide-section panel guide-legal" id="legal">
+      <h2>{{ t('guide.nav.legal') }}</h2>
+      <p class="lede">{{ t('guide.legal.lede') }}</p>
+      <h3>{{ t('guide.legal.housebook_title') }}</h3>
+      <p>{{ t('guide.legal.housebook_body') }}</p>
+      <h3>{{ t('guide.legal.paper_title') }}</h3>
+      <p>{{ t('guide.legal.paper_body') }}</p>
+      <h3>{{ t('guide.legal.signature_title') }}</h3>
+      <p>{{ t('guide.legal.signature_body') }}</p>
+      <h3>{{ t('guide.legal.reporting_title') }}</h3>
+      <p>{{ t('guide.legal.reporting_body') }}</p>
+      <h3>{{ t('guide.legal.retention_title') }}</h3>
+      <p>{{ t('guide.legal.retention_body') }}</p>
+      <div class="legal-disclaimer panel quiet">
+        <h3 style="margin-top:0">{{ t('guide.legal.disclaimer_title') }}</h3>
+        <p class="small muted" style="margin-bottom:0">{{ t('guide.legal.disclaimer_body') }}</p>
+      </div>
     </section>
 
     <section class="guide-section panel" id="demo">

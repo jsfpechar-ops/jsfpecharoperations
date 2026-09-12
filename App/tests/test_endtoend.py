@@ -441,6 +441,11 @@ def test_22_house_book_export_covers_everyone_including_czechs(host):
     assert "SMITH" in text
     assert "DVOŘÁK" in text, "Czech nationals belong in the house book even so"
 
+    zip_response = host.get("/housebook/pdfs.zip")
+    assert zip_response.status_code == 200
+    assert zip_response.headers["content-type"] == "application/zip"
+    assert zip_response.content[:2] == b"PK"
+
 
 def test_23_deadline_watch_raises_nothing_once_everyone_is_reported(host):
     reporting.check_deadlines()
@@ -524,6 +529,7 @@ def host_adds_guest(host, reservation_id: int, **overrides) -> int:
         "res_city": "Boston",
         "res_country": "USA",
         "purpose": "10",
+        "signature": SIGNATURE,
     }
     data.update(overrides)
     response = host.post(
@@ -574,6 +580,7 @@ def test_26_a_field_error_is_reported_back_as_correctable(host, mock_ubyport):
             "res_city": "Boston",
             "res_country": "USA",
             "purpose": "10",
+            "signature": SIGNATURE,
         },
         follow_redirects=False,
     )

@@ -56,7 +56,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download": "Download CSV",
         "csv.import": "Import CSV",
         "csv.sample_housebook": "Sample CSV",
+        "csv.download_pdfs": "Download PDFs for inspection",
         "csv.button": "CSV",
+        "host.signature_title": "Guest signature",
+        "host.signature_help": (
+            "Required by Czech law (§ 101–103, Act 326/1999 Coll.). The guest must sign, or you must "
+            "keep a matching paper form on file. Unsigned records cannot be reported to UbyPort."
+        ),
+        "host.signature_missing": "Please sign before saving.",
+        "host.signature_kept": "Signature saved. Sign again only if you need to change it.",
+        "host.signature_clear": "Clear",
+        "housebook.legal_footnote": (
+            "You are the data controller and legally responsible for guest records. UbyHost is software "
+            "only — it does not replace your duty to keep signed forms, report foreigners within three "
+            "working days, and present paper records at a police inspection."
+        ),
         "send.this_stay": "Send this stay",
         "send.all_ready": "Send all ready stays",
         "send.all_ready_hint": "Reports every stay that is complete and waiting for your approval",
@@ -134,8 +148,49 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "it never forces a partial stay."
         ),
         "guide.housebook.body": (
-            "The house book lists every guest. Export CSV for inspections; import older paper records "
-            "from the CSV menu in the filters."
+            "The house book lists every guest — Czech and foreign. Export CSV or download PDFs for "
+            "inspections; import older paper records from the CSV menu in the filters."
+        ),
+        "guide.nav.legal": "Your legal duties",
+        "guide.legal.lede": (
+            "UbyHost helps you comply, but the accommodation provider remains legally responsible. "
+            "Read this section carefully."
+        ),
+        "guide.legal.housebook_title": "House book (domovní kniha)",
+        "guide.legal.housebook_body": (
+            "Under § 101 of Act No. 326/1999 Coll. you must keep a register of accommodated foreigners "
+            "with the same data as the registration form, plus stay dates. Entries must be current, "
+            "legible, and chronological. Keep them for six years after the last entry."
+        ),
+        "guide.legal.paper_title": "Paper for police inspection",
+        "guide.legal.paper_body": (
+            "At inspection you must present the house book in written form. A screen alone is not enough. "
+            "Download each guest's signed PDF (or the ZIP from House book) and store or print it. "
+            "Signed registration forms count as house-book pages."
+        ),
+        "guide.legal.signature_title": "Signatures are mandatory",
+        "guide.legal.signature_body": (
+            "Every guest record needs a signature before it is complete. Prefer the guest link so they "
+            "sign themselves. If you type details by hand, sign on the host form. UbyPort will not "
+            "send unsigned foreign guests."
+        ),
+        "guide.legal.reporting_title": "Reporting foreigners to the police",
+        "guide.legal.reporting_body": (
+            "Report each foreign guest through UbyPort within three working days of check-in (§ 100). "
+            "Czech nationals stay in the house book only — they are not reported to the Foreign Police."
+        ),
+        "guide.legal.retention_title": "Retention and GDPR",
+        "guide.legal.retention_body": (
+            "Guest data is processed to meet your legal obligation (GDPR Art. 6(1)(c)). Keep records "
+            "for six years. After that, delete them unless another law requires longer storage."
+        ),
+        "guide.legal.disclaimer_title": "About UbyHost (important)",
+        "guide.legal.disclaimer_body": (
+            "UbyHost is a technical tool provided as-is. It does not provide legal advice, does not act "
+            "as your data controller, and does not guarantee acceptance by the police or UbyPort. You "
+            "remain responsible for correct data, timely reporting, signed forms, backups, and "
+            "presenting records at inspection. When in doubt, contact the Foreign Police "
+            "(reguby@pcr.cz) or a qualified adviser."
         ),
         "guide.demo.body": (
             "Load demo data anytime to explore with a sample flat. Demo guests are never sent to the real "
@@ -187,7 +242,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download": "Stáhnout CSV",
         "csv.import": "Importovat CSV",
         "csv.sample_housebook": "Vzorové CSV",
+        "csv.download_pdfs": "Stáhnout PDF pro kontrolu",
         "csv.button": "CSV",
+        "host.signature_title": "Podpis hosta",
+        "host.signature_help": (
+            "Vyžaduje zákon (§ 101–103, zákon č. 326/1999 Sb.). Host se musí podepsat, nebo musíte "
+            "mít shodný papírový formulář. Nepodepsané záznamy nelze odeslat do UbyPortu."
+        ),
+        "host.signature_missing": "Před uložením se prosím podepište.",
+        "host.signature_kept": "Podpis je uložený. Podepište znovu jen při změně.",
+        "host.signature_clear": "Vymazat",
+        "housebook.legal_footnote": (
+            "Jste správcem údajů a nesete právní odpovědnost. UbyHost je pouze software — nenahrazuje "
+            "povinnost uchovávat podepsané formuláře, hlásit cizince do tří pracovních dnů a předložit "
+            "listinnou evidenci při kontrole."
+        ),
         "nav.guide": "Nápověda",
         "send.this_stay": "Odeslat tento pobyt",
         "send.all_ready": "Odeslat všechny připravené",
@@ -263,7 +332,47 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Hromadné odeslání jen u kompletních pobytů povolených režimem — nikdy ne částečných."
         ),
         "guide.housebook.body": (
-            "Domovní kniha obsahuje všechny hosty. CSV export pro kontroly; import starších záznamů ve filtrech."
+            "Domovní kniha obsahuje všechny hosty — Čechy i cizince. CSV nebo PDF pro kontroly; "
+            "import starších záznamů ve filtrech."
+        ),
+        "guide.nav.legal": "Vaše právní povinnosti",
+        "guide.legal.lede": (
+            "UbyHost pomáhá s plněním povinností, ale ubytovatel zůstává právně odpovědný. "
+            "Tuto část si pečlivě přečtěte."
+        ),
+        "guide.legal.housebook_title": "Domovní kniha",
+        "guide.legal.housebook_body": (
+            "Podle § 101 zákona č. 326/1999 Sb. vedete evidenci ubytovaných cizinců v rozsahu "
+            "přihlašovacího tiskopisu a termínů pobytu. Záznamy musí být aktuální, přehledné a "
+            "chronologické. Uchovávejte je 6 let od posledního zápisu."
+        ),
+        "guide.legal.paper_title": "Listinná podoba při kontrole",
+        "guide.legal.paper_body": (
+            "Při kontrole musíte předložit domovní knihu v listinné podobě. Obrazovka sama o sobě "
+            "nestačí. Stáhněte podepsané PDF každého hosta (nebo ZIP z Domovní knihy) a archivujte "
+            "nebo vytiskněte. Podepsané tiskopisy nahrazují stránky knihy."
+        ),
+        "guide.legal.signature_title": "Podpis je povinný",
+        "guide.legal.signature_body": (
+            "Každý záznam hosta vyžaduje podpis, než je kompletní. Preferujte odkaz pro hosty. "
+            "Při ručním zadání podepište na formuláři hostitele. UbyPort neodešle nepodepsané cizince."
+        ),
+        "guide.legal.reporting_title": "Hlášení cizinců policii",
+        "guide.legal.reporting_body": (
+            "Každého cizince nahlaste přes UbyPort do tří pracovních dnů od příjezdu (§ 100). "
+            "Čeští hosté zůstávají jen v domovní knize — na cizineckou policii se nehlásí."
+        ),
+        "guide.legal.retention_title": "Uchovávání a GDPR",
+        "guide.legal.retention_body": (
+            "Údaje zpracováváte pro splnění právní povinnosti (GDPR čl. 6 odst. 1 písm. c). "
+            "Uchovávejte 6 let, poté mažte, pokud jiný zákon nevyžaduje déle."
+        ),
+        "guide.legal.disclaimer_title": "O UbyHostu (důležité)",
+        "guide.legal.disclaimer_body": (
+            "UbyHost je technický nástroj poskytovaný tak, jak je. Neposkytuje právní poradenství, "
+            "není správcem údajů a nezaručuje přijetí policií nebo UbyPortem. Odpovídáte za správnost "
+            "dat, včasné hlášení, podepsané formuláře, zálohy a předložení evidence při kontrole. "
+            "V pochybnostech kontaktujte cizineckou policii (reguby@pcr.cz) nebo odborného poradce."
         ),
         "guide.demo.body": (
             "Ukázková data lze načíst kdykoli. Na skutečnou policii se nikdy neodešlou."

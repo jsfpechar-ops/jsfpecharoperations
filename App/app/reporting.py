@@ -102,9 +102,25 @@ def guest_dict(guest) -> Dict[str, Optional[str]]:
     }
 
 
+def guest_has_signature(guest) -> bool:
+    """True when the record has a drawn signature or a declared paper import."""
+    signature = (guest["signature_png"] or "").strip()
+    if signature == "imported":
+        return True
+    return signature.startswith("data:image/")
+
+
 def guest_issues(guest, reservation) -> List[validation.Issue]:
     start, end = _stay_dates(guest, reservation)
-    return validation.validate_guest(guest_dict(guest), start, end)
+    issues = validation.validate_guest(guest_dict(guest), start, end)
+    if not guest_has_signature(guest):
+        issues.append(
+            validation.Issue(
+                "signature",
+                "A guest signature is required. Use the guest link or sign on the host form.",
+            )
+        )
+    return issues
 
 
 def guest_is_complete(guest, reservation) -> bool:
@@ -193,6 +209,7 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
         guest
         for guest in guests
         if validation.guest_is_reportable(guest["nationality"])
+        and guest_has_signature(guest)
         and guest["submit_state"] not in (SENT, BLOCKED)
     ]
 
@@ -225,9 +242,18 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     elif not has_pending and progress["status"] in ("not_required", "reported"):
         send_hint = "Nothing to send: no guest record is subject to the reporting duty"
     elif not has_pending:
-        send_hint = "Nothing left to send for this stay"
+        unsigned_foreign = [
+            guest
+            for guest in progress.get("guests", [])
+            if validation.guest_is_reportable(guest["nationality"])
+            and not guest_has_signature(guest)
+        ]
+        if unsigned_foreign:
+            send_hint = "Every foreign guest must sign before reporting to UbyPort"
+        else:
+            send_hint = "Nothing left to send for this stay"
     elif not can_send:
-        send_hint = "Complete guest details before sending"
+        send_hint = "Complete guest details and signatures before sending"
     else:
         send_hint = "Send completed guest records to UbyPort now"
 

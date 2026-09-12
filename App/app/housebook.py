@@ -13,6 +13,8 @@ import base64
 import csv
 import io
 import os
+import re
+import zipfile
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
@@ -24,7 +26,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
-from . import db, validation
+from . import db, reporting, validation
 
 RETENTION_YEARS = 6
 
@@ -130,7 +132,7 @@ def housebook_rows(
                 ),
                 "purpose": validation.purpose_label(row["purpose"] or "", "cs"),
                 "note": row["note"] or "",
-                "signed": "yes" if row["signature_png"] else "no",
+                "signed": "yes" if reporting.guest_has_signature(row) else "no",
                 "reported": reported,
                 "reported_at": row["submitted_at"] or "",
                 "stamp": stamp,
@@ -389,6 +391,29 @@ def _draw_field(pdf, x: float, y: float, label: str, value: str, width: float) -
     pdf.drawString(x, y, text)
     pdf.setStrokeGray(0.75)
     pdf.line(x, y - 3, x + width, y - 3)
+
+
+def _pdf_entry_name(row: Dict[str, Any]) -> str:
+    parts = [
+        str(row.get("stay_from") or ""),
+        str(row.get("surname") or ""),
+        str(row.get("first_name") or ""),
+    ]
+    stem = "-".join(part for part in parts if part).strip("-") or f"guest-{row['_guest_id']}"
+    stem = re.sub(r"[^\w.\-]+", "_", stem, flags=re.UNICODE)
+    return f"{stem[:96]}.pdf"
+
+
+def housebook_pdfs_zip(rows: List[Dict[str, Any]]) -> bytes:
+    """Zip signed registration forms for a police inspection."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        for row in rows:
+            guest_id = row.get("_guest_id")
+            if not guest_id:
+                continue
+            archive.writestr(_pdf_entry_name(row), registration_form_pdf(int(guest_id)))
+    return buffer.getvalue()
 
 
 def registration_form_pdf(guest_id: int) -> bytes:

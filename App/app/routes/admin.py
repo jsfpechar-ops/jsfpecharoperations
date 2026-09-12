@@ -1465,6 +1465,37 @@ def _guest_payload(form) -> Dict[str, Any]:
     return payload
 
 
+def _guest_signature_from_form(form, existing=None) -> str:
+    signature = _form_str(form, "signature")
+    if not signature.startswith("data:image/") and existing:
+        kept = (existing["signature_png"] or "").strip()
+        if kept.startswith("data:image/"):
+            return kept
+    return signature
+
+
+def _render_host_guest_form(
+    request: Request,
+    reservation,
+    guest,
+    issues,
+    *,
+    editing: bool,
+):
+    return render(
+        request,
+        "guest_form_admin.html",
+        {
+            "reservation": reservation,
+            "guest": guest,
+            "issues": issues,
+            "editing": editing,
+            "countries": codelists.nationality_options("en"),
+            "purposes": codelists.purpose_options("en"),
+        },
+    )
+
+
 @router.get("/reservations/{reservation_id}/guests/new")
 def guest_new(reservation_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1478,17 +1509,7 @@ def guest_new(reservation_id: int, request: Request):
     )
     if not reservation:
         return _back("/reservations", err="No such stay.")
-    return render(
-        request,
-        "guest_form_admin.html",
-        {
-            "reservation": reservation,
-            "guest": None,
-            "issues": [],
-            "countries": codelists.nationality_options("en"),
-            "purposes": codelists.purpose_options("en"),
-        },
-    )
+    return _render_host_guest_form(request, reservation, None, [], editing=False)
 
 
 @router.post("/reservations/{reservation_id}/guests")
@@ -1501,6 +1522,17 @@ async def guest_create(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     form = await request.form()
     payload = _guest_payload(form)
+    signature = _guest_signature_from_form(form)
+    preview = {**payload, "signature_png": signature}
+    issues = reporting.guest_issues(preview, reservation)
+    if validation.errors_only(issues):
+        return _render_host_guest_form(
+            request,
+            reservation,
+            preview,
+            issues,
+            editing=False,
+        )
     now = db.utcnow()
     is_first = not db.query_one("SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,))
     payload.update(
@@ -1508,6 +1540,8 @@ async def guest_create(reservation_id: int, request: Request):
             "reservation_id": reservation_id,
             "is_lead": 1 if is_first else 0,
             "entered_by": "host",
+            "signature_png": signature,
+            "signed_at": now,
             "filled_at": now,
             "submit_state": (
                 reporting.NOT_REQUIRED
@@ -1537,16 +1571,12 @@ def guest_edit(guest_id: int, request: Request):
         "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
         (guest["reservation_id"],),
     )
-    return render(
+    return _render_host_guest_form(
         request,
-        "guest_form_admin.html",
-        {
-            "reservation": reservation,
-            "guest": guest,
-            "issues": reporting.guest_issues(guest, reservation),
-            "countries": codelists.nationality_options("en"),
-            "purposes": codelists.purpose_options("en"),
-        },
+        reservation,
+        guest,
+        reporting.guest_issues(guest, reservation),
+        editing=True,
     )
 
 
@@ -1558,8 +1588,27 @@ async def guest_update(guest_id: int, request: Request):
     guest = access.guest(request, guest_id)
     if not guest:
         return _back("/reservations", err="No such guest.")
+    reservation = db.query_one(
+        "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (guest["reservation_id"],),
+    )
     form = await request.form()
     payload = _guest_payload(form)
+    signature = _guest_signature_from_form(form, guest)
+    preview = {**guest, **payload, "signature_png": signature}
+    issues = reporting.guest_issues(preview, reservation)
+    if validation.errors_only(issues):
+        return _render_host_guest_form(
+            request,
+            reservation,
+            preview,
+            issues,
+            editing=True,
+        )
+    payload["signature_png"] = signature
+    if signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
+        payload["signed_at"] = db.utcnow()
     payload["updated_at"] = db.utcnow()
     if not validation.guest_is_reportable(payload["nationality"]):
         payload["submit_state"] = reporting.NOT_REQUIRED
@@ -1569,9 +1618,8 @@ async def guest_update(guest_id: int, request: Request):
         payload["last_errors"] = None
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
-    reservation_row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],))
-    if reservation_row:
-        reporting.maybe_submit_after_host_save(reservation_row["apartment_id"], guest_id)
+    if reservation:
+        reporting.maybe_submit_after_host_save(reservation["apartment_id"], guest_id)
     return _back(f"/guests/{guest_id}", msg="Saved.")
 
 
@@ -1881,6 +1929,27 @@ def housebook_download(request: Request):
         housebook.housebook_csv(rows),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="domovni-kniha-{stamp}.csv"'},
+    )
+
+
+@router.get("/housebook/pdfs.zip")
+def housebook_pdfs_download(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    rows = housebook.housebook_rows(
+        _query_int(request, "apartment"),
+        _query_date(request, "from") or None,
+        _query_date(request, "to") or None,
+        owner_user_id=access.owner_id(request),
+    )
+    if not rows:
+        return _back("/housebook", err="No house-book entries match this filter.")
+    stamp = datetime.now().strftime("%Y%m%d")
+    return Response(
+        housebook.housebook_pdfs_zip(rows),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="domovni-kniha-pdf-{stamp}.zip"'},
     )
 
 
