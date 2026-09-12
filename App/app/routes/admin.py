@@ -1500,6 +1500,11 @@ def _render_host_guest_form(
             "countries": codelists.nationality_options("en"),
             "purposes": codelists.purpose_options("en"),
             "has_passport_photo": reporting.guest_has_passport_photo(guest) if guest else False,
+            "passport_is_pdf": (
+                passport_photos.is_pdf_attachment(int(guest["id"]))
+                if guest and reporting.guest_has_passport_photo(guest)
+                else False
+            ),
             "needs_verification": (
                 guest
                 and validation.guest_is_reportable(guest["nationality"])

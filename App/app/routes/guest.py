@@ -50,6 +50,19 @@ CS_VALIDATION_MESSAGES = {
     "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
 }
 
+CS_PASSPORT_UPLOAD_MESSAGES = {
+    "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
+    "(for example a registration form with up to 11 guests).": (
+        "Nahrajte fotografii pasu (JPEG, PNG, WebP) nebo PDF "
+        "(např. registrační formulář až pro 11 hostů)."
+    ),
+    "The uploaded file looks empty.": "Nahraný soubor vypadá prázdně.",
+    "The PDF is too large. Use a file under 15 MB.": "PDF je příliš velké. Maximálně 15 MB.",
+    "The file does not look like a valid PDF.": "Soubor nevypadá jako platné PDF.",
+    "The photo is too large. Use a file under 5 MB.": "Fotografie je příliš velká. Maximálně 5 MB.",
+    "The file does not look like a valid image.": "Soubor nevypadá jako platný obrázek.",
+}
+
 
 def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-owned")
@@ -553,6 +566,11 @@ def _form_context(
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
             "inpass": validation.INPASS,
             "remaining": remaining,
+            "has_existing_passport_photo": bool(
+                guest
+                and guest["passport_photo_at"]
+                and passport_photos.has_photo(int(guest["id"]))
+            ),
         }
     )
     return context
@@ -728,7 +746,10 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                     passport_bytes, passport_upload.content_type or ""
                 )
             except ValueError as exc:
-                issues.append(validation.Issue("passport_photo", str(exc)))
+                msg = str(exc)
+                if lang == "cs":
+                    msg = CS_PASSPORT_UPLOAD_MESSAGES.get(msg, msg)
+                issues.append(validation.Issue("passport_photo", msg))
         elif not has_existing_photo:
             issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))
 
