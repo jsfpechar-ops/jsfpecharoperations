@@ -187,7 +187,7 @@ def reset_demo(request: Request):
 def login_form(request: Request):
     if auth.current_user(request):
         return RedirectResponse("/", status_code=303)
-    return render(request, "login.html", {"setup_hint": auth.login_setup_hint()})
+    return render(request, "login.html")
 
 
 @router.post("/login")
@@ -203,7 +203,6 @@ async def login_submit(request: Request):
             {
                 "error": "That username or password is not correct.",
                 "username": username,
-                "setup_hint": auth.login_setup_hint(),
             },
             status_code=401,
         )

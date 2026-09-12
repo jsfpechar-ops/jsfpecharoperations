@@ -37,8 +37,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.remember": "Remember me for 30 days",
         "login.submit": "Continue",
         "login.footnote": (
-            "No public sign-up. UbyHost is invite-only. Ask your administrator for an account, "
-            "or use the first-admin credentials from your deployment."
+            "No public sign-up. UbyHost is invite-only — ask your administrator for an account."
         ),
         "login.hero_title": "Guest reporting, handled for you.",
         "login.hero_body": (
@@ -169,8 +168,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.remember": "Zapamatovat na 30 dní",
         "login.submit": "Pokračovat",
         "login.footnote": (
-            "Veřejná registrace není k dispozici. UbyHost je pouze na pozvání. Účet vám vytvoří "
-            "správce, nebo použijte přihlašovací údaje z nasazení."
+            "Veřejná registrace není k dispozici. UbyHost je pouze na pozvání — účet vám vytvoří správce."
         ),
         "login.hero_title": "Hlášení hostů bez zbytečné práce.",
         "login.hero_body": (
