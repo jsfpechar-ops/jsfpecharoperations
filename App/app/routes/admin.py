@@ -168,7 +168,7 @@ def load_demo(request: Request):
         return guard
     apartment_id = demo.seed(access.owner_id(request))
     if not apartment_id:
-        return _back("/", err="Demo data is only available on an empty install in mock mode.")
+        return _back("/", err="Demo data is only available before you add your first property.")
     return _back("/", msg="Demo property loaded. Use “Clear demo data” on Overview when finished.")
 
 
@@ -210,8 +210,13 @@ async def login_submit(request: Request):
     next_path = _form_str(form, "next")
     if next_path.startswith("/") and not next_path.startswith("//") and not account["must_change_password"]:
         target = next_path
+    remember = _form_str(form, "remember") in ("1", "on", "true", "yes")
     response = RedirectResponse(target, status_code=303)
-    auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
+    auth.attach_session(
+        response,
+        auth.issue_session(account["id"], account["session_version"], remember=remember),
+        remember=remember,
+    )
     db.audit("login", actor=account["username"], owner_user_id=account["id"])
     return response
 
@@ -462,10 +467,7 @@ def dashboard(request: Request):
             "apartments": apartments,
             "setup_warnings": setup_warnings,
             "last_sync": db.get_setting("last_ical_sync"),
-            "demo_loaded": any(
-                apartment["internal_name"] == "Vinohrady Studio (demo)"
-                for apartment in apartments
-            ),
+            "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),
         },
     )
 

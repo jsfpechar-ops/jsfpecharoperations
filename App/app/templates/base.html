@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ lang | default('en') }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260911n">
+  <link rel="stylesheet" href="/static/app.css?v=20260912a">
 </head>
 <body class="layout-host">
 {% from "_components.html" import nav_icon %}
@@ -41,7 +41,7 @@
         <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>
         <span>
           {% if current_user.id == workspace_user.id and current_user.role == 'admin' %}
-            Administrator
+            {{ t('nav.administrator') }}
           {% else %}
             @{{ workspace_user.username }}
           {% endif %}
@@ -51,27 +51,35 @@
   {% endif %}
   <nav class="sidebar-nav" aria-label="Main navigation">
     <div class="nav-group">
-      <div class="nav-label">Operations</div>
-      <a href="/" class="{{ 'active' if nav == 'dashboard' }}">{{ nav_icon('overview') }}Overview</a>
-      <a href="/reservations" class="{{ 'active' if nav == 'reservations' }}">{{ nav_icon('calendar') }}Stays</a>
+      <div class="nav-label">{{ t('nav.operations') }}</div>
+      <a href="/" class="{{ 'active' if nav == 'dashboard' }}">{{ nav_icon('overview') }}{{ t('nav.overview') }}</a>
+      <a href="/reservations" class="{{ 'active' if nav == 'reservations' }}">{{ nav_icon('calendar') }}{{ t('nav.stays') }}</a>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Records</div>
-      <a href="/submissions" class="{{ 'active' if nav == 'submissions' }}">{{ nav_icon('report') }}Reports</a>
-      <a href="/housebook" class="{{ 'active' if nav == 'housebook' }}">{{ nav_icon('book') }}House book</a>
+      <div class="nav-label">{{ t('nav.records') }}</div>
+      <a href="/submissions" class="{{ 'active' if nav == 'submissions' }}">{{ nav_icon('report') }}{{ t('nav.reports') }}</a>
+      <a href="/housebook" class="{{ 'active' if nav == 'housebook' }}">{{ nav_icon('book') }}{{ t('nav.housebook') }}</a>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Setup</div>
-      <a href="/apartments" class="{{ 'active' if nav == 'apartments' }}">{{ nav_icon('property') }}Properties</a>
-      <a href="/entities" class="{{ 'active' if nav == 'entities' }}">{{ nav_icon('entity') }}Legal entities</a>
-      <a href="/settings" class="{{ 'active' if nav == 'settings' }}">{{ nav_icon('settings') }}Settings</a>
+      <div class="nav-label">{{ t('nav.setup') }}</div>
+      <a href="/apartments" class="{{ 'active' if nav == 'apartments' }}">{{ nav_icon('property') }}{{ t('nav.properties') }}</a>
+      <a href="/entities" class="{{ 'active' if nav == 'entities' }}">{{ nav_icon('entity') }}{{ t('nav.entities') }}</a>
+      <a href="/settings" class="{{ 'active' if nav == 'settings' }}">{{ nav_icon('settings') }}{{ t('nav.settings') }}</a>
       {% if current_user and current_user.role == 'admin' %}
-        <a href="/admin/users" class="{{ 'active' if nav == 'users' }}">{{ nav_icon('users') }}Users</a>
+        <a href="/admin/users" class="{{ 'active' if nav == 'users' }}">{{ nav_icon('users') }}{{ t('nav.users') }}</a>
       {% endif %}
     </div>
   </nav>
   {% if current_user %}
-    <form class="sidebar-logout" method="post" action="/logout"><button class="nav-button" type="submit">Log out</button></form>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-label">{{ t('lang.switch') }}</div>
+      <form method="post" action="/language" class="lang-switch">
+        <input type="hidden" name="next" value="{{ request.url.path }}">
+        <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
+        <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
+      </form>
+      <form class="sidebar-logout" method="post" action="/logout"><button class="nav-button" type="submit">{{ t('nav.logout') }}</button></form>
+    </div>
   {% endif %}
 </aside>
 {% endif %}
@@ -157,6 +165,6 @@
   </form>
 </dialog>
 
-<script src="/static/app.js?v=20260911n"></script>
+<script src="/static/app.js?v=20260912a"></script>
 </body>
 </html>

@@ -22,6 +22,7 @@ from . import config, db
 
 SESSION_COOKIE = "ubyhost_session"
 SESSION_MAX_AGE = 60 * 60 * 12
+SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
 _PBKDF2_ROUNDS = 600_000
 _USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,31}$")
 _dummy_password_hash: Optional[str] = None
@@ -91,18 +92,31 @@ def authenticate(username: str, password: str):
     return account
 
 
-def issue_session(user_id: int, session_version: int, workspace_user_id: Optional[int] = None) -> str:
+def issue_session(
+    user_id: int,
+    session_version: int,
+    workspace_user_id: Optional[int] = None,
+    remember: bool = False,
+) -> str:
     payload = {"uid": int(user_id), "sv": int(session_version)}
+    if remember:
+        payload["rm"] = 1
     if workspace_user_id and workspace_user_id != user_id:
         payload["as"] = int(workspace_user_id)
     return _serializer().dumps(payload)
+
+
+def session_max_age(payload: Optional[dict[str, Any]]) -> int:
+    if payload and payload.get("rm"):
+        return SESSION_REMEMBER_MAX_AGE
+    return SESSION_MAX_AGE
 
 
 def _session_payload(token: Optional[str]) -> Optional[dict[str, Any]]:
     if not token:
         return None
     try:
-        payload = _serializer().loads(token, max_age=SESSION_MAX_AGE)
+        payload = _serializer().loads(token, max_age=SESSION_REMEMBER_MAX_AGE)
         return payload if isinstance(payload, dict) else None
     except BadSignature:
         return None
@@ -165,11 +179,11 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     return None
 
 
-def attach_session(response, token: str) -> None:
+def attach_session(response, token: str, remember: bool = False) -> None:
     response.set_cookie(
         SESSION_COOKIE,
         token,
-        max_age=SESSION_MAX_AGE,
+        max_age=SESSION_REMEMBER_MAX_AGE if remember else SESSION_MAX_AGE,
         httponly=True,
         samesite="strict",
         secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),

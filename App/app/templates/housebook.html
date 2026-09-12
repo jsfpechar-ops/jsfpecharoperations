@@ -8,7 +8,7 @@
   'House book',
   'Every guest record with the dates of their stay. The law requires this register to be kept for
    six years after the last entry and produced on request during a police inspection.',
-  actions=housebook_csv_menu(housebook_csv_params, apartments)
+  actions=housebook_csv_menu(housebook_csv_params, apartments|length > 0)
 ) }}
 
 {% if apartments %}
