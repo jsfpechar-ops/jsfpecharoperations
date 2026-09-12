@@ -463,6 +463,9 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
     reservation = _reservation_for_guest(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
@@ -488,6 +491,9 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
     reservation = _reservation_for_guest(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
@@ -601,6 +607,9 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
     reservation = _reservation_for_guest(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
@@ -611,9 +620,6 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     )
     if not guest:
         return _unavailable(request, lang, "stay_gone", 404, token)
-    pin_guard = _require_pin(request, token, lang)
-    if pin_guard:
-        return pin_guard
     if guest["submit_state"] == reporting.SENT:
         return _unavailable(request, lang, "already_filed", 403, token)
     if reporting.guest_form_locked(guest, reservation):

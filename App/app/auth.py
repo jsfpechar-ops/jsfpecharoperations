@@ -117,7 +117,16 @@ def _session_payload(token: Optional[str]) -> Optional[dict[str, Any]]:
         return None
     try:
         payload = _serializer().loads(token, max_age=SESSION_REMEMBER_MAX_AGE)
-        return payload if isinstance(payload, dict) else None
+        if not isinstance(payload, dict):
+            return None
+        # Non-remember sessions expire with the shorter cookie lifetime even
+        # though the signed payload could otherwise be replayed for 30 days.
+        if not payload.get("rm"):
+            try:
+                _serializer().loads(token, max_age=SESSION_MAX_AGE)
+            except BadSignature:
+                return None
+        return payload
     except BadSignature:
         return None
     except Exception:
