@@ -1,52 +1,52 @@
 {% extends "base.html" %}
 {% set nav = 'apartments' %}
-{% block title %}Apartments{% endblock %}
+{% block title %}{{ t('apartments.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner %}
 {{ onboarding_banner(onboarding) }}
 {{ page_header(
-  'Properties',
-  'Each accommodation facility has its own UbyPort registration, calendars, and guest link.',
-  actions='<a class="btn" href="/entities">Legal entities</a><a class="btn primary" href="/apartments/new">Add a property</a>'
+  t('apartments.title'),
+  t('apartments.lede'),
+  actions='<a class="btn" href="/entities">' ~ t('apartments.entities_link') ~ '</a><a class="btn primary" href="/apartments/new">' ~ t('apartments.add') ~ '</a>'
 ) }}
 
 {% if rows %}
 <div class="panel tight scroll-x">
   <table class="table-cards">
     <thead>
-      <tr><th>Property</th><th>Legal entity</th><th>IDUB</th><th>Calendars</th>
-        <th>Stays</th><th>Automation</th><th>Setup readiness</th><th><span class="sr-only">Actions</span></th></tr>
+      <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.table.entity') }}</th><th>{{ t('apartments.table.idub') }}</th><th>{{ t('apartments.table.calendars') }}</th>
+        <th>{{ t('apartments.table.stays') }}</th><th>{{ t('apartments.table.automation') }}</th><th>{{ t('apartments.table.setup') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr>
     </thead>
     <tbody>
     {% for row in rows %}
       {% set apartment = row.apartment %}
       <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link"
-          aria-label="Open property {{ apartment.internal_name }}">
-        <td data-label="Property">
+          aria-label="{{ apartment.internal_name }}">
+        <td data-label="{{ t('apartments.table.property') }}">
           <a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a>
-          {% if not apartment.active %}<span class="pill grey">Inactive</span>{% endif %}
+          {% if not apartment.active %}<span class="pill grey">{{ t('apartments.inactive') }}</span>{% endif %}
           {% if apartment.uby_name %}<div class="small muted">{{ apartment.uby_name }}</div>{% endif %}
         </td>
-        <td data-label="Legal entity">{{ row.apartment.entity_name or '—' }}</td>
-        <td class="mono" data-label="IDUB">{{ apartment.uby_idub or '—' }}</td>
-        <td class="num" data-label="Calendars">{{ apartment.feeds }}</td>
-        <td class="num" data-label="Stays">{{ apartment.reservations }}</td>
-        <td class="nowrap" data-label="Automation">
-          {% if apartment.automation_mode == 'immediate' %}<span class="pill blue">Immediate</span>
-          {% elif apartment.automation_mode == 'scheduled' %}<span class="pill blue">+{{ apartment.submit_after_hours }} h</span>
-          {% else %}<span class="pill grey">Manual</span>{% endif %}
+        <td data-label="{{ t('apartments.table.entity') }}">{{ row.apartment.entity_name or '—' }}</td>
+        <td class="mono" data-label="{{ t('apartments.table.idub') }}">{{ apartment.uby_idub or '—' }}</td>
+        <td class="num" data-label="{{ t('apartments.table.calendars') }}">{{ apartment.feeds }}</td>
+        <td class="num" data-label="{{ t('apartments.table.stays') }}">{{ apartment.reservations }}</td>
+        <td class="nowrap" data-label="{{ t('apartments.table.automation') }}">
+          {% if apartment.automation_mode == 'immediate' %}<span class="pill blue">{{ t('apartments.automation.immediate') }}</span>
+          {% elif apartment.automation_mode == 'scheduled' %}<span class="pill blue">{{ t('apartments.automation.scheduled', hours=apartment.submit_after_hours) }}</span>
+          {% else %}<span class="pill grey">{{ t('apartments.automation.manual') }}</span>{% endif %}
         </td>
-        <td data-label="Setup readiness">
-          {% if row.issues %}<span class="pill red">{{ row.issues | length }} to fix</span>
-          {% elif not apartment.feeds %}<span class="pill amber">Connect calendar</span>
-          {% else %}<span class="pill green">Can report</span>{% endif %}
+        <td data-label="{{ t('apartments.table.setup') }}">
+          {% if row.issues %}<span class="pill red">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
+          {% elif not apartment.feeds %}<span class="pill amber">{{ t('apartments.setup.calendar') }}</span>
+          {% else %}<span class="pill green">{{ t('apartments.setup.ready') }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">Edit</a>
+            <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">{{ t('apartments.row.edit') }}</a>
             <form method="post" action="/apartments/{{ apartment.id }}/archive" class="row-menu-form"
-                  onsubmit="return confirm('Archive this property? It will disappear from your dashboard and guest links.')">
-              <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+                  data-confirm data-confirm-message="{{ t('confirm.archive_property') }}">
+              <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
             </form>
           {{ row_menu_end() }}
         </td>
@@ -57,34 +57,34 @@
 </div>
 {% else %}
 <div class="panel empty">
-  <p>No properties yet. Add the legal entity that operates them first, then create a property.</p>
+  <p>{{ t('apartments.empty.lede') }}</p>
   <div class="actions" style="justify-content:center">
-    <a class="btn" href="/entities">Add a legal entity</a>
-    <a class="btn primary" href="/apartments/new">Add your first property</a>
+    <a class="btn" href="/entities">{{ t('apartments.empty.entity') }}</a>
+    <a class="btn primary" href="/apartments/new">{{ t('apartments.empty.add') }}</a>
   </div>
 </div>
 {% endif %}
 
 {% if archived_rows %}
-<h2>Archived</h2>
-<p class="small muted">These properties are hidden from your dashboard and guest links. Their history is kept.</p>
+<h2>{{ t('apartments.archived.title') }}</h2>
+<p class="small muted">{{ t('apartments.archived.lede') }}</p>
 <div class="panel tight scroll-x">
   <table class="table-cards">
     <thead>
-      <tr><th>Property</th><th>Archived</th><th>Stays</th><th><span class="sr-only">Actions</span></th></tr>
+      <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.archived.when') }}</th><th>{{ t('apartments.table.stays') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr>
     </thead>
     <tbody>
     {% for row in archived_rows %}
       {% set apartment = row.apartment %}
       <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link">
-        <td data-label="Property"><a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a></td>
-        <td class="small muted" data-label="Archived">{{ apartment.archived_at[:10] }}</td>
-        <td class="num" data-label="Stays">{{ apartment.reservations }}</td>
+        <td data-label="{{ t('apartments.table.property') }}"><a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a></td>
+        <td class="small muted" data-label="{{ t('apartments.archived.when') }}">{{ apartment.archived_at[:10] }}</td>
+        <td class="num" data-label="{{ t('apartments.table.stays') }}">{{ apartment.reservations }}</td>
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">Edit</a>
+            <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">{{ t('apartments.row.edit') }}</a>
             <form method="post" action="/apartments/{{ apartment.id }}/unarchive" class="row-menu-form">
-              <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
+              <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.restore') }}</button>
             </form>
           {{ row_menu_end() }}
         </td>

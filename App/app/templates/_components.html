@@ -25,15 +25,24 @@
   </nav>
 {% endmacro %}
 
+{% macro next_action(progress, reservation) %}
+  {% if progress.status == 'failed' %}{{ t('action.failed') }}
+  {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}{{ t('action.ready_immediate') }}
+  {% elif progress.status == 'ready' %}{{ t('action.ready') }}
+  {% elif progress.status == 'incomplete' %}{{ t('action.incomplete') }}
+  {% elif progress.status == 'awaiting_guest' %}{{ t('action.awaiting_guest') }}
+  {% else %}{{ t('action.check_missing') }}{% endif %}
+{% endmacro %}
+
 {% macro progress_pill(status, automation_mode=none, compact=false, is_demo=false) %}
   {% set labels = {
-    'failed': 'Rejected',
-    'reported': 'Reported',
-    'ready': 'Ready to report',
-    'incomplete': 'Incomplete',
-    'not_required': 'Exempt',
-    'awaiting_guest': 'Waiting for guest',
-    'awaiting_verification': 'Verify passport'
+    'failed': t('status.failed'),
+    'reported': t('status.reported'),
+    'ready': t('status.ready'),
+    'incomplete': t('status.incomplete'),
+    'not_required': t('status.not_required'),
+    'awaiting_guest': t('status.awaiting_guest_short'),
+    'awaiting_verification': t('status.awaiting_verification')
   } %}
   {% if is_demo and status == 'ready' %}
     {% set label = t('status.demo_preview') %}
@@ -74,7 +83,7 @@
       <input type="hidden" name="return_to" value="{{ return_to }}">
       <button class="btn small row-action-send{% if controls.get('send_enabled') %} accent{% endif %}" type="submit"
               {% if not controls.get('send_enabled') %}disabled{% endif %}
-              title="{{ controls.get('send_hint', '') }}" aria-label="Send to police">{{ 'Send' if controls.get('send_enabled') else 'Auto' }}</button>
+              title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else 'Auto' }}</button>
     </form>
   {% endif %}
 {% endmacro %}

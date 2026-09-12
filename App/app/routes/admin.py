@@ -20,6 +20,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    host_i18n,
     housebook,
     icalsync,
     passport_photos,
@@ -1410,7 +1411,11 @@ async def reservation_submit(reservation_id: int, request: Request):
     if not controls.get("send_enabled"):
         return _back(
             f"/reservations/{reservation_id}",
-            err=controls.get("send_hint") or "This stay cannot be sent right now.",
+            err=host_i18n.translate(
+                host_i18n.lang_from_request(request),
+                controls.get("send_hint_key", ""),
+            )
+            or "This stay cannot be sent right now.",
         )
     form = await request.form()
     allow_resend = bool(form.get("allow_resend"))
@@ -2053,6 +2058,40 @@ def dismiss_alert(alert_id: int, request: Request):
         return Response(status_code=204)
     referer = request.headers.get("referer") or "/"
     return RedirectResponse(referer, status_code=303)
+
+
+@router.get("/settings/archived")
+def settings_archived(request: Request, kind: str = "all"):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    kinds = ("all", "stays", "properties", "guests")
+    if kind not in kinds:
+        kind = "all"
+    archived_stays = db.query(
+        "SELECT r.*, a.internal_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ? "
+        "ORDER BY r.archived_at DESC LIMIT 200",
+        (owner_id,),
+    )
+    archived_properties = db.query(
+        "SELECT * FROM apartment WHERE archived_at IS NOT NULL AND owner_user_id IS ? "
+        "ORDER BY archived_at DESC",
+        (owner_id,),
+    )
+    archived_guests = housebook.housebook_archived_rows(owner_user_id=owner_id)
+    return render(
+        request,
+        "settings_archived.html",
+        {
+            "kind": kind,
+            "archived_stays": archived_stays,
+            "archived_properties": archived_properties,
+            "archived_guests": archived_guests,
+        },
+    )
 
 
 @router.get("/settings")

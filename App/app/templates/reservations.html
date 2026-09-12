@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% set nav = 'reservations' %}
-{% block title %}Stays{% endblock %}
+{% block title %}{{ t('stays.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set header_actions %}
   {{ bulk_send_ready(ready_send_count, return_to) }}
   {% if apartments %}
-    <button class="btn" type="button" data-toggle-panel="add-stay-panel">Add stay</button>
+    <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button>
   {% endif %}
 {% endset %}
 {{ page_header(
-  'Stays',
-  'Calendar stays and manual bookings, earliest arrival first.',
+  t('stays.title'),
+  t('stays.lede'),
   actions=header_actions
 ) }}
 
@@ -20,14 +20,14 @@
 <div id="add-stay-panel" class="action-panel hidden">
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
-      <h2>Add a stay by hand</h2>
-      <button class="btn small ghost" type="button" data-close-panel>Close</button>
+      <h2>{{ t('stays.add_panel.title') }}</h2>
+      <button class="btn small ghost" type="button" data-close-panel>{{ t('common.close') }}</button>
     </div>
-    <p class="small muted">For direct bookings, phone reservations, or anything not on a connected calendar.</p>
+    <p class="small muted">{{ t('stays.add_panel.lede') }}</p>
     <form method="post" action="/reservations">
       <div class="grid">
         <div class="field">
-          <label for="new_apartment">Apartment</label>
+          <label for="new_apartment">{{ t('stays.add_panel.apartment') }}</label>
           <select id="new_apartment" name="apartment_id" required>
             {% for apartment in apartments %}
               <option value="{{ apartment.id }}">{{ apartment.internal_name }}</option>
@@ -35,29 +35,29 @@
           </select>
         </div>
         <div class="field">
-          <label for="date_from">Arrival</label>
+          <label for="date_from">{{ t('stays.add_panel.arrival') }}</label>
           <input type="date" id="date_from" name="date_from" required>
         </div>
         <div class="field">
-          <label for="date_to">Departure</label>
+          <label for="date_to">{{ t('stays.add_panel.departure') }}</label>
           <input type="date" id="date_to" name="date_to" required>
         </div>
         <div class="field">
-          <label for="expected_guests">Number of guests <span class="opt">(optional)</span></label>
+          <label for="expected_guests">{{ t('stays.add_panel.guests') }} <span class="opt">{{ t('common.optional') }}</span></label>
           <input type="number" id="expected_guests" name="expected_guests" min="1" max="60">
         </div>
       </div>
       <div class="grid two">
         <div class="field">
-          <label for="summary">Label <span class="opt">(optional)</span></label>
-          <input type="text" id="summary" name="summary" placeholder="Direct booking – Novák">
+          <label for="summary">{{ t('stays.add_panel.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+          <input type="text" id="summary" name="summary" placeholder="{{ t('stays.add_panel.label_ph') }}">
         </div>
         <div class="field">
-          <label for="guest_email">Guest e-mail <span class="opt">(optional)</span></label>
+          <label for="guest_email">{{ t('stays.add_panel.email') }} <span class="opt">{{ t('common.optional') }}</span></label>
           <input type="email" id="guest_email" name="guest_email">
         </div>
       </div>
-      <div class="actions"><button class="btn primary" type="submit">Create stay</button></div>
+      <div class="actions"><button class="btn primary" type="submit">{{ t('stays.add_panel.create') }}</button></div>
     </form>
   </div>
 </div>
@@ -65,20 +65,20 @@
 <div id="import-stays-panel" class="action-panel hidden">
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
-      <h2>Import stays from CSV</h2>
-      <button class="btn small ghost" type="button" data-close-panel>Close</button>
+      <h2>{{ t('stays.import.title') }}</h2>
+      <button class="btn small ghost" type="button" data-close-panel>{{ t('common.close') }}</button>
     </div>
     <div class="import-guide">
-      <p>Upload a semicolon-separated file with one stay per row. Download the <a href="/reservations-sample.csv">sample CSV</a> to see the exact format.</p>
-      <p class="small muted">Required columns: Apartment, Arrival, Departure. Apartment names must match your properties exactly.</p>
+      <p>{{ t('stays.import.lede') }} <a href="/reservations-sample.csv">{{ t('csv.sample_stays') }}</a></p>
+      <p class="small muted">{{ t('stays.import.required') }}</p>
     </div>
     <form method="post" action="/reservations/import" enctype="multipart/form-data" class="filters" style="margin-top:14px">
       <div class="field" style="min-width:260px;margin:0">
-        <label for="stays_csv_file">CSV file</label>
+        <label for="stays_csv_file">{{ t('stays.import.file') }}</label>
         <input type="file" id="stays_csv_file" name="csv_file" accept=".csv,text/csv" required>
       </div>
       <div class="field filter-actions">
-        <button class="btn primary" type="submit">Import stays</button>
+        <button class="btn primary" type="submit">{{ t('stays.import.submit') }}</button>
       </div>
     </form>
   </div>
@@ -86,23 +86,22 @@
 {% endif %}
 
 <div class="chips">
-  {% for value, label in [('upcoming', 'Upcoming & current'), ('past', 'Past'), ('all', 'All dates'), ('archive', 'Archive')] %}
+  {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
     <a class="chip {{ 'on' if date_range == value }}"
-       href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ label }}</a>
+       href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
   {% endfor %}
 </div>
 
 {% if show_archive %}
-<p class="small muted">Archived stays are hidden from your daily work but kept for reference. Restore any entry you archived by mistake.</p>
+<p class="small muted">{{ t('stays.archive_note') }}</p>
 {% endif %}
 
-{# Changing a filter applies it; Apply only exists for browsers without scripting. #}
 <form method="get" action="/reservations" class="filters panel" data-auto-submit>
   <input type="hidden" name="range" value="{{ date_range }}">
   <div class="field">
-    <label for="apartment">Apartment</label>
+    <label for="apartment">{{ t('stays.filter.apartment') }}</label>
     <select id="apartment" name="apartment">
-      <option value="">All</option>
+      <option value="">{{ t('stays.filter.all_apartments') }}</option>
       {% for apartment in apartments %}
         <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
           {{ apartment.internal_name }}</option>
@@ -110,26 +109,24 @@
     </select>
   </div>
   <div class="field">
-    <label for="status">Stay state</label>
+    <label for="status">{{ t('stays.filter.state') }}</label>
     <select id="status" name="status">
-      {% for value, label in [('active', 'Active'), ('cancelled', 'Cancelled'), ('ignored', 'Ignored'), ('all', 'All')] %}
-        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+      {% for value, label_key in [('active', 'stays.filter.state.active'), ('cancelled', 'stays.filter.state.cancelled'), ('ignored', 'stays.filter.state.ignored'), ('all', 'stays.filter.state.all')] %}
+        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ t(label_key) }}</option>
       {% endfor %}
     </select>
   </div>
   <div class="field">
-    <label for="from">Staying on or after</label>
+    <label for="from">{{ t('stays.filter.from') }}</label>
     <input type="date" id="from" name="from" value="{{ date_from }}">
   </div>
   <div class="field">
-    <label for="to">Staying on or before</label>
+    <label for="to">{{ t('stays.filter.to') }}</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
   <div class="field filter-actions filter-actions-end">
-    {# When scripts are unavailable this submitter overrides the hidden preset,
-       so manually entered dates still win. #}
-    <button class="btn primary filter-apply" type="submit" name="range" value="custom">Apply</button>
-    <a class="btn ghost" href="/reservations?range=upcoming">Clear</a>
+    <button class="btn primary filter-apply" type="submit" name="range" value="custom">{{ t('common.apply') }}</button>
+    <a class="btn ghost" href="/reservations?range=upcoming">{{ t('common.clear') }}</a>
     {{ csv_actions_menu(csv_export_params, apartments|length > 0, true) }}
   </div>
 </form>
@@ -138,7 +135,7 @@
 <div class="panel tight scroll-x">
   <table class="table-cards">
     <thead>
-      <tr><th>Stay</th><th>Apartment</th><th>Source</th><th>Guests</th><th>Reporting</th><th>Deadline</th><th><span class="sr-only">Open</span></th></tr>
+      <tr><th>{{ t('stays.table.stay') }}</th><th>{{ t('stays.table.apartment') }}</th><th>{{ t('stays.table.source') }}</th><th>{{ t('stays.table.guests') }}</th><th>{{ t('stays.table.reporting') }}</th><th>{{ t('stays.table.deadline') }}</th><th><span class="sr-only">{{ t('common.open') }}</span></th></tr>
     </thead>
     <tbody>
     {% for row in rows %}
@@ -148,31 +145,31 @@
       {% set check_out = parse_iso_date(reservation.date_to) %}
       <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to }}"
           tabindex="0" role="link"
-          aria-label="Open stay {{ reservation.date_from | date_cz }} to {{ reservation.date_to | date_cz }} at {{ reservation.internal_name }}">
-        <td class="nowrap" data-label="Stay">
+          aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
+        <td class="nowrap" data-label="{{ t('stays.table.stay') }}">
           <a class="row-primary-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}">
             {{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}
           </a>
           <div class="small muted">
-            {{ nights(reservation.date_from, reservation.date_to) }} nights
+            {{ t('stays.table.nights', count=nights(reservation.date_from, reservation.date_to)) }}
             {%- if check_in and check_out and check_in <= today() <= check_out %}
-              &middot; <span class="pill blue">In house</span>
+              &middot; <span class="pill blue">{{ t('stays.table.in_house') }}</span>
             {%- endif %}
           </div>
         </td>
-        <td data-label="Apartment">{{ reservation.internal_name }}</td>
-        <td class="small" data-label="Source">
+        <td data-label="{{ t('stays.table.apartment') }}">{{ reservation.internal_name }}</td>
+        <td class="small" data-label="{{ t('stays.table.source') }}">
           {{ reservation.summary or reservation.source }}
           {% if reservation.reservation_url %}
-            <div><a class="small" href="{{ reservation.reservation_url }}" target="_blank" rel="noopener">portal &rarr;</a></div>
+            <div><a class="small" href="{{ reservation.reservation_url }}" target="_blank" rel="noopener">{{ t('stays.table.portal') }}</a></div>
           {% endif %}
         </td>
-        <td class="num" data-label="Guests">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
-        <td data-label="Reporting">
+        <td class="num" data-label="{{ t('stays.table.guests') }}">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+        <td data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill grey">{{ reservation.status }}</span>
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}{% endif %}
         </td>
-        <td class="nowrap" data-label="Deadline">
+        <td class="nowrap" data-label="{{ t('stays.table.deadline') }}">
           {% if check_in and reservation.status == 'active' %}
             <span class="deadline {{ urgency(check_in) }}">{{ describe_time_left(check_in) }}</span>
           {% else %}—{% endif %}
@@ -181,19 +178,20 @@
           {{ row_reporting_actions(reservation, row.controls, return_to) }}
           {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
             {{ copy_inline('stay-link-' ~ reservation.id,
-                public_base_url ~ '/l/' ~ reservation.permalink_token ~ '/' ~ reservation.id) }}
+                public_base_url ~ '/l/' ~ reservation.permalink_token ~ '/' ~ reservation.id,
+                t('dashboard.focus.copy_link')) }}
           {% endif %}
           {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}" role="menuitem">Open stay</a>
-            <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">Add a guest</a>
+            <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}" role="menuitem">{{ t('stays.row.open') }}</a>
+            <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stays.row.add_guest') }}</a>
             {% if show_archive %}
               <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
-                <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
+                <button class="row-menu-item" type="submit" role="menuitem">{{ t('stays.row.restore') }}</button>
               </form>
             {% else %}
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
-                    onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
-                <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+                    data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
+                <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
               </form>
             {% endif %}
           {{ row_menu_end() }}
@@ -204,35 +202,38 @@
   </table>
 </div>
 <p class="small muted">
-  Showing {{ ((page - 1) * page_size) + 1 }}–{{ [page * page_size, total] | min }}
-  of {{ total }} stay{{ '' if total == 1 else 's' }}.
+  {% if total == 1 %}
+    {{ t('stays.pagination.showing', from=((page - 1) * page_size) + 1, to=[page * page_size, total] | min, total=total) }}
+  {% else %}
+    {{ t('stays.pagination.showing_plural', from=((page - 1) * page_size) + 1, to=[page * page_size, total] | min, total=total) }}
+  {% endif %}
 </p>
 {% if page_count > 1 %}
-  <nav class="pagination" aria-label="Stays pages">
-    {% if previous_page_url %}<a class="btn" href="{{ previous_page_url }}">&larr; Previous</a>
-    {% else %}<span class="btn disabled" aria-disabled="true">&larr; Previous</span>{% endif %}
-    <span class="pagination-label">Page {{ page }} of {{ page_count }}</span>
-    {% if next_page_url %}<a class="btn" href="{{ next_page_url }}">Next &rarr;</a>
-    {% else %}<span class="btn disabled" aria-disabled="true">Next &rarr;</span>{% endif %}
+  <nav class="pagination" aria-label="{{ t('stays.title') }}">
+    {% if previous_page_url %}<a class="btn" href="{{ previous_page_url }}">{{ t('stays.pagination.prev') }}</a>
+    {% else %}<span class="btn disabled" aria-disabled="true">{{ t('stays.pagination.prev') }}</span>{% endif %}
+    <span class="pagination-label">{{ t('stays.pagination.label', page=page, pages=page_count) }}</span>
+    {% if next_page_url %}<a class="btn" href="{{ next_page_url }}">{{ t('stays.pagination.next') }}</a>
+    {% else %}<span class="btn disabled" aria-disabled="true">{{ t('stays.pagination.next') }}</span>{% endif %}
   </nav>
 {% endif %}
 {% elif show_archive %}
-  <div class="panel empty">No archived stays. Mistakes from manual entry can be archived from any stay row.</div>
+  <div class="panel empty">{{ t('stays.empty.archive') }}</div>
 {% elif has_any %}
   <div class="panel empty">
-    <p>No stay matches this filter.</p>
-    <a class="btn" href="/reservations?range=all">Show all dates</a>
+    <p>{{ t('stays.empty.filter') }}</p>
+    <a class="btn" href="/reservations?range=all">{{ t('stays.empty.show_all') }}</a>
   </div>
 {% elif apartments %}
   <div class="panel empty">
-    <p>No stays yet. Connect a calendar to an apartment, or use <strong>Add stay</strong> above.</p>
-    <a class="btn" href="/apartments">Go to apartments</a>
+    <p>{{ t('stays.empty.none') }}</p>
+    <a class="btn" href="/apartments">{{ t('stays.empty.go_apartments') }}</a>
   </div>
 {% else %}
   <div class="panel empty">
-    <p>There are no apartments yet, so there is nothing to show.</p>
+    <p>{{ t('stays.empty.no_apartments') }}</p>
     <div class="actions" style="justify-content:center;margin-top:14px">
-      <a class="btn primary" href="/apartments/new">Add your first apartment</a>
+      <a class="btn primary" href="/apartments/new">{{ t('stays.empty.add_first') }}</a>
       <form method="post" action="/demo" class="inline">
         <button class="btn" type="submit">{{ t('demo.load') }}</button>
       </form>

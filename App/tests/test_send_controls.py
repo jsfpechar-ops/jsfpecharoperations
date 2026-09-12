@@ -120,7 +120,7 @@ def test_czech_guest_explains_nothing_to_send():
     controls = reporting.send_controls(reservation, apartment, progress)
     assert progress["status"] == "not_required"
     assert controls["send_enabled"] is False
-    assert "reporting duty" in controls["send_hint"]
+    assert controls["send_hint_key"] == "hint.nothing_duty"
 
 
 def test_count_sendable_stays_includes_ready_manual_stays():
@@ -146,7 +146,7 @@ def test_unverified_foreign_guest_blocks_send():
     controls = reporting.send_controls(reservation, apartment, progress)
     assert progress["status"] == "awaiting_verification"
     assert controls["send_enabled"] is False
-    assert "passport" in controls["send_hint"].lower()
+    assert controls["send_hint_key"] == "hint.awaiting_verification"
 
 
 def test_unsigned_foreign_guest_blocks_send():
@@ -158,4 +158,4 @@ def test_unsigned_foreign_guest_blocks_send():
     assert progress["status"] == "incomplete"
     assert controls["send_enabled"] is False
     assert controls["send_visible"] is False
-    assert "sign" in controls["send_hint"].lower()
+    assert controls["send_hint_key"] == "hint.need_signature"

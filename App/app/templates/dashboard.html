@@ -1,51 +1,45 @@
 {% extends "base.html" %}
 {% set nav = 'dashboard' %}
-{% block title %}Overview{% endblock %}
+{% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_welcome %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_welcome, next_action %}
 
-{% macro queue_table(items, empty_text='Nothing needs attention here.') %}
+{% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
   {% if items %}
   <div class="panel tight scroll-x">
     <table class="table-cards">
-      <thead><tr><th>Stay</th><th>Deadline</th><th>Guests</th><th>Reporting</th><th><span class="sr-only">Actions</span></th></tr></thead>
+      <thead><tr><th>{{ t('dashboard.table.stay') }}</th><th>{{ t('dashboard.table.deadline') }}</th><th>{{ t('dashboard.table.guests') }}</th><th>{{ t('dashboard.table.reporting') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr></thead>
       <tbody>
       {% for row in items %}
         {% set reservation = row.reservation %}
         {% set progress = row.progress %}
         <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link">
-          <td class="task-row-main" data-label="Stay">
+          <td class="task-row-main" data-label="{{ t('dashboard.table.stay') }}">
             <a class="task-title row-primary-link" href="/reservations/{{ reservation.id }}?return_to=/">
               {{ reservation.internal_name }}
             </a>
             <div class="small muted">{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</div>
-            <div class="next-action">
-              {% if progress.status == 'failed' %}Open the stay, fix the rejection, and send again.
-              {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}Guest details are complete — they will send automatically when guests submit.
-              {% elif progress.status == 'ready' %}Guest details are complete. Open the stay and send when ready.
-              {% elif progress.status == 'incomplete' %}Open the stay to finish missing guest details.
-              {% elif progress.status == 'awaiting_guest' %}Share the guest link or add the details yourself.
-              {% else %}Open the stay and check what is missing.{% endif %}
-            </div>
+            <div class="next-action">{{ next_action(progress, reservation) }}</div>
           </td>
-          <td class="nowrap" data-label="Deadline">
+          <td class="nowrap" data-label="{{ t('dashboard.table.deadline') }}">
             <span class="deadline {{ row.urgency }}">{{ describe_time_left(row.check_in) }}</span>
-            {% if row.deadline and row.urgency != 'future' %}<div class="small muted">by {{ row.deadline.strftime('%d.%m. %H:%M') }}</div>{% endif %}
+            {% if row.deadline and row.urgency != 'future' %}<div class="small muted">{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</div>{% endif %}
           </td>
-          <td class="nowrap" data-label="Guests">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
-          <td data-label="Reporting">{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}</td>
+          <td class="nowrap" data-label="{{ t('dashboard.table.guests') }}">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+          <td data-label="{{ t('dashboard.table.reporting') }}">{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}</td>
           <td class="nowrap row-actions" data-label="">
             {{ row_reporting_actions(reservation, row.controls, '/') }}
             {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
               {{ copy_inline('queue-link-' ~ reservation.id,
-                  public_base_url ~ '/l/' ~ reservation.permalink_token ~ '/' ~ reservation.id) }}
+                  public_base_url ~ '/l/' ~ reservation.permalink_token ~ '/' ~ reservation.id,
+                  t('dashboard.focus.copy_link')) }}
             {% endif %}
             {{ row_menu_begin() }}
-              <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">Open stay</a>
-              <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">Add a guest</a>
+              <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('dashboard.row.open_stay') }}</a>
+              <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
-                    onsubmit="return confirm('Archive this stay? It moves to Archive and can be restored later.')">
-                <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+                    data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
+                <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
               </form>
             {{ row_menu_end() }}
           </td>
@@ -55,24 +49,28 @@
     </table>
   </div>
   {% else %}
-    <div class="panel empty small">{{ empty_text }}</div>
+    <div class="panel empty small">{{ t(empty_key) }}</div>
   {% endif %}
 {% endmacro %}
 
 {% set header_actions %}
-  <div class="sync-action">
-    <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
-    {% if last_sync %}<p class="small muted sync-hint">Last synced {{ last_sync[:16].replace('T', ' ') }} UTC</p>{% endif %}
+  <div class="page-toolbar">
+    <div class="page-toolbar-row">
+      <form method="post" action="/sync"><button class="btn" type="submit">{{ t('dashboard.sync_calendars') }}</button></form>
+      {% if demo_loaded %}
+        <form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">
+          <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
+        </form>
+      {% endif %}
+    </div>
+    {% if last_sync %}
+      <p class="small muted page-toolbar-meta">{{ t('dashboard.last_synced', when=last_sync[:16].replace('T', ' ')) }}</p>
+    {% endif %}
   </div>
-  {% if demo_loaded %}
-    <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">
-      <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
-    </form>
-  {% endif %}
 {% endset %}
 {{ page_header(
-  'Overview',
-  'Your reporting work, ordered by legal urgency and the next action.',
+  t('dashboard.title'),
+  t('dashboard.lede'),
   actions=header_actions
 ) }}
 
@@ -82,17 +80,16 @@
 
   {{ onboarding_banner(onboarding) }}
 
-  {# One card for the single most urgent thing, with its action already on it. #}
   {% if focus %}
     {% set f_res = focus.reservation %}
     {% set f_progress = focus.progress %}
     <section class="focus-card {{ 'is-overdue' if focus.urgency in ('overdue', 'urgent') }}"
-             aria-label="Next action">
+             aria-label="{{ t('dashboard.focus.next_up') }}">
       <div class="focus-main">
         <div class="focus-eyebrow"><span class="dot"></span>
-          {% if focus.urgency == 'overdue' %}Past the deadline
-          {% elif focus.urgency == 'urgent' %}Due now
-          {% else %}Next up{% endif %}
+          {% if focus.urgency == 'overdue' %}{{ t('dashboard.focus.overdue') }}
+          {% elif focus.urgency == 'urgent' %}{{ t('dashboard.focus.urgent') }}
+          {% else %}{{ t('dashboard.focus.next_up') }}{% endif %}
         </div>
         <p class="focus-title">
           <a href="/reservations/{{ f_res.id }}?return_to=/">{{ f_res.internal_name }}</a>
@@ -101,7 +98,7 @@
           <span>{{ f_res.date_from | date_cz }} &ndash; {{ f_res.date_to | date_cz }}</span>
           <span class="deadline {{ focus.urgency }}">{{ describe_time_left(focus.check_in) }}</span>
           {{ progress_pill(f_progress.status, f_res.automation_mode, is_demo='(demo)' in f_res.internal_name) }}
-          <span class="muted">{{ f_progress.filled }} / {{ f_progress.expected if f_progress.expected is not none else '?' }} guest forms</span>
+          <span class="muted">{{ t('dashboard.focus.guest_forms', filled=f_progress.filled, expected=f_progress.expected if f_progress.expected is not none else '?') }}</span>
         </div>
       </div>
       <div class="focus-actions">
@@ -115,11 +112,11 @@
           </form>
         {% elif f_progress.status in ('awaiting_guest', 'incomplete') and f_res.permalink_token %}
           {{ copy_inline('focus-link',
-              public_base_url ~ '/l/' ~ f_res.permalink_token ~ '/' ~ f_res.id, 'Copy guest link') }}
-          <a class="btn" href="/reservations/{{ f_res.id }}/guests/new">Add a guest by hand</a>
+              public_base_url ~ '/l/' ~ f_res.permalink_token ~ '/' ~ f_res.id, t('dashboard.focus.copy_link')) }}
+          <a class="btn" href="/reservations/{{ f_res.id }}/guests/new">{{ t('dashboard.focus.add_guest') }}</a>
         {% endif %}
         <a class="btn {{ 'primary' if not focus.controls.get('send_enabled') else '' }}"
-           href="/reservations/{{ f_res.id }}?return_to=/">Open the stay</a>
+           href="/reservations/{{ f_res.id }}?return_to=/">{{ t('dashboard.focus.open_stay') }}</a>
       </div>
     </section>
   {% endif %}
@@ -133,33 +130,33 @@
     <p class="small muted" style="margin-bottom:0">{{ t('dashboard.reporting_modes_body') }}</p>
   </section>
 
-  <div class="stats" aria-label="Work summary">
+  <div class="stats" aria-label="{{ t('dashboard.title') }}">
     <a class="stat stat-link {{ 'bad' if counts.overdue else 'zero' }}" href="#needs-action">
-      <div class="n">{{ counts.overdue }}</div><div class="k">Past deadline</div>
+      <div class="n">{{ counts.overdue }}</div><div class="k">{{ t('dashboard.stats.past_deadline') }}</div>
     </a>
     <a class="stat stat-link {{ 'warn' if counts.attention else 'zero' }}" href="#needs-action">
-      <div class="n">{{ counts.attention }}</div><div class="k">Need action</div>
+      <div class="n">{{ counts.attention }}</div><div class="k">{{ t('dashboard.stats.need_action') }}</div>
     </a>
     <a class="stat stat-link {{ '' if counts.awaiting else 'zero' }}" href="#waiting">
-      <div class="n">{{ counts.awaiting }}</div><div class="k">Waiting for guest</div>
+      <div class="n">{{ counts.awaiting }}</div><div class="k">{{ t('dashboard.stats.waiting_guest') }}</div>
     </a>
     <a class="stat stat-link {{ 'ok' if counts.ready else 'zero' }}" href="#needs-action">
-      <div class="n">{{ counts.ready }}</div><div class="k">Ready to report</div>
+      <div class="n">{{ counts.ready }}</div><div class="k">{{ t('dashboard.stats.ready') }}</div>
     </a>
   </div>
 
   {% if setup_warnings %}
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
-      <h2>Finish setup</h2><a href="/apartments">View properties</a>
+      <h2>{{ t('dashboard.setup.title') }}</h2><a href="/apartments">{{ t('dashboard.setup.view_properties') }}</a>
     </div>
-    <p class="small muted">These properties cannot report until their registration details are complete.</p>
+    <p class="small muted">{{ t('dashboard.setup.lede') }}</p>
     <div class="setup-list">
     {% for warning in setup_warnings %}
       <a class="setup-item plain" href="/apartments/{{ warning.apartment.id }}">
         <span class="mark">!</span>
         <span class="grow"><strong>{{ warning.apartment.internal_name }}</strong><br>
-        <span class="small muted">{{ warning.issues | length }} item{{ '' if warning.issues | length == 1 else 's' }} to fix</span></span>
+        <span class="small muted">{% if warning.issues | length == 1 %}{{ t('dashboard.setup.items', count=warning.issues | length) }}{% else %}{{ t('dashboard.setup.items_plural', count=warning.issues | length) }}{% endif %}</span></span>
       </a>
     {% endfor %}
     </div>
@@ -168,24 +165,23 @@
 
   {% if not rows %}
   <div class="panel empty">
-    <p>No stays in the current window. Either the calendars have nothing booked, or they have
-      not been synced yet.</p>
-    <form method="post" action="/sync"><button class="btn primary" type="submit">Sync calendars now</button></form>
+    <p>{{ t('dashboard.empty.no_stays') }}</p>
+    <form method="post" action="/sync"><button class="btn primary" type="submit">{{ t('dashboard.empty.sync_now') }}</button></form>
   </div>
   {% else %}
     <section id="needs-action">
-      <div class="section-heading"><h2>Needs action now</h2><a href="/reservations">View all stays</a></div>
-      {{ queue_table(queue_groups.needs_action, 'You are caught up. Nothing needs action now.') }}
+      <div class="section-heading"><h2>{{ t('dashboard.section.needs_action') }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>
+      {{ queue_table(queue_groups.needs_action, 'dashboard.queue.empty.action') }}
     </section>
     <section id="waiting">
-      <div class="section-heading"><h2>Waiting for guests</h2></div>
-      {{ queue_table(queue_groups.waiting, 'No guest forms are currently outstanding.') }}
+      <div class="section-heading"><h2>{{ t('dashboard.section.waiting') }}</h2></div>
+      {{ queue_table(queue_groups.waiting, 'dashboard.queue.empty.waiting') }}
     </section>
     {% if queue_groups.upcoming %}
-      <section><div class="section-heading"><h2>Upcoming arrivals</h2></div>{{ queue_table(queue_groups.upcoming) }}</section>
+      <section><div class="section-heading"><h2>{{ t('dashboard.section.upcoming') }}</h2></div>{{ queue_table(queue_groups.upcoming) }}</section>
     {% endif %}
     {% if queue_groups.completed %}
-      <section><div class="section-heading"><h2>Recently completed</h2><a href="/submissions">View reports</a></div>{{ queue_table(queue_groups.completed) }}</section>
+      <section><div class="section-heading"><h2>{{ t('dashboard.section.completed') }}</h2><a href="/submissions">{{ t('dashboard.section.view_reports') }}</a></div>{{ queue_table(queue_groups.completed) }}</section>
     {% endif %}
   {% endif %}
 {% endif %}

@@ -409,6 +409,70 @@
     });
   }
 
+  function initConfirmDialog() {
+    var dialog = document.getElementById("confirm-dialog");
+    var shell = document.getElementById("confirm-form");
+    var title = document.getElementById("confirm-title");
+    var body = document.getElementById("confirm-body");
+    if (!dialog || !shell) return;
+    var pendingForm = null;
+    var pendingButton = null;
+
+    function openDialog(message, form, button) {
+      pendingForm = form || null;
+      pendingButton = button || null;
+      if (title) title.textContent = "";
+      if (body) body.textContent = message || "";
+      document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
+      if (typeof dialog.showModal === "function") dialog.showModal();
+    }
+
+    document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        if (form.dataset.confirmBypass === "1") {
+          form.dataset.confirmBypass = "";
+          return;
+        }
+        e.preventDefault();
+        openDialog(form.getAttribute("data-confirm-message"), form, null);
+      });
+    });
+
+    document.querySelectorAll("button[data-confirm]").forEach(function (button) {
+      button.addEventListener("click", function (e) {
+        if (button.dataset.confirmBypass === "1") {
+          button.dataset.confirmBypass = "";
+          return;
+        }
+        e.preventDefault();
+        openDialog(button.getAttribute("data-confirm-message"), null, button);
+      });
+    });
+
+    shell.addEventListener("submit", function (e) {
+      e.preventDefault();
+      dialog.close();
+      if (pendingForm) {
+        pendingForm.dataset.confirmBypass = "1";
+        if (pendingForm.requestSubmit) pendingForm.requestSubmit();
+        else pendingForm.submit();
+        pendingForm = null;
+      } else if (pendingButton) {
+        pendingButton.dataset.confirmBypass = "1";
+        pendingButton.click();
+        pendingButton = null;
+      }
+    });
+
+    dialog.querySelectorAll("[data-confirm-cancel]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        pendingForm = null;
+        pendingButton = null;
+        dialog.close();
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initBirthDateInputs();
@@ -424,5 +488,6 @@
     initToasts();
     initAutoFilters();
     initResetPasswordDialog();
+    initConfirmDialog();
   });
 })();

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% set nav = 'settings' %}
+{% block title %}{{ t('archive.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, breadcrumb %}
+{{ breadcrumb([
+  {'label': t('nav.settings'), 'url': '/settings'},
+  {'label': t('archive.title'), 'url': ''}
+]) }}
+{{ page_header(t('archive.title'), t('archive.lede')) }}
+
+<div class="chips">
+  {% for value, label_key in [('all', 'archive.chip.all'), ('stays', 'archive.chip.stays'), ('properties', 'archive.chip.properties'), ('guests', 'archive.chip.guests')] %}
+    <a class="chip {{ 'on' if kind == value }}" href="/settings/archived?kind={{ value }}">{{ t(label_key) }}</a>
+  {% endfor %}
+</div>
+
+{% set has_stays = archived_stays and kind in ('all', 'stays') %}
+{% set has_properties = archived_properties and kind in ('all', 'properties') %}
+{% set has_guests = archived_guests and kind in ('all', 'guests') %}
+
+{% if not has_stays and not has_properties and not has_guests %}
+  <div class="panel empty">{{ t('archive.empty') }}</div>
+{% else %}
+
+  {% if has_stays %}
+  <section class="panel tight scroll-x">
+    <h2 style="margin-top:0">{{ t('archive.section.stays') }}</h2>
+    <table class="table-cards">
+      <thead><tr><th>{{ t('archive.col.stay') }}</th><th>{{ t('archive.col.property') }}</th><th>{{ t('archive.col.when') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for stay in archived_stays %}
+        <tr>
+          <td class="nowrap" data-label="{{ t('archive.col.stay') }}">{{ stay.date_from | date_cz }} – {{ stay.date_to | date_cz }}</td>
+          <td data-label="{{ t('archive.col.property') }}">{{ stay.internal_name }}</td>
+          <td class="small muted" data-label="{{ t('archive.col.when') }}">{{ stay.archived_at[:10] }}</td>
+          <td class="nowrap" data-label="">
+            <a class="btn small" href="/reservations/{{ stay.id }}">{{ t('common.open') }}</a>
+            <form method="post" action="/reservations/{{ stay.id }}/unarchive" class="inline">
+              <button class="btn small" type="submit">{{ t('common.restore') }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if has_properties %}
+  <section class="panel tight scroll-x">
+    <h2 style="margin-top:0">{{ t('archive.section.properties') }}</h2>
+    <table class="table-cards">
+      <thead><tr><th>{{ t('archive.col.property') }}</th><th>{{ t('archive.col.when') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for apartment in archived_properties %}
+        <tr>
+          <td data-label="{{ t('archive.col.property') }}">{{ apartment.internal_name }}</td>
+          <td class="small muted" data-label="{{ t('archive.col.when') }}">{{ apartment.archived_at[:10] }}</td>
+          <td class="nowrap" data-label="">
+            <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('common.open') }}</a>
+            <form method="post" action="/apartments/{{ apartment.id }}/unarchive" class="inline">
+              <button class="btn small" type="submit">{{ t('common.restore') }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {% if has_guests %}
+  <section class="panel tight scroll-x">
+    <h2 style="margin-top:0">{{ t('archive.section.guests') }}</h2>
+    <table class="table-cards">
+      <thead><tr><th>{{ t('archive.col.guest') }}</th><th>{{ t('archive.col.stay') }}</th><th>{{ t('archive.col.property') }}</th><th>{{ t('archive.col.when') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for row in archived_guests %}
+        <tr>
+          <td data-label="{{ t('archive.col.guest') }}"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
+          <td class="nowrap small" data-label="{{ t('archive.col.stay') }}">{{ row.stay_from | date_cz }} – {{ row.stay_to | date_cz }}</td>
+          <td data-label="{{ t('archive.col.property') }}">{{ row.apartment }}</td>
+          <td class="small muted" data-label="{{ t('archive.col.when') }}">{{ row.archived_at[:10] }}</td>
+          <td class="nowrap" data-label="">
+            <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
+              <button class="btn small" type="submit">{{ t('common.restore') }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+{% endif %}
+{% endblock %}
