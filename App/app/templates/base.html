@@ -72,16 +72,14 @@
   </nav>
   {% if current_user %}
     <div class="sidebar-footer">
-      <a class="sidebar-help" href="/guide">
-        <span class="sidebar-help-icon" aria-hidden="true">?</span>
-        {{ t('nav.guide') }}
-      </a>
-      <a class="sidebar-help" href="/legal">
-        {{ t('legal.footer_link') }}
-      </a>
-      <a class="sidebar-help" href="/terms">
-        {{ t('terms.footer_link') }}
-      </a>
+      <nav class="sidebar-footer-links" aria-label="{{ t('legal.footer_nav_label') }}">
+        <a href="/guide">{{ t('nav.guide') }}</a>
+        <span class="sidebar-footer-sep" aria-hidden="true">·</span>
+        <a href="/legal">{{ t('legal.footer_short') }}</a>
+        <span class="sidebar-footer-sep" aria-hidden="true">·</span>
+        <a href="/terms">{{ t('terms.footer_short') }}</a>
+      </nav>
+      <p class="sidebar-legal-note">{{ t('legal.use_acceptance_short') }}</p>
       <div class="sidebar-footer-row">
         <form method="post" action="/language" class="lang-switch compact">
           <input type="hidden" name="next" value="{{ request.url.path }}">

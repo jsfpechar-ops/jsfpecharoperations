@@ -22,11 +22,14 @@
       </form>
       {% block auth_body %}{% endblock %}
       <footer class="auth-foot-legal small muted">
-        <a href="/legal">{{ t('legal.footer_link') }}</a>
-        &middot; <a href="/terms">{{ t('terms.footer_link') }}</a>
-        {% if operator().email %}
-          &middot; <a href="mailto:{{ operator().email }}">{{ operator().email }}</a>
-        {% endif %}
+        <p class="auth-foot-acceptance">{{ t('legal.use_acceptance') }}</p>
+        <p class="auth-foot-links">
+          <a href="/legal">{{ t('legal.footer_link') }}</a>
+          &middot; <a href="/terms">{{ t('terms.footer_link') }}</a>
+          {% if operator().email %}
+            &middot; <a href="mailto:{{ operator().email }}">{{ operator().email }}</a>
+          {% endif %}
+        </p>
       </footer>
     </section>
     <aside class="auth-hero" aria-hidden="true">
