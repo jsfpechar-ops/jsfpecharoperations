@@ -22,6 +22,7 @@ from .. import (
     demo,
     housebook,
     icalsync,
+    passport_photos,
     reporting,
     stays_import,
     validation,
@@ -187,7 +188,7 @@ def reset_demo(request: Request):
 def login_form(request: Request):
     if auth.current_user(request):
         return RedirectResponse("/", status_code=303)
-    return render(request, "login.html", {"setup_hint": auth.login_setup_hint()})
+    return render(request, "login.html")
 
 
 @router.post("/login")
@@ -203,7 +204,6 @@ async def login_submit(request: Request):
             {
                 "error": "That username or password is not correct.",
                 "username": username,
-                "setup_hint": auth.login_setup_hint(),
             },
             status_code=401,
         )
@@ -534,12 +534,20 @@ def entities(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    owner_user_id = access.owner_id(request)
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
         "FROM legal_entity e WHERE e.owner_user_id IS ? ORDER BY e.name",
-        (access.owner_id(request),),
+        (owner_user_id,),
     )
-    return render(request, "entities.html", {"entities": rows})
+    edit_entity = None
+    edit_id = request.query_params.get("edit")
+    if edit_id and edit_id.isdigit():
+        edit_entity = db.query_one(
+            "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id IS ?",
+            (int(edit_id), owner_user_id),
+        )
+    return render(request, "entities.html", {"entities": rows, "edit_entity": edit_entity})
 
 
 ENTITY_FIELDS = ("name", "seat", "ico", "dic", "contact_email", "contact_phone")
@@ -1302,6 +1310,12 @@ def reservation_detail(reservation_id: int, request: Request):
                 "guest": guest,
                 "issues": reporting.guest_issues(guest, reservation),
                 "complete": reporting.guest_is_complete(guest, reservation),
+                "verified": reporting.guest_identity_verified(guest),
+                "has_passport_photo": reporting.guest_has_passport_photo(guest),
+                "needs_verification": (
+                    validation.guest_is_reportable(guest["nationality"])
+                    and not reporting.guest_identity_verified(guest)
+                ),
             }
         )
     check_in = validation.parse_iso_date(reservation["date_from"])
@@ -1458,6 +1472,43 @@ def _guest_payload(form) -> Dict[str, Any]:
     return payload
 
 
+def _guest_signature_from_form(form, existing=None) -> str:
+    signature = _form_str(form, "signature")
+    if not signature.startswith("data:image/") and existing:
+        kept = (existing["signature_png"] or "").strip()
+        if kept.startswith("data:image/"):
+            return kept
+    return signature
+
+
+def _render_host_guest_form(
+    request: Request,
+    reservation,
+    guest,
+    issues,
+    *,
+    editing: bool,
+):
+    return render(
+        request,
+        "guest_form_admin.html",
+        {
+            "reservation": reservation,
+            "guest": guest,
+            "issues": issues,
+            "editing": editing,
+            "countries": codelists.nationality_options("en"),
+            "purposes": codelists.purpose_options("en"),
+            "has_passport_photo": reporting.guest_has_passport_photo(guest) if guest else False,
+            "needs_verification": (
+                guest
+                and validation.guest_is_reportable(guest["nationality"])
+                and not reporting.guest_identity_verified(guest)
+            ),
+        },
+    )
+
+
 @router.get("/reservations/{reservation_id}/guests/new")
 def guest_new(reservation_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1471,17 +1522,7 @@ def guest_new(reservation_id: int, request: Request):
     )
     if not reservation:
         return _back("/reservations", err="No such stay.")
-    return render(
-        request,
-        "guest_form_admin.html",
-        {
-            "reservation": reservation,
-            "guest": None,
-            "issues": [],
-            "countries": codelists.nationality_options("en"),
-            "purposes": codelists.purpose_options("en"),
-        },
-    )
+    return _render_host_guest_form(request, reservation, None, [], editing=False)
 
 
 @router.post("/reservations/{reservation_id}/guests")
@@ -1494,13 +1535,32 @@ async def guest_create(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     form = await request.form()
     payload = _guest_payload(form)
+    signature = _guest_signature_from_form(form)
+    preview = {**payload, "signature_png": signature, "entered_by": "host"}
+    issues = reporting.guest_issues(preview, reservation)
+    if validation.errors_only(issues):
+        return _render_host_guest_form(
+            request,
+            reservation,
+            preview,
+            issues,
+            editing=False,
+        )
     now = db.utcnow()
     is_first = not db.query_one("SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,))
+    identity = {}
+    if validation.guest_is_reportable(payload["nationality"]):
+        identity = {
+            "identity_verified_at": now,
+            "identity_verified_by": access.owner_id(request),
+        }
     payload.update(
         {
             "reservation_id": reservation_id,
             "is_lead": 1 if is_first else 0,
             "entered_by": "host",
+            "signature_png": signature,
+            "signed_at": now,
             "filled_at": now,
             "submit_state": (
                 reporting.NOT_REQUIRED
@@ -1509,6 +1569,7 @@ async def guest_create(reservation_id: int, request: Request):
             ),
             "created_at": now,
             "updated_at": now,
+            **identity,
         }
     )
     guest_id = db.insert("guest", payload)
@@ -1530,16 +1591,12 @@ def guest_edit(guest_id: int, request: Request):
         "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
         (guest["reservation_id"],),
     )
-    return render(
+    return _render_host_guest_form(
         request,
-        "guest_form_admin.html",
-        {
-            "reservation": reservation,
-            "guest": guest,
-            "issues": reporting.guest_issues(guest, reservation),
-            "countries": codelists.nationality_options("en"),
-            "purposes": codelists.purpose_options("en"),
-        },
+        reservation,
+        guest,
+        reporting.guest_issues(guest, reservation),
+        editing=True,
     )
 
 
@@ -1551,9 +1608,31 @@ async def guest_update(guest_id: int, request: Request):
     guest = access.guest(request, guest_id)
     if not guest:
         return _back("/reservations", err="No such guest.")
+    reservation = db.query_one(
+        "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (guest["reservation_id"],),
+    )
     form = await request.form()
     payload = _guest_payload(form)
+    signature = _guest_signature_from_form(form, guest)
+    preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
+    issues = reporting.guest_issues(preview, reservation)
+    if validation.errors_only(issues):
+        return _render_host_guest_form(
+            request,
+            reservation,
+            preview,
+            issues,
+            editing=True,
+        )
+    payload["signature_png"] = signature
+    if signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
+        payload["signed_at"] = db.utcnow()
     payload["updated_at"] = db.utcnow()
+    if validation.guest_is_reportable(payload["nationality"]):
+        payload["identity_verified_at"] = db.utcnow()
+        payload["identity_verified_by"] = access.owner_id(request)
     if not validation.guest_is_reportable(payload["nationality"]):
         payload["submit_state"] = reporting.NOT_REQUIRED
     elif guest["submit_state"] in (reporting.ERROR, reporting.BLOCKED, reporting.NOT_REQUIRED):
@@ -1562,10 +1641,66 @@ async def guest_update(guest_id: int, request: Request):
         payload["last_errors"] = None
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
-    reservation_row = db.query_one("SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],))
-    if reservation_row:
-        reporting.maybe_submit_after_host_save(reservation_row["apartment_id"], guest_id)
+    if reservation:
+        reporting.maybe_submit_after_host_save(reservation["apartment_id"], guest_id)
     return _back(f"/guests/{guest_id}", msg="Saved.")
+
+
+@router.post("/guests/{guest_id}/verify-identity")
+async def guest_verify_identity(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest:
+        return _back("/reservations", err="No such guest.")
+    if not validation.guest_is_reportable(guest["nationality"]):
+        return _back(f"/guests/{guest_id}", err="Czech guests do not need passport verification.")
+    if guest["identity_verified_at"]:
+        return _back(f"/guests/{guest_id}", msg="Identity already verified.")
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    if guest["entered_by"] == "guest" and not passport_photos.has_photo(guest_id):
+        return _back(f"/guests/{guest_id}", err="No passport photo on file to verify.")
+    form = await request.form()
+    return_to = (form.get("return_to") or f"/guests/{guest_id}").strip()
+    if not return_to.startswith("/") or return_to.startswith("//"):
+        return_to = f"/guests/{guest_id}"
+    now = db.utcnow()
+    passport_photos.delete_photo(guest_id)
+    db.update(
+        "guest",
+        guest_id,
+        {
+            "identity_verified_at": now,
+            "identity_verified_by": access.owner_id(request),
+            "passport_photo_at": None,
+            "updated_at": now,
+        },
+    )
+    db.audit("guest_identity_verified", f"id={guest_id}")
+    reporting.maybe_submit_after_verify(reservation["apartment_id"], guest_id)
+    return _back(return_to, msg="Identity verified. Passport photo deleted.")
+
+
+@router.get("/guests/{guest_id}/passport-photo")
+def guest_passport_photo(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest or not reporting.guest_has_passport_photo(guest):
+        return Response("Not found.", status_code=404)
+    payload = passport_photos.read_photo(guest_id)
+    if not payload:
+        return Response("Not found.", status_code=404)
+    content, media_type = payload
+    return Response(
+        content,
+        media_type=media_type,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.post("/guests/{guest_id}/archive")
@@ -1621,6 +1756,7 @@ def guest_delete(guest_id: int, request: Request):
             err="This guest was already reported to the police; the record is kept for the house book.",
         )
     reservation_id = guest["reservation_id"]
+    passport_photos.delete_photo(guest_id)
     db.execute("DELETE FROM guest WHERE id = ?", (guest_id,))
     db.audit("guest_deleted", f"id={guest_id}")
     return _back(f"/reservations/{reservation_id}", msg="Guest removed.")
@@ -1874,6 +2010,27 @@ def housebook_download(request: Request):
         housebook.housebook_csv(rows),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="domovni-kniha-{stamp}.csv"'},
+    )
+
+
+@router.get("/housebook/pdfs.zip")
+def housebook_pdfs_download(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    rows = housebook.housebook_rows(
+        _query_int(request, "apartment"),
+        _query_date(request, "from") or None,
+        _query_date(request, "to") or None,
+        owner_user_id=access.owner_id(request),
+    )
+    if not rows:
+        return _back("/housebook", err="No house-book entries match this filter.")
+    stamp = datetime.now().strftime("%Y%m%d")
+    return Response(
+        housebook.housebook_pdfs_zip(rows),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="domovni-kniha-pdf-{stamp}.zip"'},
     )
 
 
