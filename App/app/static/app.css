@@ -737,6 +737,17 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .clickable-row { cursor: pointer; }
 .clickable-row:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; background: var(--brand-soft); }
+.clickable-row.row-selected { background: var(--brand-soft); }
+.password-generate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+}
+.password-generate input {
+  flex: 1 1 180px;
+  min-width: 0;
+}
 .row-primary-link { color: var(--ink); font-weight: 650; text-decoration: none; }
 .clickable-row:hover .row-primary-link { color: var(--brand); }
 .scroll-x { overflow-x: auto; }

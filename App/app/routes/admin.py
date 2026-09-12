@@ -293,8 +293,8 @@ async def user_create(request: Request):
         return Response("Administrators only.", status_code=403)
     form = await request.form()
     password = _form_str(form, "password")
-    if password != _form_str(form, "confirm_password"):
-        return _back("/admin/users", err="The passwords do not match.")
+    if not password:
+        password = auth.generate_password()
     try:
         user_id = auth.create_account(
             _form_str(form, "username"),
@@ -312,7 +312,10 @@ async def user_create(request: Request):
     db.audit(
         "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
     )
-    return _back("/admin/users", msg="User created. Give them the initial password securely.")
+    return _back(
+        "/admin/users",
+        msg=f"User created. Temporary password: {password} — copy it now; it is not shown again.",
+    )
 
 
 @router.post("/admin/users/{user_id}/password")
@@ -328,8 +331,8 @@ async def user_password_reset(user_id: int, request: Request):
         return _back("/account/password", err="Change your own password from your account page.")
     form = await request.form()
     password = _form_str(form, "password")
-    if password != _form_str(form, "confirm_password"):
-        return _back("/admin/users", err="The passwords do not match.")
+    if not password:
+        password = auth.generate_password()
     try:
         auth.set_account_password(user_id, password, must_change=True)
     except ValueError as exc:
@@ -337,7 +340,13 @@ async def user_password_reset(user_id: int, request: Request):
     db.audit(
         "password_reset", actor=account["username"], owner_user_id=user_id
     )
-    return _back("/admin/users", msg=f"Password reset for {target['username']}.")
+    return _back(
+        "/admin/users",
+        msg=(
+            f"Password reset for {target['username']}. "
+            f"Temporary password: {password} — copy it now; it is not shown again."
+        ),
+    )
 
 
 @router.post("/admin/users/{user_id}/impersonate")
@@ -537,7 +546,13 @@ def entities(request: Request):
     owner_user_id = access.owner_id(request)
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
-        "FROM legal_entity e WHERE e.owner_user_id IS ? ORDER BY e.name",
+        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NULL ORDER BY e.name",
+        (owner_user_id,),
+    )
+    archived = db.query(
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
+        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NOT NULL "
+        "ORDER BY e.archived_at DESC",
         (owner_user_id,),
     )
     edit_entity = None
@@ -547,7 +562,11 @@ def entities(request: Request):
             "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id IS ?",
             (int(edit_id), owner_user_id),
         )
-    return render(request, "entities.html", {"entities": rows, "edit_entity": edit_entity})
+    return render(
+        request,
+        "entities.html",
+        {"entities": rows, "archived_entities": archived, "edit_entity": edit_entity},
+    )
 
 
 ENTITY_FIELDS = ("name", "seat", "ico", "dic", "contact_email", "contact_phone")
@@ -591,21 +610,64 @@ async def update_entity(entity_id: int, request: Request):
     return _back("/entities", msg="Saved.")
 
 
-@router.post("/entities/{entity_id}/delete")
-def delete_entity(entity_id: int, request: Request):
+@router.post("/entities/{entity_id}/archive")
+def archive_entity(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.entity(request, entity_id):
+    entity = access.entity(request, entity_id)
+    if not entity:
         return _back("/entities", err="No such legal entity.")
+    if entity["archived_at"]:
+        return _back("/entities", err="Already archived.")
     used = db.query_one(
         "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
         (entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
-        return _back("/entities", err="Detach the apartments from this entity first.")
+        return _back(
+            "/entities",
+            err="Detach or archive the properties linked to this entity first.",
+        )
+    db.update("legal_entity", entity_id, {"archived_at": db.utcnow()})
+    db.audit("entity_archived", f"id={entity_id}")
+    return _back("/entities", msg=f"“{entity['name']}” archived.")
+
+
+@router.post("/entities/{entity_id}/unarchive")
+def unarchive_entity(entity_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entity = access.entity(request, entity_id)
+    if not entity:
+        return _back("/entities", err="No such legal entity.")
+    if not entity["archived_at"]:
+        return _back("/entities", err="Not archived.")
+    db.update("legal_entity", entity_id, {"archived_at": None})
+    db.audit("entity_unarchived", f"id={entity_id}")
+    return _back(f"/entities?edit={entity_id}", msg=f"“{entity['name']}” restored.")
+
+
+@router.post("/entities/{entity_id}/delete")
+def delete_entity(entity_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entity = access.entity(request, entity_id)
+    if not entity:
+        return _back("/entities", err="No such legal entity.")
+    if not entity["archived_at"]:
+        return _back("/entities", err="Archive the legal entity before deleting it.")
+    used = db.query_one(
+        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
+        (entity_id, access.owner_id(request)),
+    )
+    if used and used["n"]:
+        return _back("/entities", err="Detach the properties from this entity first.")
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
-    return _back("/entities", msg="Deleted.")
+    db.audit("entity_deleted", f"id={entity_id}")
+    return _back("/entities", msg="Deleted permanently.")
 
 
 # --- apartments ----------------------------------------------------------
@@ -2087,7 +2149,7 @@ def settings_view(request: Request):
             ),
             "entities_without_contact": db.query(
                 "SELECT id, name FROM legal_entity "
-                "WHERE owner_user_id IS ? AND "
+                "WHERE owner_user_id IS ? AND archived_at IS NULL AND "
                 "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
                 (access.owner_id(request),),
             ),

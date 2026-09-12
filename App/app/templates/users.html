@@ -51,7 +51,7 @@
 
   <aside class="panel">
     <h2 style="margin-top:0">Create a host</h2>
-    <p class="small muted">Give the temporary password privately. They must replace it at first login.</p>
+    <p class="small muted">A secure temporary password is generated for you. Copy it before creating the account.</p>
     <form method="post" action="/admin/users">
       <div class="field">
         <label for="display_name">Name</label>
@@ -66,13 +66,13 @@
       </div>
       <div class="field">
         <label for="password">Temporary password</label>
-        <input type="password" id="password" name="password" minlength="12" required
-               autocomplete="new-password">
-      </div>
-      <div class="field">
-        <label for="confirm_password">Repeat password</label>
-        <input type="password" id="confirm_password" name="confirm_password" minlength="12" required
-               autocomplete="new-password">
+        <div class="password-generate">
+          <input type="text" id="password" name="password" class="mono" required readonly
+                 autocomplete="off" spellcheck="false" data-generated-password>
+          <button class="btn small ghost" type="button" data-generate-password>Regenerate</button>
+          <button class="btn small ghost" type="button" data-copy="password">Copy</button>
+        </div>
+        <div class="hint">They must replace it at first login.</div>
       </div>
       <button class="btn primary" type="submit">Create host</button>
     </form>
@@ -82,14 +82,15 @@
 <dialog id="reset-password-dialog" class="admin-dialog">
   <form method="post" id="reset-password-form" class="admin-dialog-form">
     <h2 style="margin-top:0">Reset password</h2>
-    <p class="small muted">Set a temporary password for <strong id="reset-password-label"></strong>. They must replace it at next login.</p>
+    <p class="small muted">A new temporary password for <strong id="reset-password-label"></strong>. Copy it before saving.</p>
     <div class="field">
       <label for="reset_password_value">Temporary password</label>
-      <input type="password" id="reset_password_value" name="password" minlength="12" required autocomplete="new-password">
-    </div>
-    <div class="field">
-      <label for="reset_password_confirm">Repeat password</label>
-      <input type="password" id="reset_password_confirm" name="confirm_password" minlength="12" required autocomplete="new-password">
+      <div class="password-generate">
+        <input type="text" id="reset_password_value" name="password" class="mono" required readonly
+               autocomplete="off" spellcheck="false" data-generated-password>
+        <button class="btn small ghost" type="button" data-generate-password>Regenerate</button>
+        <button class="btn small ghost" type="button" data-copy="reset_password_value">Copy</button>
+      </div>
     </div>
     <div class="actions">
       <button class="btn" type="button" data-reset-password-cancel>Cancel</button>

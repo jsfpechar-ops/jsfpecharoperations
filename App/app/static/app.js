@@ -385,6 +385,49 @@
     });
   }
 
+  function randomPassword() {
+    var chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    var extra = "-_";
+    var out = "";
+    if (window.crypto && window.crypto.getRandomValues) {
+      var bytes = new Uint8Array(20);
+      window.crypto.getRandomValues(bytes);
+      for (var i = 0; i < bytes.length; i += 1) {
+        out += chars.charAt(bytes[i] % chars.length);
+      }
+      out += extra.charAt(bytes[0] % extra.length);
+      out += String((bytes[1] % 9) + 1);
+    } else {
+      while (out.length < 18) out += chars.charAt(Math.floor(Math.random() * chars.length));
+      out += "_7";
+    }
+    return out;
+  }
+
+  function fillGeneratedPassword(input) {
+    if (!input) return;
+    input.value = randomPassword();
+  }
+
+  function initGeneratedPasswords() {
+    document.querySelectorAll("[data-generated-password]").forEach(function (input) {
+      if (!input.value) fillGeneratedPassword(input);
+    });
+
+    document.querySelectorAll("[data-generate-password]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var field = button.closest(".password-generate");
+        if (!field) return;
+        var input = field.querySelector("[data-generated-password]");
+        fillGeneratedPassword(input);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      });
+    });
+  }
+
   function initResetPasswordDialog() {
     var dialog = document.getElementById("reset-password-dialog");
     var form = document.getElementById("reset-password-form");
@@ -399,6 +442,8 @@
         form.action = "/admin/users/" + userId + "/password";
         label.textContent = userLabel;
         form.reset();
+        var passwordInput = form.querySelector("[data-generated-password]");
+        fillGeneratedPassword(passwordInput);
         document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
         if (typeof dialog.showModal === "function") dialog.showModal();
       });
@@ -423,6 +468,7 @@
     initCsvExport();
     initToasts();
     initAutoFilters();
+    initGeneratedPasswords();
     initResetPasswordDialog();
   });
 })();

@@ -69,6 +69,14 @@ def password_error(password: str) -> str:
     return ""
 
 
+def generate_password() -> str:
+    """Return a random password that satisfies password_error()."""
+    while True:
+        candidate = secrets.token_urlsafe(18)
+        if not password_error(candidate):
+            return candidate
+
+
 def accounts_exist() -> bool:
     return bool(db.query_one("SELECT id FROM user_account LIMIT 1"))
 
