@@ -110,7 +110,7 @@
             <input type="hidden" name="return_to" value="/">
             <button class="btn accent" type="submit"
                     title="{{ t('send.filled_forms_hint') }}">
-              {{ t('send.filled_forms') }}
+              {{ t('send.guests_count', count=focus.controls.pending_count) }}
             </button>
           </form>
         {% elif f_progress.status in ('awaiting_guest', 'incomplete') and f_res.permalink_token %}
