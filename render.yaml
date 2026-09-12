@@ -1,11 +1,20 @@
-# Render Blueprint — deploy UbyHost (mock UbyPort by default).
-# Connect this repo in Render → New → Blueprint, or merge and use "Apply" on the dashboard.
+# Render Blueprint — two environments from one repo.
 #
-# Free tier: data resets on redeploy (SQLite lives on ephemeral container disk).
-# For a persistent login and database, upgrade to Starter and uncomment disk below.
+#   ubyhost-staging  → mock UbyPort, safe for demos and feature testing
+#   ubyhost          → production (real UbyPort), persistent disk required
+#
+# Apply once in Render → New → Blueprint. Each service can also be created
+# manually; see docs/DEPLOYMENT.md for promotion and secrets.
+#
+# Staging uses the free plan (ephemeral disk — fine for throwaway testing).
+# Production must stay on Starter or higher with the disk block enabled.
+
 services:
+  # ---------------------------------------------------------------------------
+  # Staging / mock — nothing is sent to the police.
+  # ---------------------------------------------------------------------------
   - type: web
-    name: ubyhost
+    name: ubyhost-staging
     runtime: python
     region: frankfurt
     plan: free
@@ -13,13 +22,12 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: ./render_start.sh
     healthCheckPath: /healthz
-    # disk:
-    #   name: ubyhost-data
-    #   mountPath: /opt/render/project/src/App/data
-    #   sizeGB: 1
+    autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.0"
+      - key: UBYHOST_DEPLOYMENT
+        value: staging
       - key: UBYHOST_UBYPORT_ENV
         value: mock
       - key: UBYHOST_ENABLE_SCHEDULER
@@ -34,6 +42,47 @@ services:
         value: admin
       - key: UBYHOST_ADMIN_PASSWORD
         generateValue: true
+      - key: UBYHOST_PUBLIC_BASE_URL
+        fromService:
+          type: web
+          name: ubyhost-staging
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # ---------------------------------------------------------------------------
+  # Production — real Foreign Police reporting.
+  # Set UBYHOST_UBYPORT_ENV to "test" first, then "prod" after a clean run.
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: ubyhost
+    runtime: python
+    region: frankfurt
+    plan: starter
+    rootDir: App
+    buildCommand: pip install -r requirements.txt
+    startCommand: ./render_start.sh
+    healthCheckPath: /healthz
+    autoDeploy: false
+    disk:
+      name: ubyhost-data
+      mountPath: /opt/render/project/src/App/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: UBYHOST_DEPLOYMENT
+        value: production
+      - key: UBYHOST_UBYPORT_ENV
+        value: test
+      - key: UBYHOST_ENABLE_SCHEDULER
+        value: "1"
+      - key: UBYHOST_GUEST_PIN
+        value: "1"
+      - key: UBYHOST_SECRET_KEY
+        generateValue: true
+      - key: UBYHOST_ADMIN_USERNAME
+        sync: false
+      - key: UBYHOST_ADMIN_PASSWORD
+        sync: false
       - key: UBYHOST_PUBLIC_BASE_URL
         fromService:
           type: web

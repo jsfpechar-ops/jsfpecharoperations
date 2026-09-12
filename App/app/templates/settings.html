@@ -10,7 +10,8 @@
     <div class="panel">
       <h2 style="margin-top:0">Where reports go</h2>
       <dl class="kv">
-        <dt>Environment</dt><dd><span class="env-badge {{ ubyport_env }}">{{ ubyport_env }}</span></dd>
+        <dt>Deployment</dt><dd><span class="env-badge {{ deployment_tier }}">{{ deployment_tier }}</span></dd>
+        <dt>UbyPort target</dt><dd><span class="env-badge {{ ubyport_env }}">{{ ubyport_env }}</span></dd>
         <dt>Endpoint</dt><dd class="mono small">{{ endpoint }}</dd>
         <dt>Calendar polling</dt><dd>every {{ poll_minutes }} minutes</dd>
         <dt>Submission sweep</dt><dd>every {{ sweep_minutes }} minutes</dd>
