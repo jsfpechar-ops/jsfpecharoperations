@@ -87,7 +87,20 @@ To restore: stop the service, replace `ubyhost.db` from a backup, restart.
 
 ## Alternative hosts
 
-The same container image works on Fly.io, Railway, or a VPS:
+### AWS Lightsail (Docker — recommended VPS path)
+
+Full guide: **[LIGHTSAIL.md](LIGHTSAIL.md)**
+
+```bash
+cd deploy/lightsail
+cp .env.example .env   # edit domain, passwords, UbyPort env
+./scripts/deploy.sh
+```
+
+Includes Caddy (automatic HTTPS), persistent SQLite volume, backup scripts, and
+sizing notes for ~10 properties.
+
+### Manual Docker (any VPS)
 
 ```bash
 docker build -t ubyhost .
