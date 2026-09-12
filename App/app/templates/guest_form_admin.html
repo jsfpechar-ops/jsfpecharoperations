@@ -162,6 +162,38 @@
     </div>
   </div>
 
+  {% if editing and needs_verification %}
+  <div class="panel verify-panel">
+    <h2 style="margin-top:0">{{ t('host.verify_title') }}</h2>
+    <p class="small muted">{{ t('host.verify_help') }}</p>
+    {% if has_passport_photo %}
+      <div class="passport-preview">
+        <img src="/guests/{{ guest.id }}/passport-photo" alt="Passport photo for verification">
+      </div>
+      <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form">
+        <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
+        <div class="checkline" style="margin:12px 0">
+          <input type="checkbox" id="confirm_verify" name="confirm_verify" value="1" required>
+          <label for="confirm_verify">{{ t('host.verify_confirm') }}</label>
+        </div>
+        <button class="btn primary" type="submit">{{ t('host.verify_button') }}</button>
+      </form>
+      <p class="legal-fineprint">{{ t('host.verify_footnote') }}</p>
+    {% else %}
+      <p class="small muted">{{ t('host.verify_waiting_photo') }}</p>
+    {% endif %}
+  </div>
+  {% elif editing and guest.identity_verified_at and guest.nationality != 'CZE' %}
+  <div class="panel quiet">
+    <p class="small muted" style="margin:0">{{ t('host.verify_done') }}
+      {{ guest.identity_verified_at[:16].replace('T', ' ') }}.</p>
+  </div>
+  {% elif not editing %}
+  <div class="panel quiet">
+    <p class="small muted" style="margin:0">{{ t('host.verify_host_entry') }}</p>
+  </div>
+  {% endif %}
+
   <div class="panel">
     <h2 style="margin-top:0">{{ t('host.signature_title') }}</h2>
     <p class="small muted">{{ t('host.signature_help') }}</p>

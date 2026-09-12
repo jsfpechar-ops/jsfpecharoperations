@@ -66,6 +66,25 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host.signature_missing": "Please sign before saving.",
         "host.signature_kept": "Signature saved. Sign again only if you need to change it.",
         "host.signature_clear": "Clear",
+        "host.verify_title": "Passport verification",
+        "host.verify_help": (
+            "You are legally responsible for the accuracy of every field. Compare the guest's "
+            "passport or ID against the details below before reporting to UbyPort."
+        ),
+        "host.verify_confirm": (
+            "I have checked this person's face and travel document against the details above."
+        ),
+        "host.verify_button": "Verify identity & delete photo",
+        "host.verify_footnote": (
+            "The passport photo is deleted immediately when you confirm. UbyPort is not sent "
+            "until verification is complete."
+        ),
+        "host.verify_waiting_photo": "Waiting for the guest to upload a passport photo.",
+        "host.verify_done": "Identity verified on",
+        "host.verify_host_entry": (
+            "When you enter a guest by hand you confirm the details against their document in "
+            "person. The record is marked verified on save."
+        ),
         "housebook.legal_footnote": (
             "You are the data controller and legally responsible for guest records. UbyHost is software "
             "only — it does not replace your duty to keep signed forms, report foreigners within three "
@@ -78,18 +97,25 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "send.filled_forms_hint": "Submit every completed guest form on this stay to UbyPort",
         "status.ready_manual": "Ready — you send",
         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
-        "status.ready_immediate": "Forms complete — auto-send",
-        "status.ready_immediate_tip": "Guest forms are done. UbyPort submission happens automatically.",
+        "status.ready_immediate": "Verified — auto-send",
+        "status.ready_immediate_tip": "Passport checks are done. UbyPort submission happens automatically.",
+        "status.awaiting_verification": "Verify passport",
+        "status.awaiting_verification_tip": (
+            "Guest forms are complete. Check each passport photo before reporting."
+        ),
+        "status.waiting_guest": "Waiting for guest",
+        "status.waiting_guest_tip": "Guest forms are not complete yet.",
         "status.waiting_signature": "Waiting for signature",
-        "status.waiting_signature_tip": "Guest forms are not signed yet. Sends automatically once each guest signs.",
+        "status.waiting_signature_tip": "Guest forms are not signed yet.",
         "status.ready_scheduled": "Ready — scheduled",
         "status.ready_scheduled_tip": "Will go out automatically after the delay set on the property.",
         "status.demo_preview": "Preview only",
         "status.demo_preview_tip": "Demo data is never sent to the police.",
         "dashboard.reporting_modes": "How sending works",
         "dashboard.reporting_modes_body": (
-            "Immediate sends when a guest signs. Scheduled waits a few hours after check-in. "
-            "Manual waits for you — use Send on the stay or Send all ready stays above the list."
+            "You must verify each passport before reporting. Manual waits for your Send click. "
+            "Scheduled sends after check-in plus a delay, once verified. Auto-after-verify sends "
+            "right after you confirm each guest."
         ),
         "dashboard.minutes_saved": "~%(minutes)s min saved vs manual UbyPort entry",
         "celebration.title": "Well done!",
@@ -134,11 +160,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Each property chooses how completed guest records reach UbyPort:",
         "guide.reporting.caption": (
-            "Waiting for signature means guests still need to sign. Forms complete — auto-send means "
-            "everything is filled in and UbyPort submission happens automatically."
+            "Verify passport means you still need to check the ID photo. Nothing is sent to UbyPort "
+            "until you confirm the details match the travel document."
         ),
-        "guide.reporting.immediate": "Immediate",
-        "guide.reporting.immediate_detail": "Sent as soon as the guest signs.",
+        "guide.reporting.immediate": "After verification",
+        "guide.reporting.immediate_detail": (
+            "Sent automatically once you verify each guest against their passport. "
+            "Never sent blindly from the guest form alone."
+        ),
+        "guide.legal.verification_title": "Verify every foreign guest",
+        "guide.legal.verification_body": (
+            "You are legally responsible for accurate police records. Guests upload a passport "
+            "photo for your review; compare face and document number before confirming. The photo "
+            "is deleted immediately after verification. If a guest refuses to show ID, you may "
+            "refuse accommodation."
+        ),
         "guide.reporting.scheduled": "Scheduled",
         "guide.reporting.scheduled_detail": "Batched after check-in plus your chosen delay.",
         "guide.reporting.manual": "Manual",
@@ -252,6 +288,25 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host.signature_missing": "Před uložením se prosím podepište.",
         "host.signature_kept": "Podpis je uložený. Podepište znovu jen při změně.",
         "host.signature_clear": "Vymazat",
+        "host.verify_title": "Ověření pasu",
+        "host.verify_help": (
+            "Za správnost každého údaje odpovídáte vy. Před odesláním do UbyPortu porovnejte "
+            "pas nebo průkaz hosta s vyplněnými údaji."
+        ),
+        "host.verify_confirm": (
+            "Zkontroloval(a) jsem obličej a cestovní doklad proti údajům výše."
+        ),
+        "host.verify_button": "Ověřit identitu a smazat fotografii",
+        "host.verify_footnote": (
+            "Fotografie pasu se po potvrzení okamžitě smaže. Do UbyPortu se neodešle nic, "
+            "dokud ověření není hotové."
+        ),
+        "host.verify_waiting_photo": "Čeká se na nahrání fotografie pasu hostem.",
+        "host.verify_done": "Identita ověřena",
+        "host.verify_host_entry": (
+            "Když zadáváte hosta ručně, potvrzujete údaje proti dokladu na místě. Záznam se "
+            "označí jako ověřený při uložení."
+        ),
         "housebook.legal_footnote": (
             "Jste správcem údajů a nesete právní odpovědnost. UbyHost je pouze software — nenahrazuje "
             "povinnost uchovávat podepsané formuláře, hlásit cizince do tří pracovních dnů a předložit "
@@ -265,18 +320,24 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "send.filled_forms_hint": "Odešle každý hotový formulář hosta na tomto pobytu do UbyPortu",
         "status.ready_manual": "Připraveno — ručně",
         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
-        "status.ready_immediate": "Formuláře hotové — automaticky",
-        "status.ready_immediate_tip": "Formuláře jsou vyplněné. Odeslání do UbyPortu proběhne automaticky.",
+        "status.ready_immediate": "Ověřeno — automaticky",
+        "status.ready_immediate_tip": "Kontrola pasů je hotová. Odeslání do UbyPortu proběhne automaticky.",
+        "status.awaiting_verification": "Ověřit pas",
+        "status.awaiting_verification_tip": (
+            "Formuláře jsou hotové. Zkontrolujte fotografii pasu před hlášením."
+        ),
+        "status.waiting_guest": "Čeká na hosta",
+        "status.waiting_guest_tip": "Formuláře hostů ještě nejsou hotové.",
         "status.waiting_signature": "Čeká na podpis",
-        "status.waiting_signature_tip": "Formuláře ještě nejsou podepsané. Po podpisu hosta se odešle automaticky.",
+        "status.waiting_signature_tip": "Formuláře ještě nejsou podepsané.",
         "status.ready_scheduled": "Připraveno — naplánováno",
         "status.ready_scheduled_tip": "Odejde automaticky po zvolené prodlevě od příjezdu.",
         "status.demo_preview": "Jen náhled",
         "status.demo_preview_tip": "Ukázková data se na policii nikdy neodešlou.",
         "dashboard.reporting_modes": "Jak funguje odesílání",
         "dashboard.reporting_modes_body": (
-            "Okamžité odešle po podpisu hosta. Naplánované počká po příjezdu. Ruční čeká na vás — "
-            "použijte Odeslat u pobytu nebo Odeslat všechny připravené nad seznamem."
+            "Před hlášením musíte ověřit každý pas. Ruční čeká na Odeslat. Naplánované odešle po "
+            "prodlevě od příjezdu, až po ověření. Auto po ověření odešle hned po vašem potvrzení."
         ),
         "dashboard.minutes_saved": "~%(minutes)s min ušetřeno oproti ručnímu UbyPortu",
         "celebration.title": "Výborně!",
@@ -319,11 +380,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Každé ubytování volí, jak se hotová hlášení dostanou do UbyPortu:",
         "guide.reporting.caption": (
-            "Čeká na podpis znamená, že host ještě nepodepsal. Formuláře hotové — automaticky znamená, "
-            "že je vše vyplněné a odeslání do UbyPortu proběhne samo."
+            "Ověřit pas znamená, že ještě musíte zkontrolovat fotografii dokladu. Do UbyPortu se nic "
+            "neodešle, dokud nepotvrdíte shodu s cestovním dokladem."
         ),
-        "guide.reporting.immediate": "Okamžité",
-        "guide.reporting.immediate_detail": "Odešle se hned po podpisu hosta.",
+        "guide.reporting.immediate": "Po ověření",
+        "guide.reporting.immediate_detail": (
+            "Odešle se automaticky po ověření hosta proti pasu. Nikdy ne slepě z formuláře hosta."
+        ),
+        "guide.legal.verification_title": "Ověřte každého cizince",
+        "guide.legal.verification_body": (
+            "Za správnost policejních záznamů odpovídáte vy. Hosté nahrají fotografii pasu ke kontrole; "
+            "porovnejte obličej a číslo dokladu před potvrzením. Fotografie se po ověření okamžitě smaže. "
+            "Odmítne-li host doklad ukázat, můžete odmítnout ubytování."
+        ),
         "guide.reporting.scheduled": "Naplánované",
         "guide.reporting.scheduled_detail": "Dávka po příjezdu a zvolené prodlevě.",
         "guide.reporting.manual": "Ruční",

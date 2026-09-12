@@ -67,7 +67,9 @@ def _seed(mode: str = "manual", token: str = "tok"):
             "is_lead": 1,
             "entered_by": "host",
             "signature_png": SIGNATURE,
+            "passport_photo_at": None,
             "signed_at": now,
+            "identity_verified_at": now,
             "submit_state": reporting.PENDING,
             "created_at": now,
             "updated_at": now,
@@ -127,9 +129,24 @@ def test_count_sendable_stays_includes_ready_manual_stays():
 
 
 def test_status_label_reflects_automation():
-    assert reporting.status_label("ready", "immediate") == "Forms complete — auto-send"
-    assert reporting.status_label("awaiting_guest", "immediate") == "Waiting for signature"
+    assert reporting.status_label("ready", "immediate") == "Verified — auto-send after you confirm"
+    assert reporting.status_label("awaiting_guest", "immediate") == "Waiting for guest"
     assert reporting.status_label("ready", "manual") == "Ready — send manually"
+
+
+def test_unverified_foreign_guest_blocks_send():
+    apartment, reservation, guest_id = _seed("manual", "tok-unverified")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["status"] == "awaiting_verification"
+    assert controls["send_enabled"] is False
+    assert "passport" in controls["send_hint"].lower()
 
 
 def test_unsigned_foreign_guest_blocks_send():

@@ -28,6 +28,7 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
         "6082".replace("od", "0d")
     )
 ).decode()
+PNG_BYTES = base64.b64decode(SIGNATURE.split(",", 1)[1])
 
 
 def ics_for(start: date, nights: int = 4) -> str:
@@ -267,6 +268,38 @@ def guest_form_data(**overrides):
     return data
 
 
+def passport_files(nationality: str = "GBR"):
+    if nationality == "CZE":
+        return None
+    return {"passport_photo": ("passport.png", PNG_BYTES, "image/png")}
+
+
+def save_guest_form(browser, stay, host=None, verify: bool = True, **overrides):
+    nationality = overrides.get("nationality", guest_form_data()["nationality"])
+    data = guest_form_data(**overrides)
+    kwargs = {"data": data, "follow_redirects": False}
+    files = passport_files(nationality)
+    if files:
+        kwargs["files"] = files
+    response = browser.post(permalink(stay) + "/save", **kwargs)
+    if verify and host and nationality != "CZE" and response.status_code == 303:
+        guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
+        host.post(
+            f"/guests/{guest['id']}/verify-identity",
+            data={"return_to": f"/guests/{guest['id']}"},
+            follow_redirects=False,
+        )
+    return response
+
+
+def host_verifies_guest(host, guest_id: int) -> None:
+    host.post(
+        f"/guests/{guest_id}/verify-identity",
+        data={"return_to": f"/guests/{guest_id}"},
+        follow_redirects=False,
+    )
+
+
 def test_12_incomplete_form_is_refused_before_it_reaches_the_police(client):
     stay = db.query_one("SELECT * FROM reservation")
     response = client.post(
@@ -276,12 +309,10 @@ def test_12_incomplete_form_is_refused_before_it_reaches_the_police(client):
     assert not db.query("SELECT * FROM guest")
 
 
-def test_13_completed_form_is_reported_immediately_and_accepted(client):
+def test_13_completed_form_is_reported_after_passport_verification(client, host):
     stay = db.query_one("SELECT * FROM reservation")
     guest_browser = TestClient(app)
-    response = guest_browser.post(
-        permalink(stay) + "/save", data=guest_form_data(), follow_redirects=False
-    )
+    response = save_guest_form(guest_browser, stay, host=host)
     assert response.status_code == 303, response.text
 
     guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
@@ -290,8 +321,9 @@ def test_13_completed_form_is_reported_immediately_and_accepted(client):
     assert guest["signature_png"].startswith("data:image/")
     assert guest["signed_at"]
     assert guest["is_lead"] == 1
+    assert guest["identity_verified_at"]
 
-    # automation_mode is "immediate", so the record went out on save.
+    # Immediate mode sends only after the host verifies the passport photo.
     assert guest["submit_state"] == reporting.SENT, guest["last_errors"]
     assert guest["submitted_at"], "rule 10.5(3) requires the time of the successful notification"
 
@@ -361,18 +393,17 @@ def test_17_a_deliberate_resend_is_rejected_as_a_duplicate(host):
     ), "the host has to learn that the record bounced"
 
 
-def test_18_a_second_guest_completes_the_party(client):
+def test_18_a_second_guest_completes_the_party(client, host):
     stay = db.query_one("SELECT * FROM reservation")
     guest_browser = TestClient(app)
-    response = guest_browser.post(
-        permalink(stay) + "/save",
-        data=guest_form_data(
-            surname="Smithová",
-            first_name="Anna",
-            birth_date="15.03.1992",
-            doc_number="P7654321",
-        ),
-        follow_redirects=False,
+    response = save_guest_form(
+        guest_browser,
+        stay,
+        host=host,
+        surname="Smithová",
+        first_name="Anna",
+        birth_date="15.03.1992",
+        doc_number="P7654321",
     )
     assert response.status_code == 303, response.text
 
@@ -498,13 +529,23 @@ def test_25_manual_mode_waits_for_the_host(host, mock_ubyport):
     guest_browser = TestClient(app)
     guest_browser.post(
         f"/l/{apartment['permalink_token']}/{reservation_id}/save",
-        data=guest_form_data(surname="Rossi", first_name="Marco", doc_number="YA1122334",
-                             nationality="ITA", res_city="Roma", res_country="ITA",
-                             res_street="Via Roma 1"),
+        data=guest_form_data(
+            surname="Rossi",
+            first_name="Marco",
+            doc_number="YA1122334",
+            nationality="ITA",
+            res_city="Roma",
+            res_country="ITA",
+            res_street="Via Roma 1",
+        ),
+        files=passport_files("ITA"),
         follow_redirects=False,
     )
     guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
     assert guest["submit_state"] == reporting.PENDING, "manual mode must not send by itself"
+    host_verifies_guest(host, guest["id"])
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest["id"],))
+    assert guest["submit_state"] == reporting.PENDING, "manual mode still waits for host send"
 
     reporting.sweep()
     assert db.query_one("SELECT submit_state FROM guest WHERE id = ?", (guest["id"],))[

@@ -1107,6 +1107,24 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   font-weight: 650;
   cursor: pointer;
 }
+.passport-preview {
+  margin: 12px 0;
+  max-width: 420px;
+}
+.passport-preview img {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.verify-panel .verify-form {
+  margin-top: 8px;
+}
+.verify-inline {
+  margin-top: 12px;
+  padding: 12px 14px;
+}
+
 .legal-fineprint {
   margin-top: 10px;
   font-size: 11.5px;

@@ -14,6 +14,7 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
         "6082".replace("od", "0d")
     )
 ).decode()
+PNG_BYTES = base64.b64decode(SIGNATURE.split(",", 1)[1])
 
 TOKEN = "navflowtoken"
 
@@ -34,6 +35,12 @@ def _form(**overrides):
     }
     data.update(overrides)
     return data
+
+
+def _passport_files(nationality: str = "GBR"):
+    if nationality == "CZE":
+        return None
+    return {"passport_photo": ("passport.png", PNG_BYTES, "image/png")}
 
 
 def _cleanup():
@@ -136,6 +143,7 @@ def test_wrong_stay_then_correct_stay_opens_a_fresh_form():
         saved = browser.post(
             f"/l/{token}/{wrong}/save",
             data=_form(),
+            files=_passport_files(),
             follow_redirects=False,
         )
         assert saved.status_code == 303

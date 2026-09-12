@@ -22,6 +22,7 @@ from .. import (
     demo,
     housebook,
     icalsync,
+    passport_photos,
     reporting,
     stays_import,
     validation,
@@ -1309,6 +1310,12 @@ def reservation_detail(reservation_id: int, request: Request):
                 "guest": guest,
                 "issues": reporting.guest_issues(guest, reservation),
                 "complete": reporting.guest_is_complete(guest, reservation),
+                "verified": reporting.guest_identity_verified(guest),
+                "has_passport_photo": reporting.guest_has_passport_photo(guest),
+                "needs_verification": (
+                    validation.guest_is_reportable(guest["nationality"])
+                    and not reporting.guest_identity_verified(guest)
+                ),
             }
         )
     check_in = validation.parse_iso_date(reservation["date_from"])
@@ -1492,6 +1499,12 @@ def _render_host_guest_form(
             "editing": editing,
             "countries": codelists.nationality_options("en"),
             "purposes": codelists.purpose_options("en"),
+            "has_passport_photo": reporting.guest_has_passport_photo(guest) if guest else False,
+            "needs_verification": (
+                guest
+                and validation.guest_is_reportable(guest["nationality"])
+                and not reporting.guest_identity_verified(guest)
+            ),
         },
     )
 
@@ -1523,7 +1536,7 @@ async def guest_create(reservation_id: int, request: Request):
     form = await request.form()
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form)
-    preview = {**payload, "signature_png": signature}
+    preview = {**payload, "signature_png": signature, "entered_by": "host"}
     issues = reporting.guest_issues(preview, reservation)
     if validation.errors_only(issues):
         return _render_host_guest_form(
@@ -1535,6 +1548,12 @@ async def guest_create(reservation_id: int, request: Request):
         )
     now = db.utcnow()
     is_first = not db.query_one("SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,))
+    identity = {}
+    if validation.guest_is_reportable(payload["nationality"]):
+        identity = {
+            "identity_verified_at": now,
+            "identity_verified_by": access.owner_id(request),
+        }
     payload.update(
         {
             "reservation_id": reservation_id,
@@ -1550,6 +1569,7 @@ async def guest_create(reservation_id: int, request: Request):
             ),
             "created_at": now,
             "updated_at": now,
+            **identity,
         }
     )
     guest_id = db.insert("guest", payload)
@@ -1596,7 +1616,7 @@ async def guest_update(guest_id: int, request: Request):
     form = await request.form()
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form, guest)
-    preview = {**guest, **payload, "signature_png": signature}
+    preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
     issues = reporting.guest_issues(preview, reservation)
     if validation.errors_only(issues):
         return _render_host_guest_form(
@@ -1610,6 +1630,9 @@ async def guest_update(guest_id: int, request: Request):
     if signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
         payload["signed_at"] = db.utcnow()
     payload["updated_at"] = db.utcnow()
+    if validation.guest_is_reportable(payload["nationality"]):
+        payload["identity_verified_at"] = db.utcnow()
+        payload["identity_verified_by"] = access.owner_id(request)
     if not validation.guest_is_reportable(payload["nationality"]):
         payload["submit_state"] = reporting.NOT_REQUIRED
     elif guest["submit_state"] in (reporting.ERROR, reporting.BLOCKED, reporting.NOT_REQUIRED):
@@ -1621,6 +1644,63 @@ async def guest_update(guest_id: int, request: Request):
     if reservation:
         reporting.maybe_submit_after_host_save(reservation["apartment_id"], guest_id)
     return _back(f"/guests/{guest_id}", msg="Saved.")
+
+
+@router.post("/guests/{guest_id}/verify-identity")
+async def guest_verify_identity(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest:
+        return _back("/reservations", err="No such guest.")
+    if not validation.guest_is_reportable(guest["nationality"]):
+        return _back(f"/guests/{guest_id}", err="Czech guests do not need passport verification.")
+    if guest["identity_verified_at"]:
+        return _back(f"/guests/{guest_id}", msg="Identity already verified.")
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    if guest["entered_by"] == "guest" and not passport_photos.has_photo(guest_id):
+        return _back(f"/guests/{guest_id}", err="No passport photo on file to verify.")
+    form = await request.form()
+    return_to = (form.get("return_to") or f"/guests/{guest_id}").strip()
+    if not return_to.startswith("/") or return_to.startswith("//"):
+        return_to = f"/guests/{guest_id}"
+    now = db.utcnow()
+    passport_photos.delete_photo(guest_id)
+    db.update(
+        "guest",
+        guest_id,
+        {
+            "identity_verified_at": now,
+            "identity_verified_by": access.owner_id(request),
+            "passport_photo_at": None,
+            "updated_at": now,
+        },
+    )
+    db.audit("guest_identity_verified", f"id={guest_id}")
+    reporting.maybe_submit_after_verify(reservation["apartment_id"], guest_id)
+    return _back(return_to, msg="Identity verified. Passport photo deleted.")
+
+
+@router.get("/guests/{guest_id}/passport-photo")
+def guest_passport_photo(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest or not reporting.guest_has_passport_photo(guest):
+        return Response("Not found.", status_code=404)
+    payload = passport_photos.read_photo(guest_id)
+    if not payload:
+        return Response("Not found.", status_code=404)
+    content, media_type = payload
+    return Response(
+        content,
+        media_type=media_type,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.post("/guests/{guest_id}/archive")
@@ -1676,6 +1756,7 @@ def guest_delete(guest_id: int, request: Request):
             err="This guest was already reported to the police; the record is kept for the house book.",
         )
     reservation_id = guest["reservation_id"]
+    passport_photos.delete_photo(guest_id)
     db.execute("DELETE FROM guest WHERE id = ?", (guest_id,))
     db.audit("guest_deleted", f"id={guest_id}")
     return _back(f"/reservations/{reservation_id}", msg="Guest removed.")

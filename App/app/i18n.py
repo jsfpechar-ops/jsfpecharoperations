@@ -162,6 +162,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_clear": "Clear",
         "signature_missing": "Please sign before submitting.",
         "signature_kept": "Signature already saved. Sign again only if you need to change it.",
+        "passport_photo_title": "Passport or ID photo",
+        "passport_photo_help": (
+            "Your host must check your details against your travel document by law. "
+            "Upload a clear photo of the ID page. Only your host can see it, and it is "
+            "deleted as soon as they confirm the details."
+        ),
+        "passport_photo_label": "Photo of passport ID page",
+        "passport_photo_hint": "JPEG, PNG, or WebP, up to 5 MB. No need to include every page.",
+        "passport_photo_missing": "Please upload a photo of your passport or ID card.",
         "submit": "Submit my details",
         "optional": "optional",
         "required": "required",
@@ -375,6 +384,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_clear": "Vymazat",
         "signature_missing": "Před odesláním se prosím podepište.",
         "signature_kept": "Podpis je uložený. Podepište se znovu jen pokud ho chcete změnit.",
+        "passport_photo_title": "Fotografie pasu nebo průkazu",
+        "passport_photo_help": (
+            "Hostitel musí ze zákona zkontrolovat vaše údaje proti cestovnímu dokladu. "
+            "Nahrajte čitelnou fotografii stránky s údaji. Uvidí ji jen hostitel a po "
+            "ověření bude smazána."
+        ),
+        "passport_photo_label": "Fotografie stránky s údaji v pasu",
+        "passport_photo_hint": "JPEG, PNG nebo WebP, max. 5 MB.",
+        "passport_photo_missing": "Nahrajte prosím fotografii pasu nebo občanského průkazu.",
         "submit": "Odeslat údaje",
         "optional": "nepovinné",
         "required": "povinné",
