@@ -5,6 +5,8 @@ from typing import Dict
 
 from fastapi import Request
 
+from .terms_i18n import TERMS_STRINGS
+
 LANG_COOKIE = "ubyhost_lang"
 LANGUAGES = ("en", "cs")
 DEFAULT_LANGUAGE = "en"
@@ -1165,6 +1167,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "settings.archive_hint": "Obnovte archivované pobyty, ubytování a záznamy domovní knihy.",
     },
 }
+
+for _lang, _terms in TERMS_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_terms)
 
 
 def normalise_language(value: str | None) -> str:
