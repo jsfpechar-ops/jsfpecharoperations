@@ -55,8 +55,33 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.sample_stays": "Sample CSV",
         "csv.download": "Download CSV",
         "csv.import": "Import CSV",
-        "csv.sample_housebook": "Sample CSV",
+        "csv.sample_housebook": "Import template (paper records)",
         "csv.download_pdfs": "Download PDFs for inspection",
+        "housebook.legal_title": "Your legal duty — read this",
+        "housebook.legal_body": (
+            "Under § 101 of Act No. 326/1999 Coll., you must keep a house book (domovní kniha) for "
+            "six years after the last entry and present it at a police inspection. A guest's signed "
+            "registration form counts as a house-book page."
+        ),
+        "housebook.legal_paper": (
+            "UbyHost helps you maintain the register digitally. It does not replace paper you already "
+            "have: keep any original signed forms, ledgers, or binders you used before this app in a "
+            "safe place for the full retention period."
+        ),
+        "housebook.legal_inspection": (
+            "At inspection the officer may ask for written records. Export CSV for a spreadsheet view, "
+            "or download signed PDFs (one file per guest) and print or store them offline. A screen "
+            "alone may not be accepted."
+        ),
+        "housebook.legal_import": (
+            "Had a paper house book? Use Import to digitise old rows without retyping — download the "
+            "import template for the exact column format."
+        ),
+        "housebook.import_paper": "Import paper records",
+        "housebook.pdf_hint": (
+            "PDF bundle builds one guest form at a time on the server (low memory). Narrow the filter "
+            "if you have many entries — max %(limit)s per download."
+        ),
         "csv.button": "CSV",
         "host.signature_title": "Guest signature",
         "host.signature_help": (
@@ -86,9 +111,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "person. The record is marked verified on save."
         ),
         "housebook.legal_footnote": (
-            "You are the data controller and legally responsible for guest records. UbyHost is software "
-            "only — it does not replace your duty to keep signed forms, report foreigners within three "
-            "working days, and present paper records at a police inspection."
+            "You remain the data controller. UbyHost is software only — not legal advice, not a "
+            "substitute for signed paper you already hold, and not a guarantee the police will accept "
+            "a screen instead of written records."
         ),
         "send.this_stay": "Send this stay",
         "send.all_ready": "Send all ready stays",
@@ -278,8 +303,33 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.sample_stays": "Vzorové CSV",
         "csv.download": "Stáhnout CSV",
         "csv.import": "Importovat CSV",
-        "csv.sample_housebook": "Vzorové CSV",
+        "csv.sample_housebook": "Vzor pro import (papírová evidence)",
         "csv.download_pdfs": "Stáhnout PDF pro kontrolu",
+        "housebook.legal_title": "Vaše zákonná povinnost — přečtěte",
+        "housebook.legal_body": (
+            "Podle § 101 zákona č. 326/1999 Sb. musíte vést domovní knihu po dobu šesti let od posledního "
+            "zápisu a předložit ji při kontrole. Podepsaný registrační formulář hosta se počítá jako "
+            "stránka domovní knihy."
+        ),
+        "housebook.legal_paper": (
+            "UbyHost vám pomáhá vést evidenci digitálně. Nenahrazuje papír, který už máte: uschovejte "
+            "původní podepsané formuláře, knihy nebo pořadače z doby před aplikací po celou zákonnou "
+            "dobu."
+        ),
+        "housebook.legal_inspection": (
+            "Při kontrole může úředník požadovat písemnou podobu. Exportujte CSV pro přehled v tabulce, "
+            "nebo stáhněte podepsaná PDF (jeden soubor na hosta) a uložte či vytiskněte. Samotná "
+            "obrazovka nemusí stačit."
+        ),
+        "housebook.legal_import": (
+            "Vedli jste papírovou domovní knihu? Importem z CSV doplníte starší záznamy bez přepisování — "
+            "vzor souboru najdete v menu CSV."
+        ),
+        "housebook.import_paper": "Importovat papírovou evidenci",
+        "housebook.pdf_hint": (
+            "Balíček PDF se na serveru skládá postupně po jednom hostu (nízká spotřeba paměti). Při "
+            "velkém počtu záznamů zužte filtr — max. %(limit)s na jedno stažení."
+        ),
         "csv.button": "CSV",
         "host.signature_title": "Podpis hosta",
         "host.signature_help": (
@@ -309,9 +359,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "označí jako ověřený při uložení."
         ),
         "housebook.legal_footnote": (
-            "Jste správcem údajů a nesete právní odpovědnost. UbyHost je pouze software — nenahrazuje "
-            "povinnost uchovávat podepsané formuláře, hlásit cizince do tří pracovních dnů a předložit "
-            "listinnou evidenci při kontrole."
+            "Zůstáváte správcem údajů. UbyHost je pouze software — ne právní poradenství, nenahrazuje "
+            "papíry, které už máte, a nezaručuje, že policie přijme obrazovku místo listinné evidence."
         ),
         "nav.guide": "Nápověda",
         "send.this_stay": "Odeslat tento pobyt",

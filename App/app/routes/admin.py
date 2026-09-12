@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, BackgroundTasks, Request
 from fastapi.responses import RedirectResponse, Response
 
 from .. import (
@@ -2017,6 +2017,7 @@ def housebook_view(request: Request):
             "date_from": date_from,
             "date_to": date_to,
             "retention_years": housebook.RETENTION_YEARS,
+            "max_inspection_pdfs": housebook.MAX_INSPECTION_PDFS,
         },
     )
 
@@ -2081,7 +2082,7 @@ def housebook_download(request: Request):
 
 
 @router.get("/housebook/pdfs.zip")
-def housebook_pdfs_download(request: Request):
+def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -2093,11 +2094,32 @@ def housebook_pdfs_download(request: Request):
     )
     if not rows:
         return _back("/housebook", err="No house-book entries match this filter.")
+    if len(rows) > housebook.MAX_INSPECTION_PDFS:
+        return _back(
+            "/housebook",
+            err=(
+                f"Too many entries ({len(rows)}) for one download. "
+                f"Narrow the date or property filter to {housebook.MAX_INSPECTION_PDFS} or fewer."
+            ),
+        )
+    import os
+    import tempfile
+
+    from starlette.responses import FileResponse
+
+    fd, path = tempfile.mkstemp(suffix=".zip")
+    os.close(fd)
+    try:
+        housebook.build_housebook_pdfs_zip(rows, path)
+    except Exception:
+        os.unlink(path)
+        raise
     stamp = datetime.now().strftime("%Y%m%d")
-    return Response(
-        housebook.housebook_pdfs_zip(rows),
+    background_tasks.add_task(os.unlink, path)
+    return FileResponse(
+        path,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="domovni-kniha-pdf-{stamp}.zip"'},
+        filename=f"domovni-kniha-pdf-{stamp}.zip",
     )
 
 

@@ -139,8 +139,8 @@
     {% endif %}
     {% if can_import %}
       <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-housebook-panel">{{ t('csv.import') }}</button>
+      <a class="row-menu-item quiet" href="/housebook-sample.csv" role="menuitem">{{ t('csv.sample_housebook') }}</a>
     {% endif %}
-    <a class="row-menu-item quiet" href="/housebook-sample.csv" role="menuitem">{{ t('csv.sample_housebook') }}</a>
   </div>
 </div>
 {% endmacro %}

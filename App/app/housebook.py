@@ -29,6 +29,8 @@ from reportlab.pdfgen import canvas as pdfcanvas
 from . import db, reporting, validation
 
 RETENTION_YEARS = 6
+# Police-inspection ZIPs are built one PDF at a time on disk — not held in RAM.
+MAX_INSPECTION_PDFS = 100
 
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
@@ -404,10 +406,27 @@ def _pdf_entry_name(row: Dict[str, Any]) -> str:
     return f"{stem[:96]}.pdf"
 
 
+def build_housebook_pdfs_zip(rows: List[Dict[str, Any]], dest_path: str) -> int:
+    """Write signed registration forms to a zip file on disk, one PDF at a time.
+
+    Keeps memory use low: only one guest PDF is rendered at a time instead of
+    buffering the whole archive in RAM.
+    """
+    count = 0
+    with zipfile.ZipFile(dest_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for row in rows:
+            guest_id = row.get("_guest_id")
+            if not guest_id:
+                continue
+            archive.writestr(_pdf_entry_name(row), registration_form_pdf(int(guest_id)))
+            count += 1
+    return count
+
+
 def housebook_pdfs_zip(rows: List[Dict[str, Any]]) -> bytes:
-    """Zip signed registration forms for a police inspection."""
+    """In-memory zip for tests. Production uses build_housebook_pdfs_zip on disk."""
     buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         for row in rows:
             guest_id = row.get("_guest_id")
             if not guest_id:
