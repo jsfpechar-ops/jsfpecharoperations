@@ -20,6 +20,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    host_i18n,
     housebook,
     icalsync,
     passport_photos,
@@ -1477,7 +1478,11 @@ async def reservation_submit(reservation_id: int, request: Request):
     if not controls.get("send_enabled"):
         return _back(
             f"/reservations/{reservation_id}",
-            err=controls.get("send_hint") or "This stay cannot be sent right now.",
+            err=host_i18n.translate(
+                host_i18n.lang_from_request(request),
+                controls.get("send_hint_key", ""),
+            )
+            or "This stay cannot be sent right now.",
         )
     form = await request.form()
     allow_resend = bool(form.get("allow_resend"))

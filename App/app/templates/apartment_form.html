@@ -260,7 +260,7 @@ Thank you.</pre>
           </div>
           <button class="btn small" type="submit" formmethod="post"
                   formaction="/apartments/{{ apartment.id }}/regenerate-link"
-                  onclick="return confirm('Generate a new guest link and PIN? The current link and PIN stop working.')">Generate a new link</button>
+                  data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">Generate a new link</button>
         </div>
         <div class="setup-item" style="border:0;padding:0 0 14px">
           <div class="grow">
@@ -269,7 +269,7 @@ Thank you.</pre>
           </div>
           <button class="btn small" type="submit" formmethod="post"
                   formaction="/apartments/{{ apartment.id }}/regenerate-pin"
-                  onclick="return confirm('Generate a new random PIN?')">Generate a new PIN</button>
+                  data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">Generate a new PIN</button>
         </div>
         {% if apartment.archived_at %}
         <div class="setup-item" style="border:0;padding:0">
@@ -288,7 +288,7 @@ Thank you.</pre>
           </div>
           <button class="btn small" type="submit" formmethod="post"
                   formaction="/apartments/{{ apartment.id }}/archive"
-                  onclick="return confirm('Archive this property? It will disappear from your dashboard and guest links.')">Archive</button>
+                  data-confirm data-confirm-message="{{ t('confirm.archive_property') }}">{{ t('common.archive') }}</button>
         </div>
         {% endif %}
       </div>
@@ -338,7 +338,7 @@ Thank you.</pre>
             <td class="small mono truncate" data-label="URL">{{ feed.url }}</td>
             <td class="row-actions" data-label="">
               <form method="post" action="/feeds/{{ feed.id }}/delete" class="inline"
-                    onsubmit="return confirm('Disconnect this calendar feed? Existing stays are preserved.')">
+                    data-confirm data-confirm-message="{{ t('confirm.disconnect_feed') }}">
                 <button class="btn small danger" type="submit">Remove</button>
               </form>
             </td>

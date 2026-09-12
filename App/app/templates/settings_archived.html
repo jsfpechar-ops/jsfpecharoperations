@@ -1,68 +1,72 @@
 {% extends "base.html" %}
 {% set nav = 'settings' %}
-{% block title %}Archived{% endblock %}
+{% block title %}{{ t('archive.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
 {{ page_header(
-  'Archived',
-  'Everything you archived in one place. Restore a mistake or review old records.',
+  t('archive.title'),
+  t('archive.page_lede'),
   '/settings',
-  'Back to settings'
+  t('common.back')
 ) }}
 
-<p class="small muted">
-  Archiving hides items from your daily work but keeps their history.
-  Only the six-year retention purge in Settings permanently deletes guest records.
-</p>
+<p class="small muted">{{ t('archive.retention_note') }}</p>
 
 <div class="chips">
-  {% for value, label in [
-    ('all', 'All (' ~ counts.all ~ ')'),
-    ('stays', 'Stays (' ~ counts.stays ~ ')'),
-    ('properties', 'Properties (' ~ counts.properties ~ ')'),
-    ('housebook', 'House book (' ~ counts.housebook ~ ')'),
-    ('entities', 'Legal entities (' ~ counts.entities ~ ')')
+  {% for value, label_key in [
+    ('all', 'archive.chip.all_count'),
+    ('stays', 'archive.chip.stays_count'),
+    ('properties', 'archive.chip.properties_count'),
+    ('housebook', 'archive.chip.housebook_count'),
+    ('entities', 'archive.chip.entities_count')
   ] %}
-    <a class="chip {{ 'on' if item_type == value }}" href="/settings/archived?type={{ value }}">{{ label }}</a>
+    <a class="chip {{ 'on' if item_type == value }}" href="/settings/archived?type={{ value }}">
+      {{ t(label_key, count=counts[value]) }}
+    </a>
   {% endfor %}
 </div>
 
 {% if counts.all == 0 %}
   <div class="panel empty">
-    <p>Nothing is archived yet. You can archive stays, properties, house-book entries, and legal entities from their usual pages.</p>
+    <p>{{ t('archive.empty_detailed') }}</p>
     <div class="actions" style="justify-content:center">
-      <a class="btn" href="/reservations">Stays</a>
-      <a class="btn" href="/apartments">Properties</a>
-      <a class="btn" href="/housebook">House book</a>
-      <a class="btn" href="/entities">Legal entities</a>
+      <a class="btn" href="/reservations">{{ t('nav.stays') }}</a>
+      <a class="btn" href="/apartments">{{ t('nav.properties') }}</a>
+      <a class="btn" href="/housebook">{{ t('nav.housebook') }}</a>
+      <a class="btn" href="/entities">{{ t('nav.entities') }}</a>
     </div>
   </div>
 {% else %}
 
   {% if item_type in ('all', 'stays') and archived_stays %}
-  <h2>Archived stays</h2>
-  <p class="small muted">Hidden from your stay list. Reporting history is kept.</p>
+  <h2>{{ t('archive.section.stays') }}</h2>
+  <p class="small muted">{{ t('archive.hint.stays') }}</p>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>
-        <tr><th>Stay</th><th>Property</th><th>Archived</th><th><span class="sr-only">Actions</span></th></tr>
+        <tr>
+          <th>{{ t('archive.col.stay') }}</th>
+          <th>{{ t('archive.col.property') }}</th>
+          <th>{{ t('archive.col.when') }}</th>
+          <th><span class="sr-only">{{ t('common.actions') }}</span></th>
+        </tr>
       </thead>
       <tbody>
       {% for reservation in archived_stays %}
         <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}" tabindex="0" role="link">
-          <td class="nowrap" data-label="Stay">
+          <td class="nowrap" data-label="{{ t('archive.col.stay') }}">
             <a class="row-primary-link" href="/reservations/{{ reservation.id }}">
               {{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}
             </a>
           </td>
-          <td data-label="Property">{{ reservation.internal_name }}</td>
-          <td class="small muted" data-label="Archived">{{ reservation.archived_at[:10] }}</td>
+          <td data-label="{{ t('archive.col.property') }}">{{ reservation.internal_name }}</td>
+          <td class="small muted" data-label="{{ t('archive.col.when') }}">{{ reservation.archived_at[:10] }}</td>
           <td class="nowrap row-actions" data-label="">
             {{ row_menu_begin() }}
-              <a class="row-menu-item" href="/reservations/{{ reservation.id }}" role="menuitem">Open</a>
+              <a class="row-menu-item" href="/reservations/{{ reservation.id }}" role="menuitem">{{ t('common.open') }}</a>
               <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
                 <input type="hidden" name="return_to" value="/settings/archived{% if item_type != 'all' %}?type={{ item_type }}{% endif %}">
-                <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
+                <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.restore') }}</button>
               </form>
             {{ row_menu_end() }}
           </td>
@@ -72,31 +76,36 @@
     </table>
   </div>
   {% elif item_type == 'stays' %}
-    <div class="panel empty">No archived stays.</div>
+    <div class="panel empty">{{ t('archive.empty.stays') }}</div>
   {% endif %}
 
   {% if item_type in ('all', 'properties') and archived_properties %}
-  <h2>Archived properties</h2>
-  <p class="small muted">Hidden from your dashboard and guest links. Their history is kept.</p>
+  <h2>{{ t('archive.section.properties') }}</h2>
+  <p class="small muted">{{ t('archive.hint.properties') }}</p>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>
-        <tr><th>Property</th><th>Archived</th><th>Stays</th><th><span class="sr-only">Actions</span></th></tr>
+        <tr>
+          <th>{{ t('archive.col.property') }}</th>
+          <th>{{ t('archive.col.when') }}</th>
+          <th>{{ t('archive.col.stays_count') }}</th>
+          <th><span class="sr-only">{{ t('common.actions') }}</span></th>
+        </tr>
       </thead>
       <tbody>
       {% for apartment in archived_properties %}
         <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link">
-          <td data-label="Property">
+          <td data-label="{{ t('archive.col.property') }}">
             <a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a>
           </td>
-          <td class="small muted" data-label="Archived">{{ apartment.archived_at[:10] }}</td>
-          <td class="num" data-label="Stays">{{ apartment.reservations }}</td>
+          <td class="small muted" data-label="{{ t('archive.col.when') }}">{{ apartment.archived_at[:10] }}</td>
+          <td class="num" data-label="{{ t('archive.col.stays_count') }}">{{ apartment.reservations }}</td>
           <td class="nowrap row-actions" data-label="">
             {{ row_menu_begin() }}
-              <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">Open</a>
+              <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">{{ t('common.open') }}</a>
               <form method="post" action="/apartments/{{ apartment.id }}/unarchive" class="row-menu-form">
                 <input type="hidden" name="return_to" value="/settings/archived{% if item_type != 'all' %}?type={{ item_type }}{% endif %}">
-                <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
+                <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.restore') }}</button>
               </form>
             {{ row_menu_end() }}
           </td>
@@ -106,28 +115,34 @@
     </table>
   </div>
   {% elif item_type == 'properties' %}
-    <div class="panel empty">No archived properties.</div>
+    <div class="panel empty">{{ t('archive.empty.properties') }}</div>
   {% endif %}
 
   {% if item_type in ('all', 'housebook') and archived_housebook %}
-  <h2>Archived house-book entries</h2>
-  <p class="small muted">Mistaken imports or duplicates can be restored here.</p>
+  <h2>{{ t('archive.section.guests') }}</h2>
+  <p class="small muted">{{ t('archive.hint.housebook') }}</p>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>
-        <tr><th>Stay</th><th>Property</th><th>Guest</th><th>Archived</th><th></th></tr>
+        <tr>
+          <th>{{ t('archive.col.stay') }}</th>
+          <th>{{ t('archive.col.property') }}</th>
+          <th>{{ t('archive.col.guest') }}</th>
+          <th>{{ t('archive.col.when') }}</th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>
       {% for row in archived_housebook %}
         <tr>
-          <td class="nowrap small" data-label="Stay">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
-          <td data-label="Property">{{ row.apartment }}</td>
-          <td data-label="Guest"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
-          <td class="small muted" data-label="Archived">{{ row.archived_at[:10] }}</td>
+          <td class="nowrap small" data-label="{{ t('archive.col.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+          <td data-label="{{ t('archive.col.property') }}">{{ row.apartment }}</td>
+          <td data-label="{{ t('archive.col.guest') }}"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
+          <td class="small muted" data-label="{{ t('archive.col.when') }}">{{ row.archived_at[:10] }}</td>
           <td class="nowrap" data-label="">
             <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
               <input type="hidden" name="return_to" value="/settings/archived{% if item_type != 'all' %}?type={{ item_type }}{% endif %}">
-              <button class="btn small" type="submit">Restore</button>
+              <button class="btn small" type="submit">{{ t('common.restore') }}</button>
             </form>
           </td>
         </tr>
@@ -136,31 +151,36 @@
     </table>
   </div>
   {% elif item_type == 'housebook' %}
-    <div class="panel empty">No archived house-book entries.</div>
+    <div class="panel empty">{{ t('archive.empty.housebook') }}</div>
   {% endif %}
 
   {% if item_type in ('all', 'entities') and archived_entities %}
-  <h2>Archived legal entities</h2>
-  <p class="small muted">Hidden from property pickers until restored.</p>
+  <h2>{{ t('archive.section.entities') }}</h2>
+  <p class="small muted">{{ t('archive.hint.entities') }}</p>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>
-        <tr><th>Name</th><th>Archived</th><th>IČO</th><th><span class="sr-only">Actions</span></th></tr>
+        <tr>
+          <th>{{ t('archive.col.name') }}</th>
+          <th>{{ t('archive.col.when') }}</th>
+          <th>IČO</th>
+          <th><span class="sr-only">{{ t('common.actions') }}</span></th>
+        </tr>
       </thead>
       <tbody>
       {% for entity in archived_entities %}
         <tr class="clickable-row" data-href="/entities?edit={{ entity.id }}" tabindex="0" role="link">
-          <td data-label="Name">
+          <td data-label="{{ t('archive.col.name') }}">
             <a class="row-primary-link" href="/entities?edit={{ entity.id }}">{{ entity.name }}</a>
           </td>
-          <td class="small muted" data-label="Archived">{{ entity.archived_at[:10] }}</td>
+          <td class="small muted" data-label="{{ t('archive.col.when') }}">{{ entity.archived_at[:10] }}</td>
           <td class="mono" data-label="IČO">{{ entity.ico or '—' }}</td>
           <td class="nowrap row-actions" data-label="">
             {{ row_menu_begin() }}
-              <a class="row-menu-item" href="/entities?edit={{ entity.id }}" role="menuitem">Open</a>
+              <a class="row-menu-item" href="/entities?edit={{ entity.id }}" role="menuitem">{{ t('common.open') }}</a>
               <form method="post" action="/entities/{{ entity.id }}/unarchive" class="row-menu-form">
                 <input type="hidden" name="return_to" value="/settings/archived{% if item_type != 'all' %}?type={{ item_type }}{% endif %}">
-                <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
+                <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.restore') }}</button>
               </form>
             {{ row_menu_end() }}
           </td>
@@ -170,7 +190,7 @@
     </table>
   </div>
   {% elif item_type == 'entities' %}
-    <div class="panel empty">No archived legal entities.</div>
+    <div class="panel empty">{{ t('archive.empty.entities') }}</div>
   {% endif %}
 
 {% endif %}

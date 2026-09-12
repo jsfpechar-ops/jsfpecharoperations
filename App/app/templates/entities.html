@@ -128,7 +128,7 @@
                 </form>
                 {% if not entity.apartments %}
                 <form method="post" action="/entities/{{ entity.id }}/delete" class="row-menu-form"
-                      onsubmit="return confirm('Delete this legal entity permanently? This cannot be undone.')">
+                      data-confirm data-confirm-message="{{ t('confirm.delete_entity') }}">
                   <button class="row-menu-item danger" type="submit" role="menuitem">Delete</button>
                 </form>
                 {% endif %}

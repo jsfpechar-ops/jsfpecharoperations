@@ -315,7 +315,7 @@ def test_settings_archived_hub_lists_and_restores_entities():
         assert "Legal entities (1)" in page.text
 
         settings = admin.get("/settings")
-        assert "View archive" in settings.text
+        assert "Open archive hub" in settings.text
 
         restored = admin.post(
             f"/entities/{entity_id}/unarchive",

@@ -63,12 +63,12 @@ Thank you.</pre>
         {{ row_menu_begin('Link and PIN options') }}
           <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">Set a specific PIN</a>
           <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="row-menu-form"
-                onsubmit="return confirm('Generate a new random PIN?')">
+                data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">
             <input type="hidden" name="return_to" value="/guest-links">
             <button class="row-menu-item" type="submit" role="menuitem">Generate a new PIN</button>
           </form>
           <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="row-menu-form"
-                onsubmit="return confirm('Generate a new link and PIN? Update your portal messages.')">
+                data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">
             <input type="hidden" name="return_to" value="/guest-links">
             <button class="row-menu-item" type="submit" role="menuitem">Generate a new link</button>
           </form>

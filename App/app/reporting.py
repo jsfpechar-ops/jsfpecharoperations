@@ -294,11 +294,11 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     send_enabled = can_send and not auto_immediate
 
     if progress["status"] == "awaiting_verification":
-        send_hint = "Check each passport photo and confirm the details before reporting"
+        send_hint_key = "hint.awaiting_verification"
     elif auto_immediate:
-        send_hint = "Sends automatically after you verify each guest against their passport"
+        send_hint_key = "hint.auto_immediate"
     elif not has_pending and progress["status"] in ("not_required", "reported"):
-        send_hint = "Nothing to send: no guest record is subject to the reporting duty"
+        send_hint_key = "hint.nothing_duty"
     elif not has_pending:
         unsigned_foreign = [
             guest
@@ -308,22 +308,22 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
         ]
         unverified_foreign = progress.get("unverified") or []
         if unsigned_foreign:
-            send_hint = "Every foreign guest must sign before reporting to UbyPort"
+            send_hint_key = "hint.need_signature"
         elif unverified_foreign:
-            send_hint = "Verify each guest against their passport before reporting"
+            send_hint_key = "hint.need_verification"
         else:
-            send_hint = "Nothing left to send for this stay"
+            send_hint_key = "hint.nothing_left"
     elif not can_send:
-        send_hint = "Complete guest details, signatures, and passport checks before sending"
+        send_hint_key = "hint.not_ready"
     else:
-        send_hint = "Send completed guest records to UbyPort now"
+        send_hint_key = "hint.ready_to_send"
 
     send_visible = has_pending and progress["status"] in ("ready", "failed")
 
     return {
         "send_enabled": send_enabled,
         "send_visible": send_visible or (auto_immediate and has_pending),
-        "send_hint": send_hint,
+        "send_hint_key": send_hint_key,
         "auto_immediate": auto_immediate,
         "pending_count": len(pending),
     }
