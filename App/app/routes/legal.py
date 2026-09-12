@@ -8,6 +8,8 @@ from ..templating import render
 
 router = APIRouter()
 
+TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
+
 
 @router.get("/legal")
 def legal_operator(request: Request):
@@ -15,5 +17,20 @@ def legal_operator(request: Request):
         request,
         "legal.html",
         {"operator": operator.details(), "wrap_class": "narrow"},
+        status_code=200,
+    )
+
+
+@router.get("/terms")
+def terms_of_service(request: Request):
+    op = operator.details()
+    return render(
+        request,
+        "terms.html",
+        {
+            "operator": op,
+            "wrap_class": "narrow",
+            "terms_sections": TERMS_SECTION_IDS,
+        },
         status_code=200,
     )

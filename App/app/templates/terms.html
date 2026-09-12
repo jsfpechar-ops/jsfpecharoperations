@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% set show_nav = false %}
-{% block title %}{{ t('legal.page_title') }}{% endblock %}
+{% block title %}{{ t('terms.page_title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header %}
 
-{{ page_header(t('legal.page_title'), t('legal.page_lede')) }}
+{{ page_header(t('terms.page_title'), t('terms.page_lede')) }}
+
+<p class="small muted">{{ t('terms.effective') }}</p>
 
 <div class="panel legal-operator">
-  <h2 style="margin-top:0">{{ t('legal.operator_title') }}</h2>
+  <h2 style="margin-top:0">{{ t('terms.operator_title') }}</h2>
   <dl class="kv">
     <dt>{{ t('legal.operator_name') }}</dt>
     <dd>{{ operator.name }}</dd>
@@ -19,32 +21,25 @@
     {% endif %}
     <dt>{{ t('legal.operator_address') }}</dt>
     <dd>{{ operator.address }}</dd>
-    {% if operator.email %}
-      <dt>{{ t('legal.operator_contact') }}</dt>
-      <dd><a href="mailto:{{ operator.email }}">{{ operator.email }}</a></dd>
-    {% endif %}
     <dt>{{ t('legal.operator_registry') }}</dt>
     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">ARES (public register)</a></dd>
   </dl>
 </div>
 
+{% for sid in terms_sections %}
 <div class="panel">
-  <h2 style="margin-top:0">{{ t('legal.roles_title') }}</h2>
-  <p class="small muted">{{ t('legal.roles_body') }}</p>
+  <h2 style="margin-top:0">{{ t('terms.s' ~ sid ~ '_title') }}</h2>
+  <div class="small muted terms-section">{{ t('terms.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) }}</div>
 </div>
-
-<div class="panel">
-  <h2 style="margin-top:0">{{ t('legal.software_title') }}</h2>
-  <p class="small muted">{{ t('legal.software_body') }}</p>
-</div>
+{% endfor %}
 
 <div class="panel quiet">
-  <h2 style="margin-top:0">{{ t('legal.disclaimer_title') }}</h2>
-  <p class="small muted" style="margin-bottom:0">{{ t('legal.disclaimer_body') }}</p>
+  <h2 style="margin-top:0">{{ t('terms.review_title') }}</h2>
+  <p class="small muted" style="margin-bottom:0">{{ t('terms.review_body') }}</p>
 </div>
 
 <p class="small muted">
-  <a href="/terms">{{ t('legal.cross_terms') }}</a>
+  <a href="/legal">{{ t('terms.cross_legal') }}</a>
   &middot;
   <a href="/login">{{ t('legal.back_login') }}</a>
 </p>
