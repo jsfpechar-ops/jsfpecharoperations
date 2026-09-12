@@ -7,8 +7,9 @@ from typing import Any, Dict, Optional
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from jinja2 import pass_context
 
-from . import __version__, alerts, auth, config, deadlines, onboarding, reporting, validation
+from . import __version__, alerts, auth, config, deadlines, host_i18n, onboarding, reporting, validation
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
@@ -35,9 +36,17 @@ def _from_json(value: Optional[str]) -> Any:
         return []
 
 
+@pass_context
+def _template_translate(context, key: str, **kwargs) -> str:
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    return host_i18n.translate(lang, key, **kwargs)
+
+
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["from_json"] = _from_json
+templates.env.globals["t"] = _template_translate
 templates.env.globals.update(
     app_version=__version__,
     deployment_tier=config.DEPLOYMENT,
@@ -62,6 +71,7 @@ templates.env.globals.update(
 def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
     data = dict(context or {})
     data["request"] = request
+    data["lang"] = host_i18n.lang_from_request(request)
     data.setdefault("current_user", auth.current_user(request))
     data.setdefault("workspace_user", auth.workspace_user(request))
     workspace = data["workspace_user"]

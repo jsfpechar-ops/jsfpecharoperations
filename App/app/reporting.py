@@ -540,6 +540,11 @@ def submit_for_apartment(
     if not apartment:
         return []
 
+    from . import demo
+
+    if demo.is_demo_apartment(apartment):
+        return [{"state": "noop", "error": "Demo data is for preview only and is never sent to the police."}]
+
     ap_dict = dict(apartment)
     ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
     setup_errors = validation.errors_only(validation.validate_apartment(ap_dict))

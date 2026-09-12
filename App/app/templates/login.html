@@ -1,9 +1,9 @@
 {% extends "auth_base.html" %}
-{% block title %}Log in{% endblock %}
+{% block title %}{{ t('login.submit') }}{% endblock %}
 {% block auth_body %}
 <section class="auth-card">
-  <h1 class="auth-title">Your guest reporting workspace.</h1>
-  <p class="auth-lede">Log in to your UbyHost account</p>
+  <h1 class="auth-title">{{ t('login.title') }}</h1>
+  <p class="auth-lede">{{ t('login.lede') }}</p>
 
   {% if error %}
     <div class="auth-alert" role="alert">{{ error }}</div>
@@ -12,22 +12,26 @@
   <form method="post" action="/login" class="auth-form">
     <input type="hidden" name="next" value="{{ request.query_params.get('next', '') }}">
     <div class="auth-field">
-      <label for="username">Username</label>
+      <label for="username">{{ t('login.username') }}</label>
       <input type="text" id="username" name="username" required autofocus
              value="{{ username | default('', true) }}"
              autocomplete="username" autocapitalize="none" spellcheck="false"
-             placeholder="Enter your username…">
+             placeholder="{{ t('login.username_ph') }}">
     </div>
     <div class="auth-field">
-      <label for="password">Password</label>
+      <label for="password">{{ t('login.password') }}</label>
       <input type="password" id="password" name="password" required
-             autocomplete="current-password" placeholder="Enter your password…">
+             autocomplete="current-password" placeholder="{{ t('login.password_ph') }}">
     </div>
-    <button class="auth-submit" type="submit">Continue</button>
+    <label class="auth-remember">
+      <input type="checkbox" name="remember" value="1">
+      <span>{{ t('login.remember') }}</span>
+    </label>
+    <button class="auth-submit" type="submit">{{ t('login.submit') }}</button>
   </form>
 
   <div class="auth-foot">
-    <p><strong>No public sign-up.</strong> UbyHost is invite-only. Ask your administrator for an account, or use the first-admin credentials from your deployment.</p>
+    <p>{{ t('login.footnote') }}</p>
     {% if setup_hint %}
       <p class="auth-setup-hint">{{ setup_hint }}</p>
     {% endif %}

@@ -96,32 +96,34 @@
   {% endif %}
 {% endmacro %}
 
-{% macro csv_actions_menu(export_params='') %}
+{% macro csv_actions_menu(export_params='', can_import=false) %}
 <div class="action-menu row-menu">
   <button class="btn row-menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">
     CSV <span class="menu-caret" aria-hidden="true">▾</span>
   </button>
   <div class="row-menu-panel" role="menu" hidden>
     <button class="row-menu-item" type="button" role="menuitem"
-            data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}">Export stays</button>
-    <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-stays-panel">Import stays</button>
-    <a class="row-menu-item quiet" href="/reservations-sample.csv" role="menuitem">Sample CSV</a>
+            data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}">{{ t('csv.export_stays') }}</button>
+    {% if can_import %}
+      <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-stays-panel">{{ t('csv.import_stays') }}</button>
+    {% endif %}
+    <a class="row-menu-item quiet" href="/reservations-sample.csv" role="menuitem">{{ t('csv.sample_stays') }}</a>
   </div>
 </div>
 {% endmacro %}
 
-{% macro housebook_csv_menu(export_params='', has_apartments=false) %}
+{% macro housebook_csv_menu(export_params='', can_import=false) %}
 <div class="action-menu row-menu">
   <button class="btn row-menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">
     CSV <span class="menu-caret" aria-hidden="true">▾</span>
   </button>
   <div class="row-menu-panel" role="menu" hidden>
     <button class="row-menu-item" type="button" role="menuitem"
-            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}">Download CSV</button>
-    {% if has_apartments %}
-      <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-housebook-panel">Import CSV</button>
-      <a class="row-menu-item quiet" href="/housebook-sample.csv" role="menuitem">Sample CSV</a>
+            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}">{{ t('csv.download') }}</button>
+    {% if can_import %}
+      <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-housebook-panel">{{ t('csv.import') }}</button>
     {% endif %}
+    <a class="row-menu-item quiet" href="/housebook-sample.csv" role="menuitem">{{ t('csv.sample_housebook') }}</a>
   </div>
 </div>
 {% endmacro %}
@@ -194,14 +196,12 @@
     {% if onboarding.current %}
       <a class="btn primary" href="{{ onboarding.current.url }}">Continue: {{ onboarding.current.action }}</a>
     {% endif %}
-    {% if ubyport_env == 'mock' %}
-      <div class="onboarding-demo">
-        <form method="post" action="/demo">
-          <button class="btn" type="submit">Or explore with demo data first</button>
-        </form>
-        <p class="small muted" style="margin-top:8px">One property, sample stays, and guests already reported to the mock server.</p>
-      </div>
-    {% endif %}
+    <div class="onboarding-demo">
+      <form method="post" action="/demo">
+        <button class="btn" type="submit">{{ t('demo.load') }}</button>
+      </form>
+      <p class="small muted" style="margin-top:8px">{{ t('demo.load_detail') }}</p>
+    </div>
   </div>
 {% endmacro %}
 

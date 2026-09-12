@@ -5,12 +5,13 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, config, db, scheduler
+from . import auth, config, db, host_i18n, scheduler
 from .routes import admin, guest
+from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
     level=logging.INFO,
@@ -67,6 +68,31 @@ app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), name="static")
 app.include_router(guest.router)
 app.include_router(admin.router)
+
+
+@app.get("/sample-airbnb.ics", include_in_schema=False)
+def sample_airbnb_calendar():
+    return sample_calendar_response()
+
+
+@app.post("/language", include_in_schema=False)
+async def set_language(request: Request):
+    form = await request.form()
+    lang = host_i18n.normalise_language(str(form.get("lang", "")))
+    target = str(form.get("next", "/") or "/")
+    if not target.startswith("/") or target.startswith("//"):
+        target = "/"
+    response = RedirectResponse(target, status_code=303)
+    response.set_cookie(
+        host_i18n.LANG_COOKIE,
+        lang,
+        max_age=60 * 60 * 24 * 365,
+        httponly=False,
+        samesite="lax",
+        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        path="/",
+    )
+    return response
 
 
 @app.get("/healthz", include_in_schema=False)
