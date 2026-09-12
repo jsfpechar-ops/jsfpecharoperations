@@ -292,3 +292,38 @@ def test_legal_entity_rows_are_clickable_and_can_be_archived():
     finally:
         db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
         _clean_accounts()
+
+
+def test_settings_archived_hub_lists_and_restores_entities():
+    db.init_db()
+    _clean_accounts()
+    admin_id = _account("boundary-admin", role="admin")
+    entity_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Hub Archive s.r.o.",
+            "owner_user_id": admin_id,
+            "created_at": db.utcnow(),
+            "archived_at": db.utcnow(),
+        },
+    )
+    try:
+        admin = _login("boundary-admin")
+        page = admin.get("/settings/archived")
+        assert page.status_code == 200
+        assert "Hub Archive s.r.o." in page.text
+        assert "Legal entities (1)" in page.text
+
+        settings = admin.get("/settings")
+        assert "View archive" in settings.text
+
+        restored = admin.post(
+            f"/entities/{entity_id}/unarchive",
+            data={"return_to": "/settings/archived"},
+            follow_redirects=False,
+        )
+        assert restored.status_code == 303
+        assert restored.headers["location"].startswith("/settings/archived")
+    finally:
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
+        _clean_accounts()

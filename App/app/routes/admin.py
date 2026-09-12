@@ -635,18 +635,20 @@ def archive_entity(entity_id: int, request: Request):
 
 
 @router.post("/entities/{entity_id}/unarchive")
-def unarchive_entity(entity_id: int, request: Request):
+async def unarchive_entity(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/entities?edit={entity_id}")
     entity = access.entity(request, entity_id)
     if not entity:
         return _back("/entities", err="No such legal entity.")
     if not entity["archived_at"]:
-        return _back("/entities", err="Not archived.")
+        return _back(return_to, err="Not archived.")
     db.update("legal_entity", entity_id, {"archived_at": None})
     db.audit("entity_unarchived", f"id={entity_id}")
-    return _back(f"/entities?edit={entity_id}", msg=f"“{entity['name']}” restored.")
+    return _back(return_to, msg=f"“{entity['name']}” restored.")
 
 
 @router.post("/entities/{entity_id}/delete")
@@ -968,22 +970,24 @@ def archive_apartment(apartment_id: int, request: Request):
 
 
 @router.post("/apartments/{apartment_id}/unarchive")
-def unarchive_apartment(apartment_id: int, request: Request):
+async def unarchive_apartment(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     if not apartment["archived_at"]:
-        return _back(f"/apartments/{apartment_id}", err="Not archived.")
+        return _back(return_to, err="Not archived.")
     db.update(
         "apartment",
         apartment_id,
         {"archived_at": None, "active": 1},
     )
     db.audit("apartment_unarchived", f"id={apartment_id}")
-    return _back(f"/apartments/{apartment_id}", msg="Property restored from archive.")
+    return _back(return_to, msg="Property restored from archive.")
 
 
 @router.post("/apartments/{apartment_id}/feeds")
@@ -1444,18 +1448,20 @@ def reservation_archive(reservation_id: int, request: Request):
 
 
 @router.post("/reservations/{reservation_id}/unarchive")
-def reservation_unarchive(reservation_id: int, request: Request):
+async def reservation_unarchive(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/reservations/{reservation_id}")
     reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err="No such stay.")
     if not reservation["archived_at"]:
-        return _back(f"/reservations/{reservation_id}", err="Not archived.")
+        return _back(return_to, err="Not archived.")
     db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("reservation_unarchived", f"id={reservation_id}")
-    return _back(f"/reservations/{reservation_id}", msg="Stay restored from archive.")
+    return _back(return_to, msg="Stay restored from archive.")
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -1795,18 +1801,20 @@ async def guest_archive(guest_id: int, request: Request):
 
 
 @router.post("/guests/{guest_id}/unarchive")
-def guest_unarchive(guest_id: int, request: Request):
+async def guest_unarchive(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, "/housebook")
     guest = access.guest(request, guest_id)
     if not guest:
         return _back("/housebook", err="No such guest record.")
     if not guest["archived_at"]:
-        return _back(f"/guests/{guest_id}", err="Not archived.")
+        return _back(return_to, err="Not archived.")
     db.update("guest", guest_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("guest_unarchived", f"id={guest_id}")
-    return _back("/housebook", msg="House-book entry restored.")
+    return _back(return_to, msg="House-book entry restored.")
 
 
 @router.post("/guests/{guest_id}/delete")
@@ -2212,9 +2220,7 @@ def settings_archived_view(request: Request):
         archived_housebook = housebook.housebook_archived_rows(owner_user_id=owner_id)
     if item_type in ("all", "entities"):
         archived_entities = db.query(
-            "SELECT e.*, "
-            "  (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
-            "FROM legal_entity e "
+            "SELECT e.* FROM legal_entity e "
             "WHERE e.archived_at IS NOT NULL AND e.owner_user_id IS ? "
             "ORDER BY e.archived_at DESC",
             (owner_id,),
