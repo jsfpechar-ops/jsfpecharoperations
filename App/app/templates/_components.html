@@ -32,14 +32,18 @@
     'ready': 'Ready to report',
     'incomplete': 'Incomplete',
     'not_required': 'Exempt',
-    'awaiting_guest': 'Waiting for guest'
+    'awaiting_guest': 'Waiting for guest',
+    'awaiting_verification': 'Verify passport'
   } %}
   {% if is_demo and status == 'ready' %}
     {% set label = t('status.demo_preview') %}
     {% set tip = t('status.demo_preview_tip') %}
+  {% elif status == 'awaiting_verification' %}
+    {% set label = t('status.awaiting_verification') %}
+    {% set tip = t('status.awaiting_verification_tip') %}
   {% elif automation_mode == 'immediate' and status in ('awaiting_guest', 'incomplete') %}
-    {% set label = t('status.waiting_signature') %}
-    {% set tip = t('status.waiting_signature_tip') %}
+    {% set label = t('status.waiting_guest') %}
+    {% set tip = t('status.waiting_guest_tip') %}
   {% elif status == 'ready' and automation_mode == 'immediate' %}
     {% set label = t('status.ready_immediate') %}
     {% set tip = t('status.ready_immediate_tip') %}

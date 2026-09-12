@@ -17,7 +17,7 @@ import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import alerts, codelists, config, db, deadlines, validation
+from . import alerts, codelists, config, db, deadlines, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
 
@@ -110,6 +110,44 @@ def guest_has_signature(guest) -> bool:
     return signature.startswith("data:image/")
 
 
+def guest_identity_verified(guest) -> bool:
+    """True when the host has confirmed the record against a travel document."""
+    if not validation.guest_is_reportable(guest["nationality"]):
+        return True
+    return bool(guest["identity_verified_at"])
+
+
+def _guest_entered_by(guest) -> str:
+    try:
+        return guest["entered_by"] or "guest"
+    except (KeyError, IndexError, TypeError):
+        return "guest"
+
+
+def guest_has_passport_photo(guest) -> bool:
+    """True when a temporary passport photo is on file for host review."""
+    if not validation.guest_is_reportable(guest["nationality"]):
+        return False
+    if _guest_entered_by(guest) == "host":
+        return False
+    try:
+        guest_id = guest["id"]
+    except (KeyError, IndexError, TypeError):
+        return False
+    if not guest_id:
+        return False
+    return bool(guest["passport_photo_at"]) and passport_photos.has_photo(int(guest_id))
+
+
+def guest_needs_passport_photo(guest) -> bool:
+    """Online check-ins from foreigners must include a passport photo for review."""
+    return (
+        validation.guest_is_reportable(guest["nationality"])
+        and _guest_entered_by(guest) != "host"
+        and not guest_identity_verified(guest)
+    )
+
+
 def guest_issues(guest, reservation) -> List[validation.Issue]:
     start, end = _stay_dates(guest, reservation)
     issues = validation.validate_guest(guest_dict(guest), start, end)
@@ -118,6 +156,13 @@ def guest_issues(guest, reservation) -> List[validation.Issue]:
             validation.Issue(
                 "signature",
                 "A guest signature is required. Use the guest link or sign on the host form.",
+            )
+        )
+    if guest_needs_passport_photo(guest) and not guest_has_passport_photo(guest):
+        issues.append(
+            validation.Issue(
+                "passport_photo",
+                "A passport photo is required so the host can verify your details before reporting.",
             )
         )
     return issues
@@ -155,6 +200,7 @@ def reservation_progress(reservation) -> Dict[str, Any]:
     expected = expected_guest_count(reservation)
     complete = [g for g in guests if guest_is_complete(g, reservation)]
     reportable = [g for g in complete if validation.guest_is_reportable(g["nationality"])]
+    unverified = [g for g in reportable if not guest_identity_verified(g)]
     sent = [g for g in guests if g["submit_state"] == SENT]
     failed = [g for g in guests if g["submit_state"] in (ERROR, BLOCKED)]
     incomplete = [g for g in guests if not guest_is_complete(g, reservation)]
@@ -171,6 +217,8 @@ def reservation_progress(reservation) -> Dict[str, Any]:
         status = "incomplete"
     elif incomplete:
         status = "incomplete"
+    elif unverified:
+        status = "awaiting_verification"
     elif reportable and len(sent) < len(reportable):
         status = "ready"
     elif reportable and len(sent) == len(reportable):
@@ -187,6 +235,7 @@ def reservation_progress(reservation) -> Dict[str, Any]:
         "missing": missing,
         "incomplete": incomplete,
         "reportable": reportable,
+        "unverified": unverified,
         "sent": sent,
         "failed": failed,
         "status": status,
@@ -196,6 +245,7 @@ def reservation_progress(reservation) -> Dict[str, Any]:
 STATUS_LABELS = {
     "awaiting_guest": "Waiting for guest",
     "incomplete": "Incomplete",
+    "awaiting_verification": "Awaiting passport check",
     "ready": "Ready to report",
     "reported": "Reported",
     "not_required": "No reporting duty",
@@ -210,16 +260,19 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
         for guest in guests
         if validation.guest_is_reportable(guest["nationality"])
         and guest_has_signature(guest)
+        and guest_identity_verified(guest)
         and guest["submit_state"] not in (SENT, BLOCKED)
     ]
 
 
 def status_label(status: str, automation_mode: Optional[str] = None) -> str:
     """Human label for a stay's reporting status, with automation context."""
+    if status == "awaiting_verification":
+        return "Verify passport before reporting"
     if status in ("awaiting_guest", "incomplete") and automation_mode == "immediate":
-        return "Waiting for signature"
+        return "Waiting for guest"
     if status == "ready" and automation_mode == "immediate":
-        return "Forms complete — auto-send"
+        return "Verified — auto-send after you confirm"
     if status == "ready" and automation_mode == "manual":
         return "Ready — send manually"
     if status == "ready" and automation_mode == "scheduled":
@@ -237,8 +290,10 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
     send_enabled = can_send and not auto_immediate
 
-    if auto_immediate:
-        send_hint = "Sends automatically when a guest completes their form"
+    if progress["status"] == "awaiting_verification":
+        send_hint = "Check each passport photo and confirm the details before reporting"
+    elif auto_immediate:
+        send_hint = "Sends automatically after you verify each guest against their passport"
     elif not has_pending and progress["status"] in ("not_required", "reported"):
         send_hint = "Nothing to send: no guest record is subject to the reporting duty"
     elif not has_pending:
@@ -248,12 +303,15 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
             if validation.guest_is_reportable(guest["nationality"])
             and not guest_has_signature(guest)
         ]
+        unverified_foreign = progress.get("unverified") or []
         if unsigned_foreign:
             send_hint = "Every foreign guest must sign before reporting to UbyPort"
+        elif unverified_foreign:
+            send_hint = "Verify each guest against their passport before reporting"
         else:
             send_hint = "Nothing left to send for this stay"
     elif not can_send:
-        send_hint = "Complete guest details and signatures before sending"
+        send_hint = "Complete guest details, signatures, and passport checks before sending"
     else:
         send_hint = "Send completed guest records to UbyPort now"
 
@@ -269,7 +327,7 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
 
 def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
-    """Immediate automation after a guest record is saved (guest or host)."""
+    """Immediate automation after the host verifies identity (never on raw guest save)."""
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment or apartment["automation_mode"] != "immediate":
         return
@@ -280,6 +338,8 @@ def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
     if not reservation or reservation["status"] != "active":
         return
     if not guest_is_complete(guest, reservation) or not validation.guest_is_reportable(guest["nationality"]):
+        return
+    if not guest_identity_verified(guest):
         return
     if guest["submit_state"] == SENT:
         return
@@ -297,7 +357,12 @@ def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
 
 
 def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
-    """Immediate automation also applies when the host enters guest details."""
+    """Host-entered records are verified on save; immediate mode may send then."""
+    try_immediate_submit(apartment_id, guest_id)
+
+
+def maybe_submit_after_verify(apartment_id: int, guest_id: int) -> None:
+    """Immediate automation fires once the host confirms passport details."""
     try_immediate_submit(apartment_id, guest_id)
 
 
@@ -382,6 +447,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if guest["submit_state"] == BLOCKED and not allow_resend:
             continue
         if not guest_is_complete(guest, reservation):
+            continue
+        if not guest_identity_verified(guest):
             continue
         if not ignore_automation and not due_for_automatic_send(apartment, reservation):
             continue

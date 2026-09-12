@@ -163,7 +163,7 @@
     <dl class="kv">
       <dt>Send timing</dt>
       <dd>
-        {% if apartment.automation_mode == 'immediate' %}Immediately after guest submit
+        {% if apartment.automation_mode == 'immediate' %}After you verify each passport
         {% elif apartment.automation_mode == 'manual' %}Only when you press send
         {% else %}{{ apartment.submit_after_hours }} h after check-in{% endif %}
       </dd>
@@ -183,9 +183,9 @@
         <label for="automation_mode">When to send to UbyPort</label>
         <select id="automation_mode" name="automation_mode"
                 data-automation-mode data-hours-target="submit_after_hours">
-          <option value="immediate">Immediately after the guest submits the form</option>
-          <option value="scheduled" selected>A set number of hours after check-in (recommended)</option>
-          <option value="manual">Only when I press send</option>
+          <option value="manual" selected>Only when I press send (recommended)</option>
+          <option value="scheduled">A set number of hours after check-in, once verified</option>
+          <option value="immediate">Automatically after I verify each passport</option>
         </select>
       </div>
       <div class="field">
