@@ -9,8 +9,9 @@
   <link rel="stylesheet" href="/static/app.css?v=20260912f">
 </head>
 <body class="auth-page">
+  <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
   <div class="auth-layout">
-    <section class="auth-panel">
+    <section id="main-content" class="auth-panel">
       <header class="auth-brand">
         <img class="auth-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
       </header>
@@ -20,6 +21,12 @@
         <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
       </form>
       {% block auth_body %}{% endblock %}
+      <footer class="auth-foot-legal small muted">
+        <a href="/legal">{{ t('legal.footer_link') }}</a>
+        {% if operator().email %}
+          &middot; <a href="mailto:{{ operator().email }}">{{ operator().email }}</a>
+        {% endif %}
+      </footer>
     </section>
     <aside class="auth-hero" aria-hidden="true">
       <div class="auth-hero-inner">

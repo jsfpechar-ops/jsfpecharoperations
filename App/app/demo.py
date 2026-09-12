@@ -106,7 +106,6 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
             "submit_after_hours": 24,
             "permalink_window_days": 3,
             "default_purpose": "10",
-            "checkin_info": "Self check-in. Key box code arrives on the morning of arrival.",
             "permalink_token": auth.new_permalink_token(),
             "permalink_pin": auth.new_permalink_pin(),
             "active": 1,

@@ -79,8 +79,9 @@ def apartments(request: Request, columns: str = "*", include_archived: bool = Fa
     return db.query(sql, (owner_id(request),))
 
 
-def entities(request: Request):
-    return db.query(
-        "SELECT * FROM legal_entity WHERE owner_user_id IS ? ORDER BY name",
-        (owner_id(request),),
-    )
+def entities(request: Request, include_archived: bool = False):
+    sql = "SELECT * FROM legal_entity WHERE owner_user_id IS ?"
+    if not include_archived:
+        sql += " AND archived_at IS NULL"
+    sql += " ORDER BY name"
+    return db.query(sql, (owner_id(request),))

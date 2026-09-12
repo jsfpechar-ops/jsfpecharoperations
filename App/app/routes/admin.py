@@ -7,8 +7,8 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode
 
-from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi.responses import RedirectResponse, Response, StreamingResponse
 
 from .. import (
     access,
@@ -20,6 +20,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    host_i18n,
     housebook,
     icalsync,
     passport_photos,
@@ -293,8 +294,8 @@ async def user_create(request: Request):
         return Response("Administrators only.", status_code=403)
     form = await request.form()
     password = _form_str(form, "password")
-    if password != _form_str(form, "confirm_password"):
-        return _back("/admin/users", err="The passwords do not match.")
+    if not password:
+        password = auth.generate_password()
     try:
         user_id = auth.create_account(
             _form_str(form, "username"),
@@ -312,7 +313,10 @@ async def user_create(request: Request):
     db.audit(
         "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
     )
-    return _back("/admin/users", msg="User created. Give them the initial password securely.")
+    return _back(
+        "/admin/users",
+        msg=f"User created. Temporary password: {password} — copy it now; it is not shown again.",
+    )
 
 
 @router.post("/admin/users/{user_id}/password")
@@ -328,8 +332,8 @@ async def user_password_reset(user_id: int, request: Request):
         return _back("/account/password", err="Change your own password from your account page.")
     form = await request.form()
     password = _form_str(form, "password")
-    if password != _form_str(form, "confirm_password"):
-        return _back("/admin/users", err="The passwords do not match.")
+    if not password:
+        password = auth.generate_password()
     try:
         auth.set_account_password(user_id, password, must_change=True)
     except ValueError as exc:
@@ -337,7 +341,13 @@ async def user_password_reset(user_id: int, request: Request):
     db.audit(
         "password_reset", actor=account["username"], owner_user_id=user_id
     )
-    return _back("/admin/users", msg=f"Password reset for {target['username']}.")
+    return _back(
+        "/admin/users",
+        msg=(
+            f"Password reset for {target['username']}. "
+            f"Temporary password: {password} — copy it now; it is not shown again."
+        ),
+    )
 
 
 @router.post("/admin/users/{user_id}/impersonate")
@@ -537,7 +547,13 @@ def entities(request: Request):
     owner_user_id = access.owner_id(request)
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
-        "FROM legal_entity e WHERE e.owner_user_id IS ? ORDER BY e.name",
+        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NULL ORDER BY e.name",
+        (owner_user_id,),
+    )
+    archived = db.query(
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
+        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NOT NULL "
+        "ORDER BY e.archived_at DESC",
         (owner_user_id,),
     )
     edit_entity = None
@@ -547,7 +563,11 @@ def entities(request: Request):
             "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id IS ?",
             (int(edit_id), owner_user_id),
         )
-    return render(request, "entities.html", {"entities": rows, "edit_entity": edit_entity})
+    return render(
+        request,
+        "entities.html",
+        {"entities": rows, "archived_entities": archived, "edit_entity": edit_entity},
+    )
 
 
 ENTITY_FIELDS = ("name", "seat", "ico", "dic", "contact_email", "contact_phone")
@@ -591,21 +611,66 @@ async def update_entity(entity_id: int, request: Request):
     return _back("/entities", msg="Saved.")
 
 
-@router.post("/entities/{entity_id}/delete")
-def delete_entity(entity_id: int, request: Request):
+@router.post("/entities/{entity_id}/archive")
+def archive_entity(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.entity(request, entity_id):
+    entity = access.entity(request, entity_id)
+    if not entity:
         return _back("/entities", err="No such legal entity.")
+    if entity["archived_at"]:
+        return _back("/entities", err="Already archived.")
     used = db.query_one(
         "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
         (entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
-        return _back("/entities", err="Detach the apartments from this entity first.")
+        return _back(
+            "/entities",
+            err="Detach or archive the properties linked to this entity first.",
+        )
+    db.update("legal_entity", entity_id, {"archived_at": db.utcnow()})
+    db.audit("entity_archived", f"id={entity_id}")
+    return _back("/entities", msg=f"“{entity['name']}” archived.")
+
+
+@router.post("/entities/{entity_id}/unarchive")
+async def unarchive_entity(entity_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/entities?edit={entity_id}")
+    entity = access.entity(request, entity_id)
+    if not entity:
+        return _back("/entities", err="No such legal entity.")
+    if not entity["archived_at"]:
+        return _back(return_to, err="Not archived.")
+    db.update("legal_entity", entity_id, {"archived_at": None})
+    db.audit("entity_unarchived", f"id={entity_id}")
+    return _back(return_to, msg=f"“{entity['name']}” restored.")
+
+
+@router.post("/entities/{entity_id}/delete")
+def delete_entity(entity_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entity = access.entity(request, entity_id)
+    if not entity:
+        return _back("/entities", err="No such legal entity.")
+    if not entity["archived_at"]:
+        return _back("/entities", err="Archive the legal entity before deleting it.")
+    used = db.query_one(
+        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
+        (entity_id, access.owner_id(request)),
+    )
+    if used and used["n"]:
+        return _back("/entities", err="Detach the properties from this entity first.")
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
-    return _back("/entities", msg="Deleted.")
+    db.audit("entity_deleted", f"id={entity_id}")
+    return _back("/entities", msg="Deleted permanently.")
 
 
 # --- apartments ----------------------------------------------------------
@@ -677,8 +742,6 @@ APARTMENT_TEXT_FIELDS = (
     "uby_contact",
     "uby_ws_user",
     "notes",
-    "checkin_info",
-    "checkout_info",
 )
 
 
@@ -906,22 +969,24 @@ def archive_apartment(apartment_id: int, request: Request):
 
 
 @router.post("/apartments/{apartment_id}/unarchive")
-def unarchive_apartment(apartment_id: int, request: Request):
+async def unarchive_apartment(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
     if not apartment["archived_at"]:
-        return _back(f"/apartments/{apartment_id}", err="Not archived.")
+        return _back(return_to, err="Not archived.")
     db.update(
         "apartment",
         apartment_id,
         {"archived_at": None, "active": 1},
     )
     db.audit("apartment_unarchived", f"id={apartment_id}")
-    return _back(f"/apartments/{apartment_id}", msg="Property restored from archive.")
+    return _back(return_to, msg="Property restored from archive.")
 
 
 @router.post("/apartments/{apartment_id}/feeds")
@@ -1206,13 +1271,14 @@ def reservations_export(request: Request):
     if not (date_from and date_to):
         return _back("/reservations", err="Choose a date range for the export.")
     stamp = datetime.now().strftime("%Y%m%d")
-    return Response(
-        stays_import.export_csv(
-            date_from=date_from,
-            date_to=date_to,
-            apartment_id=_query_int(request, "apartment"),
-            owner_user_id=access.owner_id(request),
-        ),
+    sql, params = stays_import._export_sql(
+        date_from=date_from,
+        date_to=date_to,
+        apartment_id=_query_int(request, "apartment"),
+        owner_user_id=access.owner_id(request),
+    )
+    return StreamingResponse(
+        stays_import.iter_export_csv_rows(db.query(sql, params)),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="stays-{stamp}.csv"'},
     )
@@ -1382,18 +1448,20 @@ def reservation_archive(reservation_id: int, request: Request):
 
 
 @router.post("/reservations/{reservation_id}/unarchive")
-def reservation_unarchive(reservation_id: int, request: Request):
+async def reservation_unarchive(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, f"/reservations/{reservation_id}")
     reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err="No such stay.")
     if not reservation["archived_at"]:
-        return _back(f"/reservations/{reservation_id}", err="Not archived.")
+        return _back(return_to, err="Not archived.")
     db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("reservation_unarchived", f"id={reservation_id}")
-    return _back(f"/reservations/{reservation_id}", msg="Stay restored from archive.")
+    return _back(return_to, msg="Stay restored from archive.")
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -1410,7 +1478,11 @@ async def reservation_submit(reservation_id: int, request: Request):
     if not controls.get("send_enabled"):
         return _back(
             f"/reservations/{reservation_id}",
-            err=controls.get("send_hint") or "This stay cannot be sent right now.",
+            err=host_i18n.translate(
+                host_i18n.lang_from_request(request),
+                controls.get("send_hint_key", ""),
+            )
+            or "This stay cannot be sent right now.",
         )
     form = await request.form()
     allow_resend = bool(form.get("allow_resend"))
@@ -1733,18 +1805,20 @@ async def guest_archive(guest_id: int, request: Request):
 
 
 @router.post("/guests/{guest_id}/unarchive")
-def guest_unarchive(guest_id: int, request: Request):
+async def guest_unarchive(guest_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, "/housebook")
     guest = access.guest(request, guest_id)
     if not guest:
         return _back("/housebook", err="No such guest record.")
     if not guest["archived_at"]:
-        return _back(f"/guests/{guest_id}", err="Not archived.")
+        return _back(return_to, err="Not archived.")
     db.update("guest", guest_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("guest_unarchived", f"id={guest_id}")
-    return _back("/housebook", msg="House-book entry restored.")
+    return _back(return_to, msg="House-book entry restored.")
 
 
 @router.post("/guests/{guest_id}/delete")
@@ -1823,6 +1897,62 @@ def guest_form_pdf(guest_id: int, request: Request):
 
 # --- submissions ---------------------------------------------------------
 
+@router.get("/submissions/receipts.zip")
+def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks):
+    """Bulk-download stored Doručenka PDFs as a zip built on disk."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    date_from = _query_date(request, "from")
+    date_to = _query_date(request, "to")
+    sql = (
+        "SELECT s.* FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+        "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
+    )
+    params: List[Any] = [owner_id]
+    if date_from:
+        sql += " AND date(s.created_at) >= ?"
+        params.append(date_from)
+    if date_to:
+        sql += " AND date(s.created_at) <= ?"
+        params.append(date_to)
+    sql += " ORDER BY s.created_at DESC"
+    rows = db.query(sql, params)
+    if not rows:
+        return _back("/submissions", err="No Doručenka receipts to download yet.")
+    if len(rows) > reporting.MAX_RECEIPT_DOWNLOADS:
+        return _back(
+            "/submissions",
+            err=(
+                f"Too many receipts ({len(rows)}) for one download. "
+                f"Narrow the date filter to {reporting.MAX_RECEIPT_DOWNLOADS} or fewer."
+            ),
+        )
+    import os
+    import tempfile
+
+    from starlette.responses import FileResponse
+
+    fd, path = tempfile.mkstemp(suffix=".zip")
+    os.close(fd)
+    try:
+        written = reporting.build_receipts_zip(rows, path)
+    except Exception:
+        os.unlink(path)
+        raise
+    if not written:
+        os.unlink(path)
+        return _back("/submissions", err="No Doručenka receipts to download yet.")
+    stamp = datetime.now().strftime("%Y%m%d")
+    background_tasks.add_task(os.unlink, path)
+    return FileResponse(
+        path,
+        media_type="application/zip",
+        filename=f"dorucenky-{stamp}.zip",
+    )
+
+
 @router.get("/submissions")
 def submissions_list(request: Request):
     guard = auth.require_login(request)
@@ -1833,7 +1963,8 @@ def submissions_list(request: Request):
         "WHERE a.owner_user_id IS ? ORDER BY s.created_at DESC LIMIT 200",
         (access.owner_id(request),),
     )
-    return render(request, "submissions.html", {"rows": rows})
+    receipt_count = sum(1 for row in rows if row["receipt_pdf"])
+    return render(request, "submissions.html", {"rows": rows, "receipt_count": receipt_count})
 
 
 @router.get("/submissions/{submission_id}")
@@ -1955,6 +2086,7 @@ def housebook_view(request: Request):
             "date_from": date_from,
             "date_to": date_to,
             "retention_years": housebook.RETENTION_YEARS,
+            "max_inspection_pdfs": housebook.MAX_INSPECTION_PDFS,
         },
     )
 
@@ -2004,22 +2136,22 @@ def housebook_download(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    stamp = datetime.now().strftime("%Y%m%d")
     rows = housebook.housebook_rows(
         _query_int(request, "apartment"),
         _query_date(request, "from") or None,
         _query_date(request, "to") or None,
         owner_user_id=access.owner_id(request),
     )
-    stamp = datetime.now().strftime("%Y%m%d")
-    return Response(
-        housebook.housebook_csv(rows),
+    return StreamingResponse(
+        housebook.iter_housebook_csv_rows(rows),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="domovni-kniha-{stamp}.csv"'},
     )
 
 
 @router.get("/housebook/pdfs.zip")
-def housebook_pdfs_download(request: Request):
+def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -2031,11 +2163,32 @@ def housebook_pdfs_download(request: Request):
     )
     if not rows:
         return _back("/housebook", err="No house-book entries match this filter.")
+    if len(rows) > housebook.MAX_INSPECTION_PDFS:
+        return _back(
+            "/housebook",
+            err=(
+                f"Too many entries ({len(rows)}) for one download. "
+                f"Narrow the date or property filter to {housebook.MAX_INSPECTION_PDFS} or fewer."
+            ),
+        )
+    import os
+    import tempfile
+
+    from starlette.responses import FileResponse
+
+    fd, path = tempfile.mkstemp(suffix=".zip")
+    os.close(fd)
+    try:
+        housebook.build_housebook_pdfs_zip(rows, path)
+    except Exception:
+        os.unlink(path)
+        raise
     stamp = datetime.now().strftime("%Y%m%d")
-    return Response(
-        housebook.housebook_pdfs_zip(rows),
+    background_tasks.add_task(os.unlink, path)
+    return FileResponse(
+        path,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="domovni-kniha-pdf-{stamp}.zip"'},
+        filename=f"domovni-kniha-pdf-{stamp}.zip",
     )
 
 
@@ -2053,6 +2206,100 @@ def dismiss_alert(alert_id: int, request: Request):
         return Response(status_code=204)
     referer = request.headers.get("referer") or "/"
     return RedirectResponse(referer, status_code=303)
+
+
+ARCHIVED_TYPES = ("all", "stays", "properties", "housebook", "entities")
+
+
+@router.get("/settings/archived")
+def settings_archived_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    item_type = request.query_params.get("type", "all")
+    if item_type not in ARCHIVED_TYPES:
+        item_type = "all"
+
+    counts = {
+        "stays": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM reservation r "
+                "JOIN apartment a ON a.id = r.apartment_id "
+                "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+        "properties": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM apartment "
+                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+        "housebook": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM guest g "
+                "JOIN reservation r ON r.id = g.reservation_id "
+                "JOIN apartment a ON a.id = r.apartment_id "
+                "WHERE g.archived_at IS NOT NULL AND a.owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+        "entities": int(
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM legal_entity "
+                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
+                (owner_id,),
+            )["n"]
+        ),
+    }
+    counts["all"] = counts["stays"] + counts["properties"] + counts["housebook"] + counts["entities"]
+
+    archived_stays: List[Dict[str, Any]] = []
+    archived_properties: List[Dict[str, Any]] = []
+    archived_housebook: List[Dict[str, Any]] = []
+    archived_entities: List[Dict[str, Any]] = []
+
+    if item_type in ("all", "stays"):
+        archived_stays = db.query(
+            "SELECT r.*, a.internal_name FROM reservation r "
+            "JOIN apartment a ON a.id = r.apartment_id "
+            "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ? "
+            "ORDER BY r.archived_at DESC, r.id DESC",
+            (owner_id,),
+        )
+    if item_type in ("all", "properties"):
+        archived_properties = db.query(
+            "SELECT a.*, "
+            "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id) AS reservations "
+            "FROM apartment a "
+            "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? "
+            "ORDER BY a.archived_at DESC",
+            (owner_id,),
+        )
+    if item_type in ("all", "housebook"):
+        archived_housebook = housebook.housebook_archived_rows(owner_user_id=owner_id)
+    if item_type in ("all", "entities"):
+        archived_entities = db.query(
+            "SELECT e.* FROM legal_entity e "
+            "WHERE e.archived_at IS NOT NULL AND e.owner_user_id IS ? "
+            "ORDER BY e.archived_at DESC",
+            (owner_id,),
+        )
+
+    return render(
+        request,
+        "settings_archived.html",
+        {
+            "item_type": item_type,
+            "counts": counts,
+            "archived_stays": archived_stays,
+            "archived_properties": archived_properties,
+            "archived_housebook": archived_housebook,
+            "archived_entities": archived_entities,
+        },
+    )
 
 
 @router.get("/settings")
@@ -2087,7 +2334,7 @@ def settings_view(request: Request):
             ),
             "entities_without_contact": db.query(
                 "SELECT id, name FROM legal_entity "
-                "WHERE owner_user_id IS ? AND "
+                "WHERE owner_user_id IS ? AND archived_at IS NULL AND "
                 "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
                 (access.owner_id(request),),
             ),

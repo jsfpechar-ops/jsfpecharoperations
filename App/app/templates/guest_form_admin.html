@@ -247,7 +247,7 @@
 
 {% if guest.submit_state != 'sent' %}
 <form method="post" action="/guests/{{ guest.id }}/delete" class="panel"
-      onsubmit="return confirm('Remove this guest record?')">
+      data-confirm data-confirm-message="{{ t('confirm.remove_guest') }}">
   <h3 style="margin-top:0">Remove</h3>
   <button class="btn danger" type="submit">Delete this guest</button>
 </form>

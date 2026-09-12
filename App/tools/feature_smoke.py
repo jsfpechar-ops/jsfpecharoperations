@@ -4,6 +4,7 @@ Run: .venv/bin/python tools/feature_smoke.py
 """
 from __future__ import annotations
 
+import html
 import os
 import re
 import sys
@@ -103,7 +104,7 @@ def main() -> int:
         ("/", ["Operations", "Overview", "row-menu-trigger"]),
         ("/automation", ["When to send to UbyPort", "data-automation-mode", "Test connection"]),
         ("/guest-links", ["Generate a new PIN", "data-copy"]),
-        ("/reservations", ["CSV", "Send all ready", "row-menu-trigger", "Archive"]),
+        ("/reservations", ["Import & export", "Send all ready", "row-menu-trigger", "Archive"]),
         ("/housebook", ["data-csv-export", "Exempt", "row-menu-trigger"]),
         ("/apartments", ["row-menu-trigger"]),
         ("/settings", ["activity log", "Advanced"]),
@@ -115,7 +116,8 @@ def main() -> int:
         if "Internal Server Error" in r.text:
             fail(path, "500 in body")
             continue
-        missing = [n for n in needles if n not in r.text]
+        page_text = html.unescape(r.text)
+        missing = [n for n in needles if n not in page_text]
         if missing:
             fail(path, f"missing {missing}")
         else:

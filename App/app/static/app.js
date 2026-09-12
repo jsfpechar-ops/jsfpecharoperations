@@ -385,6 +385,49 @@
     });
   }
 
+  function randomPassword() {
+    var chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    var extra = "-_";
+    var out = "";
+    if (window.crypto && window.crypto.getRandomValues) {
+      var bytes = new Uint8Array(20);
+      window.crypto.getRandomValues(bytes);
+      for (var i = 0; i < bytes.length; i += 1) {
+        out += chars.charAt(bytes[i] % chars.length);
+      }
+      out += extra.charAt(bytes[0] % extra.length);
+      out += String((bytes[1] % 9) + 1);
+    } else {
+      while (out.length < 18) out += chars.charAt(Math.floor(Math.random() * chars.length));
+      out += "_7";
+    }
+    return out;
+  }
+
+  function fillGeneratedPassword(input) {
+    if (!input) return;
+    input.value = randomPassword();
+  }
+
+  function initGeneratedPasswords() {
+    document.querySelectorAll("[data-generated-password]").forEach(function (input) {
+      if (!input.value) fillGeneratedPassword(input);
+    });
+
+    document.querySelectorAll("[data-generate-password]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var field = button.closest(".password-generate");
+        if (!field) return;
+        var input = field.querySelector("[data-generated-password]");
+        fillGeneratedPassword(input);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      });
+    });
+  }
+
   function initResetPasswordDialog() {
     var dialog = document.getElementById("reset-password-dialog");
     var form = document.getElementById("reset-password-form");
@@ -399,6 +442,8 @@
         form.action = "/admin/users/" + userId + "/password";
         label.textContent = userLabel;
         form.reset();
+        var passwordInput = form.querySelector("[data-generated-password]");
+        fillGeneratedPassword(passwordInput);
         document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
         if (typeof dialog.showModal === "function") dialog.showModal();
       });
@@ -406,6 +451,70 @@
 
     dialog.querySelectorAll("[data-reset-password-cancel]").forEach(function (button) {
       button.addEventListener("click", function () { dialog.close(); });
+    });
+  }
+
+  function initConfirmDialog() {
+    var dialog = document.getElementById("confirm-dialog");
+    var shell = document.getElementById("confirm-form");
+    var title = document.getElementById("confirm-title");
+    var body = document.getElementById("confirm-body");
+    if (!dialog || !shell) return;
+    var pendingForm = null;
+    var pendingButton = null;
+
+    function openDialog(message, form, button) {
+      pendingForm = form || null;
+      pendingButton = button || null;
+      if (title) title.textContent = "";
+      if (body) body.textContent = message || "";
+      document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
+      if (typeof dialog.showModal === "function") dialog.showModal();
+    }
+
+    document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        if (form.dataset.confirmBypass === "1") {
+          form.dataset.confirmBypass = "";
+          return;
+        }
+        e.preventDefault();
+        openDialog(form.getAttribute("data-confirm-message"), form, null);
+      });
+    });
+
+    document.querySelectorAll("button[data-confirm]").forEach(function (button) {
+      button.addEventListener("click", function (e) {
+        if (button.dataset.confirmBypass === "1") {
+          button.dataset.confirmBypass = "";
+          return;
+        }
+        e.preventDefault();
+        openDialog(button.getAttribute("data-confirm-message"), null, button);
+      });
+    });
+
+    shell.addEventListener("submit", function (e) {
+      e.preventDefault();
+      dialog.close();
+      if (pendingForm) {
+        pendingForm.dataset.confirmBypass = "1";
+        if (pendingForm.requestSubmit) pendingForm.requestSubmit();
+        else pendingForm.submit();
+        pendingForm = null;
+      } else if (pendingButton) {
+        pendingButton.dataset.confirmBypass = "1";
+        pendingButton.click();
+        pendingButton = null;
+      }
+    });
+
+    dialog.querySelectorAll("[data-confirm-cancel]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        pendingForm = null;
+        pendingButton = null;
+        dialog.close();
+      });
     });
   }
 
@@ -423,6 +532,8 @@
     initCsvExport();
     initToasts();
     initAutoFilters();
+    initGeneratedPasswords();
     initResetPasswordDialog();
+    initConfirmDialog();
   });
 })();
