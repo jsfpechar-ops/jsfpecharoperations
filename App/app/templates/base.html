@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260912a">
+  <link rel="stylesheet" href="/static/app.css?v=20260912c">
 </head>
 <body class="layout-host">
 {% from "_components.html" import nav_icon %}
@@ -15,7 +15,7 @@
   <button class="nav-toggle" type="button" data-nav-toggle aria-label="Open menu" aria-expanded="false">
     <span aria-hidden="true">☰</span>
   </button>
-  <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-mark.png" alt="UbyHost"></a>
+  <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost"></a>
   <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
 </header>
 <button class="nav-backdrop" type="button" data-nav-close aria-label="Close menu"></button>
@@ -25,8 +25,7 @@
 <aside class="sidebar" id="app-sidebar">
   <div class="sidebar-brand">
     <a class="brand plain" href="/">
-      <img class="brand-logo" src="/static/ubyhost-mark.png" alt="UbyHost">
-      <span class="brand-word">UbyHost</span>
+      <img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
     <div class="sidebar-brand-actions">
       <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
@@ -72,13 +71,20 @@
   </nav>
   {% if current_user %}
     <div class="sidebar-footer">
-      <div class="sidebar-footer-label">{{ t('lang.switch') }}</div>
-      <form method="post" action="/language" class="lang-switch">
-        <input type="hidden" name="next" value="{{ request.url.path }}">
-        <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
-        <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
-      </form>
-      <form class="sidebar-logout" method="post" action="/logout"><button class="nav-button" type="submit">{{ t('nav.logout') }}</button></form>
+      <a class="sidebar-help" href="/guide">
+        <span class="sidebar-help-icon" aria-hidden="true">?</span>
+        {{ t('nav.guide') }}
+      </a>
+      <div class="sidebar-footer-row">
+        <form method="post" action="/language" class="lang-switch compact">
+          <input type="hidden" name="next" value="{{ request.url.path }}">
+          <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
+          <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
+        </form>
+        <form class="sidebar-logout" method="post" action="/logout">
+          <button class="nav-button" type="submit">{{ t('nav.logout') }}</button>
+        </form>
+      </div>
     </div>
   {% endif %}
 </aside>
@@ -165,6 +171,21 @@
   </form>
 </dialog>
 
-<script src="/static/app.js?v=20260912a"></script>
+{% if celebration_milestone %}
+<dialog id="celebration-dialog" class="celebration-dialog" open>
+  <div class="celebration-card">
+    <div class="celebration-badge" aria-hidden="true">{{ celebration_milestone }}</div>
+    <h2>{{ t('celebration.title') }}</h2>
+    <p>{{ t('celebration.body', count=sent_guest_count, milestone=celebration_milestone) }}</p>
+    <form method="post" action="/celebrations/dismiss">
+      <input type="hidden" name="milestone" value="{{ celebration_milestone }}">
+      <input type="hidden" name="return_to" value="{{ request.url.path }}">
+      <button class="btn primary" type="submit">{{ t('celebration.dismiss') }}</button>
+    </form>
+  </div>
+</dialog>
+{% endif %}
+
+<script src="/static/app.js?v=20260912c"></script>
 </body>
 </html>

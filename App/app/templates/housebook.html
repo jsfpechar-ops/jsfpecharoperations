@@ -7,8 +7,7 @@
 {{ page_header(
   'House book',
   'Every guest record with the dates of their stay. The law requires this register to be kept for
-   six years after the last entry and produced on request during a police inspection.',
-  actions=housebook_csv_menu(housebook_csv_params, apartments|length > 0)
+   six years after the last entry and produced on request during a police inspection.'
 ) }}
 
 {% if apartments %}
@@ -64,8 +63,9 @@
     <label for="to">Stays until</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
-  <div class="field filter-actions">
+  <div class="field filter-actions filter-actions-end">
     <button class="btn filter-apply" type="submit">Filter</button>
+    {{ housebook_csv_menu(housebook_csv_params, apartments|length > 0, true) }}
   </div>
 </form>
 

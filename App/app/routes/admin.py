@@ -14,6 +14,7 @@ from .. import (
     access,
     alerts,
     auth,
+    celebrations,
     codelists,
     config,
     db,
@@ -451,6 +452,7 @@ def dashboard(request: Request):
     # dashboard_rows() is already sorted by legal urgency, so the first row that
     # needs work is the one thing worth putting at the top of the page.
     focus = next(iter(needs_action), None) or next(iter(waiting), None)
+    milestone, sent_count, minutes_saved = celebrations.celebration_context(owner_user_id)
     return render(
         request,
         "dashboard.html",
@@ -468,8 +470,32 @@ def dashboard(request: Request):
             "setup_warnings": setup_warnings,
             "last_sync": db.get_setting("last_ical_sync"),
             "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),
+            "celebration_milestone": milestone,
+            "sent_guest_count": sent_count,
+            "minutes_saved": minutes_saved,
         },
     )
+
+
+@router.get("/guide")
+def guide_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return render(request, "guide.html")
+
+
+@router.post("/celebrations/dismiss")
+async def dismiss_celebration(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    milestone = int(_form_str(form, "milestone") or "0")
+    owner_user_id = access.owner_id(request)
+    if owner_user_id and milestone:
+        celebrations.acknowledge(owner_user_id, milestone)
+    return RedirectResponse(_form_str(form, "return_to") or "/", status_code=303)
 
 
 # --- guest communication ------------------------------------------------
