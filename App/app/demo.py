@@ -102,7 +102,7 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
             "addr_zip": "12000",
             "uby_ws_user": "UBY-WS12cdef",
             "uby_ws_password_enc": db.encrypt_secret("demo-password"),
-            "automation_mode": "immediate",
+            "automation_mode": "manual",
             "submit_after_hours": 24,
             "permalink_window_days": 3,
             "default_purpose": "10",

@@ -33,7 +33,7 @@
             {% if row.deadline and row.urgency != 'future' %}<div class="small muted">by {{ row.deadline.strftime('%d.%m. %H:%M') }}</div>{% endif %}
           </td>
           <td class="nowrap" data-label="Guests">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
-          <td data-label="Reporting">{{ progress_pill(progress.status, reservation.automation_mode) }}</td>
+          <td data-label="Reporting">{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}</td>
           <td class="nowrap row-actions" data-label="">
             {{ row_reporting_actions(reservation, row.controls, '/') }}
             {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
@@ -97,7 +97,7 @@
         <div class="focus-meta">
           <span>{{ f_res.date_from | date_cz }} &ndash; {{ f_res.date_to | date_cz }}</span>
           <span class="deadline {{ focus.urgency }}">{{ describe_time_left(focus.check_in) }}</span>
-          {{ progress_pill(f_progress.status, f_res.automation_mode) }}
+          {{ progress_pill(f_progress.status, f_res.automation_mode, is_demo='(demo)' in f_res.internal_name) }}
           <span class="muted">{{ f_progress.filled }} / {{ f_progress.expected if f_progress.expected is not none else '?' }} guest forms</span>
         </div>
       </div>
@@ -105,7 +105,10 @@
         {% if focus.controls.get('send_enabled') %}
           <form method="post" action="/reservations/{{ f_res.id }}/submit" class="inline">
             <input type="hidden" name="return_to" value="/">
-            <button class="btn accent" type="submit">Send to UbyPort now</button>
+            <button class="btn accent" type="submit"
+                    title="{{ t('status.ready_manual_tip') }}">
+              {{ t('send.guests_count', count=focus.controls.pending_count) }}
+            </button>
           </form>
         {% elif f_progress.status in ('awaiting_guest', 'incomplete') and f_res.permalink_token %}
           {{ copy_inline('focus-link',
@@ -117,6 +120,15 @@
       </div>
     </section>
   {% endif %}
+
+  {% if minutes_saved %}
+    <p class="minutes-saved">{{ t('dashboard.minutes_saved', minutes=minutes_saved) }}</p>
+  {% endif %}
+
+  <section class="panel reporting-modes-panel">
+    <h2 style="margin-top:0">{{ t('dashboard.reporting_modes') }}</h2>
+    <p class="small muted" style="margin-bottom:0">{{ t('dashboard.reporting_modes_body') }}</p>
+  </section>
 
   <div class="stats" aria-label="Work summary">
     <a class="stat stat-link {{ 'bad' if counts.overdue else 'zero' }}" href="#needs-action">
