@@ -57,6 +57,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.import": "Import CSV",
         "csv.sample_housebook": "Import template (paper records)",
         "csv.download_pdfs": "Download PDFs for inspection",
+        "reports.download_receipts": "Download all Doručenky (ZIP)",
+        "reports.download_receipts_hint": "One PDF per successful transmission, built on disk to stay lightweight.",
         "housebook.legal_title": "Your legal duty — read this",
         "housebook.legal_body": (
             "Under § 101 of Act No. 326/1999 Coll., you must keep a house book (domovní kniha) for "
@@ -305,6 +307,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.import": "Importovat CSV",
         "csv.sample_housebook": "Vzor pro import (papírová evidence)",
         "csv.download_pdfs": "Stáhnout PDF pro kontrolu",
+        "reports.download_receipts": "Stáhnout všechny doručenky (ZIP)",
+        "reports.download_receipts_hint": "Jedno PDF za každé úspěšné odeslání, sestavené na disku bez zbytečné paměti.",
         "housebook.legal_title": "Vaše zákonná povinnost — přečtěte",
         "housebook.legal_body": (
             "Podle § 101 zákona č. 326/1999 Sb. musíte vést domovní knihu po dobu šesti let od posledního "

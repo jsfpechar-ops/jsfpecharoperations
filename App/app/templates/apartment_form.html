@@ -234,16 +234,6 @@
                value="{{ apartment.permalink_window_days }}">
         <div class="hint">Keep it close to your minimum stay so each guest sees only their own booking.</div>
       </div>
-      <div class="field">
-        <label for="checkin_info">Check-in instructions <span class="opt">(optional)</span></label>
-        <textarea id="checkin_info" name="checkin_info" rows="2">{{ apartment.checkin_info or '' }}</textarea>
-        <div class="hint">Shown to guests on their stay page — key box codes, arrival times, and so on.</div>
-      </div>
-      <div class="field">
-        <label for="checkout_info">Check-out instructions <span class="opt">(optional)</span></label>
-        <textarea id="checkout_info" name="checkout_info" rows="2">{{ apartment.checkout_info or '' }}</textarea>
-        <div class="hint">Shown alongside check-in info when guests open their stay.</div>
-      </div>
       <details class="message-details" open>
         <summary>Suggested message for every portal</summary>
         <pre>Dear guests,

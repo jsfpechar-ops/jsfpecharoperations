@@ -10,17 +10,6 @@
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
 
-{% if apartment.checkin_info or apartment.checkout_info %}
-  <div class="g-card g-host-info">
-    {% if apartment.checkin_info %}
-      <p><strong>{{ t('checkin_info') }}</strong><br>{{ apartment.checkin_info }}</p>
-    {% endif %}
-    {% if apartment.checkout_info %}
-      <p style="margin-bottom:0"><strong>{{ t('checkout_info') }}</strong><br>{{ apartment.checkout_info }}</p>
-    {% endif %}
-  </div>
-{% endif %}
-
 {% if remaining is not none and remaining <= 0 %}
   <div class="g-card">
     <div class="g-big-ok">

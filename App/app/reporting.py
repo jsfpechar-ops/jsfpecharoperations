@@ -13,7 +13,10 @@ The rules this file exists to honour, all from the Ubyport operating rules:
 """
 from __future__ import annotations
 
+import base64
 import json
+import re
+import zipfile
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -726,3 +729,29 @@ def check_deadlines(
         else:
             alerts.resolve(key)
     return raised
+
+
+MAX_RECEIPT_DOWNLOADS = 100
+
+
+def receipt_zip_name(row: Any) -> str:
+    stamp = re.sub(r"[^\w.\-]+", "_", (row["pseudo_stamp"] or str(row["id"]))[:36])
+    date_part = (row["created_at"] or "")[:10] or "report"
+    return f"dorucenka-{date_part}-{row['id']}-{stamp}.pdf"
+
+
+def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
+    """Write Doručenka PDFs to a zip on disk, one file at a time."""
+    count = 0
+    with zipfile.ZipFile(dest_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for row in rows:
+            raw_b64 = row["receipt_pdf"]
+            if not raw_b64:
+                continue
+            try:
+                raw = base64.b64decode(raw_b64)
+            except Exception:
+                continue
+            archive.writestr(receipt_zip_name(row), raw)
+            count += 1
+    return count

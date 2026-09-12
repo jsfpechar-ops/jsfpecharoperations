@@ -3,7 +3,19 @@
 {% block title %}Reports{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, submission_pill, empty_state %}
-{{ page_header('Reports', 'Every UbyPort transmission and its Doručenka, retained as proof.') }}
+{% set header_actions %}
+  {% if receipt_count %}
+    <a class="btn" href="/submissions/receipts.zip">{{ t('reports.download_receipts') }}</a>
+  {% endif %}
+{% endset %}
+{{ page_header(
+  'Reports',
+  'Every UbyPort transmission and its Doručenka, retained as proof.',
+  actions=header_actions if receipt_count else ''
+) }}
+{% if receipt_count %}
+  <p class="small muted">{{ t('reports.download_receipts_hint') }}</p>
+{% endif %}
 
 {% if rows %}
 <div class="panel tight scroll-x">

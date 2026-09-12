@@ -712,8 +712,22 @@ a.notification-link:hover { background: var(--surface-2); }
 .focus-meta { color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
 .focus-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .focus-actions .btn.accent { white-space: nowrap; }
-.sync-action { display: grid; gap: 4px; justify-items: end; text-align: right; }
-.sync-action .sync-hint { margin: 0; font-size: 12px; line-height: 1.35; }
+.page-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+.page-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.page-toolbar-row form { margin: 0; }
+.page-toolbar-meta { margin: 0; font-size: 12px; line-height: 1.35; }
 .entity-edit-panel { margin-bottom: 16px; }
 
 /* --- tables ------------------------------------------------------------ */

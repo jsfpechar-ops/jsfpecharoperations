@@ -741,8 +741,6 @@ APARTMENT_TEXT_FIELDS = (
     "uby_contact",
     "uby_ws_user",
     "notes",
-    "checkin_info",
-    "checkout_info",
 )
 
 
@@ -1893,6 +1891,62 @@ def guest_form_pdf(guest_id: int, request: Request):
 
 # --- submissions ---------------------------------------------------------
 
+@router.get("/submissions/receipts.zip")
+def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks):
+    """Bulk-download stored Doručenka PDFs as a zip built on disk."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    date_from = _query_date(request, "from")
+    date_to = _query_date(request, "to")
+    sql = (
+        "SELECT s.* FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+        "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
+    )
+    params: List[Any] = [owner_id]
+    if date_from:
+        sql += " AND date(s.created_at) >= ?"
+        params.append(date_from)
+    if date_to:
+        sql += " AND date(s.created_at) <= ?"
+        params.append(date_to)
+    sql += " ORDER BY s.created_at DESC"
+    rows = db.query(sql, params)
+    if not rows:
+        return _back("/submissions", err="No Doručenka receipts to download yet.")
+    if len(rows) > reporting.MAX_RECEIPT_DOWNLOADS:
+        return _back(
+            "/submissions",
+            err=(
+                f"Too many receipts ({len(rows)}) for one download. "
+                f"Narrow the date filter to {reporting.MAX_RECEIPT_DOWNLOADS} or fewer."
+            ),
+        )
+    import os
+    import tempfile
+
+    from starlette.responses import FileResponse
+
+    fd, path = tempfile.mkstemp(suffix=".zip")
+    os.close(fd)
+    try:
+        written = reporting.build_receipts_zip(rows, path)
+    except Exception:
+        os.unlink(path)
+        raise
+    if not written:
+        os.unlink(path)
+        return _back("/submissions", err="No Doručenka receipts to download yet.")
+    stamp = datetime.now().strftime("%Y%m%d")
+    background_tasks.add_task(os.unlink, path)
+    return FileResponse(
+        path,
+        media_type="application/zip",
+        filename=f"dorucenky-{stamp}.zip",
+    )
+
+
 @router.get("/submissions")
 def submissions_list(request: Request):
     guard = auth.require_login(request)
@@ -1903,7 +1957,8 @@ def submissions_list(request: Request):
         "WHERE a.owner_user_id IS ? ORDER BY s.created_at DESC LIMIT 200",
         (access.owner_id(request),),
     )
-    return render(request, "submissions.html", {"rows": rows})
+    receipt_count = sum(1 for row in rows if row["receipt_pdf"])
+    return render(request, "submissions.html", {"rows": rows, "receipt_count": receipt_count})
 
 
 @router.get("/submissions/{submission_id}")

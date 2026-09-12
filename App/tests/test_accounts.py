@@ -382,3 +382,34 @@ def test_csv_exports_stream_without_buffering_entire_file():
         assert stays_csv.content.startswith(b"\xef\xbb\xbf")
     finally:
         _clean_accounts()
+
+
+def test_submissions_receipts_zip_downloads_bulk_dorucenky():
+    db.init_db()
+    _clean_accounts()
+    owner_id = _account("boundary-receipts")
+    apartment_id = _apartment(owner_id, "Receipt flat", "boundaryreceipts")
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment_id,
+            "created_at": db.utcnow(),
+            "state": "ok",
+            "receipt_pdf": base64.b64encode(b"%PDF-1.4 dorucenka").decode(),
+            "pseudo_stamp": "ABC-123",
+        },
+    )
+    try:
+        client = _login("boundary-receipts")
+        page = client.get("/submissions")
+        assert page.status_code == 200
+        assert "Download all Doručenky" in page.text
+
+        response = client.get("/submissions/receipts.zip")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("application/zip")
+        assert len(response.content) > 20
+        assert response.content[:2] == b"PK"
+    finally:
+        db.execute("DELETE FROM submission WHERE id = ?", (submission_id,))
+        _clean_accounts()

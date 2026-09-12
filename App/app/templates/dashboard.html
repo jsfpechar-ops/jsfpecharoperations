@@ -60,15 +60,19 @@
 {% endmacro %}
 
 {% set header_actions %}
-  <div class="sync-action">
-    <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
-    {% if last_sync %}<p class="small muted sync-hint">Last synced {{ last_sync[:16].replace('T', ' ') }} UTC</p>{% endif %}
+  <div class="page-toolbar">
+    <div class="page-toolbar-row">
+      <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
+      {% if demo_loaded %}
+        <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">
+          <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
+        </form>
+      {% endif %}
+    </div>
+    {% if last_sync %}
+      <p class="small muted page-toolbar-meta">Last synced {{ last_sync[:16].replace('T', ' ') }} UTC</p>
+    {% endif %}
   </div>
-  {% if demo_loaded %}
-    <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">
-      <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
-    </form>
-  {% endif %}
 {% endset %}
 {{ page_header(
   'Overview',
