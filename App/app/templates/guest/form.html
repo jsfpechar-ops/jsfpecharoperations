@@ -24,7 +24,6 @@
   </div>
 {% endif %}
 
-{% set why_compact = true %}
 {% include "guest/_why.html" %}
 
 <div class="g-card g-stay-summary">
@@ -202,6 +201,8 @@
     {{ err_for('signature') }}
   </div>
 
+  {% include "guest/_legal_notice.html" %}
+
   <button class="g-btn" type="submit">{{ t('submit') }}</button>
 </form>
 <script>
@@ -209,11 +210,23 @@
   var card = document.getElementById('passport-photo-card');
   var nationality = document.getElementById('nationality');
   var input = document.getElementById('passport_photo');
-  if (!card || !nationality || !input) return;
+  var passportLegal = document.querySelector('.legal-passport-text');
+  if (!nationality) return;
   function sync() {
     var foreign = nationality.value && nationality.value !== 'CZE';
-    card.hidden = !foreign;
-    input.required = foreign;
+    if (card) {
+      card.hidden = !foreign;
+    }
+    if (input) {
+      input.required = foreign;
+    }
+    var passportSection = document.getElementById('legal-passport-section');
+    if (passportSection) {
+      passportSection.style.display = foreign ? '' : 'none';
+    }
+    if (passportLegal) {
+      passportLegal.style.display = foreign ? '' : 'none';
+    }
   }
   nationality.addEventListener('change', sync);
   sync();

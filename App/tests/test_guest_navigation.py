@@ -32,6 +32,7 @@ def _form(**overrides):
         "purpose": "10",
         "party_size": "2",
         "signature": SIGNATURE,
+        "legal_ack": "1",
     }
     data.update(overrides)
     return data

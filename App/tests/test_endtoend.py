@@ -263,6 +263,7 @@ def guest_form_data(**overrides):
         "res_country": "GBR",
         "purpose": "10",
         "signature": SIGNATURE,
+        "legal_ack": "1",
     }
     data.update(overrides)
     return data

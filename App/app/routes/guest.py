@@ -709,6 +709,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             issues.append(validation.Issue("party_size", translate("error_party_size")))
     if not signature.startswith("data:image/"):
         issues.append(validation.Issue("signature", translate("signature_missing")))
+    if not form.get("legal_ack"):
+        issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
     passport_upload = form.get("passport_photo")
     passport_bytes = None
@@ -751,6 +753,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "parent_doc_number": form.get("parent_doc_number") or "",
                 "signature": signature,
                 "party_size": party_raw,
+                "legal_ack": form.get("legal_ack") or "",
             }
         )
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
