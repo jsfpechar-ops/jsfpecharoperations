@@ -1,3 +1,5 @@
+# Default: Let's Encrypt (see Caddyfile.acme).
+# For Cloudflare proxied DNS, deploy.sh swaps in Caddyfile.cloudflare instead.
 {
 	email {env.ACME_EMAIL}
 }
@@ -6,3 +8,4 @@
 	encode gzip
 	reverse_proxy ubyhost:8080
 }
+

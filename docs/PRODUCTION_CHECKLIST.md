@@ -31,6 +31,9 @@ These must match **exactly** in UbyHost → apartment settings and in the police
 - [ ] `UBYHOST_ADMIN_USERNAME` and `UBYHOST_ADMIN_PASSWORD` set in Render (production only).
 - [ ] `UBYHOST_UBYPORT_ENV=test` (stay on test until Phase 4 passes).
 - [ ] `UBYHOST_DEPLOYMENT=production`
+- [ ] Domain on Cloudflare (or `.cz` nameservers → Cloudflare) — see
+      [CLOUDFLARE.md](CLOUDFLARE.md)
+- [ ] Proxied A record, SSL **Full (strict)**, origin certificate on server
 - [ ] `UBYHOST_PUBLIC_BASE_URL` resolves to the production URL (set automatically via
   `RENDER_EXTERNAL_URL` in the blueprint).
 - [ ] First deploy completed; `/healthz` shows `deployment: production`, `ubyport_env: test`.

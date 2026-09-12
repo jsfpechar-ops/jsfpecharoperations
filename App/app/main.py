@@ -65,6 +65,18 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
+
+
+@app.middleware("http")
+async def cloudflare_connecting_ip(request: Request, call_next):
+    """Use the visitor IP when traffic is proxied through Cloudflare."""
+    cf_ip = request.headers.get("cf-connecting-ip")
+    if cf_ip:
+        _host, port = request.scope.get("client") or ("", 0)
+        request.scope["client"] = (cf_ip, port or 0)
+    return await call_next(request)
+
+
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), name="static")
 app.include_router(guest.router)
 app.include_router(admin.router)

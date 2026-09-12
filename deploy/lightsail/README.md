@@ -1,7 +1,9 @@
 # UbyHost on AWS Lightsail
 
-Production Docker stack with automatic HTTPS. **Full guide:**
-[docs/LIGHTSAIL.md](../../docs/LIGHTSAIL.md)
+Production Docker stack with HTTPS. **Guides:**
+
+- Server: [docs/LIGHTSAIL.md](../../docs/LIGHTSAIL.md)
+- Domain (Cloudflare): [docs/CLOUDFLARE.md](../../docs/CLOUDFLARE.md)
 
 Quick start (on the server, after DNS points at your static IP):
 

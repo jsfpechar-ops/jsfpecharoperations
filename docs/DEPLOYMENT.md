@@ -89,7 +89,8 @@ To restore: stop the service, replace `ubyhost.db` from a backup, restart.
 
 ### AWS Lightsail (Docker — recommended VPS path)
 
-Full guide: **[LIGHTSAIL.md](LIGHTSAIL.md)**
+Full guide: **[LIGHTSAIL.md](LIGHTSAIL.md)**  
+Domain + DNS (Cloudflare): **[CLOUDFLARE.md](CLOUDFLARE.md)**
 
 ```bash
 cd deploy/lightsail
