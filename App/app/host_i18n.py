@@ -41,6 +41,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.footnote": (
             "No public sign-up. UbyHost is invite-only — ask your administrator for an account."
         ),
+        "login.acceptance_before": "By logging in or using UbyHost, you agree to the ",
+        "login.acceptance_and": " and ",
+        "login.acceptance_after": (
+            ". If you do not agree, do not log in or use the Service."
+        ),
         "login.hero_title": "Guest reporting, handled for you.",
         "login.hero_body": (
             "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace — "
@@ -293,6 +298,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.back_login": "Back to login",
         "legal.footer_link": "Legal notice",
+        "legal.footer_short": "Legal",
+        "legal.footer_nav_label": "Help and legal",
+        "legal.use_acceptance": (
+            "By logging in or continuing to use UbyHost, you confirm that you have read and agree "
+            "to the Terms of Service and Legal notice, and that you act on behalf of your "
+            "accommodation business (not as a consumer where business terms apply)."
+        ),
+        "legal.use_acceptance_short": "Use of UbyHost = acceptance of Terms & Legal notice.",
         "legal.settings_title": "Software operator",
         "legal.settings_body": (
             "UbyHost is operated by %(name)s, IČO %(ico)s. Guest data controllers are your legal entities "
@@ -622,6 +635,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.footnote": (
             "Veřejná registrace není k dispozici. UbyHost je pouze na pozvání — účet vám vytvoří správce."
         ),
+        "login.acceptance_before": "Přihlášením nebo používáním UbyHostu souhlasíte s ",
+        "login.acceptance_and": " a ",
+        "login.acceptance_after": (
+            ". Pokud nesouhlasíte, nepřihlašujte se ani Službu nepoužívejte."
+        ),
         "login.hero_title": "Hlášení hostů bez zbytečné práce.",
         "login.hero_body": (
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
@@ -867,6 +885,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.back_login": "Zpět na přihlášení",
         "legal.footer_link": "Právní informace",
+        "legal.footer_short": "Právní",
+        "legal.footer_nav_label": "Nápověda a právní informace",
+        "legal.use_acceptance": (
+            "Přihlášením nebo dalším používáním UbyHostu potvrzujete, že jste se seznámili "
+            "s Obchodními podmínkami a Právními informacemi a že s nimi souhlasíte, a že jednáte "
+            "za své ubytovací podnikání (nikoli jako spotřebitel, pokud platí podmínky pro podnikatele)."
+        ),
+        "legal.use_acceptance_short": "Používáním UbyHostu přijímáte Podmínky a Právní informace.",
         "legal.settings_title": "Provozovatel software",
         "legal.settings_body": (
             "UbyHost provozuje %(name)s, IČO %(ico)s. Správci údajů hostů jsou vaše právnické osoby "

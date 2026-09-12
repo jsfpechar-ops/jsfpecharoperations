@@ -429,6 +429,7 @@ def test_login_page_links_to_terms():
     response = TestClient(app).get("/login")
     assert response.status_code == 200
     assert 'href="/terms"' in response.text
+    assert "agree to the" in response.text or "souhlasíte" in response.text
 
 
 def test_legal_page_links_to_terms():
