@@ -25,7 +25,7 @@
   </nav>
 {% endmacro %}
 
-{% macro progress_pill(status, automation_mode=none, compact=false) %}
+{% macro progress_pill(status, automation_mode=none, compact=false, is_demo=false) %}
   {% set labels = {
     'failed': 'Rejected',
     'reported': 'Reported',
@@ -34,14 +34,21 @@
     'not_required': 'Exempt',
     'awaiting_guest': 'Waiting for guest'
   } %}
-  {% if status == 'ready' and automation_mode == 'immediate' %}
-    {% set label = 'Ready — auto-send' %}
+  {% if is_demo and status == 'ready' %}
+    {% set label = t('status.demo_preview') %}
+    {% set tip = t('status.demo_preview_tip') %}
+  {% elif status == 'ready' and automation_mode == 'immediate' %}
+    {% set label = t('status.ready_immediate') %}
+    {% set tip = t('status.ready_immediate_tip') %}
   {% elif status == 'ready' and automation_mode == 'manual' %}
-    {% set label = 'Ready — send manually' %}
+    {% set label = t('status.ready_manual') %}
+    {% set tip = t('status.ready_manual_tip') %}
   {% elif status == 'ready' and automation_mode == 'scheduled' %}
-    {% set label = 'Ready — scheduled' %}
+    {% set label = t('status.ready_scheduled') %}
+    {% set tip = t('status.ready_scheduled_tip') %}
   {% else %}
     {% set label = labels.get(status, status) %}
+    {% set tip = '' %}
   {% endif %}
   {% set tones = {
     'failed': 'red',
@@ -51,7 +58,7 @@
     'not_required': 'grey',
     'awaiting_guest': 'grey'
   } %}
-  <span class="pill {{ tones.get(status, 'grey') }}">{{ label }}</span>
+  <span class="pill {{ tones.get(status, 'grey') }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
 {% endmacro %}
 
 {% macro row_reporting_actions(reservation, controls, return_to) %}
@@ -66,12 +73,12 @@
 {% endmacro %}
 
 {% macro bulk_send_ready(count, return_to) %}
-  <form method="post" action="/reservations/submit-ready" class="inline">
+  <form method="post" action="/reservations/submit-ready" class="inline send-all-form">
     <input type="hidden" name="return_to" value="{{ return_to }}">
     <button class="btn send-all" type="submit"
             {% if not count %}disabled{% endif %}
-            title="{% if count %}Send every stay with completed guest forms ready for police reporting{% else %}No stays have completed guest forms ready to send{% endif %}">
-      Send all ready{% if count %} ({{ count }}){% endif %}
+            title="{{ t('send.all_ready_hint') }}">
+      {{ t('send.all_ready') }}{% if count %} ({{ count }}){% endif %}
     </button>
   </form>
 {% endmacro %}
@@ -96,10 +103,10 @@
   {% endif %}
 {% endmacro %}
 
-{% macro csv_actions_menu(export_params='', can_import=false) %}
-<div class="action-menu row-menu">
-  <button class="btn row-menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">
-    CSV <span class="menu-caret" aria-hidden="true">▾</span>
+{% macro csv_actions_menu(export_params='', can_import=false, compact=false) %}
+<div class="action-menu row-menu{% if compact %} csv-in-filter{% endif %}">
+  <button class="btn row-menu-trigger{% if compact %} small{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">
+    {{ t('csv.button') }} <span class="menu-caret" aria-hidden="true">▾</span>
   </button>
   <div class="row-menu-panel" role="menu" hidden>
     <button class="row-menu-item" type="button" role="menuitem"
@@ -112,10 +119,10 @@
 </div>
 {% endmacro %}
 
-{% macro housebook_csv_menu(export_params='', can_import=false) %}
-<div class="action-menu row-menu">
-  <button class="btn row-menu-trigger" type="button" aria-expanded="false" aria-haspopup="true">
-    CSV <span class="menu-caret" aria-hidden="true">▾</span>
+{% macro housebook_csv_menu(export_params='', can_import=false, compact=false) %}
+<div class="action-menu row-menu{% if compact %} csv-in-filter{% endif %}">
+  <button class="btn row-menu-trigger{% if compact %} small{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">
+    {{ t('csv.button') }} <span class="menu-caret" aria-hidden="true">▾</span>
   </button>
   <div class="row-menu-panel" role="menu" hidden>
     <button class="row-menu-item" type="button" role="menuitem"

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260912a">
+  <link rel="stylesheet" href="/static/app.css?v=20260912c">
 </head>
 <body class="auth-page">
   <div class="auth-layout">
@@ -16,8 +16,8 @@
       </header>
       <form method="post" action="/language" class="lang-switch auth-lang-switch">
         <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-        <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">EN</button>
-        <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">CS</button>
+        <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
+        <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
       </form>
       {% block auth_body %}{% endblock %}
     </section>
