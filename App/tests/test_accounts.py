@@ -197,6 +197,30 @@ def test_temporary_password_must_be_replaced_and_invalidates_old_sessions():
         _clean_accounts()
 
 
+def test_remember_me_extends_session_max_age():
+    assert auth.session_max_age({"rm": 1}) == auth.SESSION_REMEMBER_MAX_AGE
+    assert auth.session_max_age({}) == auth.SESSION_MAX_AGE
+    assert auth.session_max_age(None) == auth.SESSION_MAX_AGE
+
+
+def test_remember_me_login_keeps_session_active():
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-remember")
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/login",
+            data={"username": "boundary-remember", "password": PASSWORD, "remember": "on"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert client.cookies.get(auth.SESSION_COOKIE)
+        assert client.get("/").status_code == 200
+    finally:
+        _clean_accounts()
+
+
 def test_bootstrap_admin_claims_existing_data(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "migration.db")
     monkeypatch.setattr(config, "DATA_DIR", tmp_path)
