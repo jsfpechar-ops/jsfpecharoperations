@@ -121,7 +121,7 @@ def test_01_the_app_opens_onto_the_authenticated_dashboard(host):
 
 def test_02_an_empty_install_offers_the_demo(host):
     page = host.get("/")
-    assert "Nothing set up yet" in page.text
+    assert "Welcome to UbyHost" in page.text
     assert 'action="/demo"' in page.text
 
 

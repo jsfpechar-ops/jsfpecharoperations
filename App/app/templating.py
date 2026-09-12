@@ -40,6 +40,7 @@ templates.env.filters["weekday"] = _weekday
 templates.env.filters["from_json"] = _from_json
 templates.env.globals.update(
     app_version=__version__,
+    deployment_tier=config.DEPLOYMENT,
     ubyport_env=config.UBYPORT_ENV,
     public_base_url=config.PUBLIC_BASE_URL,
     describe_time_left=deadlines.describe_time_left,

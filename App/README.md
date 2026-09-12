@@ -34,54 +34,31 @@ UbyPort server** alongside the app, so nothing is sent to the police until you
 say so. On the empty dashboard there is a button that loads a demo apartment
 with a sample calendar, so you can click through the whole thing immediately.
 
-## Deploy on Render (free demo)
+## Deploy
 
-Put a mock demo online in a few minutes — nothing is sent to the real Foreign
-Police.
+The repo ships a **two-environment** Render blueprint:
 
-1. Push this repository to GitHub (or fork it).
-2. Open [Render](https://render.com/) and sign up (no card needed for the free
-   web service).
-3. **New → Blueprint** → connect the repo → Render reads `render.yaml` at the
-   repo root.
-4. Click **Apply**. Render builds `App/`, starts the mock UbyPort server, and
-   gives you a URL like `https://ubyhost.onrender.com`.
+| Service | Purpose |
+|---------|---------|
+| `ubyhost-staging` | Mock UbyPort, free tier, auto-deploy — safe for testing |
+| `ubyhost` | Production, Starter + disk, manual deploy, real police reporting |
 
-If you created the service manually instead of via Blueprint, open **Settings**
-and set **Root Directory** to `App`, **Build Command** to
-`pip install -r requirements.txt`, and **Start Command** to `./render_start.sh`.
-(Without Root Directory, the repo root also has a `requirements.txt` that
-includes `App/requirements.txt`.)
-5. Set `UBYHOST_ADMIN_USERNAME` and `UBYHOST_ADMIN_PASSWORD` in Render, then
-   open the URL, sign in, click **Load demo data**, and explore.
+Full runbooks: **[docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)** and
+**[docs/PRODUCTION_CHECKLIST.md](../docs/PRODUCTION_CHECKLIST.md)**.
 
-The free tier sleeps after ~15 minutes of idle time; the first request after
-that may take 30–60 seconds to wake up. **Data is stored in SQLite on the
-container disk and is wiped on every redeploy** — that is why you keep having
-to copy a new password and set it again. Fine for a quick preview, not for
-real use.
+Quick start (staging demo):
 
-### Keeping your login and data
+1. Push to GitHub → Render **New → Blueprint** → Apply `render.yaml`.
+2. Open `https://ubyhost-staging.onrender.com`, sign in with the generated admin
+   password (Render → Environment), click **Load demo data**.
 
-UbyHost is a Python server with SQLite. It needs a host that keeps a writable
-disk between restarts:
+Production requires setting `UBYHOST_ADMIN_USERNAME` / `UBYHOST_ADMIN_PASSWORD` on
+the `ubyhost` service, UBY-WS credentials per apartment, and promoting through
+`UBYHOST_UBYPORT_ENV=test` before `prod`.
 
-| Option | Notes |
-|--------|-------|
-| **Render Starter + disk** | Uncomment the `disk` block in `render.yaml`, upgrade off the free plan, mount at `App/data`. |
-| **[Fly.io](https://fly.io)** | Run the Docker image with a persistent volume on `/data` and set `UBYHOST_DATA_DIR=/data`. |
-| **[Railway](https://railway.app)** | Attach a volume for `App/data`. |
-| **Small VPS** (Hetzner, etc.) | Cheapest long-term option; run uvicorn behind nginx. |
+**Cloudflare Pages is not suitable** — it cannot run this FastAPI app or SQLite.
 
-**Cloudflare Pages is not suitable** — it only serves static sites and cannot
-run this FastAPI application or SQLite database.
-
-Host pages always require an account. Guest registration links still work
-without a host login.
-
-To point at the real UbyPort test service later, change `UBYHOST_UBYPORT_ENV` to
-`test` in the Render dashboard and add your web-service credentials per
-apartment.
+Docker: `docker build -t ubyhost .` from the repo root (see `Dockerfile`).
 
 ### Name and branding
 

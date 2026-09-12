@@ -37,6 +37,9 @@ SECRET_KEY = _load_secret()
 # "mock" | "test" | "prod".  Controls which UbyPort endpoint submissions go to.
 UBYPORT_ENV = os.environ.get("UBYHOST_UBYPORT_ENV", "mock").lower()
 
+# Logical deployment tier shown in the UI and health checks: local | staging | production.
+DEPLOYMENT = os.environ.get("UBYHOST_DEPLOYMENT", "local").lower()
+
 UBYPORT_ENDPOINTS = {
     "test": "https://ubyport.pcr.cz/ws_uby_test/ws_uby.svc",
     "prod": "https://ubyport.pcr.cz/ws_uby/ws_uby.svc",
