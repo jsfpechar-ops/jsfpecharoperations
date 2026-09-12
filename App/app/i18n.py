@@ -35,6 +35,16 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "why_point_czech": (
             "Czech citizens are not reported to the police — only the house-book entry is made."
         ),
+        "why_point_passport": (
+            "If you are not a Czech citizen, you must upload a photo of your passport or ID "
+            "page so your host can verify your details. Only the host sees it; it is deleted "
+            "immediately after verification."
+        ),
+        "why_point_accuracy": (
+            "You must enter truthful information that matches your travel document. The host "
+            "is legally responsible for accuracy and may refuse accommodation if you will not "
+            "show ID or provide correct details."
+        ),
         "why_point_sign": (
             "Completing and signing the form is the guest's own legal duty, which is why a "
             "signature is required."
@@ -162,6 +172,63 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_clear": "Clear",
         "signature_missing": "Please sign before submitting.",
         "signature_kept": "Signature already saved. Sign again only if you need to change it.",
+        "passport_photo_title": "Passport or ID photo",
+        "passport_photo_help": (
+            "Your host must check your details against your travel document by law. "
+            "Upload a clear photo of the ID page. Only your host can see it, and it is "
+            "deleted as soon as they confirm the details."
+        ),
+        "passport_photo_label": "Photo of passport ID page",
+        "passport_photo_hint": "JPEG, PNG, or WebP, up to 5 MB. No need to include every page.",
+        "passport_photo_missing": "Please upload a photo of your passport or ID card.",
+        "legal_notice_title": "Legal information",
+        "legal_notice_intro": (
+            "Please read this before submitting. Czech accommodation law requires both you "
+            "and your host to follow the rules below."
+        ),
+        "legal_notice_duty_title": "Your legal duty",
+        "legal_notice_duty_body": (
+            "Every accommodated person must be registered. Foreign nationals are reported to "
+            "the Foreign Police within three working days of check-in. Czech citizens are "
+            "recorded in the house book only. Providing these details is a statutory "
+            "requirement — not optional."
+        ),
+        "legal_notice_accuracy_title": "Accurate information only",
+        "legal_notice_accuracy_body": (
+            "All fields must match your passport or national ID card exactly. Your host must "
+            "verify them before any police report is sent. False or misleading information can "
+            "lead to fines for the host and may affect your stay."
+        ),
+        "legal_notice_passport_title": "Passport photo (foreign nationals)",
+        "legal_notice_passport_body": (
+            "Non-Czech guests must upload a clear photo of the ID page. Your host compares it "
+            "to the details you enter. The image is stored temporarily, visible only to your "
+            "host in this app, and deleted as soon as they confirm the match. It is not kept "
+            "after verification and is not sent to the police."
+        ),
+        "legal_notice_reporting_title": "Police reporting and house book",
+        "legal_notice_reporting_body": (
+            "Verified foreign-guest records are sent electronically to the Police of the Czech "
+            "Republic (UbyPort). The same information is kept in the house book (domovní kniha) "
+            "for six years and must be shown at a police inspection."
+        ),
+        "legal_notice_retention_title": "How long data is kept",
+        "legal_notice_retention_body": (
+            "Registration details and your signature are kept for six years from the last "
+            "house-book entry, as required by § 101 of Act No. 326/1999 Coll. Processing is "
+            "based on legal obligation (GDPR Article 6(1)(c)), not consent."
+        ),
+        "legal_notice_refusal_title": "If you refuse",
+        "legal_notice_refusal_body": (
+            "You must present a valid travel document for verification. If you refuse to "
+            "provide accurate details, sign, or allow identity verification, the host may "
+            "lawfully refuse accommodation."
+        ),
+        "legal_ack_label": (
+            "I confirm that my details are accurate, I have read the legal information above "
+            "and the privacy notice, and I understand my obligations under Czech law."
+        ),
+        "legal_ack_missing": "Please confirm that you have read the legal information.",
         "submit": "Submit my details",
         "optional": "optional",
         "required": "required",
@@ -199,6 +266,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Given name and surname, date of birth, nationality, travel document number, visa "
             "number where one was issued, permanent home address abroad, purpose of stay, the "
             "start and end of your stay, and your signature."
+        ),
+        "privacy_passport_photo_title": "Temporary passport photo",
+        "privacy_passport_photo_body": (
+            "If you are not a Czech citizen, you may upload a photograph of your passport or ID "
+            "page so the host can verify your details. The image is processed only for that "
+            "check, stored on the host's secure system, accessible only to the host, and "
+            "deleted immediately after verification. It is not transmitted to the police and "
+            "is not kept longer than necessary for the check."
         ),
         "privacy_recipients": "Who receives it",
         "privacy_recipients_body": (
@@ -252,6 +327,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "why_point_czech": (
             "Občané ČR se policii neoznamují — provede se pouze zápis do domovní knihy."
+        ),
+        "why_point_passport": (
+            "Pokud nejste občanem ČR, musíte nahrát fotografii stránky pasu nebo průkazu, "
+            "aby hostitel mohl ověřit údaje. Vidí ji jen hostitel; po ověření je smazána."
+        ),
+        "why_point_accuracy": (
+            "Musíte uvést pravdivé údaje shodné s cestovním dokladem. Hostitel za správnost "
+            "odpovídá a může odmítnout ubytování, pokud doklad neukážete nebo údaje nebudou "
+            "správné."
         ),
         "why_point_sign": (
             "Vyplnit a podepsat formulář je zákonnou povinností ubytovaného, proto je podpis "
@@ -375,6 +459,60 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_clear": "Vymazat",
         "signature_missing": "Před odesláním se prosím podepište.",
         "signature_kept": "Podpis je uložený. Podepište se znovu jen pokud ho chcete změnit.",
+        "passport_photo_title": "Fotografie pasu nebo průkazu",
+        "passport_photo_help": (
+            "Hostitel musí ze zákona zkontrolovat vaše údaje proti cestovnímu dokladu. "
+            "Nahrajte čitelnou fotografii stránky s údaji. Uvidí ji jen hostitel a po "
+            "ověření bude smazána."
+        ),
+        "passport_photo_label": "Fotografie stránky s údaji v pasu",
+        "passport_photo_hint": "JPEG, PNG nebo WebP, max. 5 MB.",
+        "passport_photo_missing": "Nahrajte prosím fotografii pasu nebo občanského průkazu.",
+        "legal_notice_title": "Právní informace",
+        "legal_notice_intro": (
+            "Před odesláním si prosím přečtěte. Český zákon o ubytování vyžaduje, aby vy i "
+            "ubytovatel dodrželi níže uvedená pravidla."
+        ),
+        "legal_notice_duty_title": "Vaše zákonná povinnost",
+        "legal_notice_duty_body": (
+            "Každá ubytovaná osoba musí být evidována. Cizinci se oznamují cizinecké policii "
+            "do tří pracovních dnů od ubytování. Občané ČR se zapisují pouze do domovní knihy. "
+            "Poskytnutí údajů je zákonný požadavek — není dobrovolné."
+        ),
+        "legal_notice_accuracy_title": "Pouze pravdivé údaje",
+        "legal_notice_accuracy_body": (
+            "Všechna pole musí přesně odpovídat pasu nebo občanskému průkazu. Hostitel je musí "
+            "ověřit před odesláním na policii. Nepravdivé údaje mohou vést k pokutám pro "
+            "ubytovatele a ovlivnit váš pobyt."
+        ),
+        "legal_notice_passport_title": "Fotografie pasu (cizinci)",
+        "legal_notice_passport_body": (
+            "Cizinci musí nahrát čitelnou fotografii stránky s údaji. Hostitel ji porovná s "
+            "vyplněnými poli. Obrázek je uložen dočasně, vidí ho jen hostitel v této aplikaci, "
+            "a po potvrzení shody je smazán. Po ověření se neuchovává a neposílá se policii."
+        ),
+        "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
+        "legal_notice_reporting_body": (
+            "Ověřené záznamy cizinců se elektronicky odesílají Policii ČR (UbyPort). Stejné "
+            "údaje se vedou v domovní knize po dobu šesti let a předkládají při kontrole."
+        ),
+        "legal_notice_retention_title": "Jak dlouho se údaje uchovávají",
+        "legal_notice_retention_body": (
+            "Registrační údaje a podpis se uchovávají šest let od posledního zápisu v domovní "
+            "knize podle § 101 zákona č. 326/1999 Sb. Zpracování je na základě právní povinnosti "
+            "(GDPR čl. 6 odst. 1 písm. c), nikoli souhlasu."
+        ),
+        "legal_notice_refusal_title": "Pokud odmítnete",
+        "legal_notice_refusal_body": (
+            "Musíte předložit platný cestovní doklad k ověření. Pokud odmítnete poskytnout "
+            "správné údaje, podepsat se nebo umožnit ověření totožnosti, může vás ubytovatel "
+            "po právu odmítnout."
+        ),
+        "legal_ack_label": (
+            "Potvrzuji, že mé údaje jsou správné, že jsem si přečetl(a) právní informace výše "
+            "a informaci o zpracování údajů a rozumím svým povinnostem podle českého práva."
+        ),
+        "legal_ack_missing": "Potvrďte prosím, že jste si přečetli právní informace.",
         "submit": "Odeslat údaje",
         "optional": "nepovinné",
         "required": "povinné",
@@ -410,6 +548,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Jméno a příjmení, datum narození, státní občanství, číslo cestovního dokladu, "
             "číslo víza (bylo-li vydáno), trvalé bydliště v zahraničí, účel pobytu, počátek a "
             "konec pobytu a podpis."
+        ),
+        "privacy_passport_photo_title": "Dočasná fotografie pasu",
+        "privacy_passport_photo_body": (
+            "Pokud nejste občanem ČR, můžete nahrát fotografii stránky pasu nebo průkazu, aby "
+            "hostitel ověřil údaje. Obrázek slouží jen k této kontrole, ukládá se v zabezpečeném "
+            "systému hostitele, je přístupný pouze hostiteli a po ověření je okamžitě smazán. "
+            "Nepředává se policii a neuchovává se déle, než je nutné pro kontrolu."
         ),
         "privacy_recipients": "Komu se předávají",
         "privacy_recipients_body": (

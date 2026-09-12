@@ -54,6 +54,19 @@
 
 <div class="split wide">
   <div>
+    {% if edit_entity %}
+    <div class="panel entity-edit-panel" id="entity-edit">
+      <div class="section-heading" style="margin-top:0">
+        <h2>Edit {{ edit_entity.name }}</h2>
+        <a class="btn small ghost" href="/entities">Close</a>
+      </div>
+      <form method="post" action="/entities/{{ edit_entity.id }}">
+        {{ entity_fields('edit_', edit_entity) }}
+        <div class="actions"><button class="btn primary" type="submit">Save changes</button></div>
+      </form>
+    </div>
+    {% endif %}
+
     {% if entities %}
     <div class="panel tight scroll-x">
       <table class="table-cards">
@@ -72,7 +85,7 @@
             <td class="num" data-label="Apartments">{{ entity.apartments }}</td>
             <td class="nowrap row-actions" data-label="">
               {{ row_menu_begin() }}
-                <a class="row-menu-item" href="#edit-{{ entity.id }}" data-open-details role="menuitem">Edit</a>
+                <a class="row-menu-item" href="/entities?edit={{ entity.id }}" role="menuitem">Edit</a>
                 {% if not entity.apartments %}
                 <form method="post" action="/entities/{{ entity.id }}/delete" class="row-menu-form"
                       onsubmit="return confirm('Delete this legal entity? This cannot be undone.')">
@@ -86,16 +99,6 @@
         </tbody>
       </table>
     </div>
-
-    {% for entity in entities %}
-      <details class="panel" id="edit-{{ entity.id }}">
-        <summary><strong>Edit {{ entity.name }}</strong></summary>
-        <form method="post" action="/entities/{{ entity.id }}" style="margin-top:12px">
-          {{ entity_fields('e' ~ entity.id ~ '_', entity) }}
-          <div class="actions"><button class="btn primary" type="submit">Save</button></div>
-        </form>
-      </details>
-    {% endfor %}
     {% else %}
       <div class="panel empty">No legal entities yet. Add the first one on the right.</div>
     {% endif %}

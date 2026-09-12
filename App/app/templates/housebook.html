@@ -4,6 +4,7 @@
 {% block content %}
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu %}
 {% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
+{% set housebook_pdf_params = 'apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
 {{ page_header(
   'House book',
   'Every guest record with the dates of their stay. The law requires this register to be kept for
@@ -65,7 +66,7 @@
   </div>
   <div class="field filter-actions filter-actions-end">
     <button class="btn filter-apply" type="submit">Filter</button>
-    {{ housebook_csv_menu(housebook_csv_params, apartments|length > 0, true) }}
+    {{ housebook_csv_menu(housebook_csv_params, apartments|length > 0, true, housebook_pdf_params) }}
   </div>
 </form>
 
@@ -121,6 +122,7 @@
   </table>
 </div>
 <p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}. CSV export includes active entries only.</p>
+<p class="legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
 {% else %}
   <div class="panel empty">No entries match this filter. The house book fills as guest forms are completed.</div>
 {% endif %}

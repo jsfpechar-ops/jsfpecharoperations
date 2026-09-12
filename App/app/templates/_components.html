@@ -32,11 +32,18 @@
     'ready': 'Ready to report',
     'incomplete': 'Incomplete',
     'not_required': 'Exempt',
-    'awaiting_guest': 'Waiting for guest'
+    'awaiting_guest': 'Waiting for guest',
+    'awaiting_verification': 'Verify passport'
   } %}
   {% if is_demo and status == 'ready' %}
     {% set label = t('status.demo_preview') %}
     {% set tip = t('status.demo_preview_tip') %}
+  {% elif status == 'awaiting_verification' %}
+    {% set label = t('status.awaiting_verification') %}
+    {% set tip = t('status.awaiting_verification_tip') %}
+  {% elif automation_mode == 'immediate' and status in ('awaiting_guest', 'incomplete') %}
+    {% set label = t('status.waiting_guest') %}
+    {% set tip = t('status.waiting_guest_tip') %}
   {% elif status == 'ready' and automation_mode == 'immediate' %}
     {% set label = t('status.ready_immediate') %}
     {% set tip = t('status.ready_immediate_tip') %}
@@ -119,7 +126,7 @@
 </div>
 {% endmacro %}
 
-{% macro housebook_csv_menu(export_params='', can_import=false, compact=false) %}
+{% macro housebook_csv_menu(export_params='', can_import=false, compact=false, pdf_params='') %}
 <div class="action-menu row-menu{% if compact %} csv-in-filter{% endif %}">
   <button class="btn row-menu-trigger{% if compact %} small{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">
     {{ t('csv.button') }} <span class="menu-caret" aria-hidden="true">▾</span>
@@ -127,6 +134,9 @@
   <div class="row-menu-panel" role="menu" hidden>
     <button class="row-menu-item" type="button" role="menuitem"
             data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}">{{ t('csv.download') }}</button>
+    {% if pdf_params %}
+      <a class="row-menu-item" href="/housebook/pdfs.zip?{{ pdf_params }}" role="menuitem">{{ t('csv.download_pdfs') }}</a>
+    {% endif %}
     {% if can_import %}
       <button class="row-menu-item" type="button" role="menuitem" data-toggle-panel="import-housebook-panel">{{ t('csv.import') }}</button>
     {% endif %}

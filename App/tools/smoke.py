@@ -5,6 +5,7 @@ It uses a scratch database, so it never touches real data.
 """
 from __future__ import annotations
 
+import base64
 import os
 import sys
 import tempfile
@@ -25,6 +26,12 @@ from app.main import app  # noqa: E402
 
 FAILURES = []
 CHECKED = 0
+
+# Minimal valid PNG for passport-photo upload in guest form smoke.
+PNG_BYTES = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
+    "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
 
 
 def check(client, path, expect=(200,), must_contain=(), must_not_contain=(), label=""):
@@ -171,7 +178,13 @@ def main():
     check(
         guest,
         f"/l/{token}/privacy",
-        must_contain=["Smoke s.r.o.", "privacy@example.com", "6(1)(c)", "uoou.gov.cz"],
+        must_contain=[
+            "Smoke s.r.o.",
+            "privacy@example.com",
+            "6(1)(c)",
+            "uoou.gov.cz",
+            "Temporary passport photo",
+        ],
     )
     # A separate browser, because ?lang=cs sets a sticky cookie.
     czech = TestClient(app)
@@ -180,7 +193,7 @@ def main():
     check(
         guest,
         f"/l/{token}/{stay_a}",
-        must_contain=['name="surname"', "Czech law"],
+        must_contain=['name="surname"', "Czech law", "Legal information", "legal_ack"],
         must_not_contain=["Airbnb", "Booking.com"],
     )
     check(guest, f"/l/{token}/999999", expect=(404,), must_contain=["no longer open"])
@@ -203,7 +216,9 @@ def main():
             "purpose": "10",
             "party_size": "2",
             "signature": signature,
+            "legal_ack": "1",
         },
+        files={"passport_photo": ("passport.png", PNG_BYTES, "image/png")},
         follow_redirects=True,
     )
     if saved.status_code != 200:

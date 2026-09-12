@@ -296,7 +296,10 @@ a.plain { color: inherit; text-decoration: none; }
   align-items: center;
   gap: 8px;
 }
-.sidebar-footer-row .lang-switch.compact { flex: 1; min-width: 0; }
+.sidebar-footer-row .lang-switch.compact {
+  flex: 0 0 auto;
+  width: fit-content;
+}
 .sidebar-logout { margin: 0; padding: 0; flex-shrink: 0; }
 .sidebar-logout .nav-button {
   cursor: pointer;
@@ -708,6 +711,10 @@ a.notification-link:hover { background: var(--surface-2); }
 .focus-title a:hover { color: var(--brand); }
 .focus-meta { color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
 .focus-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.focus-actions .btn.accent { white-space: nowrap; }
+.sync-action { display: grid; gap: 4px; justify-items: end; text-align: right; }
+.sync-action .sync-hint { margin: 0; font-size: 12px; line-height: 1.35; }
+.entity-edit-panel { margin-bottom: 16px; }
 
 /* --- tables ------------------------------------------------------------ */
 
@@ -1046,12 +1053,12 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   padding-bottom: 0;
 }
 .filters .filter-actions-end {
-  flex: 1 1 100%;
+  flex: 0 0 auto;
   max-width: none;
   justify-content: flex-end;
-  align-items: center;
-  margin-left: 0;
-  padding-top: 2px;
+  align-items: flex-end;
+  margin-left: auto;
+  padding-top: 0;
 }
 .filters .csv-in-filter .row-menu-trigger { height: 44px; }
 .filters input[type=date], .filters input[type=text], .filters select { height: 44px; }
@@ -1067,6 +1074,71 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   margin-bottom: 14px;
 }
 .reporting-modes-panel h2 { font-size: 15px; margin: 0 0 6px; }
+
+.signature-pad {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+.signature-pad canvas {
+  display: block;
+  width: 100%;
+  height: 160px;
+  touch-action: none;
+  background: var(--surface);
+  cursor: crosshair;
+}
+.signature-pad-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 13px;
+}
+.signature-pad-bar button {
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.passport-preview {
+  margin: 12px 0;
+  max-width: 420px;
+}
+.passport-preview img {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.verify-panel .verify-form {
+  margin-top: 8px;
+}
+.verify-inline {
+  margin-top: 12px;
+  padding: 12px 14px;
+}
+
+.legal-fineprint {
+  margin-top: 10px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--faint);
+}
+.guide-legal h3 {
+  font-size: 14px;
+  margin: 18px 0 6px;
+}
+.legal-disclaimer {
+  margin-top: 18px;
+  border-color: var(--line);
+}
 .compact-filters summary { color: var(--brand); font-size: 13.5px; font-weight: 600; }
 /* With scripting the filters apply themselves, so Apply is only a fallback. */
 .has-js form[data-auto-submit] .filter-apply { display: none; }

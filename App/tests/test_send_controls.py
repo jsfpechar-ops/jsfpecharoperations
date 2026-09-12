@@ -1,9 +1,18 @@
 """Send action rules for stay rows."""
 from __future__ import annotations
 
+import base64
 from datetime import date, timedelta
 
 from app import db, reporting
+
+SIGNATURE = "data:image/png;base64," + base64.b64encode(
+    bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000a49444154789c6300010000050001od7a1f0000000049454e44ae42"
+        "6082".replace("od", "0d")
+    )
+).decode()
 
 
 def _seed(mode: str = "manual", token: str = "tok"):
@@ -57,6 +66,10 @@ def _seed(mode: str = "manual", token: str = "tok"):
             "purpose": "10",
             "is_lead": 1,
             "entered_by": "host",
+            "signature_png": SIGNATURE,
+            "passport_photo_at": None,
+            "signed_at": now,
+            "identity_verified_at": now,
             "submit_state": reporting.PENDING,
             "created_at": now,
             "updated_at": now,
@@ -116,5 +129,33 @@ def test_count_sendable_stays_includes_ready_manual_stays():
 
 
 def test_status_label_reflects_automation():
-    assert reporting.status_label("ready", "immediate") == "Ready — auto-send"
+    assert reporting.status_label("ready", "immediate") == "Verified — auto-send after you confirm"
+    assert reporting.status_label("awaiting_guest", "immediate") == "Waiting for guest"
     assert reporting.status_label("ready", "manual") == "Ready — send manually"
+
+
+def test_unverified_foreign_guest_blocks_send():
+    apartment, reservation, guest_id = _seed("manual", "tok-unverified")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["status"] == "awaiting_verification"
+    assert controls["send_enabled"] is False
+    assert "passport" in controls["send_hint"].lower()
+
+
+def test_unsigned_foreign_guest_blocks_send():
+    apartment, reservation, guest_id = _seed("manual", "tok-unsigned")
+    db.update("guest", guest_id, {"signature_png": None, "signed_at": None})
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["status"] == "incomplete"
+    assert controls["send_enabled"] is False
+    assert controls["send_visible"] is False
+    assert "sign" in controls["send_hint"].lower()

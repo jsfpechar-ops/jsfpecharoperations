@@ -37,8 +37,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.remember": "Remember me for 30 days",
         "login.submit": "Continue",
         "login.footnote": (
-            "No public sign-up. UbyHost is invite-only. Ask your administrator for an account, "
-            "or use the first-admin credentials from your deployment."
+            "No public sign-up. UbyHost is invite-only — ask your administrator for an account."
         ),
         "login.hero_title": "Guest reporting, handled for you.",
         "login.hero_body": (
@@ -57,23 +56,67 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download": "Download CSV",
         "csv.import": "Import CSV",
         "csv.sample_housebook": "Sample CSV",
+        "csv.download_pdfs": "Download PDFs for inspection",
         "csv.button": "CSV",
+        "host.signature_title": "Guest signature",
+        "host.signature_help": (
+            "Required by Czech law (§ 101–103, Act 326/1999 Coll.). The guest must sign, or you must "
+            "keep a matching paper form on file. Unsigned records cannot be reported to UbyPort."
+        ),
+        "host.signature_missing": "Please sign before saving.",
+        "host.signature_kept": "Signature saved. Sign again only if you need to change it.",
+        "host.signature_clear": "Clear",
+        "host.verify_title": "Passport verification",
+        "host.verify_help": (
+            "You are legally responsible for the accuracy of every field. Compare the guest's "
+            "passport or ID against the details below before reporting to UbyPort."
+        ),
+        "host.verify_confirm": (
+            "I have checked this person's face and travel document against the details above."
+        ),
+        "host.verify_button": "Verify identity & delete photo",
+        "host.verify_footnote": (
+            "The passport photo is deleted immediately when you confirm. UbyPort is not sent "
+            "until verification is complete."
+        ),
+        "host.verify_waiting_photo": "Waiting for the guest to upload a passport photo.",
+        "host.verify_done": "Identity verified on",
+        "host.verify_host_entry": (
+            "When you enter a guest by hand you confirm the details against their document in "
+            "person. The record is marked verified on save."
+        ),
+        "housebook.legal_footnote": (
+            "You are the data controller and legally responsible for guest records. UbyHost is software "
+            "only — it does not replace your duty to keep signed forms, report foreigners within three "
+            "working days, and present paper records at a police inspection."
+        ),
         "send.this_stay": "Send this stay",
         "send.all_ready": "Send all ready stays",
         "send.all_ready_hint": "Reports every stay that is complete and waiting for your approval",
+        "send.filled_forms": "Send filled forms",
+        "send.filled_forms_hint": "Submit every completed guest form on this stay to UbyPort",
         "send.guests_count": "Send %(count)s guest(s) on this stay",
         "status.ready_manual": "Ready — you send",
         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
-        "status.ready_immediate": "Ready — auto-send",
-        "status.ready_immediate_tip": "Sends automatically when each guest signs. No button needed unless something failed.",
+        "status.ready_immediate": "Verified — auto-send",
+        "status.ready_immediate_tip": "Passport checks are done. UbyPort submission happens automatically.",
+        "status.awaiting_verification": "Verify passport",
+        "status.awaiting_verification_tip": (
+            "Guest forms are complete. Check each passport photo before reporting."
+        ),
+        "status.waiting_guest": "Waiting for guest",
+        "status.waiting_guest_tip": "Guest forms are not complete yet.",
+        "status.waiting_signature": "Waiting for signature",
+        "status.waiting_signature_tip": "Guest forms are not signed yet.",
         "status.ready_scheduled": "Ready — scheduled",
         "status.ready_scheduled_tip": "Will go out automatically after the delay set on the property.",
         "status.demo_preview": "Preview only",
         "status.demo_preview_tip": "Demo data is never sent to the police.",
         "dashboard.reporting_modes": "How sending works",
         "dashboard.reporting_modes_body": (
-            "Immediate sends when a guest signs. Scheduled waits a few hours after check-in. "
-            "Manual waits for you — use Send on the stay or Send all ready stays above the list."
+            "You must verify each passport before reporting. Manual waits for your Send click. "
+            "Scheduled sends after check-in plus a delay, once verified. Auto-after-verify sends "
+            "right after you confirm each guest."
         ),
         "dashboard.minutes_saved": "~%(minutes)s min saved vs manual UbyPort entry",
         "celebration.title": "Well done!",
@@ -118,11 +161,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Each property chooses how completed guest records reach UbyPort:",
         "guide.reporting.caption": (
-            "Ready — you send means guest forms are done but your property waits for you to click Send. "
-            "Ready — auto-send goes out when guests sign."
+            "Verify passport means you still need to check the ID photo. Nothing is sent to UbyPort "
+            "until you confirm the details match the travel document."
         ),
-        "guide.reporting.immediate": "Immediate",
-        "guide.reporting.immediate_detail": "Sent as soon as the guest signs.",
+        "guide.reporting.immediate": "After verification",
+        "guide.reporting.immediate_detail": (
+            "Sent automatically once you verify each guest against their passport. "
+            "Never sent blindly from the guest form alone."
+        ),
+        "guide.legal.verification_title": "Verify every foreign guest",
+        "guide.legal.verification_body": (
+            "You are legally responsible for accurate police records. Guests upload a passport "
+            "photo for your review; compare face and document number before confirming. The photo "
+            "is deleted immediately after verification. If a guest refuses to show ID, you may "
+            "refuse accommodation."
+        ),
         "guide.reporting.scheduled": "Scheduled",
         "guide.reporting.scheduled_detail": "Batched after check-in plus your chosen delay.",
         "guide.reporting.manual": "Manual",
@@ -132,8 +185,49 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "it never forces a partial stay."
         ),
         "guide.housebook.body": (
-            "The house book lists every guest. Export CSV for inspections; import older paper records "
-            "from the CSV menu in the filters."
+            "The house book lists every guest — Czech and foreign. Export CSV or download PDFs for "
+            "inspections; import older paper records from the CSV menu in the filters."
+        ),
+        "guide.nav.legal": "Your legal duties",
+        "guide.legal.lede": (
+            "UbyHost helps you comply, but the accommodation provider remains legally responsible. "
+            "Read this section carefully."
+        ),
+        "guide.legal.housebook_title": "House book (domovní kniha)",
+        "guide.legal.housebook_body": (
+            "Under § 101 of Act No. 326/1999 Coll. you must keep a register of accommodated foreigners "
+            "with the same data as the registration form, plus stay dates. Entries must be current, "
+            "legible, and chronological. Keep them for six years after the last entry."
+        ),
+        "guide.legal.paper_title": "Paper for police inspection",
+        "guide.legal.paper_body": (
+            "At inspection you must present the house book in written form. A screen alone is not enough. "
+            "Download each guest's signed PDF (or the ZIP from House book) and store or print it. "
+            "Signed registration forms count as house-book pages."
+        ),
+        "guide.legal.signature_title": "Signatures are mandatory",
+        "guide.legal.signature_body": (
+            "Every guest record needs a signature before it is complete. Prefer the guest link so they "
+            "sign themselves. If you type details by hand, sign on the host form. UbyPort will not "
+            "send unsigned foreign guests."
+        ),
+        "guide.legal.reporting_title": "Reporting foreigners to the police",
+        "guide.legal.reporting_body": (
+            "Report each foreign guest through UbyPort within three working days of check-in (§ 100). "
+            "Czech nationals stay in the house book only — they are not reported to the Foreign Police."
+        ),
+        "guide.legal.retention_title": "Retention and GDPR",
+        "guide.legal.retention_body": (
+            "Guest data is processed to meet your legal obligation (GDPR Art. 6(1)(c)). Keep records "
+            "for six years. After that, delete them unless another law requires longer storage."
+        ),
+        "guide.legal.disclaimer_title": "About UbyHost (important)",
+        "guide.legal.disclaimer_body": (
+            "UbyHost is a technical tool provided as-is. It does not provide legal advice, does not act "
+            "as your data controller, and does not guarantee acceptance by the police or UbyPort. You "
+            "remain responsible for correct data, timely reporting, signed forms, backups, and "
+            "presenting records at inspection. When in doubt, contact the Foreign Police "
+            "(reguby@pcr.cz) or a qualified adviser."
         ),
         "guide.demo.body": (
             "Load demo data anytime to explore with a sample flat. Demo guests are never sent to the real "
@@ -166,8 +260,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.remember": "Zapamatovat na 30 dní",
         "login.submit": "Pokračovat",
         "login.footnote": (
-            "Veřejná registrace není k dispozici. UbyHost je pouze na pozvání. Účet vám vytvoří "
-            "správce, nebo použijte přihlašovací údaje z nasazení."
+            "Veřejná registrace není k dispozici. UbyHost je pouze na pozvání — účet vám vytvoří správce."
         ),
         "login.hero_title": "Hlášení hostů bez zbytečné práce.",
         "login.hero_body": (
@@ -186,24 +279,67 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download": "Stáhnout CSV",
         "csv.import": "Importovat CSV",
         "csv.sample_housebook": "Vzorové CSV",
+        "csv.download_pdfs": "Stáhnout PDF pro kontrolu",
         "csv.button": "CSV",
+        "host.signature_title": "Podpis hosta",
+        "host.signature_help": (
+            "Vyžaduje zákon (§ 101–103, zákon č. 326/1999 Sb.). Host se musí podepsat, nebo musíte "
+            "mít shodný papírový formulář. Nepodepsané záznamy nelze odeslat do UbyPortu."
+        ),
+        "host.signature_missing": "Před uložením se prosím podepište.",
+        "host.signature_kept": "Podpis je uložený. Podepište znovu jen při změně.",
+        "host.signature_clear": "Vymazat",
+        "host.verify_title": "Ověření pasu",
+        "host.verify_help": (
+            "Za správnost každého údaje odpovídáte vy. Před odesláním do UbyPortu porovnejte "
+            "pas nebo průkaz hosta s vyplněnými údaji."
+        ),
+        "host.verify_confirm": (
+            "Zkontroloval(a) jsem obličej a cestovní doklad proti údajům výše."
+        ),
+        "host.verify_button": "Ověřit identitu a smazat fotografii",
+        "host.verify_footnote": (
+            "Fotografie pasu se po potvrzení okamžitě smaže. Do UbyPortu se neodešle nic, "
+            "dokud ověření není hotové."
+        ),
+        "host.verify_waiting_photo": "Čeká se na nahrání fotografie pasu hostem.",
+        "host.verify_done": "Identita ověřena",
+        "host.verify_host_entry": (
+            "Když zadáváte hosta ručně, potvrzujete údaje proti dokladu na místě. Záznam se "
+            "označí jako ověřený při uložení."
+        ),
+        "housebook.legal_footnote": (
+            "Jste správcem údajů a nesete právní odpovědnost. UbyHost je pouze software — nenahrazuje "
+            "povinnost uchovávat podepsané formuláře, hlásit cizince do tří pracovních dnů a předložit "
+            "listinnou evidenci při kontrole."
+        ),
         "nav.guide": "Nápověda",
         "send.this_stay": "Odeslat tento pobyt",
         "send.all_ready": "Odeslat všechny připravené",
         "send.all_ready_hint": "Odešle každý pobyt, který je kompletní a čeká na vaše potvrzení",
+        "send.filled_forms": "Odeslat vyplněné formuláře",
+        "send.filled_forms_hint": "Odešle každý hotový formulář hosta na tomto pobytu do UbyPortu",
         "send.guests_count": "Odeslat %(count)s host(y) na tomto pobytu",
         "status.ready_manual": "Připraveno — ručně",
         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
-        "status.ready_immediate": "Připraveno — automaticky",
-        "status.ready_immediate_tip": "Odešle se po podpisu hosta. Tlačítko není potřeba, pokud vše proběhlo.",
+        "status.ready_immediate": "Ověřeno — automaticky",
+        "status.ready_immediate_tip": "Kontrola pasů je hotová. Odeslání do UbyPortu proběhne automaticky.",
+        "status.awaiting_verification": "Ověřit pas",
+        "status.awaiting_verification_tip": (
+            "Formuláře jsou hotové. Zkontrolujte fotografii pasu před hlášením."
+        ),
+        "status.waiting_guest": "Čeká na hosta",
+        "status.waiting_guest_tip": "Formuláře hostů ještě nejsou hotové.",
+        "status.waiting_signature": "Čeká na podpis",
+        "status.waiting_signature_tip": "Formuláře ještě nejsou podepsané.",
         "status.ready_scheduled": "Připraveno — naplánováno",
         "status.ready_scheduled_tip": "Odejde automaticky po zvolené prodlevě od příjezdu.",
         "status.demo_preview": "Jen náhled",
         "status.demo_preview_tip": "Ukázková data se na policii nikdy neodešlou.",
         "dashboard.reporting_modes": "Jak funguje odesílání",
         "dashboard.reporting_modes_body": (
-            "Okamžité odešle po podpisu hosta. Naplánované počká po příjezdu. Ruční čeká na vás — "
-            "použijte Odeslat u pobytu nebo Odeslat všechny připravené nad seznamem."
+            "Před hlášením musíte ověřit každý pas. Ruční čeká na Odeslat. Naplánované odešle po "
+            "prodlevě od příjezdu, až po ověření. Auto po ověření odešle hned po vašem potvrzení."
         ),
         "dashboard.minutes_saved": "~%(minutes)s min ušetřeno oproti ručnímu UbyPortu",
         "celebration.title": "Výborně!",
@@ -246,11 +382,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Každé ubytování volí, jak se hotová hlášení dostanou do UbyPortu:",
         "guide.reporting.caption": (
-            "Připraveno — ručně znamená hotové formuláře, ale čeká na vaše Odeslat. "
-            "Připraveno — automaticky odejde po podpisu hosta."
+            "Ověřit pas znamená, že ještě musíte zkontrolovat fotografii dokladu. Do UbyPortu se nic "
+            "neodešle, dokud nepotvrdíte shodu s cestovním dokladem."
         ),
-        "guide.reporting.immediate": "Okamžité",
-        "guide.reporting.immediate_detail": "Odešle se hned po podpisu hosta.",
+        "guide.reporting.immediate": "Po ověření",
+        "guide.reporting.immediate_detail": (
+            "Odešle se automaticky po ověření hosta proti pasu. Nikdy ne slepě z formuláře hosta."
+        ),
+        "guide.legal.verification_title": "Ověřte každého cizince",
+        "guide.legal.verification_body": (
+            "Za správnost policejních záznamů odpovídáte vy. Hosté nahrají fotografii pasu ke kontrole; "
+            "porovnejte obličej a číslo dokladu před potvrzením. Fotografie se po ověření okamžitě smaže. "
+            "Odmítne-li host doklad ukázat, můžete odmítnout ubytování."
+        ),
         "guide.reporting.scheduled": "Naplánované",
         "guide.reporting.scheduled_detail": "Dávka po příjezdu a zvolené prodlevě.",
         "guide.reporting.manual": "Ruční",
@@ -259,7 +403,47 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Hromadné odeslání jen u kompletních pobytů povolených režimem — nikdy ne částečných."
         ),
         "guide.housebook.body": (
-            "Domovní kniha obsahuje všechny hosty. CSV export pro kontroly; import starších záznamů ve filtrech."
+            "Domovní kniha obsahuje všechny hosty — Čechy i cizince. CSV nebo PDF pro kontroly; "
+            "import starších záznamů ve filtrech."
+        ),
+        "guide.nav.legal": "Vaše právní povinnosti",
+        "guide.legal.lede": (
+            "UbyHost pomáhá s plněním povinností, ale ubytovatel zůstává právně odpovědný. "
+            "Tuto část si pečlivě přečtěte."
+        ),
+        "guide.legal.housebook_title": "Domovní kniha",
+        "guide.legal.housebook_body": (
+            "Podle § 101 zákona č. 326/1999 Sb. vedete evidenci ubytovaných cizinců v rozsahu "
+            "přihlašovacího tiskopisu a termínů pobytu. Záznamy musí být aktuální, přehledné a "
+            "chronologické. Uchovávejte je 6 let od posledního zápisu."
+        ),
+        "guide.legal.paper_title": "Listinná podoba při kontrole",
+        "guide.legal.paper_body": (
+            "Při kontrole musíte předložit domovní knihu v listinné podobě. Obrazovka sama o sobě "
+            "nestačí. Stáhněte podepsané PDF každého hosta (nebo ZIP z Domovní knihy) a archivujte "
+            "nebo vytiskněte. Podepsané tiskopisy nahrazují stránky knihy."
+        ),
+        "guide.legal.signature_title": "Podpis je povinný",
+        "guide.legal.signature_body": (
+            "Každý záznam hosta vyžaduje podpis, než je kompletní. Preferujte odkaz pro hosty. "
+            "Při ručním zadání podepište na formuláři hostitele. UbyPort neodešle nepodepsané cizince."
+        ),
+        "guide.legal.reporting_title": "Hlášení cizinců policii",
+        "guide.legal.reporting_body": (
+            "Každého cizince nahlaste přes UbyPort do tří pracovních dnů od příjezdu (§ 100). "
+            "Čeští hosté zůstávají jen v domovní knize — na cizineckou policii se nehlásí."
+        ),
+        "guide.legal.retention_title": "Uchovávání a GDPR",
+        "guide.legal.retention_body": (
+            "Údaje zpracováváte pro splnění právní povinnosti (GDPR čl. 6 odst. 1 písm. c). "
+            "Uchovávejte 6 let, poté mažte, pokud jiný zákon nevyžaduje déle."
+        ),
+        "guide.legal.disclaimer_title": "O UbyHostu (důležité)",
+        "guide.legal.disclaimer_body": (
+            "UbyHost je technický nástroj poskytovaný tak, jak je. Neposkytuje právní poradenství, "
+            "není správcem údajů a nezaručuje přijetí policií nebo UbyPortem. Odpovídáte za správnost "
+            "dat, včasné hlášení, podepsané formuláře, zálohy a předložení evidence při kontrole. "
+            "V pochybnostech kontaktujte cizineckou policii (reguby@pcr.cz) nebo odborného poradce."
         ),
         "guide.demo.body": (
             "Ukázková data lze načíst kdykoli. Na skutečnou policii se nikdy neodešlou."

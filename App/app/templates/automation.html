@@ -36,12 +36,12 @@
             <label for="automation_mode_{{ apartment.id }}">Send timing</label>
             <select id="automation_mode_{{ apartment.id }}" name="automation_mode"
                     data-automation-mode data-hours-target="submit_after_hours_{{ apartment.id }}">
-              <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
-                Immediately after the guest submits the form</option>
-              <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
-                A set number of hours after check-in (recommended)</option>
               <option value="manual" {% if apartment.automation_mode == 'manual' %}selected{% endif %}>
-                Only when I press send</option>
+                Only when I press send (recommended)</option>
+              <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
+                Hours after check-in, once verified</option>
+              <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
+                Automatically after I verify each passport</option>
             </select>
           </div>
           <div class="field">

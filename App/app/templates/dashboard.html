@@ -60,7 +60,10 @@
 {% endmacro %}
 
 {% set header_actions %}
-  <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
+  <div class="sync-action">
+    <form method="post" action="/sync"><button class="btn" type="submit">Sync calendars</button></form>
+    {% if last_sync %}<p class="small muted sync-hint">Last synced {{ last_sync[:16].replace('T', ' ') }} UTC</p>{% endif %}
+  </div>
   {% if demo_loaded %}
     <form method="post" action="/demo/reset" onsubmit="return confirm('Clear the built-in demo data?')">
       <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
@@ -106,7 +109,7 @@
           <form method="post" action="/reservations/{{ f_res.id }}/submit" class="inline">
             <input type="hidden" name="return_to" value="/">
             <button class="btn accent" type="submit"
-                    title="{{ t('status.ready_manual_tip') }}">
+                    title="{{ t('send.filled_forms_hint') }}">
               {{ t('send.guests_count', count=focus.controls.pending_count) }}
             </button>
           </form>
@@ -144,8 +147,6 @@
       <div class="n">{{ counts.ready }}</div><div class="k">Ready to report</div>
     </a>
   </div>
-
-  {% if last_sync %}<p class="small muted">Calendars last synced {{ last_sync[:16].replace('T', ' ') }} UTC.</p>{% endif %}
 
   {% if setup_warnings %}
   <div class="panel">

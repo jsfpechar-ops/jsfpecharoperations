@@ -1,0 +1,36 @@
+<div class="g-card g-legal-notice" id="legal-notice">
+  <h2>{{ t('legal_notice_title') }}</h2>
+  <p class="g-intro">{{ t('legal_notice_intro') }}</p>
+
+  <h3>{{ t('legal_notice_duty_title') }}</h3>
+  <p>{{ t('legal_notice_duty_body') }}</p>
+
+  <h3>{{ t('legal_notice_accuracy_title') }}</h3>
+  <p>{{ t('legal_notice_accuracy_body') }}</p>
+
+  <h3 id="legal-passport-section">{{ t('legal_notice_passport_title') }}</h3>
+  <p class="legal-passport-text">{{ t('legal_notice_passport_body') }}</p>
+
+  <h3>{{ t('legal_notice_reporting_title') }}</h3>
+  <p>{{ t('legal_notice_reporting_body') }}</p>
+
+  <h3>{{ t('legal_notice_retention_title') }}</h3>
+  <p>{{ t('legal_notice_retention_body') }}</p>
+
+  <h3>{{ t('legal_notice_refusal_title') }}</h3>
+  <p>{{ t('legal_notice_refusal_body') }}</p>
+
+  <p class="g-law">{{ t('why_law') }}</p>
+  {% if privacy_url %}
+    <p class="legal-privacy-link"><a href="{{ privacy_url }}">{{ t('privacy_link') }} &rarr;</a></p>
+  {% endif %}
+
+  <div class="g-field legal-ack">
+    <label class="checkline" for="legal_ack">
+      <input type="checkbox" id="legal_ack" name="legal_ack" value="1" required
+             {% if values.get('legal_ack') %}checked{% endif %}>
+      <span>{{ t('legal_ack_label') }}</span>
+    </label>
+    {{ err_for('legal_ack') }}
+  </div>
+</div>
