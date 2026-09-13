@@ -10,6 +10,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   lightsail:
     if: >-
@@ -21,6 +24,7 @@ jobs:
         env:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
             echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
@@ -32,31 +36,33 @@ jobs:
           chmod 600 ~/.ssh/lightsail_deploy.pem
           LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
           LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" \
-            'set -euo pipefail
-             INSTALL=/opt/ubyhost
-             REPO=https://github.com/jsfpechar-ops/jsfpecharoperations.git
-             if [ ! -d "${INSTALL}/.git" ]; then
-               echo "==> No git repo at ${INSTALL}; bootstrapping for CI deploy"
-               if [ -d "${INSTALL}/deploy/lightsail" ]; then
-                 cd "${INSTALL}"
-                 git init
-                 git remote add origin "${REPO}" 2>/dev/null || git remote set-url origin "${REPO}"
-                 git fetch --depth 1 origin main
-                 git reset --mixed origin/main
-               elif [ ! -e "${INSTALL}" ] || [ -z "$(ls -A "${INSTALL}" 2>/dev/null)" ]; then
-                 git clone --depth 1 --branch main "${REPO}" "${INSTALL}"
-               else
-                 echo "ERROR: ${INSTALL} is not a git repo and layout is unexpected" >&2
-                 exit 1
-               fi
-             fi
-             cd "${INSTALL}"
-             git fetch origin main
-             git pull origin main
-             cd deploy/lightsail
-             chmod +x scripts/*.sh
-             ./scripts/deploy.sh'
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
+          set -euo pipefail
+          INSTALL=/opt/ubyhost
+          REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git"
+          if [ ! -d "\${INSTALL}/.git" ]; then
+            echo "==> No git repo at \${INSTALL}; bootstrapping for CI deploy"
+            if [ -d "\${INSTALL}/deploy/lightsail" ]; then
+              cd "\${INSTALL}"
+              git init
+              git remote add origin "\${REPO}" 2>/dev/null || git remote set-url origin "\${REPO}"
+              git fetch --depth 1 origin main
+              git reset --mixed origin/main
+            elif [ ! -e "\${INSTALL}" ] || [ -z "\$(ls -A "\${INSTALL}" 2>/dev/null)" ]; then
+              git clone --depth 1 --branch main "\${REPO}" "\${INSTALL}"
+            else
+              echo "ERROR: \${INSTALL} is not a git repo and layout is unexpected" >&2
+              exit 1
+            fi
+          fi
+          cd "\${INSTALL}"
+          git remote set-url origin "\${REPO}"
+          git fetch origin main
+          git pull origin main
+          cd deploy/lightsail
+          chmod +x scripts/*.sh
+          ./scripts/deploy.sh
+          REMOTE
           rm -f ~/.ssh/lightsail_deploy.pem
 
   render-staging:
