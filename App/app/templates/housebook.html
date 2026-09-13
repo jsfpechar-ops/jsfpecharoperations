@@ -11,19 +11,6 @@
    six years after the last entry and produced on request during a police inspection.'
 ) }}
 
-<div class="panel legal-panel">
-  <h2 style="margin-top:0">{{ t('housebook.legal_title') }}</h2>
-  <p>{{ t('housebook.legal_body') }}</p>
-  <ul class="legal-list small">
-    <li>{{ t('housebook.legal_paper') }}</li>
-    <li>{{ t('housebook.legal_inspection') }}</li>
-    {% if apartments %}
-      <li>{{ t('housebook.legal_import') }}</li>
-    {% endif %}
-  </ul>
-  <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
-</div>
-
 {% if apartments %}
 <div id="import-housebook-panel" class="action-panel hidden">
   <div class="panel">
@@ -172,4 +159,17 @@
   </table>
 </div>
 {% endif %}
+
+<details class="panel quiet housebook-legal">
+  <summary>{{ t('housebook.legal_title') }}</summary>
+  <p class="small muted">{{ t('housebook.legal_body') }}</p>
+  <ul class="legal-list small">
+    <li>{{ t('housebook.legal_paper') }}</li>
+    <li>{{ t('housebook.legal_inspection') }}</li>
+    {% if apartments %}
+      <li>{{ t('housebook.legal_import') }}</li>
+    {% endif %}
+  </ul>
+  <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
+</details>
 {% endblock %}
