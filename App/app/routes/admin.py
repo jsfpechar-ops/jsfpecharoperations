@@ -221,7 +221,11 @@ async def login_submit(request: Request):
     )
     db.audit(
         "login",
-        detail=f"terms_v{config.TERMS_VERSION} accepted",
+        detail=(
+            f"terms_v{config.TERMS_VERSION} "
+            f"privacy_v{config.PRIVACY_VERSION} "
+            f"dpa_v{config.DPA_VERSION} accepted"
+        ),
         actor=account["username"],
         owner_user_id=account["id"],
     )
