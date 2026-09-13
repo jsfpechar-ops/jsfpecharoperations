@@ -308,14 +308,14 @@ def new_permalink_token() -> str:
 
 
 def new_permalink_pin() -> str:
-    """Four-digit PIN guests enter before the registration form opens."""
-    return f"{secrets.randbelow(10000):04d}"
+    """Six-digit PIN guests enter before the registration form opens."""
+    return f"{secrets.randbelow(1_000_000):06d}"
 
 
 def normalise_permalink_pin(value: str) -> Optional[str]:
-    """Return a valid four-digit PIN or None."""
+    """Return a valid guest PIN (4 legacy or 6 current digits) or None."""
     value = (value or "").strip()
-    if len(value) == 4 and value.isdigit():
+    if value.isdigit() and len(value) in (4, 6):
         return value
     return None
 

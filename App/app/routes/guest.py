@@ -21,7 +21,10 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 
-from .. import auth, codelists, config, db, i18n, passport_photos, reporting, validation
+import secrets
+import time
+
+from .. import auth, codelists, config, db, i18n, passport_photos, rate_limit, reporting, validation
 from ..templating import render_guest
 
 router = APIRouter()
@@ -345,7 +348,21 @@ async def verify_pin(token: str, request: Request):
         return _unavailable(request, lang)
     form = await request.form()
     entered = (form.get("pin") or "").strip()
-    if entered != (apartment["permalink_pin"] or ""):
+    pin_key = rate_limit.client_key(request, token)
+    if rate_limit.pin_blocked(pin_key):
+        return _pin_page(
+            request,
+            token,
+            lang,
+            error=i18n.translator(lang)("pin_rate_limited"),
+        )
+    expected = apartment["permalink_pin"] or ""
+    if len(entered) != len(expected) or not secrets.compare_digest(entered, expected):
+        rate_limit.record_pin_failure(pin_key)
+        # Slow brute-force attempts without blocking legitimate guests for long.
+        failures = rate_limit.pin_failure_count(pin_key)
+        if failures > 0:
+            time.sleep(min(2.0, 0.15 * failures))
         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
     return_to = (form.get("return_to") or _guest_link(token)).strip()
     if not return_to.startswith(_guest_link(token)):

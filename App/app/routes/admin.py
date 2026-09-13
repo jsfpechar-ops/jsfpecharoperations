@@ -5,7 +5,7 @@ import base64
 import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlparse
 
 from fastapi import APIRouter, BackgroundTasks, Request
 from fastapi.responses import RedirectResponse, Response, StreamingResponse
@@ -24,6 +24,7 @@ from .. import (
     housebook,
     icalsync,
     passport_photos,
+    rate_limit,
     reporting,
     stays_import,
     validation,
@@ -90,6 +91,24 @@ def _form_return_to(form, default: str) -> str:
     if value.startswith("/") and not value.startswith("//") and "\n" not in value and "\r" not in value:
         return value
     return default
+
+
+def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
+    """Use only the path (and query) from Referer when it targets this host."""
+    referer = (request.headers.get("referer") or "").strip()
+    if not referer:
+        return default
+    parsed = urlparse(referer)
+    site_host = (request.headers.get("host") or "").split(":", 1)[0].lower()
+    ref_host = (parsed.hostname or "").lower()
+    if not site_host or ref_host != site_host:
+        return default
+    path = parsed.path or default
+    if not path.startswith("/") or path.startswith("//"):
+        return default
+    if parsed.query:
+        return f"{path}?{parsed.query}"
+    return path
 
 
 def _form_int(form, key: str) -> Optional[int]:
@@ -196,8 +215,20 @@ def login_form(request: Request):
 async def login_submit(request: Request):
     form = await request.form()
     username = _form_str(form, "username")
+    client_key = rate_limit.client_key(request, username.lower() or "unknown")
+    if rate_limit.login_blocked(client_key):
+        return render(
+            request,
+            "login.html",
+            {
+                "error": "Too many failed attempts. Wait about 15 minutes and try again.",
+                "username": username,
+            },
+            status_code=429,
+        )
     account = auth.authenticate(username, _form_str(form, "password"))
     if not account:
+        rate_limit.record_login_failure(client_key)
         db.audit("login_failed", request.client.host if request.client else "", actor="anonymous")
         return render(
             request,
@@ -843,7 +874,7 @@ async def apartment_update(apartment_id: int, request: Request):
     if pin_raw:
         pin = auth.normalise_permalink_pin(pin_raw)
         if not pin:
-            return _back(f"/apartments/{apartment_id}", err="PIN must be exactly four digits.")
+            return _back(f"/apartments/{apartment_id}", err="PIN must be 4 or 6 digits.")
         payload["permalink_pin"] = pin
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
@@ -1007,8 +1038,12 @@ async def add_feed(apartment_id: int, request: Request):
         return _back("/apartments", err="No such apartment.")
     form = await request.form()
     url = _form_str(form, "url")
-    if not url.lower().startswith(("http://", "https://")):
-        return _back(f"/apartments/{apartment_id}", err="The calendar URL must start with http:// or https://")
+    try:
+        from ..feed_url import FeedUrlError, validate_calendar_url
+
+        url = validate_calendar_url(url)
+    except FeedUrlError as exc:
+        return _back(f"/apartments/{apartment_id}", err=str(exc))
     db.insert(
         "ical_feed",
         {
@@ -2213,8 +2248,7 @@ def dismiss_alert(alert_id: int, request: Request):
     alerts.resolve_by_id(alert_id, user_dismissed=True)
     if request.headers.get("x-requested-with") == "fetch":
         return Response(status_code=204)
-    referer = request.headers.get("referer") or "/"
-    return RedirectResponse(referer, status_code=303)
+    return RedirectResponse(_redirect_path_from_referer(request), status_code=303)
 
 
 ARCHIVED_TYPES = ("all", "stays", "properties", "housebook", "entities")
