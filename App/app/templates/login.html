@@ -29,7 +29,8 @@
     </label>
     <p class="auth-acceptance">
       {{ t('login.acceptance_before') }}
-      <a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('terms.footer_link') }}</a>{{ t('login.acceptance_and') }}
+      <a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('terms.footer_link') }}</a>{{ t('login.acceptance_between_terms_privacy') }}
+      <a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('privacy.footer_link') }}</a>{{ t('login.acceptance_between_privacy_legal') }}
       <a href="/legal" target="_blank" rel="noopener noreferrer">{{ t('legal.footer_link') }}</a>{{ t('login.acceptance_after') }}
     </p>
     <button class="auth-submit" type="submit">{{ t('login.submit') }}</button>
