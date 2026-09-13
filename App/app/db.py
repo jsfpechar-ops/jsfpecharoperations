@@ -200,6 +200,14 @@ CREATE INDEX IF NOT EXISTS idx_apartment_owner     ON apartment (owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_entity_owner        ON legal_entity (owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_alert_owner         ON alert (owner_user_id, resolved_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_dedupe ON alert (dedupe_key) WHERE resolved_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS rate_limit_event (
+    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    scope TEXT NOT NULL,
+    key   TEXT NOT NULL,
+    at    REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_scope_key ON rate_limit_event (scope, key, at);
 """
 
 
