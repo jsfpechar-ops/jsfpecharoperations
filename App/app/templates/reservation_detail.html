@@ -35,8 +35,6 @@
     <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
   {% elif progress.status == 'reported' and submissions %}
     <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
-  {% elif progress.status == 'awaiting_verification' %}
-    <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.verify') }}</a>
   {% else %}
     <a class="btn primary" href="#guests">{{ t('stay.detail.cta.open') }}</a>
   {% endif %}

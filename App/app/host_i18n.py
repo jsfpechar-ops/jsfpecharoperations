@@ -151,8 +151,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
         "status.ready_immediate": "Verified — auto-send",
         "status.ready_immediate_tip": "Forms complete — UbyPort sends automatically when automation allows.",
-        "status.awaiting_verification": "Optional ID check",
-        "status.awaiting_verification_tip": "Guest forms are complete. Send when ready, or mark ID checked first.",
+        "status.awaiting_verification": "ID not checked",
+        "status.awaiting_verification_tip": (
+            "Guest forms are complete. Mark ID on each guest below, or send — ID is recorded when you send."
+        ),
         "stay.detail.note.immediate": "after guest forms are complete",
         "legal.footer_short": "Legal",
         "legal.footer_nav_label": "Legal",
@@ -364,6 +366,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.ready": "Guest details are complete. Open the stay and send when ready.",
         "action.incomplete": "Open the stay to finish missing guest details.",
         "action.awaiting_guest": "Share the guest link or add the details yourself.",
+        "action.awaiting_verification": "Forms complete — mark ID checked or send from this stay.",
         "action.check_missing": "Open the stay and check what is missing.",
         "hint.awaiting_verification": "Check each passport photo and confirm the details before reporting",
         "hint.auto_immediate": "Sends automatically after you verify each guest against their passport",
@@ -373,6 +376,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.nothing_left": "Nothing left to send for this stay",
         "hint.not_ready": "Complete guest details, signatures, and passport checks before sending",
         "hint.ready_to_send": "Send completed guest records to UbyPort now",
+        "hint.ready_id_optional": "Forms complete — send now or mark ID checked first (recorded on send)",
+        "hint.demo_preview": "Demo stays are never sent — use a real property to report to UbyPort",
         "status.failed": "Rejected",
         "status.reported": "Reported",
         "status.ready": "Ready to report",
@@ -760,9 +765,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
         "status.ready_immediate": "Ověřeno — automaticky",
         "status.ready_immediate_tip": "Formuláře hotové — UbyPort odešle automaticky podle režimu.",
-        "status.awaiting_verification": "Volitelná kontrola dokladu",
+        "status.awaiting_verification": "Doklad nezkontrolován",
         "status.awaiting_verification_tip": (
-            "Formuláře jsou hotové. Odešlete, až budete připraveni, nebo nejdřív označte kontrolu dokladu."
+            "Formuláře jsou hotové. Označte kontrolu dokladu u hostů, nebo odešlete — kontrola se zapíše při odeslání."
         ),
         "stay.detail.note.immediate": "po dokončení formulářů hostů",
         "legal.footer_short": "Právní",
@@ -967,6 +972,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.ready": "Údaje hostů jsou hotové. Otevřete pobyt a odešlete, až budete připraveni.",
         "action.incomplete": "Otevřete pobyt a doplňte chybějící údaje hostů.",
         "action.awaiting_guest": "Sdílejte odkaz pro hosty nebo údaje zadejte sami.",
+        "action.awaiting_verification": "Formuláře hotové — označte kontrolu dokladu nebo odešlete z pobytu.",
         "action.check_missing": "Otevřete pobyt a zkontrolujte, co chybí.",
         "hint.awaiting_verification": "Zkontrolujte fotografii pasu a potvrďte údaje před hlášením",
         "hint.auto_immediate": "Odešle se automaticky po ověření hosta proti pasu",
@@ -976,6 +982,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.nothing_left": "Pro tento pobyt už nic k odeslání není",
         "hint.not_ready": "Doplňte údaje hostů, podpisy a kontrolu pasů před odesláním",
         "hint.ready_to_send": "Odeslat hotové záznamy hostů do UbyPortu",
+        "hint.ready_id_optional": "Formuláře hotové — odešlete, nebo nejdřív označte kontrolu dokladu (zapíše se při odeslání)",
+        "hint.demo_preview": "Ukázkové pobyty se neodesílají — pro hlášení použijte skutečnou nemovitost",
         "status.failed": "Odmítnuto",
         "status.reported": "Nahlášeno",
         "status.ready": "Připraveno k hlášení",

@@ -30,6 +30,7 @@
   {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}{{ t('action.ready_immediate') }}
   {% elif progress.status == 'ready' %}{{ t('action.ready') }}
   {% elif progress.status == 'incomplete' %}{{ t('action.incomplete') }}
+  {% elif progress.status == 'awaiting_verification' %}{{ t('action.awaiting_verification') }}
   {% elif progress.status == 'awaiting_guest' %}{{ t('action.awaiting_guest') }}
   {% else %}{{ t('action.check_missing') }}{% endif %}
 {% endmacro %}
@@ -44,7 +45,7 @@
     'awaiting_guest': t('status.awaiting_guest_short'),
     'awaiting_verification': t('status.awaiting_verification')
   } %}
-  {% if is_demo and status == 'ready' %}
+  {% if is_demo and status in ('ready', 'awaiting_verification') %}
     {% set label = t('status.demo_preview') %}
     {% set tip = t('status.demo_preview_tip') %}
   {% elif status == 'awaiting_verification' %}
@@ -72,7 +73,8 @@
     'ready': 'blue',
     'incomplete': 'amber',
     'not_required': 'grey',
-    'awaiting_guest': 'grey'
+    'awaiting_guest': 'grey',
+    'awaiting_verification': 'amber'
   } %}
   <span class="pill {{ tones.get(status, 'grey') }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
 {% endmacro %}

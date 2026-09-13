@@ -1550,6 +1550,8 @@ async def reservation_submit(reservation_id: int, request: Request):
             err="Nothing was sendable: every guest is either incomplete, already reported, or not reportable.",
         )
     first = results[0]
+    if first.get("state") == "noop":
+        return _back(return_to, err=first.get("error") or "Nothing to send.")
     if first.get("state") == "not_configured":
         return _back(return_to, err=f"UbyPort settings incomplete: {first['error']}")
     if first.get("state") == "transport_error":
