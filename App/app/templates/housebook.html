@@ -3,26 +3,12 @@
 {% block title %}House book{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu %}
-{% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
-{% set housebook_pdf_params = 'apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
+{% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
 {{ page_header(
   'House book',
   'Every guest record with the dates of their stay. The law requires this register to be kept for
    six years after the last entry and produced on request during a police inspection.'
 ) }}
-
-<div class="panel legal-panel">
-  <h2 style="margin-top:0">{{ t('housebook.legal_title') }}</h2>
-  <p>{{ t('housebook.legal_body') }}</p>
-  <ul class="legal-list small">
-    <li>{{ t('housebook.legal_paper') }}</li>
-    <li>{{ t('housebook.legal_inspection') }}</li>
-    {% if apartments %}
-      <li>{{ t('housebook.legal_import') }}</li>
-    {% endif %}
-  </ul>
-  <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
-</div>
 
 {% if apartments %}
 <div id="import-housebook-panel" class="action-panel hidden">
@@ -77,18 +63,18 @@
     <label for="to">Stays until</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
-  <div class="field filter-actions filter-actions-end">
+  <div class="field filter-actions">
+    <button class="btn filter-apply" type="submit">Filter</button>
+  </div>
+  <div class="field housebook-toolbar-actions">
     {% if apartments %}
-      <button class="btn ghost filter-apply" type="button" data-toggle-panel="import-housebook-panel">
+      <button class="btn ghost" type="button" data-toggle-panel="import-housebook-panel">
         {{ t('housebook.import_paper') }}
       </button>
     {% endif %}
-    <button class="btn filter-apply" type="submit">Filter</button>
-    {{ housebook_csv_menu(housebook_csv_params, apartments|length > 0, true, housebook_pdf_params) }}
+    {{ housebook_csv_menu(housebook_csv_params, apartments|length > 0, true, true) }}
   </div>
 </form>
-
-<p class="small muted">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
 
 {% if rows %}
 <div class="panel tight scroll-x">
@@ -172,4 +158,87 @@
   </table>
 </div>
 {% endif %}
+
+<details class="panel quiet housebook-legal" id="housebook-legal-details">
+  <summary>{{ t('housebook.legal_title') }}</summary>
+  <p class="small muted">{{ t('housebook.legal_body') }}</p>
+  <ul class="legal-list small">
+    <li>{{ t('housebook.legal_paper') }}</li>
+    <li>{{ t('housebook.legal_inspection') }}</li>
+    {% if apartments %}
+      <li>{{ t('housebook.legal_import') }}</li>
+    {% endif %}
+  </ul>
+  <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
+</details>
+
+<dialog id="housebook-legal-intro" class="admin-dialog housebook-legal-dialog">
+  <div class="admin-dialog-form">
+    <h2 style="margin-top:0">{{ t('housebook.legal_intro_title') }}</h2>
+    <p class="small muted">{{ t('housebook.legal_body') }}</p>
+    <ul class="legal-list small">
+      <li>{{ t('housebook.legal_paper') }}</li>
+      <li>{{ t('housebook.legal_inspection') }}</li>
+      {% if apartments %}
+        <li>{{ t('housebook.legal_import') }}</li>
+      {% endif %}
+    </ul>
+    <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
+    <div class="actions">
+      <button class="btn" type="button" data-housebook-legal-skip>{{ t('housebook.legal_intro_skip') }}</button>
+      <button class="btn primary" type="button" data-housebook-legal-ack>{{ t('housebook.legal_intro_ack') }}</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="housebook-pdf-dialog" class="csv-export-dialog">
+  <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
+    <h2 style="margin-top:0">{{ t('housebook.pdf_export_title') }}</h2>
+    <p class="small muted">{{ t('housebook.pdf_export_help') }}</p>
+    <p class="small muted housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
+    <div class="field">
+      <label for="pdf_export_apartment">Apartment</label>
+      <select id="pdf_export_apartment" name="apartment">
+        <option value="">All</option>
+        {% for apartment in apartments %}
+          <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
+            {{ apartment.internal_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="grid two">
+      <div class="field">
+        <label for="pdf_export_from">{{ t('common.from') }}</label>
+        <input type="date" id="pdf_export_from" name="from" value="{{ date_from }}">
+      </div>
+      <div class="field">
+        <label for="pdf_export_to">{{ t('common.until') }}</label>
+        <input type="date" id="pdf_export_to" name="to" value="{{ date_to }}">
+      </div>
+    </div>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn" type="button" data-housebook-pdf-cancel>{{ t('data.export_csv_cancel') }}</button>
+      <button class="btn primary" type="submit">{{ t('data.export_csv_download') }}</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  var KEY = "ubyhost_housebook_legal_v1";
+  var intro = document.getElementById("housebook-legal-intro");
+  function dismissIntro() {
+    try { localStorage.setItem(KEY, "1"); } catch (e) {}
+    if (intro && typeof intro.close === "function") intro.close();
+  }
+  if (intro) {
+    var seen = false;
+    try { seen = localStorage.getItem(KEY) === "1"; } catch (e) {}
+    if (!seen && typeof intro.showModal === "function") intro.showModal();
+    intro.querySelectorAll("[data-housebook-legal-ack], [data-housebook-legal-skip]").forEach(function (btn) {
+      btn.addEventListener("click", dismissIntro);
+    });
+  }
+})();
+</script>
 {% endblock %}

@@ -184,6 +184,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_take": "Take photo",
         "passport_photo_choose": "Choose file",
         "passport_photo_selected": "Selected: %(name)s",
+        "passport_photo_pending_nat": (
+            "Choose your nationality above — foreign guests must upload a passport or ID photo here."
+        ),
+        "passport_photo_not_required": (
+            "Czech citizens do not upload a passport photo in this form."
+        ),
         "passport_photo_hint": (
             "Photo: JPEG, PNG, or WebP, up to 5 MB. PDF: up to 15 MB "
             "(e.g. a multi-guest registration form)."
@@ -490,6 +496,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_take": "Vyfotit",
         "passport_photo_choose": "Vybrat soubor",
         "passport_photo_selected": "Vybráno: %(name)s",
+        "passport_photo_pending_nat": (
+            "Nejprve zvolte státní příslušnost — cizinci zde nahrají fotografii pasu nebo průkazu."
+        ),
+        "passport_photo_not_required": (
+            "Občané ČR v tomto formuláři fotografii pasu nenahrávají."
+        ),
         "passport_photo_hint": (
             "Fotografie: JPEG, PNG nebo WebP, max. 5 MB. PDF: max. 15 MB "
             "(např. registrační formulář pro více hostů)."
