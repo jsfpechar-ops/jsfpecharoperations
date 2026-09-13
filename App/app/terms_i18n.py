@@ -29,8 +29,9 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "operated by %(name)s, identification number (IČO) %(ico)s, a self-employed person "
             "(osoba samostatně výdělečně činná) under the laws of the Czech Republic (the \"Operator\"). "
             "By creating an account, logging in, or otherwise using the Service, you (the \"Host\") "
-            "confirm that you have read, understood, and agree to be bound by these Terms. If you do "
-            "not agree, you must not use the Service. Where you accept on behalf of a legal entity, "
+            "confirm that you have read, understood, and agree to be bound by these Terms and the "
+            "Data Processing Agreement at /dpa (which is incorporated by reference for Guest Data). "
+            "If you do not agree, you must not use the Service. Where you accept on behalf of a legal entity, "
             "you represent that you have authority to bind that entity. The Service is offered primarily "
             "to accommodation providers and other business users; if you are a consumer within the "
             "meaning of Act No. 634/1992 Coll., as amended (including Act No. 261/2021 Coll.), "
@@ -70,9 +71,10 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "under Czech law, including Act No. 326/1999 Coll. on residence of foreign nationals, "
             "related decrees, house book rules, and GDPR duties as data controller. The Operator "
             "provides technical infrastructure and processes Guest Data on the Host's documented "
-            "instructions to deliver the Service — typically as a data processor under GDPR Article 28. "
-            "Nothing in these Terms transfers statutory duties of the Host to the Operator. The Operator "
-            "is not a joint controller unless expressly agreed in a separate data processing agreement."
+            "instructions to deliver the Service — as a data processor under GDPR Article 28 pursuant "
+            "to the Data Processing Agreement at /dpa. Nothing in these Terms transfers statutory duties "
+            "of the Host to the Operator. The Operator is not a joint controller unless expressly agreed "
+            "in a separate written agreement."
         ),
         "terms.s06_title": "6. Account registration and security",
         "terms.s06_body": (
@@ -117,8 +119,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "guarantee that the Host's use of the Service satisfies the Host's GDPR obligations. The "
             "Operator may access Guest Data only to provide the Service, ensure security, comply with "
             "law, or as otherwise instructed. The Host shall not instruct processing that violates "
-            "applicable law. Details of subprocessors and security are described in these Terms and "
-            "on the /legal page."
+            "applicable law. Details of subprocessors, cookies, retention, and security are described "
+            "in these Terms and in the Privacy Policy at /privacy."
         ),
         "terms.s10_title": "10. UbyPort and police reporting",
         "terms.s10_body": (
@@ -236,8 +238,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "deliver the Service, provided they are bound by confidentiality and data protection "
             "obligations consistent with these Terms. The Host authorises such subcontracting for "
             "processing Guest Data on the Host's instructions. The Operator remains responsible for "
-            "subprocessors' performance to the extent required by GDPR Article 28. A current list of "
-            "categories of subprocessors may be provided on request or in documentation."
+            "subprocessors' performance to the extent required by GDPR Article 28. A summary of "
+            "subprocessor categories is published in the Privacy Policy at /privacy."
         ),
         "terms.s22_title": "22. Changes to these Terms",
         "terms.s22_body": (
@@ -266,8 +268,9 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s25_title": "25. General provisions",
         "terms.s25_body": (
-            "These Terms, together with the /legal notice and any order form or data processing terms "
-            "expressly incorporated, constitute the entire agreement regarding the Service. If any "
+            "These Terms, together with the /legal notice, the Data Processing Agreement at /dpa, the "
+            "Privacy Policy at /privacy, and any order form expressly incorporated, constitute the "
+            "entire agreement regarding the Service. If any "
             "provision is invalid, the remainder stays in effect and the invalid part is replaced by a "
             "valid provision closest to the intent. Failure to enforce a right is not a waiver. The Host "
             "may not assign these Terms without the Operator's consent; the Operator may assign in "
@@ -313,8 +316,9 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "souvisejícímu softwaru, dokumentaci a hostované infrastruktuře (společně „Služba“), kterou "
             "provozuje %(name)s, IČO %(ico)s, osoba samostatně výdělečně činná podle práva České "
             "republiky (dále jen „Provozovatel“). Vytvořením účtu, přihlášením nebo jiným používáním "
-            "Služby potvrzujete vy (dále jen „Ubytovatel“), že jste si Podmínky přečetli, rozumíte jim "
-            "a souhlasíte s nimi. Pokud nesouhlasíte, Službu nepoužívejte. Pokud jednáte za právnickou "
+            "Služby potvrzujete vy (dále jen „Ubytovatel“), že jste si Podmínky a smlouvu o zpracování "
+            "údajů na /dpa (pro Údaje hostů začleněnou odkazem) přečetli, rozumíte jim a souhlasíte "
+            "s nimi. Pokud nesouhlasíte, Službu nepoužívejte. Pokud jednáte za právnickou "
             "osobu, prohlašujete, že jste k tomu oprávněni. Služba je určena především poskytovatelům "
             "ubytování a dalším podnikatelům; pokud jste spotřebitelem ve smyslu zákona č. 634/1992 Sb., "
             "ve znění pozdějších předpisů (včetně zákona č. 261/2021 Sb.), platí kogentní ochrana "
@@ -352,10 +356,9 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Ubytovatel výhradně odpovídá za plnění povinností poskytovatele ubytování podle českého "
             "práva, včetně zákona č. 326/1999 Sb. o pobytu cizinců, prováděcích předpisů, pravidel "
             "domovní knihy a povinností správce podle GDPR. Provozovatel poskytuje technickou "
-            "infrastrukturu a zpracovává Údaje hostů na dokumentovaný pokyn Ubytovatele — typicky jako "
-            "zpracovatel podle čl. 28 GDPR. Nic v těchto Podmínkách nepřenáší zákonné povinnosti "
-            "Ubytovatele na Provozovatele. Společná správa údajů nastává jen při výslovné samostatné "
-            "dohodě."
+            "infrastrukturu a zpracovává Údaje hostů na dokumentovaný pokyn Ubytovatele jako zpracovatel "
+            "podle čl. 28 GDPR dle DPA na /dpa. Nic v těchto Podmínkách nepřenáší zákonné povinnosti "
+            "Ubytovatele na Provozovatele. Společná správa údajů nastává jen při výslovné písemné dohodě."
         ),
         "terms.s06_title": "6. Registrace účtu a bezpečnost",
         "terms.s06_body": (
@@ -392,8 +395,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Provozovatel uplatňuje přiměřená technická a organizační opatření, ale nezaručuje, že "
             "použití Služby samo o sobě splní všechny GDPR povinnosti Ubytovatele. K Údajům hostů "
             "přistupuje jen pro poskytování Služby, bezpečnost, zákon nebo dle pokynu. Ubytovatel "
-            "neinstruuje protiprávní zpracování. Subzpracovatelé a bezpečnost jsou popsány v těchto "
-            "Podmínkách a na /legal."
+            "neinstruuje protiprávní zpracování. Subzpracovatelé, cookies, doba uchování a bezpečnost "
+            "jsou popsány v těchto Podmínkách a v Zásadách ochrany osobních údajů na /privacy."
         ),
         "terms.s10_title": "10. UbyPort a hlášení policii",
         "terms.s10_body": (
@@ -497,8 +500,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Provozovatel může využívat hosting, infrastrukturu a další subzpracovatele za podmínky "
             "mlčenlivosti a ochrany údajů v souladu s těmito Podmínkami. Ubytovatel takové "
             "subdodávání pro zpracování Údajů hostů na svůj pokyn autorizuje. Provozovatel odpovídá za "
-            "subzpracovatele v rozsahu čl. 28 GDPR. Aktuální kategorie subzpracovatelů mohou být uvedeny "
-            "v dokumentaci nebo na žádost."
+            "subzpracovatele v rozsahu čl. 28 GDPR. Přehled kategorií subzpracovatelů je v Zásadách "
+            "ochrany osobních údajů na /privacy."
         ),
         "terms.s22_title": "22. Změny Podmínek",
         "terms.s22_body": (
@@ -525,8 +528,9 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s25_title": "25. Obecná ustanovení",
         "terms.s25_body": (
-            "Tyto Podmínky spolu s informacemi na /legal a výslovně začleněnými objednávkami či DPA "
-            "tvoří úplnou dohodu o Službě. Neplatnost části neovlivní zbytek; neplatné ustanovení nahradí "
+            "Tyto Podmínky spolu s informacemi na /legal, DPA na /dpa, Zásadami na /privacy a výslovně "
+            "začleněnými objednávkami tvoří úplnou dohodu o Službě. Neplatnost části neovlivní zbytek; "
+            "neplatné ustanovení nahradí "
             "účinek co nejbližší záměru. Neuplatnění práva není vzdáním. Ubytovatel nesmí postoupit "
             "Podmínky bez souhlasu Provozovatele; Provozovatel může při převodu podnikání. Oznámení "
             "Ubytovateli lze doručit elektronicky ve Službě."

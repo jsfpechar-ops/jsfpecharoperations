@@ -5,6 +5,8 @@ from typing import Dict
 
 from fastapi import Request
 
+from .dpa_i18n import DPA_STRINGS
+from .privacy_policy_i18n import PRIVACY_STRINGS
 from .terms_i18n import TERMS_STRINGS
 
 LANG_COOKIE = "ubyhost_lang"
@@ -43,6 +45,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "login.acceptance_before": "By logging in or using UbyHost, you agree to the ",
         "login.acceptance_and": " and ",
+        "login.acceptance_between_terms_privacy": ", the ",
+        "login.acceptance_between_privacy_legal": ", and the ",
         "login.acceptance_after": (
             ". If you do not agree, do not log in or use the Service."
         ),
@@ -302,10 +306,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.footer_nav_label": "Help and legal",
         "legal.use_acceptance": (
             "By logging in or continuing to use UbyHost, you confirm that you have read and agree "
-            "to the Terms of Service and Legal notice, and that you act on behalf of your "
-            "accommodation business (not as a consumer where business terms apply)."
+            "to the Terms of Service (including the Data Processing Agreement at /dpa), the Privacy "
+            "Policy, and the Legal notice, and that you act on behalf of your accommodation business "
+            "(not as a consumer where business terms apply)."
         ),
-        "legal.use_acceptance_short": "Use of UbyHost = acceptance of Terms & Legal notice.",
+        "legal.use_acceptance_short": "Use = Terms (incl. DPA), Privacy & Legal.",
         "legal.settings_title": "Software operator",
         "legal.settings_body": (
             "UbyHost is operated by %(name)s, IČO %(ico)s. Guest data controllers are your legal entities "
@@ -637,6 +642,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "login.acceptance_before": "Přihlášením nebo používáním UbyHostu souhlasíte s ",
         "login.acceptance_and": " a ",
+        "login.acceptance_between_terms_privacy": ", ",
+        "login.acceptance_between_privacy_legal": " a ",
         "login.acceptance_after": (
             ". Pokud nesouhlasíte, nepřihlašujte se ani Službu nepoužívejte."
         ),
@@ -889,10 +896,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.footer_nav_label": "Nápověda a právní informace",
         "legal.use_acceptance": (
             "Přihlášením nebo dalším používáním UbyHostu potvrzujete, že jste se seznámili "
-            "s Obchodními podmínkami a Právními informacemi a že s nimi souhlasíte, a že jednáte "
-            "za své ubytovací podnikání (nikoli jako spotřebitel, pokud platí podmínky pro podnikatele)."
+            "s Obchodními podmínkami (včetně DPA na /dpa), Zásadami ochrany osobních údajů "
+            "a Právními informacemi a že s nimi souhlasíte, a že jednáte za své ubytovací podnikání "
+            "(nikoli jako spotřebitel, pokud platí podmínky pro podnikatele)."
         ),
-        "legal.use_acceptance_short": "Používáním UbyHostu přijímáte Podmínky a Právní informace.",
+        "legal.use_acceptance_short": "Použití = Podmínky (vč. DPA), Soukromí a Právní info.",
         "legal.settings_title": "Provozovatel software",
         "legal.settings_body": (
             "UbyHost provozuje %(name)s, IČO %(ico)s. Správci údajů hostů jsou vaše právnické osoby "
@@ -1196,6 +1204,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
 
 for _lang, _terms in TERMS_STRINGS.items():
     STRINGS.setdefault(_lang, {}).update(_terms)
+
+for _lang, _privacy in PRIVACY_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_privacy)
+
+for _lang, _dpa in DPA_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_dpa)
 
 
 def normalise_language(value: str | None) -> str:
