@@ -70,10 +70,11 @@ app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
 @app.middleware("http")
 async def cloudflare_connecting_ip(request: Request, call_next):
     """Use the visitor IP when traffic is proxied through Cloudflare."""
-    cf_ip = request.headers.get("cf-connecting-ip")
-    if cf_ip:
-        _host, port = request.scope.get("client") or ("", 0)
-        request.scope["client"] = (cf_ip, port or 0)
+    if config.TRUST_CF_CONNECTING_IP:
+        cf_ip = request.headers.get("cf-connecting-ip")
+        if cf_ip:
+            _host, port = request.scope.get("client") or ("", 0)
+            request.scope["client"] = (cf_ip.strip(), port or 0)
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")

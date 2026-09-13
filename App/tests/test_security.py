@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app import db, rate_limit
+from app import config, db, rate_limit
 from app.main import app
 from app.routes import admin as admin_routes
 from tests.test_accounts import _account, _clean_accounts, _login
@@ -32,6 +32,32 @@ def test_redirect_path_from_referer_rejects_off_site():
         )
         == "/reservations?x=1"
     )
+
+
+def test_login_rate_limit_not_bypassed_by_spoofed_cf_connecting_ip(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-cf-spoof")
+    monkeypatch.setattr(config, "TRUST_CF_CONNECTING_IP", False)
+    try:
+        client = TestClient(app)
+        for i in range(rate_limit._LOGIN_MAX_FAILURES):
+            client.post(
+                "/login",
+                data={"username": "boundary-cf-spoof", "password": "wrong"},
+                headers={"cf-connecting-ip": f"203.0.113.{i}"},
+                follow_redirects=False,
+            )
+        blocked = client.post(
+            "/login",
+            data={"username": "boundary-cf-spoof", "password": "wrong"},
+            headers={"cf-connecting-ip": "203.0.113.99"},
+            follow_redirects=False,
+        )
+        assert blocked.status_code == 429
+    finally:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", ("%boundary-cf-spoof%",))
+        _clean_accounts()
 
 
 def test_login_rate_limit_blocks_after_repeated_failures():

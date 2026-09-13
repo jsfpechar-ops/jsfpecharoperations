@@ -103,6 +103,18 @@ ICAL_ALLOW_PRIVATE = os.environ.get("UBYHOST_ICAL_ALLOW_PRIVATE", "0").lower() i
     "yes",
 )
 
+# Honor Cloudflare's CF-Connecting-IP for rate limits only when traffic is proxied
+# through Cloudflare (see CLOUDFLARE_PROXY in deploy/lightsail/.env). On direct
+# HTTPS (Let's Encrypt) clients can forge that header and bypass PIN/login limits.
+def _trust_cf_connecting_ip() -> bool:
+    explicit = os.environ.get("UBYHOST_TRUST_CF_CONNECTING_IP")
+    if explicit is not None:
+        return explicit.lower() in ("1", "true", "yes")
+    return os.environ.get("CLOUDFLARE_PROXY", "0").lower() in ("1", "true", "yes")
+
+
+TRUST_CF_CONNECTING_IP = _trust_cf_connecting_ip()
+
 
 def endpoint_for(env: str = None) -> str:
     return UBYPORT_ENDPOINTS.get((env or UBYPORT_ENV), UBYPORT_ENDPOINTS["mock"])

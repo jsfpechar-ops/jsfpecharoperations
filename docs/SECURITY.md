@@ -28,7 +28,7 @@ summarises the threat model, controls, and known limitations.
 | Risk | Mitigation / note |
 |------|-------------------|
 | **CSRF on host POST forms** | `SameSite=strict` session cookie reduces cross-site risk; no CSRF token (invite-only hosts). |
-| **Rate limits** | SQLite-backed; effective per app instance; use Cloudflare rate rules for edge protection. |
+| **Rate limits** | SQLite-backed; effective per app instance; use Cloudflare rate rules for edge protection. `CF-Connecting-IP` is trusted only when `CLOUDFLARE_PROXY=1` (or `UBYHOST_TRUST_CF_CONNECTING_IP=1`) so direct HTTPS clients cannot forge it to bypass limits. |
 | **`/healthz`** | Exposes deployment tier and UbyPort env (for monitoring). |
 | **Guest PIN entropy** | New PINs are 6 digits; rotate old 4-digit PINs. Always use PIN in production (`UBYHOST_GUEST_PIN=1`). |
 | **Admin impersonation** | Intentional for support; audited; admin role only. |
