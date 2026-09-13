@@ -172,6 +172,35 @@
     });
   }
 
+  function initHousebookPdfExport() {
+    var dialog = document.getElementById("housebook-pdf-dialog");
+    if (!dialog) return;
+    var form = document.getElementById("housebook-pdf-form");
+    document.querySelectorAll("[data-housebook-pdf-export]").forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        var pageFrom = document.getElementById("from");
+        var pageTo = document.getElementById("to");
+        var pageApt = document.getElementById("apartment");
+        var fromInput = document.getElementById("pdf_export_from");
+        var toInput = document.getElementById("pdf_export_to");
+        var aptInput = document.getElementById("pdf_export_apartment");
+        if (pageFrom && fromInput && pageFrom.value) fromInput.value = pageFrom.value;
+        if (pageTo && toInput && pageTo.value) toInput.value = pageTo.value;
+        if (pageApt && aptInput) aptInput.value = pageApt.value;
+        if (typeof dialog.showModal === "function") dialog.showModal();
+      });
+    });
+    dialog.querySelectorAll("[data-housebook-pdf-cancel]").forEach(function (button) {
+      button.addEventListener("click", function () { dialog.close(); });
+    });
+    if (form) {
+      form.addEventListener("submit", function () {
+        dialog.close();
+      });
+    }
+  }
+
   function initCsvExport() {
     var dialog = document.getElementById("csv-export-dialog");
     if (!dialog) return;
@@ -530,6 +559,7 @@
     initDetailsLinks();
     initAutomationFields();
     initCsvExport();
+    initHousebookPdfExport();
     initToasts();
     initAutoFilters();
     initGeneratedPasswords();

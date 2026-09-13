@@ -1,23 +1,20 @@
-{% set why_detail %}
-  <ul>
-    <li>{{ t('why_point_report') }}</li>
-    <li>{{ t('why_point_book') }}</li>
-    <li>{{ t('why_point_czech') }}</li>
-    <li>{{ t('why_point_passport') }}</li>
-    <li>{{ t('why_point_accuracy') }}</li>
-    <li>{{ t('why_point_sign') }}</li>
-    <li>{{ t('why_point_nothing_else') }}</li>
-  </ul>
-  <p class="g-law">{{ t('why_law') }}</p>
-  {% if privacy_url %}
-    <p style="margin-bottom:0"><a href="{{ privacy_url }}">{{ t('privacy_link') }} &rarr;</a></p>
-  {% endif %}
-{% endset %}
-<div class="g-card g-why">
-  <h2>{{ t('why_title') }}</h2>
+<details class="g-card g-why">
+  <summary class="g-why-summary">{{ t('why_title') }}</summary>
   <p class="g-intro">{{ t('legal_intro') }}</p>
   <div class="g-details">
     <h3>{{ t('why_more') }}</h3>
-    {{ why_detail }}
+    <ul>
+      <li>{{ t('why_point_report') }}</li>
+      <li>{{ t('why_point_book') }}</li>
+      <li>{{ t('why_point_czech') }}</li>
+      <li>{{ t('why_point_passport') }}</li>
+      <li>{{ t('why_point_accuracy') }}</li>
+      <li>{{ t('why_point_sign') }}</li>
+      <li>{{ t('why_point_nothing_else') }}</li>
+    </ul>
+    <p class="g-law">{{ t('why_law') }}</p>
+    {% if privacy_url %}
+      <p style="margin-bottom:0"><a href="{{ privacy_url }}">{{ t('privacy_link') }} &rarr;</a></p>
+    {% endif %}
   </div>
-</div>
+</details>

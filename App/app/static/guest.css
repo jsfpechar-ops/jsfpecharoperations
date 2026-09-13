@@ -464,6 +464,30 @@ select {
 
 .g-why { background: var(--g-surface-2); }
 .g-why h2 { display: flex; align-items: center; gap: 8px; }
+details.g-why { padding: 0; }
+details.g-why > summary.g-why-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 20px;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--g-ink);
+}
+details.g-why > summary.g-why-summary::-webkit-details-marker { display: none; }
+details.g-why > summary.g-why-summary::after {
+  content: "▾";
+  float: right;
+  color: var(--g-muted);
+  font-weight: 400;
+}
+details.g-why[open] > summary.g-why-summary::after { content: "▴"; }
+details.g-why[open] > summary.g-why-summary {
+  border-bottom: 1px solid var(--g-line);
+}
+details.g-why .g-intro,
+details.g-why .g-details {
+  padding: 0 20px 18px;
+}
 .g-details { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--g-line); }
 .g-details h3 {
   margin: 0 0 9px;
