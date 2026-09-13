@@ -144,9 +144,10 @@ def test_unverified_foreign_guest_can_send():
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress)
-    assert progress["status"] == "ready"
+    assert progress["status"] == "awaiting_verification"
     assert controls["send_enabled"] is True
     assert controls["pending_count"] == 1
+    assert controls["send_hint_key"] == "hint.ready_id_optional"
 
 
 def test_foreign_guest_online_checkin_complete_without_passport_photo():
@@ -187,3 +188,25 @@ def test_unsigned_foreign_guest_blocks_send():
     assert controls["send_enabled"] is False
     assert controls["send_visible"] is False
     assert controls["send_hint_key"] == "hint.need_signature"
+
+
+def test_demo_apartment_hides_send_button():
+    apartment, reservation, guest_id = _seed("manual", "tok-demo")
+    db.update(
+        "apartment",
+        apartment["id"],
+        {"internal_name": "Vinohrady Studio (demo)"},
+    )
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment["id"],))
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["status"] == "awaiting_verification"
+    assert controls["send_enabled"] is False
+    assert controls["send_visible"] is False
+    assert controls["send_hint_key"] == "hint.demo_preview"

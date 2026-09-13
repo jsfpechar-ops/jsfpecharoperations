@@ -214,7 +214,7 @@ def reservation_progress(reservation) -> Dict[str, Any]:
     elif incomplete:
         status = "incomplete"
     elif reportable and len(sent) < len(reportable):
-        status = "ready"
+        status = "awaiting_verification" if unverified else "ready"
     elif reportable and len(sent) == len(reportable):
         status = "reported"
     elif complete and not reportable:
@@ -275,13 +275,26 @@ def status_label(status: str, automation_mode: Optional[str] = None) -> str:
 
 def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str, Any]:
     """Whether Send actions should appear on a stay row."""
+    from . import demo
+
     mode = apartment["automation_mode"]
     pending = pending_reportable(progress["reportable"])
     has_pending = bool(pending)
-    can_send = progress["status"] in ("ready", "failed") and has_pending
+    sendable_statuses = ("ready", "failed", "awaiting_verification")
+    can_send = progress["status"] in sendable_statuses and has_pending
     auto_immediate = mode == "immediate"
 
     send_enabled = can_send and not auto_immediate
+
+    if apartment and demo.is_demo_apartment(apartment):
+        return {
+            "send_enabled": False,
+            "send_visible": False,
+            "send_hint_key": "hint.demo_preview",
+            "auto_immediate": auto_immediate,
+            "pending_count": len(pending),
+            "is_demo": True,
+        }
 
     if auto_immediate:
         send_hint_key = "hint.auto_immediate"
@@ -300,10 +313,12 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
             send_hint_key = "hint.nothing_left"
     elif not can_send:
         send_hint_key = "hint.not_ready"
+    elif progress["status"] == "awaiting_verification":
+        send_hint_key = "hint.ready_id_optional"
     else:
         send_hint_key = "hint.ready_to_send"
 
-    send_visible = has_pending and progress["status"] in ("ready", "failed")
+    send_visible = has_pending and progress["status"] in sendable_statuses
 
     return {
         "send_enabled": send_enabled,
