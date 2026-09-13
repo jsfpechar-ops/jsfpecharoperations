@@ -34,6 +34,7 @@ os.environ.setdefault("UBYHOST_GUEST_PIN", "0")
 os.environ.setdefault("UBYHOST_BOOTSTRAP_ADMIN", "0")
 os.environ.setdefault("UBYHOST_UBYPORT_ENV", "mock")
 os.environ.setdefault("UBYHOST_MOCK_URL", f"http://127.0.0.1:{MOCK_PORT}/ws_uby/ws_uby.svc")
+os.environ.setdefault("UBYHOST_ICAL_ALLOW_PRIVATE", "1")
 os.environ["MOCK_UBYPORT_STATE"] = str(_TMP / "mock_state.json")
 os.environ["MOCK_UBYPORT_PORT"] = str(MOCK_PORT)
 

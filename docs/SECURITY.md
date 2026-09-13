@@ -16,8 +16,9 @@ summarises the threat model, controls, and known limitations.
 
 ## Hardening (application)
 
+- **iCal SSRF**: calendar URLs resolved and blocked if they point to private, loopback, link-local, or metadata addresses; redirects re-validated (max 3 hops, no automatic `requests` redirect following).
 - **Login brute force**: sliding-window limit per IP+username (`rate_limit_event` table).
-- **Guest PIN brute force**: limit per IP+token; constant-time PIN comparison.
+- **Guest PIN brute force**: limit (10 failures / 15 min per IP+token), progressive delay on wrong PIN, constant-time compare; **new** PINs are six digits (legacy four-digit PINs still accepted until rotated).
 - **Open redirects**: `return_to` and login `next` accept local paths only; alert dismiss uses referer path only.
 - **Headers**: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`.
 - **API surface**: FastAPI `/docs` and `/redoc` disabled.
@@ -29,7 +30,7 @@ summarises the threat model, controls, and known limitations.
 | **CSRF on host POST forms** | `SameSite=strict` session cookie reduces cross-site risk; no CSRF token (invite-only hosts). |
 | **Rate limits** | SQLite-backed; effective per app instance; use Cloudflare rate rules for edge protection. |
 | **`/healthz`** | Exposes deployment tier and UbyPort env (for monitoring). |
-| **Guest PIN entropy** | 4 digits — always use PIN in production (`UBYHOST_GUEST_PIN=1`). |
+| **Guest PIN entropy** | New PINs are 6 digits; rotate old 4-digit PINs. Always use PIN in production (`UBYHOST_GUEST_PIN=1`). |
 | **Admin impersonation** | Intentional for support; audited; admin role only. |
 
 ## Reporting

@@ -870,7 +870,7 @@ async def apartment_update(apartment_id: int, request: Request):
     if pin_raw:
         pin = auth.normalise_permalink_pin(pin_raw)
         if not pin:
-            return _back(f"/apartments/{apartment_id}", err="PIN must be exactly four digits.")
+            return _back(f"/apartments/{apartment_id}", err="PIN must be 4 or 6 digits.")
         payload["permalink_pin"] = pin
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
@@ -1034,8 +1034,12 @@ async def add_feed(apartment_id: int, request: Request):
         return _back("/apartments", err="No such apartment.")
     form = await request.form()
     url = _form_str(form, "url")
-    if not url.lower().startswith(("http://", "https://")):
-        return _back(f"/apartments/{apartment_id}", err="The calendar URL must start with http:// or https://")
+    try:
+        from ..feed_url import FeedUrlError, validate_calendar_url
+
+        url = validate_calendar_url(url)
+    except FeedUrlError as exc:
+        return _back(f"/apartments/{apartment_id}", err=str(exc))
     db.insert(
         "ical_feed",
         {

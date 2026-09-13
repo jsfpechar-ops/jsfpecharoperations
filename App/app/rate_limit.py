@@ -8,7 +8,7 @@ from . import db
 
 _WINDOW_SECONDS = 15 * 60
 _LOGIN_MAX_FAILURES = 12
-_PIN_MAX_FAILURES = 30
+_PIN_MAX_FAILURES = 10
 _BLOCK_SECONDS = 15 * 60
 
 
@@ -56,6 +56,10 @@ def pin_blocked(client_key: str) -> bool:
 
 def record_pin_failure(client_key: str) -> None:
     record("pin_fail", client_key)
+
+
+def pin_failure_count(client_key: str) -> int:
+    return _count("pin_fail", client_key, _WINDOW_SECONDS)
 
 
 def client_key(request, suffix: str = "") -> str:
