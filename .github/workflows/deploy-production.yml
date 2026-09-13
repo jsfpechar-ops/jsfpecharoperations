@@ -47,7 +47,7 @@ jobs:
               git init
               git remote add origin "\${REPO}" 2>/dev/null || git remote set-url origin "\${REPO}"
               git fetch --depth 1 origin main
-              git reset --mixed origin/main
+                 git reset --hard origin/main
             elif [ ! -e "\${INSTALL}" ] || [ -z "\$(ls -A "\${INSTALL}" 2>/dev/null)" ]; then
               git clone --depth 1 --branch main "\${REPO}" "\${INSTALL}"
             else
@@ -58,7 +58,7 @@ jobs:
           cd "\${INSTALL}"
           git remote set-url origin "\${REPO}"
           git fetch origin main
-          git pull origin main
+          git reset --hard origin/main
           cd deploy/lightsail
           chmod +x scripts/*.sh
           ./scripts/deploy.sh
