@@ -190,6 +190,40 @@ def test_unsigned_foreign_guest_blocks_send():
     assert controls["send_hint_key"] == "hint.need_signature"
 
 
+def test_demo_apartment_submit_is_noop():
+    apartment, reservation, guest_id = _seed("manual", "tok-demo-submit")
+    db.update(
+        "apartment",
+        apartment["id"],
+        {"internal_name": "Vinohrady Studio (demo)"},
+    )
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment["id"],))
+    results = reporting.submit_for_apartment(apartment["id"], only_guest_ids=[guest_id])
+    assert results == [
+        {
+            "state": "noop",
+            "error": "Demo data is for preview only and is never sent to the police.",
+        }
+    ]
+
+
+def test_record_host_identity_confirmation_is_idempotent():
+    _apartment, _reservation, guest_id = _seed("manual", "tok-idempotent")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    reporting.record_host_identity_confirmation(guest_id, verified_by_user_id=None)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    first_at = guest["identity_verified_at"]
+    assert guest["identity_verified_by"] is None
+    reporting.record_host_identity_confirmation(guest_id, verified_by_user_id=None)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["identity_verified_at"] == first_at
+    assert guest["identity_verified_by"] is None
+
+
 def test_demo_apartment_hides_send_button():
     apartment, reservation, guest_id = _seed("manual", "tok-demo")
     db.update(
