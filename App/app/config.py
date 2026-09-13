@@ -103,6 +103,13 @@ ICAL_ALLOW_PRIVATE = os.environ.get("UBYHOST_ICAL_ALLOW_PRIVATE", "0").lower() i
     "yes",
 )
 
+# When set (deploy/lightsail .env: CLOUDFLARE_PROXY=1), trust Caddy/Docker peers and
+# honour CF-Connecting-IP from them. Otherwise only UBYHOST_TRUSTED_PROXY_CIDRS applies.
+CLOUDFLARE_PROXY = os.environ.get("CLOUDFLARE_PROXY", "0").lower() in ("1", "true", "yes")
+
+# Comma-separated CIDRs for reverse proxies that may set CF-Connecting-IP (overrides defaults).
+TRUSTED_PROXY_CIDRS = os.environ.get("UBYHOST_TRUSTED_PROXY_CIDRS", "").strip()
+
 
 def endpoint_for(env: str = None) -> str:
     return UBYPORT_ENDPOINTS.get((env or UBYPORT_ENV), UBYPORT_ENDPOINTS["mock"])
