@@ -171,11 +171,13 @@
     </div>
   </div>
 
-  <div class="g-card" id="passport-photo-card" hidden
+  <div class="g-card" id="passport-photo-card"
        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
     <h2>{{ t('passport_photo_title') }}</h2>
     <p class="g-intro">{{ t('passport_photo_help') }}</p>
-    <div class="g-field">
+    <p class="hint" id="passport-photo-pending" hidden>{{ t('passport_photo_pending_nat') }}</p>
+    <p class="hint" id="passport-photo-czech" hidden>{{ t('passport_photo_not_required') }}</p>
+    <div class="g-field" id="passport-photo-upload">
       <span class="g-label" id="passport_photo_label">{{ t('passport_photo_label') }}</span>
       <div class="passport-upload-actions">
         <button class="g-btn secondary" type="button" id="passport-take-btn">
@@ -304,10 +306,17 @@
     });
   }
 
+  var pendingNat = document.getElementById('passport-photo-pending');
+  var czechNote = document.getElementById('passport-photo-czech');
+  var uploadWrap = document.getElementById('passport-photo-upload');
+
   function sync() {
-    var foreign = nationality.value && nationality.value !== 'CZE';
+    var code = nationality.value;
+    var foreign = code && code !== 'CZE';
     var hasExisting = card && card.getAttribute('data-has-existing') === '1';
-    if (card) card.hidden = !foreign;
+    if (uploadWrap) uploadWrap.hidden = !foreign;
+    if (pendingNat) pendingNat.hidden = !!code;
+    if (czechNote) czechNote.hidden = foreign || !code;
     input.required = foreign && !hasExisting;
     var passportSection = document.getElementById('legal-passport-section');
     if (passportSection) passportSection.style.display = foreign ? '' : 'none';

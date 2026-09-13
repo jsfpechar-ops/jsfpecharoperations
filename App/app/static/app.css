@@ -1099,7 +1099,27 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   margin-left: auto;
   padding-top: 0;
 }
+.filters .housebook-toolbar-actions {
+  flex: 1 1 100%;
+  max-width: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: 0;
+  padding-top: 4px;
+}
+.filters .housebook-toolbar-actions .btn { height: 44px; }
+.filters .housebook-toolbar-actions .action-menu { margin: 0; }
 .filters .csv-in-filter .row-menu-trigger { height: 44px; }
+.housebook-pdf-warn {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  color: var(--ink-2);
+}
+.housebook-legal-dialog .legal-list { margin-top: 8px; }
 .filters input[type=date], .filters input[type=text], .filters select { height: 44px; }
 
 .minutes-saved {
@@ -1175,11 +1195,13 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   line-height: 1.5;
   color: var(--faint);
 }
-.legal-panel {
-  margin-bottom: 16px;
+.housebook-legal {
+  margin-top: 28px;
 }
-.legal-panel h2 {
-  font-size: 1.05rem;
+.housebook-legal > summary {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
 }
 .legal-list {
   margin: 10px 0 0;

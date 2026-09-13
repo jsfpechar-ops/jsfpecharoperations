@@ -75,7 +75,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download_pdfs": "Download PDF bundle (inspection)",
         "reports.download_receipts": "Download Doručenky (ZIP)",
         "reports.download_receipts_hint": "One PDF per successful transmission, built on disk to stay lightweight.",
-        "housebook.legal_title": "Your legal duty — read this",
+        "housebook.legal_title": "Your legal duty (house book)",
         "housebook.legal_body": (
             "Under § 101 of Act No. 326/1999 Coll., you must keep a house book (domovní kniha) for "
             "six years after the last entry and present it at a police inspection. A guest's signed "
@@ -96,10 +96,18 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "import template for the exact column format."
         ),
         "housebook.import_paper": "Import paper records",
-        "housebook.pdf_hint": (
-            "PDF bundle builds one guest form at a time on the server (low memory). Narrow the filter "
-            "if you have many entries — max %(limit)s per download."
+        "housebook.export_menu": "Export",
+        "housebook.pdf_export_title": "Download PDF bundle",
+        "housebook.pdf_export_help": (
+            "Choose the stay dates and property to include. Each guest form is generated on the server "
+            "one at a time — large ranges take longer and use more server capacity."
         ),
+        "housebook.pdf_hint": (
+            "Up to %(limit)s forms per download. Use a narrower date range if you have many entries."
+        ),
+        "housebook.legal_intro_title": "House book — your legal duty",
+        "housebook.legal_intro_ack": "Got it — hide this next time",
+        "housebook.legal_intro_skip": "Skip for now",
         "housebook.filter_footer": "Exports use the current filter.",
         "csv.button": "Import & export",
         "host.signature_title": "Guest signature",
@@ -130,9 +138,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "person. The record is marked verified on save."
         ),
         "housebook.legal_footnote": (
-            "You remain the data controller. UbyHost is software only — not legal advice, not a "
-            "substitute for signed paper you already hold, and not a guarantee the police will accept "
-            "a screen instead of written records."
+            "You remain the data controller for guest data. ***REMOVED*** (UbyHost) is the technology "
+            "provider only — not your accommodation business, not legal advice, and not liable for "
+            "incorrect data you or guests enter or for how you use the software. Keep signed paper you "
+            "already hold; a screen alone may not satisfy an inspection."
         ),
         "send.this_stay": "Send this stay",
         "send.all_ready": "Send all ready stays",
@@ -672,7 +681,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download_pdfs": "Stáhnout balíček PDF (kontrola)",
         "reports.download_receipts": "Stáhnout doručenky (ZIP)",
         "reports.download_receipts_hint": "Jedno PDF za každé úspěšné odeslání, sestavené na disku bez zbytečné paměti.",
-        "housebook.legal_title": "Vaše zákonná povinnost — přečtěte",
+        "housebook.legal_title": "Vaše zákonná povinnost (domovní kniha)",
         "housebook.legal_body": (
             "Podle § 101 zákona č. 326/1999 Sb. musíte vést domovní knihu po dobu šesti let od posledního "
             "zápisu a předložit ji při kontrole. Podepsaný registrační formulář hosta se počítá jako "
@@ -693,10 +702,18 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "vzor souboru najdete v menu Import a export."
         ),
         "housebook.import_paper": "Importovat papírovou evidenci",
-        "housebook.pdf_hint": (
-            "Balíček PDF se na serveru skládá postupně po jednom hostu (nízká spotřeba paměti). Při "
-            "velkém počtu záznamů zužte filtr — max. %(limit)s na jedno stažení."
+        "housebook.export_menu": "Export",
+        "housebook.pdf_export_title": "Stáhnout balíček PDF",
+        "housebook.pdf_export_help": (
+            "Vyberte rozsah pobytů a ubytování. Každý formulář hosta se na serveru generuje zvlášť — "
+            "velký rozsah trvá déle a zatěžuje server."
         ),
+        "housebook.pdf_hint": (
+            "Nejvýše %(limit)s formulářů na jedno stažení. Při velkém počtu záznamů zužte datumy."
+        ),
+        "housebook.legal_intro_title": "Domovní kniha — vaše zákonná povinnost",
+        "housebook.legal_intro_ack": "Rozumím — příště skrýt",
+        "housebook.legal_intro_skip": "Teď přeskočit",
         "housebook.filter_footer": "Exporty používají aktuální filtr.",
         "csv.button": "Import a export",
         "host.signature_title": "Podpis hosta",
@@ -727,8 +744,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "označí jako ověřený při uložení."
         ),
         "housebook.legal_footnote": (
-            "Zůstáváte správcem údajů. UbyHost je pouze software — ne právní poradenství, nenahrazuje "
-            "papíry, které už máte, a nezaručuje, že policie přijme obrazovku místo listinné evidence."
+            "Zůstáváte správcem údajů hostů. ***REMOVED*** (UbyHost) je pouze poskytovatel technologie — "
+            "ne váš ubytovací podnik, ne právní poradenství a neodpovídá za chybné údaje, které zadáte "
+            "vy nebo hosté, ani za způsob použití software. Uchovejte podepsané papíry; obrazovka sama "
+            "o sobě nemusí při kontrole stačit."
         ),
         "nav.guide": "Nápověda",
         "send.this_stay": "Odeslat tento pobyt",
