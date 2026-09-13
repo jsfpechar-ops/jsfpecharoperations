@@ -75,6 +75,21 @@ export UBYHOST_S3_BUCKET=your-bucket-name
 ./scripts/backup-s3.sh
 ```
 
+**`No such file or directory`?** Run these on the server:
+
+```bash
+ls -la /opt/ubyhost/deploy/lightsail/scripts/backup-s3.sh   # missing → git pull in /opt/ubyhost
+cd /opt/ubyhost/deploy/lightsail && test -f .env || echo "need .env here"
+docker compose ps    # ubyhost must be Up
+```
+
+If the script exists but `docker cp` fails, set the container name explicitly:
+
+```bash
+export UBYHOST_CONTAINER="$(docker compose ps --format '{{.Names}}' ubyhost | head -1)"
+UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh
+```
+
 Weekly cron (example; set your bucket name):
 
 ```bash

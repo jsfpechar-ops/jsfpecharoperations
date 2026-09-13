@@ -7,10 +7,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
+# shellcheck source=lib-docker.sh
+source "$(dirname "$0")/lib-docker.sh"
+
 REMOTE="${RCLONE_REMOTE:-s3}"
 BUCKET="${UBYHOST_S3_BUCKET:?set UBYHOST_S3_BUCKET to your bucket name}"
 PREFIX="${UBYHOST_S3_PREFIX:-UbyHost-backups}"
-CONTAINER="${UBYHOST_CONTAINER:-ubyhost-ubyhost-1}"
+CONTAINER="$(ubyhost_container_ref "${ROOT}")" || exit 1
 TMP="/tmp/ubyhost-s3-upload"
 
 if ! command -v rclone >/dev/null 2>&1; then
