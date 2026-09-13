@@ -1,6 +1,7 @@
 # Production go-live checklist (***REMOVED*** / ***REMOVED***)
 
-Use this when moving the **`ubyhost`** Render service from setup to live reporting.
+Use this when moving **production (AWS Lightsail, ubyhost.com)** from setup to live
+reporting. Staging stays on Render **`ubyhost-staging`** (`mock`) only.
 Your police registration documents confirm the accommodation; this checklist does not
 repeat any passwords from those PDFs.
 
@@ -24,21 +25,14 @@ These must match **exactly** in UbyHost → apartment settings and in the police
   in your registration PDFs).
 - [ ] Store the web-service password only in UbyHost (encrypted at rest), never in git.
 
-## Phase 2 — Render production service
+## Phase 2 — Lightsail production stack
 
-- [ ] Blueprint applied; `ubyhost` service on **Starter** with disk enabled
-  (`render.yaml` disk block).
-- [ ] `UBYHOST_ADMIN_USERNAME` and `UBYHOST_ADMIN_PASSWORD` set in Render (production only).
-- [ ] `UBYHOST_UBYPORT_ENV=test` (stay on test until Phase 4 passes).
-- [ ] `UBYHOST_DEPLOYMENT=production`
-- [ ] Domain on Cloudflare (or `.cz` nameservers → Cloudflare) — see
-      [CLOUDFLARE.md](CLOUDFLARE.md)
-- [ ] Proxied A record, SSL **Full (strict)**, origin certificate on server
-- [ ] `UBYHOST_PUBLIC_BASE_URL` resolves to the production URL (set automatically via
-  `RENDER_EXTERNAL_URL` in the blueprint).
-- [ ] First deploy completed; `/healthz` shows `deployment: production`, `ubyport_env: test`.
-- [ ] Admin login works; password changed from bootstrap value.
-- [ ] Run `scripts/backup_data.sh` once and confirm a backup file exists.
+- [ ] Instance running; app at `/opt/ubyhost/deploy/lightsail` — see [LIGHTSAIL.md](LIGHTSAIL.md)
+- [ ] `.env`: `UBYHOST_DEPLOYMENT=production`, `UBYHOST_UBYPORT_ENV=test`, `UBYHOST_PUBLIC_BASE_URL=https://ubyhost.com`
+- [ ] Domain on Cloudflare — [CLOUDFLARE.md](CLOUDFLARE.md): proxied A record, SSL **Full (strict)**, origin certs on server
+- [ ] `./scripts/deploy.sh` completed; `/healthz` shows `deployment: production`, `ubyport_env: test`
+- [ ] Admin login works; password changed from bootstrap value
+- [ ] `./scripts/backup.sh` once; optional weekly **Google Drive** (`backup-gdrive.sh`). S3 optional — can defer
 
 ## Phase 3 — Configure the apartment
 
@@ -61,10 +55,10 @@ These must match **exactly** in UbyHost → apartment settings and in the police
 
 ## Phase 5 — Go live
 
-- [ ] In Render, set `UBYHOST_UBYPORT_ENV=prod` on **`ubyhost` only** (not staging).
-- [ ] Redeploy production; Settings shows red **prod** badge.
+- [ ] On Lightsail `.env`, set `UBYHOST_UBYPORT_ENV=prod` (never on Render staging).
+- [ ] `./scripts/deploy.sh`; Settings shows red **prod** badge.
 - [ ] Submit one real guest batch; archive Doručenka.
-- [ ] Enable Render deploy notifications and periodic off-site backups.
+- [ ] Weekly off-site backup (Google Drive cron); monitor `/healthz` and logs.
 
 ## Ongoing operations
 
@@ -73,7 +67,7 @@ These must match **exactly** in UbyHost → apartment settings and in the police
 | `backup_data.sh` | Weekly (cron) + after major changes |
 | Review failed submissions / alerts | Daily during high season |
 | Staging deploy after merges | Automatic; spot-check critical UI changes |
-| Production deploy | Manual until CI history is trusted |
+| Production deploy | `git pull` + `./scripts/deploy.sh` on Lightsail after merges to `main` |
 | Rotate admin password | After staff changes |
 | UbyPort password | Only when police issues a new WS account |
 
