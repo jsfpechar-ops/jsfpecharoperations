@@ -1,10 +1,10 @@
 # Direct TLS via Let's Encrypt (DNS grey-cloud or no Cloudflare proxy).
 # Selected automatically when CLOUDFLARE_PROXY is not set in .env.
 {
-	email {env.ACME_EMAIL}
+	email {$ACME_EMAIL}
 }
 
-{env.UBYHOST_DOMAIN} {
+{$UBYHOST_DOMAIN} {
 	encode gzip
 	reverse_proxy ubyhost:8080
 }
