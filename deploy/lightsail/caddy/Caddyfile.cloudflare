@@ -1,13 +1,13 @@
 # TLS with a Cloudflare Origin Certificate (orange-cloud / proxied DNS).
 # Requires origin.pem + origin-key.pem in caddy/certs/ (see docs/CLOUDFLARE.md).
 {
-	email {env.ACME_EMAIL}
+	email {$ACME_EMAIL}
 	servers {
 		trusted_proxies static cloudflare
 	}
 }
 
-{env.UBYHOST_DOMAIN} {
+{$UBYHOST_DOMAIN} {
 	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
 	encode gzip
 	reverse_proxy ubyhost:8080
