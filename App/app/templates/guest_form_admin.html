@@ -163,30 +163,22 @@
   </div>
 
   {% if editing and needs_verification %}
-  <div class="panel verify-panel">
-    <h2 style="margin-top:0">{{ t('host.verify_title') }}</h2>
-    <p class="small muted">{{ t('host.verify_help') }}</p>
+  <div class="panel verify-panel tight">
     {% if has_passport_photo %}
-      <div class="passport-preview">
+      <div class="passport-preview compact">
         {% if passport_is_pdf %}
           <iframe class="passport-preview-pdf" src="/guests/{{ guest.id }}/passport-photo"
-                  title="Passport PDF for verification"></iframe>
+                  title="Passport PDF"></iframe>
         {% else %}
-          <img src="/guests/{{ guest.id }}/passport-photo" alt="Passport photo for verification">
+          <img src="/guests/{{ guest.id }}/passport-photo" alt="Passport photo">
         {% endif %}
       </div>
-      <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form">
-        <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
-        <div class="checkline" style="margin:12px 0">
-          <input type="checkbox" id="confirm_verify" name="confirm_verify" value="1" required>
-          <label for="confirm_verify">{{ t('host.verify_confirm') }}</label>
-        </div>
-        <button class="btn primary" type="submit">{{ t('host.verify_button') }}</button>
-      </form>
-      <p class="legal-fineprint">{{ t('host.verify_footnote') }}</p>
-    {% else %}
-      <p class="small muted">{{ t('host.verify_waiting_photo') }}</p>
     {% endif %}
+    <p class="small muted" style="margin:0 0 10px">{{ t('host.verify_in_person') }}</p>
+    <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form">
+      <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
+      <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
+    </form>
   </div>
   {% elif editing and guest.identity_verified_at and guest.nationality != 'CZE' %}
   <div class="panel quiet">
