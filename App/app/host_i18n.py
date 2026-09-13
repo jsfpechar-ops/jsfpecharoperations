@@ -101,21 +101,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host.signature_missing": "Please sign before saving.",
         "host.signature_kept": "Signature saved. Sign again only if you need to change it.",
         "host.signature_clear": "Clear",
-        "host.verify_title": "Passport verification",
-        "host.verify_help": (
-            "You are legally responsible for the accuracy of every field. Compare the guest's "
-            "passport or ID against the details below before reporting to UbyPort."
+        "host.verify_title": "ID check",
+        "host.verify_in_person": (
+            "You are responsible for accurate records. Compare the travel document when you can; "
+            "sending to UbyPort also records your confirmation."
         ),
-        "host.verify_confirm": (
-            "I have checked this person's face and travel document against the details above."
-        ),
-        "host.verify_button": "Verify identity & delete photo",
-        "host.verify_footnote": (
-            "The passport photo is deleted immediately when you confirm. UbyPort is not sent "
-            "until verification is complete."
-        ),
-        "host.verify_waiting_photo": "Waiting for the guest to upload a passport photo.",
-        "host.verify_done": "Identity verified on",
+        "host.verify_help": "Optional: open the guest form to view an uploaded ID photo.",
+        "host.verify_confirm": "I checked this guest's ID against the details above.",
+        "host.verify_button": "Mark ID checked",
+        "host.verify_pending": "ID not checked",
+        "host.verify_view_photo": "View uploaded ID",
+        "host.verify_footnote": "Uploaded ID photos are deleted when you mark the check.",
+        "host.verify_waiting_photo": "No ID photo uploaded — you can still mark the check in person.",
+        "host.verify_done": "ID checked on",
         "host.verify_host_entry": (
             "When you enter a guest by hand you confirm the details against their document in "
             "person. The record is marked verified on save."
@@ -134,11 +132,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.ready_manual": "Ready — you send",
         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
         "status.ready_immediate": "Verified — auto-send",
-        "status.ready_immediate_tip": "Passport checks are done. UbyPort submission happens automatically.",
-        "status.awaiting_verification": "Verify passport",
-        "status.awaiting_verification_tip": (
-            "Guest forms are complete. Check each passport photo before reporting."
-        ),
+        "status.ready_immediate_tip": "Forms complete — UbyPort sends automatically when automation allows.",
+        "status.awaiting_verification": "Optional ID check",
+        "status.awaiting_verification_tip": "Guest forms are complete. Send when ready, or mark ID checked first.",
+        "stay.detail.note.immediate": "after guest forms are complete",
+        "legal.footer_short": "Legal",
+        "legal.footer_nav_label": "Legal",
+        "terms.footer_short": "Terms",
+        "privacy.footer_short": "Privacy",
+        "dpa.footer_short": "DPA",
         "status.waiting_guest": "Waiting for guest",
         "status.waiting_guest_tip": "Guest forms are not complete yet.",
         "status.waiting_signature": "Waiting for signature",
@@ -394,21 +396,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host.signature_missing": "Před uložením se prosím podepište.",
         "host.signature_kept": "Podpis je uložený. Podepište znovu jen při změně.",
         "host.signature_clear": "Vymazat",
-        "host.verify_title": "Ověření pasu",
-        "host.verify_help": (
-            "Za správnost každého údaje odpovídáte vy. Před odesláním do UbyPortu porovnejte "
-            "pas nebo průkaz hosta s vyplněnými údaji."
+        "host.verify_title": "Kontrola dokladu",
+        "host.verify_in_person": (
+            "Za správnost údajů odpovídáte vy. Porovnejte doklad, když můžete; odeslání do UbyPortu "
+            "také zaznamená vaše potvrzení."
         ),
-        "host.verify_confirm": (
-            "Zkontroloval(a) jsem obličej a cestovní doklad proti údajům výše."
-        ),
-        "host.verify_button": "Ověřit identitu a smazat fotografii",
-        "host.verify_footnote": (
-            "Fotografie pasu se po potvrzení okamžitě smaže. Do UbyPortu se neodešle nic, "
-            "dokud ověření není hotové."
-        ),
-        "host.verify_waiting_photo": "Čeká se na nahrání fotografie pasu hostem.",
-        "host.verify_done": "Identita ověřena",
+        "host.verify_help": "Volitelně otevřete formulář hosta a zobrazte nahranou fotografii dokladu.",
+        "host.verify_confirm": "Zkontroloval(a) jsem doklad hosta proti údajům výše.",
+        "host.verify_button": "Označit doklad zkontrolovaný",
+        "host.verify_pending": "Doklad nezkontrolován",
+        "host.verify_view_photo": "Zobrazit nahraný doklad",
+        "host.verify_footnote": "Nahrané fotografie dokladu se po označení kontroly smažou.",
+        "host.verify_waiting_photo": "Host nenahrál fotografii — kontrolu můžete označit i osobně.",
+        "host.verify_done": "Doklad zkontrolován",
         "host.verify_host_entry": (
             "Když zadáváte hosta ručně, potvrzujete údaje proti dokladu na místě. Záznam se "
             "označí jako ověřený při uložení."
@@ -427,11 +427,17 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.ready_manual": "Připraveno — ručně",
         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
         "status.ready_immediate": "Ověřeno — automaticky",
-        "status.ready_immediate_tip": "Kontrola pasů je hotová. Odeslání do UbyPortu proběhne automaticky.",
-        "status.awaiting_verification": "Ověřit pas",
+        "status.ready_immediate_tip": "Formuláře hotové — UbyPort odešle automaticky podle režimu.",
+        "status.awaiting_verification": "Volitelná kontrola dokladu",
         "status.awaiting_verification_tip": (
-            "Formuláře jsou hotové. Zkontrolujte fotografii pasu před hlášením."
+            "Formuláře jsou hotové. Odešlete, až budete připraveni, nebo nejdřív označte kontrolu dokladu."
         ),
+        "stay.detail.note.immediate": "po dokončení formulářů hostů",
+        "legal.footer_short": "Právní",
+        "legal.footer_nav_label": "Právní informace",
+        "terms.footer_short": "Podmínky",
+        "privacy.footer_short": "Soukromí",
+        "dpa.footer_short": "DPA",
         "status.waiting_guest": "Čeká na hosta",
         "status.waiting_guest_tip": "Formuláře hostů ještě nejsou hotové.",
         "status.waiting_signature": "Čeká na podpis",

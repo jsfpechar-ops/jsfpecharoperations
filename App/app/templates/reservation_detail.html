@@ -81,17 +81,15 @@
     <div class="metric-label">Reporting</div>
     <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
     <div class="metric-note">
-      {% if progress.status == 'awaiting_verification' %}
-        Guest forms are complete. Check each passport photo and confirm the details before reporting.
-      {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
-        All guests verified. UbyPort submission happens automatically after each verification.
+      {% if progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
+        {{ t('status.ready_immediate_tip') }}
       {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
-        Guest forms are complete. Check the details below, then send when ready.
+        {{ t('status.ready_manual_tip') }}
       {% elif progress.status == 'ready' and reservation.automation_mode == 'scheduled' %}
         Guest forms are complete. They will send {{ reservation.submit_after_hours }} h after check-in, or use Send now.
       {% else %}
         Automation:
-        {% if reservation.automation_mode == 'immediate' %}after you verify each passport
+        {% if reservation.automation_mode == 'immediate' %}{{ t('stay.detail.note.immediate') }}
         {% elif reservation.automation_mode == 'scheduled' %}{{ reservation.submit_after_hours }} h after check-in
         {% else %}manual only{% endif %}
       {% endif %}
@@ -125,7 +123,7 @@
           {% elif not row.complete %}
             <span class="pill amber">Incomplete</span>
           {% elif row.needs_verification %}
-            <span class="pill amber">Verify passport</span>
+            <span class="pill amber">{{ t('host.verify_pending') }}</span>
           {% else %}
             <span class="pill blue">Ready</span>
           {% endif %}
@@ -183,16 +181,14 @@
         </div>
       </dl>
 
-      {% if row.needs_verification and row.has_passport_photo %}
-        <div class="verify-inline panel quiet">
-          <p class="small" style="margin:0 0 8px">{{ t('host.verify_help') }}</p>
-          <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form">
-            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-            <button class="btn primary small" type="submit">{{ t('host.verify_button') }}</button>
-          </form>
-        </div>
-      {% elif row.needs_verification %}
-        <p class="guest-card-note warn-text">{{ t('host.verify_waiting_photo') }}</p>
+      {% if row.needs_verification %}
+        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form guest-card-action">
+          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+          <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
+          {% if row.has_passport_photo %}
+            <a class="small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('host.verify_view_photo') }}</a>
+          {% endif %}
+        </form>
       {% endif %}
       {% if guest.note %}
         <p class="guest-card-note">Note: {{ guest.note }}</p>

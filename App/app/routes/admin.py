@@ -1337,6 +1337,7 @@ async def reservations_submit_ready(request: Request):
             only_guest_ids=guest_ids,
             mode="manual_bulk",
             ignore_automation=True,
+            verified_by_user_id=access.owner_id(request),
         )
         if not results:
             continue
@@ -1492,6 +1493,7 @@ async def reservation_submit(reservation_id: int, request: Request):
         mode="manual",
         ignore_automation=True,
         allow_resend=allow_resend,
+        verified_by_user_id=access.owner_id(request),
     )
     if not results:
         return _back(
@@ -1733,27 +1735,22 @@ async def guest_verify_identity(guest_id: int, request: Request):
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
     if not reservation:
         return _back("/reservations", err="No such stay.")
-    if guest["entered_by"] == "guest" and not passport_photos.has_photo(guest_id):
-        return _back(f"/guests/{guest_id}", err="No passport photo on file to verify.")
     form = await request.form()
     return_to = (form.get("return_to") or f"/guests/{guest_id}").strip()
     if not return_to.startswith("/") or return_to.startswith("//"):
         return_to = f"/guests/{guest_id}"
+    owner_id = access.owner_id(request)
+    reporting.record_host_identity_confirmation(guest_id, owner_id, on_send=False)
     now = db.utcnow()
-    passport_photos.delete_photo(guest_id)
-    db.update(
-        "guest",
-        guest_id,
-        {
-            "identity_verified_at": now,
-            "identity_verified_by": access.owner_id(request),
-            "passport_photo_at": None,
-            "updated_at": now,
-        },
-    )
-    db.audit("guest_identity_verified", f"id={guest_id}")
+    if passport_photos.has_photo(guest_id):
+        passport_photos.delete_photo(guest_id)
+        db.update(
+            "guest",
+            guest_id,
+            {"passport_photo_at": None, "updated_at": now},
+        )
     reporting.maybe_submit_after_verify(reservation["apartment_id"], guest_id)
-    return _back(return_to, msg="Identity verified. Passport photo deleted.")
+    return _back(return_to, msg="ID check recorded.")
 
 
 @router.get("/guests/{guest_id}/passport-photo")
@@ -1860,6 +1857,7 @@ async def guest_resend(guest_id: int, request: Request):
         mode="manual_resend",
         ignore_automation=True,
         allow_resend=True,
+        verified_by_user_id=access.owner_id(request),
     )
     if not results:
         return _back(f"/guests/{guest_id}", err="Record is not sendable - fix the validation errors first.")
