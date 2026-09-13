@@ -17,6 +17,9 @@
     <span aria-hidden="true">☰</span>
   </button>
   <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost"></a>
+  {% if current_user %}
+    <a class="appbar-help" href="/guide">{{ t('nav.guide') }}</a>
+  {% endif %}
   <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
 </header>
 <button class="nav-backdrop" type="button" data-nav-close aria-label="Close menu"></button>
@@ -68,13 +71,12 @@
       {% if current_user and current_user.role == 'admin' %}
         <a href="/admin/users" class="{{ 'active' if nav == 'users' }}">{{ nav_icon('users') }}{{ t('nav.users') }}</a>
       {% endif %}
+      <a href="/guide" class="{{ 'active' if nav == 'guide' }}">{{ nav_icon('guide') }}{{ t('nav.guide') }}</a>
     </div>
   </nav>
   {% if current_user %}
     <div class="sidebar-footer">
       <nav class="sidebar-footer-links" aria-label="{{ t('legal.footer_nav_label') }}">
-        <a href="/guide">{{ t('nav.guide') }}</a>
-        <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/legal">{{ t('legal.footer_short') }}</a>
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/terms">{{ t('terms.footer_short') }}</a>

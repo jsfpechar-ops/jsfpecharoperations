@@ -87,9 +87,7 @@
     <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
     <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
     <div class="metric-note">
-      {% if progress.status == 'awaiting_verification' %}
-        {{ t('stay.detail.note.verify') }}
-      {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
+      {% if progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
         {{ t('stay.detail.note.ready_immediate') }}
       {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
         {{ t('stay.detail.note.ready_manual') }}
@@ -129,7 +127,7 @@
           {% elif not row.complete %}
             <span class="pill amber">{{ t('stay.detail.guests.incomplete') }}</span>
           {% elif row.needs_verification %}
-            <span class="pill amber">{{ t('stay.detail.guests.verify') }}</span>
+            <span class="pill amber">{{ t('host.verify_pending') }}</span>
           {% else %}
             <span class="pill blue">{{ t('stay.detail.guests.ready') }}</span>
           {% endif %}
@@ -187,16 +185,14 @@
         </div>
       </dl>
 
-      {% if row.needs_verification and row.has_passport_photo %}
-        <div class="verify-inline panel quiet">
-          <p class="small" style="margin:0 0 8px">{{ t('host.verify_help') }}</p>
-          <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form">
-            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-            <button class="btn primary small" type="submit">{{ t('host.verify_button') }}</button>
-          </form>
-        </div>
-      {% elif row.needs_verification %}
-        <p class="guest-card-note warn-text">{{ t('host.verify_waiting_photo') }}</p>
+      {% if row.needs_verification %}
+        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form guest-card-action">
+          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+          <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
+          {% if row.has_passport_photo %}
+            <a class="small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('host.verify_view_photo') }}</a>
+          {% endif %}
+        </form>
       {% endif %}
       {% if guest.note %}
         <p class="guest-card-note">{{ t('stay.detail.guests.note', text=guest.note) }}</p>

@@ -161,13 +161,6 @@ def guest_issues(guest, reservation) -> List[validation.Issue]:
                 "A guest signature is required. Use the guest link or sign on the host form.",
             )
         )
-    if guest_needs_passport_photo(guest) and not guest_has_passport_photo(guest):
-        issues.append(
-            validation.Issue(
-                "passport_photo",
-                "A passport photo is required so the host can verify your details before reporting.",
-            )
-        )
     return issues
 
 
@@ -220,8 +213,6 @@ def reservation_progress(reservation) -> Dict[str, Any]:
         status = "incomplete"
     elif incomplete:
         status = "incomplete"
-    elif unverified:
-        status = "awaiting_verification"
     elif reportable and len(sent) < len(reportable):
         status = "ready"
     elif reportable and len(sent) == len(reportable):
@@ -263,7 +254,6 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
         for guest in guests
         if validation.guest_is_reportable(guest["nationality"])
         and guest_has_signature(guest)
-        and guest_identity_verified(guest)
         and guest["submit_state"] not in (SENT, BLOCKED)
     ]
 
@@ -293,9 +283,7 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
     send_enabled = can_send and not auto_immediate
 
-    if progress["status"] == "awaiting_verification":
-        send_hint_key = "hint.awaiting_verification"
-    elif auto_immediate:
+    if auto_immediate:
         send_hint_key = "hint.auto_immediate"
     elif not has_pending and progress["status"] in ("not_required", "reported"):
         send_hint_key = "hint.nothing_duty"
@@ -306,11 +294,8 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
             if validation.guest_is_reportable(guest["nationality"])
             and not guest_has_signature(guest)
         ]
-        unverified_foreign = progress.get("unverified") or []
         if unsigned_foreign:
             send_hint_key = "hint.need_signature"
-        elif unverified_foreign:
-            send_hint_key = "hint.need_verification"
         else:
             send_hint_key = "hint.nothing_left"
     elif not can_send:
@@ -330,7 +315,7 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
 
 def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
-    """Immediate automation after the host verifies identity (never on raw guest save)."""
+    """Immediate automation after host save or ID check (never on raw guest save)."""
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment or apartment["automation_mode"] != "immediate":
         return
@@ -341,8 +326,6 @@ def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
     if not reservation or reservation["status"] != "active":
         return
     if not guest_is_complete(guest, reservation) or not validation.guest_is_reportable(guest["nationality"]):
-        return
-    if not guest_identity_verified(guest):
         return
     if guest["submit_state"] == SENT:
         return
@@ -414,6 +397,46 @@ def client_for(apartment, env: Optional[str] = None) -> UbyportClient:
     )
 
 
+# --- host identity confirmation ------------------------------------------
+
+def record_host_identity_confirmation(
+    guest_id: int,
+    verified_by_user_id: Optional[int],
+    *,
+    on_send: bool = False,
+) -> None:
+    """Host confirms guest details against a travel document (optional before send)."""
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    if not guest or not validation.guest_is_reportable(guest["nationality"]):
+        return
+    if guest["identity_verified_at"]:
+        return
+    now = db.utcnow()
+    db.update(
+        "guest",
+        guest_id,
+        {
+            "identity_verified_at": now,
+            "identity_verified_by": verified_by_user_id,
+            "updated_at": now,
+        },
+    )
+    flag = "on_send=1" if on_send else "on_send=0"
+    db.audit(
+        "guest_identity_verified",
+        f"id={guest_id} {flag}",
+        owner_user_id=verified_by_user_id,
+    )
+
+
+def ensure_identity_verified_for_send(
+    guest_ids: List[int], verified_by_user_id: Optional[int]
+) -> None:
+    """Mark reportable guests verified when the host sends to UbyPort."""
+    for guest_id in guest_ids:
+        record_host_identity_confirmation(guest_id, verified_by_user_id, on_send=True)
+
+
 # --- submission ----------------------------------------------------------
 
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
@@ -450,8 +473,6 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if guest["submit_state"] == BLOCKED and not allow_resend:
             continue
         if not guest_is_complete(guest, reservation):
-            continue
-        if not guest_identity_verified(guest):
             continue
         if not ignore_automation and not due_for_automatic_send(apartment, reservation):
             continue
@@ -632,6 +653,7 @@ def submit_for_apartment(
     ignore_automation: bool = False,
     allow_resend: bool = False,
     env: Optional[str] = None,
+    verified_by_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Send everything currently sendable for one apartment, in batches."""
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
@@ -661,6 +683,9 @@ def submit_for_apartment(
     pairs = collect_sendable(apartment_id, only_guest_ids, ignore_automation, allow_resend)
     if not pairs:
         return []
+
+    actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
+    ensure_identity_verified_for_send([guest["id"] for guest, _ in pairs], actor)
 
     limit = config.UBYPORT_MAX_BATCH
     results = []
