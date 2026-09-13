@@ -1,13 +1,12 @@
-# Render Blueprint — two environments from one repo.
+# Render Blueprint — staging + optional Render production.
 #
-#   ubyhost-staging  → mock UbyPort, safe for demos and feature testing
-#   ubyhost          → production (real UbyPort), persistent disk required
+#   ubyhost-staging  → mock UbyPort (STAGING for this project — use this on Render)
+#   ubyhost          → optional all-in-on-Render production (NOT used for ubyhost.com;
+#                      live production is AWS Lightsail — see docs/DEPLOYMENT.md)
 #
-# Apply once in Render → New → Blueprint. Each service can also be created
-# manually; see docs/DEPLOYMENT.md for promotion and secrets.
+# Apply once in Render → New → Blueprint. See docs/DEPLOYMENT.md.
 #
-# Staging uses the free plan (ephemeral disk — fine for throwaway testing).
-# Production must stay on Starter or higher with the disk block enabled.
+# Staging: free plan, ephemeral disk. ubyhost: Starter + disk if you keep it.
 
 services:
   # ---------------------------------------------------------------------------

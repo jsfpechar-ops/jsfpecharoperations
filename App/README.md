@@ -36,12 +36,13 @@ with a sample calendar, so you can click through the whole thing immediately.
 
 ## Deploy
 
-The repo ships a **two-environment** Render blueprint:
+| Environment | Where | Purpose |
+|-------------|--------|---------|
+| **Staging** | Render **`ubyhost-staging`** | Mock UbyPort, free tier — demos and UX testing |
+| **Production** | **AWS Lightsail** (`deploy/lightsail`) | Real police reporting (e.g. ubyhost.com) |
 
-| Service | Purpose |
-|---------|---------|
-| `ubyhost-staging` | Mock UbyPort, free tier, auto-deploy — safe for testing |
-| `ubyhost` | Production, Starter + disk, manual deploy, real police reporting |
+The Render blueprint also defines **`ubyhost`** (Starter + disk) for all-on-Render
+deployments; this project uses Lightsail for production instead.
 
 Full runbooks: **[docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)** and
 **[docs/PRODUCTION_CHECKLIST.md](../docs/PRODUCTION_CHECKLIST.md)**.
@@ -52,9 +53,9 @@ Quick start (staging demo):
 2. Open `https://ubyhost-staging.onrender.com`, sign in with the generated admin
    password (Render → Environment), click **Load demo data**.
 
-Production requires setting `UBYHOST_ADMIN_USERNAME` / `UBYHOST_ADMIN_PASSWORD` on
-the `ubyhost` service, UBY-WS credentials per apartment, and promoting through
-`UBYHOST_UBYPORT_ENV=test` before `prod`.
+Production (Lightsail) requires `.env` admin credentials, UBY-WS per apartment, and
+`UBYHOST_UBYPORT_ENV=test` before `prod`. See `deploy/lightsail/` and
+[docs/LIGHTSAIL.md](../docs/LIGHTSAIL.md).
 
 **Cloudflare Pages is not suitable** — it cannot run this FastAPI app or SQLite.
 

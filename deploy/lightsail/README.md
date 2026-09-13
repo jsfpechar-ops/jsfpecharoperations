@@ -1,5 +1,12 @@
 # UbyHost on AWS Lightsail
 
+**Production** lives here (`UBYHOST_DEPLOYMENT=production`, real UbyPort).
+
+| Environment | Platform | UbyPort |
+|-------------|----------|---------|
+| **Staging** | Render `ubyhost-staging` | `mock` |
+| **Production** | This Lightsail stack | `test` → `prod` |
+
 Production Docker stack with HTTPS. **Guides:**
 
 - Server: [docs/LIGHTSAIL.md](../../docs/LIGHTSAIL.md)
@@ -49,7 +56,13 @@ Check Google Drive for folder **`UbyHost-backups`** with a dated subfolder (`uby
 
 Local `./scripts/backup.sh` still runs daily at 03:00 if you added that cron earlier; this uploads the **newest** snapshot to Drive once a week.
 
-## Weekly backup to S3 (alternative to Drive)
+## S3 backup (optional — deferred)
+
+Not required if **Google Drive** weekly backups are working. S3 needs an IAM access
+key and `rclone config`; skip until you want a second off-site copy.
+
+<details>
+<summary>Enable S3 later (click to expand)</summary>
 
 Same data (`ubyhost.db` + `secret_key`); uses **rclone** with an **IAM access key** (no browser login).
 
@@ -75,6 +88,21 @@ export UBYHOST_S3_BUCKET=your-bucket-name
 ./scripts/backup-s3.sh
 ```
 
+**`No such file or directory`?** Run these on the server:
+
+```bash
+ls -la /opt/ubyhost/deploy/lightsail/scripts/backup-s3.sh   # missing → git pull in /opt/ubyhost
+cd /opt/ubyhost/deploy/lightsail && test -f .env || echo "need .env here"
+docker compose ps    # ubyhost must be Up
+```
+
+If the script exists but `docker cp` fails, set the container name explicitly:
+
+```bash
+export UBYHOST_CONTAINER="$(docker compose ps --format '{{.Names}}' ubyhost | head -1)"
+UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh
+```
+
 Weekly cron (example; set your bucket name):
 
 ```bash
@@ -82,3 +110,5 @@ Weekly cron (example; set your bucket name):
 ```
 
 You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if you want bare minimum.
+
+</details>

@@ -1,8 +1,10 @@
 # AWS Lightsail deployment (Docker)
 
-Run UbyHost on a **Lightsail Linux instance** with Docker Compose, automatic HTTPS
-(Caddy), and a persistent data volume for SQLite. This stack is ready when you
-move off Render — keep building on Render until then.
+**Production** for UbyHost runs here (e.g. **ubyhost.com**). Use **Render
+`ubyhost-staging`** only for mock staging — see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+Lightsail gives you Docker Compose, HTTPS (Caddy), and a persistent SQLite volume
+on a small Frankfurt VM.
 
 ## Recommended Lightsail plan
 
