@@ -134,6 +134,20 @@ cd deploy/lightsail
 
 The database volume is **not** replaced on deploy — only application code updates.
 
+### Deploy from GitHub Actions (optional)
+
+After each green **CI** run on `main`, workflow **Deploy production** can SSH to
+this instance and run the same `git pull` + `./scripts/deploy.sh`.
+
+In GitHub → **Settings → Secrets and variables → Actions**, add:
+
+| Secret | Example |
+|--------|---------|
+| `LIGHTSAIL_HOST` | `63.177.209.225` or your static IP |
+| `LIGHTSAIL_SSH_PRIVATE_KEY` | Full contents of `LightsailDefaultKey-eu-central-1.pem` |
+
+Without those secrets, CI skips deploy and you update manually over SSH.
+
 ## Migrating from Render
 
 1. On Render: download `ubyhost.db` from the persistent disk (Shell or backup).

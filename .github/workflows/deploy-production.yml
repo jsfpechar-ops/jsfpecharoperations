@@ -1,27 +1,60 @@
 name: Deploy production
 
+# Production = AWS Lightsail (ubyhost.com). Staging = Render ubyhost-staging (mock).
+# See docs/DEPLOYMENT.md
+
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 jobs:
-  deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  lightsail:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render production deploy
+      - name: Deploy Lightsail (production)
         env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
         run: |
-          if [ -z "${RENDER_DEPLOY_HOOK}" ]; then
-            echo "::warning::RENDER_DEPLOY_HOOK is not set."
-            echo "Production will not deploy from CI until you add the deploy hook URL from"
-            echo "Render → ubyhost → Settings → Deploy Hook as a GitHub Actions secret."
-            echo "You can also enable autoDeploy on the ubyhost service (branch: main)."
+          if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
+            echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
+            echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
             exit 0
           fi
-          echo "Deploying ubyhost (production) from main…"
-          curl -fsSL -X POST "${RENDER_DEPLOY_HOOK}"
-          echo "Production deploy hook triggered."
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
+          chmod 600 ~/.ssh/lightsail_deploy.pem
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" \
+            'set -euo pipefail
+             cd /opt/ubyhost
+             git fetch origin main
+             git pull origin main
+             cd deploy/lightsail
+             chmod +x scripts/*.sh
+             ./scripts/deploy.sh'
+          rm -f ~/.ssh/lightsail_deploy.pem
+
+  render-staging:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Optional Render staging deploy hook
+        env:
+          RENDER_STAGING_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          HOOK="${RENDER_STAGING_DEPLOY_HOOK:-${RENDER_DEPLOY_HOOK:-}}"
+          if [ -z "${HOOK}" ]; then
+            echo "No Render deploy hook secret — skip (staging deploy manually in Render if needed)."
+            exit 0
+          fi
+          echo "Triggering Render deploy hook (staging / legacy)…"
+          curl -fsSL -X POST "${HOOK}"
