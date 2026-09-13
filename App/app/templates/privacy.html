@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% set show_nav = false %}
-{% block title %}{{ t('legal.page_title') }}{% endblock %}
+{% block title %}{{ t('privacy.page_title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header %}
 
-{{ page_header(t('legal.page_title'), t('legal.page_lede')) }}
+{{ page_header(t('privacy.page_title'), t('privacy.page_lede', name=operator.name)) }}
+
+<p class="small muted">{{ t('privacy.effective') }}</p>
 
 <div class="panel legal-operator">
-  <h2 style="margin-top:0">{{ t('legal.operator_title') }}</h2>
+  <h2 style="margin-top:0">{{ t('privacy.operator_title') }}</h2>
   <dl class="kv">
     <dt>{{ t('legal.operator_name') }}</dt>
     <dd>{{ operator.name }}</dd>
@@ -28,25 +30,24 @@
   </dl>
 </div>
 
-<div class="panel">
-  <h2 style="margin-top:0">{{ t('legal.roles_title') }}</h2>
-  <p class="small muted">{{ t('legal.roles_body') }}</p>
-</div>
+<p class="small muted">{{ t('privacy.guest_note') }}</p>
 
+{% for sid in privacy_sections %}
 <div class="panel">
-  <h2 style="margin-top:0">{{ t('legal.software_title') }}</h2>
-  <p class="small muted">{{ t('legal.software_body') }}</p>
+  <h2 style="margin-top:0">{{ t('privacy.s' ~ sid ~ '_title') }}</h2>
+  <div class="small muted terms-section">{{ t('privacy.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) }}</div>
 </div>
+{% endfor %}
 
 <div class="panel quiet">
-  <h2 style="margin-top:0">{{ t('legal.disclaimer_title') }}</h2>
-  <p class="small muted" style="margin-bottom:0">{{ t('legal.disclaimer_body') }}</p>
+  <h2 style="margin-top:0">{{ t('privacy.review_title') }}</h2>
+  <p class="small muted" style="margin-bottom:0">{{ t('privacy.review_body') }}</p>
 </div>
 
 <p class="small muted">
-  <a href="/terms">{{ t('legal.cross_terms') }}</a>
+  <a href="/legal">{{ t('privacy.cross_legal') }}</a>
   &middot;
-  <a href="/privacy">{{ t('legal.cross_privacy') }}</a>
+  <a href="/terms">{{ t('privacy.cross_terms') }}</a>
   &middot;
   <a href="/login">{{ t('legal.back_login') }}</a>
 </p>

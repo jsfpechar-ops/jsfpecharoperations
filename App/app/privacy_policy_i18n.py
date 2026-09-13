@@ -1,0 +1,412 @@
+"""Privacy Policy strings (EN/CS) — merged into host_i18n.STRINGS."""
+from __future__ import annotations
+
+from typing import Dict
+
+PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+    "en": {
+        "privacy.page_title": "Privacy Policy",
+        "privacy.page_lede": (
+            "How %(name)s (the UbyHost software operator) processes personal data when you use "
+            "the hosted service, visit public pages, or interact with us. This policy does not "
+            "replace the guest privacy notice shown to your guests — that notice names you (or your "
+            "legal entity) as data controller."
+        ),
+        "privacy.effective": "Effective date: 13 September 2026. Version 1.0.",
+        "privacy.operator_title": "Data controller for this policy",
+        "privacy.footer_link": "Privacy Policy",
+        "privacy.footer_short": "Privacy",
+        "privacy.cross_legal": "Legal notice (operator identity)",
+        "privacy.cross_terms": "Terms of Service",
+        "privacy.cross_guest": "Guest privacy notice (per property link)",
+        "privacy.guest_note": (
+            "Guests who complete a form via /l/… see a separate notice naming the accommodation "
+            "provider as controller. Hosts must configure a legal entity with contact e-mail so "
+            "that notice is complete."
+        ),
+        "privacy.review_title": "Professional review",
+        "privacy.review_body": (
+            "This policy is drafted for GDPR and Czech Act No. 110/2019 Coll. It is not legal advice. "
+            "Hosts remain responsible for their own compliance as accommodation providers and data "
+            "controllers for guest data. Have qualified counsel review if your operations are complex."
+        ),
+        "legal.cross_privacy": "Privacy Policy",
+        "terms.cross_privacy": "Privacy Policy",
+        "privacy.s01_title": "1. Scope and who should read this",
+        "privacy.s01_body": (
+            "This Privacy Policy (\"Policy\") describes how %(name)s, identification number (IČO) "
+            "%(ico)s (the \"Operator\"), processes personal data in connection with the UbyHost "
+            "web application and related websites (the \"Service\"). It applies to: (a) accommodation "
+            "providers and their staff who hold a Host account (\"Host Users\"); (b) visitors to "
+            "public pages such as /login, /legal, /terms, and /privacy; and (c) technical processing "
+            "of Guest Data on behalf of Hosts as described below. It does not govern the relationship "
+            "between a Host and their Guests as controller and data subject — that is covered by the "
+            "guest-facing privacy notice at each property link (/l/{token}/privacy) and by the Host's "
+            "own policies."
+        ),
+        "privacy.s02_title": "2. Controller identity and contact",
+        "privacy.s02_body": (
+            "For Host account data, authentication, billing contact details (if any), support "
+            "correspondence, and operational logs relating to the Service, the Operator is the data "
+            "controller within the meaning of Regulation (EU) 2016/679 (\"GDPR\") and Act No. "
+            "110/2019 Coll., on personal data processing. Identity and address are published on "
+            "/legal. Where an e-mail is configured (UBYHOST_OPERATOR_EMAIL), it is the primary "
+            "contact for privacy requests relating to the Operator's processing; otherwise use the "
+            "postal address on /legal. The Operator does not provide a guaranteed support hotline "
+            "unless published there."
+        ),
+        "privacy.s03_title": "3. Roles: Operator, Host, and Guest",
+        "privacy.s03_body": (
+            "Hosts (or the legal entities they configure per property) are typically the data "
+            "controllers for personal data about Guests (names, travel documents, stays, signatures, "
+            "and related records). The Operator provides hosted software and processes Guest Data "
+            "only on the Host's documented instructions to deliver the Service — typically as a data "
+            "processor under GDPR Article 28. The Operator is not a joint controller with the Host "
+            "unless expressly agreed in writing. The Operator is controller for its own business data "
+            "(accounts, security, hosting). Nothing in this Policy transfers statutory duties of "
+            "accommodation providers or controllers to the Operator."
+        ),
+        "privacy.s04_title": "4. Categories of Host User data",
+        "privacy.s04_body": (
+            "We may process: account identifiers (username, internal user id); authentication data "
+            "(password hashes, session tokens, optional \"remember me\" duration); profile and "
+            "workspace settings; legal entity names, addresses, and contact e-mails you enter for "
+            "guest notices; property and stay metadata; UbyPort or calendar integration credentials "
+            "(stored encrypted at rest); audit and activity logs you generate in-app; communications "
+            "you send to us; and billing or plan information if fees apply. We do not require Host "
+            "Users to provide special categories of data about themselves unless you voluntarily "
+            "include such information in free-text fields."
+        ),
+        "privacy.s05_title": "5. Guest Data processed on your instructions",
+        "privacy.s05_body": (
+            "When Hosts use the Service, we process Guest Data they or their Guests submit: identity "
+            "and travel document details, dates of stay, nationality, addresses, signatures, "
+            "optional passport photos or PDFs uploaded for verification, house book entries, and "
+            "data formatted for transmission toward UbyPort or related police reporting channels "
+            "when enabled. Purposes, legal bases, and retention for Guests are determined by the "
+            "Host as controller and explained in the guest privacy notice. The Operator implements "
+            "technical and organisational measures appropriate to the risk but does not decide why "
+            "Guest Data is collected from a GDPR perspective."
+        ),
+        "privacy.s06_title": "6. Purposes and legal bases (Operator as controller)",
+        "privacy.s06_body": (
+            "We process Host User data to: provide and secure the Service (contract / legitimate "
+            "interest, GDPR Art. 6(1)(b) and (f)); comply with legal obligations (Art. 6(1)(c)); "
+            "prevent abuse, fraud, and security incidents (legitimate interest); maintain records "
+            "required for accounting or tax if applicable (legal obligation); and improve reliability "
+            "using aggregated or pseudonymised diagnostics where possible (legitimate interest). Where "
+            "we rely on legitimate interest, we balance our needs against your rights. Where consent "
+            "is required by law, we will request it separately. Czech national rules in Act 110/2019 "
+            "Coll. apply alongside GDPR."
+        ),
+        "privacy.s07_title": "7. Cookies and similar technologies",
+        "privacy.s07_body": (
+            "The Service uses strictly necessary cookies and similar storage: signed session cookies "
+            "for Host login (and optional extended duration if \"remember me\" is selected); language "
+            "preference cookies; and, on guest links, cookies that remember PIN verification or "
+            "language. We do not use third-party advertising or analytics cookies in the application "
+            "as shipped. You can control cookies through browser settings; disabling session cookies "
+            "will prevent login. Cookie lifetimes follow security configuration (shorter sessions by "
+            "default; longer when remember-me is used)."
+        ),
+        "privacy.s08_title": "8. Server logs and security monitoring",
+        "privacy.s08_body": (
+            "Our infrastructure automatically logs technical data: IP addresses, timestamps, request "
+            "paths, user agents, error traces, and security events (e.g. failed logins, rate limits). "
+            "We use these logs to operate, debug, and protect the Service, typically for a limited "
+            "rolling period unless longer retention is needed to investigate incidents or comply with "
+            "law. Logs may contain personal data in incidental form (e.g. IP address)."
+        ),
+        "privacy.s09_title": "9. Recipients and subprocessors",
+        "privacy.s09_body": (
+            "Personal data is accessed by authorised Operator personnel and contractors bound by "
+            "confidentiality. We use infrastructure subprocessors to host the Service, including "
+            "Render.com (cloud hosting; production deployments commonly use the EU Frankfurt region) "
+            "and, where you configure it, DNS or CDN providers such as Cloudflare in front of the "
+            "application. Guest Data may be transmitted to the Czech Police UbyPort systems or "
+            "related endpoints when a Host enables reporting — that transmission occurs on the Host's "
+            "instructions as processor. We require subprocessors that process personal data on our "
+            "behalf to provide appropriate safeguards (GDPR Art. 28). A summary list is maintained "
+            "in this Policy; material changes will be reflected here."
+        ),
+        "privacy.s10_title": "10. International transfers",
+        "privacy.s10_body": (
+            "We aim to host and process data within the European Economic Area. If a subprocessor "
+            "or support tool involves a transfer outside the EEA, we rely on appropriate safeguards "
+            "such as Standard Contractual Clauses, adequacy decisions, or other mechanisms permitted "
+            "under GDPR Chapter V. Details can be provided on request where required by law."
+        ),
+        "privacy.s11_title": "11. Retention",
+        "privacy.s11_body": (
+            "Host account data is retained while the account is active and for a reasonable period "
+            "after termination to allow export, resolve disputes, and comply with law. Guest Data "
+            "retention is controlled by Host settings and legal obligations (including typical "
+            "six-year house book rules); the Operator may retain backups for disaster recovery for a "
+            "limited period before purging. Security logs are kept for short rolling windows unless "
+            "an incident requires longer storage. When retention ends, we delete or anonymise data "
+            "unless statutory storage applies."
+        ),
+        "privacy.s12_title": "12. Security",
+        "privacy.s12_body": (
+            "We implement measures such as encryption of sensitive credentials at rest, HTTPS in "
+            "transit, access controls, rate limiting on authentication endpoints, separation of "
+            "environments, and regular dependency updates. No method of transmission or storage is "
+            "100%% secure; Hosts must use strong passwords, protect devices, and configure guest "
+            "links carefully. Report suspected security issues to the contact on /legal."
+        ),
+        "privacy.s13_title": "13. Your rights (Host Users)",
+        "privacy.s13_body": (
+            "Where the Operator is controller, you may have rights to access, rectification, erasure, "
+            "restriction, portability, and objection under GDPR, and to withdraw consent where "
+            "processing is consent-based. You may lodge a complaint with the Office for Personal "
+            "Data Protection (ÚOOÚ), Pplk. Sochora 27, 170 00 Praha 7, www.uoou.cz. We respond to "
+            "requests without undue delay and within statutory deadlines. We may need to verify your "
+            "identity. Some rights may be limited where we must retain data by law or for defence of "
+            "legal claims."
+        ),
+        "privacy.s14_title": "14. Guest rights",
+        "privacy.s14_body": (
+            "Guests should direct access, correction, deletion, and objection requests regarding "
+            "their stay data to the Host (controller) named in the guest privacy notice for that "
+            "property. The Operator will assist Hosts with technical measures to fulfil requests where "
+            "feasible and contractually required as processor, but cannot usually decide guest requests "
+            "without Host instruction."
+        ),
+        "privacy.s15_title": "15. Automated decision-making",
+        "privacy.s15_body": (
+            "The Service does not use solely automated decision-making that produces legal or "
+            "similarly significant effects on Host Users or Guests within the meaning of GDPR "
+            "Article 22. Validation rules (e.g. required fields, document checks) assist users but "
+            "do not replace Host or authority decisions."
+        ),
+        "privacy.s16_title": "16. Children",
+        "privacy.s16_body": (
+            "The Service is intended for business use by accommodation providers. Host accounts are "
+            "not offered to children. Guest data about minors may be processed when required by "
+            "accommodation law on the Host's responsibility as controller."
+        ),
+        "privacy.s17_title": "17. Marketing",
+        "privacy.s17_body": (
+            "We do not sell personal data. We may send service-related messages (security, terms or "
+            "policy updates, operational notices) to account contacts. We do not send third-party "
+            "marketing on behalf of others through the application unless explicitly stated and "
+            "lawfully opted in."
+        ),
+        "privacy.s18_title": "18. Personal data breaches",
+        "privacy.s18_body": (
+            "If we become aware of a personal data breach affecting data for which we are controller, "
+            "we will notify the ÚOOÚ and affected individuals where required by GDPR Articles 33–34. "
+            "Where we process Guest Data as processor, we will inform the relevant Host without undue "
+            "delay so the Host can meet controller obligations."
+        ),
+        "privacy.s19_title": "19. Host obligations as controller",
+        "privacy.s19_body": (
+            "Hosts must provide lawful bases and transparent notices to Guests, respond to data subject "
+            "requests, maintain records of processing where required, conduct DPIAs when appropriate, "
+            "and ensure instructions to the Operator are lawful. Hosts must not upload unnecessary "
+            "special-category data. Use of passport images should be limited to what law and risk "
+            "assessment justify, with clear guest information."
+        ),
+        "privacy.s20_title": "20. Changes to this Policy",
+        "privacy.s20_body": (
+            "We may update this Policy for legal, technical, or business reasons. Material changes "
+            "will be posted at /privacy with an updated effective date and, where practicable, "
+            "communicated through the Service or account contact at least thirty (30) days before "
+            "they take effect. Continued use after the effective date constitutes acknowledgement "
+            "where permitted by law."
+        ),
+        "privacy.s21_title": "21. Relationship to Terms of Service",
+        "privacy.s21_body": (
+            "This Policy supplements the Terms of Service at /terms. In case of conflict regarding "
+            "data protection roles, the more specific description of processing in this Policy and "
+            "in the guest notice prevails for privacy matters; commercial terms remain in the Terms."
+        ),
+        "privacy.s22_title": "22. Contact",
+        "privacy.s22_body": (
+            "For privacy questions about Operator-controlled processing, contact %(name)s, IČO "
+            "%(ico)s, at the address on /legal, or by e-mail if published there. For guest data, "
+            "contact the Host entity shown in the relevant guest privacy notice."
+        ),
+    },
+    "cs": {
+        "privacy.page_title": "Zásady ochrany osobních údajů",
+        "privacy.page_lede": (
+            "Jak %(name)s (provozovatel softwaru UbyHost) zpracovává osobní údaje při používání "
+            "hostované služby, návštěvě veřejných stránek nebo komunikaci s námi. Tyto zásady "
+            "nenahrazují informaci pro hosty — v ní je jako správce uveden vy (nebo vaše právnická "
+            "osoba)."
+        ),
+        "privacy.effective": "Účinnost od: 13. září 2026. Verze 1.0.",
+        "privacy.operator_title": "Správce údajů podle těchto zásad",
+        "privacy.footer_link": "Zásady ochrany osobních údajů",
+        "privacy.footer_short": "Soukromí",
+        "privacy.cross_legal": "Právní informace (identita provozovatele)",
+        "privacy.cross_terms": "Obchodní podmínky",
+        "privacy.cross_guest": "Informace pro hosty (odkaz u každého ubytování)",
+        "privacy.guest_note": (
+            "Hosté vyplňující formulář na /l/… vidí samostatnou informaci se správcem ubytování. "
+            "Ubytovatelé musí nastavit právnickou osobu s kontaktním e-mailem, aby byla informace "
+            "úplná."
+        ),
+        "privacy.review_title": "Odborná kontrola",
+        "privacy.review_body": (
+            "Text je připraven pro GDPR a zákon č. 110/2019 Sb. Nejde o právní poradenství. "
+            "Ubytovatelé zůstávají odpovědní za vlastní soulad jako poskytovatelé ubytování a "
+            "správci údajů hostů. U složitých provozů doporučujeme revizi advokátem."
+        ),
+        "legal.cross_privacy": "Zásady ochrany osobních údajů",
+        "terms.cross_privacy": "Zásady ochrany osobních údajů",
+        "privacy.s01_title": "1. Rozsah a komu je text určen",
+        "privacy.s01_body": (
+            "Tyto zásady ochrany osobních údajů (\"Zásady\") popisují, jak %(name)s, IČO %(ico)s "
+            "(\"Provozovatel\"), zpracovává osobní údaje v souvislosti s webovou aplikací UbyHost "
+            "a souvisejícími stránkami (\"Služba\"). Platí pro: (a) poskytovatele ubytování a jejich "
+            "pracovníky s účtem (\"Uživatelé účtu\"); (b) návštěvníky veřejných stránek (/login, "
+            "/legal, /terms, /privacy); (c) technické zpracování údajů hostů na pokyn ubytovatele "
+            "dle níže. Neupravují vztah ubytovatele a hosta jako správce a subjektu údajů — to řeší "
+            "informace pro hosty u odkazu (/l/{token}/privacy) a vlastní dokumenty ubytovatele."
+        ),
+        "privacy.s02_title": "2. Identita správce a kontakt",
+        "privacy.s02_body": (
+            "Pro údaje účtu ubytovatele, přihlášení, fakturační kontakty (pokud existují), podporu "
+            "a provozní logy Služby je Provozovatel správcem ve smyslu nařízení (EU) 2016/679 "
+            "(\"GDPR\") a zákona č. 110/2019 Sb. Identita a adresa jsou na /legal. Pokud je nastaven "
+            "e-mail (UBYHOST_OPERATOR_EMAIL), slouží pro žádosti o práva; jinak poštovní adresa na "
+            "/legal. Telefonní linka není garantována, pokud není zveřejněna."
+        ),
+        "privacy.s03_title": "3. Role: provozovatel, ubytovatel a host",
+        "privacy.s03_body": (
+            "Ubytovatel (nebo nastavená právnická osoba) je typicky správcem údajů o hostech (jména, "
+            "cestovní doklady, pobyty, podpisy aj.). Provozovatel poskytuje software a údaje hostů "
+            "zpracovává jen na dokumentovaný pokyn ubytovatele — obvykle jako zpracovatel dle čl. 28 "
+            "GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. "
+            "Provozovatel je správcem vlastních provozních údajů. Povinnosti ubytovatele podle zákona "
+            "se na Provozovatele nepřenášejí."
+        ),
+        "privacy.s04_title": "4. Kategorie údajů uživatelů účtu",
+        "privacy.s04_body": (
+            "Můžeme zpracovávat: identifikátory účtu; autentizační údaje (hash hesla, tokeny relace, "
+            "volitelné „zapamatovat\"); nastavení; názvy a kontakty právnických osob pro informace "
+            "hostům; metadata ubytování a pobytů; přihlašovací údaje k UbyPortu nebo kalendářům "
+            "(šifrovaně); auditní záznamy; komunikaci s námi; fakturační údaje. Zvláštní kategorie "
+            "údajů o ubytovateli nevyžadujeme, pokud je sami nezadáte v textových polích."
+        ),
+        "privacy.s05_title": "5. Údaje hostů na pokyn ubytovatele",
+        "privacy.s05_body": (
+            "Při používání Služby zpracováváme údaje, které ubytovatel nebo host zadá: identitu a "
+            "doklady, termíny pobytu, státní příslušnost, adresy, podpisy, volitelné fotografie nebo "
+            "PDF pasu, záznamy domovní knihy a data pro přenos do UbyPortu či souvisejících systémů "
+            "policie, pokud je funkce zapnuta. Účely, právní základy a dobu uchování pro hosty "
+            "určuje ubytovatel jako správce v informaci pro hosty. Provozovatel zajišťuje technická "
+            "a organizační opatření, ale ne rozhoduje o účelu zpracování údajů hostů ve smyslu GDPR."
+        ),
+        "privacy.s06_title": "6. Účely a právní základy (Provozovatel jako správce)",
+        "privacy.s06_body": (
+            "Údaje uživatelů účtu zpracováváme pro poskytování a zabezpečení Služby (smlouva / "
+            "oprávněný zájem, čl. 6 odst. 1 písm. b) a f) GDPR); plnění právních povinností (písm. c)); "
+            "prevenci zneužití a incidentů (oprávněný zájem); účetní a daňové povinnosti; zlepšování "
+            "spolehlivosti agregovanými diagnostikami. Při oprávněném zájmu vážíme naše potřeby a vaše "
+            "práva. Souhlas vyžadujeme jen tam, kde to vyžaduje zákon. Platí i zákon č. 110/2019 Sb."
+        ),
+        "privacy.s07_title": "7. Cookies a podobné technologie",
+        "privacy.s07_body": (
+            "Služba používá nezbytné cookies: relaci přihlášení ubytovatele (delší při „zapamatovat\"); "
+            "jazyk; u hostovských odkazů cookies pro PIN a jazyk. V aplikaci v základní podobě nepoužíváme "
+            "reklamní ani analytické cookies třetích stran. Cookies lze omezit v prohlížeči; bez relačního "
+            "cookie přihlášení nefunguje."
+        ),
+        "privacy.s08_title": "8. Serverové logy a bezpečnost",
+        "privacy.s08_body": (
+            "Infrastruktura automaticky zaznamenává IP adresy, čas, cesty požadavků, user agent, chyby "
+            "a bezpečnostní události (neúspěšná přihlášení, rate limiting). Logy slouží provozu a ochraně "
+            "Služby po omezenou dobu, déle jen při incidentu nebo zákonné povinnosti. Mohou obsahovat "
+            "osobní údaje (např. IP)."
+        ),
+        "privacy.s09_title": "9. Příjemci a subzpracovatelé",
+        "privacy.s09_body": (
+            "Údaje vidí oprávnění pracovníci a smluvní partneři s mlčenlivostí. Hosting zajišťují "
+            "subzpracovatelé včetně Render.com (cloud; produkce často region EU Frankfurt) a při "
+            "nastavení DNS/CDN např. Cloudflare. Údaje hostů mohou být přeneseny do systémů UbyPort "
+            "Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít vhodné záruky "
+            "(čl. 28 GDPR). Přehled udržujeme v těchto Zásadách."
+        ),
+        "privacy.s10_title": "10. Přeshraniční přenosy",
+        "privacy.s10_body": (
+            "Usilujeme o zpracování v EHP. Pokud subzpracovatel přenáší údaje mimo EHP, použijeme "
+            "standardní smluvní doložky, rozhodnutí o přiměřenosti nebo jiné prostředky dle kapitoly V "
+            "GDPR. Podrobnosti poskytneme na žádost, kde to zákon vyžaduje."
+        ),
+        "privacy.s11_title": "11. Doba uchování",
+        "privacy.s11_body": (
+            "Údaje účtu držíme po dobu aktivního účtu a přiměřeně po ukončení kvůli exportu, sporům "
+            "a zákonu. Údaje hostů řídí nastavení a povinnosti ubytovatele (včetně typické šestileté "
+            "domovní knihy); zálohy mohou být krátce pro obnovu po havárii. Bezpečnostní logy po "
+            "krátkou dobu. Po uplynutí mažeme nebo anonymizujeme, pokud zákon nevyžaduje jinak."
+        ),
+        "privacy.s12_title": "12. Bezpečnost",
+        "privacy.s12_body": (
+            "Používáme šifrování citlivých přihlašovacích údajů, HTTPS, řízení přístupu, rate limiting "
+            "přihlášení, oddělení prostředí a aktualizace závislostí. Žádný přenos není stoprocentně "
+            "bezpečný; ubytovatelé mají používat silná hesla a chránit zařízení. Bezpečnostní incidenty "
+            "hlaste kontaktu na /legal."
+        ),
+        "privacy.s13_title": "13. Vaše práva (uživatelé účtu)",
+        "privacy.s13_body": (
+            "Jako správce můžete uplatnit přístup, opravu, výmaz, omezení, přenositelnost a námitku dle "
+            "GDPR; odvolat souhlas, kde je základem. Stížnost u Úřadu pro ochranu osobních údajů, "
+            "Pplk. Sochora 27, 170 00 Praha 7, www.uoou.cz. Vyřizujeme bez zbytečného odkladu. Můžeme "
+            "ověřit totožnost. Práva mohou být omezena zákonem nebo obranou nároků."
+        ),
+        "privacy.s14_title": "14. Práva hostů",
+        "privacy.s14_body": (
+            "Hosté žádají o přístup, opravu, výmaz a námitku u správce uvedeného v informaci pro dané "
+            "ubytování. Provozovatel jako zpracovatel pomůže technicky, pokud je to možné a smluvně "
+            "nutné, ale obvykle nerozhoduje bez pokynu ubytovatele."
+        ),
+        "privacy.s15_title": "15. Automatizované rozhodování",
+        "privacy.s15_body": (
+            "Služba nepoužívá čistě automatizované rozhodování s právními nebo obdobně významnými "
+            "účinky dle čl. 22 GDPR. Validace polí pomáhá uživatelům, nenahrazuje rozhodnutí "
+            "ubytovatele nebo úřadů."
+        ),
+        "privacy.s16_title": "16. Děti",
+        "privacy.s16_body": (
+            "Služba je určena pro podnikatelské použití ubytovatelů. Účty dětem nenabízíme. Údaje o "
+            "nezletilých hostech mohou být zpracovány zákonnou povinností ubytovatele jako správce."
+        ),
+        "privacy.s17_title": "17. Marketing",
+        "privacy.s17_body": (
+            "Osobní údaje neprodáváme. Můžeme zasílat provozní zprávy (bezpečnost, změny podmínek či "
+            "zásad). Marketing třetích stran přes aplikaci nebez souhlasu neprovádíme."
+        ),
+        "privacy.s18_title": "18. Porušení zabezpečení údajů",
+        "privacy.s18_body": (
+            "Při porušení zabezpečení údajů, za která jsme správcem, oznámíme ÚOOÚ a dotčené osoby dle "
+            "čl. 33–34 GDPR. U údajů hostů jako zpracovatel bez zbytečného odkladu informujeme "
+            "ubytovatele."
+        ),
+        "privacy.s19_title": "19. Povinnosti ubytovatele jako správce",
+        "privacy.s19_body": (
+            "Ubytovatel musí hostům sdělit právní základy a informace, vyřizovat žádosti subjektů, vést "
+            "záznamy, provádět DPIA kde je třeba a dávat Provozovateli jen zákonné pokyny. Fotografie "
+            "pasů jen v nezbytném rozsahu s jasnou informací pro hosty."
+        ),
+        "privacy.s20_title": "20. Změny Zásad",
+        "privacy.s20_body": (
+            "Zásady můžeme měnit. Podstatné změny zveřejníme na /privacy s datem účinnosti a pokud "
+            "možno oznámíme ve Službě nejméně třicet (30) dní předem. Pokračující používání po datu "
+            "účinnosti znamená seznámení, kde to zákon dovoluje."
+        ),
+        "privacy.s21_title": "21. Vztah k obchodním podmínkám",
+        "privacy.s21_body": (
+            "Zásady doplňují obchodní podmínky na /terms. Při rozporu v oblasti ochrany údajů mají "
+            "přednost tyto Zásady a informace pro hosty; obchodní ujednání zůstávají v podmínkách."
+        ),
+        "privacy.s22_title": "22. Kontakt",
+        "privacy.s22_body": (
+            "Dotazy ke zpracování Provozovatele směřujte na %(name)s, IČO %(ico)s, adresu na /legal "
+            "nebo e-mail, pokud je zveřejněn. K údajům hostů kontaktujte správce v informaci u daného "
+            "ubytování."
+        ),
+    },
+}

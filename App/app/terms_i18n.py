@@ -117,8 +117,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "guarantee that the Host's use of the Service satisfies the Host's GDPR obligations. The "
             "Operator may access Guest Data only to provide the Service, ensure security, comply with "
             "law, or as otherwise instructed. The Host shall not instruct processing that violates "
-            "applicable law. Details of subprocessors and security are described in these Terms and "
-            "on the /legal page."
+            "applicable law. Details of subprocessors, cookies, retention, and security are described "
+            "in these Terms and in the Privacy Policy at /privacy."
         ),
         "terms.s10_title": "10. UbyPort and police reporting",
         "terms.s10_body": (
@@ -236,8 +236,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "deliver the Service, provided they are bound by confidentiality and data protection "
             "obligations consistent with these Terms. The Host authorises such subcontracting for "
             "processing Guest Data on the Host's instructions. The Operator remains responsible for "
-            "subprocessors' performance to the extent required by GDPR Article 28. A current list of "
-            "categories of subprocessors may be provided on request or in documentation."
+            "subprocessors' performance to the extent required by GDPR Article 28. A summary of "
+            "subprocessor categories is published in the Privacy Policy at /privacy."
         ),
         "terms.s22_title": "22. Changes to these Terms",
         "terms.s22_body": (
@@ -392,8 +392,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Provozovatel uplatňuje přiměřená technická a organizační opatření, ale nezaručuje, že "
             "použití Služby samo o sobě splní všechny GDPR povinnosti Ubytovatele. K Údajům hostů "
             "přistupuje jen pro poskytování Služby, bezpečnost, zákon nebo dle pokynu. Ubytovatel "
-            "neinstruuje protiprávní zpracování. Subzpracovatelé a bezpečnost jsou popsány v těchto "
-            "Podmínkách a na /legal."
+            "neinstruuje protiprávní zpracování. Subzpracovatelé, cookies, doba uchování a bezpečnost "
+            "jsou popsány v těchto Podmínkách a v Zásadách ochrany osobních údajů na /privacy."
         ),
         "terms.s10_title": "10. UbyPort a hlášení policii",
         "terms.s10_body": (
@@ -497,8 +497,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Provozovatel může využívat hosting, infrastrukturu a další subzpracovatele za podmínky "
             "mlčenlivosti a ochrany údajů v souladu s těmito Podmínkami. Ubytovatel takové "
             "subdodávání pro zpracování Údajů hostů na svůj pokyn autorizuje. Provozovatel odpovídá za "
-            "subzpracovatele v rozsahu čl. 28 GDPR. Aktuální kategorie subzpracovatelů mohou být uvedeny "
-            "v dokumentaci nebo na žádost."
+            "subzpracovatele v rozsahu čl. 28 GDPR. Přehled kategorií subzpracovatelů je v Zásadách "
+            "ochrany osobních údajů na /privacy."
         ),
         "terms.s22_title": "22. Změny Podmínek",
         "terms.s22_body": (

@@ -438,6 +438,28 @@ def test_legal_page_links_to_terms():
     assert 'href="/terms"' in response.text
 
 
+def test_privacy_page_shows_operator_identity():
+    response = TestClient(app).get("/privacy")
+    assert response.status_code == 200
+    assert "***REMOVED***" in response.text
+    assert "***REMOVED***" in response.text
+    assert "Privacy Policy" in response.text or "Zásady ochrany osobních údajů" in response.text
+    assert "ÚOOÚ" in response.text or "uoou.cz" in response.text
+
+
+def test_login_page_links_to_privacy():
+    response = TestClient(app).get("/login")
+    assert response.status_code == 200
+    assert 'href="/privacy"' in response.text
+
+
+def test_legal_and_terms_link_to_privacy():
+    for path in ("/legal", "/terms"):
+        response = TestClient(app).get(path)
+        assert response.status_code == 200
+        assert 'href="/privacy"' in response.text
+
+
 def test_submissions_receipts_zip_downloads_bulk_dorucenky():
     db.init_db()
     _clean_accounts()
