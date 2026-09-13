@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app import db, rate_limit
+from app import client_ip, config, db, rate_limit
 from app.main import app
 from app.routes import admin as admin_routes
 from tests.test_accounts import _account, _clean_accounts, _login
@@ -53,6 +53,75 @@ def test_login_rate_limit_blocks_after_repeated_failures():
     finally:
         db.execute("DELETE FROM rate_limit_event WHERE key = ?", (key,))
         _clean_accounts()
+
+
+def test_cf_connecting_ip_ignored_without_trusted_proxy(monkeypatch):
+    monkeypatch.setattr(config, "CLOUDFLARE_PROXY", False)
+    monkeypatch.setattr(config, "TRUSTED_PROXY_CIDRS", "")
+    client_ip.reset_trusted_proxy_cache()
+
+    scope = {"client": ("203.0.113.50", 12345)}
+    headers = {"cf-connecting-ip": "198.51.100.99"}
+    client_ip.apply_visitor_client(scope, headers)
+    assert scope["client"][0] == "203.0.113.50"
+
+
+def test_cf_connecting_ip_honoured_from_trusted_proxy(monkeypatch):
+    monkeypatch.setattr(config, "CLOUDFLARE_PROXY", False)
+    monkeypatch.setattr(config, "TRUSTED_PROXY_CIDRS", "172.18.0.0/16")
+    client_ip.reset_trusted_proxy_cache()
+
+    scope = {"client": ("172.18.0.2", 0)}
+    headers = {"cf-connecting-ip": "198.51.100.77"}
+    client_ip.apply_visitor_client(scope, headers)
+    assert scope["client"][0] == "198.51.100.77"
+
+
+def test_pin_rate_limit_not_bypassed_by_spoofed_cf_header(monkeypatch):
+    monkeypatch.setattr(config, "CLOUDFLARE_PROXY", False)
+    monkeypatch.setattr(config, "TRUSTED_PROXY_CIDRS", "")
+    client_ip.reset_trusted_proxy_cache()
+
+    db.init_db()
+    token = "cf-pin-guard"
+    pin = "654321"
+    now = db.utcnow()
+    apt = db.query_one("SELECT id FROM apartment WHERE permalink_token = ?", (token,))
+    if apt:
+        db.execute("DELETE FROM apartment WHERE id = ?", (apt["id"],))
+    entity_id = db.insert("legal_entity", {"name": "CF guard", "created_at": now})
+    db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "internal_name": "CF",
+            "permalink_token": token,
+            "permalink_pin": pin,
+            "permalink_window_days": 14,
+            "default_purpose": "10",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    try:
+        client = TestClient(app)
+        for _ in range(rate_limit._PIN_MAX_FAILURES):
+            client.post(f"/l/{token}/pin", data={"pin": "000000"}, follow_redirects=False)
+        blocked = client.post(f"/l/{token}/pin", data={"pin": "000000"}, follow_redirects=False)
+        assert "Wait about 15" in blocked.text
+
+        spoofed = client.post(
+            f"/l/{token}/pin",
+            data={"pin": "000000"},
+            headers={"CF-Connecting-IP": "203.0.113.99"},
+            follow_redirects=False,
+        )
+        assert "Wait about 15" in spoofed.text
+    finally:
+        db.execute("DELETE FROM apartment WHERE permalink_token = ?", (token,))
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{token}",))
 
 
 def test_alert_dismiss_does_not_redirect_to_external_site():
