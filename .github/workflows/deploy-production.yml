@@ -30,9 +30,28 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
           chmod 600 ~/.ssh/lightsail_deploy.pem
+          LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
+          LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" \
             'set -euo pipefail
-             cd /opt/ubyhost
+             INSTALL=/opt/ubyhost
+             REPO=https://github.com/jsfpechar-ops/jsfpecharoperations.git
+             if [ ! -d "${INSTALL}/.git" ]; then
+               echo "==> No git repo at ${INSTALL}; bootstrapping for CI deploy"
+               if [ -d "${INSTALL}/deploy/lightsail" ]; then
+                 cd "${INSTALL}"
+                 git init
+                 git remote add origin "${REPO}" 2>/dev/null || git remote set-url origin "${REPO}"
+                 git fetch --depth 1 origin main
+                 git reset --mixed origin/main
+               elif [ ! -e "${INSTALL}" ] || [ -z "$(ls -A "${INSTALL}" 2>/dev/null)" ]; then
+                 git clone --depth 1 --branch main "${REPO}" "${INSTALL}"
+               else
+                 echo "ERROR: ${INSTALL} is not a git repo and layout is unexpected" >&2
+                 exit 1
+               fi
+             fi
+             cd "${INSTALL}"
              git fetch origin main
              git pull origin main
              cd deploy/lightsail
