@@ -169,6 +169,7 @@ No code changes required.
 
 | Symptom | Fix |
 |---------|-----|
+| **HTTPS hangs**; `curl http://YOUR_IP/healthz` returns **308** but `https://your-host/healthz` never connects | Open **HTTPS (443)** in the **Lightsail** instance **Networking → IPv4 firewall** (not only `ufw` on the VM). Keep **HTTP (80)** for Let's Encrypt. |
 | Caddy / SSL errors | Cloudflare: Full (strict) + origin certs; or `CLOUDFLARE_PROXY=0` for Let's Encrypt |
 | `healthz` shows `deployment: local` | Set `UBYHOST_DEPLOYMENT=production` in `.env`, redeploy |
 | Out of memory | Upgrade to Small plan or export PDFs in smaller date ranges |
