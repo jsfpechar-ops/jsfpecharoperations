@@ -134,7 +134,7 @@ def test_status_label_reflects_automation():
     assert reporting.status_label("ready", "manual") == "Ready — send manually"
 
 
-def test_unverified_foreign_guest_blocks_send():
+def test_unverified_foreign_guest_can_send():
     apartment, reservation, guest_id = _seed("manual", "tok-unverified")
     db.update(
         "guest",
@@ -144,9 +144,37 @@ def test_unverified_foreign_guest_blocks_send():
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress)
-    assert progress["status"] == "awaiting_verification"
-    assert controls["send_enabled"] is False
-    assert "passport" in controls["send_hint"].lower()
+    assert progress["status"] == "ready"
+    assert controls["send_enabled"] is True
+    assert controls["pending_count"] == 1
+
+
+def test_foreign_guest_online_checkin_complete_without_passport_photo():
+    apartment, reservation, guest_id = _seed("manual", "tok-no-photo")
+    db.update(
+        "guest",
+        guest_id,
+        {"entered_by": "guest", "identity_verified_at": None, "identity_verified_by": None},
+    )
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert reporting.guest_is_complete(guest, reservation)
+
+
+def test_ensure_identity_verified_for_send_marks_guest_on_send():
+    _apartment, _reservation, guest_id = _seed("manual", "tok-on-send")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    reporting.ensure_identity_verified_for_send([guest_id], verified_by_user_id=None)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["identity_verified_at"]
+    assert guest["identity_verified_by"] is None
+    audit = db.query_one(
+        "SELECT * FROM audit WHERE action = 'guest_identity_verified' ORDER BY id DESC LIMIT 1"
+    )
+    assert "on_send=1" in (audit["detail"] or "")
 
 
 def test_unsigned_foreign_guest_blocks_send():
