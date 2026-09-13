@@ -1175,11 +1175,13 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   line-height: 1.5;
   color: var(--faint);
 }
-.legal-panel {
-  margin-bottom: 16px;
+.housebook-legal {
+  margin-top: 28px;
 }
-.legal-panel h2 {
-  font-size: 1.05rem;
+.housebook-legal > summary {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
 }
 .legal-list {
   margin: 10px 0 0;
