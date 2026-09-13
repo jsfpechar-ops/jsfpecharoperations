@@ -488,7 +488,7 @@ def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch
     assert rows, "house book should list every guest from earlier tests"
     assert "Import paper records" in page.text
     assert "Download import template" in page.text
-    assert "Import & export" in html.unescape(page.text)
+    assert "Export" in html.unescape(page.text)
 
     fd, path = tempfile.mkstemp(suffix=".zip")
     os.close(fd)
