@@ -93,6 +93,9 @@ TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.0")
 # Bumped when the public Privacy Policy changes materially.
 PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.0")
 
+# Bumped when the Data Processing Agreement changes materially.
+DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.0")
+
 
 def endpoint_for(env: str = None) -> str:
     return UBYPORT_ENDPOINTS.get((env or UBYPORT_ENV), UBYPORT_ENDPOINTS["mock"])

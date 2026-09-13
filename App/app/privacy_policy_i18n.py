@@ -63,8 +63,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "only on the Host's documented instructions to deliver the Service — typically as a data "
             "processor under GDPR Article 28. The Operator is not a joint controller with the Host "
             "unless expressly agreed in writing. The Operator is controller for its own business data "
-            "(accounts, security, hosting). Nothing in this Policy transfers statutory duties of "
-            "accommodation providers or controllers to the Operator."
+            "(accounts, security, hosting). Guest Data processing terms are in the Data Processing "
+            "Agreement at /dpa. Nothing in this Policy transfers statutory duties of accommodation "
+            "providers or controllers to the Operator."
         ),
         "privacy.s04_title": "4. Categories of Host User data",
         "privacy.s04_body": (
@@ -280,8 +281,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "cestovní doklady, pobyty, podpisy aj.). Provozovatel poskytuje software a údaje hostů "
             "zpracovává jen na dokumentovaný pokyn ubytovatele — obvykle jako zpracovatel dle čl. 28 "
             "GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. "
-            "Provozovatel je správcem vlastních provozních údajů. Povinnosti ubytovatele podle zákona "
-            "se na Provozovatele nepřenášejí."
+            "Provozovatel je správcem vlastních provozních údajů. Podmínky zpracování údajů hostů jsou "
+            "v DPA na /dpa. Povinnosti ubytovatele podle zákona se na Provozovatele nepřenášejí."
         ),
         "privacy.s04_title": "4. Kategorie údajů uživatelů účtu",
         "privacy.s04_body": (
