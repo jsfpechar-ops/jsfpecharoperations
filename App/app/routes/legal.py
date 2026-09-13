@@ -9,6 +9,8 @@ from ..templating import render
 router = APIRouter()
 
 TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
+PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
+DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
 
 
 @router.get("/legal")
@@ -31,6 +33,36 @@ def terms_of_service(request: Request):
             "operator": op,
             "wrap_class": "narrow",
             "terms_sections": TERMS_SECTION_IDS,
+        },
+        status_code=200,
+    )
+
+
+@router.get("/privacy")
+def privacy_policy(request: Request):
+    op = operator.details()
+    return render(
+        request,
+        "privacy.html",
+        {
+            "operator": op,
+            "wrap_class": "narrow",
+            "privacy_sections": PRIVACY_SECTION_IDS,
+        },
+        status_code=200,
+    )
+
+
+@router.get("/dpa")
+def data_processing_agreement(request: Request):
+    op = operator.details()
+    return render(
+        request,
+        "dpa.html",
+        {
+            "operator": op,
+            "wrap_class": "narrow",
+            "dpa_sections": DPA_SECTION_IDS,
         },
         status_code=200,
     )

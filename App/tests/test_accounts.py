@@ -438,6 +438,72 @@ def test_legal_page_links_to_terms():
     assert 'href="/terms"' in response.text
 
 
+def test_privacy_page_shows_operator_identity():
+    response = TestClient(app).get("/privacy")
+    assert response.status_code == 200
+    assert "***REMOVED***" in response.text
+    assert "***REMOVED***" in response.text
+    assert "Privacy Policy" in response.text or "Zásady ochrany osobních údajů" in response.text
+    assert "ÚOOÚ" in response.text or "uoou.cz" in response.text
+
+
+def test_login_page_links_to_privacy():
+    response = TestClient(app).get("/login")
+    assert response.status_code == 200
+    assert 'href="/privacy"' in response.text
+
+
+def test_legal_and_terms_link_to_privacy():
+    for path in ("/legal", "/terms"):
+        response = TestClient(app).get(path)
+        assert response.status_code == 200
+        assert 'href="/privacy"' in response.text
+
+
+def test_dpa_page_shows_operator_and_article_28():
+    db.init_db()
+    response = TestClient(app).get("/dpa")
+    assert response.status_code == 200
+    assert "***REMOVED***" in response.text
+    assert "***REMOVED***" in response.text
+    assert "Article 28" in response.text or "čl. 28" in response.text
+
+
+def test_public_legal_pages_cross_link_dpa():
+    db.init_db()
+    for path in ("/legal", "/terms", "/privacy"):
+        response = TestClient(app).get(path)
+        assert response.status_code == 200
+        assert 'href="/dpa"' in response.text
+
+
+def test_login_audit_includes_legal_versions():
+    db.init_db()
+    from app import config
+
+    client = TestClient(app)
+    # Use bootstrap admin if present
+    username = config.ADMIN_USERNAME
+    password = config.ADMIN_PASSWORD or ""
+    if not password:
+        creds = config.DATA_DIR / "initial_admin_credentials"
+        if creds.exists():
+            for line in creds.read_text().splitlines():
+                if line.startswith("password="):
+                    password = line.split("=", 1)[1].strip()
+    if password:
+        client.post("/login", data={"username": username, "password": password})
+        rows = db.query(
+            "SELECT detail FROM audit WHERE action = ? ORDER BY id DESC LIMIT 1",
+            ("login",),
+        )
+        if rows:
+            detail = rows[0]["detail"]
+            assert f"terms_v{config.TERMS_VERSION}" in detail
+            assert f"privacy_v{config.PRIVACY_VERSION}" in detail
+            assert f"dpa_v{config.DPA_VERSION}" in detail
+
+
 def test_submissions_receipts_zip_downloads_bulk_dorucenky():
     db.init_db()
     _clean_accounts()
