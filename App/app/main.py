@@ -74,7 +74,12 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     if cf_ip:
         _host, port = request.scope.get("client") or ("", 0)
         request.scope["client"] = (cf_ip, port or 0)
-    return await call_next(request)
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
+    return response
 
 
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), name="static")
