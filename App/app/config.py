@@ -96,6 +96,13 @@ PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.0")
 # Bumped when the Data Processing Agreement changes materially.
 DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.0")
 
+# Never enable in production — allows iCal fetch to private/loopback hosts (tests only).
+ICAL_ALLOW_PRIVATE = os.environ.get("UBYHOST_ICAL_ALLOW_PRIVATE", "0").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 
 def endpoint_for(env: str = None) -> str:
     return UBYPORT_ENDPOINTS.get((env or UBYPORT_ENV), UBYPORT_ENDPOINTS["mock"])

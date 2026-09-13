@@ -39,7 +39,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from icalendar import Calendar
 
-from . import alerts, db
+from . import alerts, db, feed_url
+from .feed_url import FeedUrlError
 
 USER_AGENT = "UbyHost/1.0 (+self-hosted Czech foreign-police reporting)"
 FETCH_TIMEOUT = 45
@@ -92,11 +93,30 @@ class FeedError(Exception):
 
 def fetch_feed(url: str) -> str:
     try:
-        response = requests.get(
-            url, timeout=FETCH_TIMEOUT, headers={"User-Agent": USER_AGENT, "Accept": "text/calendar"}
-        )
+        current = feed_url.validate_calendar_url(url)
+    except FeedUrlError as exc:
+        raise FeedError(str(exc)) from exc
+    headers = {"User-Agent": USER_AGENT, "Accept": "text/calendar"}
+    response = None
+    try:
+        for _ in range(4):
+            response = requests.get(
+                current,
+                timeout=FETCH_TIMEOUT,
+                headers=headers,
+                allow_redirects=False,
+            )
+            if response.status_code in (301, 302, 303, 307, 308):
+                location = response.headers.get("Location")
+                if not location:
+                    raise FeedError(f"Calendar redirect missing Location (HTTP {response.status_code}).")
+                current = feed_url.resolve_redirect_url(current, location)
+                continue
+            break
     except requests.RequestException as exc:
         raise FeedError(f"Could not download the calendar: {exc}") from exc
+    if response is None:
+        raise FeedError("Could not download the calendar.")
     if response.status_code != 200:
         raise FeedError(f"Calendar returned HTTP {response.status_code}.")
     text = response.text or ""
