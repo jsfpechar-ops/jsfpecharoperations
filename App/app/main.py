@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, config, db, host_i18n, scheduler
+from . import auth, client_ip, config, db, host_i18n, scheduler
 from .routes import admin, guest, legal
 from .sample_calendar import sample_calendar_response
 
@@ -69,11 +69,8 @@ app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
 
 @app.middleware("http")
 async def cloudflare_connecting_ip(request: Request, call_next):
-    """Use the visitor IP when traffic is proxied through Cloudflare."""
-    cf_ip = request.headers.get("cf-connecting-ip")
-    if cf_ip:
-        _host, port = request.scope.get("client") or ("", 0)
-        request.scope["client"] = (cf_ip, port or 0)
+    """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""
+    client_ip.apply_visitor_client(request.scope, request.headers)
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
