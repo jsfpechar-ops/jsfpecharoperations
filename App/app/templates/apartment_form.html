@@ -223,7 +223,7 @@
         <label for="permalink_pin">Access PIN</label>
         <div class="copyrow pin-row">
           <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
-                 inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
+                 inputmode="numeric" pattern="[0-9]{4}|[0-9]{6}" maxlength="6" placeholder="000000" required>
           {{ copy_button('permalink_pin') }}
         </div>
         <div class="hint">Six digits (or legacy four) guests enter before the form opens. Change it here, or generate a random one below.</div>

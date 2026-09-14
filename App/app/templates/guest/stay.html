@@ -10,6 +10,10 @@
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
 
+{% if party_error %}
+  <div class="g-err">{{ t('error_party_size') }}</div>
+{% endif %}
+
 {% if remaining is not none and remaining <= 0 %}
   <div class="g-card">
     <div class="g-big-ok">
@@ -17,6 +21,12 @@
       <h2>{{ t('all_done_title') }}</h2>
       <p class="g-intro">{{ t('all_done_body') }}</p>
     </div>
+    {% if can_raise_party %}
+      <form method="post" action="/l/{{ token }}/{{ reservation.id }}/another?lang={{ lang }}">
+        <p class="g-intro">{{ t('someone_missing') }}</p>
+        <button class="g-btn ghost slim" type="submit">{{ t('add_another') }}</button>
+      </form>
+    {% endif %}
   </div>
 {% else %}
   {% if just_saved %}

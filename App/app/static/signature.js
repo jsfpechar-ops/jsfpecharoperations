@@ -69,8 +69,16 @@
     ["mousemove", "touchmove"].forEach(function (e) { canvas.addEventListener(e, move, { passive: false }); });
     ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach(function (e) { canvas.addEventListener(e, end); });
 
+    // A failed submit re-renders the form with the signature intact. Paint it
+    // back so the guest does not think their signature was lost and re-sign.
     if (hidden.value && hidden.value.indexOf("data:image/") === 0) {
       dirty = true;
+      var kept = new Image();
+      kept.onload = function () {
+        var rect = canvas.getBoundingClientRect();
+        ctx.drawImage(kept, 0, 0, rect.width, rect.height);
+      };
+      kept.src = hidden.value;
       if (status) status.textContent = status.getAttribute("data-kept") || "";
     }
 

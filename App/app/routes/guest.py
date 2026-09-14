@@ -476,6 +476,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "can_add": remaining is None or remaining > 0,
             "can_raise_party": not reservation["expected_guests_override"],
             "can_pick_other": _can_pick_other_stays(apartment),
+            "party_error": request.query_params.get("party_error") == "1",
             "just_saved": request.query_params.get("saved") == "1",
             "just_reported": (
                 request.query_params.get("saved") == "1"
@@ -505,8 +506,13 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     except ValueError:
         count = 0
     if count < 1 or count > 60:
+        # Silently bouncing back looks like the app ignored them.
         return _with_lang(
-            RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
+            RedirectResponse(
+                _guest_link(token, reservation_id) + _lang_q(lang, "&party_error=1"),
+                status_code=303,
+            ),
+            lang,
         )
     _set_declared_guests(reservation, count)
     return _with_lang(
@@ -729,7 +735,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             prefix = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
             raw["note"] = (prefix + parent_doc + (" " + raw["note"] if raw["note"] else ""))[:255]
 
-    values = validation.normalise_guest(raw)
+    # Un-clamped so an over-long name is reported back to the guest instead of
+    # being cut mid-word and filed against a passport it no longer matches.
+    values = validation.normalise_guest(raw, clamp=False)
     stay_from = (form.get("stay_from") or "").strip() or reservation["date_from"]
     stay_to = (form.get("stay_to") or "").strip() or reservation["date_to"]
     signature = (form.get("signature") or "").strip()
@@ -743,7 +751,10 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         party_size = 0
 
     issues = validation.validate_guest(
-        values, validation.parse_iso_date(stay_from), validation.parse_iso_date(stay_to)
+        values,
+        validation.parse_iso_date(stay_from),
+        validation.parse_iso_date(stay_to),
+        raw=raw,
     )
     if reporting.expected_guest_count(reservation) is None and not existing:
         if party_size < 1 or party_size > 60:
@@ -830,6 +841,17 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         db.update("guest", existing["id"], payload)
         saved_id = existing["id"]
     else:
+        # Two phones can each open /new while one slot is free. /new checks
+        # capacity on GET; re-check here so the party cannot overshoot the
+        # declared headcount and report a guest nobody expected.
+        fresh = reporting.reservation_progress(reservation)
+        if fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]:
+            return _with_lang(
+                RedirectResponse(
+                    _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
+                ),
+                lang,
+            )
         is_first = not db.query_one(
             "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
         )

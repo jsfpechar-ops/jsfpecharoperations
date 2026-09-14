@@ -1586,7 +1586,7 @@ GUEST_TEXT_FIELDS = (
 
 def _guest_payload(form) -> Dict[str, Any]:
     raw = {field: _form_str(form, field) for field in GUEST_TEXT_FIELDS}
-    payload: Dict[str, Any] = dict(validation.normalise_guest(raw))
+    payload: Dict[str, Any] = dict(validation.normalise_guest(raw, clamp=False))
     payload["stay_from"] = _form_str(form, "stay_from") or None
     payload["stay_to"] = _form_str(form, "stay_to") or None
     return payload
