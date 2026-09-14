@@ -378,6 +378,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.ready_to_send": "Send completed guest records to UbyPort now",
         "hint.ready_id_optional": "Forms complete — send now or mark ID checked first (recorded on send)",
         "hint.demo_preview": "Demo stays are never sent — use a real property to report to UbyPort",
+        "env.mock_title": "Nothing is being reported to the police",
+        "env.mock_body": (
+            "This workspace is pointed at the practice server, so records marked "
+            "\"Reported\" were never filed. Set UBYHOST_UBYPORT_ENV to test or prod "
+            "before you rely on it."
+        ),
+        "env.mock_production_title": "Live deployment is still on the practice server",
+        "env.mock_production_body": (
+            "Guests are registering for real but nothing reaches the Foreign Police, so "
+            "every stay is running out its three working days unreported. Set "
+            "UBYHOST_UBYPORT_ENV=prod now."
+        ),
+        "env.prod_title": "Live police reporting",
+        "env.prod_body": "Everything you send from here goes into the real police register.",
         "status.failed": "Rejected",
         "status.reported": "Reported",
         "status.ready": "Ready to report",
@@ -984,6 +998,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.ready_to_send": "Odeslat hotové záznamy hostů do UbyPortu",
         "hint.ready_id_optional": "Formuláře hotové — odešlete, nebo nejdřív označte kontrolu dokladu (zapíše se při odeslání)",
         "hint.demo_preview": "Ukázkové pobyty se neodesílají — pro hlášení použijte skutečnou nemovitost",
+        "env.mock_title": "Policii se nic nehlásí",
+        "env.mock_body": (
+            "Tento účet je nastavený na cvičný server, takže záznamy označené jako "
+            "„Nahlášeno“ nebyly nikdy podány. Než se na to spolehnete, nastavte "
+            "UBYHOST_UBYPORT_ENV na test nebo prod."
+        ),
+        "env.mock_production_title": "Produkční nasazení stále běží na cvičném serveru",
+        "env.mock_production_body": (
+            "Hosté se registrují doopravdy, ale na cizineckou policii nic nedorazí, takže "
+            "u každého pobytu běží tři pracovní dny bez hlášení. Nastavte hned "
+            "UBYHOST_UBYPORT_ENV=prod."
+        ),
+        "env.prod_title": "Ostré hlášení policii",
+        "env.prod_body": "Vše, co odsud odešlete, jde do skutečné evidence policie.",
         "status.failed": "Odmítnuto",
         "status.reported": "Nahlášeno",
         "status.ready": "Připraveno k hlášení",

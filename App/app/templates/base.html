@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260912f">
+  <link rel="stylesheet" href="/static/app.css?v=20260914a">
 </head>
 <body class="layout-host">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
@@ -101,6 +101,20 @@
 {% endif %}
 
 <main id="main-content" class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
+  {# The badge alone is a 10px pill. A host on the mock server sees stays go
+     green while nothing reaches the police, so say it on every page. #}
+  {% if current_user and ubyport_env == 'mock' %}
+    {% set production_mock = deployment_tier == 'production' %}
+    <aside class="env-banner mock" role="alert">
+      <strong>{{ t('env.mock_production_title') if production_mock else t('env.mock_title') }}</strong>
+      <span>{{ t('env.mock_production_body') if production_mock else t('env.mock_body') }}</span>
+    </aside>
+  {% elif current_user and ubyport_env == 'prod' %}
+    <aside class="env-banner prod" role="status">
+      <strong>{{ t('env.prod_title') }}</strong>
+      <span>{{ t('env.prod_body') }}</span>
+    </aside>
+  {% endif %}
   {% if current_user and workspace_user and current_user.id != workspace_user.id %}
     <aside class="impersonation-bar" role="status" aria-live="polite">
       <div class="impersonation-copy">

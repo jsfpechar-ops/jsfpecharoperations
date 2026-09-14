@@ -360,3 +360,13 @@ def test_guest_form_accepts_pdf_passport_attachment():
         assert payload[1] == "application/pdf"
     finally:
         _cleanup()
+
+
+def test_guest_english_and_czech_carry_the_same_keys():
+    """A jet-lagged guest must not be shown a raw i18n key."""
+    from app import i18n
+
+    english = set(i18n.STRINGS["en"])
+    czech = set(i18n.STRINGS["cs"])
+    assert english - czech == set(), f"missing Czech: {sorted(english - czech)}"
+    assert czech - english == set(), f"missing English: {sorted(czech - english)}"

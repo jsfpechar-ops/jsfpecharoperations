@@ -190,3 +190,25 @@ def test_pin_return_to_cannot_escape_the_apartment_permalink():
         landing = _safe_return_to(escape, token, "en")
         assert landing.startswith(f"/l/{token}"), (escape, landing)
         assert ".." not in landing
+
+
+def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
+    """On mock, stays go green while nothing reaches the police. Say so."""
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-envcheck")
+    try:
+        host = _login("boundary-envcheck")
+
+        # conftest runs the suite against the mock UbyPort server.
+        assert config.UBYPORT_ENV == "mock"
+        for path in ("/", "/reservations", "/submissions"):
+            page = host.get(path)
+            assert page.status_code == 200, path
+            assert "Nothing is being reported to the police" in page.text, path
+
+        # The badge must not render mock and test identically.
+        overview = host.get("/")
+        assert 'class="env-badge mock"' in overview.text
+    finally:
+        _clean_accounts()

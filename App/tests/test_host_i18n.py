@@ -46,3 +46,11 @@ def test_language_endpoint_sets_cookie_and_rejects_open_redirects():
         follow_redirects=False,
     )
     assert unsafe.headers["location"] == "/"
+
+
+def test_english_and_czech_carry_the_same_keys():
+    """A missing key silently renders the key itself in the other language."""
+    english = set(host_i18n.STRINGS["en"])
+    czech = set(host_i18n.STRINGS["cs"])
+    assert english - czech == set(), f"missing Czech: {sorted(english - czech)}"
+    assert czech - english == set(), f"missing English: {sorted(czech - english)}"
