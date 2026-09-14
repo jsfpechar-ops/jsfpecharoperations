@@ -3,7 +3,7 @@
 {% block auth_body %}
 <section class="auth-card">
   <h1 class="auth-title">Save your recovery codes</h1>
-  <p class="auth-lede">Store these in Bitwarden now. Each code works once if you lose your authenticator.</p>
+  <p class="auth-lede">Store these in a safe place (password manager or printed copy). Each code works once if you lose your authenticator.</p>
   <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     {% for code in recovery_codes %}<code>{{ code }}</code>{% endfor %}
   </div>
