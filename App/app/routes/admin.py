@@ -1530,7 +1530,16 @@ async def reservation_submit(reservation_id: int, request: Request):
             or "This stay cannot be sent right now.",
         )
     form = await request.form()
+    # Re-sending an accepted record creates a duplicate, which UbyPort counts
+    # against the host and cannot be corrected. The single-guest resend route
+    # gates this on an explicit tick; the whole-stay route must not be the
+    # cheaper way around it, especially with no CSRF token to lean on.
     allow_resend = bool(form.get("allow_resend"))
+    if allow_resend and not form.get("confirm_duplicate"):
+        return _back(
+            f"/reservations/{reservation_id}",
+            err="Confirm you understand the duplicate rules before re-sending accepted records.",
+        )
     return_to = _form_str(form, "return_to") or f"/reservations/{reservation_id}"
     guest_ids = [
         guest["id"]

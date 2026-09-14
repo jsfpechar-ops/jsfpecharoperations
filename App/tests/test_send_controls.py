@@ -210,3 +210,47 @@ def test_demo_apartment_hides_send_button():
     assert controls["send_enabled"] is False
     assert controls["send_visible"] is False
     assert controls["send_hint_key"] == "hint.demo_preview"
+
+
+def test_accepted_records_are_never_collected_for_resend():
+    """Duplicates are uncorrectable and count against the host (since 1 Sep 2025)."""
+    apartment, reservation, guest_id = _seed("manual", "tok-sent")
+    db.update("guest", guest_id, {"submit_state": reporting.SENT})
+
+    assert reporting.collect_sendable(
+        apartment["id"], only_guest_ids=[guest_id], ignore_automation=True
+    ) == []
+    # Only an explicit allow_resend reaches an already-accepted record.
+    assert reporting.collect_sendable(
+        apartment["id"],
+        only_guest_ids=[guest_id],
+        ignore_automation=True,
+        allow_resend=True,
+    )
+
+
+def test_scheduler_sweep_cannot_resend():
+    """The unattended path must never opt into duplicates."""
+    import inspect
+
+    signature = inspect.signature(reporting.collect_sendable)
+    assert signature.parameters["allow_resend"].default is False
+    signature = inspect.signature(reporting.submit_for_apartment)
+    assert signature.parameters["allow_resend"].default is False
+
+    source = inspect.getsource(reporting.sweep)
+    assert "allow_resend" not in source, "sweep must not pass allow_resend"
+
+
+def test_stay_submit_route_requires_duplicate_confirmation():
+    """Whole-stay submit must not be a cheaper route around the resend gate."""
+    import inspect
+
+    from app.routes import admin
+
+    source = inspect.getsource(admin.reservation_submit)
+    assert "allow_resend" in source
+    assert "confirm_duplicate" in source, (
+        "re-sending accepted records from the stay page must be confirmed, "
+        "like the single-guest resend route"
+    )

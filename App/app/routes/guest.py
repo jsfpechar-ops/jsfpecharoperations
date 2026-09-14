@@ -15,12 +15,13 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 
+import posixpath
 import re
 import secrets
 import time
@@ -160,6 +161,26 @@ def _with_lang(response, lang: str):
         path="/",
     )
     return response
+
+
+def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
+    """Only ever bounce back inside this apartment's own permalink.
+
+    A plain ``startswith`` check passes ``/l/{token}/../../somewhere-else``,
+    so the path is normalised before it is compared.
+    """
+    fallback = _guest_link(token) + _lang_q(lang)
+    raw = (requested or "").strip()
+    if not raw.startswith("/") or raw.startswith("//"):
+        return fallback
+    split = urlsplit(raw)
+    if split.scheme or split.netloc:
+        return fallback
+    path = posixpath.normpath(split.path)
+    prefix = _guest_link(token)
+    if path != prefix and not path.startswith(prefix + "/"):
+        return fallback
+    return urlunsplit(("", "", path, split.query, ""))
 
 
 def _localize_message(message: str) -> str:
@@ -423,9 +444,7 @@ async def verify_pin(token: str, request: Request):
         if failures > 0:
             time.sleep(min(2.0, 0.15 * failures))
         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
-    return_to = (form.get("return_to") or _guest_link(token)).strip()
-    if not return_to.startswith(_guest_link(token)):
-        return_to = _guest_link(token) + _lang_q(lang)
+    return_to = _safe_return_to(form.get("return_to"), token, lang)
     response = RedirectResponse(return_to, status_code=303)
     auth.attach_pin_session(response, token)
     return _with_lang(response, lang)
@@ -442,13 +461,7 @@ def privacy_notice(token: str, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    requested_back = (request.query_params.get("return_to") or "").strip()
-    safe_prefix = _guest_link(token)
-    back_url = (
-        requested_back
-        if requested_back.startswith(safe_prefix) and not requested_back.startswith("//")
-        else _guest_link(token) + _lang_q(lang)
-    )
+    back_url = _safe_return_to(request.query_params.get("return_to"), token, lang)
     context = _shared(request, token, lang, apartment)
     context.update(
         {

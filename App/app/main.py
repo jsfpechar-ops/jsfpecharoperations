@@ -76,6 +76,11 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
+    # Everything outside /static carries passport numbers, addresses and
+    # signatures. Guests hand the phone back and hosts share laptops, so these
+    # pages must not sit in history, the back/forward cache, or a proxy.
+    if not request.url.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "no-store, private")
     return response
 
 

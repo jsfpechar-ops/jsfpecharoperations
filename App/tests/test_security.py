@@ -151,3 +151,42 @@ def test_alert_dismiss_does_not_redirect_to_external_site():
     finally:
         db.execute("DELETE FROM alert WHERE id = ?", (alert_id,))
         _clean_accounts()
+
+
+def test_guest_pages_are_never_cached_but_static_still_is():
+    """Passport data must not survive in history on a handed-back phone."""
+    client = TestClient(app)
+
+    page = client.get("/login")
+    assert "no-store" in page.headers.get("Cache-Control", "")
+
+    unavailable = client.get("/l/does-not-exist", follow_redirects=False)
+    assert "no-store" in unavailable.headers.get("Cache-Control", "")
+
+    # Stylesheets and the signature pad still cache, or the guest pays for
+    # them again on hotel wifi.
+    asset = client.get("/static/guest.css")
+    assert asset.status_code == 200
+    assert "no-store" not in asset.headers.get("Cache-Control", "")
+
+
+def test_pin_return_to_cannot_escape_the_apartment_permalink():
+    from app.routes.guest import _safe_return_to
+
+    token = "abc123"
+    inside = f"/l/{token}/42/new?lang=en"
+    assert _safe_return_to(inside, token, "en") == inside
+    assert _safe_return_to(f"/l/{token}", token, "en") == f"/l/{token}"
+
+    # A plain startswith() check lets all of these through.
+    for escape in (
+        f"/l/{token}/../../apartments",
+        f"/l/{token}/../..//evil.example",
+        "//evil.example",
+        "https://evil.example",
+        "/apartments",
+        f"/l/{token}-other/1",
+    ):
+        landing = _safe_return_to(escape, token, "en")
+        assert landing.startswith(f"/l/{token}"), (escape, landing)
+        assert ".." not in landing
