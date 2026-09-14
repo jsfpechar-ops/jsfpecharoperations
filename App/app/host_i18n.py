@@ -155,7 +155,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "import template for the exact column format."
         ),
         "housebook.import_paper": "Import existing records",
-        "housebook.export_menu": "Export",
+        "housebook.export_menu": "Import / export",
         "housebook.pdf_export_title": "Download PDF bundle",
         "housebook.pdf_export_help": (
             "Choose the stay dates and property to include. Each guest form is generated on the server "
@@ -937,7 +937,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "vzor souboru najdete v menu Import a export."
         ),
         "housebook.import_paper": "Importovat existující záznamy",
-        "housebook.export_menu": "Export",
+        "housebook.export_menu": "Import / export",
         "housebook.pdf_export_title": "Stáhnout balíček PDF",
         "housebook.pdf_export_help": (
             "Vyberte rozsah pobytů a ubytování. Každý formulář hosta se na serveru generuje zvlášť — "

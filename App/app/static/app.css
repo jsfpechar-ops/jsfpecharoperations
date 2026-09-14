@@ -1194,19 +1194,6 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   margin-left: auto;
   padding-top: 0;
 }
-.filters .housebook-toolbar-actions {
-  flex: 0 0 auto;
-  max-width: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-  margin-left: auto;
-  padding-top: 0;
-}
-.filters .housebook-toolbar-actions .btn { height: 44px; }
-.filters .housebook-toolbar-actions .action-menu { margin: 0; }
 .filters .csv-in-filter .row-menu-trigger { height: 44px; }
 .housebook-pdf-warn {
   padding: 10px 12px;
@@ -1713,11 +1700,6 @@ details.raw pre {
   .table-cards td.nowrap { white-space: normal; }
   .table-cards td.row-actions > * + * { margin-left: 6px; }
   .filters .field { max-width: none; }
-  .filters .housebook-toolbar-actions {
-    flex: 1 1 100%;
-    justify-content: flex-start;
-    margin-left: 0;
-  }
   .settings-action-row { align-items: flex-start; flex-direction: column; }
   .action-bar { position: static; }
 }

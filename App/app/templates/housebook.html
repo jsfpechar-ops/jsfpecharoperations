@@ -67,12 +67,7 @@
   <div class="field filter-actions">
     <button class="btn filter-apply" type="submit">Filter</button>
   </div>
-  <div class="field housebook-toolbar-actions" aria-label="House book actions">
-    {% if apartments %}
-      <button class="btn ghost" type="button" data-toggle-panel="import-housebook-panel">
-        {{ t('housebook.import_paper') }}
-      </button>
-    {% endif %}
+  <div class="field filter-actions filter-actions-end" aria-label="House book actions">
     {{ housebook_csv_menu(housebook_csv_params, apartments|length > 0, true, true) }}
   </div>
 </form>
