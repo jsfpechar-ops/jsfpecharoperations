@@ -270,6 +270,7 @@ def main() -> None:
         "res_country": "GBR",
         "purpose": "10",
         "signature": SIGNATURE,
+        "legal_ack": "1",
     }, files={"passport_photo": ("passport.png", PASSPORT_PNG, "image/png")},
         allow_redirects=False)
     print(f"   guest form saved -> {saved.status_code}")
