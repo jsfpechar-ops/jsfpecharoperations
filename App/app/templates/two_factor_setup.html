@@ -1,0 +1,26 @@
+{% extends "auth_base.html" %}
+{% block title %}Secure your account{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">Set up two-factor authentication</h1>
+  <p class="auth-lede">UbyHost contains identity documents, so every host account requires an authenticator app.</p>
+  {% if error %}<div class="auth-alert" role="alert">{{ error }}</div>{% endif %}
+  {% if qr_data %}
+    <img src="{{ qr_data }}" alt="QR code for your authenticator app"
+         style="display:block;width:220px;max-width:100%;margin:18px auto;border-radius:12px">
+  {% endif %}
+  <ol class="small">
+    <li>In Bitwarden, choose <strong>Scan a QR code</strong> for this UbyHost login.</li>
+    <li>Or enter this setup key manually: <code>{{ secret }}</code></li>
+    <li>Enter the generated six-digit code below.</li>
+  </ol>
+  <form method="post" action="/account/2fa/setup" class="auth-form">
+    <div class="auth-field">
+      <label for="code">Six-digit code</label>
+      <input type="text" id="code" name="code" required autofocus
+             inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6">
+    </div>
+    <button class="auth-submit" type="submit">Enable two-factor authentication</button>
+  </form>
+</section>
+{% endblock %}
