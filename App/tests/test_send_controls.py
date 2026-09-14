@@ -109,7 +109,7 @@ def test_empty_stay_tells_host_to_share_the_guest_link():
     db.execute("DELETE FROM guest WHERE id = ?", (guest_id,))
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress)
-    assert progress["status"] == "awaiting_guest"
+    assert progress["filled"] == 0
     assert controls["send_hint_key"] == "hint.awaiting_guest"
     assert controls["send_visible"] is False
 
