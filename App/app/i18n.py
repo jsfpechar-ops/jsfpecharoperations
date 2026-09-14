@@ -97,7 +97,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_locked_short": "Saved and locked — contact your host to change anything.",
         "pin_title": "Enter the access PIN",
         "pin_help": (
-            "Your host sent a four-digit PIN together with the registration link. "
+            "Your host sent a six-digit PIN together with the registration link. "
             "Enter it to open the form."
         ),
         "pin_label": "PIN",
@@ -423,7 +423,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_locked_short": "Uloženo a uzamčeno — pro změnu kontaktujte ubytovatele.",
         "pin_title": "Zadejte přístupový PIN",
         "pin_help": (
-            "Ubytovatel vám spolu s odkazem poslal čtyřmístný PIN. "
+            "Ubytovatel vám spolu s odkazem poslal šestimístný PIN. "
             "Zadejte ho pro otevření formuláře."
         ),
         "pin_label": "PIN",

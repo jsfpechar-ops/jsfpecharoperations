@@ -226,7 +226,7 @@ def main() -> None:
     if 'name="pin"' in landing.text:
         links = session.get(BASE + "/guest-links").text
         pin = re.search(
-            rf'id="pin-{apartment_id}"[^>]*value="(\d{{4}})"', links
+            rf'id="pin-{apartment_id}"[^>]*value="(\d{{4,6}})"', links
         ).group(1)
         print(f"   entering guest PIN {pin}")
         guest.post(f"{BASE}/l/{token}/pin", data={"pin": pin, "return_to": f"/l/{token}"},
