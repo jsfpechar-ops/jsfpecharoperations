@@ -9,9 +9,12 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from app.ubyport_sample_pdf import (
+    RIGHT_MARGIN,
     SAMPLE_IDUB,
+    SAMPLE_WS_PASSWORD,
     SAMPLE_ZKRATKA,
     SAMPLE_WS_USER,
+    VALUE_COL,
     build_sample_pdf,
     default_static_path,
 )
@@ -87,6 +90,34 @@ def test_sample_pdf_has_two_pages_and_czech_official_headings():
     assert "Poučení:" in text
     assert SAMPLE_WS_USER in text
     assert SAMPLE_IDUB in text
+
+
+def test_extract_page_text_stays_inside_right_margin():
+    from reportlab.pdfbase import pdfmetrics
+
+    from app.ubyport_sample_pdf import FONT_REGULAR, FONT_MONO, POUCENI_TEXT_X, _wrap_to_width
+
+    pouceni_items = (
+        "Tento účet slouží pro robotické vkládání dat prostřednictvím webové služby a "
+        "nemůže být použit k jiným účelům.",
+        "Ztratí-li nebo zapomene-li uživatel heslo, může požádat Ředitelství služby "
+        "cizinecké policie o vygenerování nového hesla.",
+        "Uživatel se řídí provozním řádem Internetové aplikace Ubyport.",
+        "Při podezření na porušení provozního řádu Internetové aplikace Ubyport nebo "
+        "jiné činnosti ohrožující kybernetickou",
+        "bezpečnost může být uživatel zablokován.",
+    )
+    wrap_width = RIGHT_MARGIN - POUCENI_TEXT_X
+    for item in pouceni_items:
+        for line in _wrap_to_width(item, wrap_width, FONT_REGULAR, 11):
+            assert pdfmetrics.stringWidth(line, FONT_REGULAR, 11) <= wrap_width + 0.5
+
+    for label, value in (
+        ("Přihlašovací jméno:", SAMPLE_WS_USER),
+        ("Přístupové heslo:", SAMPLE_WS_PASSWORD),
+    ):
+        assert pdfmetrics.stringWidth(label, FONT_REGULAR, 11) + 10 < VALUE_COL
+        assert pdfmetrics.stringWidth(value, FONT_MONO, 14) + VALUE_COL <= RIGHT_MARGIN + 0.5
 
 
 def test_sample_constants_are_fictional():

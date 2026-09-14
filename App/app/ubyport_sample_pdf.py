@@ -45,27 +45,37 @@ SAMPLE_SIGNATORY_ROLE = "vedoucí odboru"
 
 STATIC_RELATIVE = Path("docs") / "ubyport-ws-credential-sample.pdf"
 
+# Measured from official PDFs (points, pdfplumber top-left origin).
+LEFT_MARGIN = 70.8
+VALUE_COL = 180.1
+RIGHT_MARGIN = 525.0
+POUCENI_NUM_X = 88.8
+POUCENI_TEXT_X = 106.8
+BODY_WIDTH = RIGHT_MARGIN - LEFT_MARGIN
+
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
-FONT_OBLIQUE = "Helvetica-Oblique"
+FONT_MONO = "Helvetica"
+FONT_TITLE = "Helvetica-Bold"
 
-# Positions measured from official PDFs (pdfplumber top-left coords, in points).
-LEFT_MARGIN = 70.8
-VALUE_COL = 177.0
-BODY_WIDTH = 453.0
+TITLE_SLANT = 0.22
 
 
 def _register_fonts() -> None:
-    global FONT_REGULAR, FONT_BOLD, FONT_OBLIQUE
-    candidates = (
+    global FONT_REGULAR, FONT_BOLD, FONT_MONO, FONT_TITLE
+    pairs = (
         ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "DejaVuSans"),
         ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "DejaVuSans-Bold"),
+        ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", "DejaVuSansMono"),
     )
     try:
-        for path, name in candidates:
+        for path, name in pairs:
             if os.path.isfile(path):
                 pdfmetrics.registerFont(TTFont(name, path))
-        FONT_REGULAR, FONT_BOLD, FONT_OBLIQUE = "DejaVuSans", "DejaVuSans-Bold", "DejaVuSans"
+        FONT_REGULAR = "DejaVuSans"
+        FONT_BOLD = "DejaVuSans-Bold"
+        FONT_MONO = "DejaVuSansMono"
+        FONT_TITLE = "DejaVuSans-Bold"
     except Exception:
         pass
 
@@ -148,9 +158,8 @@ def _draw_cover_letter(pdf: pdfcanvas.Canvas, width: float, height: float) -> No
         )
         y_top += 13
 
-    y_top = 466.3
     pdf.setFont(FONT_BOLD, 11)
-    pdf.drawString(56.7, _y(height, y_top), "DŮLEŽITÉ:")
+    pdf.drawString(56.7, _y(height, 466.3), "DŮLEŽITÉ:")
     important = (
         "Aby se přiložený PDF dokument otevřel a zobrazil správně, doporučujeme jej otevřít "
         "v programu Adobe Acrobat Reader (prohlížeč PDF) nebo v internetovém prohlížeči MS "
@@ -158,7 +167,18 @@ def _draw_cover_letter(pdf: pdfcanvas.Canvas, width: float, height: float) -> No
         "Acrobat a jiných editorech PDF dokumentů, se obsah nemusí zobrazit správně, nebo může "
         "zcela chybět."
     )
-    _draw_wrapped_paragraph(pdf, height, 56.7, y_top, important, BODY_WIDTH, 11, leading=13)
+    _draw_wrapped_paragraph_with_hanging_first_line(
+        pdf,
+        height,
+        first_line_x=118.5,
+        body_x=56.7,
+        top=466.3,
+        text=important,
+        first_width=RIGHT_MARGIN - 118.5,
+        body_width=BODY_WIDTH,
+        font_size=11,
+        leading=13,
+    )
 
     pdf.setFont(FONT_REGULAR, 9)
     pdf.drawString(56.7, _y(height, 578.0), "Zpracoval:")
@@ -183,63 +203,61 @@ def _draw_credential_extract(pdf: pdfcanvas.Canvas, width: float, height: float)
     _draw_training_footer(pdf)
 
     title = "VÝPIS Z DATABÁZE PŘIHLAŠOVACÍCH ÚDAJŮ"
-    pdf.setFont(FONT_BOLD, 15)
-    title_w = pdfmetrics.stringWidth(title, FONT_BOLD, 15)
-    pdf.drawString((width - title_w) / 2, _y(height, 73.1), title)
+    title_w = _slanted_string_width(title, FONT_TITLE, 15)
+    _draw_slanted_string(pdf, (width - title_w) / 2, _y(height, 73.1), title, FONT_TITLE, 15)
 
     subtitle = "Přihlašovací údaje pro robotické vkládání Ubyport Webová služba"
-    pdf.setFont(FONT_REGULAR, 11)
-    sub_w = pdfmetrics.stringWidth(subtitle, FONT_REGULAR, 11)
+    pdf.setFont(FONT_BOLD, 11)
+    sub_w = pdfmetrics.stringWidth(subtitle, FONT_BOLD, 11)
     pdf.drawString((width - sub_w) / 2, _y(height, 101.2), subtitle)
 
-    fields: list[tuple[str, str, str, float]] = [
-        ("Přihlašovací jméno:", SAMPLE_WS_USER, "UbyHost → Web-service login", 146.5),
-        ("Přístupové heslo:", SAMPLE_WS_PASSWORD, "UbyHost → Web-service password (enter once)", 179.3),
-        ("IDUB:", SAMPLE_IDUB, "UbyHost → IDUB", 212.1),
-    ]
-    for label, value, note, top in fields:
-        _draw_extract_field(pdf, height, label, value, note, top)
+    _draw_extract_label_value(
+        pdf, height, "Přihlašovací jméno:", SAMPLE_WS_USER, label_top=146.5, value_top=144.4
+    )
+    _draw_extract_label_value(
+        pdf, height, "Přístupové heslo:", SAMPLE_WS_PASSWORD, label_top=179.3, value_top=177.2
+    )
+    _draw_extract_label_value(pdf, height, "IDUB:", SAMPLE_IDUB, label_top=212.1, value_top=209.9)
 
     pdf.setFont(FONT_REGULAR, 11)
     pdf.drawString(LEFT_MARGIN, _y(height, 244.9), "Ubytovací zařízení:")
-    _highlight_value(pdf, height, 244.9, SAMPLE_FACILITY_LINE1, value_size=14)
-    pdf.setFont(FONT_REGULAR, 14)
-    pdf.drawString(VALUE_COL, _y(height, 275.5), SAMPLE_FACILITY_LINE2)
-    _draw_field_note(
-        pdf,
-        height,
-        285.0,
-        "UbyHost → Facility name — first line only, max 35 chars "
-        f"(here: «{SAMPLE_FACILITY_LINE1[:35]}»)",
-    )
+    _highlight_mono_value(pdf, height, 242.7, SAMPLE_FACILITY_LINE1)
+    _highlight_mono_value(pdf, height, 275.5, SAMPLE_FACILITY_LINE2, x=LEFT_MARGIN)
 
     pdf.setFont(FONT_REGULAR, 11)
     pdf.drawString(LEFT_MARGIN, _y(height, 371.9), "Poučení:")
 
-    pouceni = (
-        "1. Tento účet slouží pro robotické vkládání dat prostřednictvím webové služby a "
+    pouceni_items = (
+        "Tento účet slouží pro robotické vkládání dat prostřednictvím webové služby a "
         "nemůže být použit k jiným účelům.",
-        "2. Ztratí-li nebo zapomene-li uživatel heslo, může požádat Ředitelství služby "
+        "Ztratí-li nebo zapomene-li uživatel heslo, může požádat Ředitelství služby "
         "cizinecké policie o vygenerování nového hesla.",
-        "3. Uživatel se řídí provozním řádem Internetové aplikace Ubyport.",
-        "4. Při podezření na porušení provozního řádu Internetové aplikace Ubyport nebo "
+        "Uživatel se řídí provozním řádem Internetové aplikace Ubyport.",
+        "Při podezření na porušení provozního řádu Internetové aplikace Ubyport nebo "
         "jiné činnosti ohrožující kybernetickou",
-        "5. bezpečnost může být uživatel zablokován.",
+        "bezpečnost může být uživatel zablokován.",
     )
     y_top = 384.6
-    for line in pouceni:
-        pdf.drawString(88.8 if line[0].isdigit() else LEFT_MARGIN, _y(height, y_top), line)
-        y_top += 12.7
+    for idx, item in enumerate(pouceni_items, start=1):
+        y_top = _draw_pouceni_item(pdf, height, idx, item, y_top)
 
     pdf.setFont(FONT_REGULAR, 11)
     pdf.drawString(LEFT_MARGIN, _y(height, 598.2), f"V Praze dne {SAMPLE_EXTRACT_DATE}")
-    pdf.drawString(306.6, _y(height, 619.9), "Vystavilo: Ředitelství služby cizinecké policie")
+    issuer = "Vystavilo: Ředitelství služby cizinecké policie"
+    issuer_size = 11.0
+    while issuer_size >= 9.5 and pdfmetrics.stringWidth(issuer, FONT_REGULAR, issuer_size) > (
+        RIGHT_MARGIN - 306.6
+    ):
+        issuer_size -= 0.5
+    pdf.setFont(FONT_REGULAR, issuer_size)
+    pdf.drawString(306.6, _y(height, 619.9), issuer)
 
-    extra_top = 638.0
-    extra_top = _draw_off_letter_callout(
+    annotation_top = 632.0
+    annotation_top = _draw_field_mapping_block(pdf, height, annotation_top)
+    annotation_top = _draw_off_letter_callout(
         pdf,
         height,
-        extra_top,
+        annotation_top,
         "Facility abbreviation (zkratka)",
         f"{SAMPLE_ZKRATKA} — five letters on file with the police. Often matches the suffix "
         f"after UBY-WS_ in your login ({SAMPLE_WS_USER} → {SAMPLE_ZKRATKA}). Real WS PDFs "
@@ -248,55 +266,99 @@ def _draw_credential_extract(pdf: pdfcanvas.Canvas, width: float, height: float)
     _draw_off_letter_callout(
         pdf,
         height,
-        extra_top,
+        annotation_top,
         "Contact at registration",
         f"{SAMPLE_CONTACT} — e-mail or phone from your original accommodation registration "
         "or the UbyPort portal profile. Police WS letters often do not print it.",
     )
 
 
-def _draw_extract_field(
+def _draw_extract_label_value(
     pdf: pdfcanvas.Canvas,
     height: float,
     label: str,
     value: str,
-    note: str,
-    top: float,
+    *,
+    label_top: float,
+    value_top: float,
 ) -> None:
     pdf.setFont(FONT_REGULAR, 11)
-    pdf.drawString(LEFT_MARGIN, _y(height, top), label)
-    _highlight_value(pdf, height, top, value, value_size=14)
-    _draw_field_note(pdf, height, top + 11, note)
+    pdf.drawString(LEFT_MARGIN, _y(height, label_top), label)
+    _highlight_mono_value(pdf, height, value_top, value)
 
 
-def _highlight_value(
+def _highlight_mono_value(
     pdf: pdfcanvas.Canvas,
     height: float,
     top: float,
     value: str,
     *,
-    value_size: float,
+    x: float | None = None,
 ) -> None:
-    pdf.setFont(FONT_REGULAR, value_size)
-    text_w = pdfmetrics.stringWidth(value, FONT_REGULAR, value_size)
-    box_h = value_size + 6
+    value_x = x if x is not None else VALUE_COL
+    value_size = 14.0
+    pdf.setFont(FONT_MONO, value_size)
+    text_w = pdfmetrics.stringWidth(value, FONT_MONO, value_size)
     baseline = _y(height, top)
+    box_h = value_size + 6
     pdf.saveState()
     pdf.setFillColorRGB(1.0, 0.95, 0.55, alpha=0.75)
-    pdf.rect(VALUE_COL - 2, baseline - 3, text_w + 8, box_h, fill=1, stroke=0)
+    pdf.rect(value_x - 2, baseline - 3, text_w + 8, box_h, fill=1, stroke=0)
     pdf.restoreState()
     pdf.setFillColor(colors.black)
-    pdf.drawString(VALUE_COL, baseline, value)
+    pdf.drawString(value_x, baseline, value)
 
 
-def _draw_field_note(pdf: pdfcanvas.Canvas, height: float, top: float, note: str) -> None:
-    pdf.setFont(FONT_OBLIQUE, 7.5)
+def _draw_pouceni_item(
+    pdf: pdfcanvas.Canvas,
+    height: float,
+    number: int,
+    text: str,
+    top: float,
+) -> float:
+    pdf.setFont(FONT_REGULAR, 11)
+    pdf.drawString(POUCENI_NUM_X, _y(height, top), f"{number}.")
+    wrap_width = RIGHT_MARGIN - POUCENI_TEXT_X
+    lines = _wrap_to_width(text, wrap_width, FONT_REGULAR, 11)
+    y = top
+    for line in lines:
+        pdf.drawString(POUCENI_TEXT_X, _y(height, y), line)
+        y += 12.7
+    return y + 0.5
+
+
+def _draw_field_mapping_block(pdf: pdfcanvas.Canvas, height: float, top: float) -> float:
+    left = LEFT_MARGIN
+    box_width = RIGHT_MARGIN - left
+    notes = (
+        f"Přihlašovací jméno → UbyHost Web-service login ({SAMPLE_WS_USER})",
+        f"Přístupové heslo → UbyHost Web-service password ({SAMPLE_WS_PASSWORD})",
+        f"IDUB → UbyHost IDUB ({SAMPLE_IDUB})",
+        "Ubytovací zařízení → Facility name, first line only, max 35 chars "
+        f"(«{SAMPLE_FACILITY_LINE1[:35]}»)",
+    )
+    lines: list[str] = []
+    for note in notes:
+        lines.extend(_wrap_to_width(note, box_width - 6 * mm, FONT_REGULAR, 7.5))
+    box_h = 5 * mm + len(lines) * 3.1 * mm
+    y_rl = _y(height, top)
+    pdf.saveState()
+    pdf.setFillColorRGB(0.97, 0.98, 1.0, alpha=0.95)
+    pdf.setStrokeColor(colors.HexColor("#0B5394"))
+    pdf.setLineWidth(0.4)
+    pdf.roundRect(left, y_rl - box_h, box_width, box_h, 2 * mm, fill=1, stroke=1)
+    pdf.restoreState()
     pdf.setFillColor(colors.HexColor("#0B5394"))
-    note_top = top + 8
-    for chunk in _wrap(note, 105):
-        pdf.drawString(LEFT_MARGIN, _y(height, note_top), f"→ {chunk}")
-        note_top += 9
+    pdf.setFont(FONT_BOLD, 7.5)
+    pdf.drawString(left + 2 * mm, y_rl - 3.5 * mm, "UbyHost — map highlighted values above")
+    pdf.setFont(FONT_REGULAR, 7.5)
+    pdf.setFillColor(colors.HexColor("#0B5394"))
+    ty = y_rl - 6.5 * mm
+    for line in lines:
+        pdf.drawString(left + 2 * mm, ty, f"→ {line}")
+        ty -= 3.1 * mm
     pdf.setFillColor(colors.black)
+    return top + box_h + 6
 
 
 def _draw_off_letter_callout(
@@ -307,10 +369,10 @@ def _draw_off_letter_callout(
     body: str,
 ) -> float:
     """Draw callout; return next top (pdfplumber coords) below this box."""
-    left = 56.7
-    box_width = 482.0
-    lines = _wrap(body, 98)
-    box_h = 7 * mm + len(lines) * 3.4 * mm
+    left = LEFT_MARGIN
+    box_width = RIGHT_MARGIN - left
+    lines = _wrap_to_width(body, box_width - 8 * mm, FONT_REGULAR, 8)
+    box_h = 6 * mm + len(lines) * 3.2 * mm
     y_rl = _y(height, top)
     pdf.saveState()
     pdf.setFillColorRGB(0.93, 0.96, 1.0, alpha=0.92)
@@ -326,8 +388,8 @@ def _draw_off_letter_callout(
     ty = y_rl - 7.5 * mm
     for line in lines:
         pdf.drawString(left + 2.5 * mm, ty, line)
-        ty -= 3.4 * mm
-    return top + box_h + 8
+        ty -= 3.2 * mm
+    return top + box_h + 6
 
 
 def _draw_wrapped_paragraph(
@@ -350,6 +412,70 @@ def _draw_wrapped_paragraph(
     return y_top - leading
 
 
+def _draw_wrapped_paragraph_with_hanging_first_line(
+    pdf: pdfcanvas.Canvas,
+    height: float,
+    *,
+    first_line_x: float,
+    body_x: float,
+    top: float,
+    text: str,
+    first_width: float,
+    body_width: float,
+    font_size: float,
+    leading: float,
+) -> None:
+    pdf.setFont(FONT_REGULAR, font_size)
+    words = text.split()
+    if not words:
+        return
+    lines: list[tuple[float, str]] = []
+    current = words[0]
+    idx = 1
+    max_w = first_width
+    x_pos = first_line_x
+    while idx <= len(words):
+        while idx < len(words):
+            candidate = f"{current} {words[idx]}"
+            if pdfmetrics.stringWidth(candidate, FONT_REGULAR, font_size) <= max_w:
+                current = candidate
+                idx += 1
+            else:
+                break
+        lines.append((x_pos, current))
+        if idx >= len(words):
+            break
+        current = words[idx]
+        idx += 1
+        max_w = body_width
+        x_pos = body_x
+
+    y_top = top
+    for x_pos, line in lines:
+        pdf.drawString(x_pos, _y(height, y_top), line)
+        y_top += leading
+
+
+def _slanted_string_width(text: str, font: str, size: float) -> float:
+    return pdfmetrics.stringWidth(text, font, size) + size * TITLE_SLANT * len(text) * 0.15
+
+
+def _draw_slanted_string(
+    pdf: pdfcanvas.Canvas,
+    x: float,
+    y: float,
+    text: str,
+    font: str,
+    size: float,
+) -> None:
+    pdf.saveState()
+    pdf.setFont(font, size)
+    pdf.translate(x, y)
+    pdf.transform(1, 0, TITLE_SLANT, 1, 0, 0)
+    pdf.drawString(0, 0, text)
+    pdf.restoreState()
+
+
 def _draw_page_watermark(pdf: pdfcanvas.Canvas, width: float, height: float) -> None:
     pdf.saveState()
     pdf.setFillColorRGB(0.75, 0.75, 0.75, alpha=0.12)
@@ -361,7 +487,7 @@ def _draw_page_watermark(pdf: pdfcanvas.Canvas, width: float, height: float) -> 
 
 
 def _draw_training_footer(pdf: pdfcanvas.Canvas) -> None:
-    pdf.setFont(FONT_OBLIQUE, 7)
+    pdf.setFont(FONT_REGULAR, 7)
     pdf.setFillColor(colors.HexColor("#666666"))
     pdf.drawString(
         15 * mm,
@@ -378,23 +504,6 @@ def _wrap_to_width(text: str, max_width: float, font: str, size: float) -> list[
     for word in words:
         candidate = f"{current} {word}".strip()
         if pdfmetrics.stringWidth(candidate, font, size) <= max_width:
-            current = candidate
-        else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-    return lines or [""]
-
-
-def _wrap(text: str, max_chars: int) -> list[str]:
-    words = text.split()
-    lines: list[str] = []
-    current = ""
-    for word in words:
-        candidate = f"{current} {word}".strip()
-        if len(candidate) <= max_chars:
             current = candidate
         else:
             if current:
