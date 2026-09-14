@@ -15,6 +15,7 @@ from app.ubyport_sample_pdf import (
     SAMPLE_ZKRATKA,
     SAMPLE_WS_USER,
     VALUE_COL,
+    WATERMARK_LINE_2,
     build_sample_pdf,
     default_static_path,
     page_content_streams,
@@ -129,6 +130,18 @@ def test_watermark_in_pdf_content_streams():
         assert b"SAMPLE" in stream
         assert b"NOT REAL" in stream
         assert b"ZKA" in stream
+        assert WATERMARK_LINE_2.encode("utf-8") in data or b"NEPOU" in stream
+
+
+def test_watermark_czech_diacritics_in_extracted_text():
+    from pypdf import PdfReader
+
+    text = "\n".join(
+        page.extract_text() or "" for page in PdfReader(io.BytesIO(build_sample_pdf())).pages
+    )
+    assert "NEPOUŽÍVAT" in text
+    assert "NEPOUZÍVAT" not in text
+    assert "UKÁZKA" in text
 
 
 def test_watermark_renders_as_non_white_pixels():

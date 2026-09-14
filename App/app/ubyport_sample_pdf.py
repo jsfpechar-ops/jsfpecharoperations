@@ -45,6 +45,7 @@ SAMPLE_SIGNATORY_ROLE = "vedoucí odboru"
 
 STATIC_RELATIVE = Path("docs") / "ubyport-ws-credential-sample.pdf"
 WATERMARK_LINE = "SAMPLE — NOT REAL / UKÁZKA"
+WATERMARK_LINE_2 = "NEPOUŽÍVAT — TRÉNINKOVÝ DOKUMENT"
 
 # Measured from official PDFs (points, pdfplumber top-left origin).
 LEFT_MARGIN = 70.8
@@ -513,7 +514,7 @@ def _draw_page_watermark(pdf: pdfcanvas.Canvas, width: float, height: float) -> 
     pdf.rotate(42)
     pdf.drawCentredString(0, 14, WATERMARK_LINE)
     pdf.setFont(FONT_BOLD, 26)
-    pdf.drawCentredString(0, -22, "NEPOUZÍVAT — TRÉNINKOVÝ DOKUMENT")
+    pdf.drawCentredString(0, -22, WATERMARK_LINE_2)
     pdf.restoreState()
 
 
