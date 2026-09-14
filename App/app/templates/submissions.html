@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% set nav = 'submissions' %}
-{% block title %}Reports{% endblock %}
+{% block title %}{{ t('reports.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, submission_pill, empty_state with context %}
+{% from "_components.html" import page_header, submission_pill, empty_state, property_identity with context %}
 {% set header_actions %}
   {% if receipt_count %}
     <a class="btn" href="/submissions/receipts.zip">{{ t('reports.download_receipts') }}</a>
   {% endif %}
 {% endset %}
 {{ page_header(
-  'Reports',
-  'Every UbyPort transmission and its Doručenka, retained as proof.',
+  t('reports.title'),
+  t('reports.lede'),
   actions=header_actions if receipt_count else ''
 ) }}
 {% if receipt_count %}
@@ -21,24 +21,24 @@
 <div class="panel tight scroll-x">
   <table class="table-cards">
     <thead>
-      <tr><th>When</th><th>Apartment</th><th>Mode</th><th>Guests</th><th>Outcome</th>
-        <th>Receipt stamp</th><th></th></tr>
+      <tr><th>{{ t('reports.when') }}</th><th>{{ t('reports.property') }}</th><th>{{ t('reports.mode') }}</th><th>{{ t('reports.guests') }}</th><th>{{ t('reports.outcome') }}</th>
+        <th>{{ t('reports.stamp') }}</th><th></th></tr>
     </thead>
     <tbody>
     {% for submission in rows %}
       <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link"
-          aria-label="Open report {{ submission.id }}">
-        <td class="nowrap small" data-label="When">{{ submission.created_at[:16].replace('T', ' ') }}</td>
-        <td data-label="Apartment">{{ submission.internal_name }}</td>
-        <td class="small" data-label="Mode">{{ submission.mode | replace('_', ' ') | capitalize }}</td>
-        <td class="num" data-label="Guests">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
-        <td data-label="Outcome">{{ submission_pill(submission.state) }}</td>
-        <td class="mono small" data-label="Receipt stamp">{{ submission.pseudo_stamp or '—' }}</td>
+          aria-label="{{ t('reports.open', id=submission.id) }}">
+        <td class="nowrap small" data-label="{{ t('reports.when') }}">{{ submission.created_at[:16].replace('T', ' ') }}</td>
+        <td data-label="{{ t('reports.property') }}">{{ property_identity(submission.apartment_id, submission.internal_name, true) }}</td>
+        <td class="small" data-label="{{ t('reports.mode') }}">{{ submission.mode | replace('_', ' ') | capitalize }}</td>
+        <td class="num" data-label="{{ t('reports.guests') }}">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
+        <td data-label="{{ t('reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
+        <td class="mono small" data-label="{{ t('reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
         <td class="nowrap row-actions" data-label="">
           {% if submission.receipt_pdf %}
-            <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
+            <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.receipt') }}</a>
           {% endif %}
-          <a class="btn small" href="/submissions/{{ submission.id }}">View details</a>
+          <a class="btn small" href="/submissions/{{ submission.id }}">{{ t('reports.details') }}</a>
         </td>
       </tr>
     {% endfor %}
@@ -46,6 +46,6 @@
   </table>
 </div>
 {% else %}
-  {{ empty_state('No reports yet', 'Completed guest records appear here after they are sent to UbyPort.', '/reservations', 'Open stays') }}
+  {{ empty_state(t('reports.empty_title'), t('reports.empty_body'), '/reservations', t('reports.empty_action')) }}
 {% endif %}
 {% endblock %}

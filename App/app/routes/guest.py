@@ -352,6 +352,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "lang_urls": _lang_urls(request),
         "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang),
         "facility": _facility(apartment),
+        "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
     }
 
 
@@ -664,6 +665,7 @@ def _form_context(
             "can_pick_other": _can_pick_other_stays(apartment),
             "ask_party_size": expected is None and guest is None,
             "person_number": progress["filled"] + 1 if guest is None else None,
+            "expected_people": expected,
             "issues": issues or [],
             "values": values or {},
             "countries": codelists.nationality_options(lang),

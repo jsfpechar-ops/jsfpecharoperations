@@ -56,6 +56,7 @@ PASSPORT_PNG = base64.b64decode(
 
 def render(html: str, target: Path, width: int = 1440, height: int = 1000) -> None:
     """Write one HTML string to a PNG with headless Chrome."""
+    target.unlink(missing_ok=True)
     html = html.replace('href="/static/', f'href="{BASE}/static/')
     html = html.replace('src="/static/', f'src="{BASE}/static/')
     with tempfile.TemporaryDirectory() as profile:
@@ -98,8 +99,11 @@ def render(html: str, target: Path, width: int = 1440, height: int = 1000) -> No
             time.sleep(0.4)
         if process.poll() is None:
             process.kill()
-        process.wait(timeout=10)
-        if not target.exists():
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+        if not target.exists() or target.stat().st_size == 0:
             raise SystemExit(f"Chrome produced no screenshot for {target.name}")
 
 
@@ -217,6 +221,11 @@ def main() -> None:
         "label": "Airbnb",
         "own_name": "Airbnb",
     })
+    post("/sync")
+    for _ in range(25):
+        if 'data-href="/reservations/' in session.get(BASE + "/reservations").text:
+            break
+        time.sleep(0.2)
     shot(f"/apartments/{apartment_id}", "apartment-with-feed")
     # The feed URL is on loopback, which the SSRF guard blocks by default, and
     # a silent failure here used to produce a screenshot called

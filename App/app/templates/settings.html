@@ -3,7 +3,7 @@
 {% block title %}{{ t('nav.settings') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
-{{ page_header(t('nav.settings'), 'System status, security, data protection, and diagnostics.') }}
+{{ page_header(t('nav.settings'), t('settings.lede')) }}
 
 <nav class="section-nav settings-nav" aria-label="{{ t('nav.settings') }}">
   <a href="#settings-overview">{{ t('settings.nav.overview') }}</a>

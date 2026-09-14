@@ -333,6 +333,14 @@
         if (panel) panel.classList.add("hidden");
       });
     });
+    if (new URLSearchParams(window.location.search).get("new") === "1") {
+      var addPanel = document.getElementById("add-stay-panel");
+      if (addPanel) {
+        addPanel.classList.remove("hidden");
+        var first = addPanel.querySelector("input, select, textarea");
+        if (first) first.focus();
+      }
+    }
   }
 
   function initDetailsLinks() {
@@ -547,6 +555,258 @@
     });
   }
 
+  function initPowerTools() {
+    var command = document.getElementById("command-dialog");
+    var input = command ? command.querySelector("[data-command-input]") : null;
+    var results = command ? command.querySelector("[data-command-results]") : null;
+    var shortcuts = document.getElementById("shortcuts-dialog");
+    var items = null;
+    var visible = [];
+    var selected = 0;
+    var goPrefix = false;
+    var goTimer = null;
+
+    function typingTarget(target) {
+      return target && (target.matches("input, textarea, select") || target.isContentEditable);
+    }
+
+    function submitPost(url) {
+      var form = document.createElement("form");
+      form.method = "post";
+      form.action = url;
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function runItem(item) {
+      if (item.copy) {
+        Promise.resolve(navigator.clipboard && navigator.clipboard.writeText(item.copy)).then(function () {
+          if (results) results.textContent = results.getAttribute("data-copied") || "";
+          setTimeout(function () { if (command.open) command.close(); }, 450);
+        });
+      } else if (item.method === "post") {
+        submitPost(item.url);
+      } else if (item.url) {
+        window.location.assign(item.url);
+      }
+    }
+
+    function updateSelection() {
+      if (!results) return;
+      results.querySelectorAll("[role=option]").forEach(function (option, index) {
+        option.classList.toggle("is-selected", index === selected);
+        option.setAttribute("aria-selected", index === selected ? "true" : "false");
+        if (index === selected) option.scrollIntoView({ block: "nearest" });
+      });
+    }
+
+    function render(query) {
+      if (!results || !items) return;
+      var words = String(query || "").toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+      visible = items.filter(function (item) {
+        var haystack = [item.label, item.meta, item.group, item.keywords].join(" ").toLocaleLowerCase();
+        return words.every(function (word) { return haystack.indexOf(word) >= 0; });
+      }).slice(0, 14);
+      selected = 0;
+      results.textContent = "";
+      if (!visible.length) {
+        var empty = document.createElement("p");
+        empty.className = "command-empty";
+        empty.textContent = results.getAttribute("data-empty") || "";
+        results.appendChild(empty);
+        return;
+      }
+      visible.forEach(function (item, index) {
+        var option = document.createElement("button");
+        option.type = "button";
+        option.className = "command-option";
+        option.setAttribute("role", "option");
+        if (typeof item.tone === "number") {
+          var mark = document.createElement("span");
+          mark.className = "property-mark property-tone-" + item.tone;
+          mark.textContent = item.label.charAt(0);
+          mark.setAttribute("aria-hidden", "true");
+          option.appendChild(mark);
+        }
+        var copy = document.createElement("span");
+        copy.className = "command-option-copy";
+        var title = document.createElement("strong");
+        title.textContent = item.label;
+        copy.appendChild(title);
+        if (item.meta) {
+          var meta = document.createElement("small");
+          meta.textContent = item.meta;
+          copy.appendChild(meta);
+        }
+        option.appendChild(copy);
+        var group = document.createElement("span");
+        group.className = "command-group";
+        group.textContent = item.group || "";
+        option.appendChild(group);
+        option.addEventListener("mouseenter", function () { selected = index; updateSelection(); });
+        option.addEventListener("click", function () { runItem(item); });
+        results.appendChild(option);
+      });
+      updateSelection();
+    }
+
+    function openCommand() {
+      if (!command || !input) return;
+      if (typeof command.showModal === "function" && !command.open) command.showModal();
+      input.value = "";
+      input.focus();
+      if (items) {
+        render("");
+      } else {
+        fetch("/api/command-palette", { credentials: "same-origin" })
+          .then(function (response) { return response.ok ? response.json() : { items: [] }; })
+          .then(function (data) { items = data.items || []; render(input.value); });
+      }
+    }
+
+    document.querySelectorAll("[data-command-open]").forEach(function (button) {
+      button.addEventListener("click", openCommand);
+    });
+    document.querySelectorAll("[data-shortcuts-open]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        if (shortcuts && typeof shortcuts.showModal === "function") shortcuts.showModal();
+      });
+    });
+    document.querySelectorAll("[data-shortcuts-close]").forEach(function (button) {
+      button.addEventListener("click", function () { if (shortcuts) shortcuts.close(); });
+    });
+
+    if (input) {
+      input.addEventListener("input", function () { render(input.value); });
+      input.addEventListener("keydown", function (event) {
+        if ((event.key === "ArrowDown" || event.key === "ArrowUp") && visible.length) {
+          event.preventDefault();
+          selected = (selected + (event.key === "ArrowDown" ? 1 : -1) + visible.length) % visible.length;
+          updateSelection();
+        } else if (event.key === "Enter" && visible[selected]) {
+          event.preventDefault();
+          runItem(visible[selected]);
+        }
+      });
+    }
+
+    document.addEventListener("keydown", function (event) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openCommand();
+        return;
+      }
+      if (typingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === "?" && shortcuts) {
+        event.preventDefault();
+        shortcuts.showModal();
+        return;
+      }
+      if (event.key === "/") {
+        event.preventDefault();
+        openCommand();
+        return;
+      }
+      if (event.key === "g") {
+        goPrefix = true;
+        clearTimeout(goTimer);
+        goTimer = setTimeout(function () { goPrefix = false; }, 900);
+        return;
+      }
+      if (goPrefix) {
+        var routes = { d: "/", s: "/reservations", r: "/submissions", h: "/housebook" };
+        goPrefix = false;
+        if (routes[event.key]) {
+          event.preventDefault();
+          window.location.assign(routes[event.key]);
+        }
+        return;
+      }
+      var rows = Array.prototype.slice.call(document.querySelectorAll("tr[data-href]"));
+      if (!rows.length) return;
+      var current = rows.findIndex(function (row) { return row.classList.contains("row-selected"); });
+      if (event.key === "j" || event.key === "k") {
+        event.preventDefault();
+        if (current >= 0) rows[current].classList.remove("row-selected");
+        current = event.key === "j" ? Math.min(current + 1, rows.length - 1) : Math.max(current < 0 ? 0 : current - 1, 0);
+        rows[current].classList.add("row-selected");
+        rows[current].focus({ preventScroll: true });
+        rows[current].scrollIntoView({ block: "nearest" });
+      } else if (event.key === "Enter" && current >= 0) {
+        window.location.assign(rows[current].getAttribute("data-href"));
+      }
+    });
+  }
+
+  function initSavedViews() {
+    var key = "ubyhost-saved-stay-views";
+    var container = document.querySelector("[data-saved-views]");
+    var button = document.querySelector("[data-save-view]");
+    var views = [];
+    try { views = JSON.parse(localStorage.getItem(key) || "[]"); } catch (error) { views = []; }
+
+    function render() {
+      if (!container) return;
+      container.textContent = "";
+      if (!views.length) return;
+      var label = document.createElement("div");
+      label.className = "nav-label";
+      label.textContent = container.getAttribute("data-label") || "";
+      container.appendChild(label);
+      views.forEach(function (view) {
+        var link = document.createElement("a");
+        link.href = view.url;
+        link.textContent = view.label;
+        container.appendChild(link);
+      });
+    }
+
+    if (button) {
+      button.addEventListener("click", function () {
+        var filter = button.closest("form");
+        var apartment = filter && filter.querySelector('[name="apartment"]');
+        var status = filter && filter.querySelector('[name="status"]');
+        var parts = [];
+        if (apartment && apartment.value) parts.push(apartment.options[apartment.selectedIndex].text.trim());
+        if (status && status.value !== "active") parts.push(status.options[status.selectedIndex].text.trim());
+        var label = parts.join(" · ") || document.title;
+        var url = window.location.pathname + window.location.search;
+        views = views.filter(function (view) { return view.url !== url; });
+        views.unshift({ label: label, url: url });
+        views = views.slice(0, 5);
+        try { localStorage.setItem(key, JSON.stringify(views)); } catch (error) {}
+        button.textContent = button.getAttribute("data-saved-label") || button.textContent;
+        render();
+      });
+    }
+    render();
+  }
+
+  function initInlineEdit() {
+    document.querySelectorAll("form[data-inline-edit]").forEach(function (form) {
+      var status = form.querySelector(".inline-edit-status");
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var button = form.querySelector("[type=submit]");
+        if (button) button.disabled = true;
+        if (status) status.textContent = "";
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          credentials: "same-origin",
+          headers: { "X-Requested-With": "fetch" }
+        }).then(function (response) {
+          if (!response.ok) throw new Error("save");
+          if (status) status.textContent = form.getAttribute("data-saved") || "";
+        }).catch(function () {
+          if (status) status.textContent = form.getAttribute("data-error") || "";
+        }).finally(function () {
+          if (button) button.disabled = false;
+        });
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initBirthDateInputs();
@@ -565,5 +825,8 @@
     initGeneratedPasswords();
     initResetPasswordDialog();
     initConfirmDialog();
+    initPowerTools();
+    initSavedViews();
+    initInlineEdit();
   });
 })();

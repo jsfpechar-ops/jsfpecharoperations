@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header-main">
       {% if back_url %}
-        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or 'Back' }}</a>
+        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or t('common.back') }}</a>
       {% endif %}
       {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
       <h1>{{ title }}</h1>
@@ -13,7 +13,7 @@
 {% endmacro %}
 
 {% macro breadcrumb(items) %}
-  <nav class="breadcrumbs" aria-label="Breadcrumb">
+  <nav class="breadcrumbs" aria-label="{{ t('a11y.breadcrumb') }}">
     <ol>
       {% for item in items %}
         <li>
@@ -85,7 +85,7 @@
       <input type="hidden" name="return_to" value="{{ return_to }}">
       <button class="btn small row-action-send{% if controls.get('send_enabled') %} accent{% endif %}" type="submit"
               {% if not controls.get('send_enabled') %}disabled{% endif %}
-              title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else 'Auto' }}</button>
+              title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else t('common.auto') }}</button>
     </form>
   {% endif %}
 {% endmacro %}
@@ -157,14 +157,14 @@
 
 {% macro submission_pill(state) %}
   {% set labels = {
-    'ok': 'Accepted',
-    'partial': 'Partly accepted',
-    'error': 'Rejected',
-    'failed': 'Rejected',
-    'transport_error': 'Not delivered',
-    'not_configured': 'Setup incomplete',
-    'running': 'In progress',
-    'noop': 'Nothing to send'
+    'ok': t('submission.accepted'),
+    'partial': t('submission.partial'),
+    'error': t('submission.rejected'),
+    'failed': t('submission.rejected'),
+    'transport_error': t('submission.not_delivered'),
+    'not_configured': t('submission.setup_incomplete'),
+    'running': t('submission.in_progress'),
+    'noop': t('submission.nothing_to_send')
   } %}
   {% set tones = {
     'ok': 'green',
@@ -185,6 +185,13 @@
     {% if body %}<p>{{ body }}</p>{% endif %}
     {% if action_url %}<a class="btn primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
   </div>
+{% endmacro %}
+
+{% macro property_identity(id, name, compact=false) %}
+  <span class="property-identity">
+    <span class="property-mark property-tone-{{ id % 10 }}" aria-hidden="true">{{ name[:1] }}</span>
+    <span class="{{ 'small' if compact }}">{{ name }}</span>
+  </span>
 {% endmacro %}
 
 {% macro onboarding_banner(onboarding) %}
@@ -245,19 +252,19 @@
 {% endmacro %}
 
 {% macro copy_button(target_id) %}
-  <button class="btn-icon" type="button" data-copy="{{ target_id }}" aria-label="Copy">{{ copy_icon() }}</button>
+  <button class="btn-icon" type="button" data-copy="{{ target_id }}" aria-label="{{ t('common.copy') }}">{{ copy_icon() }}</button>
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
-{% macro copy_inline(target_id, value, label='Copy link') %}
+{% macro copy_inline(target_id, value, label='') %}
   <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
-  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copied-label="Copied"
-          title="Copy the guest link for this stay">{{ label }}</button>
+  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copied-label="{{ t('common.copied') }}"
+          title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
 {% endmacro %}
 
-{% macro row_menu_begin(label='More actions') %}
+{% macro row_menu_begin(label='') %}
 <div class="row-menu">
-  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label }}" aria-expanded="false" aria-haspopup="true">
+  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label or t('common.more_actions') }}" aria-expanded="false" aria-haspopup="true">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
       <circle cx="3.25" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.75" cy="8" r="1.25"/>
     </svg>
