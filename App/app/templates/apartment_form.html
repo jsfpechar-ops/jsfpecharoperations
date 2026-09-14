@@ -110,32 +110,61 @@
   <div class="panel" id="ubyport">
     <h2 style="margin-top:0">UbyPort web-service credentials</h2>
     <p class="small muted" style="margin-top:-4px">
-      These are <strong>not</strong> your normal UbyPort login. Web-service credentials are issued
-      separately per accommodation facility — request them from the Foreign Police by data box
-      <span class="mono">ybndqw9</span> or at <span class="mono">reguby@pcr.cz</span>.
-      Ask for web-service access and include the facility name, address, IDUB, and IČO in your request.
+      These are <strong>not</strong> your normal UbyPort portal login (<span class="mono">ub…</span>).
+      Use the separate letter titled <strong>“Výpis z databáze přihlašovacích údajů”</strong> (web-service /
+      robotické vkládání) — usually a PDF whose filename contains your IDUB and <span class="mono">UBY-WS</span>.
     </p>
+    <p class="small" style="margin:12px 0">
+      <a class="btn small" href="/static/docs/ubyport-ws-credential-sample.pdf" target="_blank" rel="noopener">
+        Open annotated sample PDF</a>
+      <span class="muted"> — fictional police letter with SAMPLE watermarks; shows every value to copy into UbyHost,
+      including zkratka and contact that real WS PDFs often omit.</span>
+    </p>
+    <details class="small" style="margin:12px 0">
+      <summary style="cursor:pointer;font-weight:600">Where each UbyHost field comes from (read this once)</summary>
+      <table class="small" style="width:100%;margin-top:8px;border-collapse:collapse">
+        <tbody>
+          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>IDUB</strong></td>
+              <td>Line <span class="mono">IDUB:</span> on the web-service PDF.</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>Web-service login</strong></td>
+              <td>Line <span class="mono">Přihlašovací jméno:</span> (e.g. <span class="mono">UBY-WS_MLJNO</span>).</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>Web-service password</strong></td>
+              <td>Line <span class="mono">Přístupové heslo:</span> on the same PDF — enter once, then leave blank on later saves.</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>Facility abbreviation (zkratka)</strong></td>
+              <td>Five letters assigned when the facility was registered — <strong>not</strong> on the cover e-mail.
+              Often the same five letters after <span class="mono">UBY-WS_</span> in the web-service login
+              (e.g. login <span class="mono">UBY-WS_MLJNO</span> → zkratka <span class="mono">MLJNO</span>).
+              Confirm in the UbyPort portal under facility details or your original registration decision if unsure.</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>Facility name in UbyPort</strong></td>
+              <td>Line <span class="mono">Ubytovací zařízení:</span> on the web-service PDF — copy the <strong>first line only</strong>
+              (before any bracket with Praha/address). Not your Airbnb title. Max 35 characters; the police register
+              uses the short legal name.</td></tr>
+          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>Contact (optional here)</strong></td>
+              <td>E-mail or phone you gave on the <strong>original</strong> UbyPort accommodation registration — often
+              <strong>not</strong> printed on the web-service PDF. Same value as in the UbyPort portal profile for this facility.
+              UbyPort may reject reports if this is wrong; leave blank only if you never registered one.</td></tr>
+        </tbody>
+      </table>
+    </details>
     <p class="small muted">
-      Copy the IDUB, abbreviation, name and address <strong>character for character</strong> from
-      your registration. UbyPort checks them against the facility on file: a value in the right
-      format but with the wrong content is rejected, not corrected, and you only find out after
-      the first report — which may be after the deadline.
+      UbyPort compares IDUB, zkratka, name, address, and contact to the register. A typo or an Airbnb listing name
+      fails even when the web-service login works — you often only see that on the first real submission.
     </p>
     <div class="grid">
       {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
-         '12–14 characters assigned at registration. Must match it exactly.', false, 14) }}
+         'PDF line “IDUB:” — 12–14 digits, character for character.', false, 14) }}
       {{ text_field('uby_mark', 'Facility abbreviation (zkratka)', apartment.uby_mark if editing else '',
-         'Exactly five letters, e.g. AAKLI. Must match your registration.', false, 5) }}
+         'Five letters on file with the police (often = letters after UBY-WS_ in your login).', false, 5) }}
     </div>
     <div class="grid two">
       {{ text_field('uby_name', 'Facility name in UbyPort', apartment.uby_name if editing else '',
-         'Max 35 characters, exactly as registered.', false, 35) }}
-      {{ text_field('uby_contact', 'Contact given at registration', apartment.uby_contact if editing else '',
-         'Usually the e-mail address.', true, 50) }}
+         'PDF “Ubytovací zařízení:” — first line only, not your listing title; max 35 characters.', false, 35) }}
+      {{ text_field('uby_contact', 'Contact at registration', apartment.uby_contact if editing else '',
+         'E-mail/phone from original registration or UbyPort portal — not on the WS password letter.', true, 50) }}
     </div>
     <div class="grid two">
       {{ text_field('uby_ws_user', 'Web-service login', apartment.uby_ws_user if editing else '',
-         'Starts with UBY-WS (production) or uby-tws (test).') }}
+         'PDF “Přihlašovací jméno:” — copy exactly (including _ or digits).') }}
       <div class="field">
         <label for="uby_ws_password">Web-service password</label>
         {% if editing and has_password %}
