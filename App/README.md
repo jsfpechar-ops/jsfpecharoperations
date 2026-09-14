@@ -132,6 +132,36 @@ Whichever you choose, an accepted record is never sent again on its own. Since
 1 September 2025 the police reject duplicates and count them against you, so a
 re-send needs a deliberate confirmation.
 
+On the stay detail screen, **Send** is separate from **police acceptance**: the UI shows
+whether guests still need a signature, ID check, or manual send. Immediate mode can submit
+right after the guest signs; scheduled and manual modes queue until the configured time or
+your click. Host-entered guest rows are treated as verified when saved.
+
+## Reporting deadline (three working days)
+
+Czech law (Act 326/1999 §100(c)) requires notification within **three working days** after
+accommodation starts. UbyHost computes that window using **Europe/Prague** dates, skipping
+weekends and Czech public holidays (including movable Easter). The dashboard and **Stays**
+list sort by time left in that window so overdue stays surface first. Alerts call out stays
+that are past the deadline but not yet accepted by UbyPort.
+
+## Passport photos and ID check
+
+Guests may upload a passport photo, camera capture, or PDF (for example a multi-guest form).
+Files are stored under `data/passport_photos/` and are readable only by logged-in hosts for
+that property. They exist so you can compare the form against the document before reporting;
+deleting them after **Verify** is the normal path.
+
+If you never verify, the scheduler still enforces retention: files for stays that ended more
+than **30 days** ago are removed, along with orphaned files no guest row references. House
+book rows are not deleted — only the temporary image.
+
+## Host and guest language
+
+The host UI and guest forms are available in **English** and **Czech**. Use the language
+switcher in the header; the choice is stored in the `ubyhost_lang` cookie (`en` or `cs`).
+Legal pages (Terms, Privacy, DPA) follow the same language where translations exist.
+
 ## What it keeps for you
 
 - The **Doručenka** (receipt PDF with the pseudo-stamp) for every transmission,
@@ -155,9 +185,16 @@ Everything has a working default; set these only if you need to.
 | `UBYHOST_ICAL_POLL_MINUTES` | `60` | How often calendars are re-read |
 | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | How often queued records are sent |
 | `UBYHOST_ENABLE_SCHEDULER` | `1` | Set to `0` to stop all background work |
+| `UBYHOST_DEPLOYMENT` | `local` | `local`, `staging`, or `production` (shown in UI and `/healthz`) |
+| `UBYHOST_GUEST_PIN` | `1` | Require a PIN on guest permalinks (`0` only for local demos) |
+| `UBYHOST_OPERATOR_*` | see `config.py` | Software operator name, IČO, address, and **support e-mail** on `/legal` and privacy notices |
+| `CLOUDFLARE_PROXY` | `0` | Set to `1` on Lightsail when Cloudflare proxies HTTPS (trusted proxy IPs for rate limits) |
 
 Losing `UBYHOST_SECRET_KEY` means re-entering the UbyPort password; nothing
 else is lost.
+
+Set `UBYHOST_OPERATOR_EMAIL` (and related fields) in production `.env` so published legal
+pages show a reachable support address — see `deploy/lightsail/.env.example`.
 
 ## Tests
 

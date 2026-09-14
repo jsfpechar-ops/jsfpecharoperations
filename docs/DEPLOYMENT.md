@@ -60,12 +60,18 @@ Verify both services: `curl https://<host>/healthz` should return JSON with
 Use this whenever you ship a change that affects hosts or guests.
 
 1. **Merge to `main`** — GitHub Actions must pass (tests + smoke).
-2. **Staging** (optional) — Render → **`ubyhost-staging`** → Manual Deploy.
-3. **Production (Lightsail)** — SSH to the instance, then:
+2. **Staging** (optional) — Render → **`ubyhost-staging`** → Manual Deploy, or set
+   `RENDER_STAGING_DEPLOY_HOOK` so workflow **Deploy production** POSTs the hook after
+   green CI (same workflow as Lightsail; see below).
+3. **Production (Lightsail)** — either wait for **Deploy production** (runs after green CI
+   on `main` when `LIGHTSAIL_HOST` and `LIGHTSAIL_SSH_PRIVATE_KEY` are set), or SSH
+   manually:
    ```bash
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
    ```
+   CI uses `GITHUB_TOKEN` to `git fetch` on a private repo and hard-resets the tree to
+   `origin/main` before `./scripts/deploy.sh`. Details: [LIGHTSAIL.md](LIGHTSAIL.md#deploy-from-github-actions-optional).
 4. **Smoke production** — sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`

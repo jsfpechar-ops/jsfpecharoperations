@@ -17,6 +17,10 @@ summarises the threat model, controls, and known limitations.
 ## Hardening (application)
 
 - **iCal SSRF**: calendar URLs resolved and blocked if they point to private, loopback, link-local, or metadata addresses; redirects re-validated (max 3 hops, no automatic `requests` redirect following).
+- **Visitor IP behind Cloudflare**: `CF-Connecting-IP` is honoured only when the TCP peer
+  is in `UBYHOST_TRUSTED_PROXY_CIDRS`, or (on Lightsail) when `CLOUDFLARE_PROXY=1` and the
+  peer is a private/Docker network address. Otherwise the header is ignored so clients
+  cannot bypass rate limits by spoofing Cloudflare headers (`client_ip.py`).
 - **Login brute force**: sliding-window limit per IP+username (`rate_limit_event` table).
 - **Guest PIN brute force**: limit (10 failures / 15 min per IP+token), progressive delay on wrong PIN, constant-time compare; **new** PINs are six digits (legacy four-digit PINs still accepted until rotated).
 - **Open redirects**: `return_to` and login `next` accept local paths only; alert dismiss uses referer path only.
