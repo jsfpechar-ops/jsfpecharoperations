@@ -421,17 +421,6 @@ select {
   gap: 10px;
   margin: 8px 0 4px;
 }
-.passport-photo-inline {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--g-line);
-}
-.passport-photo-inline[hidden] { display: none !important; }
-.passport-photo-inline h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-  letter-spacing: -0.02em;
-}
 .passport-upload-actions .g-btn {
   flex: 1 1 140px;
   width: auto;
