@@ -137,7 +137,7 @@ a.plain { color: inherit; text-decoration: none; }
   height: 26px;
   border-radius: 9px;
   background: var(--ink);
-  color: #fff;
+  color: var(--canvas);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
@@ -333,7 +333,7 @@ a.plain { color: inherit; text-decoration: none; }
 }
 .lang-switch button.is-active {
   background: var(--ink);
-  color: #fff;
+  color: var(--canvas);
 }
 
 .sidebar-collapse, .sidebar-expand {
@@ -466,7 +466,7 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
   z-index: 10000;
   padding: 10px 16px;
   background: var(--brand-ink);
-  color: #fff;
+  color: var(--canvas);
   border-radius: var(--radius);
   text-decoration: none;
   font-weight: 600;
@@ -533,7 +533,7 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
   padding: 13px 15px;
   border-radius: var(--radius);
   background: var(--ink);
-  color: #fff;
+  color: var(--canvas);
   box-shadow: var(--shadow-lg);
   font-size: 14.5px;
   pointer-events: auto;
@@ -551,11 +551,11 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
   cursor: pointer;
   padding: 0 2px;
 }
-.toast button:hover { color: #fff; }
+.toast button:hover { color: var(--canvas); }
 .toast form { margin: 0; }
 .toast button.toast-undo {
   padding: 2px 4px;
-  color: #fff;
+  color: var(--canvas);
   font-size: 13px;
   font-weight: 700;
   text-decoration: underline;
@@ -687,7 +687,7 @@ a.notification-link:hover { background: var(--surface-2); }
   flex: 0 0 auto;
   border-radius: 9px;
   background: var(--bad);
-  color: #fff;
+  color: var(--canvas);
   font-weight: 750;
 }
 .notification-bubble.warning .notification-icon { background: var(--warn); }
@@ -1161,7 +1161,7 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 .chip:hover { background: var(--surface-2); border-color: var(--border-strong); }
-.chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.chip.on { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
 
 .filters {
   display: flex;
