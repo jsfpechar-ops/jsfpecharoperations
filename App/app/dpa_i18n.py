@@ -12,7 +12,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "This DPA is incorporated into the Terms of Service; using the Service constitutes "
             "acceptance unless a separate signed agreement expressly replaces it."
         ),
-        "dpa.effective": "Effective date: 13 September 2026. Version 1.0.",
+        "dpa.effective": "Effective date: 14 September 2026. Version 1.1.",
         "dpa.operator_title": "Processor (service provider)",
         "dpa.footer_link": "Data Processing Agreement",
         "dpa.footer_short": "DPA",
@@ -124,24 +124,28 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s10_title": "10. Security measures (Article 32)",
         "dpa.s10_body": (
             "Taking into account the state of the art, costs, and risks, the Processor implements "
-            "measures including: access controls and authentication for Host accounts; encryption of "
-            "sensitive integration credentials at rest; HTTPS for data in transit; logical separation "
-            "of customer data; rate limiting on authentication; backup and recovery procedures; "
-            "restriction of production access to authorised personnel; and security updates to "
-            "dependencies. The Controller is responsible for password strength, device security, and "
-            "sharing guest links only with intended recipients. A summary is also in the Privacy Policy."
+            "measures including: access controls and authentication for Host accounts; mandatory "
+            "two-factor authentication (TOTP) in production; encryption of sensitive integration "
+            "credentials and TOTP secrets at rest; HTTPS for data in transit; Cloudflare Turnstile "
+            "where configured; logical separation of customer data; rate limiting on authentication; "
+            "backup and recovery procedures (including optional off-site copies to Google Drive and "
+            "Amazon S3 when configured by the Operator); restriction of production access to authorised "
+            "personnel; and security updates to dependencies. The Controller is responsible for password "
+            "strength, device security, recovery codes, and sharing guest links only with intended "
+            "recipients. A summary is also in the Privacy Policy."
         ),
         "dpa.s11_title": "11. Subprocessors",
         "dpa.s11_body": (
             "The Controller provides general written authorisation for the Processor to engage "
             "Subprocessors listed or described in the Privacy Policy at /privacy (including "
-            "infrastructure hosting such as Render.com and, where used, DNS/CDN providers). The "
-            "Processor will impose data protection terms on Subprocessors substantially similar to "
-            "this DPA. The Processor remains liable to the Controller for Subprocessor performance "
-            "to the extent required by Article 28(4). The Processor will inform the Controller of "
-            "intended changes to Subprocessors (e.g. by updating the Privacy Policy) and allow the "
-            "Controller to object on reasonable data-protection grounds; if unresolved, the Controller "
-            "may terminate the affected Service as per the Terms."
+            "infrastructure hosting such as AWS Lightsail, Render.com, Cloudflare including Turnstile, "
+            "Google Drive and Amazon S3 for configured backups, and, where used, DNS/CDN or e-mail "
+            "providers). The Processor will impose data protection terms on Subprocessors substantially "
+            "similar to this DPA. The Processor remains liable to the Controller for Subprocessor "
+            "performance to the extent required by Article 28(4). The Processor will inform the "
+            "Controller of intended changes to Subprocessors (e.g. by updating the Privacy Policy) and "
+            "allow the Controller to object on reasonable data-protection grounds; if unresolved, the "
+            "Controller may terminate the affected Service as per the Terms."
         ),
         "dpa.s12_title": "12. Assistance with data subject rights",
         "dpa.s12_body": (
@@ -247,7 +251,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(Provozovatel jako zpracovatel) o údajích hostů v UbyHostu. DPA je součástí obchodních "
             "podmínek; používáním Služby ji přijímáte, pokud ji nepřepíše samostatná písemná smlouva."
         ),
-        "dpa.effective": "Účinnost od: 13. září 2026. Verze 1.0.",
+        "dpa.effective": "Účinnost od: 14. září 2026. Verze 1.1.",
         "dpa.operator_title": "Zpracovatel (poskytovatel služby)",
         "dpa.footer_link": "Smlouva o zpracování údajů (DPA)",
         "dpa.footer_short": "DPA",
@@ -334,14 +338,17 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "dpa.s10_title": "10. Bezpečnostní opatření (čl. 32)",
         "dpa.s10_body": (
-            "Zpracovatel uplatňuje přiměřená opatření: řízení přístupu, šifrování citlivých údajů, "
-            "HTTPS, oddělení dat zákazníků, rate limiting přihlášení, zálohy a omezený přístup do "
-            "produkce. Správce odpovídá za hesla a sdílení odkazů hostům. Shrnutí je v Zásadách."
+            "Zpracovatel uplatňuje přiměřená opatření: řízení přístupu, povinné dvoufázové ověření "
+            "(TOTP) v produkci, šifrování citlivých údajů a TOTP, HTTPS, Cloudflare Turnstile při "
+            "nastavení, oddělení dat zákazníků, rate limiting přihlášení, zálohy včetně volitelných "
+            "off-site kopií (Google Drive, Amazon S3) a omezený přístup do produkce. Správce "
+            "odpovídá za hesla, zařízení, obnovovací kódy a sdílení odkazů hostům. Shrnutí je v Zásadách."
         ),
         "dpa.s11_title": "11. Subzpracovatelé",
         "dpa.s11_body": (
             "Správce uděluje obecné povolení k subzpracovatelům uvedeným v Zásadách na /privacy "
-            "(včetně Render.com a případně DNS/CDN). Zpracovatel ukládá obdobné povinnosti. "
+            "(včetně AWS Lightsail, Render.com, Cloudflare včetně Turnstile, Google Drive a Amazon S3 "
+            "pro nastavené zálohy a případně DNS/CDN či e-mail). Zpracovatel ukládá obdobné povinnosti. "
             "Odpovídá za subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací "
             "Zásad); Správce může vznést oprávněnou námitku a při neřešení ukončit Službu dle Podmínek."
         ),
