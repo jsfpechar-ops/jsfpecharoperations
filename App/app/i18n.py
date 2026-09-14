@@ -261,6 +261,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Your details are used only to meet the host's legal reporting duty towards the "
             "Police of the Czech Republic and are kept for the statutory six years."
         ),
+        "skip_to_form": "Skip to the form",
         "privacy_link": "How your data is handled",
         "privacy_title": "Privacy notice",
         "privacy_intro": (
@@ -575,6 +576,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Údaje slouží výhradně ke splnění zákonné oznamovací povinnosti ubytovatele vůči "
             "Policii České republiky a uchovávají se zákonných 6 let."
         ),
+        "skip_to_form": "Přejít na formulář",
         "privacy_link": "Jak nakládáme s vašimi údaji",
         "privacy_title": "Informace o zpracování osobních údajů",
         "privacy_intro": (
