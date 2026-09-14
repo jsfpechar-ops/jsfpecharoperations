@@ -719,6 +719,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Restore anything you hid by mistake. The retention purge below is the only way guest records are permanently deleted."
         ),
         "settings.nav.overview": "Overview",
+        "settings.lede": "Advanced system status, security, data protection, and activity log.",
         "settings.nav.retention": "Data protection",
         "settings.nav.archive": "Archive",
         "settings.nav.audit": "Activity log",
@@ -1425,6 +1426,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Obnovte, co jste skryli omylem. Trvalé smazání hostů provede pouze retence níže."
         ),
         "settings.nav.overview": "Přehled",
+        "settings.lede": "Pokročilý stav systému, zabezpečení, ochrana údajů a protokol aktivit.",
         "settings.nav.retention": "Ochrana údajů",
         "settings.nav.archive": "Archiv",
         "settings.nav.audit": "Protokol aktivit",
