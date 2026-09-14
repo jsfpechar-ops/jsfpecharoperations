@@ -99,7 +99,10 @@ def render(html: str, target: Path, width: int = 1440, height: int = 1000) -> No
             time.sleep(0.4)
         if process.poll() is None:
             process.kill()
-        process.wait(timeout=10)
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
         if not target.exists():
             raise SystemExit(f"Chrome produced no screenshot for {target.name}")
 
