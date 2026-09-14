@@ -360,6 +360,8 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
         send_hint_key = "hint.auto_immediate"
     elif not has_pending and progress["status"] in ("not_required", "reported"):
         send_hint_key = "hint.nothing_duty"
+    elif not progress.get("guests"):
+        send_hint_key = "hint.awaiting_guest"
     elif not has_pending:
         unsigned_foreign = [
             guest

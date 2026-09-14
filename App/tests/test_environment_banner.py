@@ -1,15 +1,10 @@
-"""Which register this workspace files to has to be visible before you file.
-
-A practice run and the real thing look identical from inside the app: stays go
-green either way. The one place a host is guaranteed to look is the login page,
-and until now that was the one page that did not say.
-"""
+"""Practice environments must be obvious; production should stay quiet."""
 from __future__ import annotations
 
 import pytest
 from starlette.testclient import TestClient
 
-from app import db, host_i18n, templating
+from app import auth, db, host_i18n, templating
 from app.main import app
 
 
@@ -50,12 +45,36 @@ def test_a_czech_host_is_warned_in_czech(client, env):
     assert expected in page.text, "the warning was left in English"
 
 
-def test_the_real_thing_is_announced_too(client, env):
+def test_production_does_not_show_a_persistent_warning(client, env):
     env("prod")
 
     page = client.get("/login")
 
-    assert "env-banner prod" in page.text
+    assert "env-banner" not in page.text
+    assert "Live police reporting" not in page.text
+
+
+def test_production_does_not_show_a_sidebar_badge(client, env):
+    env("prod")
+    username = "quiet-production-ui"
+    if not db.query_one("SELECT id FROM user_account WHERE username = ?", (username,)):
+        auth.create_account(
+            username,
+            "Quiet-Production-Password-123",
+            "Production host",
+            role="admin",
+            must_change_password=False,
+        )
+    client.post(
+        "/login",
+        data={"username": username, "password": "Quiet-Production-Password-123"},
+        follow_redirects=False,
+    )
+
+    page = client.get("/")
+
+    assert 'class="env-badge prod"' not in page.text
+    assert "LIVE · Police" not in page.text
 
 
 def test_a_test_environment_is_not_shouted_about(client, env):
