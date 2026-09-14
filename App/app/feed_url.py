@@ -22,6 +22,16 @@ _BLOCKED_HOSTNAMES = frozenset(
 )
 
 
+# Ranges Python reports as neither private nor reserved, so the attribute
+# checks below miss them, but which still reach somewhere other than the public
+# internet. A self-hosted box behind carrier-grade NAT, or inside a cluster that
+# uses 100.64.0.0/10 for pods, can reach its neighbours through them.
+_EXTRA_BLOCKED_NETWORKS = tuple(
+    ipaddress.ip_network(cidr)
+    for cidr in ("100.64.0.0/10", "192.0.0.0/24", "198.18.0.0/15")
+)
+
+
 def _blocked_ip(ip: ipaddress._BaseAddress) -> bool:
     if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_reserved:
         return True
@@ -29,6 +39,8 @@ def _blocked_ip(ip: ipaddress._BaseAddress) -> bool:
         return True
     # Link-local IPv4 metadata (cloud)
     if ip == ipaddress.ip_address("169.254.169.254"):
+        return True
+    if any(ip in network for network in _EXTRA_BLOCKED_NETWORKS if ip.version == network.version):
         return True
     return False
 

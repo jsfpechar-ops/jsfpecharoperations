@@ -20,6 +20,7 @@
         <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
         <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
       </form>
+      {% include "_env_banner.html" %}
       {% block auth_body %}{% endblock %}
       <footer class="auth-foot-legal small muted">
         <p class="auth-foot-acceptance">{{ t('legal.use_acceptance') }}</p>

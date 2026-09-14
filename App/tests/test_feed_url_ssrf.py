@@ -51,6 +51,13 @@ def test_blocks_metadata_host():
         "gopher://example.com/",
         # mDNS names resolve inside the LAN.
         "http://nas.local/c.ics",
+        # Carrier-grade NAT. Python reports these as neither private nor
+        # reserved, so they slipped through, but a self-hosted box behind CGNAT
+        # or in a cluster that uses the range reaches its neighbours here.
+        "http://100.64.0.1/c.ics",
+        "http://100.127.255.254/c.ics",
+        # IPv4-to-IPv6 translation and 6to4 wrappers around a private target.
+        "http://[64:ff9b::a00:5]/c.ics",
     ],
 )
 def test_blocks_internal_targets_however_they_are_written(url):

@@ -211,7 +211,10 @@ def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
         overview = host.get("/")
         assert 'class="env-badge mock"' in overview.text
 
-        # Login is not a host surface and must stay clean.
-        assert "Nothing is being reported" not in TestClient(app).get("/login").text
+        # Login says it too. It is where a host who keeps a practice instance
+        # alongside a real one finds out they opened the wrong one, which is
+        # the cheapest moment to correct. It discloses nothing new: /healthz
+        # already reports the environment without any authentication.
+        assert "Nothing is being reported" in TestClient(app).get("/login").text
     finally:
         _clean_accounts()
