@@ -463,37 +463,10 @@ def dashboard(request: Request):
     owner_user_id = access.owner_id(request)
     apartments = access.apartments(request)
     rows = dashboard_rows(owner_user_id=owner_user_id)
-    needs_action = [
-        row for row in rows
-        if row["progress"]["status"] in ("failed", "incomplete", "ready")
-        or (
-            row["urgency"] == "overdue"
-            and row["progress"]["status"] not in ("reported", "not_required")
-        )
-    ]
-    action_ids = {row["reservation"]["id"] for row in needs_action}
-    waiting = [
-        row for row in rows
-        if row["progress"]["status"] == "awaiting_guest"
-        and row["reservation"]["id"] not in action_ids
-    ]
-    assigned_ids = action_ids | {row["reservation"]["id"] for row in waiting}
-    upcoming = [
-        row for row in rows
-        if row["reservation"]["id"] not in assigned_ids
-        and row["progress"]["status"] not in ("reported", "not_required")
-    ]
-    completed = [
-        row for row in rows
-        if row["progress"]["status"] in ("reported", "not_required")
-    ][:8]
-    counts = {
-        "attention": len(needs_action),
-        "awaiting": len(waiting),
-        "ready": sum(1 for r in rows if r["progress"]["status"] == "ready"),
-        "overdue": sum(1 for r in rows if r["urgency"] == "overdue"
-                       and r["progress"]["status"] not in ("reported", "not_required")),
-    }
+    queue = reporting.queue_groups(rows)
+    counts = reporting.queue_counts(rows, queue)
+    needs_action, waiting = queue["needs_action"], queue["waiting"]
+    upcoming, completed = queue["upcoming"], queue["completed"][:8]
     setup_warnings = []
     for apartment in apartments:
         issues = validation.errors_only(_apartment_issues(apartment))
@@ -2407,7 +2380,16 @@ def purge_expired_records(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    deleted = housebook.purge_expired(owner_user_id=access.owner_id(request))
-    if not deleted:
+    owner_user_id = access.owner_id(request)
+    deleted = housebook.purge_expired(owner_user_id=owner_user_id)
+    # A passport image has no six-year basis, so the same button clears the
+    # ones left over from stays that ended long ago.
+    photos = passport_photos.purge_stale(owner_user_id=owner_user_id)
+    parts = []
+    if deleted:
+        parts.append(f"{deleted} guest record(s) past the retention period")
+    if photos:
+        parts.append(f"{photos} passport image(s) no longer needed")
+    if not parts:
         return _back("/settings", msg="Nothing to delete - no record is past the retention period.")
-    return _back("/settings", msg=f"Deleted {deleted} guest record(s) past the retention period.")
+    return _back("/settings", msg="Deleted " + " and ".join(parts) + ".")

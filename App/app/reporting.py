@@ -246,6 +246,66 @@ STATUS_LABELS = {
     "failed": "Rejected",
 }
 
+# Statuses only the host can clear. "awaiting_verification" belongs here even
+# though sending would verify implicitly: a manual apartment never sends on its
+# own, so leaving it off the queue means nobody is told before the window shuts.
+HOST_ACTION_STATUSES = ("failed", "incomplete", "ready", "awaiting_verification")
+FINISHED_STATUSES = ("reported", "not_required")
+
+
+def queue_groups(rows: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Split dashboard rows into the four buckets of the Overview work queue.
+
+    Every row lands in exactly one bucket, so the counts beside the headings
+    can be trusted.
+    """
+    needs_action = [
+        row for row in rows
+        if row["progress"]["status"] in HOST_ACTION_STATUSES
+        # Past the deadline even "waiting for the guest" is the host's problem.
+        or (row["urgency"] == "overdue" and row["progress"]["status"] not in FINISHED_STATUSES)
+    ]
+    claimed = {row["reservation"]["id"] for row in needs_action}
+    waiting = [
+        row for row in rows
+        if row["progress"]["status"] == "awaiting_guest"
+        and row["reservation"]["id"] not in claimed
+    ]
+    claimed |= {row["reservation"]["id"] for row in waiting}
+    upcoming = [
+        row for row in rows
+        if row["reservation"]["id"] not in claimed
+        and row["progress"]["status"] not in FINISHED_STATUSES
+    ]
+    claimed |= {row["reservation"]["id"] for row in upcoming}
+    completed = [
+        row for row in rows
+        if row["reservation"]["id"] not in claimed
+        and row["progress"]["status"] in FINISHED_STATUSES
+    ]
+    return {
+        "needs_action": needs_action,
+        "waiting": waiting,
+        "upcoming": upcoming,
+        "completed": completed,
+    }
+
+
+def queue_counts(
+    rows: List[Dict[str, Any]], groups: Dict[str, List[Dict[str, Any]]]
+) -> Dict[str, int]:
+    """Numbers for the Overview stat strip, derived from the same buckets."""
+    return {
+        "attention": len(groups["needs_action"]),
+        "awaiting": len(groups["waiting"]),
+        "ready": sum(1 for row in rows if row["progress"]["status"] == "ready"),
+        "overdue": sum(
+            1 for row in rows
+            if row["urgency"] == "overdue"
+            and row["progress"]["status"] not in FINISHED_STATUSES
+        ),
+    }
+
 
 def pending_reportable(guests: List[Any]) -> List[Any]:
     """Reportable guests that have not yet been accepted by UbyPort."""
