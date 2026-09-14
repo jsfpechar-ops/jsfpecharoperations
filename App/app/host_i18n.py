@@ -430,6 +430,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "common.copy_link": "Copy link",
         "common.copy_guest_link": "Copy the guest link for this stay",
         "common.more_actions": "More actions",
+        "common.undo": "Undo",
         "submission.accepted": "Accepted",
         "submission.partial": "Partly accepted",
         "submission.rejected": "Rejected",
@@ -702,6 +703,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Archiving hides items from your daily work but keeps their history. "
             "Only the six-year retention purge in Settings permanently deletes guest records."
         ),
+        "archive.stay_moved": "Stay moved to archive.",
         "archive.chip.all_count": "All (%(count)s)",
         "archive.chip.stays_count": "Stays (%(count)s)",
         "archive.chip.properties_count": "Properties (%(count)s)",
@@ -1144,6 +1146,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "common.copy_link": "Kopírovat odkaz",
         "common.copy_guest_link": "Kopírovat odkaz pro hosty tohoto pobytu",
         "common.more_actions": "Další akce",
+        "common.undo": "Vrátit zpět",
         "submission.accepted": "Přijato",
         "submission.partial": "Částečně přijato",
         "submission.rejected": "Odmítnuto",
@@ -1416,6 +1419,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Archivace skryje položky z každodenní práce, ale historii ponechá. "
             "Trvalé smazání hostů provede pouze šestiletá retence v Nastavení."
         ),
+        "archive.stay_moved": "Pobyt přesunut do archivu.",
         "archive.chip.all_count": "Vše (%(count)s)",
         "archive.chip.stays_count": "Pobyty (%(count)s)",
         "archive.chip.properties_count": "Ubytování (%(count)s)",

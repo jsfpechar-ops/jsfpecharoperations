@@ -39,6 +39,7 @@
               <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
                     data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
+                <input type="hidden" name="return_to" value="/">
                 <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
               </form>
             {{ row_menu_end() }}

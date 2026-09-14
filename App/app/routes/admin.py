@@ -1569,7 +1569,7 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
 
 
 @router.post("/reservations/{reservation_id}/archive")
-def reservation_archive(reservation_id: int, request: Request):
+async def reservation_archive(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -1578,9 +1578,16 @@ def reservation_archive(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     if reservation["archived_at"]:
         return _back(f"/reservations/{reservation_id}", err="Already archived.")
+    form = await request.form()
+    return_to = _form_return_to(form, _redirect_path_from_referer(request, "/reservations"))
     db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("reservation_archived", f"id={reservation_id}")
-    return _back("/reservations?range=archive", msg="Stay moved to archive. You can restore it from there.")
+    lang = host_i18n.lang_from_request(request)
+    target = (
+        f"/reservations?range=archive&undo_stay={reservation_id}"
+        f"&undo_return={quote(return_to, safe='')}"
+    )
+    return _back(target, msg=host_i18n.translate(lang, "archive.stay_moved"))
 
 
 @router.post("/reservations/{reservation_id}/unarchive")

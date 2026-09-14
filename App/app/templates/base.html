@@ -168,7 +168,9 @@
 </aside>
 {% endif %}
 
-{% if flash or flash_error %}
+{% set undo_stay = request.query_params.get('undo_stay', '') %}
+{% set undo_return = request.query_params.get('undo_return', '/') %}
+{% if flash or flash_error or (undo_stay and undo_stay.isdigit()) %}
 <div class="toast-stack" role="status" aria-live="polite">
   {% if flash %}
     <div class="toast" data-toast>
@@ -179,6 +181,16 @@
   {% if flash_error %}
     <div class="toast err" data-toast data-toast-sticky>
       <span class="grow">{{ flash_error }}</span>
+      <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss') }}">&times;</button>
+    </div>
+  {% endif %}
+  {% if undo_stay and undo_stay.isdigit() %}
+    <div class="toast" data-toast data-toast-sticky>
+      <span class="grow">{{ t('archive.stay_moved') }}</span>
+      <form method="post" action="/reservations/{{ undo_stay }}/unarchive">
+        <input type="hidden" name="return_to" value="{{ undo_return }}">
+        <button class="toast-undo" type="submit">{{ t('common.undo') }}</button>
+      </form>
       <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss') }}">&times;</button>
     </div>
   {% endif %}

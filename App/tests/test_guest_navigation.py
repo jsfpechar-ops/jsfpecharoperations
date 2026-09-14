@@ -193,6 +193,31 @@ def test_party_size_is_blank_and_invalid_value_is_not_silently_coerced():
         _cleanup()
 
 
+def test_completed_party_can_add_another_person():
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="1"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+
+        complete = browser.get(f"/l/{token}/{wrong}")
+        assert f'action="/l/{token}/{wrong}/another?lang=en"' in complete.text
+        assert "Add another person" in complete.text
+
+        raised = browser.post(f"/l/{token}/{wrong}/another", follow_redirects=False)
+        assert raised.status_code == 303
+        assert raised.headers["location"].endswith(f"/l/{token}/{wrong}/new?lang=en")
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (wrong,))
+        assert reservation["declared_guests"] == 2
+    finally:
+        _cleanup()
+
+
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:
