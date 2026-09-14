@@ -97,9 +97,19 @@
           </div>
           <div class="field">
             <label for="uby_ws_password_{{ apartment.id }}">Web-service password</label>
+            {% if row.has_password %}
+            <p class="small muted" style="margin:0 0 6px">Saved — not shown again.</p>
+            {% endif %}
             <input type="password" id="uby_ws_password_{{ apartment.id }}" name="uby_ws_password"
                    autocomplete="new-password"
-                   placeholder="{{ 'stored — leave blank to keep' if row.has_password else '' }}">
+                   placeholder="{{ 'Leave empty to keep the saved password' if row.has_password else 'Paste from the police letter' }}">
+            <div class="hint">
+              {% if row.has_password %}
+              Fill in only when replacing the password from the police. Otherwise leave empty and save.
+              {% else %}
+              Required once; encrypted at rest and never shown again after save.
+              {% endif %}
+            </div>
           </div>
         </div>
 
