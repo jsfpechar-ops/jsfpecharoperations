@@ -207,6 +207,75 @@ def test_czech_guest_validation_is_localized():
         _cleanup()
 
 
+def test_an_unexpected_extra_guest_can_still_register():
+    """The lead under-declares the party; the extra arrival must not dead-end."""
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        lead = TestClient(app)
+        saved = lead.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(party_size="1"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+
+        # A second person arrives. The stay page must offer a way in, not just
+        # "everything is complete".
+        second = TestClient(app)
+        hub = second.get(f"/l/{token}/{stay}", follow_redirects=True)
+        assert hub.status_code == 200
+        assert f'action="/l/{token}/{stay}/another' in hub.text, hub.text
+
+        raised = second.post(f"/l/{token}/{stay}/another", follow_redirects=False)
+        assert raised.status_code == 303
+        assert "/new" in raised.headers["location"]
+        assert db.query_one(
+            "SELECT declared_guests FROM reservation WHERE id = ?", (stay,)
+        )["declared_guests"] == 2
+
+        filled = second.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(surname="Jones", first_name="Mary", party_size="2"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert filled.status_code == 303
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
+        )["n"] == 2
+    finally:
+        _cleanup()
+
+
+def test_save_does_not_overshoot_the_declared_party_size():
+    """/new guards capacity on GET; a slow filler must not slip past it."""
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        first = TestClient(app)
+        assert first.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(party_size="1"),
+            files=_passport_files(),
+            follow_redirects=False,
+        ).status_code == 303
+
+        # A second phone had the form open from before the party filled up.
+        latecomer = TestClient(app)
+        response = latecomer.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(surname="Jones", first_name="Mary"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
+        )["n"] == 1
+    finally:
+        _cleanup()
+
+
 def test_guest_form_accepts_pdf_passport_attachment():
     token, wrong, _right = _make_apartment_with_stays()
     try:
