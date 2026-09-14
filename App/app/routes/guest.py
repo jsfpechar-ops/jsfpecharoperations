@@ -26,7 +26,7 @@ import re
 import secrets
 import time
 
-from .. import auth, codelists, config, db, i18n, passport_photos, rate_limit, reporting, validation
+from .. import alerts, auth, codelists, config, db, i18n, passport_photos, rate_limit, reporting, turnstile, validation
 from ..templating import render_guest
 
 router = APIRouter()
@@ -223,10 +223,12 @@ def _apartment_by_token(token: str):
 
 
 def _pin_page(request: Request, token: str, lang: str, error: str = ""):
+    failures = rate_limit.pin_failure_count(rate_limit.client_key(request, token))
     context = _shared(request, token, lang)
     context.update(
         {
             "error": error,
+            "require_turnstile": failures >= 3,
             "return_to": request.url.path
             + (("?" + str(request.url.query)) if request.url.query else ""),
         }
@@ -434,6 +436,12 @@ async def verify_pin(token: str, request: Request):
     form = await request.form()
     entered = (form.get("pin") or "").strip()
     pin_key = rate_limit.client_key(request, token)
+    if rate_limit.pin_failure_count(pin_key) >= 3 and not turnstile.verify(
+        request, form.get("cf-turnstile-response"), "guest_pin"
+    ):
+        return _pin_page(
+            request, token, lang, error=i18n.translator(lang)("security_check_failed")
+        )
     if rate_limit.pin_blocked(pin_key):
         return _pin_page(
             request,
@@ -446,6 +454,21 @@ async def verify_pin(token: str, request: Request):
         rate_limit.record_pin_failure(pin_key)
         # Slow brute-force attempts without blocking legitimate guests for long.
         failures = rate_limit.pin_failure_count(pin_key)
+        if failures >= rate_limit._PIN_MAX_FAILURES:
+            alerts.raise_alert(
+                "warning",
+                "guest_pin_abuse",
+                "Guest link temporarily blocked after repeated wrong PINs.",
+                detail="Review the message PIN and rotate it if the link may have been shared.",
+                dedupe_key=f"guest_pin_abuse:{apartment['id']}",
+                apartment_id=apartment["id"],
+            )
+            db.audit(
+                "guest_pin_rate_limited",
+                detail=f"apartment={apartment['id']}",
+                actor="anonymous",
+                owner_user_id=apartment["owner_user_id"],
+            )
         if failures > 0:
             time.sleep(min(2.0, 0.15 * failures))
         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))

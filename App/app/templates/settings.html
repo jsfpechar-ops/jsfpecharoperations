@@ -160,6 +160,11 @@
         <span class="small muted mono">{{ current_user.username }}</span></p>
       <p class="small muted">Passwords are stored as one-way hashes. Changing yours signs out other sessions.</p>
       <a class="btn" href="/account/password">Change password</a>
+      {% if current_user.totp_enabled %}
+        <span class="pill green">Two-factor authentication enabled</span>
+      {% else %}
+        <a class="btn primary" href="/account/2fa/setup">Set up two-factor authentication</a>
+      {% endif %}
       {% if current_user.role == 'admin' %}
         <a class="btn" href="/admin/users">Manage users</a>
       {% endif %}

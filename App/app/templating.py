@@ -72,6 +72,7 @@ templates.env.globals.update(
     deployment_tier=config.DEPLOYMENT,
     ubyport_env=config.UBYPORT_ENV,
     public_base_url=config.PUBLIC_BASE_URL,
+    turnstile_site_key=config.TURNSTILE_SITE_KEY if config.TURNSTILE_ENABLED else "",
     describe_time_left=_template_time_left,
     urgency=deadlines.urgency,
     reporting_deadline=deadlines.reporting_deadline,
