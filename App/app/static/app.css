@@ -3,54 +3,6 @@
    accent, and generous spacing. Status colour is reserved for status only, so
    a glance at a row tells you what the law still wants from you. */
 
-:root {
-  /* Surfaces: warm paper tones matched to the UbyHost logo. */
-  --bg: #faf6f2;
-  --bg-tint: #f3ebe4;
-  --surface: #ffffff;
-  --surface-2: #fcf8f5;
-  --surface-3: #f6efe8;
-
-  /* Ink */
-  --ink: #1f1a18;
-  --ink-2: #3f3834;
-  --muted: #736a64;
-  --faint: #9a9089;
-
-  /* Hairlines */
-  --line: #e8ddd5;
-  --line-2: #dacfc6;
-
-  /* Coral accent from the UbyHost mark. */
-  --brand: #c85a52;
-  --brand-ink: #9f443d;
-  --brand-hover: #b54f48;
-  --brand-soft: #fdf1ef;
-  --brand-ring: rgba(200, 90, 82, 0.22);
-
-  /* Status */
-  --ok: #0f7a4a;
-  --ok-soft: #e8f5ee;
-  --warn: #a45b00;
-  --warn-soft: #fdf1e1;
-  --bad: #c32f24;
-  --bad-soft: #fdeeec;
-
-  --radius-xs: 8px;
-  --radius-sm: 10px;
-  --radius: 14px;
-  --radius-lg: 20px;
-  --pill: 999px;
-
-  --shadow-sm: 0 1px 2px rgba(22, 25, 27, 0.05);
-  --shadow: 0 1px 2px rgba(22, 25, 27, 0.04), 0 6px 18px rgba(22, 25, 27, 0.05);
-  --shadow-lg: 0 12px 40px rgba(22, 25, 27, 0.12);
-  --shadow-pop: 0 10px 34px rgba(22, 25, 27, 0.16);
-
-  --sidebar: 244px;
-  --ease: cubic-bezier(0.32, 0.72, 0, 1);
-}
-
 * { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }

@@ -4,34 +4,28 @@
    a repaint. Shares the host palette so the two halves feel like one product. */
 
 :root {
-  --g-bg: #f4f3ef;
-  --g-surface: #ffffff;
-  --g-surface-2: #faf9f6;
-
-  --g-ink: #16191b;
-  --g-ink-2: #353b3f;
-  --g-muted: #6b7378;
-
-  --g-line: #e6e3dc;
-  --g-line-2: #d3cfc5;
-
-  --g-accent: #1f56d6;
-  --g-accent-hover: #1a48b6;
-  --g-accent-soft: #eef2fd;
-  --g-accent-ring: rgba(31, 86, 214, 0.22);
-
-  --g-ok: #0f7a4a;
-  --g-ok-soft: #e8f5ee;
-  --g-bad: #c32f24;
-  --g-bad-soft: #fdeeec;
-
-  --g-radius-sm: 10px;
-  --g-radius: 16px;
-  --g-radius-lg: 22px;
-  --g-pill: 999px;
-
-  --g-shadow: 0 1px 2px rgba(22, 25, 27, 0.04), 0 8px 24px rgba(22, 25, 27, 0.06);
-  --g-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --g-bg: var(--canvas);
+  --g-surface: var(--surface);
+  --g-surface-2: var(--canvas-subtle);
+  --g-ink: var(--ink);
+  --g-ink-2: var(--ink-secondary);
+  --g-muted: var(--ink-muted);
+  --g-line: var(--border);
+  --g-line-2: var(--border-strong);
+  --g-accent: var(--brand);
+  --g-accent-hover: var(--brand-hover);
+  --g-accent-soft: var(--brand-soft);
+  --g-accent-ring: var(--focus-ring);
+  --g-ok: var(--green);
+  --g-ok-soft: var(--green-bg);
+  --g-bad: var(--red);
+  --g-bad-soft: var(--red-bg);
+  --g-radius-sm: var(--radius-sm);
+  --g-radius: var(--radius-lg);
+  --g-radius-lg: var(--radius-lg);
+  --g-pill: var(--radius-pill);
+  --g-shadow: none;
+  --g-ease: var(--ease-standard);
 }
 
 * { box-sizing: border-box; }
