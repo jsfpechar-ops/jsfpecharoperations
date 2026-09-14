@@ -134,6 +134,29 @@ def test_the_status_pill_on_a_czech_queue_row_is_czech():
     assert czech in page.text
 
 
+def test_the_setup_steps_a_new_czech_host_reads_are_czech():
+    """First run is the one screen a host cannot skip, so it cannot be English."""
+    client = _host_with_a_stay_needing_action()
+    page = client.get("/")
+    assert page.status_code == 200
+    banner = re.search(r'class="onboarding-banner".*?</div>\s*</div>', page.text, re.S)
+    assert banner, "no onboarding banner while setup is unfinished"
+    text = " ".join(banner.group(0).split())
+    assert "Setup step" not in text, "the setup prompt is in English for a Czech host"
+    assert host_i18n.translate("cs", "onboarding.step_of").split("%")[0].strip() in text
+
+
+def test_onboarding_copy_lives_in_the_translation_tables():
+    """onboarding.py must stay logic; the wording belongs with the other strings."""
+    from app import onboarding
+
+    for step in onboarding.progress(None)["steps"]:
+        for part in ("title", "detail", "action"):
+            key = f"onboarding.{step['id']}.{part}"
+            for lang in ("en", "cs"):
+                assert host_i18n.translate(lang, key) != key, f"missing {lang} {key}"
+
+
 def test_every_macro_import_passes_the_render_context():
     """Structural guard: the bug is invisible until someone reads a page in Czech.
 

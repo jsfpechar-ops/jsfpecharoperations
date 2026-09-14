@@ -37,51 +37,36 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
             setup_issues.append({"apartment": apartment, "issues": issues})
     first_apartment = apartments[0] if apartments else None
 
+    # Wording lives in host_i18n under "onboarding.<id>.{title,detail,action}",
+    # so a Czech host reads the setup steps in Czech and this module stays
+    # about what is actually done and where to go next.
     steps = [
         {
             "id": "entity",
-            "title": "Legal entity",
-            "detail": "The company or sole trader registered in UbyPort.",
             "done": entity_count > 0,
             "url": "/entities",
-            "action": "Add legal entity",
         },
         {
             "id": "property",
-            "title": "Property",
-            "detail": "Each flat or house you rent out.",
             "done": apartment_count > 0,
             "url": "/apartments/new" if entity_count else "/entities",
-            "action": "Add property",
         },
         {
             "id": "calendars",
-            "title": "Calendar links",
-            "detail": "Airbnb or Booking.com iCal URLs so stays appear automatically.",
             "done": feed_count > 0,
             "url": f"/apartments/{first_apartment['id']}#calendars" if first_apartment else "/apartments/new",
-            "action": "Connect calendars",
         },
         {
             "id": "automation",
-            "title": "Automation & UbyPort",
-            "detail": (
-                "Web-service credentials, and the IDUB, abbreviation and address copied "
-                "exactly from your registration. UbyPort rejects a mismatch rather than "
-                "correcting it."
-            ),
             "done": apartment_count > 0 and not setup_issues,
             "url": (
                 f"/automation#apartment-{first_apartment['id']}"
                 if first_apartment
                 else "/automation"
             ),
-            "action": "Finish automation",
         },
         {
             "id": "guest_link",
-            "title": "Guest link",
-            "detail": "Paste into your Airbnb or Booking.com check-in message.",
             "done": (
                 apartment_count > 0
                 and feed_count > 0
@@ -92,7 +77,6 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
                 if first_apartment
                 else "/apartments"
             ),
-            "action": "Copy guest link",
         },
     ]
 

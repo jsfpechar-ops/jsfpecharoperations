@@ -191,10 +191,12 @@
   {% if onboarding and onboarding.current and not onboarding.finished %}
     <div class="onboarding-banner" role="status">
       <div>
-        <strong>Setup step {{ onboarding.completed + 1 }} of {{ onboarding.total }}: {{ onboarding.current.title }}</strong>
-        <small>{{ onboarding.current.detail }}</small>
+        <strong>{{ t('onboarding.step_of', n=onboarding.completed + 1, total=onboarding.total,
+                     title=t('onboarding.' ~ onboarding.current.id ~ '.title')) }}</strong>
+        <small>{{ t('onboarding.' ~ onboarding.current.id ~ '.detail') }}</small>
       </div>
-      <a class="btn primary small" href="{{ onboarding.current.url }}">{{ onboarding.current.action }}</a>
+      <a class="btn primary small" href="{{ onboarding.current.url }}">
+        {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
     </div>
   {% endif %}
 {% endmacro %}
@@ -202,26 +204,29 @@
 {% macro onboarding_welcome(onboarding) %}
   <div class="panel onboarding-welcome">
     <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="UbyHost">
-    <h2>Welcome to UbyHost</h2>
-    <p class="lede">Let’s get your first property ready for guest reporting. Follow the steps below — most hosts finish in a few minutes.</p>
-    <div class="onboarding-steps" aria-label="Setup steps">
+    <h2>{{ t('onboarding.welcome_title') }}</h2>
+    <p class="lede">{{ t('onboarding.welcome_lede') }}</p>
+    <div class="onboarding-steps" aria-label="{{ t('onboarding.welcome_title') }}">
       {% for step in onboarding.steps %}
         <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
           <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
           <div>
-            <h3>{{ step.title }}</h3>
-            <p>{{ step.detail }}</p>
+            <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
+            <p>{{ t('onboarding.' ~ step.id ~ '.detail') }}</p>
           </div>
           {% if not step.done and onboarding.current and step.id == onboarding.current.id %}
-            <a class="btn primary small" href="{{ step.url }}">{{ step.action }}</a>
+            <a class="btn primary small" href="{{ step.url }}">
+              {{ t('onboarding.' ~ step.id ~ '.action') }}</a>
           {% elif step.done %}
-            <span class="pill green">Done</span>
+            <span class="pill green">{{ t('onboarding.step_done') }}</span>
           {% endif %}
         </article>
       {% endfor %}
     </div>
     {% if onboarding.current %}
-      <a class="btn primary" href="{{ onboarding.current.url }}">Continue: {{ onboarding.current.action }}</a>
+      <a class="btn primary" href="{{ onboarding.current.url }}">
+        {{ t('onboarding.continue',
+              action=t('onboarding.' ~ onboarding.current.id ~ '.action')) }}</a>
     {% endif %}
     <div class="onboarding-demo">
       <form method="post" action="/demo">

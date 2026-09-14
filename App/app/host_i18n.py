@@ -55,6 +55,37 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace — "
             "built for Czech short-term hosts."
         ),
+        "onboarding.welcome_title": "Welcome to UbyHost",
+        "onboarding.welcome_lede": (
+            "Let's get your first property ready for guest reporting. Follow the steps "
+            "below — most hosts finish in a few minutes."
+        ),
+        "onboarding.step_of": "Setup step %(n)s of %(total)s: %(title)s",
+        "onboarding.step_done": "Done",
+        "onboarding.continue": "Continue: %(action)s",
+        "onboarding.entity.title": "Legal entity",
+        "onboarding.entity.detail": "The company or sole trader registered in UbyPort.",
+        "onboarding.entity.action": "Add legal entity",
+        "onboarding.property.title": "Property",
+        "onboarding.property.detail": "Each flat or house you rent out.",
+        "onboarding.property.action": "Add property",
+        "onboarding.calendars.title": "Calendar links",
+        "onboarding.calendars.detail": (
+            "Airbnb or Booking.com iCal URLs so stays appear automatically."
+        ),
+        "onboarding.calendars.action": "Connect calendars",
+        "onboarding.automation.title": "Automation & UbyPort",
+        "onboarding.automation.detail": (
+            "Web-service credentials, and the IDUB, abbreviation and address copied "
+            "exactly from your registration. UbyPort rejects a mismatch rather than "
+            "correcting it."
+        ),
+        "onboarding.automation.action": "Finish automation",
+        "onboarding.guest_link.title": "Guest link",
+        "onboarding.guest_link.detail": (
+            "Paste into your Airbnb or Booking.com check-in message."
+        ),
+        "onboarding.guest_link.action": "Copy guest link",
         "demo.load": "Explore with demo data",
         "demo.load_detail": (
             "One sample property with stays and guests. Nothing is sent to the police unless you "
@@ -697,6 +728,38 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
             "pro krátkodobé pronájmy v Česku."
         ),
+        "onboarding.welcome_title": "Vítejte v UbyHostu",
+        "onboarding.welcome_lede": (
+            "Připravíme vaše první ubytování na hlášení hostů. Projděte kroky níže — "
+            "většina hostitelů to zvládne za několik minut."
+        ),
+        "onboarding.step_of": "Krok nastavení %(n)s z %(total)s: %(title)s",
+        "onboarding.step_done": "Hotovo",
+        "onboarding.continue": "Pokračovat: %(action)s",
+        "onboarding.entity.title": "Právnická osoba",
+        "onboarding.entity.detail": (
+            "Firma nebo podnikatel registrovaný v UbyPortu."
+        ),
+        "onboarding.entity.action": "Přidat právnickou osobu",
+        "onboarding.property.title": "Ubytování",
+        "onboarding.property.detail": "Každý byt nebo dům, který pronajímáte.",
+        "onboarding.property.action": "Přidat ubytování",
+        "onboarding.calendars.title": "Odkazy na kalendáře",
+        "onboarding.calendars.detail": (
+            "iCal odkazy z Airbnb nebo Booking.com, aby se pobyty zobrazovaly automaticky."
+        ),
+        "onboarding.calendars.action": "Připojit kalendáře",
+        "onboarding.automation.title": "Automatizace a UbyPort",
+        "onboarding.automation.detail": (
+            "Přihlašovací údaje k webové službě a IDUB, zkratka a adresa opsané přesně "
+            "podle registrace. UbyPort neshodu odmítne, neopraví ji."
+        ),
+        "onboarding.automation.action": "Dokončit automatizaci",
+        "onboarding.guest_link.title": "Odkaz pro hosty",
+        "onboarding.guest_link.detail": (
+            "Vložte do zprávy s pokyny k příjezdu na Airbnb nebo Booking.com."
+        ),
+        "onboarding.guest_link.action": "Kopírovat odkaz pro hosty",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": (
             "Ukázkové ubytování s pobytem a hosty. Na policii se nic neodešle, dokud sami "
