@@ -37,6 +37,13 @@ router = APIRouter()
 
 # --- helpers -------------------------------------------------------------
 
+# A house book with years of history is still well under a megabyte, so this
+# is generous for a real import and stops an upload from being read whole into
+# memory.
+MAX_IMPORT_BYTES = 4 * 1024 * 1024
+_TOO_BIG = "That file is larger than 4 MB. Split the import into smaller files."
+
+
 def _back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
     query = []
     if msg:
@@ -1310,9 +1317,11 @@ async def reservations_import(request: Request):
     upload = form.get("csv_file")
     if not upload or not getattr(upload, "filename", ""):
         return _back("/reservations", err="Choose a CSV file to import.")
-    content = await upload.read()
+    content = await upload.read(MAX_IMPORT_BYTES + 1)
     if not content:
         return _back("/reservations", err="The file is empty.")
+    if len(content) > MAX_IMPORT_BYTES:
+        return _back("/reservations", err=_TOO_BIG)
     result = stays_import.import_csv(content, owner_user_id=access.owner_id(request))
     if result["imported"]:
         detail = f"Imported {result['imported']} stay(s)."
@@ -2140,9 +2149,11 @@ async def housebook_import(request: Request):
         return _back("/housebook", err="No such property.")
     if not upload or not getattr(upload, "filename", ""):
         return _back("/housebook", err="Choose a CSV file to import.")
-    content = await upload.read()
+    content = await upload.read(MAX_IMPORT_BYTES + 1)
     if not content:
         return _back("/housebook", err="The file is empty.")
+    if len(content) > MAX_IMPORT_BYTES:
+        return _back("/housebook", err=_TOO_BIG)
     result = housebook.import_csv(content, apartment_id)
     if result["imported"]:
         detail = f"Imported {result['imported']} record(s)."
