@@ -59,7 +59,7 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   z-index: 10000;
   padding: 10px 16px;
   background: var(--g-ink);
-  color: #fff;
+  color: var(--g-bg);
   border-radius: var(--g-radius-sm);
   text-decoration: none;
   font-weight: 600;
@@ -106,7 +106,7 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   transition: background 0.16s var(--g-ease), color 0.16s var(--g-ease);
 }
 .g-lang a:hover { color: var(--g-ink); }
-.g-lang a.on { background: var(--g-ink); color: #fff; }
+.g-lang a.on { background: var(--g-ink); color: var(--g-bg); }
 
 /* --- cards ------------------------------------------------------------- */
 
