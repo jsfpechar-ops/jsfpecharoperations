@@ -555,3 +555,41 @@ def test_non_remember_sessions_expire_after_twelve_hours(monkeypatch):
         assert auth._session_payload(remember_token) is not None
     finally:
         _clean_accounts()
+
+
+def test_every_id_route_is_ownership_scoped():
+    """A numeric id must never be enough to reach another workspace.
+
+    Structural rather than behavioural: it catches the next route added
+    without an access.py lookup, which no per-route test would.
+    """
+    import inspect
+    import re
+
+    from app.routes import admin as admin_routes
+
+    source = inspect.getsource(admin_routes)
+    blocks = re.split(r"\n(?=@router\.(?:get|post|put|delete)\()", source)
+
+    # These act across workspaces on purpose and gate on the admin role
+    # instead; see user_password_reset / user_impersonate / user_toggle.
+    cross_workspace = {"/admin/users/{user_id}"}
+
+    unscoped = []
+    for block in blocks:
+        header = re.match(r'@router\.(\w+)\("([^"]+)"', block)
+        if not header:
+            continue
+        path = header.group(2)
+        if not re.search(r"\{\w*_?id\}", path):
+            continue
+        if any(path.startswith(prefix) for prefix in cross_workspace):
+            assert 'role"] != "admin"' in block, f"{path} must check the admin role"
+            continue
+        name = re.search(r"\n(?:async )?def (\w+)", block)
+        if "require_login" not in block:
+            unscoped.append((path, "no require_login"))
+        elif "access." not in block:
+            unscoped.append((path, f"no access.* lookup in {name.group(1) if name else '?'}"))
+
+    assert not unscoped, f"routes reachable by id without ownership scoping: {unscoped}"
