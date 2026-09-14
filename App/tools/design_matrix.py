@@ -21,7 +21,12 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 
 def themed(html: str, theme: str) -> str:
-    return html.replace("<html ", f'<html data-theme="{theme}" ', 1)
+    html = html.replace("<html ", f'<html data-theme="{theme}" ', 1)
+    return html.replace(
+        "<head>",
+        f"<head><script>localStorage.setItem('ubyhost-theme','{theme}')</script>",
+        1,
+    )
 
 
 def main() -> None:
