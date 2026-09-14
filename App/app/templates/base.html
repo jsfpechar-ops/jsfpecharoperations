@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
+  <script>
+    (function(){try{var t=localStorage.getItem("ubyhost-theme");if(t&&t!=="system")document.documentElement.dataset.theme=t;}catch(e){}})();
+  </script>
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914a">
   <link rel="stylesheet" href="/static/app.css?v=20260912f">
@@ -14,17 +17,17 @@
 {% from "_components.html" import nav_icon %}
 {% if show_nav | default(true) %}
 <header class="appbar">
-  <button class="nav-toggle" type="button" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+  <button class="nav-toggle" type="button" data-nav-toggle aria-label="{{ t('a11y.open_menu') }}" aria-expanded="false">
     <span aria-hidden="true">☰</span>
   </button>
   <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost"></a>
   {% if current_user %}
     <a class="appbar-help" href="/guide">{{ t('nav.guide') }}</a>
   {% endif %}
-  <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
+  <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
 </header>
-<button class="nav-backdrop" type="button" data-nav-close aria-label="Close menu"></button>
-<button class="sidebar-expand" type="button" data-sidebar-expand aria-label="Show menu">
+<button class="nav-backdrop" type="button" data-nav-close aria-label="{{ t('a11y.close_menu') }}"></button>
+<button class="sidebar-expand" type="button" data-sidebar-expand aria-label="{{ t('a11y.show_menu') }}">
   <span aria-hidden="true">☰</span>
 </button>
 <aside class="sidebar" id="app-sidebar">
@@ -33,9 +36,9 @@
       <img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
     <div class="sidebar-brand-actions">
-      <span class="env-badge {{ ubyport_env }}" title="Where reports are sent">{{ ubyport_env }}</span>
+      <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
       <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true"
-              aria-label="Hide menu"><span aria-hidden="true">‹</span></button>
+              aria-label="{{ t('a11y.hide_menu') }}"><span aria-hidden="true">‹</span></button>
     </div>
   </div>
   {% if current_user and workspace_user %}
@@ -53,7 +56,20 @@
       </div>
     </div>
   {% endif %}
-  <nav class="sidebar-nav" aria-label="Main navigation">
+  <button class="command-trigger" type="button" data-command-open>
+    <span>{{ t('command.open') }}</span><kbd>⌘K</kbd>
+  </button>
+  {% if apartments is defined and apartments %}
+  <div class="property-switcher" aria-label="{{ t('nav.properties') }}">
+    {% for apartment in apartments[:6] %}
+      <a href="/reservations?range=upcoming&apartment={{ apartment.id }}" title="{{ apartment.internal_name }}">
+        <span class="property-mark property-tone-{{ apartment.id % 10 }}" aria-hidden="true">{{ apartment.internal_name[:1] }}</span>
+        <span>{{ apartment.internal_name }}</span>
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <nav class="sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">
     <div class="nav-group">
       <div class="nav-label">{{ t('nav.operations') }}</div>
       <a href="/" class="{{ 'active' if nav == 'dashboard' }}">{{ nav_icon('overview') }}{{ t('nav.overview') }}</a>
@@ -77,6 +93,11 @@
   </nav>
   {% if current_user %}
     <div class="sidebar-footer">
+      <div class="theme-switch" role="group" aria-label="{{ t('theme.label') }}">
+        <button type="button" data-theme-value="system">{{ t('theme.system') }}</button>
+        <button type="button" data-theme-value="light">{{ t('theme.light') }}</button>
+        <button type="button" data-theme-value="dark">{{ t('theme.dark') }}</button>
+      </div>
       <nav class="sidebar-footer-links" aria-label="{{ t('legal.footer_nav_label') }}">
         <a href="/legal">{{ t('legal.footer_short') }}</a>
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
@@ -92,6 +113,7 @@
           <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
           <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
         </form>
+        <button class="shortcut-trigger" type="button" data-shortcuts-open aria-label="{{ t('shortcuts.open') }}">?</button>
         <form class="sidebar-logout" method="post" action="/logout">
           <button class="nav-button" type="submit">{{ t('nav.logout') }}</button>
         </form>
@@ -105,12 +127,12 @@
   {% if current_user and workspace_user and current_user.id != workspace_user.id %}
     <aside class="impersonation-bar" role="status" aria-live="polite">
       <div class="impersonation-copy">
-        <span class="impersonation-eyebrow">Previewing workspace</span>
+        <span class="impersonation-eyebrow">{{ t('impersonation.previewing') }}</span>
         <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>
         <span class="impersonation-handle">@{{ workspace_user.username }}</span>
       </div>
       <form method="post" action="/admin/stop-impersonating">
-        <button class="btn small" type="submit">Exit preview</button>
+        <button class="btn small" type="submit">{{ t('impersonation.exit') }}</button>
       </form>
     </aside>
   {% endif %}
@@ -118,7 +140,7 @@
 </main>
 
 {% if open_alerts %}
-<aside class="notification-stack" aria-label="Notifications" aria-live="polite">
+<aside class="notification-stack" aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
   {% for alert in open_alerts %}
     <article class="notification-bubble {{ alert.level }}" data-notification>
       {% if alert.reservation_id %}
@@ -132,12 +154,12 @@
           <span class="grow">
             <strong>{{ alert.message }}</strong>
             {% if alert.detail %}<small>{{ alert.detail }}</small>{% endif %}
-            {% if alert.reservation_id %}<small class="notification-action">Open the stay</small>
-            {% elif alert.apartment_id %}<small class="notification-action">Open the property</small>{% endif %}
+            {% if alert.reservation_id %}<small class="notification-action">{{ t('notification.open_stay') }}</small>
+            {% elif alert.apartment_id %}<small class="notification-action">{{ t('notification.open_property') }}</small>{% endif %}
           </span>
       {% if alert.reservation_id or alert.apartment_id %}</a>{% else %}</div>{% endif %}
       <form method="post" action="/alerts/{{ alert.id }}/dismiss" data-notification-dismiss>
-        <button type="submit" aria-label="Dismiss notification">&times;</button>
+        <button type="submit" aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
       </form>
     </article>
   {% endfor %}
@@ -149,13 +171,13 @@
   {% if flash %}
     <div class="toast" data-toast>
       <span class="grow">{{ flash }}</span>
-      <button type="button" data-toast-close aria-label="Dismiss">&times;</button>
+      <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss') }}">&times;</button>
     </div>
   {% endif %}
   {% if flash_error %}
     <div class="toast err" data-toast data-toast-sticky>
       <span class="grow">{{ flash_error }}</span>
-      <button type="button" data-toast-close aria-label="Dismiss">&times;</button>
+      <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss') }}">&times;</button>
     </div>
   {% endif %}
 </div>
@@ -208,6 +230,7 @@
 </dialog>
 {% endif %}
 
+<script src="/static/theme.js?v=20260914a"></script>
 <script src="/static/app.js?v=20260912g"></script>
 </body>
 </html>

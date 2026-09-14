@@ -268,6 +268,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "lang_urls": _lang_urls(request),
         "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang),
         "facility": _facility(apartment),
+        "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
     }
 
 

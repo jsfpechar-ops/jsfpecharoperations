@@ -13,6 +13,10 @@ DEFAULT_LANGUAGE = "en"
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "title": "Guest registration",
+        "theme_label": "Appearance",
+        "theme_system": "System",
+        "theme_light": "Light",
+        "theme_dark": "Dark",
         "legal_intro": (
             "Czech law treats every rented apartment as an accommodation facility. Your host "
             "must write each guest into a house book and report every foreign guest to the "
@@ -334,6 +338,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "cs": {
         "title": "Registrace ubytovaného",
+        "theme_label": "Vzhled",
+        "theme_system": "Systém",
+        "theme_light": "Světlý",
+        "theme_dark": "Tmavý",
         "legal_intro": (
             "Podle českého práva je pronajímaný apartmán ubytovacím zařízením. Ubytovatel musí "
             "každého hosta zapsat do domovní knihy a každého ubytovaného cizince oznámit "
