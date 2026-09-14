@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header-main">
       {% if back_url %}
-        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or 'Back' }}</a>
+        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or t('common.back') }}</a>
       {% endif %}
       {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
       <h1>{{ title }}</h1>
@@ -13,7 +13,7 @@
 {% endmacro %}
 
 {% macro breadcrumb(items) %}
-  <nav class="breadcrumbs" aria-label="Breadcrumb">
+  <nav class="breadcrumbs" aria-label="{{ t('a11y.breadcrumb') }}">
     <ol>
       {% for item in items %}
         <li>
@@ -85,7 +85,7 @@
       <input type="hidden" name="return_to" value="{{ return_to }}">
       <button class="btn small row-action-send{% if controls.get('send_enabled') %} accent{% endif %}" type="submit"
               {% if not controls.get('send_enabled') %}disabled{% endif %}
-              title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else 'Auto' }}</button>
+              title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else t('common.auto') }}</button>
     </form>
   {% endif %}
 {% endmacro %}
@@ -157,14 +157,14 @@
 
 {% macro submission_pill(state) %}
   {% set labels = {
-    'ok': 'Accepted',
-    'partial': 'Partly accepted',
-    'error': 'Rejected',
-    'failed': 'Rejected',
-    'transport_error': 'Not delivered',
-    'not_configured': 'Setup incomplete',
-    'running': 'In progress',
-    'noop': 'Nothing to send'
+    'ok': t('submission.accepted'),
+    'partial': t('submission.partial'),
+    'error': t('submission.rejected'),
+    'failed': t('submission.rejected'),
+    'transport_error': t('submission.not_delivered'),
+    'not_configured': t('submission.setup_incomplete'),
+    'running': t('submission.in_progress'),
+    'noop': t('submission.nothing_to_send')
   } %}
   {% set tones = {
     'ok': 'green',
@@ -191,7 +191,7 @@
   {% if onboarding and onboarding.current and not onboarding.finished %}
     <div class="onboarding-banner" role="status">
       <div>
-        <strong>Setup step {{ onboarding.completed + 1 }} of {{ onboarding.total }}: {{ onboarding.current.title }}</strong>
+        <strong>{{ t('onboarding.step', current=onboarding.completed + 1, total=onboarding.total, title=onboarding.current.title) }}</strong>
         <small>{{ onboarding.current.detail }}</small>
       </div>
       <a class="btn primary small" href="{{ onboarding.current.url }}">{{ onboarding.current.action }}</a>
@@ -202,9 +202,9 @@
 {% macro onboarding_welcome(onboarding) %}
   <div class="panel onboarding-welcome">
     <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="UbyHost">
-    <h2>Welcome to UbyHost</h2>
-    <p class="lede">Let’s get your first property ready for guest reporting. Follow the steps below — most hosts finish in a few minutes.</p>
-    <div class="onboarding-steps" aria-label="Setup steps">
+    <h2>{{ t('onboarding.welcome') }}</h2>
+    <p class="lede">{{ t('onboarding.lede') }}</p>
+    <div class="onboarding-steps" aria-label="{{ t('onboarding.steps') }}">
       {% for step in onboarding.steps %}
         <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
           <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
@@ -215,13 +215,13 @@
           {% if not step.done and onboarding.current and step.id == onboarding.current.id %}
             <a class="btn primary small" href="{{ step.url }}">{{ step.action }}</a>
           {% elif step.done %}
-            <span class="pill green">Done</span>
+            <span class="pill green">{{ t('onboarding.done') }}</span>
           {% endif %}
         </article>
       {% endfor %}
     </div>
     {% if onboarding.current %}
-      <a class="btn primary" href="{{ onboarding.current.url }}">Continue: {{ onboarding.current.action }}</a>
+      <a class="btn primary" href="{{ onboarding.current.url }}">{{ t('onboarding.continue', action=onboarding.current.action) }}</a>
     {% endif %}
     <div class="onboarding-demo">
       <form method="post" action="/demo">
@@ -240,19 +240,19 @@
 {% endmacro %}
 
 {% macro copy_button(target_id) %}
-  <button class="btn-icon" type="button" data-copy="{{ target_id }}" aria-label="Copy">{{ copy_icon() }}</button>
+  <button class="btn-icon" type="button" data-copy="{{ target_id }}" aria-label="{{ t('common.copy') }}">{{ copy_icon() }}</button>
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
-{% macro copy_inline(target_id, value, label='Copy link') %}
+{% macro copy_inline(target_id, value, label='') %}
   <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
-  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copied-label="Copied"
-          title="Copy the guest link for this stay">{{ label }}</button>
+  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copied-label="{{ t('common.copied') }}"
+          title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
 {% endmacro %}
 
-{% macro row_menu_begin(label='More actions') %}
+{% macro row_menu_begin(label='') %}
 <div class="row-menu">
-  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label }}" aria-expanded="false" aria-haspopup="true">
+  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label or t('common.more_actions') }}" aria-expanded="false" aria-haspopup="true">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
       <circle cx="3.25" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.75" cy="8" r="1.25"/>
     </svg>

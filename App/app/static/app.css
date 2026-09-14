@@ -786,6 +786,12 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pill.green { background: var(--ok-soft); color: var(--ok); }
 .pill.amber { background: var(--warn-soft); color: var(--warn); }
 .pill.red { background: var(--bad-soft); color: var(--bad); }
+.pill.orange, .tone-orange { background: var(--orange-bg); color: var(--orange); }
+.pill.teal, .tone-teal { background: var(--teal-bg); color: var(--teal); }
+.pill.indigo, .tone-indigo { background: var(--indigo-bg); color: var(--indigo); }
+.pill.purple, .tone-purple { background: var(--purple-bg); color: var(--purple); }
+.pill.pink, .tone-pink { background: var(--pink-bg); color: var(--pink); }
+.pill.brown, .tone-brown { background: var(--brown-bg); color: var(--brown); }
 
 .deadline { font-weight: 600; font-size: 13.5px; }
 .deadline.overdue, .deadline.urgent { color: var(--bad); }
@@ -851,7 +857,7 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   justify-content: center;
   gap: 7px;
   padding: 10px 17px;
-  border-radius: var(--pill);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line-2);
   background: var(--surface);
   color: var(--ink);
@@ -2000,6 +2006,115 @@ details.raw pre {
 }
 .celebration-card h2 { margin: 0 0 8px; font-size: 22px; }
 .celebration-card p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+
+/* --- unified primitives ------------------------------------------------
+   Colour is allowed for state, urgency, focus, and stable property identity.
+   Everything structural stays neutral so dense operational screens remain
+   calm. */
+.property-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.property-mark, .avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  background: var(--gray-bg);
+  color: var(--gray);
+  font-size: var(--text-sm);
+  font-weight: 750;
+  text-transform: uppercase;
+}
+.property-tone-0 { background: var(--blue-bg); color: var(--blue); }
+.property-tone-1 { background: var(--purple-bg); color: var(--purple); }
+.property-tone-2 { background: var(--teal-bg); color: var(--teal); }
+.property-tone-3 { background: var(--orange-bg); color: var(--orange); }
+.property-tone-4 { background: var(--pink-bg); color: var(--pink); }
+.property-tone-5 { background: var(--green-bg); color: var(--green); }
+.property-tone-6 { background: var(--indigo-bg); color: var(--indigo); }
+.property-tone-7 { background: var(--brown-bg); color: var(--brown); }
+.property-tone-8 { background: var(--amber-bg); color: var(--amber); }
+.property-tone-9 { background: var(--red-bg); color: var(--red); }
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+}
+.switch input {
+  appearance: none;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-active);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+.switch input::after {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 2px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .22);
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+.switch input:checked { background: var(--brand); border-color: var(--brand); }
+.switch input:checked::after { transform: translateX(14px); }
+
+[data-tooltip] { position: relative; }
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  z-index: var(--z-popover);
+  max-width: 240px;
+  padding: 5px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--ink);
+  color: var(--canvas);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 3px);
+  transition: opacity var(--motion-fast), transform var(--motion-fast);
+}
+[data-tooltip]:hover::after, [data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.skeleton {
+  min-height: 12px;
+  border-radius: var(--radius-xs);
+  background: linear-gradient(90deg, var(--surface-hover), var(--surface-active), var(--surface-hover));
+  background-size: 200% 100%;
+  animation: skeleton 1.2s linear infinite;
+}
+@keyframes skeleton { to { background-position: -200% 0; } }
+
+@media (hover: hover) {
+  tbody tr .row-actions > * { opacity: 0; transition: opacity var(--motion-fast); }
+  tbody tr:hover .row-actions > *,
+  tbody tr:focus-within .row-actions > *,
+  tbody tr.row-selected .row-actions > * { opacity: 1; }
+}
+
+dialog { color: var(--ink-secondary); background: var(--surface-raised); }
+dialog::backdrop { background: rgba(10, 10, 9, .58); }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

@@ -610,6 +610,32 @@ details.g-why .g-details {
 .g-summary-list dt { margin: 0; color: var(--g-muted); font-weight: 600; }
 .g-summary-list dd { margin: 0; color: var(--g-ink); }
 
+/* Guest variants of the shared primitives use larger touch targets and type. */
+.g-property {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.g-property-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-weight: 750;
+  text-transform: uppercase;
+}
+.g-card, .g-stay { box-shadow: none; }
+.g-btn { border-radius: var(--radius-sm); box-shadow: none; }
+.g-err { border-color: color-mix(in srgb, var(--red) 28%, transparent); color: var(--red); }
+.g-ok, .g-saved { border-color: color-mix(in srgb, var(--green) 28%, transparent); color: var(--green); }
+.g-stay.yours { border-color: color-mix(in srgb, var(--green) 32%, transparent); background: var(--green-bg); }
+.g-sign canvas { background: var(--surface-raised); }
+
 /* The submit button is the whole point of the page; on a phone it should
    never be the thing you have to scroll to find. */
 @media (max-width: 560px) {
