@@ -16,7 +16,7 @@
 {% endset %}
 {{ page_header(
   reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
-  (nights(reservation.date_from, reservation.date_to) | string) ~ ' nights · ' ~ (reservation.summary or reservation.source),
+  t('stays.table.nights', count=nights(reservation.date_from, reservation.date_to)) ~ ' · ' ~ (reservation.summary or reservation.source),
   return_to,
   t('stay.detail.back'),
   '',
@@ -86,7 +86,7 @@
       {{ describe_time_left(check_in) if check_in else '—' }}
     </div>
     {% if deadline %}
-      <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y at %H:%M')) }}</div>
+      <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
     {% endif %}
   </div>
   <div class="detail-metric">

@@ -43,6 +43,26 @@ def _template_translate(context, key: str, **kwargs) -> str:
     return host_i18n.translate(lang, key, **kwargs)
 
 
+@pass_context
+def _describe_time_left(context, check_in: date) -> str:
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    now = datetime.now()
+    if check_in > now.date():
+        days = (check_in - now.date()).days
+        key = "deadline.arrives_day" if days == 1 else "deadline.arrives_days"
+        return host_i18n.translate(lang, key, count=days)
+    left = deadlines.hours_left(check_in, now)
+    if left < 0:
+        over = abs(left)
+        if over < 48:
+            return host_i18n.translate(lang, "deadline.overdue_hours", count=int(over))
+        return host_i18n.translate(lang, "deadline.overdue_days", count=int(over // 24))
+    if left < 48:
+        return host_i18n.translate(lang, "deadline.hours_left", count=int(left))
+    return host_i18n.translate(lang, "deadline.days_left", count=int(left // 24))
+
+
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["from_json"] = _from_json
@@ -53,7 +73,7 @@ templates.env.globals.update(
     deployment_tier=config.DEPLOYMENT,
     ubyport_env=config.UBYPORT_ENV,
     public_base_url=config.PUBLIC_BASE_URL,
-    describe_time_left=deadlines.describe_time_left,
+    describe_time_left=_describe_time_left,
     urgency=deadlines.urgency,
     reporting_deadline=deadlines.reporting_deadline,
     purpose_label=validation.purpose_label,
