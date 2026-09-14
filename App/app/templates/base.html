@@ -1,13 +1,10 @@
 <!doctype html>
-<html lang="{{ lang | default('en') }}">
+<html lang="{{ lang | default('en') }}" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
-  <script>
-    (function(){try{var t=localStorage.getItem("ubyhost-theme");if(t&&t!=="system")document.documentElement.dataset.theme=t;}catch(e){}})();
-  </script>
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
   <link rel="stylesheet" href="/static/app.css?v=20260914d">
@@ -99,11 +96,6 @@
   </nav>
   {% if current_user %}
     <div class="sidebar-footer">
-      <div class="theme-switch" role="group" aria-label="{{ t('theme.label') }}">
-        <button type="button" data-theme-value="system">{{ t('theme.system') }}</button>
-        <button type="button" data-theme-value="light">{{ t('theme.light') }}</button>
-        <button type="button" data-theme-value="dark">{{ t('theme.dark') }}</button>
-      </div>
       <nav class="sidebar-footer-links" aria-label="{{ t('legal.footer_nav_label') }}">
         <a href="/legal">{{ t('legal.footer_short') }}</a>
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
@@ -282,7 +274,6 @@
   </div>
 </dialog>
 
-<script src="/static/theme.js?v=20260914a"></script>
 <script src="/static/app.js?v=20260914c"></script>
 </body>
 </html>
