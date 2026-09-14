@@ -264,6 +264,9 @@ def test_reservation_detail_shows_direct_guest_link():
         assert page.status_code == 200
         assert f"/l/{TOKEN}/{stays[0]}" in page.text
         assert "Copy guest link for this stay" in page.text
+        assert "Next step" in page.text
+        assert "Edit stay details" in page.text
+        assert 'class="panel stay-command-panel"' in page.text
         assert 'href="/guest-links"' in page.text
     finally:
         _cleanup()
