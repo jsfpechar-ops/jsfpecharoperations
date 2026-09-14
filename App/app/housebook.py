@@ -26,7 +26,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
-from . import db, reporting, validation
+from . import db, passport_photos, reporting, validation
 
 RETENTION_YEARS = 6
 # Police-inspection ZIPs are built one PDF at a time on disk — not held in RAM.
@@ -647,6 +647,11 @@ def purge_expired(
     ids = expired_guest_ids(today, owner_user_id=owner_user_id)
     if not ids:
         return 0
+    # Drop the image before the row: once the row is gone nothing in the app
+    # can find the file again, and an orphaned passport scan is the worst
+    # thing to leave behind at the exact moment the basis for holding it ends.
+    for guest_id in ids:
+        passport_photos.delete_photo(guest_id)
     marks = ", ".join("?" for _ in ids)
     db.execute(f"DELETE FROM guest WHERE id IN ({marks})", ids)
     db.audit("retention_purge", f"deleted {len(ids)} guest record(s) older than {RETENTION_YEARS} years")
