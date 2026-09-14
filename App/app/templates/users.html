@@ -8,6 +8,25 @@
   'Create a private workspace for each host. Passwords are hashed and can be reset, never viewed.'
 ) }}
 
+{% if new_credential %}
+<div class="panel credential-once" role="status">
+  <h2>{% if new_credential.reset %}Password reset{% else %}User created{% endif %}</h2>
+  <p class="small muted">
+    Copy this now - it is not stored in readable form and cannot be shown again.
+    {% if new_credential.reset %}The old password no longer works.{% endif %}
+  </p>
+  <dl class="credential-pair">
+    <dt>Username</dt>
+    <dd class="mono">{{ new_credential.username }}</dd>
+    <dt>Temporary password</dt>
+    <dd class="mono credential-secret">{{ new_credential.password }}</dd>
+  </dl>
+  <p class="small muted">
+    They will be asked to choose their own password the first time they sign in.
+  </p>
+</div>
+{% endif %}
+
 <div class="split wide">
   <section>
     <div class="panel tight scroll-x">

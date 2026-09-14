@@ -2090,6 +2090,16 @@ details.raw pre {
 .celebration-card h2 { margin: 0 0 8px; font-size: 22px; }
 .celebration-card p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
 
+/* Shown once, in the response body, because a credential must never travel in
+   a URL where history and proxy logs would keep it. */
+.credential-once { border-left: 4px solid var(--warn); background: var(--warn-soft); margin-bottom: 18px; }
+.credential-once h2 { margin: 0 0 6px; font-size: 17px; }
+.credential-once p { margin: 0 0 12px; }
+.credential-pair { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0 0 12px; align-items: baseline; }
+.credential-pair dt { color: var(--muted); font-size: 13px; }
+.credential-pair dd { margin: 0; }
+.credential-secret { font-size: 18px; font-weight: 600; user-select: all; letter-spacing: 0.02em; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

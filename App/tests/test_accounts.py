@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import base64
-from urllib.parse import unquote
 
 from fastapi.testclient import TestClient
 
@@ -268,9 +267,11 @@ def test_admin_create_host_generates_password_when_missing():
             data={"username": "boundary-auto", "display_name": "Auto Host"},
             follow_redirects=False,
         )
-        assert response.status_code == 303
-        location = unquote(response.headers["location"])
-        assert "Temporary password:" in location
+        # Shown in the response body, never in a redirect URL: see
+        # tests/test_credential_handling.py for why.
+        assert response.status_code == 200
+        assert "Temporary password" in response.text
+        assert "password" not in response.headers.get("location", "").lower()
         row = db.query_one(
             "SELECT * FROM user_account WHERE username = ?", ("boundary-auto",)
         )

@@ -322,13 +322,17 @@ def users_admin(request: Request):
     account = auth.current_user(request)
     if not account or account["role"] != "admin":
         return Response("Administrators only.", status_code=403)
+    return _render_users(request)
+
+
+def _render_users(request: Request, **extra):
     users = db.query(
         "SELECT u.id, u.username, u.display_name, u.role, u.active, "
         "u.must_change_password, u.created_at, u.last_login_at, "
         "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
         "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
     )
-    return render(request, "users.html", {"users": users})
+    return render(request, "users.html", {"users": users, **extra})
 
 
 @router.post("/admin/users")
@@ -343,9 +347,10 @@ async def user_create(request: Request):
     password = _form_str(form, "password")
     if not password:
         password = auth.generate_password()
+    username = _form_str(form, "username")
     try:
         user_id = auth.create_account(
-            _form_str(form, "username"),
+            username,
             password,
             _form_str(form, "display_name"),
             role="host",
@@ -360,9 +365,12 @@ async def user_create(request: Request):
     db.audit(
         "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
     )
-    return _back(
-        "/admin/users",
-        msg=f"User created. Temporary password: {password} — copy it now; it is not shown again.",
+    # Rendered straight into the response body rather than flashed through a
+    # redirect: a query string ends up in browser history, proxy logs and the
+    # Referer of the next request, which is no place for a live credential.
+    return _render_users(
+        request,
+        new_credential={"username": username, "password": password},
     )
 
 
@@ -388,12 +396,9 @@ async def user_password_reset(user_id: int, request: Request):
     db.audit(
         "password_reset", actor=account["username"], owner_user_id=user_id
     )
-    return _back(
-        "/admin/users",
-        msg=(
-            f"Password reset for {target['username']}. "
-            f"Temporary password: {password} — copy it now; it is not shown again."
-        ),
+    return _render_users(
+        request,
+        new_credential={"username": target["username"], "password": password, "reset": True},
     )
 
 
