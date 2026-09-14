@@ -21,8 +21,8 @@
     <div class="panel" id="settings-overview">
       <h2 style="margin-top:0">Where reports go</h2>
       <dl class="kv">
-        <dt>Deployment</dt><dd><span class="env-badge {{ deployment_tier }}">{{ deployment_tier }}</span></dd>
-        <dt>UbyPort target</dt><dd><span class="env-badge {{ ubyport_env }}">{{ ubyport_env }}</span></dd>
+        <dt>Deployment</dt><dd>{{ deployment_tier | capitalize }}</dd>
+        <dt>UbyPort target</dt><dd>{{ 'Production' if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
         <dt>Endpoint</dt><dd class="mono small">{{ endpoint }}</dd>
         <dt>Calendar polling</dt><dd>every {{ poll_minutes }} minutes</dd>
         <dt>Submission sweep</dt><dd>every {{ sweep_minutes }} minutes</dd>
@@ -35,13 +35,6 @@
             <small>You are pointed at the local mock server. Set
               <span class="mono">UBYHOST_UBYPORT_ENV=test</span> or <span class="mono">prod</span>
               and restart once you have credentials.</small>
-          </div>
-        </div>
-      {% elif ubyport_env == 'prod' %}
-        <div class="banner critical" style="margin-top:14px">
-          <div class="grow">
-            <strong>Live production reporting is active.</strong>
-            <small>Submissions go to the real Foreign Police register. Duplicates count against you.</small>
           </div>
         </div>
       {% endif %}

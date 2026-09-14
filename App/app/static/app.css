@@ -378,7 +378,6 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
   background: var(--surface-3);
   color: var(--muted);
 }
-.env-badge.prod { background: var(--bad-soft); color: var(--bad); }
 .env-badge.test { background: var(--warn-soft); color: var(--warn); }
 /* Dashed, so "practice server" is not mistaken for "test credentials" at a
    glance - the two used to render identically. */
@@ -388,7 +387,6 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
   border: 1px dashed currentColor;
   padding: 2px 7px;
 }
-.env-badge.production { background: var(--bad-soft); color: var(--bad); }
 .env-badge.staging { background: var(--accent-soft); color: var(--accent); }
 .env-badge.local { background: var(--muted-soft, #eee); color: var(--muted); }
 

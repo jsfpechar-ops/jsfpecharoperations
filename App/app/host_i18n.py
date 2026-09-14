@@ -415,8 +415,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "env.where_reports_go": "Where reports are sent",
         "env.mock": "MOCK · Nothing sent",
         "env.test": "TEST · Police sandbox",
-        "env.prod": "LIVE · Police",
-        "env.production": "LIVE · Police",
         "env.staging": "STAGING",
         "env.local": "LOCAL",
         "theme.label": "Appearance",
@@ -532,8 +530,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "every stay is running out its three working days unreported. Set "
             "UBYHOST_UBYPORT_ENV=prod now."
         ),
-        "env.prod_title": "Live police reporting",
-        "env.prod_body": "Everything you send from here goes into the real police register.",
         "status.failed": "Rejected",
         "status.reported": "Reported",
         "status.ready": "Ready to report",
@@ -1190,8 +1186,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "env.where_reports_go": "Kam se hlášení odesílají",
         "env.mock": "UKÁZKA · Nic se neodesílá",
         "env.test": "TEST · Policejní test",
-        "env.prod": "OSTRÝ · Policie",
-        "env.production": "OSTRÝ · Policie",
         "env.staging": "STAGING",
         "env.local": "LOKÁLNÍ",
         "theme.label": "Vzhled",
@@ -1305,8 +1299,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "u každého pobytu běží tři pracovní dny bez hlášení. Nastavte hned "
             "UBYHOST_UBYPORT_ENV=prod."
         ),
-        "env.prod_title": "Ostré hlášení policii",
-        "env.prod_body": "Vše, co odsud odešlete, jde do skutečné evidence policie.",
         "status.failed": "Odmítnuto",
         "status.reported": "Nahlášeno",
         "status.ready": "Připraveno k hlášení",
