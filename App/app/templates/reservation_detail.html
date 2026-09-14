@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, progress_pill, submission_pill, row_menu_begin, row_menu_end, copy_inline %}
+{% from "_components.html" import page_header, breadcrumb, progress_pill, submission_pill, row_menu_begin, row_menu_end, copy_inline with context %}
 
 {{ breadcrumb([
   {'label': t('stays.title'), 'url': return_to},
@@ -132,7 +132,8 @@
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">{{ t('stay.detail.guests.edit') }}</a>
             <a class="row-menu-item" href="/guests/{{ guest.id }}/form.pdf" role="menuitem">{{ t('stay.detail.guests.pdf') }}</a>
-            <form method="post" action="/guests/{{ guest.id }}/archive" class="row-menu-form">
+            <form method="post" action="/guests/{{ guest.id }}/archive" class="row-menu-form"
+                  data-confirm data-confirm-message="{{ t('confirm.archive_guest') }}">
               <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
               <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
             </form>

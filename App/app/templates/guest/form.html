@@ -3,10 +3,14 @@
 {% macro val(name, fallback='') %}{{ values.get(name) if values.get(name) is not none else (guest[name] if guest and name in guest.keys() and guest[name] else fallback) }}{% endmacro %}
 {% macro err_for(field) %}
   {% for issue in issues if issue.field == field %}
-    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ issue.message }}</div>
+    <div class="{{ 'err' if issue.is_error else 'hint' }}"
+         {% if issue.is_error %}id="{{ field }}-error"{% endif %}>{{ issue.message }}</div>
   {% endfor %}
 {% endmacro %}
 {% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
+{# A red border is invisible to a screen reader, so say it in the markup too
+   and point at the message instead of leaving the guest to hunt for it. #}
+{% macro invalid(field) %}{% if issues | selectattr('is_error') | selectattr('field', 'equalto', field) | list %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}{% endmacro %}
 
 {% block content %}
 {% if back_url %}
@@ -61,13 +65,13 @@
     <div class="g-row">
       <div class="g-field">
         <label for="first_name">{{ t('first_name') }}</label>
-        <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name" maxlength="24"
+        <input class="{{ bad('first_name') }}" {{ invalid('first_name') }} type="text" id="first_name" name="first_name" maxlength="24"
                autocomplete="given-name" required value="{{ val('first_name') }}">
         {{ err_for('first_name') }}
       </div>
       <div class="g-field">
         <label for="surname">{{ t('surname') }}</label>
-        <input class="{{ bad('surname') }}" type="text" id="surname" name="surname" maxlength="50" required
+        <input class="{{ bad('surname') }}" {{ invalid('surname') }} type="text" id="surname" name="surname" maxlength="50" required
                autocomplete="family-name" value="{{ val('surname') }}">
         {{ err_for('surname') }}
       </div>
@@ -76,7 +80,7 @@
     <div class="g-row">
       <div class="g-field">
         <label for="birth_date">{{ t('birth_date') }}</label>
-        <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
+        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date"
                inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" required
                autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
         <div class="hint">{{ t('birth_date_help') }}</div>
@@ -84,7 +88,7 @@
       </div>
       <div class="g-field">
         <label for="nationality">{{ t('nationality') }}</label>
-        <select class="{{ bad('nationality') }}" id="nationality" name="nationality" required>
+        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" required>
           <option value="">—</option>
           {% for country in countries %}
             <option value="{{ country.code }}" {% if val('nationality') == country.code %}selected{% endif %}>
@@ -97,7 +101,7 @@
 
     <div class="g-field" id="doc-wrap">
       <label for="doc_number">{{ t('doc_number') }}</label>
-      <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
+      <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
              autocapitalize="characters" value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
       <div class="hint">{{ t('doc_number_help') }}</div>
       {{ err_for('doc_number') }}
@@ -123,7 +127,7 @@
 
     <div class="g-field">
       <label for="visa_number">{{ t('visa_number') }} <span class="opt">({{ t('optional') }})</span></label>
-      <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
+      <input class="{{ bad('visa_number') }}" {{ invalid('visa_number') }} type="text" id="visa_number" name="visa_number" maxlength="15"
              autocapitalize="characters" value="{{ val('visa_number') }}">
       <div class="hint">{{ t('visa_help') }}</div>
       {{ err_for('visa_number') }}
@@ -146,20 +150,20 @@
     <p class="g-intro">{{ t('residence_help') }}</p>
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>
-      <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street" maxlength="42"
+      <input class="{{ bad('res_street') }}" {{ invalid('res_street') }} type="text" id="res_street" name="res_street" maxlength="42"
              autocomplete="street-address" required value="{{ val('res_street') }}">
       {{ err_for('res_street') }}
     </div>
     <div class="g-row">
       <div class="g-field">
         <label for="res_city">{{ t('res_city') }}</label>
-        <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city" maxlength="42"
+        <input class="{{ bad('res_city') }}" {{ invalid('res_city') }} type="text" id="res_city" name="res_city" maxlength="42"
                autocomplete="address-level2" required value="{{ val('res_city') }}">
         {{ err_for('res_city') }}
       </div>
       <div class="g-field">
         <label for="res_country">{{ t('res_country') }}</label>
-        <select class="{{ bad('res_country') }}" id="res_country" name="res_country" required>
+        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" required>
           <option value="">—</option>
           {% for country in countries %}
             <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
@@ -187,7 +191,7 @@
           {{ t('passport_photo_choose') }}
         </button>
       </div>
-      <input class="{{ bad('passport_photo') }}" type="file" id="passport_photo" name="passport_photo" hidden>
+      <input class="{{ bad('passport_photo') }}" {{ invalid('passport_photo') }} type="file" id="passport_photo" name="passport_photo" hidden>
       <p class="passport-file-name" id="passport-file-name" hidden></p>
       <p class="passport-file-err err" id="passport-file-err" role="alert" hidden></p>
       <div class="hint">{{ t('passport_photo_hint') }}</div>

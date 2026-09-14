@@ -2,7 +2,7 @@
 {% set nav = 'guide' %}
 {% block title %}{{ t('guide.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header %}
+{% from "_components.html" import page_header with context %}
 {{ page_header(t('guide.title'), t('guide.lede')) }}
 
 <div class="guide-layout">

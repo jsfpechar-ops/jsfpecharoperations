@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/static/guest.css?v=20260912a">
 </head>
 <body>
+<a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
 <div class="g-wrap">
   <div class="g-head">
     <div class="g-title">
@@ -27,13 +28,15 @@
   {% if flash %}<div class="g-ok">{{ flash }}</div>{% endif %}
   {% if flash_error %}<div class="g-err">{{ flash_error }}</div>{% endif %}
 
-  {% block content %}{% endblock %}
+  <main id="g-main">
+    {% block content %}{% endblock %}
+  </main>
 
   <div class="g-foot">
     <p>{{ t('privacy') }}</p>
     {% if privacy_url %}<p><a href="{{ privacy_url }}">{{ t('privacy_link') }}</a></p>{% endif %}
   </div>
 </div>
-<script src="/static/signature.js?v=20260911e"></script>
+<script src="/static/signature.js?v=20260914a"></script>
 </body>
 </html>

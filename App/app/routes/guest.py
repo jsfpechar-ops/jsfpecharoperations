@@ -15,12 +15,14 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 
+import posixpath
+import re
 import secrets
 import time
 
@@ -50,8 +52,60 @@ CS_VALIDATION_MESSAGES = {
     "Country is required.": "Země je povinná.",
     "Unknown country code.": "Neznámý kód země.",
     "Unknown purpose-of-stay code.": "Neznámý účel pobytu.",
+    "Purpose of stay is required.": "Účel pobytu je povinný.",
+    "Remove the | character and any line breaks.": (
+        "Odstraňte znak | a všechny konce řádků."
+    ),
     "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
+    validation.NON_LATIN_MESSAGE: (
+        "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově "
+        "čitelných řádcích na konci vašeho pasu."
+    ),
+    # Built from the same constants as the English text so the two cannot drift
+    # apart when a field limit changes.
+    f"Surname must be at most {validation.MAX_SURNAME} characters.": (
+        f"Příjmení může mít nejvýše {validation.MAX_SURNAME} znaků. Zkraťte ho, "
+        "prosím, podle pasu."
+    ),
+    f"Given name must be at most {validation.MAX_FIRST_NAME} characters.": (
+        f"Jméno může mít nejvýše {validation.MAX_FIRST_NAME} znaků. Uveďte, prosím, "
+        "jen první jména z pasu."
+    ),
+    f"Document number must be at least {validation.MIN_DOC} characters.": (
+        f"Číslo dokladu musí mít alespoň {validation.MIN_DOC} znaků."
+    ),
+    f"Document number must be at most {validation.MAX_DOC} characters.": (
+        f"Číslo dokladu může mít nejvýše {validation.MAX_DOC} znaků."
+    ),
+    f"Visa number must be at most {validation.MAX_VISA} characters.": (
+        f"Číslo víza může mít nejvýše {validation.MAX_VISA} znaků."
+    ),
+    f"Street must be at most {validation.MAX_RESIDENCE_PART} characters.": (
+        f"Ulice může mít nejvýše {validation.MAX_RESIDENCE_PART} znaků."
+    ),
+    f"City must be at most {validation.MAX_RESIDENCE_PART} characters.": (
+        f"Město může mít nejvýše {validation.MAX_RESIDENCE_PART} znaků."
+    ),
+    "Street cannot consist of digits only.": "Ulice nemůže obsahovat jen číslice.",
+    "City cannot consist of digits only.": "Město nemůže obsahovat jen číslice.",
+    "Home address is too long.": "Adresa bydliště je příliš dlouhá.",
+    f"Note must be at most {validation.MAX_NOTE} characters.": (
+        f"Poznámka může mít nejvýše {validation.MAX_NOTE} znaků."
+    ),
+    "For a child recorded in a parent's passport the note must contain "
+    "the parent's document number.": (
+        "U dítěte zapsaného v pasu rodiče musí poznámka obsahovat číslo dokladu rodiče."
+    ),
 }
+
+# The nationality message embeds the code the guest typed, so it cannot be a
+# dictionary key.
+_CS_VALIDATION_PATTERNS = (
+    (
+        re.compile(r"^'(?P<code>.*)' is not a valid three-letter country code\.$"),
+        "„{code}“ není platný třímístný kód země (např. GBR, USA, DEU).",
+    ),
+)
 
 CS_PASSPORT_UPLOAD_MESSAGES = {
     "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
@@ -113,14 +167,44 @@ def _with_lang(response, lang: str):
     return response
 
 
+def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
+    """Only ever bounce back inside this apartment's own permalink.
+
+    A plain ``startswith`` check passes ``/l/{token}/../../somewhere-else``,
+    so the path is normalised before it is compared.
+    """
+    fallback = _guest_link(token) + _lang_q(lang)
+    raw = (requested or "").strip()
+    if not raw.startswith("/") or raw.startswith("//"):
+        return fallback
+    split = urlsplit(raw)
+    if split.scheme or split.netloc:
+        return fallback
+    path = posixpath.normpath(split.path)
+    prefix = _guest_link(token)
+    if path != prefix and not path.startswith(prefix + "/"):
+        return fallback
+    return urlunsplit(("", "", path, split.query, ""))
+
+
+def _localize_message(message: str) -> str:
+    translated = CS_VALIDATION_MESSAGES.get(message)
+    if translated:
+        return translated
+    for pattern, template in _CS_VALIDATION_PATTERNS:
+        match = pattern.match(message)
+        if match:
+            return template.format(**match.groupdict())
+    return message
+
+
 def _localize_issues(issues, lang: str):
     if lang != "cs":
         return issues
-    localized = []
-    for issue in issues:
-        message = CS_VALIDATION_MESSAGES.get(issue.message, issue.message)
-        localized.append(validation.Issue(issue.field, message, issue.severity))
-    return localized
+    return [
+        validation.Issue(issue.field, _localize_message(issue.message), issue.severity)
+        for issue in issues
+    ]
 
 
 def _apartment_by_token(token: str):
@@ -364,9 +448,7 @@ async def verify_pin(token: str, request: Request):
         if failures > 0:
             time.sleep(min(2.0, 0.15 * failures))
         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
-    return_to = (form.get("return_to") or _guest_link(token)).strip()
-    if not return_to.startswith(_guest_link(token)):
-        return_to = _guest_link(token) + _lang_q(lang)
+    return_to = _safe_return_to(form.get("return_to"), token, lang)
     response = RedirectResponse(return_to, status_code=303)
     auth.attach_pin_session(response, token)
     return _with_lang(response, lang)
@@ -383,13 +465,7 @@ def privacy_notice(token: str, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    requested_back = (request.query_params.get("return_to") or "").strip()
-    safe_prefix = _guest_link(token)
-    back_url = (
-        requested_back
-        if requested_back.startswith(safe_prefix) and not requested_back.startswith("//")
-        else _guest_link(token) + _lang_q(lang)
-    )
+    back_url = _safe_return_to(request.query_params.get("return_to"), token, lang)
     context = _shared(request, token, lang, apartment)
     context.update(
         {
@@ -476,6 +552,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "can_add": remaining is None or remaining > 0,
             "can_raise_party": not reservation["expected_guests_override"],
             "can_pick_other": _can_pick_other_stays(apartment),
+            "party_error": request.query_params.get("party_error") == "1",
             "just_saved": request.query_params.get("saved") == "1",
             "just_reported": (
                 request.query_params.get("saved") == "1"
@@ -505,8 +582,13 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     except ValueError:
         count = 0
     if count < 1 or count > 60:
+        # Silently bouncing back looks like the app ignored them.
         return _with_lang(
-            RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
+            RedirectResponse(
+                _guest_link(token, reservation_id) + _lang_q(lang, "&party_error=1"),
+                status_code=303,
+            ),
+            lang,
         )
     _set_declared_guests(reservation, count)
     return _with_lang(
@@ -729,7 +811,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             prefix = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
             raw["note"] = (prefix + parent_doc + (" " + raw["note"] if raw["note"] else ""))[:255]
 
-    values = validation.normalise_guest(raw)
+    # Un-clamped so an over-long name is reported back to the guest instead of
+    # being cut mid-word and filed against a passport it no longer matches.
+    values = validation.normalise_guest(raw, clamp=False)
     stay_from = (form.get("stay_from") or "").strip() or reservation["date_from"]
     stay_to = (form.get("stay_to") or "").strip() or reservation["date_to"]
     signature = (form.get("signature") or "").strip()
@@ -743,7 +827,10 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         party_size = 0
 
     issues = validation.validate_guest(
-        values, validation.parse_iso_date(stay_from), validation.parse_iso_date(stay_to)
+        values,
+        validation.parse_iso_date(stay_from),
+        validation.parse_iso_date(stay_to),
+        raw=raw,
     )
     if reporting.expected_guest_count(reservation) is None and not existing:
         if party_size < 1 or party_size > 60:
@@ -830,6 +917,17 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         db.update("guest", existing["id"], payload)
         saved_id = existing["id"]
     else:
+        # Two phones can each open /new while one slot is free. /new checks
+        # capacity on GET; re-check here so the party cannot overshoot the
+        # declared headcount and report a guest nobody expected.
+        fresh = reporting.reservation_progress(reservation)
+        if fresh["expected"] is not None and fresh["filled"] >= fresh["expected"]:
+            return _with_lang(
+                RedirectResponse(
+                    _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
+                ),
+                lang,
+            )
         is_first = not db.query_one(
             "SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)
         )

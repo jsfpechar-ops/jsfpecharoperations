@@ -115,17 +115,35 @@ def urgency(check_in: date, now: Optional[datetime] = None) -> str:
 URGENCY_ORDER = {"overdue": 0, "urgent": 1, "soon": 2, "ok": 3, "future": 4}
 
 
-def describe_time_left(check_in: date, now: Optional[datetime] = None) -> str:
+def time_left_parts(check_in: date, now: Optional[datetime] = None) -> tuple:
+    """(kind, amount) for the deadline countdown, ready to be translated.
+
+    The wording lives with the other UI strings; this module stays a pure
+    calculation so the legal arithmetic can be read on its own.
+    """
     now = now or datetime.now()
     if check_in > now.date():
-        days = (check_in - now.date()).days
-        return f"arrives in {days} day{'s' if days != 1 else ''}"
+        return "arrives_days", (check_in - now.date()).days
     left = hours_left(check_in, now)
     if left < 0:
         over = abs(left)
         if over < 48:
-            return f"overdue by {int(over)} h"
-        return f"overdue by {int(over // 24)} days"
+            return "overdue_hours", int(over)
+        return "overdue_days", int(over // 24)
     if left < 48:
-        return f"{int(left)} h left"
-    return f"{int(left // 24)} days left"
+        return "hours_left", int(left)
+    return "days_left", int(left // 24)
+
+
+def describe_time_left(check_in: date, now: Optional[datetime] = None) -> str:
+    """English countdown, for logs and stored alert text."""
+    kind, amount = time_left_parts(check_in, now)
+    if kind == "arrives_days":
+        return f"arrives in {amount} day{'s' if amount != 1 else ''}"
+    if kind == "overdue_hours":
+        return f"overdue by {amount} h"
+    if kind == "overdue_days":
+        return f"overdue by {amount} days"
+    if kind == "hours_left":
+        return f"{amount} h left"
+    return f"{amount} days left"

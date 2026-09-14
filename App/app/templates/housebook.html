@@ -2,7 +2,7 @@
 {% set nav = 'housebook' %}
 {% block title %}House book{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu with context %}
 {% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
 {{ page_header(
   'House book',
@@ -116,7 +116,8 @@
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">Edit</a>
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">PDF</a>
-            <form method="post" action="/guests/{{ row._guest_id }}/archive" class="row-menu-form">
+            <form method="post" action="/guests/{{ row._guest_id }}/archive" class="row-menu-form"
+                  data-confirm data-confirm-message="{{ t('confirm.archive_guest') }}">
               <input type="hidden" name="return_to" value="/housebook">
               <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
             </form>

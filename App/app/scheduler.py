@@ -5,7 +5,7 @@ import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from . import config, db, icalsync, reporting
+from . import config, db, icalsync, passport_photos, reporting
 
 log = logging.getLogger("ubyhost.scheduler")
 _scheduler = None
@@ -37,6 +37,16 @@ def _job_deadlines() -> None:
         log.exception("deadline watch failed")
 
 
+def _job_photo_sweep() -> None:
+    """Delete passport images the host never got round to verifying."""
+    try:
+        removed = passport_photos.purge_stale()
+        if removed:
+            log.info("passport photo sweep deleted %s file(s)", removed)
+    except Exception:
+        log.exception("passport photo sweep failed")
+
+
 def start() -> None:
     global _scheduler
     if _scheduler or not config.ENABLE_SCHEDULER:
@@ -52,6 +62,10 @@ def start() -> None:
     )
     _scheduler.add_job(
         _job_deadlines, "interval", minutes=30, id="deadlines", max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_photo_sweep, "interval", hours=12, id="photo_sweep",
+        max_instances=1, coalesce=True, next_run_time=_soon(),
     )
     _scheduler.start()
     # Kick off a first calendar sync shortly after boot rather than waiting

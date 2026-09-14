@@ -129,21 +129,57 @@ def collapse_spaces(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+# Letters outside CP1250 that have no combining-mark decomposition, so NFKD
+# alone would leave them unrepresentable. The replacements are the ones ICAO
+# Doc 9303 uses for the passport machine-readable zone, which is also what the
+# police compare a record against.
+_MRZ_FOLD = {
+    "Đ": "D", "đ": "d", "Ð": "D", "ð": "d",
+    "Ø": "O", "ø": "o", "Œ": "OE", "œ": "oe",
+    "Æ": "AE", "æ": "ae", "Þ": "TH", "þ": "th",
+    "İ": "I", "ı": "i", "Ħ": "H", "ħ": "h",
+    "Ŧ": "T", "ŧ": "t", "Ə": "E", "ə": "e",
+    "Ŀ": "L", "ŀ": "l", "Ŋ": "N", "ŋ": "n",
+    "Ƶ": "Z", "ƶ": "z", "Ɖ": "D", "ɖ": "d",
+}
+
+
+def fold_to_allowed(text: str, allowed: set) -> str:
+    """Keep what UbyPort accepts and transliterate the rest instead of deleting it.
+
+    Dropping an unsupported letter silently changes the guest's identity
+    (NGUYỄN would become NGUYN), so anything outside the CP1250 repertoire is
+    folded to its passport-MRZ equivalent first and only dropped when even that
+    has no representation.
+    """
+    out = []
+    for ch in text:
+        if ch in allowed:
+            out.append(ch)
+            continue
+        mapped = _MRZ_FOLD.get(ch)
+        if mapped is None:
+            decomposed = unicodedata.normalize("NFKD", ch)
+            mapped = "".join(c for c in decomposed if not unicodedata.combining(c))
+        out.extend(c for c in mapped if c in allowed)
+    return "".join(out)
+
+
 def normalise_name(value: Optional[str]) -> str:
-    """Uppercase, collapse whitespace, drop characters UbyPort would reject."""
+    """Uppercase, collapse whitespace, and fold to the characters UbyPort accepts."""
     text = collapse_spaces(strip_forbidden(value)).upper()
-    return "".join(ch for ch in text if ch.upper() in NAME_ALLOWED or ch in " '-")
+    return collapse_spaces(fold_to_allowed(text, NAME_ALLOWED))
 
 
 def normalise_residence_part(value: Optional[str]) -> str:
     text = collapse_spaces(strip_forbidden(value))
-    return "".join(ch for ch in text if ch in RESIDENCE_ALLOWED)
+    return collapse_spaces(fold_to_allowed(text, RESIDENCE_ALLOWED))
 
 
 def normalise_document(value: Optional[str]) -> str:
     """Remove all spaces and uppercase; only A-Z and 0-9 survive."""
     text = strip_forbidden(value).upper()
-    return "".join(ch for ch in text if ch in DOC_ALLOWED)
+    return fold_to_allowed(text, DOC_ALLOWED)
 
 
 def normalise_note(value: Optional[str]) -> str:
@@ -291,42 +327,88 @@ def validate_residence(street: str, city: str, country_code: str) -> List[Issue]
 
 # --- guest record --------------------------------------------------------
 
-def normalise_guest(data: Dict[str, Optional[str]]) -> Dict[str, str]:
-    """Coerce raw form input into exactly what will be sent to UbyPort."""
-    return {
-        "surname": normalise_name(data.get("surname"))[:MAX_SURNAME],
-        "first_name": normalise_name(data.get("first_name"))[:MAX_FIRST_NAME],
+GUEST_LENGTH_LIMITS = {
+    "surname": MAX_SURNAME,
+    "first_name": MAX_FIRST_NAME,
+    "doc_number": MAX_DOC,
+    "visa_number": MAX_VISA,
+    "res_street": MAX_RESIDENCE_PART,
+    "res_city": MAX_RESIDENCE_PART,
+}
+
+
+def normalise_guest(data: Dict[str, Optional[str]], clamp: bool = True) -> Dict[str, str]:
+    """Coerce raw form input into exactly what will be sent to UbyPort.
+
+    With ``clamp=False`` the text fields keep their full length so
+    ``validate_guest`` can report "too long" and let the person decide what to
+    shorten. Silently cutting a name mid-word submits a record that no longer
+    matches the passport, which is what appendix 5 section 10.5 asks us to
+    catch on first save instead.
+    """
+    values = {
+        "surname": normalise_name(data.get("surname")),
+        "first_name": normalise_name(data.get("first_name")),
         "birth_date": normalise_birth_date(data.get("birth_date")),
         "nationality": (data.get("nationality") or "").strip().upper()[:3],
-        "doc_number": normalise_document(data.get("doc_number"))[:MAX_DOC],
-        "visa_number": normalise_document(data.get("visa_number"))[:MAX_VISA],
-        "res_street": normalise_residence_part(data.get("res_street"))[:MAX_RESIDENCE_PART],
-        "res_city": normalise_residence_part(data.get("res_city"))[:MAX_RESIDENCE_PART],
+        "doc_number": normalise_document(data.get("doc_number")),
+        "visa_number": normalise_document(data.get("visa_number")),
+        "res_street": normalise_residence_part(data.get("res_street")),
+        "res_city": normalise_residence_part(data.get("res_city")),
         "res_country": (data.get("res_country") or "").strip().upper()[:3],
         "purpose": (data.get("purpose") or "").strip()[:2],
+        # App-built text (the INPASS parent-document prefix), not something the
+        # guest can shorten, so this one stays clamped either way.
         "note": normalise_note(data.get("note")),
     }
+    if clamp:
+        for field, limit in GUEST_LENGTH_LIMITS.items():
+            values[field] = values[field][:limit]
+    return values
+
+
+NON_LATIN_MESSAGE = (
+    "Type this using Latin letters (A-Z), exactly as printed in the two "
+    "machine-readable lines at the bottom of your passport."
+)
 
 
 def validate_guest(
     guest: Dict[str, Optional[str]],
     stay_from: Optional[date] = None,
     stay_to: Optional[date] = None,
+    raw: Optional[Dict[str, Optional[str]]] = None,
 ) -> List[Issue]:
-    """All reasons this guest record would be refused, in display order."""
+    """All reasons this guest record would be refused, in display order.
+
+    Pass ``raw`` (the untouched form input) so a name written in Cyrillic,
+    Chinese or Arabic - which normalises to nothing UbyPort accepts - is told
+    to use the passport's Latin transcription rather than the misleading
+    "Surname is required".
+    """
     issues: List[Issue] = []
+
+    def typed(field: str) -> bool:
+        return bool(raw and (raw.get(field) or "").strip())
 
     surname = guest.get("surname") or ""
     if not surname:
-        issues.append(Issue("surname", "Surname is required."))
+        issues.append(
+            Issue("surname", NON_LATIN_MESSAGE if typed("surname") else "Surname is required.")
+        )
     elif len(surname) > MAX_SURNAME:
         issues.append(Issue("surname", f"Surname must be at most {MAX_SURNAME} characters."))
 
     first_name = guest.get("first_name") or ""
     if not first_name:
-        # Appendix 3 allows an empty given name, but a blank one is nearly
-        # always a filling mistake rather than a genuinely nameless guest.
-        issues.append(Issue("first_name", "Given name looks missing - please check the passport.", "warning"))
+        if typed("first_name"):
+            issues.append(Issue("first_name", NON_LATIN_MESSAGE))
+        else:
+            # Appendix 3 allows an empty given name, but a blank one is nearly
+            # always a filling mistake rather than a genuinely nameless guest.
+            issues.append(
+                Issue("first_name", "Given name looks missing - please check the passport.", "warning")
+            )
     elif len(first_name) > MAX_FIRST_NAME:
         issues.append(Issue("first_name", f"Given name must be at most {MAX_FIRST_NAME} characters."))
 
@@ -375,8 +457,21 @@ def validate_guest(
         issues.append(Issue("res_street", "Home address is too long."))
 
     purpose = guest.get("purpose") or ""
-    if purpose and purpose not in PURPOSE_CODES:
+    if not purpose:
+        issues.append(Issue("purpose", "Purpose of stay is required."))
+    elif purpose not in PURPOSE_CODES:
         issues.append(Issue("purpose", "Unknown purpose-of-stay code."))
+
+    # The normalisers strip these, but validation is also the gate in front of
+    # values that were already stored, and one pipe or newline anywhere in a
+    # record breaks the field framing for the whole batch.
+    for field in ("surname", "first_name", "doc_number", "visa_number",
+                  "res_street", "res_city", "note"):
+        value = guest.get(field) or ""
+        if any(ch in value for ch in FORBIDDEN_ANYWHERE):
+            issues.append(
+                Issue(field, "Remove the | character and any line breaks.")
+            )
 
     if len(note) > MAX_NOTE:
         issues.append(Issue("note", f"Note must be at most {MAX_NOTE} characters."))
