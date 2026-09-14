@@ -82,6 +82,7 @@ Use this whenever you ship a change that affects hosts or guests.
 | `UBYHOST_ADMIN_PASSWORD` | Render env (you set) | Bootstrap admin only; change in the UI after first login. |
 | UbyPort **web-service** login (`UBY-WS…`) | Entered per apartment in the UI | **Not** your normal UbyPort web login. Request from `reguby@pcr.cz` / data box `ybndqw9`. |
 | Police PDF / portal passwords | **Never** in git or Render env | Those are for the human UbyPort portal, not this app. |
+| Annotated **sample** WS credential PDF | Committed under `App/app/static/docs/` | Fictional training aid only. Regenerate with `python App/tools/generate_ubyport_sample_pdf.py` (ReportLab). |
 
 ## Persistent data and backups
 
