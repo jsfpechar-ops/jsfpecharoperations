@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
+
+import qrcode
+import pyotp
 
 from fastapi import APIRouter, BackgroundTasks, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
@@ -27,6 +31,7 @@ from .. import (
     rate_limit,
     reporting,
     stays_import,
+    turnstile,
     validation,
 )
 from ..templating import render
@@ -223,6 +228,13 @@ async def login_submit(request: Request):
     form = await request.form()
     username = _form_str(form, "username")
     client_key = rate_limit.client_key(request, username.lower() or "unknown")
+    if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
+        return render(
+            request,
+            "login.html",
+            {"error": "Security check failed. Please try again.", "username": username},
+            status_code=403,
+        )
     if rate_limit.login_blocked(client_key):
         return render(
             request,
@@ -251,6 +263,16 @@ async def login_submit(request: Request):
     if next_path.startswith("/") and not next_path.startswith("//") and not account["must_change_password"]:
         target = next_path
     remember = _form_str(form, "remember") in ("1", "on", "true", "yes")
+    if account["totp_enabled"]:
+        return render(
+            request,
+            "two_factor_login.html",
+            {
+                "pending": auth.issue_two_factor_pending(
+                    account["id"], remember=remember, next_path=target
+                )
+            },
+        )
     response = RedirectResponse(target, status_code=303)
     auth.attach_session(
         response,
@@ -270,6 +292,46 @@ async def login_submit(request: Request):
     return response
 
 
+@router.post("/login/2fa")
+async def two_factor_login(request: Request):
+    form = await request.form()
+    pending = auth.read_two_factor_pending(_form_str(form, "pending"))
+    if not pending:
+        return RedirectResponse("/login", status_code=303)
+    account = db.query_one(
+        "SELECT * FROM user_account WHERE id = ? AND active = 1", (pending["uid"],)
+    )
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    client_key = rate_limit.client_key(request, f"{account['username']}:2fa")
+    if rate_limit.login_blocked(client_key):
+        return render(
+            request,
+            "two_factor_login.html",
+            {"pending": _form_str(form, "pending"), "error": "Too many attempts. Wait about 15 minutes."},
+            status_code=429,
+        )
+    if not auth.verify_second_factor(account, _form_str(form, "code")):
+        rate_limit.record_login_failure(client_key)
+        db.audit("two_factor_failed", actor=account["username"], owner_user_id=account["id"])
+        return render(
+            request,
+            "two_factor_login.html",
+            {"pending": _form_str(form, "pending"), "error": "That code is not valid."},
+            status_code=401,
+        )
+    response = RedirectResponse(str(pending.get("next") or "/"), status_code=303)
+    auth.attach_session(
+        response,
+        auth.issue_session(
+            account["id"], account["session_version"], remember=bool(pending.get("rm"))
+        ),
+        remember=bool(pending.get("rm")),
+    )
+    db.audit("two_factor_login", actor=account["username"], owner_user_id=account["id"])
+    return response
+
+
 @router.post("/logout")
 def logout():
     response = RedirectResponse("/login", status_code=303)
@@ -283,6 +345,62 @@ def account_password_form(request: Request):
     if guard:
         return guard
     return render(request, "account_password.html", {})
+
+
+def _totp_qr_data(uri: str) -> str:
+    image = qrcode.make(uri)
+    output = io.BytesIO()
+    image.save(output, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(output.getvalue()).decode()
+
+
+@router.get("/account/2fa/setup")
+def two_factor_setup_form(request: Request):
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    if account["totp_enabled"]:
+        return _back("/settings", msg="Two-factor authentication is already enabled.")
+    try:
+        secret = db.decrypt_secret(account["totp_secret_enc"]) if account["totp_secret_enc"] else ""
+    except Exception:
+        secret = ""
+    if not secret:
+        secret = auth.new_totp_secret()
+        auth.stage_totp(account["id"], secret)
+    uri = auth.totp_uri(secret, account["username"])
+    return render(
+        request,
+        "two_factor_setup.html",
+        {"secret": secret, "qr_data": _totp_qr_data(uri)},
+    )
+
+
+@router.post("/account/2fa/setup")
+async def two_factor_setup_submit(request: Request):
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    form = await request.form()
+    try:
+        secret = db.decrypt_secret(account["totp_secret_enc"])
+    except Exception:
+        secret = ""
+    if not secret or not pyotp.TOTP(secret).verify(_form_str(form, "code"), valid_window=1):
+        uri = auth.totp_uri(secret, account["username"]) if secret else ""
+        return render(
+            request,
+            "two_factor_setup.html",
+            {"secret": secret, "qr_data": _totp_qr_data(uri) if uri else "", "error": "That code is not valid."},
+            status_code=400,
+        )
+    recovery_codes = auth.new_recovery_codes()
+    auth.enable_totp(account["id"], secret, recovery_codes)
+    refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
+    response = render(request, "two_factor_recovery.html", {"recovery_codes": recovery_codes})
+    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
+    db.audit("two_factor_enabled", actor=account["username"], owner_user_id=account["id"])
+    return response
 
 
 @router.post("/account/password")
@@ -308,6 +426,11 @@ async def account_password_update(request: Request):
     except ValueError as exc:
         return render(request, "account_password.html", {"error": str(exc)}, status_code=400)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
+    if account["must_change_password"]:
+        try:
+            (config.DATA_DIR / "initial_admin_credentials").unlink(missing_ok=True)
+        except OSError:
+            pass
     response = _back("/", msg="Password changed.")
     auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
     db.audit("password_changed", actor=account["username"], owner_user_id=account["id"])
@@ -391,6 +514,7 @@ async def user_password_reset(user_id: int, request: Request):
         password = auth.generate_password()
     try:
         auth.set_account_password(user_id, password, must_change=True)
+        auth.reset_totp(user_id)
     except ValueError as exc:
         return _back("/admin/users", err=str(exc))
     db.audit(

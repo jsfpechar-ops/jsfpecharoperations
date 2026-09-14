@@ -1,0 +1,13 @@
+{% extends "auth_base.html" %}
+{% block title %}Save recovery codes{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">Save your recovery codes</h1>
+  <p class="auth-lede">Store these in Bitwarden now. Each code works once if you lose your authenticator.</p>
+  <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    {% for code in recovery_codes %}<code>{{ code }}</code>{% endfor %}
+  </div>
+  <p class="small"><strong>They will not be shown again.</strong></p>
+  <a class="auth-submit" href="/" style="display:block;text-align:center;text-decoration:none">I saved them — continue</a>
+</section>
+{% endblock %}

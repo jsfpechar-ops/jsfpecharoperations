@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
 import re
 import secrets
@@ -17,12 +18,14 @@ from typing import Any, Optional
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeTimedSerializer
+import pyotp
 
 from . import config, db
 
 SESSION_COOKIE = "ubyhost_session"
 SESSION_MAX_AGE = 60 * 60 * 12
 SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
+TWO_FACTOR_PENDING_MAX_AGE = 10 * 60
 _PBKDF2_ROUNDS = 600_000
 _USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,31}$")
 _dummy_password_hash: Optional[str] = None
@@ -30,6 +33,94 @@ _dummy_password_hash: Optional[str] = None
 
 def _serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-session")
+
+
+def _two_factor_serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-2fa-pending")
+
+
+def issue_two_factor_pending(user_id: int, remember: bool = False, next_path: str = "/") -> str:
+    return _two_factor_serializer().dumps(
+        {"uid": int(user_id), "rm": bool(remember), "next": next_path}
+    )
+
+
+def read_two_factor_pending(token: str) -> Optional[dict[str, Any]]:
+    try:
+        payload = _two_factor_serializer().loads(token, max_age=TWO_FACTOR_PENDING_MAX_AGE)
+        return payload if isinstance(payload, dict) and payload.get("uid") else None
+    except BadSignature:
+        return None
+
+
+def new_totp_secret() -> str:
+    return pyotp.random_base32()
+
+
+def totp_uri(secret: str, username: str) -> str:
+    return pyotp.TOTP(secret).provisioning_uri(name=username, issuer_name="UbyHost")
+
+
+def recovery_code_hash(code: str) -> str:
+    normalized = (code or "").replace("-", "").replace(" ", "").upper()
+    return hmac.new(
+        config.SECRET_KEY.encode(), normalized.encode(), hashlib.sha256
+    ).hexdigest()
+
+
+def new_recovery_codes(count: int = 8) -> list[str]:
+    return [f"{secrets.token_hex(4)[:4]}-{secrets.token_hex(4)[:4]}".upper() for _ in range(count)]
+
+
+def enable_totp(user_id: int, secret: str, recovery_codes: list[str]) -> None:
+    db.execute(
+        "UPDATE user_account SET totp_secret_enc = ?, totp_enabled = 1, "
+        "recovery_codes_hash = ?, session_version = session_version + 1 WHERE id = ?",
+        (
+            db.encrypt_secret(secret),
+            json.dumps([recovery_code_hash(code) for code in recovery_codes]),
+            user_id,
+        ),
+    )
+
+
+def stage_totp(user_id: int, secret: str) -> None:
+    db.execute(
+        "UPDATE user_account SET totp_secret_enc = ?, totp_enabled = 0 WHERE id = ?",
+        (db.encrypt_secret(secret), user_id),
+    )
+
+
+def reset_totp(user_id: int) -> None:
+    db.execute(
+        "UPDATE user_account SET totp_secret_enc = NULL, totp_enabled = 0, "
+        "recovery_codes_hash = NULL, session_version = session_version + 1 WHERE id = ?",
+        (user_id,),
+    )
+
+
+def verify_second_factor(account, code: str) -> bool:
+    normalized = (code or "").replace(" ", "")
+    try:
+        secret = db.decrypt_secret(account["totp_secret_enc"])
+    except Exception:
+        return False
+    if secret and pyotp.TOTP(secret).verify(normalized, valid_window=1):
+        return True
+    candidate = recovery_code_hash(normalized)
+    try:
+        hashes = json.loads(account["recovery_codes_hash"] or "[]")
+    except ValueError:
+        hashes = []
+    for stored in hashes:
+        if hmac.compare_digest(candidate, stored):
+            hashes.remove(stored)
+            db.execute(
+                "UPDATE user_account SET recovery_codes_hash = ? WHERE id = ?",
+                (json.dumps(hashes), account["id"]),
+            )
+            return True
+    return False
 
 
 def hash_password(password: str) -> str:
@@ -191,6 +282,10 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
         "/account/password", "/logout"
     ):
         return RedirectResponse("/account/password", status_code=303)
+    if config.DEPLOYMENT == "production" and not account["totp_enabled"] and request.url.path not in (
+        "/account/2fa/setup", "/logout"
+    ):
+        return RedirectResponse("/account/2fa/setup", status_code=303)
     workspace = workspace_user(request)
     db.set_current_owner(workspace["id"] if workspace else None)
     return None
@@ -321,7 +416,7 @@ def normalise_permalink_pin(value: str) -> Optional[str]:
 
 
 PIN_COOKIE = "ubyhost_pin"
-_PIN_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+_PIN_MAX_AGE = 60 * 60 * 24 * 7  # Limit exposure on shared or lost phones.
 
 
 def _pin_serializer() -> URLSafeTimedSerializer:

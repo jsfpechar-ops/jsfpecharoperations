@@ -9,3 +9,5 @@ icalendar==6.3.2
 APScheduler==3.11.3
 reportlab==5.0.1
 cryptography==50.0.1
+pyotp==2.10.0
+qrcode[pil]==8.2

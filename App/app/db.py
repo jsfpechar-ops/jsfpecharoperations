@@ -31,7 +31,10 @@ CREATE TABLE IF NOT EXISTS user_account (
     must_change_password INTEGER NOT NULL DEFAULT 1,
     session_version      INTEGER NOT NULL DEFAULT 1,
     created_at           TEXT NOT NULL,
-    last_login_at        TEXT
+    last_login_at        TEXT,
+    totp_secret_enc      TEXT,
+    totp_enabled         INTEGER NOT NULL DEFAULT 0,
+    recovery_codes_hash  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS legal_entity (
@@ -245,6 +248,9 @@ def cursor():
 # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
 # existing database untouched, so every later column has to be added by hand.
 ADDED_COLUMNS = (
+    ("user_account", "totp_secret_enc", "TEXT"),
+    ("user_account", "totp_enabled", "INTEGER NOT NULL DEFAULT 0"),
+    ("user_account", "recovery_codes_hash", "TEXT"),
     ("legal_entity", "contact_email", "TEXT"),
     ("legal_entity", "contact_phone", "TEXT"),
     ("legal_entity", "owner_user_id", "INTEGER REFERENCES user_account(id)"),

@@ -87,6 +87,19 @@ OPERATOR_REGISTRY_URL = os.environ.get(
     "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/24005169",
 )
 
+# Cloudflare Turnstile. The site key is public; keep TURNSTILE_SECRET only in
+# the production environment. Verification is enabled only when both are set.
+TURNSTILE_SITE_KEY = os.environ.get(
+    "TURNSTILE_SITE_KEY", "0x4AAAAAAE0LDM2eoIjssN00"
+).strip()
+TURNSTILE_SECRET = os.environ.get("TURNSTILE_SECRET", "").strip()
+TURNSTILE_HOSTNAMES = {
+    value.strip().lower()
+    for value in os.environ.get("TURNSTILE_HOSTNAMES", "").split(",")
+    if value.strip()
+}
+TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET and TURNSTILE_HOSTNAMES)
+
 # Bumped when Terms of Service change materially (logged on host login).
 TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.0")
 
