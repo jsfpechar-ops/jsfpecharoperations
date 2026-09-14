@@ -49,6 +49,9 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
     )
 ).decode()
+PASSPORT_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
+)
 
 
 def render(html: str, target: Path, width: int = 1440, height: int = 1000) -> None:
@@ -235,6 +238,9 @@ def main() -> None:
     guest_shot(guest, f"/l/{token}/{reservation_id}/new", "guest-form")
     guest_shot(guest, f"/l/{token}/{reservation_id}/new?lang=cs", "guest-form-czech")
 
+    # A foreign guest also has to tick the legal notice and attach a passport
+    # page, or the save stops at 422 and every later screenshot shows a stay
+    # that was never reported.
     saved = guest.post(f"{BASE}/l/{token}/{reservation_id}/save", data={
         "surname": "Smith",
         "first_name": "John Paul",
@@ -246,8 +252,11 @@ def main() -> None:
         "res_country": "GBR",
         "purpose": "10",
         "signature": SIGNATURE,
-    }, allow_redirects=False)
+        "legal_ack": "1",
+    }, files={"passport_photo": ("passport.png", PASSPORT_PNG, "image/png")},
+        allow_redirects=False)
     print(f"   guest form saved -> {saved.status_code}")
+    assert saved.status_code == 303, f"guest form should save: {saved.status_code}"
     guest_shot(guest, f"/l/{token}/{reservation_id}", "guest-after-submit")
 
     # An incomplete second attempt, to capture the validation screen.

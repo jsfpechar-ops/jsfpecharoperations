@@ -102,18 +102,21 @@
 
 <main id="main-content" class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
   {# The badge alone is a 10px pill. A host on the mock server sees stays go
-     green while nothing reaches the police, so say it on every page. #}
-  {% if current_user and ubyport_env == 'mock' %}
-    {% set production_mock = deployment_tier == 'production' %}
-    <aside class="env-banner mock" role="alert">
-      <strong>{{ t('env.mock_production_title') if production_mock else t('env.mock_title') }}</strong>
-      <span>{{ t('env.mock_production_body') if production_mock else t('env.mock_body') }}</span>
-    </aside>
-  {% elif current_user and ubyport_env == 'prod' %}
-    <aside class="env-banner prod" role="status">
-      <strong>{{ t('env.prod_title') }}</strong>
-      <span>{{ t('env.prod_body') }}</span>
-    </aside>
+     green while nothing reaches the police, so say it on every host page -
+     including first-run setup, which has no account yet. #}
+  {% if show_nav | default(true) %}
+    {% if ubyport_env == 'mock' %}
+      {% set production_mock = deployment_tier == 'production' %}
+      <aside class="env-banner mock" role="alert">
+        <strong>{{ t('env.mock_production_title') if production_mock else t('env.mock_title') }}</strong>
+        <span>{{ t('env.mock_production_body') if production_mock else t('env.mock_body') }}</span>
+      </aside>
+    {% elif ubyport_env == 'prod' %}
+      <aside class="env-banner prod" role="status">
+        <strong>{{ t('env.prod_title') }}</strong>
+        <span>{{ t('env.prod_body') }}</span>
+      </aside>
+    {% endif %}
   {% endif %}
   {% if current_user and workspace_user and current_user.id != workspace_user.id %}
     <aside class="impersonation-bar" role="status" aria-live="polite">

@@ -107,7 +107,7 @@ def main() -> int:
         ("/reservations", ["Import & export", "Send all ready", "row-menu-trigger", "Archive"]),
         ("/housebook", ["data-csv-export", "Exempt", "row-menu-trigger"]),
         ("/apartments", ["row-menu-trigger"]),
-        ("/settings", ["activity log", "Advanced"]),
+        ("/settings", ["settings-audit", "Recent activity"]),
     ):
         r = client.get(path, follow_redirects=True)
         if r.status_code != 200:

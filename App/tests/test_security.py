@@ -202,7 +202,7 @@ def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
 
         # conftest runs the suite against the mock UbyPort server.
         assert config.UBYPORT_ENV == "mock"
-        for path in ("/", "/reservations", "/submissions"):
+        for path in ("/", "/reservations", "/submissions", "/settings", "/apartments"):
             page = host.get(path)
             assert page.status_code == 200, path
             assert "Nothing is being reported to the police" in page.text, path
@@ -210,5 +210,8 @@ def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
         # The badge must not render mock and test identically.
         overview = host.get("/")
         assert 'class="env-badge mock"' in overview.text
+
+        # Login is not a host surface and must stay clean.
+        assert "Nothing is being reported" not in TestClient(app).get("/login").text
     finally:
         _clean_accounts()
