@@ -154,8 +154,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Had a paper house book? Use Import to digitise old rows without retyping — download the "
             "import template for the exact column format."
         ),
-        "housebook.import_paper": "Import paper records",
-        "housebook.export_menu": "Export",
+        "housebook.import_paper": "Import existing records",
+        "housebook.export_menu": "Import / export",
         "housebook.pdf_export_title": "Download PDF bundle",
         "housebook.pdf_export_help": (
             "Choose the stay dates and property to include. Each guest form is generated on the server "
@@ -415,8 +415,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "env.where_reports_go": "Where reports are sent",
         "env.mock": "MOCK · Nothing sent",
         "env.test": "TEST · Police sandbox",
-        "env.prod": "LIVE · Police",
-        "env.production": "LIVE · Police",
         "env.staging": "STAGING",
         "env.local": "LOCAL",
         "theme.label": "Appearance",
@@ -497,6 +495,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.awaiting_verification": "Forms complete — mark ID checked or send from this stay.",
         "action.check_missing": "Open the stay and check what is missing.",
         "hint.awaiting_verification": "Check each passport photo and confirm the details before reporting",
+        "hint.awaiting_guest": "Send the check-in link to the guest, or add their details yourself",
         "hint.auto_immediate": "Sends automatically after you verify each guest against their passport",
         "hint.nothing_duty": "Nothing to send: no guest record is subject to the reporting duty",
         "hint.need_signature": "Every foreign guest must sign before reporting to UbyPort",
@@ -531,8 +530,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "every stay is running out its three working days unreported. Set "
             "UBYHOST_UBYPORT_ENV=prod now."
         ),
-        "env.prod_title": "Live police reporting",
-        "env.prod_body": "Everything you send from here goes into the real police register.",
         "status.failed": "Rejected",
         "status.reported": "Reported",
         "status.ready": "Ready to report",
@@ -645,11 +642,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.verify": "Verify passports",
         "stay.detail.cta.open": "Open stay",
         "stay.detail.cta.add_guest": "Add a guest",
+        "stay.detail.next_step": "Next step",
         "stay.detail.ready_count": "%(count)s guest record(s) ready to report.",
         "stay.detail.metric.deadline": "Reporting deadline",
         "stay.detail.metric.deadline_note": "Three working days after check-in ends %(when)s.",
         "stay.detail.metric.guests": "Guest forms",
         "stay.detail.metric.guests_note": "%(sent)s reported · %(reportable)s subject to the duty",
+        "stay.detail.metric.set_expected": "Set expected guests",
         "stay.detail.metric.reporting": "Reporting",
         "stay.detail.note.verify": "Guest forms are complete. Check each passport photo and confirm the details before reporting.",
         "stay.detail.note.ready_immediate": "All guests verified. UbyPort submission happens automatically after each verification.",
@@ -704,8 +703,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.settings.state.ignored": "Not a guest stay",
         "stay.detail.settings.state_hint": "“Not a guest stay” removes this item from daily work but preserves it and sticks across future calendar syncs. You can restore it by choosing Active.",
         "stay.detail.settings.note": "Private note",
-        "stay.detail.inline.title": "Quick edit",
-        "stay.detail.inline.label": "Stay label",
+        "stay.detail.inline.title": "Edit stay details",
+        "stay.detail.inline.label": "Internal label",
         "stay.detail.inline.guests": "Expected guests",
         "stay.detail.inline.saved": "Saved",
         "stay.detail.inline.error": "Could not save. Try again.",
@@ -933,8 +932,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Vedli jste papírovou domovní knihu? Importem doplníte starší záznamy bez přepisování — "
             "vzor souboru najdete v menu Import a export."
         ),
-        "housebook.import_paper": "Importovat papírovou evidenci",
-        "housebook.export_menu": "Export",
+        "housebook.import_paper": "Importovat existující záznamy",
+        "housebook.export_menu": "Import / export",
         "housebook.pdf_export_title": "Stáhnout balíček PDF",
         "housebook.pdf_export_help": (
             "Vyberte rozsah pobytů a ubytování. Každý formulář hosta se na serveru generuje zvlášť — "
@@ -1187,8 +1186,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "env.where_reports_go": "Kam se hlášení odesílají",
         "env.mock": "UKÁZKA · Nic se neodesílá",
         "env.test": "TEST · Policejní test",
-        "env.prod": "OSTRÝ · Policie",
-        "env.production": "OSTRÝ · Policie",
         "env.staging": "STAGING",
         "env.local": "LOKÁLNÍ",
         "theme.label": "Vzhled",
@@ -1269,6 +1266,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.awaiting_verification": "Formuláře hotové — označte kontrolu dokladu nebo odešlete z pobytu.",
         "action.check_missing": "Otevřete pobyt a zkontrolujte, co chybí.",
         "hint.awaiting_verification": "Zkontrolujte fotografii pasu a potvrďte údaje před hlášením",
+        "hint.awaiting_guest": "Pošlete hostovi odkaz pro check-in, nebo jeho údaje přidejte sami",
         "hint.auto_immediate": "Odešle se automaticky po ověření hosta proti pasu",
         "hint.nothing_duty": "Nic k odeslání: žádný záznam hosta není předmětem hlášení",
         "hint.need_signature": "Každý cizinec se musí podepsat před odesláním do UbyPortu",
@@ -1301,8 +1299,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "u každého pobytu běží tři pracovní dny bez hlášení. Nastavte hned "
             "UBYHOST_UBYPORT_ENV=prod."
         ),
-        "env.prod_title": "Ostré hlášení policii",
-        "env.prod_body": "Vše, co odsud odešlete, jde do skutečné evidence policie.",
         "status.failed": "Odmítnuto",
         "status.reported": "Nahlášeno",
         "status.ready": "Připraveno k hlášení",
@@ -1415,11 +1411,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.verify": "Ověřit pasy",
         "stay.detail.cta.open": "Otevřít pobyt",
         "stay.detail.cta.add_guest": "Přidat hosta",
+        "stay.detail.next_step": "Další krok",
         "stay.detail.ready_count": "%(count)s záznam(ů) hostů připraveno k hlášení.",
         "stay.detail.metric.deadline": "Termín hlášení",
         "stay.detail.metric.deadline_note": "Tři pracovní dny po příjezdu končí %(when)s.",
         "stay.detail.metric.guests": "Formuláře hostů",
         "stay.detail.metric.guests_note": "%(sent)s nahlášeno · %(reportable)s podléhá povinnosti",
+        "stay.detail.metric.set_expected": "Nastavit očekávaný počet hostů",
         "stay.detail.metric.reporting": "Hlášení",
         "stay.detail.note.verify": "Formuláře jsou hotové. Zkontrolujte fotografii pasu a potvrďte údaje před hlášením.",
         "stay.detail.note.ready_immediate": "Všichni hosté ověřeni. Odeslání do UbyPortu proběhne automaticky po každém ověření.",
@@ -1474,8 +1472,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.settings.state.ignored": "Není pobyt hostů",
         "stay.detail.settings.state_hint": "„Není pobyt hostů“ odstraní položku z denní práce, ale zachová ji při synchronizaci kalendáře. Obnovíte výběrem Aktivní.",
         "stay.detail.settings.note": "Soukromá poznámka",
-        "stay.detail.inline.title": "Rychlá úprava",
-        "stay.detail.inline.label": "Popisek pobytu",
+        "stay.detail.inline.title": "Upravit údaje pobytu",
+        "stay.detail.inline.label": "Interní popisek",
         "stay.detail.inline.guests": "Očekávaní hosté",
         "stay.detail.inline.saved": "Uloženo",
         "stay.detail.inline.error": "Uložení se nepodařilo. Zkuste to znovu.",

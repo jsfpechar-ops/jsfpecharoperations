@@ -104,6 +104,16 @@ def test_incomplete_stay_hides_send_button():
     assert controls["send_enabled"] is False
 
 
+def test_empty_stay_tells_host_to_share_the_guest_link():
+    apartment, reservation, guest_id = _seed("manual", "tok-empty")
+    db.execute("DELETE FROM guest WHERE id = ?", (guest_id,))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["filled"] == 0
+    assert controls["send_hint_key"] == "hint.awaiting_guest"
+    assert controls["send_visible"] is False
+
+
 def test_immediate_mode_disables_manual_send_button():
     apartment, reservation, _guest_id = _seed("immediate", "tok-immediate")
     progress = reporting.reservation_progress(reservation)

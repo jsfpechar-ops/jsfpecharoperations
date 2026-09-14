@@ -21,8 +21,8 @@
     <div class="panel" id="settings-overview">
       <h2 style="margin-top:0">Where reports go</h2>
       <dl class="kv">
-        <dt>Deployment</dt><dd><span class="env-badge {{ deployment_tier }}">{{ deployment_tier }}</span></dd>
-        <dt>UbyPort target</dt><dd><span class="env-badge {{ ubyport_env }}">{{ ubyport_env }}</span></dd>
+        <dt>Deployment</dt><dd>{{ deployment_tier | capitalize }}</dd>
+        <dt>UbyPort target</dt><dd>{{ 'Production' if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
         <dt>Endpoint</dt><dd class="mono small">{{ endpoint }}</dd>
         <dt>Calendar polling</dt><dd>every {{ poll_minutes }} minutes</dd>
         <dt>Submission sweep</dt><dd>every {{ sweep_minutes }} minutes</dd>
@@ -35,13 +35,6 @@
             <small>You are pointed at the local mock server. Set
               <span class="mono">UBYHOST_UBYPORT_ENV=test</span> or <span class="mono">prod</span>
               and restart once you have credentials.</small>
-          </div>
-        </div>
-      {% elif ubyport_env == 'prod' %}
-        <div class="banner critical" style="margin-top:14px">
-          <div class="grow">
-            <strong>Live production reporting is active.</strong>
-            <small>Submissions go to the real Foreign Police register. Duplicates count against you.</small>
           </div>
         </div>
       {% endif %}
@@ -156,18 +149,39 @@
   <div>
     <div class="panel" id="settings-account">
       <h2 style="margin-top:0">{{ t('settings.nav.account') }}</h2>
-      <p><strong>{{ current_user.display_name or current_user.username }}</strong><br>
-        <span class="small muted mono">{{ current_user.username }}</span></p>
-      <p class="small muted">Passwords are stored as one-way hashes. Changing yours signs out other sessions.</p>
-      <a class="btn" href="/account/password">Change password</a>
-      {% if current_user.totp_enabled %}
-        <span class="pill green">Two-factor authentication enabled</span>
-      {% else %}
-        <a class="btn primary" href="/account/2fa/setup">Set up two-factor authentication</a>
-      {% endif %}
-      {% if current_user.role == 'admin' %}
-        <a class="btn" href="/admin/users">Manage users</a>
-      {% endif %}
+      <div class="account-identity">
+        <strong>{{ current_user.display_name or current_user.username }}</strong>
+        <span class="small muted mono">{{ current_user.username }}</span>
+      </div>
+      <div class="settings-action-list">
+        <div class="settings-action-row">
+          <div>
+            <strong>Password</strong>
+            <small>Changing it signs out your other sessions.</small>
+          </div>
+          <a class="btn small" href="/account/password">Change password</a>
+        </div>
+        <div class="settings-action-row">
+          <div>
+            <strong>Two-factor authentication</strong>
+            <small>{{ 'Your account requires an authenticator code at sign-in.' if current_user.totp_enabled else 'Add an authenticator code after your password.' }}</small>
+          </div>
+          {% if current_user.totp_enabled %}
+            <span class="pill green">Enabled</span>
+          {% else %}
+            <a class="btn primary small" href="/account/2fa/setup">Set up</a>
+          {% endif %}
+        </div>
+        {% if current_user.role == 'admin' %}
+          <div class="settings-action-row">
+            <div>
+              <strong>User access</strong>
+              <small>Add users and manage their roles.</small>
+            </div>
+            <a class="btn small" href="/admin/users">Manage users</a>
+          </div>
+        {% endif %}
+      </div>
     </div>
 
     <div class="panel" id="settings-legal">
@@ -181,10 +195,12 @@
           <dt>{{ t('legal.operator_contact') }}</dt><dd class="muted">{{ t('legal.settings_contact_missing') }}</dd>
         {% endif %}
       </dl>
-      <a class="btn small" href="/legal">{{ t('legal.footer_link') }}</a>
-      <a class="btn small" href="/terms">{{ t('terms.footer_link') }}</a>
-      <a class="btn small" href="/privacy">{{ t('privacy.footer_link') }}</a>
-      <a class="btn small" href="/dpa">{{ t('dpa.footer_link') }}</a>
+      <nav class="document-links" aria-label="{{ t('legal.settings_title') }}">
+        <a href="/legal"><span>{{ t('legal.footer_link') }}</span><span aria-hidden="true">→</span></a>
+        <a href="/terms"><span>{{ t('terms.footer_link') }}</span><span aria-hidden="true">→</span></a>
+        <a href="/privacy"><span>{{ t('privacy.footer_link') }}</span><span aria-hidden="true">→</span></a>
+        <a href="/dpa"><span>{{ t('dpa.footer_link') }}</span><span aria-hidden="true">→</span></a>
+      </nav>
     </div>
 
     <div class="panel" id="settings-version">

@@ -1644,11 +1644,12 @@ async def reservation_update(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     form = await request.form()
     payload: Dict[str, Any] = {
-        "expected_guests_override": _form_int(form, "expected_guests_override"),
         "guest_email": _form_str(form, "guest_email"),
         "host_note": _form_str(form, "host_note"),
         "updated_at": db.utcnow(),
     }
+    if "expected_guests_override" in form:
+        payload["expected_guests_override"] = _form_int(form, "expected_guests_override")
     status = _form_str(form, "status")
     if status in ("active", "cancelled", "ignored"):
         payload["status"] = status
