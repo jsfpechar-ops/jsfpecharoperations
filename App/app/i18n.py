@@ -199,7 +199,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_retake": "Retake or choose another",
         "passport_photo_selected": "Selected: %(name)s",
         "passport_photo_pending_nat": (
-            "Choose your nationality above — foreign guests must upload a passport or ID photo here."
+            "Choose your nationality above. If you are not Czech, take a photo or choose a file below."
         ),
         "passport_photo_not_required": (
             "Czech citizens do not upload a passport photo in this form."
@@ -526,7 +526,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_retake": "Vyfotit nebo vybrat jiný",
         "passport_photo_selected": "Vybráno: %(name)s",
         "passport_photo_pending_nat": (
-            "Nejprve zvolte státní příslušnost — cizinci zde nahrají fotografii pasu nebo průkazu."
+            "Nejprve zvolte státní příslušnost. Pokud nejste občan ČR, vyfotíte nebo vyberete soubor níže."
         ),
         "passport_photo_not_required": (
             "Občané ČR v tomto formuláři fotografii pasu nenahrávají."
