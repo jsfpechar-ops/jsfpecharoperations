@@ -59,6 +59,7 @@
   <button class="command-trigger" type="button" data-command-open>
     <span>{{ t('command.open') }}</span><kbd>⌘K</kbd>
   </button>
+  <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
   {% if apartments is defined and apartments %}
   <div class="property-switcher" aria-label="{{ t('nav.properties') }}">
     {% for apartment in apartments[:6] %}
@@ -229,6 +230,37 @@
   </div>
 </dialog>
 {% endif %}
+
+<dialog id="command-dialog" class="command-dialog" aria-labelledby="command-title">
+  <div class="command-shell">
+    <h2 id="command-title" class="sr-only">{{ t('command.open') }}</h2>
+    <div class="command-search">
+      <span aria-hidden="true">⌕</span>
+      <input type="search" data-command-input placeholder="{{ t('command.placeholder') }}" autocomplete="off">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="command-results" data-command-results role="listbox" aria-live="polite"
+         data-empty="{{ t('command.empty') }}" data-copied="{{ t('command.copied') }}"></div>
+  </div>
+</dialog>
+
+<dialog id="shortcuts-dialog" class="shortcuts-dialog" aria-labelledby="shortcuts-title">
+  <div class="shortcuts-shell">
+    <div class="section-heading">
+      <h2 id="shortcuts-title">{{ t('shortcuts.title') }}</h2>
+      <button class="btn-icon" type="button" data-shortcuts-close aria-label="{{ t('shortcuts.close') }}">&times;</button>
+    </div>
+    <dl class="shortcut-list">
+      <div><dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>{{ t('shortcuts.dashboard') }}</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>s</kbd></dt><dd>{{ t('shortcuts.stays') }}</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>r</kbd></dt><dd>{{ t('shortcuts.reports') }}</dd></div>
+      <div><dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>{{ t('shortcuts.housebook') }}</dd></div>
+      <div><dt><kbd>⌘/Ctrl</kbd> <kbd>K</kbd></dt><dd>{{ t('shortcuts.search') }}</dd></div>
+      <div><dt><kbd>j</kbd> / <kbd>k</kbd></dt><dd>{{ t('shortcuts.next') }} / {{ t('shortcuts.previous') }}</dd></div>
+      <div><dt><kbd>Enter</kbd></dt><dd>{{ t('shortcuts.open_row') }}</dd></div>
+    </dl>
+  </div>
+</dialog>
 
 <script src="/static/theme.js?v=20260914a"></script>
 <script src="/static/app.js?v=20260912g"></script>

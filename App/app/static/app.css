@@ -230,6 +230,21 @@ kbd {
 }
 .property-switcher a { display: block; text-decoration: none; }
 .property-switcher a > span:last-child { position: absolute; clip: rect(0 0 0 0); width: 1px; height: 1px; overflow: hidden; }
+.saved-views { display: grid; gap: 2px; margin: 0 0 12px; }
+.saved-views:empty { display: none; }
+.saved-views .nav-label { padding-left: 4px; }
+.saved-views a {
+  display: block;
+  padding: 6px 8px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.saved-views a:hover { color: var(--ink); background: var(--surface-hover); }
 
 .sidebar-nav a, .nav-button {
   color: var(--ink-2);
@@ -1026,6 +1041,25 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   box-shadow: var(--shadow);
 }
 .action-bar .bar-note { flex: 1 1 220px; color: var(--muted); font-size: 13.5px; min-width: 0; }
+.inline-edit-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: -8px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.inline-edit-bar > strong { align-self: center; font-size: var(--text-sm); }
+.inline-edit-bar label { flex: 1; margin: 0; color: var(--ink-muted); font-size: var(--text-xs); }
+.inline-edit-bar input { height: 34px; margin-top: 3px; padding: 6px 8px; font-size: var(--text-sm); }
+.inline-edit-bar label:nth-of-type(2) { max-width: 130px; }
+.inline-edit-status { align-self: center; min-width: 48px; color: var(--green); font-size: var(--text-sm); }
+@media (max-width: 720px) {
+  .inline-edit-bar { align-items: stretch; flex-direction: column; }
+  .inline-edit-bar label:nth-of-type(2) { max-width: none; }
+}
 
 /* --- row actions and menus --------------------------------------------- */
 
@@ -2192,6 +2226,69 @@ details.raw pre {
 
 dialog { color: var(--ink-secondary); background: var(--surface-raised); }
 dialog::backdrop { background: rgba(10, 10, 9, .58); }
+.command-dialog, .shortcuts-dialog {
+  width: min(640px, calc(100vw - 24px));
+  max-height: min(680px, calc(100vh - 40px));
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-dialog);
+}
+.command-dialog { margin-top: max(8vh, 32px); }
+.command-shell { overflow: hidden; }
+.command-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.command-search > span { color: var(--ink-muted); font-size: 22px; }
+.command-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--text-md);
+  box-shadow: none;
+}
+.command-search input:focus { box-shadow: none; }
+.command-results { max-height: min(520px, 65vh); padding: 6px; overflow-y: auto; }
+.command-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.command-option.is-selected { background: var(--surface-hover); color: var(--ink); }
+.command-option-copy { display: grid; flex: 1; min-width: 0; }
+.command-option-copy strong, .command-option-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.command-option-copy strong { font-size: var(--text-base); }
+.command-option-copy small, .command-group { color: var(--ink-muted); font-size: var(--text-xs); }
+.command-empty { padding: 32px; color: var(--ink-muted); text-align: center; }
+.shortcuts-shell { padding: 20px; }
+.shortcuts-shell .section-heading { margin: 0 0 12px; }
+.shortcut-list { display: grid; margin: 0; }
+.shortcut-list > div { display: grid; grid-template-columns: 150px 1fr; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); }
+.shortcut-list dt, .shortcut-list dd { margin: 0; }
+.shortcut-list dd { color: var(--ink-muted); }
+
+@media (max-width: 560px) {
+  .command-dialog { margin-top: 12px; }
+  .command-group { display: none; }
+  .shortcut-list > div { grid-template-columns: 120px 1fr; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
