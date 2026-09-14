@@ -14,11 +14,12 @@
 <div id="import-housebook-panel" class="action-panel hidden">
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
-      <h2>Import historical records</h2>
+      <h2>Import existing records</h2>
       <button class="btn small" type="button" data-close-panel>Close</button>
     </div>
     <div class="import-guide">
-      <p>Digitise rows from a paper house book or spreadsheet you kept before UbyHost.</p>
+      <p>Bring in guest records you kept before UbyHost — from another system, a spreadsheet,
+        or a digitised paper house book.</p>
       <p class="small muted">Required columns: Stay from, Stay to, Surname, Given name(s). Dates can be YYYY-MM-DD or DD.MM.YYYY.
         <a href="/housebook-sample.csv">{{ t('csv.sample_housebook') }}</a> shows the exact layout.</p>
     </div>
@@ -66,7 +67,7 @@
   <div class="field filter-actions">
     <button class="btn filter-apply" type="submit">Filter</button>
   </div>
-  <div class="field housebook-toolbar-actions">
+  <div class="field housebook-toolbar-actions" aria-label="House book actions">
     {% if apartments %}
       <button class="btn ghost" type="button" data-toggle-panel="import-housebook-panel">
         {{ t('housebook.import_paper') }}

@@ -154,7 +154,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Had a paper house book? Use Import to digitise old rows without retyping — download the "
             "import template for the exact column format."
         ),
-        "housebook.import_paper": "Import paper records",
+        "housebook.import_paper": "Import existing records",
         "housebook.export_menu": "Export",
         "housebook.pdf_export_title": "Download PDF bundle",
         "housebook.pdf_export_help": (
@@ -645,6 +645,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.verify": "Verify passports",
         "stay.detail.cta.open": "Open stay",
         "stay.detail.cta.add_guest": "Add a guest",
+        "stay.detail.next_step": "Next step",
         "stay.detail.ready_count": "%(count)s guest record(s) ready to report.",
         "stay.detail.metric.deadline": "Reporting deadline",
         "stay.detail.metric.deadline_note": "Three working days after check-in ends %(when)s.",
@@ -704,8 +705,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.settings.state.ignored": "Not a guest stay",
         "stay.detail.settings.state_hint": "“Not a guest stay” removes this item from daily work but preserves it and sticks across future calendar syncs. You can restore it by choosing Active.",
         "stay.detail.settings.note": "Private note",
-        "stay.detail.inline.title": "Quick edit",
-        "stay.detail.inline.label": "Stay label",
+        "stay.detail.inline.title": "Edit stay details",
+        "stay.detail.inline.label": "Internal label",
         "stay.detail.inline.guests": "Expected guests",
         "stay.detail.inline.saved": "Saved",
         "stay.detail.inline.error": "Could not save. Try again.",
@@ -933,7 +934,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Vedli jste papírovou domovní knihu? Importem doplníte starší záznamy bez přepisování — "
             "vzor souboru najdete v menu Import a export."
         ),
-        "housebook.import_paper": "Importovat papírovou evidenci",
+        "housebook.import_paper": "Importovat existující záznamy",
         "housebook.export_menu": "Export",
         "housebook.pdf_export_title": "Stáhnout balíček PDF",
         "housebook.pdf_export_help": (
@@ -1415,6 +1416,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.verify": "Ověřit pasy",
         "stay.detail.cta.open": "Otevřít pobyt",
         "stay.detail.cta.add_guest": "Přidat hosta",
+        "stay.detail.next_step": "Další krok",
         "stay.detail.ready_count": "%(count)s záznam(ů) hostů připraveno k hlášení.",
         "stay.detail.metric.deadline": "Termín hlášení",
         "stay.detail.metric.deadline_note": "Tři pracovní dny po příjezdu končí %(when)s.",
@@ -1474,8 +1476,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.settings.state.ignored": "Není pobyt hostů",
         "stay.detail.settings.state_hint": "„Není pobyt hostů“ odstraní položku z denní práce, ale zachová ji při synchronizaci kalendáře. Obnovíte výběrem Aktivní.",
         "stay.detail.settings.note": "Soukromá poznámka",
-        "stay.detail.inline.title": "Rychlá úprava",
-        "stay.detail.inline.label": "Popisek pobytu",
+        "stay.detail.inline.title": "Upravit údaje pobytu",
+        "stay.detail.inline.label": "Interní popisek",
         "stay.detail.inline.guests": "Očekávaní hosté",
         "stay.detail.inline.saved": "Uloženo",
         "stay.detail.inline.error": "Uložení se nepodařilo. Zkuste to znovu.",
