@@ -1,6 +1,8 @@
 """Static annotated UbyPort web-service credential sample PDF and UI links."""
 from __future__ import annotations
 
+import io
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -70,7 +72,21 @@ def test_committed_sample_pdf_exists_and_is_pdf():
 def test_build_sample_pdf_bytes_are_valid_pdf():
     data = build_sample_pdf()
     assert data.startswith(b"%PDF-")
-    assert len(data) > 8000
+    assert len(data) > 12000
+
+
+def test_sample_pdf_has_two_pages_and_czech_official_headings():
+    from pypdf import PdfReader
+
+    reader = PdfReader(io.BytesIO(build_sample_pdf()))
+    assert len(reader.pages) == 2
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    assert "ŘEDITELSTVÍ SLUŽBY CIZINECKÉ POLICIE" in text
+    assert "VÝPIS Z DATABÁZE PŘIHLAŠOVACÍCH ÚDAJŮ" in text
+    assert "Přihlašovací jméno:" in text
+    assert "Poučení:" in text
+    assert SAMPLE_WS_USER in text
+    assert SAMPLE_IDUB in text
 
 
 def test_sample_constants_are_fictional():
