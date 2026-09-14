@@ -366,6 +366,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "police will accept any submission. Each host remains responsible for accuracy, deadlines, "
             "signatures, retention, and inspection."
         ),
+        "legal.security_title": "Security measures",
+        "legal.security_body": (
+            "Production deployments may require two-factor authentication (authenticator app), Cloudflare "
+            "Turnstile on login and guest PIN after abuse, encrypted storage of integration secrets, rate "
+            "limiting, and off-site backups configured by the operator. Details are in the Privacy Policy "
+            "and Data Processing Agreement."
+        ),
         "legal.disclaimer_title": "Disclaimer",
         "legal.disclaimer_body": (
             "The software is provided without warranty to the extent permitted by law. Liability is limited "
@@ -1131,6 +1138,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Není právní poradenství, nenahrazuje papírovou evidenci, kterou musíte uchovávat, a "
             "nezaručuje přijetí hlášení policií. Za správnost, lhůty, podpisy, uchovávání a kontrolu "
             "odpovídá vždy ubytovatel."
+        ),
+        "legal.security_title": "Bezpečnostní opatření",
+        "legal.security_body": (
+            "V produkci může být vyžadováno dvoufázové ověření (autentizační aplikace), Cloudflare "
+            "Turnstile při přihlášení a u PIN hostů po zneužití, šifrované uložení integračních "
+            "tajemství, rate limiting a off-site zálohy nastavené provozovatelem. Podrobnosti jsou "
+            "v Zásadách ochrany osobních údajů a v DPA."
         ),
         "legal.disclaimer_title": "Vyloučení odpovědnosti",
         "legal.disclaimer_body": (
