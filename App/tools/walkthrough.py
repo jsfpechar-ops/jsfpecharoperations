@@ -203,7 +203,9 @@ def main() -> None:
         "uby_ws_password": "mockpassword",
         "automation_mode": "immediate",
         "default_purpose": "10",
-        "permalink_window_days": "3",
+        # The sample feed can start several weeks ahead. Keep it visible so
+        # this full-product visual audit does not depend on the calendar date.
+        "permalink_window_days": "30",
         "checkin_info": "Self check-in, key box code sent on the day of arrival.",
         "active": "on",
     })
