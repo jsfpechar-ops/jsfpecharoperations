@@ -316,6 +316,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "any officer inspecting the house book. The data stays within the EU. It is never "
             "sold, sent to the site you booked through, or used for marketing."
         ),
+        "privacy_bot_protection_title": "Protecting the registration link",
+        "privacy_bot_protection_body": (
+            "If someone repeatedly enters a wrong access PIN, the form may show Cloudflare Turnstile "
+            "to block automated abuse. That check may process technical connection data (such as IP "
+            "address) under Cloudflare's privacy notice. It is not used for marketing."
+        ),
         "privacy_processor": "Who runs this website",
         "privacy_processor_body": (
             "The UbyHost software is operated by Josef Pechar, IČO 24005169, Kubelíkova 697/13, "
@@ -639,6 +645,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Policii České republiky, Ředitelství služby cizinecké policie, a kontrolnímu "
             "orgánu při nahlédnutí do domovní knihy. Údaje zůstávají v EU. Neprodávají se, "
             "neposílají rezervačnímu portálu ani se nepoužívají k marketingu."
+        ),
+        "privacy_bot_protection_title": "Ochrana registračního odkazu",
+        "privacy_bot_protection_body": (
+            "Při opakovaně chybném PIN může formulář zobrazit Cloudflare Turnstile proti "
+            "automatizovanému zneužití. Kontrola může zpracovat technické údaje o připojení (např. IP) "
+            "podle zásad Cloudflare. Nepoužívá se pro marketing."
         ),
         "privacy_processor": "Kdo provozuje tento web",
         "privacy_processor_body": (

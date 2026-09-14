@@ -10,7 +10,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Contract between the UbyHost software operator and accommodation providers "
             "who use the service. Please read carefully before using UbyHost."
         ),
-        "terms.effective": "Effective date: 12 September 2026. Version 1.0.",
+        "terms.effective": "Effective date: 14 September 2026. Version 1.1.",
         "terms.operator_title": "Service provider",
         "terms.footer_link": "Terms of Service",
         "terms.footer_short": "Terms",
@@ -82,9 +82,11 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "passwords are personal or assigned to authorised staff only. The Host is responsible for "
             "all activity under its Account, including actions by employees, contractors, and anyone "
             "who gains access through the Host's credentials or guest links. The Host must use strong "
-            "passwords, limit access appropriately, and notify the Operator promptly if unauthorised "
-            "access is suspected. The Operator may require password changes or additional verification "
-            "measures."
+            "passwords, enable and maintain two-factor authentication when the Service requires it "
+            "(including mandatory authenticator-based 2FA on production deployments), safeguard "
+            "recovery codes, limit access appropriately, and notify the Operator promptly if "
+            "unauthorised access is suspected. The Operator may require password changes, additional "
+            "verification, or Cloudflare Turnstile checks on login and guest PIN flows to prevent abuse."
         ),
         "terms.s07_title": "7. Acceptable use",
         "terms.s07_body": (
@@ -297,7 +299,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kterí službu "
             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
         ),
-        "terms.effective": "Účinnost od: 12. září 2026. Verze 1.0.",
+        "terms.effective": "Účinnost od: 14. září 2026. Verze 1.1.",
         "terms.operator_title": "Poskytovatel služby",
         "terms.footer_link": "Obchodní podmínky",
         "terms.footer_short": "Podmínky",
@@ -365,9 +367,11 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Ubytovatel uvede pravdivé registrační údaje a udržuje je aktuální. Přihlašovací údaje jsou "
             "osobní nebo přidělené oprávněným osobám. Ubytovatel odpovídá za veškerou činnost pod svým "
             "Účtem, včetně zaměstnanců, dodavatelů a kohokoli, kdo získá přístup přes jeho údaje nebo "
-            "odkazy pro hosty. Používejte silná hesla, omezte přístup a při podezření na zneužití "
-            "Provozovatele neprodleně informujte. Provozovatel může vyžadovat změnu hesla nebo další "
-            "ověření."
+            "odkazy pro hosty. Používejte silná hesla, zapněte a udržujte dvoufázové ověření, pokud "
+            "Služba vyžaduje (včetně povinného 2FA přes autentizační aplikaci v produkci), chraňte "
+            "obnovovací kódy, omezte přístup a při podezření na zneužití Provozovatele neprodleně "
+            "informujte. Provozovatel může vyžadovat změnu hesla, další ověření nebo Cloudflare "
+            "Turnstile při přihlášení a u PIN hostů proti zneužití."
         ),
         "terms.s07_title": "7. Přípustné použití",
         "terms.s07_body": (

@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "replace the guest privacy notice shown to your guests — that notice names you (or your "
             "legal entity) as data controller."
         ),
-        "privacy.effective": "Effective date: 13 September 2026. Version 1.0.",
+        "privacy.effective": "Effective date: 14 September 2026. Version 1.1.",
         "privacy.operator_title": "Data controller for this policy",
         "privacy.footer_link": "Privacy Policy",
         "privacy.footer_short": "Privacy",
@@ -70,8 +70,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s04_title": "4. Categories of Host User data",
         "privacy.s04_body": (
             "We may process: account identifiers (username, internal user id); authentication data "
-            "(password hashes, session tokens, optional \"remember me\" duration); profile and "
-            "workspace settings; legal entity names, addresses, and contact e-mails you enter for "
+            "(password hashes, session tokens, optional \"remember me\" duration, time-based one-time "
+            "password (TOTP) secrets stored encrypted, and one-way hashes of recovery codes); profile "
+            "and workspace settings; legal entity names, addresses, and contact e-mails you enter for "
             "guest notices; property and stay metadata; UbyPort or calendar integration credentials "
             "(stored encrypted at rest); audit and activity logs you generate in-app; communications "
             "you send to us; and billing or plan information if fees apply. We do not require Host "
@@ -105,10 +106,13 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "The Service uses strictly necessary cookies and similar storage: signed session cookies "
             "for Host login (and optional extended duration if \"remember me\" is selected); language "
             "preference cookies; and, on guest links, cookies that remember PIN verification or "
-            "language. We do not use third-party advertising or analytics cookies in the application "
-            "as shipped. You can control cookies through browser settings; disabling session cookies "
-            "will prevent login. Cookie lifetimes follow security configuration (shorter sessions by "
-            "default; longer when remember-me is used)."
+            "language for a limited period. On production login and, after repeated failed guest PIN "
+            "attempts, guest PIN pages, we may use Cloudflare Turnstile to distinguish legitimate "
+            "use from automated abuse. Turnstile may set or read technical identifiers and process "
+            "connection data (such as IP address) under Cloudflare's terms and privacy notice; it is "
+            "not used for advertising. We do not use third-party analytics or advertising cookies in "
+            "the application as shipped. You can control cookies through browser settings; disabling "
+            "session cookies will prevent login."
         ),
         "privacy.s08_title": "8. Server logs and security monitoring",
         "privacy.s08_body": (
@@ -122,13 +126,15 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s09_body": (
             "Personal data is accessed by authorised Operator personnel and contractors bound by "
             "confidentiality. We use infrastructure subprocessors to host the Service, including "
-            "Render.com (cloud hosting; production deployments commonly use the EU Frankfurt region) "
-            "and, where you configure it, DNS or CDN providers such as Cloudflare in front of the "
-            "application. Guest Data may be transmitted to the Czech Police UbyPort systems or "
-            "related endpoints when a Host enables reporting — that transmission occurs on the Host's "
-            "instructions as processor. We require subprocessors that process personal data on our "
-            "behalf to provide appropriate safeguards (GDPR Art. 28). A summary list is maintained "
-            "in this Policy; material changes will be reflected here."
+            "Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), "
+            "Render.com (cloud hosting for staging or other tiers; commonly EU Frankfurt), DNS or "
+            "CDN providers such as Cloudflare (including Turnstile bot protection when enabled), "
+            "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and e-mail "
+            "or support tools where used. Guest Data may be transmitted to the Czech Police UbyPort "
+            "systems or related endpoints when a Host enables reporting — that transmission occurs on "
+            "the Host's instructions as processor. We require subprocessors that process personal data "
+            "on our behalf to provide appropriate safeguards (GDPR Art. 28). Material changes are "
+            "reflected in this Policy."
         ),
         "privacy.s10_title": "10. International transfers",
         "privacy.s10_body": (
@@ -142,18 +148,23 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Host account data is retained while the account is active and for a reasonable period "
             "after termination to allow export, resolve disputes, and comply with law. Guest Data "
             "retention is controlled by Host settings and legal obligations (including typical "
-            "six-year house book rules); the Operator may retain backups for disaster recovery for a "
-            "limited period before purging. Security logs are kept for short rolling windows unless "
-            "an incident requires longer storage. When retention ends, we delete or anonymise data "
-            "unless statutory storage applies."
+            "six-year house book rules); the Operator may retain encrypted database and key backups "
+            "on the server and, when configured, encrypted off-site copies (for example weekly to "
+            "Google Drive and monthly to Amazon S3) for disaster recovery for a limited period before "
+            "purging. Security logs are kept for short rolling windows unless an incident requires "
+            "longer storage. When retention ends, we delete or anonymise data unless statutory storage "
+            "applies."
         ),
         "privacy.s12_title": "12. Security",
         "privacy.s12_body": (
-            "We implement measures such as encryption of sensitive credentials at rest, HTTPS in "
-            "transit, access controls, rate limiting on authentication endpoints, separation of "
-            "environments, and regular dependency updates. No method of transmission or storage is "
-            "100%% secure; Hosts must use strong passwords, protect devices, and configure guest "
-            "links carefully. Report suspected security issues to the contact on /legal."
+            "We implement measures such as encryption of sensitive credentials and TOTP secrets at "
+            "rest, HTTPS in transit, mandatory two-factor authentication (authenticator app) for Host "
+            "accounts in production, Cloudflare Turnstile on host login and on guest PIN verification "
+            "after repeated failures when configured, access controls, rate limiting on authentication "
+            "endpoints, separation of environments, and regular dependency updates. No method of "
+            "transmission or storage is 100%% secure; Hosts must use strong passwords, protect "
+            "authenticator devices and recovery codes, and configure guest links carefully. Report "
+            "suspected security issues to the contact on /legal."
         ),
         "privacy.s13_title": "13. Your rights (Host Users)",
         "privacy.s13_body": (
@@ -237,7 +248,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "nenahrazují informaci pro hosty — v ní je jako správce uveden vy (nebo vaše právnická "
             "osoba)."
         ),
-        "privacy.effective": "Účinnost od: 13. září 2026. Verze 1.0.",
+        "privacy.effective": "Účinnost od: 14. září 2026. Verze 1.1.",
         "privacy.operator_title": "Správce údajů podle těchto zásad",
         "privacy.footer_link": "Zásady ochrany osobních údajů",
         "privacy.footer_short": "Soukromí",
@@ -287,7 +298,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s04_title": "4. Kategorie údajů uživatelů účtu",
         "privacy.s04_body": (
             "Můžeme zpracovávat: identifikátory účtu; autentizační údaje (hash hesla, tokeny relace, "
-            "volitelné „zapamatovat\"); nastavení; názvy a kontakty právnických osob pro informace "
+            "volitelné „zapamatovat\", šifrované tajemství TOTP pro dvoufázové ověření a jednosměrné "
+            "hashe obnovovacích kódů); nastavení; názvy a kontakty právnických osob pro informace "
             "hostům; metadata ubytování a pobytů; přihlašovací údaje k UbyPortu nebo kalendářům "
             "(šifrovaně); auditní záznamy; komunikaci s námi; fakturační údaje. Zvláštní kategorie "
             "údajů o ubytovateli nevyžadujeme, pokud je sami nezadáte v textových polích."
@@ -312,9 +324,13 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s07_title": "7. Cookies a podobné technologie",
         "privacy.s07_body": (
             "Služba používá nezbytné cookies: relaci přihlášení ubytovatele (delší při „zapamatovat\"); "
-            "jazyk; u hostovských odkazů cookies pro PIN a jazyk. V aplikaci v základní podobě nepoužíváme "
-            "reklamní ani analytické cookies třetích stran. Cookies lze omezit v prohlížeči; bez relačního "
-            "cookie přihlášení nefunguje."
+            "jazyk; u hostovských odkazů cookies pro PIN (omezená doba) a jazyk. Na produkčním "
+            "přihlášení a po opakovaných neúspěšných pokusech o PIN může být použit Cloudflare "
+            "Turnstile proti automatizovanému zneužití. Turnstile může zpracovávat technické "
+            "identifikátory a údaje o připojení (např. IP) podle podmínek Cloudflare; nejde o "
+            "reklamu. V aplikaci v základní podobě nepoužíváme reklamní ani analytické cookies "
+            "třetích stran. Cookies lze omezit v prohlížeči; bez relačního cookie přihlášení "
+            "nefunguje."
         ),
         "privacy.s08_title": "8. Serverové logy a bezpečnost",
         "privacy.s08_body": (
@@ -326,10 +342,12 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s09_title": "9. Příjemci a subzpracovatelé",
         "privacy.s09_body": (
             "Údaje vidí oprávnění pracovníci a smluvní partneři s mlčenlivostí. Hosting zajišťují "
-            "subzpracovatelé včetně Render.com (cloud; produkce často region EU Frankfurt) a při "
-            "nastavení DNS/CDN např. Cloudflare. Údaje hostů mohou být přeneseny do systémů UbyPort "
-            "Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít vhodné záruky "
-            "(čl. 28 GDPR). Přehled udržujeme v těchto Zásadách."
+            "subzpracovatelé včetně Amazon Web Services (Lightsail nebo obdobný hosting v EHP pro "
+            "produkci), Render.com (staging a další úrovně; často EU Frankfurt), DNS/CDN včetně "
+            "Cloudflare (včetně Turnstile), Google Drive a/nebo Amazon S3 při nastavených "
+            "off-site zálohách a případně e-mail či podpora. Údaje hostů mohou být přeneseny do "
+            "UbyPort Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít "
+            "vhodné záruky (čl. 28 GDPR). Podstatné změny promítneme do těchto Zásad."
         ),
         "privacy.s10_title": "10. Přeshraniční přenosy",
         "privacy.s10_body": (
@@ -341,15 +359,19 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s11_body": (
             "Údaje účtu držíme po dobu aktivního účtu a přiměřeně po ukončení kvůli exportu, sporům "
             "a zákonu. Údaje hostů řídí nastavení a povinnosti ubytovatele (včetně typické šestileté "
-            "domovní knihy); zálohy mohou být krátce pro obnovu po havárii. Bezpečnostní logy po "
-            "krátkou dobu. Po uplynutí mažeme nebo anonymizujeme, pokud zákon nevyžaduje jinak."
+            "domovní knihy); Provozovatel může uchovávat šifrované zálohy databáze a klíčů na serveru "
+            "a při nastavení off-site kopie (např. týdně na Google Drive a měsíčně na Amazon S3) pro "
+            "obnovu po havárii po omezenou dobu. Bezpečnostní logy po krátkou dobu. Po uplynutí mažeme "
+            "nebo anonymizujeme, pokud zákon nevyžaduje jinak."
         ),
         "privacy.s12_title": "12. Bezpečnost",
         "privacy.s12_body": (
-            "Používáme šifrování citlivých přihlašovacích údajů, HTTPS, řízení přístupu, rate limiting "
-            "přihlášení, oddělení prostředí a aktualizace závislostí. Žádný přenos není stoprocentně "
-            "bezpečný; ubytovatelé mají používat silná hesla a chránit zařízení. Bezpečnostní incidenty "
-            "hlaste kontaktu na /legal."
+            "Používáme šifrování citlivých přihlašovacích údajů a TOTP, HTTPS, povinné dvoufázové "
+            "ověření účtů ubytovatelů v produkci, Cloudflare Turnstile při přihlášení a po opakovaných "
+            "neúspěších PIN u hostů (pokud je zapnuto), řízení přístupu, rate limiting přihlášení, "
+            "oddělení prostředí a aktualizace závislostí. Žádný přenos není stoprocentně bezpečný; "
+            "ubytovatelé mají používat silná hesla, chránit autentizační aplikaci a obnovovací kódy "
+            "a pečlivě sdílet odkazy hostům. Bezpečnostní incidenty hlaste kontaktu na /legal."
         ),
         "privacy.s13_title": "13. Vaše práva (uživatelé účtu)",
         "privacy.s13_body": (
