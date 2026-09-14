@@ -49,6 +49,10 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
     )
 ).decode()
+PASSPORT_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
+    "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
 
 
 def render(html: str, target: Path, width: int = 1440, height: int = 1000) -> None:
@@ -263,8 +267,10 @@ def main() -> None:
         "res_country": "GBR",
         "purpose": "10",
         "signature": SIGNATURE,
-    }, allow_redirects=False)
+    }, files={"passport_photo": ("passport.png", PASSPORT_PNG, "image/png")},
+        allow_redirects=False)
     print(f"   guest form saved -> {saved.status_code}")
+    assert saved.status_code == 303, f"guest form save returned {saved.status_code}"
     guest_shot(guest, f"/l/{token}/{reservation_id}", "guest-after-submit")
 
     # An incomplete second attempt, to capture the validation screen.
