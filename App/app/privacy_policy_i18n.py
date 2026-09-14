@@ -50,9 +50,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "correspondence, and operational logs relating to the Service, the Operator is the data "
             "controller within the meaning of Regulation (EU) 2016/679 (\"GDPR\") and Act No. "
             "110/2019 Coll., on personal data processing. Identity and address are published on "
-            "/legal. Where an e-mail is configured (UBYHOST_OPERATOR_EMAIL), it is the primary "
-            "contact for privacy requests relating to the Operator's processing; otherwise use the "
-            "postal address on /legal. The Operator does not provide a guaranteed support hotline "
+            "/legal. The primary e-mail contact for privacy requests relating to the Operator's "
+            "processing is support@ubyhost.com; you may also use the postal address on /legal. "
+            "The Operator does not provide a guaranteed support hotline "
             "unless published there."
         ),
         "privacy.s03_title": "3. Roles: Operator, Host, and Guest",
@@ -225,7 +225,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s22_title": "22. Contact",
         "privacy.s22_body": (
             "For privacy questions about Operator-controlled processing, contact %(name)s, IČO "
-            "%(ico)s, at the address on /legal, or by e-mail if published there. For guest data, "
+            "%(ico)s, at the address on /legal, or by e-mail at support@ubyhost.com. For guest data, "
             "contact the Host entity shown in the relevant guest privacy notice."
         ),
     },
@@ -271,8 +271,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s02_body": (
             "Pro údaje účtu ubytovatele, přihlášení, fakturační kontakty (pokud existují), podporu "
             "a provozní logy Služby je Provozovatel správcem ve smyslu nařízení (EU) 2016/679 "
-            "(\"GDPR\") a zákona č. 110/2019 Sb. Identita a adresa jsou na /legal. Pokud je nastaven "
-            "e-mail (UBYHOST_OPERATOR_EMAIL), slouží pro žádosti o práva; jinak poštovní adresa na "
+            "(\"GDPR\") a zákona č. 110/2019 Sb. Identita a adresa jsou na /legal. E-mail "
+            "support@ubyhost.com slouží pro žádosti o práva; použít lze také poštovní adresu na "
             "/legal. Telefonní linka není garantována, pokud není zveřejněna."
         ),
         "privacy.s03_title": "3. Role: provozovatel, ubytovatel a host",
@@ -406,7 +406,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s22_title": "22. Kontakt",
         "privacy.s22_body": (
             "Dotazy ke zpracování Provozovatele směřujte na %(name)s, IČO %(ico)s, adresu na /legal "
-            "nebo e-mail, pokud je zveřejněn. K údajům hostů kontaktujte správce v informaci u daného "
+            "nebo e-mail support@ubyhost.com. K údajům hostů kontaktujte správce v informaci u daného "
             "ubytování."
         ),
     },

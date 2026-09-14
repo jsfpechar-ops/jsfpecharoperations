@@ -566,6 +566,11 @@
     var goPrefix = false;
     var goTimer = null;
 
+    document.querySelectorAll("[data-command-shortcut]").forEach(function (hint) {
+      var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+      hint.textContent = /mac|iphone|ipad|ipod/i.test(platform) ? "⌘ K" : "Ctrl K";
+    });
+
     function typingTarget(target) {
       return target && (target.matches("input, textarea, select") || target.isContentEditable);
     }
@@ -652,21 +657,40 @@
 
     function openCommand() {
       if (!command || !input) return;
-      if (typeof command.showModal === "function" && !command.open) command.showModal();
+      document.body.classList.remove("nav-open");
+      if (!command.open) {
+        if (typeof command.showModal === "function") command.showModal();
+        else command.setAttribute("open", "");
+      }
       input.value = "";
-      input.focus();
+      window.requestAnimationFrame(function () { input.focus(); });
       if (items) {
         render("");
       } else {
         fetch("/api/command-palette", { credentials: "same-origin" })
           .then(function (response) { return response.ok ? response.json() : { items: [] }; })
-          .then(function (data) { items = data.items || []; render(input.value); });
+          .then(function (data) { items = data.items || []; render(input.value); })
+          .catch(function () { items = []; render(input.value); });
       }
+    }
+
+    function closeCommand() {
+      if (!command) return;
+      if (typeof command.close === "function") command.close();
+      else command.removeAttribute("open");
     }
 
     document.querySelectorAll("[data-command-open]").forEach(function (button) {
       button.addEventListener("click", openCommand);
     });
+    document.querySelectorAll("[data-command-close]").forEach(function (button) {
+      button.addEventListener("click", closeCommand);
+    });
+    if (command) {
+      command.addEventListener("click", function (event) {
+        if (event.target === command) closeCommand();
+      });
+    }
     document.querySelectorAll("[data-shortcuts-open]").forEach(function (button) {
       button.addEventListener("click", function () {
         if (shortcuts && typeof shortcuts.showModal === "function") shortcuts.showModal();
