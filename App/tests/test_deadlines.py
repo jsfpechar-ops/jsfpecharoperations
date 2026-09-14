@@ -65,3 +65,53 @@ def test_describe_time_left_reads_naturally():
     assert "left" in d.describe_time_left(date(2026, 9, 10), datetime(2026, 9, 15, 12, 0))
     assert "overdue" in d.describe_time_left(date(2026, 9, 10), datetime(2026, 9, 17, 12, 0))
     assert "arrives in" in d.describe_time_left(date(2026, 9, 20), datetime(2026, 9, 15, 12, 0))
+
+
+def test_countdown_is_translated_for_a_czech_host():
+    """The deadline is the most important text on the queue; it must not be
+    the one English string left on a Czech page."""
+    from app import host_i18n
+    from app.deadlines import time_left_parts
+
+    def render(kind, amount):
+        key = f"deadline.{kind}"
+        if kind in ("arrives_days", "days_left", "overdue_days"):
+            if amount == 1:
+                key += ".one"
+            elif 2 <= amount <= 4:
+                key += ".few"
+        return host_i18n.translate("cs", key, n=amount)
+
+    # Czech has three forms for "day": 1 den / 2-4 dny / 5+ dni.
+    assert render("days_left", 1) == "zbývá 1 den"
+    assert render("days_left", 3) == "zbývají 3 dny"
+    assert render("days_left", 7) == "zbývá 7 dní"
+    assert render("overdue_days", 1) == "po termínu o 1 den"
+    assert render("overdue_days", 2) == "po termínu o 2 dny"
+    assert render("arrives_days", 5) == "přijíždí za 5 dní"
+    assert render("hours_left", 12) == "zbývá 12 h"
+    assert render("overdue_hours", 6) == "po termínu o 6 h"
+
+    # No key may fall through to its own name.
+    for kind in ("arrives_days", "days_left", "overdue_days", "hours_left", "overdue_hours"):
+        for amount in (1, 3, 9):
+            for lang in ("en", "cs"):
+                key = f"deadline.{kind}"
+                if kind in ("arrives_days", "days_left", "overdue_days"):
+                    if amount == 1:
+                        key += ".one"
+                    elif 2 <= amount <= 4:
+                        key += ".few"
+                assert host_i18n.translate(lang, key, n=amount) != key
+
+
+def test_time_left_parts_matches_the_english_sentence():
+    from datetime import datetime
+
+    from app import deadlines
+
+    check_in = date(2026, 6, 1)  # Monday
+    now = datetime(2026, 6, 2, 12, 0)
+    kind, amount = deadlines.time_left_parts(check_in, now)
+    assert kind == "days_left"
+    assert deadlines.describe_time_left(check_in, now) == f"{amount} days left"

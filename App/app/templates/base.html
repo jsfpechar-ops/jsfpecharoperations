@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20260912f">
+  <link rel="stylesheet" href="/static/app.css?v=20260914a">
 </head>
 <body class="layout-host">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
-{% from "_components.html" import nav_icon %}
+{% from "_components.html" import nav_icon with context %}
 {% if show_nav | default(true) %}
 <header class="appbar">
   <button class="nav-toggle" type="button" data-nav-toggle aria-label="Open menu" aria-expanded="false">
@@ -101,6 +101,9 @@
 {% endif %}
 
 <main id="main-content" class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
+  {% if show_nav | default(true) %}
+    {% include "_env_banner.html" %}
+  {% endif %}
   {% if current_user and workspace_user and current_user.id != workspace_user.id %}
     <aside class="impersonation-bar" role="status" aria-live="polite">
       <div class="impersonation-copy">

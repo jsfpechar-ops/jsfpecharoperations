@@ -93,7 +93,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_locked_short": "Saved and locked — contact your host to change anything.",
         "pin_title": "Enter the access PIN",
         "pin_help": (
-            "Your host sent a four-digit PIN together with the registration link. "
+            "Your host sent a PIN together with the registration link. "
             "Enter it to open the form."
         ),
         "pin_label": "PIN",
@@ -134,6 +134,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "checkout_info": "Check-out",
         "still_missing": "Still missing details for %(n)s person(s).",
         "add_another": "Add another person",
+        "someone_missing": (
+            "Is someone in your group still not registered? Every guest must be reported, "
+            "so add them here."
+        ),
         "continue_filling": "Continue filling in",
         "mrz_title": "Fast fill from your passport",
         "mrz_help": (
@@ -257,6 +261,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Your details are used only to meet the host's legal reporting duty towards the "
             "Police of the Czech Republic and are kept for the statutory six years."
         ),
+        "skip_to_form": "Skip to the form",
         "privacy_link": "How your data is handled",
         "privacy_title": "Privacy notice",
         "privacy_intro": (
@@ -409,7 +414,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_locked_short": "Uloženo a uzamčeno — pro změnu kontaktujte ubytovatele.",
         "pin_title": "Zadejte přístupový PIN",
         "pin_help": (
-            "Ubytovatel vám spolu s odkazem poslal čtyřmístný PIN. "
+            "Ubytovatel vám spolu s odkazem poslal PIN. "
             "Zadejte ho pro otevření formuláře."
         ),
         "pin_label": "PIN",
@@ -447,6 +452,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "checkout_info": "Odjezd",
         "still_missing": "Chybí ještě údaje %(n)s osob(y).",
         "add_another": "Přidat další osobu",
+        "someone_missing": (
+            "Chybí ještě někdo z vaší skupiny? Ohlásit se musí každý ubytovaný, "
+            "proto ho zde přidejte."
+        ),
         "continue_filling": "Pokračovat ve vyplnění",
         "mrz_title": "Rychlé vyplnění z pasu",
         "mrz_help": (
@@ -567,6 +576,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Údaje slouží výhradně ke splnění zákonné oznamovací povinnosti ubytovatele vůči "
             "Policii České republiky a uchovávají se zákonných 6 let."
         ),
+        "skip_to_form": "Přejít na formulář",
         "privacy_link": "Jak nakládáme s vašimi údaji",
         "privacy_title": "Informace o zpracování osobních údajů",
         "privacy_intro": (

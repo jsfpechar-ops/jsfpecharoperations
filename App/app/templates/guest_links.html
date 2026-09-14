@@ -2,7 +2,7 @@
 {% set nav = 'guest_links' %}
 {% block title %}Guest links{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, empty_state, copy_button, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, empty_state, copy_button, row_menu_begin, row_menu_end with context %}
 
 {{ page_header(
   'Guest links',

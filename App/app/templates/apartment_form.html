@@ -14,7 +14,7 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, copy_button %}
+{% from "_components.html" import page_header, breadcrumb, copy_button with context %}
 {{ breadcrumb([
   {'label': 'Properties', 'url': '/apartments'},
   {'label': apartment.internal_name if editing else 'New property', 'url': ''}
@@ -115,11 +115,17 @@
       <span class="mono">ybndqw9</span> or at <span class="mono">reguby@pcr.cz</span>.
       Ask for web-service access and include the facility name, address, IDUB, and IČO in your request.
     </p>
+    <p class="small muted">
+      Copy the IDUB, abbreviation, name and address <strong>character for character</strong> from
+      your registration. UbyPort checks them against the facility on file: a value in the right
+      format but with the wrong content is rejected, not corrected, and you only find out after
+      the first report — which may be after the deadline.
+    </p>
     <div class="grid">
       {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
-         '12–14 characters assigned at registration.', false, 14) }}
+         '12–14 characters assigned at registration. Must match it exactly.', false, 14) }}
       {{ text_field('uby_mark', 'Facility abbreviation (zkratka)', apartment.uby_mark if editing else '',
-         'Exactly five letters, e.g. AAKLI.', false, 5) }}
+         'Exactly five letters, e.g. AAKLI. Must match your registration.', false, 5) }}
     </div>
     <div class="grid two">
       {{ text_field('uby_name', 'Facility name in UbyPort', apartment.uby_name if editing else '',
@@ -223,7 +229,7 @@
         <label for="permalink_pin">Access PIN</label>
         <div class="copyrow pin-row">
           <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
-                 inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="0000" required>
+                 inputmode="numeric" pattern="[0-9]{4}|[0-9]{6}" maxlength="6" placeholder="000000" required>
           {{ copy_button('permalink_pin') }}
         </div>
         <div class="hint">Six digits (or legacy four) guests enter before the form opens. Change it here, or generate a random one below.</div>

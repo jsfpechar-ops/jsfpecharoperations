@@ -16,6 +16,47 @@ def test_name_is_uppercased_and_cleaned():
     assert v.normalise_name("Dvořák") == "DVOŘÁK"
 
 
+def test_unsupported_letters_are_transliterated_not_deleted():
+    """Deleting a letter files a name that no longer matches the passport."""
+    # Vietnamese and Turkish letters are outside CP1250; the passport's
+    # machine-readable line spells them NGUYEN and ISMAIL.
+    assert v.normalise_name("Nguyễn") == "NGUYEN"
+    assert v.normalise_name("İsmail") == "ISMAIL"
+    # Romanian comma-below, which is a different codepoint to the cedilla form.
+    assert v.normalise_name("Șerban") == "SERBAN"
+    # Letters CP1250 does have must be left exactly as they are.
+    assert v.normalise_name("Dvořák") == "DVOŘÁK"
+    assert v.normalise_name("Müller") == "MÜLLER"
+
+
+def test_non_latin_script_is_reported_as_a_script_problem():
+    """A Cyrillic surname normalises to nothing; "required" would be a lie."""
+    raw = {"surname": "Иванов", "first_name": "Иван"}
+    values = v.normalise_guest(raw)
+    assert values["surname"] == ""
+    issues = v.validate_guest(values, raw=raw)
+    surname_issue = next(i for i in issues if i.field == "surname")
+    assert "Latin letters" in surname_issue.message
+    # Without the raw input there is nothing better to say than "required".
+    assert "required" in next(
+        i for i in v.validate_guest(values) if i.field == "surname"
+    ).message
+
+
+def test_over_length_names_are_reported_instead_of_cut():
+    """Appendix 5 section 10.5: tell the user on first save, do not truncate."""
+    long_given = "Maria Jose Guadalupe Fernanda"  # 29 characters
+    assert len(long_given) > v.MAX_FIRST_NAME
+
+    unclamped = v.normalise_guest({"first_name": long_given}, clamp=False)
+    assert unclamped["first_name"] == long_given.upper()
+    assert "first_name" in errors(v.validate_guest(unclamped))
+
+    # Importers and demo data still get a value the database column accepts.
+    clamped = v.normalise_guest({"first_name": long_given})
+    assert len(clamped["first_name"]) == v.MAX_FIRST_NAME
+
+
 def test_forbidden_characters_never_survive():
     dirty = "Ab|cd\r\nef"
     assert "|" not in v.normalise_name(dirty)
