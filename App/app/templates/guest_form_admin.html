@@ -12,7 +12,7 @@
 {% macro field_val(name) %}{{ guest[name] if guest and guest[name] is not none else '' }}{% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb %}
+{% from "_components.html" import page_header, breadcrumb with context %}
 {{ breadcrumb([
   {'label': 'Stays', 'url': '/reservations'},
   {'label': reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz), 'url': '/reservations/' ~ reservation.id},

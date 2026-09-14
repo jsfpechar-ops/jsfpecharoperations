@@ -40,7 +40,7 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end with context %}
 {{ breadcrumb([
   {'label': 'Properties', 'url': '/apartments'},
   {'label': 'Legal entities', 'url': ''}

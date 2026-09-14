@@ -2,7 +2,7 @@
 {% set nav = 'settings' %}
 {% block title %}{{ t('archive.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
 {{ page_header(
   t('archive.title'),
   t('archive.page_lede'),

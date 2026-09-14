@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, progress_pill, submission_pill, row_menu_begin, row_menu_end, copy_inline %}
+{% from "_components.html" import page_header, breadcrumb, progress_pill, submission_pill, row_menu_begin, row_menu_end, copy_inline with context %}
 
 {{ breadcrumb([
   {'label': t('stays.title'), 'url': return_to},

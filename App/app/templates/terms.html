@@ -2,7 +2,7 @@
 {% set show_nav = false %}
 {% block title %}{{ t('terms.page_title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header %}
+{% from "_components.html" import page_header with context %}
 
 {{ page_header(t('terms.page_title'), t('terms.page_lede')) }}
 

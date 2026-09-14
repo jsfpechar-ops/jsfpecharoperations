@@ -14,7 +14,7 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, copy_button %}
+{% from "_components.html" import page_header, breadcrumb, copy_button with context %}
 {{ breadcrumb([
   {'label': 'Properties', 'url': '/apartments'},
   {'label': apartment.internal_name if editing else 'New property', 'url': ''}

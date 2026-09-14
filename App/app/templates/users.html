@@ -2,7 +2,7 @@
 {% set nav = 'users' %}
 {% block title %}Users{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
 {{ page_header(
   'Users',
   'Create a private workspace for each host. Passwords are hashed and can be reset, never viewed.'

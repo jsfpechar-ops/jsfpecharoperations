@@ -2,7 +2,7 @@
 {% set nav = 'housebook' %}
 {% block title %}House book{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu with context %}
 {% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
 {{ page_header(
   'House book',

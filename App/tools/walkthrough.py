@@ -37,7 +37,7 @@ def _find_chrome() -> str:
 CHROME = _find_chrome()
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080"
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else ".screenshots")
-PASSWORD = "testpassword123"
+PASSWORD = "Walkthrough-Password-123"
 MOCK = f"{urlparse(BASE).scheme}://{urlparse(BASE).hostname}:8081"
 
 OUT.mkdir(parents=True, exist_ok=True)
@@ -146,6 +146,24 @@ def main() -> None:
         )
         if logged_in.status_code != 303:
             raise SystemExit("Could not log in with the configured walkthrough credentials.")
+        # A freshly bootstrapped admin must change its password before any
+        # other page will load, so the walkthrough has to do that first or
+        # every POST below silently lands on /account/password.
+        if logged_in.headers.get("location", "").startswith("/account/password"):
+            changed = session.post(
+                BASE + "/account/password",
+                data={
+                    "current_password": password,
+                    "new_password": PASSWORD,
+                    "confirm_password": PASSWORD,
+                },
+                allow_redirects=False,
+            )
+            if changed.status_code != 303:
+                raise SystemExit(
+                    "Could not complete the first-run password change: "
+                    f"{changed.status_code}"
+                )
 
     print("1. empty dashboard and login screen")
     shot("/", "dashboard-empty")

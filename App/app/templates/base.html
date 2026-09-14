@@ -10,7 +10,7 @@
 </head>
 <body class="layout-host">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
-{% from "_components.html" import nav_icon %}
+{% from "_components.html" import nav_icon with context %}
 {% if show_nav | default(true) %}
 <header class="appbar">
   <button class="nav-toggle" type="button" data-nav-toggle aria-label="Open menu" aria-expanded="false">
