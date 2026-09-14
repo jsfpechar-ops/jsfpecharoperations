@@ -276,6 +276,71 @@ def test_save_does_not_overshoot_the_declared_party_size():
         _cleanup()
 
 
+def test_every_guest_facing_validation_message_has_czech():
+    """A Czech guest must never be handed an untranslated UbyPort rule."""
+    from app import validation as v
+    from app.routes.guest import _localize_message
+
+    long_name = "X" * 80
+    cases = [
+        # (raw overrides, field we expect to complain about)
+        ({"surname": ""}, "surname"),
+        ({"surname": "Иванов"}, "surname"),
+        ({"surname": long_name}, "surname"),
+        ({"first_name": long_name}, "first_name"),
+        ({"first_name": "李"}, "first_name"),
+        ({"birth_date": ""}, "birth_date"),
+        ({"birth_date": "31/02/1990"}, "birth_date"),
+        ({"birth_date": "01/01/1850"}, "birth_date"),
+        ({"birth_date": "01/13/1990"}, "birth_date"),
+        ({"birth_date": "32/01/1990"}, "birth_date"),
+        ({"birth_date": "01/01/2090"}, "birth_date"),
+        ({"birth_date": "1/1/1990", "nationality": ""}, "nationality"),
+        ({"nationality": "UK"}, "nationality"),
+        ({"doc_number": ""}, "doc_number"),
+        ({"doc_number": "AB12"}, "doc_number"),
+        ({"doc_number": "P" * 40}, "doc_number"),
+        ({"doc_number": "INPASS", "note": ""}, "note"),
+        ({"visa_number": "V" * 20}, "visa_number"),
+        ({"res_street": ""}, "res_street"),
+        ({"res_street": long_name}, "res_street"),
+        ({"res_street": "12345"}, "res_street"),
+        ({"res_city": ""}, "res_city"),
+        ({"res_city": long_name}, "res_city"),
+        ({"res_city": "12345"}, "res_city"),
+        ({"res_country": ""}, "res_country"),
+        ({"res_country": "XYZ"}, "res_country"),
+        ({"purpose": "77"}, "purpose"),
+    ]
+
+    checked = 0
+    for overrides, field in cases:
+        raw = {
+            "surname": "Smith",
+            "first_name": "John",
+            "birth_date": "1.1.1990",
+            "nationality": "GBR",
+            "doc_number": "P1234567",
+            "visa_number": "",
+            "res_street": "Baker Street 221B",
+            "res_city": "London",
+            "res_country": "GBR",
+            "purpose": "10",
+            "note": "",
+        }
+        raw.update(overrides)
+        values = v.normalise_guest(raw, clamp=False)
+        issues = [i for i in v.validate_guest(values, raw=raw) if i.field == field]
+        assert issues, f"expected a {field} issue for {overrides}"
+        for issue in issues:
+            czech = _localize_message(issue.message)
+            assert czech != issue.message, (
+                f"no Czech translation for {field}: {issue.message!r}"
+            )
+            checked += 1
+    assert checked >= len(cases)
+
+
 def test_guest_form_accepts_pdf_passport_attachment():
     token, wrong, _right = _make_apartment_with_stays()
     try:
