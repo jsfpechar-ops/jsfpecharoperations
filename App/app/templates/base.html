@@ -10,10 +10,10 @@
   </script>
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914a">
-  <link rel="stylesheet" href="/static/app.css?v=20260914b">
-  <link rel="stylesheet" href="/static/components.css?v=20260914a">
+  <link rel="stylesheet" href="/static/app.css?v=20260914c">
+  <link rel="stylesheet" href="/static/components.css?v=20260914b">
 </head>
-<body class="layout-host">
+<body class="layout-host {{ 'no-nav' if not (show_nav | default(true)) }}">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
 {% from "_components.html" import nav_icon with context %}
 {% if show_nav | default(true) %}
@@ -25,6 +25,9 @@
   {% if current_user %}
     <a class="appbar-help" href="/guide">{{ t('nav.guide') }}</a>
   {% endif %}
+  <button class="appbar-search" type="button" data-command-open aria-label="{{ t('command.open') }}">
+    <span aria-hidden="true">⌕</span>
+  </button>
   <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
 </header>
 <button class="nav-backdrop" type="button" data-nav-close aria-label="{{ t('a11y.close_menu') }}"></button>
@@ -58,7 +61,8 @@
     </div>
   {% endif %}
   <button class="command-trigger" type="button" data-command-open>
-    <span>{{ t('command.open') }}</span><kbd>⌘K</kbd>
+    <span aria-hidden="true" class="command-trigger-icon">⌕</span>
+    <span>{{ t('command.open') }}</span><kbd data-command-shortcut>Ctrl K</kbd>
   </button>
   <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
   {% if apartments is defined and apartments %}
@@ -253,7 +257,7 @@
     <div class="command-search">
       <span aria-hidden="true">⌕</span>
       <input type="search" data-command-input placeholder="{{ t('command.placeholder') }}" autocomplete="off">
-      <kbd>Esc</kbd>
+      <button class="command-close" type="button" data-command-close aria-label="{{ t('shortcuts.close') }}">&times;</button>
     </div>
     <div class="command-results" data-command-results role="listbox" aria-live="polite"
          data-empty="{{ t('command.empty') }}" data-copied="{{ t('command.copied') }}"></div>
@@ -279,6 +283,6 @@
 </dialog>
 
 <script src="/static/theme.js?v=20260914a"></script>
-<script src="/static/app.js?v=20260912g"></script>
+<script src="/static/app.js?v=20260914c"></script>
 </body>
 </html>
