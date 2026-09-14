@@ -437,6 +437,7 @@ def test_legal_page_links_to_terms():
     response = TestClient(app).get("/legal")
     assert response.status_code == 200
     assert 'href="/terms"' in response.text
+    assert 'href="mailto:support@ubyhost.com"' in response.text
 
 
 def test_privacy_page_shows_operator_identity():
@@ -446,6 +447,7 @@ def test_privacy_page_shows_operator_identity():
     assert "24005169" in response.text
     assert "Privacy Policy" in response.text or "Zásady ochrany osobních údajů" in response.text
     assert "ÚOOÚ" in response.text or "uoou.cz" in response.text
+    assert "support@ubyhost.com" in response.text
 
 
 def test_login_page_links_to_privacy():
