@@ -457,8 +457,21 @@ def validate_guest(
         issues.append(Issue("res_street", "Home address is too long."))
 
     purpose = guest.get("purpose") or ""
-    if purpose and purpose not in PURPOSE_CODES:
+    if not purpose:
+        issues.append(Issue("purpose", "Purpose of stay is required."))
+    elif purpose not in PURPOSE_CODES:
         issues.append(Issue("purpose", "Unknown purpose-of-stay code."))
+
+    # The normalisers strip these, but validation is also the gate in front of
+    # values that were already stored, and one pipe or newline anywhere in a
+    # record breaks the field framing for the whole batch.
+    for field in ("surname", "first_name", "doc_number", "visa_number",
+                  "res_street", "res_city", "note"):
+        value = guest.get(field) or ""
+        if any(ch in value for ch in FORBIDDEN_ANYWHERE):
+            issues.append(
+                Issue(field, "Remove the | character and any line breaks.")
+            )
 
     if len(note) > MAX_NOTE:
         issues.append(Issue("note", f"Note must be at most {MAX_NOTE} characters."))

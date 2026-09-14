@@ -52,6 +52,10 @@ CS_VALIDATION_MESSAGES = {
     "Country is required.": "Země je povinná.",
     "Unknown country code.": "Neznámý kód země.",
     "Unknown purpose-of-stay code.": "Neznámý účel pobytu.",
+    "Purpose of stay is required.": "Účel pobytu je povinný.",
+    "Remove the | character and any line breaks.": (
+        "Odstraňte znak | a všechny konce řádků."
+    ),
     "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
     validation.NON_LATIN_MESSAGE: (
         "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově "

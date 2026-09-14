@@ -218,6 +218,15 @@ def main() -> None:
         "own_name": "Airbnb",
     })
     shot(f"/apartments/{apartment_id}", "apartment-with-feed")
+    # The feed URL is on loopback, which the SSRF guard blocks by default, and
+    # a silent failure here used to produce a screenshot called
+    # "dashboard-with-stays" showing no stays at all.
+    stays = session.get(BASE + "/reservations").text
+    assert "Direct booking" in stays or 'href="/reservations/' in stays, (
+        "the calendar feed imported nothing. Start the mock server "
+        "(python -m mock_ubyport.server) and run the app with "
+        "UBYHOST_ICAL_ALLOW_PRIVATE=1 so a loopback feed URL is allowed."
+    )
     shot("/", "dashboard-with-stays")
     shot("/reservations", "reservations")
 
@@ -234,9 +243,11 @@ def main() -> None:
     # would after reading the PIN in their arrival message.
     if 'name="pin"' in landing.text:
         links = session.get(BASE + "/guest-links").text
-        pin = re.search(
-            rf'id="pin-{apartment_id}"[^>]*value="(\d{{4}})"', links
-        ).group(1)
+        found_pin = re.search(
+            rf'id="pin-{apartment_id}"[^>]*value="(\d{{4,6}})"', links
+        )
+        assert found_pin, f"no PIN shown for apartment {apartment_id} on /guest-links"
+        pin = found_pin.group(1)
         print(f"   entering guest PIN {pin}")
         guest.post(f"{BASE}/l/{token}/pin", data={"pin": pin, "return_to": f"/l/{token}"},
                    allow_redirects=False)
