@@ -443,6 +443,47 @@ select {
   margin: 8px 0 0;
   font-size: 14px;
 }
+.passport-camera {
+  width: min(680px, calc(100% - 28px));
+  padding: 0;
+  border: 1px solid var(--g-line-2);
+  border-radius: var(--radius-lg);
+  background: var(--g-surface);
+  color: var(--g-ink);
+  box-shadow: 0 22px 70px rgba(22, 25, 27, 0.3);
+}
+.passport-camera::backdrop { background: rgba(22, 25, 27, 0.72); }
+.passport-camera-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+}
+.passport-camera-close {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--g-surface-2);
+  color: var(--g-ink);
+  font: 26px/1 var(--font-sans);
+  cursor: pointer;
+}
+.passport-camera video {
+  display: block;
+  width: 100%;
+  max-height: min(65vh, 560px);
+  background: #111;
+  object-fit: contain;
+}
+.passport-camera-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px 18px 18px;
+}
+.passport-camera-actions .g-btn { margin: 0; }
 
 /* --- notices ----------------------------------------------------------- */
 

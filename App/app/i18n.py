@@ -197,7 +197,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_label": "Passport or ID document",
         "passport_photo_take": "Take photo",
         "passport_photo_choose": "Choose file",
-        "passport_photo_retake": "Retake or choose another",
+        "passport_photo_retake": "Retake photo",
+        "passport_photo_choose_another": "Choose another file",
+        "passport_photo_camera_unavailable": (
+            "The camera is unavailable. Allow camera access in your browser, or choose a file instead."
+        ),
         "passport_photo_selected": "Selected: %(name)s",
         "passport_photo_pending_nat": (
             "Choose your nationality above — foreign guests must upload a passport or ID photo here."
@@ -525,7 +529,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_label": "Pas nebo průkaz totožnosti",
         "passport_photo_take": "Vyfotit",
         "passport_photo_choose": "Vybrat soubor",
-        "passport_photo_retake": "Vyfotit nebo vybrat jiný",
+        "passport_photo_retake": "Vyfotit znovu",
+        "passport_photo_choose_another": "Vybrat jiný soubor",
+        "passport_photo_camera_unavailable": (
+            "Fotoaparát není dostupný. Povolte přístup ke kameře v prohlížeči nebo vyberte soubor."
+        ),
         "passport_photo_selected": "Vybráno: %(name)s",
         "passport_photo_pending_nat": (
             "Nejprve zvolte státní příslušnost — cizinci zde nahrají fotografii pasu nebo průkazu."

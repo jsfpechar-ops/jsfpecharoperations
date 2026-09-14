@@ -193,11 +193,14 @@
     <div class="g-field" id="passport-photo-upload">
       <span class="g-label" id="passport_photo_label">{{ t('passport_photo_label') }}</span>
       <div class="passport-upload-actions">
-        <button class="g-btn secondary" type="button" id="passport-take-btn">
+        <button class="g-btn secondary" type="button" id="passport-take-btn"
+                data-take-label="{{ t('passport_photo_take') }}"
+                data-retake-label="{{ t('passport_photo_retake') }}">
           {{ t('passport_photo_take') }}
         </button>
         <button class="g-btn secondary" type="button" id="passport-choose-btn"
-                data-retake-label="{{ t('passport_photo_retake') }}">
+                data-choose-label="{{ t('passport_photo_choose') }}"
+                data-another-label="{{ t('passport_photo_choose_another') }}">
           {{ t('passport_photo_choose') }}
         </button>
       </div>
@@ -207,6 +210,18 @@
       <div class="hint">{{ t('passport_photo_hint') }}</div>
       {{ err_for('passport_photo') }}
     </div>
+    <dialog class="passport-camera" id="passport-camera-dialog" aria-labelledby="passport-camera-title">
+      <div class="passport-camera-head">
+        <strong id="passport-camera-title">{{ t('passport_photo_take') }}</strong>
+        <button type="button" class="passport-camera-close" aria-label="{{ t('back') }}">×</button>
+      </div>
+      <video id="passport-camera-preview" autoplay playsinline muted></video>
+      <canvas id="passport-camera-canvas" hidden></canvas>
+      <div class="passport-camera-actions">
+        <button class="g-btn secondary" type="button" id="passport-camera-cancel">{{ t('back') }}</button>
+        <button class="g-btn" type="button" id="passport-camera-capture">{{ t('passport_photo_take') }}</button>
+      </div>
+    </dialog>
   </div>
 
   <div class="g-card" data-guest-step>
@@ -242,15 +257,24 @@
   var input = document.getElementById('passport_photo');
   var takeBtn = document.getElementById('passport-take-btn');
   var chooseBtn = document.getElementById('passport-choose-btn');
+  var cameraDialog = document.getElementById('passport-camera-dialog');
+  var cameraPreview = document.getElementById('passport-camera-preview');
+  var cameraCanvas = document.getElementById('passport-camera-canvas');
+  var cameraCapture = document.getElementById('passport-camera-capture');
+  var cameraCancel = document.getElementById('passport-camera-cancel');
+  var cameraClose = cameraDialog && cameraDialog.querySelector('.passport-camera-close');
   var fileName = document.getElementById('passport-file-name');
   var fileErr = document.getElementById('passport-file-err');
   var passportLegal = document.querySelector('.legal-passport-text');
   var form = input && input.form;
+  var selectionSource = '';
+  var cameraStream = null;
   var msgs = {
     tooLargeImage: {{ t('passport_photo_too_large_image') | tojson }},
     tooLargePdf: {{ t('passport_photo_too_large_pdf') | tojson }},
     badType: {{ t('passport_photo_bad_type') | tojson }},
-    selected: {{ t('passport_photo_selected') | tojson }}
+    selected: {{ t('passport_photo_selected') | tojson }},
+    cameraUnavailable: {{ t('passport_photo_camera_unavailable') | tojson }}
   };
   if (!nationality || !input) return;
 
@@ -282,24 +306,98 @@
       fileName.textContent = msgs.selected.replace('%(name)s', file.name);
       fileName.hidden = false;
     }
-    if (chooseBtn) chooseBtn.textContent = chooseBtn.getAttribute('data-retake-label') || chooseBtn.textContent;
+    if (takeBtn) {
+      takeBtn.textContent = selectionSource === 'camera'
+        ? takeBtn.getAttribute('data-retake-label')
+        : takeBtn.getAttribute('data-take-label');
+    }
+    if (chooseBtn) chooseBtn.textContent = chooseBtn.getAttribute('data-another-label');
     return true;
   }
 
-  function openPicker(mode) {
+  function openPicker() {
+    selectionSource = 'file';
     input.value = '';
-    if (mode === 'camera') {
-      input.setAttribute('capture', 'environment');
-      input.setAttribute('accept', 'image/*');
-    } else {
-      input.removeAttribute('capture');
-      input.setAttribute('accept', 'image/jpeg,image/png,image/webp,application/pdf');
-    }
+    input.removeAttribute('capture');
+    input.setAttribute('accept', 'image/jpeg,image/png,image/webp,application/pdf');
     input.click();
   }
 
-  if (takeBtn) takeBtn.addEventListener('click', function () { openPicker('camera'); });
-  if (chooseBtn) chooseBtn.addEventListener('click', function () { openPicker('file'); });
+  function stopCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(function (track) { track.stop(); });
+      cameraStream = null;
+    }
+    if (cameraPreview) cameraPreview.srcObject = null;
+  }
+
+  function closeCamera() {
+    stopCamera();
+    if (cameraDialog && cameraDialog.open) cameraDialog.close();
+  }
+
+  function useNativeCamera() {
+    selectionSource = 'camera';
+    input.value = '';
+    input.setAttribute('capture', 'environment');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+  }
+
+  function openCamera() {
+    showErr('');
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+      useNativeCamera();
+      return;
+    }
+    if (!cameraDialog || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showErr(msgs.cameraUnavailable);
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    }).then(function (stream) {
+      cameraStream = stream;
+      cameraPreview.srcObject = stream;
+      cameraDialog.showModal();
+    }).catch(function () {
+      showErr(msgs.cameraUnavailable);
+    });
+  }
+
+  if (takeBtn) takeBtn.addEventListener('click', openCamera);
+  if (chooseBtn) chooseBtn.addEventListener('click', openPicker);
+  if (cameraCancel) cameraCancel.addEventListener('click', closeCamera);
+  if (cameraClose) cameraClose.addEventListener('click', closeCamera);
+  if (cameraDialog) {
+    cameraDialog.addEventListener('cancel', function (event) {
+      event.preventDefault();
+      closeCamera();
+    });
+    cameraDialog.addEventListener('close', stopCamera);
+  }
+  if (cameraCapture) {
+    cameraCapture.addEventListener('click', function () {
+      if (!cameraPreview.videoWidth || !cameraPreview.videoHeight) return;
+      cameraCanvas.width = cameraPreview.videoWidth;
+      cameraCanvas.height = cameraPreview.videoHeight;
+      cameraCanvas.getContext('2d').drawImage(cameraPreview, 0, 0);
+      cameraCanvas.toBlob(function (blob) {
+        if (!blob) {
+          showErr(msgs.cameraUnavailable);
+          return;
+        }
+        var captured = new File([blob], 'passport-photo-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+        var transfer = new DataTransfer();
+        transfer.items.add(captured);
+        input.files = transfer.files;
+        selectionSource = 'camera';
+        closeCamera();
+        validateFile(captured);
+      }, 'image/jpeg', 0.9);
+    });
+  }
 
   input.addEventListener('change', function () {
     var file = input.files && input.files[0];
@@ -340,8 +438,11 @@
     if (passportLegal) passportLegal.style.display = foreign ? '' : 'none';
     if (!foreign) {
       input.value = '';
+      selectionSource = '';
       showErr('');
       if (fileName) fileName.hidden = true;
+      if (takeBtn) takeBtn.textContent = takeBtn.getAttribute('data-take-label');
+      if (chooseBtn) chooseBtn.textContent = chooseBtn.getAttribute('data-choose-label');
     }
   }
   nationality.addEventListener('change', sync);
