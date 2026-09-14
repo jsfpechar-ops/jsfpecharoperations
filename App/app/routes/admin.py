@@ -1883,6 +1883,15 @@ async def guest_resend(guest_id: int, request: Request):
     form = await request.form()
     if not form.get("confirm_duplicate"):
         return _back(f"/guests/{guest_id}", err="Confirm you understand the duplicate rules first.")
+    if reporting.blocked_as_duplicate(guest):
+        return _back(
+            f"/guests/{guest_id}",
+            err=(
+                "UbyPort already holds this record, so re-sending cannot be accepted "
+                "and would count as another duplicate. The guest is reported - see the "
+                "Doručenka."
+            ),
+        )
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
     results = reporting.submit_for_apartment(
         reservation["apartment_id"],

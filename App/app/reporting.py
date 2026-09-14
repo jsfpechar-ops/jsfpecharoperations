@@ -487,12 +487,17 @@ def record_host_identity_confirmation(
     if guest["identity_verified_at"]:
         return
     now = db.utcnow()
+    # Verification is the whole reason the photo exists, so it goes here rather
+    # than only on the explicit Verify route. Most hosts verify by sending, and
+    # that path used to leave the scan on disk until the retention sweep.
+    passport_photos.delete_photo(guest_id)
     db.update(
         "guest",
         guest_id,
         {
             "identity_verified_at": now,
             "identity_verified_by": verified_by_user_id,
+            "passport_photo_at": None,
             "updated_at": now,
         },
     )
@@ -513,6 +518,15 @@ def ensure_identity_verified_for_send(
 
 
 # --- submission ----------------------------------------------------------
+
+def blocked_as_duplicate(guest) -> bool:
+    """True when UbyPort refused this record because it already holds it."""
+    try:
+        stored = guest["last_errors"] or ""
+    except (IndexError, KeyError):
+        return False
+    return any(uby_errors.is_duplicate(part) for part in stored.split(" | "))
+
 
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
                      ignore_automation: bool = False, allow_resend: bool = False
@@ -546,6 +560,12 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if guest["submit_state"] == SENT and not allow_resend:
             continue
         if guest["submit_state"] == BLOCKED and not allow_resend:
+            continue
+        # allow_resend is the host overriding caution, not overriding the law.
+        # A record blocked because the register already holds it cannot be
+        # accepted on a second try, so sending it again buys nothing and adds
+        # another unjustified duplicate against the host.
+        if guest["submit_state"] == BLOCKED and blocked_as_duplicate(guest):
             continue
         if not guest_is_complete(guest, reservation):
             continue

@@ -11,7 +11,30 @@ from __future__ import annotations
 import base64
 from datetime import date, timedelta
 
+import pytest
+
 from app import db, housebook, passport_photos, reporting
+
+
+@pytest.fixture(autouse=True)
+def _no_leftovers():
+    """Leave the shared database as it was found; see test_duplicate_guard."""
+    _purge()
+    yield
+    _purge()
+
+
+def _purge():
+    db.init_db()
+    for row in db.query("SELECT id FROM apartment WHERE permalink_token LIKE 'tok-%'"):
+        db.execute(
+            "DELETE FROM guest WHERE reservation_id IN"
+            " (SELECT id FROM reservation WHERE apartment_id = ?)",
+            (row["id"],),
+        )
+        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (row["id"],))
+        db.execute("DELETE FROM apartment WHERE id = ?", (row["id"],))
+    db.execute("DELETE FROM legal_entity WHERE name = 'Test'")
 
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
@@ -125,6 +148,25 @@ def test_a_file_with_no_guest_row_is_swept():
     passport_photos.purge_stale(owner_user_id=None)
 
     assert not passport_photos.has_photo(orphan_id)
+
+
+def test_sending_counts_as_verifying_so_the_photo_goes_then():
+    """Most hosts verify by sending, not by pressing Verify.
+
+    Sending stamps the identity check, which is the moment the photo stops
+    having a purpose. Leaving it for the sweep means a passport scan sits on
+    disk for weeks after the app decided it was no longer needed.
+    """
+    guest_id = _seed_guest(date.today(), verified=False)
+
+    reporting.record_host_identity_confirmation(guest_id, None, on_send=True)
+
+    assert not passport_photos.has_photo(guest_id), (
+        "the record was verified on send but the passport image was kept"
+    )
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["identity_verified_at"]
+    assert guest["passport_photo_at"] is None
 
 
 def test_a_reported_guest_cannot_be_deleted_before_the_six_years_are_up():
