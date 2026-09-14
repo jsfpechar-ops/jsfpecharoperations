@@ -81,7 +81,7 @@ OPERATOR_ADDRESS = os.environ.get(
     "UBYHOST_OPERATOR_ADDRESS",
     "***REMOVED***",
 )
-OPERATOR_EMAIL = os.environ.get("UBYHOST_OPERATOR_EMAIL", "").strip()
+OPERATOR_EMAIL = os.environ.get("UBYHOST_OPERATOR_EMAIL", "support@ubyhost.com").strip()
 OPERATOR_REGISTRY_URL = os.environ.get(
     "UBYHOST_OPERATOR_REGISTRY_URL",
     "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/***REMOVED***",
