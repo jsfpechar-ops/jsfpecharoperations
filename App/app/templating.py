@@ -44,23 +44,22 @@ def _template_translate(context, key: str, **kwargs) -> str:
 
 
 @pass_context
-def _describe_time_left(context, check_in: date) -> str:
+def _template_time_left(context, check_in) -> str:
+    """The deadline countdown, in the host's language.
+
+    This is the most load-bearing text on the work queue, so it must not be
+    the one English string left on an otherwise Czech page.
+    """
     request = context.get("request")
     lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
-    now = datetime.now()
-    if check_in > now.date():
-        days = (check_in - now.date()).days
-        key = "deadline.arrives_day" if days == 1 else "deadline.arrives_days"
-        return host_i18n.translate(lang, key, count=days)
-    left = deadlines.hours_left(check_in, now)
-    if left < 0:
-        over = abs(left)
-        if over < 48:
-            return host_i18n.translate(lang, "deadline.overdue_hours", count=int(over))
-        return host_i18n.translate(lang, "deadline.overdue_days", count=int(over // 24))
-    if left < 48:
-        return host_i18n.translate(lang, "deadline.hours_left", count=int(left))
-    return host_i18n.translate(lang, "deadline.days_left", count=int(left // 24))
+    kind, amount = deadlines.time_left_parts(check_in)
+    key = f"deadline.{kind}"
+    if kind in ("arrives_days", "days_left", "overdue_days"):
+        if amount == 1:
+            key += ".one"
+        elif 2 <= amount <= 4:
+            key += ".few"
+    return host_i18n.translate(lang, key, n=amount)
 
 
 templates.env.filters["date_cz"] = _fmt_date
@@ -73,7 +72,7 @@ templates.env.globals.update(
     deployment_tier=config.DEPLOYMENT,
     ubyport_env=config.UBYPORT_ENV,
     public_base_url=config.PUBLIC_BASE_URL,
-    describe_time_left=_describe_time_left,
+    describe_time_left=_template_time_left,
     urgency=deadlines.urgency,
     reporting_deadline=deadlines.reporting_deadline,
     purpose_label=validation.purpose_label,

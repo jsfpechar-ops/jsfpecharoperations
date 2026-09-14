@@ -246,6 +246,66 @@ STATUS_LABELS = {
     "failed": "Rejected",
 }
 
+# Statuses only the host can clear. "awaiting_verification" belongs here even
+# though sending would verify implicitly: a manual apartment never sends on its
+# own, so leaving it off the queue means nobody is told before the window shuts.
+HOST_ACTION_STATUSES = ("failed", "incomplete", "ready", "awaiting_verification")
+FINISHED_STATUSES = ("reported", "not_required")
+
+
+def queue_groups(rows: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Split dashboard rows into the four buckets of the Overview work queue.
+
+    Every row lands in exactly one bucket, so the counts beside the headings
+    can be trusted.
+    """
+    needs_action = [
+        row for row in rows
+        if row["progress"]["status"] in HOST_ACTION_STATUSES
+        # Past the deadline even "waiting for the guest" is the host's problem.
+        or (row["urgency"] == "overdue" and row["progress"]["status"] not in FINISHED_STATUSES)
+    ]
+    claimed = {row["reservation"]["id"] for row in needs_action}
+    waiting = [
+        row for row in rows
+        if row["progress"]["status"] == "awaiting_guest"
+        and row["reservation"]["id"] not in claimed
+    ]
+    claimed |= {row["reservation"]["id"] for row in waiting}
+    upcoming = [
+        row for row in rows
+        if row["reservation"]["id"] not in claimed
+        and row["progress"]["status"] not in FINISHED_STATUSES
+    ]
+    claimed |= {row["reservation"]["id"] for row in upcoming}
+    completed = [
+        row for row in rows
+        if row["reservation"]["id"] not in claimed
+        and row["progress"]["status"] in FINISHED_STATUSES
+    ]
+    return {
+        "needs_action": needs_action,
+        "waiting": waiting,
+        "upcoming": upcoming,
+        "completed": completed,
+    }
+
+
+def queue_counts(
+    rows: List[Dict[str, Any]], groups: Dict[str, List[Dict[str, Any]]]
+) -> Dict[str, int]:
+    """Numbers for the Overview stat strip, derived from the same buckets."""
+    return {
+        "attention": len(groups["needs_action"]),
+        "awaiting": len(groups["waiting"]),
+        "ready": sum(1 for row in rows if row["progress"]["status"] == "ready"),
+        "overdue": sum(
+            1 for row in rows
+            if row["urgency"] == "overdue"
+            and row["progress"]["status"] not in FINISHED_STATUSES
+        ),
+    }
+
 
 def pending_reportable(guests: List[Any]) -> List[Any]:
     """Reportable guests that have not yet been accepted by UbyPort."""
@@ -427,12 +487,17 @@ def record_host_identity_confirmation(
     if guest["identity_verified_at"]:
         return
     now = db.utcnow()
+    # Verification is the whole reason the photo exists, so it goes here rather
+    # than only on the explicit Verify route. Most hosts verify by sending, and
+    # that path used to leave the scan on disk until the retention sweep.
+    passport_photos.delete_photo(guest_id)
     db.update(
         "guest",
         guest_id,
         {
             "identity_verified_at": now,
             "identity_verified_by": verified_by_user_id,
+            "passport_photo_at": None,
             "updated_at": now,
         },
     )
@@ -453,6 +518,15 @@ def ensure_identity_verified_for_send(
 
 
 # --- submission ----------------------------------------------------------
+
+def blocked_as_duplicate(guest) -> bool:
+    """True when UbyPort refused this record because it already holds it."""
+    try:
+        stored = guest["last_errors"] or ""
+    except (IndexError, KeyError):
+        return False
+    return any(uby_errors.is_duplicate(part) for part in stored.split(" | "))
+
 
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
                      ignore_automation: bool = False, allow_resend: bool = False
@@ -486,6 +560,12 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if guest["submit_state"] == SENT and not allow_resend:
             continue
         if guest["submit_state"] == BLOCKED and not allow_resend:
+            continue
+        # allow_resend is the host overriding caution, not overriding the law.
+        # A record blocked because the register already holds it cannot be
+        # accepted on a second try, so sending it again buys nothing and adds
+        # another unjustified duplicate against the host.
+        if guest["submit_state"] == BLOCKED and blocked_as_duplicate(guest):
             continue
         if not guest_is_complete(guest, reservation):
             continue

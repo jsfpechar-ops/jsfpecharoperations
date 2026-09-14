@@ -8,8 +8,8 @@
     <input type="hidden" name="return_to" value="{{ return_to }}">
     <div class="g-field">
       <label for="pin">{{ t('pin_label') }}</label>
-      <input type="text" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6"
-             autocomplete="one-time-code" required autofocus class="g-pin-input">
+      <input type="text" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}|[0-9]{6}"
+             maxlength="6" autocomplete="one-time-code" required autofocus class="g-pin-input">
     </div>
     <button class="g-btn" type="submit">{{ t('pin_submit') }}</button>
     <p class="g-pin-recovery">{{ t('pin_recovery') }}</p>

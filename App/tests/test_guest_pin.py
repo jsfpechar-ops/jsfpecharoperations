@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import re
 from datetime import date, timedelta
 
 import pytest
@@ -118,6 +119,48 @@ def test_party_and_another_posts_require_pin(pin_required):
         assert db.query_one(
             "SELECT declared_guests FROM reservation WHERE id = ?", (stay_id,)
         )["declared_guests"] == 4
+    finally:
+        _cleanup()
+
+
+def test_pin_page_accepts_the_length_the_app_generates(pin_required):
+    """A 6-digit PIN in a maxlength=4 box cannot be typed at all."""
+    generated = auth.new_permalink_pin()
+    assert len(generated) == 6
+    assert auth.normalise_permalink_pin(generated) == generated
+
+    stay_id = _stay_id()
+    try:
+        db.execute(
+            "UPDATE apartment SET permalink_pin = ? WHERE permalink_token = ?",
+            (generated, TOKEN),
+        )
+        client = TestClient(app)
+        page = client.get(f"/l/{TOKEN}", follow_redirects=False)
+        assert page.status_code == 200
+        field = re.search(r"<input[^>]*name=\"pin\"[^>]*>", page.text, re.S)
+        assert field, "the PIN page should render a pin input"
+        markup = field.group(0)
+        assert 'maxlength="6"' in markup, markup
+        assert "[0-9]{4}|[0-9]{6}" in markup, markup
+
+        accepted = client.post(
+            f"/l/{TOKEN}/pin",
+            data={"pin": generated, "return_to": f"/l/{TOKEN}"},
+            follow_redirects=False,
+        )
+        assert accepted.status_code == 303
+        # A legacy 4-digit PIN must keep working for links already sent out.
+        db.execute(
+            "UPDATE apartment SET permalink_pin = ? WHERE permalink_token = ?",
+            (PIN, TOKEN),
+        )
+        legacy = TestClient(app).post(
+            f"/l/{TOKEN}/pin",
+            data={"pin": PIN, "return_to": f"/l/{TOKEN}"},
+            follow_redirects=False,
+        )
+        assert legacy.status_code == 303
     finally:
         _cleanup()
 

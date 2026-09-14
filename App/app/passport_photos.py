@@ -2,15 +2,20 @@
 
 Guests upload a photo, camera capture, or PDF (e.g. a multi-guest registration
 form). Files stay on disk only until the host confirms the data matches the
-document, then are deleted immediately (GDPR-safe). Only authenticated hosts can
-read them via the admin route.
+document, then are deleted immediately. Only authenticated hosts can read them
+via the admin route.
+
+Verification is the happy path, not a guarantee: a host can simply never press
+the button. ``purge_stale`` is the backstop that makes the promise true, and it
+also clears files no guest row points at any more, which nothing else can reach.
 """
 from __future__ import annotations
 
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional, Tuple
 
-from app import config
+from app import config, db
 
 PHOTOS_DIR = config.DATA_DIR / "passport_photos"
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -96,6 +101,82 @@ def delete_photo(guest_id: int) -> None:
     for path in _paths_for(guest_id):
         if path.is_file():
             path.unlink()
+
+
+# --- retention -----------------------------------------------------------
+#
+# A photo exists for one purpose: letting the host compare the form against the
+# document before reporting. That purpose dies with the stay, so the file has
+# to go even when the host never pressed Verify. The grace period is generous
+# enough for a host who was away the week the guest checked out.
+PHOTO_GRACE_DAYS = 30
+
+
+def stale_cutoff(today: Optional[date] = None) -> date:
+    return (today or date.today()) - timedelta(days=PHOTO_GRACE_DAYS)
+
+
+def _orphan_ids() -> list[int]:
+    """Files on disk that no guest row claims.
+
+    Nothing in the app can offer to delete these, because every delete button
+    is rendered from a guest row. Only a sweep can reach them.
+    """
+    if not PHOTOS_DIR.is_dir():
+        return []
+    found = set()
+    for path in PHOTOS_DIR.iterdir():
+        if not path.is_file() or path.suffix.lower() not in ALL_EXTENSIONS:
+            continue
+        try:
+            found.add(int(path.stem))
+        except ValueError:
+            continue
+    if not found:
+        return []
+    marks = ", ".join("?" for _ in found)
+    live = {
+        int(row["id"])
+        for row in db.query(f"SELECT id FROM guest WHERE id IN ({marks})", sorted(found))
+    }
+    return sorted(found - live)
+
+
+def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = None) -> int:
+    """Delete photos whose stay is long over, plus any orphaned files.
+
+    Clears ``passport_photo_at`` so the host stops being offered a photo that
+    is no longer there, but never touches the rest of the guest row: that is a
+    house book entry and has its own six-year duty.
+    """
+    rows = db.query(
+        "SELECT g.id AS id, g.passport_photo_at AS marked FROM guest g "
+        "JOIN reservation r ON r.id = g.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE COALESCE(g.stay_to, r.date_to) < ? "
+        "AND (? IS NULL OR a.owner_user_id = ?)",
+        (stale_cutoff(today).isoformat(), owner_user_id, owner_user_id),
+    )
+    removed = 0
+    for row in rows:
+        guest_id = int(row["id"])
+        if has_photo(guest_id):
+            delete_photo(guest_id)
+            removed += 1
+        if row["marked"]:
+            db.update("guest", guest_id, {"passport_photo_at": None})
+    # Orphans belong to no workspace, so only the global sweep clears them.
+    if owner_user_id is None:
+        for guest_id in _orphan_ids():
+            delete_photo(guest_id)
+            removed += 1
+    if removed:
+        db.audit(
+            "passport_photo_sweep",
+            f"deleted {removed} passport image(s) with no remaining purpose",
+            owner_user_id=owner_user_id,
+        )
+    return removed
 
 
 def read_photo(guest_id: int) -> Optional[Tuple[bytes, str]]:

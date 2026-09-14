@@ -2,7 +2,7 @@
 {% set nav = 'apartments' %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity with context %}
 {{ onboarding_banner(onboarding) }}
 {{ page_header(
   t('apartments.title'),

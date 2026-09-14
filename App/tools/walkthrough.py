@@ -37,7 +37,7 @@ def _find_chrome() -> str:
 CHROME = _find_chrome()
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080"
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else ".screenshots")
-PASSWORD = "Testpassword123"
+PASSWORD = "Walkthrough-Password-123"
 MOCK = f"{urlparse(BASE).scheme}://{urlparse(BASE).hostname}:8081"
 
 OUT.mkdir(parents=True, exist_ok=True)
@@ -50,8 +50,7 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
     )
 ).decode()
 PASSPORT_PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
-    "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
 )
 
 
@@ -151,6 +150,9 @@ def main() -> None:
         )
         if logged_in.status_code != 303:
             raise SystemExit("Could not log in with the configured walkthrough credentials.")
+        # A freshly bootstrapped admin must change its password before any
+        # other page will load, so the walkthrough has to do that first or
+        # every POST below silently lands on /account/password.
         if logged_in.headers.get("location", "").startswith("/account/password"):
             changed = session.post(
                 BASE + "/account/password",
@@ -162,7 +164,10 @@ def main() -> None:
                 allow_redirects=False,
             )
             if changed.status_code != 303:
-                raise SystemExit("Could not complete the required first password change.")
+                raise SystemExit(
+                    "Could not complete the first-run password change: "
+                    f"{changed.status_code}"
+                )
 
     print("1. empty dashboard and login screen")
     shot("/", "dashboard-empty")
@@ -222,6 +227,15 @@ def main() -> None:
             break
         time.sleep(0.2)
     shot(f"/apartments/{apartment_id}", "apartment-with-feed")
+    # The feed URL is on loopback, which the SSRF guard blocks by default, and
+    # a silent failure here used to produce a screenshot called
+    # "dashboard-with-stays" showing no stays at all.
+    stays = session.get(BASE + "/reservations").text
+    assert "Direct booking" in stays or 'href="/reservations/' in stays, (
+        "the calendar feed imported nothing. Start the mock server "
+        "(python -m mock_ubyport.server) and run the app with "
+        "UBYHOST_ICAL_ALLOW_PRIVATE=1 so a loopback feed URL is allowed."
+    )
     shot("/", "dashboard-with-stays")
     shot("/reservations", "reservations")
 
@@ -238,9 +252,11 @@ def main() -> None:
     # would after reading the PIN in their arrival message.
     if 'name="pin"' in landing.text:
         links = session.get(BASE + "/guest-links").text
-        pin = re.search(
+        found_pin = re.search(
             rf'id="pin-{apartment_id}"[^>]*value="(\d{{4,6}})"', links
-        ).group(1)
+        )
+        assert found_pin, f"no PIN shown for apartment {apartment_id} on /guest-links"
+        pin = found_pin.group(1)
         print(f"   entering guest PIN {pin}")
         guest.post(f"{BASE}/l/{token}/pin", data={"pin": pin, "return_to": f"/l/{token}"},
                    allow_redirects=False)
@@ -260,6 +276,9 @@ def main() -> None:
     guest_shot(guest, f"/l/{token}/{reservation_id}/new", "guest-form")
     guest_shot(guest, f"/l/{token}/{reservation_id}/new?lang=cs", "guest-form-czech")
 
+    # A foreign guest also has to tick the legal notice and attach a passport
+    # page, or the save stops at 422 and every later screenshot shows a stay
+    # that was never reported.
     saved = guest.post(f"{BASE}/l/{token}/{reservation_id}/save", data={
         "surname": "Smith",
         "first_name": "John Paul",
@@ -275,7 +294,7 @@ def main() -> None:
     }, files={"passport_photo": ("passport.png", PASSPORT_PNG, "image/png")},
         allow_redirects=False)
     print(f"   guest form saved -> {saved.status_code}")
-    assert saved.status_code == 303, f"guest form save returned {saved.status_code}"
+    assert saved.status_code == 303, f"guest form should save: {saved.status_code}"
     guest_shot(guest, f"/l/{token}/{reservation_id}", "guest-after-submit")
 
     # An incomplete second attempt, to capture the validation screen.

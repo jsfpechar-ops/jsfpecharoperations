@@ -37,6 +37,13 @@ router = APIRouter()
 
 # --- helpers -------------------------------------------------------------
 
+# A house book with years of history is still well under a megabyte, so this
+# is generous for a real import and stops an upload from being read whole into
+# memory.
+MAX_IMPORT_BYTES = 4 * 1024 * 1024
+_TOO_BIG = "That file is larger than 4 MB. Split the import into smaller files."
+
+
 def _back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
     query = []
     if msg:
@@ -315,13 +322,17 @@ def users_admin(request: Request):
     account = auth.current_user(request)
     if not account or account["role"] != "admin":
         return Response("Administrators only.", status_code=403)
+    return _render_users(request)
+
+
+def _render_users(request: Request, **extra):
     users = db.query(
         "SELECT u.id, u.username, u.display_name, u.role, u.active, "
         "u.must_change_password, u.created_at, u.last_login_at, "
         "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
         "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
     )
-    return render(request, "users.html", {"users": users})
+    return render(request, "users.html", {"users": users, **extra})
 
 
 @router.post("/admin/users")
@@ -336,9 +347,10 @@ async def user_create(request: Request):
     password = _form_str(form, "password")
     if not password:
         password = auth.generate_password()
+    username = _form_str(form, "username")
     try:
         user_id = auth.create_account(
-            _form_str(form, "username"),
+            username,
             password,
             _form_str(form, "display_name"),
             role="host",
@@ -353,9 +365,12 @@ async def user_create(request: Request):
     db.audit(
         "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
     )
-    return _back(
-        "/admin/users",
-        msg=f"User created. Temporary password: {password} — copy it now; it is not shown again.",
+    # Rendered straight into the response body rather than flashed through a
+    # redirect: a query string ends up in browser history, proxy logs and the
+    # Referer of the next request, which is no place for a live credential.
+    return _render_users(
+        request,
+        new_credential={"username": username, "password": password},
     )
 
 
@@ -381,12 +396,9 @@ async def user_password_reset(user_id: int, request: Request):
     db.audit(
         "password_reset", actor=account["username"], owner_user_id=user_id
     )
-    return _back(
-        "/admin/users",
-        msg=(
-            f"Password reset for {target['username']}. "
-            f"Temporary password: {password} — copy it now; it is not shown again."
-        ),
+    return _render_users(
+        request,
+        new_credential={"username": target["username"], "password": password, "reset": True},
     )
 
 
@@ -531,37 +543,10 @@ def dashboard(request: Request):
     owner_user_id = access.owner_id(request)
     apartments = access.apartments(request)
     rows = dashboard_rows(owner_user_id=owner_user_id)
-    needs_action = [
-        row for row in rows
-        if row["progress"]["status"] in ("failed", "incomplete", "ready")
-        or (
-            row["urgency"] == "overdue"
-            and row["progress"]["status"] not in ("reported", "not_required")
-        )
-    ]
-    action_ids = {row["reservation"]["id"] for row in needs_action}
-    waiting = [
-        row for row in rows
-        if row["progress"]["status"] == "awaiting_guest"
-        and row["reservation"]["id"] not in action_ids
-    ]
-    assigned_ids = action_ids | {row["reservation"]["id"] for row in waiting}
-    upcoming = [
-        row for row in rows
-        if row["reservation"]["id"] not in assigned_ids
-        and row["progress"]["status"] not in ("reported", "not_required")
-    ]
-    completed = [
-        row for row in rows
-        if row["progress"]["status"] in ("reported", "not_required")
-    ][:8]
-    counts = {
-        "attention": len(needs_action),
-        "awaiting": len(waiting),
-        "ready": sum(1 for r in rows if r["progress"]["status"] == "ready"),
-        "overdue": sum(1 for r in rows if r["urgency"] == "overdue"
-                       and r["progress"]["status"] not in ("reported", "not_required")),
-    }
+    queue = reporting.queue_groups(rows)
+    counts = reporting.queue_counts(rows, queue)
+    needs_action, waiting = queue["needs_action"], queue["waiting"]
+    upcoming, completed = queue["upcoming"], queue["completed"][:8]
     setup_warnings = []
     for apartment in apartments:
         issues = validation.errors_only(_apartment_issues(apartment))
@@ -1405,9 +1390,11 @@ async def reservations_import(request: Request):
     upload = form.get("csv_file")
     if not upload or not getattr(upload, "filename", ""):
         return _back("/reservations", err="Choose a CSV file to import.")
-    content = await upload.read()
+    content = await upload.read(MAX_IMPORT_BYTES + 1)
     if not content:
         return _back("/reservations", err="The file is empty.")
+    if len(content) > MAX_IMPORT_BYTES:
+        return _back("/reservations", err=_TOO_BIG)
     result = stays_import.import_csv(content, owner_user_id=access.owner_id(request))
     if result["imported"]:
         detail = f"Imported {result['imported']} stay(s)."
@@ -1628,7 +1615,16 @@ async def reservation_submit(reservation_id: int, request: Request):
             or "This stay cannot be sent right now.",
         )
     form = await request.form()
+    # Re-sending an accepted record creates a duplicate, which UbyPort counts
+    # against the host and cannot be corrected. The single-guest resend route
+    # gates this on an explicit tick; the whole-stay route must not be the
+    # cheaper way around it, especially with no CSRF token to lean on.
     allow_resend = bool(form.get("allow_resend"))
+    if allow_resend and not form.get("confirm_duplicate"):
+        return _back(
+            f"/reservations/{reservation_id}",
+            err="Confirm you understand the duplicate rules before re-sending accepted records.",
+        )
     return_to = _form_str(form, "return_to") or f"/reservations/{reservation_id}"
     guest_ids = [
         guest["id"]
@@ -1684,7 +1680,7 @@ GUEST_TEXT_FIELDS = (
 
 def _guest_payload(form) -> Dict[str, Any]:
     raw = {field: _form_str(form, field) for field in GUEST_TEXT_FIELDS}
-    payload: Dict[str, Any] = dict(validation.normalise_guest(raw))
+    payload: Dict[str, Any] = dict(validation.normalise_guest(raw, clamp=False))
     payload["stay_from"] = _form_str(form, "stay_from") or None
     payload["stay_to"] = _form_str(form, "stay_to") or None
     return payload
@@ -1999,6 +1995,15 @@ async def guest_resend(guest_id: int, request: Request):
     form = await request.form()
     if not form.get("confirm_duplicate"):
         return _back(f"/guests/{guest_id}", err="Confirm you understand the duplicate rules first.")
+    if reporting.blocked_as_duplicate(guest):
+        return _back(
+            f"/guests/{guest_id}",
+            err=(
+                "UbyPort already holds this record, so re-sending cannot be accepted "
+                "and would count as another duplicate. The guest is reported - see the "
+                "Doručenka."
+            ),
+        )
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
     results = reporting.submit_for_apartment(
         reservation["apartment_id"],
@@ -2247,9 +2252,11 @@ async def housebook_import(request: Request):
         return _back("/housebook", err="No such property.")
     if not upload or not getattr(upload, "filename", ""):
         return _back("/housebook", err="Choose a CSV file to import.")
-    content = await upload.read()
+    content = await upload.read(MAX_IMPORT_BYTES + 1)
     if not content:
         return _back("/housebook", err="The file is empty.")
+    if len(content) > MAX_IMPORT_BYTES:
+        return _back("/housebook", err=_TOO_BIG)
     result = housebook.import_csv(content, apartment_id)
     if result["imported"]:
         detail = f"Imported {result['imported']} record(s)."
@@ -2496,7 +2503,16 @@ def purge_expired_records(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    deleted = housebook.purge_expired(owner_user_id=access.owner_id(request))
-    if not deleted:
+    owner_user_id = access.owner_id(request)
+    deleted = housebook.purge_expired(owner_user_id=owner_user_id)
+    # A passport image has no six-year basis, so the same button clears the
+    # ones left over from stays that ended long ago.
+    photos = passport_photos.purge_stale(owner_user_id=owner_user_id)
+    parts = []
+    if deleted:
+        parts.append(f"{deleted} guest record(s) past the retention period")
+    if photos:
+        parts.append(f"{photos} passport image(s) no longer needed")
+    if not parts:
         return _back("/settings", msg="Nothing to delete - no record is past the retention period.")
-    return _back("/settings", msg=f"Deleted {deleted} guest record(s) past the retention period.")
+    return _back("/settings", msg="Deleted " + " and ".join(parts) + ".")

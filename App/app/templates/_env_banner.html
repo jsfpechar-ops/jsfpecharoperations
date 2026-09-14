@@ -1,0 +1,18 @@
+{# Which register this workspace is pointed at.
+
+   A practice run and the real thing look identical once you are inside, so
+   this is stated on every host page - including first-run setup, which has no
+   account yet, and the login page, where a host arriving at the wrong
+   deployment should find out before they start filing. #}
+{% if ubyport_env == 'mock' %}
+  {% set production_mock = deployment_tier == 'production' %}
+  <aside class="env-banner mock" role="alert">
+    <strong>{{ t('env.mock_production_title') if production_mock else t('env.mock_title') }}</strong>
+    <span>{{ t('env.mock_production_body') if production_mock else t('env.mock_body') }}</span>
+  </aside>
+{% elif ubyport_env == 'prod' %}
+  <aside class="env-banner prod" role="status">
+    <strong>{{ t('env.prod_title') }}</strong>
+    <span>{{ t('env.prod_body') }}</span>
+  </aside>
+{% endif %}

@@ -50,6 +50,22 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   border-radius: 5px;
 }
 
+/* Off-screen until tabbed to: the legal notice and language switch come first
+   in the source, and a keyboard guest should not have to pass them every time. */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 10000;
+  padding: 10px 16px;
+  background: var(--g-ink);
+  color: #fff;
+  border-radius: var(--g-radius-sm);
+  text-decoration: none;
+  font-weight: 600;
+}
+.skip-link:focus { top: 12px; }
+
 .g-wrap { max-width: 580px; margin: 0 auto; padding: 20px 16px 72px; }
 
 /* --- header ------------------------------------------------------------ */

@@ -26,7 +26,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
-from . import db, reporting, validation
+from . import db, passport_photos, reporting, validation
 
 RETENTION_YEARS = 6
 # Police-inspection ZIPs are built one PDF at a time on disk — not held in RAM.
@@ -192,6 +192,13 @@ def _split_residence(value: str) -> tuple[str, str, str]:
     return value, "", ""
 
 
+def _as_date(value: Optional[str]) -> Optional[date]:
+    try:
+        return date.fromisoformat(value) if value else None
+    except ValueError:
+        return None
+
+
 def import_csv(content: bytes, apartment_id: int) -> Dict[str, Any]:
     """Import historical house-book rows from a semicolon-separated CSV export."""
     text = content.decode("utf-8-sig", errors="replace")
@@ -285,21 +292,47 @@ def import_csv(content: bytes, apartment_id: int) -> Dict[str, Any]:
             reservation_id = reservation["id"]
 
         signed = cell("signed").lower().startswith("y")
+        # Through the same normaliser as every other way a guest is recorded.
+        # This import used to write raw cells with its own length limits, which
+        # were wider than the police allow, so a spreadsheet could put a pipe
+        # or a 35-character given name straight into a later SOAP batch.
+        fields = validation.normalise_guest(
+            {
+                "surname": surname,
+                "first_name": first_name,
+                "birth_date": _parse_import_birth(cell("birth_date")),
+                "nationality": cell("nationality"),
+                "doc_number": cell("doc_number"),
+                "visa_number": cell("visa_number"),
+                "res_street": street,
+                "res_city": city,
+                "res_country": country,
+                "purpose": (cell("purpose") or "10").split()[0],
+                "note": cell("note"),
+            }
+        )
+        # Rows already filed elsewhere are the six-year legal record, so they
+        # are kept even when they would fail today's rules. A row this app will
+        # have to send is refused now, while there is still time to fix it,
+        # rather than at submission time with the deadline running.
+        if submit_state == "pending" and validation.guest_is_reportable(fields["nationality"]):
+            problems = validation.errors_only(
+                validation.validate_guest(
+                    fields, _as_date(stay_from), _as_date(stay_to)
+                )
+            )
+            if problems:
+                skipped += 1
+                errors.append(
+                    f"Line {line_no}: {problems[0].message} "
+                    "(not imported - it could not be reported as it stands)."
+                )
+                continue
         db.insert(
             "guest",
             {
                 "reservation_id": reservation_id,
-                "surname": surname[:35],
-                "first_name": first_name[:35],
-                "birth_date": _parse_import_birth(cell("birth_date")),
-                "nationality": cell("nationality")[:3].upper(),
-                "doc_number": cell("doc_number")[:20],
-                "visa_number": cell("visa_number")[:20],
-                "res_street": street[:48],
-                "res_city": city[:48],
-                "res_country": country[:3].upper(),
-                "purpose": (cell("purpose") or "10").split()[0][:2],
-                "note": cell("note")[:255],
+                **fields,
                 "stay_from": stay_from,
                 "stay_to": stay_to,
                 "signature_png": "imported" if signed else None,
@@ -649,6 +682,11 @@ def purge_expired(
     ids = expired_guest_ids(today, owner_user_id=owner_user_id)
     if not ids:
         return 0
+    # Drop the image before the row: once the row is gone nothing in the app
+    # can find the file again, and an orphaned passport scan is the worst
+    # thing to leave behind at the exact moment the basis for holding it ends.
+    for guest_id in ids:
+        passport_photos.delete_photo(guest_id)
     marks = ", ".join("?" for _ in ids)
     db.execute(f"DELETE FROM guest WHERE id IN ({marks})", ids)
     db.audit("retention_purge", f"deleted {len(ids)} guest record(s) older than {RETENTION_YEARS} years")

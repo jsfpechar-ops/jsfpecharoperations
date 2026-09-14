@@ -55,6 +55,37 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace — "
             "built for Czech short-term hosts."
         ),
+        "onboarding.welcome_title": "Welcome to UbyHost",
+        "onboarding.welcome_lede": (
+            "Let's get your first property ready for guest reporting. Follow the steps "
+            "below — most hosts finish in a few minutes."
+        ),
+        "onboarding.step_of": "Setup step %(n)s of %(total)s: %(title)s",
+        "onboarding.step_done": "Done",
+        "onboarding.continue": "Continue: %(action)s",
+        "onboarding.entity.title": "Legal entity",
+        "onboarding.entity.detail": "The company or sole trader registered in UbyPort.",
+        "onboarding.entity.action": "Add legal entity",
+        "onboarding.property.title": "Property",
+        "onboarding.property.detail": "Each flat or house you rent out.",
+        "onboarding.property.action": "Add property",
+        "onboarding.calendars.title": "Calendar links",
+        "onboarding.calendars.detail": (
+            "Airbnb or Booking.com iCal URLs so stays appear automatically."
+        ),
+        "onboarding.calendars.action": "Connect calendars",
+        "onboarding.automation.title": "Automation & UbyPort",
+        "onboarding.automation.detail": (
+            "Web-service credentials, and the IDUB, abbreviation and address copied "
+            "exactly from your registration. UbyPort rejects a mismatch rather than "
+            "correcting it."
+        ),
+        "onboarding.automation.action": "Finish automation",
+        "onboarding.guest_link.title": "Guest link",
+        "onboarding.guest_link.detail": (
+            "Paste into your Airbnb or Booking.com check-in message."
+        ),
+        "onboarding.guest_link.action": "Copy guest link",
         "demo.load": "Explore with demo data",
         "demo.load_detail": (
             "One sample property with stays and guests. Nothing is sent to the police unless you "
@@ -451,7 +482,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "confirm.clear_demo": "Clear the built-in demo data?",
         "confirm.purge_expired": "Permanently delete every guest record past the retention period? This cannot be undone.",
         "confirm.delete_entity": "Delete this legal entity? This cannot be undone.",
+        "confirm.archive_entity": "Archive this legal entity? You can restore it later.",
         "confirm.remove_guest": "Remove this guest record?",
+        "confirm.archive_guest": "Archive this guest? The entry leaves your house book export until you restore it.",
         "confirm.disconnect_feed": "Disconnect this calendar feed? Existing stays are preserved.",
         "confirm.regenerate_link": "Generate a new guest link and PIN? The current link and PIN stop working.",
         "confirm.regenerate_pin": "Generate a new random PIN?",
@@ -472,6 +505,33 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.ready_to_send": "Send completed guest records to UbyPort now",
         "hint.ready_id_optional": "Forms complete — send now or mark ID checked first (recorded on send)",
         "hint.demo_preview": "Demo stays are never sent — use a real property to report to UbyPort",
+        # Czech needs three forms for "day" (1 / 2-4 / 5+), so every day-based
+        # countdown carries .one and .few alongside the base many form.
+        "deadline.arrives_days": "arrives in %(n)s days",
+        "deadline.arrives_days.one": "arrives in 1 day",
+        "deadline.arrives_days.few": "arrives in %(n)s days",
+        "deadline.days_left": "%(n)s days left",
+        "deadline.days_left.one": "1 day left",
+        "deadline.days_left.few": "%(n)s days left",
+        "deadline.overdue_days": "overdue by %(n)s days",
+        "deadline.overdue_days.one": "overdue by 1 day",
+        "deadline.overdue_days.few": "overdue by %(n)s days",
+        "deadline.hours_left": "%(n)s h left",
+        "deadline.overdue_hours": "overdue by %(n)s h",
+        "env.mock_title": "Nothing is being reported to the police",
+        "env.mock_body": (
+            "This workspace is pointed at the practice server, so records marked "
+            "\"Reported\" were never filed. Set UBYHOST_UBYPORT_ENV to test or prod "
+            "before you rely on it."
+        ),
+        "env.mock_production_title": "Live deployment is still on the practice server",
+        "env.mock_production_body": (
+            "Guests are registering for real but nothing reaches the Foreign Police, so "
+            "every stay is running out its three working days unreported. Set "
+            "UBYHOST_UBYPORT_ENV=prod now."
+        ),
+        "env.prod_title": "Live police reporting",
+        "env.prod_body": "Everything you send from here goes into the real police register.",
         "status.failed": "Rejected",
         "status.reported": "Reported",
         "status.ready": "Ready to report",
@@ -778,6 +838,38 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
             "pro krátkodobé pronájmy v Česku."
         ),
+        "onboarding.welcome_title": "Vítejte v UbyHostu",
+        "onboarding.welcome_lede": (
+            "Připravíme vaše první ubytování na hlášení hostů. Projděte kroky níže — "
+            "většina hostitelů to zvládne za několik minut."
+        ),
+        "onboarding.step_of": "Krok nastavení %(n)s z %(total)s: %(title)s",
+        "onboarding.step_done": "Hotovo",
+        "onboarding.continue": "Pokračovat: %(action)s",
+        "onboarding.entity.title": "Právnická osoba",
+        "onboarding.entity.detail": (
+            "Firma nebo podnikatel registrovaný v UbyPortu."
+        ),
+        "onboarding.entity.action": "Přidat právnickou osobu",
+        "onboarding.property.title": "Ubytování",
+        "onboarding.property.detail": "Každý byt nebo dům, který pronajímáte.",
+        "onboarding.property.action": "Přidat ubytování",
+        "onboarding.calendars.title": "Odkazy na kalendáře",
+        "onboarding.calendars.detail": (
+            "iCal odkazy z Airbnb nebo Booking.com, aby se pobyty zobrazovaly automaticky."
+        ),
+        "onboarding.calendars.action": "Připojit kalendáře",
+        "onboarding.automation.title": "Automatizace a UbyPort",
+        "onboarding.automation.detail": (
+            "Přihlašovací údaje k webové službě a IDUB, zkratka a adresa opsané přesně "
+            "podle registrace. UbyPort neshodu odmítne, neopraví ji."
+        ),
+        "onboarding.automation.action": "Dokončit automatizaci",
+        "onboarding.guest_link.title": "Odkaz pro hosty",
+        "onboarding.guest_link.detail": (
+            "Vložte do zprávy s pokyny k příjezdu na Airbnb nebo Booking.com."
+        ),
+        "onboarding.guest_link.action": "Kopírovat odkaz pro hosty",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": (
             "Ukázkové ubytování s pobytem a hosty. Na policii se nic neodešle, dokud sami "
@@ -1167,7 +1259,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "confirm.clear_demo": "Smazat vestavěná ukázková data?",
         "confirm.purge_expired": "Trvale smazat všechny záznamy hostů po uplynutí zákonné doby uchovávání? Nelze vrátit.",
         "confirm.delete_entity": "Smazat tuto právnickou osobu? Nelze vrátit.",
+        "confirm.archive_entity": "Archivovat tuto právnickou osobu? Později ji můžete obnovit.",
         "confirm.remove_guest": "Odstranit tento záznam hosta?",
+        "confirm.archive_guest": "Archivovat tohoto hosta? Záznam zmizí z exportu domovní knihy, dokud ho neobnovíte.",
         "confirm.disconnect_feed": "Odpojit tento kalendář? Existující pobyty zůstanou.",
         "confirm.regenerate_link": "Vygenerovat nový odkaz a PIN? Stávající odkaz a PIN přestanou fungovat.",
         "confirm.regenerate_pin": "Vygenerovat nový náhodný PIN?",
@@ -1188,6 +1282,31 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.ready_to_send": "Odeslat hotové záznamy hostů do UbyPortu",
         "hint.ready_id_optional": "Formuláře hotové — odešlete, nebo nejdřív označte kontrolu dokladu (zapíše se při odeslání)",
         "hint.demo_preview": "Ukázkové pobyty se neodesílají — pro hlášení použijte skutečnou nemovitost",
+        "deadline.arrives_days": "přijíždí za %(n)s dní",
+        "deadline.arrives_days.one": "přijíždí za 1 den",
+        "deadline.arrives_days.few": "přijíždí za %(n)s dny",
+        "deadline.days_left": "zbývá %(n)s dní",
+        "deadline.days_left.one": "zbývá 1 den",
+        "deadline.days_left.few": "zbývají %(n)s dny",
+        "deadline.overdue_days": "po termínu o %(n)s dní",
+        "deadline.overdue_days.one": "po termínu o 1 den",
+        "deadline.overdue_days.few": "po termínu o %(n)s dny",
+        "deadline.hours_left": "zbývá %(n)s h",
+        "deadline.overdue_hours": "po termínu o %(n)s h",
+        "env.mock_title": "Policii se nic nehlásí",
+        "env.mock_body": (
+            "Tento účet je nastavený na cvičný server, takže záznamy označené jako "
+            "„Nahlášeno“ nebyly nikdy podány. Než se na to spolehnete, nastavte "
+            "UBYHOST_UBYPORT_ENV na test nebo prod."
+        ),
+        "env.mock_production_title": "Produkční nasazení stále běží na cvičném serveru",
+        "env.mock_production_body": (
+            "Hosté se registrují doopravdy, ale na cizineckou policii nic nedorazí, takže "
+            "u každého pobytu běží tři pracovní dny bez hlášení. Nastavte hned "
+            "UBYHOST_UBYPORT_ENV=prod."
+        ),
+        "env.prod_title": "Ostré hlášení policii",
+        "env.prod_body": "Vše, co odsud odešlete, jde do skutečné evidence policie.",
         "status.failed": "Odmítnuto",
         "status.reported": "Nahlášeno",
         "status.ready": "Připraveno k hlášení",

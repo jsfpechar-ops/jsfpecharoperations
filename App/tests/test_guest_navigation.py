@@ -232,6 +232,140 @@ def test_czech_guest_validation_is_localized():
         _cleanup()
 
 
+def test_an_unexpected_extra_guest_can_still_register():
+    """The lead under-declares the party; the extra arrival must not dead-end."""
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        lead = TestClient(app)
+        saved = lead.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(party_size="1"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+
+        # A second person arrives. The stay page must offer a way in, not just
+        # "everything is complete".
+        second = TestClient(app)
+        hub = second.get(f"/l/{token}/{stay}", follow_redirects=True)
+        assert hub.status_code == 200
+        assert f'action="/l/{token}/{stay}/another' in hub.text, hub.text
+
+        raised = second.post(f"/l/{token}/{stay}/another", follow_redirects=False)
+        assert raised.status_code == 303
+        assert "/new" in raised.headers["location"]
+        assert db.query_one(
+            "SELECT declared_guests FROM reservation WHERE id = ?", (stay,)
+        )["declared_guests"] == 2
+
+        filled = second.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(surname="Jones", first_name="Mary", party_size="2"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert filled.status_code == 303
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
+        )["n"] == 2
+    finally:
+        _cleanup()
+
+
+def test_save_does_not_overshoot_the_declared_party_size():
+    """/new guards capacity on GET; a slow filler must not slip past it."""
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        first = TestClient(app)
+        assert first.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(party_size="1"),
+            files=_passport_files(),
+            follow_redirects=False,
+        ).status_code == 303
+
+        # A second phone had the form open from before the party filled up.
+        latecomer = TestClient(app)
+        response = latecomer.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(surname="Jones", first_name="Mary"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
+        )["n"] == 1
+    finally:
+        _cleanup()
+
+
+def test_every_guest_facing_validation_message_has_czech():
+    """A Czech guest must never be handed an untranslated UbyPort rule."""
+    from app import validation as v
+    from app.routes.guest import _localize_message
+
+    long_name = "X" * 80
+    cases = [
+        # (raw overrides, field we expect to complain about)
+        ({"surname": ""}, "surname"),
+        ({"surname": "Иванов"}, "surname"),
+        ({"surname": long_name}, "surname"),
+        ({"first_name": long_name}, "first_name"),
+        ({"first_name": "李"}, "first_name"),
+        ({"birth_date": ""}, "birth_date"),
+        ({"birth_date": "31/02/1990"}, "birth_date"),
+        ({"birth_date": "01/01/1850"}, "birth_date"),
+        ({"birth_date": "01/13/1990"}, "birth_date"),
+        ({"birth_date": "32/01/1990"}, "birth_date"),
+        ({"birth_date": "01/01/2090"}, "birth_date"),
+        ({"birth_date": "1/1/1990", "nationality": ""}, "nationality"),
+        ({"nationality": "UK"}, "nationality"),
+        ({"doc_number": ""}, "doc_number"),
+        ({"doc_number": "AB12"}, "doc_number"),
+        ({"doc_number": "P" * 40}, "doc_number"),
+        ({"doc_number": "INPASS", "note": ""}, "note"),
+        ({"visa_number": "V" * 20}, "visa_number"),
+        ({"res_street": ""}, "res_street"),
+        ({"res_street": long_name}, "res_street"),
+        ({"res_street": "12345"}, "res_street"),
+        ({"res_city": ""}, "res_city"),
+        ({"res_city": long_name}, "res_city"),
+        ({"res_city": "12345"}, "res_city"),
+        ({"res_country": ""}, "res_country"),
+        ({"res_country": "XYZ"}, "res_country"),
+        ({"purpose": "77"}, "purpose"),
+    ]
+
+    checked = 0
+    for overrides, field in cases:
+        raw = {
+            "surname": "Smith",
+            "first_name": "John",
+            "birth_date": "1.1.1990",
+            "nationality": "GBR",
+            "doc_number": "P1234567",
+            "visa_number": "",
+            "res_street": "Baker Street 221B",
+            "res_city": "London",
+            "res_country": "GBR",
+            "purpose": "10",
+            "note": "",
+        }
+        raw.update(overrides)
+        values = v.normalise_guest(raw, clamp=False)
+        issues = [i for i in v.validate_guest(values, raw=raw) if i.field == field]
+        assert issues, f"expected a {field} issue for {overrides}"
+        for issue in issues:
+            czech = _localize_message(issue.message)
+            assert czech != issue.message, (
+                f"no Czech translation for {field}: {issue.message!r}"
+            )
+            checked += 1
+    assert checked >= len(cases)
+
+
 def test_guest_form_accepts_pdf_passport_attachment():
     token, wrong, _right = _make_apartment_with_stays()
     try:
@@ -251,3 +385,13 @@ def test_guest_form_accepts_pdf_passport_attachment():
         assert payload[1] == "application/pdf"
     finally:
         _cleanup()
+
+
+def test_guest_english_and_czech_carry_the_same_keys():
+    """A jet-lagged guest must not be shown a raw i18n key."""
+    from app import i18n
+
+    english = set(i18n.STRINGS["en"])
+    czech = set(i18n.STRINGS["cs"])
+    assert english - czech == set(), f"missing Czech: {sorted(english - czech)}"
+    assert czech - english == set(), f"missing English: {sorted(czech - english)}"

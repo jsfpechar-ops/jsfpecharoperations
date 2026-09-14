@@ -2,7 +2,7 @@
 {% set nav = 'automation' %}
 {% block title %}Automation &amp; UbyPort{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header %}
+{% from "_components.html" import page_header with context %}
 {{ page_header(
   'Automation & UbyPort',
   'When guest data is sent to the Foreign Police, and the web-service credentials for each property.'

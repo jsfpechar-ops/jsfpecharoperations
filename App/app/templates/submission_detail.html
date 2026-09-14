@@ -2,7 +2,7 @@
 {% set nav = 'submissions' %}
 {% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, submission_pill, row_menu_begin, row_menu_end, property_identity %}
+{% from "_components.html" import page_header, breadcrumb, submission_pill, row_menu_begin, row_menu_end, property_identity with context %}
 {{ breadcrumb([
   {'label': t('reports.title'), 'url': '/submissions'},
   {'label': t('reports.detail.title', id=submission.id), 'url': ''}
