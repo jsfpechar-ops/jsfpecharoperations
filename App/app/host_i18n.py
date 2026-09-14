@@ -378,6 +378,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.ready_to_send": "Send completed guest records to UbyPort now",
         "hint.ready_id_optional": "Forms complete — send now or mark ID checked first (recorded on send)",
         "hint.demo_preview": "Demo stays are never sent — use a real property to report to UbyPort",
+        # Czech needs three forms for "day" (1 / 2-4 / 5+), so every day-based
+        # countdown carries .one and .few alongside the base many form.
+        "deadline.arrives_days": "arrives in %(n)s days",
+        "deadline.arrives_days.one": "arrives in 1 day",
+        "deadline.arrives_days.few": "arrives in %(n)s days",
+        "deadline.days_left": "%(n)s days left",
+        "deadline.days_left.one": "1 day left",
+        "deadline.days_left.few": "%(n)s days left",
+        "deadline.overdue_days": "overdue by %(n)s days",
+        "deadline.overdue_days.one": "overdue by 1 day",
+        "deadline.overdue_days.few": "overdue by %(n)s days",
+        "deadline.hours_left": "%(n)s h left",
+        "deadline.overdue_hours": "overdue by %(n)s h",
         "env.mock_title": "Nothing is being reported to the police",
         "env.mock_body": (
             "This workspace is pointed at the practice server, so records marked "
@@ -998,6 +1011,17 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.ready_to_send": "Odeslat hotové záznamy hostů do UbyPortu",
         "hint.ready_id_optional": "Formuláře hotové — odešlete, nebo nejdřív označte kontrolu dokladu (zapíše se při odeslání)",
         "hint.demo_preview": "Ukázkové pobyty se neodesílají — pro hlášení použijte skutečnou nemovitost",
+        "deadline.arrives_days": "přijíždí za %(n)s dní",
+        "deadline.arrives_days.one": "přijíždí za 1 den",
+        "deadline.arrives_days.few": "přijíždí za %(n)s dny",
+        "deadline.days_left": "zbývá %(n)s dní",
+        "deadline.days_left.one": "zbývá 1 den",
+        "deadline.days_left.few": "zbývají %(n)s dny",
+        "deadline.overdue_days": "po termínu o %(n)s dní",
+        "deadline.overdue_days.one": "po termínu o 1 den",
+        "deadline.overdue_days.few": "po termínu o %(n)s dny",
+        "deadline.hours_left": "zbývá %(n)s h",
+        "deadline.overdue_hours": "po termínu o %(n)s h",
         "env.mock_title": "Policii se nic nehlásí",
         "env.mock_body": (
             "Tento účet je nastavený na cvičný server, takže záznamy označené jako "
