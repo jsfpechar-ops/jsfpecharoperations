@@ -208,6 +208,7 @@ def main() -> None:
         "label": "Airbnb",
         "own_name": "Airbnb",
     })
+    post("/sync")
     shot(f"/apartments/{apartment_id}", "apartment-with-feed")
     shot("/", "dashboard-with-stays")
     shot("/reservations", "reservations")
