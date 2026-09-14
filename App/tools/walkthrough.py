@@ -209,6 +209,10 @@ def main() -> None:
         "own_name": "Airbnb",
     })
     post("/sync")
+    for _ in range(25):
+        if 'data-href="/reservations/' in session.get(BASE + "/reservations").text:
+            break
+        time.sleep(0.2)
     shot(f"/apartments/{apartment_id}", "apartment-with-feed")
     shot("/", "dashboard-with-stays")
     shot("/reservations", "reservations")
