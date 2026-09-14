@@ -9,8 +9,14 @@ cd "${ROOT}"
 # shellcheck source=lib-docker.sh
 source "$(dirname "$0")/lib-docker.sh"
 
-REMOTE="${RCLONE_REMOTE:-gdrive}"
-DRIVE_DIR="${RCLONE_BACKUP_FOLDER:-UbyHost-backups}"
+env_value() {
+  awk -F= -v key="$1" '$1 == key {sub(/^[^=]*=/, ""); print; exit}' .env 2>/dev/null
+}
+
+REMOTE="${UBYHOST_GDRIVE_REMOTE:-${RCLONE_REMOTE:-$(env_value UBYHOST_GDRIVE_REMOTE)}}"
+REMOTE="${REMOTE:-gdrive}"
+DRIVE_DIR="${RCLONE_BACKUP_FOLDER:-$(env_value UBYHOST_GDRIVE_FOLDER)}"
+DRIVE_DIR="${DRIVE_DIR:-UbyHost-backups}"
 CONTAINER="$(ubyhost_container_ref "${ROOT}")" || exit 1
 TMP="/tmp/ubyhost-gdrive-upload"
 

@@ -56,20 +56,16 @@ Check Google Drive for folder **`UbyHost-backups`** with a dated subfolder (`uby
 
 Local `./scripts/backup.sh` still runs daily at 03:00 if you added that cron earlier; this uploads the **newest** snapshot to Drive once a week.
 
-## S3 backup (optional — deferred)
+## Monthly S3 backup
 
-Not required if **Google Drive** weekly backups are working. S3 needs an IAM access
-key and `rclone config`; skip until you want a second off-site copy.
-
-<details>
-<summary>Enable S3 later (click to expand)</summary>
-
-Same data (`ubyhost.db` + `secret_key`); uses **rclone** with an **IAM access key** (no browser login).
+S3 is the second off-site copy, once a month. Google Drive remains weekly. The
+same data (`ubyhost.db` + `secret_key`) is uploaded through **rclone** with an
+IAM access key (no browser login).
 
 **One-time in AWS:**
 
-1. **S3** → Create bucket (e.g. `ubyhost-backups-yourname`) in **eu-central-1** (Frankfurt). Block public access: **on**. Versioning: optional but nice.
-2. **IAM** → User → programmatic access → attach policy limited to that bucket (`s3:PutObject`, `s3:GetObject`, `s3:ListBucket`, `s3:DeleteObject` on `arn:aws:s3:::bucket-name/*`).
+1. **S3** → Create bucket (e.g. `ubyhost-backups-yourname`) in **eu-central-1** (Frankfurt). Keep **Block all public access** on, enable default SSE-S3 encryption, and enable versioning.
+2. **IAM** → User → programmatic access → attach policy limited to that bucket (`s3:PutObject`, `s3:GetObject`, `s3:ListBucket` on that bucket and its objects).
 3. Save **Access key ID** + **Secret access key** (shown once).
 
 **On the server:**
@@ -84,7 +80,7 @@ Test:
 
 ```bash
 cd /opt/ubyhost/deploy/lightsail
-export UBYHOST_S3_BUCKET=your-bucket-name
+printf '\nUBYHOST_S3_BUCKET=your-bucket-name\n' >> .env
 ./scripts/backup-s3.sh
 ```
 
@@ -103,12 +99,13 @@ export UBYHOST_CONTAINER="$(docker compose ps --format '{{.Names}}' ubyhost | he
 UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh
 ```
 
-Weekly cron (example; set your bucket name):
+Install both schedules (safe to run again; it replaces old Drive/S3 cron lines):
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 4 * * 0 cd /opt/ubyhost/deploy/lightsail && UBYHOST_S3_BUCKET=your-bucket-name ./scripts/backup-s3.sh >> /var/log/ubyhost-s3.log 2>&1") | crontab -
+chmod +x scripts/install-offsite-backup-cron.sh
+./scripts/install-offsite-backup-cron.sh
+crontab -l
 ```
 
-You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if you want bare minimum.
-
-</details>
+This keeps Drive on Sundays at 04:00 UTC and runs S3 on the first day of each
+month at 05:00 UTC. Each upload creates a new timestamped folder.
