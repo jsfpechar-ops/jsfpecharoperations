@@ -1577,6 +1577,7 @@ details.raw pre {
   }
   .sidebar-collapse { display: none; }
   .sidebar-expand { display: none !important; }
+  body.sidebar-collapsed .sidebar { transform: translateX(-105%); }
   body.nav-open .sidebar { transform: none; }
   body.nav-open .nav-backdrop { display: block; }
   .wrap.with-sidebar { margin-left: 0; padding: 20px 16px 80px; }
