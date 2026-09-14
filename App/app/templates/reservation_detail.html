@@ -2,12 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, progress_pill, submission_pill, row_menu_begin, row_menu_end, copy_inline with context %}
-
-{{ breadcrumb([
-  {'label': t('stays.title'), 'url': return_to},
-  {'label': reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz), 'url': ''}
-]) }}
+{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end with context %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {{ page_header(
   reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
@@ -63,7 +58,7 @@
       {{ row_menu_end() }}
     </div>
   </div>
-  <details class="stay-quick-edit">
+  <details class="stay-quick-edit" id="stay-quick-edit">
     <summary>{{ t('stay.detail.inline.title') }}</summary>
     <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
           data-inline-edit data-saved="{{ t('stay.detail.inline.saved') }}"
@@ -96,10 +91,13 @@
   <div class="detail-metric">
     <div class="metric-label">{{ t('stay.detail.metric.guests') }}</div>
     <div class="metric-value">
-      {{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}
+      {{ progress.filled }} / {{ progress.expected if progress.expected is not none else '—' }}
     </div>
     <div class="metric-note">
       {{ t('stay.detail.metric.guests_note', sent=progress.sent | length, reportable=progress.reportable | length) }}
+      {% if progress.expected is none %}
+        <br><a href="#stay-quick-edit">{{ t('stay.detail.metric.set_expected') }}</a>
+      {% endif %}
     </div>
   </div>
   <div class="detail-metric">
@@ -264,18 +262,6 @@
   <summary><strong>{{ t('stay.detail.settings.title') }}</strong></summary>
   <p class="small muted">{{ t('stay.detail.settings.lede') }} <a href="/guest-links">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
   <form method="post" action="/reservations/{{ reservation.id }}" class="settings-grid">
-    <div class="field">
-      <label for="expected_guests_override">{{ t('stay.detail.settings.expected') }}</label>
-      <input type="number" id="expected_guests_override" name="expected_guests_override" min="1" max="60"
-             value="{{ reservation.expected_guests_override or '' }}">
-      <div class="hint">
-        {% if reservation.declared_guests %}
-          {{ t('stay.detail.settings.expected_declared', count=reservation.declared_guests) }}
-        {% else %}
-          {{ t('stay.detail.settings.expected_blank') }}
-        {% endif %}
-      </div>
-    </div>
     <div class="field">
       <label for="guest_email">{{ t('stay.detail.settings.email') }} <span class="opt">{{ t('stay.detail.settings.host_only') }}</span></label>
       <input type="email" id="guest_email" name="guest_email" value="{{ reservation.guest_email or '' }}">

@@ -267,7 +267,24 @@ def test_reservation_detail_shows_direct_guest_link():
         assert "Next step" in page.text
         assert "Edit stay details" in page.text
         assert 'class="panel stay-command-panel"' in page.text
+        assert page.text.count('name="expected_guests_override"') == 1
         assert 'href="/guest-links"' in page.text
+    finally:
+        _cleanup()
+
+
+def test_stay_settings_preserve_expected_guests_edited_above():
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        db.update("reservation", stays[0], {"expected_guests_override": 4})
+        response = _browser().post(
+            f"/reservations/{stays[0]}",
+            data={"guest_email": "guest@example.com", "host_note": "Late arrival", "status": "active"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (stays[0],))
+        assert reservation["expected_guests_override"] == 4
     finally:
         _cleanup()
 

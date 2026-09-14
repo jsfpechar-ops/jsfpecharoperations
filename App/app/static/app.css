@@ -1594,6 +1594,7 @@ details.raw pre {
   text-decoration: none;
 }
 .section-nav a:hover { color: var(--brand-ink); background: var(--brand-soft); }
+.settings-nav { position: static; }
 
 .message-template {
   white-space: pre-wrap;
