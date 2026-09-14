@@ -23,7 +23,7 @@
       ctx.lineWidth = 2.2;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "#16202b";
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#20201e";
       if (snapshot) {
         var img = new Image();
         img.onload = function () { ctx.drawImage(img, 0, 0, rect.width, rect.height); };
@@ -40,6 +40,7 @@
     function start(event) {
       event.preventDefault();
       drawing = true;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#20201e";
       var p = pos(event);
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
@@ -88,7 +89,7 @@
       form.addEventListener("submit", function (event) {
         if (!hidden.value) {
           event.preventDefault();
-          if (status) status.textContent = status.getAttribute("data-missing") || "Signature required.";
+          if (status) status.textContent = status.getAttribute("data-missing") || "";
           canvas.scrollIntoView({ behavior: "smooth", block: "center" });
           canvas.focus();
         }
@@ -105,7 +106,7 @@
         try {
           navigator.clipboard ? navigator.clipboard.writeText(target.value) : document.execCommand("copy");
           var original = button.textContent;
-          button.textContent = "Copied";
+          button.textContent = button.getAttribute("data-copied-label") || original;
           setTimeout(function () { button.textContent = original; }, 1400);
         } catch (e) { /* the field is selected, the user can copy manually */ }
       });
@@ -169,12 +170,79 @@
     if (target && typeof target.focus === "function") target.focus();
   }
 
+  function initGuestWizard() {
+    var form = document.querySelector("[data-guest-wizard]");
+    if (!form) return;
+    var steps = Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]"));
+    if (steps.length < 2) return;
+    var progress = form.querySelector("[data-wizard-progress]");
+    var label = form.querySelector("[data-wizard-label]");
+    var bar = form.querySelector("[data-wizard-bar]");
+    var template = form.getAttribute("data-progress-label") || "";
+    var active = Math.max(0, steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); }));
+
+    function stepIsValid(step) {
+      var fields = step.querySelectorAll("input, select, textarea");
+      for (var i = 0; i < fields.length; i += 1) {
+        if (!fields[i].checkValidity()) {
+          fields[i].reportValidity();
+          fields[i].focus();
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function show(index, focus) {
+      active = Math.max(0, Math.min(index, steps.length - 1));
+      steps.forEach(function (step, i) { step.hidden = i !== active; });
+      if (progress) progress.hidden = false;
+      if (label) {
+        label.textContent = template
+          .replace("__CURRENT__", String(active + 1))
+          .replace("__TOTAL__", String(steps.length));
+      }
+      if (bar) bar.style.width = ((active + 1) / steps.length * 100) + "%";
+      if (focus) {
+        var target = steps[active].querySelector("input:not([type=hidden]), select, textarea, button, summary");
+        if (target) target.focus({ preventScroll: true });
+        steps[active].scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    steps.forEach(function (step, index) {
+      var nav = document.createElement("div");
+      nav.className = "g-wizard-nav";
+      if (index > 0) {
+        var back = document.createElement("button");
+        back.type = "button";
+        back.className = "g-btn secondary slim";
+        back.textContent = form.getAttribute("data-back-label") || "";
+        back.addEventListener("click", function () { show(index - 1, true); });
+        nav.appendChild(back);
+      }
+      if (index < steps.length - 1) {
+        var next = document.createElement("button");
+        next.type = "button";
+        next.className = "g-btn slim";
+        next.textContent = form.getAttribute("data-next-label") || "";
+        next.addEventListener("click", function () {
+          if (stepIsValid(step)) show(index + 1, true);
+        });
+        nav.appendChild(next);
+      }
+      if (nav.childNodes.length) step.appendChild(nav);
+    });
+    show(active, false);
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initSignature();
     initCopy();
     initBirthDate();
     initChildToggle();
     initResidenceCountry();
+    initGuestWizard();
     focusFirstError();
   });
 })();

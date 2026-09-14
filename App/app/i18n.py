@@ -103,6 +103,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "pin_label": "PIN",
         "pin_submit": "Continue",
         "pin_wrong": "That PIN is not correct. Check the message from your host.",
+        "pin_recovery": "Can’t find the PIN? Ask your host to resend the registration message.",
         "pin_rate_limited": "Too many incorrect PIN attempts. Wait about 15 minutes and try again.",
         "start_over": "Start again",
         "nights": "nights",
@@ -113,6 +114,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "party_help": "Count everyone, including children. Each person needs their own form.",
         "party_confirm": "Continue",
         "people_progress": "%(done)s of %(total)s people completed",
+        "person_progress": "Person %(current)s of %(total)s",
+        "form_step_progress": "Step %(current)s of %(total)s",
+        "next_step": "Continue",
+        "previous_step": "Back",
         "add_person": "Add a person",
         "add_first_person": "Start with your own details",
         "saved_title": "Details saved",
@@ -187,6 +192,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_label": "Passport or ID document",
         "passport_photo_take": "Take photo",
         "passport_photo_choose": "Choose file",
+        "passport_photo_retake": "Retake or choose another",
         "passport_photo_selected": "Selected: %(name)s",
         "passport_photo_pending_nat": (
             "Choose your nationality above — foreign guests must upload a passport or ID photo here."
@@ -423,6 +429,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "pin_label": "PIN",
         "pin_submit": "Pokračovat",
         "pin_wrong": "PIN není správný. Zkontrolujte zprávu od ubytovatele.",
+        "pin_recovery": "Nemůžete PIN najít? Požádejte ubytovatele o nové zaslání registrační zprávy.",
         "pin_rate_limited": "Příliš mnoho chybných PINů. Počkejte asi 15 minut a zkuste to znovu.",
         "start_over": "Začít znovu",
         "nights": "nocí",
@@ -433,6 +440,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "party_help": "Započítejte všechny včetně dětí. Každá osoba má vlastní formulář.",
         "party_confirm": "Pokračovat",
         "people_progress": "vyplněno %(done)s z %(total)s osob",
+        "person_progress": "Osoba %(current)s z %(total)s",
+        "form_step_progress": "Krok %(current)s z %(total)s",
+        "next_step": "Pokračovat",
+        "previous_step": "Zpět",
         "add_person": "Přidat osobu",
         "add_first_person": "Začněte svými údaji",
         "saved_title": "Údaje uloženy",
@@ -503,6 +514,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_label": "Pas nebo průkaz totožnosti",
         "passport_photo_take": "Vyfotit",
         "passport_photo_choose": "Vybrat soubor",
+        "passport_photo_retake": "Vyfotit nebo vybrat jiný",
         "passport_photo_selected": "Vybráno: %(name)s",
         "passport_photo_pending_nat": (
             "Nejprve zvolte státní příslušnost — cizinci zde nahrají fotografii pasu nebo průkazu."

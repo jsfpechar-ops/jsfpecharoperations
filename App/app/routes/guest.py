@@ -583,6 +583,7 @@ def _form_context(
             "can_pick_other": _can_pick_other_stays(apartment),
             "ask_party_size": expected is None and guest is None,
             "person_number": progress["filled"] + 1 if guest is None else None,
+            "expected_people": expected,
             "issues": issues or [],
             "values": values or {},
             "countries": codelists.nationality_options(lang),
