@@ -179,3 +179,28 @@
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-fast: 0.01ms; --motion-base: 0.01ms; }
 }
+
+/* A forced theme must also switch the browser's own rendering. Without this a
+   guest who picks Light on a dark phone gets our light card with the browser's
+   dark autofill boxes and scrollbars. */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* Autofilled fields keep the surface and ink of the page. Chrome ignores
+   background-color here, so the fill is painted with an inset shadow and the
+   colour transition is parked far enough out to never run. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+select:-webkit-autofill,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  box-shadow: inset 0 0 0 100px var(--surface);
+  transition: background-color 600000s 0s;
+}
+
+input:-webkit-autofill:focus,
+select:-webkit-autofill:focus,
+textarea:-webkit-autofill:focus {
+  box-shadow: inset 0 0 0 100px var(--surface), 0 0 0 3px var(--focus-ring);
+}
