@@ -346,7 +346,7 @@ def housebook_archived_rows(
     """Archived house-book entries that can be restored."""
     sql = (
         "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id, "
-        "       a.internal_name, a.uby_idub "
+        "       a.id AS apartment_id, a.internal_name, a.uby_idub "
         "FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
@@ -368,6 +368,7 @@ def housebook_archived_rows(
                 "first_name": row["first_name"] or "",
                 "archived_at": row["archived_at"] or "",
                 "_guest_id": row["id"],
+                "_apartment_id": row["apartment_id"],
             }
         )
     return out

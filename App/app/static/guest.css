@@ -143,7 +143,7 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 }
 .g-stay:hover { border-color: var(--g-line-2); transform: translateY(-1px); }
 .g-stay:active { transform: translateY(0); }
-.g-stay.yours { border-color: #bfe3cf; background: #f6fbf8; }
+.g-stay.yours { border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); background: var(--g-ok-soft); }
 .g-stay .dates { flex: 1; min-width: 0; }
 .g-stay .dates strong { display: block; font-size: 16.5px; color: var(--g-ink); }
 .g-stay .dates span { font-size: 13.5px; color: var(--g-muted); }
@@ -293,7 +293,7 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--g-accent);
   box-shadow: 0 0 0 3px var(--g-accent-ring);
 }
-input.bad, select.bad { border-color: var(--g-bad); background: #fffbfb; }
+input.bad, select.bad { border-color: var(--g-bad); background: var(--g-bad-soft); }
 textarea { min-height: 76px; resize: vertical; }
 
 select {
@@ -432,22 +432,22 @@ select {
 
 .g-err {
   background: var(--g-bad-soft);
-  border: 1px solid #f4c9c4;
+  border: 1px solid color-mix(in srgb, var(--g-bad) 28%, transparent);
   border-radius: var(--g-radius-sm);
   padding: 13px 15px;
   font-size: 14.5px;
-  color: #8c2019;
+  color: var(--g-bad);
   margin-bottom: 14px;
 }
 .g-err ul { margin: 7px 0 0; padding-left: 20px; }
 .g-err li { margin-bottom: 3px; }
 .g-ok {
   background: var(--g-ok-soft);
-  border: 1px solid #bfe3cf;
+  border: 1px solid color-mix(in srgb, var(--g-ok) 28%, transparent);
   border-radius: var(--g-radius-sm);
   padding: 13px 15px;
   font-size: 14.5px;
-  color: #0b5c39;
+  color: var(--g-ok);
   margin-bottom: 14px;
 }
 
@@ -632,8 +632,8 @@ details.g-why .g-details {
 .g-big-ok h2 { font-size: 21px; }
 .g-big-ok .g-btn { max-width: 280px; margin: 6px auto 0; }
 
-.g-saved { background: var(--g-ok-soft); border-color: #bfe3cf; }
-.g-saved h2 { color: #0b5c39; }
+.g-saved { background: var(--g-ok-soft); border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); }
+.g-saved h2 { color: var(--g-ok); }
 
 .g-summary-name { font-size: 17.5px; font-weight: 700; color: var(--g-ink); margin: 0 0 14px; }
 .g-summary-list {
