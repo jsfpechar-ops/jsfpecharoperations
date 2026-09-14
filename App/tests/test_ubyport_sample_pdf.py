@@ -17,6 +17,7 @@ from app.ubyport_sample_pdf import (
     VALUE_COL,
     build_sample_pdf,
     default_static_path,
+    page_content_streams,
 )
 
 SAMPLE_URL = "/static/docs/ubyport-ws-credential-sample.pdf"
@@ -118,6 +119,43 @@ def test_extract_page_text_stays_inside_right_margin():
     ):
         assert pdfmetrics.stringWidth(label, FONT_REGULAR, 11) + 10 < VALUE_COL
         assert pdfmetrics.stringWidth(value, FONT_MONO, 14) + VALUE_COL <= RIGHT_MARGIN + 0.5
+
+
+def test_watermark_in_pdf_content_streams():
+    data = build_sample_pdf()
+    streams = page_content_streams(data)
+    assert len(streams) == 2
+    for stream in streams:
+        assert b"SAMPLE" in stream
+        assert b"NOT REAL" in stream
+        assert b"ZKA" in stream
+
+
+def test_watermark_renders_as_non_white_pixels():
+    pdfplumber = pytest.importorskip("pdfplumber")
+
+    data = build_sample_pdf()
+    with pdfplumber.open(io.BytesIO(data)) as doc:
+        for page in doc.pages:
+            image = page.to_image(resolution=100).original.convert("L")
+            w, h = image.size
+            crop = image.crop((w // 5, h // 5, 4 * w // 5, 4 * h // 5))
+            grey_pixels = sum(1 for px in crop.getdata() if px < 235)
+            assert grey_pixels > 250, "expected visible diagonal watermark pixels on page"
+
+
+def test_dulezite_prefix_has_space_before_body():
+    from reportlab.pdfbase import pdfmetrics
+
+    from app.ubyport_sample_pdf import FONT_BOLD, FONT_REGULAR
+
+    prefix = "DŮLEŽITÉ:"
+    prefix_end = (
+        56.7
+        + pdfmetrics.stringWidth(prefix, FONT_BOLD, 11)
+        + pdfmetrics.stringWidth(" ", FONT_REGULAR, 11)
+    )
+    assert prefix_end > 118.5
 
 
 def test_sample_constants_are_fictional():

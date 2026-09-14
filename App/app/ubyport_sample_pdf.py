@@ -44,6 +44,7 @@ SAMPLE_SIGNATORY = "plk. Mgr. Demo Vedoucí"
 SAMPLE_SIGNATORY_ROLE = "vedoucí odboru"
 
 STATIC_RELATIVE = Path("docs") / "ubyport-ws-credential-sample.pdf"
+WATERMARK_LINE = "SAMPLE — NOT REAL / UKÁZKA"
 
 # Measured from official PDFs (points, pdfplumber top-left origin).
 LEFT_MARGIN = 70.8
@@ -111,15 +112,29 @@ def write_sample_pdf(path: Path | None = None) -> Path:
     return target
 
 
+def page_content_streams(pdf_bytes: bytes) -> list[bytes]:
+    """Return decompressed content stream bytes for each page."""
+    from pypdf import PdfReader
+
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    streams: list[bytes] = []
+    for page in reader.pages:
+        content = page.get_contents()
+        if content is None:
+            streams.append(b"")
+        elif isinstance(content, list):
+            streams.append(b"".join(part.get_data() for part in content))
+        else:
+            streams.append(content.get_data())
+    return streams
+
+
 def _y(height: float, top: float) -> float:
     """Convert pdfplumber-style distance-from-top to ReportLab baseline."""
     return height - top
 
 
 def _draw_cover_letter(pdf: pdfcanvas.Canvas, width: float, height: float) -> None:
-    _draw_page_watermark(pdf, width, height)
-    _draw_training_footer(pdf)
-
     pdf.setFont(FONT_REGULAR, 8)
     pdf.drawRightString(width - 56.7, _y(height, 22.2), f"JID: {SAMPLE_JID}")
 
@@ -158,8 +173,14 @@ def _draw_cover_letter(pdf: pdfcanvas.Canvas, width: float, height: float) -> No
         )
         y_top += 13
 
+    important_prefix = "DŮLEŽITÉ:"
     pdf.setFont(FONT_BOLD, 11)
-    pdf.drawString(56.7, _y(height, 466.3), "DŮLEŽITÉ:")
+    pdf.drawString(56.7, _y(height, 466.3), important_prefix)
+    prefix_end_x = (
+        56.7
+        + pdfmetrics.stringWidth(important_prefix, FONT_BOLD, 11)
+        + pdfmetrics.stringWidth(" ", FONT_REGULAR, 11)
+    )
     important = (
         "Aby se přiložený PDF dokument otevřel a zobrazil správně, doporučujeme jej otevřít "
         "v programu Adobe Acrobat Reader (prohlížeč PDF) nebo v internetovém prohlížeči MS "
@@ -170,11 +191,11 @@ def _draw_cover_letter(pdf: pdfcanvas.Canvas, width: float, height: float) -> No
     _draw_wrapped_paragraph_with_hanging_first_line(
         pdf,
         height,
-        first_line_x=118.5,
+        first_line_x=prefix_end_x,
         body_x=56.7,
         top=466.3,
         text=important,
-        first_width=RIGHT_MARGIN - 118.5,
+        first_width=RIGHT_MARGIN - prefix_end_x,
         body_width=BODY_WIDTH,
         font_size=11,
         leading=13,
@@ -197,11 +218,11 @@ def _draw_cover_letter(pdf: pdfcanvas.Canvas, width: float, height: float) -> No
     pdf.setFont(FONT_REGULAR, 7)
     pdf.drawRightString(width - 56.7, _y(height, 815.5), SAMPLE_DS_BARCODE)
 
+    _draw_training_footer(pdf)
+    _draw_page_watermark(pdf, width, height)
+
 
 def _draw_credential_extract(pdf: pdfcanvas.Canvas, width: float, height: float) -> None:
-    _draw_page_watermark(pdf, width, height)
-    _draw_training_footer(pdf)
-
     title = "VÝPIS Z DATABÁZE PŘIHLAŠOVACÍCH ÚDAJŮ"
     title_w = _slanted_string_width(title, FONT_TITLE, 15)
     _draw_slanted_string(pdf, (width - title_w) / 2, _y(height, 73.1), title, FONT_TITLE, 15)
@@ -271,6 +292,9 @@ def _draw_credential_extract(pdf: pdfcanvas.Canvas, width: float, height: float)
         f"{SAMPLE_CONTACT} — e-mail or phone from your original accommodation registration "
         "or the UbyPort portal profile. Police WS letters often do not print it.",
     )
+
+    _draw_training_footer(pdf)
+    _draw_page_watermark(pdf, width, height)
 
 
 def _draw_extract_label_value(
@@ -477,12 +501,19 @@ def _draw_slanted_string(
 
 
 def _draw_page_watermark(pdf: pdfcanvas.Canvas, width: float, height: float) -> None:
+    """Draw on top of page content so the mark stays visible when printed."""
     pdf.saveState()
-    pdf.setFillColorRGB(0.75, 0.75, 0.75, alpha=0.12)
-    pdf.setFont(FONT_BOLD, 42)
-    pdf.translate(width * 0.35, height * 0.55)
+    pdf.setFillColorRGB(0.45, 0.45, 0.45)
+    try:
+        pdf.setFillAlpha(0.28)
+    except AttributeError:
+        pass
+    pdf.setFont(FONT_BOLD, 34)
+    pdf.translate(width * 0.5, height * 0.52)
     pdf.rotate(42)
-    pdf.drawCentredString(0, 0, "SAMPLE — NOT REAL")
+    pdf.drawCentredString(0, 14, WATERMARK_LINE)
+    pdf.setFont(FONT_BOLD, 26)
+    pdf.drawCentredString(0, -22, "NEPOUZÍVAT — TRÉNINKOVÝ DOKUMENT")
     pdf.restoreState()
 
 
