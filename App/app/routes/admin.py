@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
 
 from fastapi import APIRouter, BackgroundTasks, Request
-from fastapi.responses import RedirectResponse, Response, StreamingResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
 
 from .. import (
     access,
@@ -466,6 +466,74 @@ def stop_impersonating(request: Request):
 
 
 # --- dashboard -----------------------------------------------------------
+
+@router.get("/api/command-palette")
+def command_palette(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return JSONResponse({"items": []}, status_code=401)
+    owner_user_id = access.owner_id(request)
+    lang = host_i18n.lang_from_request(request)
+    t = lambda key, **kwargs: host_i18n.translate(lang, key, **kwargs)
+    items: List[Dict[str, Any]] = [
+        {"label": t("nav.overview"), "group": t("command.group.pages"), "url": "/", "keywords": "dashboard"},
+        {"label": t("nav.stays"), "group": t("command.group.pages"), "url": "/reservations", "keywords": "bookings calendar"},
+        {"label": t("nav.reports"), "group": t("command.group.pages"), "url": "/submissions", "keywords": "ubyport dorucenka"},
+        {"label": t("nav.housebook"), "group": t("command.group.pages"), "url": "/housebook", "keywords": "export csv"},
+        {"label": t("nav.settings"), "group": t("command.group.pages"), "url": "/settings", "keywords": "environment account"},
+        {"label": t("dashboard.sync_calendars"), "group": t("command.group.actions"), "url": "/sync", "method": "post", "keywords": "ical refresh"},
+        {"label": t("stays.add_stay"), "group": t("command.group.actions"), "url": "/reservations?new=1", "keywords": "booking reservation"},
+    ]
+    apartments = access.apartments(request)
+    for apartment in apartments:
+        items.append({
+            "label": apartment["internal_name"],
+            "meta": t("command.property"),
+            "group": t("nav.properties"),
+            "url": f"/apartments/{apartment['id']}",
+            "tone": int(apartment["id"]) % 10,
+            "keywords": f"{apartment['uby_name'] or ''} {apartment['city_en'] or ''}",
+        })
+        if apartment["permalink_token"]:
+            items.append({
+                "label": t("command.copy_property_link", property=apartment["internal_name"]),
+                "group": t("command.group.actions"),
+                "copy": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+                "tone": int(apartment["id"]) % 10,
+                "keywords": "guest permalink pin",
+            })
+    reservations = db.query(
+        "SELECT r.id, r.apartment_id, r.date_from, r.date_to, r.summary, a.internal_name "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
+        "ORDER BY r.date_from DESC LIMIT 80",
+        (owner_user_id, owner_user_id),
+    )
+    for stay in reservations:
+        items.append({
+            "label": f"{stay['internal_name']} · {stay['date_from']} – {stay['date_to']}",
+            "meta": stay["summary"] or t("command.stay"),
+            "group": t("nav.stays"),
+            "url": f"/reservations/{stay['id']}",
+            "tone": int(stay["apartment_id"]) % 10,
+            "keywords": stay["summary"] or "",
+        })
+    submissions = db.query(
+        "SELECT s.id, s.apartment_id, s.created_at, s.state, a.internal_name "
+        "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+        "WHERE (? IS NULL OR a.owner_user_id = ?) ORDER BY s.id DESC LIMIT 40",
+        (owner_user_id, owner_user_id),
+    )
+    for submission in submissions:
+        items.append({
+            "label": t("reports.detail.title", id=submission["id"]),
+            "meta": f"{submission['internal_name']} · {submission['state']}",
+            "group": t("nav.reports"),
+            "url": f"/submissions/{submission['id']}",
+            "tone": int(submission["apartment_id"]) % 10,
+            "keywords": submission["created_at"],
+        })
+    return JSONResponse({"items": items})
 
 @router.get("/")
 def dashboard(request: Request):
@@ -1464,8 +1532,31 @@ async def reservation_update(reservation_id: int, request: Request):
     return _back(f"/reservations/{reservation_id}", msg="Saved.")
 
 
+@router.post("/reservations/{reservation_id}/quick-edit")
+async def reservation_quick_edit(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return JSONResponse({"ok": False}, status_code=404)
+    form = await request.form()
+    payload: Dict[str, Any] = {"updated_at": db.utcnow()}
+    if "summary" in form:
+        payload["summary"] = _form_str(form, "summary")[:160]
+    if "expected_guests_override" in form:
+        expected = _form_int(form, "expected_guests_override")
+        if expected is not None and not 1 <= expected <= 60:
+            return JSONResponse({"ok": False}, status_code=422)
+        payload["expected_guests_override"] = expected
+    db.update("reservation", reservation_id, payload)
+    if request.headers.get("X-Requested-With") == "fetch":
+        return JSONResponse({"ok": True})
+    return _back(f"/reservations/{reservation_id}", msg="Saved.")
+
+
 @router.post("/reservations/{reservation_id}/archive")
-def reservation_archive(reservation_id: int, request: Request):
+async def reservation_archive(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -1474,9 +1565,16 @@ def reservation_archive(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     if reservation["archived_at"]:
         return _back(f"/reservations/{reservation_id}", err="Already archived.")
+    form = await request.form()
+    return_to = _form_return_to(form, _redirect_path_from_referer(request, "/reservations"))
     db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("reservation_archived", f"id={reservation_id}")
-    return _back("/reservations?range=archive", msg="Stay moved to archive. You can restore it from there.")
+    lang = host_i18n.lang_from_request(request)
+    target = (
+        f"/reservations?range=archive&undo_stay={reservation_id}"
+        f"&undo_return={quote(return_to, safe='')}"
+    )
+    return _back(target, msg=host_i18n.translate(lang, "archive.stay_moved"))
 
 
 @router.post("/reservations/{reservation_id}/unarchive")

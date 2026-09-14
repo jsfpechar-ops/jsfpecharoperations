@@ -4,34 +4,28 @@
    a repaint. Shares the host palette so the two halves feel like one product. */
 
 :root {
-  --g-bg: #f4f3ef;
-  --g-surface: #ffffff;
-  --g-surface-2: #faf9f6;
-
-  --g-ink: #16191b;
-  --g-ink-2: #353b3f;
-  --g-muted: #6b7378;
-
-  --g-line: #e6e3dc;
-  --g-line-2: #d3cfc5;
-
-  --g-accent: #1f56d6;
-  --g-accent-hover: #1a48b6;
-  --g-accent-soft: #eef2fd;
-  --g-accent-ring: rgba(31, 86, 214, 0.22);
-
-  --g-ok: #0f7a4a;
-  --g-ok-soft: #e8f5ee;
-  --g-bad: #c32f24;
-  --g-bad-soft: #fdeeec;
-
-  --g-radius-sm: 10px;
-  --g-radius: 16px;
-  --g-radius-lg: 22px;
-  --g-pill: 999px;
-
-  --g-shadow: 0 1px 2px rgba(22, 25, 27, 0.04), 0 8px 24px rgba(22, 25, 27, 0.06);
-  --g-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --g-bg: var(--canvas);
+  --g-surface: var(--surface);
+  --g-surface-2: var(--canvas-subtle);
+  --g-ink: var(--ink);
+  --g-ink-2: var(--ink-secondary);
+  --g-muted: var(--ink-muted);
+  --g-line: var(--border);
+  --g-line-2: var(--border-strong);
+  --g-accent: var(--brand);
+  --g-accent-hover: var(--brand-hover);
+  --g-accent-soft: var(--brand-soft);
+  --g-accent-ring: var(--focus-ring);
+  --g-ok: var(--green);
+  --g-ok-soft: var(--green-bg);
+  --g-bad: var(--red);
+  --g-bad-soft: var(--red-bg);
+  --g-radius-sm: var(--radius-sm);
+  --g-radius: var(--radius-lg);
+  --g-radius-lg: var(--radius-lg);
+  --g-pill: var(--radius-pill);
+  --g-shadow: none;
+  --g-ease: var(--ease-standard);
 }
 
 * { box-sizing: border-box; }
@@ -165,7 +159,7 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 }
 .g-stay:hover { border-color: var(--g-line-2); transform: translateY(-1px); }
 .g-stay:active { transform: translateY(0); }
-.g-stay.yours { border-color: #bfe3cf; background: #f6fbf8; }
+.g-stay.yours { border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); background: var(--g-ok-soft); }
 .g-stay .dates { flex: 1; min-width: 0; }
 .g-stay .dates strong { display: block; font-size: 16.5px; color: var(--g-ink); }
 .g-stay .dates span { font-size: 13.5px; color: var(--g-muted); }
@@ -216,6 +210,36 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-muted);
   margin-bottom: 14px;
 }
+.g-person-progress {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.g-wizard-progress {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -4px 14px;
+  padding: 10px 4px;
+  background: color-mix(in srgb, var(--canvas) 94%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+.g-wizard-progress[hidden] { display: none; }
+.g-wizard-progress .g-bar { height: 6px; }
+.g-wizard-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.g-wizard-nav .g-btn { flex: 1; width: auto; }
+[data-guest-step][hidden] { display: none !important; }
 .g-bar {
   flex: 1;
   height: 8px;
@@ -285,7 +309,7 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--g-accent);
   box-shadow: 0 0 0 3px var(--g-accent-ring);
 }
-input.bad, select.bad { border-color: var(--g-bad); background: #fffbfb; }
+input.bad, select.bad { border-color: var(--g-bad); background: var(--g-bad-soft); }
 textarea { min-height: 76px; resize: vertical; }
 
 select {
@@ -346,6 +370,12 @@ select {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   padding: 16px 14px;
+}
+.g-pin-recovery {
+  margin: 14px 0 0;
+  color: var(--g-muted);
+  font-size: 14px;
+  text-align: center;
 }
 
 /* --- buttons ----------------------------------------------------------- */
@@ -418,22 +448,22 @@ select {
 
 .g-err {
   background: var(--g-bad-soft);
-  border: 1px solid #f4c9c4;
+  border: 1px solid color-mix(in srgb, var(--g-bad) 28%, transparent);
   border-radius: var(--g-radius-sm);
   padding: 13px 15px;
   font-size: 14.5px;
-  color: #8c2019;
+  color: var(--g-bad);
   margin-bottom: 14px;
 }
 .g-err ul { margin: 7px 0 0; padding-left: 20px; }
 .g-err li { margin-bottom: 3px; }
 .g-ok {
   background: var(--g-ok-soft);
-  border: 1px solid #bfe3cf;
+  border: 1px solid color-mix(in srgb, var(--g-ok) 28%, transparent);
   border-radius: var(--g-radius-sm);
   padding: 13px 15px;
   font-size: 14.5px;
-  color: #0b5c39;
+  color: var(--g-ok);
   margin-bottom: 14px;
 }
 
@@ -618,8 +648,8 @@ details.g-why .g-details {
 .g-big-ok h2 { font-size: 21px; }
 .g-big-ok .g-btn { max-width: 280px; margin: 6px auto 0; }
 
-.g-saved { background: var(--g-ok-soft); border-color: #bfe3cf; }
-.g-saved h2 { color: #0b5c39; }
+.g-saved { background: var(--g-ok-soft); border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); }
+.g-saved h2 { color: var(--g-ok); }
 
 .g-summary-name { font-size: 17.5px; font-weight: 700; color: var(--g-ink); margin: 0 0 14px; }
 .g-summary-list {
@@ -631,6 +661,64 @@ details.g-why .g-details {
 }
 .g-summary-list dt { margin: 0; color: var(--g-muted); font-weight: 600; }
 .g-summary-list dd { margin: 0; color: var(--g-ink); }
+
+/* Guest variants of the shared primitives use larger touch targets and type. */
+.g-property {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.g-property-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-md);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-weight: 750;
+  text-transform: uppercase;
+}
+.property-tone-0 { background: var(--blue-bg); color: var(--blue); }
+.property-tone-1 { background: var(--purple-bg); color: var(--purple); }
+.property-tone-2 { background: var(--teal-bg); color: var(--teal); }
+.property-tone-3 { background: var(--orange-bg); color: var(--orange); }
+.property-tone-4 { background: var(--pink-bg); color: var(--pink); }
+.property-tone-5 { background: var(--green-bg); color: var(--green); }
+.property-tone-6 { background: var(--indigo-bg); color: var(--indigo); }
+.property-tone-7 { background: var(--brown-bg); color: var(--brown); }
+.property-tone-8 { background: var(--amber-bg); color: var(--amber); }
+.property-tone-9 { background: var(--red-bg); color: var(--red); }
+.g-theme {
+  width: min(270px, 100%);
+  margin: 16px auto 0;
+}
+.theme-switch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--canvas-subtle);
+}
+.theme-switch button {
+  padding: 7px 5px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--ink-muted);
+  font: 600 12px/1.4 var(--font-sans);
+}
+.theme-switch button.is-active { color: var(--ink); background: var(--surface); }
+.g-card, .g-stay { box-shadow: none; }
+.g-btn { border-radius: var(--radius-sm); box-shadow: none; }
+.g-err { border-color: color-mix(in srgb, var(--red) 28%, transparent); color: var(--red); }
+.g-ok, .g-saved { border-color: color-mix(in srgb, var(--green) 28%, transparent); color: var(--green); }
+.g-stay.yours { border-color: color-mix(in srgb, var(--green) 32%, transparent); background: var(--green-bg); }
+.g-sign canvas { background: var(--surface-raised); }
 
 /* The submit button is the whole point of the page; on a phone it should
    never be the thing you have to scroll to find. */

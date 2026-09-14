@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ t('stays.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline with context %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity with context %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set header_actions %}
   {{ bulk_send_ready(ready_send_count, return_to) }}
@@ -127,6 +127,8 @@
   <div class="field filter-actions filter-actions-end">
     <button class="btn primary filter-apply" type="submit" name="range" value="custom">{{ t('common.apply') }}</button>
     <a class="btn ghost" href="/reservations?range=upcoming">{{ t('common.clear') }}</a>
+    <button class="btn ghost" type="button" data-save-view
+            data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
     {{ csv_actions_menu(csv_export_params, apartments|length > 0, true) }}
   </div>
 </form>
@@ -157,7 +159,7 @@
             {%- endif %}
           </div>
         </td>
-        <td data-label="{{ t('stays.table.apartment') }}">{{ reservation.internal_name }}</td>
+        <td data-label="{{ t('stays.table.apartment') }}">{{ property_identity(reservation.apartment_id, reservation.internal_name, true) }}</td>
         <td class="small" data-label="{{ t('stays.table.source') }}">
           {{ reservation.summary or reservation.source }}
           {% if reservation.reservation_url %}
@@ -191,6 +193,7 @@
             {% else %}
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
                     data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
+                <input type="hidden" name="return_to" value="{{ return_to }}">
                 <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
               </form>
             {% endif %}
