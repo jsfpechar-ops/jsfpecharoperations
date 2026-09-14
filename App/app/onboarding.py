@@ -65,7 +65,11 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         {
             "id": "automation",
             "title": "Automation & UbyPort",
-            "detail": "Web-service credentials and when reports are sent.",
+            "detail": (
+                "Web-service credentials, and the IDUB, abbreviation and address copied "
+                "exactly from your registration. UbyPort rejects a mismatch rather than "
+                "correcting it."
+            ),
             "done": apartment_count > 0 and not setup_issues,
             "url": (
                 f"/automation#apartment-{first_apartment['id']}"

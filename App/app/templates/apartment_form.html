@@ -115,11 +115,17 @@
       <span class="mono">ybndqw9</span> or at <span class="mono">reguby@pcr.cz</span>.
       Ask for web-service access and include the facility name, address, IDUB, and IČO in your request.
     </p>
+    <p class="small muted">
+      Copy the IDUB, abbreviation, name and address <strong>character for character</strong> from
+      your registration. UbyPort checks them against the facility on file: a value in the right
+      format but with the wrong content is rejected, not corrected, and you only find out after
+      the first report — which may be after the deadline.
+    </p>
     <div class="grid">
       {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
-         '12–14 characters assigned at registration.', false, 14) }}
+         '12–14 characters assigned at registration. Must match it exactly.', false, 14) }}
       {{ text_field('uby_mark', 'Facility abbreviation (zkratka)', apartment.uby_mark if editing else '',
-         'Exactly five letters, e.g. AAKLI.', false, 5) }}
+         'Exactly five letters, e.g. AAKLI. Must match your registration.', false, 5) }}
     </div>
     <div class="grid two">
       {{ text_field('uby_name', 'Facility name in UbyPort', apartment.uby_name if editing else '',

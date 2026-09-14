@@ -867,7 +867,17 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pill.red { background: var(--bad-soft); color: var(--bad); }
 
 .deadline { font-weight: 600; font-size: 13.5px; }
-.deadline.overdue, .deadline.urgent { color: var(--bad); }
+.deadline.urgent { color: var(--bad); }
+/* "Act today" and "already late" are different jobs: one is still compliant,
+   the other is a breach where re-sending is penalised. Same red read as the
+   same row, so past-deadline gets the filled treatment. */
+.deadline.overdue {
+  color: var(--bad);
+  background: var(--bad-soft);
+  padding: 2px 8px;
+  border-radius: var(--pill);
+  white-space: nowrap;
+}
 .deadline.soon { color: var(--warn); }
 .deadline.ok { color: var(--ok); }
 .deadline.future { color: var(--muted); font-weight: 500; }
