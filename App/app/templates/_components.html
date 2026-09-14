@@ -187,6 +187,13 @@
   </div>
 {% endmacro %}
 
+{% macro property_identity(id, name, compact=false) %}
+  <span class="property-identity">
+    <span class="property-mark property-tone-{{ id % 10 }}" aria-hidden="true">{{ name[:1] }}</span>
+    <span class="{{ 'small' if compact }}">{{ name }}</span>
+  </span>
+{% endmacro %}
+
 {% macro onboarding_banner(onboarding) %}
   {% if onboarding and onboarding.current and not onboarding.finished %}
     <div class="onboarding-banner" role="status">

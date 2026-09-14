@@ -1,62 +1,62 @@
 {% extends "base.html" %}
 {% set nav = 'submissions' %}
-{% block title %}Report {{ submission.id }}{% endblock %}
+{% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, submission_pill, row_menu_begin, row_menu_end %}
+{% from "_components.html" import page_header, breadcrumb, submission_pill, row_menu_begin, row_menu_end, property_identity %}
 {{ breadcrumb([
-  {'label': 'Reports', 'url': '/submissions'},
-  {'label': 'Report #' ~ submission.id, 'url': ''}
+  {'label': t('reports.title'), 'url': '/submissions'},
+  {'label': t('reports.detail.title', id=submission.id), 'url': ''}
 ]) }}
 {{ page_header(
-  'Report #' ~ submission.id,
+  t('reports.detail.title', id=submission.id),
   submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ')
     ~ ' · ' ~ {'immediate': 'sent immediately', 'scheduled': 'sent on a schedule',
                'manual': 'sent by hand'}.get(submission.mode, 'sent ' ~ submission.mode),
   '/submissions',
-  'Back to reports'
+  t('reports.detail.back')
 ) }}
 
 <div class="split wide">
   <div>
     <div class="panel">
       <dl class="kv">
-        <dt>Outcome</dt>
+        <dt>{{ t('reports.outcome') }}</dt>
         <dd>
           {{ submission_pill(submission.state) }}
         </dd>
-        <dt>Endpoint</dt><dd class="mono small">{{ submission.endpoint }}</dd>
-        <dt>Receipt stamp</dt><dd class="mono small">{{ submission.pseudo_stamp or '—' }}</dd>
-        <dt>Finished</dt><dd class="small">{{ (submission.finished_at or '')[:19].replace('T', ' ') or '—' }}</dd>
+        <dt>{{ t('reports.detail.endpoint') }}</dt><dd class="mono small">{{ submission.endpoint }}</dd>
+        <dt>{{ t('reports.stamp') }}</dt><dd class="mono small">{{ submission.pseudo_stamp or '—' }}</dd>
+        <dt>{{ t('reports.detail.finished') }}</dt><dd class="small">{{ (submission.finished_at or '')[:19].replace('T', ' ') or '—' }}</dd>
       </dl>
 
       {% if submission.error_text %}
         <div class="banner err" style="margin-top:14px">
-          <div class="grow"><strong>Transport error</strong><small>{{ submission.error_text }}</small></div>
+          <div class="grow"><strong>{{ t('reports.detail.transport_error') }}</strong><small>{{ submission.error_text }}</small></div>
         </div>
       {% endif %}
 
       {% if header_messages %}
-        <h3>Problems with the report header</h3>
+        <h3>{{ t('reports.detail.header_problems') }}</h3>
         <ul class="small">
           {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
         </ul>
-        <p class="small muted">Header errors come from the apartment settings, not the guest data.</p>
+        <p class="small muted">{{ t('reports.detail.header_help') }}</p>
       {% endif %}
 
       <div class="actions">
         {% if submission.receipt_pdf %}
-          <a class="btn primary" href="/submissions/{{ submission.id }}/receipt.pdf">Download the Doručenka</a>
+          <a class="btn primary" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
         {% endif %}
         {% if submission.error_pdf %}
-          <a class="btn" href="/submissions/{{ submission.id }}/errors.pdf">Download the error report</a>
+          <a class="btn" href="/submissions/{{ submission.id }}/errors.pdf">{{ t('reports.detail.download_errors') }}</a>
         {% endif %}
       </div>
     </div>
 
-    <h2>Guests in this transmission</h2>
+    <h2>{{ t('reports.detail.guests') }}</h2>
     <div class="panel tight scroll-x">
       <table class="table-cards">
-        <thead><tr><th>#</th><th>Guest</th><th>Result</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>{{ t('reports.detail.guest') }}</th><th>{{ t('reports.detail.result') }}</th><th></th></tr></thead>
         <tbody>
         {% for guest in guests %}
           <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
@@ -66,15 +66,15 @@
               <div class="small muted">{{ guest.nationality }} &middot; {{ guest.doc_number }}</div>
             </td>
             <td data-label="Result">
-              {% if guest.submit_state == 'sent' %}<span class="pill green">Accepted</span>
-              {% elif guest.submit_state == 'blocked' %}<span class="pill red">Rejected, final</span>
-              {% elif guest.submit_state == 'error' %}<span class="pill red">Rejected</span>
+              {% if guest.submit_state == 'sent' %}<span class="pill green">{{ t('submission.accepted') }}</span>
+              {% elif guest.submit_state == 'blocked' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
+              {% elif guest.submit_state == 'error' %}<span class="pill red">{{ t('submission.rejected') }}</span>
               {% else %}<span class="pill grey">{{ guest.submit_state }}</span>{% endif %}
               {% if guest.last_errors %}<div class="small err-text">{{ guest.last_errors }}</div>{% endif %}
             </td>
             <td class="nowrap row-actions" data-label="">
               {{ row_menu_begin() }}
-                <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">Edit</a>
+                <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">{{ t('common.edit') }}</a>
               {{ row_menu_end() }}
             </td>
           </tr>
@@ -85,9 +85,8 @@
   </div>
 
   <details class="panel technical">
-    <summary>Technical details</summary>
-    <p class="small muted">The exact computer messages exchanged with UbyPort. You normally only
-      need these when support is investigating a rejected report.</p>
+    <summary>{{ t('reports.detail.technical') }}</summary>
+    <p class="small muted">{{ t('reports.detail.technical_help') }}</p>
     <h3>Messages exchanged</h3>
     <div class="technical-downloads">
       <span class="technical-download">

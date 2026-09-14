@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_welcome, next_action %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_welcome, next_action, property_identity %}
 
 {% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
   {% if items %}
@@ -16,7 +16,7 @@
         <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link">
           <td class="task-row-main" data-label="{{ t('dashboard.table.stay') }}">
             <a class="task-title row-primary-link" href="/reservations/{{ reservation.id }}?return_to=/">
-              {{ reservation.internal_name }}
+              {{ property_identity(reservation.apartment_id, reservation.internal_name, true) }}
             </a>
             <div class="small muted">{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</div>
             <div class="next-action">{{ next_action(progress, reservation) }}</div>
@@ -92,7 +92,7 @@
           {% else %}{{ t('dashboard.focus.next_up') }}{% endif %}
         </div>
         <p class="focus-title">
-          <a href="/reservations/{{ f_res.id }}?return_to=/">{{ f_res.internal_name }}</a>
+          <a href="/reservations/{{ f_res.id }}?return_to=/">{{ property_identity(f_res.apartment_id, f_res.internal_name) }}</a>
         </p>
         <div class="focus-meta">
           <span>{{ f_res.date_from | date_cz }} &ndash; {{ f_res.date_to | date_cz }}</span>
@@ -155,7 +155,7 @@
     {% for warning in setup_warnings %}
       <a class="setup-item plain" href="/apartments/{{ warning.apartment.id }}">
         <span class="mark">!</span>
-        <span class="grow"><strong>{{ warning.apartment.internal_name }}</strong><br>
+        <span class="grow"><strong>{{ property_identity(warning.apartment.id, warning.apartment.internal_name, true) }}</strong><br>
         <span class="small muted">{% if warning.issues | length == 1 %}{{ t('dashboard.setup.items', count=warning.issues | length) }}{% else %}{{ t('dashboard.setup.items_plural', count=warning.issues | length) }}{% endif %}</span></span>
       </a>
     {% endfor %}
