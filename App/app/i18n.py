@@ -319,8 +319,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_bot_protection_title": "Protecting the registration link",
         "privacy_bot_protection_body": (
             "If someone repeatedly enters a wrong access PIN, the form may show Cloudflare Turnstile "
-            "to block automated abuse. That check may process technical connection data (such as IP "
-            "address) under Cloudflare's privacy notice. It is not used for marketing."
+            "to block automated abuse. Production pages may also be challenged by Cloudflare Bot Fight "
+            "Mode. Those checks may process technical connection data (such as IP address) under "
+            "Cloudflare's privacy notice. They are not used for marketing."
         ),
         "privacy_processor": "Who runs this website",
         "privacy_processor_body": (
@@ -649,8 +650,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_bot_protection_title": "Ochrana registračního odkazu",
         "privacy_bot_protection_body": (
             "Při opakovaně chybném PIN může formulář zobrazit Cloudflare Turnstile proti "
-            "automatizovanému zneužití. Kontrola může zpracovat technické údaje o připojení (např. IP) "
-            "podle zásad Cloudflare. Nepoužívá se pro marketing."
+            "automatizovanému zneužití. Produkční stránky může rovněž prověřit Cloudflare Bot Fight "
+            "Mode. Kontroly mohou zpracovat technické údaje o připojení (např. IP) podle zásad "
+            "Cloudflare. Nepoužívají se pro marketing."
         ),
         "privacy_processor": "Kdo provozuje tento web",
         "privacy_processor_body": (

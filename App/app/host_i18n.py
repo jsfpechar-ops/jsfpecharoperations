@@ -317,7 +317,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "one-time recovery codes somewhere safe."
         ),
         "guide.security.turnstile": (
-            "Guest PIN and sign-in screens use Cloudflare Turnstile in production to slow automated abuse."
+            "Production sits behind Cloudflare: Turnstile on sign-in and after repeated guest PIN "
+            "failures, Bot Fight Mode, leaked-credential checks on login, HSTS, and client-side "
+            "script monitoring. Legitimate visitors may occasionally see a short challenge."
         ),
         "guide.security.passports": (
             "Passport photos are encrypted while awaiting review and deleted immediately after verification."
@@ -391,7 +393,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.security_title": "Security measures",
         "legal.security_body": (
             "Production deployments may require two-factor authentication (authenticator app), Cloudflare "
-            "Turnstile on login and guest PIN after abuse, encrypted storage of integration secrets, rate "
+            "Turnstile on login and guest PIN after abuse, Bot Fight Mode, leaked-credential checks, "
+            "HSTS, client-side script monitoring, encrypted storage of integration secrets, rate "
             "limiting, and off-site backups configured by the operator. Details are in the Privacy Policy "
             "and Data Processing Agreement."
         ),
@@ -1107,7 +1110,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "obnovovací kódy uložte na bezpečné místo."
         ),
         "guide.security.turnstile": (
-            "PIN hosta a přihlášení v produkci chrání Cloudflare Turnstile proti automatizovaným útokům."
+            "Produkce je za Cloudflare: Turnstile při přihlášení a po opakovaných chybách PIN, "
+            "Bot Fight Mode, kontrola uniklých přihlašovacích údajů, HSTS a monitoring skriptů "
+            "v prohlížeči. Návštěvník může občas vidět krátkou výzvu."
         ),
         "guide.security.passports": (
             "Fotografie pasů jsou při čekání na kontrolu šifrované a po ověření se ihned smažou."
@@ -1180,9 +1185,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.security_title": "Bezpečnostní opatření",
         "legal.security_body": (
             "V produkci může být vyžadováno dvoufázové ověření (autentizační aplikace), Cloudflare "
-            "Turnstile při přihlášení a u PIN hostů po zneužití, šifrované uložení integračních "
-            "tajemství, rate limiting a off-site zálohy nastavené provozovatelem. Podrobnosti jsou "
-            "v Zásadách ochrany osobních údajů a v DPA."
+            "Turnstile při přihlášení a u PIN hostů po zneužití, Bot Fight Mode, kontrola uniklých "
+            "přihlašovacích údajů, HSTS, monitoring skriptů v prohlížeči, šifrované uložení "
+            "integračních tajemství, rate limiting a off-site zálohy nastavené provozovatelem. "
+            "Podrobnosti jsou v Zásadách ochrany osobních údajů a v DPA."
         ),
         "legal.disclaimer_title": "Vyloučení odpovědnosti",
         "legal.disclaimer_body": (
