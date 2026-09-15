@@ -92,17 +92,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "submit real data yourself."
         ),
         "demo.clear": "Clear demo data",
-        "data.menu": "Import & export",
         "data.export_csv_title": "Export CSV",
         "data.export_csv_help": "Choose the date range to include in the export.",
         "data.export_csv_download": "Download",
         "data.export_csv_cancel": "Cancel",
         "csv.export_stays": "Export stays (CSV)",
-        "csv.import_stays": "Import stays (CSV)",
-        "csv.sample_stays": "Download sample file",
         "csv.download": "Export spreadsheet (CSV)",
-        "csv.import": "Import paper records (CSV)",
-        "csv.sample_housebook": "Download import template",
         "csv.download_pdfs": "Download PDF bundle (inspection)",
         "reports.download_receipts": "Download Doručenky (ZIP)",
         "reports.download_receipts_hint": "One PDF per successful transmission, built on disk to stay lightweight.",
@@ -150,12 +145,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "or download signed PDFs (one file per guest) and print or store them offline. A screen "
             "alone may not be accepted."
         ),
-        "housebook.legal_import": (
-            "Had a paper house book? Use Import to digitise old rows without retyping — download the "
-            "import template for the exact column format."
-        ),
-        "housebook.import_paper": "Import existing records",
-        "housebook.export_menu": "Import / export",
+        "housebook.export_menu": "Export",
         "housebook.pdf_export_title": "Download PDF bundle",
         "housebook.pdf_export_help": (
             "Choose the stay dates and property to include. Each guest form is generated on the server "
@@ -168,7 +158,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "housebook.legal_intro_ack": "Got it — hide this next time",
         "housebook.legal_intro_skip": "Skip for now",
         "housebook.filter_footer": "Exports use the current filter.",
-        "csv.button": "Import & export",
         "host.signature_title": "Guest signature",
         "host.signature_help": (
             "Required by Czech law (§ 101–103, Act 326/1999 Coll.). The guest must sign, or you must "
@@ -244,17 +233,31 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.title": "Help & guide",
         "guide.lede": "Everything you need to run guest reporting calmly, from setup to the house book.",
         "guide.nav.overview": "Overview",
+        "guide.nav.productivity": "Faster everyday work",
         "guide.nav.setup": "First-time setup",
         "guide.nav.stays": "Stays & calendars",
         "guide.nav.guests": "Guest forms",
         "guide.nav.reporting": "Police reporting",
         "guide.nav.housebook": "House book",
+        "guide.nav.security": "Security & backups",
         "guide.nav.demo": "Demo data",
         "guide.overview.body": (
             "Overview shows what needs attention now: missing guest forms, stays ready to report, "
             "and deadlines. Stays lists every booking; Reports keeps Doručenka receipts."
         ),
         "guide.overview.caption": "The next-up card shows the most urgent stay and its send button.",
+        "guide.productivity.search": (
+            "Press Ctrl+K (or Cmd+K on a Mac) to search and jump to a property, stay, guest, or page."
+        ),
+        "guide.productivity.shortcuts": (
+            "Open the ? menu at the bottom of the sidebar for navigation and table keyboard shortcuts."
+        ),
+        "guide.productivity.views": (
+            "On Stays, set your filters and choose Save view to keep a useful view for next time."
+        ),
+        "guide.productivity.quick_edit": (
+            "Open a stay for its guest link, Add a guest, reporting controls, and the compact Quick edit panel."
+        ),
         "guide.setup.step1_title": "Legal entity",
         "guide.setup.step1": "The company or person registered with the police.",
         "guide.setup.step2_title": "Property",
@@ -262,15 +265,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.setup.step3_title": "Calendars",
         "guide.setup.step3": "Paste Airbnb or Booking.com iCal export links.",
         "guide.setup.step4_title": "UbyPort credentials",
-        "guide.setup.step4": "Enter your UBY-WS web-service login on the property page.",
+        "guide.setup.step4": (
+            "Enter the UBY-WS web-service login from the police letter on the property page. "
+            "The annotated sample shows the exact fields; leaving an already-saved password blank keeps it."
+        ),
         "guide.setup.step5_title": "Guest link",
         "guide.setup.step5": "Put the permalink in your check-in message on every portal.",
         "guide.stays.body": (
             "Stays arrive from calendars or manual entry. Open a row to add guests, copy the guest link, "
             "or send completed records."
         ),
-        "guide.stays.csv": "Use Import & export in the filter bar to import past stays or export for your records.",
-        "guide.stays.caption": "Import & export lives in the bottom-right of the filter panel on Stays and House book.",
+        "guide.stays.csv": (
+            "Use Export stays (CSV) in the filter bar for a spreadsheet copy. House book offers CSV "
+            "and an inspection PDF bundle from its Export menu. Exports respect the current filters."
+        ),
         "guide.guests.body": (
             "Each stay gets a link guests open on their phone. They pick their dates, enter passport "
             "details, and sign. Czech guests still go in the house book but are not reported to the police."
@@ -302,7 +310,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.housebook.body": (
             "The house book lists every guest — Czech and foreign. Export CSV or download PDFs for "
-            "inspections; import older paper records from Import & export in the filters."
+            "inspections from the Export menu. Import is currently unavailable."
+        ),
+        "guide.security.two_factor": (
+            "Enable two-factor authentication in Settings with an authenticator app, and store the "
+            "one-time recovery codes somewhere safe."
+        ),
+        "guide.security.turnstile": (
+            "Guest PIN and sign-in screens use Cloudflare Turnstile in production to slow automated abuse."
+        ),
+        "guide.security.passports": (
+            "Passport photos are encrypted while awaiting review and deleted immediately after verification."
+        ),
+        "guide.security.backups": (
+            "Settings shows backup status. Production creates encrypted database backups; keep an independent "
+            "export before closing the service or making major changes."
         ),
         "guide.nav.legal": "Your legal duties",
         "guide.legal.lede": (
@@ -587,11 +609,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.add_panel.label_ph": "Direct booking – Novák",
         "stays.add_panel.email": "Guest e-mail",
         "stays.add_panel.create": "Create stay",
-        "stays.import.title": "Import stays from CSV",
-        "stays.import.lede": "Upload a semicolon-separated file with one stay per row. Download the sample CSV to see the exact format.",
-        "stays.import.required": "Required columns: Apartment, Arrival, Departure. Apartment names must match your properties exactly.",
-        "stays.import.file": "CSV file",
-        "stays.import.submit": "Import stays",
         "stays.chip.upcoming": "Upcoming & current",
         "stays.chip.past": "Past",
         "stays.chip.all": "All dates",
@@ -870,17 +887,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "neodešlete skutečná data."
         ),
         "demo.clear": "Smazat ukázková data",
-        "data.menu": "Import a export",
         "data.export_csv_title": "Export CSV",
         "data.export_csv_help": "Vyberte rozsah dat, který chcete exportovat.",
         "data.export_csv_download": "Stáhnout",
         "data.export_csv_cancel": "Zrušit",
         "csv.export_stays": "Export pobytů (CSV)",
-        "csv.import_stays": "Import pobytů (CSV)",
-        "csv.sample_stays": "Stáhnout vzorový soubor",
         "csv.download": "Export tabulky (CSV)",
-        "csv.import": "Import papírové evidence (CSV)",
-        "csv.sample_housebook": "Stáhnout vzor pro import",
         "csv.download_pdfs": "Stáhnout balíček PDF (kontrola)",
         "reports.download_receipts": "Stáhnout doručenky (ZIP)",
         "reports.download_receipts_hint": "Jedno PDF za každé úspěšné odeslání, sestavené na disku bez zbytečné paměti.",
@@ -928,12 +940,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "nebo stáhněte podepsaná PDF (jeden soubor na hosta) a uložte či vytiskněte. Samotná "
             "obrazovka nemusí stačit."
         ),
-        "housebook.legal_import": (
-            "Vedli jste papírovou domovní knihu? Importem doplníte starší záznamy bez přepisování — "
-            "vzor souboru najdete v menu Import a export."
-        ),
-        "housebook.import_paper": "Importovat existující záznamy",
-        "housebook.export_menu": "Import / export",
+        "housebook.export_menu": "Export",
         "housebook.pdf_export_title": "Stáhnout balíček PDF",
         "housebook.pdf_export_help": (
             "Vyberte rozsah pobytů a ubytování. Každý formulář hosta se na serveru generuje zvlášť — "
@@ -946,7 +953,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "housebook.legal_intro_ack": "Rozumím — příště skrýt",
         "housebook.legal_intro_skip": "Teď přeskočit",
         "housebook.filter_footer": "Exporty používají aktuální filtr.",
-        "csv.button": "Import a export",
         "host.signature_title": "Podpis hosta",
         "host.signature_help": (
             "Vyžaduje zákon (§ 101–103, zákon č. 326/1999 Sb.). Host se musí podepsat, nebo musíte "
@@ -1022,17 +1028,31 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.title": "Nápověda a průvodce",
         "guide.lede": "Vše pro klidné hlášení hostů — od nastavení po domovní knihu.",
         "guide.nav.overview": "Přehled",
+        "guide.nav.productivity": "Rychlejší každodenní práce",
         "guide.nav.setup": "První nastavení",
         "guide.nav.stays": "Pobyty a kalendáře",
         "guide.nav.guests": "Formuláře hostů",
         "guide.nav.reporting": "Hlášení na policii",
         "guide.nav.housebook": "Domovní kniha",
+        "guide.nav.security": "Zabezpečení a zálohy",
         "guide.nav.demo": "Ukázková data",
         "guide.overview.body": (
             "Přehled ukazuje, co vyžaduje pozornost: chybějící formuláře, připravená hlášení a termíny. "
             "Pobyty obsahují rezervace; Hlášení uchovává doručenky."
         ),
         "guide.overview.caption": "Karta Další na řadě ukazuje nejnaléhavější pobyt a tlačítko Odeslat.",
+        "guide.productivity.search": (
+            "Klávesami Ctrl+K (na Macu Cmd+K) otevřete hledání ubytování, pobytu, hosta nebo stránky."
+        ),
+        "guide.productivity.shortcuts": (
+            "V nabídce ? dole v postranním panelu najdete klávesové zkratky pro navigaci a tabulky."
+        ),
+        "guide.productivity.views": (
+            "Na stránce Pobyty nastavte filtry a volbou Uložit pohled si je uchovejte pro příště."
+        ),
+        "guide.productivity.quick_edit": (
+            "V detailu pobytu najdete odkaz pro hosty, Přidat hosta, ovládání hlášení a stručnou Rychlou úpravu."
+        ),
         "guide.setup.step1_title": "Právnická osoba",
         "guide.setup.step1": "Firma nebo osoba registrovaná u policie.",
         "guide.setup.step2_title": "Ubytování",
@@ -1040,14 +1060,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.setup.step3_title": "Kalendáře",
         "guide.setup.step3": "Vložte exportní iCal odkazy z Airbnb nebo Booking.com.",
         "guide.setup.step4_title": "Přihlašovací údaje UbyPort",
-        "guide.setup.step4": "Na stránce ubytování zadejte UBY-WS webovou službu.",
+        "guide.setup.step4": (
+            "Na stránce ubytování zadejte přihlašovací jméno UBY-WS z policejního dopisu. "
+            "Anotovaná ukázka přesně ukazuje pole; prázdné již uložené heslo se při uložení zachová."
+        ),
         "guide.setup.step5_title": "Odkaz pro hosty",
         "guide.setup.step5": "Permalink vložte do zprávy při příjezdu na všech portálech.",
         "guide.stays.body": (
             "Pobyty přicházejí z kalendářů nebo ručního zadání. Otevřete řádek pro hosty, odkaz nebo odeslání."
         ),
-        "guide.stays.csv": "Import a export v panelu filtrů slouží k importu starších pobytů nebo exportu.",
-        "guide.stays.caption": "Import a export je vpravo dole v panelu filtrů u Pobytů a Domovní knihy.",
+        "guide.stays.csv": (
+            "Tlačítkem Export pobytů (CSV) v panelu filtrů získáte tabulku. Domovní kniha nabízí "
+            "v nabídce Export CSV a balíček PDF pro kontrolu. Export respektuje aktuální filtry."
+        ),
         "guide.guests.body": (
             "Každý pobyt má odkaz pro hosty na telefonu. Vyberou datum, vyplní pas a podepíší se."
         ),
@@ -1074,8 +1099,22 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Hromadné odeslání jen u kompletních pobytů povolených režimem — nikdy ne částečných."
         ),
         "guide.housebook.body": (
-            "Domovní kniha obsahuje všechny hosty — Čechy i cizince. CSV nebo PDF pro kontroly; "
-            "import starších záznamů ve filtrech."
+            "Domovní kniha obsahuje všechny hosty — Čechy i cizince. CSV nebo PDF pro kontroly "
+            "stáhnete z nabídky Export. Import nyní není k dispozici."
+        ),
+        "guide.security.two_factor": (
+            "V Nastavení zapněte dvoufázové ověření pomocí autentizační aplikace a jednorázové "
+            "obnovovací kódy uložte na bezpečné místo."
+        ),
+        "guide.security.turnstile": (
+            "PIN hosta a přihlášení v produkci chrání Cloudflare Turnstile proti automatizovaným útokům."
+        ),
+        "guide.security.passports": (
+            "Fotografie pasů jsou při čekání na kontrolu šifrované a po ověření se ihned smažou."
+        ),
+        "guide.security.backups": (
+            "Nastavení ukazuje stav záloh. Produkce vytváří šifrované zálohy databáze; před ukončením "
+            "služby nebo zásadní změnou si ponechte také vlastní export."
         ),
         "guide.nav.legal": "Vaše právní povinnosti",
         "guide.legal.lede": (
@@ -1356,11 +1395,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.add_panel.label_ph": "Přímá rezervace – Novák",
         "stays.add_panel.email": "E-mail hosta",
         "stays.add_panel.create": "Vytvořit pobyt",
-        "stays.import.title": "Import pobytů z CSV",
-        "stays.import.lede": "Nahrajte soubor oddělený středníky, jeden pobyt na řádek. Stáhněte vzor CSV pro přesný formát.",
-        "stays.import.required": "Povinné sloupce: Ubytování, Příjezd, Odjezd. Názvy musí přesně sedět s vašimi ubytováními.",
-        "stays.import.file": "Soubor CSV",
-        "stays.import.submit": "Importovat pobyty",
         "stays.chip.upcoming": "Aktuální a budoucí",
         "stays.chip.past": "Minulé",
         "stays.chip.all": "Všechna data",

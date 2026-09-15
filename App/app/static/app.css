@@ -1144,7 +1144,16 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 }
 .technical-download { display: inline-flex; align-items: center; }
 .help-dot:focus-visible { outline: 3px solid var(--brand-ring); outline-offset: 2px; }
-.action-menu .menu-caret { font-size: 10px; opacity: 0.6; }
+.action-menu .row-menu-trigger { gap: 9px; }
+.action-menu .menu-caret {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  opacity: 0.78;
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+.action-menu .row-menu-trigger:hover .menu-caret { opacity: 1; }
+.action-menu .row-menu-trigger[aria-expanded="true"] .menu-caret { transform: rotate(180deg); }
 .page-actions .action-menu .row-menu-panel { min-width: 210px; }
 
 /* --- chips and filters ------------------------------------------------- */
@@ -1801,9 +1810,11 @@ details.raw pre {
   justify-content: space-between;
   margin-bottom: 20px;
   padding: 14px 18px;
-  border: 1px solid rgba(200, 90, 82, 0.22);
+  border: 1px solid rgba(200, 90, 82, 0.3);
   border-radius: var(--radius);
   background: linear-gradient(90deg, var(--brand-soft), var(--surface));
+  box-shadow: 0 2px 5px rgba(36, 31, 29, 0.08);
+  overflow: hidden;
 }
 
 .onboarding-banner strong { display: block; font-size: 14px; }

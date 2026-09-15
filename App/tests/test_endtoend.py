@@ -486,9 +486,23 @@ def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch
 
     rows = housebook.housebook_rows()
     assert rows, "house book should list every guest from earlier tests"
-    assert "Import existing records" in page.text
-    assert "Download import template" in page.text
     assert "Export" in html.unescape(page.text)
+    assert 'data-csv-export="/housebook.csv"' in page.text
+    assert "Download PDF bundle (inspection)" in page.text
+    assert "Import existing records" not in page.text
+    assert "Download import template" not in page.text
+    assert "import-housebook-panel" not in page.text
+
+    stays_page = host.get("/reservations")
+    assert stays_page.status_code == 200
+    assert 'data-csv-export="/reservations.csv"' in stays_page.text
+    assert "Export stays (CSV)" in stays_page.text
+    assert "Import stays (CSV)" not in stays_page.text
+    assert "import-stays-panel" not in stays_page.text
+    assert host.post("/reservations/import").status_code >= 400
+    assert host.get("/reservations-sample.csv").status_code == 404
+    assert host.post("/housebook/import").status_code == 404
+    assert host.get("/housebook-sample.csv").status_code == 404
 
     fd, path = tempfile.mkstemp(suffix=".zip")
     os.close(fd)
