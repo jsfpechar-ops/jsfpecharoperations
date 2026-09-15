@@ -81,6 +81,32 @@ def test_production_host_posts_require_session_bound_csrf_token(monkeypatch):
         _clean_accounts()
 
 
+def test_production_login_accepts_same_site_mobile_headers(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    _account("mobile-login")
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    try:
+        client = TestClient(app, base_url="https://ubyhost.com")
+        login_token = _csrf_from(client.get("/login"))
+        response = client.post(
+            "/login",
+            data={
+                "username": "mobile-login",
+                "password": "Secure-Password-123",
+                security.CSRF_FIELD: login_token,
+            },
+            headers={
+                "Origin": "https://www.ubyhost.com",
+                "Sec-Fetch-Site": "same-site",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+    finally:
+        _clean_accounts()
+
+
 def test_safe_local_path_rejects_ambiguous_redirect_targets():
     for value in (
         "https://other.example/path",

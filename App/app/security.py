@@ -63,18 +63,33 @@ def csrf_token_valid(request: Request, token: str) -> bool:
     )
 
 
+def _canonical_host(hostname: Optional[str]) -> str:
+    host = (hostname or "").lower().split(":", 1)[0]
+    if host.startswith("www."):
+        return host[4:]
+    return host
+
+
+def _hosts_equivalent(left: Optional[str], right: Optional[str]) -> bool:
+    return _canonical_host(left) == _canonical_host(right) and bool(_canonical_host(left))
+
+
 def _request_is_same_site(request: Request) -> bool:
+    """Reject obvious cross-site posts; allow same registrable host (e.g. www vs apex)."""
     fetch_site = (request.headers.get("sec-fetch-site") or "").lower()
-    if fetch_site in {"cross-site", "same-site"}:
-        return False
     origin = request.headers.get("origin")
-    if not origin:
-        return True
-    parsed = urlsplit(origin)
-    return (
-        parsed.scheme.lower() == request.url.scheme.lower()
-        and parsed.netloc.lower() == request.url.netloc.lower()
-    )
+    if origin:
+        parsed = urlsplit(origin)
+        if parsed.scheme.lower() != request.url.scheme.lower():
+            return False
+        return _hosts_equivalent(parsed.hostname, request.url.hostname)
+    referer = request.headers.get("referer")
+    if referer:
+        parsed = urlsplit(referer)
+        return _hosts_equivalent(parsed.hostname, request.url.hostname)
+    if fetch_site == "cross-site":
+        return False
+    return True
 
 
 async def protect_host_post(request: Request) -> None:

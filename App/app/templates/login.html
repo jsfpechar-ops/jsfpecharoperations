@@ -10,6 +10,7 @@
   {% endif %}
 
   <form method="post" action="/login" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="next" value="{{ request.query_params.get('next', '') }}">
     <div class="auth-field">
       <label for="username">{{ t('login.username') }}</label>

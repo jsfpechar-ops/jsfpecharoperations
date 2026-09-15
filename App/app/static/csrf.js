@@ -30,6 +30,7 @@
 
   document.querySelectorAll("form").forEach(attach);
   document.addEventListener("submit", function (event) {
-    attach(event.target);
+    var form = event.target && event.target.closest ? event.target.closest("form") : null;
+    if (form) attach(form);
   }, true);
 })();
