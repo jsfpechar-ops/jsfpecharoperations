@@ -69,8 +69,30 @@ Next steps (as ${DEPLOY_USER} or root):
   4. Verify:
        curl -sS https://YOUR_DOMAIN/healthz
 
-  5. Optional — daily backup cron (03:00 UTC):
+  5. Optional — daily on-volume backup cron (03:00 UTC):
        (crontab -l 2>/dev/null; echo "0 3 * * * cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup.sh >> /var/log/ubyhost-backup.log 2>&1") | crontab -
+
+  6. Optional — weekly Google Drive off-site copy (Sunday 04:00 UTC), after rclone config:
+       (crontab -l 2>/dev/null; echo "0 4 * * 0 cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup-gdrive.sh >> /var/log/ubyhost-gdrive.log 2>&1") | crontab -
+
+  7. Keep an eye on disk (1 GB Lightsail fills with photos, logs, and backups):
+       df -h
+       docker system df
+       ./scripts/status.sh
+
+Log rotation for backup scripts (as root):
+
+  cat >/etc/logrotate.d/ubyhost <<'ROTATE'
+/var/log/ubyhost-backup.log /var/log/ubyhost-gdrive.log /var/log/ubyhost-s3.log {
+  weekly
+  rotate 8
+  compress
+  missingok
+  notifempty
+  copytruncate
+}
+ROTATE
+
 
 Recommended Lightsail plan for ~10 properties: Micro (1 GB RAM, \$7/mo).
 Point your domain A record at this instance's static IP before deploy.

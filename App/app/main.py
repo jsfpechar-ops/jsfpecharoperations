@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, client_ip, config, db, host_i18n, scheduler, security
+from . import auth, client_ip, config, db, env_guard, host_i18n, scheduler, security
 from .routes import admin, guest, legal
 from .sample_calendar import sample_calendar_response
 
@@ -48,6 +48,7 @@ async def lifespan(_app: FastAPI):
         config.UBYPORT_ENV,
         config.endpoint_for(),
     )
+    env_guard.apply()
     if config.UBYPORT_ENV == "mock":
         log.warning(
             "Running against the MOCK UbyPort server - nothing is reported to the police. "

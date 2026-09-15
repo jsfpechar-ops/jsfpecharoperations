@@ -54,6 +54,9 @@ if [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
   set +a
 fi
 
+chmod +x scripts/*.sh
+./scripts/preflight.sh
+
 echo "==> Building image"
 docker compose build --pull
 
@@ -82,3 +85,10 @@ if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then
   echo "Cloudflare: ensure DNS is proxied (orange cloud) and SSL/TLS is Full (strict)."
 fi
 echo "Run ./scripts/logs.sh to tail logs."
+if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
+  echo ""
+  echo "==> Public smoke (set SKIP_PUBLIC_SMOKE=1 to skip)"
+  if ! ./scripts/smoke-remote.sh; then
+    echo "WARNING: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz is above." >&2
+  fi
+fi

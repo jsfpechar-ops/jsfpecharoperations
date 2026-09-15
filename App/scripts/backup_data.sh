@@ -9,6 +9,11 @@ DATA_DIR="${UBYHOST_DATA_DIR:-${ROOT}/data}"
 BACKUP_ROOT="${UBYHOST_BACKUP_DIR:-${DATA_DIR}/backups}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 DEST="${BACKUP_ROOT}/${STAMP}"
+suffix=0
+while [ -e "${DEST}" ]; do
+  suffix=$((suffix + 1))
+  DEST="${BACKUP_ROOT}/${STAMP}-${suffix}"
+done
 
 mkdir -p "${DEST}"
 chmod 700 "${BACKUP_ROOT}" "${DEST}" 2>/dev/null || true

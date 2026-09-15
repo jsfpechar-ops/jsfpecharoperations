@@ -69,10 +69,13 @@ Use this whenever you ship a change that affects hosts or guests.
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
    ```
-4. **Smoke production** — sign in at **ubyhost.com**, open Settings, confirm:
+   Or GitHub → **Actions → Deploy production → Run workflow** (`workflow_dispatch`).
+   CI-triggered deploys after green `main` stay **off** unless secret `LIGHTSAIL_AUTO_DEPLOY=1`.
+4. **Smoke production** — `./scripts/status.sh` and `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`
    - Public base URL = `https://ubyhost.com`
+   Public `GET /healthz` in production does **not** include those labels (monitoring still gets `status` + `data_dir_writable`).
 5. **Rollback** — redeploy a previous git commit on Lightsail (`git checkout` / `git pull`
    an older SHA, then `./scripts/deploy.sh`). SQLite on the Docker volume is **not**
    rolled back with the code.
@@ -102,8 +105,7 @@ Backups land in the container under `/data/backups/` (last 10 kept). Off-site co
 
 **Staging (Render)** uses ephemeral disk on the free tier — no production data there.
 
-To restore production: stop the stack, replace `ubyhost.db` from a backup on the volume,
-restart.
+To restore production: see **[LIGHTSAIL.md](LIGHTSAIL.md#restore-runbook-same-instance)** (`./scripts/restore.sh`). Off-site: Google Drive via `backup-gdrive.sh`.
 
 ## Production host (Lightsail)
 
@@ -139,20 +141,24 @@ Set `UBYHOST_UBYPORT_ENV=mock` only for non-production stacks.
 
 ## Monitoring
 
-- **Health**: `GET /healthz` — `status`, `deployment`, `ubyport_env`, `data_dir_writable`.
-- **Render**: enable email alerts for deploy failures and health-check failures.
+- **Health**: `GET /healthz` — `status`, `version`, `data_dir_writable`. Outside production it also includes `deployment` and `ubyport_env`. On Lightsail use `./scripts/status.sh` for the env labels.
+- **No external pager** is configured; failed submissions surface as in-app alerts and `./scripts/logs.sh`.
+- **Render**: enable email alerts for deploy failures and health-check failures (staging only).
 - **Application**: Settings → audit log; apartment submission history and Doručenka PDFs.
 
 ## Environment variables (production)
 
-| Variable | Production value |
-|----------|-------------------|
-| `UBYHOST_DEPLOYMENT` | `production` |
-| `UBYHOST_UBYPORT_ENV` | `test`, then `prod` |
-| `UBYHOST_PUBLIC_BASE_URL` | `https://ubyhost.com` (Lightsail) |
-| `UBYHOST_GUEST_PIN` | `1` (recommended) |
-| `UBYHOST_ENABLE_SCHEDULER` | `1` |
-| `UBYHOST_DATA_DIR` | `/data` in the container (Lightsail volume) |
+| Variable | Production value | If wrong |
+|----------|------------------|----------|
+| `UBYHOST_DEPLOYMENT` | `production` | `prod` UbyPort will not start |
+| `UBYHOST_UBYPORT_ENV` | `test`, then `prod` | `mock` sends nowhere; `prod` on Render is refused |
+| `UBYHOST_PUBLIC_BASE_URL` | `https://ubyhost.com` | Guest links / cookies |
+| `UBYHOST_GUEST_PIN` | `1` | Unprotected permalinks |
+| `UBYHOST_ENABLE_SCHEDULER` | `1` | No iCal / auto-submit / photo sweep |
+| `UBYHOST_DATA_DIR` | `/data` in the container | Empty DB on a new volume |
+| `UBYHOST_SECRET_KEY` | ≥32 chars, stable | Lost Fernet + sessions |
+
+Full table: [LIGHTSAIL.md](LIGHTSAIL.md#environment-variables-what-breaks-if-wrong).
 
 ## What not to do
 
