@@ -208,6 +208,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Please read this before submitting. Czech accommodation law requires both you "
             "and your host to follow the rules below."
         ),
+        "legal_notice_disclaimer": (
+            "UbyHost is a software tool and this information does not replace legal advice."
+        ),
         "legal_notice_duty_title": "Your legal duty",
         "legal_notice_duty_body": (
             "Every accommodated person must be registered. Foreign nationals are reported to "
@@ -530,6 +533,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal_notice_intro": (
             "Před odesláním si prosím přečtěte. Český zákon o ubytování vyžaduje, aby vy i "
             "ubytovatel dodrželi níže uvedená pravidla."
+        ),
+        "legal_notice_disclaimer": (
+            "UbyHost je softwarový nástroj a tyto informace nenahrazují právní poradenství."
         ),
         "legal_notice_duty_title": "Vaše zákonná povinnost",
         "legal_notice_duty_body": (
