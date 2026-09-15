@@ -708,24 +708,25 @@ def submit_batch(
             accepted_count += 1
         else:
             new_state = BLOCKED if state == "not_correctable" else ERROR
-            # "Duplicate" means the register already holds this record. If we
-            # are the ones who put it there, the guest is still reported and
-            # the stay must not start showing up as a failure.
-            if guest["submit_state"] == SENT and any(
+            # A duplicate response proves the register already has this guest.
+            # This also covers an earlier accept whose HTTP response was lost.
+            duplicate = "150" in uby_errors.split_codes(record_error) or any(
                 uby_errors.is_duplicate(message) for message in messages
-            ):
-                new_state = SENT
-            db.update(
-                "guest",
-                guest["id"],
-                {
-                    "submit_state": new_state,
-                    "submission_id": submission_id,
-                    "last_errors": " | ".join(messages),
-                    "updated_at": now,
-                },
             )
-            if new_state == ERROR:
+            if duplicate:
+                new_state = SENT
+            update_values = {
+                "submit_state": new_state,
+                "submission_id": submission_id,
+                "last_errors": " | ".join(messages),
+                "updated_at": now,
+            }
+            if new_state == SENT:
+                update_values["submitted_at"] = guest["submitted_at"] or now
+            db.update("guest", guest["id"], update_values)
+            if new_state == SENT:
+                accepted_count += 1
+            elif new_state == ERROR:
                 failed_count += 1
             else:
                 blocked_count += 1

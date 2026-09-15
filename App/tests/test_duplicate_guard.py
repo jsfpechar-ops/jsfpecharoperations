@@ -16,6 +16,7 @@ import pytest
 
 from app import db, reporting
 from app.ubyport import errors as uby_errors
+from app.ubyport.client import SubmissionResult
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -122,6 +123,11 @@ def test_the_duplicate_detector_recognises_what_ubyport_sends_back():
     assert not uby_errors.is_duplicate("106: Invalid value in a guest field")
 
 
+def test_duplicate_code_is_non_correctable_without_codebook_wording():
+    state, _messages = uby_errors.classify("", ";150;", {})
+    assert state == "not_correctable"
+
+
 def test_a_known_duplicate_is_not_resent_even_when_the_host_insists():
     """allow_resend is the host overriding caution, not overriding the law."""
     apartment_id, guest_id = _seed(
@@ -210,3 +216,30 @@ def test_concurrent_sends_claim_each_guest_once(monkeypatch):
     assert first_result == [{"submitted": 1, "state": "ok"}]
     assert second == []
     assert calls == [[guest_id]]
+
+
+def test_duplicate_after_lost_success_is_recorded_as_sent(monkeypatch):
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok6")
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    pairs = reporting.collect_sendable(
+        apartment_id, only_guest_ids=[guest_id], ignore_automation=True
+    )
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            return SubmissionResult(
+                endpoint="mock",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                record_errors=[";150;"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    result = reporting.submit_batch(apartment, pairs)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert result["state"] == "ok"
+    assert result["submitted"] == 1
+    assert guest["submit_state"] == reporting.SENT
+    assert guest["submitted_at"]
