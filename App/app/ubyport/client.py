@@ -98,6 +98,7 @@ class UbyportClient:
                 auth=self._auth(),
                 timeout=self.timeout,
                 verify=self.verify_tls,
+                allow_redirects=False,
             )
         except requests.RequestException as exc:
             raise UbyportTransportError(f"Could not reach UbyPort at {self.endpoint}: {exc}") from exc
@@ -107,6 +108,10 @@ class UbyportClient:
             raise UbyportTransportError(
                 "UbyPort rejected the credentials (HTTP 401). Check that this is a web-service "
                 "login (UBY-WS...) and that it is registered for this IDUB."
+            )
+        if 300 <= response.status_code < 400:
+            raise UbyportTransportError(
+                f"UbyPort returned an unexpected redirect (HTTP {response.status_code})."
             )
         fault = soap.parse_fault(text)
         if fault:

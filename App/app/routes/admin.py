@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
 
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
 
 from .. import (
@@ -25,6 +25,7 @@ from .. import (
     icalsync,
     passport_photos,
     reporting,
+    security,
     stays_import,
     validation,
 )
@@ -34,7 +35,7 @@ from . import admin_accounts
 from .admin_helpers import back as _back
 from .admin_helpers import form_str as _form_str
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
 
 
@@ -56,10 +57,7 @@ def _ensure_apartment_pin(apartment):
 
 def _safe_return_to(request: Request, default: str) -> str:
     """Accept only local paths so breadcrumbs can preserve list state safely."""
-    value = (request.query_params.get("return_to") or "").strip()
-    if not value.startswith("/") or value.startswith("//") or "\n" in value or "\r" in value:
-        return default
-    return value
+    return security.safe_local_path(request.query_params.get("return_to"), default)
 
 
 def _apartment_with_secret(apartment) -> Dict[str, Any]:
@@ -73,10 +71,7 @@ def _apartment_issues(apartment) -> List[validation.Issue]:
 
 
 def _form_return_to(form, default: str) -> str:
-    value = _form_str(form, "return_to")
-    if value.startswith("/") and not value.startswith("//") and "\n" not in value and "\r" not in value:
-        return value
-    return default
+    return security.safe_local_path(_form_str(form, "return_to"), default)
 
 
 def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
@@ -323,7 +318,9 @@ async def dismiss_celebration(request: Request):
     owner_user_id = access.owner_id(request)
     if owner_user_id and milestone:
         celebrations.acknowledge(owner_user_id, milestone)
-    return RedirectResponse(_form_str(form, "return_to") or "/", status_code=303)
+    return RedirectResponse(
+        security.safe_local_path(_form_str(form, "return_to"), "/"), status_code=303
+    )
 
 
 # --- guest communication ------------------------------------------------
@@ -651,8 +648,8 @@ async def apartment_update(apartment_id: int, request: Request):
     pin_raw = _form_str(form, "permalink_pin")
     if pin_raw:
         pin = auth.normalise_permalink_pin(pin_raw)
-        if not pin:
-            return _back(f"/apartments/{apartment_id}", err="PIN must be 4 or 6 digits.")
+        if not pin or len(pin) != 6:
+            return _back(f"/apartments/{apartment_id}", err="PIN must be 6 digits.")
         payload["permalink_pin"] = pin
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
@@ -1100,7 +1097,7 @@ async def reservations_submit_ready(request: Request):
     if guard:
         return guard
     form = await request.form()
-    return_to = _form_str(form, "return_to") or "/reservations"
+    return_to = security.safe_local_path(_form_str(form, "return_to"), "/reservations")
     reservations = db.query(
         "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
@@ -1175,8 +1172,8 @@ def reservation_detail(reservation_id: int, request: Request):
     submissions = db.query(
         "SELECT * FROM submission WHERE id IN ("
         "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
-        ") ORDER BY created_at DESC",
-        (reservation_id,),
+        ") AND apartment_id = ? ORDER BY created_at DESC",
+        (reservation_id, reservation["apartment_id"]),
     )
     return render(
         request,
@@ -1313,7 +1310,9 @@ async def reservation_submit(reservation_id: int, request: Request):
             f"/reservations/{reservation_id}",
             err="Confirm you understand the duplicate rules before re-sending accepted records.",
         )
-    return_to = _form_str(form, "return_to") or f"/reservations/{reservation_id}"
+    return_to = security.safe_local_path(
+        _form_str(form, "return_to"), f"/reservations/{reservation_id}"
+    )
     guest_ids = [
         guest["id"]
         for guest in db.query("SELECT id FROM guest WHERE reservation_id = ?", (reservation_id,))
@@ -1569,9 +1568,9 @@ async def guest_verify_identity(guest_id: int, request: Request):
     if not reservation:
         return _back("/reservations", err="No such stay.")
     form = await request.form()
-    return_to = (form.get("return_to") or f"/guests/{guest_id}").strip()
-    if not return_to.startswith("/") or return_to.startswith("//"):
-        return_to = f"/guests/{guest_id}"
+    return_to = security.safe_local_path(
+        str(form.get("return_to") or ""), f"/guests/{guest_id}"
+    )
     owner_id = access.owner_id(request)
     reporting.record_host_identity_confirmation(guest_id, owner_id, on_send=False)
     now = db.utcnow()
@@ -1601,7 +1600,10 @@ def guest_passport_photo(guest_id: int, request: Request):
     return Response(
         content,
         media_type=media_type,
-        headers={"Cache-Control": "no-store"},
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Security-Policy": "sandbox; default-src 'none'",
+        },
     )
 
 
@@ -1621,9 +1623,7 @@ async def guest_archive(guest_id: int, request: Request):
     if guest["archived_at"]:
         return _back(f"/guests/{guest_id}", err="Already archived.")
     form = await request.form()
-    return_to = (form.get("return_to") or "/housebook").strip()
-    if not return_to.startswith("/") or return_to.startswith("//"):
-        return_to = "/housebook"
+    return_to = security.safe_local_path(str(form.get("return_to") or ""), "/housebook")
     db.update("guest", guest_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("guest_archived", f"id={guest_id}")
     return _back(return_to, msg="House-book entry archived. Restore it from the archive below.")
@@ -1890,9 +1890,10 @@ def submission_xml(submission_id: int, which: str, request: Request):
     if which not in ("request", "response"):
         return Response("Unknown document.", status_code=404, media_type="text/plain")
     owned = access.submission(request, submission_id)
-    row = (
-        db.query_one(f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,))
-        if owned else None
+    if not owned:
+        return Response("Not found.", status_code=404, media_type="text/plain")
+    row = db.query_one(
+        f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,)
     )
     return Response((row["body"] if row else "") or "", media_type="application/xml")
 

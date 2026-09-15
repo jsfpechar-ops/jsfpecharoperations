@@ -141,6 +141,29 @@ def test_submit_wraps_malformed_xml_as_transport_failure(monkeypatch):
         client.submit(HEADER, [GUEST])
 
 
+def test_ubyport_redirects_are_not_followed(monkeypatch):
+    class RedirectResponse:
+        status_code = 302
+        text = ""
+
+    observed = {}
+
+    def fake_post(*args, **kwargs):
+        observed.update(kwargs)
+        return RedirectResponse()
+
+    monkeypatch.setattr("app.ubyport.client.requests.post", fake_post)
+    client = UbyportClient(
+        "https://ubyport.invalid",
+        use_ntlm=False,
+    )
+
+    with pytest.raises(UbyportTransportError, match="unexpected redirect"):
+        client._post("TestDostupnosti", "<Envelope />")
+
+    assert observed["allow_redirects"] is False
+
+
 def test_pseudo_stamp_accepts_the_misspelling_in_the_spec():
     xml = RESPONSE_WITH_ERRORS.replace("PseudoRazitko", "PseudoRazirko")
     assert soap.parse_zapis_response(xml)["pseudo_stamp"].startswith("F8EA613D")

@@ -7,6 +7,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
+# Local/deployment secrets
+.env
+.env.*
+!.env.example
+
 # Screenshot output from tools/walkthrough.py
 .screenshots/
 

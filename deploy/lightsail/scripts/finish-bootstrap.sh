@@ -36,6 +36,7 @@ cd "${ROOT}"
 if [ ! -f .env ]; then
   cp .env.example .env
 fi
+chmod 600 .env
 
 set_kv() {
   local key="$1" val="$2"

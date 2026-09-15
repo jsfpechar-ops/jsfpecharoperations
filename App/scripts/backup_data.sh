@@ -2,6 +2,7 @@
 # Snapshot the SQLite database and secret key to a timestamped folder.
 # Run on the server (cron weekly) or copy backups off-site after each run.
 set -euo pipefail
+umask 077
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA_DIR="${UBYHOST_DATA_DIR:-${ROOT}/data}"
@@ -10,6 +11,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 DEST="${BACKUP_ROOT}/${STAMP}"
 
 mkdir -p "${DEST}"
+chmod 700 "${BACKUP_ROOT}" "${DEST}" 2>/dev/null || true
 
 DB="${UBYHOST_DB:-${DATA_DIR}/ubyhost.db}"
 if [ ! -f "${DB}" ]; then

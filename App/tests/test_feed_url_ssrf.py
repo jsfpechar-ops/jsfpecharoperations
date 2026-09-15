@@ -46,6 +46,10 @@ def test_blocks_metadata_host():
         "http://0.0.0.0/c.ics",
         # Credentials must not smuggle a blocked host past the check.
         "http://user:pass@127.0.0.1/c.ics",
+        # Feed URLs must never carry credentials, even for public hosts.
+        "https://calendar-user:calendar-password@www.google.com/c.ics",
+        # Malformed authority syntax must fail closed rather than raising a 500.
+        "http://[::1/c.ics",
         # Non-HTTP schemes.
         "file:///etc/passwd",
         "gopher://example.com/",
@@ -86,3 +90,11 @@ def test_allows_public_https_calendar():
     # Does not fetch — only DNS resolution; use a stable public host.
     url = validate_calendar_url("https://www.google.com/calendar/ical/test/basic.ics")
     assert url.startswith("https://")
+
+
+def test_production_cannot_enable_private_calendar_targets(monkeypatch):
+    monkeypatch.setattr(config, "ICAL_ALLOW_PRIVATE", True)
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+
+    with pytest.raises(FeedUrlError):
+        validate_calendar_url("http://127.0.0.1/calendar.ics")

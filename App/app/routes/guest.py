@@ -13,6 +13,7 @@ guest's personal data.
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
@@ -23,10 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-import secrets
-import time
-
-from .. import alerts, auth, codelists, config, db, i18n, passport_photos, rate_limit, reporting, turnstile, validation
+from .. import alerts, auth, codelists, config, db, i18n, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 
 router = APIRouter()
@@ -174,8 +172,8 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     so the path is normalised before it is compared.
     """
     fallback = _guest_link(token) + _lang_q(lang)
-    raw = (requested or "").strip()
-    if not raw.startswith("/") or raw.startswith("//"):
+    raw = security.safe_local_path(requested, "")
+    if not raw:
         return fallback
     split = urlsplit(raw)
     if split.scheme or split.netloc:
@@ -239,7 +237,10 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
 def _require_pin(request: Request, token: str, lang: str):
     if not config.GUEST_PIN_REQUIRED:
         return None
-    if auth.pin_session_valid(request, token):
+    apartment = _apartment_by_token(token)
+    if apartment and auth.pin_session_valid(
+        request, token, apartment["permalink_pin"] or ""
+    ):
         return None
     return _pin_page(request, token, lang)
 
@@ -450,7 +451,7 @@ async def verify_pin(token: str, request: Request):
             error=i18n.translator(lang)("pin_rate_limited"),
         )
     expected = apartment["permalink_pin"] or ""
-    if len(entered) != len(expected) or not secrets.compare_digest(entered, expected):
+    if not auth.pin_matches(token, entered, expected):
         rate_limit.record_pin_failure(pin_key)
         # Slow brute-force attempts without blocking legitimate guests for long.
         failures = rate_limit.pin_failure_count(pin_key)
@@ -470,11 +471,11 @@ async def verify_pin(token: str, request: Request):
                 owner_user_id=apartment["owner_user_id"],
             )
         if failures > 0:
-            time.sleep(min(2.0, 0.15 * failures))
+            await asyncio.sleep(min(2.0, 0.15 * failures))
         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
     return_to = _safe_return_to(form.get("return_to"), token, lang)
     response = RedirectResponse(return_to, status_code=303)
-    auth.attach_pin_session(response, token)
+    auth.attach_pin_session(response, token, expected)
     return _with_lang(response, lang)
 
 

@@ -64,14 +64,25 @@ def _resolve_host_ips(hostname: str) -> list[ipaddress._BaseAddress]:
 def validate_calendar_url(url: str) -> str:
     """Return a normalised URL or raise FeedError if the target is not allowed."""
     raw = (url or "").strip()
-    parsed = urlparse(raw)
+    try:
+        parsed = urlparse(raw)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise FeedError("Calendar URL is malformed.") from exc
     if parsed.scheme not in ("http", "https"):
         raise FeedError("Calendar URL must use http:// or https://.")
-    if not parsed.hostname:
+    if not hostname:
         raise FeedError("Calendar URL is missing a hostname.")
-    if config.ICAL_ALLOW_PRIVATE:
+    if parsed.username is not None or parsed.password is not None:
+        raise FeedError("Calendar URL must not contain embedded credentials.")
+    if port is not None and not 1 <= port <= 65535:
+        raise FeedError("Calendar URL has an invalid port.")
+    # The override exists for the local mock stack only. A production typo
+    # must never silently disable the network boundary.
+    if config.ICAL_ALLOW_PRIVATE and config.DEPLOYMENT != "production":
         return raw
-    host = parsed.hostname.lower().rstrip(".")
+    host = hostname.lower().rstrip(".")
     if host in _BLOCKED_HOSTNAMES or host.endswith(".local"):
         raise FeedError("That calendar host is not allowed.")
     if host == "127.0.0.1" or host.startswith("127."):

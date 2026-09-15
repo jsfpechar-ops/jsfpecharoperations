@@ -8,6 +8,7 @@ from . import db
 
 _WINDOW_SECONDS = 15 * 60
 _LOGIN_MAX_FAILURES = 12
+_LOGIN_IP_MAX_FAILURES = 30
 _PIN_MAX_FAILURES = 10
 _BLOCK_SECONDS = 15 * 60
 
@@ -42,12 +43,17 @@ def blocked(scope: str, key: str, max_events: int, window: int = _WINDOW_SECONDS
     return _count(scope, key, window) >= max_events
 
 
-def login_blocked(client_key: str) -> bool:
-    return blocked("login_fail", client_key, _LOGIN_MAX_FAILURES)
+def login_blocked(client_key: str, ip_key: str = "") -> bool:
+    return blocked("login_fail", client_key, _LOGIN_MAX_FAILURES) or (
+        bool(ip_key)
+        and blocked("login_fail_ip", ip_key, _LOGIN_IP_MAX_FAILURES)
+    )
 
 
-def record_login_failure(client_key: str) -> None:
+def record_login_failure(client_key: str, ip_key: str = "") -> None:
     record("login_fail", client_key)
+    if ip_key:
+        record("login_fail_ip", ip_key)
 
 
 def pin_blocked(client_key: str) -> bool:

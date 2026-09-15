@@ -8,7 +8,11 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+DATA_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+try:
+    DATA_DIR.chmod(0o700)
+except OSError:
+    pass
 
 DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
 
@@ -20,15 +24,25 @@ _SECRET_FILE = DATA_DIR / "secret_key"
 def _load_secret() -> str:
     env = os.environ.get("UBYHOST_SECRET_KEY")
     if env:
+        if len(env) < 32:
+            raise RuntimeError("UBYHOST_SECRET_KEY must contain at least 32 characters.")
         return env
     if _SECRET_FILE.exists():
-        return _SECRET_FILE.read_text().strip()
+        try:
+            _SECRET_FILE.chmod(0o600)
+        except OSError:
+            pass
+        stored = _SECRET_FILE.read_text().strip()
+        if len(stored) < 32:
+            raise RuntimeError(f"{_SECRET_FILE} is empty or too short.")
+        return stored
     generated = secrets.token_urlsafe(48)
-    _SECRET_FILE.write_text(generated)
     try:
-        _SECRET_FILE.chmod(0o600)
-    except OSError:
-        pass
+        descriptor = os.open(_SECRET_FILE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        return _load_secret()
+    with os.fdopen(descriptor, "w") as handle:
+        handle.write(generated)
     return generated
 
 

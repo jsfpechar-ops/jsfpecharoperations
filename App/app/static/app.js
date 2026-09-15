@@ -583,6 +583,14 @@
       var form = document.createElement("form");
       form.method = "post";
       form.action = url;
+      var csrf = document.querySelector('meta[name="csrf-token"]');
+      if (csrf) {
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "_csrf";
+        input.value = csrf.getAttribute("content") || "";
+        form.appendChild(input);
+      }
       document.body.appendChild(form);
       form.submit();
     }
