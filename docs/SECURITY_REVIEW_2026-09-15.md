@@ -37,6 +37,7 @@ and secret rotation.
 | UH-18 | Medium | Authentication | Login throttling was only per IP+username, allowing failures to be distributed across usernames. | Fixed: an aggregate per-IP window is enforced as a second limit. |
 | UH-19 | Medium | Production configuration | `UBYHOST_ICAL_ALLOW_PRIVATE` could disable SSRF screening in production. | Fixed: the override is effective only outside production. |
 | UH-20 | Low | Tenant metadata | Reservation detail trusted a guest's submission foreign key without matching the apartment. | Fixed: submission metadata must belong to the reservation apartment. |
+| UH-21 | Medium | Guest isolation | One apartment token/PIN authorizes all active stays in the configured visibility window, exposing limited booking dates across overlapping stays. | Accepted product residual; keep the window short or adopt stay-specific secrets before using wider windows. |
 
 ## Control review notes
 
@@ -71,6 +72,7 @@ and secret rotation.
 | Admin impersonation | Restrict administrator accounts, retain audit history, and use impersonation only for support. Impersonation is full read/write access, not a read-only preview. |
 | Inline CSP allowances | Move inline template scripts/styles to static assets, then remove `'unsafe-inline'`. |
 | Copied stateless session after logout | Use password reset, account disablement, or 2FA reset when compromise is suspected. |
+| Overlapping guest stays | Keep `permalink_window_days` minimal and use separate apartment links where booking-date separation is required. |
 
 ## Operator checklist
 
@@ -90,8 +92,8 @@ and secret rotation.
 
 ## Verification
 
-- Full application suite: `320 passed`.
-- Focused security/tenancy/SSRF suite: `64 passed`.
+- Full application suite: `328 passed`.
+- Focused security/tenancy/SSRF suite: `94 passed`.
 - Local mock smoke check: `32 pages checked`; no dead pages or server errors.
 - Dependency audit against `App/requirements.txt`: no known vulnerabilities.
 - Tracked-file review: no runtime `.env`, database, secret key, or initial credential file.

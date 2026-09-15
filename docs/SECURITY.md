@@ -42,6 +42,7 @@ summarises the threat model, controls, and known limitations.
 | **Admin impersonation** | Intentional full read/write support access; audited; admin role only. Actions taken while previewing mutate the host workspace. |
 | **iCal DNS rebinding** | DNS answers are screened before each request/redirect, but the HTTP client performs its own lookup. Restrict instance egress and metadata access at the host/cloud-network layer. |
 | **Guest POST CSRF** | Guest forms do not carry host authority and require the scoped permalink/PIN cookie. Keep PIN protection enabled. |
+| **Overlapping stay selection** | One apartment permalink/PIN can select any active stay inside its configured visibility window. Keep the window short and avoid overlapping links where booking-date disclosure is unacceptable. |
 | **Content Security Policy** | Existing inline scripts/styles require `'unsafe-inline'`; Jinja autoescape remains the primary XSS control. Remove inline code before tightening this directive. |
 | **Stateless logout** | Logout clears the browser cookie but does not revoke a copied token. Password changes, account disablement, and 2FA changes increment `session_version`; ordinary sessions expire after 12 hours (30 days with “remember me”). |
 | **Backups** | Local permissions do not encrypt the database, key, passport attachments, or receipts. Encrypt before copying off-host and protect access to both backup and key. |
