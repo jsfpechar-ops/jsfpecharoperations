@@ -42,6 +42,8 @@ def _no_leftovers():
 def _purge():
     db.init_db()
     for row in db.query("SELECT id FROM apartment WHERE permalink_token LIKE 'duptok%'"):
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (row["id"],))
+        db.execute("DELETE FROM submission WHERE apartment_id = ?", (row["id"],))
         db.execute(
             "DELETE FROM guest WHERE reservation_id IN"
             " (SELECT id FROM reservation WHERE apartment_id = ?)",
