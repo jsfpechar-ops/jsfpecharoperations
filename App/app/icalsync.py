@@ -32,6 +32,7 @@ not a guest stay can be marked "ignored" and will stay that way across syncs.
 """
 from __future__ import annotations
 
+import logging
 import re
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -41,6 +42,8 @@ from icalendar import Calendar
 
 from . import alerts, db, feed_url
 from .feed_url import FeedUrlError
+
+log = logging.getLogger("ubyhost.icalsync")
 
 USER_AGENT = "UbyHost/1.0 (+self-hosted Czech foreign-police reporting)"
 FETCH_TIMEOUT = 45
@@ -336,27 +339,35 @@ def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
         "WHERE apartment_id = ? AND ical_feed_id = ? AND status = 'active' AND date_from >= ?",
         (feed["apartment_id"], feed["id"], cutoff),
     )
-    for row in candidates:
-        if row["uid"] in seen_uids:
-            continue
-        reported = db.query_one(
-            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
-            (row["id"],),
+    if candidates and not seen_uids:
+        log.warning(
+            "ical_empty_feed_retained apartment_id=%s feed_id=%s retained_stays=%s",
+            feed["apartment_id"],
+            feed["id"],
+            len(candidates),
         )
-        if reported and reported["n"]:
-            alerts.raise_alert(
-                "warning",
-                "cancelled_after_report",
-                f"A stay from {row['date_from']} disappeared from the calendar after it had "
-                "already been reported to the police.",
-                "Check whether the booking was cancelled or merely moved.",
-                dedupe_key=f"cancelled_after_report:{row['id']}",
-                apartment_id=feed["apartment_id"],
-                reservation_id=row["id"],
+    else:
+        for row in candidates:
+            if row["uid"] in seen_uids:
+                continue
+            reported = db.query_one(
+                "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
+                (row["id"],),
             )
-            continue
-        db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
-        stats["cancelled"] += 1
+            if reported and reported["n"]:
+                alerts.raise_alert(
+                    "warning",
+                    "cancelled_after_report",
+                    f"A stay from {row['date_from']} disappeared from the calendar after it had "
+                    "already been reported to the police.",
+                    "Check whether the booking was cancelled or merely moved.",
+                    dedupe_key=f"cancelled_after_report:{row['id']}",
+                    apartment_id=feed["apartment_id"],
+                    reservation_id=row["id"],
+                )
+                continue
+            db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
+            stats["cancelled"] += 1
 
     db.update(
         "ical_feed",

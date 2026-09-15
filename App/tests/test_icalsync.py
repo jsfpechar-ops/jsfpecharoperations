@@ -1,4 +1,4 @@
-from app import icalsync
+from app import config, db, icalsync
 
 AIRBNB = """BEGIN:VCALENDAR
 PRODID;X-RICAL-TZSOURCE=TZINFO:-//Airbnb Inc//Hosting Calendar 0.8.8//EN
@@ -115,3 +115,54 @@ def test_event_without_uid_gets_a_stable_synthetic_one():
     second = icalsync.parse_events(ics)[0]["uid"]
     assert first == second
     assert first.startswith("synthetic-")
+
+
+def test_empty_calendar_does_not_mass_cancel_future_stays(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "empty-feed.sqlite3")
+    db.init_db()
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Empty feed test",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    feed_id = db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/empty.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "ical_feed_id": feed_id,
+            "uid": "must-survive",
+            "date_from": "2099-01-10",
+            "date_to": "2099-01-12",
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    monkeypatch.setattr(
+        icalsync,
+        "fetch_feed",
+        lambda _url: "BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n",
+    )
+
+    stats = icalsync.sync_feed(
+        db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+    )
+
+    assert stats["cancelled"] == 0
+    assert db.query_one(
+        "SELECT status FROM reservation WHERE id = ?", (reservation_id,)
+    )["status"] == "active"
