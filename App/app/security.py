@@ -74,22 +74,51 @@ def _hosts_equivalent(left: Optional[str], right: Optional[str]) -> bool:
     return _canonical_host(left) == _canonical_host(right) and bool(_canonical_host(left))
 
 
+def _public_site_host() -> str:
+    return _canonical_host(urlsplit(config.PUBLIC_BASE_URL).hostname)
+
+
+def _browser_site_matches(request: Request, hostname: Optional[str], scheme: str) -> bool:
+    """Match browser Origin/Referer to this deployment (proxy-aware)."""
+    if not _hosts_equivalent(hostname, request.url.hostname):
+        public_host = _public_site_host()
+        if not public_host or not _hosts_equivalent(hostname, public_host):
+            return False
+    origin_scheme = (scheme or "").lower()
+    request_scheme = request.url.scheme.lower()
+    if origin_scheme == request_scheme:
+        return True
+    public_scheme = urlsplit(config.PUBLIC_BASE_URL).scheme.lower()
+    # TLS terminates at Caddy/Cloudflare; the app often sees plain HTTP internally.
+    if origin_scheme == "https" and request_scheme == "http":
+        return public_scheme in {"", "https"}
+    if public_scheme and origin_scheme == public_scheme:
+        return True
+    return False
+
+
 def _request_is_same_site(request: Request) -> bool:
     """Reject obvious cross-site posts; allow same registrable host (e.g. www vs apex)."""
     fetch_site = (request.headers.get("sec-fetch-site") or "").lower()
     origin = request.headers.get("origin")
     if origin:
         parsed = urlsplit(origin)
-        if parsed.scheme.lower() != request.url.scheme.lower():
-            return False
-        return _hosts_equivalent(parsed.hostname, request.url.hostname)
+        return _browser_site_matches(request, parsed.hostname, parsed.scheme)
     referer = request.headers.get("referer")
     if referer:
         parsed = urlsplit(referer)
-        return _hosts_equivalent(parsed.hostname, request.url.hostname)
+        return _browser_site_matches(request, parsed.hostname, parsed.scheme)
     if fetch_site == "cross-site":
         return False
     return True
+
+
+async def _supplied_csrf_token(request: Request) -> str:
+    supplied = request.headers.get(CSRF_HEADER, "")
+    if supplied:
+        return supplied
+    form = await request.form()
+    return str(form.get(CSRF_FIELD, ""))
 
 
 async def protect_host_post(request: Request) -> None:
@@ -98,11 +127,9 @@ async def protect_host_post(request: Request) -> None:
         return
     if config.DEPLOYMENT != "production":
         return
+    supplied = await _supplied_csrf_token(request)
+    if csrf_token_valid(request, supplied):
+        return
     if not _request_is_same_site(request):
         raise HTTPException(status_code=403, detail="Cross-site request rejected.")
-    supplied = request.headers.get(CSRF_HEADER, "")
-    if not supplied:
-        form = await request.form()
-        supplied = str(form.get(CSRF_FIELD, ""))
-    if not csrf_token_valid(request, supplied):
-        raise HTTPException(status_code=403, detail="Invalid or expired form token.")
+    raise HTTPException(status_code=403, detail="Invalid or expired form token.")
