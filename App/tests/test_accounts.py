@@ -163,6 +163,83 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
         _clean_accounts()
 
 
+def test_reservation_detail_ignores_foreign_submission_reference():
+    db.init_db()
+    _clean_accounts()
+    first_id = _account("boundary-first")
+    second_id = _account("boundary-second")
+    first_apartment = _apartment(first_id, "First flat", "boundary-first-fk")
+    second_apartment = _apartment(second_id, "Second flat", "boundary-second-fk")
+    now = db.utcnow()
+    try:
+        reservation_id = db.insert(
+            "reservation",
+            {
+                "apartment_id": first_apartment,
+                "source": "manual",
+                "uid": "boundary-first-stay",
+                "date_from": "2026-09-20",
+                "date_to": "2026-09-22",
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        foreign_submission = db.insert(
+            "submission",
+            {
+                "apartment_id": second_apartment,
+                "created_at": now,
+                "state": "ok",
+                "pseudo_stamp": "FOREIGN-SUBMISSION-STAMP",
+            },
+        )
+        db.insert(
+            "guest",
+            {
+                "reservation_id": reservation_id,
+                "surname": "Owned Guest",
+                "entered_by": "host",
+                "submit_state": "pending",
+                "submission_id": foreign_submission,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+
+        page = _login("boundary-first").get(f"/reservations/{reservation_id}")
+
+        assert page.status_code == 200
+        assert "FOREIGN-SUBMISSION-STAMP" not in page.text
+    finally:
+        _clean_accounts()
+
+
+def test_hosts_cannot_set_new_four_digit_pins():
+    db.init_db()
+    _clean_accounts()
+    owner_id = _account("boundary-pin-owner")
+    apartment_id = _apartment(owner_id, "PIN flat", "boundary-pin-update")
+    db.update("apartment", apartment_id, {"permalink_pin": "654321"})
+    try:
+        response = _login("boundary-pin-owner").post(
+            f"/apartments/{apartment_id}",
+            data={
+                "internal_name": "PIN flat",
+                "active": "1",
+                "permalink_pin": "1234",
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        assert db.query_one(
+            "SELECT permalink_pin FROM apartment WHERE id = ?", (apartment_id,)
+        )["permalink_pin"] == "654321"
+    finally:
+        _clean_accounts()
+
+
 def test_admin_can_open_a_host_workspace_without_knowing_the_password():
     db.init_db()
     _clean_accounts()

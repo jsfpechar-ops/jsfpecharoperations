@@ -4,8 +4,9 @@ from __future__ import annotations
 import re
 
 from fastapi.testclient import TestClient
+from fastapi.responses import Response
 
-from app import client_ip, config, db, rate_limit, security
+from app import auth, client_ip, config, db, rate_limit, security
 from app.main import app
 from app.routes import admin as admin_routes
 from tests.test_accounts import _account, _clean_accounts, _login
@@ -134,6 +135,35 @@ def test_login_rate_limit_blocks_after_repeated_failures():
     finally:
         db.execute("DELETE FROM rate_limit_event WHERE key = ?", (key,))
         _clean_accounts()
+
+
+def test_login_rate_limit_also_caps_failures_across_usernames():
+    ip_key = "203.0.113.90"
+    try:
+        for index in range(rate_limit._LOGIN_IP_MAX_FAILURES):
+            rate_limit.record_login_failure(f"{ip_key}:candidate-{index}", ip_key)
+        assert rate_limit.login_blocked(f"{ip_key}:new-candidate", ip_key)
+    finally:
+        db.execute(
+            "DELETE FROM rate_limit_event WHERE scope = ? AND key = ?",
+            ("login_fail_ip", ip_key),
+        )
+
+
+def test_production_cookies_are_secure_even_if_public_url_is_misconfigured(monkeypatch):
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "http://app.example")
+
+    attached = Response()
+    auth.attach_session(attached, "session-token")
+    assert "Secure" in attached.headers["set-cookie"]
+
+    cleared = Response()
+    auth.clear_session(cleared)
+    header = cleared.headers["set-cookie"]
+    assert "Secure" in header
+    assert "HttpOnly" in header
+    assert "SameSite=strict" in header
 
 
 def test_cf_connecting_ip_ignored_without_trusted_proxy(monkeypatch):
@@ -267,6 +297,8 @@ def test_pin_return_to_cannot_escape_the_apartment_permalink():
         "https://evil.example",
         "/apartments",
         f"/l/{token}-other/1",
+        f"/l/{token}/%2e%2e/%2e%2e/%2f%2fevil.example",
+        f"/l/{token}/%5cevil.example",
     ):
         landing = _safe_return_to(escape, token, "en")
         assert landing.startswith(f"/l/{token}"), (escape, landing)
