@@ -34,13 +34,14 @@
           Promise.resolve(copied).then(function () {
             button.classList.add("copied");
             var label = button.getAttribute("data-copied-label");
+            var copyLabel = button.getAttribute("data-copy-label") || button.getAttribute("aria-label") || "";
             var original = button.textContent;
             if (label) button.textContent = label;
-            button.setAttribute("aria-label", "Copied");
+            if (label) button.setAttribute("aria-label", label);
             setTimeout(function () {
               button.classList.remove("copied");
               if (label) button.textContent = original;
-              button.setAttribute("aria-label", "Copy");
+              if (copyLabel) button.setAttribute("aria-label", copyLabel);
             }, 1600);
           });
         } catch (error) {
@@ -565,6 +566,9 @@
     var selected = 0;
     var goPrefix = false;
     var goTimer = null;
+    var recentKey = "ubyhost-command-recents";
+    var recents = [];
+    try { recents = JSON.parse(localStorage.getItem(recentKey) || "[]"); } catch (error) { recents = []; }
 
     document.querySelectorAll("[data-command-shortcut]").forEach(function (hint) {
       var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
@@ -584,6 +588,9 @@
     }
 
     function runItem(item) {
+      var recentId = item.url || item.label;
+      recents = [recentId].concat(recents.filter(function (value) { return value !== recentId; })).slice(0, 8);
+      try { localStorage.setItem(recentKey, JSON.stringify(recents)); } catch (error) {}
       if (item.copy) {
         Promise.resolve(navigator.clipboard && navigator.clipboard.writeText(item.copy)).then(function () {
           if (results) results.textContent = results.getAttribute("data-copied") || "";
@@ -608,10 +615,31 @@
     function render(query) {
       if (!results || !items) return;
       var words = String(query || "").toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
-      visible = items.filter(function (item) {
+      function fuzzyScore(haystack, word) {
+        var cursor = -1;
+        var score = 0;
+        for (var i = 0; i < word.length; i += 1) {
+          var next = haystack.indexOf(word.charAt(i), cursor + 1);
+          if (next < 0) return -1;
+          score += next - cursor;
+          cursor = next;
+        }
+        return score;
+      }
+      visible = items.map(function (item) {
         var haystack = [item.label, item.meta, item.group, item.keywords].join(" ").toLocaleLowerCase();
-        return words.every(function (word) { return haystack.indexOf(word) >= 0; });
-      }).slice(0, 14);
+        var scores = words.map(function (word) { return fuzzyScore(haystack, word); });
+        if (scores.some(function (score) { return score < 0; })) return null;
+        var id = item.url || item.label;
+        return { item: item, score: scores.reduce(function (sum, score) { return sum + score; }, 0), recent: recents.indexOf(id) };
+      }).filter(Boolean).sort(function (a, b) {
+        if (!words.length) {
+          var ar = a.recent < 0 ? 999 : a.recent;
+          var br = b.recent < 0 ? 999 : b.recent;
+          if (ar !== br) return ar - br;
+        }
+        return a.score - b.score;
+      }).slice(0, 14).map(function (entry) { return entry.item; });
       selected = 0;
       results.textContent = "";
       if (!visible.length) {

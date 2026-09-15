@@ -379,6 +379,12 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
   color: var(--muted);
 }
 .env-badge.test { background: var(--warn-soft); color: var(--warn); }
+.env-badge.prod {
+  border: 1px solid var(--brand);
+  background: var(--ink);
+  color: var(--surface);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
 /* Dashed, so "practice server" is not mistaken for "test credentials" at a
    glance - the two used to render identically. */
 .env-badge.mock {

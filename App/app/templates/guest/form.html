@@ -60,6 +60,25 @@
       {% endif %}
     </h2>
 
+    <details class="g-mrz" data-mrz-assist>
+      <summary>{{ t('mrz_title') }}</summary>
+      <p class="g-intro">{{ t('mrz_help') }}</p>
+      <div class="g-field">
+        <label for="mrz_line_1">{{ t('mrz_line_1') }}</label>
+        <input type="text" id="mrz_line_1" inputmode="text" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" maxlength="44" class="mono">
+      </div>
+      <div class="g-field">
+        <label for="mrz_line_2">{{ t('mrz_line_2') }}</label>
+        <input type="text" id="mrz_line_2" inputmode="text" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" maxlength="44" class="mono">
+      </div>
+      <button class="g-btn secondary slim" type="button" data-mrz-fill>{{ t('mrz_button') }}</button>
+      <p class="hint" role="status" aria-live="polite" data-mrz-status
+         data-failed="{{ t('mrz_failed') }}" data-filled="{{ t('mrz_filled') }}"></p>
+    </details>
+    <p class="g-form-divider"><span>{{ t('mrz_or') }}</span></p>
+
     {% if ask_party_size %}
       <div class="g-field">
         <label for="party_size">{{ t('party_question') }}</label>

@@ -33,9 +33,7 @@
   <button class="appbar-search" type="button" data-command-open aria-label="{{ t('command.open') }}">
     <span aria-hidden="true">⌕</span>
   </button>
-  {% if ubyport_env != 'prod' %}
-    <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
-  {% endif %}
+  <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
 </header>
 <button class="nav-backdrop" type="button" data-nav-close aria-label="{{ t('a11y.close_menu') }}"></button>
 <button class="sidebar-expand" type="button" data-sidebar-expand aria-label="{{ t('a11y.show_menu') }}">
@@ -47,9 +45,7 @@
       <img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
     <div class="sidebar-brand-actions">
-      {% if ubyport_env != 'prod' %}
-        <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
-      {% endif %}
+      <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
       <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true"
               aria-label="{{ t('a11y.hide_menu') }}"><span aria-hidden="true">‹</span></button>
     </div>
@@ -99,6 +95,8 @@
       <div class="nav-label">{{ t('nav.setup') }}</div>
       <a href="/apartments" class="{{ 'active' if nav == 'apartments' }}">{{ nav_icon('property') }}{{ t('nav.properties') }}</a>
       <a href="/entities" class="{{ 'active' if nav == 'entities' }}">{{ nav_icon('entity') }}{{ t('nav.entities') }}</a>
+      <a href="/automation" class="{{ 'active' if nav == 'automation' }}">{{ nav_icon('automation') }}{{ t('nav.automation') }}</a>
+      <a href="/guest-links" class="{{ 'active' if nav == 'guest_links' }}">{{ nav_icon('link') }}{{ t('nav.guest_links') }}</a>
       <a href="/settings" class="{{ 'active' if nav == 'settings' }}">{{ nav_icon('settings') }}{{ t('nav.settings') }}</a>
       {% if current_user and current_user.role == 'admin' %}
         <a href="/admin/users" class="{{ 'active' if nav == 'users' }}">{{ nav_icon('users') }}{{ t('nav.users') }}</a>

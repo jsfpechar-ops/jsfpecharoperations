@@ -19,54 +19,43 @@
 <div class="split wide">
   <div>
     <div class="panel" id="settings-overview">
-      <h2 style="margin-top:0">Where reports go</h2>
+      <h2 style="margin-top:0">{{ t('settings.destination.title') }}</h2>
       <dl class="kv">
-        <dt>Deployment</dt><dd>{{ deployment_tier | capitalize }}</dd>
-        <dt>UbyPort target</dt><dd>{{ 'Production' if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
-        <dt>Endpoint</dt><dd class="mono small">{{ endpoint }}</dd>
-        <dt>Calendar polling</dt><dd>every {{ poll_minutes }} minutes</dd>
-        <dt>Submission sweep</dt><dd>every {{ sweep_minutes }} minutes</dd>
-        <dt>Public base URL</dt><dd class="mono small">{{ public_base_url }}</dd>
+        <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
+        <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
+        <dt>{{ t('settings.destination.endpoint') }}</dt><dd class="mono small">{{ endpoint }}</dd>
+        <dt>{{ t('settings.destination.polling') }}</dt><dd>{{ t('settings.destination.every_minutes', count=poll_minutes) }}</dd>
+        <dt>{{ t('settings.destination.sweep') }}</dt><dd>{{ t('settings.destination.every_minutes', count=sweep_minutes) }}</dd>
+        <dt>{{ t('settings.destination.public_url') }}</dt><dd class="mono small">{{ public_base_url }}</dd>
       </dl>
       {% if ubyport_env == 'mock' %}
         <div class="banner warning" style="margin-top:14px">
           <div class="grow">
-            <strong>Nothing is being reported to the police.</strong>
-            <small>You are pointed at the local mock server. Set
+            <strong>{{ t('env.mock_title') }}</strong>
+            <small>{{ t('settings.destination.mock_help') }}
               <span class="mono">UBYHOST_UBYPORT_ENV=test</span> or <span class="mono">prod</span>
-              and restart once you have credentials.</small>
+              {{ t('settings.destination.restart') }}</small>
           </div>
         </div>
       {% endif %}
-      <p class="small muted">
-        The environment and the public URL come from environment variables, so a misconfiguration
-        cannot be introduced by a stray click in the interface.
-      </p>
+      <p class="small muted">{{ t('settings.destination.help') }}</p>
     </div>
 
     <div class="panel" id="settings-ubyport">
-      <h2 style="margin-top:0">Guest form access</h2>
+      <h2 style="margin-top:0">{{ t('settings.access.title') }}</h2>
       <dl class="kv">
-        <dt>PIN before the form</dt>
-        <dd>{{ 'Required (six digits per property)' if guest_pin_required else 'Off' }}</dd>
+        <dt>{{ t('settings.access.pin') }}</dt>
+        <dd>{{ t('settings.access.required') if guest_pin_required else t('settings.access.off') }}</dd>
       </dl>
-      <p class="small muted">
-        Each property has its own PIN on the guest-link settings page. Whether a PIN is required at
-        all is controlled by the
-        <span class="mono">UBYHOST_GUEST_PIN</span> environment variable — set it to
-        <span class="mono">0</span> to disable PINs everywhere, then restart the app.
-      </p>
+      <p class="small muted">{{ t('settings.access.help') }}</p>
 
-      <h3 style="margin-top:20px">Cached UbyPort code lists</h3>
+      <h3 style="margin-top:20px">{{ t('settings.codelists.title') }}</h3>
       <dl class="kv">
-        <dt>Countries</dt><dd>{{ codelists.countries[:19].replace('T', ' ') if codelists.countries else 'using the bundled list' }}</dd>
-        <dt>Purposes of stay</dt><dd>{{ codelists.purposes[:19].replace('T', ' ') if codelists.purposes else 'using the bundled list' }}</dd>
-        <dt>Error codes</dt><dd>{{ codelists.errors[:19].replace('T', ' ') if codelists.errors else 'not fetched yet' }}</dd>
+        <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ codelists.countries[:19].replace('T', ' ') if codelists.countries else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ codelists.purposes[:19].replace('T', ' ') if codelists.purposes else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ codelists.errors[:19].replace('T', ' ') if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
       </dl>
-      <p class="small muted">
-        Refresh these from any apartment's settings page. The error code book is what turns a bare
-        "112" from UbyPort into a readable explanation, so it is worth fetching once credentials work.
-      </p>
+      <p class="small muted">{{ t('settings.codelists.help') }}</p>
     </div>
 
     <div class="panel" id="settings-archive">
@@ -77,30 +66,25 @@
 
     <div class="panel" id="settings-retention">
       <h2 style="margin-top:0">{{ t('settings.nav.retention') }}</h2>
-      <p class="small muted" style="margin-top:-4px">
-        Guest data is processed under Article 6(1)(c) GDPR — a legal obligation, not consent —
-        namely §§ 101–103 of Act No. 326/1999 Coll. Guests are shown a notice covering all of
-        this at the bottom of every page of their form.
-      </p>
+      <p class="small muted" style="margin-top:-4px">{{ t('settings.retention.help') }}</p>
       <dl class="kv">
-        <dt>Retention</dt><dd>{{ retention_years }} years after the end of the stay</dd>
-        <dt>Delete anything ending before</dt><dd>{{ retention_cutoff.strftime('%d.%m.%Y') }}</dd>
-        <dt>Records past that date</dt><dd><strong>{{ expired_records }}</strong></dd>
+        <dt>{{ t('settings.retention.period') }}</dt><dd>{{ t('settings.retention.years', count=retention_years) }}</dd>
+        <dt>{{ t('settings.retention.cutoff') }}</dt><dd>{{ retention_cutoff.strftime('%d.%m.%Y') }}</dd>
+        <dt>{{ t('settings.retention.expired') }}</dt><dd><strong>{{ expired_records }}</strong></dd>
       </dl>
       <form method="post" action="/settings/purge-expired"
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="btn {{ 'danger' if expired_records else '' }}" type="submit"
                 {% if not expired_records %}disabled{% endif %}>
-          Delete {{ expired_records }} expired record(s)
+          {{ t('settings.retention.delete', count=expired_records) }}
         </button>
-        <span class="small muted">Keeping passport numbers longer than the law requires is itself
-          a breach, so this is worth running once a year.</span>
+        <span class="small muted">{{ t('settings.retention.delete_help') }}</span>
       </form>
 
       {% if apartments_without_entity or entities_without_contact %}
         <div class="banner warning" style="margin-top:14px">
           <div class="grow">
-            <strong>The guest privacy notice is incomplete.</strong>
+            <strong>{{ t('settings.privacy_incomplete') }}</strong>
             {% if apartments_without_entity %}
               <small>No legal entity on:
                 {% for apartment in apartments_without_entity %}
@@ -120,15 +104,11 @@
 
     <details class="panel technical" open id="settings-audit">
       <summary>{{ t('settings.nav.audit') }}</summary>
-      <p class="small muted">
-        Every important change is recorded here — saves, imports, archives, PIN rotations, and police submissions.
-        Archived items can be restored from <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>.
-        Only the six-year retention purge permanently deletes guest records.
-      </p>
-      <h2>Recent activity (last {{ audit_count }} events)</h2>
+      <p class="small muted">{{ t('settings.audit.help') }}</p>
+      <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
       <div class="scroll-x">
         <table class="table-cards">
-          <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+          <thead><tr><th>{{ t('settings.audit.when') }}</th><th>{{ t('settings.audit.who') }}</th><th>{{ t('settings.audit.action') }}</th><th>{{ t('settings.audit.detail') }}</th></tr></thead>
           <tbody>
           {% for entry in audit %}
             <tr>
@@ -138,7 +118,7 @@
               <td class="small muted" data-label="Detail">{{ entry.detail }}</td>
             </tr>
           {% else %}
-            <tr><td colspan="4" class="muted small">Nothing logged yet.</td></tr>
+            <tr><td colspan="4" class="muted small">{{ t('settings.audit.empty') }}</td></tr>
           {% endfor %}
           </tbody>
         </table>
@@ -156,29 +136,29 @@
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
-            <strong>Password</strong>
-            <small>Changing it signs out your other sessions.</small>
+            <strong>{{ t('login.password') }}</strong>
+            <small>{{ t('account.password.change_lede') }}</small>
           </div>
-          <a class="btn small" href="/account/password">Change password</a>
+          <a class="btn small" href="/account/password">{{ t('account.password.change') }}</a>
         </div>
         <div class="settings-action-row">
           <div>
-            <strong>Two-factor authentication</strong>
-            <small>{{ 'Your account requires an authenticator code at sign-in.' if current_user.totp_enabled else 'Add an authenticator code after your password.' }}</small>
+            <strong>{{ t('settings.account.2fa') }}</strong>
+            <small>{{ t('settings.account.2fa_on') if current_user.totp_enabled else t('settings.account.2fa_off') }}</small>
           </div>
           {% if current_user.totp_enabled %}
-            <span class="pill green">Enabled</span>
+            <span class="pill green">{{ t('settings.account.enabled') }}</span>
           {% else %}
-            <a class="btn primary small" href="/account/2fa/setup">Set up</a>
+            <a class="btn primary small" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
           {% endif %}
         </div>
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>
-              <strong>User access</strong>
-              <small>Add users and manage their roles.</small>
+              <strong>{{ t('settings.account.users') }}</strong>
+              <small>{{ t('settings.account.users_help') }}</small>
             </div>
-            <a class="btn small" href="/admin/users">Manage users</a>
+            <a class="btn small" href="/admin/users">{{ t('settings.account.users_action') }}</a>
           </div>
         {% endif %}
       </div>

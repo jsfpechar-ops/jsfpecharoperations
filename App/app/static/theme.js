@@ -15,6 +15,10 @@
       value = "system";
     }
     try { localStorage.setItem(KEY, value); } catch (error) {}
+    var dark = value === "dark" ||
+      (value === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", dark ? "#191918" : "#f7f7f5");
     document.querySelectorAll("[data-theme-value]").forEach(function (button) {
       var selected = button.getAttribute("data-theme-value") === value;
       button.classList.toggle("is-active", selected);
@@ -29,5 +33,10 @@
         apply(button.getAttribute("data-theme-value"));
       });
     });
+    if (window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+        if (current() === "system") apply("system");
+      });
+    }
   });
 })();

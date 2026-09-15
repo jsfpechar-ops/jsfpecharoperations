@@ -158,6 +158,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "for you and check it for typos."
         ),
         "mrz_button": "Fill in from these lines",
+        "mrz_line_1": "First MRZ line",
+        "mrz_line_2": "Second MRZ line",
         "mrz_or": "or fill in the form manually below",
         "mrz_failed": "Could not read those lines. Please fill in the form manually.",
         "mrz_filled": "Filled in from your document. Please check every field before signing.",
@@ -496,6 +498,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "zkontrolujeme případné překlepy."
         ),
         "mrz_button": "Vyplnit z těchto řádků",
+        "mrz_line_1": "První řádek MRZ",
+        "mrz_line_2": "Druhý řádek MRZ",
         "mrz_or": "nebo vyplňte formulář ručně níže",
         "mrz_failed": "Řádky se nepodařilo přečíst. Vyplňte prosím formulář ručně.",
         "mrz_filled": "Vyplněno z dokladu. Před podpisem prosím zkontrolujte všechna pole.",
