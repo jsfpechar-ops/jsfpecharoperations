@@ -380,10 +380,9 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
 }
 .env-badge.test { background: var(--warn-soft); color: var(--warn); }
 .env-badge.prod {
-  border: 1px solid var(--brand);
-  background: var(--ink);
-  color: var(--surface);
-  box-shadow: inset 3px 0 0 var(--brand);
+  border: 1px solid color-mix(in srgb, var(--brand) 34%, transparent);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
 }
 /* Dashed, so "practice server" is not mistaken for "test credentials" at a
    glance - the two used to render identically. */
@@ -402,6 +401,8 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
   max-width: none;
   transition: margin-left 0.26s var(--ease);
 }
+/* Auto margins only centre block-level children, so a page section must not be
+   an inline-level box or it drifts to the far left of the column. */
 .wrap.with-sidebar > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
 .wrap.narrow { max-width: 620px; }
 .no-nav .wrap { max-width: 840px; }
