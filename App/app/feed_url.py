@@ -97,11 +97,12 @@ def resolve_calendar_target(url: str) -> CalendarFetchTarget:
     if port is not None and not 1 <= port <= 65535:
         raise FeedError("Calendar URL has an invalid port.")
     host = hostname.lower().rstrip(".")
-    if host in _BLOCKED_HOSTNAMES or host.endswith(".local"):
-        raise FeedError("That calendar host is not allowed.")
-    if host == "127.0.0.1" or host.startswith("127."):
-        raise FeedError("Calendar URL must not point to a loopback address.")
     allow_private = config.ICAL_ALLOW_PRIVATE and config.DEPLOYMENT != "production"
+    if not allow_private:
+        if host in _BLOCKED_HOSTNAMES or host.endswith(".local"):
+            raise FeedError("That calendar host is not allowed.")
+        if host == "127.0.0.1" or host.startswith("127."):
+            raise FeedError("Calendar URL must not point to a loopback address.")
     ips = _resolve_host_ips(host)
     if not allow_private:
         for ip in ips:
