@@ -255,7 +255,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Open the ? menu at the bottom of the sidebar for navigation and table keyboard shortcuts."
         ),
         "guide.productivity.views": (
-            "On Stays, set your filters and choose Save view to keep a useful view for next time."
+            "On Stays, switch between List and Timeline, set filters, and choose Save view to "
+            "keep a useful view for next time."
         ),
         "guide.productivity.quick_edit": (
             "Open a stay for its guest link, Add a guest, reporting controls, and the compact Quick edit panel."
@@ -282,8 +283,24 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "and an inspection PDF bundle from its Export menu. Exports respect the current filters."
         ),
         "guide.guests.body": (
-            "Each stay gets a link guests open on their phone. They pick their dates, enter passport "
-            "details, and sign. Czech guests still go in the house book but are not reported to the police."
+            "Each stay has a guest link meant for a phone. Guests pick their arrival dates, the lead "
+            "guest states how many people are staying, then each person fills in a short step-by-step "
+            "form on their own."
+        ),
+        "guide.guests.step_party": (
+            "Headcount first — everyone in the group, including children, gets a separate form so "
+            "nobody sees anyone else's passport details."
+        ),
+        "guide.guests.step_details": (
+            "Each guest types name, birth date, nationality, and document number as printed on the "
+            "travel document (no scanning or machine-readable line copying)."
+        ),
+        "guide.guests.step_photo": (
+            "Non-Czech guests upload a photo of the passport or ID page so you can verify face and "
+            "document number before reporting. Only you see it; it is deleted right after you confirm."
+        ),
+        "guide.guests.step_czech": (
+            "Czech guests are still written to the house book but are not reported to the police."
         ),
         "guide.reporting.body": "Each property chooses how completed guest records reach UbyPort:",
         "guide.reporting.caption": (
@@ -1055,7 +1072,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "V nabídce ? dole v postranním panelu najdete klávesové zkratky pro navigaci a tabulky."
         ),
         "guide.productivity.views": (
-            "Na stránce Pobyty nastavte filtry a volbou Uložit pohled si je uchovejte pro příště."
+            "Na stránce Pobyty přepínejte Seznam a Časovou osu, nastavte filtry a volbou Uložit "
+            "pohled si je uchovejte pro příště."
         ),
         "guide.productivity.quick_edit": (
             "V detailu pobytu najdete odkaz pro hosty, Přidat hosta, ovládání hlášení a stručnou Rychlou úpravu."
@@ -1081,7 +1099,23 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "v nabídce Export CSV a balíček PDF pro kontrolu. Export respektuje aktuální filtry."
         ),
         "guide.guests.body": (
-            "Každý pobyt má odkaz pro hosty na telefonu. Vyberou datum, vyplní pas a podepíší se."
+            "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, vedoucí host uvede "
+            "počet osob a každý pak vyplní vlastní krátký formulář po krocích."
+        ),
+        "guide.guests.step_party": (
+            "Nejdřív počet osob — včetně dětí; každý má vlastní formulář, aby nikdo neviděl "
+            "údaje z pasu ostatních."
+        ),
+        "guide.guests.step_details": (
+            "Každý host ručně zadá jméno, datum narození, státní občanství a číslo dokladu tak, "
+            "jak jsou v cestovním dokladu (bez skenování ani přepisování strojově čitelných řádků)."
+        ),
+        "guide.guests.step_photo": (
+            "Cizinci nahrají fotografii stránky pasu nebo průkazu, abyste před hlášením mohli "
+            "ověřit obličej a číslo dokladu. Vidíte ji jen vy; po potvrzení se smaže."
+        ),
+        "guide.guests.step_czech": (
+            "Občané ČR se zapisují do domovní knihy, policii se neoznamují."
         ),
         "guide.reporting.body": "Každé ubytování volí, jak se hotová hlášení dostanou do UbyPortu:",
         "guide.reporting.caption": (
