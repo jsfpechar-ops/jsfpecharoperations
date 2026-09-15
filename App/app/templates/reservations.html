@@ -66,18 +66,20 @@
 
 {% endif %}
 
-<div class="chips">
-  {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
-    <a class="chip {{ 'on' if date_range == value }}"
-       href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
-  {% endfor %}
+<div class="stays-toolbar">
+  <div class="chips">
+    {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
+      <a class="chip {{ 'on' if date_range == value }}"
+         href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
+    {% endfor %}
+  </div>
+  <nav class="view-switch" aria-label="{{ t('stays.view.label') }}">
+    <a class="{{ 'on' if stay_view == 'list' }}" href="/reservations?{{ view_query }}&view=list"
+       aria-current="{{ 'page' if stay_view == 'list' else 'false' }}">{{ t('stays.view.list') }}</a>
+    <a class="{{ 'on' if stay_view == 'timeline' }}" href="/reservations?{{ view_query }}&view=timeline"
+       aria-current="{{ 'page' if stay_view == 'timeline' else 'false' }}">{{ t('stays.view.timeline') }}</a>
+  </nav>
 </div>
-<nav class="view-switch" aria-label="{{ t('stays.view.label') }}">
-  <a class="{{ 'on' if stay_view == 'list' }}" href="/reservations?{{ view_query }}&view=list"
-     aria-current="{{ 'page' if stay_view == 'list' else 'false' }}">{{ t('stays.view.list') }}</a>
-  <a class="{{ 'on' if stay_view == 'timeline' }}" href="/reservations?{{ view_query }}&view=timeline"
-     aria-current="{{ 'page' if stay_view == 'timeline' else 'false' }}">{{ t('stays.view.timeline') }}</a>
-</nav>
 
 {% if show_archive %}
 <p class="small muted">{{ t('stays.archive_note') }}</p>
