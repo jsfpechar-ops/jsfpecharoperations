@@ -32,12 +32,17 @@ jobs:
             echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
             exit 0
           fi
+          # Optional brake: set LIGHTSAIL_AUTO_DEPLOY=0 to skip CI-triggered deploys only.
           if [ "${GITHUB_EVENT_NAME}" = "workflow_run" ]; then
-            case "${LIGHTSAIL_AUTO_DEPLOY}" in
-              1|true|yes) ;;
+            case "${LIGHTSAIL_AUTO_DEPLOY:-1}" in
+              0|false|no) ;;
               *)
-                echo "CI auto-deploy is off. Set Actions secret LIGHTSAIL_AUTO_DEPLOY=1 to enable"
-                echo "deploys after green CI on main. Use workflow_dispatch to deploy this SHA now."
+                echo "CI auto-deploy enabled (set LIGHTSAIL_AUTO_DEPLOY=0 to pause)."
+                ;;
+            esac
+            case "${LIGHTSAIL_AUTO_DEPLOY:-1}" in
+              0|false|no)
+                echo "Skipping Lightsail deploy for this CI run (LIGHTSAIL_AUTO_DEPLOY=0)."
                 exit 0
                 ;;
             esac

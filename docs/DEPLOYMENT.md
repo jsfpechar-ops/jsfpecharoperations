@@ -70,7 +70,7 @@ Use this whenever you ship a change that affects hosts or guests.
    cd deploy/lightsail && ./scripts/deploy.sh
    ```
    Or GitHub → **Actions → Deploy production → Run workflow** (`workflow_dispatch`).
-   CI-triggered deploys after green `main` stay **off** unless secret `LIGHTSAIL_AUTO_DEPLOY=1`.
+   CI-triggered deploys after green `main` run when SSH secrets are set (default on). Set `LIGHTSAIL_AUTO_DEPLOY=0` to pause.
 4. **Smoke production** — `./scripts/status.sh` and `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`
