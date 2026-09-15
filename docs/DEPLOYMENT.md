@@ -1,7 +1,9 @@
 # Deployment and environments
 
-UbyHost runs in **three logical tiers**. Only **production** talks to the real
-police register.
+UbyHost runs in **three logical tiers**. The checked-in configuration points only
+**production** at the real police register. The application does not enforce
+this separation, so verify `UBYHOST_DEPLOYMENT` and `UBYHOST_UBYPORT_ENV`
+together before every deployment.
 
 **Operator setup (UbyHost / jsf):**
 
@@ -18,9 +20,10 @@ Use Render for mock demos and UX checks. Run live reporting only on Lightsail.
 | **Staging** | Render **`ubyhost-staging`** | `staging` | `mock` | Ephemeral (free tier OK) | Demos, UX testing, new features |
 | **Production** | **Lightsail** Docker stack | `production` | `test` → `prod` | Volume `ubyhost-data` | Real guest reporting |
 
-Nothing in staging ever leaves the server for the police. Production starts on the
-**test** UbyPort endpoint so you can validate credentials and field mappings before
-flipping to **prod**.
+Staging is configured for `mock`; while that configuration is active, nothing
+leaves the server for the police. Do not set staging to `test` or `prod`.
+Production starts on the **test** UbyPort endpoint so you can validate credentials
+and field mappings before flipping to **prod**.
 
 The blueprint still defines Render **`ubyhost`** (Starter + disk) for all-in-on-Render
 deployments. **This project’s production is Lightsail** — suspend or remove Render

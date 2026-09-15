@@ -123,7 +123,8 @@ person. Nobody sees anybody else's details.
 
 Each apartment picks one, as the UbyPort operating rules require:
 
-- **Immediate** — the record goes out the moment the guest signs.
+- **Immediate** — the record goes out after the host verifies the guest against
+  their travel document.
 - **Scheduled** — it goes out a set number of hours after check-in, so late
   arrivals and corrections are batched together.
 - **Manual** — nothing leaves without your click.
