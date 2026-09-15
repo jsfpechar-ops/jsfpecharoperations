@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
 from . import config
@@ -45,6 +46,23 @@ def _blocked_ip(ip: ipaddress._BaseAddress) -> bool:
     return False
 
 
+@dataclass(frozen=True)
+class CalendarFetchTarget:
+    """Validated calendar URL plus addresses allowed for the next TCP connect."""
+
+    url: str
+    hostname: str
+    port: int
+    scheme: str
+    pinned_ips: tuple[str, ...]
+
+
+def _default_port(scheme: str, port: int | None) -> int:
+    if port is not None:
+        return port
+    return 443 if scheme == "https" else 80
+
+
 def _resolve_host_ips(hostname: str) -> list[ipaddress._BaseAddress]:
     try:
         infos = socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)
@@ -61,8 +79,8 @@ def _resolve_host_ips(hostname: str) -> list[ipaddress._BaseAddress]:
     return ips
 
 
-def validate_calendar_url(url: str) -> str:
-    """Return a normalised URL or raise FeedError if the target is not allowed."""
+def resolve_calendar_target(url: str) -> CalendarFetchTarget:
+    """Validate a calendar URL, resolve DNS once, and return connect-time pinned IPs."""
     raw = (url or "").strip()
     try:
         parsed = urlparse(raw)
@@ -78,21 +96,32 @@ def validate_calendar_url(url: str) -> str:
         raise FeedError("Calendar URL must not contain embedded credentials.")
     if port is not None and not 1 <= port <= 65535:
         raise FeedError("Calendar URL has an invalid port.")
-    # The override exists for the local mock stack only. A production typo
-    # must never silently disable the network boundary.
-    if config.ICAL_ALLOW_PRIVATE and config.DEPLOYMENT != "production":
-        return raw
     host = hostname.lower().rstrip(".")
     if host in _BLOCKED_HOSTNAMES or host.endswith(".local"):
         raise FeedError("That calendar host is not allowed.")
     if host == "127.0.0.1" or host.startswith("127."):
         raise FeedError("Calendar URL must not point to a loopback address.")
-    for ip in _resolve_host_ips(host):
-        if _blocked_ip(ip):
-            raise FeedError(
-                "Calendar URL must point to a public internet host, not a private or internal address."
-            )
-    return raw
+    allow_private = config.ICAL_ALLOW_PRIVATE and config.DEPLOYMENT != "production"
+    ips = _resolve_host_ips(host)
+    if not allow_private:
+        for ip in ips:
+            if _blocked_ip(ip):
+                raise FeedError(
+                    "Calendar URL must point to a public internet host, not a private or internal address."
+                )
+    pinned = tuple(dict.fromkeys(str(ip) for ip in ips))
+    return CalendarFetchTarget(
+        url=raw,
+        hostname=host,
+        port=_default_port(parsed.scheme, port),
+        scheme=parsed.scheme.lower(),
+        pinned_ips=pinned,
+    )
+
+
+def validate_calendar_url(url: str) -> str:
+    """Return a normalised URL or raise FeedError if the target is not allowed."""
+    return resolve_calendar_target(url).url
 
 
 def resolve_redirect_url(current: str, location: str) -> str:
