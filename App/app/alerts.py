@@ -36,10 +36,6 @@ def raise_alert(
         )
         owner_user_id = reservation["owner_user_id"] if reservation else None
     key = dedupe_key or f"{kind}:{apartment_id}:{reservation_id}:{message}"
-    if db.query_one(
-        "SELECT id FROM alert WHERE dedupe_key = ? AND user_dismissed = 1 LIMIT 1", (key,)
-    ):
-        return
     existing = db.query_one(
         "SELECT id FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
     )

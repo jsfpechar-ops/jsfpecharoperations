@@ -290,6 +290,12 @@ def import_csv(content: bytes, apartment_id: int) -> Dict[str, Any]:
             )
         else:
             reservation_id = reservation["id"]
+            if db.query_one(
+                "SELECT 1 AS present FROM guest WHERE reservation_id = ? LIMIT 1",
+                (reservation_id,),
+            ):
+                skipped += 1
+                continue
 
         signed = cell("signed").lower().startswith("y")
         # Through the same normaliser as every other way a guest is recorded.

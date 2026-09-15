@@ -8,12 +8,15 @@ send cannot succeed, so the only possible outcome is another strike.
 from __future__ import annotations
 
 import base64
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 
 import pytest
 
 from app import db, reporting
 from app.ubyport import errors as uby_errors
+from app.ubyport.client import SubmissionResult, UbyportTransportError
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -39,6 +42,8 @@ def _no_leftovers():
 def _purge():
     db.init_db()
     for row in db.query("SELECT id FROM apartment WHERE permalink_token LIKE 'duptok%'"):
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (row["id"],))
+        db.execute("DELETE FROM submission WHERE apartment_id = ?", (row["id"],))
         db.execute(
             "DELETE FROM guest WHERE reservation_id IN"
             " (SELECT id FROM reservation WHERE apartment_id = ?)",
@@ -120,6 +125,11 @@ def test_the_duplicate_detector_recognises_what_ubyport_sends_back():
     assert not uby_errors.is_duplicate("106: Invalid value in a guest field")
 
 
+def test_duplicate_code_is_non_correctable_without_codebook_wording():
+    state, _messages = uby_errors.classify("", ";150;", {})
+    assert state == "not_correctable"
+
+
 def test_a_known_duplicate_is_not_resent_even_when_the_host_insists():
     """allow_resend is the host overriding caution, not overriding the law."""
     apartment_id, guest_id = _seed(
@@ -167,3 +177,106 @@ def test_nothing_blocked_is_ever_swept_up_automatically():
     pairs = reporting.collect_sendable(apartment_id, ignore_automation=True)
 
     assert guest_id not in _ids(pairs)
+
+
+def test_concurrent_sends_claim_each_guest_once(monkeypatch):
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok5")
+    entered = threading.Event()
+    release = threading.Event()
+    calls = []
+
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _apartment: [])
+    monkeypatch.setattr(reporting, "ensure_identity_verified_for_send", lambda *_args: None)
+
+    def fake_submit(
+        _apartment,
+        pairs,
+        mode="auto",
+        want_pdf=True,
+        env=None,
+        verified_by_user_id=None,
+    ):
+        calls.append([guest["id"] for guest, _reservation in pairs])
+        entered.set()
+        assert release.wait(timeout=5)
+        return {"submitted": len(pairs), "state": "ok"}
+
+    monkeypatch.setattr(reporting, "submit_batch", fake_submit)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(
+            reporting.submit_for_apartment,
+            apartment_id,
+            [guest_id],
+            "manual",
+            True,
+            False,
+        )
+        assert entered.wait(timeout=5)
+        second = reporting.submit_for_apartment(
+            apartment_id,
+            [guest_id],
+            mode="manual",
+            ignore_automation=True,
+        )
+        release.set()
+        first_result = first.result(timeout=5)
+
+    assert first_result == [{"submitted": 1, "state": "ok"}]
+    assert second == []
+    assert calls == [[guest_id]]
+
+
+def test_duplicate_after_lost_success_is_recorded_as_sent(monkeypatch):
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok6")
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    pairs = reporting.collect_sendable(
+        apartment_id, only_guest_ids=[guest_id], ignore_automation=True
+    )
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            return SubmissionResult(
+                endpoint="mock",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                record_errors=[";150;"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    result = reporting.submit_batch(apartment, pairs)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert result["state"] == "ok"
+    assert result["submitted"] == 1
+    assert guest["submit_state"] == reporting.SENT
+    assert guest["submitted_at"]
+
+
+def test_transport_failure_does_not_mark_identity_verified(monkeypatch):
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok7")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            raise UbyportTransportError("offline")
+
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _apartment: [])
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    result = reporting.submit_for_apartment(
+        apartment_id,
+        [guest_id],
+        mode="manual",
+        ignore_automation=True,
+    )
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert result[0]["state"] == "transport_error"
+    assert guest["submit_state"] == reporting.PENDING
+    assert guest["identity_verified_at"] is None

@@ -876,7 +876,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         if passport_upload and hasattr(passport_upload, "read"):
             try:
-                passport_bytes = await passport_upload.read()
+                passport_bytes = await passport_photos.read_upload_limited(passport_upload)
                 passport_type = passport_photos.validate_upload(
                     passport_bytes, passport_upload.content_type or ""
                 )

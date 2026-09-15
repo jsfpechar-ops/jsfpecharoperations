@@ -215,16 +215,17 @@ def main() -> int:
     else:
         fail("housebook CSV", f"HTTP {r.status_code}")
 
-    print("Alert dismiss is permanent")
+    print("Recurring failures re-alert after dismissal")
     alerts.raise_alert("warning", "test_kind", "Test alert", dedupe_key="feature:test")
     open_before = alerts.open_alerts()
     alert_id = open_before[0]["id"]
     client.post(f"/alerts/{alert_id}/dismiss")
     alerts.raise_alert("warning", "test_kind", "Test alert again", dedupe_key="feature:test")
-    if not alerts.open_alerts():
-        ok("dismissed alert does not return")
+    if alerts.open_alerts():
+        ok("later failure raises a new alert")
     else:
-        fail("alert dismiss", "alert reappeared")
+        fail("alert recurrence", "later failure was permanently muted")
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", ("feature:test",))
 
     print("iCal providers")
     if icalsync.platform_of("https://ycs.agoda.com/ical/x.ics") == "agoda":

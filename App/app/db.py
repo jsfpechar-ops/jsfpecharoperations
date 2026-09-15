@@ -211,6 +211,14 @@ CREATE TABLE IF NOT EXISTS rate_limit_event (
     at    REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_rate_limit_scope_key ON rate_limit_event (scope, key, at);
+
+-- A short-lived cross-process lease prevents a scheduler sweep and a host
+-- request from putting the same guest on the wire at the same time.
+CREATE TABLE IF NOT EXISTS submission_claim (
+    guest_id    INTEGER PRIMARY KEY REFERENCES guest(id) ON DELETE CASCADE,
+    claim_token TEXT NOT NULL,
+    claimed_at  REAL NOT NULL
+);
 """
 
 

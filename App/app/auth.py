@@ -273,7 +273,11 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     """Return a redirect unless a valid account session identifies this host."""
     # Test/development databases may deliberately disable bootstrap and have no
     # accounts. A deployed app creates its administrator before serving.
-    if not accounts_exist() and not config.BOOTSTRAP_ADMIN:
+    if (
+        not accounts_exist()
+        and not config.BOOTSTRAP_ADMIN
+        and config.DEPLOYMENT != "production"
+    ):
         return None
     account = current_user(request)
     if not account:

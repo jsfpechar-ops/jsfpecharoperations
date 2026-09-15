@@ -1,4 +1,5 @@
 """Passport photo and PDF upload validation."""
+import asyncio
 import base64
 
 import pytest
@@ -62,6 +63,21 @@ def test_validate_upload_rejects_oversize_pdf():
 def test_validate_upload_rejects_fake_pdf():
     with pytest.raises(ValueError, match="valid PDF"):
         passport_photos.validate_upload(b"not-a-pdf" + b"x" * 56, "application/pdf")
+
+
+def test_route_upload_reader_caps_memory_before_validation():
+    class Upload:
+        requested = None
+
+        async def read(self, size):
+            self.requested = size
+            return b"x" * size
+
+    upload = Upload()
+    content = asyncio.run(passport_photos.read_upload_limited(upload))
+
+    assert upload.requested == passport_photos.MAX_PDF_BYTES + 1
+    assert len(content) == passport_photos.MAX_PDF_BYTES + 1
 
 
 def test_save_photo_pdf_roundtrip():

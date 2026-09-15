@@ -239,6 +239,28 @@ def test_accepted_records_are_never_collected_for_resend():
     )
 
 
+def test_archived_guest_is_excluded_from_progress_and_send():
+    apartment, reservation, guest_id = _seed("manual", "tok-archived-guest")
+    db.update("guest", guest_id, {"archived_at": db.utcnow()})
+
+    progress = reporting.reservation_progress(reservation)
+
+    assert progress["filled"] == 0
+    assert progress["status"] == "incomplete"
+    assert reporting.collect_sendable(
+        apartment["id"], only_guest_ids=[guest_id], ignore_automation=True
+    ) == []
+
+
+def test_archived_stay_is_never_collected_for_send():
+    apartment, reservation, guest_id = _seed("manual", "tok-archived-stay")
+    db.update("reservation", reservation["id"], {"archived_at": db.utcnow()})
+
+    assert reporting.collect_sendable(
+        apartment["id"], only_guest_ids=[guest_id], ignore_automation=True
+    ) == []
+
+
 def test_scheduler_sweep_cannot_resend():
     """The unattended path must never opt into duplicates."""
     import inspect

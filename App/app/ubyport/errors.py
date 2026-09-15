@@ -82,7 +82,7 @@ def classify(
     for code in codes:
         text = describe(code, codebook)
         messages.append(f"{code}: {text}")
-        if is_non_correctable(text) or code == "112":
+        if is_non_correctable(text) or code in {"112", "150"}:
             non_correctable = True
 
     return ("not_correctable" if non_correctable else "error"), messages
