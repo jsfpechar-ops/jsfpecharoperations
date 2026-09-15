@@ -222,7 +222,7 @@ def test_manual_dates_override_the_selected_preset_without_javascript():
         _cleanup()
 
 
-def test_alert_dismiss_fetch_is_instant_and_permanent():
+def test_alert_dismiss_is_instant_but_a_new_failure_realerts():
     db.init_db()
     key = "overhaul-test-alert"
     db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
@@ -241,6 +241,14 @@ def test_alert_dismiss_fetch_is_instant_and_permanent():
         row = db.query_one("SELECT resolved_at, user_dismissed FROM alert WHERE id = ?", (alert["id"],))
         assert row["resolved_at"]
         assert row["user_dismissed"] == 1
+        alerts.raise_alert(
+            "warning", "test", "A later failure", dedupe_key=key, owner_user_id=owner_id
+        )
+        reopened = db.query_one(
+            "SELECT * FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
+        )
+        assert reopened
+        assert reopened["id"] != alert["id"]
     finally:
         db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
 
