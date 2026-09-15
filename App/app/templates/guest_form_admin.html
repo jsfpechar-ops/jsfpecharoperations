@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% set nav = 'reservations' %}
 {% set editing = editing | default(guest is not none) %}
-{% block title %}{{ 'Edit guest' if editing else 'Add guest' }}{% endblock %}
+{% block title %}{{ t('guest.admin.title_edit') if editing else t('guest.admin.title_add') }}{% endblock %}
 
 {% macro err_for(field) %}
   {% for issue in issues if issue.field == field %}
@@ -14,48 +14,47 @@
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb with context %}
 {{ breadcrumb([
-  {'label': 'Stays', 'url': '/reservations'},
+  {'label': t('nav.stays'), 'url': '/reservations'},
   {'label': reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz), 'url': '/reservations/' ~ reservation.id},
-  {'label': 'Edit guest' if editing else 'Add guest', 'url': ''}
+  {'label': t('guest.admin.title_edit') if editing else t('guest.admin.title_add'), 'url': ''}
 ]) }}
 {{ page_header(
-  'Edit guest' if editing else 'Add guest',
+  t('guest.admin.title_edit') if editing else t('guest.admin.title_add'),
   reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
   '/reservations/' ~ reservation.id,
-  'Back to stay'
+  t('guest.admin.back_to_stay')
 ) }}
 
 {% if editing and guest.submit_state in ('error', 'blocked') %}
   <div class="banner critical">
     <div class="grow">
-      <strong>UbyPort rejected this record.</strong>
+      <strong>{{ t('guest.admin.banner.rejected_title') }}</strong>
       <small>{{ guest.last_errors }}</small>
-      <small>Correct the data and save — that puts it back in the queue.</small>
+      <small>{{ t('guest.admin.banner.rejected_help') }}</small>
     </div>
   </div>
 {% endif %}
 {% if editing and guest.submit_state == 'sent' %}
   <div class="banner info">
     <div class="grow">
-      <strong>Already reported to the Foreign Police{% if guest.submitted_at %} on {{ guest.submitted_at[:16].replace('T', ' ') }}{% endif %}.</strong>
-      <small>Editing changes the house book only. Sending it again creates a duplicate, which the
-        police count against you, so it needs a deliberate confirmation below.</small>
+      <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at[:16].replace('T', ' ')) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
+      <small>{{ t('guest.admin.banner.sent_help') }}</small>
     </div>
   </div>
 {% endif %}
 
 <form method="post" action="{{ ('/guests/' ~ guest.id) if editing else ('/reservations/' ~ reservation.id ~ '/guests') }}">
   <div class="panel">
-    <h2 style="margin-top:0">Identity</h2>
+    <h2 style="margin-top:0">{{ t('guest.admin.identity.title') }}</h2>
     <div class="grid two">
       <div class="field">
-        <label for="surname">Surname</label>
+        <label for="surname">{{ t('guest.admin.surname') }}</label>
         <input class="{{ bad('surname') }}" type="text" id="surname" name="surname" maxlength="50" required
                value="{{ field_val('surname') }}">
         {{ err_for('surname') }}
       </div>
       <div class="field">
-        <label for="first_name">Given name(s)</label>
+        <label for="first_name">{{ t('guest.admin.given_names') }}</label>
         <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name" maxlength="24"
                value="{{ field_val('first_name') }}">
         {{ err_for('first_name') }}
@@ -63,36 +62,36 @@
     </div>
     <div class="grid">
       <div class="field">
-        <label for="birth_date">Date of birth</label>
+        <label for="birth_date">{{ t('guest.admin.birth_date') }}</label>
         <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
-               data-birth-date inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10"
+               data-birth-date inputmode="numeric" placeholder="{{ t('guest.admin.birth_date_ph') }}" maxlength="10"
                autocomplete="bday"
                value="{{ display_birth_date(guest.birth_date) if guest and guest.birth_date else '' }}">
-        <div class="hint">Type the 8 digits from the passport — slashes are added automatically. Use 00 for an unknown day or month.</div>
+        <div class="hint">{{ t('guest.admin.birth_date_hint') }}</div>
         {{ err_for('birth_date') }}
       </div>
       <div class="field">
-        <label for="nationality">Nationality</label>
+        <label for="nationality">{{ t('stay.detail.guests.nationality') }}</label>
         <select class="{{ bad('nationality') }}" id="nationality" name="nationality" required>
-          <option value="">— select —</option>
+          <option value="">{{ t('common.select') }}</option>
           {% for country in countries %}
             <option value="{{ country.code }}"
               {% if guest and guest.nationality == country.code %}selected{% endif %}>
               {{ country.label }} ({{ country.code }})</option>
           {% endfor %}
         </select>
-        <div class="hint">Czech nationals are recorded in the house book but never sent to the police.</div>
+        <div class="hint">{{ t('guest.admin.nationality_hint') }}</div>
         {{ err_for('nationality') }}
       </div>
       <div class="field">
-        <label for="doc_number">Travel document number</label>
+        <label for="doc_number">{{ t('guest.admin.document') }}</label>
         <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
                value="{{ field_val('doc_number') }}">
-        <div class="hint">6–30 letters and digits, or INPASS for a child in a parent's passport.</div>
+        <div class="hint">{{ t('guest.admin.document_hint') }}</div>
         {{ err_for('doc_number') }}
       </div>
       <div class="field">
-        <label for="visa_number">Visa number <span class="opt">(optional)</span></label>
+        <label for="visa_number">{{ t('guest.admin.visa') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
                value="{{ field_val('visa_number') }}">
         {{ err_for('visa_number') }}
@@ -101,24 +100,24 @@
   </div>
 
   <div class="panel">
-    <h2 style="margin-top:0">Permanent residence abroad</h2>
+    <h2 style="margin-top:0">{{ t('stay.detail.guests.residence') }}</h2>
     <div class="grid">
       <div class="field">
-        <label for="res_street">Street and number <span class="opt">(optional)</span></label>
+        <label for="res_street">{{ t('guest.admin.res_street') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street" maxlength="42"
                value="{{ field_val('res_street') }}">
         {{ err_for('res_street') }}
       </div>
       <div class="field">
-        <label for="res_city">City</label>
+        <label for="res_city">{{ t('guest.admin.res_city') }}</label>
         <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city" maxlength="42"
                value="{{ field_val('res_city') }}">
         {{ err_for('res_city') }}
       </div>
       <div class="field">
-        <label for="res_country">Country</label>
+        <label for="res_country">{{ t('guest.admin.res_country') }}</label>
         <select class="{{ bad('res_country') }}" id="res_country" name="res_country">
-          <option value="">— select —</option>
+          <option value="">{{ t('common.select') }}</option>
           {% for country in countries %}
             <option value="{{ country.code }}"
               {% if guest and guest.res_country == country.code %}selected{% endif %}>
@@ -131,21 +130,21 @@
   </div>
 
   <div class="panel">
-    <h2 style="margin-top:0">Stay</h2>
+    <h2 style="margin-top:0">{{ t('guest.admin.stay.title') }}</h2>
     <div class="grid">
       <div class="field">
-        <label for="stay_from">Accommodated from</label>
+        <label for="stay_from">{{ t('guest.admin.stay_from') }}</label>
         <input type="date" id="stay_from" name="stay_from"
                value="{{ (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
       </div>
       <div class="field">
-        <label for="stay_to">Accommodated until</label>
+        <label for="stay_to">{{ t('guest.admin.stay_to') }}</label>
         <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"
                value="{{ (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
         {{ err_for('stay_to') }}
       </div>
       <div class="field">
-        <label for="purpose">Purpose of stay</label>
+        <label for="purpose">{{ t('stay.detail.guests.purpose') }}</label>
         <select id="purpose" name="purpose">
           {% for purpose in purposes %}
             <option value="{{ purpose.code }}"
@@ -156,7 +155,7 @@
       </div>
     </div>
     <div class="field">
-      <label for="note">Note <span class="opt">(optional, max 255)</span></label>
+      <label for="note">{{ t('guest.admin.note') }} <span class="opt">{{ t('guest.admin.note_optional') }}</span></label>
       <textarea class="{{ bad('note') }}" id="note" name="note" maxlength="255">{{ field_val('note') }}</textarea>
       {{ err_for('note') }}
     </div>
@@ -168,9 +167,9 @@
       <div class="passport-preview compact">
         {% if passport_is_pdf %}
           <iframe class="passport-preview-pdf" src="/guests/{{ guest.id }}/passport-photo"
-                  title="Passport PDF"></iframe>
+                  title="{{ t('guest.admin.passport_pdf_title') }}"></iframe>
         {% else %}
-          <img src="/guests/{{ guest.id }}/passport-photo" alt="Passport photo">
+          <img src="/guests/{{ guest.id }}/passport-photo" alt="{{ t('guest.admin.passport_photo_alt') }}">
         {% endif %}
       </div>
     {% endif %}
@@ -210,38 +209,36 @@
   </div>
 
   <div class="actions">
-    <button class="btn primary" type="submit">{{ 'Save changes' if editing else 'Add guest' }}</button>
-    <a class="btn" href="/reservations/{{ reservation.id }}">Cancel</a>
+    <button class="btn primary" type="submit">{{ t('common.save_changes') if editing else t('guest.admin.submit_add') }}</button>
+    <a class="btn" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
     {% if editing and guest.id %}
-      <a class="btn" href="/guests/{{ guest.id }}/form.pdf">Download signed form</a>
+      <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
     {% endif %}
   </div>
 </form>
 
 {% if editing and guest.id %}
 <details class="panel danger-zone" style="margin-top:24px">
-  <summary>Advanced and dangerous actions</summary>
+  <summary>{{ t('guest.admin.danger.summary') }}</summary>
 <div style="margin-top:16px">
-  <h3 style="margin-top:0">Send this record again</h3>
+  <h3 style="margin-top:0">{{ t('guest.admin.resend.title') }}</h3>
   <p class="small muted">
-    UbyPort files duplicates under errors that cannot be corrected, and repeatedly sending them
-    without reason can cost you web-service access. Only do this if you have a genuine reason —
-    for example the connection dropped mid-transfer and you are not sure the data arrived.
+    {{ t('guest.admin.resend.help') }}
   </p>
   <form method="post" action="/guests/{{ guest.id }}/resend">
     <div class="checkline" style="margin-bottom:12px">
       <input type="checkbox" id="confirm_duplicate" name="confirm_duplicate" value="1">
-      <label for="confirm_duplicate">I understand this may create a duplicate record.</label>
+      <label for="confirm_duplicate">{{ t('guest.admin.resend.confirm') }}</label>
     </div>
-    <button class="btn danger" type="submit">Re-send to UbyPort</button>
+    <button class="btn danger" type="submit">{{ t('guest.admin.resend.submit') }}</button>
   </form>
 </div>
 
 {% if guest.submit_state != 'sent' %}
 <form method="post" action="/guests/{{ guest.id }}/delete" class="panel"
       data-confirm data-confirm-message="{{ t('confirm.remove_guest') }}">
-  <h3 style="margin-top:0">Remove</h3>
-  <button class="btn danger" type="submit">Delete this guest</button>
+  <h3 style="margin-top:0">{{ t('guest.admin.remove.title') }}</h3>
+  <button class="btn danger" type="submit">{{ t('guest.admin.remove.submit') }}</button>
 </form>
 {% endif %}
 </details>

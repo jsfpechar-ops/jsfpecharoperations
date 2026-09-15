@@ -1,38 +1,38 @@
 {% extends "base.html" %}
 {% set nav = 'entities' %}
-{% block title %}Legal entities{% endblock %}
+{% block title %}{{ t('entities.title') }}{% endblock %}
 
 {% macro entity_fields(prefix, entity) %}
   <div class="field">
-    <label for="{{ prefix }}name">Name</label>
+    <label for="{{ prefix }}name">{{ t('entities.name') }}</label>
     <input type="text" id="{{ prefix }}name" name="name" required
            value="{{ entity.name if entity else '' }}"
-           placeholder="As in the commercial or trade register">
+           placeholder="{{ t('entities.name_placeholder') }}">
   </div>
   <div class="field">
-    <label for="{{ prefix }}seat">Registered seat</label>
+    <label for="{{ prefix }}seat">{{ t('entities.seat') }}</label>
     <input type="text" id="{{ prefix }}seat" name="seat" value="{{ entity.seat or '' if entity else '' }}"
-           placeholder="Street, number, postcode, city">
+           placeholder="{{ t('entities.seat_placeholder') }}">
   </div>
   <div class="grid">
     <div class="field">
-      <label for="{{ prefix }}ico">IČO</label>
+      <label for="{{ prefix }}ico">{{ t('entities.ico') }}</label>
       <input type="text" id="{{ prefix }}ico" name="ico" inputmode="numeric"
              value="{{ entity.ico or '' if entity else '' }}">
     </div>
     <div class="field">
-      <label for="{{ prefix }}dic">DIČ <span class="opt">(optional)</span></label>
+      <label for="{{ prefix }}dic">{{ t('entities.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
       <input type="text" id="{{ prefix }}dic" name="dic" value="{{ entity.dic or '' if entity else '' }}">
     </div>
   </div>
   <div class="grid">
     <div class="field">
-      <label for="{{ prefix }}contact_email">Contact e-mail for data requests</label>
+      <label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>
       <input type="email" id="{{ prefix }}contact_email" name="contact_email"
              value="{{ entity.contact_email or '' if entity else '' }}">
     </div>
     <div class="field">
-      <label for="{{ prefix }}contact_phone">Phone <span class="opt">(optional)</span></label>
+      <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }} <span class="opt">{{ t('common.optional') }}</span></label>
       <input type="text" id="{{ prefix }}contact_phone" name="contact_phone"
              value="{{ entity.contact_phone or '' if entity else '' }}">
     </div>
@@ -42,27 +42,24 @@
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end with context %}
 {{ breadcrumb([
-  {'label': 'Properties', 'url': '/apartments'},
-  {'label': 'Legal entities', 'url': ''}
+  {'label': t('nav.properties'), 'url': '/apartments'},
+  {'label': t('entities.title'), 'url': ''}
 ]) }}
-{{ page_header('Legal entities', 'The company or sole trader that operates a property and controls guest data.', '/apartments', 'Back to properties') }}
+{{ page_header(t('entities.title'), t('entities.lede'), '/apartments', t('entities.back')) }}
 {{ onboarding_banner(onboarding) }}
-<p class="lede">The IČO holds
-  the UbyPort registration and pays the accommodation fee. It is also the data controller shown to
-  guests in the privacy notice, so keep the seat and contact e-mail current. One person can run
-  several.</p>
+<p class="lede">{{ t('entities.explainer') }}</p>
 
 <div class="split wide">
   <div>
     {% if edit_entity %}
     <div class="panel entity-edit-panel" id="entity-edit">
       <div class="section-heading" style="margin-top:0">
-        <h2>Edit {{ edit_entity.name }}</h2>
-        <a class="btn small ghost" href="/entities">Close</a>
+        <h2>{{ t('entities.edit', name=edit_entity.name) }}</h2>
+        <a class="btn small ghost" href="/entities">{{ t('common.close') }}</a>
       </div>
       <form method="post" action="/entities/{{ edit_entity.id }}">
         {{ entity_fields('edit_', edit_entity) }}
-        <div class="actions"><button class="btn primary" type="submit">Save changes</button></div>
+        <div class="actions"><button class="btn primary" type="submit">{{ t('entities.save') }}</button></div>
       </form>
     </div>
     {% endif %}
@@ -70,23 +67,23 @@
     {% if entities %}
     <div class="panel tight scroll-x">
       <table class="table-cards">
-        <thead><tr><th class="col-name">Name</th><th>Registered seat</th><th>IČO</th><th>Contact</th>
-          <th>Apartments</th><th></th></tr></thead>
+        <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.seat') }}</th><th>{{ t('entities.ico') }}</th><th>{{ t('entities.contact') }}</th>
+          <th>{{ t('entities.properties') }}</th><th></th></tr></thead>
         <tbody>
         {% for entity in entities %}
           <tr class="clickable-row{% if edit_entity and edit_entity.id == entity.id %} row-selected{% endif %}"
               data-href="/entities?edit={{ entity.id }}" tabindex="0" role="link"
-              aria-label="Open {{ entity.name }}">
-            <td class="col-name" data-label="Name">
+              aria-label="{{ t('entities.open', name=entity.name) }}">
+            <td class="col-name" data-label="{{ t('entities.name') }}">
               <a class="row-primary-link" href="/entities?edit={{ entity.id }}">{{ entity.name }}</a>
             </td>
-            <td data-label="Registered seat">{{ entity.seat or '—' }}</td>
-            <td class="mono" data-label="IČO">{{ entity.ico or '—' }}</td>
-            <td class="small" data-label="Contact">
+            <td data-label="{{ t('entities.seat') }}">{{ entity.seat or '—' }}</td>
+            <td class="mono" data-label="{{ t('entities.ico') }}">{{ entity.ico or '—' }}</td>
+            <td class="small" data-label="{{ t('entities.contact') }}">
               {% if entity.contact_email %}{{ entity.contact_email }}
-              {% else %}<span class="pill amber">Missing</span>{% endif %}
+              {% else %}<span class="pill amber">{{ t('entities.missing') }}</span>{% endif %}
             </td>
-            <td class="num" data-label="Apartments">{{ entity.apartments }}</td>
+            <td class="num" data-label="{{ t('entities.properties') }}">{{ entity.apartments }}</td>
             <td class="nowrap row-actions" data-label="">
               {% if not entity.apartments %}
               {{ row_menu_begin() }}
@@ -103,33 +100,33 @@
       </table>
     </div>
     {% else %}
-      <div class="panel empty">No legal entities yet. Add the first one on the right.</div>
+      <div class="panel empty">{{ t('entities.empty') }}</div>
     {% endif %}
 
     {% if archived_entities %}
-    <h2>Archived</h2>
-    <p class="small muted">Hidden from property pickers. Restore any entry you archived by mistake.</p>
+    <h2>{{ t('entities.archived') }}</h2>
+    <p class="small muted">{{ t('entities.archived_lede') }}</p>
     <div class="panel tight scroll-x">
       <table class="table-cards">
-        <thead><tr><th class="col-name">Name</th><th>Archived</th><th>IČO</th><th></th></tr></thead>
+        <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.archived') }}</th><th>{{ t('entities.ico') }}</th><th></th></tr></thead>
         <tbody>
         {% for entity in archived_entities %}
           <tr class="clickable-row{% if edit_entity and edit_entity.id == entity.id %} row-selected{% endif %}"
               data-href="/entities?edit={{ entity.id }}" tabindex="0" role="link">
-            <td class="col-name" data-label="Name">
+            <td class="col-name" data-label="{{ t('entities.name') }}">
               <a class="row-primary-link" href="/entities?edit={{ entity.id }}">{{ entity.name }}</a>
             </td>
-            <td class="small muted" data-label="Archived">{{ entity.archived_at[:10] }}</td>
-            <td class="mono" data-label="IČO">{{ entity.ico or '—' }}</td>
+            <td class="small muted" data-label="{{ t('entities.archived') }}">{{ entity.archived_at[:10] }}</td>
+            <td class="mono" data-label="{{ t('entities.ico') }}">{{ entity.ico or '—' }}</td>
             <td class="nowrap row-actions" data-label="">
               {{ row_menu_begin() }}
                 <form method="post" action="/entities/{{ entity.id }}/unarchive" class="row-menu-form">
-                  <button class="row-menu-item" type="submit" role="menuitem">Restore</button>
+                  <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.restore') }}</button>
                 </form>
                 {% if not entity.apartments %}
                 <form method="post" action="/entities/{{ entity.id }}/delete" class="row-menu-form"
                       data-confirm data-confirm-message="{{ t('confirm.delete_entity') }}">
-                  <button class="row-menu-item danger" type="submit" role="menuitem">Delete</button>
+                  <button class="row-menu-item danger" type="submit" role="menuitem">{{ t('entities.delete') }}</button>
                 </form>
                 {% endif %}
               {{ row_menu_end() }}
@@ -143,9 +140,9 @@
   </div>
 
   <form method="post" action="/entities" class="panel">
-    <h2 style="margin-top:0">Add a legal entity</h2>
+    <h2 style="margin-top:0">{{ t('entities.add') }}</h2>
     {{ entity_fields('new_', none) }}
-    <div class="actions"><button class="btn primary" type="submit">Add</button></div>
+    <div class="actions"><button class="btn primary" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>
 </div>
 {% endblock %}

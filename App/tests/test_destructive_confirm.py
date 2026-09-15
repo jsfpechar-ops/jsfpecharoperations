@@ -49,6 +49,10 @@ def _destructive_forms() -> list[tuple[Path, str]]:
             # "unarchive" restores; it is the undo, not the damage.
             if "unarchive" in target:
                 continue
+            # Stay archives return an undo toast. They are deliberately
+            # reversible and should not interrupt triage with a modal.
+            if "/reservations/" in target and target.endswith("/archive"):
+                continue
             if any(verb in target for verb in DESTRUCTIVE):
                 found.append((path, tag))
     return found

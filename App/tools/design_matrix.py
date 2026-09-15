@@ -1,4 +1,4 @@
-"""Capture the five critical UI screens across language, theme, and viewport.
+"""Capture the five critical UI screens across language and viewport.
 
 Run against a populated local instance:
   UBYHOST_ADMIN_PASSWORD=... .venv/bin/python tools/design_matrix.py [base] [out]
@@ -18,15 +18,6 @@ from walkthrough import render  # noqa: E402
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080"
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "/opt/cursor/artifacts/ubyhost-design-matrix")
 OUT.mkdir(parents=True, exist_ok=True)
-
-
-def themed(html: str, theme: str) -> str:
-    html = html.replace("<html ", f'<html data-theme="{theme}" ', 1)
-    return html.replace(
-        "<head>",
-        f"<head><script>localStorage.setItem('ubyhost-theme','{theme}')</script>",
-        1,
-    )
 
 
 def main() -> None:
@@ -74,14 +65,13 @@ def main() -> None:
     }
     for language in ("en", "cs"):
         host.cookies.set("ubyhost_lang", language, domain="127.0.0.1", path="/")
-        for theme in ("light", "dark"):
-            for width in (390, 1440):
-                for name, (session, path) in screens.items():
-                    separator = "&" if "?" in path else "?"
-                    url = path + (f"{separator}lang={language}" if name == "guest-form" else "")
-                    html = session.get(BASE + url).text
-                    target = OUT / f"{name}-{width}-{theme}-{language}.png"
-                    render(themed(html, theme), target, width=width, height=1000)
+        for width in (390, 1440):
+            for name, (session, path) in screens.items():
+                separator = "&" if "?" in path else "?"
+                url = path + (f"{separator}lang={language}" if name == "guest-form" else "")
+                html = session.get(BASE + url).text
+                target = OUT / f"{name}-{width}-light-{language}.png"
+                render(html, target, width=width, height=1000)
                     print(target)
 
 

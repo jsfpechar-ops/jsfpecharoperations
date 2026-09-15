@@ -124,6 +124,21 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-ink);
   margin: 0 0 10px;
 }
+.g-question-card h2 {
+  max-width: 15ch;
+  margin-bottom: 8px;
+  font-size: clamp(24px, 7vw, 34px);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+.g-question-kicker {
+  margin: 0 0 8px;
+  color: var(--g-accent);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 .g-intro { font-size: 14.5px; color: var(--g-muted); margin: 0 0 16px; }
 
 .g-host-info p { margin: 0 0 14px; font-size: 15px; line-height: 1.55; color: var(--g-ink-2); }
@@ -324,6 +339,7 @@ select {
 .g-field { margin-bottom: 16px; }
 .g-field:last-child { margin-bottom: 0; }
 .g-field .hint { font-size: 13px; color: var(--g-muted); margin-top: 5px; }
+.g-field .hint.success { color: var(--g-ok); }
 .g-field .err { font-size: 13px; color: var(--g-bad); font-weight: 600; margin-top: 5px; }
 .g-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
 @media (max-width: 430px) { .g-row { grid-template-columns: 1fr; } }
@@ -386,8 +402,8 @@ select {
   padding: 15px 18px;
   border-radius: var(--g-pill);
   border: 1px solid transparent;
-  background: var(--g-accent);
-  color: #fff;
+  background: var(--brand-action);
+  color: var(--on-brand);
   font: inherit;
   font-weight: 650;
   font-size: 16.5px;
@@ -691,28 +707,6 @@ details.g-why .g-details {
 .property-tone-7 { background: var(--brown-bg); color: var(--brown); }
 .property-tone-8 { background: var(--amber-bg); color: var(--amber); }
 .property-tone-9 { background: var(--red-bg); color: var(--red); }
-.g-theme {
-  width: min(270px, 100%);
-  margin: 16px auto 0;
-}
-.theme-switch {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--canvas-subtle);
-}
-.theme-switch button {
-  padding: 7px 5px;
-  border: 0;
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--ink-muted);
-  font: 600 12px/1.4 var(--font-sans);
-}
-.theme-switch button.is-active { color: var(--ink); background: var(--surface); }
 .g-card, .g-stay { box-shadow: none; }
 .g-btn { border-radius: var(--radius-sm); box-shadow: none; }
 .g-err { border-color: color-mix(in srgb, var(--red) 28%, transparent); color: var(--red); }

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% set nav = 'guest_links' %}
-{% block title %}Guest links{% endblock %}
+{% block title %}{{ t('guest_links.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, empty_state, copy_button, row_menu_begin, row_menu_end with context %}
 
 {{ page_header(
-  'Guest links',
-  'Reusable apartment links for portal messages. A guest chooses their dates after opening one.'
+  t('guest_links.title'),
+  t('guest_links.lede')
 ) }}
 
 {% if rows %}
@@ -17,60 +17,50 @@
     <section class="panel link-card">
       <div class="section-heading" style="margin-top:0">
         <h2>{{ apartment.internal_name }}</h2>
-        {% if row.issues %}<span class="pill amber">{{ row.issues | length }} setup item{{ '' if row.issues | length == 1 else 's' }}</span>
-        {% else %}<span class="pill green">Ready</span>{% endif %}
+        {% if row.issues %}<span class="pill amber">{{ t('guest_links.setup_items', count=row.issues | length) }}</span>
+        {% else %}<span class="pill green">{{ t('guest_links.ready') }}</span>{% endif %}
       </div>
-      <p class="small muted">{{ apartment.uby_name or 'Facility name not set' }}
+      <p class="small muted">{{ apartment.uby_name or t('guest_links.facility_missing') }}
         {% if apartment.city_en %}&middot; {{ apartment.city_en }}{% endif %}</p>
 
-      <label for="link-{{ apartment.id }}">Reusable apartment link</label>
+      <label for="link-{{ apartment.id }}">{{ t('guest_links.reusable') }}</label>
       <div class="copyrow">
         <input type="text" id="link-{{ apartment.id }}" readonly value="{{ row.permalink }}">
         {{ copy_button('link-' ~ apartment.id) }}
       </div>
 
-      <label for="pin-{{ apartment.id }}" style="margin-top:14px">Access PIN</label>
+      <label for="pin-{{ apartment.id }}" style="margin-top:14px">{{ t('guest_links.pin') }}</label>
       <div class="copyrow pin-row">
         <input type="text" id="pin-{{ apartment.id }}" readonly value="{{ row.pin }}" class="mono">
         {{ copy_button('pin-' ~ apartment.id) }}
-        <span class="small muted">Guests enter this before the form opens.</span>
+        <span class="small muted">{{ t('guest_links.pin_help') }}</span>
       </div>
 
       <details class="message-details" open>
-        <summary>Suggested portal message</summary>
-        <pre class="message-template" id="message-{{ apartment.id }}">Dear guests,
-
-Czech law requires us to register every guest before arrival and report foreign nationals to the Foreign Police.
-
-Please fill in one short form per person, including children:
-{{ row.permalink }}
-
-Access PIN: {{ row.pin }}
-
-The form explains why the information is required and how it is handled.
-
-Thank you.</pre>
+        <summary>{{ t('guest_links.message_title') }}</summary>
+        <pre class="message-template" id="message-{{ apartment.id }}">{{ t('guest_links.message', link=row.permalink, pin=row.pin) }}</pre>
         <div class="actions">
           {# Pasting this whole block into a portal is the job of this page, so it
              gets the card's strongest button. #}
           <button class="btn small primary" type="button" data-copy="message-{{ apartment.id }}"
-                  data-copied-label="Message copied">Copy this message</button>
+                  data-copy-label="{{ t('guest_links.copy_message') }}"
+                  data-copied-label="{{ t('guest_links.message_copied') }}">{{ t('guest_links.copy_message') }}</button>
         </div>
       </details>
 
       <div class="actions">
-        <a class="btn small" href="/apartments/{{ apartment.id }}">Property setup</a>
-        {{ row_menu_begin('Link and PIN options') }}
-          <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">Set a specific PIN</a>
+        <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('guest_links.property_setup') }}</a>
+        {{ row_menu_begin(t('guest_links.options')) }}
+          <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">{{ t('guest_links.set_pin') }}</a>
           <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="row-menu-form"
                 data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">
             <input type="hidden" name="return_to" value="/guest-links">
-            <button class="row-menu-item" type="submit" role="menuitem">Generate a new PIN</button>
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('guest_links.new_pin') }}</button>
           </form>
           <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="row-menu-form"
                 data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">
             <input type="hidden" name="return_to" value="/guest-links">
-            <button class="row-menu-item" type="submit" role="menuitem">Generate a new link</button>
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('guest_links.new_link') }}</button>
           </form>
         {{ row_menu_end() }}
       </div>
@@ -78,6 +68,6 @@ Thank you.</pre>
   {% endfor %}
   </div>
 {% else %}
-  {{ empty_state('No guest links yet', 'Create a property first; its reusable link is generated automatically.', '/apartments/new', 'Add a property') }}
+  {{ empty_state(t('guest_links.empty_title'), t('guest_links.empty_body'), '/apartments/new', t('apartments.add')) }}
 {% endif %}
 {% endblock %}

@@ -1,20 +1,19 @@
 {% extends "base.html" %}
 {% set nav = 'housebook' %}
-{% block title %}House book{% endblock %}
+{% block title %}{{ t('housebook.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu, property_identity with context %}
 {% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
 {{ page_header(
-  'House book',
-  'Every guest record with the dates of their stay. The law requires this register to be kept for
-   six years after the last entry and produced on request during a police inspection.'
+  t('housebook.title'),
+  t('housebook.lede')
 ) }}
 
 <form method="get" action="/housebook" class="filters panel" data-auto-submit>
   <div class="field">
-    <label for="apartment">Apartment</label>
+    <label for="apartment">{{ t('housebook.apartment') }}</label>
     <select id="apartment" name="apartment">
-      <option value="">All</option>
+      <option value="">{{ t('common.all') }}</option>
       {% for apartment in apartments %}
         <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
           {{ apartment.internal_name }}</option>
@@ -22,17 +21,17 @@
     </select>
   </div>
   <div class="field">
-    <label for="from">Stays from</label>
+    <label for="from">{{ t('housebook.from') }}</label>
     <input type="date" id="from" name="from" value="{{ date_from }}">
   </div>
   <div class="field">
-    <label for="to">Stays until</label>
+    <label for="to">{{ t('housebook.until') }}</label>
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
   <div class="field filter-actions">
-    <button class="btn filter-apply" type="submit">Filter</button>
+    <button class="btn filter-apply" type="submit">{{ t('common.filter') }}</button>
   </div>
-  <div class="field filter-actions filter-actions-end" aria-label="House book actions">
+  <div class="field filter-actions filter-actions-end" aria-label="{{ t('housebook.actions') }}">
     {{ housebook_csv_menu(housebook_csv_params, true, true) }}
   </div>
 </form>
@@ -42,45 +41,45 @@
   <table class="table-cards">
     <thead>
       <tr>
-        <th>Stay</th><th>Apartment</th><th class="col-name">Guest</th><th>Born</th><th>Nat.</th>
-        <th>Document</th><th class="col-address">Residence abroad</th>
-        <th class="col-purpose">Purpose</th><th>Signed</th>
-        <th>Reported</th><th><span class="sr-only">Actions</span></th>
+        <th>{{ t('housebook.stay') }}</th><th>{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th>{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
+        <th>{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
+        <th class="col-purpose">{{ t('housebook.purpose') }}</th><th>{{ t('housebook.signed') }}</th>
+        <th>{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr>
     </thead>
     <tbody>
     {% for row in rows %}
       <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
-        <td class="nowrap small" data-label="Stay">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
-        <td class="small" data-label="Apartment">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
+        <td class="nowrap small" data-label="{{ t('housebook.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+        <td class="small" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
         {# Two deliberate lines beat three ragged ones in a column this narrow. #}
-        <td class="col-name" data-label="Guest"><strong>{{ row.surname }}</strong><br>
+        <td class="col-name" data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong><br>
           <span class="small">{{ row.first_name }}</span></td>
-        <td class="nowrap small" data-label="Born">{{ row.birth_date }}</td>
-        <td class="small" data-label="Nationality">{{ row.nationality }}</td>
-        <td class="mono small" data-label="Document">{{ row.doc_number }}{% if row.visa_number %}<br>visa {{ row.visa_number }}{% endif %}</td>
-        <td class="small col-address" data-label="Residence abroad">{{ row.residence or '—' }}</td>
-        <td class="small col-purpose" data-label="Purpose">{{ row.purpose }}</td>
-        <td class="small nowrap" data-label="Signed">{% if row.signed == 'yes' %}<span class="pill green">Signed</span>
-          {% else %}<span class="pill amber">Not signed</span>{% endif %}</td>
+        <td class="nowrap small" data-label="{{ t('housebook.born') }}">{{ row.birth_date }}</td>
+        <td class="small" data-label="{{ t('housebook.nationality') }}">{{ row.nationality }}</td>
+        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ row.doc_number }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=row.visa_number) }}{% endif %}</td>
+        <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
+        <td class="small col-purpose" data-label="{{ t('housebook.purpose') }}">{{ row.purpose }}</td>
+        <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="pill green">{{ t('housebook.signed_yes') }}</span>
+          {% else %}<span class="pill amber">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
         {# The stored values double as the CSV column, which the importer reads
            back, so they stay as they are and only the label changes here. #}
-        <td class="small nowrap" data-label="Reported">
-          {% if row.reported == 'yes' %}<span class="pill green">Reported</span>
+        <td class="small nowrap" data-label="{{ t('housebook.reported') }}">
+          {% if row.reported == 'yes' %}<span class="pill green">{{ t('status.reported') }}</span>
             <div class="small muted">{{ row.reported_at[:10] }}</div>
-          {% elif row.reported.startswith('not required') %}<span class="pill grey">Exempt</span>
-          {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="pill red">Rejected, final</span>
-          {% elif row.reported.startswith('NO') %}<span class="pill red">Rejected</span>
-          {% else %}<span class="pill amber">Not yet sent</span>{% endif %}
+          {% elif row.reported.startswith('not required') %}<span class="pill grey">{{ t('status.not_required') }}</span>
+          {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
+          {% elif row.reported.startswith('NO') %}<span class="pill red">{{ t('submission.rejected') }}</span>
+          {% else %}<span class="pill amber">{{ t('housebook.not_sent') }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">Edit</a>
-            <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">PDF</a>
+            <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">{{ t('common.edit') }}</a>
+            <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">{{ t('housebook.pdf') }}</a>
             <form method="post" action="/guests/{{ row._guest_id }}/archive" class="row-menu-form"
                   data-confirm data-confirm-message="{{ t('confirm.archive_guest') }}">
               <input type="hidden" name="return_to" value="/housebook">
-              <button class="row-menu-item" type="submit" role="menuitem">Archive</button>
+              <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
             </form>
           {{ row_menu_end() }}
         </td>
@@ -89,29 +88,29 @@
     </tbody>
   </table>
 </div>
-<p class="small muted">{{ rows | length }} entr{{ 'y' if rows | length == 1 else 'ies' }}. {{ t('housebook.filter_footer') }}</p>
+<p class="small muted">{{ t('housebook.entries', count=rows | length) }} {{ t('housebook.filter_footer') }}</p>
 {% else %}
-  <div class="panel empty">No entries match this filter. The house book fills as guest forms are completed.</div>
+  <div class="panel empty">{{ t('housebook.empty') }}</div>
 {% endif %}
 
 {% if archived_rows %}
-<h2>Archived entries</h2>
-<p class="small muted">Mistaken imports or duplicates can be restored from here.</p>
+<h2>{{ t('housebook.archived_title') }}</h2>
+<p class="small muted">{{ t('housebook.archived_lede') }}</p>
 <div class="panel tight scroll-x">
   <table class="table-cards">
     <thead>
-      <tr><th>Stay</th><th>Apartment</th><th>Guest</th><th>Archived</th><th></th></tr>
+      <tr><th>{{ t('housebook.stay') }}</th><th>{{ t('housebook.apartment') }}</th><th>{{ t('housebook.guest') }}</th><th>{{ t('housebook.archived') }}</th><th></th></tr>
     </thead>
     <tbody>
     {% for row in archived_rows %}
       <tr>
-        <td class="nowrap small" data-label="Stay">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
-        <td data-label="Apartment">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
-        <td data-label="Guest"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
-        <td class="small muted" data-label="Archived">{{ row.archived_at[:10] }}</td>
+        <td class="nowrap small" data-label="{{ t('housebook.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+        <td data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
+        <td data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong> {{ row.first_name }}</td>
+        <td class="small muted" data-label="{{ t('housebook.archived') }}">{{ row.archived_at[:10] }}</td>
         <td class="nowrap" data-label="">
           <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
-            <button class="btn small" type="submit">Restore</button>
+            <button class="btn small" type="submit">{{ t('common.restore') }}</button>
           </form>
         </td>
       </tr>
@@ -127,9 +126,6 @@
   <ul class="legal-list small">
     <li>{{ t('housebook.legal_paper') }}</li>
     <li>{{ t('housebook.legal_inspection') }}</li>
-    {% if apartments %}
-      <li>{{ t('housebook.legal_import') }}</li>
-    {% endif %}
   </ul>
   <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
 </details>
@@ -141,9 +137,6 @@
     <ul class="legal-list small">
       <li>{{ t('housebook.legal_paper') }}</li>
       <li>{{ t('housebook.legal_inspection') }}</li>
-      {% if apartments %}
-        <li>{{ t('housebook.legal_import') }}</li>
-      {% endif %}
     </ul>
     <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
     <div class="actions">
@@ -159,9 +152,9 @@
     <p class="small muted">{{ t('housebook.pdf_export_help') }}</p>
     <p class="small muted housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
     <div class="field">
-      <label for="pdf_export_apartment">Apartment</label>
+      <label for="pdf_export_apartment">{{ t('housebook.apartment') }}</label>
       <select id="pdf_export_apartment" name="apartment">
-        <option value="">All</option>
+        <option value="">{{ t('common.all') }}</option>
         {% for apartment in apartments %}
           <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
             {{ apartment.internal_name }}</option>

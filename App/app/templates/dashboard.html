@@ -37,8 +37,7 @@
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('dashboard.row.open_stay') }}</a>
               <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
-              <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
-                    data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
+              <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form">
                 <input type="hidden" name="return_to" value="/">
                 <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
               </form>
@@ -122,30 +121,6 @@
     </section>
   {% endif %}
 
-  {% if minutes_saved %}
-    <p class="minutes-saved">{{ t('dashboard.minutes_saved', minutes=minutes_saved) }}</p>
-  {% endif %}
-
-  <section class="panel reporting-modes-panel">
-    <h2 style="margin-top:0">{{ t('dashboard.reporting_modes') }}</h2>
-    <p class="small muted" style="margin-bottom:0">{{ t('dashboard.reporting_modes_body') }}</p>
-  </section>
-
-  <div class="stats" aria-label="{{ t('dashboard.title') }}">
-    <a class="stat stat-link {{ 'bad' if counts.overdue else 'zero' }}" href="#needs-action">
-      <div class="n">{{ counts.overdue }}</div><div class="k">{{ t('dashboard.stats.past_deadline') }}</div>
-    </a>
-    <a class="stat stat-link {{ 'warn' if counts.attention else 'zero' }}" href="#needs-action">
-      <div class="n">{{ counts.attention }}</div><div class="k">{{ t('dashboard.stats.need_action') }}</div>
-    </a>
-    <a class="stat stat-link {{ '' if counts.awaiting else 'zero' }}" href="#waiting">
-      <div class="n">{{ counts.awaiting }}</div><div class="k">{{ t('dashboard.stats.waiting_guest') }}</div>
-    </a>
-    <a class="stat stat-link {{ 'ok' if counts.ready else 'zero' }}" href="#needs-action">
-      <div class="n">{{ counts.ready }}</div><div class="k">{{ t('dashboard.stats.ready') }}</div>
-    </a>
-  </div>
-
   {% if setup_warnings %}
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
@@ -184,6 +159,11 @@
     {% if queue_groups.completed %}
       <section><div class="section-heading"><h2>{{ t('dashboard.section.completed') }}</h2><a href="/submissions">{{ t('dashboard.section.view_reports') }}</a></div>{{ queue_table(queue_groups.completed) }}</section>
     {% endif %}
+    <details class="panel quiet reporting-modes-panel">
+      <summary>{{ t('dashboard.reporting_modes') }}</summary>
+      <p class="small muted">{{ t('dashboard.reporting_modes_body') }}</p>
+      {% if minutes_saved %}<p class="small muted">{{ t('dashboard.minutes_saved', minutes=minutes_saved) }}</p>{% endif %}
+    </details>
   {% endif %}
 {% endif %}
 {% endblock %}

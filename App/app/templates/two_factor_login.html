@@ -1,19 +1,19 @@
 {% extends "auth_base.html" %}
-{% block title %}Two-factor authentication{% endblock %}
+{% block title %}{{ t('account.2fa.code_title') }}{% endblock %}
 {% block auth_body %}
 <section class="auth-card">
-  <h1 class="auth-title">Security code</h1>
-  <p class="auth-lede">Enter the six-digit code from your authenticator app, or one recovery code.</p>
+  <h1 class="auth-title">{{ t('account.2fa.code_title') }}</h1>
+  <p class="auth-lede">{{ t('account.2fa.code_lede') }}</p>
   {% if error %}<div class="auth-alert" role="alert">{{ error }}</div>{% endif %}
   <form method="post" action="/login/2fa" class="auth-form">
     <input type="hidden" name="pending" value="{{ pending }}">
     <div class="auth-field">
-      <label for="code">Authentication code</label>
+      <label for="code">{{ t('account.2fa.code_label') }}</label>
       <input type="text" id="code" name="code" required autofocus
              inputmode="numeric" autocomplete="one-time-code" maxlength="12">
     </div>
-    <button class="auth-submit" type="submit">Verify and sign in</button>
+    <button class="auth-submit" type="submit">{{ t('account.2fa.verify') }}</button>
   </form>
-  <div class="auth-foot"><a href="/login">Start over</a></div>
+  <div class="auth-foot"><a href="/login">{{ t('account.2fa.start_over') }}</a></div>
 </section>
 {% endblock %}
