@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import re
 import secrets
 import time
@@ -25,6 +26,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from . import alerts, codelists, config, db, deadlines, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
+
+log = logging.getLogger("ubyhost.reporting")
 
 # guest.submit_state values
 PENDING = "pending"
@@ -642,6 +645,18 @@ def submit_batch(
     try:
         result: SubmissionResult = client.submit(header, guests, want_pdf=want_pdf)
     except (UbyportTransportError, UbyportError) as exc:
+        log.error(
+            "ubyport_submission_failed apartment_id=%s owner_user_id=%s "
+            "submission_id=%s env=%s endpoint=%s guest_ids=%s error_type=%s",
+            apartment["id"],
+            apartment["owner_user_id"],
+            submission_id,
+            env or config.UBYPORT_ENV,
+            endpoint,
+            guest_ids,
+            type(exc).__name__,
+            exc_info=True,
+        )
         db.update(
             "submission",
             submission_id,
@@ -736,6 +751,19 @@ def submit_batch(
     if state == "ok":
         alerts.resolve(f"submission_rejected:{apartment['id']}")
     else:
+        log.error(
+            "ubyport_submission_rejected apartment_id=%s owner_user_id=%s "
+            "submission_id=%s env=%s endpoint=%s state=%s accepted=%s failed=%s blocked=%s",
+            apartment["id"],
+            apartment["owner_user_id"],
+            submission_id,
+            env or config.UBYPORT_ENV,
+            endpoint,
+            state,
+            accepted_count,
+            failed_count,
+            blocked_count,
+        )
         detail_bits = []
         if result.header_errors:
             detail_bits.append(
