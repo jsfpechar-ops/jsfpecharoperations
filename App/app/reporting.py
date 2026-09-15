@@ -725,7 +725,10 @@ def submit_batch(
                 update_values["submitted_at"] = guest["submitted_at"] or now
             db.update("guest", guest["id"], update_values)
             if new_state == SENT:
-                accepted_count += 1
+                if guest["submit_state"] == SENT:
+                    blocked_count += 1
+                else:
+                    accepted_count += 1
             elif new_state == ERROR:
                 failed_count += 1
             else:
