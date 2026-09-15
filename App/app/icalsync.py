@@ -37,18 +37,13 @@ import re
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-import requests
 from icalendar import Calendar
 
-from . import alerts, db, feed_url
+from . import alerts, db
+from .feed_fetch import CalendarFetchError, fetch_calendar_text
 from .feed_url import FeedUrlError
 
 log = logging.getLogger("ubyhost.icalsync")
-
-USER_AGENT = "UbyHost/1.0 (+self-hosted Czech foreign-police reporting)"
-FETCH_TIMEOUT = 45
-MAX_FEED_BYTES = 5 * 1024 * 1024
-MAX_REDIRECTS = 3
 
 # Summaries that mean "not a guest stay". Airbnb and Vrbo are explicit about
 # blocks; Booking.com is not, which is why its feeds are treated as bookings.
@@ -98,58 +93,11 @@ class FeedError(Exception):
 
 def fetch_feed(url: str) -> str:
     try:
-        current = feed_url.validate_calendar_url(url)
+        return fetch_calendar_text(url)
+    except CalendarFetchError as exc:
+        raise FeedError(str(exc)) from exc
     except FeedUrlError as exc:
         raise FeedError(str(exc)) from exc
-    headers = {"User-Agent": USER_AGENT, "Accept": "text/calendar"}
-    response = None
-    try:
-        for hop in range(MAX_REDIRECTS + 1):
-            response = requests.get(
-                current,
-                timeout=FETCH_TIMEOUT,
-                headers=headers,
-                allow_redirects=False,
-                stream=True,
-            )
-            if response.status_code in (301, 302, 303, 307, 308):
-                if hop >= MAX_REDIRECTS:
-                    response.close()
-                    raise FeedError("Calendar redirected too many times.")
-                location = response.headers.get("Location")
-                if not location:
-                    response.close()
-                    raise FeedError(f"Calendar redirect missing Location (HTTP {response.status_code}).")
-                response.close()
-                current = feed_url.resolve_redirect_url(current, location)
-                continue
-            break
-    except requests.RequestException as exc:
-        raise FeedError(f"Could not download the calendar: {exc}") from exc
-    if response is None:
-        raise FeedError("Could not download the calendar.")
-    if response.status_code != 200:
-        response.close()
-        raise FeedError(f"Calendar returned HTTP {response.status_code}.")
-    content_length = response.headers.get("Content-Length", "")
-    if content_length.isdigit() and int(content_length) > MAX_FEED_BYTES:
-        response.close()
-        raise FeedError("Calendar is too large.")
-    body = bytearray()
-    try:
-        for chunk in response.iter_content(chunk_size=64 * 1024):
-            body.extend(chunk)
-            if len(body) > MAX_FEED_BYTES:
-                raise FeedError("Calendar is too large.")
-    finally:
-        response.close()
-    text = bytes(body).decode(response.encoding or "utf-8", errors="replace")
-    if "BEGIN:VCALENDAR" not in text.upper():
-        raise FeedError(
-            "That URL did not return an iCal calendar. Check you copied the whole export link "
-            "(it contains '/ical/' and usually ends with '.ics')."
-        )
-    return text
 
 
 def _as_date(value: Any) -> Optional[date]:
