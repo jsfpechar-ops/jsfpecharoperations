@@ -122,7 +122,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("minutes_saved", 0)
     if workspace and workspace["id"]:
         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
-    return templates.TemplateResponse(name, data, status_code=status_code)
+    return templates.TemplateResponse(request, name, data, status_code=status_code)
 
 
 def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
@@ -132,4 +132,4 @@ def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] 
     data["open_alerts"] = []
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
-    return templates.TemplateResponse(name, data, status_code=status_code)
+    return templates.TemplateResponse(request, name, data, status_code=status_code)
