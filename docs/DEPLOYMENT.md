@@ -105,7 +105,8 @@ restart.
 ## Production host (Lightsail)
 
 Full guide: **[LIGHTSAIL.md](LIGHTSAIL.md)**  
-Domain + DNS (Cloudflare): **[CLOUDFLARE.md](CLOUDFLARE.md)**
+Domain + DNS (Cloudflare): **[CLOUDFLARE.md](CLOUDFLARE.md)**  
+Production zone extras (HSTS, Bot Fight Mode, leaked credentials, client-side security): same file, section **Production zone (`ubyhost.com`)**.
 
 ```bash
 cd deploy/lightsail

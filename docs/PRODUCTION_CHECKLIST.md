@@ -29,7 +29,7 @@ These must match **exactly** in UbyHost → apartment settings and in the police
 
 - [ ] Instance running; app at `/opt/ubyhost/deploy/lightsail` — see [LIGHTSAIL.md](LIGHTSAIL.md)
 - [ ] `.env`: `UBYHOST_DEPLOYMENT=production`, `UBYHOST_UBYPORT_ENV=test`, `UBYHOST_PUBLIC_BASE_URL=https://ubyhost.com`
-- [ ] Domain on Cloudflare — [CLOUDFLARE.md](CLOUDFLARE.md): proxied A record, SSL **Full (strict)**, origin certs on server
+- [ ] Domain on Cloudflare — [CLOUDFLARE.md](CLOUDFLARE.md): proxied A record, SSL **Full (strict)**, origin certs on server, **HSTS** (6 months, no subdomains/preload), **Bot Fight Mode**, **leaked credentials**, **client-side security**
 - [ ] `./scripts/deploy.sh` completed; `/healthz` shows `deployment: production`, `ubyport_env: test`
 - [ ] Admin login works; password changed from bootstrap value
 - [ ] `./scripts/backup.sh` once; optional weekly **Google Drive** (`backup-gdrive.sh`). S3 optional — can defer

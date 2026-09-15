@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "replace the guest privacy notice shown to your guests — that notice names you (or your "
             "legal entity) as data controller."
         ),
-        "privacy.effective": "Effective date: 14 September 2026. Version 1.1.",
+        "privacy.effective": "Effective date: 15 September 2026. Version 1.2.",
         "privacy.operator_title": "Data controller for this policy",
         "privacy.footer_link": "Privacy Policy",
         "privacy.footer_short": "Privacy",
@@ -106,21 +106,28 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "The Service uses strictly necessary cookies and similar storage: signed session cookies "
             "for Host login (and optional extended duration if \"remember me\" is selected); language "
             "preference cookies; and, on guest links, cookies that remember PIN verification or "
-            "language for a limited period. On production login and, after repeated failed guest PIN "
-            "attempts, guest PIN pages, we may use Cloudflare Turnstile to distinguish legitimate "
-            "use from automated abuse. Turnstile may set or read technical identifiers and process "
-            "connection data (such as IP address) under Cloudflare's terms and privacy notice; it is "
-            "not used for advertising. We do not use third-party analytics or advertising cookies in "
-            "the application as shipped. You can control cookies through browser settings; disabling "
-            "session cookies will prevent login."
+            "language for a limited period. Production traffic to ubyhost.com is proxied by Cloudflare. "
+            "We may use Cloudflare Turnstile on production login and, after repeated failed guest PIN "
+            "attempts, on guest PIN pages; Bot Fight Mode to challenge automated traffic; leaked-credential "
+            "checks that compare login attempts against known leaked-password signals at the edge "
+            "(without storing your password in Cloudflare's dashboard); and a small client-side "
+            "security script that inventories third-party scripts loaded in the browser. These "
+            "features may set or read technical identifiers and process connection data (such as IP "
+            "address) under Cloudflare's terms and privacy notice; they are not used for advertising. "
+            "We do not use third-party analytics or advertising cookies in the application as shipped. "
+            "You can control cookies through browser settings; disabling session cookies will prevent "
+            "login. Browsers may also honour HTTP Strict Transport Security (HSTS) so this hostname "
+            "is opened only over HTTPS for a limited period."
         ),
         "privacy.s08_title": "8. Server logs and security monitoring",
         "privacy.s08_body": (
             "Our infrastructure automatically logs technical data: IP addresses, timestamps, request "
             "paths, user agents, error traces, and security events (e.g. failed logins, rate limits). "
-            "We use these logs to operate, debug, and protect the Service, typically for a limited "
-            "rolling period unless longer retention is needed to investigate incidents or comply with "
-            "law. Logs may contain personal data in incidental form (e.g. IP address)."
+            "Cloudflare, as the DNS/CDN/security proxy for production, may also log or score requests "
+            "for DDoS, bot, and leaked-credential protection. We use these logs to operate, debug, and "
+            "protect the Service, typically for a limited rolling period unless longer retention is "
+            "needed to investigate incidents or comply with law. Logs may contain personal data in "
+            "incidental form (e.g. IP address)."
         ),
         "privacy.s09_title": "9. Recipients and subprocessors",
         "privacy.s09_body": (
@@ -128,7 +135,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "confidentiality. We use infrastructure subprocessors to host the Service, including "
             "Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), "
             "Render.com (cloud hosting for staging or other tiers; commonly EU Frankfurt), DNS or "
-            "CDN providers such as Cloudflare (including Turnstile bot protection when enabled), "
+            "CDN providers such as Cloudflare (including Turnstile, Bot Fight Mode, leaked-credential "
+            "mitigation, client-side script monitoring, and HSTS when enabled for the production zone), "
             "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and e-mail "
             "or support tools where used. Guest Data may be transmitted to the Czech Police UbyPort "
             "systems or related endpoints when a Host enables reporting — that transmission occurs on "
@@ -158,9 +166,11 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s12_title": "12. Security",
         "privacy.s12_body": (
             "We implement measures such as encryption of sensitive credentials and TOTP secrets at "
-            "rest, HTTPS in transit, mandatory two-factor authentication (authenticator app) for Host "
-            "accounts in production, Cloudflare Turnstile on host login and on guest PIN verification "
-            "after repeated failures when configured, access controls, rate limiting on authentication "
+            "rest, HTTPS in transit (with HSTS on the production hostname), mandatory two-factor "
+            "authentication (authenticator app) for Host accounts in production, Cloudflare edge "
+            "protections (Turnstile on host login and on guest PIN verification after repeated "
+            "failures when configured; Bot Fight Mode; leaked-credential checks on login traffic; "
+            "client-side script monitoring), access controls, rate limiting on authentication "
             "endpoints, separation of environments, and regular dependency updates. No method of "
             "transmission or storage is 100%% secure; Hosts must use strong passwords, protect "
             "authenticator devices and recovery codes, and configure guest links carefully. Report "
@@ -248,7 +258,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "nenahrazují informaci pro hosty — v ní je jako správce uveden vy (nebo vaše právnická "
             "osoba)."
         ),
-        "privacy.effective": "Účinnost od: 14. září 2026. Verze 1.1.",
+        "privacy.effective": "Účinnost od: 15. září 2026. Verze 1.2.",
         "privacy.operator_title": "Správce údajů podle těchto zásad",
         "privacy.footer_link": "Zásady ochrany osobních údajů",
         "privacy.footer_short": "Soukromí",
@@ -324,27 +334,33 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s07_title": "7. Cookies a podobné technologie",
         "privacy.s07_body": (
             "Služba používá nezbytné cookies: relaci přihlášení ubytovatele (delší při „zapamatovat\"); "
-            "jazyk; u hostovských odkazů cookies pro PIN (omezená doba) a jazyk. Na produkčním "
-            "přihlášení a po opakovaných neúspěšných pokusech o PIN může být použit Cloudflare "
-            "Turnstile proti automatizovanému zneužití. Turnstile může zpracovávat technické "
-            "identifikátory a údaje o připojení (např. IP) podle podmínek Cloudflare; nejde o "
-            "reklamu. V aplikaci v základní podobě nepoužíváme reklamní ani analytické cookies "
-            "třetích stran. Cookies lze omezit v prohlížeči; bez relačního cookie přihlášení "
-            "nefunguje."
+            "jazyk; u hostovských odkazů cookies pro PIN (omezená doba) a jazyk. Produkční provoz "
+            "ubyhost.com zprostředkovává Cloudflare. Můžeme použít Cloudflare Turnstile na produkčním "
+            "přihlášení a po opakovaných neúspěšných pokusech o PIN; Bot Fight Mode proti automatizované "
+            "návštěvnosti; kontrolu uniklých přihlašovacích údajů, která na okraji sítě porovnává pokusy "
+            "o přihlášení se známými úniky hesel (heslo se v Cloudflare dashboardu neukládá); a malý "
+            "skript klientské bezpečnosti, který eviduje skripty třetích stran v prohlížeči. Tyto "
+            "funkce mohou zpracovávat technické identifikátory a údaje o připojení (např. IP) podle "
+            "podmínek Cloudflare; nejde o reklamu. V aplikaci v základní podobě nepoužíváme reklamní "
+            "ani analytické cookies třetích stran. Cookies lze omezit v prohlížeči; bez relačního "
+            "cookie přihlášení nefunguje. Prohlížeče mohou také dodržovat HTTP Strict Transport "
+            "Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
         ),
         "privacy.s08_title": "8. Serverové logy a bezpečnost",
         "privacy.s08_body": (
             "Infrastruktura automaticky zaznamenává IP adresy, čas, cesty požadavků, user agent, chyby "
-            "a bezpečnostní události (neúspěšná přihlášení, rate limiting). Logy slouží provozu a ochraně "
-            "Služby po omezenou dobu, déle jen při incidentu nebo zákonné povinnosti. Mohou obsahovat "
-            "osobní údaje (např. IP)."
+            "a bezpečnostní události (neúspěšná přihlášení, rate limiting). Cloudflare jako DNS/CDN/"
+            "bezpečnostní proxy pro produkci může rovněž logovat nebo hodnotit požadavky kvůli DDoS, "
+            "botům a únikům přihlašovacích údajů. Logy slouží provozu a ochraně Služby po omezenou dobu, "
+            "déle jen při incidentu nebo zákonné povinnosti. Mohou obsahovat osobní údaje (např. IP)."
         ),
         "privacy.s09_title": "9. Příjemci a subzpracovatelé",
         "privacy.s09_body": (
             "Údaje vidí oprávnění pracovníci a smluvní partneři s mlčenlivostí. Hosting zajišťují "
             "subzpracovatelé včetně Amazon Web Services (Lightsail nebo obdobný hosting v EHP pro "
             "produkci), Render.com (staging a další úrovně; často EU Frankfurt), DNS/CDN včetně "
-            "Cloudflare (včetně Turnstile), Google Drive a/nebo Amazon S3 při nastavených "
+            "Cloudflare (včetně Turnstile, Bot Fight Mode, kontroly uniklých přihlašovacích údajů, "
+            "monitoringu skriptů na straně klienta a HSTS v produkční zóně), Google Drive a/nebo Amazon S3 při nastavených "
             "off-site zálohách a případně e-mail či podpora. Údaje hostů mohou být přeneseny do "
             "UbyPort Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít "
             "vhodné záruky (čl. 28 GDPR). Podstatné změny promítneme do těchto Zásad."
@@ -366,12 +382,14 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s12_title": "12. Bezpečnost",
         "privacy.s12_body": (
-            "Používáme šifrování citlivých přihlašovacích údajů a TOTP, HTTPS, povinné dvoufázové "
-            "ověření účtů ubytovatelů v produkci, Cloudflare Turnstile při přihlášení a po opakovaných "
-            "neúspěších PIN u hostů (pokud je zapnuto), řízení přístupu, rate limiting přihlášení, "
-            "oddělení prostředí a aktualizace závislostí. Žádný přenos není stoprocentně bezpečný; "
-            "ubytovatelé mají používat silná hesla, chránit autentizační aplikaci a obnovovací kódy "
-            "a pečlivě sdílet odkazy hostům. Bezpečnostní incidenty hlaste kontaktu na /legal."
+            "Používáme šifrování citlivých přihlašovacích údajů a TOTP, HTTPS (s HSTS na produkční "
+            "doméně), povinné dvoufázové ověření účtů ubytovatelů v produkci, ochrany Cloudflare "
+            "na okraji sítě (Turnstile při přihlášení a po opakovaných neúspěších PIN u hostů, "
+            "pokud je zapnuto; Bot Fight Mode; kontrola uniklých přihlašovacích údajů; monitoring "
+            "skriptů v prohlížeči), řízení přístupu, rate limiting přihlášení, oddělení prostředí "
+            "a aktualizace závislostí. Žádný přenos není stoprocentně bezpečný; ubytovatelé mají "
+            "používat silná hesla, chránit autentizační aplikaci a obnovovací kódy a pečlivě "
+            "sdílet odkazy hostům. Bezpečnostní incidenty hlaste kontaktu na /legal."
         ),
         "privacy.s13_title": "13. Vaše práva (uživatelé účtu)",
         "privacy.s13_body": (
