@@ -86,6 +86,16 @@ def test_missing_dtend_becomes_one_night():
     assert event["date_to"] == "2026-09-11"
 
 
+def test_duration_is_used_when_dtend_is_missing():
+    ics = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20260910\nDURATION:P3D\nUID:duration@y\n"
+        "SUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+    )
+    event = icalsync.parse_events(ics)[0]
+    assert event["date_to"] == "2026-09-13"
+
+
 def test_cancelled_status_is_flagged():
     ics = (
         "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
@@ -95,6 +105,20 @@ def test_cancelled_status_is_flagged():
     )
     event = icalsync.parse_events(ics)[0]
     assert event["is_cancelled"] is True
+
+
+def test_common_cancellation_variants_are_flagged():
+    canceled = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20260910\nUID:canceled@y\nSTATUS:CANCELED\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    method_cancel = canceled.replace(
+        "VERSION:2.0", "VERSION:2.0\nMETHOD:CANCEL"
+    ).replace("STATUS:CANCELED\n", "")
+
+    assert icalsync.parse_events(canceled)[0]["is_cancelled"] is True
+    assert icalsync.parse_events(method_cancel)[0]["is_cancelled"] is True
 
 
 def test_platform_detection_for_major_otas():

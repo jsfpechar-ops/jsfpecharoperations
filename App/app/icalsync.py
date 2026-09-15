@@ -165,6 +165,7 @@ def _guest_name_hint(summary: str) -> str:
 def parse_events(ics_text: str) -> List[Dict[str, Any]]:
     """Extract the stays from an iCal document."""
     calendar = Calendar.from_ical(ics_text)
+    calendar_cancelled = str(calendar.get("METHOD") or "").strip().upper() == "CANCEL"
     events: List[Dict[str, Any]] = []
     for component in calendar.walk("VEVENT"):
         start = _as_date(component.get("DTSTART").dt) if component.get("DTSTART") else None
@@ -173,8 +174,13 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
         if not start:
             continue
         if not end:
-            # A stay with no end is treated as a single night.
-            end = start + timedelta(days=1)
+            duration_prop = component.get("DURATION")
+            duration = duration_prop.dt if duration_prop else None
+            if isinstance(duration, timedelta) and duration > timedelta(0):
+                end = start + duration
+            else:
+                # A stay with no end or duration is treated as a single night.
+                end = start + timedelta(days=1)
 
         summary = str(component.get("SUMMARY") or "").strip()
         description = str(component.get("DESCRIPTION") or "").replace("\\n", "\n").strip()
@@ -196,7 +202,7 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
                 "summary": summary,
                 "description": description,
                 "is_block": is_block(summary),
-                "is_cancelled": status == "CANCELLED",
+                "is_cancelled": calendar_cancelled or status in ("CANCELLED", "CANCELED"),
                 "reservation_url": url_match.group(1).rstrip(".,);") if url_match else None,
                 "phone_last4": phone_match.group(1) if phone_match else None,
                 "guest_email": email_match.group(0) if email_match else None,
