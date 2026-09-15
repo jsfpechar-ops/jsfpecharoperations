@@ -141,14 +141,41 @@ You keep cheap `.cz` registration and Cloudflare DNS/security.
 
 ---
 
-## Optional hardening
+## Production zone (`ubyhost.com`) — enabled 15 September 2026
+
+These Cloudflare **zone** settings are on for the live domain (orange-cloud proxy).
+They sit in front of Lightsail; they are **not** configured in this git repo.
+Re-check after a dashboard reset or plan change.
+
+| Control | Dashboard | Setting |
+|---------|-----------|---------|
+| **SSL/TLS mode** | SSL/TLS → Overview | **Full (strict)** |
+| **Always Use HTTPS** | SSL/TLS → Edge Certificates | On |
+| **HSTS** | SSL/TLS → Edge Certificates → HSTS | **On**; max-age **6 months**; **includeSubDomains off**; **preload off**; **No-Sniff on** |
+| **Bot Fight Mode** | Security → Settings (one-click) or Bots | **On** |
+| **Leaked credentials mitigation** | Security → Settings | **On** (challenges or rate-limits login traffic that matches leaked-password signals) |
+| **Client-side security** | Security → Settings | **On** (inventories third-party scripts in browsers; Page Shield / client-side monitoring) |
+| **Turnstile** | application env (`TURNSTILE_*`) | Host login in production; guest PIN after repeated failures — see [SECURITY.md](SECURITY.md) |
+
+Do **not** enable HSTS **preload** or **includeSubDomains** unless every hostname under the zone is HTTPS-only (mail, staging, future subdomains).
+
+After toggling Bot Fight Mode or leaked-credential rules, try:
+
+1. Host login at `https://ubyhost.com/login`
+2. A guest permalink (`/l/…`) and PIN
+3. Security → Events for false positives labelled Bot Fight Mode
+
+### Still optional
 
 | Setting | Where | Why |
 |---------|-------|-----|
-| **Bot Fight Mode** | Security → Bots | Blocks obvious bots (free) |
 | **Security Level** | Security → Settings | Medium is fine for a host tool |
 | **Email Routing** | Email → Routing | Forward `hello@domain` to Gmail (free) |
 | **Firewall: allow only Cloudflare** | VPS firewall | Blocks direct IP access — advanced; see [Cloudflare IP ranges](https://www.cloudflare.com/ips/) |
+| **AI Labyrinth** | Security | Optional; skip unless unwanted AI crawlers become a problem |
+| **security.txt** | Cloudflare Security.txt or origin `/.well-known/security.txt` | Vulnerability disclosure contact |
+| **Cloudflare account MFA** | My Profile → Authentication | Required for the zone admin (not the UbyHost app) |
+| **DMARC** | DNS TXT `_dmarc` | If the zone has MX; start with `p=none` |
 
 ---
 

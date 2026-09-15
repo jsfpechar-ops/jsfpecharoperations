@@ -7,7 +7,7 @@ summarises the threat model, controls, and known limitations.
 
 | Layer | Control |
 |-------|---------|
-| **Transport** | HTTPS in production (`Secure` cookies when `PUBLIC_BASE_URL` is `https://`) |
+| **Transport** | HTTPS in production (`Secure` cookies when `PUBLIC_BASE_URL` is `https://`); Cloudflare **HSTS** (6 months, no preload) on `ubyhost.com` |
 | **Host auth** | Signed session cookie, `HttpOnly`, `SameSite=strict`, session version invalidation |
 | **Host 2FA** | Authenticator-app TOTP required in production; one-use recovery codes |
 | **Guest access** | Unguessable permalink token + optional 4-digit PIN + signed PIN cookie bound to token |
@@ -20,7 +20,7 @@ summarises the threat model, controls, and known limitations.
 - **iCal SSRF**: calendar URLs resolved and blocked if they point to private, loopback, link-local, or metadata addresses; redirects re-validated (max 3 hops, no automatic `requests` redirect following).
 - **Login brute force**: sliding-window limit per IP+username (`rate_limit_event` table).
 - **Guest PIN brute force**: limit (10 failures / 15 min per IP+token), progressive delay on wrong PIN, constant-time compare; **new** PINs are six digits (legacy four-digit PINs still accepted until rotated).
-- **Bot protection**: Cloudflare Turnstile gates production host login and appears on guest PIN after three failures; the backend validates token, action, hostname, and client IP.
+- **Bot protection**: Cloudflare Turnstile gates production host login and appears on guest PIN after three failures; the backend validates token, action, hostname, and client IP. The `ubyhost.com` zone also has **Bot Fight Mode**, **leaked-credential mitigation** (login traffic checked against known-leak signals at the edge), and **client-side security** (script inventory in the browser). See [CLOUDFLARE.md](CLOUDFLARE.md).
 - **Security alerts**: repeated guest PIN failures create an audit event and a host-visible warning.
 - **Guest authorization lifetime**: successful PIN authorization expires after seven days.
 - **Open redirects**: `return_to` and login `next` accept local paths only; alert dismiss uses referer path only.
