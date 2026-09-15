@@ -16,6 +16,9 @@ kbd { padding:1px 5px;border:1px solid var(--border);border-radius:var(--radius-
 .theme-switch button { min-width:0;padding:5px 4px;border:0;border-radius:var(--radius-xs);background:transparent;color:var(--ink-muted);font:600 11px/1.4 var(--font-sans);cursor:pointer }
 .theme-switch button:hover { color:var(--ink);background:var(--surface-hover) }
 .theme-switch button.is-active { color:var(--ink);background:var(--surface) }
+.theme-control { display:grid;gap:5px;margin:0 0 10px }
+.theme-control .nav-label { padding:0 }
+.auth-theme-switch { position:absolute;top:22px;right:24px;width:210px }
 .shortcut-trigger { width:30px;height:30px;padding:0;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink-muted);font-weight:700;cursor:pointer }
 .property-identity { display:inline-flex;align-items:center;gap:var(--space-2);min-width:0 }
 .property-mark,.avatar { display:inline-grid;place-items:center;width:28px;height:28px;flex:0 0 auto;border-radius:var(--radius-sm);background:var(--gray-bg);color:var(--gray);font-size:var(--text-sm);font-weight:750;text-transform:uppercase }
@@ -78,4 +81,5 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
   .command-group { display:none }
   .shortcut-list>div { grid-template-columns:120px 1fr }
   .command-trigger kbd { display:none }
+  .auth-theme-switch { position:static;width:100%;margin:8px 0 16px }
 }

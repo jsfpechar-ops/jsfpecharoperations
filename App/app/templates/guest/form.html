@@ -90,7 +90,7 @@
       <div class="g-field">
         <label for="birth_date">{{ t('birth_date') }}</label>
         <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date"
-               inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" required
+               inputmode="numeric" placeholder="{{ t('date_placeholder') }}" maxlength="10" required
                autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
         <div class="hint">{{ t('birth_date_help') }}</div>
         {{ err_for('birth_date') }}

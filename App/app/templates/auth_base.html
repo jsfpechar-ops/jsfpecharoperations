@@ -1,10 +1,18 @@
 <!doctype html>
-<html lang="{{ lang | default('en') }}" data-theme="light">
+<html lang="{{ lang | default('en') }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("ubyhost-theme");
+        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+      } catch (error) {}
+    })();
+  </script>
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
   <link rel="stylesheet" href="/static/app.css?v=20260914d">
@@ -22,6 +30,11 @@
         <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
         <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
       </form>
+      <div class="theme-switch auth-theme-switch" role="group" aria-label="{{ t('theme.label') }}">
+        <button type="button" data-theme-value="system" aria-pressed="false">{{ t('theme.system') }}</button>
+        <button type="button" data-theme-value="light" aria-pressed="false">{{ t('theme.light') }}</button>
+        <button type="button" data-theme-value="dark" aria-pressed="false">{{ t('theme.dark') }}</button>
+      </div>
       {% include "_env_banner.html" %}
       {% block auth_body %}{% endblock %}
       <footer class="auth-foot-legal small muted">
@@ -45,5 +58,6 @@
       </div>
     </aside>
   </div>
+  <script src="/static/theme.js?v=20260915a"></script>
 </body>
 </html>

@@ -17,6 +17,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "theme_system": "System",
         "theme_light": "Light",
         "theme_dark": "Dark",
+        "language_label": "Language",
+        "date_placeholder": "DD/MM/YYYY",
         "legal_intro": (
             "Czech law treats every rented apartment as an accommodation facility. Your host "
             "must write each guest into a house book and report every foreign guest to the "
@@ -361,6 +363,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "theme_system": "Systém",
         "theme_light": "Světlý",
         "theme_dark": "Tmavý",
+        "language_label": "Jazyk",
+        "date_placeholder": "DD/MM/RRRR",
         "legal_intro": (
             "Podle českého práva je pronajímaný apartmán ubytovacím zařízením. Ubytovatel musí "
             "každého hosta zapsat do domovní knihy a každého ubytovaného cizince oznámit "
