@@ -17,7 +17,7 @@ summarises the threat model, controls, and known limitations.
 
 ## Hardening (application)
 
-- **iCal SSRF**: calendar URLs resolved and blocked if they point to private, loopback, link-local, or metadata addresses; redirects re-validated (max 3 hops, no automatic `requests` redirect following). `UBYHOST_ICAL_ALLOW_PRIVATE` is ignored in production.
+- **iCal SSRF**: calendar URLs resolved and blocked if they point to private, loopback, link-local, or metadata addresses; each hop is fetched over TCP to the validated address without a second DNS lookup (DNS rebinding safe); redirects re-validated (max 3 hops). `UBYHOST_ICAL_ALLOW_PRIVATE` is ignored in production.
 - **Login brute force**: sliding-window limits per IP+username and across usernames from one IP (`rate_limit_event` table).
 - **Guest PIN brute force**: limit (10 failures / 15 min per IP+token), non-blocking progressive delay on wrong PIN, constant-time compare; **new** PINs are six digits (legacy four-digit PINs still accepted until rotated). Rotating a PIN invalidates prior PIN sessions.
 - **Host CSRF**: production host/authentication POSTs require a signed CSRF token bound to the current host session. A valid token is accepted even when TLS terminates at Caddy/Cloudflare (browser `Origin: https://…` vs internal `http://`). Without a valid token, cross-site `Origin`/`Referer` values are rejected; `www` and apex hostnames are treated as equivalent. Staging/local environments retain `SameSite=Strict` protection so test and administrative clients remain usable. Guest permalink forms remain outside this control boundary.
@@ -40,7 +40,7 @@ summarises the threat model, controls, and known limitations.
 | **Rate limits** | SQLite-backed; effective per app instance; use Cloudflare rate rules for edge protection. |
 | **Guest PIN entropy** | New PINs are 6 digits; rotate old 4-digit PINs. Always use PIN in production (`UBYHOST_GUEST_PIN=1`). |
 | **Admin impersonation** | Intentional full read/write support access; audited; admin role only. Actions taken while previewing mutate the host workspace. |
-| **iCal DNS rebinding** | DNS answers are screened before each request/redirect, but the HTTP client performs its own lookup. Restrict instance egress and metadata access at the host/cloud-network layer. |
+| **iCal DNS rebinding** | Mitigated by pinning each fetch to the IP(s) returned at validation time (no `getaddrinfo` on connect). Keep egress restrictions as defence in depth. |
 | **Guest POST CSRF** | Guest forms do not carry host authority and require the scoped permalink/PIN cookie. Keep PIN protection enabled. |
 | **Overlapping stay selection** | One apartment permalink/PIN can select any active stay inside its configured visibility window. Keep the window short and avoid overlapping links where booking-date disclosure is unacceptable. |
 | **Content Security Policy** | Existing inline scripts/styles require `'unsafe-inline'`; Jinja autoescape remains the primary XSS control. Remove inline code before tightening this directive. |
