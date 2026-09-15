@@ -24,12 +24,23 @@ jobs:
         env:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          LIGHTSAIL_AUTO_DEPLOY: ${{ secrets.LIGHTSAIL_AUTO_DEPLOY }}
           GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
             echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
             echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
             exit 0
+          fi
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_run" ]; then
+            case "${LIGHTSAIL_AUTO_DEPLOY}" in
+              1|true|yes) ;;
+              *)
+                echo "CI auto-deploy is off. Set Actions secret LIGHTSAIL_AUTO_DEPLOY=1 to enable"
+                echo "deploys after green CI on main. Use workflow_dispatch to deploy this SHA now."
+                exit 0
+                ;;
+            esac
           fi
           install -m 700 -d ~/.ssh
           printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem

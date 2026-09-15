@@ -17,8 +17,12 @@ Quick start (on the server, after DNS points at your static IP):
 ```bash
 cp .env.example .env && nano .env
 chmod +x scripts/*.sh
+./scripts/preflight.sh
 ./scripts/deploy.sh
 ```
+
+Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/smoke-remote.sh`.
+
 
 ## Weekly backup to Google Drive (bare minimum)
 

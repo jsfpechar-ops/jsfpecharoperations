@@ -31,9 +31,7 @@ The most important gaps for counsel are:
    action, not a scheduled job. Repository backup scripts retain snapshots by
    count, not by a documented time window, and do not demonstrate the policy's
    claims of encrypted off-site copies or automatic backup purging.
-4. **Environment isolation:** deployment files configure staging as mock, but the
-   application has no hard guard against `UBYHOST_DEPLOYMENT=staging` with
-   `UBYHOST_UBYPORT_ENV=prod`.
+4. **Environment isolation:** `app/env_guard.py` refuses `UBYHOST_UBYPORT_ENV=prod` unless `UBYHOST_DEPLOYMENT=production`, and refuses `prod` on Render-like environments. Staging Render still starts mock/test only via `render_start.sh` (prod exits). Operator discipline is still required for the Lightsail `test` → `prod` flip.
 5. **Rights and incidents:** exports and record correction exist, but there is no
    dedicated data-subject request, restriction, erasure, breach-case, or
    notification workflow. DPA assistance and notification promises therefore
