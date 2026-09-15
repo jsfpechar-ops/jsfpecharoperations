@@ -30,12 +30,30 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Run tests
+      - name: Lint for runtime errors
+        run: ruff check app tests --select E9,F63,F7,F82
+
+      - name: Type check (baseline)
+        continue-on-error: true
+        run: >-
+          mypy app
+          --ignore-missing-imports
+          --follow-imports=skip
+          --allow-untyped-defs
+          --allow-untyped-calls
+          --allow-incomplete-defs
+          --disable-error-code=var-annotated
+
+      - name: Run tests with coverage
         env:
           UBYHOST_UBYPORT_ENV: mock
           UBYHOST_DEPLOYMENT: staging
           UBYHOST_ENABLE_SCHEDULER: "0"
-        run: python -m pytest tests -q
+        run: >-
+          python -m pytest tests -q
+          --cov=app
+          --cov-report=term-missing
+          --cov-report=xml
 
   smoke:
     runs-on: ubuntu-latest
