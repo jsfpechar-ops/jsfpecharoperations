@@ -18,7 +18,7 @@ and secret rotation.
 | ID | Severity | Area | Finding | Status |
 |----|----------|------|---------|--------|
 | UH-01 | High | Supply chain | Pinned multipart, HTTP, and framework packages had published 2026 advisories. | Fixed: upgraded FastAPI, Starlette, python-multipart, and requests; dependency audit is clean. |
-| UH-02 | Medium | CSRF | Host and authentication POST forms relied only on `SameSite=Strict`. | Fixed: production/staging requests require a signed, session-bound token and same-origin browser metadata. |
+| UH-02 | Medium | CSRF | Host and authentication POST forms relied only on `SameSite=Strict`. | Fixed in production: requests require a signed, session-bound token and same-origin browser metadata. Staging/local retain strict-cookie protection for automation compatibility. |
 | UH-03 | Medium | Redirects | Several `return_to` and continuation paths bypassed the stricter local-path helpers. | Fixed: host redirects use one normalized local-path validator. |
 | UH-04 | Medium | Availability | Calendar responses had redirect limits but no response-size ceiling. | Fixed: 5 MiB ceiling, explicit three-hop limit, malformed/userinfo URL rejection. |
 | UH-05 | Medium | Secrets | Existing secret-key permissions were not repaired; generated files were not created atomically. | Fixed: owner-only modes are enforced and key creation is exclusive. |
