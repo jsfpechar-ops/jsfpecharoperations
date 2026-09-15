@@ -1,7 +1,10 @@
 import xml.etree.ElementTree as ET
 
+import pytest
+
 from app.ubyport import errors as uby_errors
 from app.ubyport import soap
+from app.ubyport.client import UbyportClient, UbyportTransportError
 
 HEADER = {
     "uIdub": "100227887600",
@@ -120,6 +123,22 @@ def test_response_parsing():
     assert parsed["header_errors"] == "5;6;7;"
     assert parsed["record_errors"] == [";112;106;", ";"]
     assert parsed["pseudo_stamp"] == "F8EA613D-C8C5-4671-924D-EE4F8588E08D"
+
+
+def test_submit_rejects_fewer_outcomes_than_guest_records(monkeypatch):
+    client = UbyportClient("https://ubyport.invalid", "user", "password")
+    monkeypatch.setattr(client, "_post", lambda *_args: RESPONSE_WITH_ERRORS)
+
+    with pytest.raises(UbyportTransportError, match="2 outcomes for 3 guest"):
+        client.submit(HEADER, [GUEST, GUEST, GUEST])
+
+
+def test_submit_wraps_malformed_xml_as_transport_failure(monkeypatch):
+    client = UbyportClient("https://ubyport.invalid", "user", "password")
+    monkeypatch.setattr(client, "_post", lambda *_args: "<html>upstream failure")
+
+    with pytest.raises(UbyportTransportError, match="unreadable XML"):
+        client.submit(HEADER, [GUEST])
 
 
 def test_pseudo_stamp_accepts_the_misspelling_in_the_spec():
