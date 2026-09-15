@@ -28,6 +28,12 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+if [ "${UBYPORT_ENV}" = "prod" ]; then
+  echo "FATAL: UBYHOST_UBYPORT_ENV=prod is not allowed on Render." >&2
+  echo "Live reporting runs only on AWS Lightsail. Staging must stay mock." >&2
+  exit 1
+fi
+
 if [ "${UBYPORT_ENV}" = "mock" ]; then
   export UBYHOST_MOCK_URL="${UBYHOST_MOCK_URL:-http://127.0.0.1:8081/ws_uby/ws_uby.svc}"
   echo "Starting mock UbyPort on port 8081 (demo only — nothing sent to the police)."
