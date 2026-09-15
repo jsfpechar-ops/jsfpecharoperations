@@ -254,6 +254,99 @@ def test_duplicate_after_lost_success_is_recorded_as_sent(monkeypatch):
     assert guest["submitted_at"]
 
 
+def test_successful_acceptance_marks_identity_verified(monkeypatch):
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok8")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    pairs = reporting.collect_sendable(
+        apartment_id, only_guest_ids=[guest_id], ignore_automation=True
+    )
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            return SubmissionResult(
+                endpoint="mock",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                record_errors=[";"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    result = reporting.submit_batch(apartment, pairs, verified_by_user_id=None)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert result["state"] == "ok"
+    assert guest["submit_state"] == reporting.SENT
+    assert guest["identity_verified_at"]
+    assert guest["identity_verified_by"] is None
+
+
+def test_resend_duplicate_on_already_sent_record_stays_sent(monkeypatch):
+    """A deliberate resend that hits code 150 must not look like a fresh acceptance."""
+    apartment_id, guest_id = _seed(reporting.SENT, None, "duptok9")
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    pairs = reporting.collect_sendable(
+        apartment_id,
+        only_guest_ids=[guest_id],
+        ignore_automation=True,
+        allow_resend=True,
+    )
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            return SubmissionResult(
+                endpoint="mock",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                record_errors=[";150;"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    result = reporting.submit_batch(apartment, pairs)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert guest["submit_state"] == reporting.SENT
+    assert result["submitted"] == 0
+    assert result["blocked"] == 1
+    assert result["state"] == "error"
+
+
+def test_correctable_field_error_stays_error_on_resend(monkeypatch):
+    apartment_id, guest_id = _seed(
+        reporting.ERROR, "106: Invalid value in a guest field", "duptok10"
+    )
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    pairs = reporting.collect_sendable(
+        apartment_id,
+        only_guest_ids=[guest_id],
+        ignore_automation=True,
+        allow_resend=True,
+    )
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            return SubmissionResult(
+                endpoint="mock",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                record_errors=[";106;"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    reporting.submit_batch(apartment, pairs)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert guest["submit_state"] == reporting.ERROR
+    assert "106" in (guest["last_errors"] or "")
+
+
 def test_transport_failure_does_not_mark_identity_verified(monkeypatch):
     apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok7")
     db.update(
