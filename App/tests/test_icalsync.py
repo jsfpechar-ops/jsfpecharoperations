@@ -166,3 +166,70 @@ def test_empty_calendar_does_not_mass_cancel_future_stays(monkeypatch, tmp_path)
     assert db.query_one(
         "SELECT status FROM reservation WHERE id = ?", (reservation_id,)
     )["status"] == "active"
+
+
+def test_moved_ical_stay_updates_guest_dates_and_requires_new_signature(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "moved-feed.sqlite3")
+    db.init_db()
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Moved feed test",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    feed_id = db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/moved.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "ical_feed_id": feed_id,
+            "uid": "moved-stay",
+            "date_from": "2099-01-10",
+            "date_to": "2099-01-12",
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": reservation_id,
+            "stay_from": "2099-01-10",
+            "stay_to": "2099-01-12",
+            "signature_png": "data:image/png;base64,signed",
+            "signed_at": now,
+            "entered_by": "guest",
+            "submit_state": "pending",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    moved = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20990210\nDTEND;VALUE=DATE:20990212\n"
+        "UID:moved-stay\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+    )
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: moved)
+
+    icalsync.sync_feed(db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,)))
+
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["stay_from"] == "2099-02-10"
+    assert guest["stay_to"] == "2099-02-12"
+    assert guest["signature_png"] is None
+    assert guest["signed_at"] is None

@@ -297,6 +297,10 @@ def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
             # A host decision to ignore a range is never undone by a re-sync.
             if existing["status"] == "ignored":
                 continue
+            dates_changed = (
+                existing["date_from"] != event["date_from"]
+                or existing["date_to"] != event["date_to"]
+            )
             changed = {
                 k: v
                 for k, v in payload.items()
@@ -308,6 +312,23 @@ def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
                 changed["updated_at"] = now
                 db.update("reservation", existing["id"], changed)
                 stats["updated"] += 1
+            if dates_changed:
+                db.execute(
+                    "UPDATE guest SET stay_from = ?, stay_to = ?, signature_png = NULL, "
+                    "signed_at = NULL, updated_at = ? "
+                    "WHERE reservation_id = ? AND submit_state != 'sent'",
+                    (
+                        event["date_from"],
+                        event["date_to"],
+                        now,
+                        existing["id"],
+                    ),
+                )
+                log.warning(
+                    "ical_dates_changed_resign_required apartment_id=%s reservation_id=%s",
+                    feed["apartment_id"],
+                    existing["id"],
+                )
             if event["guest_email"] and not existing["guest_email"]:
                 db.update("reservation", existing["id"], {"guest_email": event["guest_email"]})
         else:
