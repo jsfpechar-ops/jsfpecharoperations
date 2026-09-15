@@ -12,7 +12,9 @@ kbd { padding:1px 5px;border:1px solid var(--border);border-radius:var(--radius-
 .saved-views .nav-label { padding-left:4px }
 .saved-views a { display:block;padding:6px 8px;overflow:hidden;border-radius:var(--radius-sm);color:var(--ink-muted);font-size:var(--text-sm);text-decoration:none;text-overflow:ellipsis;white-space:nowrap }
 .saved-views a:hover { color:var(--ink);background:var(--surface-hover) }
-.view-switch { display:inline-flex;gap:2px;margin:0 0 12px;padding:2px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--canvas-subtle) }
+.stays-toolbar { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 16px }
+.stays-toolbar .chips { margin-bottom:0 }
+.view-switch { display:inline-flex;gap:2px;padding:2px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--canvas-subtle) }
 .view-switch a { padding:6px 11px;border-radius:var(--radius-xs);color:var(--ink-muted);font-size:var(--text-sm);font-weight:650;text-decoration:none }
 .view-switch a:hover { color:var(--ink);background:var(--surface-hover) }
 .view-switch a.on { color:var(--ink);background:var(--surface) }
