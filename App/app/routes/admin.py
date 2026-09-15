@@ -45,8 +45,6 @@ router = APIRouter()
 # A house book with years of history is still well under a megabyte, so this
 # is generous for a real import and stops an upload from being read whole into
 # memory.
-MAX_IMPORT_BYTES = 4 * 1024 * 1024
-_TOO_BIG = "That file is larger than 4 MB. Split the import into smaller files."
 
 
 def _back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
@@ -1470,18 +1468,6 @@ async def reservation_create(request: Request):
     return _back(f"/reservations/{reservation_id}", msg="Stay created.")
 
 
-@router.get("/reservations-sample.csv")
-def reservations_sample_download(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    return Response(
-        stays_import.sample_csv(),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="stays-vzor.csv"'},
-    )
-
-
 @router.get("/reservations.csv")
 def reservations_export(request: Request):
     guard = auth.require_login(request)
@@ -1503,32 +1489,6 @@ def reservations_export(request: Request):
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="stays-{stamp}.csv"'},
     )
-
-
-@router.post("/reservations/import")
-async def reservations_import(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    form = await request.form()
-    upload = form.get("csv_file")
-    if not upload or not getattr(upload, "filename", ""):
-        return _back("/reservations", err="Choose a CSV file to import.")
-    content = await upload.read(MAX_IMPORT_BYTES + 1)
-    if not content:
-        return _back("/reservations", err="The file is empty.")
-    if len(content) > MAX_IMPORT_BYTES:
-        return _back("/reservations", err=_TOO_BIG)
-    result = stays_import.import_csv(content, owner_user_id=access.owner_id(request))
-    if result["imported"]:
-        detail = f"Imported {result['imported']} stay(s)."
-        if result["skipped"]:
-            detail += f" Skipped {result['skipped']} row(s)."
-        if result["errors"]:
-            detail += " " + result["errors"][0]
-        return _back("/reservations", msg=detail)
-    return _back("/reservations", err=result["errors"][0] if result["errors"] else "Nothing imported.")
-
 
 @router.post("/reservations/submit-ready")
 async def reservations_submit_ready(request: Request):
@@ -2360,48 +2320,6 @@ def housebook_view(request: Request):
             "retention_years": housebook.RETENTION_YEARS,
             "max_inspection_pdfs": housebook.MAX_INSPECTION_PDFS,
         },
-    )
-
-
-@router.post("/housebook/import")
-async def housebook_import(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    form = await request.form()
-    apartment_id = _form_int(form, "apartment_id")
-    upload = form.get("csv_file")
-    if not apartment_id:
-        return _back("/housebook", err="Choose which property the records belong to.")
-    if not access.apartment(request, apartment_id):
-        return _back("/housebook", err="No such property.")
-    if not upload or not getattr(upload, "filename", ""):
-        return _back("/housebook", err="Choose a CSV file to import.")
-    content = await upload.read(MAX_IMPORT_BYTES + 1)
-    if not content:
-        return _back("/housebook", err="The file is empty.")
-    if len(content) > MAX_IMPORT_BYTES:
-        return _back("/housebook", err=_TOO_BIG)
-    result = housebook.import_csv(content, apartment_id)
-    if result["imported"]:
-        detail = f"Imported {result['imported']} record(s)."
-        if result["skipped"]:
-            detail += f" Skipped {result['skipped']} row(s)."
-        if result["errors"]:
-            detail += " " + result["errors"][0]
-        return _back("/housebook", msg=detail)
-    return _back("/housebook", err=result["errors"][0] if result["errors"] else "Nothing imported.")
-
-
-@router.get("/housebook-sample.csv")
-def housebook_sample_download(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    return Response(
-        housebook.sample_housebook_csv(),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="domovni-kniha-vzor.csv"'},
     )
 
 

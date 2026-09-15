@@ -104,7 +104,7 @@ def main() -> int:
         ("/", ["Operations", "Overview", "row-menu-trigger"]),
         ("/automation", ["When to send to UbyPort", "data-automation-mode", "Test connection"]),
         ("/guest-links", ["Generate a new PIN", "data-copy"]),
-        ("/reservations", ["Import & export", "Send all ready", "row-menu-trigger", "Archive"]),
+        ("/reservations", ["Export stays (CSV)", "Send all ready", "Archive"]),
         ("/housebook", ["data-csv-export", "Exempt", "row-menu-trigger"]),
         ("/apartments", ["row-menu-trigger"]),
         ("/settings", ["settings-audit", "Recent activity"]),

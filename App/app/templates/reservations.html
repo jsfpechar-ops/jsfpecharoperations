@@ -62,27 +62,6 @@
   </div>
 </div>
 
-<div id="import-stays-panel" class="action-panel hidden">
-  <div class="panel">
-    <div class="section-heading" style="margin-top:0">
-      <h2>{{ t('stays.import.title') }}</h2>
-      <button class="btn small ghost" type="button" data-close-panel>{{ t('common.close') }}</button>
-    </div>
-    <div class="import-guide">
-      <p>{{ t('stays.import.lede') }} <a href="/reservations-sample.csv">{{ t('csv.sample_stays') }}</a></p>
-      <p class="small muted">{{ t('stays.import.required') }}</p>
-    </div>
-    <form method="post" action="/reservations/import" enctype="multipart/form-data" class="filters" style="margin-top:14px">
-      <div class="field" style="min-width:260px;margin:0">
-        <label for="stays_csv_file">{{ t('stays.import.file') }}</label>
-        <input type="file" id="stays_csv_file" name="csv_file" accept=".csv,text/csv" required>
-      </div>
-      <div class="field filter-actions">
-        <button class="btn primary" type="submit">{{ t('stays.import.submit') }}</button>
-      </div>
-    </form>
-  </div>
-</div>
 {% endif %}
 
 <div class="chips">
@@ -129,7 +108,7 @@
     <a class="btn ghost" href="/reservations?range=upcoming">{{ t('common.clear') }}</a>
     <button class="btn ghost" type="button" data-save-view
             data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
-    {{ csv_actions_menu(csv_export_params, apartments|length > 0, true) }}
+    {{ csv_actions_menu(csv_export_params, true) }}
   </div>
 </form>
 
