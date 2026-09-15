@@ -5,11 +5,11 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, client_ip, config, db, host_i18n, scheduler
+from . import auth, client_ip, config, db, host_i18n, scheduler, security
 from .routes import admin, guest, legal
 from .sample_calendar import sample_calendar_response
 
@@ -76,6 +76,14 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+        "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+        "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
+        "frame-src https://challenges.cloudflare.com; "
+        "connect-src 'self' https://challenges.cloudflare.com",
+    )
     # Everything outside /static carries passport numbers, addresses and
     # signatures. Guests hand the phone back and hosts share laptops, so these
     # pages must not sit in history, the back/forward cache, or a proxy.
@@ -95,13 +103,16 @@ def sample_airbnb_calendar():
     return sample_calendar_response()
 
 
-@app.post("/language", include_in_schema=False)
+@app.post(
+    "/language",
+    include_in_schema=False,
+    dependencies=[Depends(security.protect_host_post)],
+)
 async def set_language(request: Request):
     form = await request.form()
     lang = host_i18n.normalise_language(str(form.get("lang", "")))
     target = str(form.get("next", "/") or "/")
-    if not target.startswith("/") or target.startswith("//"):
-        target = "/"
+    target = security.safe_local_path(target, "/")
     response = RedirectResponse(target, status_code=303)
     response.set_cookie(
         host_i18n.LANG_COOKIE,
@@ -118,13 +129,16 @@ async def set_language(request: Request):
 @app.get("/healthz", include_in_schema=False)
 def healthz():
     data_writable = os.access(config.DATA_DIR, os.W_OK)
-    return {
+    payload = {
         "status": "ok" if data_writable else "degraded",
         "version": __import__("app").__version__,
-        "deployment": config.DEPLOYMENT,
-        "ubyport_env": config.UBYPORT_ENV,
         "data_dir_writable": data_writable,
     }
+    if config.DEPLOYMENT != "production":
+        payload.update(
+            {"deployment": config.DEPLOYMENT, "ubyport_env": config.UBYPORT_ENV}
+        )
+    return payload
 
 
 @app.get("/favicon.ico", include_in_schema=False)

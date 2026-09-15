@@ -9,7 +9,19 @@ from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context
 
-from . import __version__, alerts, auth, config, deadlines, host_i18n, onboarding, operator, reporting, validation
+from . import (
+    __version__,
+    alerts,
+    auth,
+    config,
+    deadlines,
+    host_i18n,
+    onboarding,
+    operator,
+    reporting,
+    security,
+    validation,
+)
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
@@ -92,6 +104,7 @@ templates.env.globals.update(
 def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
     data = dict(context or {})
     data["request"] = request
+    data["csrf_token"] = security.csrf_token(request)
     data["lang"] = host_i18n.lang_from_request(request)
     data.setdefault("current_user", auth.current_user(request))
     data.setdefault("workspace_user", auth.workspace_user(request))

@@ -9,7 +9,7 @@ import qrcode
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import auth, config, db, rate_limit, turnstile
+from .. import auth, config, db, rate_limit, security, turnstile
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import form_str as _form_str
@@ -60,8 +60,8 @@ async def login_submit(request: Request):
             status_code=401,
         )
     target = "/account/password" if account["must_change_password"] else "/"
-    next_path = _form_str(form, "next")
-    if next_path.startswith("/") and not next_path.startswith("//") and not account["must_change_password"]:
+    next_path = security.safe_local_path(_form_str(form, "next"), "/")
+    if not account["must_change_password"]:
         target = next_path
     remember = _form_str(form, "remember") in ("1", "on", "true", "yes")
     if account["totp_enabled"]:
@@ -121,7 +121,9 @@ async def two_factor_login(request: Request):
             {"pending": _form_str(form, "pending"), "error": "That code is not valid."},
             status_code=401,
         )
-    response = RedirectResponse(str(pending.get("next") or "/"), status_code=303)
+    response = RedirectResponse(
+        security.safe_local_path(str(pending.get("next") or ""), "/"), status_code=303
+    )
     auth.attach_session(
         response,
         auth.issue_session(

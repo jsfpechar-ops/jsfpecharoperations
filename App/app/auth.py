@@ -392,18 +392,17 @@ def ensure_bootstrap_admin() -> Optional[str]:
     db.execute("UPDATE audit SET owner_user_id = ? WHERE owner_user_id IS NULL", (user_id,))
     if generated_password:
         path = Path(config.DATA_DIR) / "initial_admin_credentials"
-        path.write_text(f"username={username}\npassword={generated_password}\n")
-        try:
-            path.chmod(0o600)
-        except OSError:
-            pass
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        os.fchmod(descriptor, 0o600)
+        with os.fdopen(descriptor, "w") as handle:
+            handle.write(f"username={username}\npassword={generated_password}\n")
     return generated_password
 
 
 def new_permalink_token() -> str:
     """Short, unguessable, and readable enough to paste into a message."""
     alphabet = "abcdefghijkmnopqrstuvwxyz23456789"
-    return "".join(secrets.choice(alphabet) for _ in range(10))
+    return "".join(secrets.choice(alphabet) for _ in range(20))
 
 
 def new_permalink_pin() -> str:
