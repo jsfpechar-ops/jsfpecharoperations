@@ -1,9 +1,11 @@
 """Security regression tests."""
 from __future__ import annotations
 
+import re
+
 from fastapi.testclient import TestClient
 
-from app import client_ip, config, db, rate_limit
+from app import client_ip, config, db, rate_limit, security
 from app.main import app
 from app.routes import admin as admin_routes
 from tests.test_accounts import _account, _clean_accounts, _login
@@ -14,6 +16,83 @@ def test_security_headers_on_healthz():
     assert response.status_code == 200
     assert response.headers.get("X-Content-Type-Options") == "nosniff"
     assert response.headers.get("X-Frame-Options") == "DENY"
+    policy = response.headers.get("Content-Security-Policy", "")
+    assert "object-src 'none'" in policy
+    assert "frame-ancestors 'none'" in policy
+
+
+def test_production_healthz_omits_environment_details(monkeypatch):
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    response = TestClient(app).get("/healthz")
+    assert response.status_code == 200
+    assert "deployment" not in response.json()
+    assert "ubyport_env" not in response.json()
+
+
+def _csrf_from(response) -> str:
+    match = re.search(r'<meta name="csrf-token" content="([^"]+)"', response.text)
+    assert match
+    return match.group(1)
+
+
+def test_production_host_posts_require_session_bound_csrf_token(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-csrf")
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    try:
+        client = TestClient(app)
+        login_token = _csrf_from(client.get("/login"))
+        denied = client.post(
+            "/login",
+            data={"username": "boundary-csrf", "password": "Secure-Password-123"},
+            follow_redirects=False,
+        )
+        assert denied.status_code == 403
+
+        logged_in = client.post(
+            "/login",
+            data={
+                "username": "boundary-csrf",
+                "password": "Secure-Password-123",
+                security.CSRF_FIELD: login_token,
+            },
+            follow_redirects=False,
+        )
+        assert logged_in.status_code == 303
+
+        host_token = _csrf_from(client.get("/settings"))
+        assert client.post("/settings/purge-expired", follow_redirects=False).status_code == 403
+        accepted = client.post(
+            "/settings/purge-expired",
+            data={security.CSRF_FIELD: host_token},
+            follow_redirects=False,
+        )
+        assert accepted.status_code == 303
+        cross_site = client.post(
+            "/settings/purge-expired",
+            data={security.CSRF_FIELD: host_token},
+            headers={"Origin": "https://other.example"},
+            follow_redirects=False,
+        )
+        assert cross_site.status_code == 403
+    finally:
+        _clean_accounts()
+
+
+def test_safe_local_path_rejects_ambiguous_redirect_targets():
+    for value in (
+        "https://other.example/path",
+        "//other.example/path",
+        "/\\other.example/path",
+        "/safe\r\nLocation: https://other.example",
+        "/a/../../other",
+    ):
+        result = security.safe_local_path(value, "/fallback")
+        assert result.startswith("/")
+        assert not result.startswith("//")
+        assert "\\" not in result
+        assert "\r" not in result and "\n" not in result
 
 
 def test_redirect_path_from_referer_rejects_off_site():

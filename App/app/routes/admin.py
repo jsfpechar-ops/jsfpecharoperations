@@ -1890,9 +1890,10 @@ def submission_xml(submission_id: int, which: str, request: Request):
     if which not in ("request", "response"):
         return Response("Unknown document.", status_code=404, media_type="text/plain")
     owned = access.submission(request, submission_id)
-    row = (
-        db.query_one(f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,))
-        if owned else None
+    if not owned:
+        return Response("Not found.", status_code=404, media_type="text/plain")
+    row = db.query_one(
+        f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,)
     )
     return Response((row["body"] if row else "") or "", media_type="application/xml")
 

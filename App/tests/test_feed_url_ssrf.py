@@ -46,6 +46,10 @@ def test_blocks_metadata_host():
         "http://0.0.0.0/c.ics",
         # Credentials must not smuggle a blocked host past the check.
         "http://user:pass@127.0.0.1/c.ics",
+        # Feed URLs must never carry credentials, even for public hosts.
+        "https://calendar-user:calendar-password@www.google.com/c.ics",
+        # Malformed authority syntax must fail closed rather than raising a 500.
+        "http://[::1/c.ics",
         # Non-HTTP schemes.
         "file:///etc/passwd",
         "gopher://example.com/",

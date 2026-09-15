@@ -6,7 +6,7 @@ import json
 
 from fastapi.testclient import TestClient
 
-from app import auth, config, db
+from app import auth, config, db, passport_photos
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
@@ -121,6 +121,10 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
                 "updated_at": db.utcnow(),
             },
         )
+        db.update("guest", guest_id, {"passport_photo_at": db.utcnow()})
+        passport_photos.save_photo(
+            guest_id, b"\xff\xd8\xff" + (b"\x00" * 61), "image/jpeg"
+        )
         submission_id = db.insert(
             "submission",
             {
@@ -128,6 +132,7 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
                 "created_at": db.utcnow(),
                 "state": "ok",
                 "receipt_pdf": base64.b64encode(b"%PDF-test").decode(),
+                "request_xml": "<private>other workspace</private>",
             },
         )
         assert first.get(f"/guests/{guest_id}", follow_redirects=False).status_code == 303
@@ -135,6 +140,8 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
             f"/submissions/{submission_id}", follow_redirects=False
         ).status_code == 303
         assert first.get(f"/submissions/{submission_id}/receipt.pdf").status_code == 404
+        assert first.get(f"/submissions/{submission_id}/request.xml").status_code == 404
+        assert first.get(f"/guests/{guest_id}/passport-photo").status_code == 404
         assert first.get(f"/reservations/{reservation_id}", follow_redirects=False).status_code == 303
         assert first.get(f"/apartments/{first_apartment}").status_code == 200
 
@@ -151,6 +158,8 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
         assert detail.status_code == 200
         assert "OtherTenantSecret" not in detail.text
     finally:
+        if "guest_id" in locals():
+            passport_photos.delete_photo(guest_id)
         _clean_accounts()
 
 
