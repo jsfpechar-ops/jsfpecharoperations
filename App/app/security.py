@@ -19,6 +19,14 @@ CSRF_COOKIE = "ubyhost_csrf"
 CSRF_MAX_AGE = auth.SESSION_REMEMBER_MAX_AGE
 
 
+class ExpiredFormError(Exception):
+    """A same-site form has no valid CSRF proof and should be refreshed."""
+
+    def __init__(self, location: str):
+        self.location = location
+        super().__init__("Invalid or expired form token.")
+
+
 def safe_local_path(value: Optional[str], default: str = "/") -> str:
     """Return a normalized same-site path, or ``default`` for unsafe input."""
     raw = (value or "").strip()
@@ -173,8 +181,4 @@ async def protect_host_post(request: Request) -> None:
         return
     if not _request_is_same_site(request):
         raise HTTPException(status_code=403, detail="Cross-site request rejected.")
-    raise HTTPException(
-        status_code=303,
-        detail="Invalid or expired form token.",
-        headers={"Location": _csrf_recovery_location(request)},
-    )
+    raise ExpiredFormError(_csrf_recovery_location(request))
