@@ -84,7 +84,9 @@ def test_safe_local_path_rejects_ambiguous_redirect_targets():
     for value in (
         "https://other.example/path",
         "//other.example/path",
+        "/%2f%2fother.example/path",
         "/\\other.example/path",
+        "/%5cother.example/path",
         "/safe\r\nLocation: https://other.example",
         "/a/../../other",
     ):

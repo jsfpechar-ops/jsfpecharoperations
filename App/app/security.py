@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import posixpath
 from typing import Optional
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 from fastapi import HTTPException, Request
 from itsdangerous import BadSignature, URLSafeTimedSerializer
@@ -24,6 +24,13 @@ def safe_local_path(value: Optional[str], default: str = "/") -> str:
         return default
     split = urlsplit(raw)
     if split.scheme or split.netloc or not split.path.startswith("/") or split.path.startswith("//"):
+        return default
+    decoded_path = unquote(split.path)
+    if (
+        decoded_path.startswith("//")
+        or "\\" in decoded_path
+        or any(ord(char) < 0x20 for char in decoded_path)
+    ):
         return default
     path = posixpath.normpath(split.path)
     if not path.startswith("/") or path.startswith("//"):

@@ -80,3 +80,11 @@ and secret rotation.
   for every production administrator.
 - Run the pinned dependency audit during routine updates and rebuild the container
   when security pins change.
+
+## Verification
+
+- Full application suite: `320 passed`.
+- Focused security/tenancy/SSRF suite: `64 passed`.
+- Local mock smoke check: `32 pages checked`; no dead pages or server errors.
+- Dependency audit against `App/requirements.txt`: no known vulnerabilities.
+- Tracked-file review: no runtime `.env`, database, secret key, or initial credential file.
