@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import re
 from datetime import date, timedelta
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -200,4 +201,39 @@ def test_edit_form_requires_pin_before_owned_cookie(pin_required):
         assert page.status_code == 200
         assert "PIN" in page.text
     finally:
+        _cleanup()
+
+
+def test_rotating_pin_invalidates_existing_pin_session(pin_required):
+    _stay_id()
+    try:
+        client = _with_pin(TestClient(app))
+        db.execute(
+            "UPDATE apartment SET permalink_pin = ? WHERE permalink_token = ?",
+            ("654321", TOKEN),
+        )
+
+        page = client.get(f"/l/{TOKEN}", follow_redirects=False)
+
+        assert page.status_code == 200
+        assert 'name="pin"' in page.text
+    finally:
+        _cleanup()
+
+
+def test_wrong_pin_delay_does_not_block_event_loop(pin_required, monkeypatch):
+    _stay_id()
+    delayed = AsyncMock()
+    monkeypatch.setattr("app.routes.guest.asyncio.sleep", delayed)
+    try:
+        response = TestClient(app).post(
+            f"/l/{TOKEN}/pin",
+            data={"pin": "9999"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 200
+        delayed.assert_awaited_once()
+    finally:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
         _cleanup()

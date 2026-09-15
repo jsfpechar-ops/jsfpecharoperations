@@ -9,7 +9,19 @@ from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context
 
-from . import __version__, alerts, auth, config, deadlines, host_i18n, onboarding, operator, reporting, validation
+from . import (
+    __version__,
+    alerts,
+    auth,
+    config,
+    deadlines,
+    host_i18n,
+    onboarding,
+    operator,
+    reporting,
+    security,
+    validation,
+)
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
@@ -92,6 +104,7 @@ templates.env.globals.update(
 def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
     data = dict(context or {})
     data["request"] = request
+    data["csrf_token"] = security.csrf_token(request)
     data["lang"] = host_i18n.lang_from_request(request)
     data.setdefault("current_user", auth.current_user(request))
     data.setdefault("workspace_user", auth.workspace_user(request))
@@ -109,7 +122,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("minutes_saved", 0)
     if workspace and workspace["id"]:
         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
-    return templates.TemplateResponse(name, data, status_code=status_code)
+    return templates.TemplateResponse(request, name, data, status_code=status_code)
 
 
 def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
@@ -119,4 +132,4 @@ def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] 
     data["open_alerts"] = []
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
-    return templates.TemplateResponse(name, data, status_code=status_code)
+    return templates.TemplateResponse(request, name, data, status_code=status_code)

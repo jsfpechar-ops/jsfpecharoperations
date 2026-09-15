@@ -47,6 +47,8 @@ log = logging.getLogger("ubyhost.icalsync")
 
 USER_AGENT = "UbyHost/1.0 (+self-hosted Czech foreign-police reporting)"
 FETCH_TIMEOUT = 45
+MAX_FEED_BYTES = 5 * 1024 * 1024
+MAX_REDIRECTS = 3
 
 # Summaries that mean "not a guest stay". Airbnb and Vrbo are explicit about
 # blocks; Booking.com is not, which is why its feeds are treated as bookings.
@@ -102,17 +104,23 @@ def fetch_feed(url: str) -> str:
     headers = {"User-Agent": USER_AGENT, "Accept": "text/calendar"}
     response = None
     try:
-        for _ in range(4):
+        for hop in range(MAX_REDIRECTS + 1):
             response = requests.get(
                 current,
                 timeout=FETCH_TIMEOUT,
                 headers=headers,
                 allow_redirects=False,
+                stream=True,
             )
             if response.status_code in (301, 302, 303, 307, 308):
+                if hop >= MAX_REDIRECTS:
+                    response.close()
+                    raise FeedError("Calendar redirected too many times.")
                 location = response.headers.get("Location")
                 if not location:
+                    response.close()
                     raise FeedError(f"Calendar redirect missing Location (HTTP {response.status_code}).")
+                response.close()
                 current = feed_url.resolve_redirect_url(current, location)
                 continue
             break
@@ -121,8 +129,21 @@ def fetch_feed(url: str) -> str:
     if response is None:
         raise FeedError("Could not download the calendar.")
     if response.status_code != 200:
+        response.close()
         raise FeedError(f"Calendar returned HTTP {response.status_code}.")
-    text = response.text or ""
+    content_length = response.headers.get("Content-Length", "")
+    if content_length.isdigit() and int(content_length) > MAX_FEED_BYTES:
+        response.close()
+        raise FeedError("Calendar is too large.")
+    body = bytearray()
+    try:
+        for chunk in response.iter_content(chunk_size=64 * 1024):
+            body.extend(chunk)
+            if len(body) > MAX_FEED_BYTES:
+                raise FeedError("Calendar is too large.")
+    finally:
+        response.close()
+    text = bytes(body).decode(response.encoding or "utf-8", errors="replace")
     if "BEGIN:VCALENDAR" not in text.upper():
         raise FeedError(
             "That URL did not return an iCal calendar. Check you copied the whole export link "
