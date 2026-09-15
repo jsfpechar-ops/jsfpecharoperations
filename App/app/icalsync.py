@@ -32,6 +32,7 @@ not a guest stay can be marked "ignored" and will stay that way across syncs.
 """
 from __future__ import annotations
 
+import logging
 import re
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -41,6 +42,8 @@ from icalendar import Calendar
 
 from . import alerts, db, feed_url
 from .feed_url import FeedUrlError
+
+log = logging.getLogger("ubyhost.icalsync")
 
 USER_AGENT = "UbyHost/1.0 (+self-hosted Czech foreign-police reporting)"
 FETCH_TIMEOUT = 45
@@ -162,6 +165,7 @@ def _guest_name_hint(summary: str) -> str:
 def parse_events(ics_text: str) -> List[Dict[str, Any]]:
     """Extract the stays from an iCal document."""
     calendar = Calendar.from_ical(ics_text)
+    calendar_cancelled = str(calendar.get("METHOD") or "").strip().upper() == "CANCEL"
     events: List[Dict[str, Any]] = []
     for component in calendar.walk("VEVENT"):
         start = _as_date(component.get("DTSTART").dt) if component.get("DTSTART") else None
@@ -170,8 +174,13 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
         if not start:
             continue
         if not end:
-            # A stay with no end is treated as a single night.
-            end = start + timedelta(days=1)
+            duration_prop = component.get("DURATION")
+            duration = duration_prop.dt if duration_prop else None
+            if isinstance(duration, timedelta) and duration > timedelta(0):
+                end = start + duration
+            else:
+                # A stay with no end or duration is treated as a single night.
+                end = start + timedelta(days=1)
 
         summary = str(component.get("SUMMARY") or "").strip()
         description = str(component.get("DESCRIPTION") or "").replace("\\n", "\n").strip()
@@ -193,7 +202,7 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
                 "summary": summary,
                 "description": description,
                 "is_block": is_block(summary),
-                "is_cancelled": status == "CANCELLED",
+                "is_cancelled": calendar_cancelled or status in ("CANCELLED", "CANCELED"),
                 "reservation_url": url_match.group(1).rstrip(".,);") if url_match else None,
                 "phone_last4": phone_match.group(1) if phone_match else None,
                 "guest_email": email_match.group(0) if email_match else None,
@@ -294,6 +303,10 @@ def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
             # A host decision to ignore a range is never undone by a re-sync.
             if existing["status"] == "ignored":
                 continue
+            dates_changed = (
+                existing["date_from"] != event["date_from"]
+                or existing["date_to"] != event["date_to"]
+            )
             changed = {
                 k: v
                 for k, v in payload.items()
@@ -305,6 +318,23 @@ def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
                 changed["updated_at"] = now
                 db.update("reservation", existing["id"], changed)
                 stats["updated"] += 1
+            if dates_changed:
+                db.execute(
+                    "UPDATE guest SET stay_from = ?, stay_to = ?, signature_png = NULL, "
+                    "signed_at = NULL, updated_at = ? "
+                    "WHERE reservation_id = ? AND submit_state != 'sent'",
+                    (
+                        event["date_from"],
+                        event["date_to"],
+                        now,
+                        existing["id"],
+                    ),
+                )
+                log.warning(
+                    "ical_dates_changed_resign_required apartment_id=%s reservation_id=%s",
+                    feed["apartment_id"],
+                    existing["id"],
+                )
             if event["guest_email"] and not existing["guest_email"]:
                 db.update("reservation", existing["id"], {"guest_email": event["guest_email"]})
         else:
@@ -336,27 +366,35 @@ def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
         "WHERE apartment_id = ? AND ical_feed_id = ? AND status = 'active' AND date_from >= ?",
         (feed["apartment_id"], feed["id"], cutoff),
     )
-    for row in candidates:
-        if row["uid"] in seen_uids:
-            continue
-        reported = db.query_one(
-            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
-            (row["id"],),
+    if candidates and not seen_uids:
+        log.warning(
+            "ical_empty_feed_retained apartment_id=%s feed_id=%s retained_stays=%s",
+            feed["apartment_id"],
+            feed["id"],
+            len(candidates),
         )
-        if reported and reported["n"]:
-            alerts.raise_alert(
-                "warning",
-                "cancelled_after_report",
-                f"A stay from {row['date_from']} disappeared from the calendar after it had "
-                "already been reported to the police.",
-                "Check whether the booking was cancelled or merely moved.",
-                dedupe_key=f"cancelled_after_report:{row['id']}",
-                apartment_id=feed["apartment_id"],
-                reservation_id=row["id"],
+    else:
+        for row in candidates:
+            if row["uid"] in seen_uids:
+                continue
+            reported = db.query_one(
+                "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
+                (row["id"],),
             )
-            continue
-        db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
-        stats["cancelled"] += 1
+            if reported and reported["n"]:
+                alerts.raise_alert(
+                    "warning",
+                    "cancelled_after_report",
+                    f"A stay from {row['date_from']} disappeared from the calendar after it had "
+                    "already been reported to the police.",
+                    "Check whether the booking was cancelled or merely moved.",
+                    dedupe_key=f"cancelled_after_report:{row['id']}",
+                    apartment_id=feed["apartment_id"],
+                    reservation_id=row["id"],
+                )
+                continue
+            db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
+            stats["cancelled"] += 1
 
     db.update(
         "ical_feed",

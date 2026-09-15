@@ -131,6 +131,20 @@ def test_a_good_pending_row_still_imports(apartment_id):
     assert _guests(apartment_id), f"a valid row was refused: {result}"
 
 
+def test_importing_the_same_file_twice_does_not_duplicate_a_guest(apartment_id):
+    line = (
+        "Nguyen;Van;01.01.1990;VNM;P1234567;Street 1, Hanoi, VNM;"
+        "01.01.2199;05.01.2199;10;no"
+    )
+
+    first = _import(apartment_id, line)
+    second = _import(apartment_id, line)
+
+    assert first["imported"] == 1
+    assert second == {"imported": 0, "skipped": 1, "errors": []}
+    assert len(_guests(apartment_id)) == 1
+
+
 def test_a_name_outside_cp1250_is_folded_not_hollowed_out(apartment_id):
     """Same rule as the guest form: fold to the passport's Latin spelling."""
     _import(

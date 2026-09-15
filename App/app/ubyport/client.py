@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -152,7 +153,17 @@ class UbyportClient:
             header, guests, want_pdf, self.auth_code, INCLUDE_WSA_HEADER
         )
         text = self._post("ZapisUbytovane", envelope)
-        parsed = soap.parse_zapis_response(text)
+        try:
+            parsed = soap.parse_zapis_response(text)
+        except ET.ParseError as exc:
+            raise UbyportTransportError(
+                "UbyPort returned an unreadable XML response."
+            ) from exc
+        if len(parsed["record_errors"]) != len(guests):
+            raise UbyportTransportError(
+                "UbyPort returned an incomplete result: "
+                f"{len(parsed['record_errors'])} outcomes for {len(guests)} guest records."
+            )
         return SubmissionResult(
             endpoint=self.endpoint,
             request_xml=envelope,

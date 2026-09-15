@@ -15,7 +15,10 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import re
+import secrets
+import time
 import zipfile
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -23,6 +26,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from . import alerts, codelists, config, db, deadlines, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
+
+log = logging.getLogger("ubyhost.reporting")
 
 # guest.submit_state values
 PENDING = "pending"
@@ -32,6 +37,7 @@ BLOCKED = "blocked"  # rejected in a way that resending cannot fix
 NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
+SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
 
 
 # --- payload mapping -----------------------------------------------------
@@ -191,7 +197,9 @@ def expected_guest_count(reservation) -> Optional[int]:
 def reservation_progress(reservation) -> Dict[str, Any]:
     """How far along this reservation is, for the dashboard."""
     guests = db.query(
-        "SELECT * FROM guest WHERE reservation_id = ? ORDER BY is_lead DESC, id", (reservation["id"],)
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+        "ORDER BY is_lead DESC, id",
+        (reservation["id"],),
     )
     expected = expected_guest_count(reservation)
     complete = [g for g in guests if guest_is_complete(g, reservation)]
@@ -444,7 +452,7 @@ def count_sendable_stays(reservations: List[Any]) -> int:
 
 def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
     """Whether the apartment's automation setting says to send this now."""
-    now = now or datetime.now()
+    now = deadlines.local_now(now)
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
@@ -541,7 +549,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     sql = (
         "SELECT g.*, r.id AS res_id FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
-        "WHERE r.apartment_id = ? AND r.status = 'active'"
+        "WHERE r.apartment_id = ? AND r.status = 'active' "
+        "AND r.archived_at IS NULL AND g.archived_at IS NULL"
     )
     params: List[Any] = [apartment_id]
     if only_guest_ids:
@@ -577,12 +586,39 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     return out
 
 
+def claim_sendable(
+    pairs: List[Tuple[Any, Any]],
+) -> Tuple[str, List[Tuple[Any, Any]]]:
+    """Atomically lease guests so concurrent workers cannot submit duplicates."""
+    token = secrets.token_urlsafe(18)
+    claimed_ids = set()
+    with db.cursor() as cur:
+        cur.execute(
+            "DELETE FROM submission_claim WHERE claimed_at < ?",
+            (time.time() - SUBMISSION_CLAIM_TTL_SECONDS,),
+        )
+        for guest, _reservation in pairs:
+            cur.execute(
+                "INSERT OR IGNORE INTO submission_claim (guest_id, claim_token, claimed_at) "
+                "VALUES (?, ?, ?)",
+                (guest["id"], token, time.time()),
+            )
+            if cur.rowcount == 1:
+                claimed_ids.add(guest["id"])
+    return token, [pair for pair in pairs if pair[0]["id"] in claimed_ids]
+
+
+def release_sendable_claim(token: str) -> None:
+    db.execute("DELETE FROM submission_claim WHERE claim_token = ?", (token,))
+
+
 def submit_batch(
     apartment,
     pairs: List[Tuple[Any, Any]],
     mode: str = "auto",
     want_pdf: bool = True,
     env: Optional[str] = None,
+    verified_by_user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Send up to one batch of guests and record the outcome.
 
@@ -613,6 +649,18 @@ def submit_batch(
     try:
         result: SubmissionResult = client.submit(header, guests, want_pdf=want_pdf)
     except (UbyportTransportError, UbyportError) as exc:
+        log.error(
+            "ubyport_submission_failed apartment_id=%s owner_user_id=%s "
+            "submission_id=%s env=%s endpoint=%s guest_ids=%s error_type=%s",
+            apartment["id"],
+            apartment["owner_user_id"],
+            submission_id,
+            env or config.UBYPORT_ENV,
+            endpoint,
+            guest_ids,
+            type(exc).__name__,
+            exc_info=True,
+        )
         db.update(
             "submission",
             submission_id,
@@ -658,27 +706,37 @@ def submit_batch(
                     "updated_at": now,
                 },
             )
+            record_host_identity_confirmation(
+                guest["id"], verified_by_user_id, on_send=True
+            )
             accepted_count += 1
         else:
             new_state = BLOCKED if state == "not_correctable" else ERROR
-            # "Duplicate" means the register already holds this record. If we
-            # are the ones who put it there, the guest is still reported and
-            # the stay must not start showing up as a failure.
-            if guest["submit_state"] == SENT and any(
+            # A duplicate response proves the register already has this guest.
+            # This also covers an earlier accept whose HTTP response was lost.
+            duplicate = "150" in uby_errors.split_codes(record_error) or any(
                 uby_errors.is_duplicate(message) for message in messages
-            ):
-                new_state = SENT
-            db.update(
-                "guest",
-                guest["id"],
-                {
-                    "submit_state": new_state,
-                    "submission_id": submission_id,
-                    "last_errors": " | ".join(messages),
-                    "updated_at": now,
-                },
             )
-            if new_state == ERROR:
+            if duplicate:
+                new_state = SENT
+            update_values = {
+                "submit_state": new_state,
+                "submission_id": submission_id,
+                "last_errors": " | ".join(messages),
+                "updated_at": now,
+            }
+            if new_state == SENT:
+                update_values["submitted_at"] = guest["submitted_at"] or now
+            db.update("guest", guest["id"], update_values)
+            if new_state == SENT:
+                record_host_identity_confirmation(
+                    guest["id"], verified_by_user_id, on_send=True
+                )
+                if guest["submit_state"] == SENT:
+                    blocked_count += 1
+                else:
+                    accepted_count += 1
+            elif new_state == ERROR:
                 failed_count += 1
             else:
                 blocked_count += 1
@@ -707,6 +765,19 @@ def submit_batch(
     if state == "ok":
         alerts.resolve(f"submission_rejected:{apartment['id']}")
     else:
+        log.error(
+            "ubyport_submission_rejected apartment_id=%s owner_user_id=%s "
+            "submission_id=%s env=%s endpoint=%s state=%s accepted=%s failed=%s blocked=%s",
+            apartment["id"],
+            apartment["owner_user_id"],
+            submission_id,
+            env or config.UBYPORT_ENV,
+            endpoint,
+            state,
+            accepted_count,
+            failed_count,
+            blocked_count,
+        )
         detail_bits = []
         if result.header_errors:
             detail_bits.append(
@@ -781,14 +852,26 @@ def submit_for_apartment(
     if not pairs:
         return []
 
-    actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
-    ensure_identity_verified_for_send([guest["id"] for guest, _ in pairs], actor)
-
-    limit = config.UBYPORT_MAX_BATCH
-    results = []
-    for start in range(0, len(pairs), limit):
-        results.append(submit_batch(apartment, pairs[start:start + limit], mode=mode, env=env))
-    return results
+    claim_token, pairs = claim_sendable(pairs)
+    if not pairs:
+        return []
+    try:
+        actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
+        limit = config.UBYPORT_MAX_BATCH
+        results = []
+        for start in range(0, len(pairs), limit):
+            results.append(
+                submit_batch(
+                    apartment,
+                    pairs[start:start + limit],
+                    mode=mode,
+                    env=env,
+                    verified_by_user_id=actor,
+                )
+            )
+        return results
+    finally:
+        release_sendable_claim(claim_token)
 
 
 def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
@@ -816,14 +899,13 @@ def check_deadlines(
     This is the part the host asked for: not "here is a list of bookings" but
     "these ones will make you non-compliant unless you chase the guest today".
     """
-    now = now or datetime.now()
+    now = deadlines.local_now(now)
     raised = 0
-    horizon = (now.date() - timedelta(days=30)).isoformat()
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status = 'active' AND a.active = 1 "
-        "AND (? IS NULL OR a.owner_user_id = ?) AND r.date_from >= ? AND r.date_from <= ?",
-        (owner_user_id, owner_user_id, horizon, now.date().isoformat()),
+        "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
+        "AND (? IS NULL OR a.owner_user_id = ?) AND r.date_from <= ?",
+        (owner_user_id, owner_user_id, now.date().isoformat()),
     )
     for reservation in rows:
         start = validation.parse_iso_date(reservation["date_from"])

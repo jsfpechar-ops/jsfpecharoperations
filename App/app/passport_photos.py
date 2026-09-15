@@ -84,6 +84,11 @@ def validate_upload(content: bytes, content_type: str) -> str:
     return ctype
 
 
+async def read_upload_limited(upload) -> bytes:
+    """Read at most the largest accepted upload plus its rejection byte."""
+    return await upload.read(MAX_PDF_BYTES + 1)
+
+
 def save_photo(guest_id: int, content: bytes, content_type: str) -> None:
     """Replace any existing attachment for this guest."""
     ctype = validate_upload(content, content_type)
