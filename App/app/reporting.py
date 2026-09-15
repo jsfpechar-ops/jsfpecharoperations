@@ -618,6 +618,7 @@ def submit_batch(
     mode: str = "auto",
     want_pdf: bool = True,
     env: Optional[str] = None,
+    verified_by_user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Send up to one batch of guests and record the outcome.
 
@@ -705,6 +706,9 @@ def submit_batch(
                     "updated_at": now,
                 },
             )
+            record_host_identity_confirmation(
+                guest["id"], verified_by_user_id, on_send=True
+            )
             accepted_count += 1
         else:
             new_state = BLOCKED if state == "not_correctable" else ERROR
@@ -725,6 +729,9 @@ def submit_batch(
                 update_values["submitted_at"] = guest["submitted_at"] or now
             db.update("guest", guest["id"], update_values)
             if new_state == SENT:
+                record_host_identity_confirmation(
+                    guest["id"], verified_by_user_id, on_send=True
+                )
                 if guest["submit_state"] == SENT:
                     blocked_count += 1
                 else:
@@ -850,12 +857,18 @@ def submit_for_apartment(
         return []
     try:
         actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
-        ensure_identity_verified_for_send([guest["id"] for guest, _ in pairs], actor)
-
         limit = config.UBYPORT_MAX_BATCH
         results = []
         for start in range(0, len(pairs), limit):
-            results.append(submit_batch(apartment, pairs[start:start + limit], mode=mode, env=env))
+            results.append(
+                submit_batch(
+                    apartment,
+                    pairs[start:start + limit],
+                    mode=mode,
+                    env=env,
+                    verified_by_user_id=actor,
+                )
+            )
         return results
     finally:
         release_sendable_claim(claim_token)

@@ -16,7 +16,7 @@ import pytest
 
 from app import db, reporting
 from app.ubyport import errors as uby_errors
-from app.ubyport.client import SubmissionResult
+from app.ubyport.client import SubmissionResult, UbyportTransportError
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -186,7 +186,14 @@ def test_concurrent_sends_claim_each_guest_once(monkeypatch):
     monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _apartment: [])
     monkeypatch.setattr(reporting, "ensure_identity_verified_for_send", lambda *_args: None)
 
-    def fake_submit(_apartment, pairs, mode="auto", want_pdf=True, env=None):
+    def fake_submit(
+        _apartment,
+        pairs,
+        mode="auto",
+        want_pdf=True,
+        env=None,
+        verified_by_user_id=None,
+    ):
         calls.append([guest["id"] for guest, _reservation in pairs])
         entered.set()
         assert release.wait(timeout=5)
@@ -243,3 +250,31 @@ def test_duplicate_after_lost_success_is_recorded_as_sent(monkeypatch):
     assert result["submitted"] == 1
     assert guest["submit_state"] == reporting.SENT
     assert guest["submitted_at"]
+
+
+def test_transport_failure_does_not_mark_identity_verified(monkeypatch):
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok7")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            raise UbyportTransportError("offline")
+
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _apartment: [])
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    result = reporting.submit_for_apartment(
+        apartment_id,
+        [guest_id],
+        mode="manual",
+        ignore_automation=True,
+    )
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert result[0]["state"] == "transport_error"
+    assert guest["submit_state"] == reporting.PENDING
+    assert guest["identity_verified_at"] is None
