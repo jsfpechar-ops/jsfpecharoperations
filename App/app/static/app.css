@@ -942,14 +942,14 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .btn:active { transform: scale(0.985); }
 
 /* Dark = the main action of a form or page. */
-.btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn.primary { background: var(--brand-action); border-color: var(--brand-action); color: var(--on-brand); }
 .btn.primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
 
 /* Blue = send to the police. The one thing the law is waiting for. */
 .btn.accent, .btn.send-all {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: #fff;
+  background: var(--brand-action);
+  border-color: var(--brand-action);
+  color: var(--on-brand);
   box-shadow: 0 1px 2px rgba(31, 86, 214, 0.24), 0 6px 16px rgba(31, 86, 214, 0.18);
 }
 .btn.accent:hover, .btn.send-all:hover {
@@ -1755,9 +1755,9 @@ details.raw pre {
 }
 
 .onboarding-step.is-current .onboarding-step-index {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: #fff;
+  background: var(--brand-action);
+  border-color: var(--brand-action);
+  color: var(--on-brand);
 }
 
 .onboarding-step h3 {
@@ -1966,8 +1966,8 @@ details.raw pre {
   padding: 13px 18px;
   border: 0;
   border-radius: 12px;
-  background: var(--brand);
-  color: #fff;
+  background: var(--brand-action);
+  color: var(--on-brand);
   font: inherit;
   font-size: 16px;
   font-weight: 650;
