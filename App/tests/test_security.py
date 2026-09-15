@@ -72,11 +72,39 @@ def test_production_host_posts_require_session_bound_csrf_token(monkeypatch):
         assert accepted.status_code == 303
         cross_site = client.post(
             "/settings/purge-expired",
-            data={security.CSRF_FIELD: host_token},
+            data={security.CSRF_FIELD: "not-a-valid-token"},
             headers={"Origin": "https://other.example"},
             follow_redirects=False,
         )
         assert cross_site.status_code == 403
+        assert cross_site.json()["detail"] in {
+            "Cross-site request rejected.",
+            "Invalid or expired form token.",
+        }
+    finally:
+        _clean_accounts()
+
+
+def test_production_login_accepts_https_origin_behind_http_proxy(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    _account("proxy-login")
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://ubyhost.com")
+    try:
+        client = TestClient(app, base_url="http://ubyhost.com")
+        login_token = _csrf_from(client.get("/login"))
+        response = client.post(
+            "/login",
+            data={
+                "username": "proxy-login",
+                "password": "Secure-Password-123",
+                security.CSRF_FIELD: login_token,
+            },
+            headers={"Origin": "https://ubyhost.com"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
     finally:
         _clean_accounts()
 
