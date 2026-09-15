@@ -10,41 +10,6 @@
    six years after the last entry and produced on request during a police inspection.'
 ) }}
 
-{% if apartments %}
-<div id="import-housebook-panel" class="action-panel hidden">
-  <div class="panel">
-    <div class="section-heading" style="margin-top:0">
-      <h2>Import existing records</h2>
-      <button class="btn small" type="button" data-close-panel>Close</button>
-    </div>
-    <div class="import-guide">
-      <p>Bring in guest records you kept before UbyHost — from another system, a spreadsheet,
-        or a digitised paper house book.</p>
-      <p class="small muted">Required columns: Stay from, Stay to, Surname, Given name(s). Dates can be YYYY-MM-DD or DD.MM.YYYY.
-        <a href="/housebook-sample.csv">{{ t('csv.sample_housebook') }}</a> shows the exact layout.</p>
-    </div>
-    <form method="post" action="/housebook/import" enctype="multipart/form-data" class="filters" style="margin-top:14px">
-      <div class="field" style="min-width:220px;margin:0">
-        <label for="import-apartment">Property</label>
-        <select id="import-apartment" name="apartment_id" required>
-          <option value="">— choose —</option>
-          {% for apartment in apartments %}
-            <option value="{{ apartment.id }}">{{ apartment.internal_name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field" style="min-width:260px;margin:0">
-        <label for="csv_file">CSV file</label>
-        <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" required>
-      </div>
-      <div class="field filter-actions">
-        <button class="btn primary" type="submit">Import records</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endif %}
-
 <form method="get" action="/housebook" class="filters panel" data-auto-submit>
   <div class="field">
     <label for="apartment">Apartment</label>
@@ -68,7 +33,7 @@
     <button class="btn filter-apply" type="submit">Filter</button>
   </div>
   <div class="field filter-actions filter-actions-end" aria-label="House book actions">
-    {{ housebook_csv_menu(housebook_csv_params, apartments|length > 0, true, true) }}
+    {{ housebook_csv_menu(housebook_csv_params, true, true) }}
   </div>
 </form>
 

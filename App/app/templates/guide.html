@@ -8,11 +8,13 @@
 <div class="guide-layout">
   <nav class="guide-nav panel" aria-label="{{ t('guide.title') }}">
     <a href="#overview" class="guide-nav-link">{{ t('guide.nav.overview') }}</a>
+    <a href="#productivity" class="guide-nav-link">{{ t('guide.nav.productivity') }}</a>
     <a href="#setup" class="guide-nav-link">{{ t('guide.nav.setup') }}</a>
     <a href="#stays" class="guide-nav-link">{{ t('guide.nav.stays') }}</a>
     <a href="#guests" class="guide-nav-link">{{ t('guide.nav.guests') }}</a>
     <a href="#reporting" class="guide-nav-link">{{ t('guide.nav.reporting') }}</a>
     <a href="#housebook" class="guide-nav-link">{{ t('guide.nav.housebook') }}</a>
+    <a href="#security" class="guide-nav-link">{{ t('guide.nav.security') }}</a>
     <a href="#legal" class="guide-nav-link">{{ t('guide.nav.legal') }}</a>
     <a href="#demo" class="guide-nav-link">{{ t('guide.nav.demo') }}</a>
   </nav>
@@ -25,6 +27,16 @@
         <img src="/static/guide/overview-next-up.png" alt="Overview with next-up stay card and send action" loading="lazy">
         <figcaption>{{ t('guide.overview.caption') }}</figcaption>
       </figure>
+    </section>
+
+    <section class="guide-section panel" id="productivity">
+      <h2>{{ t('guide.nav.productivity') }}</h2>
+      <ul class="guide-steps">
+        <li>{{ t('guide.productivity.search') }}</li>
+        <li>{{ t('guide.productivity.shortcuts') }}</li>
+        <li>{{ t('guide.productivity.views') }}</li>
+        <li>{{ t('guide.productivity.quick_edit') }}</li>
+      </ul>
     </section>
 
     <section class="guide-section panel" id="setup">
@@ -42,10 +54,6 @@
       <h2>{{ t('guide.nav.stays') }}</h2>
       <p>{{ t('guide.stays.body') }}</p>
       <p class="small muted">{{ t('guide.stays.csv') }}</p>
-      <figure class="guide-figure">
-        <img src="/static/guide/housebook-filters.png" alt="Filter bar with Import and export in the corner" loading="lazy">
-        <figcaption>{{ t('guide.stays.caption') }}</figcaption>
-      </figure>
     </section>
 
     <section class="guide-section panel" id="guests">
@@ -83,6 +91,16 @@
       <h2>{{ t('guide.nav.housebook') }}</h2>
       <p>{{ t('guide.housebook.body') }}</p>
       <p class="small muted">{{ t('housebook.legal_footnote') }}</p>
+    </section>
+
+    <section class="guide-section panel" id="security">
+      <h2>{{ t('guide.nav.security') }}</h2>
+      <ul class="guide-steps">
+        <li>{{ t('guide.security.two_factor') }}</li>
+        <li>{{ t('guide.security.turnstile') }}</li>
+        <li>{{ t('guide.security.passports') }}</li>
+        <li>{{ t('guide.security.backups') }}</li>
+      </ul>
     </section>
 
     <section class="guide-section panel guide-legal" id="legal">
