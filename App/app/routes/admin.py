@@ -1818,7 +1818,12 @@ def submission_detail(submission_id: int, request: Request):
     guests = []
     if guest_ids:
         marks = ", ".join("?" for _ in guest_ids)
-        guests = db.query(f"SELECT * FROM guest WHERE id IN ({marks})", guest_ids)
+        guests = db.query(
+            "SELECT g.* FROM guest g "
+            "JOIN reservation r ON r.id = g.reservation_id "
+            f"WHERE g.id IN ({marks}) AND r.apartment_id = ?",
+            [*guest_ids, submission["apartment_id"]],
+        )
     codebook = codelists.error_codebook()
     from ..ubyport import errors as uby_errors
 

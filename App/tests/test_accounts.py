@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import json
 
 from fastapi.testclient import TestClient
 
@@ -113,6 +114,7 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
             "guest",
             {
                 "reservation_id": reservation_id,
+                "surname": "OtherTenantSecret",
                 "entered_by": "host",
                 "submit_state": "pending",
                 "created_at": db.utcnow(),
@@ -135,6 +137,19 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
         assert first.get(f"/submissions/{submission_id}/receipt.pdf").status_code == 404
         assert first.get(f"/reservations/{reservation_id}", follow_redirects=False).status_code == 303
         assert first.get(f"/apartments/{first_apartment}").status_code == 200
+
+        tainted_submission = db.insert(
+            "submission",
+            {
+                "apartment_id": first_apartment,
+                "created_at": db.utcnow(),
+                "state": "ok",
+                "guest_ids": json.dumps([guest_id]),
+            },
+        )
+        detail = first.get(f"/submissions/{tainted_submission}")
+        assert detail.status_code == 200
+        assert "OtherTenantSecret" not in detail.text
     finally:
         _clean_accounts()
 
@@ -572,8 +587,11 @@ def test_every_id_route_is_ownership_scoped():
     import re
 
     from app.routes import admin as admin_routes
+    from app.routes import admin_accounts
 
-    source = inspect.getsource(admin_routes)
+    source = "\n".join(
+        (inspect.getsource(admin_routes), inspect.getsource(admin_accounts))
+    )
     blocks = re.split(r"\n(?=@router\.(?:get|post|put|delete)\()", source)
 
     # These act across workspaces on purpose and gate on the admin role
@@ -589,7 +607,7 @@ def test_every_id_route_is_ownership_scoped():
         if not re.search(r"\{\w*_?id\}", path):
             continue
         if any(path.startswith(prefix) for prefix in cross_workspace):
-            assert 'role"] != "admin"' in block, f"{path} must check the admin role"
+            assert "_require_admin" in block, f"{path} must check the admin role"
             continue
         name = re.search(r"\n(?:async )?def (\w+)", block)
         if "require_login" not in block:
@@ -598,3 +616,15 @@ def test_every_id_route_is_ownership_scoped():
             unscoped.append((path, f"no access.* lookup in {name.group(1) if name else '?'}"))
 
     assert not unscoped, f"routes reachable by id without ownership scoping: {unscoped}"
+
+
+def test_production_without_accounts_fails_closed(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    monkeypatch.setattr(config, "BOOTSTRAP_ADMIN", False)
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+
+    response = TestClient(app).get("/", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/login")
