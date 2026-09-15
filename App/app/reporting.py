@@ -16,6 +16,8 @@ from __future__ import annotations
 import base64
 import json
 import re
+import secrets
+import time
 import zipfile
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -32,6 +34,7 @@ BLOCKED = "blocked"  # rejected in a way that resending cannot fix
 NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
+SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
 
 
 # --- payload mapping -----------------------------------------------------
@@ -577,6 +580,32 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     return out
 
 
+def claim_sendable(
+    pairs: List[Tuple[Any, Any]],
+) -> Tuple[str, List[Tuple[Any, Any]]]:
+    """Atomically lease guests so concurrent workers cannot submit duplicates."""
+    token = secrets.token_urlsafe(18)
+    claimed_ids = set()
+    with db.cursor() as cur:
+        cur.execute(
+            "DELETE FROM submission_claim WHERE claimed_at < ?",
+            (time.time() - SUBMISSION_CLAIM_TTL_SECONDS,),
+        )
+        for guest, _reservation in pairs:
+            cur.execute(
+                "INSERT OR IGNORE INTO submission_claim (guest_id, claim_token, claimed_at) "
+                "VALUES (?, ?, ?)",
+                (guest["id"], token, time.time()),
+            )
+            if cur.rowcount == 1:
+                claimed_ids.add(guest["id"])
+    return token, [pair for pair in pairs if pair[0]["id"] in claimed_ids]
+
+
+def release_sendable_claim(token: str) -> None:
+    db.execute("DELETE FROM submission_claim WHERE claim_token = ?", (token,))
+
+
 def submit_batch(
     apartment,
     pairs: List[Tuple[Any, Any]],
@@ -781,14 +810,20 @@ def submit_for_apartment(
     if not pairs:
         return []
 
-    actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
-    ensure_identity_verified_for_send([guest["id"] for guest, _ in pairs], actor)
+    claim_token, pairs = claim_sendable(pairs)
+    if not pairs:
+        return []
+    try:
+        actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
+        ensure_identity_verified_for_send([guest["id"] for guest, _ in pairs], actor)
 
-    limit = config.UBYPORT_MAX_BATCH
-    results = []
-    for start in range(0, len(pairs), limit):
-        results.append(submit_batch(apartment, pairs[start:start + limit], mode=mode, env=env))
-    return results
+        limit = config.UBYPORT_MAX_BATCH
+        results = []
+        for start in range(0, len(pairs), limit):
+            results.append(submit_batch(apartment, pairs[start:start + limit], mode=mode, env=env))
+        return results
+    finally:
+        release_sendable_claim(claim_token)
 
 
 def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:

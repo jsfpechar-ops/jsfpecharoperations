@@ -8,6 +8,8 @@ send cannot succeed, so the only possible outcome is another strike.
 from __future__ import annotations
 
 import base64
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 
 import pytest
@@ -167,3 +169,44 @@ def test_nothing_blocked_is_ever_swept_up_automatically():
     pairs = reporting.collect_sendable(apartment_id, ignore_automation=True)
 
     assert guest_id not in _ids(pairs)
+
+
+def test_concurrent_sends_claim_each_guest_once(monkeypatch):
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok5")
+    entered = threading.Event()
+    release = threading.Event()
+    calls = []
+
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _apartment: [])
+    monkeypatch.setattr(reporting, "ensure_identity_verified_for_send", lambda *_args: None)
+
+    def fake_submit(_apartment, pairs, mode="auto", want_pdf=True, env=None):
+        calls.append([guest["id"] for guest, _reservation in pairs])
+        entered.set()
+        assert release.wait(timeout=5)
+        return {"submitted": len(pairs), "state": "ok"}
+
+    monkeypatch.setattr(reporting, "submit_batch", fake_submit)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(
+            reporting.submit_for_apartment,
+            apartment_id,
+            [guest_id],
+            "manual",
+            True,
+            False,
+        )
+        assert entered.wait(timeout=5)
+        second = reporting.submit_for_apartment(
+            apartment_id,
+            [guest_id],
+            mode="manual",
+            ignore_automation=True,
+        )
+        release.set()
+        first_result = first.result(timeout=5)
+
+    assert first_result == [{"submitted": 1, "state": "ok"}]
+    assert second == []
+    assert calls == [[guest_id]]
