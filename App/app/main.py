@@ -68,11 +68,18 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
 
 
+@app.exception_handler(security.ExpiredFormError)
+async def expired_form_handler(_request: Request, exc: security.ExpiredFormError):
+    """Refresh stale same-site forms without exposing a downloadable JSON body."""
+    return RedirectResponse(exc.location, status_code=303)
+
+
 @app.middleware("http")
 async def cloudflare_connecting_ip(request: Request, call_next):
     """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""
     client_ip.apply_visitor_client(request.scope, request.headers)
     response = await call_next(request)
+    security.attach_csrf_cookie(request, response)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")

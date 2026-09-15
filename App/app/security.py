@@ -4,8 +4,9 @@ from __future__ import annotations
 import hashlib
 import hmac
 import posixpath
+import secrets
 from typing import Optional
-from urllib.parse import unquote, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, unquote, urlsplit, urlunsplit
 
 from fastapi import HTTPException, Request
 from itsdangerous import BadSignature, URLSafeTimedSerializer
@@ -14,7 +15,16 @@ from . import auth, config
 
 CSRF_FIELD = "_csrf"
 CSRF_HEADER = "x-csrf-token"
+CSRF_COOKIE = "ubyhost_csrf"
 CSRF_MAX_AGE = auth.SESSION_REMEMBER_MAX_AGE
+
+
+class ExpiredFormError(Exception):
+    """A same-site form has no valid CSRF proof and should be refreshed."""
+
+    def __init__(self, location: str):
+        self.location = location
+        super().__init__("Invalid or expired form token.")
 
 
 def safe_local_path(value: Optional[str], default: str = "/") -> str:
@@ -42,14 +52,23 @@ def _csrf_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-csrf")
 
 
-def _session_binding(request: Request) -> str:
-    session = request.cookies.get(auth.SESSION_COOKIE, "")
-    return hashlib.sha256(session.encode("utf-8")).hexdigest()
+def _csrf_nonce(request: Request) -> str:
+    nonce = request.cookies.get(CSRF_COOKIE, "")
+    if not nonce:
+        nonce = getattr(request.state, "csrf_nonce", "")
+    if not nonce:
+        nonce = secrets.token_urlsafe(32)
+        request.state.csrf_nonce = nonce
+    return nonce
+
+
+def _nonce_binding(nonce: str) -> str:
+    return hashlib.sha256(nonce.encode("utf-8")).hexdigest()
 
 
 def csrf_token(request: Request) -> str:
-    """Issue a signed token bound to the current host session."""
-    return _csrf_serializer().dumps({"session": _session_binding(request)})
+    """Issue a signed token bound to a host-only CSRF cookie."""
+    return _csrf_serializer().dumps({"nonce": _nonce_binding(_csrf_nonce(request))})
 
 
 def csrf_token_valid(request: Request, token: str) -> bool:
@@ -57,9 +76,27 @@ def csrf_token_valid(request: Request, token: str) -> bool:
         payload = _csrf_serializer().loads(token or "", max_age=CSRF_MAX_AGE)
     except BadSignature:
         return False
-    expected = _session_binding(request)
+    nonce = request.cookies.get(CSRF_COOKIE, "")
+    expected = _nonce_binding(nonce) if nonce else ""
     return isinstance(payload, dict) and hmac.compare_digest(
-        str(payload.get("session", "")), expected
+        str(payload.get("nonce", "")), expected
+    )
+
+
+def attach_csrf_cookie(request: Request, response) -> None:
+    """Persist a nonce generated while rendering a form."""
+    nonce = getattr(request.state, "csrf_nonce", "")
+    if not nonce:
+        return
+    response.set_cookie(
+        CSRF_COOKIE,
+        nonce,
+        max_age=CSRF_MAX_AGE,
+        httponly=True,
+        samesite="strict",
+        secure=config.DEPLOYMENT == "production"
+        or config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        path="/",
     )
 
 
@@ -113,6 +150,18 @@ def _request_is_same_site(request: Request) -> bool:
     return True
 
 
+def _csrf_recovery_location(request: Request) -> str:
+    """Return the page that rendered a stale form, with an actionable message."""
+    referer = request.headers.get("referer", "")
+    if referer:
+        parsed = urlsplit(referer)
+        if _browser_site_matches(request, parsed.hostname, parsed.scheme):
+            query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+            query["err"] = "This form expired. Please try again."
+            return urlunsplit(("", "", parsed.path or "/", urlencode(query), ""))
+    return "/login?err=This+form+expired.+Please+sign+in+and+try+again."
+
+
 async def _supplied_csrf_token(request: Request) -> str:
     supplied = request.headers.get(CSRF_HEADER, "")
     if supplied:
@@ -132,4 +181,4 @@ async def protect_host_post(request: Request) -> None:
         return
     if not _request_is_same_site(request):
         raise HTTPException(status_code=403, detail="Cross-site request rejected.")
-    raise HTTPException(status_code=403, detail="Invalid or expired form token.")
+    raise ExpiredFormError(_csrf_recovery_location(request))
