@@ -9,6 +9,9 @@ from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
 from typing import Dict, Optional, Set
+from zoneinfo import ZoneInfo
+
+from . import config
 
 REPORTING_WORKING_DAYS = 3
 
@@ -85,8 +88,17 @@ def reporting_deadline(check_in: date) -> datetime:
     return datetime.combine(add_working_days(check_in, REPORTING_WORKING_DAYS), time(23, 59, 59))
 
 
+def local_now(now: Optional[datetime] = None) -> datetime:
+    """Return a naive Czech civil time for comparisons with stored stay dates."""
+    if now is None:
+        return datetime.now(ZoneInfo(config.TIMEZONE)).replace(tzinfo=None)
+    if now.tzinfo is not None:
+        return now.astimezone(ZoneInfo(config.TIMEZONE)).replace(tzinfo=None)
+    return now
+
+
 def hours_left(check_in: date, now: Optional[datetime] = None) -> float:
-    now = now or datetime.now()
+    now = local_now(now)
     return (reporting_deadline(check_in) - now).total_seconds() / 3600.0
 
 
@@ -99,7 +111,7 @@ def urgency(check_in: date, now: Optional[datetime] = None) -> str:
     "urgent"   - inside the last 24 hours
     "overdue"  - the deadline has passed
     """
-    now = now or datetime.now()
+    now = local_now(now)
     if check_in > now.date():
         return "future"
     left = hours_left(check_in, now)
@@ -121,7 +133,7 @@ def time_left_parts(check_in: date, now: Optional[datetime] = None) -> tuple:
     The wording lives with the other UI strings; this module stays a pure
     calculation so the legal arithmetic can be read on its own.
     """
-    now = now or datetime.now()
+    now = local_now(now)
     if check_in > now.date():
         return "arrives_days", (check_in - now.date()).days
     left = hours_left(check_in, now)

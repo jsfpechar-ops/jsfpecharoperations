@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from app import deadlines as d
 
@@ -45,6 +45,17 @@ def test_working_day_arithmetic_skips_public_holiday():
 def test_deadline_is_end_of_the_third_working_day():
     deadline = d.reporting_deadline(date(2026, 9, 10))
     assert deadline == datetime(2026, 9, 15, 23, 59, 59)
+
+
+def test_aware_instants_are_compared_in_czech_civil_time_across_dst():
+    check_in = date(2026, 3, 26)
+    assert d.reporting_deadline(check_in) == datetime(2026, 3, 31, 23, 59, 59)
+    assert d.hours_left(
+        check_in, datetime(2026, 3, 31, 21, 59, tzinfo=timezone.utc)
+    ) > 0
+    assert d.urgency(
+        check_in, datetime(2026, 3, 31, 22, 0, tzinfo=timezone.utc)
+    ) == "overdue"
 
 
 def test_urgency_buckets():

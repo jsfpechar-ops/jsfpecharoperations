@@ -447,7 +447,7 @@ def count_sendable_stays(reservations: List[Any]) -> int:
 
 def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
     """Whether the apartment's automation setting says to send this now."""
-    now = now or datetime.now()
+    now = deadlines.local_now(now)
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
