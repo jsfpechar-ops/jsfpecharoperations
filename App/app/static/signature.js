@@ -171,60 +171,6 @@
     });
   }
 
-  function initMrzAssist() {
-    var assist = document.querySelector("[data-mrz-assist]");
-    if (!assist) return;
-    var line1 = document.getElementById("mrz_line_1");
-    var line2 = document.getElementById("mrz_line_2");
-    var button = assist.querySelector("[data-mrz-fill]");
-    var status = assist.querySelector("[data-mrz-status]");
-    if (!line1 || !line2 || !button || !status) return;
-
-    function clean(value) {
-      return String(value || "").toUpperCase().replace(/\s/g, "").replace(/[^A-Z0-9<]/g, "");
-    }
-
-    function setValue(id, value) {
-      var field = document.getElementById(id);
-      if (field && value) field.value = value;
-      return field;
-    }
-
-    button.addEventListener("click", function () {
-      var first = clean(line1.value);
-      var second = clean(line2.value);
-      var names = first.slice(5).split("<<");
-      if (first.length < 20 || second.length < 28 || names.length < 2) {
-        status.textContent = status.getAttribute("data-failed") || "";
-        status.className = "err";
-        return;
-      }
-      var surname = names[0].replace(/</g, " ").trim();
-      var given = names.slice(1).join(" ").replace(/</g, " ").replace(/\s+/g, " ").trim();
-      var documentNumber = second.slice(0, 9).replace(/</g, "");
-      var nationalityCode = second.slice(10, 13).replace(/</g, "");
-      var birth = second.slice(13, 19);
-      if (!surname || !given || !documentNumber || !/^\d{6}$/.test(birth)) {
-        status.textContent = status.getAttribute("data-failed") || "";
-        status.className = "err";
-        return;
-      }
-      var year = Number(birth.slice(0, 2));
-      var currentYear = new Date().getFullYear();
-      var fullYear = year > currentYear % 100 ? 1900 + year : 2000 + year;
-      setValue("surname", surname);
-      setValue("first_name", given);
-      setValue("doc_number", documentNumber);
-      setValue("birth_date", birth.slice(4, 6) + "/" + birth.slice(2, 4) + "/" + fullYear);
-      var nationality = setValue("nationality", nationalityCode);
-      if (nationality) nationality.dispatchEvent(new Event("change", { bubbles: true }));
-      status.textContent = status.getAttribute("data-filled") || "";
-      status.className = "hint success";
-      assist.open = false;
-      document.getElementById("surname").focus();
-    });
-  }
-
   function focusFirstError() {
     var first = document.querySelector(".g-field .bad, .g-sign .err:not(:empty)");
     if (!first) return;
@@ -304,7 +250,6 @@
     initBirthDate();
     initChildToggle();
     initResidenceCountry();
-    initMrzAssist();
     initGuestWizard();
     focusFirstError();
   });

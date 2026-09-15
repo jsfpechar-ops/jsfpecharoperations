@@ -151,18 +151,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "so add them here."
         ),
         "continue_filling": "Continue filling in",
-        "mrz_title": "Fast fill from your passport",
-        "mrz_help": (
-            "Type the two long lines of letters and << symbols printed at the very bottom of "
-            "your passport photo page (or the back of your ID card). We will fill in the form "
-            "for you and check it for typos."
-        ),
-        "mrz_button": "Fill in from these lines",
-        "mrz_line_1": "First MRZ line",
-        "mrz_line_2": "Second MRZ line",
-        "mrz_or": "or fill in the form manually below",
-        "mrz_failed": "Could not read those lines. Please fill in the form manually.",
-        "mrz_filled": "Filled in from your document. Please check every field before signing.",
         "surname": "Surname",
         "first_name": "Given name(s)",
         "birth_date": "Date of birth",
@@ -491,18 +479,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "proto ho zde přidejte."
         ),
         "continue_filling": "Pokračovat ve vyplnění",
-        "mrz_title": "Rychlé vyplnění z pasu",
-        "mrz_help": (
-            "Přepište dva dlouhé řádky se znaky << ze spodní části stránky s fotografií v pasu "
-            "(nebo ze zadní strany občanského průkazu). Formulář vyplníme za vás a "
-            "zkontrolujeme případné překlepy."
-        ),
-        "mrz_button": "Vyplnit z těchto řádků",
-        "mrz_line_1": "První řádek MRZ",
-        "mrz_line_2": "Druhý řádek MRZ",
-        "mrz_or": "nebo vyplňte formulář ručně níže",
-        "mrz_failed": "Řádky se nepodařilo přečíst. Vyplňte prosím formulář ručně.",
-        "mrz_filled": "Vyplněno z dokladu. Před podpisem prosím zkontrolujte všechna pole.",
         "surname": "Příjmení",
         "first_name": "Jméno",
         "birth_date": "Datum narození",
