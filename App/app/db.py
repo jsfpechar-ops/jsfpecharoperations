@@ -228,6 +228,10 @@ def utcnow() -> str:
 
 def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(str(config.DB_PATH), timeout=30, isolation_level=None)
+    try:
+        config.DB_PATH.chmod(0o600)
+    except OSError:
+        pass
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")

@@ -78,7 +78,9 @@ def validate_calendar_url(url: str) -> str:
         raise FeedError("Calendar URL must not contain embedded credentials.")
     if port is not None and not 1 <= port <= 65535:
         raise FeedError("Calendar URL has an invalid port.")
-    if config.ICAL_ALLOW_PRIVATE:
+    # The override exists for the local mock stack only. A production typo
+    # must never silently disable the network boundary.
+    if config.ICAL_ALLOW_PRIVATE and config.DEPLOYMENT != "production":
         return raw
     host = hostname.lower().rstrip(".")
     if host in _BLOCKED_HOSTNAMES or host.endswith(".local"):

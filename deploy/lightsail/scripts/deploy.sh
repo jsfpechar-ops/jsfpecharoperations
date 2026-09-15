@@ -9,6 +9,7 @@ if [ ! -f .env ]; then
   echo "Missing .env — copy .env.example and set your domain, email, and passwords." >&2
   exit 1
 fi
+chmod 600 .env
 
 # shellcheck disable=SC1091
 set -a

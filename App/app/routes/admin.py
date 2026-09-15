@@ -648,8 +648,8 @@ async def apartment_update(apartment_id: int, request: Request):
     pin_raw = _form_str(form, "permalink_pin")
     if pin_raw:
         pin = auth.normalise_permalink_pin(pin_raw)
-        if not pin:
-            return _back(f"/apartments/{apartment_id}", err="PIN must be 4 or 6 digits.")
+        if not pin or len(pin) != 6:
+            return _back(f"/apartments/{apartment_id}", err="PIN must be 6 digits.")
         payload["permalink_pin"] = pin
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
@@ -1172,8 +1172,8 @@ def reservation_detail(reservation_id: int, request: Request):
     submissions = db.query(
         "SELECT * FROM submission WHERE id IN ("
         "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
-        ") ORDER BY created_at DESC",
-        (reservation_id,),
+        ") AND apartment_id = ? ORDER BY created_at DESC",
+        (reservation_id, reservation["apartment_id"]),
     )
     return render(
         request,

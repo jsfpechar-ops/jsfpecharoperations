@@ -151,6 +151,8 @@ def username_is_valid(value: str) -> bool:
 
 
 def password_error(password: str) -> str:
+    if len(password or "") > 256:
+        return "Use no more than 256 characters."
     if len(password or "") < 12:
         return "Use at least 12 characters."
     if password.lower() == password or password.upper() == password:
@@ -302,13 +304,19 @@ def attach_session(response, token: str, remember: bool = False) -> None:
         max_age=SESSION_REMEMBER_MAX_AGE if remember else SESSION_MAX_AGE,
         httponly=True,
         samesite="strict",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=_secure_cookies(),
         path="/",
     )
 
 
 def clear_session(response) -> None:
-    response.delete_cookie(SESSION_COOKIE, path="/")
+    response.delete_cookie(
+        SESSION_COOKIE,
+        path="/",
+        secure=_secure_cookies(),
+        httponly=True,
+        samesite="strict",
+    )
 
 
 def create_account(
@@ -426,32 +434,60 @@ def _pin_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-guest-pin")
 
 
-def issue_pin_session(token: str) -> str:
-    return _pin_serializer().dumps({"token": token})
+def _pin_fingerprint(token: str, pin: str) -> str:
+    return hmac.new(
+        config.SECRET_KEY.encode(),
+        f"{token}\0{pin}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
 
 
-def pin_session_valid(request: Request, token: str) -> bool:
+def issue_pin_session(token: str, pin: str) -> str:
+    return _pin_serializer().dumps(
+        {"token": token, "pin": _pin_fingerprint(token, pin)}
+    )
+
+
+def pin_session_valid(request: Request, token: str, pin: str) -> bool:
     raw = request.cookies.get(PIN_COOKIE)
     if not raw:
         return False
     try:
         payload = _pin_serializer().loads(raw, max_age=_PIN_MAX_AGE)
-        return isinstance(payload, dict) and payload.get("token") == token
+        return (
+            isinstance(payload, dict)
+            and hmac.compare_digest(str(payload.get("token", "")), token)
+            and hmac.compare_digest(
+                str(payload.get("pin", "")), _pin_fingerprint(token, pin)
+            )
+        )
     except BadSignature:
         return False
 
 
-def attach_pin_session(response, token: str) -> None:
+def _secure_cookies() -> bool:
+    return config.DEPLOYMENT == "production" or config.PUBLIC_BASE_URL.lower().startswith(
+        "https://"
+    )
+
+
+def attach_pin_session(response, token: str, pin: str) -> None:
     response.set_cookie(
         PIN_COOKIE,
-        issue_pin_session(token),
+        issue_pin_session(token, pin),
         max_age=_PIN_MAX_AGE,
         httponly=True,
         samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=_secure_cookies(),
         path="/",
     )
 
 
 def clear_pin_session(response) -> None:
-    response.delete_cookie(PIN_COOKIE, path="/")
+    response.delete_cookie(
+        PIN_COOKIE,
+        path="/",
+        secure=_secure_cookies(),
+        httponly=True,
+        samesite="lax",
+    )

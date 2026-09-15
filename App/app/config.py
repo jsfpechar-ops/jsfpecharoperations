@@ -8,7 +8,11 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+DATA_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+try:
+    DATA_DIR.chmod(0o700)
+except OSError:
+    pass
 
 DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
 

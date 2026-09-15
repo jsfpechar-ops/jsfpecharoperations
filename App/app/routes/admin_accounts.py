@@ -28,6 +28,7 @@ def login_form(request: Request):
 async def login_submit(request: Request):
     form = await request.form()
     username = _form_str(form, "username")
+    ip_key = rate_limit.client_key(request)
     client_key = rate_limit.client_key(request, username.lower() or "unknown")
     if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
         return render(
@@ -36,7 +37,7 @@ async def login_submit(request: Request):
             {"error": "Security check failed. Please try again.", "username": username},
             status_code=403,
         )
-    if rate_limit.login_blocked(client_key):
+    if rate_limit.login_blocked(client_key, ip_key):
         return render(
             request,
             "login.html",
@@ -48,7 +49,7 @@ async def login_submit(request: Request):
         )
     account = auth.authenticate(username, _form_str(form, "password"))
     if not account:
-        rate_limit.record_login_failure(client_key)
+        rate_limit.record_login_failure(client_key, ip_key)
         db.audit("login_failed", request.client.host if request.client else "", actor="anonymous")
         return render(
             request,
@@ -105,7 +106,8 @@ async def two_factor_login(request: Request):
     if not account:
         return RedirectResponse("/login", status_code=303)
     client_key = rate_limit.client_key(request, f"{account['username']}:2fa")
-    if rate_limit.login_blocked(client_key):
+    ip_key = rate_limit.client_key(request)
+    if rate_limit.login_blocked(client_key, ip_key):
         return render(
             request,
             "two_factor_login.html",
@@ -113,7 +115,7 @@ async def two_factor_login(request: Request):
             status_code=429,
         )
     if not auth.verify_second_factor(account, _form_str(form, "code")):
-        rate_limit.record_login_failure(client_key)
+        rate_limit.record_login_failure(client_key, ip_key)
         db.audit("two_factor_failed", actor=account["username"], owner_user_id=account["id"])
         return render(
             request,
