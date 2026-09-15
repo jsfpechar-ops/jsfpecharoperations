@@ -86,16 +86,16 @@
           <div class="grow">
             <strong>{{ t('settings.privacy_incomplete') }}</strong>
             {% if apartments_without_entity %}
-              <small>No legal entity on:
+              <small>{{ t('settings.privacy.no_entity_prefix') }}
                 {% for apartment in apartments_without_entity %}
                   <a href="/apartments/{{ apartment.id }}">{{ apartment.internal_name }}</a>{{ ", " if not loop.last }}
                 {% endfor %}
-                — guests cannot be told who controls their data.</small>
+                {{ t('settings.privacy.no_entity_suffix') }}</small>
             {% endif %}
             {% if entities_without_contact %}
-              <small>No contact e-mail on:
+              <small>{{ t('settings.privacy.no_contact_prefix') }}
                 {% for entity in entities_without_contact %}{{ entity.name }}{{ ", " if not loop.last }}{% endfor %}
-                — <a href="/entities">add one</a> so guests can exercise their rights.</small>
+                — <a href="/entities">{{ t('settings.privacy.add_contact') }}</a>{{ t('settings.privacy.no_contact_suffix') }}</small>
             {% endif %}
           </div>
         </div>
@@ -112,10 +112,10 @@
           <tbody>
           {% for entry in audit %}
             <tr>
-              <td class="nowrap small" data-label="When">{{ entry.at[:19].replace('T', ' ') }}</td>
-              <td class="small" data-label="Who">{{ entry.actor }}</td>
-              <td class="small" data-label="Action">{{ entry.action }}</td>
-              <td class="small muted" data-label="Detail">{{ entry.detail }}</td>
+              <td class="nowrap small" data-label="{{ t('settings.audit.when') }}">{{ entry.at[:19].replace('T', ' ') }}</td>
+              <td class="small" data-label="{{ t('settings.audit.who') }}">{{ entry.actor }}</td>
+              <td class="small" data-label="{{ t('settings.audit.action') }}">{{ entry.action }}</td>
+              <td class="small muted" data-label="{{ t('settings.audit.detail') }}">{{ entry.detail }}</td>
             </tr>
           {% else %}
             <tr><td colspan="4" class="muted small">{{ t('settings.audit.empty') }}</td></tr>
@@ -185,7 +185,7 @@
 
     <div class="panel" id="settings-version">
       <h3 style="margin-top:0">{{ t('settings.nav.version') }}</h3>
-      <p class="small muted">UbyHost {{ app_version }}</p>
+      <p class="small muted">{{ t('settings.version_line', version=app_version) }}</p>
     </div>
   </div>
 </div>

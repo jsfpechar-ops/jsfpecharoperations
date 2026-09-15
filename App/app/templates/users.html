@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {% set nav = 'users' %}
-{% block title %}Users{% endblock %}
+{% block title %}{{ t('users.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
 {{ page_header(
-  'Users',
-  'Create a private workspace for each host. Passwords are hashed and can be reset, never viewed.'
+  t('users.title'),
+  t('users.lede')
 ) }}
 
 {% if new_credential %}
 <div class="panel credential-once" role="status">
-  <h2>{% if new_credential.reset %}Password reset{% else %}User created{% endif %}</h2>
+  <h2>{% if new_credential.reset %}{{ t('users.credential.reset_title') }}{% else %}{{ t('users.credential.created_title') }}{% endif %}</h2>
   <p class="small muted">
-    Copy this now - it is not stored in readable form and cannot be shown again.
-    {% if new_credential.reset %}The old password no longer works.{% endif %}
+    {{ t('users.credential.copy_now') }}
+    {% if new_credential.reset %}{{ t('users.credential.old_password_invalid') }}{% endif %}
   </p>
   <dl class="credential-pair">
-    <dt>Username</dt>
+    <dt>{{ t('users.credential.username') }}</dt>
     <dd class="mono">{{ new_credential.username }}</dd>
-    <dt>Temporary password</dt>
+    <dt>{{ t('users.credential.temporary_password') }}</dt>
     <dd class="mono credential-secret">{{ new_credential.password }}</dd>
   </dl>
   <p class="small muted">
-    They will be asked to choose their own password the first time they sign in.
+    {{ t('users.credential.choose_on_login') }}
   </p>
 </div>
 {% endif %}
@@ -31,33 +31,33 @@
   <section>
     <div class="panel tight scroll-x">
       <table class="table-cards user-table">
-        <thead><tr><th>User</th><th>Role</th><th>Properties</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <thead><tr><th>{{ t('users.table.user') }}</th><th>{{ t('users.table.role') }}</th><th>{{ t('users.table.properties') }}</th><th>{{ t('users.table.status') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr></thead>
         <tbody>
         {% for user in users %}
           <tr>
-            <td data-label="User">
+            <td data-label="{{ t('users.table.user') }}">
               <strong>{{ user.display_name or user.username }}</strong>
               <div class="small muted mono">{{ user.username }}</div>
             </td>
-            <td data-label="Role">{{ user.role | capitalize }}</td>
-            <td data-label="Properties">{{ user.apartment_count }}</td>
-            <td data-label="Status">
-              {% if not user.active %}<span class="pill grey">Disabled</span>
-              {% elif user.must_change_password %}<span class="pill amber">Temporary password</span>
-              {% else %}<span class="pill green">Active</span>{% endif %}
+            <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
+            <td data-label="{{ t('users.table.properties') }}">{{ user.apartment_count }}</td>
+            <td data-label="{{ t('users.table.status') }}">
+              {% if not user.active %}<span class="pill grey">{{ t('users.status.disabled') }}</span>
+              {% elif user.must_change_password %}<span class="pill amber">{{ t('users.status.temporary_password') }}</span>
+              {% else %}<span class="pill green">{{ t('users.status.active') }}</span>{% endif %}
             </td>
             <td class="row-actions" data-label="">
               {% if user.id != current_user.id %}
-                {{ row_menu_begin('User actions') }}
+                {{ row_menu_begin(t('users.menu.aria')) }}
                   <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
-                    <button class="row-menu-item" type="submit" role="menuitem">Open workspace</button>
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.open_workspace') }}</button>
                   </form>
                   <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form">
-                    <button class="row-menu-item" type="submit" role="menuitem">{{ 'Disable' if user.active else 'Enable' }}</button>
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.disable') if user.active else t('users.menu.enable') }}</button>
                   </form>
                   <button class="row-menu-item" type="button" role="menuitem"
                           data-reset-password data-user-id="{{ user.id }}"
-                          data-user-label="{{ user.display_name or user.username }}">Reset password</button>
+                          data-user-label="{{ user.display_name or user.username }}">{{ t('users.menu.reset_password') }}</button>
                 {{ row_menu_end() }}
               {% endif %}
             </td>
@@ -69,51 +69,51 @@
   </section>
 
   <aside class="panel">
-    <h2 style="margin-top:0">Create a host</h2>
-    <p class="small muted">A secure temporary password is generated for you. Copy it before creating the account.</p>
+    <h2 style="margin-top:0">{{ t('users.create.title') }}</h2>
+    <p class="small muted">{{ t('users.create.lede') }}</p>
     <form method="post" action="/admin/users">
       <div class="field">
-        <label for="display_name">Name</label>
+        <label for="display_name">{{ t('users.create.name') }}</label>
         <input type="text" id="display_name" name="display_name" autocomplete="off">
       </div>
       <div class="field">
-        <label for="username">Username</label>
+        <label for="username">{{ t('users.create.username') }}</label>
         <input type="text" id="username" name="username" required minlength="3" maxlength="32"
                pattern="[a-z0-9][a-z0-9._-]{2,31}" autocapitalize="none" spellcheck="false"
                autocomplete="off">
-        <div class="hint">Lowercase letters, numbers, dots, dashes, and underscores.</div>
+        <div class="hint">{{ t('users.create.username_hint') }}</div>
       </div>
       <div class="field">
-        <label for="password">Temporary password</label>
+        <label for="password">{{ t('users.create.temporary_password') }}</label>
         <div class="password-generate">
           <input type="text" id="password" name="password" class="mono" required readonly
                  autocomplete="off" spellcheck="false" data-generated-password>
-          <button class="btn small ghost" type="button" data-generate-password>Regenerate</button>
-          <button class="btn small ghost" type="button" data-copy="password">Copy</button>
+          <button class="btn small ghost" type="button" data-generate-password>{{ t('users.create.regenerate') }}</button>
+          <button class="btn small ghost" type="button" data-copy="password">{{ t('common.copy') }}</button>
         </div>
-        <div class="hint">They must replace it at first login.</div>
+        <div class="hint">{{ t('users.create.password_hint') }}</div>
       </div>
-      <button class="btn primary" type="submit">Create host</button>
+      <button class="btn primary" type="submit">{{ t('users.create.submit') }}</button>
     </form>
   </aside>
 </div>
 
 <dialog id="reset-password-dialog" class="admin-dialog">
   <form method="post" id="reset-password-form" class="admin-dialog-form">
-    <h2 style="margin-top:0">Reset password</h2>
-    <p class="small muted">A new temporary password for <strong id="reset-password-label"></strong>. Copy it before saving.</p>
+    <h2 style="margin-top:0">{{ t('users.reset.title') }}</h2>
+    <p class="small muted">{{ t('users.reset.lede_before') }}<strong id="reset-password-label"></strong>{{ t('users.reset.lede_after') }}</p>
     <div class="field">
-      <label for="reset_password_value">Temporary password</label>
+      <label for="reset_password_value">{{ t('users.reset.temporary_password') }}</label>
       <div class="password-generate">
         <input type="text" id="reset_password_value" name="password" class="mono" required readonly
                autocomplete="off" spellcheck="false" data-generated-password>
-        <button class="btn small ghost" type="button" data-generate-password>Regenerate</button>
-        <button class="btn small ghost" type="button" data-copy="reset_password_value">Copy</button>
+        <button class="btn small ghost" type="button" data-generate-password>{{ t('users.create.regenerate') }}</button>
+        <button class="btn small ghost" type="button" data-copy="reset_password_value">{{ t('common.copy') }}</button>
       </div>
     </div>
     <div class="actions">
-      <button class="btn" type="button" data-reset-password-cancel>Cancel</button>
-      <button class="btn primary" type="submit">Save password</button>
+      <button class="btn" type="button" data-reset-password-cancel>{{ t('confirm.cancel') }}</button>
+      <button class="btn primary" type="submit">{{ t('users.reset.save') }}</button>
     </div>
   </form>
 </dialog>
