@@ -7,7 +7,7 @@
    page-level surfaces. Shadows are reserved for floating UI.
 */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* Neutral canvas and ink */
   --canvas: #f7f7f5;
@@ -111,85 +111,9 @@
   --ease: var(--ease-standard);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --canvas: #191918;
-    --canvas-subtle: #20201f;
-    --surface: #242423;
-    --surface-raised: #2a2a28;
-    --surface-hover: #30302e;
-    --surface-active: #393936;
-    --ink: #f1f1ed;
-    --ink-secondary: #d0d0ca;
-    --ink-muted: #a4a49d;
-    --ink-faint: #85857e;
-    --border: #3b3b38;
-    --border-strong: #50504b;
-    --brand: #dc746d;
-    --brand-action: #dc746d;
-    --brand-hover: #e58983;
-    --brand-pressed: #c86059;
-    --brand-soft: #482a28;
-    --brand-ink: #f3aaa5;
-    --focus-ring: rgba(220, 116, 109, 0.38);
-    --on-brand: #191918;
-    --red: #ff9b92;    --red-bg: #482421;
-    --orange: #f6a36c; --orange-bg: #432b1e;
-    --amber: #e8bd62;  --amber-bg: #3f321a;
-    --green: #72ce9c;  --green-bg: #1d392a;
-    --teal: #69cec4;   --teal-bg: #183b38;
-    --blue: #8ab4f8;   --blue-bg: #20334f;
-    --indigo: #aaa6f6; --indigo-bg: #2d2b50;
-    --purple: #c89be7; --purple-bg: #392649;
-    --pink: #ed9bc4;   --pink-bg: #47253a;
-    --brown: #d2aa8f;  --brown-bg: #3b2e27;
-    --gray: #c1c4bf;   --gray-bg: #343633;
-  }
-}
-
-:root[data-theme="dark"] {
-  --canvas: #191918;
-  --canvas-subtle: #20201f;
-  --surface: #242423;
-  --surface-raised: #2a2a28;
-  --surface-hover: #30302e;
-  --surface-active: #393936;
-  --ink: #f1f1ed;
-  --ink-secondary: #d0d0ca;
-  --ink-muted: #a4a49d;
-  --ink-faint: #85857e;
-  --border: #3b3b38;
-  --border-strong: #50504b;
-  --brand: #dc746d;
-  --brand-action: #dc746d;
-  --brand-hover: #e58983;
-  --brand-pressed: #c86059;
-  --brand-soft: #482a28;
-  --brand-ink: #f3aaa5;
-  --focus-ring: rgba(220, 116, 109, 0.38);
-  --on-brand: #191918;
-  --red: #ff9b92; --red-bg: #482421;
-  --orange: #f6a36c; --orange-bg: #432b1e;
-  --amber: #e8bd62; --amber-bg: #3f321a;
-  --green: #72ce9c; --green-bg: #1d392a;
-  --teal: #69cec4; --teal-bg: #183b38;
-  --blue: #8ab4f8; --blue-bg: #20334f;
-  --indigo: #aaa6f6; --indigo-bg: #2d2b50;
-  --purple: #c89be7; --purple-bg: #392649;
-  --pink: #ed9bc4; --pink-bg: #47253a;
-  --brown: #d2aa8f; --brown-bg: #3b2e27;
-  --gray: #c1c4bf; --gray-bg: #343633;
-}
-
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-fast: 0.01ms; --motion-base: 0.01ms; }
 }
-
-/* A forced theme must also switch the browser's own rendering. Without this a
-   guest who picks Light on a dark phone gets our light card with the browser's
-   dark autofill boxes and scrollbars. */
-:root[data-theme="light"] { color-scheme: light; }
-:root[data-theme="dark"] { color-scheme: dark; }
 
 /* Autofilled fields keep the surface and ink of the page. Chrome ignores
    background-color here, so the fill is painted with an inset shadow and the

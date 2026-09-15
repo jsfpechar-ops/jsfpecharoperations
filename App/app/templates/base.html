@@ -5,14 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#faf6f2">
   <title>{% block title %}UbyHost{% endblock %}</title>
-  <script>
-    (function () {
-      try {
-        var theme = localStorage.getItem("ubyhost-theme");
-        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
-      } catch (error) {}
-    })();
-  </script>
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
   <link rel="stylesheet" href="/static/app.css?v=20260915a">
@@ -115,14 +107,6 @@
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/dpa">{{ t('dpa.footer_short') }}</a>
       </nav>
-      <div class="theme-control">
-        <span class="nav-label">{{ t('theme.label') }}</span>
-        <div class="theme-switch" role="group" aria-label="{{ t('theme.label') }}">
-          <button type="button" data-theme-value="system" aria-pressed="false">{{ t('theme.system') }}</button>
-          <button type="button" data-theme-value="light" aria-pressed="false">{{ t('theme.light') }}</button>
-          <button type="button" data-theme-value="dark" aria-pressed="false">{{ t('theme.dark') }}</button>
-        </div>
-      </div>
       <div class="sidebar-footer-row">
         <form method="post" action="/language" class="lang-switch compact">
           <input type="hidden" name="next" value="{{ request.url.path }}">
@@ -292,7 +276,6 @@
   </div>
 </dialog>
 
-<script src="/static/theme.js?v=20260915a"></script>
 <script src="/static/app.js?v=20260915a"></script>
 </body>
 </html>

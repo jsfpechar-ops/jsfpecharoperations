@@ -13,10 +13,6 @@ DEFAULT_LANGUAGE = "en"
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "title": "Guest registration",
-        "theme_label": "Appearance",
-        "theme_system": "System",
-        "theme_light": "Light",
-        "theme_dark": "Dark",
         "language_label": "Language",
         "date_placeholder": "DD/MM/YYYY",
         "legal_intro": (
@@ -349,10 +345,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "cs": {
         "title": "Registrace ubytovaného",
-        "theme_label": "Vzhled",
-        "theme_system": "Systém",
-        "theme_light": "Světlý",
-        "theme_dark": "Tmavý",
         "language_label": "Jazyk",
         "date_placeholder": "DD/MM/RRRR",
         "legal_intro": (
