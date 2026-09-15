@@ -19,6 +19,7 @@
         <img class="auth-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
       </header>
       <form method="post" action="/language" class="lang-switch auth-lang-switch">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
         <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
         <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>

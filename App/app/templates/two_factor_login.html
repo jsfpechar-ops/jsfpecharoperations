@@ -6,6 +6,7 @@
   <p class="auth-lede">{{ t('account.2fa.code_lede') }}</p>
   {% if error %}<div class="auth-alert" role="alert">{{ error }}</div>{% endif %}
   <form method="post" action="/login/2fa" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="pending" value="{{ pending }}">
     <div class="auth-field">
       <label for="code">{{ t('account.2fa.code_label') }}</label>
