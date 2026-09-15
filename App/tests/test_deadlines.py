@@ -126,3 +126,23 @@ def test_time_left_parts_matches_the_english_sentence():
     kind, amount = deadlines.time_left_parts(check_in, now)
     assert kind == "days_left"
     assert deadlines.describe_time_left(check_in, now) == f"{amount} days left"
+
+
+def test_deadline_watch_uses_czech_time_and_keeps_old_compliance_debt(monkeypatch):
+    from app import reporting
+
+    captured = {}
+    local = datetime(2026, 9, 15, 23, 0)
+    monkeypatch.setattr(reporting.deadlines, "local_now", lambda _now: local)
+
+    def query(sql, params):
+        captured["sql"] = sql
+        captured["params"] = params
+        return []
+
+    monkeypatch.setattr(reporting.db, "query", query)
+
+    reporting.check_deadlines(datetime(2026, 9, 15, 21, 0, tzinfo=timezone.utc))
+
+    assert "date_from >= ?" not in captured["sql"]
+    assert captured["params"][-1] == "2026-09-15"

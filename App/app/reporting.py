@@ -882,14 +882,13 @@ def check_deadlines(
     This is the part the host asked for: not "here is a list of bookings" but
     "these ones will make you non-compliant unless you chase the guest today".
     """
-    now = now or datetime.now()
+    now = deadlines.local_now(now)
     raised = 0
-    horizon = (now.date() - timedelta(days=30)).isoformat()
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
-        "AND (? IS NULL OR a.owner_user_id = ?) AND r.date_from >= ? AND r.date_from <= ?",
-        (owner_user_id, owner_user_id, horizon, now.date().isoformat()),
+        "AND (? IS NULL OR a.owner_user_id = ?) AND r.date_from <= ?",
+        (owner_user_id, owner_user_id, now.date().isoformat()),
     )
     for reservation in rows:
         start = validation.parse_iso_date(reservation["date_from"])
