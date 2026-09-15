@@ -81,7 +81,7 @@ async def protect_host_post(request: Request) -> None:
     """Require CSRF proof for state-changing host requests in production."""
     if request.method in {"GET", "HEAD", "OPTIONS", "TRACE"}:
         return
-    if config.DEPLOYMENT not in {"production", "staging"}:
+    if config.DEPLOYMENT != "production":
         return
     if not _request_is_same_site(request):
         raise HTTPException(status_code=403, detail="Cross-site request rejected.")
