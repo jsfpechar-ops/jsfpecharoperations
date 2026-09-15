@@ -442,6 +442,13 @@ def _pin_fingerprint(token: str, pin: str) -> str:
     ).hexdigest()
 
 
+def pin_matches(token: str, entered: str, expected: str) -> bool:
+    """Compare PINs without exposing their length through an early return."""
+    return hmac.compare_digest(
+        _pin_fingerprint(token, entered), _pin_fingerprint(token, expected)
+    )
+
+
 def issue_pin_session(token: str, pin: str) -> str:
     return _pin_serializer().dumps(
         {"token": token, "pin": _pin_fingerprint(token, pin)}

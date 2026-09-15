@@ -24,7 +24,6 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-import secrets
 from .. import alerts, auth, codelists, config, db, i18n, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 
@@ -452,7 +451,7 @@ async def verify_pin(token: str, request: Request):
             error=i18n.translator(lang)("pin_rate_limited"),
         )
     expected = apartment["permalink_pin"] or ""
-    if len(entered) != len(expected) or not secrets.compare_digest(entered, expected):
+    if not auth.pin_matches(token, entered, expected):
         rate_limit.record_pin_failure(pin_key)
         # Slow brute-force attempts without blocking legitimate guests for long.
         failures = rate_limit.pin_failure_count(pin_key)
