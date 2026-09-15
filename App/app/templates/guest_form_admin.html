@@ -44,6 +44,7 @@
 {% endif %}
 
 <form method="post" action="{{ ('/guests/' ~ guest.id) if editing else ('/reservations/' ~ reservation.id ~ '/guests') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <div class="panel">
     <h2 style="margin-top:0">{{ t('guest.admin.identity.title') }}</h2>
     <div class="grid two">
@@ -175,6 +176,7 @@
     {% endif %}
     <p class="small muted" style="margin:0 0 10px">{{ t('host.verify_in_person') }}</p>
     <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
       <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
     </form>
@@ -226,6 +228,7 @@
     {{ t('guest.admin.resend.help') }}
   </p>
   <form method="post" action="/guests/{{ guest.id }}/resend">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <div class="checkline" style="margin-bottom:12px">
       <input type="checkbox" id="confirm_duplicate" name="confirm_duplicate" value="1">
       <label for="confirm_duplicate">{{ t('guest.admin.resend.confirm') }}</label>
@@ -237,6 +240,7 @@
 {% if guest.submit_state != 'sent' %}
 <form method="post" action="/guests/{{ guest.id }}/delete" class="panel"
       data-confirm data-confirm-message="{{ t('confirm.remove_guest') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <h3 style="margin-top:0">{{ t('guest.admin.remove.title') }}</h3>
   <button class="btn danger" type="submit">{{ t('guest.admin.remove.submit') }}</button>
 </form>

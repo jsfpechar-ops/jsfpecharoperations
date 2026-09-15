@@ -36,7 +36,7 @@ def _csrf_from(response) -> str:
     return match.group(1)
 
 
-def test_production_host_posts_require_session_bound_csrf_token(monkeypatch):
+def test_production_host_posts_require_cookie_bound_csrf_token(monkeypatch):
     db.init_db()
     _clean_accounts()
     _account("boundary-csrf")
@@ -49,7 +49,8 @@ def test_production_host_posts_require_session_bound_csrf_token(monkeypatch):
             data={"username": "boundary-csrf", "password": "Secure-Password-123"},
             follow_redirects=False,
         )
-        assert denied.status_code == 403
+        assert denied.status_code == 303
+        assert denied.headers["location"].startswith("/login?err=")
 
         logged_in = client.post(
             "/login",
@@ -63,7 +64,13 @@ def test_production_host_posts_require_session_bound_csrf_token(monkeypatch):
         assert logged_in.status_code == 303
 
         host_token = _csrf_from(client.get("/settings"))
-        assert client.post("/settings/purge-expired", follow_redirects=False).status_code == 403
+        expired = client.post(
+            "/settings/purge-expired",
+            headers={"Referer": "http://testserver/settings"},
+            follow_redirects=False,
+        )
+        assert expired.status_code == 303
+        assert expired.headers["location"].startswith("/settings?err=")
         accepted = client.post(
             "/settings/purge-expired",
             data={security.CSRF_FIELD: host_token},
@@ -83,6 +90,52 @@ def test_production_host_posts_require_session_bound_csrf_token(monkeypatch):
         }
     finally:
         _clean_accounts()
+
+
+def test_login_token_survives_session_cookie_appearing_after_cross_site_navigation(monkeypatch):
+    """Safari can omit Strict session cookies on the initial externally-opened GET."""
+    db.init_db()
+    _clean_accounts()
+    account_id = _account("strict-cookie-login")
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    try:
+        client = TestClient(app, base_url="https://ubyhost.com")
+        login_token = _csrf_from(client.get("/login"))
+        account = db.query_one("SELECT * FROM user_account WHERE id = ?", (account_id,))
+        client.cookies.set(
+            auth.SESSION_COOKIE,
+            auth.issue_session(account_id, account["session_version"]),
+            domain="ubyhost.com",
+            path="/",
+        )
+        response = client.post(
+            "/login",
+            data={
+                "username": "strict-cookie-login",
+                "password": "Secure-Password-123",
+                security.CSRF_FIELD: login_token,
+            },
+            headers={"Origin": "https://ubyhost.com"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"] == "/"
+    finally:
+        _clean_accounts()
+
+
+def test_csrf_token_remains_valid_when_authenticated_session_is_reissued(monkeypatch):
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    client = TestClient(app, base_url="https://ubyhost.com")
+    token = _csrf_from(client.get("/login"))
+    client.cookies.set(auth.SESSION_COOKIE, "a-new-session", domain="ubyhost.com", path="/")
+    response = client.post(
+        "/language",
+        data={"lang": "en", security.CSRF_FIELD: token},
+        headers={"Origin": "https://ubyhost.com"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
 
 
 def test_production_login_accepts_https_origin_behind_http_proxy(monkeypatch):

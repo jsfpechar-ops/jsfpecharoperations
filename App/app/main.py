@@ -73,6 +73,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""
     client_ip.apply_visitor_client(request.scope, request.headers)
     response = await call_next(request)
+    security.attach_csrf_cookie(request, response)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
