@@ -10,8 +10,7 @@
 {{ page_header(
   t('reports.detail.title', id=submission.id),
   submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ')
-    ~ ' · ' ~ {'immediate': 'sent immediately', 'scheduled': 'sent on a schedule',
-               'manual': 'sent by hand'}.get(submission.mode, 'sent ' ~ submission.mode),
+    ~ ' · ' ~ t('reports.mode.' ~ submission.mode),
   '/submissions',
   t('reports.detail.back')
 ) }}
@@ -61,11 +60,11 @@
         {% for guest in guests %}
           <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
             <td class="num" data-label="#">{{ loop.index }}</td>
-            <td data-label="Guest">
+            <td data-label="{{ t('reports.detail.guest') }}">
               <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
               <div class="small muted">{{ guest.nationality }} &middot; {{ guest.doc_number }}</div>
             </td>
-            <td data-label="Result">
+            <td data-label="{{ t('reports.detail.result') }}">
               {% if guest.submit_state == 'sent' %}<span class="pill green">{{ t('submission.accepted') }}</span>
               {% elif guest.submit_state == 'blocked' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
               {% elif guest.submit_state == 'error' %}<span class="pill red">{{ t('submission.rejected') }}</span>
@@ -87,20 +86,20 @@
   <details class="panel technical">
     <summary>{{ t('reports.detail.technical') }}</summary>
     <p class="small muted">{{ t('reports.detail.technical_help') }}</p>
-    <h3>Messages exchanged</h3>
+    <h3>{{ t('reports.detail.messages') }}</h3>
     <div class="technical-downloads">
       <span class="technical-download">
-        <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">What UbyHost sent</a>
-        <span class="help-dot" tabindex="0" title="Downloads the original data UbyHost sent to UbyPort. Support may ask for it when investigating a rejection." aria-label="About the sent message">?</span>
+        <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">{{ t('reports.detail.request') }}</a>
+        <span class="help-dot" tabindex="0" title="{{ t('reports.detail.request_help') }}" aria-label="{{ t('reports.detail.request_about') }}">?</span>
       </span>
       <span class="technical-download">
-        <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">What UbyPort replied</a>
-        <span class="help-dot" tabindex="0" title="Downloads UbyPort's exact reply, including technical acceptance or rejection codes." aria-label="About the reply">?</span>
+        <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">{{ t('reports.detail.response') }}</a>
+        <span class="help-dot" tabindex="0" title="{{ t('reports.detail.response_help') }}" aria-label="{{ t('reports.detail.response_about') }}">?</span>
       </span>
     </div>
     {% if record_errors %}
-      <h3>Guest record error codes
-        <span class="help-dot" title="UbyPort returns one code for each guest it could not accept. These codes help support locate the exact problem." aria-label="About guest error codes">?</span>
+      <h3>{{ t('reports.detail.error_codes') }}
+        <span class="help-dot" title="{{ t('reports.detail.error_codes_help') }}" aria-label="{{ t('reports.detail.error_codes_about') }}">?</span>
       </h3>
       <pre class="mono small code-block">{{ record_errors | join('\n') }}</pre>
     {% endif %}

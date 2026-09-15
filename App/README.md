@@ -176,3 +176,10 @@ that failed to render.
 
 Accommodation fees (`poplatek z pobytu`) are a separate obligation to your
 municipality and are not calculated or reported here.
+
+## UI and design
+
+Host and guest surfaces use a single **light** design system (see
+`app/static/tokens.css`). **Dark mode is not part of the product** and must not
+be added unless the owner explicitly asks. Full policy for contributors and
+agents: **[docs/DESIGN.md](../docs/DESIGN.md)**.
