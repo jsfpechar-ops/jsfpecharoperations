@@ -197,7 +197,9 @@ def expected_guest_count(reservation) -> Optional[int]:
 def reservation_progress(reservation) -> Dict[str, Any]:
     """How far along this reservation is, for the dashboard."""
     guests = db.query(
-        "SELECT * FROM guest WHERE reservation_id = ? ORDER BY is_lead DESC, id", (reservation["id"],)
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+        "ORDER BY is_lead DESC, id",
+        (reservation["id"],),
     )
     expected = expected_guest_count(reservation)
     complete = [g for g in guests if guest_is_complete(g, reservation)]
@@ -547,7 +549,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     sql = (
         "SELECT g.*, r.id AS res_id FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
-        "WHERE r.apartment_id = ? AND r.status = 'active'"
+        "WHERE r.apartment_id = ? AND r.status = 'active' "
+        "AND r.archived_at IS NULL AND g.archived_at IS NULL"
     )
     params: List[Any] = [apartment_id]
     if only_guest_ids:
@@ -884,7 +887,7 @@ def check_deadlines(
     horizon = (now.date() - timedelta(days=30)).isoformat()
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status = 'active' AND a.active = 1 "
+        "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
         "AND (? IS NULL OR a.owner_user_id = ?) AND r.date_from >= ? AND r.date_from <= ?",
         (owner_user_id, owner_user_id, horizon, now.date().isoformat()),
     )
