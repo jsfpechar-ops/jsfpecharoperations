@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import contextlib
 import socket
+import threading
 from typing import Iterator, Optional
 
 import requests
@@ -15,6 +16,10 @@ USER_AGENT = "UbyHost/1.0 (+self-hosted Czech foreign-police reporting)"
 FETCH_TIMEOUT = 45
 MAX_FEED_BYTES = 5 * 1024 * 1024
 MAX_REDIRECTS = 3
+
+# urllib3's create_connection is patched globally while connecting; serialize fetches
+# so concurrent sync jobs cannot pin one thread's HTTP client to another's IP.
+_connect_lock = threading.Lock()
 
 
 class CalendarFetchError(Exception):
@@ -63,11 +68,12 @@ def _connect_only_to(pinned_ip: str) -> Iterator[None]:
             socket_options=socket_options,
         )
 
-    urllib3_connection.create_connection = create_connection
-    try:
-        yield
-    finally:
-        urllib3_connection.create_connection = original
+    with _connect_lock:
+        urllib3_connection.create_connection = create_connection
+        try:
+            yield
+        finally:
+            urllib3_connection.create_connection = original
 
 
 def _request_get(target: CalendarFetchTarget, headers: dict[str, str]) -> requests.Response:
