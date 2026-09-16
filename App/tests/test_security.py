@@ -36,6 +36,76 @@ def _csrf_from(response) -> str:
     return match.group(1)
 
 
+def test_login_page_sets_csrf_cookie_bound_to_form_token(monkeypatch):
+    db.init_db()
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    client = TestClient(app, base_url="https://ubyhost.com")
+    response = client.get("/login")
+    assert response.cookies.get(security.CSRF_COOKIE)
+    token = _csrf_from(response)
+    # Wrong password yields 401; CSRF failures would be 403 or a 303 refresh redirect.
+    denied = client.post(
+        "/login",
+        data={"username": "nobody", "password": "wrong"},
+        headers={"Origin": "https://ubyhost.com", security.CSRF_HEADER: token},
+        follow_redirects=False,
+    )
+    assert denied.status_code == 401
+
+
+def test_production_host_post_accepts_csrf_token_in_header(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    _account("header-csrf")
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    try:
+        client = TestClient(app, base_url="https://ubyhost.com")
+        login_page = client.get("/login")
+        token = _csrf_from(login_page)
+        response = client.post(
+            "/login",
+            data={"username": "header-csrf", "password": "Secure-Password-123"},
+            headers={
+                security.CSRF_HEADER: token,
+                "Origin": "https://ubyhost.com",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+    finally:
+        _clean_accounts()
+
+
+def test_expired_csrf_on_same_site_post_redirects_instead_of_json(monkeypatch):
+    db.init_db()
+    _clean_accounts()
+    _account("expired-csrf")
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    try:
+        client = TestClient(app, base_url="https://ubyhost.com")
+        _csrf_from(client.get("/login"))
+        client.post(
+            "/login",
+            data={"username": "expired-csrf", "password": "Secure-Password-123"},
+            headers={"Origin": "https://ubyhost.com"},
+            follow_redirects=False,
+        )
+        stale = client.post(
+            "/language",
+            data={"lang": "en"},
+            headers={
+                "Origin": "https://ubyhost.com",
+                "Referer": "https://ubyhost.com/settings",
+            },
+            follow_redirects=False,
+        )
+        assert stale.status_code == 303
+        assert stale.headers["location"].startswith("/settings?err=")
+        assert "application/json" not in stale.headers.get("content-type", "")
+    finally:
+        _clean_accounts()
+
+
 def test_production_host_posts_require_cookie_bound_csrf_token(monkeypatch):
     db.init_db()
     _clean_accounts()

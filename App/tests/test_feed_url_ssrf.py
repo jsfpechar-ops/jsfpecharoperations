@@ -98,3 +98,14 @@ def test_production_cannot_enable_private_calendar_targets(monkeypatch):
 
     with pytest.raises(FeedUrlError):
         validate_calendar_url("http://127.0.0.1/calendar.ics")
+
+
+def test_private_ical_flag_allows_loopback_hosts_off_production(monkeypatch):
+    """Staging and local dev sync loopback feeds when ICAL_ALLOW_PRIVATE is set."""
+    monkeypatch.setattr(config, "ICAL_ALLOW_PRIVATE", True)
+    monkeypatch.setattr(config, "DEPLOYMENT", "staging")
+
+    assert validate_calendar_url("http://127.0.0.1:8081/ws_uby/ws_uby.svc").startswith(
+        "http://127.0.0.1"
+    )
+    assert validate_calendar_url("http://localhost/calendar.ics") == "http://localhost/calendar.ics"
