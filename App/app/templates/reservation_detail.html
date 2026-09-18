@@ -140,11 +140,11 @@
     <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
     <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
     <div class="metric-note">
-      {% if progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
+      {% if progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'immediate' %}
         {{ t('stay.detail.note.ready_immediate') }}
       {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
         {{ t('stay.detail.note.ready_manual') }}
-      {% elif progress.status == 'ready' and reservation.automation_mode == 'scheduled' %}
+      {% elif progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'scheduled' %}
         {{ t('stay.detail.note.ready_scheduled', hours=reservation.submit_after_hours) }}
       {% else %}
         {{ t('stay.detail.note.automation') }}

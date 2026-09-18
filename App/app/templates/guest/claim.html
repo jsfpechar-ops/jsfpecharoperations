@@ -11,8 +11,6 @@
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
 
-{% include "guest/_host.html" %}
-
 {% if claim_sent %}
   <div class="g-card g-saved">
     <h2>{{ t('claim_sent_title') }}</h2>
@@ -39,6 +37,9 @@
       <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
              maxlength="254">
       <div class="hint">{{ t('claim_email_help') }}</div>
+      <div class="hint">{{ t('claim_cookie_help') }}
+        {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
+      </div>
     </div>
     <button class="g-btn" type="submit">{{ t('claim_submit') }}</button>
   </form>

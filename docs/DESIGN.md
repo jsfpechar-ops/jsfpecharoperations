@@ -45,6 +45,20 @@ The brief for generating or commissioning a new UbyHost logo — product
 description, concept territory, palette, and the mark / mark+name / full-lockup
 deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
 
+## Contact split (host admin vs guest form)
+
+**Host admin portal:** software support is **`support@ubyhost.com`**. Show it in the signed-in chrome (sidebar) and in Settings. Do not send guests there for booking or stay questions.
+
+**Guest form:** if the guest needs anything about the stay, show the **host** legal-entity name, e-mail, and phone. UbyHost does not run the property. From-address for later guest mail is `noreply@ubyhost.com`; Reply-To remains the host contact.
+
+**Host message:** each property may have one optional plain-text message shown on its guest registration form. Hosts edit it under the property’s Guest link settings. It is intended for a welcome note or property-specific guidance, not access codes or secrets.
+
+**Late registration:** incomplete claimed forms remain accessible for 24 hours from 00:00 Europe/Prague on the check-in date because imported reservations contain a date, not an arrival time. Notify the host after 09:00 on check-in day, then lock incomplete access when the grace period ends. An explicit host reopen overrides that automatic lock.
+
+**Guest e-mail and privacy:** at collection, explain the private claim link, single day-before incomplete reminder, completion receipt/Host copy, public masking, no-marketing rule, and necessary cookies. Assigned guest screens show only a masked address; expired/locked screens show none. The full guest notice documents cookie lifetimes, mail delivery/retention, recipients, and passport processing only when the property enables it.
+
+**Automatic UbyPort timing:** timing starts when all declared guest forms for a reservation become complete, not at check-in. “Immediate” sends then without host verification. “Delayed” sends automatically after the configured number of hours from completion (default 24), giving the host a review window but requiring no approval. Verification remains an explicit optional action and must never be fabricated merely because a report was sent.
+
 ## Agents and automation
 
 Cursor Cloud Agents and other automated contributors **must read this file**

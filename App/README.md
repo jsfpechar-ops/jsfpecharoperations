@@ -96,12 +96,14 @@ e-mail, no headcount. Booking.com gives you even less. That is enough to know
 somebody is arriving, which is all the app needs: the guest supplies the rest
 themselves.
 
-Because there is no e-mail address in the feed, the app cannot write to guests.
-Instead each apartment gets one permanent link. Paste it into your automated
+Because there is no e-mail address in the feed, each apartment gets one permanent
+link. Paste it into your automated
 arrival message on Airbnb or Booking.com and it works for every future booking.
 A guest who opens it sees only the stays starting in the next few days, picks
-theirs, says how many people are coming, and fills in one short form per
-person. Nobody sees anybody else's details.
+theirs, says how many people are coming, and claims it with an e-mail address.
+UbyHost sends the private form link, one day-before reminder if incomplete, and
+a completion receipt. The guest fills in one short form per person; public
+screens mask the claim address and nobody sees anybody else's details.
 
 ## What you have to do once
 
@@ -123,10 +125,11 @@ person. Nobody sees anybody else's details.
 
 Each apartment picks one, as the UbyPort operating rules require:
 
-- **Immediate** — the record goes out after the host verifies the guest against
-  their travel document.
-- **Scheduled** — it goes out a set number of hours after check-in, so late
-  arrivals and corrections are batched together.
+- **Immediate** — all reportable records go out automatically when every
+  declared guest form is complete, without waiting for host verification.
+- **Scheduled** — they go out automatically a set number of hours after all
+  declared forms become complete (24 hours by default), leaving a review window
+  but requiring no approval.
 - **Manual** — nothing leaves without your click.
 
 Whichever you choose, an accepted record is never sent again on its own. Since

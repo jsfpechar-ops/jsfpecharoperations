@@ -201,11 +201,12 @@
       <dl class="kv small">
         <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
         {% if operator().email %}
-          <dt>{{ t('legal.operator_contact') }}</dt><dd><a href="mailto:{{ operator().email }}">{{ operator().email }}</a></dd>
+          <dt>{{ t('legal.support_label') }}</dt><dd><a href="mailto:{{ operator().email }}">{{ operator().email }}</a></dd>
         {% else %}
-          <dt>{{ t('legal.operator_contact') }}</dt><dd class="muted">{{ t('legal.settings_contact_missing') }}</dd>
+          <dt>{{ t('legal.support_label') }}</dt><dd class="muted">{{ t('legal.settings_contact_missing') }}</dd>
         {% endif %}
       </dl>
+      <p class="small muted">{{ t('legal.support_help') }}</p>
       <nav class="document-links" aria-label="{{ t('legal.settings_title') }}">
         <a href="/legal"><span>{{ t('legal.footer_link') }}</span><span aria-hidden="true">→</span></a>
         <a href="/terms"><span>{{ t('terms.footer_link') }}</span><span aria-hidden="true">→</span></a>
