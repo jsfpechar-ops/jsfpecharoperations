@@ -11,8 +11,6 @@
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
 
-{% include "guest/_host.html" %}
-
 {% if claim_sent %}
   <div class="g-card g-saved">
     <h2>{{ t('claim_sent_title') }}</h2>

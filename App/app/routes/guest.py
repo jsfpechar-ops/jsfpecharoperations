@@ -252,7 +252,8 @@ def _apartment_by_token(token: str):
 
 def _pin_page(request: Request, token: str, lang: str, error: str = ""):
     failures = rate_limit.pin_failure_count(rate_limit.client_key(request, token))
-    context = _shared(request, token, lang)
+    apartment = _apartment_by_token(token)
+    context = _shared(request, token, lang, apartment)
     context.update(
         {
             "error": error,
@@ -334,18 +335,29 @@ def _unavailable(
         "form_locked": ("form_locked_title", "form_locked_help"),
     }
     title_key, body_key = titles.get(reason, titles["bad_link"])
-    return render_guest(
-        request,
-        "guest/unavailable.html",
-        {
+    apartment = _apartment_by_token(token) if token else None
+    context = (
+        _shared(request, token or "", lang, apartment)
+        if token
+        else {
             "t": i18n.translator(lang),
             "lang": lang,
             "lang_urls": _lang_urls(request),
+            "controller": {},
+        }
+    )
+    context.update(
+        {
             "title_key": title_key,
             "body_key": body_key,
             "restart_url": _guest_link(token) + _lang_q(lang) if token else None,
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
-        },
+        }
+    )
+    return render_guest(
+        request,
+        "guest/unavailable.html",
+        context,
         status_code=status_code,
     )
 

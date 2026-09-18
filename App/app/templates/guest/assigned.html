@@ -9,8 +9,6 @@
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
 
-{% include "guest/_host.html" %}
-
 <div class="g-card">
   <h2>{{ t('assigned_title') }}</h2>
   <p class="g-intro">{{ t('assigned_body', email=claim.email_masked or '') }}</p>

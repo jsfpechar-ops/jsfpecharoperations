@@ -113,6 +113,30 @@ def test_picker_hides_past_and_far_check_ins():
         _cleanup()
 
 
+def test_guest_pages_show_host_contact_not_ubyhost_support():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        browser = TestClient(app)
+        claim_page = browser.get(f"/l/{TOKEN}/{current}")
+        assert claim_page.status_code == 200
+        assert "Your host" in claim_page.text
+        assert "If you need anything about this stay" in claim_page.text
+        assert "Claim Mail" in claim_page.text
+        assert "host@claim.test" in claim_page.text
+        assert "+420111222333" in claim_page.text
+        assert "mailto:host@claim.test" in claim_page.text
+        assert "mailto:support@ubyhost.com" not in claim_page.text
+
+        complete_guest_claim(browser, TOKEN, current, party_size=1)
+        form = browser.get(f"/l/{TOKEN}/{current}/new")
+        assert form.status_code == 200
+        assert "Your host" in form.text
+        assert "host@claim.test" in form.text
+        assert "mailto:support@ubyhost.com" not in form.text
+    finally:
+        _cleanup()
+
+
 def test_magic_link_get_does_not_assign():
     current, _past, _far, _apartment_id = _seed()
     try:

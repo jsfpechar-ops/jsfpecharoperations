@@ -59,6 +59,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "pick_stay": "Find your stay",
         "pick_stay_help": "Tap your arrival and departure dates to continue.",
         "host_details": "Your host",
+        "host_details_help": (
+            "If you need anything about this stay, contact your host. "
+            "UbyHost does not run the property and cannot change your booking."
+        ),
+        "host_details_missing": (
+            "Use the phone or e-mail in the message that contained this link."
+        ),
         "claim_title": "Confirm the number of guests and your e-mail",
         "claim_help": (
             "We e-mail a private link to this address so only you can fill in the forms. "
@@ -423,6 +430,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "pick_stay": "Najděte svou rezervaci",
         "pick_stay_help": "Klepněte na termín svého pobytu a pokračujte.",
         "host_details": "Váš hostitel",
+        "host_details_help": (
+            "Pokud k pobytu něco potřebujete, kontaktujte ubytovatele. "
+            "UbyHost objekt neprovozuje a rezervaci nemůže měnit."
+        ),
+        "host_details_missing": (
+            "Použijte telefon nebo e-mail ze zprávy, ve které byl tento odkaz."
+        ),
         "claim_title": "Potvrďte počet hostů a e-mail",
         "claim_help": (
             "Na tuto adresu pošleme soukromý odkaz, aby formuláře vyplnil jen host. "

@@ -45,6 +45,12 @@ The brief for generating or commissioning a new UbyHost logo — product
 description, concept territory, palette, and the mark / mark+name / full-lockup
 deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
 
+## Contact split (host admin vs guest form)
+
+**Host admin portal:** software support is **`support@ubyhost.com`**. Show it in the signed-in chrome (sidebar) and in Settings. Do not send guests there for booking or stay questions.
+
+**Guest form:** if the guest needs anything about the stay, show the **host** legal-entity name, e-mail, and phone. UbyHost does not run the property. From-address for later guest mail is `noreply@ubyhost.com`; Reply-To remains the host contact.
+
 ## Agents and automation
 
 Cursor Cloud Agents and other automated contributors **must read this file**

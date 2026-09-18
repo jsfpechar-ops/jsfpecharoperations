@@ -33,6 +33,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.settings": "Settings",
         "nav.users": "Users",
         "nav.logout": "Log out",
+        "nav.support": "Support",
         "nav.administrator": "Administrator",
         "login.title": "Your guest reporting workspace.",
         "login.lede": "Log in to your UbyHost account",
@@ -441,6 +442,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.settings_contact_missing": (
             "Set UBYHOST_OPERATOR_EMAIL in the server environment for a public support address."
+        ),
+        "legal.support_label": "UbyHost support",
+        "legal.support_help": (
+            "Software questions: support@ubyhost.com. Guests with a stay question should use "
+            "the host name, e-mail, and phone shown on the guest form."
         ),
         "guide.demo.body": (
             "Load demo data anytime to explore with a sample flat. Demo guests are never sent to the real "
@@ -858,6 +864,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.settings": "Nastavení",
         "nav.users": "Uživatelé",
         "nav.logout": "Odhlásit se",
+        "nav.support": "Podpora",
         "nav.administrator": "Správce",
         "login.title": "Váš pracovní prostor pro hlášení hostů.",
         "login.lede": "Přihlaste se do UbyHost",
@@ -1261,6 +1268,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.settings_contact_missing": (
             "Pro veřejný kontakt nastavte UBYHOST_OPERATOR_EMAIL v prostředí serveru."
+        ),
+        "legal.support_label": "Podpora UbyHost",
+        "legal.support_help": (
+            "Dotazy k software: support@ubyhost.com. Hosté s otázkou k pobytu mají použít "
+            "jméno, e-mail a telefon ubytovatele na formuláři pro hosty."
         ),
         "guide.demo.body": (
             "Ukázková data lze načíst kdykoli. Na skutečnou policii se nikdy neodešlou."

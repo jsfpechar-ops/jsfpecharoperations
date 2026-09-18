@@ -70,6 +70,8 @@ Claim links and reminders are **not** delivered on production yet.
 
 After a manual deploy of this branch to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` must keep `UBYHOST_MAIL_BACKEND=disabled`.
 
+**Contact split:** the host admin portal (sidebar and Settings) shows **`support@ubyhost.com`** for software questions. The guest form shows the **host** legal-entity name, e-mail, and phone for anything about the stay. Do not send guests to UbyHost support for bookings.
+
 ## Promotion workflow (staging → production)
 
 Use this whenever you ship a change that affects hosts or guests.

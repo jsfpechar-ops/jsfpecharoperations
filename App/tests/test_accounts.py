@@ -420,6 +420,25 @@ def test_legal_entity_rows_are_clickable_and_can_be_archived():
         _clean_accounts()
 
 
+def test_host_admin_portal_shows_ubyhost_support_email():
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-support")
+    try:
+        host = _login("boundary-support")
+        overview = host.get("/")
+        assert overview.status_code == 200
+        assert 'href="mailto:support@ubyhost.com"' in overview.text
+        assert "support@ubyhost.com" in overview.text
+        settings = host.get("/settings")
+        assert settings.status_code == 200
+        assert "UbyHost support" in settings.text
+        assert "support@ubyhost.com" in settings.text
+        assert "Guests with a stay question" in settings.text
+    finally:
+        _clean_accounts()
+
+
 def test_settings_archived_hub_lists_and_restores_entities():
     db.init_db()
     _clean_accounts()

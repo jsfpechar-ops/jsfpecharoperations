@@ -87,7 +87,8 @@ ADMIN_PASSWORD = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
 
 TIMEZONE = "Europe/Prague"
 
-# Software operator (shown in legal notices). Override via environment in production.
+# Host-admin software support (sidebar + Settings). Guest stay questions go to
+# the host legal entity on the guest form, not this address.
 OPERATOR_NAME = os.environ.get("UBYHOST_OPERATOR_NAME", "Josef Pechar")
 OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "24005169")
 OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "CZ0101190518")

@@ -34,7 +34,6 @@
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
-{% include "guest/_host.html" %}
 
 <form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
       enctype="multipart/form-data" data-guest-wizard
