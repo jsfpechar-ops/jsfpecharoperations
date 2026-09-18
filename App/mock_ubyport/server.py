@@ -467,7 +467,10 @@ def reset():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("MOCK_UBYPORT_PORT", "8081"))
+    port = int(
+        (sys.argv[1] if len(sys.argv) > 1 else None)
+        or os.environ.get("MOCK_UBYPORT_PORT", "8081")
+    )
     host = os.environ.get("MOCK_UBYPORT_HOST", "127.0.0.1")
     log.info("mock UbyPort listening on http://%s:%s/ws_uby/ws_uby.svc", host, port)
     uvicorn.run(app, host=host, port=port, log_level="warning")

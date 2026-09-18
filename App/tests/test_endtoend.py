@@ -471,8 +471,11 @@ def test_20_a_guest_only_sees_their_own_entry(client):
     stay = db.query_one("SELECT * FROM reservation")
     stranger = TestClient(app)
     page = stranger.get(permalink(stay))
-    assert page.status_code == 200
+    # Check-in was yesterday, so the public picker hides the stay; a stranger
+    # with no claim cookie must not see another guest's names either way.
+    assert page.status_code in {200, 404}
     assert "SMITH" not in page.text.upper().replace("UBYHOST", "")
+    assert "DVOŘÁK" not in page.text.upper()
 
 
 def test_21_registration_pdf_is_produced_per_guest(host):

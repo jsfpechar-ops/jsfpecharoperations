@@ -33,7 +33,7 @@ os.environ.setdefault("UBYHOST_ENABLE_SCHEDULER", "0")
 os.environ.setdefault("UBYHOST_GUEST_PIN", "0")
 os.environ.setdefault("UBYHOST_BOOTSTRAP_ADMIN", "0")
 os.environ.setdefault("UBYHOST_UBYPORT_ENV", "mock")
-os.environ.setdefault("UBYHOST_MOCK_URL", f"http://127.0.0.1:{MOCK_PORT}/ws_uby/ws_uby.svc")
+os.environ["UBYHOST_MOCK_URL"] = f"http://127.0.0.1:{MOCK_PORT}/ws_uby/ws_uby.svc"
 os.environ.setdefault("UBYHOST_ICAL_ALLOW_PRIVATE", "1")
 os.environ["MOCK_UBYPORT_STATE"] = str(_TMP / "mock_state.json")
 os.environ["MOCK_UBYPORT_PORT"] = str(MOCK_PORT)
@@ -80,19 +80,23 @@ def complete_guest_claim(
 @pytest.fixture(scope="session")
 def mock_ubyport():
     """The stand-in police service, so the whole path is exercised for real."""
-    process = subprocess.Popen(
-        [sys.executable, "-m", "mock_ubyport.server"],
-        cwd=str(PROJECT_DIR),
-        env=dict(os.environ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    log_path = _TMP / "mock-ubyport.log"
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(PROJECT_DIR) + os.pathsep + env.get("PYTHONPATH", "")
+    env["MOCK_UBYPORT_PORT"] = str(MOCK_PORT)
+    with log_path.open("ab") as log_file:
+        process = subprocess.Popen(
+            [sys.executable, "-m", "mock_ubyport.server", str(MOCK_PORT)],
+            cwd=str(PROJECT_DIR),
+            env=env,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+        )
     base = f"http://127.0.0.1:{MOCK_PORT}"
     deadline = time.time() + 30
     while time.time() < deadline:
         if process.poll() is not None:
-            output = (process.stdout.read() or b"").decode(errors="replace")
-            raise RuntimeError(f"mock UbyPort exited early:\n{output}")
+            raise RuntimeError("mock UbyPort exited early")
         try:
             if requests.get(base + "/healthz", timeout=1).status_code == 200:
                 break
@@ -100,7 +104,10 @@ def mock_ubyport():
             time.sleep(0.2)
     else:
         process.kill()
-        raise RuntimeError("mock UbyPort did not start in time")
+        detail = log_path.read_text(errors="replace") if log_path.exists() else ""
+        raise RuntimeError(
+            f"mock UbyPort did not start in time on {base}\n{detail}"
+        )
     try:
         yield base
     finally:

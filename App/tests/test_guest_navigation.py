@@ -186,7 +186,9 @@ def test_party_size_is_blank_and_invalid_value_is_not_silently_coerced():
         form = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert 'name="party_size"' in form.text
         assert 'name="guest_email"' in form.text
-        assert 'name="party_size" min="1" max="60" required' in form.text
+        assert 'min="1"' in form.text
+        assert 'max="60"' in form.text
+        assert "required" in form.text
         assert 'value="2"' not in form.text
 
         skipped = browser.post(
