@@ -60,8 +60,7 @@ def complete_guest_claim(
         "SELECT * FROM apartment WHERE permalink_token = ?", (token,)
     )
     row = claim.ensure_row(reservation_id)
-    # Historical end-to-end fixtures model a host explicitly reopening an old
-    # stay. Production guests cannot bypass the post-check-in grace deadline.
+    # Fixtures may reuse stays that a previous test explicitly locked.
     if not claim.guest_access_open(reservation, row):
         claim.reopen_guest_access(reservation_id)
         row = claim.ensure_row(reservation_id)

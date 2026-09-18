@@ -53,7 +53,7 @@ deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
 
 **Host message:** each property may have one optional plain-text message shown on its guest registration form. Hosts edit it under the property’s Guest link settings. It is intended for a welcome note or property-specific guidance, not access codes or secrets.
 
-**Late registration:** incomplete claimed forms remain accessible for 24 hours from 00:00 Europe/Prague on the check-in date because imported reservations contain a date, not an arrival time. Notify the host after 09:00 on check-in day, then lock incomplete access when the grace period ends. An explicit host reopen overrides that automatic lock.
+**Late registration:** incomplete claimed forms remain accessible after check-in until the guest finishes or the host explicitly locks access. Notify the host after 09:00 on check-in day when forms are still incomplete. Hosts can lock or reopen guest access from the stay page. Stay-specific guest links keep incomplete registrations reachable even after the check-in date leaves the apartment link’s date window; the apartment picker itself still only lists stays in that window (plus the guest’s own incomplete claimed stay on a confirmed device).
 
 **Guest e-mail and privacy:** at collection, explain the private claim link, single day-before incomplete reminder, completion receipt/Host copy, public masking, no-marketing rule, and necessary cookies. Assigned guest screens show only a masked address; expired/locked screens show none. The full guest notice documents cookie lifetimes, mail delivery/retention, and recipients.
 
