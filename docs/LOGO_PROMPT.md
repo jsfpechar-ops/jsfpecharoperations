@@ -116,6 +116,33 @@ distorted or invented glyphs.
 
 ---
 
+## 2b. Selected mark
+
+The owner picked a mark on 2026-09-18: **`docs/assets/logo-mark-selected.jpg`**.
+
+<img alt="Selected UbyHost mark" src="assets/logo-mark-selected.jpg" width="180" />
+
+A house built from two thick rounded strokes — a coral chevron roof running down
+into the left wall, and a separate deeper-brick right wall, offset and curving
+inward at the bottom so the two overlap rather than close the outline. Inside the
+white negative space sit three rounded horizontal bars of decreasing width, which
+read as the lines of a form. So: a home and a filed record in one shape.
+
+Sampled colors are `#CE5C51` coral and `#AA453D` deep brick — within a hair of
+the brand tokens `#C85A52` and `#AD4942`, so the production artwork should use
+the tokens exactly.
+
+Two consequences for everything below:
+
+- **The house exclusions in Section 7 no longer apply to this silhouette.** Keep
+  rejecting clip-art house-with-key and chimney-and-skyline treatments, but the
+  abstract roof-and-wall geometry is now the approved direction, and the lockup
+  prompts must describe it rather than forbid it.
+- **The three form bars will not survive 16 px, and are marginal at 28 px.** Ask
+  for a simplified small-size variant of the same mark — two bars instead of
+  three, or none — for the favicon and the sidebar. Same idea, fewer parts. The
+  full three-bar version is for 120 px and up.
+
 ## 3. Where the logo appears: sizes and backgrounds
 
 Four real placements, largest to smallest. Sizes below are the CSS display sizes
