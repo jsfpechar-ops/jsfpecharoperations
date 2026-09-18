@@ -200,11 +200,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "send.guests_count": "Send %(count)s guest(s) on this stay",
         "status.ready_manual": "Ready — you send",
         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
-        "status.ready_immediate": "Verified — auto-send",
-        "status.ready_immediate_tip": "Forms complete — UbyPort sends automatically when automation allows.",
+        "status.ready_immediate": "Complete — sending now",
+        "status.ready_immediate_tip": "All declared forms are complete, so UbyHost sends automatically without waiting for verification.",
         "status.awaiting_verification": "ID not checked",
         "status.awaiting_verification_tip": (
-            "Guest forms are complete. Mark ID on each guest below, or send — ID is recorded when you send."
+            "Guest forms are complete. You may record an ID check below; automatic reporting does not wait for it."
         ),
         "stay.detail.note.immediate": "after guest forms are complete",
         "legal.footer_short": "Legal",
@@ -217,14 +217,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.waiting_signature": "Waiting for signature",
         "status.waiting_signature_tip": "Guest forms are not signed yet.",
         "status.ready_scheduled": "Ready — scheduled",
-        "status.ready_scheduled_tip": "Will go out automatically after the delay set on the property.",
+        "status.ready_scheduled_tip": "Will go out automatically after the delay measured from completion of all declared forms.",
         "status.demo_preview": "Preview only",
         "status.demo_preview_tip": "Demo data is never sent to the police.",
         "dashboard.reporting_modes": "How sending works",
         "dashboard.reporting_modes_body": (
-            "You must verify each passport before reporting. Manual waits for your Send click. "
-            "Scheduled sends after check-in plus a delay, once verified. Auto-after-verify sends "
-            "right after you confirm each guest."
+            "Manual waits for your Send click. Delayed automation sends after the chosen number "
+            "of hours from completion. Immediate automation sends as soon as all declared forms "
+            "are complete. Automatic modes do not wait for passport verification."
         ),
         "dashboard.minutes_saved": "~%(minutes)s min saved vs manual UbyPort entry",
         "celebration.title": "Well done!",
@@ -305,13 +305,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Each property chooses how completed guest records reach UbyPort:",
         "guide.reporting.caption": (
-            "Verify passport means you still need to check the ID photo. Nothing is sent to UbyPort "
-            "until you confirm the details match the travel document."
+            "Passport checking is an optional explicit host action. Automatic reporting follows "
+            "the completion timing you choose and does not wait for that check."
         ),
-        "guide.reporting.immediate": "After verification",
+        "guide.reporting.immediate": "Immediately after completion",
         "guide.reporting.immediate_detail": (
-            "Sent automatically once you verify each guest against their passport. "
-            "Never sent blindly from the guest form alone."
+            "Sent automatically as soon as every declared guest form is complete, "
+            "without waiting for host verification."
         ),
         "guide.legal.verification_title": "Verify every foreign guest",
         "guide.legal.verification_body": (
@@ -321,7 +321,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "refuse accommodation."
         ),
         "guide.reporting.scheduled": "Scheduled",
-        "guide.reporting.scheduled_detail": "Batched after check-in plus your chosen delay.",
+        "guide.reporting.scheduled_detail": "Sent automatically after your chosen delay from completion.",
         "guide.reporting.manual": "Manual",
         "guide.reporting.manual_detail": "You click Send on the stay or use Send all ready stays.",
         "guide.reporting.bulk": (
@@ -543,7 +543,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.check_missing": "Open the stay and check what is missing.",
         "hint.awaiting_verification": "Check each passport photo and confirm the details before reporting",
         "hint.awaiting_guest": "Send the check-in link to the guest, or add their details yourself",
-        "hint.auto_immediate": "Sends automatically after you verify each guest against their passport",
+        "hint.auto_immediate": "Sends automatically when all declared guest forms are complete",
         "hint.nothing_duty": "Nothing to send: no guest record is subject to the reporting duty",
         "hint.need_signature": "Every foreign guest must sign before reporting to UbyPort",
         "hint.need_verification": "Verify each guest against their passport before reporting",
@@ -703,13 +703,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.metric.guests_note": "%(sent)s reported · %(reportable)s subject to the duty",
         "stay.detail.metric.set_expected": "Set expected guests",
         "stay.detail.metric.reporting": "Reporting",
-        "stay.detail.note.verify": "Guest forms are complete. Check each passport photo and confirm the details before reporting.",
-        "stay.detail.note.ready_immediate": "All guests verified. UbyPort submission happens automatically after each verification.",
+        "stay.detail.note.verify": "Guest forms are complete. You may check each passport photo and record the result before reporting.",
+        "stay.detail.note.ready_immediate": "All declared forms are complete. UbyPort submission starts automatically without verification.",
         "stay.detail.note.ready_manual": "Guest forms are complete. Check the details below, then send when ready.",
-        "stay.detail.note.ready_scheduled": "Guest forms are complete. They will send %(hours)s h after check-in, or use Send now.",
+        "stay.detail.note.ready_scheduled": "Guest forms are complete. They will send %(hours)s h after completion, or use Send now.",
         "stay.detail.note.automation": "Automation:",
-        "stay.detail.note.immediate": "after you verify each passport",
-        "stay.detail.note.scheduled": "%(hours)s h after check-in",
+        "stay.detail.note.immediate": "immediately after all declared forms are complete",
+        "stay.detail.note.scheduled": "%(hours)s h after all declared forms are complete",
         "stay.detail.note.manual": "manual only",
         "stay.detail.guests.title": "Guests",
         "stay.detail.guests.lead": "lead",
@@ -1033,11 +1033,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "send.guests_count": "Odeslat %(count)s host(y) na tomto pobytu",
         "status.ready_manual": "Připraveno — ručně",
         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
-        "status.ready_immediate": "Ověřeno — automaticky",
-        "status.ready_immediate_tip": "Formuláře hotové — UbyPort odešle automaticky podle režimu.",
+        "status.ready_immediate": "Hotovo — odesílá se",
+        "status.ready_immediate_tip": "Všechny nahlášené formuláře jsou hotové, proto UbyHost odešle automaticky bez čekání na ověření.",
         "status.awaiting_verification": "Doklad nezkontrolován",
         "status.awaiting_verification_tip": (
-            "Formuláře jsou hotové. Označte kontrolu dokladu u hostů, nebo odešlete — kontrola se zapíše při odeslání."
+            "Formuláře jsou hotové. Kontrolu dokladu můžete zaznamenat níže; automatické hlášení na ni nečeká."
         ),
         "stay.detail.note.immediate": "po dokončení formulářů hostů",
         "legal.footer_short": "Právní",
@@ -1050,13 +1050,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.waiting_signature": "Čeká na podpis",
         "status.waiting_signature_tip": "Formuláře ještě nejsou podepsané.",
         "status.ready_scheduled": "Připraveno — naplánováno",
-        "status.ready_scheduled_tip": "Odejde automaticky po zvolené prodlevě od příjezdu.",
+        "status.ready_scheduled_tip": "Odejde automaticky po zvolené prodlevě od dokončení všech nahlášených formulářů.",
         "status.demo_preview": "Jen náhled",
         "status.demo_preview_tip": "Ukázková data se na policii nikdy neodešlou.",
         "dashboard.reporting_modes": "Jak funguje odesílání",
         "dashboard.reporting_modes_body": (
-            "Před hlášením musíte ověřit každý pas. Ruční čeká na Odeslat. Naplánované odešle po "
-            "prodlevě od příjezdu, až po ověření. Auto po ověření odešle hned po vašem potvrzení."
+            "Ruční režim čeká na Odeslat. Odložená automatizace odešle po zvoleném počtu hodin "
+            "od dokončení. Okamžitá automatizace odešle, jakmile jsou hotové všechny nahlášené "
+            "formuláře. Automatické režimy nečekají na ověření pasu."
         ),
         "dashboard.minutes_saved": "~%(minutes)s min ušetřeno oproti ručnímu UbyPortu",
         "celebration.title": "Výborně!",
@@ -1135,12 +1136,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.reporting.body": "Každé ubytování volí, jak se hotová hlášení dostanou do UbyPortu:",
         "guide.reporting.caption": (
-            "Ověřit pas znamená, že ještě musíte zkontrolovat fotografii dokladu. Do UbyPortu se nic "
-            "neodešle, dokud nepotvrdíte shodu s cestovním dokladem."
+            "Kontrola pasu je volitelný výslovný úkon ubytovatele. Automatické hlášení se řídí "
+            "zvoleným časem od dokončení a na kontrolu nečeká."
         ),
-        "guide.reporting.immediate": "Po ověření",
+        "guide.reporting.immediate": "Okamžitě po dokončení",
         "guide.reporting.immediate_detail": (
-            "Odešle se automaticky po ověření hosta proti pasu. Nikdy ne slepě z formuláře hosta."
+            "Odešle se automaticky, jakmile jsou hotové všechny nahlášené formuláře hostů, "
+            "bez čekání na ověření ubytovatelem."
         ),
         "guide.legal.verification_title": "Ověřte každého cizince",
         "guide.legal.verification_body": (
@@ -1149,7 +1151,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Odmítne-li host doklad ukázat, můžete odmítnout ubytování."
         ),
         "guide.reporting.scheduled": "Naplánované",
-        "guide.reporting.scheduled_detail": "Dávka po příjezdu a zvolené prodlevě.",
+        "guide.reporting.scheduled_detail": "Odešle se automaticky po zvolené prodlevě od dokončení.",
         "guide.reporting.manual": "Ruční",
         "guide.reporting.manual_detail": "Kliknete Odeslat u pobytu nebo Odeslat všechny připravené.",
         "guide.reporting.bulk": (
@@ -1368,7 +1370,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.check_missing": "Otevřete pobyt a zkontrolujte, co chybí.",
         "hint.awaiting_verification": "Zkontrolujte fotografii pasu a potvrďte údaje před hlášením",
         "hint.awaiting_guest": "Pošlete hostovi odkaz pro check-in, nebo jeho údaje přidejte sami",
-        "hint.auto_immediate": "Odešle se automaticky po ověření hosta proti pasu",
+        "hint.auto_immediate": "Odešle se automaticky po dokončení všech nahlášených formulářů",
         "hint.nothing_duty": "Nic k odeslání: žádný záznam hosta není předmětem hlášení",
         "hint.need_signature": "Každý cizinec se musí podepsat před odesláním do UbyPortu",
         "hint.need_verification": "Ověřte každého hosta proti pasu před hlášením",
@@ -1526,13 +1528,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.metric.guests_note": "%(sent)s nahlášeno · %(reportable)s podléhá povinnosti",
         "stay.detail.metric.set_expected": "Nastavit očekávaný počet hostů",
         "stay.detail.metric.reporting": "Hlášení",
-        "stay.detail.note.verify": "Formuláře jsou hotové. Zkontrolujte fotografii pasu a potvrďte údaje před hlášením.",
-        "stay.detail.note.ready_immediate": "Všichni hosté ověřeni. Odeslání do UbyPortu proběhne automaticky po každém ověření.",
+        "stay.detail.note.verify": "Formuláře jsou hotové. Fotografii pasu můžete zkontrolovat a výsledek zaznamenat před hlášením.",
+        "stay.detail.note.ready_immediate": "Všechny nahlášené formuláře jsou hotové. Odeslání do UbyPortu začne automaticky bez ověření.",
         "stay.detail.note.ready_manual": "Formuláře jsou hotové. Zkontrolujte údaje níže a odešlete, až budete připraveni.",
-        "stay.detail.note.ready_scheduled": "Formuláře jsou hotové. Odešlou se %(hours)s h po příjezdu, nebo použijte Odeslat.",
+        "stay.detail.note.ready_scheduled": "Formuláře jsou hotové. Odešlou se %(hours)s h po dokončení, nebo použijte Odeslat.",
         "stay.detail.note.automation": "Automatizace:",
-        "stay.detail.note.immediate": "po ověření každého pasu",
-        "stay.detail.note.scheduled": "%(hours)s h po příjezdu",
+        "stay.detail.note.immediate": "okamžitě po dokončení všech nahlášených formulářů",
+        "stay.detail.note.scheduled": "%(hours)s h po dokončení všech nahlášených formulářů",
         "stay.detail.note.manual": "pouze ručně",
         "stay.detail.guests.title": "Hosté",
         "stay.detail.guests.lead": "vedoucí",
@@ -1705,16 +1707,16 @@ _INTERFACE_STRINGS = {
         "housebook.archived_lede": "Mistaken entries and duplicates can be restored here.",
         "housebook.archived": "Archived",
         "automation.title": "Automation & UbyPort",
-        "automation.lede": "Choose when verified guest records are sent and manage each property's police web-service credentials.",
+        "automation.lede": "Choose when completed guest registrations are sent and manage each property's police web-service credentials.",
         "automation.to_fix": "%(count)s to fix",
         "automation.ready": "Ready",
         "automation.timing_title": "When to send to UbyPort",
-        "automation.timing_help": "Rejected records are never silently retried. Manual waits for Send. Scheduled sends the set hours after check-in without waiting for passport verification. Immediate sends only after you verify each passport.",
+        "automation.timing_help": "Immediate sends when all declared forms are complete. Delayed sends after the chosen number of hours from completion, giving you time to review. Both are automatic and do not wait for verification. Rejected records are never silently retried.",
         "automation.timing_label": "Send timing",
-        "automation.mode.manual": "Only when I press send (recommended)",
-        "automation.mode.scheduled": "Hours after check-in (no verify step)",
-        "automation.mode.immediate": "Automatically after I verify each passport",
-        "automation.hours": "Hours after check-in",
+        "automation.mode.manual": "Only when I press send",
+        "automation.mode.scheduled": "Automatically after a delay from completion",
+        "automation.mode.immediate": "Immediately when all forms are complete",
+        "automation.hours": "Hours after completion",
         "automation.default_purpose": "Default purpose of stay",
         "automation.credentials_title": "UbyPort web-service credentials",
         "automation.credentials_help": "These are not your normal UbyPort login details. Request UBY-WS access from reguby@pcr.cz.",
@@ -1757,12 +1759,12 @@ _INTERFACE_STRINGS = {
         "apartment.form.archived_help": 'Hidden from the dashboard and guest links. History is kept.',
         "apartment.form.automation.editing_lede_after": ' page so there is one place to manage reporting for this property.',
         "apartment.form.automation.editing_lede_before": 'Send timing, UbyPort credentials, and the default purpose of stay are configured on the ',
-        "apartment.form.automation.hours_hint": '24 hours leaves room for late arrivals while keeping two working days spare.',
-        "apartment.form.automation.mode.scheduled": 'A set number of hours after check-in, once verified',
+        "apartment.form.automation.hours_hint": 'For example, 24 hours gives you a review window; sending still happens automatically without verification.',
+        "apartment.form.automation.mode.scheduled": 'Automatically after a set number of hours from completion',
         "apartment.form.automation.new_lede": 'The operating rules let you pick how much the app does on its own, and require that the choice is yours. Whatever you choose, a rejected record is never silently retried.',
         "apartment.form.automation.open": 'Open automation settings',
         "apartment.form.automation.purpose_hint": 'Pre-selected in the guest form. Tourism fits almost all short-term rentals.',
-        "apartment.form.automation.summary.immediate": 'After you verify each passport',
+        "apartment.form.automation.summary.immediate": 'Immediately after all declared forms are complete',
         "apartment.form.automation.summary.manual": 'Only when you press send',
         "apartment.form.back": 'Back to properties',
         "apartment.form.back_list": 'Back to apartments',
@@ -1980,7 +1982,7 @@ _INTERFACE_STRINGS = {
         "guest_links.new_link": "Generate a new link",
         "guest_links.empty_title": "No guest links yet",
         "guest_links.empty_body": "Create a property first; its permanent link is generated automatically.",
-        "reports.mode.immediate": "sent after verification",
+        "reports.mode.immediate": "sent immediately after completion",
         "reports.mode.scheduled": "sent on schedule",
         "reports.mode.manual": "sent manually",
         "reports.detail.messages": "Messages exchanged",
@@ -2106,16 +2108,16 @@ _INTERFACE_STRINGS = {
         "housebook.archived_lede": "Chybné záznamy a duplicity zde můžete obnovit.",
         "housebook.archived": "Archivováno",
         "automation.title": "Automatizace a UbyPort",
-        "automation.lede": "Nastavte odesílání ověřených hostů a přístupové údaje policejní webové služby pro každé ubytování.",
+        "automation.lede": "Nastavte odesílání dokončených registrací hostů a přístupové údaje policejní webové služby pro každé ubytování.",
         "automation.to_fix": "%(count)s k opravě",
         "automation.ready": "Připraveno",
         "automation.timing_title": "Kdy odesílat do UbyPortu",
-        "automation.timing_help": "Odmítnuté záznamy se nikdy bez upozornění neopakují. Ruční režim čeká na Odeslat. Naplánovaný režim odesílá nastavený počet hodin po příjezdu bez čekání na ověření pasu. Okamžitý režim odesílá až po ověření každého pasu.",
+        "automation.timing_help": "Okamžitý režim odešle po dokončení všech nahlášených formulářů. Odložený odešle po zvoleném počtu hodin od dokončení a dává vám čas na kontrolu. Oba jsou automatické a nečekají na ověření. Odmítnuté záznamy se nikdy tiše neopakují.",
         "automation.timing_label": "Čas odeslání",
-        "automation.mode.manual": "Jen po stisknutí Odeslat (doporučeno)",
-        "automation.mode.scheduled": "Hodiny po příjezdu (bez ověření)",
-        "automation.mode.immediate": "Automaticky po ověření každého pasu",
-        "automation.hours": "Hodiny po příjezdu",
+        "automation.mode.manual": "Jen po stisknutí Odeslat",
+        "automation.mode.scheduled": "Automaticky po prodlevě od dokončení",
+        "automation.mode.immediate": "Okamžitě po dokončení všech formulářů",
+        "automation.hours": "Hodiny po dokončení",
         "automation.default_purpose": "Výchozí účel pobytu",
         "automation.credentials_title": "Přístupové údaje webové služby UbyPort",
         "automation.credentials_help": "Nejde o běžné přihlášení do UbyPortu. O přístup UBY-WS požádejte na reguby@pcr.cz.",
@@ -2158,12 +2160,12 @@ _INTERFACE_STRINGS = {
         "apartment.form.archived_help": 'Skryté z přehledu a odkazů pro hosty. Historie zůstává.',
         "apartment.form.automation.editing_lede_after": ', aby bylo jedno místo pro správu hlášení tohoto ubytování.',
         "apartment.form.automation.editing_lede_before": 'Čas odeslání, údaje UbyPortu a výchozí účel pobytu nastavíte na stránce ',
-        "apartment.form.automation.hours_hint": '24 hodin dává prostor pro pozdní příjezdy a zachová dva pracovní dny rezervy.',
-        "apartment.form.automation.mode.scheduled": 'Po zadaném počtu hodin od příjezdu, po ověření',
+        "apartment.form.automation.hours_hint": 'Například 24 hodin vám dá prostor ke kontrole; odeslání proběhne automaticky bez ověření.',
+        "apartment.form.automation.mode.scheduled": 'Automaticky po zadaném počtu hodin od dokončení',
         "apartment.form.automation.new_lede": 'Provozní pravidla určují, kolik aplikace udělá sama, a vyžadují váš výsledný souhlas. Odmítnutý záznam se nikdy tiše neopakuje.',
         "apartment.form.automation.open": 'Otevřít nastavení automatizace',
         "apartment.form.automation.purpose_hint": 'Předvybráno ve formuláři hosta. Turistika vyhovuje téměř všem krátkodobým pronájmům.',
-        "apartment.form.automation.summary.immediate": 'Po ověření každého pasu',
+        "apartment.form.automation.summary.immediate": 'Okamžitě po dokončení všech nahlášených formulářů',
         "apartment.form.automation.summary.manual": 'Jen když stisknete Odeslat',
         "apartment.form.back": 'Zpět na ubytování',
         "apartment.form.back_list": 'Zpět na seznam ubytování',
@@ -2381,7 +2383,7 @@ _INTERFACE_STRINGS = {
         "guest_links.new_link": "Vygenerovat nový odkaz",
         "guest_links.empty_title": "Zatím žádné odkazy pro hosty",
         "guest_links.empty_body": "Nejprve vytvořte ubytování; trvalý odkaz se vygeneruje automaticky.",
-        "reports.mode.immediate": "odesláno po ověření",
+        "reports.mode.immediate": "odesláno okamžitě po dokončení",
         "reports.mode.scheduled": "odesláno podle plánu",
         "reports.mode.manual": "odesláno ručně",
         "reports.detail.messages": "Vyměněné zprávy",

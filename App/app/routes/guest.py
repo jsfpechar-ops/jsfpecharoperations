@@ -493,6 +493,9 @@ def _set_declared_guests(reservation, count: int) -> None:
         reservation["id"],
         {"declared_guests": count, "updated_at": db.utcnow()},
     )
+    reporting.maybe_submit_after_completion(
+        reservation["apartment_id"], reservation["id"]
+    )
 
 
 # --- privacy notice ------------------------------------------------------
@@ -1193,6 +1196,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
         apartment,
     )
+    reporting.maybe_submit_after_completion(apartment["id"], reservation_id)
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303

@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS reservation (
     phone_last4             TEXT,
     declared_guests         INTEGER,
     expected_guests_override INTEGER,
+    registration_completed_at TEXT,
     guest_email             TEXT,
     host_note               TEXT,
     status                  TEXT NOT NULL DEFAULT 'active',
@@ -333,6 +334,7 @@ ADDED_COLUMNS = (
     ("apartment", "passport_photo_policy", "TEXT NOT NULL DEFAULT 'off'"),
     ("apartment", "guest_message", "TEXT"),
     ("reservation_claim", "guest_access_reopened_at", "TEXT"),
+    ("reservation", "registration_completed_at", "TEXT"),
 )
 
 

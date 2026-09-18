@@ -27,7 +27,7 @@
 
 {% macro next_action(progress, reservation) %}
   {% if progress.status == 'failed' %}{{ t('action.failed') }}
-  {% elif progress.status == 'ready' and reservation.automation_mode == 'immediate' %}{{ t('action.ready_immediate') }}
+  {% elif progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'immediate' %}{{ t('action.ready_immediate') }}
   {% elif progress.status == 'ready' %}{{ t('action.ready') }}
   {% elif progress.status == 'incomplete' %}{{ t('action.incomplete') }}
   {% elif progress.status == 'awaiting_verification' %}{{ t('action.awaiting_verification') }}
@@ -48,21 +48,21 @@
   {% if is_demo and status in ('ready', 'awaiting_verification') %}
     {% set label = t('status.demo_preview') %}
     {% set tip = t('status.demo_preview_tip') %}
-  {% elif status == 'awaiting_verification' %}
-    {% set label = t('status.awaiting_verification') %}
-    {% set tip = t('status.awaiting_verification_tip') %}
   {% elif automation_mode == 'immediate' and status in ('awaiting_guest', 'incomplete') %}
     {% set label = t('status.waiting_guest') %}
     {% set tip = t('status.waiting_guest_tip') %}
-  {% elif status == 'ready' and automation_mode == 'immediate' %}
+  {% elif status in ('ready', 'awaiting_verification') and automation_mode == 'immediate' %}
     {% set label = t('status.ready_immediate') %}
     {% set tip = t('status.ready_immediate_tip') %}
+  {% elif status in ('ready', 'awaiting_verification') and automation_mode == 'scheduled' %}
+    {% set label = t('status.ready_scheduled') %}
+    {% set tip = t('status.ready_scheduled_tip') %}
+  {% elif status == 'awaiting_verification' %}
+    {% set label = t('status.awaiting_verification') %}
+    {% set tip = t('status.awaiting_verification_tip') %}
   {% elif status == 'ready' and automation_mode == 'manual' %}
     {% set label = t('status.ready_manual') %}
     {% set tip = t('status.ready_manual_tip') %}
-  {% elif status == 'ready' and automation_mode == 'scheduled' %}
-    {% set label = t('status.ready_scheduled') %}
-    {% set tip = t('status.ready_scheduled_tip') %}
   {% else %}
     {% set label = labels.get(status, status) %}
     {% set tip = '' %}
