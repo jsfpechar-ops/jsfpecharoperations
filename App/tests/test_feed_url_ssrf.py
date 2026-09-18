@@ -98,3 +98,12 @@ def test_production_cannot_enable_private_calendar_targets(monkeypatch):
 
     with pytest.raises(FeedUrlError):
         validate_calendar_url("http://127.0.0.1/calendar.ics")
+
+
+def test_staging_allows_loopback_when_private_ical_enabled(monkeypatch):
+    """Local mock calendars (CI/staging) must work when private iCal is on."""
+    monkeypatch.setattr(config, "ICAL_ALLOW_PRIVATE", True)
+    monkeypatch.setattr(config, "DEPLOYMENT", "staging")
+
+    url = validate_calendar_url("http://127.0.0.1:8081/ws_uby/ws_uby.svc")
+    assert url == "http://127.0.0.1:8081/ws_uby/ws_uby.svc"

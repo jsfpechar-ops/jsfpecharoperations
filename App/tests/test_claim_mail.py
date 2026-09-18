@@ -1,7 +1,7 @@
 """Guest claim, magic-link confirmation, and staging-safe mail."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
@@ -199,4 +199,133 @@ def test_host_can_release_and_reopen_claim():
         claim.release(current)
         assert claim.ensure_row(current)["state"] == "unclaimed"
     finally:
+        _cleanup()
+
+
+def test_start_claim_rejects_invalid_email_and_party_size():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        ok, err, secret = claim.start_claim(
+            reservation, apartment, email="not-an-email", party_size=1, lang="en"
+        )
+        assert not ok and err == "bad_email" and secret is None
+        ok, err, secret = claim.start_claim(
+            reservation, apartment, email="guest@claim.test", party_size=0, lang="en"
+        )
+        assert not ok and err == "bad_party" and secret is None
+        ok, err, secret = claim.start_claim(
+            reservation, apartment, email="guest@claim.test", party_size=61, lang="en"
+        )
+        assert not ok and err == "bad_party" and secret is None
+    finally:
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_provisional_hold_blocks_a_different_email():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        ok, err, _secret = claim.start_claim(
+            reservation, apartment, email="first@claim.test", party_size=2, lang="en"
+        )
+        assert ok, err
+        ok, err, secret = claim.start_claim(
+            reservation, apartment, email="other@claim.test", party_size=2, lang="en"
+        )
+        assert not ok and err == "held" and secret is None
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_expire_holds_returns_stale_provisional_to_unclaimed():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        claim.ensure_row(current)
+        stale = (datetime.now(timezone.utc) - timedelta(hours=1)).replace(microsecond=0).isoformat()
+        db.execute(
+            "UPDATE reservation_claim SET state = ?, email = ?, provisional_until = ?, "
+            "token_hash = ?, updated_at = ? WHERE reservation_id = ?",
+            (
+                claim.PROVISIONAL,
+                "guest@claim.test",
+                stale,
+                claim.token_hash("stale-secret"),
+                db.utcnow(),
+                current,
+            ),
+        )
+        assert claim.expire_holds() == 1
+        row = claim.ensure_row(current)
+        assert row["state"] == claim.UNCLAIMED
+        assert row["token_hash"] is None
+        assert row["provisional_until"] is None
+    finally:
+        _cleanup()
+
+
+def test_confirm_rejects_wrong_or_expired_secret():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        ok, err, secret = claim.start_claim(
+            reservation,
+            db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,)),
+            email="guest@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert ok, err
+        assert not claim.confirm(reservation, "wrong-secret")
+        stale = (datetime.now(timezone.utc) - timedelta(minutes=5)).replace(microsecond=0).isoformat()
+        db.execute(
+            "UPDATE reservation_claim SET provisional_until = ? WHERE reservation_id = ?",
+            (stale, current),
+        )
+        assert not claim.confirm(reservation, secret)
+        # confirm() calls expire_holds() first, so an expired provisional becomes unclaimed.
+        assert claim.ensure_row(current)["state"] == claim.UNCLAIMED
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_expire_on_cancel_locks_guest_and_fails_queued_mail():
+    current, _past, _far, apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        claim.ensure_row(current)
+        now = db.utcnow()
+        outbox_id = db.insert(
+            "email_outbox",
+            {
+                "idempotency_key": f"cancel-test:{current}",
+                "kind": "claim",
+                "reservation_id": current,
+                "apartment_id": apartment_id,
+                "to_email": "guest@claim.test",
+                "subject": "test",
+                "payload": "{}",
+                "state": mail.QUEUED,
+                "attempts": 0,
+                "next_attempt_at": now,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        claim.expire_on_cancel(reservation)
+        row = claim.ensure_row(current)
+        assert row["token_hash"] is None
+        assert row["guest_access_locked_at"]
+        outbox = db.query_one("SELECT * FROM email_outbox WHERE id = ?", (outbox_id,))
+        assert outbox["state"] == mail.FAILED
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
         _cleanup()
