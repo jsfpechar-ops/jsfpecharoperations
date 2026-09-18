@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS apartment (
     default_purpose       TEXT NOT NULL DEFAULT '10',
     checkin_info          TEXT,
     checkout_info         TEXT,
+    guest_message         TEXT,
     notes                 TEXT,
     passport_photo_policy TEXT NOT NULL DEFAULT 'off',
     active                INTEGER NOT NULL DEFAULT 1,
@@ -329,6 +330,7 @@ ADDED_COLUMNS = (
     ("alert", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
     ("audit", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
     ("apartment", "passport_photo_policy", "TEXT NOT NULL DEFAULT 'off'"),
+    ("apartment", "guest_message", "TEXT"),
 )
 
 

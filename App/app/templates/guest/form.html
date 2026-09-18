@@ -30,6 +30,13 @@
 
 {% include "guest/_why.html" %}
 
+{% if apartment.guest_message %}
+<div class="g-card g-host-message">
+  <p class="g-question-kicker">{{ t('message_from_host') }}</p>
+  <p>{{ apartment.guest_message }}</p>
+</div>
+{% endif %}
+
 <div class="g-card g-stay-summary">
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>

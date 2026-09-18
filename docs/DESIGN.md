@@ -51,6 +51,8 @@ deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
 
 **Guest form:** if the guest needs anything about the stay, show the **host** legal-entity name, e-mail, and phone. UbyHost does not run the property. From-address for later guest mail is `noreply@ubyhost.com`; Reply-To remains the host contact.
 
+**Host message:** each property may have one optional plain-text message shown on its guest registration form. Hosts edit it under the property’s Guest link settings. It is intended for a welcome note or property-specific guidance, not access codes or secrets.
+
 ## Agents and automation
 
 Cursor Cloud Agents and other automated contributors **must read this file**

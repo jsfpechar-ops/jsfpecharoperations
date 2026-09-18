@@ -64,7 +64,7 @@ def test_older_apartment_schema_migrates_and_serves_pages(monkeypatch, tmp_path)
         assert client.get("/apartments").status_code == 200
 
     columns = {row["name"] for row in db.query("PRAGMA table_info(apartment)")}
-    assert {"owner_user_id", "permalink_pin", "archived_at"} <= columns
+    assert {"owner_user_id", "permalink_pin", "archived_at", "guest_message"} <= columns
     assert db.query_one("SELECT permalink_pin FROM apartment")["permalink_pin"]
     assert db.query_one(
         "SELECT 1 AS present FROM sqlite_master "

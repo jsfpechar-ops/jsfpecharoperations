@@ -237,6 +237,12 @@
 
   <div class="panel" id="communication">
     <h2 style="margin-top:0">{{ t('nav.guest_links') }}</h2>
+    <div class="field">
+      <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <textarea id="guest_message" name="guest_message" maxlength="1000"
+                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ apartment.guest_message or '' if editing else '' }}</textarea>
+      <div class="hint">{{ t('apartment.form.guest_message.hint') }}</div>
+    </div>
     {% if editing %}
       <p class="small muted" style="margin-top:-4px">
         {{ t('apartment.form.guest_link.lede') }}

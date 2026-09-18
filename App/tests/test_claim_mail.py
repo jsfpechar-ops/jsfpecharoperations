@@ -50,6 +50,7 @@ def _seed():
             "legal_entity_id": entity_id,
             "internal_name": "Claim flat",
             "uby_name": "Claim Facility",
+            "guest_message": "Welcome to Claim Facility.\nPlease complete this before arrival.",
             "permalink_token": TOKEN,
             "permalink_window_days": 2,
             "default_purpose": "10",
@@ -132,6 +133,9 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
         assert form.status_code == 200
         assert "Your host" in form.text
         assert "host@claim.test" in form.text
+        assert "A message from your host" in form.text
+        assert "Welcome to Claim Facility." in form.text
+        assert "Please complete this before arrival." in form.text
         assert "mailto:support@ubyhost.com" not in form.text
     finally:
         _cleanup()

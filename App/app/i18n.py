@@ -66,6 +66,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host_details_missing": (
             "Use the phone or e-mail in the message that contained this link."
         ),
+        "message_from_host": "A message from your host",
         "claim_title": "Confirm the number of guests and your e-mail",
         "claim_help": (
             "We e-mail a private link to this address so only you can fill in the forms. "
@@ -437,6 +438,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host_details_missing": (
             "Použijte telefon nebo e-mail ze zprávy, ve které byl tento odkaz."
         ),
+        "message_from_host": "Zpráva od vašeho ubytovatele",
         "claim_title": "Potvrďte počet hostů a e-mail",
         "claim_help": (
             "Na tuto adresu pošleme soukromý odkaz, aby formuláře vyplnil jen host. "

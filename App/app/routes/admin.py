@@ -558,12 +558,14 @@ APARTMENT_TEXT_FIELDS = (
     "uby_name",
     "uby_contact",
     "uby_ws_user",
+    "guest_message",
     "notes",
 )
 
 
 def _apartment_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = {field: _form_str(form, field) for field in APARTMENT_TEXT_FIELDS}
+    payload["guest_message"] = payload["guest_message"][:1000]
     payload["uby_mark"] = payload["uby_mark"].upper()
     payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
     payload["legal_entity_id"] = _form_int(form, "legal_entity_id")

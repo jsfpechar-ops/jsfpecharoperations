@@ -155,6 +155,7 @@ def test_03_apartment_is_created_with_encrypted_credentials(host):
             "automation_mode": "immediate",
             "default_purpose": "10",
             "permalink_window_days": "3",
+            "guest_message": "Welcome — please complete the registration before arrival.",
             "active": "on",
         },
         follow_redirects=False,
@@ -168,6 +169,7 @@ def test_03_apartment_is_created_with_encrypted_credentials(host):
     assert "police-secret" not in apartment["uby_ws_password_enc"]
     assert db.decrypt_secret(apartment["uby_ws_password_enc"]) == "police-secret"
     assert apartment["permalink_token"]
+    assert apartment["guest_message"] == "Welcome — please complete the registration before arrival."
 
 
 def test_04_connection_test_reaches_the_service(host):
