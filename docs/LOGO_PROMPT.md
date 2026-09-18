@@ -123,6 +123,16 @@ different metaphor, different geometry, not a variation on the previous answer.
 Pick the winner first, then reuse it for the two versions below so all three
 share one idea.
 
+**Wildcard round.** For at least one round, delete the COLOR paragraph from the
+shared brief and replace it with the line below. Shape is what has to be
+memorable; color can always be remapped to the brand tokens afterwards, so this
+costs nothing and sometimes produces the idea the palette was quietly blocking.
+
+```
+COLOR: your choice. Pick any palette of at most three colors that makes the
+idea strongest. Flat solid fills only.
+```
+
 Ask the tool for these renditions of the chosen mark:
 
 - Full color on white `#FFFFFF`.
