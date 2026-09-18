@@ -403,6 +403,11 @@ def test_guest_facing_assignment_masks_email_and_lock_hides_it():
         assert public.status_code == 200
         assert mail.mask_email(address) in public.text
         assert address not in public.text
+        assert "Claim Facility" in public.text
+        assert "Your selected stay" in public.text
+        assert "secure link sent to this address" in public.text
+        assert "This is not my reservation" in public.text
+        assert "host@claim.test" in public.text
 
         claim.lock_guest_access(current)
         locked = owner.get(f"/l/{TOKEN}/{current}")

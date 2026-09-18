@@ -414,17 +414,15 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "facility": _facility(apartment),
         "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
         "controller": _controller(apartment) if apartment else {},
+        "host": _host_contact(apartment) if apartment else {},
         "mail_enabled": mail.mail_enabled(),
     }
 
 
-def _controller(apartment) -> Dict[str, str]:
-    """The GDPR data controller: the legal entity operating the apartment."""
-    entity = None
-    if apartment["legal_entity_id"]:
-        entity = db.query_one(
-            "SELECT * FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],)
-        )
+def _entity_details(entity_id) -> Dict[str, str]:
+    if not entity_id:
+        return {}
+    entity = db.query_one("SELECT * FROM legal_entity WHERE id = ?", (entity_id,))
     if not entity:
         return {}
     return {
@@ -434,6 +432,24 @@ def _controller(apartment) -> Dict[str, str]:
         "email": (entity["contact_email"] if "contact_email" in entity.keys() else "") or "",
         "phone": (entity["contact_phone"] if "contact_phone" in entity.keys() else "") or "",
     }
+
+
+def _host_contact(apartment) -> Dict[str, str]:
+    """The property manager / operating entity guests contact about a stay."""
+    return _entity_details(apartment["legal_entity_id"] if apartment else None)
+
+
+def _controller(apartment) -> Dict[str, str]:
+    """The configured GDPR controller, defaulting to the property manager."""
+    if not apartment:
+        return {}
+    keys = apartment.keys()
+    controller_id = (
+        apartment["data_controller_entity_id"]
+        if "data_controller_entity_id" in keys
+        else None
+    )
+    return _entity_details(controller_id or apartment["legal_entity_id"])
 
 
 def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[str, Any]:
@@ -590,21 +606,25 @@ def pick_stay(token: str, request: Request):
         return pin_guard
     reservations = _visible_reservations(apartment)
 
-    # With a single candidate there is nothing to choose; go straight in.
-    if len(reservations) == 1:
-        return _with_lang(
-            RedirectResponse(_guest_link(token, reservations[0]["id"]) + _lang_q(lang), status_code=303),
-            lang,
-        )
     if not reservations:
         return _with_lang(_unavailable(request, lang, "no_stays", 200, token), lang)
 
     owned = set(_owned_ids(request))
+    today = claim.prague_today()
     rows = []
     for reservation in reservations:
         progress = reporting.reservation_progress(reservation)
         yours = any(guest["id"] in owned for guest in progress["guests"])
-        rows.append({"reservation": reservation, "progress": progress, "yours": yours})
+        start = validation.parse_iso_date(reservation["date_from"])
+        end = validation.parse_iso_date(reservation["date_to"])
+        rows.append(
+            {
+                "reservation": reservation,
+                "progress": progress,
+                "yours": yours,
+                "ongoing": bool(start and end and start <= today < end),
+            }
+        )
     context = _shared(request, token, lang, apartment)
     context.update({"apartment": apartment, "rows": rows})
     return _with_lang(render_guest(request, "guest/pick.html", context), lang)
@@ -637,6 +657,15 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "claim_error": request.query_params.get("claim_error") or "",
             "claim_sent": request.query_params.get("claim_sent") == "1",
             "require_turnstile": turnstile.required(),
+            "claim_last_sent_at": (
+                db.query_one(
+                    "SELECT MAX(sent_at) AS sent_at FROM email_outbox "
+                    "WHERE reservation_id = ? AND kind IN ('claim', 'claim_resend') "
+                    "AND sent_at IS NOT NULL",
+                    (reservation["id"],),
+                )["sent_at"]
+                or ""
+            ),
         }
     )
     if mail.mail_enabled():

@@ -395,6 +395,62 @@ def test_guest_privacy_notice_names_controller():
         _cleanup()
 
 
+def test_property_can_use_separate_pm_and_data_controller():
+    apartment_id, _stays, _past = _seed_stays()
+    controller_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Separate Controller a.s.",
+            "seat": "Praha 1",
+            "ico": "11223344",
+            "contact_email": "privacy@controller.test",
+            "owner_user_id": _ensure_admin(),
+            "created_at": db.utcnow(),
+        },
+    )
+    try:
+        saved = _browser().post(
+            f"/apartments/{apartment_id}",
+            data={
+                "internal_name": "Overhaul flat",
+                "legal_entity_id": str(
+                    db.query_one(
+                        "SELECT legal_entity_id FROM apartment WHERE id = ?",
+                        (apartment_id,),
+                    )["legal_entity_id"]
+                ),
+                "data_controller_entity_id": str(controller_id),
+                "active": "1",
+            },
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        assert db.query_one(
+            "SELECT data_controller_entity_id FROM apartment WHERE id = ?",
+            (apartment_id,),
+        )["data_controller_entity_id"] == controller_id
+        privacy = TestClient(app).get(f"/l/{TOKEN}/privacy")
+        assert "Separate Controller a.s." in privacy.text
+        assert "privacy@controller.test" in privacy.text
+        assert "Overhaul Test s.r.o." not in privacy.text
+
+        picker = TestClient(app).get(f"/l/{TOKEN}")
+        assert "privacy@overhaul.test" in picker.text
+        assert "privacy@controller.test" not in picker.text
+
+        settings = _browser().get(f"/apartments/{apartment_id}")
+        assert 'id="controller_is_operator"' in settings.text
+        assert f'<option value="{controller_id}" selected' in settings.text
+    finally:
+        db.update(
+            "apartment",
+            apartment_id,
+            {"data_controller_entity_id": None},
+        )
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (controller_id,))
+        _cleanup()
+
+
 def test_guest_unavailable_states_are_distinct():
     _seed_stays()
     try:

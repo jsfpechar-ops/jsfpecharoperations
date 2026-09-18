@@ -58,6 +58,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "pick_stay": "Find your stay",
         "pick_stay_help": "Tap your arrival and departure dates to continue.",
+        "arrival_kicker": "Guest registration",
+        "arrival_welcome": "Welcome — guest registration for %(facility)s.",
+        "arrival_question": "Which stay is yours?",
+        "arrival_help": "Choose your arrival and departure dates to continue.",
+        "arrival_cta": "That’s my stay",
+        "stay_ongoing": "Ongoing",
         "host_details": "Your host",
         "host_details_help": (
             "If you need anything about this stay, contact your host. "
@@ -104,6 +110,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "assigned_resend_help": "Enter the same e-mail to receive the link again.",
         "assigned_resend": "Send me the link again",
+        "assigned_stay_label": "Your selected stay",
+        "assigned_private_link": "For your privacy, registration continues through the secure link sent to this address.",
+        "assigned_last_sent": "Private link last sent %(date)s",
+        "assigned_not_mine": "This is not my reservation",
         "claim_confirm_title": "Is this your reservation?",
         "claim_confirm_help": (
             "E-mail scanners open links automatically. Click the button to prove this is you."
@@ -482,6 +492,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "pick_stay": "Najděte svou rezervaci",
         "pick_stay_help": "Klepněte na termín svého pobytu a pokračujte.",
+        "arrival_kicker": "Registrace ubytovaného",
+        "arrival_welcome": "Vítejte — registrace ubytovaného pro %(facility)s.",
+        "arrival_question": "Který pobyt je váš?",
+        "arrival_help": "Vyberte termín příjezdu a odjezdu a pokračujte.",
+        "arrival_cta": "To je můj pobyt",
+        "stay_ongoing": "Právě probíhá",
         "host_details": "Váš hostitel",
         "host_details_help": (
             "Pokud k pobytu něco potřebujete, kontaktujte ubytovatele. "
@@ -528,6 +544,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "assigned_resend_help": "Zadejte stejný e-mail a odkaz pošleme znovu.",
         "assigned_resend": "Pošlete mi odkaz znovu",
+        "assigned_stay_label": "Vybraný pobyt",
+        "assigned_private_link": "Kvůli ochraně soukromí pokračuje registrace přes zabezpečený odkaz zaslaný na tuto adresu.",
+        "assigned_last_sent": "Soukromý odkaz naposledy odeslán %(date)s",
+        "assigned_not_mine": "Toto není moje rezervace",
         "claim_confirm_title": "Je to vaše rezervace?",
         "claim_confirm_help": (
             "E-mailové skenery odkazy otevírají samy. Potvrďte tlačítkem, že jste to vy."

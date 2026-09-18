@@ -1,10 +1,10 @@
 <div class="g-card" id="host-contact">
   <h2>{{ t('host_details') }}</h2>
   <p class="g-intro">{{ t('host_details_help') }}</p>
-  {% if controller and (controller.name or controller.email or controller.phone) %}
-    {% if controller.name %}<p>{{ controller.name }}</p>{% endif %}
-    {% if controller.phone %}<p><a href="tel:{{ controller.phone }}">{{ controller.phone }}</a></p>{% endif %}
-    {% if controller.email %}<p><a href="mailto:{{ controller.email }}">{{ controller.email }}</a></p>{% endif %}
+  {% if host and (host.name or host.email or host.phone) %}
+    {% if host.name %}<p>{{ host.name }}</p>{% endif %}
+    {% if host.phone %}<p><a href="tel:{{ host.phone }}">{{ host.phone }}</a></p>{% endif %}
+    {% if host.email %}<p><a href="mailto:{{ host.email }}">{{ host.email }}</a></p>{% endif %}
   {% else %}
     <p class="hint">{{ t('host_details_missing') }}</p>
   {% endif %}

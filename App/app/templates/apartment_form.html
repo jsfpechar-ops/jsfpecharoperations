@@ -74,6 +74,32 @@
       </select>
       <div class="hint">{{ t('apartment.form.entity.hint') }}</div>
     </div>
+    <div class="field" style="max-width:620px">
+      <label class="checkline" for="controller_is_operator">
+        <input type="checkbox" id="controller_is_operator"
+               data-controller-same-toggle data-controller-target="alternate-controller"
+               {% if not editing or not apartment.data_controller_entity_id %}checked{% endif %}>
+        <span>
+          {{ t('apartment.form.controller.same_label') }}
+          <small>{{ t('apartment.form.controller.same_hint') }}</small>
+        </span>
+      </label>
+    </div>
+    <div class="field" id="alternate-controller" style="max-width:420px"
+         {% if not editing or not apartment.data_controller_entity_id %}hidden{% endif %}>
+      <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
+      <select id="data_controller_entity_id" name="data_controller_entity_id">
+        <option value="">{{ t('apartment.form.controller.choose') }}</option>
+        {% for entity in entities %}
+          <option value="{{ entity.id }}"
+            {% if editing and apartment.data_controller_entity_id == entity.id %}selected{% endif %}>{{ entity.name }}</option>
+        {% endfor %}
+      </select>
+      <div class="hint">
+        {{ t('apartment.form.controller.alternate_hint') }}
+        <a href="/entities">{{ t('apartment.form.controller.manage_entities') }}</a>
+      </div>
+    </div>
     <div class="checkline" style="margin-top:6px">
       <input type="checkbox" id="active" name="active" value="1"
              {% if not editing or apartment.active %}checked{% endif %}>
