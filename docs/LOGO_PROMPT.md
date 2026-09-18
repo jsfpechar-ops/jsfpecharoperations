@@ -349,6 +349,84 @@ shadows, no 3D, no device mockups, no photography, no borders.
 If the tool renders text poorly, generate the mark alone with Section 4 and
 build the lockups in a vector editor using real type.
 
+## 6b. All three versions in one prompt
+
+Once the mark is settled (Section 2b), this single prompt returns all three
+versions on one canvas, which is the fastest way to check that they hold
+together as a family. Attach `docs/assets/logo-mark-selected.jpg` as a reference
+image if the tool accepts one. Aspect ratio 3:4 or 1:1.
+
+```
+Create ONE image: a clean, minimal logo sheet showing three versions of the same
+UbyHost logo, on a flat warm off-white #F7F7F5 background, arranged as three
+rows in a single centered column with wide margins and generous even space
+between the rows. Nothing else on the canvas — no captions, no labels, no
+numbers, no dividers, no frames.
+
+CONTEXT
+UbyHost is a web app for short-term rental hosts in the Czech Republic that
+automatically reports foreign guests to the Czech Foreign Police so hosts never
+retype passport details into a government form. The brand is calm, exact,
+quietly official, and trustworthy with sensitive personal data. Modern
+minimalist flat vector identity with the restraint of Notion, Apple, Stripe or
+Linear.
+
+THE MARK — identical in all three rows, do not redesign or vary it
+An abstract house built from two thick rounded strokes. A wide chevron forms the
+roof, peaking at the top centre, and its left slope continues straight down as
+the left wall, ending in a softly rounded bottom corner. The right wall is a
+separate, slightly darker shape, offset inward and set lower than the roof's
+right tip, curving inward at its base so it sweeps toward the centre rather than
+closing the outline — the two strokes overlap instead of meeting, leaving the
+house open. Inside the white negative space of the house sit three rounded
+horizontal bars, stacked with even gaps and decreasing in width from top to
+bottom, reading as the lines of a filled-in form. Flat vector, no outlines,
+generous rounded corners, square overall proportions. Roof, left wall and bars
+in coral-brick #C85A52; right wall in deeper brick #AD4942.
+
+ROW 1 — mark only
+The symbol alone, about 150 px square, centered. No text of any kind.
+
+ROW 2 — mark and name, horizontal lockup
+The same mark on the left, the wordmark "UbyHost" immediately to its right,
+optically aligned and vertically centered on the cap height, the gap between
+them about half the mark's width, the mark's height matching the cap height plus
+a little overshoot. Roughly 300 px wide overall. Spelling exactly "UbyHost" —
+capital U, lowercase "by", capital H, lowercase "ost", one word, no space, no
+hyphen. Modern geometric or neo-grotesque sans, medium to semibold, slightly
+tightened letter spacing, in ink #20201E. No tagline in this row.
+
+ROW 3 — full lockup, stacked
+The same mark centered on top, the wordmark "UbyHost" beneath it, and beneath
+that the tagline "Guest reporting, handled for you." set much smaller in a light
+or regular weight with an ample gap so it never competes with the name. Roughly
+300 px wide by 170 px tall, balanced as one object, wordmark and tagline in ink
+#20201E.
+
+CONSISTENCY
+All three rows use the exact same mark geometry, stroke weights, corner radii
+and colors, and the same typeface. They are one family at three levels of
+detail, not three different logos. Every piece of text real, correctly spelled
+and sharply rendered.
+
+AVOID: gradients, glossy finishes, 3D, bevels, embossing, drop shadows, glows,
+metallic foil, texture, sketchy or hand-drawn strokes, AI-render sheen. AVOID
+plates, tiles, circles, rounded squares or badges behind any version. AVOID
+adding a chimney, windows, a door, a key, a keyhole, a heart, a roof tile
+pattern, a skyline or any extra object to the house. AVOID police badges,
+government seals, coats of arms, flags. AVOID mascots, faces, animals, cartoons,
+busy detail, more than the three specified colors, thin hairlines. AVOID
+misspellings or invented letterforms — the name is exactly "UbyHost", never
+"UbyHosts", "Uby Host", "UByHost" or "Ubyhost". AVOID captions, annotations,
+dimension lines, borders, watermarks, mockups, business cards, signage, phone or
+laptop frames, photography, any UI around the logos.
+```
+
+One canvas means one background, so the three versions come back sharing it
+rather than transparent. Use this sheet to judge the family, then re-run
+Sections 4–6 individually for the production files, or trace the winner in a
+vector editor.
+
 ### Identity sheet (optional, for reviewing candidates)
 
 ```
