@@ -10,7 +10,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Contract between the UbyHost software operator and accommodation providers "
             "who use the service. Please read carefully before using UbyHost."
         ),
-        "terms.effective": "Effective date: 18 September 2026. Version 1.3.",
+        "terms.effective": "Effective date: 18 September 2026. Version 1.4.",
         "terms.operator_title": "Service provider",
         "terms.footer_link": "Terms of Service",
         "terms.footer_short": "Terms",
@@ -305,7 +305,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kterí službu "
             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
         ),
-        "terms.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
+        "terms.effective": "Účinnost od: 18. září 2026. Verze 1.4.",
         "terms.operator_title": "Poskytovatel služby",
         "terms.footer_link": "Obchodní podmínky",
         "terms.footer_short": "Podmínky",

@@ -54,3 +54,14 @@ def test_english_and_czech_carry_the_same_keys():
     czech = set(host_i18n.STRINGS["cs"])
     assert english - czech == set(), f"missing Czech: {sorted(english - czech)}"
     assert czech - english == set(), f"missing English: {sorted(czech - english)}"
+
+
+def test_release_help_describes_optional_passports_and_cookie_lifetimes():
+    for lang in ("en", "cs"):
+        passport = host_i18n.translate(lang, "guide.security.passports")
+        cookies = host_i18n.translate(lang, "guide.guests.step_email")
+        assert "UbyPort" in passport
+        assert ("off by default" in passport) or ("výchozím stavu vypnuté" in passport)
+        assert ("7 days" in cookies and "60 days" in cookies) or (
+            "7 dní" in cookies and "60 dní" in cookies
+        )

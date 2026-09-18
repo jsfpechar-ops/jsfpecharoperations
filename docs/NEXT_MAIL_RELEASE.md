@@ -1,6 +1,9 @@
-# Next mail production release (full backlog)
+# UbyHost 1.1.0 — next mail production release
 
-This is the product release plan for turning guest e-mail back on and shipping the related UX. Cursor also keeps a copy under Plans as `mail_go_live_next_release_422b841b`.
+This is the release record and go-live checklist for UbyHost 1.1.0. It turns
+guest e-mail back on and ships the related guest, host, privacy, and reporting
+changes. UbyPort is the external police service; **1.1.0 is the UbyHost
+application version**, not an UbyPort version.
 
 **Implementation is consolidated in [#88](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/88). Do not merge or enable SES until the owner explicitly asks.** The former passport draft [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87) has been folded into #88.
 
@@ -10,6 +13,8 @@ This is the product release plan for turning guest e-mail back on and shipping t
 
 | Item | Status |
 |------|--------|
+| UbyHost application version | **1.1.0** |
+| Terms / Privacy Policy / DPA | **1.4**, coordinated EN/CS update |
 | SES `_send_ses` + boto3 on production | Done (`#86`); mail still **disabled** |
 | Domain DKIM / MAIL FROM / DMARC | Done (ops); Essentials; no dedicated IP |
 | Claim-mail abuse caps | Implemented in #88 |
@@ -106,9 +111,25 @@ Folded from [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87):
 - Unticked: select the alternate controller legal entity; the PM remains the guest stay contact
 - UbyPort IČO may diverge from GDPR controller → counsel note
 
-### 8. Docs / i18n
+### 8. Help, legal, privacy, DPA, cookies, and form information
 
-DESIGN picker + assigned notes and EN/CS strings are implemented. Staging stays `console`.
+The release is not complete if only the workflow code changes. PR #88 also
+updates and regression-checks:
+
+| Surface | Required 1.1.0 coverage |
+|---|---|
+| Host Help | Claim/resend flow, late incomplete forms, exact guest-cookie durations, optional passport policy, completion-based reporting, PM/controller roles |
+| Guest form | Collected fields, declared-party purpose, conditional passport upload, legal acknowledgement, controller contact, host contact |
+| Guest privacy notice | E-mail purpose/recipients/masking/retention, necessary cookies, conditional passport processing, UbyPort recipients, rights |
+| Terms | Controller/processor roles, automatic reporting behavior, service integrations, cross-links |
+| Privacy Policy | Host and guest data categories, exact application cookie lifetimes, SES/subprocessors, retention, security |
+| DPA | Controller instructions, transactional mail, declared party size, optional document files, UbyPort transmission, subprocessors |
+| Legal/operator page | Dynamic software-operator identity and links to Terms, Privacy Policy, and DPA |
+| Deployment/security docs | SES activation, rollback, environment separation, smoke and post-release checks |
+
+The application reports `1.1.0` in Settings and `/healthz`. Terms, Privacy
+Policy, and DPA display version `1.4`; host-login audit entries record the same
+three legal versions. Staging stays `console`.
 
 ---
 
@@ -127,3 +148,35 @@ DESIGN picker + assigned notes and EN/CS strings are implemented. Staging stays 
 2. Receive AWS SES production access and credentials
 3. Set `.env` to `UBYHOST_MAIL_BACKEND=ses`, redeploy, then smoke claim/resend/reminder/completion mail
 4. Roll back to `disabled` immediately if delivery or configuration is unhealthy
+
+---
+
+## Required regression analysis immediately after release
+
+The release is not considered closed when deployment succeeds. Record a
+post-release regression report against the exact deployed commit:
+
+1. Confirm Settings and `/healthz` show UbyHost `1.1.0`; confirm the public
+   Terms, Privacy Policy, and DPA show `1.4` in both EN and CS.
+2. Confirm deployment is `production`, the public URL is
+   `https://ubyhost.com`, and UbyPort remains on the owner-approved target.
+3. Verify database migration health and compare critical row counts with the
+   pre-deploy backup; do not accept unexplained reservation, guest, claim,
+   outbox, submission, or legal-entity loss.
+4. Run the complete automated suite plus production-safe remote smoke checks.
+5. Exercise one controlled guest journey: PIN → always-visible stay picker →
+   party count → claim e-mail → magic-link confirmation → individual forms →
+   completion receipt. Verify masking, resend caps, controller notice, PM
+   contact, necessary-cookie copy, and optional passport behavior.
+6. Verify incomplete past-stay recovery, explicit host lock/reopen, iCal
+   update/cancellation behavior, all three reporting modes, duplicate guards,
+   and Doručenka/report history.
+7. Review SES outbox failures, application alerts, scheduler output, and
+   delivery feedback. Confirm no staging or test recipient was contacted.
+8. Test the documented rollback by confirming the previous revision and
+   `UBYHOST_MAIL_BACKEND=disabled` recovery path are available.
+
+The report must list the deployed commit, environment values (without secrets),
+test/smoke results, mail evidence, database-count comparison, defects found,
+and the final go/no-go decision. Any material discrepancy keeps the release
+open and disables SES until corrected.

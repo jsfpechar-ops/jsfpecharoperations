@@ -579,6 +579,10 @@ def test_terms_page_shows_operator_identity():
     assert "24005169" in response.text
     assert "Kubelíkova" in response.text
     assert "Terms of Service" in response.text or "Obchodní podmínky" in response.text
+    assert (
+        f"Version {config.TERMS_VERSION}" in response.text
+        or f"Verze {config.TERMS_VERSION}" in response.text
+    )
 
 
 def test_login_page_links_to_terms():
@@ -630,6 +634,16 @@ def test_dpa_page_shows_operator_and_article_28():
     assert "Josef Pechar" in response.text
     assert "24005169" in response.text
     assert "Article 28" in response.text or "čl. 28" in response.text
+    assert (
+        f"Version {config.DPA_VERSION}" in response.text
+        or f"Verze {config.DPA_VERSION}" in response.text
+    )
+
+
+def test_release_legal_versions_are_coordinated():
+    assert config.TERMS_VERSION == "1.4"
+    assert config.PRIVACY_VERSION == "1.4"
+    assert config.DPA_VERSION == "1.4"
 
 
 def test_public_legal_pages_cross_link_dpa():

@@ -7,7 +7,7 @@ from datetime import date, datetime, time, timedelta
 
 from fastapi.testclient import TestClient
 
-from app import claim, db, mail, reporting
+from app import claim, config, db, mail, reporting
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -194,13 +194,19 @@ def test_separate_controller_does_not_change_guest_mail_reply_to(monkeypatch):
         db.execute("DELETE FROM legal_entity WHERE id = ?", (controller_id,))
 
 
-def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
+def test_claim_form_and_privacy_notice_disclose_email_and_cookies(monkeypatch):
     current, _past, _far, apartment_id = _seed()
+    monkeypatch.setattr(config, "OPERATOR_NAME", "Release Operator s.r.o.")
+    monkeypatch.setattr(config, "OPERATOR_ICO", "12345678")
+    monkeypatch.setattr(config, "OPERATOR_ADDRESS", "Release Street 1, Prague")
+    monkeypatch.setattr(config, "OPERATOR_EMAIL", "release-privacy@ubyhost.test")
     try:
         browser = TestClient(app)
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
         assert "one reminder if the forms are incomplete" in claim_page.text
         assert "Strictly necessary cookies" in claim_page.text
+        assert "up to 7 days" in claim_page.text
+        assert "up to 60 days" in claim_page.text
         assert "no advertising or analytics cookies" in claim_page.text
         assert "How your data is handled" in claim_page.text
 
@@ -208,7 +214,10 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
         assert privacy.status_code == 200
         assert "E-mail messages and masking" in privacy.text
         assert "Necessary cookies" in privacy.text
+        assert "Party size is used to determine whether every expected guest form is complete" in privacy.text
         assert "normally deleted after 14 days" in privacy.text
+        assert "Release Operator s.r.o." in privacy.text
+        assert "release-privacy@ubyhost.test" in privacy.text
         assert "Temporary passport photo or PDF" not in privacy.text
 
         db.update(
@@ -218,6 +227,7 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
         )
         policy_privacy = browser.get(f"/l/{TOKEN}/privacy")
         assert "Temporary passport photo or PDF" in policy_privacy.text
+        assert "Restricted operator or infrastructure access" in policy_privacy.text
     finally:
         _cleanup()
 
