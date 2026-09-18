@@ -305,11 +305,13 @@ def maybe_notify_completion(reservation, apartment) -> None:
     text = (
         f"Thank you. Details for your stay at {name} "
         f"({reservation['date_from']} – {reservation['date_to']}) have been received. "
-        f"This is not the police report — your host still files that after arrival."
+        f"This receipt is not proof of police reporting. Depending on your host's settings, "
+        f"complete foreign-guest records may be sent to UbyPort automatically."
         if lang != "cs"
         else f"Děkujeme. Údaje k pobytu v {name} "
         f"({reservation['date_from']} – {reservation['date_to']}) jsme přijali. "
-        f"Toto ještě není oznámení policii — to podává hostitel až po ubytování."
+        f"Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele mohou být "
+        f"kompletní záznamy cizinců odeslány do UbyPortu automaticky."
     )
     mail.enqueue(
         kind="completion",
@@ -334,11 +336,12 @@ def sweep_reminders() -> Dict[str, int]:
     from . import alerts, config
 
     today = prague_today()
-    summary = {"host": 0, "locked": 0}
+    summary = {"guest": 0, "host": 0, "locked": 0}
     expire_holds()
     rows = db.query(
         "SELECT r.*, a.permalink_token, a.internal_name, a.uby_name, a.owner_user_id, "
-        "a.legal_entity_id, c.email_masked AS email_masked, "
+        "a.legal_entity_id, c.state AS claim_state, c.email AS claim_email, "
+        "c.lang AS claim_lang, c.email_masked AS email_masked, "
         "c.guest_access_locked_at AS guest_access_locked_at, "
         "c.guest_access_reopened_at AS guest_access_reopened_at, "
         "c.token_version AS token_version "
@@ -354,7 +357,46 @@ def sweep_reminders() -> Dict[str, int]:
         if not start:
             continue
         progress = reporting.reservation_progress(reservation)
-        complete = progress["expected"] is not None and progress["filled"] >= progress["expected"]
+        complete = (
+            progress["expected"] is not None
+            and progress["filled"] >= progress["expected"]
+            and not progress["incomplete"]
+        )
+        if (
+            start == today + timedelta(days=1)
+            and now_local.hour >= 9
+            and reservation["claim_state"] == CLAIMED
+            and reservation["claim_email"]
+            and not complete
+        ):
+            lang = reservation["claim_lang"] or "en"
+            subject = (
+                "Please finish your guest registration"
+                if lang != "cs"
+                else "Dokončete prosím registraci hostů"
+            )
+            text = (
+                "Your stay starts tomorrow. Please finish the guest registration "
+                "using the private link we already sent you. This is the only "
+                "incomplete-registration reminder we will send."
+                if lang != "cs"
+                else "Váš pobyt začíná zítra. Dokončete prosím registraci hostů "
+                "pomocí soukromého odkazu, který jsme vám již poslali. Toto je jediné "
+                "upozornění na nedokončenou registraci, které vám pošleme."
+            )
+            if mail.enqueue(
+                kind="reminder_guest",
+                idempotency_key=(
+                    f"reminder_guest:{reservation['id']}:{start.isoformat()}"
+                ),
+                to_email=reservation["claim_email"],
+                subject=subject,
+                payload={"text": text, "lang": lang},
+                reservation_id=reservation["id"],
+                apartment_id=reservation["apartment_id"],
+                owner_user_id=reservation["owner_user_id"],
+            ):
+                summary["guest"] += 1
         if start < today and not complete:
             if not reservation["guest_access_locked_at"] and not reservation[
                 "guest_access_reopened_at"

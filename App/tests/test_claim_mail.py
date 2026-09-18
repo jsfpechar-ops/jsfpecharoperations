@@ -141,6 +141,34 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
         _cleanup()
 
 
+def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
+    current, _past, _far, apartment_id = _seed()
+    try:
+        browser = TestClient(app)
+        claim_page = browser.get(f"/l/{TOKEN}/{current}")
+        assert "one reminder if the forms are incomplete" in claim_page.text
+        assert "Strictly necessary cookies" in claim_page.text
+        assert "no advertising or analytics cookies" in claim_page.text
+        assert "How your data is handled" in claim_page.text
+
+        privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert privacy.status_code == 200
+        assert "E-mail messages and masking" in privacy.text
+        assert "Necessary cookies" in privacy.text
+        assert "normally deleted after 14 days" in privacy.text
+        assert "Temporary passport photo or PDF" not in privacy.text
+
+        db.update(
+            "apartment",
+            apartment_id,
+            {"passport_photo_policy": "required_foreign"},
+        )
+        policy_privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert "Temporary passport photo or PDF" in policy_privacy.text
+    finally:
+        _cleanup()
+
+
 def test_magic_link_get_does_not_assign():
     current, _past, _far, _apartment_id = _seed()
     try:
@@ -275,7 +303,7 @@ def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
         _cleanup()
 
 
-def test_incomplete_guest_does_not_receive_day_before_reminder(monkeypatch):
+def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
     today = date.today()
     try:
@@ -289,7 +317,7 @@ def test_incomplete_guest_does_not_receive_day_before_reminder(monkeypatch):
         )
         browser = TestClient(app)
         complete_guest_claim(
-            browser, TOKEN, current, email="guest-no-reminder@claim.test", party_size=1
+            browser, TOKEN, current, email="guest-reminder@claim.test", party_size=1
         )
         monkeypatch.setattr(mail, "backend_name", lambda: "console")
         monkeypatch.setattr(mail, "mail_enabled", lambda: True)
@@ -302,13 +330,42 @@ def test_incomplete_guest_does_not_receive_day_before_reminder(monkeypatch):
         summary = claim.sweep_reminders()
 
         assert summary["host"] == 0
-        assert "reminder_guest" not in mail.KINDS
-        assert not db.query_one(
-            "SELECT 1 AS x FROM console_mail_log WHERE to_email = ?",
-            ("guest-no-reminder@claim.test",),
+        assert summary["guest"] == 1
+        reminder = db.query_one(
+            "SELECT * FROM console_mail_log WHERE to_email = ?",
+            ("guest-reminder@claim.test",),
         )
+        assert reminder
+        assert reminder["subject"] == "Please finish your guest registration"
+        assert "only incomplete-registration reminder" in reminder["body_text"]
+
+        claim.sweep_reminders()
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM console_mail_log WHERE to_email = ?",
+            ("guest-reminder@claim.test",),
+        )["n"] == 1
     finally:
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_guest_facing_assignment_masks_email_and_lock_hides_it():
+    current, _past, _far, _apartment_id = _seed()
+    address = "private-address@claim.test"
+    try:
+        owner = TestClient(app)
+        complete_guest_claim(owner, TOKEN, current, email=address, party_size=1)
+
+        public = TestClient(app).get(f"/l/{TOKEN}/{current}")
+        assert public.status_code == 200
+        assert mail.mask_email(address) in public.text
+        assert address not in public.text
+
+        claim.lock_guest_access(current)
+        locked = owner.get(f"/l/{TOKEN}/{current}")
+        assert locked.status_code == 404
+        assert address not in locked.text
+    finally:
         _cleanup()

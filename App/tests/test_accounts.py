@@ -567,7 +567,10 @@ def test_privacy_page_shows_operator_identity():
     assert "24005169" in response.text
     assert "Privacy Policy" in response.text or "Zásady ochrany osobních údajů" in response.text
     assert "ÚOOÚ" in response.text or "uoou.cz" in response.text
-    assert "Version 1.2" in response.text or "Verze 1.2" in response.text
+    assert (
+        f"Version {config.PRIVACY_VERSION}" in response.text
+        or f"Verze {config.PRIVACY_VERSION}" in response.text
+    )
     assert "Bot Fight Mode" in response.text
     assert "HSTS" in response.text
 

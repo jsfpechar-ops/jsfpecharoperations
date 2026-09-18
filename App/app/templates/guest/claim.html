@@ -37,6 +37,9 @@
       <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
              maxlength="254">
       <div class="hint">{{ t('claim_email_help') }}</div>
+      <div class="hint">{{ t('claim_cookie_help') }}
+        {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
+      </div>
     </div>
     <button class="g-btn" type="submit">{{ t('claim_submit') }}</button>
   </form>

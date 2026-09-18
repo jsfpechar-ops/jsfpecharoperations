@@ -19,6 +19,10 @@
     <div class="g-field">
       <label for="guest_email_resend">{{ t('claim_email') }}</label>
       <input type="email" id="guest_email_resend" name="guest_email" required autocomplete="email">
+      <div class="hint">{{ t('claim_email_help') }}</div>
+      <div class="hint">{{ t('claim_cookie_help') }}
+        {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
+      </div>
     </div>
     <button class="g-btn" type="submit">{{ t('assigned_resend') }}</button>
   </form>

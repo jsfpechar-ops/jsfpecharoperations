@@ -567,6 +567,7 @@ def privacy_notice(token: str, request: Request):
     context.update(
         {
             "controller": _controller(apartment),
+            "passport_photo_policy": apartment["passport_photo_policy"] or "off",
             "back_url": back_url,
         }
     )

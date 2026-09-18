@@ -79,14 +79,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.calendars.action": "Connect calendars",
         "onboarding.automation.title": "Automation & UbyPort",
         "onboarding.automation.detail": (
-            "Web-service credentials, and the IDUB, abbreviation and address copied "
-            "exactly from your registration. UbyPort rejects a mismatch rather than "
-            "correcting it."
+            "Choose immediate-after-completion, delayed automatic, or manual sending; then add "
+            "the web-service credentials and registration details exactly. UbyPort rejects a mismatch."
         ),
         "onboarding.automation.action": "Finish automation",
         "onboarding.guest_link.title": "Guest link",
         "onboarding.guest_link.detail": (
-            "Paste into your Airbnb or Booking.com check-in message."
+            "Review the PIN, optional host message, passport policy, and e-mail/privacy behavior, "
+            "then copy the link into every booking portal's check-in message."
         ),
         "onboarding.guest_link.action": "Copy guest link",
         "demo.load": "Explore with demo data",
@@ -285,8 +285,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.guests.body": (
             "Each stay has a guest link meant for a phone. Guests pick their arrival dates, the lead "
-            "guest states how many people are staying, then each person fills in a short step-by-step "
-            "form on their own."
+            "guest states how many people are staying, claims the reservation by e-mail, then each "
+            "person fills in a short step-by-step form."
+        ),
+        "guide.guests.step_email": (
+            "The e-mail receives the private form link, one reminder if incomplete the day before "
+            "check-in, and a completion receipt. The host gets a completion copy; public screens "
+            "mask the address. Necessary cookies preserve PIN, language, claim, and device access."
         ),
         "guide.guests.step_party": (
             "Headcount first — everyone in the group, including children, gets a separate form so "
@@ -297,8 +302,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "travel document (no scanning or machine-readable line copying)."
         ),
         "guide.guests.step_photo": (
-            "Non-Czech guests upload a photo of the passport or ID page so you can verify face and "
-            "document number before reporting. Only you see it; it is deleted right after you confirm."
+            "Passport upload is off by default. If you require it for this property, non-Czech guests "
+            "upload a passport/ID image for your optional check; it is never sent to Police."
         ),
         "guide.guests.step_czech": (
             "Czech guests are still written to the house book but are not reported to the police."
@@ -748,7 +753,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.settings.expected_declared": "The lead guest declared %(count)s. Setting a number here overrides that.",
         "stay.detail.settings.expected_blank": "No calendar provides a headcount. Leave blank to let the lead guest declare it.",
         "stay.detail.settings.email": "Guest e-mail",
-        "stay.detail.settings.email_hint": "Stored for your reference. UbyHost does not send e-mail yet.",
+        "stay.detail.settings.email_hint": "Stored for your reference. Automated guest messages use the e-mail that claims the guest link.",
         "stay.detail.settings.host_only": "(host-only note)",
         "stay.detail.settings.state": "Stay state",
         "stay.detail.settings.state.active": "Active",
@@ -912,13 +917,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.calendars.action": "Připojit kalendáře",
         "onboarding.automation.title": "Automatizace a UbyPort",
         "onboarding.automation.detail": (
-            "Přihlašovací údaje k webové službě a IDUB, zkratka a adresa opsané přesně "
-            "podle registrace. UbyPort neshodu odmítne, neopraví ji."
+            "Zvolte okamžité po dokončení, odložené automatické nebo ruční odesílání; pak přesně "
+            "doplňte přístupové a registrační údaje. UbyPort neshodu odmítne."
         ),
         "onboarding.automation.action": "Dokončit automatizaci",
         "onboarding.guest_link.title": "Odkaz pro hosty",
         "onboarding.guest_link.detail": (
-            "Vložte do zprávy s pokyny k příjezdu na Airbnb nebo Booking.com."
+            "Zkontrolujte PIN, volitelnou zprávu hostitele, pravidlo pro pas a e-mail/soukromí, "
+            "pak odkaz zkopírujte do zprávy k příjezdu na každém rezervačním portálu."
         ),
         "onboarding.guest_link.action": "Kopírovat odkaz pro hosty",
         "demo.load": "Prohlédnout s ukázkovými daty",
@@ -1117,7 +1123,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.guests.body": (
             "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, vedoucí host uvede "
-            "počet osob a každý pak vyplní vlastní krátký formulář po krocích."
+            "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář."
+        ),
+        "guide.guests.step_email": (
+            "Na e-mail přijde soukromý odkaz, jedno upozornění při nedokončení den před příjezdem "
+            "a potvrzení o dokončení. Ubytovatel dostane kopii potvrzení; veřejné obrazovky adresu "
+            "zastřou. Nezbytné cookies uchovají PIN, jazyk, převzetí a přístup zařízení."
         ),
         "guide.guests.step_party": (
             "Nejdřív počet osob — včetně dětí; každý má vlastní formulář, aby nikdo neviděl "
@@ -1128,8 +1139,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "jak jsou v cestovním dokladu (bez skenování ani přepisování strojově čitelných řádků)."
         ),
         "guide.guests.step_photo": (
-            "Cizinci nahrají fotografii stránky pasu nebo průkazu, abyste před hlášením mohli "
-            "ověřit obličej a číslo dokladu. Vidíte ji jen vy; po potvrzení se smaže."
+            "Nahrávání pasu je ve výchozím stavu vypnuté. Pokud ho pro ubytování vyžadujete, cizinci "
+            "nahrají obrázek pasu/průkazu k vaší volitelné kontrole; policii se soubor neposílá."
         ),
         "guide.guests.step_czech": (
             "Občané ČR se zapisují do domovní knihy, policii se neoznamují."
@@ -1573,7 +1584,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.settings.expected_declared": "Vedoucí host uvedl %(count)s. Číslo zde přepíše jeho údaj.",
         "stay.detail.settings.expected_blank": "Kalendář neposkytuje počet. Nechte prázdné, aby ho uvedl vedoucí host.",
         "stay.detail.settings.email": "E-mail hosta",
-        "stay.detail.settings.email_hint": "Uloženo pro vaši referenci. UbyHost zatím neposílá e-maily.",
+        "stay.detail.settings.email_hint": "Uloženo pro vaši referenci. Automatické zprávy hostům používají e-mail, který převezme odkaz pro hosty.",
         "stay.detail.settings.host_only": "(pouze pro hostitele)",
         "stay.detail.settings.state": "Stav pobytu",
         "stay.detail.settings.state.active": "Aktivní",
@@ -1810,6 +1821,7 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_message.label": 'Custom message for guests',
         "apartment.form.guest_message.placeholder": 'For example: Welcome! Please complete this form before arrival.',
         "apartment.form.passport_policy.label": 'Passport or ID photo from the guest',
+        "apartment.form.passport_policy.hint": 'Off means the guest form does not request a document image. Required asks foreign guests for a temporary upload for your optional review; it is never sent to Police.',
         "apartment.form.passport_policy.off": 'Off (default) — host checks the document at arrival',
         "apartment.form.passport_policy.required": 'Required for foreign guests filling the online form',
         "apartment.form.internal_name.hint": 'Only for your own orientation — guests never see it.',
@@ -2211,6 +2223,7 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_message.label": 'Vlastní zpráva pro hosty',
         "apartment.form.guest_message.placeholder": 'Například: Vítejte! Vyplňte prosím tento formulář před příjezdem.',
         "apartment.form.passport_policy.label": 'Fotografie pasu nebo dokladu od hosta',
+        "apartment.form.passport_policy.hint": 'Vypnuto znamená, že formulář obrázek dokladu nevyžaduje. Povinné požádá cizince o dočasné nahrání k vaší volitelné kontrole; policii se neposílá.',
         "apartment.form.passport_policy.off": 'Vypnuto (výchozí) — doklad zkontrolujete při příjezdu',
         "apartment.form.passport_policy.required": 'Povinné pro cizince vyplňující online formulář',
         "apartment.form.internal_name.hint": 'Jen pro vaši orientaci — hosté ho nevidí.',
