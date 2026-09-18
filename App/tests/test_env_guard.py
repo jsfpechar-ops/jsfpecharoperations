@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import config, env_guard
+from app import __version__, config, env_guard
 from app.main import app
 
 
@@ -13,6 +13,7 @@ def test_healthz_includes_env_outside_production():
     body = response.json()
     assert response.status_code == 200
     assert body["status"] in {"ok", "degraded"}
+    assert body["version"] == __version__ == "1.1.0"
     assert "data_dir_writable" in body
     assert body.get("deployment") == config.DEPLOYMENT
     assert body.get("ubyport_env") == config.UBYPORT_ENV

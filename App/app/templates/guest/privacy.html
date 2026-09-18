@@ -57,7 +57,14 @@
   <p>{{ t('privacy_bot_protection_body') }}</p>
 
   <h3>{{ t('privacy_processor') }}</h3>
-  <p>{{ t('privacy_processor_body') }}</p>
+  {% set software_operator = operator() %}
+  <p>{{ t(
+    'privacy_processor_body',
+    name=software_operator.name,
+    ico=software_operator.ico,
+    address=software_operator.address,
+    email=software_operator.email
+  ) }}</p>
 
   <h3>{{ t('privacy_retention') }}</h3>
   <p>{{ t('privacy_retention_body') if mail_enabled else t('privacy_retention_body_no_email') }}</p>

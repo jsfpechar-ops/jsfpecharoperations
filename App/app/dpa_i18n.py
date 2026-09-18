@@ -12,7 +12,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "This DPA is incorporated into the Terms of Service; using the Service constitutes "
             "acceptance unless a separate signed agreement expressly replaces it."
         ),
-        "dpa.effective": "Effective date: 18 September 2026. Version 1.3.",
+        "dpa.effective": "Effective date: 18 September 2026. Version 1.4.",
         "dpa.operator_title": "Processor (service provider)",
         "dpa.footer_link": "Data Processing Agreement",
         "dpa.footer_short": "DPA",
@@ -74,7 +74,9 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "of processing: collection, storage, organisation, retrieval, transactional e-mail "
             "delivery (claim links, incomplete reminders, completion receipts and Controller copies), transmission, encryption "
             "of credentials, display to authorised Controller users, formatting for export, and "
-            "transmission toward UbyPort or related endpoints when the Controller enables such features."
+            "transmission toward UbyPort or related endpoints when the Controller enables such features. "
+            "Optional passport/ID files are restricted to authorised Host users in the application, "
+            "excluded from UbyPort payloads, and deleted after verification or by the stale-file sweep."
         ),
         "dpa.s05_title": "5. Details of processing (Annex summary)",
         "dpa.s05_body": (
@@ -82,7 +84,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "documents. Types of personal data: identity and contact details, nationality, dates "
             "of birth and stay, reservation-claim e-mail addresses, declared party size, travel document numbers and types, addresses, signatures, "
             "accommodation metadata, and optional passport photographs or PDFs uploaded for "
-            "verification. Special categories: the Service may process document images that could "
+            "verification. Declared party size is used to determine whether all expected forms are "
+            "complete and is retained with the stay. Special categories: the Service may process document images that could "
             "reveal ethnic origin or health only where the Controller instructs such upload and has "
             "a lawful basis; the Controller is responsible for necessity and proportionality. "
             "Controller personnel data is outside this DPA except where listed in the Privacy Policy."
@@ -256,7 +259,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(Provozovatel jako zpracovatel) o údajích hostů v UbyHostu. DPA je součástí obchodních "
             "podmínek; používáním Služby ji přijímáte, pokud ji nepřepíše samostatná písemná smlouva."
         ),
-        "dpa.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
+        "dpa.effective": "Účinnost od: 18. září 2026. Verze 1.4.",
         "dpa.operator_title": "Zpracovatel (poskytovatel služby)",
         "dpa.footer_link": "Smlouva o zpracování údajů (DPA)",
         "dpa.footer_short": "DPA",
@@ -308,14 +311,17 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "policii. Doba: po dobu používání Služby a do smazání/vrácení dle čl. 15. Povaha: "
             "shromažďování, uložení, uspořádání, vyhledávání, doručování transakčních e-mailů "
             "(odkazy k převzetí, upozornění na nedokončení, potvrzení a kopie Správci), přenos, šifrování přihlašovacích údajů, "
-            "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí."
+            "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí. Volitelné "
+            "soubory pasů a dokladů jsou v aplikaci omezeny na oprávněné uživatele ubytovatele, "
+            "nejsou součástí dat pro UbyPort a mažou se po ověření nebo plánovaným úklidem."
         ),
         "dpa.s05_title": "5. Podrobnosti zpracování (shrnutí přílohy)",
         "dpa.s05_body": (
             "Subjekty: hosté a osoby na dokladech. Kategorie údajů: identita, e-mail k převzetí rezervace, "
             "nahlášený počet hostů, kontakt, státní příslušnost, "
             "data pobytu, cestovní doklady, adresy, podpisy, metadata ubytování, volitelné fotografie/PDF "
-            "pasu. Zvláštní kategorie: snímky dokladů mohou odhalit původ či zdraví jen pokud Správce "
+            "pasu. Nahlášený počet slouží ke kontrole, zda jsou hotové všechny očekávané formuláře, "
+            "a uchovává se s pobytem. Zvláštní kategorie: snímky dokladů mohou odhalit původ či zdraví jen pokud Správce "
             "nahrání pokyne a má právní základ; Správce odpovídá za nezbytnost. Údaje personálu "
             "Správce spadají do Zásad ochrany osobních údajů."
         ),

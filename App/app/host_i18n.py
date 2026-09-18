@@ -286,23 +286,27 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.guests.body": (
             "Each stay has a guest link meant for a phone. Guests pick their arrival dates, the lead "
             "guest states how many people are staying, claims the reservation by e-mail, then each "
-            "person fills in a short step-by-step form."
+            "person fills in a short step-by-step form. An incomplete claimed form remains reachable "
+            "after check-in until it is completed or you explicitly lock guest access."
         ),
         "guide.guests.step_email": (
             "The e-mail receives the private form link, one reminder if incomplete the day before "
             "check-in, and a completion receipt. The host gets a completion copy; public screens "
-            "mask the address. Necessary cookies preserve PIN, language, claim, and device access."
+            "mask the address. Necessary guest cookies preserve PIN access for up to 7 days and "
+            "language, confirmed-stay access, and forms submitted on the device for up to 60 days."
         ),
         "guide.guests.step_party": (
             "Headcount first — everyone in the group, including children, gets a separate form so "
-            "nobody sees anyone else's passport details."
+            "nobody sees anyone else's passport details. The count is stored with the stay to measure "
+            "whether all expected forms are complete and follows the stay's retention."
         ),
         "guide.guests.step_details": (
             "Each guest types name, birth date, nationality, and document number as printed on the "
             "travel document (no scanning or machine-readable line copying)."
         ),
         "guide.guests.step_photo": (
-            "UbyHost does not collect passport or ID images. Any document check is handled in person."
+            "Passport/ID upload is off by default. A property can require a temporary image or PDF "
+            "from foreign guests; it is never sent to UbyPort."
         ),
         "guide.guests.step_czech": (
             "Czech guests are still written to the house book but are not reported to the police."
@@ -320,7 +324,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.legal.verification_title": "Verify every foreign guest",
         "guide.legal.verification_body": (
             "You are legally responsible for accurate police records. Check the travel document "
-            "in person when your procedure or the law requires it; UbyHost does not collect an image. "
+            "in person when your procedure or the law requires it. An optional upload does not replace "
+            "that responsibility. "
             "If a guest refuses to show ID, you may "
             "refuse accommodation."
         ),
@@ -346,7 +351,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "script monitoring. Legitimate visitors may occasionally see a short challenge."
         ),
         "guide.security.passports": (
-            "Passport and ID images are not collected by the guest form."
+            "Passport/ID upload is off by default. When enabled, access is restricted to authorised "
+            "host users in the app; the file is deleted after verification, with a stale-file sweep "
+            "as a backstop. It is never sent to UbyPort."
         ),
         "guide.security.backups": (
             "Settings shows backup status. Production creates encrypted database backups; keep an independent "
@@ -1122,23 +1129,28 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.guests.body": (
             "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, vedoucí host uvede "
-            "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář."
+            "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář. "
+            "Nedokončený převzatý formulář zůstává po příjezdu dostupný, dokud není dokončen nebo "
+            "přístup výslovně nezamknete."
         ),
         "guide.guests.step_email": (
             "Na e-mail přijde soukromý odkaz, jedno upozornění při nedokončení den před příjezdem "
             "a potvrzení o dokončení. Ubytovatel dostane kopii potvrzení; veřejné obrazovky adresu "
-            "zastřou. Nezbytné cookies uchovají PIN, jazyk, převzetí a přístup zařízení."
+            "zastřou. Nezbytné cookies pro hosty uchovají přístup přes PIN nejvýše 7 dní a jazyk, "
+            "přístup k potvrzenému pobytu a odeslané formuláře v zařízení nejvýše 60 dní."
         ),
         "guide.guests.step_party": (
             "Nejdřív počet osob — včetně dětí; každý má vlastní formulář, aby nikdo neviděl "
-            "údaje z pasu ostatních."
+            "údaje z pasu ostatních. Počet se ukládá k pobytu pro kontrolu, zda jsou hotové všechny "
+            "očekávané formuláře, a uchovává se stejně dlouho jako pobyt."
         ),
         "guide.guests.step_details": (
             "Každý host ručně zadá jméno, datum narození, státní občanství a číslo dokladu tak, "
             "jak jsou v cestovním dokladu (bez skenování ani přepisování strojově čitelných řádků)."
         ),
         "guide.guests.step_photo": (
-            "UbyHost obrázky pasů ani dokladů nesbírá. Případná kontrola dokladu probíhá osobně."
+            "Nahrávání pasu či dokladu je ve výchozím stavu vypnuté. Ubytování může od cizinců "
+            "vyžadovat dočasnou fotografii nebo PDF; do UbyPortu se nikdy neposílá."
         ),
         "guide.guests.step_czech": (
             "Občané ČR se zapisují do domovní knihy, policii se neoznamují."
@@ -1156,7 +1168,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.legal.verification_title": "Ověřte každého cizince",
         "guide.legal.verification_body": (
             "Za správnost policejních záznamů odpovídáte vy. Doklad zkontrolujte osobně, pokud to "
-            "vyžaduje váš postup nebo zákon; UbyHost jeho obrázek nesbírá. "
+            "vyžaduje váš postup nebo zákon. Volitelné nahrání dokladu tuto odpovědnost nenahrazuje. "
             "Odmítne-li host doklad ukázat, můžete odmítnout ubytování."
         ),
         "guide.reporting.scheduled": "Naplánované",
@@ -1180,7 +1192,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "v prohlížeči. Návštěvník může občas vidět krátkou výzvu."
         ),
         "guide.security.passports": (
-            "Fotografie pasů jsou při čekání na kontrolu šifrované a po ověření se ihned smažou."
+            "Nahrávání pasu či dokladu je ve výchozím stavu vypnuté. Po zapnutí k souboru v aplikaci "
+            "přistupují jen oprávnění uživatelé ubytovatele; po ověření se smaže a pojistkou je "
+            "automatické mazání starých souborů. Do UbyPortu se nikdy neposílá."
         ),
         "guide.security.backups": (
             "Nastavení ukazuje stav záloh. Produkce vytváří šifrované zálohy databáze; před ukončením "

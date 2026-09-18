@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "replace the guest privacy notice shown to your guests — that notice names the controller "
             "configured for the property, which may differ from its property manager."
         ),
-        "privacy.effective": "Effective date: 18 September 2026. Version 1.3.",
+        "privacy.effective": "Effective date: 18 September 2026. Version 1.4.",
         "privacy.operator_title": "Data controller for this policy",
         "privacy.footer_link": "Privacy Policy",
         "privacy.footer_short": "Privacy",
@@ -108,10 +108,11 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s07_title": "7. Cookies and similar technologies",
         "privacy.s07_body": (
             "The Service uses strictly necessary cookies and similar storage: signed session cookies "
-            "for Host login (and optional extended duration if \"remember me\" is selected); language "
-            "preference cookies; and, on guest links, cookies that remember PIN verification (up to "
-            "7 days), language, confirmed-reservation access, and forms submitted on that device "
-            "(up to 60 days). Production traffic to ubyhost.com is proxied by Cloudflare. "
+            "for Host login (12 hours, or 30 days if \"remember me\" is selected), a form-security "
+            "cookie (up to 30 days), and a Host language preference (up to one year). On guest links, "
+            "cookies remember PIN verification (up to 7 days), language, confirmed-reservation access, "
+            "and forms submitted on that device (up to 60 days). Production traffic to ubyhost.com is "
+            "proxied by Cloudflare. "
             "We may use Cloudflare Turnstile on production login and, after repeated failed guest PIN "
             "attempts, on guest PIN pages; Bot Fight Mode to challenge automated traffic; leaked-credential "
             "checks that compare login attempts against known leaked-password signals at the edge "
@@ -267,7 +268,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
             "který se může lišit od správce objektu."
         ),
-        "privacy.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
+        "privacy.effective": "Účinnost od: 18. září 2026. Verze 1.4.",
         "privacy.operator_title": "Správce údajů podle těchto zásad",
         "privacy.footer_link": "Zásady ochrany osobních údajů",
         "privacy.footer_short": "Soukromí",
@@ -345,8 +346,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s07_title": "7. Cookies a podobné technologie",
         "privacy.s07_body": (
-            "Služba používá nezbytné cookies: relaci přihlášení ubytovatele (delší při „zapamatovat\"); "
-            "jazyk; u hostovských odkazů cookies pro PIN (nejvýše 7 dní), jazyk, přístup k potvrzené "
+            "Služba používá nezbytné cookies: relaci přihlášení ubytovatele (12 hodin, nebo 30 dní při "
+            "volbě „zapamatovat“), ochranu formulářů (nejvýše 30 dní) a jazyk ubytovatele (nejvýše rok). "
+            "U hostovských odkazů cookies uchovávají PIN (nejvýše 7 dní), jazyk, přístup k potvrzené "
             "rezervaci a formuláře odeslané z daného zařízení (nejvýše 60 dní). Produkční provoz "
             "ubyhost.com zprostředkovává Cloudflare. Můžeme použít Cloudflare Turnstile na produkčním "
             "přihlášení a po opakovaných neúspěšných pokusech o PIN; Bot Fight Mode proti automatizované "

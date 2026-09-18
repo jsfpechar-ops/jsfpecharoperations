@@ -78,6 +78,8 @@ Do **not** promote this guest-claim build to production until the product owner 
 
 The staging acceptance check covers:
 
+- Settings and `/healthz` show UbyHost `1.1.0`; Terms, Privacy Policy, and DPA
+  show legal version `1.4` in EN and CS;
 - host sidebar and Settings show `support@ubyhost.com`;
 - property legal-entity name, e-mail, and phone appear on the guest form;
 - the optional per-property custom guest message can be saved, edited, cleared, and renders with line breaks;
@@ -86,6 +88,8 @@ The staging acceptance check covers:
 - immediate reporting sends only after the whole declared party is complete; delayed reporting uses the saved completion time plus the configured hours (24 by default), then sends without host verification;
 - check-in visibility, one day-before guest reminder, host incomplete-registration warning, completion receipt/CC, passport policy, and all three reporting gates behave as configured; verify reminder deduplication;
 - English and Czech guest flows are clear;
+- Help, guest legal/privacy notices, cookie durations, form field disclosures,
+  and controller/processor/subprocessor descriptions match the enabled behavior;
 - console mail contains the expected messages without contacting real guests.
 
 After approval, deploy the code and database migration first with `UBYHOST_MAIL_BACKEND=disabled` and UbyPort still on `test`. Back up production and run smoke checks before separately enabling SES or real UbyPort reporting. A failed check returns the revision to staging.
@@ -115,6 +119,10 @@ Use this whenever you ship a change that affects hosts or guests.
 5. **Rollback** — redeploy a previous git commit on Lightsail (`git checkout` / `git pull`
    an older SHA, then `./scripts/deploy.sh`). SQLite on the Docker volume is **not**
    rolled back with the code.
+
+Immediately after the 1.1.0 deployment, complete and retain the
+[post-release regression analysis](NEXT_MAIL_RELEASE.md#required-regression-analysis-immediately-after-release).
+Deployment success alone does not close the release.
 
 ## Secrets and credentials
 
