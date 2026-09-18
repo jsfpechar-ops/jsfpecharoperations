@@ -9,6 +9,10 @@
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
 
+{% if claim_error %}
+  <div class="g-err">{{ t('claim_error_' + claim_error) if claim_error in ['bad_email','bad_party','held','already_claimed','rate','cooldown','recipient_rate','bot'] else t('error_party_size') }}</div>
+{% endif %}
+
 <div class="g-card">
   <h2>{{ t('assigned_title') }}</h2>
   <p class="g-intro">{{ t('assigned_body', email=claim.email_masked or '') }}</p>
@@ -24,7 +28,13 @@
         {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
       </div>
     </div>
+    {% if require_turnstile and turnstile_site_key %}
+      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_claim"></div>
+    {% endif %}
     <button class="g-btn" type="submit">{{ t('assigned_resend') }}</button>
   </form>
 </div>
+{% if require_turnstile and turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
 {% endblock %}

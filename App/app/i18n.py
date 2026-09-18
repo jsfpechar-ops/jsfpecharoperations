@@ -94,6 +94,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_held": "Someone else is confirming this stay. Try again in a few minutes.",
         "claim_error_already_claimed": "This stay is already assigned to another e-mail address.",
         "claim_error_rate": "Too many attempts. Please wait a few minutes.",
+        "claim_error_cooldown": "We recently sent a link to this address. Wait a few minutes before asking again.",
+        "claim_error_recipient_rate": "This e-mail has received too many registration links. Try again later.",
+        "claim_error_bot": "Please complete the security check and try again.",
         "assigned_title": "This reservation is already assigned",
         "assigned_body": (
             "This reservation has already been assigned the e-mail %(email)s. "
@@ -515,6 +518,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_held": "Někdo jiný právě potvrzuje tento pobyt. Zkuste to za chvíli.",
         "claim_error_already_claimed": "Tento pobyt už je přiřazen jiné e-mailové adrese.",
         "claim_error_rate": "Příliš mnoho pokusů. Počkejte prosím několik minut.",
+        "claim_error_cooldown": "Na tuto adresu jsme odkaz nedávno poslali. Počkejte pár minut a zkuste to znovu.",
+        "claim_error_recipient_rate": "Na tento e-mail bylo odesláno příliš mnoho odkazů. Zkuste to později.",
+        "claim_error_bot": "Dokončete prosím bezpečnostní kontrolu a zkuste to znovu.",
         "assigned_title": "Tato rezervace už je přiřazena",
         "assigned_body": (
             "Tato rezervace už byla přiřazena e-mailu %(email)s. "
