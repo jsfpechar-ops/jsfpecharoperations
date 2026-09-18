@@ -84,7 +84,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s05_body": (
             "When Hosts use the Service, we process Guest Data they or their Guests submit: identity "
             "and travel document details, dates of stay, nationality, addresses, signatures, "
-            "reservation-claim e-mail addresses, declared party size, house book entries, claim links, "
+            "reservation-claim e-mail addresses, declared party size, optional passport photos or "
+            "PDFs uploaded when the property requires them, house book entries, claim links, "
             "incomplete-registration reminders, completion receipts (including a copy to the Host), and "
             "data formatted for transmission toward UbyPort or related police reporting channels "
             "when enabled. Purposes, legal bases, and retention for Guests are determined by the "
@@ -233,7 +234,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Hosts must provide lawful bases and transparent notices to Guests, respond to data subject "
             "requests, maintain records of processing where required, conduct DPIAs when appropriate, "
             "and ensure instructions to the Operator are lawful. Hosts must not upload unnecessary "
-            "special-category data."
+            "special-category data. Use of passport images should be limited to what law and risk "
+            "assessment justify, with clear guest information."
         ),
         "privacy.s20_title": "20. Changes to this Policy",
         "privacy.s20_body": (
@@ -325,7 +327,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s05_body": (
             "Při používání Služby zpracováváme údaje, které ubytovatel nebo host zadá: identitu a "
             "doklady, termíny pobytu, státní příslušnost, adresy, podpisy, e-maily k převzetí rezervace, "
-            "nahlášený počet hostů, záznamy domovní knihy, odkazy k převzetí, upozornění na nedokončení, potvrzení o dokončení "
+            "nahlášený počet hostů, fotografie nebo PDF pasu jen při zapnutí této povinnosti u ubytování, "
+            "záznamy domovní knihy, odkazy k převzetí, upozornění na nedokončení, potvrzení o dokončení "
             "(včetně kopie ubytovateli) a data pro přenos do UbyPortu či souvisejících systémů "
             "policie, pokud je funkce zapnuta. Účely, právní základy a dobu uchování pro hosty "
             "určuje ubytovatel jako správce v informaci pro hosty. Provozovatel zajišťuje technická "
@@ -442,7 +445,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s19_title": "19. Povinnosti ubytovatele jako správce",
         "privacy.s19_body": (
             "Ubytovatel musí hostům sdělit právní základy a informace, vyřizovat žádosti subjektů, vést "
-            "záznamy, provádět DPIA kde je třeba a dávat Provozovateli jen zákonné pokyny."
+            "záznamy, provádět DPIA kde je třeba a dávat Provozovateli jen zákonné pokyny. Fotografie "
+            "pasů jen v nezbytném rozsahu s jasnou informací pro hosty."
         ),
         "privacy.s20_title": "20. Změny Zásad",
         "privacy.s20_body": (

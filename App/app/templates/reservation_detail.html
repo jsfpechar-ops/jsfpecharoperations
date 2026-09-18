@@ -243,6 +243,9 @@
         <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form guest-card-action">
           <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
           <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
+          {% if row.has_passport_photo %}
+            <a class="small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('host.verify_view_photo') }}</a>
+          {% endif %}
         </form>
       {% endif %}
       {% if guest.note %}
