@@ -120,6 +120,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("celebration_milestone", None)
     data.setdefault("sent_guest_count", 0)
     data.setdefault("minutes_saved", 0)
+    data.setdefault("demo_available", config.UBYPORT_ENV == "mock")
     if workspace and workspace["id"]:
         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
     return templates.TemplateResponse(request, name, data, status_code=status_code)

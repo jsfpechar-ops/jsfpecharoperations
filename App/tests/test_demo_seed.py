@@ -26,6 +26,13 @@ def test_sample_feed_url_is_public_not_the_mock_server(monkeypatch):
     assert "127.0.0.1" not in url
 
 
+def test_demo_data_cannot_be_seeded_against_real_ubyport(monkeypatch):
+    db.init_db()
+    monkeypatch.setattr(config, "UBYPORT_ENV", "production")
+
+    assert demo.seed() is None
+
+
 def test_seed_imports_stays_without_fetching_the_calendar(monkeypatch):
     db.init_db()
     _clear_demo()

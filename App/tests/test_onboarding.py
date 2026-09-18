@@ -1,7 +1,14 @@
 """Setup wizard progress for new workspaces."""
 from __future__ import annotations
 
+from fastapi.testclient import TestClient
+
 from app import auth, db, onboarding
+from app.main import app
+
+
+def setup_module():
+    db.init_db()
 
 
 def _entity(owner_id: int, name: str = "Test Host s.r.o.") -> int:
@@ -40,6 +47,8 @@ def test_onboarding_starts_with_legal_entity():
     progress = onboarding.progress(owner_id)
     assert progress["current"]["id"] == "entity"
     assert progress["completed"] == 0
+    assert progress["percent"] == 0
+    assert progress["current"]["learn_url"] == "/guide#setup"
 
 
 def test_onboarding_advances_after_entity_and_property():
@@ -51,3 +60,50 @@ def test_onboarding_advances_after_entity_and_property():
     progress = onboarding.progress(owner_id)
     assert progress["current"]["id"] == "calendars"
     assert f"/apartments/{apartment_id}#calendars" in progress["current"]["url"]
+    assert progress["percent"] == 40
+
+
+def test_first_dashboard_is_a_guided_setup_journey():
+    owner_id = auth.create_account(
+        "onboard-first-view",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    page = client.get("/")
+
+    assert page.status_code == 200
+    assert 'class="onboarding-welcome"' in page.text
+    assert 'class="onboarding-now"' in page.text
+    assert "Set it once. Welcome every guest calmly." in page.text
+    assert "Have ready: legal name, IČO" in page.text
+    assert 'href="/entities"' in page.text
+    assert 'href="/guide#setup"' in page.text
+
+
+def test_onboarding_can_be_reopened_as_a_full_page():
+    owner_id = auth.create_account(
+        "onboard-reopen",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    page = client.get("/onboarding")
+
+    assert page.status_code == 200
+    assert "Nothing goes live by accident" in page.text
+    assert "Want to learn before entering real details?" in page.text

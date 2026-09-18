@@ -173,7 +173,10 @@ def load_demo(request: Request):
         return guard
     apartment_id = demo.seed(access.owner_id(request))
     if not apartment_id:
-        return _back("/", err="Demo data is only available before you add your first property.")
+        return _back(
+            "/",
+            err="Demo data is available only in a fresh staging or mock workspace.",
+        )
     return _back("/", msg="Demo property loaded. Use “Clear demo data” on Overview when finished.")
 
 
@@ -308,6 +311,14 @@ def guide_view(request: Request):
     if guard:
         return guard
     return render(request, "guide.html")
+
+
+@router.get("/onboarding")
+def onboarding_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return render(request, "onboarding.html")
 
 
 @router.post("/celebrations/dismiss")
