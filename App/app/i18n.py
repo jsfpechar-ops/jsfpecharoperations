@@ -128,15 +128,16 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "error_party_size": "Please enter how many people are staying (1–60).",
         "no_stays": "There are no upcoming stays to fill in right now.",
         "no_stays_help": (
-            "The link only shows stays that start in the next few days. If you have just "
-            "booked, try again closer to your arrival date, or message your host."
+            "The apartment link only lists stays that start in the next few days. If your "
+            "arrival has already passed, open the stay-specific link from your host or "
+            "confirmation e-mail, or message your host."
         ),
         "bad_link_title": "This guest link is not valid",
         "bad_link_help": "It may be incomplete or may have been replaced. Please ask your host for a new link.",
         "stay_gone_title": "That stay is no longer open for registration",
         "stay_gone_help": (
-            "The dates may have changed, the booking may have been cancelled, or the stay is "
-            "already over. Please message your host."
+            "The dates may have changed, the booking may have been cancelled, or your host "
+            "may have closed registration for this stay. Please message your host."
         ),
         "not_yours_title": "This form cannot be opened on this device",
         "not_yours_help": (
@@ -562,15 +563,16 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "error_party_size": "Zadejte počet osob (1–60).",
         "no_stays": "Momentálně tu není žádná rezervace k vyplnění.",
         "no_stays_help": (
-            "Odkaz zobrazuje jen pobyty začínající v nejbližších dnech. Pokud jste právě "
-            "rezervovali, zkuste to blíže k datu příjezdu, nebo napište ubytovateli."
+            "Odkaz bytu zobrazuje jen pobyty začínající v nejbližších dnech. Pokud už "
+            "příjezd proběhl, otevřete odkaz konkrétního pobytu z e-mailu nebo od "
+            "ubytovatele, nebo ubytovateli napište."
         ),
         "bad_link_title": "Tento odkaz není platný",
         "bad_link_help": "Odkaz může být neúplný nebo byl nahrazen. Požádejte ubytovatele o nový odkaz.",
         "stay_gone_title": "Tento pobyt už není otevřený k registraci",
         "stay_gone_help": (
-            "Termín se mohl změnit, rezervace mohla být zrušena, nebo už pobyt skončil. "
-            "Napište prosím ubytovateli."
+            "Termín se mohl změnit, rezervace mohla být zrušena, nebo ubytovatel registraci "
+            "pro tento pobyt uzavřel. Napište prosím ubytovateli."
         ),
         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
         "not_yours_help": (
