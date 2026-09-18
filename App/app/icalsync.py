@@ -223,12 +223,19 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
     stats["cancelled"] += 1
 
 
-def sync_feed(feed, keep_past_days: int = 400) -> Dict[str, Any]:
-    """Reconcile one feed into the reservation table."""
+def sync_feed(
+    feed, keep_past_days: int = 400, ics_text: Optional[str] = None
+) -> Dict[str, Any]:
+    """Reconcile one feed into the reservation table.
+
+    ``ics_text`` lets a caller supply calendar text the server already holds,
+    so demo seeding never depends on the network or on fetching from itself.
+    """
     now = db.utcnow()
     stats = {"created": 0, "updated": 0, "cancelled": 0, "blocks_skipped": 0}
     try:
-        ics_text = fetch_feed(feed["url"])
+        if ics_text is None:
+            ics_text = fetch_feed(feed["url"])
         events = parse_events(ics_text)
     except (FeedError, ValueError) as exc:
         db.update(
