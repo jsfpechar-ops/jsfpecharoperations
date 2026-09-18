@@ -440,7 +440,9 @@ def test_property_can_use_separate_pm_and_data_controller():
 
         settings = _browser().get(f"/apartments/{apartment_id}")
         assert 'id="controller_is_operator"' in settings.text
-        assert f'<option value="{controller_id}" selected' in settings.text
+        assert re.search(
+            rf'<option value="{controller_id}"\s+selected', settings.text
+        )
     finally:
         db.update(
             "apartment",

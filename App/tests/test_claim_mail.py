@@ -297,7 +297,7 @@ def test_host_can_release_and_reopen_claim():
 
 def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
-    check_in = date.today()
+    check_in = claim.prague_today()
     try:
         browser = TestClient(app)
         complete_guest_claim(browser, TOKEN, current, party_size=1)
@@ -342,7 +342,7 @@ def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
 
 def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
-    today = date.today()
+    today = claim.prague_today()
     try:
         db.update(
             "reservation",

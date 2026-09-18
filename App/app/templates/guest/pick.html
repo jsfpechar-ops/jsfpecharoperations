@@ -29,10 +29,10 @@
       <span class="dates">
         <strong>{{ reservation.date_from | date_cz }} <span aria-hidden="true">&rarr;</span> {{ reservation.date_to | date_cz }}</strong>
         <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
-        {% if row.ongoing %}
-          <span class="g-lane-status ongoing">{{ t('stay_ongoing') }}</span>
-        {% elif row.yours %}
+        {% if row.yours %}
           <span class="g-lane-status">{{ t('your_stay_badge') }}</span>
+        {% elif row.ongoing %}
+          <span class="g-lane-status ongoing">{{ t('stay_ongoing') }}</span>
         {% else %}
           <span class="g-lane-status quiet">{{ t('stay_not_started') }}</span>
         {% endif %}
