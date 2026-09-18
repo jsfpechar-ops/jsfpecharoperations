@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
 
 from . import db, deadlines, mail, reporting, validation
@@ -24,6 +24,12 @@ def prague_today():
 
 def token_hash(secret: str) -> str:
     return hashlib.sha256(secret.encode("utf-8")).hexdigest()
+
+
+def _hold_until_iso(now: Optional[datetime] = None) -> str:
+    """UTC instant when a provisional claim hold ends (matches ``db.utcnow()``)."""
+    moment = now or datetime.now(timezone.utc)
+    return (moment + timedelta(minutes=HOLD_MINUTES)).replace(microsecond=0).isoformat()
 
 
 def _row(reservation_id: int):
@@ -113,7 +119,7 @@ def start_claim(
 
     secret = secrets.token_urlsafe(TOKEN_BYTES)
     now = db.utcnow()
-    until = (deadlines.local_now() + timedelta(minutes=HOLD_MINUTES)).isoformat()
+    until = _hold_until_iso()
     version = int(claim["token_version"] or 0) + 1
     db.execute(
         "UPDATE reservation_claim SET state = ?, email = ?, email_masked = ?, lang = ?, "

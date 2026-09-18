@@ -1,7 +1,7 @@
 """Guest claim, magic-link confirmation, and staging-safe mail."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
@@ -109,6 +109,35 @@ def test_picker_hides_past_and_far_check_ins():
         assert f"/l/{TOKEN}/{current}" in page.text or "guest_email" in page.text
         assert f"/l/{TOKEN}/{past}" not in page.text
         assert f"/l/{TOKEN}/{far}" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_provisional_hold_expires_in_utc():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        ok, err, secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="guest@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert ok, err
+        expired = (
+            datetime.now(timezone.utc) - timedelta(minutes=claim.HOLD_MINUTES + 1)
+        ).replace(microsecond=0).isoformat()
+        db.execute(
+            "UPDATE reservation_claim SET provisional_until = ? WHERE reservation_id = ?",
+            (expired, current),
+        )
+        assert not claim.confirm(reservation, secret)
+        claim.expire_holds()
+        row = claim.ensure_row(current)
+        assert row["state"] == claim.UNCLAIMED
+        assert row["token_hash"] is None
     finally:
         _cleanup()
 
