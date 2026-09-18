@@ -142,7 +142,7 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
 
 
 def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
-    current, _past, _far, apartment_id = _seed()
+    current, _past, _far, _apartment_id = _seed()
     try:
         browser = TestClient(app)
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
@@ -158,13 +158,37 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
         assert "normally deleted after 14 days" in privacy.text
         assert "Temporary passport photo or PDF" not in privacy.text
 
-        db.update(
-            "apartment",
-            apartment_id,
-            {"passport_photo_policy": "required_foreign"},
+    finally:
+        _cleanup()
+
+
+def test_disabled_mail_uses_pin_date_form_without_collecting_email(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
+    try:
+        browser = TestClient(app)
+        form = browser.get(f"/l/{TOKEN}/{current}", follow_redirects=True)
+        assert form.status_code == 200
+        assert 'name="surname"' in form.text
+        assert 'name="party_size"' in form.text
+        assert 'name="guest_email"' not in form.text
+        assert "Send me the form link" not in form.text
+        assert "passport_photo" not in form.text
+
+        party = browser.post(
+            f"/l/{TOKEN}/{current}/party",
+            data={"party_size": "2"},
+            follow_redirects=False,
         )
-        policy_privacy = browser.get(f"/l/{TOKEN}/privacy")
-        assert "Temporary passport photo or PDF" in policy_privacy.text
+        assert party.status_code == 303
+        assert db.query_one(
+            "SELECT declared_guests FROM reservation WHERE id = ?", (current,)
+        )["declared_guests"] == 2
+
+        privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert "does not collect your e-mail" in privacy.text
+        assert "E-mail messages and masking" not in privacy.text
+        assert "Necessary cookies" in privacy.text
     finally:
         _cleanup()
 
@@ -224,7 +248,7 @@ def test_console_backend_logs_claim_link(monkeypatch):
         _cleanup()
 
 
-def test_passport_policy_defaults_off():
+def test_passport_upload_requirement_is_retired():
     current, _past, _far, apartment_id = _seed()
     try:
         apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
@@ -238,7 +262,7 @@ def test_passport_policy_defaults_off():
         assert reporting.guest_needs_passport_photo(guest, apartment) is False
         db.update("apartment", apartment_id, {"passport_photo_policy": "required_foreign"})
         apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
-        assert reporting.guest_needs_passport_photo(guest, apartment) is True
+        assert reporting.guest_needs_passport_photo(guest, apartment) is False
     finally:
         _cleanup()
 

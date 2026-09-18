@@ -35,21 +35,18 @@
   <p>{{ t('privacy_required') }}</p>
 
   <h3>{{ t('privacy_data') }}</h3>
-  <p>{{ t('privacy_data_body') }}</p>
+  <p>{{ t('privacy_data_body') if mail_enabled else t('privacy_data_body_no_email') }}</p>
 
+  {% if mail_enabled %}
   <h3>{{ t('privacy_email_title') }}</h3>
   <p>{{ t('privacy_email_body') }}</p>
+  {% endif %}
 
   <h3>{{ t('privacy_cookies_title') }}</h3>
   <p>{{ t('privacy_cookies_body') }}</p>
 
-  {% if passport_photo_policy == 'required_foreign' %}
-  <h3>{{ t('privacy_passport_photo_title') }}</h3>
-  <p>{{ t('privacy_passport_photo_body') }}</p>
-  {% endif %}
-
   <h3>{{ t('privacy_recipients') }}</h3>
-  <p>{{ t('privacy_recipients_body') }}</p>
+  <p>{{ t('privacy_recipients_body') if mail_enabled else t('privacy_recipients_body_no_email') }}</p>
 
   <h3>{{ t('privacy_bot_protection_title') }}</h3>
   <p>{{ t('privacy_bot_protection_body') }}</p>
@@ -58,7 +55,7 @@
   <p>{{ t('privacy_processor_body') }}</p>
 
   <h3>{{ t('privacy_retention') }}</h3>
-  <p>{{ t('privacy_retention_body') }}</p>
+  <p>{{ t('privacy_retention_body') if mail_enabled else t('privacy_retention_body_no_email') }}</p>
 
   <h3>{{ t('privacy_rights') }}</h3>
   <p>{{ t('privacy_rights_body') }}</p>

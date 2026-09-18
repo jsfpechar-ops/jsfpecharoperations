@@ -266,14 +266,6 @@
                value="{{ apartment.permalink_window_days }}">
         <div class="hint">{{ t('apartment.form.guest_link.window_hint') }}</div>
       </div>
-      <div class="field" style="max-width:320px">
-        <label for="passport_photo_policy">{{ t('apartment.form.passport_policy.label') }}</label>
-        <select id="passport_photo_policy" name="passport_photo_policy">
-          <option value="off" {% if (apartment.passport_photo_policy if editing else 'off') != 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.off') }}</option>
-          <option value="required_foreign" {% if editing and apartment.passport_photo_policy == 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.required') }}</option>
-        </select>
-        <div class="hint">{{ t('apartment.form.passport_policy.hint') }}</div>
-      </div>
       <details class="message-details" open>
         <summary>{{ t('guest_links.message_title') }}</summary>
         <pre>{{ t('guest_links.message', link=permalink, pin=pin) }}</pre>

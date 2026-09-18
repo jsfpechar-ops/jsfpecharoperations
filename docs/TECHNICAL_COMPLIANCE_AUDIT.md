@@ -14,8 +14,8 @@
 UbyHost implements the core mechanics it describes: it collects UbyPort-shaped
 guest fields, distinguishes Czech nationals from reportable foreign nationals,
 supports manual and completion-based immediate/delayed automatic submission, stores
-submission XML and Doručenka PDFs, exports a house book, removes passport uploads
-after host verification, and can purge guest rows after six years.
+submission XML and Doručenka PDFs, exports a house book, no longer accepts
+passport uploads, and can purge guest rows after six years.
 
 The most important gaps for counsel are:
 
@@ -23,10 +23,9 @@ The most important gaps for counsel are:
    the current public text of § 103 appears to exempt foreign nationals under 15
    from personally completing and signing the form. There is no age field or
    under-15 signature path.
-2. **Passport uploads:** each property can require an ID image/PDF for non-Czech
-   guests or leave upload off (the default). The cited
-   statute appears to require presenting a document, not necessarily uploading a
-   copy. Necessity, legal basis, and special-category risk need counsel review.
+2. **Legacy passport uploads:** the collection feature is retired. Existing
+   storage columns and cleanup code remain temporarily so deployment does not
+   destructively erase any legacy file without a reviewed retention action.
 3. **Retention and backups:** six-year deletion is a host-triggered application
    action, not a scheduled job. Repository backup scripts retain snapshots by
    count, not by a documented time window, and do not demonstrate the policy's
@@ -65,10 +64,7 @@ Status means only consistency between copy and repository behavior:
 | Foreign guests are sent to Police; Czech citizens are not (`App/app/i18n.py`, `why_point_report`/`why_point_czech`) | All nationalities except `CZE`, including EU/EEA nationals, are reportable; Czech records are marked `not_required` (`App/app/validation.py`, `guest_is_reportable`; `App/app/reporting.py`, `collect_sendable`). | CONSISTENT | Add tests for representative EU and non-EU nationalities; counsel must approve the legal description. |
 | Completing and signing is every guest's legal duty (`App/app/i18n.py`, `why_point_sign`, `signature_help`) | A signature is required for every online row, including children; `INPASS` changes document handling but not signature handling (`App/app/routes/guest.py`, `guest_form_save`; `App/app/validation.py`, `INPASS`; `App/app/reporting.py`, `guest_issues`). | NEEDS LAWYER | Add an age/under-15 workflow only after counsel defines the required record and who, if anyone, signs. |
 | The generated registration PDF stands in for a signed house-book page (`App/app/host_i18n.py`, `guide.legal.paper_body`; `App/app/housebook.py`, module docstring) | A base64 signature image is placed into a generated PDF; imported records can merely carry the literal marker `imported` and no rendered signature image (`App/app/housebook.py`, `registration_form_pdf`/`import_housebook_rows`). | NEEDS LAWYER | Label it “application-generated registration PDF” unless counsel confirms legal equivalence and electronic-signature effect. |
-| A property may require foreign guests to upload an ID image/PDF (`App/app/i18n.py`, policy-aware legal/privacy sections) | Upload defaults off; server validation requires it only for a foreign guest when the property policy is `required_foreign`. Host-entered guests do not need an upload (`App/app/routes/guest.py`; `App/app/reporting.py`, `guest_needs_passport_photo`). | CONSISTENT | Counsel must approve whether enabling mandatory upload is necessary and proportionate. |
-| ID upload is visible only to the host (`App/app/i18n.py`, `legal_notice_passport_body`/`privacy_passport_photo_body`) | The authenticated admin route is owner-scoped; the operator and infrastructure necessarily can have technical access (`App/app/routes/admin.py`, passport route; `App/app/access.py`; `App/app/passport_photos.py`, `read_photo`). | INCONSISTENT | Use “available in the app only to authorized host users; infrastructure/operator access is restricted” if operationally true; lawyer must approve. |
-| ID upload is deleted immediately after explicit verification (`App/app/i18n.py`, `why_point_passport`/`legal_notice_passport_body`) | Explicit verification deletes the file and clears its marker. Automatic reporting does not fabricate verification or delete the image. Unverified files remain until the stale-photo sweep applies (`App/app/reporting.py`, `record_host_identity_confirmation`; `App/app/passport_photos.py`, `purge_stale`). | CONSISTENT | Add the unverified fallback period to the notice; lawyer must approve the retention statement. |
-| ID upload is not sent to Police (`App/app/i18n.py`, `legal_notice_passport_body`/`privacy_passport_photo_body`) | UbyPort payload contains text fields, not the upload (`App/app/reporting.py`, `guest_payload`; `App/app/ubyport/soap.py`, request construction). | CONSISTENT | Keep a regression test asserting attachments cannot enter request XML. |
+| Passport/ID upload is retired (`docs/DESIGN.md`; guest/property templates) | No upload input or property toggle is rendered; server validation never requires a file and submitted attachments are ignored. Legacy columns, owner-scoped read route, and stale cleanup remain to avoid destructive migration (`App/app/reporting.py`; `App/app/passport_photos.py`). | CONSISTENT | Define and execute a separate reviewed deletion plan for any legacy files before removing compatibility code. |
 | Registration data/signature is retained six years from the last house-book entry, then deleted (`App/app/i18n.py`, `legal_notice_retention_body`/`privacy_retention_body`) | Expiry is calculated per guest from stay end, not globally from the last book entry. Deletion runs only when a host invokes Settings purge; no scheduled six-year purge exists (`App/app/housebook.py`, `expired_guest_ids`/`purge_expired`; `App/app/routes/admin.py`, `purge_expired_records`; `App/app/scheduler.py`). | INCONSISTENT | Align the retention trigger and automate a reviewed purge policy; lawyer must approve the legal period. |
 | Archives hide records; only retention purge permanently deletes them (`App/app/host_i18n.py`, `archive.retention_note`) | Archive is soft deletion. Unsent guests can also be hard-deleted individually; sent guests cannot (`App/app/routes/admin.py`, archive routes/`guest_delete`). | INCONSISTENT | Amend UI copy to mention deletion of unsent entries, or route all deletion through one documented policy. |
 | Encrypted server/off-site backups are retained briefly and automatically purged (`App/app/privacy_policy_i18n.py`, `privacy.s11_body`; `App/app/dpa_i18n.py`, `dpa.s15_body`) | `App/scripts/backup_data.sh` and `deploy/lightsail/scripts/backup.sh` copy the SQLite database and keys and retain ten snapshots. Off-site Drive/S3 scripts are optional. Repository code does not establish encryption, a time window, or deletion propagation from live data to old backups. | UNCLEAR | Publish the actual backup inventory, encryption layer, cadence, restore access, and expiry; avoid promises until production evidence exists. Lawyer must approve. |
@@ -152,9 +148,8 @@ following repository-backed facts must remain accurate operationally:
 1. Confirm the exact statutory sections and scope for host reporting, house-book
    content, retention, guest presentation of documents, signatures, children
    under 15, Czech nationals, and EU nationals.
-2. Decide whether making a passport/ID copy mandatory is necessary and
-   proportionate, and identify the lawful basis for that copy separately from
-   the underlying registration fields.
+2. Confirm the retention/deletion path for any legacy passport/ID copy after
+   retirement of new upload collection.
 3. Determine whether a drawn signature image in an application-generated PDF
    has the claimed legal effect, including for imported records.
 4. Reconcile “six years from last entry” with per-row expiry, manual purge, all
@@ -165,15 +160,13 @@ following repository-backed facts must remain accurate operationally:
 ### P1 — GDPR-shaped notice and DPA gaps
 
 1. Complete purposes/categories for party size, manual-stay e-mail, IP address,
-   audit/security logs, attachment metadata, submission artifacts, and support.
+   audit/security logs, submission artifacts, and support.
 2. Replace hard-coded operator identity and incomplete controller fallback.
 3. Verify subprocessors, regions, international transfers, safeguards, notice
    of changes, and “data stays in the EU.”
 4. Document actual rights-assistance, deletion/return, backup expiry, incident
    notification, and audit-evidence procedures promised in the DPA.
-5. Assess whether systematic guest-link/security monitoring or identity-document
-   processing triggers a DPIA, and whether document images may reveal special
-   categories.
+5. Assess whether systematic guest-link/security monitoring triggers a DPIA.
 6. Define separate Operator-controller legal bases and retention for host
    accounts, security logs, support, and billing.
 
@@ -199,10 +192,8 @@ following repository-backed facts must remain accurate operationally:
   using a parent's document?
 - Is a drawn signature image embedded in a generated PDF sufficient for the
   product's claimed purpose?
-- Is retaining a passport/ID image necessary and proportionate when the host can
-  inspect the document without retaining a copy?
-- If an image may reveal ethnic origin, health, religion, or other special
-  categories, what additional basis and safeguards are required?
+- How should any legacy passport/ID images be deleted and evidenced after the
+  upload feature's retirement?
 - What is the correct retention anchor for database rows, signed forms,
   Doručenka/error PDFs, XML, audit logs, server/security logs, and backups?
 - Which guest and host purposes/legal bases must be listed separately?

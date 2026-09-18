@@ -393,19 +393,11 @@ def test_every_guest_facing_validation_message_has_czech():
     assert checked >= len(cases)
 
 
-def test_guest_form_accepts_pdf_passport_attachment():
+def test_guest_form_ignores_retired_passport_attachment():
     token, wrong, _right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
         complete_guest_claim(browser, token, wrong, party_size=2)
-        apartment = db.query_one(
-            "SELECT id FROM apartment WHERE permalink_token = ?", (token,)
-        )
-        db.update(
-            "apartment",
-            apartment["id"],
-            {"passport_photo_policy": "required_foreign"},
-        )
         saved = browser.post(
             f"/l/{token}/{wrong}/save",
             data=_form(),
@@ -414,11 +406,8 @@ def test_guest_form_accepts_pdf_passport_attachment():
         )
         assert saved.status_code == 303, saved.text
         guest = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (wrong,))
-        assert guest["passport_photo_at"]
-        assert passport_photos.is_pdf_attachment(guest["id"])
-        payload = passport_photos.read_photo(guest["id"])
-        assert payload is not None
-        assert payload[1] == "application/pdf"
+        assert not guest["passport_photo_at"]
+        assert not passport_photos.has_photo(guest["id"])
     finally:
         _cleanup()
 

@@ -218,10 +218,10 @@ def main():
             "privacy@example.com",
             "6(1)(c)",
             "uoou.gov.cz",
-            "E-mail messages and masking",
             "Necessary cookies",
+            "does not collect your e-mail",
         ],
-        must_not_contain=["Temporary passport photo"],
+        must_not_contain=["Temporary passport photo", "E-mail messages and masking"],
     )
     # A separate browser, because ?lang=cs sets a sticky cookie.
     czech = TestClient(app)
@@ -231,16 +231,14 @@ def main():
         guest,
         f"/l/{token}/{stay_a}",
         must_contain=[
-            'name="guest_email"',
+            'name="surname"',
             "Czech law",
-            "Send me the form link",
-            "Strictly necessary cookies",
         ],
         must_not_contain=["Airbnb", "Booking.com"],
     )
     check(guest, f"/l/{token}/999999", expect=(404,), must_contain=["no longer open"])
     check(guest, "/l/nosuchtoken", expect=(404,))
-    check(guest, f"/l/{token}/{stay_b}", must_contain=['name="guest_email"'])
+    check(guest, f"/l/{token}/{stay_b}", must_contain=['name="surname"'])
 
     claim_stay(guest, token, stay_a, "lead@example.test")
     check(
