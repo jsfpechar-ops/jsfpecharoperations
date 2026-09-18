@@ -39,6 +39,12 @@ and update this section in the same change.
 - Vanilla JavaScript (`app.js`, `signature.js`, `claim.js`) — no SPA framework or bundler
 - No CDN-hosted fonts; system font stacks only
 
+## Brand and logo
+
+The brief for generating or commissioning a new UbyHost logo — product
+description, concept territory, palette, and the mark / mark+name / full-lockup
+deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
+
 ## Agents and automation
 
 Cursor Cloud Agents and other automated contributors **must read this file**
