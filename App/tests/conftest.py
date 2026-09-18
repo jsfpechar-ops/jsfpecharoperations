@@ -39,6 +39,44 @@ os.environ["MOCK_UBYPORT_STATE"] = str(_TMP / "mock_state.json")
 os.environ["MOCK_UBYPORT_PORT"] = str(MOCK_PORT)
 
 
+def complete_guest_claim(
+    client,
+    token: str,
+    reservation_id: int,
+    *,
+    email: str = "guest@example.test",
+    party_size: int = 2,
+    lang: str = "en",
+) -> str:
+    """Assign the stay to an e-mail and set the browser claim cookie.
+
+    GET of the magic link must not assign; tests confirm with POST like a guest.
+    """
+    from app import claim, db
+
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    apartment = db.query_one(
+        "SELECT * FROM apartment WHERE permalink_token = ?", (token,)
+    )
+    row = claim.ensure_row(reservation_id)
+    ok, err, secret = claim.start_claim(
+        reservation,
+        apartment,
+        email=email,
+        party_size=party_size,
+        lang=lang,
+        resend=claim.is_claimed(row),
+    )
+    assert ok, err
+    response = client.post(
+        f"/l/{token}/{reservation_id}/claim/confirm",
+        data={"secret": secret},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303, response.text
+    return secret
+
+
 @pytest.fixture(scope="session")
 def mock_ubyport():
     """The stand-in police service, so the whole path is exercised for real."""

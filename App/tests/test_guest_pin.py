@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, passport_photos
 from app.main import app
+from tests.conftest import complete_guest_claim
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -113,7 +114,7 @@ def test_party_and_another_posts_require_pin(pin_required):
         client = _with_pin(TestClient(app))
         allowed = client.post(
             f"/l/{TOKEN}/{stay_id}/party",
-            data={"party_size": "4"},
+            data={"party_size": "4", "guest_email": "guest@example.test"},
             follow_redirects=False,
         )
         assert allowed.status_code == 303
@@ -170,6 +171,7 @@ def test_edit_form_requires_pin_before_owned_cookie(pin_required):
     stay_id = _stay_id()
     try:
         client = _with_pin(TestClient(app))
+        complete_guest_claim(client, TOKEN, stay_id, party_size=1)
         saved = client.post(
             f"/l/{TOKEN}/{stay_id}/save",
             data={

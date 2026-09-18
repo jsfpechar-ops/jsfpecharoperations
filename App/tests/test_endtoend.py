@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, codelists, db, reporting
 from app.main import app
+from tests.conftest import complete_guest_claim
 
 PASSWORD = "Correct-Horse-Battery-123"
 
@@ -239,11 +240,12 @@ def test_09_guest_opens_the_link_and_declares_the_party(client):
     landing = guest_browser.get(f"/l/{apartment['permalink_token']}", follow_redirects=True)
     assert landing.status_code == 200
 
-    response = guest_browser.post(
-        permalink(stay) + "/party", data={"party_size": "2"}, follow_redirects=False
+    complete_guest_claim(
+        guest_browser,
+        apartment["permalink_token"],
+        stay["id"],
+        party_size=2,
     )
-    assert response.status_code == 303, response.text
-    assert response.headers["location"].endswith(f"/{stay['id']}?lang=en")
     assert db.query_one("SELECT * FROM reservation")["declared_guests"] == 2
 
 
@@ -278,6 +280,16 @@ def passport_files(nationality: str = "GBR"):
 
 
 def save_guest_form(browser, stay, host=None, verify: bool = True, **overrides):
+    apartment = db.query_one("SELECT * FROM apartment")
+    party = stay["declared_guests"] or 2
+    if overrides.get("party_size"):
+        party = int(overrides["party_size"])
+    complete_guest_claim(
+        browser,
+        apartment["permalink_token"],
+        stay["id"],
+        party_size=int(party),
+    )
     nationality = overrides.get("nationality", guest_form_data()["nationality"])
     data = guest_form_data(**overrides)
     kwargs = {"data": data, "follow_redirects": False}
@@ -305,6 +317,8 @@ def host_verifies_guest(host, guest_id: int) -> None:
 
 def test_12_incomplete_form_is_refused_before_it_reaches_the_police(client):
     stay = db.query_one("SELECT * FROM reservation")
+    apartment = db.query_one("SELECT * FROM apartment")
+    complete_guest_claim(client, apartment["permalink_token"], stay["id"], party_size=2)
     response = client.post(
         permalink(stay) + "/save", data=guest_form_data(doc_number="", signature="")
     )
@@ -424,8 +438,12 @@ def test_18_a_second_guest_completes_the_party(client, host):
 def test_19_a_czech_national_is_house_book_only(client):
     stay = db.query_one("SELECT * FROM reservation")
     guest_browser = TestClient(app)
-    guest_browser.post(
-        permalink(stay) + "/party", data={"party_size": "3"}, follow_redirects=False
+    complete_guest_claim(
+        guest_browser,
+        db.query_one("SELECT permalink_token FROM apartment")["permalink_token"],
+        stay["id"],
+        email="guest@example.test",
+        party_size=3,
     )
     response = guest_browser.post(
         permalink(stay) + "/save",
@@ -571,6 +589,13 @@ def test_25_manual_mode_waits_for_the_host(host, mock_ubyport):
     reservation_id = create_manual_stay(host, date.today() - timedelta(days=1), 3, 1)
     MANUAL_STAY["id"] = reservation_id
     guest_browser = TestClient(app)
+    complete_guest_claim(
+        guest_browser,
+        apartment["permalink_token"],
+        reservation_id,
+        email="marco@example.test",
+        party_size=1,
+    )
     guest_browser.post(
         f"/l/{apartment['permalink_token']}/{reservation_id}/save",
         data=guest_form_data(

@@ -9,6 +9,7 @@
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
+{% include "guest/_host.html" %}
 
 {% if party_error %}
   <div class="g-err">{{ t('error_party_size') }}</div>

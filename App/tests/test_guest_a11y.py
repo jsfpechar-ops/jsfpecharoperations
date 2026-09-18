@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 from app import db
 from app.main import app
+from tests.conftest import complete_guest_claim
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -79,6 +80,7 @@ def _submit_with_errors() -> str:
     """Post a form that fails on two named fields, and return the re-render."""
     reservation_id = _apartment()
     browser = TestClient(app)
+    complete_guest_claim(browser, TOKEN, reservation_id, party_size=2)
     page = browser.post(
         f"/l/{TOKEN}/{reservation_id}/save",
         data={

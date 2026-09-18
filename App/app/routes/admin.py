@@ -23,8 +23,10 @@ from .. import (
     host_i18n,
     housebook,
     icalsync,
+    mail,
     passport_photos,
     reporting,
+    claim,
     security,
     stays_import,
     validation,
@@ -568,7 +570,11 @@ def _apartment_payload(form) -> Dict[str, Any]:
     mode = _form_str(form, "automation_mode", "scheduled")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
-    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 3
+    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
+    policy = _form_str(form, "passport_photo_policy", "off")
+    payload["passport_photo_policy"] = (
+        policy if policy in ("off", "required_foreign") else "off"
+    )
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
@@ -1191,6 +1197,7 @@ def reservation_detail(reservation_id: int, request: Request):
             "guest_link": (
                 f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
             ),
+            "stay_claim": claim.ensure_row(reservation_id),
         },
     )
 
@@ -1214,6 +1221,10 @@ async def reservation_update(reservation_id: int, request: Request):
     if status in ("active", "cancelled", "ignored"):
         payload["status"] = status
     db.update("reservation", reservation_id, payload)
+    if payload.get("status") in ("cancelled", "ignored"):
+        row = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        if row:
+            claim.expire_on_cancel(row)
     return _back(f"/reservations/{reservation_id}", msg="Saved.")
 
 
@@ -1276,7 +1287,33 @@ async def reservation_unarchive(reservation_id: int, request: Request):
         return _back(return_to, err="Not archived.")
     db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("reservation_unarchived", f"id={reservation_id}")
-    return _back(return_to, msg="Stay restored from archive.")
+    return _back(return_to, msg="Stay restored from archive."    )
+
+
+@router.post("/reservations/{reservation_id}/reopen-guest")
+async def reservation_reopen_guest(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    claim.reopen_guest_access(reservation_id)
+    db.audit("guest_access_reopened", f"reservation={reservation_id}")
+    return _back(f"/reservations/{reservation_id}", msg="Guest access reopened.")
+
+
+@router.post("/reservations/{reservation_id}/release-claim")
+async def reservation_release_claim(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err="No such stay.")
+    claim.release(reservation_id)
+    db.audit("guest_claim_released", f"reservation={reservation_id}")
+    return _back(f"/reservations/{reservation_id}", msg="Guest claim released.")
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -2127,6 +2164,8 @@ def settings_view(request: Request):
             )["n"],
             "poll_minutes": config.ICAL_POLL_MINUTES,
             "sweep_minutes": config.SUBMIT_SWEEP_MINUTES,
+            "mail_backend": mail.backend_name(),
+            "console_mail": mail.recent_console_messages(access.owner_id(request)),
             "retention_years": housebook.RETENTION_YEARS,
             "retention_cutoff": housebook.retention_cutoff(),
             "expired_records": len(

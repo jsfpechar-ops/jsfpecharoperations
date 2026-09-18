@@ -10,7 +10,7 @@ import logging
 import os
 from typing import Iterable, List, Mapping, Optional, Sequence
 
-from . import config
+from . import config, mail
 
 log = logging.getLogger("ubyhost.env_guard")
 
@@ -129,6 +129,20 @@ def validate_runtime_env(
 
     if deploy == "production" and not str(base_url).lower().startswith("https://"):
         warnings.append("UBYHOST_PUBLIC_BASE_URL should use https:// in production")
+
+    try:
+        warnings.extend(
+            mail.validate_mail_env(
+                backend=(
+                    (os_env.get("UBYHOST_MAIL_BACKEND") or None)
+                    if environ is not None
+                    else None
+                ),
+                deployment=deploy,
+            )
+        )
+    except mail.MailConfigError as exc:
+        raise EnvGuardError(str(exc)) from exc
 
     return warnings
 

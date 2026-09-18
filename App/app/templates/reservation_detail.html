@@ -82,6 +82,38 @@
   </details>
 </section>
 
+{% if stay_claim %}
+<section class="panel" id="stay-claim">
+  <div class="eyebrow">{{ t('stay.claim.title') }}</div>
+  <p>
+    {% if stay_claim.guest_access_locked_at %}
+      {{ t('stay.claim.locked') }}
+    {% elif stay_claim.state == 'claimed' %}
+      {{ t('stay.claim.claimed', email=stay_claim.email_masked or '') }}
+    {% elif stay_claim.state == 'provisional' %}
+      {{ t('stay.claim.provisional', email=stay_claim.email_masked or '') }}
+    {% else %}
+      {{ t('stay.claim.unclaimed') }}
+    {% endif %}
+  </p>
+  <div class="stay-command-actions">
+    {% if stay_claim.guest_access_locked_at %}
+      <form method="post" action="/reservations/{{ reservation.id }}/reopen-guest" class="inline">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="btn small" type="submit">{{ t('stay.claim.reopen') }}</button>
+      </form>
+    {% endif %}
+    {% if stay_claim.state != 'unclaimed' %}
+      <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="inline"
+            data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="btn small" type="submit">{{ t('stay.claim.release') }}</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
 <div class="panel tight detail-hero">
   <div class="detail-metric">
     <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
