@@ -148,7 +148,7 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
 
 
 def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
-    current, _past, _far, _apartment_id = _seed()
+    current, _past, _far, apartment_id = _seed()
     try:
         browser = TestClient(app)
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
@@ -164,6 +164,13 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
         assert "normally deleted after 14 days" in privacy.text
         assert "Temporary passport photo or PDF" not in privacy.text
 
+        db.update(
+            "apartment",
+            apartment_id,
+            {"passport_photo_policy": "required_foreign"},
+        )
+        policy_privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert "Temporary passport photo or PDF" in policy_privacy.text
     finally:
         _cleanup()
 
@@ -254,7 +261,7 @@ def test_console_backend_logs_claim_link(monkeypatch):
         _cleanup()
 
 
-def test_passport_upload_requirement_is_retired():
+def test_passport_policy_defaults_off():
     current, _past, _far, apartment_id = _seed()
     try:
         apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
@@ -268,7 +275,7 @@ def test_passport_upload_requirement_is_retired():
         assert reporting.guest_needs_passport_photo(guest, apartment) is False
         db.update("apartment", apartment_id, {"passport_photo_policy": "required_foreign"})
         apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
-        assert reporting.guest_needs_passport_photo(guest, apartment) is False
+        assert reporting.guest_needs_passport_photo(guest, apartment) is True
     finally:
         _cleanup()
 

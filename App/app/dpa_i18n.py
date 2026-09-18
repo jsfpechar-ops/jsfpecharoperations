@@ -80,8 +80,11 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s05_body": (
             "Categories of data subjects: Guests, and occasionally third parties named on travel "
             "documents. Types of personal data: identity and contact details, nationality, dates "
-            "of birth and stay, reservation-claim e-mail addresses, declared party size, travel "
-            "document numbers and types, addresses, signatures, and accommodation metadata. "
+            "of birth and stay, reservation-claim e-mail addresses, declared party size, travel document numbers and types, addresses, signatures, "
+            "accommodation metadata, and optional passport photographs or PDFs uploaded for "
+            "verification. Special categories: the Service may process document images that could "
+            "reveal ethnic origin or health only where the Controller instructs such upload and has "
+            "a lawful basis; the Controller is responsible for necessity and proportionality. "
             "Controller personnel data is outside this DPA except where listed in the Privacy Policy."
         ),
         "dpa.s06_title": "6. Controller obligations",
@@ -310,7 +313,9 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s05_body": (
             "Subjekty: hosté a osoby na dokladech. Kategorie údajů: identita, e-mail k převzetí rezervace, "
             "nahlášený počet hostů, kontakt, státní příslušnost, "
-            "data pobytu, cestovní doklady, adresy, podpisy a metadata ubytování. Údaje personálu "
+            "data pobytu, cestovní doklady, adresy, podpisy, metadata ubytování, volitelné fotografie/PDF "
+            "pasu. Zvláštní kategorie: snímky dokladů mohou odhalit původ či zdraví jen pokud Správce "
+            "nahrání pokyne a má právní základ; Správce odpovídá za nezbytnost. Údaje personálu "
             "Správce spadají do Zásad ochrany osobních údajů."
         ),
         "dpa.s06_title": "6. Povinnosti správce",

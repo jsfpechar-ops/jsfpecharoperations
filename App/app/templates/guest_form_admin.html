@@ -164,6 +164,16 @@
 
   {% if editing and needs_verification %}
   <div class="panel verify-panel tight">
+    {% if has_passport_photo %}
+      <div class="passport-preview compact">
+        {% if passport_is_pdf %}
+          <iframe class="passport-preview-pdf" src="/guests/{{ guest.id }}/passport-photo"
+                  title="{{ t('guest.admin.passport_pdf_title') }}"></iframe>
+        {% else %}
+          <img src="/guests/{{ guest.id }}/passport-photo" alt="{{ t('guest.admin.passport_photo_alt') }}">
+        {% endif %}
+      </div>
+    {% endif %}
     <p class="small muted" style="margin:0 0 10px">{{ t('host.verify_in_person') }}</p>
     <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
