@@ -298,20 +298,41 @@ def _can_pick_other_stays(apartment) -> bool:
     return bool(_visible_reservations(apartment))
 
 
+def _registration_complete(reservation) -> bool:
+    progress = reporting.reservation_progress(reservation)
+    expected = progress["expected"]
+    return (
+        expected is not None
+        and progress["filled"] >= expected
+        and not progress["incomplete"]
+    )
+
+
 def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Request] = None):
+    """Resolve a stay the guest may open.
+
+    The apartment picker only lists the lead window. Stay-specific links also
+    keep incomplete, unlocked past registrations reachable so a forgotten form
+    can still be finished. Completed forms outside the window stay reachable
+    only on a device that already confirmed the claim.
+    """
     for reservation in _visible_reservations(apartment):
         if reservation["id"] == reservation_id:
             return reservation
-    if request and reservation_id in _claimed_reservation_ids(request):
-        reservation = db.query_one(
-            "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
-            "AND status = 'active' AND archived_at IS NULL",
-            (reservation_id, apartment["id"]),
-        )
-        if reservation:
-            row = claim.ensure_row(reservation["id"])
-            if claim.is_claimed(row) and claim.guest_access_open(reservation, row):
-                return reservation
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
+        "AND status = 'active' AND archived_at IS NULL",
+        (reservation_id, apartment["id"]),
+    )
+    if not reservation:
+        return None
+    row = claim.ensure_row(reservation["id"])
+    if not claim.guest_access_open(reservation, row):
+        return None
+    if not _registration_complete(reservation):
+        return reservation
+    if request and reservation_id in _claimed_reservation_ids(request) and claim.is_claimed(row):
+        return reservation
     return None
 
 
@@ -605,7 +626,17 @@ def pick_stay(token: str, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservations = _visible_reservations(apartment)
+    reservations = list(_visible_reservations(apartment))
+    visible_ids = {row["id"] for row in reservations}
+    # A claimed incomplete stay outside the date window stays reachable from
+    # the apartment link on the confirmed device, without listing unrelated past stays.
+    for claimed_id in _claimed_reservation_ids(request):
+        if claimed_id in visible_ids:
+            continue
+        extra = _reservation_for_guest(apartment, claimed_id, request)
+        if extra and not _registration_complete(extra):
+            reservations.append(extra)
+            visible_ids.add(extra["id"])
 
     if not reservations:
         return _with_lang(_unavailable(request, lang, "no_stays", 200, token), lang)

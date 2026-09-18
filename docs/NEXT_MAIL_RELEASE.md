@@ -68,7 +68,8 @@ Flipping SES turns these back on via `mail.mail_enabled()`:
 - Day-before guest reminder; host incomplete warnings
 - Completion receipt + host CC; Reply-To = PM entity
 - GDPR/cookie copy for claim email
-- Contact split; custom host message; 24h grace; completion-based reporting
+- Contact split; custom host message; completion-based reporting
+- Incomplete claimed forms stay open after check-in until the guest finishes or the host locks them (`#89`); stay-specific links recover past incomplete stays
 
 **Stay off unless toggled:** passport (see §5).
 

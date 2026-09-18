@@ -1,6 +1,7 @@
 """Guest claim, magic-link confirmation, and staging-safe mail."""
 from __future__ import annotations
 
+import base64
 import json
 from datetime import date, datetime, time, timedelta
 
@@ -341,7 +342,7 @@ def test_host_can_release_and_reopen_claim():
         _cleanup()
 
 
-def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
+def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
     check_in = claim.prague_today()
     try:
@@ -359,30 +360,134 @@ def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
         )
         notified = claim.sweep_reminders()
         assert notified["host"] == 1
+        assert notified["locked"] == 0
         assert not claim.ensure_row(current)["guest_access_locked_at"]
-        assert claim.guest_access_open(
-            reservation,
-            claim.ensure_row(current),
-            datetime.combine(check_in, time(23, 59)),
-        )
+        assert claim.guest_access_open(reservation, claim.ensure_row(current))
         host_mail = db.query_one(
             "SELECT * FROM console_mail_log WHERE subject LIKE 'Incomplete registration:%'"
         )
         assert host_mail
-        assert "24-hour grace period" in host_mail["body_text"]
+        assert "registration link" in host_mail["body_text"]
+        assert "24-hour grace period" not in host_mail["body_text"]
 
-        after_grace = datetime.combine(check_in + timedelta(days=1), time(0, 1))
-        clock[0] = after_grace
-        expired = claim.sweep_reminders()
-        assert expired["locked"] == 1
+        next_day = datetime.combine(check_in + timedelta(days=1), time(0, 1))
+        clock[0] = next_day
+        later = claim.sweep_reminders()
+        assert later["locked"] == 0
+        assert claim.guest_access_open(reservation, claim.ensure_row(current))
+        assert not claim.ensure_row(current)["guest_access_locked_at"]
+
+        claim.lock_guest_access(current)
         assert not claim.guest_access_open(reservation, claim.ensure_row(current))
-
         claim.reopen_guest_access(current)
         assert claim.guest_access_open(reservation, claim.ensure_row(current))
     finally:
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_incomplete_past_stay_remains_reachable_via_stay_link():
+    """Apartment picker hides past arrivals; stay-specific link stays open."""
+    current, past, _far, _apartment_id = _seed()
+    try:
+        # Leave only a past incomplete stay in this apartment's calendar window.
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (claim.prague_today() + timedelta(days=10)).isoformat(),
+                "date_to": (claim.prague_today() + timedelta(days=13)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        address = "forgotten@claim.test"
+        complete_guest_claim(browser, TOKEN, past, email=address, party_size=1)
+
+        apartment_landing = TestClient(app).get(f"/l/{TOKEN}")
+        assert apartment_landing.status_code == 200
+        assert "There are no upcoming stays to fill in right now." in apartment_landing.text
+        assert f"/l/{TOKEN}/{past}" not in apartment_landing.text
+
+        stay = browser.get(f"/l/{TOKEN}/{past}", follow_redirects=True)
+        assert stay.status_code == 200
+        assert "That stay is no longer open for registration" not in stay.text
+
+        # Confirmed device can also recover via the apartment link.
+        recovered = browser.get(f"/l/{TOKEN}", follow_redirects=True)
+        assert recovered.status_code == 200
+        assert "That stay is no longer open for registration" not in recovered.text
+
+        stranger = TestClient(app).get(f"/l/{TOKEN}/{past}")
+        assert stranger.status_code == 200
+        assert mail.mask_email(address) in stranger.text
+        assert address not in stranger.text
+        assert f"/l/{TOKEN}/{past}" not in TestClient(app).get(f"/l/{TOKEN}").text
+
+        claim.lock_guest_access(past)
+        locked = browser.get(f"/l/{TOKEN}/{past}")
+        assert locked.status_code == 404
+    finally:
+        _cleanup()
+
+
+def test_completed_past_stay_is_not_exposed_on_bare_stay_link():
+    current, past, _far, _apartment_id = _seed()
+    try:
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (claim.prague_today() + timedelta(days=10)).isoformat(),
+                "date_to": (claim.prague_today() + timedelta(days=13)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, past, email="done@claim.test", party_size=1)
+        now = db.utcnow()
+        signature = "data:image/png;base64," + base64.b64encode(
+            bytes.fromhex(
+                "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+                "890000000a49444154789c63000100000500010d0a1f0000000049454e44ae42"
+                "6082"
+            )
+        ).decode()
+        db.insert(
+            "guest",
+            {
+                "reservation_id": past,
+                "surname": "Guest",
+                "first_name": "Done",
+                "birth_date": "01011990",
+                "nationality": "DEU",
+                "doc_number": "C1234567",
+                "res_street": "Street 1",
+                "res_city": "Berlin",
+                "res_country": "DEU",
+                "purpose": "10",
+                "is_lead": 1,
+                "entered_by": "guest",
+                "signature_png": signature,
+                "signed_at": now,
+                "submit_state": reporting.PENDING,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        db.update("reservation", past, {"declared_guests": 1, "updated_at": now})
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (past,))
+        progress = reporting.reservation_progress(reservation)
+        assert progress["filled"] >= 1
+        assert not progress["incomplete"]
+
+        stranger = TestClient(app).get(f"/l/{TOKEN}/{past}")
+        assert stranger.status_code == 404
+
+        owner = browser.get(f"/l/{TOKEN}/{past}", follow_redirects=True)
+        assert owner.status_code == 200
+        assert "That stay is no longer open for registration" not in owner.text
+    finally:
         _cleanup()
 
 
