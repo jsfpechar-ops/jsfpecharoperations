@@ -51,7 +51,7 @@ def test_test_endpoint_allowed_on_lightsail_production():
         domain="ubyhost.com",
         environ={},
     )
-    assert warnings == []
+    assert warnings == ["guest e-mail is disabled on production"]
 
 
 def test_prod_allowed_on_lightsail_production():
@@ -64,7 +64,7 @@ def test_prod_allowed_on_lightsail_production():
         domain="ubyhost.com",
         environ={},
     )
-    assert warnings == []
+    assert warnings == ["guest e-mail is disabled on production"]
 
 
 def test_warns_when_guest_pin_and_scheduler_off():
@@ -99,3 +99,21 @@ def test_warns_when_public_url_host_mismatches_domain():
 def test_invalid_ubyport_env():
     with pytest.raises(env_guard.EnvGuardError, match="invalid"):
         env_guard.validate_runtime_env(ubyport_env="live", deployment="production")
+
+
+def test_refuse_ses_mail_on_staging():
+    with pytest.raises(env_guard.EnvGuardError, match="only allowed on production"):
+        env_guard.validate_runtime_env(
+            ubyport_env="mock",
+            deployment="staging",
+            environ={"UBYHOST_MAIL_BACKEND": "ses"},
+        )
+
+
+def test_console_mail_is_allowed_on_staging():
+    warnings = env_guard.validate_runtime_env(
+        ubyport_env="mock",
+        deployment="staging",
+        environ={"UBYHOST_MAIL_BACKEND": "console"},
+    )
+    assert not any("MAIL_BACKEND" in item for item in warnings)

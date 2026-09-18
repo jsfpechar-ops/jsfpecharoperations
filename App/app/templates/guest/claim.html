@@ -1,0 +1,46 @@
+{% extends "guest/base.html" %}
+{% block content %}
+{% include "guest/_why.html" %}
+
+{% if can_pick_other %}
+  <a class="g-back" href="/l/{{ token }}?lang={{ lang }}">&larr; {{ t('back_to_stays') }}</a>
+{% endif %}
+
+<div class="g-card g-stay-summary">
+  <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+  <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+</div>
+
+{% include "guest/_host.html" %}
+
+{% if claim_sent %}
+  <div class="g-card g-saved">
+    <h2>{{ t('claim_sent_title') }}</h2>
+    <p class="g-intro">{{ t('claim_sent_body') }}</p>
+  </div>
+{% endif %}
+{% if claim_error %}
+  <div class="g-err">{{ t('claim_error_' + claim_error) if claim_error in ['bad_email','bad_party','held','already_claimed','rate'] else t('error_party_size') }}</div>
+{% endif %}
+
+<div class="g-card g-question-card">
+  <h2>{{ t('claim_title') }}</h2>
+  <p class="g-intro">{{ t('claim_help') }}</p>
+  <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+    <div class="g-field">
+      <label for="party_size">{{ t('party_question') }}</label>
+      <input type="number" id="party_size" name="party_size" min="1" max="60"
+             required inputmode="numeric" autocomplete="off"
+             value="{{ claim.declared_guests or '' }}">
+      <div class="hint">{{ t('party_help') }}</div>
+    </div>
+    <div class="g-field">
+      <label for="guest_email">{{ t('claim_email') }}</label>
+      <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
+             maxlength="254">
+      <div class="hint">{{ t('claim_email_help') }}</div>
+    </div>
+    <button class="g-btn" type="submit">{{ t('claim_submit') }}</button>
+  </form>
+</div>
+{% endblock %}

@@ -144,7 +144,10 @@ def test_reservations_sorted_earliest_first():
         assert page.status_code == 200
         dates = _stay_dates(page.text)
         assert len(dates) == 4
-        parsed = [tuple(int(x) for x in d.split(".")) for d in dates]
+        parsed = [
+            (int(year), int(month), int(day))
+            for day, month, year in (d.split(".") for d in dates)
+        ]
         assert parsed == sorted(parsed)
     finally:
         _cleanup()

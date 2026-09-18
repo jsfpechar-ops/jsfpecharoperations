@@ -42,6 +42,8 @@ services:
         value: admin
       - key: UBYHOST_ADMIN_PASSWORD
         generateValue: true
+      - key: UBYHOST_MAIL_BACKEND
+        value: console
       - key: UBYHOST_PUBLIC_BASE_URL
         fromService:
           type: web
@@ -83,6 +85,8 @@ services:
         sync: false
       - key: UBYHOST_ADMIN_PASSWORD
         sync: false
+      - key: UBYHOST_MAIL_BACKEND
+        value: disabled
       - key: UBYHOST_PUBLIC_BASE_URL
         fromService:
           type: web

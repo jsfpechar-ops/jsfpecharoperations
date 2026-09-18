@@ -24,13 +24,14 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, codelists, config, db, i18n, passport_photos, rate_limit, reporting, security, turnstile, validation
+from .. import alerts, auth, claim, codelists, config, db, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 
 router = APIRouter()
 
 LANG_COOKIE = "ubyhost_lang"
 OWNED_COOKIE = "ubyhost_owned"
+CLAIM_COOKIE = "ubyhost_claim"
 
 CS_VALIDATION_MESSAGES = {
     "Date of birth is required.": "Datum narození je povinné.",
@@ -123,6 +124,10 @@ def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-owned")
 
 
+def _claim_serializer() -> URLSafeSerializer:
+    return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-claim")
+
+
 def _language(request: Request) -> str:
     return i18n.normalise_language(
         request.query_params.get("lang") or request.cookies.get(LANG_COOKIE) or ""
@@ -145,6 +150,31 @@ def _remember_owned(response, guest_ids: List[int]) -> None:
     response.set_cookie(
         OWNED_COOKIE,
         _serializer().dumps(unique),
+        max_age=60 * 60 * 24 * 60,
+        httponly=True,
+        samesite="lax",
+        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        path="/",
+    )
+
+
+def _claimed_reservation_ids(request: Request) -> List[int]:
+    raw = request.cookies.get(CLAIM_COOKIE)
+    if not raw:
+        return []
+    try:
+        value = _claim_serializer().loads(raw)
+        return [int(v) for v in value] if isinstance(value, list) else []
+    except (BadSignature, ValueError, TypeError):
+        return []
+
+
+def _remember_claim(response, reservation_id: int, request: Optional[Request] = None) -> None:
+    known = _claimed_reservation_ids(request) if request else []
+    unique = sorted({*known, int(reservation_id)})[-40:]
+    response.set_cookie(
+        CLAIM_COOKIE,
+        _claim_serializer().dumps(unique),
         max_age=60 * 60 * 24 * 60,
         httponly=True,
         samesite="lax",
@@ -246,14 +276,19 @@ def _require_pin(request: Request, token: str, lang: str):
 
 
 def _visible_reservations(apartment) -> List[Any]:
-    """Stays a guest may see: arriving within the window, not yet departed."""
-    window = apartment["permalink_window_days"] or 3
-    horizon = (date.today() + timedelta(days=window)).isoformat()
+    """Stays a guest may pick: arriving today through the lead window."""
+    window = apartment["permalink_window_days"] or 2
+    today = claim.prague_today()
+    horizon = (today + timedelta(days=window)).isoformat()
     return db.query(
-        "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
-        "AND archived_at IS NULL "
-        "AND date_from <= ? AND date_to >= ? ORDER BY date_from",
-        (apartment["id"], horizon, date.today().isoformat()),
+        "SELECT r.* FROM reservation r "
+        "LEFT JOIN reservation_claim c ON c.reservation_id = r.id "
+        "WHERE r.apartment_id = ? AND r.status = 'active' "
+        "AND r.archived_at IS NULL "
+        "AND r.date_from >= ? AND r.date_from <= ? "
+        "AND c.guest_access_locked_at IS NULL "
+        "ORDER BY r.date_from",
+        (apartment["id"], today.isoformat(), horizon),
     )
 
 
@@ -261,10 +296,20 @@ def _can_pick_other_stays(apartment) -> bool:
     return len(_visible_reservations(apartment)) > 1
 
 
-def _reservation_for_guest(apartment, reservation_id: int):
+def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Request] = None):
     for reservation in _visible_reservations(apartment):
         if reservation["id"] == reservation_id:
             return reservation
+    if request and reservation_id in _claimed_reservation_ids(request):
+        reservation = db.query_one(
+            "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
+            "AND status = 'active' AND archived_at IS NULL",
+            (reservation_id, apartment["id"]),
+        )
+        if reservation:
+            row = claim.ensure_row(reservation["id"])
+            if claim.is_claimed(row) and claim.guest_access_open(reservation, row):
+                return reservation
     return None
 
 
@@ -356,6 +401,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang),
         "facility": _facility(apartment),
         "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
+        "controller": _controller(apartment) if apartment else {},
     }
 
 
@@ -411,6 +457,17 @@ def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editin
         return _guest_link(token, reservation_id) + _lang_q(lang)
     if _can_pick_other_stays(apartment):
         return _guest_link(token) + _lang_q(lang)
+    return None
+
+
+def _require_claim_session(request: Request, reservation, token: str, lang: str):
+    row = claim.ensure_row(reservation["id"])
+    if not claim.guest_access_open(reservation, row):
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    if not claim.is_claimed(row) or reservation["id"] not in _claimed_reservation_ids(request):
+        return RedirectResponse(
+            _guest_link(token, reservation["id"]) + _lang_q(lang), status_code=303
+        )
     return None
 
 
@@ -543,9 +600,29 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservation = _reservation_for_guest(apartment, reservation_id)
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+
+    claim_row = claim.ensure_row(reservation["id"])
+    if not claim.guest_access_open(reservation, claim_row):
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    context = _shared(request, token, lang, apartment)
+    context.update(
+        {
+            "apartment": apartment,
+            "reservation": reservation,
+            "claim": claim_row,
+            "can_pick_other": _can_pick_other_stays(apartment),
+            "mail_enabled": mail.mail_enabled(),
+            "claim_error": request.query_params.get("claim_error") or "",
+            "claim_sent": request.query_params.get("claim_sent") == "1",
+        }
+    )
+    if not claim.is_claimed(claim_row):
+        return _with_lang(render_guest(request, "guest/claim.html", context), lang)
+    if reservation["id"] not in _claimed_reservation_ids(request):
+        return _with_lang(render_guest(request, "guest/assigned.html", context), lang)
 
     progress = reporting.reservation_progress(reservation)
     expected = progress["expected"]
@@ -588,9 +665,8 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     return _with_lang(render_guest(request, "guest/stay.html", context), lang)
 
 
-@router.post("/l/{token}/{reservation_id}/party")
-async def set_party_size(token: str, reservation_id: int, request: Request):
-    """The lead guest declares the headcount, since no feed provides it."""
+@router.get("/l/{token}/{reservation_id}/claim")
+def claim_landing(token: str, reservation_id: int, request: Request):
     lang = _language(request)
     apartment = _apartment_by_token(token)
     if not apartment:
@@ -598,7 +674,72 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservation = _reservation_for_guest(apartment, reservation_id)
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
+        "AND status = 'active' AND archived_at IS NULL",
+        (reservation_id, apartment["id"]),
+    )
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    context = _shared(request, token, lang, apartment)
+    context.update(
+        {
+            "apartment": apartment,
+            "reservation": reservation,
+            "claim_error": request.query_params.get("claim_error") == "1",
+        }
+    )
+    return _with_lang(render_guest(request, "guest/confirm.html", context), lang)
+
+
+@router.post("/l/{token}/{reservation_id}/claim/confirm")
+async def claim_confirm(token: str, reservation_id: int, request: Request):
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
+        "AND status = 'active' AND archived_at IS NULL",
+        (reservation_id, apartment["id"]),
+    )
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    form = await request.form()
+    secret = (form.get("secret") or "").strip()
+    key = rate_limit.client_key(request, f"claim:{token}")
+    if rate_limit.blocked("claim_confirm", key, 20):
+        return _unavailable(request, lang, "stay_gone", 429, token)
+    rate_limit.record("claim_confirm", key)
+    if not claim.confirm(reservation, secret):
+        return _with_lang(
+            RedirectResponse(
+                _guest_link(token, reservation_id) + "/claim" + _lang_q(lang, "&claim_error=1"),
+                status_code=303,
+            ),
+            lang,
+        )
+    response = RedirectResponse(
+        _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
+    )
+    _remember_claim(response, reservation_id, request)
+    return _with_lang(response, lang)
+
+
+@router.post("/l/{token}/{reservation_id}/party")
+async def set_party_size(token: str, reservation_id: int, request: Request):
+    """Claim the stay with party size and e-mail, or change headcount later."""
+    lang = _language(request)
+    apartment = _apartment_by_token(token)
+    if not apartment:
+        return _unavailable(request, lang)
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
     form = await request.form()
@@ -606,8 +747,37 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
         count = int((form.get("party_size") or "").strip())
     except ValueError:
         count = 0
+    email = (form.get("guest_email") or "").strip()
+    claim_row = claim.ensure_row(reservation["id"])
+    resend = bool(form.get("resend"))
+    if email or not claim.is_claimed(claim_row):
+        key = rate_limit.client_key(request, f"claim:{token}")
+        if rate_limit.blocked("claim_start", key, 8):
+            return _with_lang(
+                RedirectResponse(
+                    _guest_link(token, reservation_id) + _lang_q(lang, "&claim_error=rate"),
+                    status_code=303,
+                ),
+                lang,
+            )
+        rate_limit.record("claim_start", key)
+        ok, err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email=email,
+            party_size=count,
+            lang=lang,
+            resend=resend or claim.is_claimed(claim_row),
+        )
+        extra = "&claim_sent=1" if ok else f"&claim_error={err or 'bad_email'}"
+        return _with_lang(
+            RedirectResponse(
+                _guest_link(token, reservation_id) + _lang_q(lang, extra),
+                status_code=303,
+            ),
+            lang,
+        )
     if count < 1 or count > 60:
-        # Silently bouncing back looks like the app ignored them.
         return _with_lang(
             RedirectResponse(
                 _guest_link(token, reservation_id) + _lang_q(lang, "&party_error=1"),
@@ -631,9 +801,12 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservation = _reservation_for_guest(apartment, reservation_id)
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return _with_lang(claim_guard, lang)
     if reservation["expected_guests_override"]:
         return _with_lang(
             RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303),
@@ -702,6 +875,16 @@ def _form_context(
                 and guest["passport_photo_at"]
                 and passport_photos.has_photo(int(guest["id"]))
             ),
+            "require_passport": reporting.guest_needs_passport_photo(
+                guest
+                or {
+                    "nationality": (values or {}).get("nationality") or "",
+                    "reservation_id": reservation["id"],
+                    "entered_by": "guest",
+                    "identity_verified_at": None,
+                },
+                apartment,
+            ),
         }
     )
     return context
@@ -716,9 +899,12 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservation = _reservation_for_guest(apartment, reservation_id)
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return _with_lang(claim_guard, lang)
     progress = reporting.reservation_progress(reservation)
     expected = progress["expected"]
     remaining = (expected - progress["filled"]) if expected is not None else None
@@ -753,9 +939,12 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservation = _reservation_for_guest(apartment, reservation_id)
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return _with_lang(claim_guard, lang)
     if guest_id not in _owned_ids(request):
         return _unavailable(request, lang, "not_yours", 403, token)
     guest = db.query_one(
@@ -790,9 +979,12 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
-    reservation = _reservation_for_guest(apartment, reservation_id)
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return _with_lang(claim_guard, lang)
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -869,7 +1061,16 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     passport_upload = form.get("passport_photo")
     passport_bytes = None
     passport_type = None
-    if validation.guest_is_reportable(values["nationality"]):
+    if reporting.guest_needs_passport_photo(
+        existing
+        or {
+            "nationality": values["nationality"],
+            "reservation_id": reservation_id,
+            "entered_by": "guest",
+            "identity_verified_at": None,
+        },
+        apartment,
+    ):
         has_existing_photo = (
             existing
             and existing["passport_photo_at"]
@@ -975,6 +1176,10 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         f"guest={saved_id} reservation={reservation_id}",
         actor="guest",
         owner_user_id=apartment["owner_user_id"],
+    )
+    claim.maybe_notify_completion(
+        db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
+        apartment,
     )
 
     response = RedirectResponse(

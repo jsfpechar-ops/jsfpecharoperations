@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app import db, passport_photos
 from app.main import app
+from tests.conftest import complete_guest_claim
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -137,6 +138,10 @@ def test_tapping_an_empty_stay_opens_the_form():
     token, wrong, _right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
+        claim_page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert claim_page.status_code == 200
+        assert 'name="guest_email"' in claim_page.text
+        complete_guest_claim(browser, token, wrong, party_size=2)
         page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert page.status_code == 200
         assert 'name="surname"' in page.text
@@ -150,7 +155,7 @@ def test_wrong_stay_then_correct_stay_opens_a_fresh_form():
     token, wrong, right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
-
+        complete_guest_claim(browser, token, wrong, party_size=2)
         saved = browser.post(
             f"/l/{token}/{wrong}/save",
             data=_form(),
@@ -164,6 +169,7 @@ def test_wrong_stay_then_correct_stay_opens_a_fresh_form():
         assert "A form was submitted from this device" in picker.text
         assert "You already filled this in" not in picker.text
 
+        complete_guest_claim(browser, token, right, email="other@example.test", party_size=2)
         correct = browser.get(f"/l/{token}/{right}", follow_redirects=True)
         assert correct.status_code == 200
         assert 'name="surname"' in correct.text
@@ -179,15 +185,29 @@ def test_party_size_is_blank_and_invalid_value_is_not_silently_coerced():
         browser = TestClient(app)
         form = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert 'name="party_size"' in form.text
-        assert 'name="party_size" min="1" max="60" required' in form.text
+        assert 'name="guest_email"' in form.text
+        assert 'min="1"' in form.text
+        assert 'max="60"' in form.text
+        assert "required" in form.text
         assert 'value="2"' not in form.text
 
-        invalid = browser.post(
+        skipped = browser.post(
+            f"/l/{token}/{wrong}/party",
+            data={"party_size": "2"},
+            follow_redirects=False,
+        )
+        assert skipped.status_code == 303
+        assert "claim_error" in skipped.headers["location"]
+        assert db.query_one(
+            "SELECT declared_guests FROM reservation WHERE id = ?", (wrong,)
+        )["declared_guests"] is None
+
+        saved = browser.post(
             f"/l/{token}/{wrong}/save",
             data=_form(party_size=""),
+            follow_redirects=False,
         )
-        assert invalid.status_code == 422
-        assert "Please enter how many people are staying" in invalid.text
+        assert saved.status_code == 303
         assert not db.query_one("SELECT 1 AS x FROM guest WHERE reservation_id = ?", (wrong,))
     finally:
         _cleanup()
@@ -197,6 +217,7 @@ def test_completed_party_can_add_another_person():
     token, wrong, _right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
+        complete_guest_claim(browser, token, wrong, party_size=1)
         saved = browser.post(
             f"/l/{token}/{wrong}/save",
             data=_form(party_size="1"),
@@ -221,7 +242,9 @@ def test_completed_party_can_add_another_person():
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:
-        page = TestClient(app).post(
+        browser = TestClient(app)
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        page = browser.post(
             f"/l/{token}/{wrong}/save?lang=cs",
             data=_form(surname="", party_size="1"),
         )
@@ -237,6 +260,7 @@ def test_an_unexpected_extra_guest_can_still_register():
     token, stay, _right = _make_apartment_with_stays()
     try:
         lead = TestClient(app)
+        complete_guest_claim(lead, token, stay, party_size=1)
         saved = lead.post(
             f"/l/{token}/{stay}/save",
             data=_form(party_size="1"),
@@ -245,21 +269,21 @@ def test_an_unexpected_extra_guest_can_still_register():
         )
         assert saved.status_code == 303
 
-        # A second person arrives. The stay page must offer a way in, not just
-        # "everything is complete".
+        # A second browser without the claim cookie cannot raise the party.
         second = TestClient(app)
         hub = second.get(f"/l/{token}/{stay}", follow_redirects=True)
         assert hub.status_code == 200
-        assert f'action="/l/{token}/{stay}/another' in hub.text, hub.text
+        assert "already assigned" in hub.text.lower() or "přiřazena" in hub.text.lower() or 'name="guest_email"' in hub.text
+        assert f'action="/l/{token}/{stay}/another' not in hub.text
 
-        raised = second.post(f"/l/{token}/{stay}/another", follow_redirects=False)
+        raised = lead.post(f"/l/{token}/{stay}/another", follow_redirects=False)
         assert raised.status_code == 303
         assert "/new" in raised.headers["location"]
         assert db.query_one(
             "SELECT declared_guests FROM reservation WHERE id = ?", (stay,)
         )["declared_guests"] == 2
 
-        filled = second.post(
+        filled = lead.post(
             f"/l/{token}/{stay}/save",
             data=_form(surname="Jones", first_name="Mary", party_size="2"),
             files=_passport_files(),
@@ -278,6 +302,7 @@ def test_save_does_not_overshoot_the_declared_party_size():
     token, stay, _right = _make_apartment_with_stays()
     try:
         first = TestClient(app)
+        complete_guest_claim(first, token, stay, party_size=1)
         assert first.post(
             f"/l/{token}/{stay}/save",
             data=_form(party_size="1"),
@@ -294,6 +319,8 @@ def test_save_does_not_overshoot_the_declared_party_size():
             follow_redirects=False,
         )
         assert response.status_code == 303
+        assert f"/{stay}" in response.headers["location"]
+        assert "/new" not in response.headers.get("location", "")
         assert db.query_one(
             "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
         )["n"] == 1
@@ -370,6 +397,15 @@ def test_guest_form_accepts_pdf_passport_attachment():
     token, wrong, _right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
+        complete_guest_claim(browser, token, wrong, party_size=2)
+        apartment = db.query_one(
+            "SELECT id FROM apartment WHERE permalink_token = ?", (token,)
+        )
+        db.update(
+            "apartment",
+            apartment["id"],
+            {"passport_photo_policy": "required_foreign"},
+        )
         saved = browser.post(
             f"/l/{token}/{wrong}/save",
             data=_form(),

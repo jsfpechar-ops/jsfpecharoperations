@@ -34,6 +34,7 @@
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
   <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
 </div>
+{% include "guest/_host.html" %}
 
 <form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
       enctype="multipart/form-data" data-guest-wizard
@@ -184,6 +185,7 @@
     </div>
   </div>
 
+  {% if require_passport %}
   <div class="g-card" id="passport-photo-card" data-guest-step
        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
     <h2>{{ t('passport_photo_title') }}</h2>
@@ -208,6 +210,7 @@
       {{ err_for('passport_photo') }}
     </div>
   </div>
+  {% endif %}
 
   <div class="g-card" data-guest-step>
     <h2>{{ t('signature') }}</h2>

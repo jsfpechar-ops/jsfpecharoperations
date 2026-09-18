@@ -36,7 +36,7 @@ and update this section in the same change.
 
 - Server-rendered Jinja2 templates
 - Plain CSS (`tokens.css`, `app.css`, `guest.css`, `components.css`)
-- Vanilla JavaScript (`app.js`, `signature.js`) — no SPA framework or bundler
+- Vanilla JavaScript (`app.js`, `signature.js`, `claim.js`) — no SPA framework or bundler
 - No CDN-hosted fonts; system font stacks only
 
 ## Agents and automation

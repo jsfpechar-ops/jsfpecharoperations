@@ -1,0 +1,8 @@
+{% if controller and (controller.name or controller.email or controller.phone) %}
+<div class="g-card">
+  <h2>{{ t('host_details') }}</h2>
+  {% if controller.name %}<p>{{ controller.name }}</p>{% endif %}
+  {% if controller.phone %}<p><a href="tel:{{ controller.phone }}">{{ controller.phone }}</a></p>{% endif %}
+  {% if controller.email %}<p><a href="mailto:{{ controller.email }}">{{ controller.email }}</a></p>{% endif %}
+</div>
+{% endif %}
