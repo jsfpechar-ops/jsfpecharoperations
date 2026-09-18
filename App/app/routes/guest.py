@@ -621,6 +621,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "mail_enabled": mail.mail_enabled(),
             "claim_error": request.query_params.get("claim_error") or "",
             "claim_sent": request.query_params.get("claim_sent") == "1",
+            "require_turnstile": turnstile.required(),
         }
     )
     if mail.mail_enabled():
@@ -788,8 +789,20 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     claim_row = claim.ensure_row(reservation["id"])
     resend = bool(form.get("resend"))
     if email or not claim.is_claimed(claim_row):
+        if turnstile.required() and not turnstile.verify(
+            request, form.get("cf-turnstile-response"), "guest_claim"
+        ):
+            return _with_lang(
+                RedirectResponse(
+                    _guest_link(token, reservation_id)
+                    + _lang_q(lang, "&claim_error=bot"),
+                    status_code=303,
+                ),
+                lang,
+            )
+        # Strict IP+token cap: three claim attempts / 15 minutes.
         key = rate_limit.client_key(request, f"claim:{token}")
-        if rate_limit.blocked("claim_start", key, 8):
+        if rate_limit.blocked("claim_start", key, 3):
             return _with_lang(
                 RedirectResponse(
                     _guest_link(token, reservation_id) + _lang_q(lang, "&claim_error=rate"),
@@ -806,7 +819,13 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             lang=lang,
             resend=resend or claim.is_claimed(claim_row),
         )
-        extra = "&claim_sent=1" if ok else f"&claim_error={err or 'bad_email'}"
+        if ok:
+            extra = "&claim_sent=1"
+        elif err == "already_sent":
+            # Active provisional hold for this address — show check-email, no new send.
+            extra = "&claim_sent=1"
+        else:
+            extra = f"&claim_error={err or 'bad_email'}"
         return _with_lang(
             RedirectResponse(
                 _guest_link(token, reservation_id) + _lang_q(lang, extra),

@@ -15,6 +15,9 @@ TOKEN = "claimmailtok"
 def _cleanup():
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     if not apartment:
+        db.execute(
+            "DELETE FROM rate_limit_event WHERE scope LIKE 'claim_%' OR scope = 'claim_start'"
+        )
         return
     db.execute(
         "DELETE FROM guest WHERE reservation_id IN "
@@ -27,6 +30,9 @@ def _cleanup():
         "DELETE FROM legal_entity WHERE name = ? AND id NOT IN "
         "(SELECT legal_entity_id FROM apartment WHERE legal_entity_id IS NOT NULL)",
         ("Claim Mail",),
+    )
+    db.execute(
+        "DELETE FROM rate_limit_event WHERE scope LIKE 'claim_%' OR scope = 'claim_start'"
     )
 
 
@@ -396,4 +402,175 @@ def test_guest_facing_assignment_masks_email_and_lock_hides_it():
         assert locked.status_code == 404
         assert address not in locked.text
     finally:
+        _cleanup()
+
+
+def test_provisional_claim_does_not_resend_same_email_without_resend_flag(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        ok, err, secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="once@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert ok and secret
+        first_count = db.query_one(
+            "SELECT COUNT(*) AS n FROM email_outbox WHERE kind IN ('claim','claim_resend')"
+        )["n"]
+        ok2, err2, secret2 = claim.start_claim(
+            reservation,
+            apartment,
+            email="once@claim.test",
+            party_size=1,
+            lang="en",
+            resend=False,
+        )
+        assert not ok2
+        assert err2 == "already_sent"
+        assert secret2 is None
+        assert (
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM email_outbox WHERE kind IN ('claim','claim_resend')"
+            )["n"]
+            == first_count
+        )
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
+def test_claim_resend_enforces_cooldown(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        ok, err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="cooldown@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert ok, err
+        ok2, err2, _ = claim.start_claim(
+            reservation,
+            apartment,
+            email="cooldown@claim.test",
+            party_size=1,
+            lang="en",
+            resend=True,
+        )
+        assert not ok2
+        assert err2 == "cooldown"
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
+def test_claim_mail_caps_recipient_and_reservation(monkeypatch):
+    current, _past, _far, apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    monkeypatch.setattr(claim, "RESEND_COOLDOWN_SECONDS", 0)
+    monkeypatch.setattr(claim, "CLAIM_MAIL_PER_RECIPIENT_MAX", 1)
+    monkeypatch.setattr(claim, "CLAIM_MAIL_PER_RESERVATION_MAX", 3)
+    try:
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        addr = "capped@claim.test"
+        ok, err, _ = claim.start_claim(
+            reservation,
+            apartment,
+            email=addr,
+            party_size=1,
+            lang="en",
+        )
+        assert ok, err
+        claim.release(current)
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        ok2, err2, _ = claim.start_claim(
+            reservation,
+            apartment,
+            email=addr,
+            party_size=1,
+            lang="en",
+        )
+        assert not ok2
+        assert err2 == "recipient_rate"
+
+        # Fresh address still hits the per-reservation cap after three sends.
+        monkeypatch.setattr(claim, "CLAIM_MAIL_PER_RECIPIENT_MAX", 10)
+        monkeypatch.setattr(claim, "CLAIM_MAIL_PER_RESERVATION_MAX", 2)
+        for index in range(2):
+            claim.release(current)
+            reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+            ok, err, _ = claim.start_claim(
+                reservation,
+                apartment,
+                email=f"stay{index}@claim.test",
+                party_size=1,
+                lang="en",
+            )
+            assert ok, err
+        claim.release(current)
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        ok3, err3, _ = claim.start_claim(
+            reservation,
+            apartment,
+            email="stay-extra@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert not ok3
+        assert err3 == "rate"
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
+def test_party_post_does_not_enqueue_duplicate_claim_mail(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    try:
+        browser = TestClient(app)
+        first = browser.post(
+            f"/l/{TOKEN}/{current}/party",
+            data={"party_size": "2", "guest_email": "victim-abuse@example.com"},
+            follow_redirects=False,
+        )
+        assert first.status_code == 303
+        assert "claim_sent=1" in first.headers["location"]
+        second = browser.post(
+            f"/l/{TOKEN}/{current}/party",
+            data={"party_size": "2", "guest_email": "victim-abuse@example.com"},
+            follow_redirects=False,
+        )
+        assert second.status_code == 303
+        assert "claim_sent=1" in second.headers["location"]
+        assert (
+            db.query_one(
+                "SELECT COUNT(*) AS n FROM email_outbox WHERE to_email = ?",
+                ("victim-abuse@example.com",),
+            )["n"]
+            == 1
+        )
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM rate_limit_event")
         _cleanup()
