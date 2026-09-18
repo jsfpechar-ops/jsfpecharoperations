@@ -1,18 +1,18 @@
 """Bundled sample Airbnb calendar used by demo mode."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 from fastapi.testclient import TestClient
 
-from app import icalsync
+from app import deadlines, icalsync
 from app.main import app
 from app.sample_calendar import sample_airbnb_ics
 
 
 def test_sample_airbnb_ics_contains_expected_stays():
     body = sample_airbnb_ics()
-    today = date.today()
+    today = deadlines.local_now().date()
 
     assert "BEGIN:VCALENDAR" in body
     assert "END:VCALENDAR" in body
@@ -20,15 +20,19 @@ def test_sample_airbnb_ics_contains_expected_stays():
     assert (
         f"DTSTART;VALUE=DATE:{(today - timedelta(days=1)):%Y%m%d}" in body
     )
+    assert f"DTSTART;VALUE=DATE:{(today + timedelta(days=1)):%Y%m%d}" in body
+    assert f"DTSTART;VALUE=DATE:{(today + timedelta(days=2)):%Y%m%d}" in body
+    assert f"DTSTART;VALUE=DATE:{(today - timedelta(days=8)):%Y%m%d}" in body
     assert "SUMMARY:Reserved" in body
     assert "SUMMARY:Airbnb (Not available)" in body
     assert "Phone Number (Last 4 Digits): 0431" in body
+    assert "Phone Number (Last 4 Digits): 2201" in body
 
 
 def test_sample_airbnb_ics_parses_into_reservations():
     events = icalsync.parse_events(sample_airbnb_ics())
     reservations = [event for event in events if not event["is_block"]]
-    assert len(reservations) == 3
+    assert len(reservations) == 9
     assert all(event["date_from"] and event["date_to"] for event in reservations)
 
 
