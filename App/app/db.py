@@ -71,11 +71,12 @@ CREATE TABLE IF NOT EXISTS apartment (
     automation_mode       TEXT NOT NULL DEFAULT 'scheduled',
     submit_after_hours    INTEGER NOT NULL DEFAULT 24,
     permalink_token       TEXT UNIQUE,
-    permalink_window_days INTEGER NOT NULL DEFAULT 3,
+    permalink_window_days INTEGER NOT NULL DEFAULT 2,
     default_purpose       TEXT NOT NULL DEFAULT '10',
     checkin_info          TEXT,
     checkout_info         TEXT,
     notes                 TEXT,
+    passport_photo_policy TEXT NOT NULL DEFAULT 'off',
     active                INTEGER NOT NULL DEFAULT 1,
     created_at            TEXT NOT NULL
 );
@@ -219,6 +220,55 @@ CREATE TABLE IF NOT EXISTS submission_claim (
     claim_token TEXT NOT NULL,
     claimed_at  REAL NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS reservation_claim (
+    reservation_id          INTEGER PRIMARY KEY REFERENCES reservation(id) ON DELETE CASCADE,
+    state                   TEXT NOT NULL DEFAULT 'unclaimed'
+        CHECK (state IN ('unclaimed', 'provisional', 'claimed')),
+    email                   TEXT,
+    email_masked            TEXT,
+    lang                    TEXT,
+    token_hash              TEXT,
+    token_version           INTEGER NOT NULL DEFAULT 0,
+    provisional_until       TEXT,
+    claimed_at              TEXT,
+    guest_access_locked_at  TEXT,
+    declared_guests         INTEGER,
+    completion_notified_at  TEXT,
+    created_at              TEXT NOT NULL,
+    updated_at              TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_outbox (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    idempotency_key  TEXT NOT NULL UNIQUE,
+    kind             TEXT NOT NULL,
+    reservation_id   INTEGER REFERENCES reservation(id) ON DELETE SET NULL,
+    apartment_id     INTEGER,
+    owner_user_id    INTEGER,
+    to_email         TEXT,
+    cc_email         TEXT,
+    subject          TEXT,
+    payload          TEXT,
+    state            TEXT NOT NULL DEFAULT 'queued',
+    attempts         INTEGER NOT NULL DEFAULT 0,
+    next_attempt_at  TEXT,
+    provider_id      TEXT,
+    last_error       TEXT,
+    created_at       TEXT NOT NULL,
+    updated_at       TEXT NOT NULL,
+    sent_at          TEXT
+);
+
+CREATE TABLE IF NOT EXISTS console_mail_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    outbox_id  INTEGER,
+    to_email   TEXT,
+    cc_email   TEXT,
+    subject    TEXT,
+    body_text  TEXT,
+    created_at TEXT NOT NULL
+);
 """
 
 
@@ -278,6 +328,7 @@ ADDED_COLUMNS = (
     ("alert", "user_dismissed", "INTEGER NOT NULL DEFAULT 0"),
     ("alert", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
     ("audit", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
+    ("apartment", "passport_photo_policy", "TEXT NOT NULL DEFAULT 'off'"),
 )
 
 

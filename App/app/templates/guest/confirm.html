@@ -1,0 +1,18 @@
+{% extends "guest/base.html" %}
+{% block content %}
+<div class="g-card g-stay-summary">
+  <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+</div>
+{% if claim_error %}
+  <div class="g-err">{{ t('claim_confirm_failed') }}</div>
+{% endif %}
+<div class="g-card">
+  <h2>{{ t('claim_confirm_title') }}</h2>
+  <p class="g-intro">{{ t('claim_confirm_help') }}</p>
+  <form method="post" action="/l/{{ token }}/{{ reservation.id }}/claim/confirm?lang={{ lang }}" id="claim-confirm-form">
+    <input type="hidden" name="secret" id="claim-secret" value="">
+    <button class="g-btn" type="submit">{{ t('claim_confirm_button') }}</button>
+  </form>
+</div>
+<script src="/static/claim.js?v=20260918a"></script>
+{% endblock %}

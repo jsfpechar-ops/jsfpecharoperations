@@ -70,3 +70,11 @@ def test_older_apartment_schema_migrates_and_serves_pages(monkeypatch, tmp_path)
         "SELECT 1 AS present FROM sqlite_master "
         "WHERE type = 'table' AND name = 'submission_claim'"
     )
+    assert db.query_one(
+        "SELECT 1 AS present FROM sqlite_master "
+        "WHERE type = 'table' AND name = 'reservation_claim'"
+    )
+    assert db.query_one(
+        "SELECT 1 AS present FROM sqlite_master "
+        "WHERE type = 'table' AND name = 'email_outbox'"
+    )

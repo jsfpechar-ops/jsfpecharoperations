@@ -148,8 +148,25 @@ def guest_has_passport_photo(guest) -> bool:
     return bool(guest["passport_photo_at"]) and passport_photos.has_photo(int(guest_id))
 
 
-def guest_needs_passport_photo(guest) -> bool:
-    """Online check-ins from foreigners must include a passport photo for review."""
+def guest_needs_passport_photo(guest, apartment=None) -> bool:
+    """Online foreign guests upload a photo only when the property requires it."""
+    if apartment is None:
+        reservation = db.query_one(
+            "SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],)
+        )
+        if not reservation:
+            return False
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+    policy = "off"
+    if apartment is not None:
+        try:
+            policy = (apartment["passport_photo_policy"] or "off").strip().lower()
+        except (KeyError, IndexError, TypeError):
+            policy = "off"
+    if policy != "required_foreign":
+        return False
     return (
         validation.guest_is_reportable(guest["nationality"])
         and _guest_entered_by(guest) != "host"
@@ -457,7 +474,7 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
     if mode == "manual":
         return False
     if mode == "immediate":
-        return True
+        return False
     start = validation.parse_iso_date(reservation["date_from"])
     if not start:
         return False
@@ -580,8 +597,11 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
             continue
         if not guest_is_complete(guest, reservation):
             continue
-        if not ignore_automation and not due_for_automatic_send(apartment, reservation):
-            continue
+        if not ignore_automation:
+            if apartment["automation_mode"] == "immediate" and not guest_identity_verified(guest):
+                continue
+            if not due_for_automatic_send(apartment, reservation):
+                continue
         out.append((guest, reservation))
     return out
 

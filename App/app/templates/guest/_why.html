@@ -7,7 +7,9 @@
       <li>{{ t('why_point_report') }}</li>
       <li>{{ t('why_point_book') }}</li>
       <li>{{ t('why_point_czech') }}</li>
+      {% if require_passport|default(false) %}
       <li>{{ t('why_point_passport') }}</li>
+      {% endif %}
       <li>{{ t('why_point_accuracy') }}</li>
       <li>{{ t('why_point_sign') }}</li>
       <li>{{ t('why_point_nothing_else') }}</li>

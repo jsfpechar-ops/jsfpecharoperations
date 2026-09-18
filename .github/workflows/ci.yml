@@ -82,7 +82,7 @@ jobs:
           UBYHOST_DEPLOYMENT: staging
           UBYHOST_ENABLE_SCHEDULER: "0"
           UBYHOST_ADMIN_USERNAME: ci-admin
-          UBYHOST_ADMIN_PASSWORD: ci-smoke-password
+          UBYHOST_ADMIN_PASSWORD: Ci-Smoke-Password-2026!
           PORT: "18080"
         run: |
           python -m mock_ubyport.server &

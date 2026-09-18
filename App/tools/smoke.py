@@ -21,7 +21,7 @@ os.environ["UBYHOST_GUEST_PIN"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import db  # noqa: E402
+from app import claim, db  # noqa: E402
 from app.main import app  # noqa: E402
 
 FAILURES = []
@@ -126,6 +126,41 @@ def seed():
     return apartment_id, stays
 
 
+def claim_stay(client, token, reservation_id, email, party_size=2):
+    """Exercise the scanner-safe magic-link flow before opening guest forms."""
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    apartment = db.query_one(
+        "SELECT * FROM apartment WHERE permalink_token = ?", (token,)
+    )
+    ok, error, secret = claim.start_claim(
+        reservation,
+        apartment,
+        email=email,
+        party_size=party_size,
+        lang="en",
+    )
+    if not ok:
+        FAILURES.append(f"claim {reservation_id}: {error}")
+        return
+    # GET only renders the confirmation page. The POST is what assigns the stay.
+    check(
+        client,
+        f"/l/{token}/{reservation_id}/claim#c={secret}",
+        must_contain=["Yes, this is my stay"],
+    )
+    confirmed = client.post(
+        f"/l/{token}/{reservation_id}/claim/confirm",
+        data={"secret": secret},
+        follow_redirects=False,
+    )
+    if confirmed.status_code != 303:
+        FAILURES.append(
+            f"claim {reservation_id}: confirmation HTTP {confirmed.status_code}"
+        )
+
+
 def main():
     apartment_id, (stay_a, stay_b) = seed()
     host = TestClient(app)
@@ -193,12 +228,26 @@ def main():
     check(
         guest,
         f"/l/{token}/{stay_a}",
-        must_contain=['name="surname"', "Czech law", "Legal information", "legal_ack"],
+        must_contain=['name="guest_email"', "Czech law", "Send me the form link"],
         must_not_contain=["Airbnb", "Booking.com"],
     )
     check(guest, f"/l/{token}/999999", expect=(404,), must_contain=["no longer open"])
-    check(guest, f"/l/{token}/{stay_a}/edit/999999", expect=(403,), must_contain=["cannot be opened"])
     check(guest, "/l/nosuchtoken", expect=(404,))
+    check(guest, f"/l/{token}/{stay_b}", must_contain=['name="guest_email"'])
+
+    claim_stay(guest, token, stay_a, "lead@example.test")
+    check(
+        guest,
+        f"/l/{token}/{stay_a}",
+        must_contain=['name="surname"', "Legal information", "legal_ack"],
+    )
+    check(
+        guest,
+        f"/l/{token}/{stay_a}/edit/999999",
+        expect=(403,),
+        must_contain=["cannot be opened"],
+    )
+    claim_stay(guest, token, stay_b, "other@example.test")
     check(guest, f"/l/{token}/{stay_b}", must_contain=['name="surname"'])
 
     signature = "data:image/png;base64,iVBORw0KGgo="
@@ -227,6 +276,7 @@ def main():
         FAILURES.append("guest save: no confirmation shown")
     check(guest, f"/l/{token}/{stay_a}", must_contain=["1 of 2 people completed"])
     check(guest, f"/l/{token}/{stay_a}/new", must_contain=['name="surname"', "Person 2"])
+    czech.cookies.update(guest.cookies)
     czech_saved = czech.get(f"/l/{token}/{stay_a}?saved=1&lang=cs", follow_redirects=True)
     if czech_saved.status_code != 200 or (
         "Údaje uloženy" not in czech_saved.text

@@ -217,6 +217,9 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
         )
         return
     db.update("reservation", existing["id"], {"status": "cancelled", "updated_at": now})
+    from . import claim as stay_claim
+
+    stay_claim.expire_on_cancel(existing)
     stats["cancelled"] += 1
 
 

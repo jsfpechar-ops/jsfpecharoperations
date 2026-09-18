@@ -7,6 +7,7 @@
 
 <nav class="section-nav settings-nav" aria-label="{{ t('nav.settings') }}">
   <a href="#settings-overview">{{ t('settings.nav.overview') }}</a>
+  <a href="#settings-mail">{{ t('settings.nav.mail') }}</a>
   <a href="#settings-retention">{{ t('settings.nav.retention') }}</a>
   <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
   <a href="#settings-audit">{{ t('settings.nav.audit') }}</a>
@@ -39,6 +40,36 @@
         </div>
       {% endif %}
       <p class="small muted">{{ t('settings.destination.help') }}</p>
+    </div>
+
+    <div class="panel" id="settings-mail">
+      <h2 style="margin-top:0">{{ t('settings.mail.title') }}</h2>
+      <dl class="kv">
+        <dt>{{ t('settings.mail.backend') }}</dt>
+        <dd class="mono">{{ mail_backend }}</dd>
+      </dl>
+      <p class="small muted">{{ t('settings.mail.help') }}</p>
+      {% if mail_backend == 'console' and console_mail %}
+        <table class="data" style="margin-top:12px">
+          <thead>
+            <tr>
+              <th>{{ t('settings.mail.to') }}</th>
+              <th>{{ t('settings.mail.subject') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in console_mail %}
+              <tr>
+                <td class="small">{{ item.to_email }}</td>
+                <td class="small">{{ item.subject }}</td>
+              </tr>
+              <tr>
+                <td colspan="2"><pre class="small" style="white-space:pre-wrap">{{ item.body_text }}</pre></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
     </div>
 
     <div class="panel" id="settings-ubyport">

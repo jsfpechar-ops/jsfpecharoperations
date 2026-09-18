@@ -5,7 +5,7 @@ import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from . import config, db, icalsync, passport_photos, reporting
+from . import claim, config, db, icalsync, mail, passport_photos, reporting
 
 log = logging.getLogger("ubyhost.scheduler")
 _scheduler = None
@@ -37,6 +37,22 @@ def _job_deadlines() -> None:
         log.exception("deadline watch failed")
 
 
+def _job_mail() -> None:
+    try:
+        claim.expire_holds()
+        summary = mail.drain()
+        if summary["sent"] or summary["failed"]:
+            log.info("mail drain: %s", summary)
+        reminders = claim.sweep_reminders()
+        if any(reminders.values()):
+            log.info("mail reminders: %s", reminders)
+        purged = mail.purge_old()
+        if purged:
+            log.info("mail purge deleted %s row(s)", purged)
+    except Exception:
+        log.exception("mail drain failed")
+
+
 def _job_photo_sweep() -> None:
     """Delete passport images the host never got round to verifying."""
     try:
@@ -62,6 +78,9 @@ def start() -> None:
     )
     _scheduler.add_job(
         _job_deadlines, "interval", minutes=30, id="deadlines", max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_mail, "interval", minutes=5, id="mail", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
         _job_photo_sweep, "interval", hours=12, id="photo_sweep",

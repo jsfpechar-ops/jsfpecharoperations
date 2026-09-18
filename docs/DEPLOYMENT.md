@@ -58,6 +58,18 @@ GitHub (main)
 Verify both services: `curl https://<host>/healthz` should return JSON with
 `deployment` and `ubyport_env`.
 
+## Guest e-mail (staging first)
+
+Claim links and reminders are **not** delivered on production yet.
+
+| Host | `UBYHOST_MAIL_BACKEND` | Where messages go |
+|------|------------------------|-------------------|
+| **ubyhost-staging** (Render) | `console` | Settings → Guest e-mails (copy the `#c=` confirmation link) |
+| **Lightsail production** | `disabled` | Nothing is queued or sent |
+| SES | refused unless `UBYHOST_DEPLOYMENT=production` and credentials are complete | Not enabled in this rollout |
+
+After a manual deploy of this branch to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` must keep `UBYHOST_MAIL_BACKEND=disabled`.
+
 ## Promotion workflow (staging → production)
 
 Use this whenever you ship a change that affects hosts or guests.

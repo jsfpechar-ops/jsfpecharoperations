@@ -1,0 +1,28 @@
+{% extends "guest/base.html" %}
+{% block content %}
+{% if can_pick_other %}
+  <a class="g-back" href="/l/{{ token }}?lang={{ lang }}">&larr; {{ t('back_to_stays') }}</a>
+{% endif %}
+
+<div class="g-card g-stay-summary">
+  <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+  <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+</div>
+
+{% include "guest/_host.html" %}
+
+<div class="g-card">
+  <h2>{{ t('assigned_title') }}</h2>
+  <p class="g-intro">{{ t('assigned_body', email=claim.email_masked or '') }}</p>
+  <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+    <input type="hidden" name="resend" value="1">
+    <input type="hidden" name="party_size" value="{{ claim.declared_guests or 1 }}">
+    <p class="g-intro">{{ t('assigned_resend_help') }}</p>
+    <div class="g-field">
+      <label for="guest_email_resend">{{ t('claim_email') }}</label>
+      <input type="email" id="guest_email_resend" name="guest_email" required autocomplete="email">
+    </div>
+    <button class="g-btn" type="submit">{{ t('assigned_resend') }}</button>
+  </form>
+</div>
+{% endblock %}

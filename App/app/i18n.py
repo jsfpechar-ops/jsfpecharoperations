@@ -38,8 +38,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Czech citizens are not reported to the police — only the house-book entry is made."
         ),
         "why_point_passport": (
-            "If you are not a Czech citizen, you must upload a photo of your passport or ID "
-            "page so your host can verify your details. Only the host sees it; it is deleted "
+            "If your host asks for it, you upload a photo of your passport or ID "
+            "page so they can verify your details. Only the host sees it; it is deleted "
             "immediately after verification."
         ),
         "why_point_accuracy": (
@@ -48,8 +48,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "show ID or provide correct details."
         ),
         "why_point_sign": (
-            "Completing and signing the form is the guest's own legal duty, which is why a "
-            "signature is required."
+            "Completing and signing the form is required for adult foreign guests. "
+            "Children under 15 do not have to fill and sign personally — a parent or "
+            "guardian completes the record."
         ),
         "why_point_nothing_else": (
             "Nothing here is used for marketing, and none of it goes back to the booking "
@@ -57,6 +58,38 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "pick_stay": "Find your stay",
         "pick_stay_help": "Tap your arrival and departure dates to continue.",
+        "host_details": "Your host",
+        "claim_title": "Confirm the number of guests and your e-mail",
+        "claim_help": (
+            "We e-mail a private link to this address so only you can fill in the forms. "
+            "The public link then shows that the stay is assigned to your masked e-mail."
+        ),
+        "claim_email": "What is your e-mail address?",
+        "claim_email_help": "We will send the form link here. Your address is kept private.",
+        "claim_submit": "Send me the form link",
+        "claim_sent_title": "Check your e-mail",
+        "claim_sent_body": (
+            "If the address is correct, open the confirmation link we just sent. "
+            "On staging, the host can also copy the link from Settings → Guest e-mails."
+        ),
+        "claim_error_bad_email": "Please enter a valid e-mail address.",
+        "claim_error_bad_party": "Please enter how many people are staying (1–60).",
+        "claim_error_held": "Someone else is confirming this stay. Try again in a few minutes.",
+        "claim_error_already_claimed": "This stay is already assigned to another e-mail address.",
+        "claim_error_rate": "Too many attempts. Please wait a few minutes.",
+        "assigned_title": "This reservation is already assigned",
+        "assigned_body": (
+            "This reservation has already been assigned the e-mail %(email)s. "
+            "If that is you, we can send the private link again."
+        ),
+        "assigned_resend_help": "Enter the same e-mail to receive the link again.",
+        "assigned_resend": "Send me the link again",
+        "claim_confirm_title": "Is this your reservation?",
+        "claim_confirm_help": (
+            "E-mail scanners open links automatically. Click the button to prove this is you."
+        ),
+        "claim_confirm_button": "Yes, this is my stay",
+        "claim_confirm_failed": "That confirmation link is invalid or has expired.",
         "back_to_stays": "Choose different dates",
         "wrong_dates": "Not your dates?",
         "your_stay_badge": "A form was submitted from this device",
@@ -380,8 +413,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "správné."
         ),
         "why_point_sign": (
-            "Vyplnit a podepsat formulář je zákonnou povinností ubytovaného, proto je podpis "
-            "povinný."
+            "Vyplnit a podepsat formulář musí dospělý cizinec. Děti mladší 15 let "
+            "formulář osobně vyplňovat a podepisovat nemusí — záznam doplní rodič nebo opatrovník."
         ),
         "why_point_nothing_else": (
             "Údaje se nepoužívají k marketingu a nevracejí se rezervačnímu portálu, přes který "
@@ -389,6 +422,38 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "pick_stay": "Najděte svou rezervaci",
         "pick_stay_help": "Klepněte na termín svého pobytu a pokračujte.",
+        "host_details": "Váš hostitel",
+        "claim_title": "Potvrďte počet hostů a e-mail",
+        "claim_help": (
+            "Na tuto adresu pošleme soukromý odkaz, aby formuláře vyplnil jen host. "
+            "Veřejný odkaz pak ukáže, že pobyt je přiřazen k vašemu zastřenému e-mailu."
+        ),
+        "claim_email": "Jaký je váš e-mail?",
+        "claim_email_help": "Odkaz na formulář pošleme sem. Adresa zůstane soukromá.",
+        "claim_submit": "Pošlete mi odkaz na formulář",
+        "claim_sent_title": "Zkontrolujte e-mail",
+        "claim_sent_body": (
+            "Pokud je adresa správně, otevřete potvrzovací odkaz. "
+            "Na stagingu může hostitel odkaz zkopírovat v Nastavení → E-maily hostům."
+        ),
+        "claim_error_bad_email": "Zadejte platnou e-mailovou adresu.",
+        "claim_error_bad_party": "Zadejte počet osob (1–60).",
+        "claim_error_held": "Někdo jiný právě potvrzuje tento pobyt. Zkuste to za chvíli.",
+        "claim_error_already_claimed": "Tento pobyt už je přiřazen jiné e-mailové adrese.",
+        "claim_error_rate": "Příliš mnoho pokusů. Počkejte prosím několik minut.",
+        "assigned_title": "Tato rezervace už je přiřazena",
+        "assigned_body": (
+            "Tato rezervace už byla přiřazena e-mailu %(email)s. "
+            "Pokud jste to vy, můžeme soukromý odkaz poslat znovu."
+        ),
+        "assigned_resend_help": "Zadejte stejný e-mail a odkaz pošleme znovu.",
+        "assigned_resend": "Pošlete mi odkaz znovu",
+        "claim_confirm_title": "Je to vaše rezervace?",
+        "claim_confirm_help": (
+            "E-mailové skenery odkazy otevírají samy. Potvrďte tlačítkem, že jste to vy."
+        ),
+        "claim_confirm_button": "Ano, to je můj pobyt",
+        "claim_confirm_failed": "Potvrzovací odkaz je neplatný nebo vypršel.",
         "back_to_stays": "Vybrat jiný termín",
         "wrong_dates": "Nesedí termín?",
         "your_stay_badge": "Z tohoto zařízení byl odeslán formulář",
