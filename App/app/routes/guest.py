@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, i18n, mail, rate_limit, reporting, security, turnstile, validation
+from .. import alerts, auth, claim, codelists, config, db, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 
 router = APIRouter()
@@ -105,6 +105,20 @@ _CS_VALIDATION_PATTERNS = (
         "„{code}“ není platný třímístný kód země (např. GBR, USA, DEU).",
     ),
 )
+
+CS_PASSPORT_UPLOAD_MESSAGES = {
+    "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
+    "(for example a registration form with up to 11 guests).": (
+        "Nahrajte fotografii pasu (JPEG, PNG, WebP) nebo PDF "
+        "(např. registrační formulář až pro 11 hostů)."
+    ),
+    "The uploaded file looks empty.": "Nahraný soubor vypadá prázdně.",
+    "The PDF is too large. Use a file under 15 MB.": "PDF je příliš velké. Maximálně 15 MB.",
+    "The file does not look like a valid PDF.": "Soubor nevypadá jako platné PDF.",
+    "The photo is too large. Use a file under 5 MB.": "Fotografie je příliš velká. Maximálně 5 MB.",
+    "The file does not look like a valid image.": "Soubor nevypadá jako platný obrázek.",
+}
+
 
 def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-owned")
@@ -556,6 +570,7 @@ def privacy_notice(token: str, request: Request):
     context.update(
         {
             "controller": _controller(apartment),
+            "passport_photo_policy": apartment["passport_photo_policy"] or "off",
             "back_url": back_url,
         }
     )
@@ -907,6 +922,18 @@ def _form_context(
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
             "inpass": validation.INPASS,
             "remaining": remaining,
+            "has_existing_passport_photo": bool(
+                guest
+                and guest["passport_photo_at"]
+                and passport_photos.has_photo(int(guest["id"]))
+            ),
+            # Show the upload step whenever the property enables it; nationality
+            # gating (Czech vs foreign) is handled in the template JavaScript
+            # and again on save via guest_needs_passport_photo.
+            "require_passport": (
+                (apartment["passport_photo_policy"] or "off").strip().lower()
+                == "required_foreign"
+            ),
         }
     )
     return context
@@ -1080,6 +1107,38 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
+    passport_upload = form.get("passport_photo")
+    passport_bytes = None
+    passport_type = None
+    if reporting.guest_needs_passport_photo(
+        existing
+        or {
+            "nationality": values["nationality"],
+            "reservation_id": reservation_id,
+            "entered_by": "guest",
+            "identity_verified_at": None,
+        },
+        apartment,
+    ):
+        has_existing_photo = (
+            existing
+            and existing["passport_photo_at"]
+            and passport_photos.has_photo(existing["id"])
+        )
+        if passport_upload and hasattr(passport_upload, "read"):
+            try:
+                passport_bytes = await passport_photos.read_upload_limited(passport_upload)
+                passport_type = passport_photos.validate_upload(
+                    passport_bytes, passport_upload.content_type or ""
+                )
+            except ValueError as exc:
+                msg = str(exc)
+                if lang == "cs":
+                    msg = CS_PASSPORT_UPLOAD_MESSAGES.get(msg, msg)
+                issues.append(validation.Issue("passport_photo", msg))
+        elif not has_existing_photo:
+            issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))
+
     issues = _localize_issues(issues, lang)
 
     if validation.errors_only(issues):
@@ -1152,6 +1211,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             {"reservation_id": reservation_id, "is_lead": 1 if is_first else 0, "created_at": now}
         )
         saved_id = db.insert("guest", payload)
+
+    if passport_bytes and passport_type:
+        passport_photos.save_photo(saved_id, passport_bytes, passport_type)
+        db.update(
+            "guest",
+            saved_id,
+            {"passport_photo_at": now, "updated_at": now},
+        )
 
     db.audit(
         "guest_form_saved",

@@ -149,8 +149,29 @@ def guest_has_passport_photo(guest) -> bool:
 
 
 def guest_needs_passport_photo(guest, apartment=None) -> bool:
-    """Passport uploads are retired; retained for upgrade compatibility."""
-    return False
+    """Online foreign guests upload a photo only when the property requires it."""
+    if apartment is None:
+        reservation = db.query_one(
+            "SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],)
+        )
+        if not reservation:
+            return False
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+    policy = "off"
+    if apartment is not None:
+        try:
+            policy = (apartment["passport_photo_policy"] or "off").strip().lower()
+        except (KeyError, IndexError, TypeError):
+            policy = "off"
+    if policy != "required_foreign":
+        return False
+    return (
+        validation.guest_is_reportable(guest["nationality"])
+        and _guest_entered_by(guest) != "host"
+        and not guest_identity_verified(guest)
+    )
 
 
 def guest_issues(guest, reservation) -> List[validation.Issue]:

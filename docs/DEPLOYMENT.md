@@ -84,7 +84,7 @@ The staging acceptance check covers:
 - PIN, date selection, guest count, e-mail claim, explicit magic-link confirmation, masked assignment, and lock/reopen/release work;
 - incomplete claimed forms remain open during the 24-hour post-check-in grace period, the host receives the check-in-day warning, and access locks afterward unless explicitly reopened;
 - immediate reporting sends only after the whole declared party is complete; delayed reporting uses the saved completion time plus the configured hours (24 by default), then sends without host verification;
-- check-in visibility, one day-before guest reminder, host incomplete-registration warning, completion receipt/CC, absence of passport-upload controls, and all three reporting gates behave as configured; verify reminder deduplication;
+- check-in visibility, one day-before guest reminder, host incomplete-registration warning, completion receipt/CC, passport policy, and all three reporting gates behave as configured; verify reminder deduplication;
 - English and Czech guest flows are clear;
 - console mail contains the expected messages without contacting real guests.
 

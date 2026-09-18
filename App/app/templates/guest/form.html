@@ -191,6 +191,33 @@
     </div>
   </div>
 
+  {% if require_passport %}
+  <div class="g-card" id="passport-photo-card" data-guest-step
+       data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
+    <h2>{{ t('passport_photo_title') }}</h2>
+    <p class="g-intro">{{ t('passport_photo_help') }}</p>
+    <p class="hint" id="passport-photo-pending" hidden>{{ t('passport_photo_pending_nat') }}</p>
+    <p class="hint" id="passport-photo-czech" hidden>{{ t('passport_photo_not_required') }}</p>
+    <div class="g-field" id="passport-photo-upload">
+      <span class="g-label" id="passport_photo_label">{{ t('passport_photo_label') }}</span>
+      <div class="passport-upload-actions">
+        <button class="g-btn secondary" type="button" id="passport-take-btn">
+          {{ t('passport_photo_take') }}
+        </button>
+        <button class="g-btn secondary" type="button" id="passport-choose-btn"
+                data-retake-label="{{ t('passport_photo_retake') }}">
+          {{ t('passport_photo_choose') }}
+        </button>
+      </div>
+      <input class="{{ bad('passport_photo') }}" {{ invalid('passport_photo') }} type="file" id="passport_photo" name="passport_photo" hidden>
+      <p class="passport-file-name" id="passport-file-name" hidden></p>
+      <p class="passport-file-err err" id="passport-file-err" role="alert" hidden></p>
+      <div class="hint">{{ t('passport_photo_hint') }}</div>
+      {{ err_for('passport_photo') }}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="g-card" data-guest-step>
     <h2>{{ t('signature') }}</h2>
     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
@@ -215,4 +242,121 @@
     <button class="g-btn" type="submit">{{ t('submit') }}</button>
   </div>
 </form>
+{% if require_passport %}
+<script>
+(function () {
+  var MAX_IMAGE = 5 * 1024 * 1024;
+  var MAX_PDF = 15 * 1024 * 1024;
+  var card = document.getElementById('passport-photo-card');
+  var nationality = document.getElementById('nationality');
+  var input = document.getElementById('passport_photo');
+  var takeBtn = document.getElementById('passport-take-btn');
+  var chooseBtn = document.getElementById('passport-choose-btn');
+  var fileName = document.getElementById('passport-file-name');
+  var fileErr = document.getElementById('passport-file-err');
+  var passportLegal = document.querySelector('.legal-passport-text');
+  var form = input && input.form;
+  var msgs = {
+    tooLargeImage: {{ t('passport_photo_too_large_image') | tojson }},
+    tooLargePdf: {{ t('passport_photo_too_large_pdf') | tojson }},
+    badType: {{ t('passport_photo_bad_type') | tojson }},
+    selected: {{ t('passport_photo_selected') | tojson }}
+  };
+  if (!nationality || !input) return;
+
+  function showErr(text) {
+    if (!fileErr) return;
+    fileErr.textContent = text || '';
+    fileErr.hidden = !text;
+  }
+
+  function validateFile(file) {
+    if (!file) return true;
+    var isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    if (isPdf) {
+      if (file.size > MAX_PDF) {
+        showErr(msgs.tooLargePdf);
+        return false;
+      }
+    } else if (file.size > MAX_IMAGE) {
+      showErr(msgs.tooLargeImage);
+      return false;
+    }
+    var okType = /^image\/(jpeg|png|webp)$/i.test(file.type) || isPdf;
+    if (!okType) {
+      showErr(msgs.badType);
+      return false;
+    }
+    showErr('');
+    if (fileName) {
+      fileName.textContent = msgs.selected.replace('%(name)s', file.name);
+      fileName.hidden = false;
+    }
+    if (chooseBtn) chooseBtn.textContent = chooseBtn.getAttribute('data-retake-label') || chooseBtn.textContent;
+    return true;
+  }
+
+  function openPicker(mode) {
+    input.value = '';
+    if (mode === 'camera') {
+      input.setAttribute('capture', 'environment');
+      input.setAttribute('accept', 'image/*');
+    } else {
+      input.removeAttribute('capture');
+      input.setAttribute('accept', 'image/jpeg,image/png,image/webp,application/pdf');
+    }
+    input.click();
+  }
+
+  if (takeBtn) takeBtn.addEventListener('click', function () { openPicker('camera'); });
+  if (chooseBtn) chooseBtn.addEventListener('click', function () { openPicker('file'); });
+
+  input.addEventListener('change', function () {
+    var file = input.files && input.files[0];
+    if (!validateFile(file)) {
+      input.value = '';
+      if (fileName) fileName.hidden = true;
+    }
+  });
+
+  if (form) {
+    form.addEventListener('submit', function (ev) {
+      var foreign = nationality.value && nationality.value !== 'CZE';
+      var hasExisting = card && card.getAttribute('data-has-existing') === '1';
+      if (!foreign) return;
+      var file = input.files && input.files[0];
+      if (!file && hasExisting) return;
+      if (!file) return;
+      if (!validateFile(file)) {
+        ev.preventDefault();
+      }
+    });
+  }
+
+  var pendingNat = document.getElementById('passport-photo-pending');
+  var czechNote = document.getElementById('passport-photo-czech');
+  var uploadWrap = document.getElementById('passport-photo-upload');
+
+  function sync() {
+    var code = nationality.value;
+    var foreign = code && code !== 'CZE';
+    var hasExisting = card && card.getAttribute('data-has-existing') === '1';
+    if (uploadWrap) uploadWrap.hidden = !foreign;
+    if (pendingNat) pendingNat.hidden = !!code;
+    if (czechNote) czechNote.hidden = foreign || !code;
+    input.required = foreign && !hasExisting;
+    var passportSection = document.getElementById('legal-passport-section');
+    if (passportSection) passportSection.style.display = foreign ? '' : 'none';
+    if (passportLegal) passportLegal.style.display = foreign ? '' : 'none';
+    if (!foreign) {
+      input.value = '';
+      showErr('');
+      if (fileName) fileName.hidden = true;
+    }
+  }
+  nationality.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endif %}
 {% endblock %}
