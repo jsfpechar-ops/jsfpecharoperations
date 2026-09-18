@@ -375,7 +375,8 @@ def sweep_reminders() -> Dict[str, int]:
                     summary["guest"] += 1
         if start < today and not complete:
             if (
-                not reservation["guest_access_locked_at"]
+                reservation["claim_state"] is not None
+                and not reservation["guest_access_locked_at"]
                 and not reservation["guest_access_reopened_at"]
             ):
                 lock_guest_access(reservation["id"])
