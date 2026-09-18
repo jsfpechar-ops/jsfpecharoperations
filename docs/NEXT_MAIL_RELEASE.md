@@ -16,7 +16,7 @@ This is the product release plan for turning guest e-mail back on and shipping t
 | Arrival-lane picker | Implemented in #88; always shown, including one stay |
 | SES flip to `ses` | Waiting on AWS production access |
 | Assigned UX, PM/controller split, passport toggle | Implemented and tested in #88 |
-| Full regression suite | 377 passed |
+| Full regression suite | 379 passed (includes `#89` late-registration tests) |
 
 ```mermaid
 flowchart TD
