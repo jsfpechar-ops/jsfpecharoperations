@@ -1,7 +1,9 @@
-"""Transactional mail: SQLite outbox plus a staging-safe console backend.
+"""Transactional mail: SQLite outbox plus console and SES backends.
 
-Production SES is intentionally not enabled in this rollout. Staging uses the
-console backend so hosts can open claim links from Settings without AWS.
+Staging uses the console backend so hosts can open claim links from Settings
+without AWS. Production may set ``UBYHOST_MAIL_BACKEND=ses`` after domain
+verification and a signed-off deploy — see ``docs/SES.md``. Keep production on
+``disabled`` until that flip.
 """
 from __future__ import annotations
 
@@ -191,8 +193,55 @@ def _send_console(row) -> str:
     return f"console:{row['id']}"
 
 
-def _send_ses(_row) -> str:
-    raise MailConfigError("SES sending is not enabled in this staging rollout.")
+def _ses_client():
+    import boto3
+
+    kwargs: Dict[str, Any] = {"region_name": config.SES_REGION or "eu-central-1"}
+    if config.AWS_ACCESS_KEY_ID and config.AWS_SECRET_ACCESS_KEY:
+        kwargs["aws_access_key_id"] = config.AWS_ACCESS_KEY_ID
+        kwargs["aws_secret_access_key"] = config.AWS_SECRET_ACCESS_KEY
+    return boto3.client("ses", **kwargs)
+
+
+def _send_ses(row) -> str:
+    """Deliver one outbox row through Amazon SES SendEmail."""
+    if backend_name() != "ses":
+        raise MailConfigError("SES sender invoked while UBYHOST_MAIL_BACKEND is not ses.")
+    if not config.MAIL_FROM:
+        raise MailConfigError("UBYHOST_MAIL_FROM is required for SES sending.")
+
+    payload = json.loads(row["payload"] or "{}")
+    body = payload.get("text") or ""
+    reply_to = normalise_email(str(payload.get("reply_to") or ""))
+
+    destination: Dict[str, List[str]] = {"ToAddresses": [row["to_email"]]}
+    cc = normalise_email(row["cc_email"] or "")
+    if cc:
+        destination["CcAddresses"] = [cc]
+
+    kwargs: Dict[str, Any] = {
+        "Source": config.MAIL_FROM,
+        "Destination": destination,
+        "Message": {
+            "Subject": {"Data": row["subject"] or "", "Charset": "UTF-8"},
+            "Body": {"Text": {"Data": body, "Charset": "UTF-8"}},
+        },
+    }
+    if reply_to:
+        kwargs["ReplyToAddresses"] = [reply_to]
+
+    response = _ses_client().send_email(**kwargs)
+    message_id = (response or {}).get("MessageId") or ""
+    if not message_id:
+        raise MailConfigError("SES SendEmail returned no MessageId.")
+    log.info(
+        "ses mail id=%s kind=%s to=%s message_id=%s",
+        row["id"],
+        row["kind"],
+        mask_email(row["to_email"]),
+        message_id,
+    )
+    return message_id
 
 
 def drain(limit: int = 8) -> Dict[str, int]:
