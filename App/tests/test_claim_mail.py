@@ -40,7 +40,7 @@ def _seed():
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    today = date.today()
+    today = claim.prague_today()
     entity_id = db.insert(
         "legal_entity",
         {
