@@ -570,13 +570,18 @@ def validate_apartment(ap: Dict[str, Optional[str]]) -> List[Issue]:
         issues.append(Issue("uby_ws_password", "UbyPort web-service password is required."))
 
     if not ap.get("legal_entity_id"):
-        # Without it the guest privacy notice cannot name a data controller,
-        # which is what GDPR articles 13 and 14 ask for first.
+        # The operating entity is always the guest's stay contact, even where
+        # a separate controller entity is configured.
+        message = (
+            "No property manager is attached, so guests have no named contact "
+            "for questions about their stay."
+        )
+        if not ap.get("data_controller_entity_id"):
+            message += " The privacy notice also cannot name who controls their data."
         issues.append(
             Issue(
                 "legal_entity_id",
-                "No legal entity is attached, so the guest privacy notice cannot name who is "
-                "responsible for their data.",
+                message,
                 "warning",
             )
         )

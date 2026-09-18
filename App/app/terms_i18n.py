@@ -42,17 +42,18 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "\"Host\" means the natural or legal person that registers for and uses the Service to "
             "manage accommodation. \"Guest\" means a person whose data the Host collects through the "
             "Service. \"Guest Data\" means personal and other data relating to Guests entered or "
-            "generated through the Service. \"Legal Entity\" means the host-configured entity shown to "
-            "Guests as data controller. \"UbyPort\" means the Czech police foreigner reporting system "
+            "generated through the Service. \"Legal Entity\" means an entity configured by the Host "
+            "as the property's operating manager or Guest Data controller. \"UbyPort\" means the Czech police foreigner reporting system "
             "and related interfaces. \"Account\" means the Host's registered workspace. \"Content\" "
             "means data, text, images, and files submitted by the Host or Guests through the Service."
         ),
         "terms.s03_title": "3. Provider identity",
         "terms.s03_body": (
             "The Service is provided by %(name)s, IČO %(ico)s (the Operator). The Operator is the "
-            "provider of the software and hosted environment. Each Host (or the Legal Entity configured "
-            "per property) remains the accommodation provider and, unless expressly agreed otherwise in "
-            "writing, the data controller for Guest Data under Regulation (EU) 2016/679 (GDPR) and "
+            "provider of the software and hosted environment. Each Host remains responsible for its "
+            "accommodation provider, operating-manager, and configured Guest Data controller entities. "
+            "The configured controller is, unless expressly agreed otherwise in writing, the data "
+            "controller for Guest Data under Regulation (EU) 2016/679 (GDPR) and "
             "Czech implementing legislation. Operator contact details and public register information "
             "are published on the /legal page."
         ),
@@ -336,7 +337,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "„Ubytovatel“ je fyzická nebo právnická osoba, která se registruje a používá Službu pro "
             "správu ubytování. „Host“ je osoba, jejíž údaje Ubytovatel prostřednictvím Služby shromažďuje. "
             "„Údaje hostů“ jsou osobní a jiné údaje o hostech zadané nebo vytvořené ve Službě. "
-            "„Právnická osoba“ je entita nastavená Ubytovatelem a zobrazená hostům jako správce údajů. "
+            "„Právnická osoba“ je entita nastavená Ubytovatelem jako správce objektu nebo správce údajů hostů. "
             "„UbyPort“ je systém hlášení cizinců Policie ČR a související rozhraní. „Účet“ je "
             "registrovaný pracovní prostor Ubytovatele. „Obsah“ jsou data, texty, obrázky a soubory "
             "nahrávané Ubytovatelem nebo hosty."
@@ -344,9 +345,10 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.s03_title": "3. Identita poskytovatele",
         "terms.s03_body": (
             "Službu poskytuje %(name)s, IČO %(ico)s (Provozovatel). Provozovatel je dodavatelem softwaru "
-            "a hostovaného prostředí. Každý Ubytovatel (nebo Právnická osoba u jednotlivého ubytování) "
-            "zůstává poskytovatelem ubytování a, není-li výslovně písemně dohodnuto jinak, správcem "
-            "Údajů hostů podle nařízení (EU) 2016/679 (GDPR) a prováděcích předpisů. Kontaktní údaje "
+            "a hostovaného prostředí. Každý Ubytovatel odpovídá za nastavené subjekty poskytovatele "
+            "ubytování, správce objektu a správce údajů hostů. Nastavený správce údajů je, není-li "
+            "výslovně písemně dohodnuto jinak, správcem Údajů hostů podle nařízení (EU) 2016/679 "
+            "(GDPR) a prováděcích předpisů. Kontaktní údaje "
             "a informace z veřejného rejstříku jsou na stránce /legal."
         ),
         "terms.s04_title": "4. Popis Služby",

@@ -265,8 +265,8 @@ def main() -> None:
         landing = guest.get(f"{BASE}/l/{token}", allow_redirects=True)
         guest_shot(guest, f"/l/{token}", "guest-landing-unlocked")
 
-    # With one upcoming stay the link opens it directly; with several the guest
-    # gets a picker first, so take the stay id from whichever page we landed on.
+    # Every unlocked guest link now opens the stay picker, including when only
+    # one stay is visible. Keep the URL fallback for older deployed builds.
     found = re.search(r"/l/[^/]+/(\d+)", landing.url) or re.search(
         r'href="/l/[^/"]+/(\d+)', landing.text
     )

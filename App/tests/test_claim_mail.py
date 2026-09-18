@@ -1,6 +1,7 @@
 """Guest claim, magic-link confirmation, and staging-safe mail."""
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, time, timedelta
 
 from fastapi.testclient import TestClient
@@ -127,7 +128,7 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
         assert claim_page.status_code == 200
         assert "Your host" in claim_page.text
-        assert "If you need anything about this stay" in claim_page.text
+        assert "If there is any problem, feel free to contact your host" in claim_page.text
         assert "Claim Mail" in claim_page.text
         assert "host@claim.test" in claim_page.text
         assert "+420111222333" in claim_page.text
@@ -145,6 +146,51 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
         assert "mailto:support@ubyhost.com" not in form.text
     finally:
         _cleanup()
+
+
+def test_separate_controller_does_not_change_guest_mail_reply_to(monkeypatch):
+    current, _past, _far, apartment_id = _seed()
+    controller_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Controller only",
+            "contact_email": "privacy@controller.test",
+            "created_at": db.utcnow(),
+        },
+    )
+    db.update(
+        "apartment",
+        apartment_id,
+        {"data_controller_entity_id": controller_id},
+    )
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    try:
+        reservation = db.query_one(
+            "SELECT * FROM reservation WHERE id = ?", (current,)
+        )
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (apartment_id,)
+        )
+        ok, err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="reply-to-check@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert ok, err
+        queued = db.query_one(
+            "SELECT payload FROM email_outbox WHERE reservation_id = ? "
+            "ORDER BY id DESC",
+            (current,),
+        )
+        assert json.loads(queued["payload"])["reply_to"] == "host@claim.test"
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (controller_id,))
 
 
 def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
