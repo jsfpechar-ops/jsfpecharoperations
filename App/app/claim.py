@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import secrets
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Dict, Optional, Tuple
 
 from . import db, deadlines, mail, reporting, validation
@@ -16,7 +16,6 @@ PROVISIONAL = "provisional"
 CLAIMED = "claimed"
 HOLD_MINUTES = 30
 TOKEN_BYTES = 24
-GUEST_ACCESS_GRACE_HOURS = 24
 
 
 def prague_today():
@@ -68,26 +67,19 @@ def expire_holds(now=None) -> int:
     return len(rows)
 
 
-def guest_access_deadline(reservation) -> Optional[datetime]:
-    """End of the grace period, based on the date-only iCal check-in."""
-    start = validation.parse_iso_date(reservation["date_from"])
-    if not start:
-        return None
-    return datetime.combine(start, datetime.min.time()) + timedelta(
-        hours=GUEST_ACCESS_GRACE_HOURS
-    )
-
-
 def guest_access_open(reservation, claim=None, now=None) -> bool:
+    """True unless the stay is inactive or the host explicitly locked access.
+
+    Incomplete registrations stay reachable after check-in; only an explicit
+    host lock (or cancellation) closes guest access. ``now`` is accepted for
+    call-site compatibility and ignored.
+    """
     if reservation["status"] != "active":
         return False
     claim = claim if claim is not None else _row(reservation["id"])
     if claim and claim["guest_access_locked_at"]:
         return False
-    if claim and claim["guest_access_reopened_at"]:
-        return True
-    deadline = guest_access_deadline(reservation)
-    return deadline is None or deadlines.local_now(now) < deadline
+    return True
 
 
 def is_claimed(claim) -> bool:
@@ -418,13 +410,6 @@ def sweep_reminders() -> Dict[str, int]:
                 owner_user_id=reservation["owner_user_id"],
             ):
                 summary["guest"] += 1
-        if start < today and not complete:
-            if not reservation["guest_access_locked_at"] and not reservation[
-                "guest_access_reopened_at"
-            ]:
-                ensure_row(reservation["id"])
-                lock_guest_access(reservation["id"])
-                summary["locked"] += 1
         if start == today and not complete and now_local.hour >= 9:
             host_email = _entity_contact_email(reservation["legal_entity_id"])
             masked = reservation["email_masked"] or "not claimed"
@@ -438,8 +423,8 @@ def sweep_reminders() -> Dict[str, int]:
                         "text": (
                             f"{reservation['internal_name']} check-in is today "
                             f"({reservation['date_from']}). Guest forms are incomplete "
-                            f"(assigned to {masked}). The guest still has the 24-hour "
-                            f"grace period to finish the form. "
+                            f"(assigned to {masked}). The guest can still finish using "
+                            f"their registration link. "
                             f"Open {config.PUBLIC_BASE_URL}/reservations/{reservation['id']}"
                         )
                     },
@@ -451,8 +436,8 @@ def sweep_reminders() -> Dict[str, int]:
                 "warning",
                 "guest_incomplete_checkin",
                 f"{reservation['internal_name']}: check-in today and forms are incomplete.",
-                f"Claimed as {masked}. The guest can still complete the form during "
-                f"the 24-hour grace period.",
+                f"Claimed as {masked}. The guest can still complete the form using "
+                f"their registration link.",
                 dedupe_key=f"guest_incomplete_checkin:{reservation['id']}",
                 apartment_id=reservation["apartment_id"],
                 reservation_id=reservation["id"],
