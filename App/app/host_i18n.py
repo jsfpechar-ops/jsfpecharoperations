@@ -58,37 +58,67 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace — "
             "built for Czech short-term hosts."
         ),
-        "onboarding.welcome_title": "Welcome to UbyHost",
+        "onboarding.kicker": "Your five-step launch",
+        "onboarding.welcome_title": "Set it once. Welcome every guest calmly.",
         "onboarding.welcome_lede": (
-            "Let's get your first property ready for guest reporting. Follow the steps "
-            "below — most hosts finish in a few minutes."
+            "We will take you from legal details to a guest-ready link. One clear task at a time; "
+            "UbyHost remembers where you stopped."
         ),
+        "onboarding.progress": "%(done)s of %(total)s ready",
+        "onboarding.current_title": "Do this now",
+        "onboarding.learn": "Learn why",
+        "onboarding.all_steps": "See all setup steps",
+        "onboarding.safe_title": "Nothing goes live by accident",
+        "onboarding.safe_body": (
+            "New reporting starts in the mode you choose. Demo data never reaches the real police, "
+            "and guest e-mail stays off until delivery is configured."
+        ),
+        "onboarding.finish_line": "Complete these five checks and your first guest journey is ready.",
         "onboarding.step_of": "Setup step %(n)s of %(total)s: %(title)s",
         "onboarding.step_done": "Done",
         "onboarding.continue": "Continue: %(action)s",
         "onboarding.entity.title": "Legal entity",
-        "onboarding.entity.detail": "The company or sole trader registered in UbyPort.",
+        "onboarding.entity.detail": "Name who operates the property and who controls guest data.",
+        "onboarding.entity.prepare": "Have ready: legal name, IČO, registered address, e-mail and phone.",
+        "onboarding.entity.why": "This identity appears in guest privacy information and host contact details.",
         "onboarding.entity.action": "Add legal entity",
         "onboarding.property.title": "Property",
-        "onboarding.property.detail": "Each flat or house you rent out.",
+        "onboarding.property.detail": "Match one flat or house to its official UbyPort registration.",
+        "onboarding.property.prepare": (
+            "Have ready: police facility letter, IDUB, mark, official name, address and UBY-WS login."
+        ),
+        "onboarding.property.why": "Exact values prevent UbyPort header rejections.",
         "onboarding.property.action": "Add property",
         "onboarding.calendars.title": "Calendar links",
         "onboarding.calendars.detail": (
-            "Airbnb or Booking.com iCal URLs so stays appear automatically."
+            "Connect Airbnb or Booking.com so stay dates arrive automatically."
         ),
+        "onboarding.calendars.prepare": "Copy each listing's private iCal export URL—not its public booking page.",
+        "onboarding.calendars.why": "iCal supplies dates only; guests provide names and documents securely.",
         "onboarding.calendars.action": "Connect calendars",
         "onboarding.automation.title": "Automation & UbyPort",
         "onboarding.automation.detail": (
-            "Choose immediate-after-completion, delayed automatic, or manual sending; then add "
-            "the web-service credentials and registration details exactly. UbyPort rejects a mismatch."
+            "Choose when complete foreign-guest records may be sent."
         ),
-        "onboarding.automation.action": "Finish automation",
+        "onboarding.automation.prepare": (
+            "Start with Manual if unsure. Immediate and Delayed send automatically after every declared form is complete."
+        ),
+        "onboarding.automation.why": "Timing controls reporting; identity verification remains a separate host action.",
+        "onboarding.automation.action": "Choose reporting mode",
         "onboarding.guest_link.title": "Guest link",
         "onboarding.guest_link.detail": (
-            "Review the PIN, optional host message, and e-mail/privacy behavior, "
-            "then copy the link into every booking portal's check-in message."
+            "Preview exactly what guests see, then share one permanent link."
         ),
-        "onboarding.guest_link.action": "Copy guest link",
+        "onboarding.guest_link.prepare": (
+            "Check the PIN, host message, contact, controller and optional passport policy before copying."
+        ),
+        "onboarding.guest_link.why": "Put the same link and PIN in every portal's pre-arrival message.",
+        "onboarding.guest_link.action": "Preview and copy guest link",
+        "onboarding.demo_title": "Want to learn before entering real details?",
+        "onboarding.demo_body": (
+            "Load two safe sample properties and try claims, passports, controllers, reporting and the house book."
+        ),
+        "onboarding.demo_hint": "Available only in mock/demo environments. Clear it whenever you are done.",
         "demo.load": "Explore with demo data",
         "demo.load_detail": (
             "Two sample properties covering the stay picker, claims, passport toggle, controller "
@@ -902,39 +932,69 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
             "pro krátkodobé pronájmy v Česku."
         ),
-        "onboarding.welcome_title": "Vítejte v UbyHostu",
+        "onboarding.kicker": "Spuštění v pěti krocích",
+        "onboarding.welcome_title": "Nastavte jednou. Každého hosta přivítejte v klidu.",
         "onboarding.welcome_lede": (
-            "Připravíme vaše první ubytování na hlášení hostů. Projděte kroky níže — "
-            "většina hostitelů to zvládne za několik minut."
+            "Provedeme vás od právních údajů až k odkazu připravenému pro hosty. Vždy jeden jasný "
+            "úkol; UbyHost si pamatuje, kde jste skončili."
         ),
+        "onboarding.progress": "Hotovo %(done)s z %(total)s",
+        "onboarding.current_title": "Teď udělejte toto",
+        "onboarding.learn": "Proč je to potřeba",
+        "onboarding.all_steps": "Zobrazit celé nastavení",
+        "onboarding.safe_title": "Nic se nespustí omylem",
+        "onboarding.safe_body": (
+            "Hlášení začne v režimu, který zvolíte. Ukázková data se skutečné policii nikdy "
+            "neodešlou a e-maily hostům zůstanou vypnuté, dokud není připraveno doručení."
+        ),
+        "onboarding.finish_line": "Dokončete těchto pět kontrol a první cesta hosta je připravena.",
         "onboarding.step_of": "Krok nastavení %(n)s z %(total)s: %(title)s",
         "onboarding.step_done": "Hotovo",
         "onboarding.continue": "Pokračovat: %(action)s",
         "onboarding.entity.title": "Právnická osoba",
         "onboarding.entity.detail": (
-            "Firma nebo podnikatel registrovaný v UbyPortu."
+            "Uveďte provozovatele ubytování a správce údajů hostů."
         ),
+        "onboarding.entity.prepare": "Připravte si: právní název, IČO, sídlo, e-mail a telefon.",
+        "onboarding.entity.why": "Tato identita se zobrazí v informaci o soukromí a kontaktu pro hosty.",
         "onboarding.entity.action": "Přidat právnickou osobu",
         "onboarding.property.title": "Ubytování",
-        "onboarding.property.detail": "Každý byt nebo dům, který pronajímáte.",
+        "onboarding.property.detail": "Spojte byt nebo dům s jeho oficiální registrací UbyPort.",
+        "onboarding.property.prepare": (
+            "Připravte si: policejní dopis zařízení, IDUB, zkratku, oficiální název, adresu a login UBY-WS."
+        ),
+        "onboarding.property.why": "Přesné hodnoty zabrání odmítnutí hlavičky UbyPortem.",
         "onboarding.property.action": "Přidat ubytování",
         "onboarding.calendars.title": "Odkazy na kalendáře",
         "onboarding.calendars.detail": (
-            "iCal odkazy z Airbnb nebo Booking.com, aby se pobyty zobrazovaly automaticky."
+            "Připojte Airbnb nebo Booking.com, aby se termíny pobytů načítaly automaticky."
         ),
+        "onboarding.calendars.prepare": "Zkopírujte soukromou URL exportu iCal, ne veřejnou stránku nabídky.",
+        "onboarding.calendars.why": "iCal přináší jen termíny; jména a doklady host doplní bezpečně.",
         "onboarding.calendars.action": "Připojit kalendáře",
         "onboarding.automation.title": "Automatizace a UbyPort",
         "onboarding.automation.detail": (
-            "Zvolte okamžité po dokončení, odložené automatické nebo ruční odesílání; pak přesně "
-            "doplňte přístupové a registrační údaje. UbyPort neshodu odmítne."
+            "Zvolte, kdy se mohou odeslat kompletní záznamy zahraničních hostů."
         ),
-        "onboarding.automation.action": "Dokončit automatizaci",
+        "onboarding.automation.prepare": (
+            "Nejste-li si jistí, začněte Ručně. Okamžitý a Odložený režim odešlou po dokončení všech formulářů."
+        ),
+        "onboarding.automation.why": "Časování řídí hlášení; ověření totožnosti zůstává samostatným úkonem.",
+        "onboarding.automation.action": "Zvolit režim hlášení",
         "onboarding.guest_link.title": "Odkaz pro hosty",
         "onboarding.guest_link.detail": (
-            "Zkontrolujte PIN, volitelnou zprávu hostitele a e-mail/soukromí, "
-            "pak odkaz zkopírujte do zprávy k příjezdu na každém rezervačním portálu."
+            "Prohlédněte si přesně, co host uvidí, a pak sdílejte jeden trvalý odkaz."
         ),
-        "onboarding.guest_link.action": "Kopírovat odkaz pro hosty",
+        "onboarding.guest_link.prepare": (
+            "Před kopírováním zkontrolujte PIN, zprávu, kontakt, správce údajů a volbu pasu."
+        ),
+        "onboarding.guest_link.why": "Stejný odkaz a PIN vložte do zprávy před příjezdem na každém portálu.",
+        "onboarding.guest_link.action": "Prohlédnout a kopírovat odkaz",
+        "onboarding.demo_title": "Chcete se nejdřív učit bez skutečných údajů?",
+        "onboarding.demo_body": (
+            "Načtěte dvě bezpečná ukázková ubytování a vyzkoušejte převzetí, pasy, správce, hlášení i knihu."
+        ),
+        "onboarding.demo_hint": "Jen pro ukázkové/mock prostředí. Po dokončení je můžete kdykoli smazat.",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": (
             "Dvě ukázková ubytování: výběr pobytu, převzetí e-mailem, pas, oddělený správce, "

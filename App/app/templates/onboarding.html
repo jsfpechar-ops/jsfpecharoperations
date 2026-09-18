@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% set nav = 'dashboard' %}
+{% block title %}{{ t('onboarding.welcome_title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import onboarding_welcome with context %}
+{{ onboarding_welcome(onboarding) }}
+{% endblock %}

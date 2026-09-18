@@ -2,7 +2,8 @@
 {% set nav = 'automation' %}
 {% block title %}{{ t('automation.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header with context %}
+{% from "_components.html" import page_header, onboarding_banner with context %}
+{{ onboarding_banner(onboarding) }}
 {{ page_header(
   t('automation.title'),
   t('automation.lede')

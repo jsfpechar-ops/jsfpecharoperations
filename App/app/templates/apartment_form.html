@@ -14,7 +14,8 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, copy_button with context %}
+{% from "_components.html" import page_header, breadcrumb, copy_button, onboarding_banner with context %}
+{{ onboarding_banner(onboarding) }}
 {{ breadcrumb([
   {'label': t('nav.properties'), 'url': '/apartments'},
   {'label': apartment.internal_name if editing else t('apartment.form.new_property'), 'url': ''}

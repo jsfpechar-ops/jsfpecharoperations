@@ -389,6 +389,8 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
 
     Returns the Vinohrady Studio apartment id (primary walkthrough entry).
     """
+    if config.UBYPORT_ENV != "mock":
+        return None
     if db.query_one(
         "SELECT 1 AS x FROM apartment WHERE (? IS NULL OR owner_user_id = ?)",
         (owner_user_id, owner_user_id),

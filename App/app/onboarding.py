@@ -20,6 +20,16 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
             (owner_user_id,),
         )["n"]
     )
+    ready_entity_count = int(
+        db.query_one(
+            "SELECT COUNT(*) AS n FROM legal_entity "
+            "WHERE owner_user_id IS ? AND TRIM(COALESCE(name, '')) != '' "
+            "AND TRIM(COALESCE(seat, '')) != '' "
+            "AND TRIM(COALESCE(ico, '')) != '' "
+            "AND TRIM(COALESCE(contact_email, '')) != ''",
+            (owner_user_id,),
+        )["n"]
+    )
     apartments = db.query(
         "SELECT a.*, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
@@ -43,18 +53,21 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     steps = [
         {
             "id": "entity",
-            "done": entity_count > 0,
+            "done": ready_entity_count > 0,
             "url": "/entities",
+            "learn_url": "/guide#setup",
         },
         {
             "id": "property",
             "done": apartment_count > 0,
             "url": "/apartments/new" if entity_count else "/entities",
+            "learn_url": "/guide#setup",
         },
         {
             "id": "calendars",
             "done": feed_count > 0,
             "url": f"/apartments/{first_apartment['id']}#calendars" if first_apartment else "/apartments/new",
+            "learn_url": "/guide#stays",
         },
         {
             "id": "automation",
@@ -64,6 +77,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
                 if first_apartment
                 else "/automation"
             ),
+            "learn_url": "/guide#reporting",
         },
         {
             "id": "guest_link",
@@ -77,6 +91,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
                 if first_apartment
                 else "/apartments"
             ),
+            "learn_url": "/guide#guests",
         },
     ]
 
@@ -87,6 +102,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         "current": current,
         "completed": completed,
         "total": len(steps),
+        "percent": round((completed / len(steps)) * 100) if steps else 100,
         "finished": completed == len(steps),
         "setup_issues": setup_issues,
         "first_apartment_id": first_apartment["id"] if first_apartment else None,
