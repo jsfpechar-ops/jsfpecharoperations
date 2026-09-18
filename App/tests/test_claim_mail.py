@@ -356,7 +356,9 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
         assert summary["host"] == 0
         assert summary["guest"] == 1
         reminder = db.query_one(
-            "SELECT * FROM console_mail_log WHERE to_email = ?",
+            "SELECT l.* FROM console_mail_log l "
+            "JOIN email_outbox o ON o.id = l.outbox_id "
+            "WHERE l.to_email = ? AND o.kind = 'reminder_guest'",
             ("guest-reminder@claim.test",),
         )
         assert reminder
@@ -365,7 +367,9 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
 
         claim.sweep_reminders()
         assert db.query_one(
-            "SELECT COUNT(*) AS n FROM console_mail_log WHERE to_email = ?",
+            "SELECT COUNT(*) AS n FROM console_mail_log l "
+            "JOIN email_outbox o ON o.id = l.outbox_id "
+            "WHERE l.to_email = ? AND o.kind = 'reminder_guest'",
             ("guest-reminder@claim.test",),
         )["n"] == 1
     finally:
