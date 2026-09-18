@@ -116,32 +116,24 @@ distorted or invented glyphs.
 
 ---
 
-## 2b. Selected mark
+## 2b. Candidates seen so far (not constraints)
 
-The owner picked a mark on 2026-09-18: **`docs/assets/logo-mark-selected.jpg`**.
+`docs/assets/logo-mark-selected.jpg` is one candidate the owner liked on
+2026-09-18: an abstract house of two thick rounded strokes with form lines in
+the negative space, sampled at `#CE5C51` and `#AA453D`.
 
-<img alt="Selected UbyHost mark" src="assets/logo-mark-selected.jpg" width="180" />
+<img alt="UbyHost mark candidate" src="assets/logo-mark-selected.jpg" width="150" />
 
-A house built from two thick rounded strokes — a coral chevron roof running down
-into the left wall, and a separate deeper-brick right wall, offset and curving
-inward at the bottom so the two overlap rather than close the outline. Inside the
-white negative space sit three rounded horizontal bars of decreasing width, which
-read as the lines of a form. So: a home and a filed record in one shape.
+It is kept for reference only. **Do not describe it, or any other candidate, to
+the generator, and do not attach it as a reference image.** The concept stays
+open; the point of the brief is that the model invents the symbol. If a
+candidate is ever locked in, record the decision here and the lockup prompts can
+start describing it instead.
 
-Sampled colors are `#CE5C51` coral and `#AA453D` deep brick — within a hair of
-the brand tokens `#C85A52` and `#AD4942`, so the production artwork should use
-the tokens exactly.
-
-Two consequences for everything below:
-
-- **The house exclusions in Section 7 no longer apply to this silhouette.** Keep
-  rejecting clip-art house-with-key and chimney-and-skyline treatments, but the
-  abstract roof-and-wall geometry is now the approved direction, and the lockup
-  prompts must describe it rather than forbid it.
-- **The three form bars will not survive 16 px, and are marginal at 28 px.** Ask
-  for a simplified small-size variant of the same mark — two bars instead of
-  three, or none — for the favicon and the sidebar. Same idea, fewer parts. The
-  full three-bar version is for 120 px and up.
+One lesson worth keeping from that candidate: fine internal detail such as
+stacked form lines does not survive 16 px and is marginal at 28 px. Whatever
+concept wins will likely need a simplified small-size variant with fewer parts
+for the favicon and the sidebar.
 
 ## 3. Where the logo appears: sizes and backgrounds
 
@@ -351,10 +343,12 @@ build the lockups in a vector editor using real type.
 
 ## 6b. All three versions in one prompt
 
-Once the mark is settled (Section 2b), this single prompt returns all three
-versions on one canvas, which is the fastest way to check that they hold
-together as a family. Attach `docs/assets/logo-mark-selected.jpg` as a reference
-image if the tool accepts one. Aspect ratio 3:4 or 1:1.
+This single prompt returns all three versions on one canvas, with the symbol
+invented by the generator rather than specified here. Run it repeatedly: each
+pass is a fresh concept already shown as a complete family, which is the fastest
+way to see whether an idea survives being a wordmark and a tagline as well as an
+icon. Do not attach a reference image — it would anchor the result. Aspect ratio
+3:4 or 1:1.
 
 ```
 Create ONE image: a clean, minimal logo sheet showing three versions of the same
@@ -371,18 +365,21 @@ quietly official, and trustworthy with sensitive personal data. Modern
 minimalist flat vector identity with the restraint of Notion, Apple, Stripe or
 Linear.
 
-THE MARK — identical in all three rows, do not redesign or vary it
-An abstract house built from two thick rounded strokes. A wide chevron forms the
-roof, peaking at the top centre, and its left slope continues straight down as
-the left wall, ending in a softly rounded bottom corner. The right wall is a
-separate, slightly darker shape, offset inward and set lower than the roof's
-right tip, curving inward at its base so it sweeps toward the centre rather than
-closing the outline — the two strokes overlap instead of meeting, leaving the
-house open. Inside the white negative space of the house sit three rounded
-horizontal bars, stacked with even gaps and decreasing in width from top to
-bottom, reading as the lines of a filled-in form. Flat vector, no outlines,
-generous rounded corners, square overall proportions. Roof, left wall and bars
-in coral-brick #C85A52; right wall in deeper brick #AD4942.
+INVENT THE MARK — you design it, I am not describing it
+There is no existing logo to follow, extend or take cues from. Start from a
+blank page with full creative freedom and invent the symbol yourself. Do not
+assume it has to be a letter, a monogram or an initial, and do not default to
+drawing a house or a building. Decide for yourself what this product feels like
+and find the shape for it — arrival and welcome, a burden lifted, something
+handled correctly on someone's behalf, sensitive information kept safe and in
+order, or a reading of your own. Abstract, symbolic and unexpected are welcome
+and preferred over the obvious. Commit to one idea and strip it to the fewest
+shapes that still carry it. Surprise me.
+
+Whatever you invent must be: flat vector, geometric, built from consistent
+stroke weights, roughly square in overall proportion, strong enough as a
+silhouette to survive at 16 px and in a single flat color, and drawn in
+coral-brick #C85A52 with deeper brick #AD4942 as an optional second tone.
 
 ROW 1 — mark only
 The symbol alone, about 150 px square, centered. No text of any kind.
@@ -404,22 +401,25 @@ or regular weight with an ample gap so it never competes with the name. Roughly
 #20201E.
 
 CONSISTENCY
-All three rows use the exact same mark geometry, stroke weights, corner radii
-and colors, and the same typeface. They are one family at three levels of
-detail, not three different logos. Every piece of text real, correctly spelled
-and sharply rendered.
+Design the mark once, then reuse that exact same drawing in all three rows —
+same geometry, same stroke weights, same corner radii, same colors — with the
+same typeface throughout. They are one family at three levels of detail, not
+three different logos. Every piece of text real, correctly spelled and sharply
+rendered.
 
 AVOID: gradients, glossy finishes, 3D, bevels, embossing, drop shadows, glows,
 metallic foil, texture, sketchy or hand-drawn strokes, AI-render sheen. AVOID
-plates, tiles, circles, rounded squares or badges behind any version. AVOID
-adding a chimney, windows, a door, a key, a keyhole, a heart, a roof tile
-pattern, a skyline or any extra object to the house. AVOID police badges,
-government seals, coats of arms, flags. AVOID mascots, faces, animals, cartoons,
-busy detail, more than the three specified colors, thin hairlines. AVOID
-misspellings or invented letterforms — the name is exactly "UbyHost", never
-"UbyHosts", "Uby Host", "UByHost" or "Ubyhost". AVOID captions, annotations,
-dimension lines, borders, watermarks, mockups, business cards, signage, phone or
-laptop frames, photography, any UI around the logos.
+plates, tiles, circles, rounded squares or badges behind any version. AVOID the
+obvious rental clichés: clip-art house-with-key, house-with-heart,
+roof-with-chimney, building skylines, beds, luggage, keys, keyholes, globes,
+airplanes, location pins, passports, calendars, clipboards. AVOID police badges,
+government seals, ministry emblems, coats of arms, heraldic lions, flags. AVOID
+mascots, faces, animals, cartoons, isometric illustration, busy detail, more
+than three colors, thin hairlines. AVOID swooshes, ribbons and single-initial
+monograms. AVOID misspellings or invented letterforms — the name is exactly
+"UbyHost", never "UbyHosts", "Uby Host", "UByHost" or "Ubyhost". AVOID captions,
+annotations, dimension lines, borders, watermarks, mockups, business cards,
+signage, phone or laptop frames, photography, any UI around the logos.
 ```
 
 One canvas means one background, so the three versions come back sharing it
