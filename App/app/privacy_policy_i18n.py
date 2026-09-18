@@ -9,8 +9,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.page_lede": (
             "How %(name)s (the UbyHost software operator) processes personal data when you use "
             "the hosted service, visit public pages, or interact with us. This policy does not "
-            "replace the guest privacy notice shown to your guests — that notice names you (or your "
-            "legal entity) as data controller."
+            "replace the guest privacy notice shown to your guests — that notice names the controller "
+            "configured for the property, which may differ from its property manager."
         ),
         "privacy.effective": "Effective date: 18 September 2026. Version 1.3.",
         "privacy.operator_title": "Data controller for this policy",
@@ -21,8 +21,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.cross_guest": "Guest privacy notice (per property link)",
         "privacy.guest_note": (
             "Guests who complete a form via /l/… see a separate notice naming the accommodation "
-            "provider as controller. Hosts must configure a legal entity with contact e-mail so "
-            "that notice is complete."
+            "provider's configured controller. Hosts must configure that legal entity with contact "
+            "details so the notice is complete; the property manager remains the guest contact for "
+            "questions about the stay."
         ),
         "privacy.review_title": "Professional review",
         "privacy.review_body": (
@@ -57,7 +58,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s03_title": "3. Roles: Operator, Host, and Guest",
         "privacy.s03_body": (
-            "Hosts (or the legal entities they configure per property) are typically the data "
+            "Hosts (or the controller legal entities they configure per property) are typically the data "
             "controllers for personal data about Guests (names, travel documents, stays, signatures, "
             "and related records). The Operator provides hosted software and processes Guest Data "
             "only on the Host's documented instructions to deliver the Service — typically as a data "
@@ -263,8 +264,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.page_lede": (
             "Jak %(name)s (provozovatel softwaru UbyHost) zpracovává osobní údaje při používání "
             "hostované služby, návštěvě veřejných stránek nebo komunikaci s námi. Tyto zásady "
-            "nenahrazují informaci pro hosty — v ní je jako správce uveden vy (nebo vaše právnická "
-            "osoba)."
+            "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
+            "který se může lišit od správce objektu."
         ),
         "privacy.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
         "privacy.operator_title": "Správce údajů podle těchto zásad",
@@ -274,9 +275,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.cross_terms": "Obchodní podmínky",
         "privacy.cross_guest": "Informace pro hosty (odkaz u každého ubytování)",
         "privacy.guest_note": (
-            "Hosté vyplňující formulář na /l/… vidí samostatnou informaci se správcem ubytování. "
-            "Ubytovatelé musí nastavit právnickou osobu s kontaktním e-mailem, aby byla informace "
-            "úplná."
+            "Hosté vyplňující formulář na /l/… vidí samostatnou informaci s nastaveným správcem údajů. "
+            "Ubytovatelé musí tomuto subjektu doplnit kontaktní údaje; správce objektu zůstává kontaktem "
+            "hosta pro otázky k pobytu."
         ),
         "privacy.review_title": "Odborná kontrola",
         "privacy.review_body": (

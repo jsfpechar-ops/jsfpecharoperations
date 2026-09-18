@@ -363,12 +363,14 @@ def entities(request: Request):
         return guard
     owner_user_id = access.owner_id(request)
     rows = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
         "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NULL ORDER BY e.name",
         (owner_user_id,),
     )
     archived = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
         "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NOT NULL "
         "ORDER BY e.archived_at DESC",
         (owner_user_id,),
@@ -439,8 +441,9 @@ def archive_entity(entity_id: int, request: Request):
     if entity["archived_at"]:
         return _back("/entities", err="Already archived.")
     used = db.query_one(
-        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
-        (entity_id, access.owner_id(request)),
+        "SELECT COUNT(*) AS n FROM apartment WHERE "
+        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
+        (entity_id, entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
         return _back(
@@ -480,8 +483,9 @@ def delete_entity(entity_id: int, request: Request):
     if not entity["archived_at"]:
         return _back("/entities", err="Archive the legal entity before deleting it.")
     used = db.query_one(
-        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
-        (entity_id, access.owner_id(request)),
+        "SELECT COUNT(*) AS n FROM apartment WHERE "
+        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
+        (entity_id, entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
         return _back("/entities", err="Detach the properties from this entity first.")
@@ -569,6 +573,9 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["uby_mark"] = payload["uby_mark"].upper()
     payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
     payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
+    payload["data_controller_entity_id"] = _form_int(
+        form, "data_controller_entity_id"
+    )
     mode = _form_str(form, "automation_mode", "scheduled")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
@@ -598,6 +605,12 @@ async def apartment_create(request: Request):
     payload["owner_user_id"] = access.owner_id(request)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
         return _back("/apartments/new", err="No such legal entity.")
+    if payload["data_controller_entity_id"] and not access.entity(
+        request, payload["data_controller_entity_id"]
+    ):
+        return _back("/apartments/new", err="No such data controller.")
+    if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
+        payload["data_controller_entity_id"] = None
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
@@ -648,6 +661,12 @@ async def apartment_update(apartment_id: int, request: Request):
     payload = _apartment_payload(form)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
         return _back(f"/apartments/{apartment_id}", err="No such legal entity.")
+    if payload["data_controller_entity_id"] and not access.entity(
+        request, payload["data_controller_entity_id"]
+    ):
+        return _back(f"/apartments/{apartment_id}", err="No such data controller.")
+    if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
+        payload["data_controller_entity_id"] = None
     for key in ("automation_mode", "submit_after_hours", "default_purpose"):
         payload.pop(key, None)
     password = _form_str(form, "uby_ws_password")

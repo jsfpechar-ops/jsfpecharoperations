@@ -173,6 +173,23 @@
     });
   }
 
+  function initControllerFields() {
+    document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
+      var panel = document.getElementById(checkbox.getAttribute("data-controller-target"));
+      if (!panel) return;
+      var select = panel.querySelector("select");
+      function sync() {
+        panel.hidden = checkbox.checked;
+        if (select) {
+          select.disabled = checkbox.checked;
+          select.required = !checkbox.checked;
+        }
+      }
+      checkbox.addEventListener("change", sync);
+      sync();
+    });
+  }
+
   function initHousebookPdfExport() {
     var dialog = document.getElementById("housebook-pdf-dialog");
     if (!dialog) return;
@@ -878,6 +895,7 @@
     initNotifications();
     initDetailsLinks();
     initAutomationFields();
+    initControllerFields();
     initCsvExport();
     initHousebookPdfExport();
     initToasts();

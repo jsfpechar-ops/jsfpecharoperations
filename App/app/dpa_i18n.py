@@ -91,7 +91,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s06_body": (
             "The Controller shall: (a) comply with Applicable Data Protection Law; (b) provide lawful "
             "instructions and ensure a valid legal basis for processing; (c) maintain accurate guest "
-            "privacy notices naming the Controller entity and contact; (d) not instruct processing "
+            "privacy notices naming the Controller entity and contact, including when it differs from "
+            "the property's operating manager; (d) not instruct processing "
             "that violates law; (e) ensure Host Users are authorised and trained; (f) respond to data "
             "subject requests from Guests unless the Processor assists as stated below; (g) notify the "
             "Processor without undue delay if a Guest objects to processing that affects the Service."
@@ -320,7 +321,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "dpa.s06_title": "6. Povinnosti správce",
         "dpa.s06_body": (
-            "Správce: dodržuje právo; dává zákonné pokyny a právní titul; udržuje informace pro hosty; "
+            "Správce: dodržuje právo; dává zákonné pokyny a právní titul; udržuje informace pro hosty "
+            "se správným subjektem i tehdy, liší-li se od správce objektu; "
             "neinstruuje protiprávní zpracování; zajišťuje oprávnění uživatelů; vyřizuje žádosti hostů; "
             "bez zbytečného odkladu informuje Zpracovatele o námitkách hostů dotýkajících se Služby."
         ),

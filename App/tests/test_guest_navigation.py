@@ -129,7 +129,22 @@ def test_stay_cards_are_links_not_radios():
         assert 'type="radio"' not in page.text
         assert f'href="/l/{token}/{wrong}?lang=en"' in page.text
         assert f'href="/l/{token}/{right}?lang=en"' in page.text
-        assert "Tap your arrival" in page.text
+        assert "Which stay is yours?" in page.text
+        assert "That’s my stay" in page.text
+        assert "guest registration for" in page.text
+    finally:
+        _cleanup()
+
+
+def test_single_visible_stay_still_uses_the_picker():
+    token, stay, other = _make_apartment_with_stays()
+    try:
+        db.execute("DELETE FROM reservation WHERE id = ?", (other,))
+        page = TestClient(app).get(f"/l/{token}", follow_redirects=False)
+        assert page.status_code == 200
+        assert f'href="/l/{token}/{stay}?lang=en"' in page.text
+        assert "Which stay is yours?" in page.text
+        assert 'name="guest_email"' not in page.text
     finally:
         _cleanup()
 
