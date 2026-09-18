@@ -510,7 +510,11 @@ def test_claim_mail_caps_recipient_and_reservation(monkeypatch):
         assert not ok2
         assert err2 == "recipient_rate"
 
-        # Fresh address still hits the per-reservation cap after three sends.
+        # Fresh addresses still hit the per-reservation cap (independent of recipient).
+        db.execute(
+            "DELETE FROM rate_limit_event WHERE scope = ?",
+            ("claim_mail_reservation",),
+        )
         monkeypatch.setattr(claim, "CLAIM_MAIL_PER_RECIPIENT_MAX", 10)
         monkeypatch.setattr(claim, "CLAIM_MAIL_PER_RESERVATION_MAX", 2)
         for index in range(2):
