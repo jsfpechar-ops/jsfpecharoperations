@@ -21,7 +21,7 @@ application version**, not an UbyPort version.
 | Arrival-lane picker | Implemented in #88; always shown, including one stay |
 | SES flip to `ses` | Waiting on AWS production access |
 | Assigned UX, PM/controller split, passport toggle | Implemented and tested in #88 |
-| Full regression suite | 379 passed (includes `#89` late-registration tests) |
+| Full regression suite | 381 passed (includes `#89` and 1.1.0 release checks) |
 
 ```mermaid
 flowchart TD
