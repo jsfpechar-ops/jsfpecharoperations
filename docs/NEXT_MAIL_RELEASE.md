@@ -2,7 +2,7 @@
 
 This is the product release plan for turning guest e-mail back on and shipping the related UX. Cursor also keeps a copy under Plans as `mail_go_live_next_release_422b841b`.
 
-**Do not merge release PRs until this plan is approved.** Drafts [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87) (passport) and [#88](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/88) (claim caps + DESIGN notes) stay parked until then.
+**Implementation is consolidated in [#88](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/88). Do not merge or enable SES until the owner explicitly asks.** The former passport draft [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87) has been folded into #88.
 
 **Related:** [DESIGN.md](DESIGN.md) (Arrival-lane picker, assigned screen, PM contact footer).
 
@@ -12,10 +12,11 @@ This is the product release plan for turning guest e-mail back on and shipping t
 |------|--------|
 | SES `_send_ses` + boto3 on production | Done (`#86`); mail still **disabled** |
 | Domain DKIM / MAIL FROM / DMARC | Done (ops); Essentials; no dedicated IP |
-| Claim-mail abuse caps | Code-complete on `cursor/claim-mail-abuse-caps-3387` / #88 |
-| Arrival-lane picker **spec** | Written in DESIGN.md; UI not built yet |
+| Claim-mail abuse caps | Implemented in #88 |
+| Arrival-lane picker | Implemented in #88; always shown, including one stay |
 | SES flip to `ses` | Waiting on AWS production access |
-| Always-show picker, assigned UX, PM checkbox, passport toggle | Not built / not merged |
+| Assigned UX, PM/controller split, passport toggle | Implemented and tested in #88 |
+| Full regression suite | 375 passed |
 
 ```mermaid
 flowchart TD
@@ -47,11 +48,11 @@ flowchart TD
 
 ---
 
-## Ship in one go-live (code)
+## Included in #88
 
 ### 1. Claim-mail abuse caps (before or with SES flip)
 
-On `cursor/claim-mail-abuse-caps-3387` / [#88](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/88):
+Implemented on `cursor/claim-mail-abuse-caps-3387` / [#88](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/88):
 
 - No re-send for same provisional email unless explicit Resend + **5 min** cooldown
 - Per recipient **2/hour**, per reservation **3/hour**, IP+token **3/15 min**
@@ -73,11 +74,11 @@ Flipping SES turns these back on via `mail.mail_enabled()`:
 
 ### 3. Always show stay picker
 
-Remove `len(reservations) == 1` redirect in `pick_stay`. Always render picker after PIN when ≥1 stay. Empty stay → `/new` only **after** guest taps a stay.
+The `len(reservations) == 1` redirect is removed. The picker renders after PIN when ≥1 stay. Empty stay → `/new` only **after** the guest taps a stay.
 
 ### 4. Stay picker redesign — “Arrival lane”
 
-Specified in [DESIGN.md](DESIGN.md). Summary:
+Implemented from [DESIGN.md](DESIGN.md). Summary:
 
 1. Welcome + one legal sentence; **facility name** as hero signal
 2. Soft welcome/accommodation band (not a card stack)
@@ -88,7 +89,7 @@ Motion: staggered entrance, range accent on focus, soft press. Not an Airbo clon
 
 ### 5. Optional passport toggle (default Off)
 
-Fold [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87): Off | Required for foreign guests. Ship **with** mail go-live, not alone.
+Folded from [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87): Off | Required for foreign guests. Default remains **Off**.
 
 ### 6. Assigned / already-claimed screen
 
@@ -101,12 +102,12 @@ Fold [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87): Off | 
 ### 7. PM = controller + PoC
 
 - Default-ticked: “Property manager’s company is data controller (and guest PoC)”
-- Unticked: second legal-entity form for controller; PoC stays PM unless host opts otherwise
+- Unticked: select the alternate controller legal entity; the PM remains the guest stay contact
 - UbyPort IČO may diverge from GDPR controller → counsel note
 
 ### 8. Docs / i18n
 
-DESIGN picker + assigned notes (done); implement EN/CS strings in go-live build. Staging stays `console`.
+DESIGN picker + assigned notes and EN/CS strings are implemented. Staging stays `console`.
 
 ---
 
@@ -115,13 +116,13 @@ DESIGN picker + assigned notes (done); implement EN/CS strings in go-live build.
 - Dedicated SES IPs / Pro plan / Auto Validation / SES tenants
 - Cloning Airbo branding or pink-purple CTAs
 - Dark mode
-- Merging #87 or #88 before this umbrella is approved
+- Enabling SES before AWS production access and an owner-approved deployment
 
 ---
 
-## Execution order (when you say go)
+## Remaining release steps
 
-1. Land claim-mail caps → deploy still `disabled`
-2. Build umbrella: picker always-on + Arrival lane, assigned screen, PM checkbox, passport toggle, i18n
-3. Owner: SES production access → flip `.env` to `ses` → redeploy → smoke claim/reminder/completion
-4. One reviewable release PR (or stacked under this plan) — **not before approval**
+1. Review and merge #88 when the owner asks; deploy with production mail still `disabled`
+2. Receive AWS SES production access and credentials
+3. Set `.env` to `UBYHOST_MAIL_BACKEND=ses`, redeploy, then smoke claim/resend/reminder/completion mail
+4. Roll back to `disabled` immediately if delivery or configuration is unhealthy
