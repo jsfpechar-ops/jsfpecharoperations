@@ -82,6 +82,7 @@ The staging acceptance check covers:
 - property legal-entity name, e-mail, and phone appear on the guest form;
 - the optional per-property custom guest message can be saved, edited, cleared, and renders with line breaks;
 - PIN, date selection, guest count, e-mail claim, explicit magic-link confirmation, masked assignment, and lock/reopen/release work;
+- incomplete claimed forms remain open during the 24-hour post-check-in grace period, the host receives the check-in-day warning, and access locks afterward unless explicitly reopened;
 - check-in visibility, incomplete reminders, host warning, completion receipt/CC, passport policy, and all three reporting gates behave as configured;
 - English and Czech guest flows are clear;
 - console mail contains the expected messages without contacting real guests.

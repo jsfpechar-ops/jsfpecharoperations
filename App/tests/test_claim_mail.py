@@ -1,7 +1,7 @@
 """Guest claim, magic-link confirmation, and staging-safe mail."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -227,4 +227,49 @@ def test_host_can_release_and_reopen_claim():
         claim.release(current)
         assert claim.ensure_row(current)["state"] == "unclaimed"
     finally:
+        _cleanup()
+
+
+def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    check_in = date.today()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, current, party_size=1)
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        clock = [datetime.combine(check_in, time(10, 0))]
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now if now is not None else clock[0],
+        )
+        notified = claim.sweep_reminders()
+        assert notified["host"] == 1
+        assert notified["locked"] == 0
+        assert claim.guest_access_open(
+            reservation,
+            claim.ensure_row(current),
+            datetime.combine(check_in, time(23, 59)),
+        )
+        host_mail = db.query_one(
+            "SELECT * FROM console_mail_log WHERE subject LIKE 'Incomplete registration:%'"
+        )
+        assert host_mail
+        assert "24-hour grace period" in host_mail["body_text"]
+
+        after_grace = datetime.combine(check_in + timedelta(days=1), time(0, 1))
+        clock[0] = after_grace
+        expired = claim.sweep_reminders()
+        assert expired["locked"] == 1
+        assert not claim.guest_access_open(reservation, claim.ensure_row(current))
+
+        claim.reopen_guest_access(current)
+        assert claim.guest_access_open(reservation, claim.ensure_row(current))
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
         _cleanup()

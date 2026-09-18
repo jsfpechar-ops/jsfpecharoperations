@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 
 from . import db, deadlines, mail, reporting, validation
@@ -16,6 +16,7 @@ PROVISIONAL = "provisional"
 CLAIMED = "claimed"
 HOLD_MINUTES = 30
 TOKEN_BYTES = 24
+GUEST_ACCESS_GRACE_HOURS = 24
 
 
 def prague_today():
@@ -67,13 +68,26 @@ def expire_holds(now=None) -> int:
     return len(rows)
 
 
-def guest_access_open(reservation, claim=None) -> bool:
+def guest_access_deadline(reservation) -> Optional[datetime]:
+    """End of the grace period, based on the date-only iCal check-in."""
+    start = validation.parse_iso_date(reservation["date_from"])
+    if not start:
+        return None
+    return datetime.combine(start, datetime.min.time()) + timedelta(
+        hours=GUEST_ACCESS_GRACE_HOURS
+    )
+
+
+def guest_access_open(reservation, claim=None, now=None) -> bool:
     if reservation["status"] != "active":
         return False
     claim = claim if claim is not None else _row(reservation["id"])
-    if not claim:
+    if claim and claim["guest_access_locked_at"]:
+        return False
+    if claim and claim["guest_access_reopened_at"]:
         return True
-    return not claim["guest_access_locked_at"]
+    deadline = guest_access_deadline(reservation)
+    return deadline is None or deadlines.local_now(now) < deadline
 
 
 def is_claimed(claim) -> bool:
@@ -99,7 +113,7 @@ def start_claim(
     if reservation["status"] != "active":
         return False, "stay_gone", None
     claim = ensure_row(reservation["id"])
-    if claim["guest_access_locked_at"]:
+    if not guest_access_open(reservation, claim):
         return False, "locked", None
     if claim["state"] == CLAIMED and not resend:
         return False, "already_claimed", None
@@ -194,7 +208,7 @@ def confirm(reservation, secret: str) -> bool:
         return False
     if reservation["status"] != "active":
         return False
-    if claim["guest_access_locked_at"]:
+    if not guest_access_open(reservation, claim):
         return False
     if token_hash(secret) != claim["token_hash"]:
         return False
@@ -221,15 +235,17 @@ def release(reservation_id: int) -> None:
     db.execute(
         "UPDATE reservation_claim SET state = ?, email = NULL, email_masked = NULL, "
         "token_hash = NULL, provisional_until = NULL, claimed_at = NULL, "
-        "guest_access_locked_at = NULL, updated_at = ? WHERE reservation_id = ?",
-        (UNCLAIMED, now, reservation_id),
+        "guest_access_locked_at = NULL, guest_access_reopened_at = ?, "
+        "updated_at = ? WHERE reservation_id = ?",
+        (UNCLAIMED, now, now, reservation_id),
     )
 
 
 def lock_guest_access(reservation_id: int) -> None:
     now = db.utcnow()
     db.execute(
-        "UPDATE reservation_claim SET guest_access_locked_at = ?, updated_at = ? "
+        "UPDATE reservation_claim SET guest_access_locked_at = ?, "
+        "guest_access_reopened_at = NULL, updated_at = ? "
         "WHERE reservation_id = ? AND (guest_access_locked_at IS NULL)",
         (now, now, reservation_id),
     )
@@ -238,9 +254,10 @@ def lock_guest_access(reservation_id: int) -> None:
 def reopen_guest_access(reservation_id: int) -> None:
     now = db.utcnow()
     db.execute(
-        "UPDATE reservation_claim SET guest_access_locked_at = NULL, updated_at = ? "
+        "UPDATE reservation_claim SET guest_access_locked_at = NULL, "
+        "guest_access_reopened_at = ?, updated_at = ? "
         "WHERE reservation_id = ?",
-        (now, reservation_id),
+        (now, now, reservation_id),
     )
 
 
@@ -251,6 +268,7 @@ def expire_on_cancel(reservation) -> None:
     now = db.utcnow()
     db.execute(
         "UPDATE reservation_claim SET token_hash = NULL, guest_access_locked_at = ?, "
+        "guest_access_reopened_at = NULL, "
         "updated_at = ? WHERE reservation_id = ?",
         (now, now, reservation["id"]),
     )
@@ -320,7 +338,9 @@ def sweep_reminders() -> Dict[str, int]:
         "SELECT r.*, a.permalink_token, a.internal_name, a.uby_name, a.owner_user_id, "
         "a.legal_entity_id, c.state AS claim_state, c.email AS claim_email, "
         "c.lang AS claim_lang, c.email_masked AS email_masked, "
-        "c.guest_access_locked_at AS guest_access_locked_at, c.token_version AS token_version "
+        "c.guest_access_locked_at AS guest_access_locked_at, "
+        "c.guest_access_reopened_at AS guest_access_reopened_at, "
+        "c.token_version AS token_version "
         "FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
         "LEFT JOIN reservation_claim c ON c.reservation_id = r.id "
@@ -353,47 +373,51 @@ def sweep_reminders() -> Dict[str, int]:
                     owner_user_id=reservation["owner_user_id"],
                 ):
                     summary["guest"] += 1
-        if start == today:
-            if not complete:
-                if not reservation["guest_access_locked_at"]:
-                    lock_guest_access(reservation["id"])
-                    summary["locked"] += 1
-                if now_local.hour >= 9:
-                    entity = None
-                    if reservation["legal_entity_id"]:
-                        entity = db.query_one(
-                            "SELECT * FROM legal_entity WHERE id = ?",
-                            (reservation["legal_entity_id"],),
+        if start < today and not complete:
+            if (
+                not reservation["guest_access_locked_at"]
+                and not reservation["guest_access_reopened_at"]
+            ):
+                lock_guest_access(reservation["id"])
+                summary["locked"] += 1
+        if start == today and not complete and now_local.hour >= 9:
+            entity = None
+            if reservation["legal_entity_id"]:
+                entity = db.query_one(
+                    "SELECT * FROM legal_entity WHERE id = ?",
+                    (reservation["legal_entity_id"],),
+                )
+            host_email = (entity["contact_email"] if entity else "") or ""
+            masked = reservation["email_masked"] or "not claimed"
+            if host_email:
+                mail.enqueue(
+                    kind="reminder_host",
+                    idempotency_key=f"reminder_host:{reservation['id']}:{start.isoformat()}",
+                    to_email=host_email,
+                    subject=f"Incomplete registration: {reservation['internal_name']}",
+                    payload={
+                        "text": (
+                            f"{reservation['internal_name']} check-in is today "
+                            f"({reservation['date_from']}). Guest forms are incomplete "
+                            f"(assigned to {masked}). The guest still has the 24-hour "
+                            f"grace period to finish the form. "
+                            f"Open {config.PUBLIC_BASE_URL}/reservations/{reservation['id']}"
                         )
-                    host_email = (entity["contact_email"] if entity else "") or ""
-                    masked = reservation["email_masked"] or "not claimed"
-                    if host_email:
-                        mail.enqueue(
-                            kind="reminder_host",
-                            idempotency_key=f"reminder_host:{reservation['id']}:{start.isoformat()}",
-                            to_email=host_email,
-                            subject=f"Incomplete registration: {reservation['internal_name']}",
-                            payload={
-                                "text": (
-                                    f"{reservation['internal_name']} check-in is today "
-                                    f"({reservation['date_from']}). Guest forms are incomplete "
-                                    f"(assigned to {masked}). "
-                                    f"Open {config.PUBLIC_BASE_URL}/reservations/{reservation['id']}"
-                                )
-                            },
-                            reservation_id=reservation["id"],
-                            apartment_id=reservation["apartment_id"],
-                            owner_user_id=reservation["owner_user_id"],
-                        )
-                    alerts.raise_alert(
-                        "warning",
-                        "guest_incomplete_checkin",
-                        f"{reservation['internal_name']}: check-in today and forms are incomplete.",
-                        f"Claimed as {masked}. Reopen guest access from the stay page if needed.",
-                        dedupe_key=f"guest_incomplete_checkin:{reservation['id']}",
-                        apartment_id=reservation["apartment_id"],
-                        reservation_id=reservation["id"],
-                    )
-                    summary["host"] += 1
+                    },
+                    reservation_id=reservation["id"],
+                    apartment_id=reservation["apartment_id"],
+                    owner_user_id=reservation["owner_user_id"],
+                )
+            alerts.raise_alert(
+                "warning",
+                "guest_incomplete_checkin",
+                f"{reservation['internal_name']}: check-in today and forms are incomplete.",
+                f"Claimed as {masked}. The guest can still complete the form during "
+                f"the 24-hour grace period.",
+                dedupe_key=f"guest_incomplete_checkin:{reservation['id']}",
+                apartment_id=reservation["apartment_id"],
+                reservation_id=reservation["id"],
+            )
+            summary["host"] += 1
     mail.drain(limit=8)
     return summary

@@ -53,6 +53,8 @@ deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
 
 **Host message:** each property may have one optional plain-text message shown on its guest registration form. Hosts edit it under the property’s Guest link settings. It is intended for a welcome note or property-specific guidance, not access codes or secrets.
 
+**Late registration:** incomplete claimed forms remain accessible for 24 hours from 00:00 Europe/Prague on the check-in date because imported reservations contain a date, not an arrival time. Notify the host after 09:00 on check-in day, then lock incomplete access when the grace period ends. An explicit host reopen overrides that automatic lock.
+
 ## Agents and automation
 
 Cursor Cloud Agents and other automated contributors **must read this file**

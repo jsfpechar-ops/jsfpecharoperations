@@ -74,6 +74,10 @@ def test_older_apartment_schema_migrates_and_serves_pages(monkeypatch, tmp_path)
         "SELECT 1 AS present FROM sqlite_master "
         "WHERE type = 'table' AND name = 'reservation_claim'"
     )
+    claim_columns = {
+        row["name"] for row in db.query("PRAGMA table_info(reservation_claim)")
+    }
+    assert "guest_access_reopened_at" in claim_columns
     assert db.query_one(
         "SELECT 1 AS present FROM sqlite_master "
         "WHERE type = 'table' AND name = 'email_outbox'"

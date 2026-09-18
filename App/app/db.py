@@ -234,6 +234,7 @@ CREATE TABLE IF NOT EXISTS reservation_claim (
     provisional_until       TEXT,
     claimed_at              TEXT,
     guest_access_locked_at  TEXT,
+    guest_access_reopened_at TEXT,
     declared_guests         INTEGER,
     completion_notified_at  TEXT,
     created_at              TEXT NOT NULL,
@@ -331,6 +332,7 @@ ADDED_COLUMNS = (
     ("audit", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
     ("apartment", "passport_photo_policy", "TEXT NOT NULL DEFAULT 'off'"),
     ("apartment", "guest_message", "TEXT"),
+    ("reservation_claim", "guest_access_reopened_at", "TEXT"),
 )
 
 
