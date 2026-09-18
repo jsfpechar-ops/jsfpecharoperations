@@ -248,7 +248,7 @@ def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
         )
         notified = claim.sweep_reminders()
         assert notified["host"] == 1
-        assert notified["locked"] == 0
+        assert not claim.ensure_row(current)["guest_access_locked_at"]
         assert claim.guest_access_open(
             reservation,
             claim.ensure_row(current),

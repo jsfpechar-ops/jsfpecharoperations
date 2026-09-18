@@ -114,6 +114,7 @@ def start_claim(
         return False, "stay_gone", None
     claim = ensure_row(reservation["id"])
     if not guest_access_open(reservation, claim):
+        lock_guest_access(reservation["id"])
         return False, "locked", None
     if claim["state"] == CLAIMED and not resend:
         return False, "already_claimed", None
@@ -209,6 +210,7 @@ def confirm(reservation, secret: str) -> bool:
     if reservation["status"] != "active":
         return False
     if not guest_access_open(reservation, claim):
+        lock_guest_access(reservation["id"])
         return False
     if token_hash(secret) != claim["token_hash"]:
         return False
@@ -374,11 +376,10 @@ def sweep_reminders() -> Dict[str, int]:
                 ):
                     summary["guest"] += 1
         if start < today and not complete:
-            if (
-                reservation["claim_state"] is not None
-                and not reservation["guest_access_locked_at"]
-                and not reservation["guest_access_reopened_at"]
-            ):
+            if not reservation["guest_access_locked_at"] and not reservation[
+                "guest_access_reopened_at"
+            ]:
+                ensure_row(reservation["id"])
                 lock_guest_access(reservation["id"])
                 summary["locked"] += 1
         if start == today and not complete and now_local.hour >= 9:
