@@ -420,6 +420,41 @@ def test_legal_entity_rows_are_clickable_and_can_be_archived():
         _clean_accounts()
 
 
+def test_controller_entity_cannot_be_archived_while_property_uses_it():
+    db.init_db()
+    _clean_accounts()
+    owner_id = _account("boundary-controller")
+    apartment_id = _apartment(
+        owner_id, "Controller reference flat", "boundary-controller-flat"
+    )
+    controller_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Controller only a.s.",
+            "owner_user_id": owner_id,
+            "created_at": db.utcnow(),
+        },
+    )
+    db.update(
+        "apartment",
+        apartment_id,
+        {"data_controller_entity_id": controller_id},
+    )
+    try:
+        response = _login("boundary-controller").post(
+            f"/entities/{controller_id}/archive",
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert "err=" in response.headers["location"]
+        assert db.query_one(
+            "SELECT archived_at FROM legal_entity WHERE id = ?",
+            (controller_id,),
+        )["archived_at"] is None
+    finally:
+        _clean_accounts()
+
+
 def test_host_admin_portal_shows_ubyhost_support_email():
     db.init_db()
     _clean_accounts()

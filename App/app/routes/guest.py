@@ -294,7 +294,8 @@ def _visible_reservations(apartment) -> List[Any]:
 
 
 def _can_pick_other_stays(apartment) -> bool:
-    return len(_visible_reservations(apartment)) > 1
+    """Whether the guest can return to the now-mandatory stay picker."""
+    return bool(_visible_reservations(apartment))
 
 
 def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Request] = None):

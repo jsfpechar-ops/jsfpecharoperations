@@ -66,7 +66,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_ongoing": "Ongoing",
         "host_details": "Your host",
         "host_details_help": (
-            "If you need anything about this stay, contact your host. "
+            "If there is any problem, feel free to contact your host. "
             "UbyHost does not run the property and cannot change your booking."
         ),
         "host_details_missing": (
@@ -337,8 +337,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_controller": "Who is responsible",
         "privacy_controller_missing": (
-            "The business operating this accommodation is the controller of your data. Ask "
-            "your host for its registered name and address if you need them in writing."
+            "Your host must identify the business responsible for your data. Ask your host "
+            "for its registered name and address if they are missing here."
         ),
         "privacy_purpose": "Why the data is collected",
         "privacy_purpose_body": (
@@ -369,8 +369,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_email_body": (
             "Your e-mail secures the reservation and is used to send the private form link, one "
             "day-before reminder if the declared forms remain incomplete, and a completion receipt. "
-            "The accommodation provider receives a copy of the completion receipt. The full address "
-            "is available to the accommodation provider as controller and to the delivery provider "
+            "The property manager receives a copy of the completion receipt. The full address "
+            "is available to the configured data controller and to the delivery provider "
             "where enabled; public guest screens display only a masked address. It is not used for marketing."
         ),
         "privacy_cookies_title": "Necessary cookies",
@@ -412,10 +412,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_processor": "Who runs this website",
         "privacy_processor_body": (
             "The UbyHost software is operated by ***REMOVED***, IČO ***REMOVED***, ***REMOVED*** 697/13, "
-            "13000 Praha 3, who processes data only on the accommodation provider's instructions to "
+            "13000 Praha 3, who processes data only on the configured controller's instructions to "
             "run the registration form, transactional messages, and stored records. Software support "
-            "is support@ubyhost.com; questions about your stay and personal-data rights go to the "
-            "accommodation provider above."
+            "is support@ubyhost.com; questions about your stay go to your host, while personal-data "
+            "rights requests go to the controller named above."
         ),
         "privacy_retention": "How long it is kept",
         "privacy_retention_body": (
@@ -500,7 +500,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_ongoing": "Právě probíhá",
         "host_details": "Váš hostitel",
         "host_details_help": (
-            "Pokud k pobytu něco potřebujete, kontaktujte ubytovatele. "
+            "Pokud máte jakýkoli problém, neváhejte kontaktovat svého hostitele. "
             "UbyHost objekt neprovozuje a rezervaci nemůže měnit."
         ),
         "host_details_missing": (
@@ -762,8 +762,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_controller": "Kdo za údaje odpovídá",
         "privacy_controller_missing": (
-            "Správcem údajů je podnikatel provozující toto ubytování. O jeho název a sídlo "
-            "písemně požádejte ubytovatele."
+            "Ubytovatel musí uvést subjekt odpovědný za vaše údaje. Pokud zde jeho údaje chybí, "
+            "požádejte ubytovatele o název a sídlo."
         ),
         "privacy_purpose": "Proč údaje sbíráme",
         "privacy_purpose_body": (
@@ -791,8 +791,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_email_body": (
             "E-mail zabezpečuje rezervaci a používá se k zaslání soukromého odkazu, jednoho "
             "upozornění den před příjezdem, pokud formuláře zůstávají neúplné, a potvrzení o "
-            "dokončení. Poskytovatel ubytování obdrží kopii potvrzení. Plná adresa je dostupná "
-            "poskytovateli ubytování jako správci a případně poskytovateli doručení e-mailu; "
+            "dokončení. Správce objektu obdrží kopii potvrzení. Plná adresa je dostupná "
+            "nastavenému správci osobních údajů a případně poskytovateli doručení e-mailu; "
             "veřejné obrazovky pro hosty zobrazují jen zastřenou adresu. K marketingu se nepoužívá."
         ),
         "privacy_cookies_title": "Nezbytné cookies",
@@ -835,10 +835,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_processor": "Kdo provozuje tento web",
         "privacy_processor_body": (
             "Software UbyHost provozuje ***REMOVED***, IČO ***REMOVED***, ***REMOVED***, "
-            "který údaje zpracovává pouze na pokyn poskytovatele ubytování kvůli chodu registračního "
+            "který údaje zpracovává pouze na pokyn nastaveného správce údajů kvůli chodu registračního "
             "formuláře, transakčním zprávám a uložení záznamů. Podpora software je "
-            "support@ubyhost.com; dotazy k pobytu a právům k osobním údajům směřujte na "
-            "poskytovatele ubytování uvedeného výše."
+            "support@ubyhost.com; dotazy k pobytu směřujte na hostitele a žádosti o práva k osobním "
+            "údajům na správce uvedeného výše."
         ),
         "privacy_retention": "Jak dlouho se uchovávají",
         "privacy_retention_body": (
