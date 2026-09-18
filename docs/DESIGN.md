@@ -130,12 +130,12 @@ Keep nights / date formatting via existing filters. Refine exact strings at impl
 - Competitor colors, logos, illustration style, or emoji
 - Multi-section first viewport (stats, schedules, address blocks, secondary promos)
 
-### Implementation notes (later PR; not this docs-only pass)
+### Implementation status
 
-- Always render `pick.html` when ≥1 stay (`pick_stay` must not redirect on `len == 1`).
-- Reuse tokens; extend `guest.css` for welcome band + lane rows; keep shadows off page surfaces.
-- Update claim/smoke tests that assume a single-stay skip.
-- Ship with the next mail production release bundle alongside assigned-screen enrichment and PM-controller copy.
+- Implemented in PR #88: `pick.html` always renders when ≥1 stay (`pick_stay` no longer redirects on `len == 1`).
+- The welcome band and lane rows reuse product tokens and keep page surfaces shadow-free.
+- Claim/navigation tests cover the single-stay confirmation step.
+- The same PR includes assigned-screen enrichment, PM/controller separation, and the passport policy.
 
 **Host message:** each property may have one optional plain-text message shown on its guest registration form. Hosts edit it under the property’s Guest link settings. It is intended for a welcome note or property-specific guidance, not access codes or secrets.
 
