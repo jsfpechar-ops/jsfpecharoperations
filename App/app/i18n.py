@@ -346,6 +346,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "start and end of your stay, signature, declared party size, and the e-mail address "
             "used to claim the reservation."
         ),
+        "privacy_data_body_no_email": (
+            "Given name and surname, date of birth, nationality, travel document number, visa "
+            "number where one was issued, permanent home address abroad, purpose of stay, the "
+            "start and end of your stay, signature, and declared party size. This version of the "
+            "form does not collect your e-mail address."
+        ),
         "privacy_email_title": "E-mail messages and masking",
         "privacy_email_body": (
             "Your e-mail secures the reservation and is used to send the private form link, one "
@@ -356,8 +362,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_cookies_title": "Necessary cookies",
         "privacy_cookies_body": (
-            "UbyHost uses only necessary guest cookies: PIN access for up to 7 days, and language, "
-            "confirmed-reservation access, and forms submitted on this device for up to 60 days. "
+            "UbyHost uses only necessary guest cookies: PIN access for up to 7 days, and language "
+            "and forms submitted on this device for up to 60 days. When e-mail claims are enabled, "
+            "confirmed-reservation access is also remembered for up to 60 days. "
             "They prevent another guest from seeing or changing your form and keep the workflow usable. "
             "Cloudflare may set security identifiers when Turnstile or bot protection is triggered. "
             "There are no advertising or analytics cookies."
@@ -376,6 +383,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "any officer inspecting the house book; your accommodation provider; UbyHost as its "
             "processor; and an e-mail delivery provider where messaging is enabled. The data is "
             "never sold, sent back to the booking site, or used for marketing."
+        ),
+        "privacy_recipients_body_no_email": (
+            "The Police of the Czech Republic, Directorate of the Alien Police Service, any officer "
+            "inspecting the house book, your accommodation provider, and UbyHost as its processor. "
+            "The data is never sold, sent back to the booking site, or used for marketing."
         ),
         "privacy_bot_protection_title": "Protecting the registration link",
         "privacy_bot_protection_body": (
@@ -399,6 +411,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "is retained unless the host releases the claim. Completed or failed message-delivery "
             "records and staging console copies are normally deleted after 14 days; limited backup "
             "copies may persist until their retention cycle expires."
+        ),
+        "privacy_retention_body_no_email": (
+            "House-book registration details and signatures are kept for six years from the last "
+            "entry, as § 101 requires. Limited backup copies may persist until their retention cycle expires."
         ),
         "privacy_rights": "Your rights",
         "privacy_rights_body": (
@@ -740,6 +756,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "číslo víza (bylo-li vydáno), trvalé bydliště v zahraničí, účel pobytu, počátek a "
             "konec pobytu, podpis, nahlášený počet hostů a e-mail použitý k převzetí rezervace."
         ),
+        "privacy_data_body_no_email": (
+            "Jméno a příjmení, datum narození, státní občanství, číslo cestovního dokladu, "
+            "číslo víza (bylo-li vydáno), trvalé bydliště v zahraničí, účel pobytu, počátek a "
+            "konec pobytu, podpis a nahlášený počet hostů. Tato verze formuláře e-mail nesbírá."
+        ),
         "privacy_email_title": "E-mailové zprávy a zastření adresy",
         "privacy_email_body": (
             "E-mail zabezpečuje rezervaci a používá se k zaslání soukromého odkazu, jednoho "
@@ -751,8 +772,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_cookies_title": "Nezbytné cookies",
         "privacy_cookies_body": (
             "UbyHost používá jen nezbytné cookies pro hosty: přístup přes PIN nejvýše 7 dní a "
-            "jazyk, přístup k potvrzené rezervaci a formuláře odeslané z tohoto zařízení nejvýše "
-            "60 dní. Brání jinému hostovi vidět nebo měnit váš formulář a zachovávají funkčnost. "
+            "jazyk a formuláře odeslané z tohoto zařízení nejvýše 60 dní. Při zapnutém převzetí "
+            "e-mailem se nejvýše 60 dní pamatuje i přístup k potvrzené rezervaci. Brání jinému "
+            "hostovi vidět nebo měnit váš formulář a zachovávají funkčnost. "
             "Cloudflare může nastavit bezpečnostní identifikátory při aktivaci Turnstile nebo ochrany "
             "proti botům. Reklamní ani analytické cookies se nepoužívají."
         ),
@@ -770,6 +792,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "orgánu při nahlédnutí do domovní knihy; poskytovateli ubytování; UbyHostu jako "
             "zpracovateli a při zapnutých zprávách poskytovateli doručení e-mailu. Údaje se "
             "neprodávají, neposílají zpět rezervačnímu portálu ani nepoužívají k marketingu."
+        ),
+        "privacy_recipients_body_no_email": (
+            "Policii České republiky, Ředitelství služby cizinecké policie, kontrolnímu orgánu "
+            "při nahlédnutí do domovní knihy, poskytovateli ubytování a UbyHostu jako jeho "
+            "zpracovateli. Údaje se neprodávají, neposílají zpět rezervačnímu portálu ani "
+            "nepoužívají k marketingu."
         ),
         "privacy_bot_protection_title": "Ochrana registračního odkazu",
         "privacy_bot_protection_body": (
@@ -792,6 +820,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "podle § 101. E-mail k převzetí zůstává spojen s rezervací po dobu jejího uchování, "
             "pokud ubytovatel převzetí neuvolní. Dokončené či neúspěšné záznamy doručení a konzolové "
             "kopie ve stagingu se běžně mažou po 14 dnech; omezené zálohy mohou zůstat do konce cyklu."
+        ),
+        "privacy_retention_body_no_email": (
+            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od posledního zápisu "
+            "podle § 101. Omezené zálohy mohou zůstat do konce svého retenčního cyklu."
         ),
         "privacy_rights": "Vaše práva",
         "privacy_rights_body": (

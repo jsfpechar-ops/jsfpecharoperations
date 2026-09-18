@@ -85,7 +85,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.automation.action": "Finish automation",
         "onboarding.guest_link.title": "Guest link",
         "onboarding.guest_link.detail": (
-            "Review the PIN, optional host message, passport policy, and e-mail/privacy behavior, "
+            "Review the PIN, optional host message, and e-mail/privacy behavior, "
             "then copy the link into every booking portal's check-in message."
         ),
         "onboarding.guest_link.action": "Copy guest link",
@@ -174,13 +174,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "You are responsible for accurate records. Compare the travel document when you can; "
             "sending to UbyPort also records your confirmation."
         ),
-        "host.verify_help": "Optional: open the guest form to view an uploaded ID photo.",
+        "host.verify_help": "Optional: record that you checked the guest's document in person.",
         "host.verify_confirm": "I checked this guest's ID against the details above.",
         "host.verify_button": "Mark ID checked",
         "host.verify_pending": "ID not checked",
         "host.verify_view_photo": "View uploaded ID",
-        "host.verify_footnote": "Uploaded ID photos are deleted when you mark the check.",
-        "host.verify_waiting_photo": "No ID photo uploaded — you can still mark the check in person.",
+        "host.verify_footnote": "UbyHost does not collect a passport image.",
+        "host.verify_waiting_photo": "No document check recorded — you can mark an in-person check.",
         "host.verify_done": "ID checked on",
         "host.verify_host_entry": (
             "When you enter a guest by hand you confirm the details against their document in "
@@ -302,8 +302,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "travel document (no scanning or machine-readable line copying)."
         ),
         "guide.guests.step_photo": (
-            "Passport upload is off by default. If you require it for this property, non-Czech guests "
-            "upload a passport/ID image for your optional check; it is never sent to Police."
+            "UbyHost does not collect passport or ID images. Any document check is handled in person."
         ),
         "guide.guests.step_czech": (
             "Czech guests are still written to the house book but are not reported to the police."
@@ -320,9 +319,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.legal.verification_title": "Verify every foreign guest",
         "guide.legal.verification_body": (
-            "You are legally responsible for accurate police records. Guests upload a passport "
-            "photo for your review; compare face and document number before confirming. The photo "
-            "is deleted immediately after verification. If a guest refuses to show ID, you may "
+            "You are legally responsible for accurate police records. Check the travel document "
+            "in person when your procedure or the law requires it; UbyHost does not collect an image. "
+            "If a guest refuses to show ID, you may "
             "refuse accommodation."
         ),
         "guide.reporting.scheduled": "Scheduled",
@@ -347,7 +346,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "script monitoring. Legitimate visitors may occasionally see a short challenge."
         ),
         "guide.security.passports": (
-            "Passport photos are encrypted while awaiting review and deleted immediately after verification."
+            "Passport and ID images are not collected by the guest form."
         ),
         "guide.security.backups": (
             "Settings shows backup status. Production creates encrypted database backups; keep an independent "
@@ -546,7 +545,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.awaiting_guest": "Share the guest link or add the details yourself.",
         "action.awaiting_verification": "Forms complete — mark ID checked or send from this stay.",
         "action.check_missing": "Open the stay and check what is missing.",
-        "hint.awaiting_verification": "Check each passport photo and confirm the details before reporting",
+        "hint.awaiting_verification": "Optionally record an in-person document check",
         "hint.awaiting_guest": "Send the check-in link to the guest, or add their details yourself",
         "hint.auto_immediate": "Sends automatically when all declared guest forms are complete",
         "hint.nothing_duty": "Nothing to send: no guest record is subject to the reporting duty",
@@ -708,7 +707,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.metric.guests_note": "%(sent)s reported · %(reportable)s subject to the duty",
         "stay.detail.metric.set_expected": "Set expected guests",
         "stay.detail.metric.reporting": "Reporting",
-        "stay.detail.note.verify": "Guest forms are complete. You may check each passport photo and record the result before reporting.",
+        "stay.detail.note.verify": "Guest forms are complete. You may check the document in person and record the result.",
         "stay.detail.note.ready_immediate": "All declared forms are complete. UbyPort submission starts automatically without verification.",
         "stay.detail.note.ready_manual": "Guest forms are complete. Check the details below, then send when ready.",
         "stay.detail.note.ready_scheduled": "Guest forms are complete. They will send %(hours)s h after completion, or use Send now.",
@@ -923,7 +922,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.automation.action": "Dokončit automatizaci",
         "onboarding.guest_link.title": "Odkaz pro hosty",
         "onboarding.guest_link.detail": (
-            "Zkontrolujte PIN, volitelnou zprávu hostitele, pravidlo pro pas a e-mail/soukromí, "
+            "Zkontrolujte PIN, volitelnou zprávu hostitele a e-mail/soukromí, "
             "pak odkaz zkopírujte do zprávy k příjezdu na každém rezervačním portálu."
         ),
         "onboarding.guest_link.action": "Kopírovat odkaz pro hosty",
@@ -1012,13 +1011,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Za správnost údajů odpovídáte vy. Porovnejte doklad, když můžete; odeslání do UbyPortu "
             "také zaznamená vaše potvrzení."
         ),
-        "host.verify_help": "Volitelně otevřete formulář hosta a zobrazte nahranou fotografii dokladu.",
+        "host.verify_help": "Volitelně zaznamenejte, že jste doklad hosta zkontrolovali osobně.",
         "host.verify_confirm": "Zkontroloval(a) jsem doklad hosta proti údajům výše.",
         "host.verify_button": "Označit doklad zkontrolovaný",
         "host.verify_pending": "Doklad nezkontrolován",
         "host.verify_view_photo": "Zobrazit nahraný doklad",
-        "host.verify_footnote": "Nahrané fotografie dokladu se po označení kontroly smažou.",
-        "host.verify_waiting_photo": "Host nenahrál fotografii — kontrolu můžete označit i osobně.",
+        "host.verify_footnote": "UbyHost obrázek pasu ani dokladu nesbírá.",
+        "host.verify_waiting_photo": "Kontrola dokladu není zaznamenána — osobní kontrolu můžete označit.",
         "host.verify_done": "Doklad zkontrolován",
         "host.verify_host_entry": (
             "Když zadáváte hosta ručně, potvrzujete údaje proti dokladu na místě. Záznam se "
@@ -1139,8 +1138,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "jak jsou v cestovním dokladu (bez skenování ani přepisování strojově čitelných řádků)."
         ),
         "guide.guests.step_photo": (
-            "Nahrávání pasu je ve výchozím stavu vypnuté. Pokud ho pro ubytování vyžadujete, cizinci "
-            "nahrají obrázek pasu/průkazu k vaší volitelné kontrole; policii se soubor neposílá."
+            "UbyHost obrázky pasů ani dokladů nesbírá. Případná kontrola dokladu probíhá osobně."
         ),
         "guide.guests.step_czech": (
             "Občané ČR se zapisují do domovní knihy, policii se neoznamují."
@@ -1157,8 +1155,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.legal.verification_title": "Ověřte každého cizince",
         "guide.legal.verification_body": (
-            "Za správnost policejních záznamů odpovídáte vy. Hosté nahrají fotografii pasu ke kontrole; "
-            "porovnejte obličej a číslo dokladu před potvrzením. Fotografie se po ověření okamžitě smaže. "
+            "Za správnost policejních záznamů odpovídáte vy. Doklad zkontrolujte osobně, pokud to "
+            "vyžaduje váš postup nebo zákon; UbyHost jeho obrázek nesbírá. "
             "Odmítne-li host doklad ukázat, můžete odmítnout ubytování."
         ),
         "guide.reporting.scheduled": "Naplánované",
@@ -1379,7 +1377,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "action.awaiting_guest": "Sdílejte odkaz pro hosty nebo údaje zadejte sami.",
         "action.awaiting_verification": "Formuláře hotové — označte kontrolu dokladu nebo odešlete z pobytu.",
         "action.check_missing": "Otevřete pobyt a zkontrolujte, co chybí.",
-        "hint.awaiting_verification": "Zkontrolujte fotografii pasu a potvrďte údaje před hlášením",
+        "hint.awaiting_verification": "Volitelně zaznamenejte osobní kontrolu dokladu",
         "hint.awaiting_guest": "Pošlete hostovi odkaz pro check-in, nebo jeho údaje přidejte sami",
         "hint.auto_immediate": "Odešle se automaticky po dokončení všech nahlášených formulářů",
         "hint.nothing_duty": "Nic k odeslání: žádný záznam hosta není předmětem hlášení",
@@ -1539,7 +1537,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.metric.guests_note": "%(sent)s nahlášeno · %(reportable)s podléhá povinnosti",
         "stay.detail.metric.set_expected": "Nastavit očekávaný počet hostů",
         "stay.detail.metric.reporting": "Hlášení",
-        "stay.detail.note.verify": "Formuláře jsou hotové. Fotografii pasu můžete zkontrolovat a výsledek zaznamenat před hlášením.",
+        "stay.detail.note.verify": "Formuláře jsou hotové. Doklad můžete zkontrolovat osobně a výsledek zaznamenat.",
         "stay.detail.note.ready_immediate": "Všechny nahlášené formuláře jsou hotové. Odeslání do UbyPortu začne automaticky bez ověření.",
         "stay.detail.note.ready_manual": "Formuláře jsou hotové. Zkontrolujte údaje níže a odešlete, až budete připraveni.",
         "stay.detail.note.ready_scheduled": "Formuláře jsou hotové. Odešlou se %(hours)s h po dokončení, nebo použijte Odeslat.",
