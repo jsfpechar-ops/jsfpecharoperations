@@ -21,7 +21,7 @@ os.environ["UBYHOST_GUEST_PIN"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import claim, db  # noqa: E402
+from app import claim, db, mail  # noqa: E402
 from app.main import app  # noqa: E402
 
 FAILURES = []
@@ -127,7 +127,23 @@ def seed():
 
 
 def claim_stay(client, token, reservation_id, email, party_size=2):
-    """Exercise the scanner-safe magic-link flow before opening guest forms."""
+    """Open the guest forms the way the configured mail backend allows.
+
+    With mail disabled the guest declares the headcount behind the PIN and no
+    e-mail is collected, so only the claim-enabled build has a magic link.
+    """
+    if not mail.mail_enabled():
+        declared = client.post(
+            f"/l/{token}/{reservation_id}/party",
+            data={"party_size": str(party_size)},
+            follow_redirects=False,
+        )
+        if declared.status_code != 303:
+            FAILURES.append(
+                f"party {reservation_id}: HTTP {declared.status_code}"
+            )
+        return
+
     reservation = db.query_one(
         "SELECT * FROM reservation WHERE id = ?", (reservation_id,)
     )
@@ -210,35 +226,39 @@ def main():
         must_contain=["Czech law", "Smoke Studio", "How your data is handled"],
         must_not_contain=["Airbnb", "Booking.com"],
     )
+    privacy_expected = [
+        "Smoke s.r.o.",
+        "privacy@example.com",
+        "6(1)(c)",
+        "uoou.gov.cz",
+        "Necessary cookies",
+    ]
+    privacy_absent = ["Temporary passport photo"]
+    if mail.mail_enabled():
+        privacy_expected.append("E-mail messages and masking")
+    else:
+        privacy_expected.append("does not collect your e-mail")
+        privacy_absent.append("E-mail messages and masking")
     check(
         guest,
         f"/l/{token}/privacy",
-        must_contain=[
-            "Smoke s.r.o.",
-            "privacy@example.com",
-            "6(1)(c)",
-            "uoou.gov.cz",
-            "Necessary cookies",
-            "does not collect your e-mail",
-        ],
-        must_not_contain=["Temporary passport photo", "E-mail messages and masking"],
+        must_contain=privacy_expected,
+        must_not_contain=privacy_absent,
     )
     # A separate browser, because ?lang=cs sets a sticky cookie.
     czech = TestClient(app)
     check(czech, f"/l/{token}/privacy?lang=cs", must_contain=["Právní základ", "Policii"])
 
+    entry_marker = 'name="guest_email"' if mail.mail_enabled() else 'name="surname"'
     check(
         guest,
         f"/l/{token}/{stay_a}",
-        must_contain=[
-            'name="surname"',
-            "Czech law",
-        ],
+        must_contain=[entry_marker, "Czech law"],
         must_not_contain=["Airbnb", "Booking.com"],
     )
     check(guest, f"/l/{token}/999999", expect=(404,), must_contain=["no longer open"])
     check(guest, "/l/nosuchtoken", expect=(404,))
-    check(guest, f"/l/{token}/{stay_b}", must_contain=['name="surname"'])
+    check(guest, f"/l/{token}/{stay_b}", must_contain=[entry_marker])
 
     claim_stay(guest, token, stay_a, "lead@example.test")
     check(
