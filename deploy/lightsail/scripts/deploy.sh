@@ -57,8 +57,46 @@ fi
 chmod +x scripts/*.sh
 ./scripts/preflight.sh
 
+BACKUP_STAMP=""
+TABLES=(user_account legal_entity apartment reservation guest submission)
+declare -A BEFORE_COUNTS
+if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
+  echo "==> Mandatory pre-deploy backup"
+  ./scripts/backup.sh
+  BACKUP_STAMP="$(docker compose exec -T ubyhost sh -c \
+    'ls -1 /data/backups 2>/dev/null | sort -r | sed -n "1p"')"
+  if [ -z "${BACKUP_STAMP}" ]; then
+    echo "No backup stamp found after backup — refusing deployment." >&2
+    exit 1
+  fi
+  BACKUP_OK="$(docker compose exec -T ubyhost sqlite3 \
+    "/data/backups/${BACKUP_STAMP}/ubyhost.db" "PRAGMA integrity_check;")"
+  if [ "${BACKUP_OK}" != "ok" ]; then
+    echo "Backup integrity check failed: ${BACKUP_OK}" >&2
+    exit 1
+  fi
+  for table in "${TABLES[@]}"; do
+    BEFORE_COUNTS["${table}"]="$(docker compose exec -T ubyhost sqlite3 \
+      /data/ubyhost.db "SELECT COUNT(*) FROM ${table};")"
+  done
+  echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
+fi
+
 echo "==> Building image"
 docker compose build --pull
+
+if [ -n "${BACKUP_STAMP}" ]; then
+  echo "==> Dry-running database migration against the backup copy"
+  docker compose exec -T ubyhost sh -c \
+    "cp '/data/backups/${BACKUP_STAMP}/ubyhost.db' '/data/backups/${BACKUP_STAMP}/preflight.db'"
+  docker compose run --rm --no-deps \
+    -e "UBYHOST_DB=/data/backups/${BACKUP_STAMP}/preflight.db" \
+    --entrypoint python ubyhost -c \
+    "from app import db; db.init_db(); assert db.query_one('PRAGMA integrity_check')[0] == 'ok'; required={'guest_message','passport_photo_policy'}; apartment={r['name'] for r in db.query('PRAGMA table_info(apartment)')}; reservation={r['name'] for r in db.query('PRAGMA table_info(reservation)')}; claim={r['name'] for r in db.query('PRAGMA table_info(reservation_claim)')}; assert required <= apartment; assert 'registration_completed_at' in reservation; assert 'guest_access_reopened_at' in claim"
+  docker compose exec -T ubyhost rm -f \
+    "/data/backups/${BACKUP_STAMP}/preflight.db"
+  echo "Migration dry-run passed."
+fi
 
 echo "==> Starting stack"
 docker compose up -d --remove-orphans
@@ -79,6 +117,24 @@ echo ""
 echo "Health (internal):"
 docker compose exec -T ubyhost python -c \
   "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
+if [ -n "${BACKUP_STAMP}" ]; then
+  echo ""
+  echo "Post-deploy database integrity and row-count checks:"
+  LIVE_OK="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db "PRAGMA integrity_check;")"
+  if [ "${LIVE_OK}" != "ok" ]; then
+    echo "Live database integrity check failed: ${LIVE_OK}" >&2
+    exit 1
+  fi
+  for table in "${TABLES[@]}"; do
+    after="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
+      "SELECT COUNT(*) FROM ${table};")"
+    if [ "${after}" -lt "${BEFORE_COUNTS[${table}]}" ]; then
+      echo "${table} row count fell from ${BEFORE_COUNTS[${table}]} to ${after}." >&2
+      exit 1
+    fi
+    echo "  ${table}: ${BEFORE_COUNTS[${table}]} -> ${after}"
+  done
+fi
 echo ""
 echo "Public URL: ${UBYHOST_PUBLIC_BASE_URL}"
 if [ "${CLOUDFLARE_PROXY:-0}" = "1" ]; then

@@ -1,7 +1,7 @@
 """Guest claim, magic-link confirmation, and staging-safe mail."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -50,6 +50,7 @@ def _seed():
             "legal_entity_id": entity_id,
             "internal_name": "Claim flat",
             "uby_name": "Claim Facility",
+            "guest_message": "Welcome to Claim Facility.\nPlease complete this before arrival.",
             "permalink_token": TOKEN,
             "permalink_window_days": 2,
             "default_purpose": "10",
@@ -109,6 +110,61 @@ def test_picker_hides_past_and_far_check_ins():
         assert f"/l/{TOKEN}/{current}" in page.text or "guest_email" in page.text
         assert f"/l/{TOKEN}/{past}" not in page.text
         assert f"/l/{TOKEN}/{far}" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_guest_pages_show_host_contact_not_ubyhost_support():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        browser = TestClient(app)
+        claim_page = browser.get(f"/l/{TOKEN}/{current}")
+        assert claim_page.status_code == 200
+        assert "Your host" in claim_page.text
+        assert "If you need anything about this stay" in claim_page.text
+        assert "Claim Mail" in claim_page.text
+        assert "host@claim.test" in claim_page.text
+        assert "+420111222333" in claim_page.text
+        assert "mailto:host@claim.test" in claim_page.text
+        assert "mailto:support@ubyhost.com" not in claim_page.text
+
+        complete_guest_claim(browser, TOKEN, current, party_size=1)
+        form = browser.get(f"/l/{TOKEN}/{current}/new")
+        assert form.status_code == 200
+        assert "Your host" in form.text
+        assert "host@claim.test" in form.text
+        assert "A message from your host" in form.text
+        assert "Welcome to Claim Facility." in form.text
+        assert "Please complete this before arrival." in form.text
+        assert "mailto:support@ubyhost.com" not in form.text
+    finally:
+        _cleanup()
+
+
+def test_claim_form_and_privacy_notice_disclose_email_and_cookies():
+    current, _past, _far, apartment_id = _seed()
+    try:
+        browser = TestClient(app)
+        claim_page = browser.get(f"/l/{TOKEN}/{current}")
+        assert "one reminder if the forms are incomplete" in claim_page.text
+        assert "Strictly necessary cookies" in claim_page.text
+        assert "no advertising or analytics cookies" in claim_page.text
+        assert "How your data is handled" in claim_page.text
+
+        privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert privacy.status_code == 200
+        assert "E-mail messages and masking" in privacy.text
+        assert "Necessary cookies" in privacy.text
+        assert "normally deleted after 14 days" in privacy.text
+        assert "Temporary passport photo or PDF" not in privacy.text
+
+        db.update(
+            "apartment",
+            apartment_id,
+            {"passport_photo_policy": "required_foreign"},
+        )
+        policy_privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert "Temporary passport photo or PDF" in policy_privacy.text
     finally:
         _cleanup()
 
@@ -198,5 +254,118 @@ def test_host_can_release_and_reopen_claim():
         assert not claim.ensure_row(current)["guest_access_locked_at"]
         claim.release(current)
         assert claim.ensure_row(current)["state"] == "unclaimed"
+    finally:
+        _cleanup()
+
+
+def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    check_in = date.today()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, current, party_size=1)
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        clock = [datetime.combine(check_in, time(10, 0))]
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now if now is not None else clock[0],
+        )
+        notified = claim.sweep_reminders()
+        assert notified["host"] == 1
+        assert not claim.ensure_row(current)["guest_access_locked_at"]
+        assert claim.guest_access_open(
+            reservation,
+            claim.ensure_row(current),
+            datetime.combine(check_in, time(23, 59)),
+        )
+        host_mail = db.query_one(
+            "SELECT * FROM console_mail_log WHERE subject LIKE 'Incomplete registration:%'"
+        )
+        assert host_mail
+        assert "24-hour grace period" in host_mail["body_text"]
+
+        after_grace = datetime.combine(check_in + timedelta(days=1), time(0, 1))
+        clock[0] = after_grace
+        expired = claim.sweep_reminders()
+        assert expired["locked"] == 1
+        assert not claim.guest_access_open(reservation, claim.ensure_row(current))
+
+        claim.reopen_guest_access(current)
+        assert claim.guest_access_open(reservation, claim.ensure_row(current))
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    today = date.today()
+    try:
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (today + timedelta(days=1)).isoformat(),
+                "date_to": (today + timedelta(days=4)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        complete_guest_claim(
+            browser, TOKEN, current, email="guest-reminder@claim.test", party_size=1
+        )
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now or datetime.combine(today, time(10, 0)),
+        )
+
+        summary = claim.sweep_reminders()
+
+        assert summary["host"] == 0
+        assert summary["guest"] == 1
+        reminder = db.query_one(
+            "SELECT * FROM console_mail_log WHERE to_email = ?",
+            ("guest-reminder@claim.test",),
+        )
+        assert reminder
+        assert reminder["subject"] == "Please finish your guest registration"
+        assert "only incomplete-registration reminder" in reminder["body_text"]
+
+        claim.sweep_reminders()
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM console_mail_log WHERE to_email = ?",
+            ("guest-reminder@claim.test",),
+        )["n"] == 1
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_guest_facing_assignment_masks_email_and_lock_hides_it():
+    current, _past, _far, _apartment_id = _seed()
+    address = "private-address@claim.test"
+    try:
+        owner = TestClient(app)
+        complete_guest_claim(owner, TOKEN, current, email=address, party_size=1)
+
+        public = TestClient(app).get(f"/l/{TOKEN}/{current}")
+        assert public.status_code == 200
+        assert mail.mask_email(address) in public.text
+        assert address not in public.text
+
+        claim.lock_guest_access(current)
+        locked = owner.get(f"/l/{TOKEN}/{current}")
+        assert locked.status_code == 404
+        assert address not in locked.text
     finally:
         _cleanup()

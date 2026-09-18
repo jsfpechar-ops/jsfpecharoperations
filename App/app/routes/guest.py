@@ -252,7 +252,8 @@ def _apartment_by_token(token: str):
 
 def _pin_page(request: Request, token: str, lang: str, error: str = ""):
     failures = rate_limit.pin_failure_count(rate_limit.client_key(request, token))
-    context = _shared(request, token, lang)
+    apartment = _apartment_by_token(token)
+    context = _shared(request, token, lang, apartment)
     context.update(
         {
             "error": error,
@@ -334,18 +335,29 @@ def _unavailable(
         "form_locked": ("form_locked_title", "form_locked_help"),
     }
     title_key, body_key = titles.get(reason, titles["bad_link"])
-    return render_guest(
-        request,
-        "guest/unavailable.html",
-        {
+    apartment = _apartment_by_token(token) if token else None
+    context = (
+        _shared(request, token or "", lang, apartment)
+        if token
+        else {
             "t": i18n.translator(lang),
             "lang": lang,
             "lang_urls": _lang_urls(request),
+            "controller": {},
+        }
+    )
+    context.update(
+        {
             "title_key": title_key,
             "body_key": body_key,
             "restart_url": _guest_link(token) + _lang_q(lang) if token else None,
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
-        },
+        }
+    )
+    return render_guest(
+        request,
+        "guest/unavailable.html",
+        context,
         status_code=status_code,
     )
 
@@ -481,6 +493,9 @@ def _set_declared_guests(reservation, count: int) -> None:
         reservation["id"],
         {"declared_guests": count, "updated_at": db.utcnow()},
     )
+    reporting.maybe_submit_after_completion(
+        reservation["apartment_id"], reservation["id"]
+    )
 
 
 # --- privacy notice ------------------------------------------------------
@@ -552,6 +567,7 @@ def privacy_notice(token: str, request: Request):
     context.update(
         {
             "controller": _controller(apartment),
+            "passport_photo_policy": apartment["passport_photo_policy"] or "off",
             "back_url": back_url,
         }
     )
@@ -1181,6 +1197,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
         apartment,
     )
+    reporting.maybe_submit_after_completion(apartment["id"], reservation_id)
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303

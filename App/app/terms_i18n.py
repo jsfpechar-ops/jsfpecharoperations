@@ -10,7 +10,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Contract between the UbyHost software operator and accommodation providers "
             "who use the service. Please read carefully before using UbyHost."
         ),
-        "terms.effective": "Effective date: 15 September 2026. Version 1.2.",
+        "terms.effective": "Effective date: 18 September 2026. Version 1.3.",
         "terms.operator_title": "Service provider",
         "terms.footer_link": "Terms of Service",
         "terms.footer_short": "Terms",
@@ -105,8 +105,10 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.s08_title": "8. Host obligations and legal compliance",
         "terms.s08_body": (
             "The Host warrants that it holds all licences, registrations, and permissions required to "
-            "operate accommodation and to collect and process Guest Data. The Host must: verify Guest "
-            "identity and data accuracy before reporting; obtain signatures where required; maintain "
+            "operate accommodation and to collect and process Guest Data. The Host must: take reasonable "
+            "steps to ensure Guest identity and data accuracy, including any document check required by "
+            "law or the Host's procedure; understand that configured automatic reporting may transmit "
+            "complete records without waiting for an in-app verification step; obtain signatures where required; maintain "
             "paper or other legally required records alongside digital copies; meet reporting deadlines; "
             "present records at inspections; configure Legal Entities, properties, and UbyPort credentials "
             "correctly; and comply with GDPR transparency, retention, and security obligations toward "
@@ -128,7 +130,9 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.s10_title": "10. UbyPort and police reporting",
         "terms.s10_body": (
             "Where enabled, the Service may format and transmit reports toward UbyPort or related "
-            "channels on the Host's request. The Operator does not guarantee that any submission will "
+            "channels under the Host's configured instructions: manually, immediately when all declared "
+            "forms are complete, or after a configured delay from completion, without requiring an in-app "
+            "identity-verification step. The Operator does not guarantee that any submission will "
             "be received, accepted, validated, or deemed compliant by the Czech Police, Ministry of the "
             "Interior, or any authority. Outages, schema changes, credential issues, network failures, "
             "and manual review by authorities are outside the Operator's control. The Host must "
@@ -300,7 +304,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kterí službu "
             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
         ),
-        "terms.effective": "Účinnost od: 15. září 2026. Verze 1.2.",
+        "terms.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
         "terms.operator_title": "Poskytovatel služby",
         "terms.footer_link": "Obchodní podmínky",
         "terms.footer_short": "Podmínky",
@@ -388,7 +392,10 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.s08_title": "8. Povinnosti Ubytovatele a právní soulad",
         "terms.s08_body": (
             "Ubytovatel prohlašuje, že má veškerá oprávnění k provozu ubytování a ke zpracování Údajů "
-            "hostů. Musí ověřovat totožnost a správnost údajů před hlášením, zajistit podpisy, vést "
+            "hostů. Musí přijmout přiměřené kroky ke správnosti totožnosti a údajů včetně kontroly "
+            "dokladu vyžadované zákonem nebo postupem ubytovatele; bere na vědomí, že nastavené "
+            "automatické hlášení může odeslat kompletní záznam bez čekání na ověření v aplikaci; "
+            "musí zajistit podpisy a vést "
             "listinnou či jinak povinnou evidenci, dodržet lhůty hlášení, předložit záznamy při kontrole, "
             "správně nastavit Právnické osoby, ubytování a přístupy k UbyPortu a plnit transparentnost, "
             "uchovávání a bezpečnost podle GDPR. Za pokuty, nároky a správní postupy z nedodržení "
@@ -406,8 +413,10 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s10_title": "10. UbyPort a hlášení policii",
         "terms.s10_body": (
-            "Je-li zapnuto, Služba může formátovat a odesílat hlášení směrem k UbyPortu na žádost "
-            "Ubytovatele. Provozovatel nezaručuje přijetí, validaci ani soulad s požadavky Policie ČR, "
+            "Je-li zapnuto, Služba může formátovat a odesílat hlášení směrem k UbyPortu podle nastavení "
+            "Ubytovatele: ručně, okamžitě po dokončení všech nahlášených formulářů nebo po nastavené "
+            "prodlevě od dokončení, bez povinného ověření totožnosti v aplikaci. Provozovatel nezaručuje "
+            "přijetí, validaci ani soulad s požadavky Policie ČR, "
             "MV ČR či jiného úřadu. Výpadky, změny schémat, problémy s přihlašovacími údaji, síť a "
             "ruční kontrola úřady jsou mimo kontrolu Provozovatele. Ubytovatel sám ověřuje stav hlášení, "
             "uchovává důkazy a má náhradní postupy (včetně manuálního podání). Demo, testovací nebo "

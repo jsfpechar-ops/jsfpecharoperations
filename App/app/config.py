@@ -87,7 +87,8 @@ ADMIN_PASSWORD = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
 
 TIMEZONE = "Europe/Prague"
 
-# Software operator (shown in legal notices). Override via environment in production.
+# Host-admin software support (sidebar + Settings). Guest stay questions go to
+# the host legal entity on the guest form, not this address.
 OPERATOR_NAME = os.environ.get("UBYHOST_OPERATOR_NAME", "***REMOVED***")
 OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "***REMOVED***")
 OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "***REMOVED***")
@@ -115,7 +116,7 @@ TURNSTILE_HOSTNAMES = {
 TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET and TURNSTILE_HOSTNAMES)
 
 # Bumped when Terms of Service change materially (logged on host login).
-TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.2")
+TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.3")
 
 # Transactional mail. Staging uses console (links appear in Settings).
 # SES is refused unless deployment is production and credentials are complete.
@@ -127,10 +128,10 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").stri
 SES_FEEDBACK_QUEUE_URL = os.environ.get("UBYHOST_SES_FEEDBACK_QUEUE_URL", "").strip()
 
 # Bumped when the public Privacy Policy changes materially.
-PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.2")
+PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.3")
 
 # Bumped when the Data Processing Agreement changes materially.
-DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.2")
+DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.3")
 
 # Never enable in production — allows iCal fetch to private/loopback hosts (tests only).
 ICAL_ALLOW_PRIVATE = os.environ.get("UBYHOST_ICAL_ALLOW_PRIVATE", "0").lower() in (

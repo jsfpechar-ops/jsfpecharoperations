@@ -12,7 +12,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "This DPA is incorporated into the Terms of Service; using the Service constitutes "
             "acceptance unless a separate signed agreement expressly replaces it."
         ),
-        "dpa.effective": "Effective date: 15 September 2026. Version 1.2.",
+        "dpa.effective": "Effective date: 18 September 2026. Version 1.3.",
         "dpa.operator_title": "Processor (service provider)",
         "dpa.footer_link": "Data Processing Agreement",
         "dpa.footer_short": "DPA",
@@ -71,7 +71,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "Subject matter: provision of hosted software for house books, guest forms, stay management, "
             "and optional police reporting integrations. Duration: for the term of the Controller's "
             "use of the Service and until Guest Data is deleted or returned per Section 15. Nature "
-            "of processing: collection, storage, organisation, retrieval, transmission, encryption "
+            "of processing: collection, storage, organisation, retrieval, transactional e-mail "
+            "delivery (claim links, incomplete reminders, completion receipts and Controller copies), transmission, encryption "
             "of credentials, display to authorised Controller users, formatting for export, and "
             "transmission toward UbyPort or related endpoints when the Controller enables such features."
         ),
@@ -79,7 +80,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s05_body": (
             "Categories of data subjects: Guests, and occasionally third parties named on travel "
             "documents. Types of personal data: identity and contact details, nationality, dates "
-            "of birth and stay, travel document numbers and types, addresses, signatures, "
+            "of birth and stay, reservation-claim e-mail addresses, declared party size, travel document numbers and types, addresses, signatures, "
             "accommodation metadata, and optional passport photographs or PDFs uploaded for "
             "verification. Special categories: the Service may process document images that could "
             "reveal ethnic origin or health only where the Controller instructs such upload and has "
@@ -107,7 +108,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s08_title": "8. Documented instructions",
         "dpa.s08_body": (
             "Instructions include: this DPA, the Terms, the Privacy Policy, the Controller's in-app "
-            "configuration (properties, legal entities, reporting settings), actions taken through "
+            "configuration (properties, legal entities, reporting and guest-messaging settings), actions taken through "
             "the user interface, and written requests to operator contact on /legal. If the Processor "
             "believes an instruction infringes Applicable Data Protection Law, it will inform the "
             "Controller without undue delay. The Processor may suspend processing of the infringing "
@@ -142,8 +143,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "Subprocessors listed or described in the Privacy Policy at /privacy (including "
             "infrastructure hosting such as AWS Lightsail, Render.com, Cloudflare (including Turnstile, "
             "Bot Fight Mode, leaked-credential checks, client-side security, and HSTS), "
-            "Google Drive and Amazon S3 for configured backups, and, where used, DNS/CDN or e-mail "
-            "providers). The Processor will impose data protection terms on Subprocessors substantially "
+            "Google Drive and Amazon S3 for configured backups, and, where used, DNS/CDN or transactional "
+            "e-mail providers including Amazon SES). The Processor will impose data protection terms on Subprocessors substantially "
             "similar to this DPA. The Processor remains liable to the Controller for Subprocessor "
             "performance to the extent required by Article 28(4). The Processor will inform the "
             "Controller of intended changes to Subprocessors (e.g. by updating the Privacy Policy) and "
@@ -254,7 +255,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(Provozovatel jako zpracovatel) o údajích hostů v UbyHostu. DPA je součástí obchodních "
             "podmínek; používáním Služby ji přijímáte, pokud ji nepřepíše samostatná písemná smlouva."
         ),
-        "dpa.effective": "Účinnost od: 15. září 2026. Verze 1.2.",
+        "dpa.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
         "dpa.operator_title": "Zpracovatel (poskytovatel služby)",
         "dpa.footer_link": "Smlouva o zpracování údajů (DPA)",
         "dpa.footer_short": "DPA",
@@ -304,12 +305,14 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s04_body": (
             "Předmět: hostovaný software pro domovní knihu, formuláře hostů, pobyty a volitelné hlášení "
             "policii. Doba: po dobu používání Služby a do smazání/vrácení dle čl. 15. Povaha: "
-            "shromažďování, uložení, uspořádání, vyhledávání, přenos, šifrování přihlašovacích údajů, "
+            "shromažďování, uložení, uspořádání, vyhledávání, doručování transakčních e-mailů "
+            "(odkazy k převzetí, upozornění na nedokončení, potvrzení a kopie Správci), přenos, šifrování přihlašovacích údajů, "
             "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí."
         ),
         "dpa.s05_title": "5. Podrobnosti zpracování (shrnutí přílohy)",
         "dpa.s05_body": (
-            "Subjekty: hosté a osoby na dokladech. Kategorie údajů: identita, kontakt, státní příslušnost, "
+            "Subjekty: hosté a osoby na dokladech. Kategorie údajů: identita, e-mail k převzetí rezervace, "
+            "nahlášený počet hostů, kontakt, státní příslušnost, "
             "data pobytu, cestovní doklady, adresy, podpisy, metadata ubytování, volitelné fotografie/PDF "
             "pasu. Zvláštní kategorie: snímky dokladů mohou odhalit původ či zdraví jen pokud Správce "
             "nahrání pokyne a má právní základ; Správce odpovídá za nezbytnost. Údaje personálu "
@@ -329,7 +332,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "dpa.s08_title": "8. Dokumentované pokyny",
         "dpa.s08_body": (
-            "Pokyny zahrnují: DPA, Podmínky, Zásady, nastavení ve Službě, akce v UI a písemné žádosti "
+            "Pokyny zahrnují: DPA, Podmínky, Zásady, nastavení ubytování, hlášení a zpráv ve Službě, akce v UI a písemné žádosti "
             "na kontakt na /legal. Při protiprávním pokynu Zpracovatel informuje Správce a může "
             "zpracování pozastavit, kde to vyžaduje zákon nebo hrozí podstatné riziko."
         ),
@@ -354,7 +357,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "Správce uděluje obecné povolení k subzpracovatelům uvedeným v Zásadách na /privacy "
             "(včetně AWS Lightsail, Render.com, Cloudflare včetně Turnstile, Bot Fight Mode, kontroly "
             "uniklých údajů, klientské bezpečnosti a HSTS, Google Drive a Amazon S3 "
-            "pro nastavené zálohy a případně DNS/CDN či e-mail). Zpracovatel ukládá obdobné povinnosti. "
+            "pro nastavené zálohy a případně DNS/CDN či transakční e-mail včetně Amazon SES). Zpracovatel ukládá obdobné povinnosti. "
             "Odpovídá za subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací "
             "Zásad); Správce může vznést oprávněnou námitku a při neřešení ukončit Službu dle Podmínek."
         ),
