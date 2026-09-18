@@ -60,15 +60,15 @@ Verify both services: `curl https://<host>/healthz` should return JSON with
 
 ## Guest e-mail (staging first)
 
-Claim links, the guest's single day-before incomplete-registration reminder, host incomplete-registration warnings, and completion receipts are **not** delivered on production yet.
+Claim links, the guest's single day-before incomplete-registration reminder, host incomplete-registration warnings, and completion receipts are **not** delivered on production until SES is deliberately enabled.
 
 | Host | `UBYHOST_MAIL_BACKEND` | Where messages go |
 |------|------------------------|-------------------|
 | **ubyhost-staging** (Render) | `console` | Settings → Guest e-mails (copy the `#c=` confirmation link) |
-| **Lightsail production** | `disabled` | Nothing is queued or sent |
-| SES | refused unless `UBYHOST_DEPLOYMENT=production` and credentials are complete | Not enabled in this rollout |
+| **Lightsail production** | `disabled` (default) | Nothing is queued or sent |
+| **Lightsail + SES** | `ses` only when `UBYHOST_DEPLOYMENT=production` and credentials are complete | Amazon SES (`eu-central-1`) |
 
-After a manual deploy of this branch to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` must keep `UBYHOST_MAIL_BACKEND=disabled`.
+After a manual deploy of a claim build to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` must keep `UBYHOST_MAIL_BACKEND=disabled` until the [SES enablement runbook](SES.md) is complete (domain DKIM/MAIL FROM verified, IAM keys, `_send_ses` deployed, then `.env` flip).
 
 **Contact split:** the host admin portal (sidebar and Settings) shows **`support@ubyhost.com`** for software questions. The guest form shows the **host** legal-entity name, e-mail, and phone for anything about the stay. Do not send guests to UbyHost support for bookings.
 

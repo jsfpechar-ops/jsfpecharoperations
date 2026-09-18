@@ -164,12 +164,16 @@ def start_claim(
         else "Pokračujte v registraci hostů"
     )
     text = _claim_text(lang, apartment, reservation, link)
+    payload = {"text": text, "lang": lang}
+    reply_to = _reply_to_for_apartment(apartment)
+    if reply_to:
+        payload["reply_to"] = reply_to
     mail.enqueue(
         kind=kind,
         idempotency_key=f"{kind}:{reservation['id']}:v{version}",
         to_email=addr,
         subject=subject,
-        payload={"text": text, "lang": lang},
+        payload=payload,
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
@@ -182,6 +186,20 @@ def config_public(apartment) -> str:
     from . import config
 
     return config.PUBLIC_BASE_URL.rstrip("/")
+
+
+def _entity_contact_email(legal_entity_id) -> str:
+    if not legal_entity_id:
+        return ""
+    entity = db.query_one(
+        "SELECT contact_email FROM legal_entity WHERE id = ?",
+        (legal_entity_id,),
+    )
+    return mail.normalise_email((entity["contact_email"] if entity else "") or "")
+
+
+def _reply_to_for_apartment(apartment) -> str:
+    return _entity_contact_email(apartment["legal_entity_id"] if apartment else None)
 
 
 def _claim_text(lang: str, apartment, reservation, link: str) -> str:
@@ -290,12 +308,8 @@ def maybe_notify_completion(reservation, apartment) -> None:
     if expected is None or progress["filled"] < expected:
         return
     lang = claim["lang"] or "en"
-    entity = None
-    if apartment["legal_entity_id"]:
-        entity = db.query_one(
-            "SELECT * FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],)
-        )
-    cc = (entity["contact_email"] if entity else "") or ""
+    reply_to = _reply_to_for_apartment(apartment)
+    cc = reply_to
     subject = (
         "Guest registration received"
         if lang != "cs"
@@ -313,13 +327,16 @@ def maybe_notify_completion(reservation, apartment) -> None:
         f"Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele mohou být "
         f"kompletní záznamy cizinců odeslány do UbyPortu automaticky."
     )
+    payload = {"text": text, "lang": lang}
+    if reply_to:
+        payload["reply_to"] = reply_to
     mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
         cc_email=cc,
         subject=subject,
-        payload={"text": text, "lang": lang},
+        payload=payload,
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
@@ -384,6 +401,10 @@ def sweep_reminders() -> Dict[str, int]:
                 "pomocí soukromého odkazu, který jsme vám již poslali. Toto je jediné "
                 "upozornění na nedokončenou registraci, které vám pošleme."
             )
+            guest_payload = {"text": text, "lang": lang}
+            reply_to = _entity_contact_email(reservation["legal_entity_id"])
+            if reply_to:
+                guest_payload["reply_to"] = reply_to
             if mail.enqueue(
                 kind="reminder_guest",
                 idempotency_key=(
@@ -391,7 +412,7 @@ def sweep_reminders() -> Dict[str, int]:
                 ),
                 to_email=reservation["claim_email"],
                 subject=subject,
-                payload={"text": text, "lang": lang},
+                payload=guest_payload,
                 reservation_id=reservation["id"],
                 apartment_id=reservation["apartment_id"],
                 owner_user_id=reservation["owner_user_id"],
@@ -405,13 +426,7 @@ def sweep_reminders() -> Dict[str, int]:
                 lock_guest_access(reservation["id"])
                 summary["locked"] += 1
         if start == today and not complete and now_local.hour >= 9:
-            entity = None
-            if reservation["legal_entity_id"]:
-                entity = db.query_one(
-                    "SELECT * FROM legal_entity WHERE id = ?",
-                    (reservation["legal_entity_id"],),
-                )
-            host_email = (entity["contact_email"] if entity else "") or ""
+            host_email = _entity_contact_email(reservation["legal_entity_id"])
             masked = reservation["email_masked"] or "not claimed"
             if host_email:
                 mail.enqueue(
