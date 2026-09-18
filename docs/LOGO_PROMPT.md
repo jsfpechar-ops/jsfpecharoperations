@@ -75,15 +75,19 @@ someone remembers it after seeing it once and could redraw it from memory.
 - Must stay readable as a 16x16 px favicon and as a single-color silhouette.
 - Timeless, not trend-chasing. It should look right in ten years.
 
-CONCEPT TERRITORY (pick ONE and commit to it)
-- A "U" and a roofline resolved into a single continuous stroke.
-- A doorway or archway implying welcome and safe arrival.
-- A keystone or shield-like shape suggesting compliance without looking
-  governmental.
-- A stamp, seal, or approval check built from minimal geometry (the product's
-  payoff is an accepted, stamped record).
-- An arrival arc or chevron: a guest moving from outside into a home.
-- A single signature-like stroke enclosed or grounded by a geometric form.
+CONCEPT: INVENT IT
+There is no existing logo to follow, extend, or take cues from. Start from a
+blank page and full creative freedom. Do not assume the mark has to be a letter,
+a monogram, or an initial of any kind, and do not default to depicting a
+building. Interpret the product's meaning however you find most striking, then
+commit to that one idea and strip it to its essential shapes.
+
+The mark should carry one of these feelings, and you choose which and how:
+arrival and welcome, a burden lifted, something handled correctly on the host's
+behalf, or sensitive information kept safe and in order. Abstract, symbolic, or
+unexpected readings are welcome and preferred over the obvious ones. Surprise
+me — the only fixed constraints are the palette, the spelling of the name, and
+that it must survive at 16 px in one color.
 
 COLOR
 Primary brand coral-brick #C85A52, deep brick #AD4942, warm accent orange
@@ -113,6 +117,11 @@ Balanced optical weight, consistent stroke thickness, generous even padding
 around the mark inside a square safe area. Absolutely no letters, no words, no
 numbers, no tagline, no mockup, no frame, no background scenery.
 ```
+
+Run this several times and ask for genuinely different concepts each round —
+different metaphor, different geometry, not a variation on the previous answer.
+Pick the winner first, then reuse it for the two versions below so all three
+share one idea.
 
 Ask the tool for these renditions of the chosen mark:
 
@@ -198,6 +207,8 @@ that vanish at small sizes, drawn-by-hand imperfection.
 AVOID: dark or black backgrounds as the primary presentation; UbyHost is a
 light-surface product. (A reversed one-color version for print is fine, but the
 main renders sit on white or warm off-white.)
+AVOID: swooshes, ribbons, wavy calligraphic tails, and single-initial monograms
+as the symbol.
 AVOID: misspellings or invented letterforms. The name is exactly "UbyHost".
 Never "UbyHosts", "Uby Host", "UByHost", or "Ubyhost".
 AVOID: mockups, business cards, signage, billboards, T-shirts, phone frames,
@@ -224,14 +235,13 @@ Keep a candidate only if it passes all of these:
 
 Append your tool's own flags (for example `--v 7 --style raw --ar 1:1`).
 
-- **Mark only:** `minimalist flat vector logo mark for UbyHost, a Czech short-term-rental compliance app that files guest passport reports to the foreign police automatically, single continuous geometric stroke fusing a letter U with a roofline and an arrival arc, calm and quietly official, coral brick #C85A52 with ink #20201E on warm off-white #F7F7F5, Notion and Nike level restraint, one idea, few shapes, clever negative space, legible at 16px, no text, no gradient, no 3D, no shadow, no house-and-key cliche, no police badge`
+- **Mark only:** `minimalist flat vector logo mark for UbyHost, a Czech short-term-rental compliance app that files guest passport reports to the foreign police automatically so hosts never touch the paperwork, wholly original abstract symbol of arrival and a burden lifted, invented from scratch, not a monogram or a letter or a building, calm and quietly official, coral brick #C85A52 with ink #20201E on warm off-white #F7F7F5, Notion and Nike level restraint, one idea, few shapes, clever negative space, legible at 16px, no text, no gradient, no 3D, no shadow, no house-and-key cliche, no police badge`
 - **Mark + name:** `minimalist horizontal logo lockup, geometric coral #C85A52 mark beside the wordmark "UbyHost" in a medium-weight modern geometric sans with tight tracking, optically centered, flat vector, warm off-white background, generous clear space, Apple and Stripe level precision, no tagline, no box, no mockup, no gradient`
 - **Full sheet:** `minimal brand identity presentation sheet for UbyHost on warm off-white #F7F7F5, hero lockup with mark, wordmark "UbyHost" and small tagline "Guest reporting, handled for you.", plus mark alone, stacked lockup, one-color ink version, white-on-coral app icon in a rounded square, 64/32/16px favicon row, and a hex color chip row, strict grid, wide margins, flat vector, lead designer portfolio page, no mockups, no photography, no gradients`
 
 ## 9. Where the files land
 
-The current identity in the app is a brick-red "U" swoosh with an orange accent.
-A new logo replaces these assets:
+The new logo replaces these assets outright:
 
 | File | Use | Needs |
 | --- | --- | --- |
