@@ -103,6 +103,10 @@ Use this whenever you ship a change that affects hosts or guests.
    ```
    Or GitHub → **Actions → Deploy production → Run workflow** (`workflow_dispatch`).
    CI-triggered deploys after green `main` run when SSH secrets are set (default on). For this build, keep `LIGHTSAIL_AUTO_DEPLOY=0` until the owner’s staging acceptance and production approval are recorded.
+   `deploy.sh` refuses to replace a running release unless it can create and
+   integrity-check a SQLite backup first. It then dry-runs the new schema
+   migration against a copy of that backup and compares critical live table
+   row counts after startup.
 4. **Smoke production** — `./scripts/status.sh` and `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`

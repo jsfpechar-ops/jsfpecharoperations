@@ -249,6 +249,23 @@ def test_delayed_automation_does_not_wait_for_identity_verification():
     )["identity_verified_at"]
 
 
+def test_legacy_completed_reservation_is_not_auto_eligible_on_deploy():
+    apartment, reservation, guest_id = _seed(
+        "immediate", "tok-legacy-complete"
+    )
+    assert not reservation["registration_completed_at"]
+
+    assert not reporting.due_for_automatic_send(apartment, reservation)
+    assert reporting.collect_sendable(apartment["id"]) == []
+    assert db.query_one(
+        "SELECT submit_state FROM guest WHERE id = ?", (guest_id,)
+    )["submit_state"] == reporting.PENDING
+    assert not db.query_one(
+        "SELECT registration_completed_at FROM reservation WHERE id = ?",
+        (reservation["id"],),
+    )["registration_completed_at"]
+
+
 def test_unverified_foreign_guest_can_send():
     apartment, reservation, guest_id = _seed("manual", "tok-unverified")
     db.update(

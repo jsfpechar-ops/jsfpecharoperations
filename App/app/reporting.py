@@ -526,7 +526,10 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
-    completed_at = refresh_registration_completed_at(reservation["id"])
+    # Do not backfill this during a scheduler sweep. Existing production
+    # reservations predate completion-based automation and must not suddenly
+    # become eligible merely because the new code was deployed.
+    completed_at = reservation["registration_completed_at"]
     if not completed_at:
         return False
     try:
