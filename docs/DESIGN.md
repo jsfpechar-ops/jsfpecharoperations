@@ -49,7 +49,18 @@ deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
 
 **Host admin portal:** software support is **`support@ubyhost.com`**. Show it in the signed-in chrome (sidebar) and in Settings. Do not send guests there for booking or stay questions.
 
-**Guest form:** if the guest needs anything about the stay, show the **host** legal-entity name, e-mail, and phone. UbyHost does not run the property. From-address for later guest mail is `noreply@ubyhost.com`; Reply-To remains the host contact.
+**Guest form / guest pages:** if the guest needs anything about the stay, show the **property manager / operating legal-entity** name, e-mail, and phone (not `support@ubyhost.com`). UbyHost does not run the property. From-address for guest mail is `noreply@ubyhost.com`; Reply-To remains that entity contact.
+
+**Assigned / already-claimed stay screen (next mail production release):** when a stay is already assigned to an e-mail, the guest screen must include:
+
+- Stay summary (property/facility name, city or location if available, arrival–departure dates)
+- Notice that the reservation is already assigned, with **masked** e-mail only
+- Guidance to use the secure private link sent to that address (optional: show the date the link was last sent when known)
+- Primary action: **Send me the link again** (same-address resend; subject to claim-mail abuse caps)
+- Secondary: back / not my reservation when other stays are available
+- Persistent footer (same as other guest pages): **If there is any problem, feel free to contact your host** (or equivalent EN/CS), wired to the **property manager / legal-entity** phone and e-mail — never UbyHost support
+
+Do not clone third-party branding; keep UbyHost layout tokens from this design system.
 
 **Host message:** each property may have one optional plain-text message shown on its guest registration form. Hosts edit it under the property’s Guest link settings. It is intended for a welcome note or property-specific guidance, not access codes or secrets.
 
@@ -57,7 +68,7 @@ deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
 
 **Guest e-mail and privacy:** at collection, explain the private claim link, single day-before incomplete reminder, completion receipt/Host copy, public masking, no-marketing rule, and necessary cookies. Assigned guest screens show only a masked address; expired/locked screens show none. The full guest notice documents cookie lifetimes, mail delivery/retention, and recipients.
 
-**Passport uploads:** retired. Do not request or accept new passport/ID images or PDFs in either staging or production. Keep legacy storage columns and cleanup code only so upgrades never delete existing files without a separate reviewed retention action.
+**Passport uploads:** optional per property (`passport_photo_policy`), **Off by default**. When set to required for foreign guests, the guest form requests a temporary ID image/PDF for host review only (never sent to Police). Ship with the next mail production release (PR #87); do not merge ahead of SES go-live unless product asks.
 
 **Automatic UbyPort timing:** timing starts when all declared guest forms for a reservation become complete, not at check-in. “Immediate” sends then without host verification. “Delayed” sends automatically after the configured number of hours from completion (default 24), giving the host a review window but requiring no approval. Verification remains an explicit optional action and must never be fabricated merely because a report was sent.
 
