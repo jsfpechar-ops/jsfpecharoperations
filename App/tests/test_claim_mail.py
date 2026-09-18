@@ -35,7 +35,7 @@ def _seed():
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    today = date.today()
+    today = claim.prague_today()
     entity_id = db.insert(
         "legal_entity",
         {
@@ -285,7 +285,7 @@ def test_host_can_release_and_reopen_claim():
 
 def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
-    check_in = date.today()
+    check_in = claim.prague_today()
     try:
         browser = TestClient(app)
         complete_guest_claim(browser, TOKEN, current, party_size=1)
@@ -338,8 +338,8 @@ def test_incomplete_past_stay_remains_reachable_via_stay_link():
             "reservation",
             current,
             {
-                "date_from": (date.today() + timedelta(days=10)).isoformat(),
-                "date_to": (date.today() + timedelta(days=13)).isoformat(),
+                "date_from": (claim.prague_today() + timedelta(days=10)).isoformat(),
+                "date_to": (claim.prague_today() + timedelta(days=13)).isoformat(),
             },
         )
         browser = TestClient(app)
@@ -380,8 +380,8 @@ def test_completed_past_stay_is_not_exposed_on_bare_stay_link():
             "reservation",
             current,
             {
-                "date_from": (date.today() + timedelta(days=10)).isoformat(),
-                "date_to": (date.today() + timedelta(days=13)).isoformat(),
+                "date_from": (claim.prague_today() + timedelta(days=10)).isoformat(),
+                "date_to": (claim.prague_today() + timedelta(days=13)).isoformat(),
             },
         )
         browser = TestClient(app)
@@ -434,7 +434,7 @@ def test_completed_past_stay_is_not_exposed_on_bare_stay_link():
 
 def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
-    today = date.today()
+    today = claim.prague_today()
     try:
         db.update(
             "reservation",
