@@ -91,8 +91,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.guest_link.action": "Copy guest link",
         "demo.load": "Explore with demo data",
         "demo.load_detail": (
-            "One sample property with stays and guests. Nothing is sent to the police unless you "
-            "submit real data yourself."
+            "Two sample properties covering the stay picker, claims, passport toggle, controller "
+            "split, reporting, and house book. Nothing is sent to the real police."
         ),
         "demo.clear": "Clear demo data",
         "data.export_csv_title": "Export CSV",
@@ -460,8 +460,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "the host name, e-mail, and phone shown on the guest form."
         ),
         "guide.demo.body": (
-            "Load demo data anytime to explore with a sample flat. Demo guests are never sent to the real "
-            "police register."
+            "Load demo data to explore both sample properties: mail claim, assigned stays, late "
+            "incomplete forms, the optional passport toggle, a separate controller, and reporting. "
+            "On staging, open Settings → Guest e-mails for the confirmation links. Demo guests are "
+            "never sent to the real police register."
         ),
         "a11y.skip_to_content": "Skip to main content",
         "a11y.breadcrumb": "Breadcrumb",
@@ -935,8 +937,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.guest_link.action": "Kopírovat odkaz pro hosty",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": (
-            "Ukázkové ubytování s pobytem a hosty. Na policii se nic neodešle, dokud sami "
-            "neodešlete skutečná data."
+            "Dvě ukázková ubytování: výběr pobytu, převzetí e-mailem, pas, oddělený správce, "
+            "hlášení a domovní kniha. Na skutečnou policii se nic neodešle."
         ),
         "demo.clear": "Smazat ukázková data",
         "data.export_csv_title": "Export CSV",
@@ -1300,7 +1302,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "jméno, e-mail a telefon ubytovatele na formuláři pro hosty."
         ),
         "guide.demo.body": (
-            "Ukázková data lze načíst kdykoli. Na skutečnou policii se nikdy neodešlou."
+            "Načtěte ukázková data a projděte obě ubytování: převzetí e-mailem, přiřazené pobyty, "
+            "nedokončené formuláře po příjezdu, volitelný pas, odděleného správce a hlášení. "
+            "Na stagingu jsou potvrzovací odkazy v Nastavení → E-maily hostům. Na skutečnou "
+            "policii se ukázková data nikdy neodešlou."
         ),
         "a11y.skip_to_content": "Přeskočit na hlavní obsah",
         "a11y.breadcrumb": "Drobečková navigace",
