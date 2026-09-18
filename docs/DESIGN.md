@@ -149,6 +149,8 @@ Keep nights / date formatting via existing filters. Refine exact strings at impl
 
 ## Agents and automation
 
+**Next mail production release plan:** see **[NEXT_MAIL_RELEASE.md](NEXT_MAIL_RELEASE.md)** (full backlog: SES flip, claim caps, Arrival-lane picker, assigned screen, PM controller, passport toggle).
+
 Cursor Cloud Agents and other automated contributors **must read this file**
 before proposing or shipping UI changes. When a task mentions “modern UI,”
 “Notion/Linear-style,” or “respect system theme,” **do not** interpret that as
