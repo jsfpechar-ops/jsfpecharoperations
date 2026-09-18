@@ -72,19 +72,35 @@ After a manual deploy of this branch to **ubyhost-staging**, open Settings and c
 
 **Contact split:** the host admin portal (sidebar and Settings) shows **`support@ubyhost.com`** for software questions. The guest form shows the **host** legal-entity name, e-mail, and phone for anything about the stay. Do not send guests to UbyHost support for bookings.
 
+### Required owner acceptance before production
+
+Do **not** promote this guest-claim build to production until the product owner has personally tested it on **ubyhost-staging** and explicitly approved the exact revision. Keep production guest mail disabled during review.
+
+The staging acceptance check covers:
+
+- host sidebar and Settings show `support@ubyhost.com`;
+- property legal-entity name, e-mail, and phone appear on the guest form;
+- the optional per-property custom guest message can be saved, edited, cleared, and renders with line breaks;
+- PIN, date selection, guest count, e-mail claim, explicit magic-link confirmation, masked assignment, and lock/reopen/release work;
+- check-in visibility, incomplete reminders, host warning, completion receipt/CC, passport policy, and all three reporting gates behave as configured;
+- English and Czech guest flows are clear;
+- console mail contains the expected messages without contacting real guests.
+
+After approval, deploy the code and database migration first with `UBYHOST_MAIL_BACKEND=disabled` and UbyPort still on `test`. Back up production and run smoke checks before separately enabling SES or real UbyPort reporting. A failed check returns the revision to staging.
+
 ## Promotion workflow (staging → production)
 
 Use this whenever you ship a change that affects hosts or guests.
 
-1. **Merge to `main`** — GitHub Actions must pass (tests + smoke).
-2. **Staging** (optional) — Render → **`ubyhost-staging`** → Manual Deploy.
-3. **Production (Lightsail)** — SSH to the instance, then:
+1. **Staging** (required for this build) — Render → **`ubyhost-staging`** → Manual Deploy of the PR branch. Record the tested commit and obtain explicit product-owner approval using the checklist above.
+2. **Merge the approved revision to `main`** — GitHub Actions must pass (tests + smoke). Keep `LIGHTSAIL_AUTO_DEPLOY=0` until the owner approves production deployment.
+3. **Production (Lightsail)** — after approval and green CI, SSH to the instance, then:
    ```bash
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
    ```
    Or GitHub → **Actions → Deploy production → Run workflow** (`workflow_dispatch`).
-   CI-triggered deploys after green `main` run when SSH secrets are set (default on). Set `LIGHTSAIL_AUTO_DEPLOY=0` to pause.
+   CI-triggered deploys after green `main` run when SSH secrets are set (default on). For this build, keep `LIGHTSAIL_AUTO_DEPLOY=0` until the owner’s staging acceptance and production approval are recorded.
 4. **Smoke production** — `./scripts/status.sh` and `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`
