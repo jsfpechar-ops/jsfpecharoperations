@@ -53,7 +53,7 @@ def complete_guest_claim(
 
     GET of the magic link must not assign; tests confirm with POST like a guest.
     """
-    from app import claim, db
+    from app import claim, db, mail
 
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
     apartment = db.query_one(
@@ -65,13 +65,29 @@ def complete_guest_claim(
     if not claim.guest_access_open(reservation, row):
         claim.reopen_guest_access(reservation_id)
         row = claim.ensure_row(reservation_id)
+    # Shared fixtures reuse e-mails and stays; clear production abuse caps so
+    # reclaim/resend in tests is not blocked by recipient/reservation windows
+    # or the five-minute resend cooldown.
+    db.execute(
+        "DELETE FROM rate_limit_event WHERE scope IN "
+        "('claim_mail_recipient', 'claim_mail_reservation', 'claim_start')"
+    )
+    db.execute(
+        "UPDATE reservation_claim SET updated_at = ? WHERE reservation_id = ?",
+        ("2000-01-01T00:00:00+00:00", reservation_id),
+    )
+    row = claim.ensure_row(reservation_id)
+    same_email = mail.normalise_email(row["email"] or "") == mail.normalise_email(email)
+    resend = claim.is_claimed(row) or (
+        row["state"] == claim.PROVISIONAL and same_email
+    )
     ok, err, secret = claim.start_claim(
         reservation,
         apartment,
         email=email,
         party_size=party_size,
         lang=lang,
-        resend=claim.is_claimed(row),
+        resend=resend,
     )
     assert ok, err
     response = client.post(
