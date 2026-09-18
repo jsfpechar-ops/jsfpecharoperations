@@ -328,10 +328,16 @@ def test_12_incomplete_form_is_refused_before_it_reaches_the_police(client):
     assert not db.query("SELECT * FROM guest")
 
 
-def test_13_completed_form_is_reported_after_passport_verification(client, host):
+def test_13_completed_party_is_reported_without_passport_verification(client, host):
     stay = db.query_one("SELECT * FROM reservation")
+    db.update(
+        "reservation",
+        stay["id"],
+        {"declared_guests": 1, "registration_completed_at": None},
+    )
+    stay = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay["id"],))
     guest_browser = TestClient(app)
-    response = save_guest_form(guest_browser, stay, host=host)
+    response = save_guest_form(guest_browser, stay, host=host, verify=False)
     assert response.status_code == 303, response.text
 
     guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
@@ -340,9 +346,10 @@ def test_13_completed_form_is_reported_after_passport_verification(client, host)
     assert guest["signature_png"].startswith("data:image/")
     assert guest["signed_at"]
     assert guest["is_lead"] == 1
-    assert guest["identity_verified_at"]
+    assert not guest["identity_verified_at"]
 
-    # Immediate mode sends only after the host verifies the passport photo.
+    # Immediate mode sends when the declared party is complete; verification
+    # remains an independent, explicit host action.
     assert guest["submit_state"] == reporting.SENT, guest["last_errors"]
     assert guest["submitted_at"], "rule 10.5(3) requires the time of the successful notification"
 
@@ -414,11 +421,18 @@ def test_17_a_deliberate_resend_is_rejected_as_a_duplicate(host):
 
 def test_18_a_second_guest_completes_the_party(client, host):
     stay = db.query_one("SELECT * FROM reservation")
+    db.update(
+        "reservation",
+        stay["id"],
+        {"declared_guests": 2, "registration_completed_at": None},
+    )
+    stay = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay["id"],))
     guest_browser = TestClient(app)
     response = save_guest_form(
         guest_browser,
         stay,
         host=host,
+        verify=False,
         surname="Smithová",
         first_name="Anna",
         birth_date="15.03.1992",
@@ -430,6 +444,7 @@ def test_18_a_second_guest_completes_the_party(client, host):
     assert guest["surname"] == "SMITHOVÁ"
     assert guest["is_lead"] == 0
     assert guest["submit_state"] == reporting.SENT
+    assert not guest["identity_verified_at"]
 
     progress = reporting.reservation_progress(db.query_one("SELECT * FROM reservation"))
     assert progress["filled"] == 2

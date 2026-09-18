@@ -186,7 +186,6 @@ def test_concurrent_sends_claim_each_guest_once(monkeypatch):
     calls = []
 
     monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _apartment: [])
-    monkeypatch.setattr(reporting, "ensure_identity_verified_for_send", lambda *_args: None)
 
     def fake_submit(
         _apartment,
