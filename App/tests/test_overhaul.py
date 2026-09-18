@@ -4,7 +4,7 @@ import re
 
 from fastapi.testclient import TestClient
 
-from app import auth, db
+from app import auth, claim, db
 from app import alerts
 from app import demo
 from app import housebook
@@ -66,7 +66,7 @@ def _seed_stays():
     _cleanup()
     owner_id = _ensure_admin()
     now = db.utcnow()
-    today = date.today()
+    today = claim.prague_today()
     entity_id = db.insert(
         "legal_entity",
         {
@@ -432,7 +432,7 @@ def test_property_can_use_separate_pm_and_data_controller():
         privacy = TestClient(app).get(f"/l/{TOKEN}/privacy")
         assert "Separate Controller a.s." in privacy.text
         assert "privacy@controller.test" in privacy.text
-        assert "Overhaul Test s.r.o." not in privacy.text
+        assert "Overhaul Test s.r.o." in privacy.text
 
         picker = TestClient(app).get(f"/l/{TOKEN}")
         assert "privacy@overhaul.test" in picker.text

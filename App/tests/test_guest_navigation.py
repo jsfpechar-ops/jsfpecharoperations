@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
-from app import db, passport_photos
+from app import claim, db, passport_photos
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -76,7 +76,7 @@ def _make_apartment_with_stays():
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    today = date.today()
+    today = claim.prague_today()
     entity_id = db.insert("legal_entity", {"name": "Nav Test", "created_at": now})
     apartment_id = db.insert(
         "apartment",
