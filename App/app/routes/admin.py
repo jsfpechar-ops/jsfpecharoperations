@@ -573,10 +573,9 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
-    policy = _form_str(form, "passport_photo_policy", "off")
-    payload["passport_photo_policy"] = (
-        policy if policy in ("off", "required_foreign") else "off"
-    )
+    # Passport uploads are retired. Preserve the column for a non-destructive
+    # migration, but every saved property is forced to the disabled policy.
+    payload["passport_photo_policy"] = "off"
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
@@ -1633,28 +1632,6 @@ async def guest_verify_identity(guest_id: int, request: Request):
         )
     reporting.maybe_submit_after_verify(reservation["apartment_id"], guest_id)
     return _back(return_to, msg="ID check recorded.")
-
-
-@router.get("/guests/{guest_id}/passport-photo")
-def guest_passport_photo(guest_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    guest = access.guest(request, guest_id)
-    if not guest or not reporting.guest_has_passport_photo(guest):
-        return Response("Not found.", status_code=404)
-    payload = passport_photos.read_photo(guest_id)
-    if not payload:
-        return Response("Not found.", status_code=404)
-    content, media_type = payload
-    return Response(
-        content,
-        media_type=media_type,
-        headers={
-            "Cache-Control": "no-store",
-            "Content-Security-Policy": "sandbox; default-src 'none'",
-        },
-    )
 
 
 @router.post("/guests/{guest_id}/archive")
