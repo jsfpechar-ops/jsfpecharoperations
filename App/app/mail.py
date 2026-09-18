@@ -25,7 +25,6 @@ COMPLAINED = "complained"
 KINDS = (
     "claim",
     "claim_resend",
-    "reminder_guest",
     "reminder_host",
     "completion",
     "dates_changed",

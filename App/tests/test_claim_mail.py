@@ -273,3 +273,42 @@ def test_incomplete_guest_gets_24_hour_grace_and_host_is_notified(monkeypatch):
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
         _cleanup()
+
+
+def test_incomplete_guest_does_not_receive_day_before_reminder(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    today = date.today()
+    try:
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (today + timedelta(days=1)).isoformat(),
+                "date_to": (today + timedelta(days=4)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        complete_guest_claim(
+            browser, TOKEN, current, email="guest-no-reminder@claim.test", party_size=1
+        )
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now or datetime.combine(today, time(10, 0)),
+        )
+
+        summary = claim.sweep_reminders()
+
+        assert summary["host"] == 0
+        assert "reminder_guest" not in mail.KINDS
+        assert not db.query_one(
+            "SELECT 1 AS x FROM console_mail_log WHERE to_email = ?",
+            ("guest-no-reminder@claim.test",),
+        )
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()

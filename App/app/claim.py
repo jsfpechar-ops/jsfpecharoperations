@@ -334,12 +334,11 @@ def sweep_reminders() -> Dict[str, int]:
     from . import alerts, config
 
     today = prague_today()
-    summary = {"guest": 0, "host": 0, "locked": 0}
+    summary = {"host": 0, "locked": 0}
     expire_holds()
     rows = db.query(
         "SELECT r.*, a.permalink_token, a.internal_name, a.uby_name, a.owner_user_id, "
-        "a.legal_entity_id, c.state AS claim_state, c.email AS claim_email, "
-        "c.lang AS claim_lang, c.email_masked AS email_masked, "
+        "a.legal_entity_id, c.email_masked AS email_masked, "
         "c.guest_access_locked_at AS guest_access_locked_at, "
         "c.guest_access_reopened_at AS guest_access_reopened_at, "
         "c.token_version AS token_version "
@@ -356,25 +355,6 @@ def sweep_reminders() -> Dict[str, int]:
             continue
         progress = reporting.reservation_progress(reservation)
         complete = progress["expected"] is not None and progress["filled"] >= progress["expected"]
-        if start == today + timedelta(days=1) and now_local.hour >= 9:
-            if reservation["claim_state"] == CLAIMED and reservation["claim_email"] and not complete:
-                if mail.enqueue(
-                    kind="reminder_guest",
-                    idempotency_key=f"reminder_guest:{reservation['id']}:{start.isoformat()}",
-                    to_email=reservation["claim_email"],
-                    subject="Please finish your guest registration",
-                    payload={
-                        "text": (
-                            "Your stay is tomorrow. Please finish the guest registration "
-                            f"using the private link already sent to {reservation['email_masked']}."
-                        ),
-                        "lang": reservation["claim_lang"] or "en",
-                    },
-                    reservation_id=reservation["id"],
-                    apartment_id=reservation["apartment_id"],
-                    owner_user_id=reservation["owner_user_id"],
-                ):
-                    summary["guest"] += 1
         if start < today and not complete:
             if not reservation["guest_access_locked_at"] and not reservation[
                 "guest_access_reopened_at"
