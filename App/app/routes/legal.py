@@ -14,6 +14,16 @@ PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
 DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
 
 
+@router.get("/jak-to-funguje")
+def product_details(request: Request):
+    """Public product detail and UbyPort FAQ page."""
+    return render(
+        request,
+        "product.html",
+        {"show_nav": False, "open_alerts": []},
+    )
+
+
 @router.get("/pruvodce/{slug}")
 def public_guide(request: Request, slug: str):
     lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)

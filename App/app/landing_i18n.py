@@ -2,25 +2,76 @@
 
 LANDING_STRINGS = {
     "en": {
-        "landing.page_title": "UbyHost: Online guest book and UbyPort reporting",
+        "landing.page_title": "UbyHost: UbyPort reporting and online guest book",
         "landing.meta_description": (
-            "Run guest check-in, the house book, booking calendars, and UbyPort "
-            "reporting in one calm workspace built for Czech accommodation providers."
+            "Connect Airbnb and Booking.com calendars, collect guest details online, "
+            "keep the guest book, and report foreign guests directly to UbyPort."
         ),
-        "landing.nav.features": "Features",
+        "landing.nav.features": "Product",
         "landing.nav.how": "How it works",
         "landing.nav.guides": "Guides",
-        "landing.nav.faq": "Questions",
+        "landing.nav.faq": "UbyPort",
         "landing.nav.login": "Log in",
-        "landing.eyebrow": "Guest reporting for Czech accommodation providers",
-        "landing.title": "Guest records and UbyPort reporting, without the paperwork.",
+        "landing.eyebrow": "From Airbnb booking to UbyPort receipt",
+        "landing.title": "Guests fill it in. UbyHost reports it.",
         "landing.lede": (
-            "UbyHost connects booking calendars, guest check-in forms, the house book, "
-            "and direct foreign guest reports to UbyPort in one workspace."
+            "The online guest book for Airbnb and Booking.com hosts — with guest forms "
+            "and direct foreign-guest reporting to UbyPort."
         ),
-        "landing.cta": "Log in to UbyHost",
-        "landing.contact": "Ask about UbyHost",
+        "landing.cta": "Try UbyHost",
+        "landing.contact": "See how it works",
         "landing.trust": "Built for apartments, holiday rentals, and small accommodation providers in Czechia.",
+        "landing.demo.label": "A quick tour of UbyHost",
+        "landing.demo.play": "Play demo",
+        "landing.demo.pause": "Pause demo",
+        "landing.demo.replay": "Replay demo",
+        "landing.demo.scene.calendar": "A reservation arrives",
+        "landing.demo.scene.form": "The guest fills in the details",
+        "landing.demo.scene.queue": "Everything is ready to report",
+        "landing.demo.scene.receipt": "UbyPort accepts the report",
+        "landing.demo.calendar.month": "September",
+        "landing.demo.calendar.booking": "Airbnb · Anna K.",
+        "landing.demo.form.title": "Guest check-in",
+        "landing.demo.form.name": "Anna Kowalska",
+        "landing.demo.form.document": "Travel document",
+        "landing.demo.form.signed": "Signed by guest",
+        "landing.demo.queue.title": "Arrivals",
+        "landing.demo.queue.missing": "Missing details",
+        "landing.demo.queue.ready": "Ready",
+        "landing.demo.receipt.sending": "Sending securely…",
+        "landing.demo.receipt.accepted": "Accepted by UbyPort",
+        "landing.demo.receipt.saved": "Delivery receipt saved with the stay",
+        "landing.benefits.eyebrow": "One simple flow",
+        "landing.benefits.title": "Less chasing. Less copying. More certainty.",
+        "landing.benefit.calendar.title": "Bookings appear",
+        "landing.benefit.calendar.body": "Connect Airbnb and Booking.com calendars.",
+        "landing.benefit.guest.title": "Guests do the typing",
+        "landing.benefit.guest.body": "One private link collects and signs their details.",
+        "landing.benefit.ubyport.title": "UbyPort gets the report",
+        "landing.benefit.ubyport.body": "Send it and keep the real delivery receipt.",
+        "landing.steps.title": "From booking to reported in three moves.",
+        "landing.steps.1": "Connect your calendar",
+        "landing.steps.2": "Share the guest link",
+        "landing.steps.3": "Keep the UbyPort receipt",
+        "landing.final.title": "Your guest paperwork, on autopilot.",
+        "landing.final.body": "See every stay, form, and UbyPort response in one place.",
+        "landing.details.link": "Product details and common questions",
+        "product.page_title": "UbyPort for Airbnb and Booking.com hosts · UbyHost",
+        "product.meta_description": (
+            "See how UbyHost connects Airbnb and Booking.com calendars, online guest "
+            "forms, the guest book, and direct reporting to UbyPort."
+        ),
+        "product.eyebrow": "UbyPort reporting, without the repetitive admin",
+        "product.title": "One flow from Airbnb booking to UbyPort receipt.",
+        "product.lede": (
+            "Connect the calendar once. Guests provide their own details. UbyHost keeps "
+            "the guest book and the exact response from UbyPort together."
+        ),
+        "product.features.title": "Everything your guest report passes through",
+        "product.features.lede": "Four connected steps, with no spreadsheet in between.",
+        "product.faq.title": "UbyPort questions, answered clearly",
+        "product.guides.title": "Practical guides for Czech hosts",
+        "product.cta.title": "Ready to simplify guest reporting?",
         "landing.mock.today": "Today",
         "landing.mock.label": "Guest reporting queue",
         "landing.mock.action": "2 need attention",
@@ -111,25 +162,76 @@ LANDING_STRINGS = {
         "guide.more_nav": "More guides",
     },
     "cs": {
-        "landing.page_title": "UbyHost: Online ubytovací kniha a hlášení přes UbyPort",
+        "landing.page_title": "UbyHost: UbyPort · Online ubytovací kniha",
         "landing.meta_description": (
-            "Check-in hostů, domovní kniha, rezervační kalendáře a hlášení přes UbyPort "
-            "v jednom přehledném prostoru pro české ubytovatele."
+            "Propojte Airbnb a Booking.com, sbírejte údaje hostů online, veďte ubytovací "
+            "knihu a hlaste cizince přímo do UbyPortu."
         ),
-        "landing.nav.features": "Funkce",
+        "landing.nav.features": "Produkt",
         "landing.nav.how": "Jak to funguje",
         "landing.nav.guides": "Průvodce",
-        "landing.nav.faq": "Otázky",
+        "landing.nav.faq": "UbyPort",
         "landing.nav.login": "Přihlásit se",
-        "landing.eyebrow": "Evidence hostů pro české ubytovatele",
-        "landing.title": "Ubytovací kniha a hlášení přes UbyPort bez zbytečného papírování.",
+        "landing.eyebrow": "Od rezervace z Airbnb až po doručenku z UbyPortu",
+        "landing.title": "Hosté vyplní. UbyHost nahlásí.",
         "landing.lede": (
-            "UbyHost spojuje rezervační kalendáře, online formuláře hostů, domovní knihu "
-            "a přímé hlášení cizinců do UbyPortu v jednom pracovním prostoru."
+            "Online ubytovací kniha pro hostitele z Airbnb a Booking.com — s formuláři "
+            "pro hosty a přímým hlášením cizinců do UbyPortu."
         ),
-        "landing.cta": "Přihlásit se do UbyHostu",
-        "landing.contact": "Zeptat se na UbyHost",
+        "landing.cta": "Vyzkoušet UbyHost",
+        "landing.contact": "Jak to funguje",
         "landing.trust": "Pro apartmány, krátkodobé pronájmy a menší ubytovací zařízení v Česku.",
+        "landing.demo.label": "Rychlá ukázka UbyHostu",
+        "landing.demo.play": "Spustit ukázku",
+        "landing.demo.pause": "Pozastavit ukázku",
+        "landing.demo.replay": "Přehrát znovu",
+        "landing.demo.scene.calendar": "Přijde rezervace",
+        "landing.demo.scene.form": "Host vyplní své údaje",
+        "landing.demo.scene.queue": "Vše je připravené k hlášení",
+        "landing.demo.scene.receipt": "UbyPort hlášení přijme",
+        "landing.demo.calendar.month": "Září",
+        "landing.demo.calendar.booking": "Airbnb · Anna K.",
+        "landing.demo.form.title": "Online check-in",
+        "landing.demo.form.name": "Anna Kowalska",
+        "landing.demo.form.document": "Cestovní doklad",
+        "landing.demo.form.signed": "Podepsáno hostem",
+        "landing.demo.queue.title": "Příjezdy",
+        "landing.demo.queue.missing": "Chybí údaje",
+        "landing.demo.queue.ready": "Připraveno",
+        "landing.demo.receipt.sending": "Bezpečně odesíláme…",
+        "landing.demo.receipt.accepted": "Přijato systémem UbyPort",
+        "landing.demo.receipt.saved": "Doručenka uložena u pobytu",
+        "landing.benefits.eyebrow": "Jeden jednoduchý postup",
+        "landing.benefits.title": "Méně urgování. Méně přepisování. Více jistoty.",
+        "landing.benefit.calendar.title": "Rezervace se objeví",
+        "landing.benefit.calendar.body": "Propojte kalendáře Airbnb a Booking.com.",
+        "landing.benefit.guest.title": "Hosté údaje vyplní",
+        "landing.benefit.guest.body": "Jeden soukromý odkaz údaje získá i podepíše.",
+        "landing.benefit.ubyport.title": "UbyPort dostane hlášení",
+        "landing.benefit.ubyport.body": "Odešlete ho a uchovejte skutečnou doručenku.",
+        "landing.steps.title": "Od rezervace k hlášení ve třech krocích.",
+        "landing.steps.1": "Propojte kalendář",
+        "landing.steps.2": "Sdílejte odkaz pro hosty",
+        "landing.steps.3": "Uložte doručenku z UbyPortu",
+        "landing.final.title": "Evidence hostů na autopilota.",
+        "landing.final.body": "Každý pobyt, formulář a odpověď UbyPortu na jednom místě.",
+        "landing.details.link": "Podrobnosti o produktu a časté otázky",
+        "product.page_title": "UbyPort pro Airbnb a Booking.com hostitele · UbyHost",
+        "product.meta_description": (
+            "Jak UbyHost propojí Airbnb a Booking.com, online formuláře hostů, ubytovací "
+            "knihu a přímé hlášení cizinců do UbyPortu."
+        ),
+        "product.eyebrow": "Hlášení do UbyPortu bez opakované administrativy",
+        "product.title": "Jeden postup od rezervace z Airbnb po doručenku z UbyPortu.",
+        "product.lede": (
+            "Kalendář propojíte jednou. Hosté vyplní své údaje sami. UbyHost uchová "
+            "ubytovací knihu i přesnou odpověď z UbyPortu pohromadě."
+        ),
+        "product.features.title": "Vše, čím hlášení hosta prochází",
+        "product.features.lede": "Čtyři propojené kroky bez tabulky mezi nimi.",
+        "product.faq.title": "Otázky k UbyPortu, jasně zodpovězené",
+        "product.guides.title": "Praktické průvodce pro české ubytovatele",
+        "product.cta.title": "Chcete si zjednodušit hlášení hostů?",
         "landing.mock.today": "Dnes",
         "landing.mock.label": "Fronta hlášení hostů",
         "landing.mock.action": "2 vyžadují pozornost",
