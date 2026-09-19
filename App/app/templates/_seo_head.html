@@ -1,4 +1,4 @@
-{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
-{% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
-{% for code, href in alternate_urls | default([]) %}<link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
+{% if meta_description %}<meta name="description" content="{{ meta_description }}">
+{% endif %}{% if canonical_url %}  <link rel="canonical" href="{{ canonical_url }}">
+{% endif %}{% for code, href in alternate_urls | default([]) %}  <link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
 {% endfor %}
