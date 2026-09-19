@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% set show_nav = false %}
+{% block title %}{{ t('subprocessors.page_title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+
+{{ page_header(t('subprocessors.page_title'), t('subprocessors.page_lede')) }}
+<p class="small muted">{{ t('subprocessors.effective') }}</p>
+
+<div class="panel">
+  <h2 style="margin-top:0">{{ t('subprocessors.controller_note_title') }}</h2>
+  <p class="small muted">{{ t('subprocessors.controller_note') }}</p>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0">{{ t('subprocessors.scope_title') }}</h2>
+  <p class="small muted">{{ t('subprocessors.scope_body') }}</p>
+  <div class="scroll-x">
+    <table class="table-cards">
+      <thead>
+        <tr>
+          <th>{{ t('subprocessors.table_provider') }}</th>
+          <th>{{ t('subprocessors.table_purpose') }}</th>
+          <th>{{ t('subprocessors.table_data') }}</th>
+          <th>{{ t('subprocessors.table_location') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for sid in subprocessor_ids %}
+        <tr>
+          <td data-label="{{ t('subprocessors.table_provider') }}"><strong>{{ t('subprocessors.' ~ sid ~ '_provider') }}</strong></td>
+          <td data-label="{{ t('subprocessors.table_purpose') }}">{{ t('subprocessors.' ~ sid ~ '_purpose') }}</td>
+          <td data-label="{{ t('subprocessors.table_data') }}">{{ t('subprocessors.' ~ sid ~ '_data') }}</td>
+          <td data-label="{{ t('subprocessors.table_location') }}">{{ t('subprocessors.' ~ sid ~ '_location') }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0">{{ t('subprocessors.change_title') }}</h2>
+  <p class="small muted">{{ t('subprocessors.change_body') }}</p>
+</div>
+
+<div class="panel quiet">
+  <h2 style="margin-top:0">{{ t('subprocessors.accuracy_title') }}</h2>
+  <p class="small muted" style="margin-bottom:0">{{ t('subprocessors.accuracy_body') }}</p>
+</div>
+
+<p class="small muted">
+  <a href="/legal">{{ t('legal.footer_short') }}</a>
+  &middot; <a href="/terms">{{ t('terms.footer_short') }}</a>
+  &middot; <a href="/privacy">{{ t('privacy.footer_short') }}</a>
+  &middot; <a href="/dpa">{{ t('dpa.footer_short') }}</a>
+  &middot; <a href="/login">{{ t('legal.back_login') }}</a>
+</p>
+{% endblock %}

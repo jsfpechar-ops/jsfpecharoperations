@@ -16,7 +16,7 @@ from app.main import app
 from app.public_guides import GUIDE_TRANSLATIONS
 from tests.test_accounts import _account, _clean_accounts, _login
 
-PUBLIC_PAGES = ("/login", "/legal", "/terms", "/privacy", "/dpa")
+PUBLIC_PAGES = ("/login", "/legal", "/terms", "/privacy", "/dpa", "/subprocessors")
 
 
 def _client() -> TestClient:

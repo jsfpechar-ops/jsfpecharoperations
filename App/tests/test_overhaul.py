@@ -433,6 +433,12 @@ def test_property_can_use_separate_pm_and_data_controller():
         assert "Separate Controller a.s." in privacy.text
         assert "privacy@controller.test" in privacy.text
         assert "Overhaul Test s.r.o." in privacy.text
+        assert "Your data controller" in privacy.text
+        assert "Questions about your stay" in privacy.text
+        assert privacy.text.index("Separate Controller a.s.") < privacy.text.index(
+            "Overhaul Test s.r.o."
+        )
+        assert "different name for the stay contact below does not change" in privacy.text
 
         picker = TestClient(app).get(f"/l/{TOKEN}")
         assert "privacy@overhaul.test" in picker.text

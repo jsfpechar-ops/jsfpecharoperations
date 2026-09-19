@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "replace the guest privacy notice shown to your guests — that notice names the controller "
             "configured for the property, which may differ from its property manager."
         ),
-        "privacy.effective": "Effective date: 18 September 2026. Version 1.4.",
+        "privacy.effective": "Effective date: 19 September 2026. Version 1.5.",
         "privacy.operator_title": "Data controller for this policy",
         "privacy.footer_link": "Privacy Policy",
         "privacy.footer_short": "Privacy",
@@ -58,9 +58,13 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s03_title": "3. Roles: Operator, Host, and Guest",
         "privacy.s03_body": (
-            "Hosts (or the controller legal entities they configure per property) are typically the data "
-            "controllers for personal data about Guests (names, travel documents, stays, signatures, "
-            "and related records). The Operator provides hosted software and processes Guest Data "
+            "For each property, the configured controller legal entity is the data controller for "
+            "personal data about Guests (names, travel documents, stays, signatures, and related "
+            "records). The operating property manager is the default controller and remains the "
+            "practical point of contact for questions about the stay. If the Host selects a different "
+            "controller, that entity must genuinely determine the purposes and means of processing; "
+            "changing a label in the Service does not itself transfer legal responsibility. The "
+            "Operator provides hosted software and processes Guest Data "
             "only on the Host's documented instructions to deliver the Service — typically as a data "
             "processor under GDPR Article 28. The Operator is not a joint controller with the Host "
             "unless expressly agreed in writing. The Operator is controller for its own business data "
@@ -114,7 +118,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "and forms submitted on that device (up to 60 days). Production traffic to ubyhost.com is "
             "proxied by Cloudflare. "
             "We may use Cloudflare Turnstile on production login and, after repeated failed guest PIN "
-            "attempts, on guest PIN pages; Bot Fight Mode to challenge automated traffic; leaked-credential "
+            "attempts, on guest PIN pages; custom managed challenges on private paths; leaked-credential "
             "checks that compare login attempts against known leaked-password signals at the edge "
             "(without storing your password in Cloudflare's dashboard); and a small client-side "
             "security script that inventories third-party scripts loaded in the browser. These "
@@ -140,8 +144,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Personal data is accessed by authorised Operator personnel and contractors bound by "
             "confidentiality. We use infrastructure subprocessors to host the Service, including "
             "Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), "
-            "Render.com (cloud hosting for staging or other tiers; commonly EU Frankfurt), DNS or "
-            "CDN providers such as Cloudflare (including Turnstile, Bot Fight Mode, leaked-credential "
+            "Render.com (staging/demo hosting; live Guest Data is prohibited there), DNS or "
+            "CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential "
             "mitigation, client-side script monitoring, and HSTS when enabled for the production zone), "
             "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a "
             "transactional e-mail provider (including Amazon SES when enabled) or support tools. "
@@ -149,8 +153,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "message. Guest Data may be transmitted to the Czech Police UbyPort "
             "systems or related endpoints when a Host enables reporting — that transmission occurs on "
             "the Host's instructions as processor. We require subprocessors that process personal data "
-            "on our behalf to provide appropriate safeguards (GDPR Art. 28). Material changes are "
-            "reflected in this Policy."
+            "on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, "
+            "purposes, possible data and transfer notes are at /subprocessors. Material changes are "
+            "published there and reflected in this Policy."
         ),
         "privacy.s10_title": "10. International transfers",
         "privacy.s10_body": (
@@ -199,8 +204,10 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s14_title": "14. Guest rights",
         "privacy.s14_body": (
             "Guests should direct access, correction, deletion, and objection requests regarding "
-            "their stay data to the Host (controller) named in the guest privacy notice for that "
-            "property. The Operator will assist Hosts with technical measures to fulfil requests where "
+            "their stay data to the controller named in the guest privacy notice for that property. "
+            "Operational questions about arrival or accommodation go to the property manager shown "
+            "as the stay contact; the two entities may differ. The Operator will assist Controllers "
+            "with technical measures to fulfil requests where "
             "feasible and contractually required as processor, but cannot usually decide guest requests "
             "without Host instruction."
         ),
@@ -236,8 +243,10 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Hosts must provide lawful bases and transparent notices to Guests, respond to data subject "
             "requests, maintain records of processing where required, conduct DPIAs when appropriate, "
             "and ensure instructions to the Operator are lawful. Hosts must not upload unnecessary "
-            "special-category data. Use of passport images should be limited to what law and risk "
-            "assessment justify, with clear guest information."
+            "special-category data. A Host selecting an alternate controller warrants that the entity "
+            "actually controls the processing and that the Host is authorised to provide instructions "
+            "on its behalf. Use of passport images should be limited to what law and risk assessment "
+            "justify, with clear guest information."
         ),
         "privacy.s20_title": "20. Changes to this Policy",
         "privacy.s20_body": (
@@ -268,7 +277,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
             "který se může lišit od správce objektu."
         ),
-        "privacy.effective": "Účinnost od: 18. září 2026. Verze 1.4.",
+        "privacy.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
         "privacy.operator_title": "Správce údajů podle těchto zásad",
         "privacy.footer_link": "Zásady ochrany osobních údajů",
         "privacy.footer_short": "Soukromí",
@@ -308,8 +317,11 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s03_title": "3. Role: provozovatel, ubytovatel a host",
         "privacy.s03_body": (
-            "Ubytovatel (nebo nastavená právnická osoba) je typicky správcem údajů o hostech (jména, "
-            "cestovní doklady, pobyty, podpisy aj.). Provozovatel poskytuje software a údaje hostů "
+            "Správcem údajů hostů (jména, cestovní doklady, pobyty, podpisy aj.) je právnická osoba "
+            "nastavená pro konkrétní ubytování. Provozovatel/správce ubytování je výchozím správcem "
+            "údajů a praktickým kontaktem pro otázky k pobytu. Je-li zvolen jiný správce údajů, musí "
+            "skutečně určovat účely a prostředky zpracování; pouhá změna označení ve Službě právní "
+            "odpovědnost nepřenáší. Provozovatel UbyHostu poskytuje software a údaje hostů "
             "zpracovává jen na dokumentovaný pokyn ubytovatele — obvykle jako zpracovatel dle čl. 28 "
             "GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. "
             "Provozovatel je správcem vlastních provozních údajů. Podmínky zpracování údajů hostů jsou "
@@ -351,8 +363,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "U hostovských odkazů cookies uchovávají PIN (nejvýše 7 dní), jazyk, přístup k potvrzené "
             "rezervaci a formuláře odeslané z daného zařízení (nejvýše 60 dní). Produkční provoz "
             "ubyhost.com zprostředkovává Cloudflare. Můžeme použít Cloudflare Turnstile na produkčním "
-            "přihlášení a po opakovaných neúspěšných pokusech o PIN; Bot Fight Mode proti automatizované "
-            "návštěvnosti; kontrolu uniklých přihlašovacích údajů, která na okraji sítě porovnává pokusy "
+            "přihlášení a po opakovaných neúspěšných pokusech o PIN; vlastní řízené výzvy na neveřejných "
+            "cestách; kontrolu uniklých přihlašovacích údajů, která na okraji sítě porovnává pokusy "
             "o přihlášení se známými úniky hesel (heslo se v Cloudflare dashboardu neukládá); a malý "
             "skript klientské bezpečnosti, který eviduje skripty třetích stran v prohlížeči. Tyto "
             "funkce mohou zpracovávat technické identifikátory a údaje o připojení (např. IP) podle "
@@ -374,13 +386,14 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Údaje vidí oprávnění pracovníci a smluvní partneři s mlčenlivostí. Hosting zajišťují "
             "subzpracovatelé včetně Amazon Web Services (Lightsail nebo obdobný hosting v EHP pro "
             "produkci), Render.com (staging a další úrovně; často EU Frankfurt), DNS/CDN včetně "
-            "Cloudflare (včetně Turnstile, Bot Fight Mode, kontroly uniklých přihlašovacích údajů, "
+            "Cloudflare (včetně Turnstile, řízených výzev, kontroly uniklých přihlašovacích údajů, "
             "monitoringu skriptů na straně klienta a HSTS v produkční zóně), Google Drive a/nebo Amazon S3 při nastavených "
             "off-site zálohách, poskytovatel transakčních e-mailů (včetně Amazon SES po zapnutí) "
             "a případně podpora. Kopie potvrzení o dokončení může ubytovateli zpřístupnit adresu "
             "hosta uvedenou jako příjemce. Údaje hostů mohou být přeneseny do "
             "UbyPort Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít "
-            "vhodné záruky (čl. 28 GDPR). Podstatné změny promítneme do těchto Zásad."
+            "vhodné záruky (čl. 28 GDPR). Aktuální seznam, účely, možné údaje a informace o předání "
+            "jsou na /subprocessors. Podstatné změny zveřejníme tam a promítneme do těchto Zásad."
         ),
         "privacy.s10_title": "10. Přeshraniční přenosy",
         "privacy.s10_body": (
@@ -420,7 +433,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s14_title": "14. Práva hostů",
         "privacy.s14_body": (
             "Hosté žádají o přístup, opravu, výmaz a námitku u správce uvedeného v informaci pro dané "
-            "ubytování. Provozovatel jako zpracovatel pomůže technicky, pokud je to možné a smluvně "
+            "ubytování. Provozní otázky k příjezdu či pobytu patří správci/provozovateli ubytování; "
+            "tento kontakt se může od správce údajů lišit. Provozovatel UbyHostu jako zpracovatel "
+            "pomůže technicky, pokud je to možné a smluvně "
             "nutné, ale obvykle nerozhoduje bez pokynu ubytovatele."
         ),
         "privacy.s15_title": "15. Automatizované rozhodování",
@@ -448,8 +463,10 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s19_title": "19. Povinnosti ubytovatele jako správce",
         "privacy.s19_body": (
             "Ubytovatel musí hostům sdělit právní základy a informace, vyřizovat žádosti subjektů, vést "
-            "záznamy, provádět DPIA kde je třeba a dávat Provozovateli jen zákonné pokyny. Fotografie "
-            "pasů jen v nezbytném rozsahu s jasnou informací pro hosty."
+            "záznamy, provádět DPIA kde je třeba a dávat Provozovateli jen zákonné pokyny. Při volbě "
+            "jiného správce Ubytovatel potvrzuje, že tento subjekt zpracování skutečně řídí a Ubytovatel "
+            "je oprávněn dávat pokyny jeho jménem. Fotografie pasů lze používat jen v nezbytném "
+            "rozsahu s jasnou informací pro hosty."
         ),
         "privacy.s20_title": "20. Změny Zásad",
         "privacy.s20_body": (

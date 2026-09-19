@@ -12,6 +12,7 @@ router = APIRouter()
 TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
 PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
 DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
+SUBPROCESSOR_IDS = ("aws", "cloudflare", "render", "google")
 
 
 @router.get("/pruvodce/{slug}")
@@ -95,6 +96,20 @@ def data_processing_agreement(request: Request):
             "operator": op,
             "wrap_class": "narrow",
             "dpa_sections": DPA_SECTION_IDS,
+        },
+        status_code=200,
+    )
+
+
+@router.get("/subprocessors")
+def subprocessor_register(request: Request):
+    return render(
+        request,
+        "subprocessors.html",
+        {
+            "operator": operator.details(),
+            "wrap_class": "narrow",
+            "subprocessor_ids": SUBPROCESSOR_IDS,
         },
         status_code=200,
     )

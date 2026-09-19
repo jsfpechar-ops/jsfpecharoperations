@@ -79,7 +79,7 @@ Do **not** promote this guest-claim build to production until the product owner 
 The staging acceptance check covers:
 
 - Settings and `/healthz` show UbyHost `1.1.0`; Terms, Privacy Policy, and DPA
-  show legal version `1.4` in EN and CS;
+  show legal version `1.5` in EN and CS;
 - host sidebar and Settings show `support@ubyhost.com`;
 - property legal-entity name, e-mail, and phone appear on the guest form;
 - the optional per-property custom guest message can be saved, edited, cleared, and renders with line breaks;
