@@ -43,7 +43,7 @@ LANDING_STRINGS = {
         "landing.demo.receipt.saved": "Delivery receipt saved with the stay",
         "landing.benefits.eyebrow": "One simple flow",
         "landing.benefits.title": "Less chasing. Less copying. More certainty.",
-        "landing.benefit.calendar.title": "Bookings appear",
+        "landing.benefit.calendar.title": "Guest records start with bookings",
         "landing.benefit.calendar.body": "Connect Airbnb and Booking.com calendars.",
         "landing.benefit.guest.title": "Guests do the typing",
         "landing.benefit.guest.body": "One private link collects and signs their details.",

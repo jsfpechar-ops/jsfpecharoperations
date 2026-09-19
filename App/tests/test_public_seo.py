@@ -75,7 +75,7 @@ def test_the_homepage_has_honest_machine_readable_product_information():
 def test_the_marketing_page_renders_translated_copy_not_raw_keys():
     """New landing strings must be wired into host_i18n or the hero shows keys."""
     for lang, headline, scene_label, benefit in (
-        ("en", "Guests fill it in. UbyHost reports it.", "A reservation arrives", "Bookings appear"),
+        ("en", "Guests fill it in. UbyHost reports it.", "A reservation arrives", "Guest records start with bookings"),
         ("cs", "Hosté vyplní. UbyHost nahlásí.", "Přijde rezervace", "Rezervace se objeví"),
     ):
         page = _client().get(f"/?lang={lang}")
