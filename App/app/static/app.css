@@ -2521,6 +2521,44 @@ label { color: var(--ink); font-weight: 700; }
 }
 .auth-submit:hover { background: #343431; }
 
+/* Calendar sync is a background refresh, not the page's main action, so it
+   reads as a light control with a colored icon instead of a heavy dark pill. */
+.btn.sync-btn {
+  gap: 9px;
+  padding: 8px 16px 8px 9px;
+  border-color: var(--border-strong);
+  color: var(--ink-secondary);
+  background: var(--surface);
+  box-shadow: none;
+}
+.btn.sync-btn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--surface);
+  transform: none;
+  box-shadow: 2px 2px 0 var(--blue-bg);
+}
+.btn.sync-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+.sync-btn-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--blue);
+  background: var(--blue-bg);
+  place-items: center;
+}
+.btn.sync-btn .nav-icon { width: 17px; height: 17px; color: inherit; }
+.btn.primary.sync-btn,
+.btn.primary.sync-btn:hover {
+  border-color: var(--ink);
+  color: var(--surface);
+  background: var(--ink);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--brand) 60%, transparent);
+}
+.btn.primary.sync-btn .sync-btn-icon { color: var(--ink); background: var(--surface); }
+.sync-cta-meta { color: var(--ink-muted); }
+
 /* Authentication gets the same high-energy product story as the landing page. */
 .auth-page {
   background:
