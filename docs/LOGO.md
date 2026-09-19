@@ -55,10 +55,9 @@ shadow, or a white tile behind it.
 
 Artwork files are transparent PNGs (white canvas removed). Keep
 `mix-blend-mode: multiply` on light product surfaces as a belt-and-braces
-anti-aliasing aid; it is required for the coral workflow tile’s
-`filter: brightness(0) invert(1)` that the mark stays transparent outside
-the ligature. Do not reintroduce opaque white fills without updating that
-tile. The e-mail JPEG keeps a baked-in white canvas on purpose.
+anti-aliasing aid. Do not reintroduce opaque white fills: they show as boxes
+whenever the mark sits on a tinted surface. The e-mail JPEG keeps a baked-in
+white canvas on purpose.
 
 ## Files
 
@@ -97,7 +96,7 @@ large enough for 2× screens.
 | Mobile app bar | `ubyhost-mark.png` | `.appbar .brand-logo` | **24 × 24 px** | translucent white |
 | Onboarding welcome | `ubyhost-mark.png` | `.onboarding-logo` | **120 px** wide | `#FFFFFF` with a faint coral wash |
 | Public landing / guide header | `ubyhost-logo.png` | `.landing-brand img` | **152 px** wide | `#F7F7F5` |
-| Landing workflow card (on coral) | `ubyhost-mark.png` | `.workflow-mark img` | **22 × 22 px**, inverted to white | `--brand` |
+| Landing product mock (sidebar accent) | `ubyhost-mark.png` | `.product-shell aside img` | **28 × 28 px** | lavender-tinted white |
 | Landing final CTA | `ubyhost-mark.png` | `.landing-final img` | **64 × 64 px** | warm canvas wash |
 | Browser tab | `favicon.png` | `<link rel="icon">` | **64 × 64** (browser scales to ~16–32) | transparent |
 | Home screen | `apple-touch-icon.png` | `<link rel="apple-touch-icon">` | **180 × 180** | `#F7F7F5` |
@@ -111,11 +110,9 @@ only logo on small screens.
 - Keep clear space around the mark roughly a quarter of its height.
 - Prefer the mark-only file below ~40 px of display height.
 - Keep `mix-blend-mode: multiply` on `.brand-logo`, `.auth-logo`,
-  `.auth-hero-mark`, `.onboarding-logo`, `.landing-brand img`, and
-  `.landing-final img` as a light-surface safeguard.
-- Keep the coral workflow tile’s `filter: brightness(0) invert(1)` only while
-  `ubyhost-mark.png` has a transparent canvas (opaque white would invert into
-  a solid white square).
+  `.auth-hero-mark`, `.onboarding-logo`, `.landing-brand img`,
+  `.product-shell aside img`, and `.landing-final img` as a light-surface
+  safeguard.
 - Bump the `app.css?v=` / `landing.css?v=` cache query in the templates if you
   replace a file in place.
 
@@ -137,7 +134,7 @@ only logo on small screens.
 1. Keep the ligature geometry. Recolor only to `#D35445` / `#1B1F25` if the
    generator drifted.
 2. Crop empty margin; square the mark; export a **transparent** PNG (and JPEG
-   on white for mail). Opaque white fills break the coral workflow tile invert.
+   on white for mail). Opaque white fills show as boxes on tinted surfaces.
 3. Overwrite the matching file in `App/app/static/`.
 4. If the new PNG is truly transparent, you can drop `mix-blend-mode: multiply`.
 5. Update this document if sizes or slots change.
