@@ -68,6 +68,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.current_title": "Do this now",
         "onboarding.learn": "Learn why",
         "onboarding.all_steps": "See all setup steps",
+        "onboarding.skip": "Skip setup guidance",
+        "onboarding.skip_hint": "You can reopen the checklist whenever you want.",
+        "onboarding.resume": "Show setup guidance again",
+        "onboarding.skipped_title": "Setup guidance hidden",
+        "onboarding.skipped_body": (
+            "Continue on your own, or reopen the five-step checklist whenever you need it."
+        ),
+        "onboarding.open_checklist": "Open setup checklist",
         "onboarding.safe_title": "Nothing goes live by accident",
         "onboarding.safe_body": (
             "New reporting starts in the mode you choose. Demo data never reaches the real police, "
@@ -942,6 +950,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.current_title": "Teď udělejte toto",
         "onboarding.learn": "Proč je to potřeba",
         "onboarding.all_steps": "Zobrazit celé nastavení",
+        "onboarding.skip": "Přeskočit průvodce nastavením",
+        "onboarding.skip_hint": "Kontrolní seznam můžete kdykoli znovu otevřít.",
+        "onboarding.resume": "Znovu zobrazit průvodce nastavením",
+        "onboarding.skipped_title": "Průvodce nastavením je skrytý",
+        "onboarding.skipped_body": (
+            "Pokračujte sami, nebo si kdykoli znovu otevřete kontrolní seznam pěti kroků."
+        ),
+        "onboarding.open_checklist": "Otevřít kontrolní seznam",
         "onboarding.safe_title": "Nic se nespustí omylem",
         "onboarding.safe_body": (
             "Hlášení začne v režimu, který zvolíte. Ukázková data se skutečné policii nikdy "

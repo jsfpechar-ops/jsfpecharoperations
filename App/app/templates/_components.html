@@ -193,7 +193,7 @@
 {% endmacro %}
 
 {% macro onboarding_banner(onboarding) %}
-  {% if onboarding and onboarding.current and not onboarding.finished %}
+  {% if onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
     <aside class="onboarding-banner" aria-label="{{ t('onboarding.welcome_title') }}">
       <div class="onboarding-banner-progress" aria-hidden="true">
         <span style="width:{{ onboarding.percent }}%"></span>
@@ -208,6 +208,10 @@
         <a class="small" href="/onboarding">{{ t('onboarding.all_steps') }}</a>
         <a class="btn primary small" href="{{ onboarding.current.url }}">
           {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
+        <form method="post" action="/onboarding/dismiss">
+          <input type="hidden" name="return_to" value="{{ request.url.path }}">
+          <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
+        </form>
       </div>
     </aside>
   {% endif %}
@@ -226,6 +230,18 @@
         <strong>{{ onboarding.percent }}%</strong>
         <span>{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</span>
         <div aria-hidden="true"><i style="width:{{ onboarding.percent }}%"></i></div>
+        {% if onboarding.dismissed %}
+          <form method="post" action="/onboarding/resume">
+            <input type="hidden" name="return_to" value="{{ request.url.path }}">
+            <button class="btn ghost small" type="submit">{{ t('onboarding.resume') }}</button>
+          </form>
+        {% else %}
+          <form method="post" action="/onboarding/dismiss">
+            <input type="hidden" name="return_to" value="/">
+            <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
+          </form>
+          <small>{{ t('onboarding.skip_hint') }}</small>
+        {% endif %}
       </div>
     </header>
 

@@ -6,6 +6,21 @@ from typing import Any, Dict, List, Optional
 from . import db, validation
 
 
+def _dismissed_key(owner_user_id: int) -> str:
+    return f"onboarding_dismissed_{owner_user_id}"
+
+
+def is_dismissed(owner_user_id: Optional[int]) -> bool:
+    return bool(
+        owner_user_id
+        and db.get_setting(_dismissed_key(owner_user_id), "0") == "1"
+    )
+
+
+def set_dismissed(owner_user_id: int, dismissed: bool) -> None:
+    db.set_setting(_dismissed_key(owner_user_id), "1" if dismissed else "0")
+
+
 def _apartment_issues(apartment) -> List[validation.Issue]:
     data = dict(apartment)
     data["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
@@ -104,6 +119,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         "total": len(steps),
         "percent": round((completed / len(steps)) * 100) if steps else 100,
         "finished": completed == len(steps),
+        "dismissed": is_dismissed(owner_user_id),
         "setup_issues": setup_issues,
         "first_apartment_id": first_apartment["id"] if first_apartment else None,
     }

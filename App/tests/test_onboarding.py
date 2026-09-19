@@ -107,3 +107,50 @@ def test_onboarding_can_be_reopened_as_a_full_page():
     assert page.status_code == 200
     assert "Nothing goes live by accident" in page.text
     assert "Want to learn before entering real details?" in page.text
+
+
+def test_host_can_skip_and_restore_setup_guidance():
+    owner_id = auth.create_account(
+        "onboard-skip",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    first_view = client.get("/")
+    assert "Skip setup guidance" in first_view.text
+
+    skipped = client.post(
+        "/onboarding/dismiss",
+        data={"return_to": "/"},
+        follow_redirects=False,
+    )
+    assert skipped.status_code == 303
+    assert skipped.headers["location"] == "/"
+    assert onboarding.progress(owner_id)["dismissed"] is True
+
+    dashboard = client.get("/")
+    assert 'class="onboarding-welcome"' not in dashboard.text
+    assert "Setup guidance hidden" in dashboard.text
+    assert 'href="/onboarding"' in dashboard.text
+
+    checklist = client.get("/onboarding")
+    assert checklist.status_code == 200
+    assert 'class="onboarding-welcome"' in checklist.text
+    assert "Show setup guidance again" in checklist.text
+
+    resumed = client.post(
+        "/onboarding/resume",
+        data={"return_to": "/"},
+        follow_redirects=False,
+    )
+    assert resumed.status_code == 303
+    assert resumed.headers["location"] == "/"
+    assert onboarding.progress(owner_id)["dismissed"] is False
+    assert 'class="onboarding-welcome"' in client.get("/").text

@@ -24,6 +24,7 @@ from .. import (
     housebook,
     icalsync,
     mail,
+    onboarding,
     passport_photos,
     reporting,
     claim,
@@ -319,6 +320,35 @@ def onboarding_view(request: Request):
     if guard:
         return guard
     return render(request, "onboarding.html")
+
+
+@router.post("/onboarding/dismiss")
+async def onboarding_dismiss(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    owner_user_id = access.owner_id(request)
+    onboarding.set_dismissed(owner_user_id, True)
+    db.audit("onboarding.dismissed", owner_user_id=owner_user_id)
+    return RedirectResponse(
+        security.safe_local_path(_form_str(form, "return_to"), "/"), status_code=303
+    )
+
+
+@router.post("/onboarding/resume")
+async def onboarding_resume(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    owner_user_id = access.owner_id(request)
+    onboarding.set_dismissed(owner_user_id, False)
+    db.audit("onboarding.resumed", owner_user_id=owner_user_id)
+    return RedirectResponse(
+        security.safe_local_path(_form_str(form, "return_to"), "/onboarding"),
+        status_code=303,
+    )
 
 
 @router.post("/celebrations/dismiss")
