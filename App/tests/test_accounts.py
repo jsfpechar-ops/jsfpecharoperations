@@ -661,7 +661,7 @@ def test_subprocessor_register_is_public_and_cross_linked():
     assert "Amazon Web Services" in response.text
     assert "Cloudflare" in response.text
     assert "Live Guest Data must not be entered into staging" in response.text
-    assert "configured controller" in response.text
+    assert "accommodation provider or alternate controller" in response.text
     for path in ("/legal", "/terms", "/privacy", "/dpa"):
         page = TestClient(app).get(path)
         assert 'href="/subprocessors"' in page.text
