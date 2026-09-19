@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from . import db, validation
+from . import config, db, validation
 
 
 def _dismissed_key(owner_user_id: int) -> str:
@@ -112,13 +112,29 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
 
     current = next((step for step in steps if not step["done"]), None)
     completed = sum(1 for step in steps if step["done"])
+    finished = completed == len(steps)
+    finish = None
+    if finished and first_apartment:
+        token = first_apartment["permalink_token"] or ""
+        policy = first_apartment["passport_photo_policy"] or "off"
+        finish = {
+            "apartment_id": first_apartment["id"],
+            "name": first_apartment["internal_name"],
+            "permalink": f"{config.PUBLIC_BASE_URL}/l/{token}",
+            "permalink_token": token,
+            "pin": first_apartment["permalink_pin"] or "",
+            "passport_policy": policy,
+            "communication_url": f"/apartments/{first_apartment['id']}#communication",
+            "property_url": f"/apartments/{first_apartment['id']}",
+        }
     return {
         "steps": steps,
         "current": current,
         "completed": completed,
         "total": len(steps),
         "percent": round((completed / len(steps)) * 100) if steps else 100,
-        "finished": completed == len(steps),
+        "finished": finished,
+        "finish": finish,
         "dismissed": is_dismissed(owner_user_id),
         "setup_issues": setup_issues,
         "first_apartment_id": first_apartment["id"] if first_apartment else None,

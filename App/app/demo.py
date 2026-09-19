@@ -344,6 +344,8 @@ def _enrich_studio(apartment_id: int) -> None:
 
 def _enrich_loft(apartment_id: int) -> None:
     """Karlín: alternate controller + required passport for foreign guests."""
+    from . import passport_photos
+
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     today = claim.prague_today()
 
@@ -359,6 +361,55 @@ def _enrich_loft(apartment_id: int) -> None:
             today_stay,
             email="loft.guest@demo.ubyhost.test",
             party_size=2,
+        )
+
+    # Foreign guest with a temporary passport photo awaiting host review.
+    passport_stay = _stay_on(apartment_id, today + timedelta(days=1))
+    if passport_stay:
+        db.update(
+            "reservation",
+            passport_stay["id"],
+            {"declared_guests": 1, "updated_at": db.utcnow()},
+        )
+        guest_id = _guest(
+            passport_stay["id"],
+            True,
+            surname="Dupont",
+            first_name="Claire",
+            birth_date="18041989",
+            nationality="FRA",
+            doc_number="12AB34567",
+            res_street="Rue de Rivoli 1",
+            res_city="Paris",
+            res_country="FRA",
+            purpose="10",
+        )
+        # Minimal valid 1×1 PNG — enough for host review UI, never sent to Police.
+        tiny_png = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+            b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f"
+            b"\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        passport_photos.save_photo(guest_id, tiny_png, "image/png")
+        db.update(
+            "guest",
+            guest_id,
+            {"passport_photo_at": db.utcnow(), "updated_at": db.utcnow()},
+        )
+        _claim_assigned(
+            apartment,
+            passport_stay,
+            email="claire.dupont@demo.ubyhost.test",
+            party_size=1,
+        )
+
+    # Cancelled booking — host can filter Stays by cancelled status.
+    cancelled = _stay_on(apartment_id, today + timedelta(days=45))
+    if cancelled:
+        db.update(
+            "reservation",
+            cancelled["id"],
+            {"status": "cancelled", "updated_at": db.utcnow()},
         )
 
     # One completed Czech stay so house book shows non-reportable guests here too.
@@ -388,6 +439,13 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
     """Create two demo properties covering the main host/guest paths.
 
     Returns the Vinohrady Studio apartment id (primary walkthrough entry).
+
+    Coverage map (mock-only; never touches real UbyPort):
+    - Vinohrady: passport off, PM=controller, manual reporting, claim/assigned,
+      late incomplete, locked, Czech house-book, foreign reported stay, guest message, PIN
+    - Karlín: passport required + sample photo awaiting review, alternate controller,
+      scheduled reporting, cancelled stay, Czech house-book, guest message, PIN
+    - Shared sample calendar also includes an Airbnb block (Not available) that sync skips
     """
     if config.UBYPORT_ENV != "mock":
         return None
@@ -524,7 +582,17 @@ def clear(owner_user_id: Optional[int] = None) -> bool:
     )
     if not apartments:
         return False
+    from . import passport_photos
+
     for apartment in apartments:
+        guests = db.query(
+            "SELECT g.id FROM guest g "
+            "JOIN reservation r ON r.id = g.reservation_id "
+            "WHERE r.apartment_id = ?",
+            (apartment["id"],),
+        )
+        for guest in guests:
+            passport_photos.delete_photo(int(guest["id"]))
         db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
     for entity_id in entity_ids:

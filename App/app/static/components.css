@@ -4,9 +4,15 @@
 .command-trigger:hover { border-color:color-mix(in srgb,var(--blue) 36%,var(--border));color:var(--ink);transform:translateY(-1px) }
 .command-trigger-icon { display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--surface-raised);color:var(--blue);font-size:18px;box-shadow:0 1px 3px rgba(20,20,18,.1) }
 kbd { padding:1px 5px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--ink-muted);font:11px/1.5 var(--font-sans) }
-.property-switcher { display:flex;gap:7px;margin:0 0 14px;padding:0 2px 13px;overflow-x:auto;border-bottom:1px solid var(--border) }
+.property-switcher { display:flex;flex-wrap:wrap;gap:7px;margin:0 0 14px;padding:0 2px 13px;border-bottom:1px solid var(--border) }
 .property-switcher a { display:block;text-decoration:none }
 .property-switcher a>span:last-child { position:absolute;clip:rect(0 0 0 0);width:1px;height:1px;overflow:hidden }
+.property-switcher-more {
+  display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 7px;
+  border:1px dashed var(--border-strong);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--ink-muted);font-size:var(--text-sm);font-weight:700;cursor:pointer
+}
+.property-switcher-more:hover { background:var(--surface-3);color:var(--ink) }
 .saved-views { display:grid;gap:2px;margin:0 0 12px }
 .saved-views:empty { display:none }
 .saved-views .nav-label { padding-left:4px }
