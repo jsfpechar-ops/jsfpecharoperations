@@ -61,6 +61,7 @@ a { color: inherit; }
   display: block;
   width: 152px;
   height: auto;
+  mix-blend-mode: multiply;
 }
 
 .landing-nav,
@@ -217,7 +218,11 @@ a { color: inherit; }
   background: var(--brand);
 }
 
-.workflow-mark img { width: 22px; height: 22px; }
+.workflow-mark img {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1);
+}
 
 .workflow-state {
   margin-left: auto;
@@ -449,7 +454,12 @@ a { color: inherit; }
   background: var(--brand-soft);
 }
 
-.landing-final img { width: 64px; height: 64px; margin-bottom: 28px; }
+.landing-final img {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 28px;
+  mix-blend-mode: multiply;
+}
 .landing-final h2 { max-width: 800px; }
 .landing-final .landing-button { margin-top: 32px; }
 

@@ -153,4 +153,4 @@ def healthz():
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
-    return RedirectResponse("/static/favicon.svg", status_code=307)
+    return RedirectResponse("/static/favicon.png", status_code=307)

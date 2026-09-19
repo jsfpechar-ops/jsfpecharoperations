@@ -1,4 +1,14 @@
-# UbyHost logo generation prompt
+# UbyHost logo generation prompt (historical)
+
+**The identity is locked.** Shipping rules, files, and placements are in
+**[LOGO.md](LOGO.md)**. Do not run this brief to replace the live mark.
+
+This page is the brief that produced the family. Keep it for regenerating
+exports of the *same* idea, or for history. If you generate again, attach the
+shipped mark (`App/app/static/ubyhost-mark.png`) as a reference and do not
+ask the model to invent a new symbol.
+
+---
 
 A ready-to-paste brief for an image or design model (Midjourney, GPT Image,
 Nano Banana / Gemini, Ideogram, Recraft, Firefly) when generating a new UbyHost
@@ -115,6 +125,25 @@ distorted or invented glyphs.
 ```
 
 ---
+
+## 2b. Candidates seen so far (not constraints)
+
+`docs/assets/logo-mark-selected.jpg` is one candidate the owner liked on
+2026-09-18: an abstract house of two thick rounded strokes with form lines in
+the negative space, sampled at `#CE5C51` and `#AA453D`.
+
+<img alt="UbyHost mark candidate" src="assets/logo-mark-selected.jpg" width="150" />
+
+It is kept for reference only. **Do not describe it, or any other candidate, to
+the generator, and do not attach it as a reference image.** The concept stays
+open; the point of the brief is that the model invents the symbol. If a
+candidate is ever locked in, record the decision here and the lockup prompts can
+start describing it instead.
+
+One lesson worth keeping from that candidate: fine internal detail such as
+stacked form lines does not survive 16 px and is marginal at 28 px. Whatever
+concept wins will likely need a simplified small-size variant with fewer parts
+for the favicon and the sidebar.
 
 ## 3. Where the logo appears: sizes and backgrounds
 
@@ -321,6 +350,92 @@ shadows, no 3D, no device mockups, no photography, no borders.
 
 If the tool renders text poorly, generate the mark alone with Section 4 and
 build the lockups in a vector editor using real type.
+
+## 6b. All three versions in one prompt
+
+This single prompt returns all three versions on one canvas, with the symbol
+invented by the generator rather than specified here. Run it repeatedly: each
+pass is a fresh concept already shown as a complete family, which is the fastest
+way to see whether an idea survives being a wordmark and a tagline as well as an
+icon. Do not attach a reference image — it would anchor the result. Aspect ratio
+3:4 or 1:1.
+
+```
+Create ONE image: a clean, minimal logo sheet showing three versions of the same
+UbyHost logo, on a flat warm off-white #F7F7F5 background, arranged as three
+rows in a single centered column with wide margins and generous even space
+between the rows. Nothing else on the canvas — no captions, no labels, no
+numbers, no dividers, no frames.
+
+CONTEXT
+UbyHost is a web app for short-term rental hosts in the Czech Republic that
+automatically reports foreign guests to the Czech Foreign Police so hosts never
+retype passport details into a government form. The brand is calm, exact,
+quietly official, and trustworthy with sensitive personal data. Modern
+minimalist flat vector identity with the restraint of Notion, Apple, Stripe or
+Linear.
+
+INVENT THE MARK — you design it, I am not describing it
+There is no existing logo to follow, extend or take cues from. Start from a
+blank page with full creative freedom and invent the symbol yourself. Do not
+assume it has to be a letter, a monogram or an initial, and do not default to
+drawing a house or a building. Decide for yourself what this product feels like
+and find the shape for it — arrival and welcome, a burden lifted, something
+handled correctly on someone's behalf, sensitive information kept safe and in
+order, or a reading of your own. Abstract, symbolic and unexpected are welcome
+and preferred over the obvious. Commit to one idea and strip it to the fewest
+shapes that still carry it. Surprise me.
+
+Whatever you invent must be: flat vector, geometric, built from consistent
+stroke weights, roughly square in overall proportion, strong enough as a
+silhouette to survive at 16 px and in a single flat color, and drawn in
+coral-brick #C85A52 with deeper brick #AD4942 as an optional second tone.
+
+ROW 1 — mark only
+The symbol alone, about 150 px square, centered. No text of any kind.
+
+ROW 2 — mark and name, horizontal lockup
+The same mark on the left, the wordmark "UbyHost" immediately to its right,
+optically aligned and vertically centered on the cap height, the gap between
+them about half the mark's width, the mark's height matching the cap height plus
+a little overshoot. Roughly 300 px wide overall. Spelling exactly "UbyHost" —
+capital U, lowercase "by", capital H, lowercase "ost", one word, no space, no
+hyphen. Modern geometric or neo-grotesque sans, medium to semibold, slightly
+tightened letter spacing, in ink #20201E. No tagline in this row.
+
+ROW 3 — full lockup, stacked
+The same mark centered on top, the wordmark "UbyHost" beneath it, and beneath
+that the tagline "Guest reporting, handled for you." set much smaller in a light
+or regular weight with an ample gap so it never competes with the name. Roughly
+300 px wide by 170 px tall, balanced as one object, wordmark and tagline in ink
+#20201E.
+
+CONSISTENCY
+Design the mark once, then reuse that exact same drawing in all three rows —
+same geometry, same stroke weights, same corner radii, same colors — with the
+same typeface throughout. They are one family at three levels of detail, not
+three different logos. Every piece of text real, correctly spelled and sharply
+rendered.
+
+AVOID: gradients, glossy finishes, 3D, bevels, embossing, drop shadows, glows,
+metallic foil, texture, sketchy or hand-drawn strokes, AI-render sheen. AVOID
+plates, tiles, circles, rounded squares or badges behind any version. AVOID the
+obvious rental clichés: clip-art house-with-key, house-with-heart,
+roof-with-chimney, building skylines, beds, luggage, keys, keyholes, globes,
+airplanes, location pins, passports, calendars, clipboards. AVOID police badges,
+government seals, ministry emblems, coats of arms, heraldic lions, flags. AVOID
+mascots, faces, animals, cartoons, isometric illustration, busy detail, more
+than three colors, thin hairlines. AVOID swooshes, ribbons and single-initial
+monograms. AVOID misspellings or invented letterforms — the name is exactly
+"UbyHost", never "UbyHosts", "Uby Host", "UByHost" or "Ubyhost". AVOID captions,
+annotations, dimension lines, borders, watermarks, mockups, business cards,
+signage, phone or laptop frames, photography, any UI around the logos.
+```
+
+One canvas means one background, so the three versions come back sharing it
+rather than transparent. Use this sheet to judge the family, then re-run
+Sections 4–6 individually for the production files, or trace the winner in a
+vector editor.
 
 ### Identity sheet (optional, for reviewing candidates)
 
