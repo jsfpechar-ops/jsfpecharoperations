@@ -181,7 +181,8 @@ that failed to render.
 ## What it deliberately does not do
 
 Accommodation fees (`poplatek z pobytu`) are a separate obligation to your
-municipality and are not calculated or reported here.
+municipality and are not calculated or reported here. Planning notes for a
+future module: **[docs/POPLATEK_Z_POBYTU.md](../docs/POPLATEK_Z_POBYTU.md)**.
 
 ## UI and design
 
