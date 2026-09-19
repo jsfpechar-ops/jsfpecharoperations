@@ -1691,13 +1691,6 @@ details.raw pre {
     var(--surface);
 }
 
-.onboarding-logo {
-  display: block;
-  width: min(220px, 72vw);
-  height: auto;
-  margin: 0 auto 18px;
-}
-
 .onboarding-welcome h2 {
   margin: 0 0 10px;
   font-size: clamp(26px, 5vw, 32px);
@@ -1812,7 +1805,11 @@ details.raw pre {
 .brand-logo { height: 30px; }
 .sidebar-brand .brand-logo { height: 28px; }
 .appbar .brand-logo { height: 24px; }
-.onboarding-logo { width: min(120px, 34vw); height: auto; }
+.onboarding-logo {
+  width: min(120px, 34vw);
+  height: auto;
+  margin: 0 auto 18px;
+}
 .auth-logo { width: min(220px, 70vw); height: auto; }
 .auth-hero-mark {
   width: min(300px, 100%);
