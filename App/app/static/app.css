@@ -1757,6 +1757,8 @@ details.raw pre {
   border-radius: var(--radius-pill);
   background: var(--canvas-subtle);
 }
+.onboarding-meter form { margin-top: 9px; }
+.onboarding-meter form + small { margin-top: 2px; }
 
 .onboarding-meter i,
 .onboarding-banner-progress span {
@@ -1930,6 +1932,10 @@ details.raw pre {
   gap: 12px;
   align-items: center;
 }
+.onboarding-banner-actions form { display: inline-flex; }
+
+.onboarding-skipped h2 { margin-top: 0; }
+.onboarding-skipped .actions { justify-content: center; }
 
 .onboarding-bottom {
   display: grid;

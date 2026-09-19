@@ -75,7 +75,18 @@
 ) }}
 
 {% if not apartments %}
-  {{ onboarding_welcome(onboarding) }}
+  {% if not onboarding.dismissed %}
+    {{ onboarding_welcome(onboarding) }}
+  {% else %}
+    <div class="panel empty onboarding-skipped">
+      <h2>{{ t('onboarding.skipped_title') }}</h2>
+      <p>{{ t('onboarding.skipped_body') }}</p>
+      <div class="actions">
+        <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
+        <a class="btn" href="/onboarding">{{ t('onboarding.open_checklist') }}</a>
+      </div>
+    </div>
+  {% endif %}
 {% else %}
 
   {{ onboarding_banner(onboarding) }}
