@@ -44,9 +44,9 @@
       <img src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
     <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
-      <a href="/?lang={{ lang }}#features">{{ t('landing.nav.features') }}</a>
-      <a href="/?lang={{ lang }}#how">{{ t('landing.nav.how') }}</a>
-      <a href="/?lang={{ lang }}#questions">{{ t('landing.nav.faq') }}</a>
+      <a href="/?lang={{ lang }}#product">{{ t('landing.nav.features') }}</a>
+      <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.nav.how') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
     </nav>
     <div class="landing-actions">
       <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
@@ -90,6 +90,7 @@
             {% endfor %}
           </ul>
           <a href="/login?lang={{ lang }}" class="landing-button primary">{{ t('landing.cta') }}</a>
+          <a href="/jak-to-funguje?lang={{ lang }}" class="guide-product-link">{{ t('landing.details.link') }} →</a>
         </aside>
       </div>
 
