@@ -4,10 +4,11 @@ from __future__ import annotations
 import hashlib
 import logging
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
+from zoneinfo import ZoneInfo
 
-from . import db, deadlines, mail, reporting, validation
+from . import config, db, deadlines, mail, reporting, validation
 
 log = logging.getLogger("ubyhost.claim")
 
@@ -24,6 +25,21 @@ def prague_today():
 
 def token_hash(secret: str) -> str:
     return hashlib.sha256(secret.encode("utf-8")).hexdigest()
+
+
+def _parse_provisional_until(value: str) -> datetime:
+    """Normalise stored hold deadlines for comparison (UTC-aware)."""
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ZoneInfo(config.TIMEZONE))
+    return parsed.astimezone(timezone.utc)
+
+
+def _hold_still_active(provisional_until: Optional[str], now: Optional[str] = None) -> bool:
+    if not provisional_until:
+        return False
+    now_utc = _parse_provisional_until(now or db.utcnow())
+    return _parse_provisional_until(provisional_until) > now_utc
 
 
 def _row(reservation_id: int):
@@ -53,18 +69,24 @@ def ensure_row(reservation_id: int):
 
 def expire_holds(now=None) -> int:
     now = now or db.utcnow()
+    now_utc = _parse_provisional_until(now)
     rows = db.query(
-        "SELECT reservation_id FROM reservation_claim "
-        "WHERE state = ? AND provisional_until IS NOT NULL AND provisional_until < ?",
-        (PROVISIONAL, now),
+        "SELECT reservation_id, provisional_until FROM reservation_claim "
+        "WHERE state = ? AND provisional_until IS NOT NULL",
+        (PROVISIONAL,),
     )
-    for row in rows:
+    expired_ids = [
+        row["reservation_id"]
+        for row in rows
+        if _parse_provisional_until(row["provisional_until"]) <= now_utc
+    ]
+    for reservation_id in expired_ids:
         db.execute(
             "UPDATE reservation_claim SET state = ?, token_hash = NULL, "
             "provisional_until = NULL, updated_at = ? WHERE reservation_id = ? AND state = ?",
-            (UNCLAIMED, now, row["reservation_id"], PROVISIONAL),
+            (UNCLAIMED, now, reservation_id, PROVISIONAL),
         )
-    return len(rows)
+    return len(expired_ids)
 
 
 def guest_access_open(reservation, claim=None, now=None) -> bool:
@@ -114,13 +136,15 @@ def start_claim(
         if mail.normalise_email(claim["email"] or "") != addr:
             return False, "already_claimed", None
     if claim["state"] == PROVISIONAL and not resend:
-        if claim["provisional_until"] and claim["provisional_until"] > db.utcnow():
+        if _hold_still_active(claim["provisional_until"]):
             if mail.normalise_email(claim["email"] or "") != addr:
                 return False, "held", None
 
     secret = secrets.token_urlsafe(TOKEN_BYTES)
     now = db.utcnow()
-    until = (deadlines.local_now() + timedelta(minutes=HOLD_MINUTES)).isoformat()
+    until = (
+        datetime.now(timezone.utc) + timedelta(minutes=HOLD_MINUTES)
+    ).replace(microsecond=0).isoformat()
     version = int(claim["token_version"] or 0) + 1
     db.execute(
         "UPDATE reservation_claim SET state = ?, email = ?, email_masked = ?, lang = ?, "
