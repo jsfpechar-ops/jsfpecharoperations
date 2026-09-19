@@ -7,11 +7,129 @@ These rows drive the banner rendered in the base template.
 """
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from . import db
+from . import db, deadlines, host_i18n, validation
 
 LEVEL_ORDER = {"critical": 0, "warning": 1, "info": 2}
+
+# Stay-related kinds get short i18n titles/reasons at render time so EN/CS
+# hosts see the same compact card regardless of the English log text stored.
+_STAY_ALERT_KINDS = frozenset({"deadline", "guest_incomplete_checkin"})
+
+
+def _fmt_date(value: Optional[str]) -> str:
+    parsed = validation.parse_iso_date(value)
+    return parsed.strftime("%d.%m.%Y") if parsed else (value or "")
+
+
+def _stay_dates(reservation: Any) -> str:
+    start = _fmt_date(reservation["date_from"])
+    end = _fmt_date(reservation["date_to"])
+    if start and end:
+        return f"{start} – {end}"
+    return start or end
+
+
+def _plural_key(base: str, n: int) -> str:
+    if n == 1:
+        return f"{base}.one"
+    if 2 <= n <= 4:
+        return f"{base}.few"
+    return base
+
+
+def _forms_count(progress: Dict[str, Any]) -> tuple[str, str]:
+    filled = str(progress.get("filled") or 0)
+    expected = progress.get("expected")
+    return filled, str(expected if expected is not None else "?")
+
+
+def stay_title(lang: str, property_name: str, reservation: Any) -> str:
+    return host_i18n.translate(
+        lang,
+        "notification.stay_title",
+        property=property_name,
+        dates=_stay_dates(reservation),
+    )
+
+
+def deadline_reason(lang: str, check_in, progress: Dict[str, Any], now=None) -> str:
+    filled, expected = _forms_count(progress)
+    kind, amount = deadlines.time_left_parts(check_in, now)
+    if kind == "overdue_days":
+        key = _plural_key("notification.reason.overdue_forms", amount)
+        return host_i18n.translate(
+            lang, key, n=amount, filled=filled, expected=expected
+        )
+    if kind == "overdue_hours":
+        return host_i18n.translate(
+            lang,
+            "notification.reason.overdue_hours_forms",
+            n=amount,
+            filled=filled,
+            expected=expected,
+        )
+    return host_i18n.translate(
+        lang,
+        "notification.reason.urgent_forms",
+        filled=filled,
+        expected=expected,
+    )
+
+
+def checkin_incomplete_reason(lang: str) -> str:
+    return host_i18n.translate(lang, "notification.reason.checkin_incomplete")
+
+
+def present(alert: Any, lang: str) -> Dict[str, Any]:
+    """Compact title + reason for the notification card.
+
+    Known stay alerts are rebuilt from the reservation so hosts see short
+    EN/CS copy with Czech-style dates. Other kinds keep the stored text.
+    """
+    row = dict(alert)
+    kind = row.get("kind") or ""
+    if kind not in _STAY_ALERT_KINDS or not row.get("reservation_id"):
+        row["display_title"] = row.get("message") or ""
+        row["display_detail"] = row.get("detail") or ""
+        return row
+
+    reservation = db.query_one(
+        "SELECT r.*, a.internal_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (row["reservation_id"],),
+    )
+    if not reservation:
+        row["display_title"] = row.get("message") or ""
+        row["display_detail"] = row.get("detail") or ""
+        return row
+
+    property_name = reservation["internal_name"] or ""
+    row["display_title"] = stay_title(lang, property_name, reservation)
+    if kind == "guest_incomplete_checkin":
+        row["display_detail"] = checkin_incomplete_reason(lang)
+        return row
+
+    from . import reporting
+
+    start = validation.parse_iso_date(reservation["date_from"])
+    progress = reporting.reservation_progress(reservation)
+    if start:
+        row["display_detail"] = deadline_reason(lang, start, progress)
+    else:
+        filled, expected = _forms_count(progress)
+        row["display_detail"] = host_i18n.translate(
+            lang,
+            "notification.reason.urgent_forms",
+            filled=filled,
+            expected=expected,
+        )
+    return row
+
+
+def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
+    return [present(alert, lang) for alert in alerts]
 
 
 def raise_alert(

@@ -109,12 +109,13 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("current_user", auth.current_user(request))
     data.setdefault("workspace_user", auth.workspace_user(request))
     workspace = data["workspace_user"]
-    data.setdefault(
-        "open_alerts",
-        alerts.open_alerts(workspace["id"]) if workspace else (
-            [] if auth.accounts_exist() else alerts.open_alerts()
-        ),
-    )
+    if "open_alerts" not in data:
+        raw_alerts = (
+            alerts.open_alerts(workspace["id"]) if workspace else (
+                [] if auth.accounts_exist() else alerts.open_alerts()
+            )
+        )
+        data["open_alerts"] = alerts.present_many(raw_alerts, data["lang"])
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
     data.setdefault("celebration_milestone", None)

@@ -657,29 +657,29 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
    without a navigation. */
 .notification-stack {
   position: fixed;
-  top: 18px;
-  right: 18px;
+  top: 14px;
+  right: 14px;
   z-index: 70;
   display: grid;
-  gap: 10px;
-  width: min(390px, calc(100vw - 32px));
+  gap: 8px;
+  width: min(340px, calc(100vw - 24px));
   pointer-events: none;
 }
 .notification-bubble {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 14px;
   background: var(--surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-popover);
   pointer-events: auto;
   animation: notification-in 0.32s var(--ease);
 }
 .notification-bubble.leaving { animation: notification-out 0.22s ease forwards; }
 .notification-link {
   display: flex;
-  gap: 12px;
-  padding: 14px 42px 14px 14px;
+  gap: 10px;
+  padding: 10px 34px 10px 10px;
   color: var(--ink);
   text-decoration: none;
 }
@@ -687,32 +687,44 @@ a.notification-link:hover { background: var(--surface-2); }
 .notification-icon {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--bad);
   color: var(--canvas);
+  font-size: 13px;
   font-weight: 750;
 }
 .notification-bubble.warning .notification-icon { background: var(--warn); }
 .notification-bubble.info .notification-icon { background: var(--brand); }
-.notification-bubble strong { display: block; font-size: 14px; line-height: 1.35; }
-.notification-bubble small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.4; }
+.notification-bubble strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+.notification-bubble small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
 .notification-bubble .notification-action { color: var(--brand); font-weight: 650; }
-.notification-bubble form { position: absolute; top: 9px; right: 9px; }
+.notification-bubble form { position: absolute; top: 6px; right: 6px; }
 .notification-bubble form button {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
 }
 .notification-bubble form button:hover { background: var(--surface-3); color: var(--ink); }
