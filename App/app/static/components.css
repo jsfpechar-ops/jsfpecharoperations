@@ -110,30 +110,30 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
 .command-trigger {
   min-height:42px;
   margin-bottom:16px;
-  border:1.5px solid var(--ink);
+  border:1px solid var(--border-strong);
   border-radius:10px;
-  background:linear-gradient(135deg,var(--amber-bg),var(--pink-bg));
-  color:var(--ink);
-  font-weight:680;
-  box-shadow:3px 3px 0 var(--ink);
+  background:var(--surface);
+  color:var(--ink-secondary);
+  font-weight:640;
+  box-shadow:0 1px 2px rgba(32,32,30,.06);
 }
 .command-trigger:hover {
-  border-color:var(--ink);
+  border-color:color-mix(in srgb,var(--brand) 38%,var(--border-strong));
   color:var(--ink);
-  transform:translate(-1px,-1px);
-  box-shadow:4px 4px 0 var(--ink);
+  transform:none;
+  box-shadow:0 2px 8px rgba(32,32,30,.09);
 }
 .command-trigger-icon {
-  border:1px solid var(--ink);
-  color:var(--ink);
-  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--brand-ink);
+  background:var(--brand-soft);
   box-shadow:none;
 }
 .property-mark,.avatar { border:1px solid color-mix(in srgb,currentColor 28%,transparent) }
-.view-switch { border:1.5px solid var(--ink);border-radius:var(--radius-pill);background:var(--surface) }
-.view-switch a { border-radius:var(--radius-pill);font-weight:680 }
-.view-switch a.on { color:var(--surface);background:var(--ink) }
-.shortcut-trigger { border:1.5px solid var(--ink);border-radius:50%;box-shadow:2px 2px 0 var(--ink) }
+.view-switch { border:1px solid var(--border-strong);border-radius:var(--radius-pill);background:var(--surface) }
+.view-switch a { border-radius:var(--radius-pill);font-weight:660 }
+.view-switch a.on { color:var(--brand-ink);background:var(--brand-soft) }
+.shortcut-trigger { border:1px solid var(--border-strong);border-radius:50%;box-shadow:0 1px 2px rgba(32,32,30,.06) }
 .command-dialog,.shortcuts-dialog {
   border:2px solid var(--ink);
   box-shadow:8px 9px 0 rgba(32,32,30,.32);
