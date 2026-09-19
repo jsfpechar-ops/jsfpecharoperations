@@ -5,11 +5,11 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, client_ip, config, db, env_guard, host_i18n, scheduler, security
+from . import auth, client_ip, config, db, env_guard, host_i18n, scheduler, security, seo
 from .routes import admin, guest, legal
 from .sample_calendar import sample_calendar_response
 
@@ -111,6 +111,16 @@ def sample_airbnb_calendar():
     return sample_calendar_response()
 
 
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    return Response(seo.robots_txt(), media_type="text/plain; charset=utf-8")
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap():
+    return Response(seo.sitemap_xml(), media_type="application/xml")
+
+
 @app.post(
     "/language",
     include_in_schema=False,
@@ -122,15 +132,7 @@ async def set_language(request: Request):
     target = str(form.get("next", "/") or "/")
     target = security.safe_local_path(target, "/")
     response = RedirectResponse(target, status_code=303)
-    response.set_cookie(
-        host_i18n.LANG_COOKIE,
-        lang,
-        max_age=60 * 60 * 24 * 365,
-        httponly=False,
-        samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
-        path="/",
-    )
+    host_i18n.remember_language(response, lang)
     return response
 
 
