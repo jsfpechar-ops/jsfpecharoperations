@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260919b">
+  <link rel="stylesheet" href="/static/app.css?v=20260919c">
   <link rel="stylesheet" href="/static/components.css?v=20260914d">
 </head>
 <body class="layout-host {{ 'no-nav' if not (show_nav | default(true)) }}">
@@ -36,15 +36,15 @@
 </button>
 <aside class="sidebar" id="app-sidebar">
   <div class="sidebar-brand">
-    <a class="brand plain" href="/">
-      <img class="brand-logo" src="/static/ubyhost-mark.png" alt="">
-      <span class="brand-word">UbyHost</span>
-    </a>
-    <div class="sidebar-brand-actions">
-      <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
+    <div class="sidebar-brand-row">
+      <a class="brand plain" href="/">
+        <img class="brand-logo" src="/static/ubyhost-mark.png" alt="">
+        <span class="brand-word">UbyHost</span>
+      </a>
       <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true"
               aria-label="{{ t('a11y.hide_menu') }}"><span aria-hidden="true">‹</span></button>
     </div>
+    <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
   </div>
   {% if current_user and workspace_user %}
     <div class="sidebar-user">
