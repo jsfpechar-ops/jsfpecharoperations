@@ -101,12 +101,12 @@
   </form>
 {% endmacro %}
 
-{% macro sync_calendars_button(return_to='/', last_sync=none, label_key='dashboard.sync_calendars', primary=true) %}
+{% macro sync_calendars_button(return_to='/', last_sync=none, label_key='dashboard.sync_calendars', primary=false) %}
   <div class="sync-cta{% if last_sync %} has-meta{% endif %}">
     <form method="post" action="/sync" class="sync-cta-form">
       <input type="hidden" name="return_to" value="{{ return_to }}">
       <button class="btn{% if primary %} primary{% endif %} sync-btn" type="submit">
-        {{ nav_icon('calendar') }}
+        <span class="sync-btn-icon" aria-hidden="true">{{ nav_icon('calendar') }}</span>
         <span>{{ t(label_key) }}</span>
       </button>
     </form>

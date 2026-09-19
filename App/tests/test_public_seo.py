@@ -17,7 +17,7 @@ from app.landing_i18n import LANDING_STRINGS
 from app.public_guides import GUIDE_TRANSLATIONS
 from tests.test_accounts import _account, _clean_accounts, _login
 
-PUBLIC_PAGES = ("/login", "/legal", "/terms", "/privacy", "/dpa", "/jak-to-funguje")
+PUBLIC_PAGES = ("/login", "/legal", "/terms", "/privacy", "/dpa", "/jak-to-funguje", "/cenik")
 
 
 def _client() -> TestClient:
@@ -104,6 +104,22 @@ def test_product_details_preserve_ubyport_search_content_off_the_short_homepage(
         assert f'hreflang="{lang}"' in page.text
         assert "Airbnb" in _meta_description(page.text)
         assert "UbyPort" in _title(page.text)
+
+
+def test_pricing_is_contact_led_and_honest_in_both_languages():
+    for lang, price, cta in (
+        ("cs", "Dle domluvy", "Zeptat se na cenu"),
+        ("en", "By agreement", "Ask about pricing"),
+    ):
+        page = _client().get(f"/cenik?lang={lang}")
+        assert page.status_code == 200
+        assert price in page.text
+        assert cta in page.text
+        assert 'href="mailto:support@ubyhost.com?subject=UbyHost%20pricing"' in page.text
+        assert '"@type": "WebPage"' in page.text
+        assert '"@type": "Offer"' not in page.text
+        assert '"price"' not in page.text
+        assert f'hreflang="{lang}"' in page.text
 
 
 def test_the_login_page_describes_itself_for_the_search_snippet():

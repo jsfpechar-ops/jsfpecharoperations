@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#faf6f2">
+  <meta name="theme-color" content="#f7f7f5">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}UbyHost{% endblock %}</title>
   {% include "_seo_head.html" %}
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260919c">
-  <link rel="stylesheet" href="/static/components.css?v=20260914d">
+  <link rel="stylesheet" href="/static/app.css?v=20260919y">
+  <link rel="stylesheet" href="/static/components.css?v=20260919v">
 </head>
 <body class="auth-page">
   <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
@@ -46,6 +46,24 @@
         <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png" alt="">
         <h2>{{ t('login.hero_title') }}</h2>
         <p>{{ t('login.hero_body') }}</p>
+        <div class="auth-product-card">
+          <div class="auth-product-bar"><i></i><i></i><i></i><span>ubyhost.com</span></div>
+          <div class="auth-product-flow">
+            <div class="auth-flow-step is-blue">
+              <span>01</span><strong>{{ t('landing.demo.scene.calendar') }}</strong><em>Airbnb</em>
+            </div>
+            <div class="auth-flow-line"></div>
+            <div class="auth-flow-step is-yellow">
+              <span>02</span><strong>{{ t('landing.demo.scene.form') }}</strong><em>✓</em>
+            </div>
+            <div class="auth-flow-line"></div>
+            <div class="auth-flow-step is-green">
+              <span>03</span><strong>{{ t('landing.demo.scene.receipt') }}</strong><em>UbyPort ✓</em>
+            </div>
+          </div>
+        </div>
+        <span class="auth-float auth-float-booking">Sep 12–16</span>
+        <span class="auth-float auth-float-ready">{{ t('landing.demo.queue.ready') }} ✓</span>
       </div>
     </aside>
   </div>
