@@ -13,6 +13,10 @@ from fastapi import Request
 from . import config, host_i18n
 
 INDEXABLE_PATHS = ("/", "/login", "/legal", "/terms", "/privacy", "/dpa")
+CZECH_ONLY_PATHS = (
+    "/pruvodce/hlaseni-cizincu-ubyport",
+    "/pruvodce/online-ubytovaci-kniha",
+)
 
 # Everything a signed-in host works with. These redirect to the login page for
 # a crawler anyway; saying so keeps them out of the index and off the budget.
@@ -80,5 +84,9 @@ def sitemap_xml() -> str:
                     f'    <xhtml:link rel="alternate" hreflang="{code}" href="{href}"/>'
                 )
             lines.append("  </url>")
+    for path in CZECH_ONLY_PATHS:
+        lines.append("  <url>")
+        lines.append(f"    <loc>{page_url(path)}</loc>")
+        lines.append("  </url>")
     lines += ["</urlset>", ""]
     return "\n".join(lines)

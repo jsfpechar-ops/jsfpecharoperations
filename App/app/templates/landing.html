@@ -175,6 +175,28 @@
       </aside>
     </section>
 
+    {% if lang == 'cs' %}
+      <section class="landing-section landing-guides">
+        <div class="landing-section-head">
+          <p class="landing-eyebrow">Praktické průvodce</p>
+          <h2>UbyPort a evidence hostů srozumitelně</h2>
+          <p>Odpovědi na otázky, které ubytovatel řeší při nastavení evidence a hlášení.</p>
+        </div>
+        <div class="landing-guide-grid">
+          <a href="/pruvodce/hlaseni-cizincu-ubyport">
+            <span>UbyPort</span>
+            <strong>Hlášení cizinců přes UbyPort: postup pro ubytovatele</strong>
+            <small>Registrace, webová služba, lhůta a doručenky →</small>
+          </a>
+          <a href="/pruvodce/online-ubytovaci-kniha">
+            <span>Evidence hostů</span>
+            <strong>Online ubytovací kniha bez papírování</strong>
+            <small>Kalendáře, formuláře hostů a domovní kniha →</small>
+          </a>
+        </div>
+      </section>
+    {% endif %}
+
     <section class="landing-final">
       <img src="/static/ubyhost-mark.png" alt="">
       <h2>{{ t('landing.title') }}</h2>

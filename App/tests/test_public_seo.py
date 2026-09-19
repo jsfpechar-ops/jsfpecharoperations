@@ -183,3 +183,37 @@ def test_the_sitemap_lists_both_languages_of_every_public_page():
     for path in PUBLIC_PAGES:
         for lang in host_i18n.LANGUAGES:
             assert f"<loc>{config.PUBLIC_BASE_URL}{path}?lang={lang}</loc>" in body, path
+
+
+def test_original_czech_guides_are_public_and_indexable():
+    client = _client()
+    expected = {
+        "/pruvodce/hlaseni-cizincu-ubyport": "Hlášení cizinců přes UbyPort",
+        "/pruvodce/online-ubytovaci-kniha": "Online ubytovací kniha",
+    }
+
+    for path, phrase in expected.items():
+        page = client.get(path)
+        assert page.status_code == 200
+        assert 'lang="cs"' in page.text
+        assert phrase in _title(page.text)
+        assert f'<link rel="canonical" href="{config.PUBLIC_BASE_URL}{path}">' in page.text
+        assert '"@type": "Article"' in page.text
+        assert "Airbo" not in page.text, "competitor wording or brand leaked into our guide"
+
+
+def test_guides_are_linked_and_listed_for_discovery():
+    client = _client()
+    homepage = client.get("/").text
+    sitemap = client.get("/sitemap.xml").text
+
+    for path in (
+        "/pruvodce/hlaseni-cizincu-ubyport",
+        "/pruvodce/online-ubytovaci-kniha",
+    ):
+        assert f'href="{path}"' in homepage
+        assert f"<loc>{config.PUBLIC_BASE_URL}{path}</loc>" in sitemap
+
+
+def test_unknown_guide_is_a_real_404():
+    assert _client().get("/pruvodce/neexistuje").status_code == 404

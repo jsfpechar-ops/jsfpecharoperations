@@ -1,9 +1,10 @@
 """Public legal pages (software operator — no login required)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
-from .. import operator
+from .. import config, operator
+from ..public_guides import GUIDES
 from ..templating import render
 
 router = APIRouter()
@@ -11,6 +12,25 @@ router = APIRouter()
 TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
 PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
 DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
+
+
+@router.get("/pruvodce/{slug}")
+def public_guide(request: Request, slug: str):
+    guide = GUIDES.get(slug)
+    if not guide:
+        raise HTTPException(status_code=404)
+    return render(
+        request,
+        "public_guide.html",
+        {
+            "guide": guide,
+            "guides": GUIDES,
+            "current_slug": slug,
+            "canonical_url": f"{config.PUBLIC_BASE_URL}/pruvodce/{slug}",
+            "show_nav": False,
+            "open_alerts": [],
+        },
+    )
 
 
 @router.get("/legal")
