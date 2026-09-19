@@ -1,5 +1,6 @@
 {% extends "auth_base.html" %}
-{% block title %}{{ t('login.submit') }}{% endblock %}
+{% block title %}{{ t('login.page_title') }}{% endblock %}
+{% set meta_description = t('login.meta_description') %}
 {% block auth_body %}
 <section class="auth-card">
   <h1 class="auth-title">{{ t('login.title') }}</h1>

@@ -20,6 +20,7 @@ from . import (
     operator,
     reporting,
     security,
+    seo,
     validation,
 )
 
@@ -105,9 +106,19 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data = dict(context or {})
     data["request"] = request
     data["csrf_token"] = security.csrf_token(request)
-    data["lang"] = host_i18n.lang_from_request(request)
     data.setdefault("current_user", auth.current_user(request))
     data.setdefault("workspace_user", auth.workspace_user(request))
+    # A visitor who has not chosen a language yet gets Czech on the signed-out
+    # pages; inside the app the existing fallback stays in place.
+    fallback = (
+        host_i18n.DEFAULT_LANGUAGE if data["current_user"]
+        else host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    )
+    # Macros reach the language through the request, not this context.
+    request.state.lang = host_i18n.resolve_language(request, default=fallback)
+    data["lang"] = request.state.lang
+    for key, value in seo.head_links(request).items():
+        data.setdefault(key, value)
     workspace = data["workspace_user"]
     data.setdefault(
         "open_alerts",
@@ -122,7 +133,13 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("minutes_saved", 0)
     if workspace and workspace["id"]:
         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
-    return templates.TemplateResponse(request, name, data, status_code=status_code)
+    response = templates.TemplateResponse(request, name, data, status_code=status_code)
+    # Arriving on a ?lang= link (the hreflang URLs search engines index) is as
+    # much a choice as clicking the switcher, so it survives the next click.
+    asked_for = host_i18n.supported_language(request.query_params.get("lang"))
+    if asked_for and request.cookies.get(host_i18n.LANG_COOKIE) != asked_for:
+        host_i18n.remember_language(response, asked_for)
+    return response
 
 
 def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
