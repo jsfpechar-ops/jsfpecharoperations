@@ -1,4 +1,14 @@
-# UbyHost logo generation prompt
+# UbyHost logo generation prompt (historical)
+
+**The identity is locked.** Shipping rules, files, and placements are in
+**[LOGO.md](LOGO.md)**. Do not run this brief to replace the live mark.
+
+This page is the brief that produced the family. Keep it for regenerating
+exports of the *same* idea, or for history. If you generate again, attach the
+shipped mark (`App/app/static/ubyhost-mark.png`) as a reference and do not
+ask the model to invent a new symbol.
+
+---
 
 A ready-to-paste brief for an image or design model (Midjourney, GPT Image,
 Nano Banana / Gemini, Ideogram, Recraft, Firefly) when generating a new UbyHost

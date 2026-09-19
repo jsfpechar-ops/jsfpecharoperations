@@ -69,6 +69,8 @@ your side of the workflow, not a government system. If you plan commercial use,
 confirm trademark and naming with your lawyer; the police registration system
 remains UbyPort.
 
+Logo files, placements, and usage rules: **[docs/LOGO.md](../docs/LOGO.md)**.
+
 ## How it works
 
 ```

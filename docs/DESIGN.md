@@ -41,9 +41,12 @@ and update this section in the same change.
 
 ## Brand and logo
 
-The brief for generating or commissioning a new UbyHost logo — product
-description, concept territory, palette, and the mark / mark+name / full-lockup
-deliverables — lives in **[LOGO_PROMPT.md](LOGO_PROMPT.md)**.
+The locked identity — the U–H ligature, the three versions, file names, display
+sizes, and do/don't rules — is **[LOGO.md](LOGO.md)**. Follow that when adding
+or moving a logo. Do not restore the retired U-swoosh, and do not invent a
+fourth lockup.
+
+The older generation brief is **[LOGO_PROMPT.md](LOGO_PROMPT.md)** (historical).
 
 ## Agents and automation
 
