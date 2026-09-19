@@ -13,6 +13,7 @@ from starlette.testclient import TestClient
 
 from app import config, db, host_i18n
 from app.main import app
+from app.landing_i18n import LANDING_STRINGS
 from app.public_guides import GUIDE_TRANSLATIONS
 from tests.test_accounts import _account, _clean_accounts, _login
 
@@ -252,6 +253,10 @@ def test_original_guides_are_public_and_indexable_in_both_languages():
         assert f'hreflang="cs" href="{config.PUBLIC_BASE_URL}{path}?lang=cs"' in english_page.text
         assert f'hreflang="en" href="{config.PUBLIC_BASE_URL}{path}?lang=en"' in english_page.text
         assert "/en/accommodation-providers/" in english_page.text
+
+
+def test_landing_copy_has_matching_keys_in_both_languages():
+    assert LANDING_STRINGS["cs"].keys() == LANDING_STRINGS["en"].keys()
 
 
 def test_guide_translations_have_matching_content_structure():
