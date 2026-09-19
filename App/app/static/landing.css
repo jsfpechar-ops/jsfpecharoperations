@@ -115,11 +115,13 @@ a { color: inherit; }
 
 .landing-login {
   padding: 9px 16px;
-  border: 1px solid var(--ink);
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  color: var(--surface);
-  background: var(--ink);
+  color: var(--on-brand);
+  background: var(--brand-action);
 }
+
+.landing-login:hover { color: var(--on-brand); background: var(--brand-pressed); }
 
 .landing-hero {
   display: grid;
@@ -1458,12 +1460,12 @@ a { color: inherit; }
 .pricing-button {
   width: 100%;
   margin-top: 22px;
-  border-color: var(--ink);
-  color: var(--surface);
-  background: var(--ink);
-  box-shadow: 4px 5px 0 var(--brand);
+  border-color: transparent;
+  color: var(--on-brand);
+  background: var(--brand-action);
+  box-shadow: 0 3px 14px rgba(173, 73, 66, .26);
 }
-.pricing-button:hover { color: var(--surface); background: #343431; }
+.pricing-button:hover { color: var(--on-brand); background: var(--brand-pressed); }
 .pricing-card > small { display: block; margin-top: 13px; color: var(--ink-muted); text-align: center; }
 
 .pricing-factors { padding: clamp(80px, 10vw, 130px) 0; border-top: 1px solid var(--border); }
