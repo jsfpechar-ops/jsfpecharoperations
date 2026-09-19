@@ -1198,7 +1198,6 @@ a { color: inherit; }
   box-shadow: 0 8px 22px rgba(32, 32, 30, .1);
   pointer-events: none;
 }
-.demo-float-calendar { top: 17%; left: -3%; color: var(--blue); }
 .demo-float-form { top: 46%; right: -3%; color: var(--amber); }
 .demo-float-receipt { right: 8%; bottom: -2%; color: var(--green); }
 

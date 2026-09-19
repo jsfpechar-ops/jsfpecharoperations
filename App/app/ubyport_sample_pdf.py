@@ -63,23 +63,44 @@ FONT_TITLE = "Helvetica-Bold"
 TITLE_SLANT = 0.22
 
 
+# Czech letters (Ř, č, ů, ě) sit outside WinAnsi, so the built-in Helvetica
+# cannot render this document. Each set is (names..., file paths...); the first
+# set whose files all exist wins. Linux containers ship DejaVu; macOS workstations
+# get Verdana, the closest metric relative of DejaVu Sans (both descend from
+# Bitstream Vera), so the sample keeps its production layout.
+_FONT_SETS = (
+    (
+        ("DejaVuSans", "DejaVuSans-Bold", "DejaVuSansMono"),
+        (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        ),
+    ),
+    (
+        ("Verdana", "Verdana-Bold", "CourierNew"),
+        (
+            "/System/Library/Fonts/Supplemental/Verdana.ttf",
+            "/System/Library/Fonts/Supplemental/Verdana Bold.ttf",
+            "/System/Library/Fonts/Supplemental/Courier New.ttf",
+        ),
+    ),
+)
+
+
 def _register_fonts() -> None:
     global FONT_REGULAR, FONT_BOLD, FONT_MONO, FONT_TITLE
-    pairs = (
-        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "DejaVuSans"),
-        ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "DejaVuSans-Bold"),
-        ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", "DejaVuSansMono"),
-    )
-    try:
-        for path, name in pairs:
-            if os.path.isfile(path):
+    for names, paths in _FONT_SETS:
+        if not all(os.path.isfile(path) for path in paths):
+            continue
+        try:
+            for path, name in zip(paths, names):
                 pdfmetrics.registerFont(TTFont(name, path))
-        FONT_REGULAR = "DejaVuSans"
-        FONT_BOLD = "DejaVuSans-Bold"
-        FONT_MONO = "DejaVuSansMono"
-        FONT_TITLE = "DejaVuSans-Bold"
-    except Exception:
-        pass
+        except Exception:
+            continue
+        FONT_REGULAR, FONT_BOLD, FONT_MONO = names
+        FONT_TITLE = FONT_BOLD
+        return
 
 
 _register_fonts()
