@@ -2,13 +2,14 @@
 
 LANDING_STRINGS = {
     "en": {
-        "landing.page_title": "Online guest book and UbyPort reporting · UbyHost",
+        "landing.page_title": "UbyHost: Online guest book and UbyPort reporting",
         "landing.meta_description": (
-            "Online guest and house book, guest check-in forms, Airbnb and Booking.com "
-            "calendar sync, and foreign guest reporting through UbyPort."
+            "Run guest check-in, the house book, booking calendars, and UbyPort "
+            "reporting in one calm workspace built for Czech accommodation providers."
         ),
         "landing.nav.features": "Features",
         "landing.nav.how": "How it works",
+        "landing.nav.guides": "Guides",
         "landing.nav.faq": "Questions",
         "landing.nav.login": "Log in",
         "landing.eyebrow": "Guest reporting for Czech accommodation providers",
@@ -20,6 +21,24 @@ LANDING_STRINGS = {
         "landing.cta": "Log in to UbyHost",
         "landing.contact": "Ask about UbyHost",
         "landing.trust": "Built for apartments, holiday rentals, and small accommodation providers in Czechia.",
+        "landing.mock.today": "Today",
+        "landing.mock.label": "Guest reporting queue",
+        "landing.mock.action": "2 need attention",
+        "landing.mock.arrival": "Arrives today",
+        "landing.mock.complete": "Ready",
+        "landing.mock.guest_form": "Guest form",
+        "landing.mock.missing": "Missing details",
+        "landing.mock.report": "UbyPort report accepted",
+        "landing.mock.receipt": "Delivery receipt saved",
+        "landing.mock.note.forms": "Guests fill in their own details",
+        "landing.mock.note.receipts": "Proof stays with every stay",
+        "landing.proof.label": "What UbyHost keeps under control",
+        "landing.proof.deadline.value": "3 working days",
+        "landing.proof.deadline.label": "The reporting deadline, visible before it becomes urgent.",
+        "landing.proof.link.value": "One guest link",
+        "landing.proof.link.label": "A stable link for every future reservation at the property.",
+        "landing.proof.receipt.value": "Every receipt",
+        "landing.proof.receipt.label": "The exact UbyPort response retained with the stay.",
         "landing.features.eyebrow": "Everything in one workflow",
         "landing.features.title": "From a reservation to a delivery receipt",
         "landing.features.lede": (
@@ -88,13 +107,14 @@ LANDING_STRINGS = {
         "guide.more_nav": "More guides",
     },
     "cs": {
-        "landing.page_title": "Online ubytovací kniha a hlášení přes UbyPort · UbyHost",
+        "landing.page_title": "UbyHost: Online ubytovací kniha a hlášení přes UbyPort",
         "landing.meta_description": (
-            "Online ubytovací a domovní kniha, formuláře pro hosty, synchronizace Airbnb "
-            "a Booking.com a hlášení cizinců přes UbyPort."
+            "Check-in hostů, domovní kniha, rezervační kalendáře a hlášení přes UbyPort "
+            "v jednom přehledném prostoru pro české ubytovatele."
         ),
         "landing.nav.features": "Funkce",
         "landing.nav.how": "Jak to funguje",
+        "landing.nav.guides": "Průvodce",
         "landing.nav.faq": "Otázky",
         "landing.nav.login": "Přihlásit se",
         "landing.eyebrow": "Evidence hostů pro české ubytovatele",
@@ -106,6 +126,24 @@ LANDING_STRINGS = {
         "landing.cta": "Přihlásit se do UbyHostu",
         "landing.contact": "Zeptat se na UbyHost",
         "landing.trust": "Pro apartmány, krátkodobé pronájmy a menší ubytovací zařízení v Česku.",
+        "landing.mock.today": "Dnes",
+        "landing.mock.label": "Fronta hlášení hostů",
+        "landing.mock.action": "2 vyžadují pozornost",
+        "landing.mock.arrival": "Příjezd dnes",
+        "landing.mock.complete": "Připraveno",
+        "landing.mock.guest_form": "Formulář hosta",
+        "landing.mock.missing": "Chybí údaje",
+        "landing.mock.report": "Hlášení do UbyPortu přijato",
+        "landing.mock.receipt": "Doručenka uložena",
+        "landing.mock.note.forms": "Hosté vyplní své údaje sami",
+        "landing.mock.note.receipts": "Doklad zůstává u každého pobytu",
+        "landing.proof.label": "Co UbyHost drží pod kontrolou",
+        "landing.proof.deadline.value": "3 pracovní dny",
+        "landing.proof.deadline.label": "Lhůtu hlášení vidíte dřív, než začne hořet.",
+        "landing.proof.link.value": "Jeden odkaz pro hosty",
+        "landing.proof.link.label": "Stálý odkaz pro každou další rezervaci ubytování.",
+        "landing.proof.receipt.value": "Každá doručenka",
+        "landing.proof.receipt.label": "Přesná odpověď UbyPortu zůstane uložená u pobytu.",
         "landing.features.eyebrow": "Celý postup na jednom místě",
         "landing.features.title": "Od rezervace až po doručenku",
         "landing.features.lede": (

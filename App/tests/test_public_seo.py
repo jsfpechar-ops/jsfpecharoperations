@@ -52,6 +52,7 @@ def test_the_public_homepage_targets_the_service_people_search_for():
     assert page.status_code == 200
     assert 'lang="cs"' in page.text
     assert _title(page.text) == host_i18n.translate("cs", "landing.page_title")
+    assert _title(page.text).startswith("UbyHost:"), "lead with the brand on branded searches"
     assert "Online ubytovací kniha" in page.text
     assert "UbyPort" in page.text
     assert "Airbnb" in page.text
@@ -65,6 +66,8 @@ def test_the_homepage_has_honest_machine_readable_product_information():
     assert 'lang="en"' in page.text
     assert '"@type": "SoftwareApplication"' in page.text
     assert '"applicationCategory": "BusinessApplication"' in page.text
+    assert '"@type": "Organization"' in page.text
+    assert f'"logo": "{config.PUBLIC_BASE_URL}/static/apple-touch-icon.png"' in page.text
     assert '"aggregateRating"' not in page.text, "never invent testimonials for a rich result"
     assert '"offers"' not in page.text, "the public page makes no price claim"
 
