@@ -21,8 +21,8 @@ application version**, not an UbyPort version.
 | Arrival-lane picker | Implemented in #88; always shown, including one stay |
 | SES flip to `ses` | Waiting on AWS production access |
 | Assigned UX, PM/controller split, passport toggle | Implemented and tested in #88 |
-| First-time host onboarding + safe two-property demo | Implemented in EN/CS; skip/restore supported; demo blocked against real UbyPort |
-| Full regression suite | 385 passed (includes `#89`, onboarding skip/restore, demo, and 1.1.0 release checks) |
+| First-time host onboarding + safe two-property demo | Implemented in EN/CS; skip/restore supported; finish handoff shows guest link + PIN; demo blocked against real UbyPort |
+| Full regression suite | **386 passed** (includes sidebar property overflow, onboarding finish handoff, expanded demo, `#89`, and 1.1.0 release checks) |
 
 ```mermaid
 flowchart TD
@@ -131,6 +131,23 @@ updates and regression-checks:
 The application reports `1.1.0` in Settings and `/healthz`. Terms, Privacy
 Policy, and DPA display version `1.4`; host-login audit entries record the same
 three legal versions. Staging stays `console`.
+
+### 9. Host chrome, onboarding finish, and demo walkthrough
+
+- Sidebar property letter marks wrap up to **8** visible chips; further
+  properties open via a `+N` control into the command palette (light mode only).
+- Completing all five onboarding steps shows a finish handoff: copyable guest
+  permalink + PIN, pointers to Communication (host message + passport policy),
+  and skip/reopen guidance (EN/CS).
+- Mock-only demo: Vinohrady Studio (`246810`) and Karlín Loft (`135790`) cover
+  claim/assigned/late/locked, passport off vs required (with a sample photo
+  awaiting review), controller split, manual vs scheduled, Czech vs foreign,
+  house book, guest message, PIN, cancelled stay, and calendar blocks.
+
+**Staging:** no auto-deploy hook. Manually deploy branch
+`cursor/claim-mail-abuse-caps-3387` to **ubyhost-staging only**. Keep
+`UBYHOST_MAIL_BACKEND=console` and UbyPort on `mock`. Do not deploy Lightsail
+or production.
 
 ---
 
