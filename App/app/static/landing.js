@@ -28,6 +28,7 @@
     caption.textContent = labelFor(active);
     reel.classList.toggle("is-paused", paused);
     if (stage) stage.classList.toggle("is-reduced", reducedMotion.matches);
+    toggle.disabled = reducedMotion.matches;
     icon.textContent = paused ? "▶" : "Ⅱ";
     toggle.setAttribute(
       "aria-label",

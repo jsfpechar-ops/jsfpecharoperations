@@ -1035,6 +1035,7 @@ a { color: inherit; }
 }
 .reel-toggle:hover { background: var(--surface-hover); }
 .reel-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.reel-toggle:disabled { cursor: default; opacity: .5; }
 
 .reel-screen { display: grid; grid-template-columns: 78px 1fr; min-height: 610px; }
 .reel-side { display: flex; align-items: center; flex-direction: column; gap: 22px; padding: 22px 14px; border-right: 1px solid var(--border); background: #f5f5f2; }
