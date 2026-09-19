@@ -155,7 +155,8 @@ To restore production: see **[LIGHTSAIL.md](LIGHTSAIL.md#restore-runbook-same-in
 
 Full guide: **[LIGHTSAIL.md](LIGHTSAIL.md)**  
 Domain + DNS (Cloudflare): **[CLOUDFLARE.md](CLOUDFLARE.md)**  
-Production zone extras (HSTS, Bot Fight Mode, leaked credentials, client-side security): same file, section **Production zone (`ubyhost.com`)**.
+Production zone extras (HSTS, SEO bot/challenge rules, leaked credentials, client-side security): same file, section **Production zone (`ubyhost.com`)** and **SEO: Cloudflare rules for Google / Bing**.  
+Google Search Console (sitemap + indexing): **[SEARCH_CONSOLE.md](SEARCH_CONSOLE.md)**
 
 ```bash
 cd deploy/lightsail

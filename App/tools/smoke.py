@@ -205,9 +205,20 @@ def main():
     ):
         check(host, path)
 
-    check(host, "/", must_contain=["Operations"], must_not_contain=["row-arrow"])
-    check(host, "/housebook", must_contain=["data-csv-export"])
-    check(host, "/guest-links", must_contain=["Generate a new PIN"])
+    check(
+        host,
+        "/",
+        must_contain=["UbyHost", "Ubytovací kniha"],
+        must_not_contain=["row-arrow"],
+    )
+    check(
+        host,
+        "/?lang=en",
+        must_contain=["UbyPort", "Guest records"],
+        must_not_contain=["row-arrow"],
+    )
+    check(host, "/housebook?lang=en", must_contain=["data-csv-export"])
+    check(host, "/guest-links?lang=en", must_contain=["Generate a new PIN"])
 
     stays_page = check(host, "/reservations?range=all").text
     order = [

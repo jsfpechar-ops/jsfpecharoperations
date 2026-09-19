@@ -5,13 +5,19 @@ from typing import Dict
 
 from fastapi import Request
 
+from . import config
 from .dpa_i18n import DPA_STRINGS
+from .landing_i18n import LANDING_STRINGS
 from .privacy_policy_i18n import PRIVACY_STRINGS
 from .terms_i18n import TERMS_STRINGS
 
 LANG_COOKIE = "ubyhost_lang"
+LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 LANGUAGES = ("en", "cs")
 DEFAULT_LANGUAGE = "en"
+# Signed-out pages are what visitors and search engines see first, and UbyHost
+# is built for Czech hosts, so they are Czech unless the visitor says otherwise.
+PUBLIC_DEFAULT_LANGUAGE = "cs"
 
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
@@ -36,6 +42,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.logout": "Log out",
         "nav.support": "Support",
         "nav.administrator": "Administrator",
+        "login.page_title": "Log in · UbyHost",
+        "login.meta_description": (
+            "UbyHost brings calendars, guest forms, the house book and UbyPort reporting "
+            "together for Czech short-term hosts. Log in to your account."
+        ),
         "login.title": "Your guest reporting workspace.",
         "login.lede": "Log in to your UbyHost account",
         "login.username": "Username",
@@ -947,6 +958,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.logout": "Odhlásit se",
         "nav.support": "Podpora",
         "nav.administrator": "Správce",
+        "login.page_title": "Přihlášení · UbyHost",
+        "login.meta_description": (
+            "UbyHost spojuje kalendáře, formuláře hostů, domovní knihu a hlášení do UbyPortu "
+            "pro krátkodobé pronájmy v Česku. Přihlaste se ke svému účtu."
+        ),
         "login.title": "Váš pracovní prostor pro hlášení hostů.",
         "login.lede": "Přihlaste se do UbyHost",
         "login.username": "Uživatelské jméno",
@@ -2657,6 +2673,9 @@ _INTERFACE_STRINGS = {
 for _lang, _strings in _INTERFACE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+for _lang, _landing in LANDING_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_landing)
+
 for _lang, _terms in TERMS_STRINGS.items():
     STRINGS.setdefault(_lang, {}).update(_terms)
 
@@ -2672,8 +2691,42 @@ def normalise_language(value: str | None) -> str:
     return value if value in LANGUAGES else DEFAULT_LANGUAGE
 
 
+def supported_language(value: str | None) -> str | None:
+    """The language code, or None when we do not speak it."""
+    value = (value or "").strip().lower()[:2]
+    return value if value in LANGUAGES else None
+
+
+def resolve_language(request: Request | None, default: str = DEFAULT_LANGUAGE) -> str:
+    """Use stable language URLs: explicit link, saved choice, then page default."""
+    if request is None:
+        return normalise_language(default)
+    signals = (
+        supported_language(request.query_params.get("lang")),
+        supported_language(request.cookies.get(LANG_COOKIE)),
+    )
+    for signal in signals:
+        if signal:
+            return signal
+    return normalise_language(default)
+
+
 def lang_from_request(request: Request) -> str:
-    return normalise_language(request.cookies.get(LANG_COOKIE))
+    chosen = supported_language(getattr(request.state, "lang", None)) if request else None
+    return chosen or resolve_language(request)
+
+
+def remember_language(response, lang: str) -> None:
+    """Keep the visitor's language for a year, in the cookie the switcher uses."""
+    response.set_cookie(
+        LANG_COOKIE,
+        normalise_language(lang),
+        max_age=LANG_COOKIE_MAX_AGE,
+        httponly=False,
+        samesite="lax",
+        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        path="/",
+    )
 
 
 def translate(lang: str, key: str, **kwargs) -> str:
