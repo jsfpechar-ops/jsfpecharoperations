@@ -45,6 +45,29 @@ def test_the_login_page_is_not_titled_after_its_button():
     assert "UbyHost" in title, "the brand is missing from the search result headline"
 
 
+def test_the_public_homepage_targets_the_service_people_search_for():
+    page = _client().get("/")
+
+    assert page.status_code == 200
+    assert 'lang="cs"' in page.text
+    assert _title(page.text) == host_i18n.translate("cs", "landing.page_title")
+    assert "Online ubytovací kniha" in page.text
+    assert "UbyPort" in page.text
+    assert "Airbnb" in page.text
+    assert "<h1>" in page.text
+    assert '<link rel="canonical" href="' + config.PUBLIC_BASE_URL + '/">' in page.text
+
+
+def test_the_homepage_has_honest_machine_readable_product_information():
+    page = _client().get("/?lang=en")
+
+    assert 'lang="en"' in page.text
+    assert '"@type": "SoftwareApplication"' in page.text
+    assert '"applicationCategory": "BusinessApplication"' in page.text
+    assert '"aggregateRating"' not in page.text, "never invent testimonials for a rich result"
+    assert '"offers"' not in page.text, "the public page makes no price claim"
+
+
 def test_the_login_page_describes_itself_for_the_search_snippet():
     page = _client().get("/login?lang=en")
 
@@ -127,6 +150,18 @@ def test_the_workspace_itself_is_not_offered_to_search_engines():
         _clean_accounts()
 
 
+def test_a_signed_in_host_still_gets_the_dashboard_at_root():
+    _clean_accounts()
+    _account("seo-dashboard")
+    try:
+        html = _login("seo-dashboard").get("/").text
+
+        assert "landing-hero" not in html
+        assert 'action="/logout"' in html
+    finally:
+        _clean_accounts()
+
+
 def test_robots_keeps_crawlers_out_of_the_workspace():
     response = _client().get("/robots.txt")
 
@@ -143,6 +178,8 @@ def test_the_sitemap_lists_both_languages_of_every_public_page():
 
     assert response.status_code == 200
     body = response.text
+    for lang in host_i18n.LANGUAGES:
+        assert f"<loc>{config.PUBLIC_BASE_URL}/?lang={lang}</loc>" in body
     for path in PUBLIC_PAGES:
         for lang in host_i18n.LANGUAGES:
             assert f"<loc>{config.PUBLIC_BASE_URL}{path}?lang={lang}</loc>" in body, path

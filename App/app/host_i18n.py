@@ -7,6 +7,7 @@ from fastapi import Request
 
 from . import config
 from .dpa_i18n import DPA_STRINGS
+from .landing_i18n import LANDING_STRINGS
 from .privacy_policy_i18n import PRIVACY_STRINGS
 from .terms_i18n import TERMS_STRINGS
 
@@ -2506,6 +2507,9 @@ _INTERFACE_STRINGS = {
 }
 for _lang, _strings in _INTERFACE_STRINGS.items():
     STRINGS[_lang].update(_strings)
+
+for _lang, _landing in LANDING_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_landing)
 
 for _lang, _terms in TERMS_STRINGS.items():
     STRINGS.setdefault(_lang, {}).update(_terms)

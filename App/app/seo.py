@@ -12,7 +12,7 @@ from fastapi import Request
 
 from . import config, host_i18n
 
-INDEXABLE_PATHS = ("/login", "/legal", "/terms", "/privacy", "/dpa")
+INDEXABLE_PATHS = ("/", "/login", "/legal", "/terms", "/privacy", "/dpa")
 
 # Everything a signed-in host works with. These redirect to the login page for
 # a crawler anyway; saying so keeps them out of the index and off the budget.

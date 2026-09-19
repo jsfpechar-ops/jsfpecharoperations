@@ -259,6 +259,12 @@ def command_palette(request: Request):
 
 @router.get("/")
 def dashboard(request: Request):
+    if not auth.current_user(request):
+        return render(
+            request,
+            "landing.html",
+            {"show_nav": False, "open_alerts": []},
+        )
     guard = auth.require_login(request)
     if guard:
         return guard
