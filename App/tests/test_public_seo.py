@@ -56,7 +56,7 @@ def test_the_public_homepage_targets_the_service_people_search_for():
     assert "Online ubytovací kniha" in page.text
     assert "UbyPort" in page.text
     assert "Airbnb" in page.text
-    assert "<h1>" in page.text
+    assert "<h1 " in page.text
     assert '<link rel="canonical" href="' + config.PUBLIC_BASE_URL + '/">' in page.text
 
 
