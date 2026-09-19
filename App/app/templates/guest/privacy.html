@@ -10,6 +10,7 @@
 
 <div class="g-card g-legal">
   <h3>{{ t('privacy_controller') }}</h3>
+  <p>{{ t('privacy_controller_body') }}</p>
   {% if controller and controller.name %}
     <p class="controller">
       <strong>{{ controller.name }}</strong>
@@ -25,6 +26,16 @@
     {% endif %}
   {% else %}
     <p>{{ t('privacy_controller_missing') }}</p>
+  {% endif %}
+
+  <h3>{{ t('privacy_stay_contact') }}</h3>
+  <p>{{ t('privacy_stay_contact_body') }}</p>
+  {% if host and host.name %}
+    <p class="controller">
+      <strong>{{ host.name }}</strong>
+      {% if host.email %}<br><a href="mailto:{{ host.email }}">{{ host.email }}</a>{% endif %}
+      {% if host.phone %}<br><a href="tel:{{ host.phone }}">{{ host.phone }}</a>{% endif %}
+    </p>
   {% endif %}
 
   <h3>{{ t('privacy_purpose') }}</h3>

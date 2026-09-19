@@ -338,10 +338,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "What happens to the details you enter, as required by Articles 13 and 14 of the "
             "GDPR."
         ),
-        "privacy_controller": "Who is responsible",
+        "privacy_controller": "Your data controller",
+        "privacy_controller_body": (
+            "This legal entity determines why and how your guest data is used and is responsible "
+            "for your GDPR rights. A different name for the stay contact below does not change this role."
+        ),
         "privacy_controller_missing": (
             "Your host must identify the business responsible for your data. Ask your host "
             "for its registered name and address if they are missing here."
+        ),
+        "privacy_stay_contact": "Questions about your stay",
+        "privacy_stay_contact_body": (
+            "The property manager is your practical contact for arrival, accommodation, and booking "
+            "questions. Contact the data controller above for access, correction, deletion, or objection requests."
         ),
         "privacy_purpose": "Why the data is collected",
         "privacy_purpose_body": (
@@ -769,10 +778,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_intro": (
             "Co se děje s údaji, které vyplníte — podle článků 13 a 14 GDPR."
         ),
-        "privacy_controller": "Kdo za údaje odpovídá",
+        "privacy_controller": "Správce vašich osobních údajů",
+        "privacy_controller_body": (
+            "Tento právní subjekt určuje, proč a jak se údaje hostů používají, a odpovídá za vaše "
+            "práva podle GDPR. Jiný kontakt pro pobyt uvedený níže tuto roli nemění."
+        ),
         "privacy_controller_missing": (
             "Ubytovatel musí uvést subjekt odpovědný za vaše údaje. Pokud zde jeho údaje chybí, "
             "požádejte ubytovatele o název a sídlo."
+        ),
+        "privacy_stay_contact": "Dotazy k pobytu",
+        "privacy_stay_contact_body": (
+            "Správce/provozovatel ubytování je praktickým kontaktem pro příjezd, ubytování a rezervaci. "
+            "Žádosti o přístup, opravu, výmaz nebo námitku směřujte správci údajů uvedenému výše."
         ),
         "privacy_purpose": "Proč údaje sbíráme",
         "privacy_purpose_body": (

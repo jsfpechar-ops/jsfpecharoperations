@@ -9,6 +9,7 @@ from . import config
 from .dpa_i18n import DPA_STRINGS
 from .landing_i18n import LANDING_STRINGS
 from .privacy_policy_i18n import PRIVACY_STRINGS
+from .subprocessors_i18n import SUBPROCESSOR_STRINGS
 from .terms_i18n import TERMS_STRINGS
 
 LANG_COOKIE = "ubyhost_lang"
@@ -2684,6 +2685,9 @@ for _lang, _privacy in PRIVACY_STRINGS.items():
 
 for _lang, _dpa in DPA_STRINGS.items():
     STRINGS.setdefault(_lang, {}).update(_dpa)
+
+for _lang, _subprocessors in SUBPROCESSOR_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_subprocessors)
 
 
 def normalise_language(value: str | None) -> str:

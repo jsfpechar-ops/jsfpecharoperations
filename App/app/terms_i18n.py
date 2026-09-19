@@ -10,7 +10,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Contract between the UbyHost software operator and accommodation providers "
             "who use the service. Please read carefully before using UbyHost."
         ),
-        "terms.effective": "Effective date: 18 September 2026. Version 1.4.",
+        "terms.effective": "Effective date: 19 September 2026. Version 1.5.",
         "terms.operator_title": "Service provider",
         "terms.footer_link": "Terms of Service",
         "terms.footer_short": "Terms",
@@ -50,12 +50,14 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.s03_title": "3. Provider identity",
         "terms.s03_body": (
             "The Service is provided by %(name)s, IČO %(ico)s (the Operator). The Operator is the "
-            "provider of the software and hosted environment. Each Host remains responsible for its "
-            "accommodation provider, operating-manager, and configured Guest Data controller entities. "
-            "The configured controller is, unless expressly agreed otherwise in writing, the data "
-            "controller for Guest Data under Regulation (EU) 2016/679 (GDPR) and "
-            "Czech implementing legislation. Operator contact details and public register information "
-            "are published on the /legal page."
+            "provider of the software and hosted environment. For each property, the Host configures "
+            "(a) the property manager/operating entity, which is the practical point of contact for "
+            "the stay, and (b) the Guest Data controller. The property manager is the default "
+            "controller; an alternate entity may be selected only where it genuinely determines the "
+            "purposes and means of processing and the Host has authority to bind it. Changing a name "
+            "or contact in the Service does not by itself transfer controller responsibility. The "
+            "configured controller is responsible under Regulation (EU) 2016/679 (GDPR) and Czech "
+            "implementing law. Operator identity and contact are published on /legal."
         ),
         "terms.s04_title": "4. Description of the Service",
         "terms.s04_body": (
@@ -246,8 +248,9 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "deliver the Service, provided they are bound by confidentiality and data protection "
             "obligations consistent with these Terms. The Host authorises such subcontracting for "
             "processing Guest Data on the Host's instructions. The Operator remains responsible for "
-            "subprocessors' performance to the extent required by GDPR Article 28. A summary of "
-            "subprocessor categories is published in the Privacy Policy at /privacy."
+            "subprocessors' performance to the extent required by GDPR Article 28. The current "
+            "provider register, purposes, possible data and transfer notes are published at "
+            "/subprocessors and supplemented by the Privacy Policy at /privacy."
         ),
         "terms.s22_title": "22. Changes to these Terms",
         "terms.s22_body": (
@@ -305,7 +308,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kterí službu "
             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
         ),
-        "terms.effective": "Účinnost od: 18. září 2026. Verze 1.4.",
+        "terms.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
         "terms.operator_title": "Poskytovatel služby",
         "terms.footer_link": "Obchodní podmínky",
         "terms.footer_short": "Podmínky",
@@ -345,11 +348,13 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.s03_title": "3. Identita poskytovatele",
         "terms.s03_body": (
             "Službu poskytuje %(name)s, IČO %(ico)s (Provozovatel). Provozovatel je dodavatelem softwaru "
-            "a hostovaného prostředí. Každý Ubytovatel odpovídá za nastavené subjekty poskytovatele "
-            "ubytování, správce objektu a správce údajů hostů. Nastavený správce údajů je, není-li "
-            "výslovně písemně dohodnuto jinak, správcem Údajů hostů podle nařízení (EU) 2016/679 "
-            "(GDPR) a prováděcích předpisů. Kontaktní údaje "
-            "a informace z veřejného rejstříku jsou na stránce /legal."
+            "a hostovaného prostředí. Ubytovatel pro každé ubytování nastavuje (a) správce/provozovatele "
+            "ubytování jako praktický kontakt pro otázky k pobytu a (b) správce Údajů hostů. "
+            "Provozovatel ubytování je výchozím správcem; jiný subjekt lze zvolit pouze tehdy, pokud "
+            "skutečně určuje účely a prostředky zpracování a Ubytovatel je oprávněn jej zavázat. Pouhá "
+            "změna názvu nebo kontaktu ve Službě odpovědnost správce nepřenáší. Nastavený správce "
+            "odpovídá podle nařízení (EU) 2016/679 (GDPR) a českých prováděcích předpisů. Identita "
+            "a kontakt Provozovatele jsou na /legal."
         ),
         "terms.s04_title": "4. Popis Služby",
         "terms.s04_body": (
@@ -517,8 +522,8 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Provozovatel může využívat hosting, infrastrukturu a další subzpracovatele za podmínky "
             "mlčenlivosti a ochrany údajů v souladu s těmito Podmínkami. Ubytovatel takové "
             "subdodávání pro zpracování Údajů hostů na svůj pokyn autorizuje. Provozovatel odpovídá za "
-            "subzpracovatele v rozsahu čl. 28 GDPR. Přehled kategorií subzpracovatelů je v Zásadách "
-            "ochrany osobních údajů na /privacy."
+            "další zpracovatele v rozsahu čl. 28 GDPR. Aktuální seznam poskytovatelů, účelů, možných "
+            "údajů a informací o předání je na /subprocessors a doplňují jej Zásady na /privacy."
         ),
         "terms.s22_title": "22. Změny Podmínek",
         "terms.s22_body": (

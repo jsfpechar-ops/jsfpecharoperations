@@ -14,7 +14,7 @@ application version**, not an UbyPort version.
 | Item | Status |
 |------|--------|
 | UbyHost application version | **1.1.0** |
-| Terms / Privacy Policy / DPA | **1.4**, coordinated EN/CS update |
+| Terms / Privacy Policy / DPA | **1.5**, coordinated EN/CS update with controller/PoC roles and public subprocessor register |
 | SES `_send_ses` + boto3 on production | Done (`#86`); mail still **disabled** |
 | Domain DKIM / MAIL FROM / DMARC | Done (ops); Essentials; no dedicated IP |
 | Claim-mail abuse caps | Implemented in #88 |
