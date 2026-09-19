@@ -775,13 +775,17 @@ def test_every_id_route_is_ownership_scoped():
     assert not unscoped, f"routes reachable by id without ownership scoping: {unscoped}"
 
 
-def test_production_without_accounts_fails_closed(monkeypatch):
+def test_production_without_accounts_only_exposes_the_public_landing_page(monkeypatch):
     db.init_db()
     _clean_accounts()
     monkeypatch.setattr(config, "BOOTSTRAP_ADMIN", False)
     monkeypatch.setattr(config, "DEPLOYMENT", "production")
 
-    response = TestClient(app).get("/", follow_redirects=False)
+    client = TestClient(app)
+    response = client.get("/", follow_redirects=False)
 
-    assert response.status_code == 303
-    assert response.headers["location"].startswith("/login")
+    assert response.status_code == 200
+    assert "UbyHost" in response.text
+    private = client.get("/settings", follow_redirects=False)
+    assert private.status_code == 303
+    assert private.headers["location"].startswith("/login")

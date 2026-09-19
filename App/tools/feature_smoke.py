@@ -101,13 +101,14 @@ def main() -> int:
 
     print("Pages")
     for path, needles in (
-        ("/", ["Operations", "Overview", "row-menu-trigger"]),
-        ("/automation", ["When to send to UbyPort", "data-automation-mode", "Test connection"]),
-        ("/guest-links", ["Generate a new PIN", "data-copy"]),
-        ("/reservations", ["Export stays (CSV)", "Send all ready", "Archive"]),
-        ("/housebook", ["data-csv-export", "Exempt", "row-menu-trigger"]),
-        ("/apartments", ["row-menu-trigger"]),
-        ("/settings", ["settings-audit", "Recent activity"]),
+        ("/", ["UbyHost", "Ubytovací kniha"]),
+        ("/?lang=en", ["Guest records", "UbyPort"]),
+        ("/automation?lang=en", ["When to send to UbyPort", "data-automation-mode", "Test connection"]),
+        ("/guest-links?lang=en", ["Generate a new PIN", "data-copy"]),
+        ("/reservations?lang=en", ["Export stays (CSV)", "Send all ready", "Archive"]),
+        ("/housebook?lang=en", ["data-csv-export", "Exempt", "row-menu-trigger"]),
+        ("/apartments?lang=en", ["row-menu-trigger"]),
+        ("/settings?lang=en", ["settings-audit", "Recent activity"]),
     ):
         r = client.get(path, follow_redirects=True)
         if r.status_code != 200:

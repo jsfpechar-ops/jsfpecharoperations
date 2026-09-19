@@ -1,9 +1,10 @@
 """Public legal pages (software operator — no login required)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
-from .. import operator
+from .. import config, host_i18n, operator
+from ..public_guides import GUIDE_TRANSLATIONS
 from ..templating import render
 
 router = APIRouter()
@@ -11,6 +12,37 @@ router = APIRouter()
 TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
 PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
 DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
+
+
+@router.get("/pruvodce/{slug}")
+def public_guide(request: Request, slug: str):
+    lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
+    guides = GUIDE_TRANSLATIONS[lang]
+    guide = guides.get(slug)
+    if not guide:
+        raise HTTPException(status_code=404)
+    path = f"/pruvodce/{slug}"
+    requested = host_i18n.supported_language(request.query_params.get("lang"))
+    canonical = f"{config.PUBLIC_BASE_URL}{path}"
+    if requested:
+        canonical += f"?lang={requested}"
+    return render(
+        request,
+        "public_guide.html",
+        {
+            "guide": guide,
+            "guides": guides,
+            "current_slug": slug,
+            "canonical_url": canonical,
+            "alternate_urls": [
+                ("cs", f"{config.PUBLIC_BASE_URL}{path}?lang=cs"),
+                ("en", f"{config.PUBLIC_BASE_URL}{path}?lang=en"),
+                ("x-default", f"{config.PUBLIC_BASE_URL}{path}"),
+            ],
+            "show_nav": False,
+            "open_alerts": [],
+        },
+    )
 
 
 @router.get("/legal")

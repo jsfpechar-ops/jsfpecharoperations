@@ -42,7 +42,8 @@ The app **refuses to start** if `UBYPORT_ENV=prod` without `DEPLOYMENT=productio
 
 - [ ] Instance running; app at `/opt/ubyhost/deploy/lightsail` — see [LIGHTSAIL.md](LIGHTSAIL.md)
 - [ ] `.env`: `UBYHOST_DEPLOYMENT=production`, `UBYHOST_UBYPORT_ENV=test`, `UBYHOST_PUBLIC_BASE_URL=https://ubyhost.com`, `UBYHOST_GUEST_PIN=1`, `UBYHOST_ENABLE_SCHEDULER=1`
-- [ ] Domain on Cloudflare — [CLOUDFLARE.md](CLOUDFLARE.md): proxied A record, SSL **Full (strict)**, origin certs on server, **HSTS** (6 months, no subdomains/preload), **Bot Fight Mode**, **leaked credentials**, **client-side security**
+- [ ] Domain on Cloudflare — [CLOUDFLARE.md](CLOUDFLARE.md): proxied A record, SSL **Full (strict)**, origin certs on server, **HSTS** (6 months, no subdomains/preload), **Bot Fight Mode Off** + SEO custom Rules 1–3 (verified bots skip + Managed Challenge on `/login` and private paths), **leaked credentials**, **client-side security**
+- [ ] Google Search Console — [SEARCH_CONSOLE.md](SEARCH_CONSOLE.md): Domain property verified, `sitemap.xml` submitted, live URL test OK for `/` and `/sitemap.xml`
 - [ ] `./scripts/preflight.sh` then `./scripts/deploy.sh` completed
 - [ ] Public `/healthz` → `status: ok`, `data_dir_writable: true` (production **omits** env labels by design)
 - [ ] `./scripts/status.sh` → `deployment= production`, `ubyport_env= test`

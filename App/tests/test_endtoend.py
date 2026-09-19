@@ -781,7 +781,10 @@ def test_29_host_accounts_require_username_and_password(host):
     )
     try:
         stranger = TestClient(app)
-        assert stranger.get("/", follow_redirects=False).status_code == 303
+        landing = stranger.get("/", follow_redirects=False)
+        assert landing.status_code == 200
+        assert 'action="/logout"' not in landing.text
+        assert stranger.get("/settings", follow_redirects=False).status_code == 303
         assert stranger.post(
             "/login", data={"username": "test-admin", "password": "wrong"}
         ).status_code == 401

@@ -2074,14 +2074,23 @@ details.raw pre {
   max-width: 100%;
   object-fit: contain;
   background: transparent;
+  mix-blend-mode: multiply;
 }
 
 .brand-logo { height: 30px; }
 .sidebar-brand .brand-logo { height: 28px; }
 .appbar .brand-logo { height: 24px; }
-.onboarding-logo { width: min(120px, 34vw); height: auto; }
+.onboarding-logo {
+  width: min(120px, 34vw);
+  height: auto;
+  margin: 0 auto 18px;
+}
 .auth-logo { width: min(220px, 70vw); height: auto; }
-.auth-hero-mark { width: 72px; height: 72px; margin-bottom: 18px; opacity: 0.95; }
+.auth-hero-mark {
+  width: min(300px, 100%);
+  height: auto;
+  margin-bottom: 28px;
+}
 
 /* --- auth pages (login, first password) -------------------------------- */
 
