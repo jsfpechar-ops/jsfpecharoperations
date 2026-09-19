@@ -170,7 +170,7 @@
           <strong>{{ t('landing.official') }}</strong>
           <p>{{ t('landing.disclaimer') }}</p>
         </div>
-        <a href="https://ipc.gov.cz/pro-ubytovatele/obecne-informace-pro-ubytovatele/"
+        <a href="{{ 'https://ipc.gov.cz/en/accommodation-providers/general-information-for-accommodation-providers/' if lang == 'en' else 'https://ipc.gov.cz/pro-ubytovatele/obecne-informace-pro-ubytovatele/' }}"
            rel="noopener noreferrer" target="_blank">ipc.gov.cz ↗</a>
       </aside>
     </section>
@@ -192,6 +192,26 @@
             <span>Evidence hostů</span>
             <strong>Online ubytovací kniha bez papírování</strong>
             <small>Kalendáře, formuláře hostů a domovní kniha →</small>
+          </a>
+        </div>
+      </section>
+    {% else %}
+      <section class="landing-section landing-guides">
+        <div class="landing-section-head">
+          <p class="landing-eyebrow">Practical guides</p>
+          <h2>UbyPort and guest records, clearly explained</h2>
+          <p>Answers to the questions accommodation providers face when setting up records and reporting.</p>
+        </div>
+        <div class="landing-guide-grid">
+          <a href="/pruvodce/hlaseni-cizincu-ubyport?lang=en">
+            <span>UbyPort</span>
+            <strong>Reporting foreign guests through UbyPort: a host’s guide</strong>
+            <small>Registration, web-service access, deadlines, and receipts →</small>
+          </a>
+          <a href="/pruvodce/online-ubytovaci-kniha?lang=en">
+            <span>Guest records</span>
+            <strong>Online guest book without the paperwork</strong>
+            <small>Calendars, guest forms, and the house book →</small>
           </a>
         </div>
       </section>

@@ -13,6 +13,7 @@ from starlette.testclient import TestClient
 
 from app import config, db, host_i18n
 from app.main import app
+from app.public_guides import GUIDE_TRANSLATIONS
 from tests.test_accounts import _account, _clean_accounts, _login
 
 PUBLIC_PAGES = ("/login", "/legal", "/terms", "/privacy", "/dpa")
@@ -185,26 +186,52 @@ def test_the_sitemap_lists_both_languages_of_every_public_page():
             assert f"<loc>{config.PUBLIC_BASE_URL}{path}?lang={lang}</loc>" in body, path
 
 
-def test_original_czech_guides_are_public_and_indexable():
+def test_original_guides_are_public_and_indexable_in_both_languages():
     client = _client()
     expected = {
-        "/pruvodce/hlaseni-cizincu-ubyport": "Hlášení cizinců přes UbyPort",
-        "/pruvodce/online-ubytovaci-kniha": "Online ubytovací kniha",
+        "/pruvodce/hlaseni-cizincu-ubyport": (
+            "Hlášení cizinců přes UbyPort",
+            "Reporting foreign guests through UbyPort",
+        ),
+        "/pruvodce/online-ubytovaci-kniha": (
+            "Online ubytovací kniha",
+            "Online guest book",
+        ),
     }
 
-    for path, phrase in expected.items():
+    for path, (czech, english) in expected.items():
         page = client.get(path)
         assert page.status_code == 200
         assert 'lang="cs"' in page.text
-        assert phrase in _title(page.text)
+        assert czech in _title(page.text)
         assert f'<link rel="canonical" href="{config.PUBLIC_BASE_URL}{path}">' in page.text
         assert '"@type": "Article"' in page.text
         assert "Airbo" not in page.text, "competitor wording or brand leaked into our guide"
+
+        english_page = client.get(f"{path}?lang=en")
+        assert english_page.status_code == 200
+        assert 'lang="en"' in english_page.text
+        assert english in _title(english_page.text)
+        assert f'<link rel="canonical" href="{config.PUBLIC_BASE_URL}{path}?lang=en">' in english_page.text
+        assert f'hreflang="cs" href="{config.PUBLIC_BASE_URL}{path}?lang=cs"' in english_page.text
+        assert f'hreflang="en" href="{config.PUBLIC_BASE_URL}{path}?lang=en"' in english_page.text
+        assert "/en/accommodation-providers/" in english_page.text
+
+
+def test_guide_translations_have_matching_content_structure():
+    czech = GUIDE_TRANSLATIONS["cs"]
+    english = GUIDE_TRANSLATIONS["en"]
+
+    assert czech.keys() == english.keys()
+    for slug in czech:
+        assert len(czech[slug]["sections"]) == len(english[slug]["sections"]), slug
+        assert len(czech[slug]["checklist"]) == len(english[slug]["checklist"]), slug
 
 
 def test_guides_are_linked_and_listed_for_discovery():
     client = _client()
     homepage = client.get("/").text
+    english_homepage = _client().get("/?lang=en").text
     sitemap = client.get("/sitemap.xml").text
 
     for path in (
@@ -212,7 +239,9 @@ def test_guides_are_linked_and_listed_for_discovery():
         "/pruvodce/online-ubytovaci-kniha",
     ):
         assert f'href="{path}"' in homepage
-        assert f"<loc>{config.PUBLIC_BASE_URL}{path}</loc>" in sitemap
+        assert f'href="{path}?lang=en"' in english_homepage
+        for lang in host_i18n.LANGUAGES:
+            assert f"<loc>{config.PUBLIC_BASE_URL}{path}?lang={lang}</loc>" in sitemap
 
 
 def test_unknown_guide_is_a_real_404():

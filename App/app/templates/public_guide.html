@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="cs">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,12 +8,15 @@
   <meta name="description" content="{{ guide.description }}">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="{{ canonical_url }}">
+  {% for code, href in alternate_urls %}
+  <link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
+  {% endfor %}
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="UbyHost">
   <meta property="og:title" content="{{ guide.title }}">
   <meta property="og:description" content="{{ guide.description }}">
   <meta property="og:url" content="{{ canonical_url }}">
-  <meta property="og:locale" content="cs_CZ">
+  <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
   <meta name="twitter:card" content="summary">
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
@@ -24,7 +27,7 @@
     "@type": "Article",
     "headline": guide.title,
     "description": guide.description,
-    "inLanguage": "cs",
+    "inLanguage": lang,
     "datePublished": "2026-09-19",
     "dateModified": "2026-09-19",
     "mainEntityOfPage": canonical_url,
@@ -34,24 +37,30 @@
   </script>
 </head>
 <body>
-  <a class="landing-skip" href="#content">Přejít k obsahu</a>
+  <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
   <header class="landing-header">
-    <a class="landing-brand" href="/?lang=cs" aria-label="UbyHost">
+    <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
       <img src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
-    <nav class="landing-nav" aria-label="Hlavní navigace">
-      <a href="/?lang=cs#features">Funkce</a>
-      <a href="/?lang=cs#how">Jak to funguje</a>
-      <a href="/?lang=cs#questions">Otázky</a>
+    <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
+      <a href="/?lang={{ lang }}#features">{{ t('landing.nav.features') }}</a>
+      <a href="/?lang={{ lang }}#how">{{ t('landing.nav.how') }}</a>
+      <a href="/?lang={{ lang }}#questions">{{ t('landing.nav.faq') }}</a>
     </nav>
     <div class="landing-actions">
-      <a class="landing-login" href="/login?lang=cs">Přihlásit se</a>
+      <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
+        <a href="/pruvodce/{{ current_slug }}?lang=cs" lang="cs" hreflang="cs"
+           class="{{ 'active' if lang == 'cs' }}">CZ</a>
+        <a href="/pruvodce/{{ current_slug }}?lang=en" lang="en" hreflang="en"
+           class="{{ 'active' if lang == 'en' }}">EN</a>
+      </div>
+      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
     </div>
   </header>
 
   <main id="content" class="guide-shell">
-    <nav class="guide-breadcrumbs" aria-label="Drobečková navigace">
-      <a href="/?lang=cs">UbyHost</a><span aria-hidden="true">/</span><span>Průvodce</span>
+    <nav class="guide-breadcrumbs" aria-label="{{ t('guide.breadcrumb_nav') }}">
+      <a href="/?lang={{ lang }}">UbyHost</a><span aria-hidden="true">/</span><span>{{ t('guide.breadcrumb') }}</span>
     </nav>
     <article>
       <header class="guide-hero">
@@ -73,29 +82,29 @@
         </div>
 
         <aside class="guide-checklist">
-          <p class="landing-eyebrow">Kontrolní seznam</p>
+          <p class="landing-eyebrow">{{ t('guide.checklist') }}</p>
           <ul>
             {% for item in guide.checklist %}
               <li><span aria-hidden="true">✓</span>{{ item }}</li>
             {% endfor %}
           </ul>
-          <a href="/login?lang=cs" class="landing-button primary">Přihlásit se do UbyHostu</a>
+          <a href="/login?lang={{ lang }}" class="landing-button primary">{{ t('landing.cta') }}</a>
         </aside>
       </div>
 
       <aside class="landing-official guide-official">
         <div>
-          <strong>Ověřte aktuální pravidla u oficiálního zdroje</strong>
-          <p>UbyHost je technický nástroj, nikoli právní poradenství.</p>
+          <strong>{{ t('guide.official_title') }}</strong>
+          <p>{{ t('landing.disclaimer') }}</p>
         </div>
         <a href="{{ guide.official_url }}" rel="noopener noreferrer" target="_blank">ipc.gov.cz ↗</a>
       </aside>
 
-      <nav class="guide-more" aria-label="Další průvodce">
-        <strong>Další čtení</strong>
+      <nav class="guide-more" aria-label="{{ t('guide.more_nav') }}">
+        <strong>{{ t('guide.more') }}</strong>
         {% for slug, other in guides.items() %}
           {% if slug != current_slug %}
-            <a href="/pruvodce/{{ slug }}">{{ other.title }} →</a>
+            <a href="/pruvodce/{{ slug }}?lang={{ lang }}">{{ other.title }} →</a>
           {% endif %}
         {% endfor %}
       </nav>
@@ -103,12 +112,12 @@
   </main>
 
   <footer class="landing-footer">
-    <a class="landing-brand" href="/?lang=cs"><img src="/static/ubyhost-logo.png" alt="UbyHost"></a>
-    <nav aria-label="Právní informace">
-      <a href="/legal?lang=cs">Právní informace</a>
-      <a href="/terms?lang=cs">Podmínky</a>
-      <a href="/privacy?lang=cs">Soukromí</a>
-      <a href="/login?lang=cs">Přihlášení</a>
+    <a class="landing-brand" href="/?lang={{ lang }}"><img src="/static/ubyhost-logo.png" alt="UbyHost"></a>
+    <nav aria-label="{{ t('legal.footer_nav_label') }}">
+      <a href="/legal?lang={{ lang }}">{{ t('legal.footer_short') }}</a>
+      <a href="/terms?lang={{ lang }}">{{ t('terms.footer_short') }}</a>
+      <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
+      <a href="/login?lang={{ lang }}">{{ t('landing.footer.login') }}</a>
     </nav>
     <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>
   </footer>
