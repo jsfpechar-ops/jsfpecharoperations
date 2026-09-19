@@ -43,10 +43,10 @@
       <img src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
     <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
-      <a href="#features">{{ t('landing.nav.features') }}</a>
-      <a href="#questions">{{ t('landing.nav.faq') }}</a>
+      <a href="/?lang={{ lang }}#product">{{ t('landing.nav.features') }}</a>
+      <a href="/jak-to-funguje?lang={{ lang }}" aria-current="page">{{ t('landing.nav.how') }}</a>
       <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
-      <a href="#guides">{{ t('landing.nav.guides') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
     </nav>
     <div class="landing-actions">
       <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
