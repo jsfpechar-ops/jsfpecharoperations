@@ -265,12 +265,24 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
     return _with_lang(render_guest(request, "guest/pin.html", context), lang)
 
 
+def _host_owns_apartment(request: Request, apartment) -> bool:
+    """Signed-in host filling the guest form for their own property."""
+    if not apartment:
+        return False
+    workspace = auth.workspace_user(request)
+    if not workspace:
+        return False
+    owner = apartment["owner_user_id"]
+    return owner is not None and int(owner) == int(workspace["id"])
+
+
 def _require_pin(request: Request, token: str, lang: str):
     if not config.GUEST_PIN_REQUIRED:
         return None
     apartment = _apartment_by_token(token)
-    if apartment and auth.pin_session_valid(
-        request, token, apartment["permalink_pin"] or ""
+    if apartment and (
+        _host_owns_apartment(request, apartment)
+        or auth.pin_session_valid(request, token, apartment["permalink_pin"] or "")
     ):
         return None
     return _pin_page(request, token, lang)
@@ -514,6 +526,9 @@ def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editin
 def _require_claim_session(request: Request, reservation, token: str, lang: str):
     if not mail.mail_enabled():
         return None
+    apartment = _apartment_by_token(token)
+    if _host_owns_apartment(request, apartment):
+        return None
     row = claim.ensure_row(reservation["id"])
     if not claim.guest_access_open(reservation, row):
         return _unavailable(request, lang, "stay_gone", 404, token)
@@ -700,7 +715,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             ),
         }
     )
-    if mail.mail_enabled():
+    if mail.mail_enabled() and not _host_owns_apartment(request, apartment):
         if not claim.is_claimed(claim_row):
             return _with_lang(render_guest(request, "guest/claim.html", context), lang)
         if reservation["id"] not in _claimed_reservation_ids(request):
