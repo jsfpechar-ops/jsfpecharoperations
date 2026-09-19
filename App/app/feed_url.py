@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ipaddress
+import re
 import socket
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
@@ -31,6 +32,28 @@ _EXTRA_BLOCKED_NETWORKS = tuple(
     ipaddress.ip_network(cidr)
     for cidr in ("100.64.0.0/10", "192.0.0.0/24", "198.18.0.0/15")
 )
+
+
+_NUMERIC_HOST = re.compile(r"^[0-9a-fA-FxX.]+$")
+
+
+def _ambiguous_numeric_host(host: str) -> bool:
+    """True when a resolver and an HTTP client would read the host differently.
+
+    ``0177.0.0.1`` reaches loopback through libc's octal ``inet_aton``, but macOS
+    ``getaddrinfo`` drops the leading zero and reports the public 177.0.0.1 — so
+    the address we validate is not the address we would connect to. Only strict
+    canonical literals (``1.2.3.4``, ``::1``) are unambiguous.
+    """
+    if not _NUMERIC_HOST.match(host):
+        return False
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return True
+    if address.version == 4:
+        return host != str(address)
+    return False
 
 
 def _blocked_ip(ip: ipaddress._BaseAddress) -> bool:
@@ -99,6 +122,10 @@ def resolve_calendar_target(url: str) -> CalendarFetchTarget:
     host = hostname.lower().rstrip(".")
     allow_private = config.ICAL_ALLOW_PRIVATE and config.DEPLOYMENT != "production"
     if not allow_private:
+        if _ambiguous_numeric_host(host):
+            raise FeedError(
+                "Calendar URL must use a canonical IP address or a public hostname."
+            )
         if host in _BLOCKED_HOSTNAMES or host.endswith(".local"):
             raise FeedError("That calendar host is not allowed.")
         if host == "127.0.0.1" or host.startswith("127."):
