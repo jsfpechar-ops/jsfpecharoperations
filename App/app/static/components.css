@@ -108,8 +108,8 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
 
 /* Match shared controls to the colorful, crisp workspace shell. */
 .command-trigger {
-  min-height:42px;
-  margin-bottom:16px;
+  min-height:38px;
+  margin-bottom:12px;
   border:1px solid var(--border-strong);
   border-radius:10px;
   background:var(--surface);
