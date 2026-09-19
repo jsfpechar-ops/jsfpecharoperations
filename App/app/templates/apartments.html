@@ -53,6 +53,8 @@
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">{{ t('apartments.row.edit') }}</a>
+            <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">{{ t('nav.guest_links') }}</a>
+            <a class="row-menu-item" href="/apartments/{{ apartment.id }}#ubyport" role="menuitem">{{ t('nav.automation') }}</a>
             <form method="post" action="/apartments/{{ apartment.id }}/archive" class="row-menu-form"
                   data-confirm data-confirm-message="{{ t('confirm.archive_property') }}">
               <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>

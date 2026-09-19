@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#faf6f2">
+  <meta name="theme-color" content="#f7f7f5">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}UbyHost{% endblock %}</title>
   {% include "_seo_head.html" %}
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260919c">
-  <link rel="stylesheet" href="/static/components.css?v=20260914d">
+  <link rel="stylesheet" href="/static/app.css?v=20260919y">
+  <link rel="stylesheet" href="/static/components.css?v=20260919v">
 </head>
 <body class="layout-host {{ 'no-nav' if not (show_nav | default(true)) }}">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
@@ -88,21 +88,30 @@
       <a href="/housebook" class="{{ 'active' if nav == 'housebook' }}">{{ nav_icon('book') }}{{ t('nav.housebook') }}</a>
     </div>
     <div class="nav-group">
-      <div class="nav-label">{{ t('nav.setup') }}</div>
-      <a href="/apartments" class="{{ 'active' if nav == 'apartments' }}">{{ nav_icon('property') }}{{ t('nav.properties') }}</a>
+      <div class="nav-label">{{ t('nav.properties') }}</div>
+      <a href="/apartments" class="{{ 'active' if nav == 'apartments' }}">{{ nav_icon('property') }}{{ t('nav.all_properties') }}</a>
+      {# Guest links and automation are configured per property; nesting them
+         under Properties shows where the settings actually live. #}
+      <div class="nav-sub">
+        <p class="nav-sub-label">{{ t('nav.per_property') }}</p>
+        <a href="/guest-links" class="{{ 'active' if nav == 'guest_links' }}">{{ nav_icon('link') }}{{ t('nav.guest_links') }}</a>
+        <a href="/automation" class="{{ 'active' if nav == 'automation' }}">{{ nav_icon('automation') }}{{ t('nav.automation') }}</a>
+      </div>
       <a href="/entities" class="{{ 'active' if nav == 'entities' }}">{{ nav_icon('entity') }}{{ t('nav.entities') }}</a>
-      <a href="/automation" class="{{ 'active' if nav == 'automation' }}">{{ nav_icon('automation') }}{{ t('nav.automation') }}</a>
-      <a href="/guest-links" class="{{ 'active' if nav == 'guest_links' }}">{{ nav_icon('link') }}{{ t('nav.guest_links') }}</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">{{ t('nav.account') }}</div>
       <a href="/settings" class="{{ 'active' if nav == 'settings' }}">{{ nav_icon('settings') }}{{ t('nav.settings') }}</a>
       {% if current_user and current_user.role == 'admin' %}
         <a href="/admin/users" class="{{ 'active' if nav == 'users' }}">{{ nav_icon('users') }}{{ t('nav.users') }}</a>
       {% endif %}
-      <a href="/guide" class="{{ 'active' if nav == 'guide' }}">{{ nav_icon('guide') }}{{ t('nav.guide') }}</a>
     </div>
   </nav>
   {% if current_user %}
     <div class="sidebar-footer">
       <nav class="sidebar-footer-links" aria-label="{{ t('legal.footer_nav_label') }}">
+        <a href="/guide" class="{{ 'is-current' if nav == 'guide' }}">{{ t('nav.guide') }}</a>
+        <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/legal">{{ t('legal.footer_short') }}</a>
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/terms">{{ t('terms.footer_short') }}</a>

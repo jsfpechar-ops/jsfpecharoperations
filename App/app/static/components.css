@@ -105,3 +105,39 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
   .shortcut-list>div { grid-template-columns:120px 1fr }
   .command-trigger kbd { display:none }
 }
+
+/* Match shared controls to the colorful, crisp workspace shell. */
+.command-trigger {
+  min-height:38px;
+  margin-bottom:12px;
+  border:1px solid var(--border-strong);
+  border-radius:10px;
+  background:var(--surface);
+  color:var(--ink-secondary);
+  font-weight:640;
+  box-shadow:0 1px 2px rgba(32,32,30,.06);
+}
+.command-trigger:hover {
+  border-color:color-mix(in srgb,var(--brand) 38%,var(--border-strong));
+  color:var(--ink);
+  transform:none;
+  box-shadow:0 2px 8px rgba(32,32,30,.09);
+}
+.command-trigger-icon {
+  border:1px solid var(--border);
+  color:var(--brand-ink);
+  background:var(--brand-soft);
+  box-shadow:none;
+}
+.property-mark,.avatar { border:1px solid color-mix(in srgb,currentColor 28%,transparent) }
+.view-switch { border:1px solid var(--border-strong);border-radius:var(--radius-pill);background:var(--surface) }
+.view-switch a { border-radius:var(--radius-pill);font-weight:660 }
+.view-switch a.on { color:var(--brand-ink);background:var(--brand-soft) }
+.shortcut-trigger { border:1px solid var(--border-strong);border-radius:50%;box-shadow:0 1px 2px rgba(32,32,30,.06) }
+.command-dialog,.shortcuts-dialog {
+  border:2px solid var(--ink);
+  box-shadow:8px 9px 0 rgba(32,32,30,.32);
+}
+.command-search { background:linear-gradient(135deg,var(--amber-bg),var(--surface) 52%) }
+.command-option { border-radius:9px }
+.command-option.is-selected { color:var(--ink);background:var(--blue-bg) }
