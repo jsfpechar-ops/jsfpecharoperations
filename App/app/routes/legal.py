@@ -24,6 +24,16 @@ def product_details(request: Request):
     )
 
 
+@router.get("/cenik")
+def pricing(request: Request):
+    """Public contact-led pricing page."""
+    return render(
+        request,
+        "pricing.html",
+        {"show_nav": False, "open_alerts": []},
+    )
+
+
 @router.get("/pruvodce/{slug}")
 def public_guide(request: Request, slug: str):
     lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)

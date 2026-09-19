@@ -24,7 +24,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/landing.css?v=20260919n">
+  <link rel="stylesheet" href="/static/landing.css?v=20260919p">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -68,6 +68,7 @@
     <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
       <a href="#product">{{ t('landing.nav.features') }}</a>
       <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.nav.how') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
       <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
     </nav>
     <div class="landing-actions">
@@ -206,6 +207,7 @@
       <a href="/terms?lang={{ lang }}">{{ t('terms.footer_short') }}</a>
       <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
       <a href="/dpa?lang={{ lang }}">{{ t('dpa.footer_short') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
       <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">UbyPort</a>
       <a href="/pruvodce/online-ubytovaci-kniha?lang={{ lang }}">{{ 'Guest book' if lang == 'en' else 'Ubytovací kniha' }}</a>
       <a href="/login?lang={{ lang }}">{{ t('landing.footer.login') }}</a>
