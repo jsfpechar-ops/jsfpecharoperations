@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#faf6f2">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}UbyHost{% endblock %}</title>
-  <link rel="icon" href="/static/favicon.svg">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260914d">
+  <link rel="stylesheet" href="/static/app.css?v=20260919a">
   <link rel="stylesheet" href="/static/components.css?v=20260914d">
 </head>
 <body class="auth-page">
@@ -41,7 +42,7 @@
     </section>
     <aside class="auth-hero" aria-hidden="true">
       <div class="auth-hero-inner">
-        <img class="auth-hero-mark" src="/static/ubyhost-mark.png" alt="">
+        <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png" alt="">
         <h2>{{ t('login.hero_title') }}</h2>
         <p>{{ t('login.hero_body') }}</p>
       </div>

@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#faf6f2">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}UbyHost{% endblock %}</title>
-  <link rel="icon" href="/static/favicon.svg">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260915a">
+  <link rel="stylesheet" href="/static/app.css?v=20260919a">
   <link rel="stylesheet" href="/static/components.css?v=20260914d">
 </head>
 <body class="layout-host {{ 'no-nav' if not (show_nav | default(true)) }}">
@@ -19,7 +20,7 @@
   <button class="nav-toggle" type="button" data-nav-toggle aria-label="{{ t('a11y.open_menu') }}" aria-expanded="false">
     <span aria-hidden="true">☰</span>
   </button>
-  <a class="brand plain" href="/"><img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost"></a>
+  <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png" alt=""></a>
   {% if current_user %}
     <a class="appbar-help" href="/guide">{{ t('nav.guide') }}</a>
   {% endif %}
@@ -35,7 +36,8 @@
 <aside class="sidebar" id="app-sidebar">
   <div class="sidebar-brand">
     <a class="brand plain" href="/">
-      <img class="brand-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
+      <img class="brand-logo" src="/static/ubyhost-mark.png" alt="">
+      <span class="brand-word">UbyHost</span>
     </a>
     <div class="sidebar-brand-actions">
       <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
