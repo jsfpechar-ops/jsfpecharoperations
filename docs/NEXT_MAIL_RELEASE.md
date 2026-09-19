@@ -22,7 +22,7 @@ application version**, not an UbyPort version.
 | SES flip to `ses` | Waiting on AWS production access |
 | Assigned UX, PM/controller split, passport toggle | Implemented and tested in #88 |
 | First-time host onboarding + safe two-property demo | Implemented in EN/CS; skip/restore supported; finish handoff shows guest link + PIN; demo blocked against real UbyPort |
-| Full regression suite | **392 passed** (includes compact host notification cards, sidebar property overflow, onboarding finish handoff, expanded demo, `#89`, and 1.1.0 release checks) |
+| Full regression suite | **415 passed** (latest `main`, legal 1.5/subprocessor register, host guest-form shortcut, compact notifications, onboarding/demo, and `#89`) |
 
 ```mermaid
 flowchart TD
