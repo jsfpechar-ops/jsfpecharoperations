@@ -89,7 +89,7 @@
   {% endif %}
 {% else %}
 
-  {% if onboarding.finished and not onboarding.dismissed %}
+  {% if onboarding and onboarding.finished and not onboarding.dismissed %}
     {{ onboarding_finish(onboarding) }}
   {% else %}
     {{ onboarding_banner(onboarding) }}
