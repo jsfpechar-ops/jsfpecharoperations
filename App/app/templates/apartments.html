@@ -2,12 +2,21 @@
 {% set nav = 'apartments' %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity with context %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity, sync_calendars_button with context %}
 {{ onboarding_banner(onboarding) }}
+{% set header_actions %}
+  <div class="page-toolbar">
+    <div class="page-toolbar-row">
+      {{ sync_calendars_button(return_to='/apartments', last_sync=last_sync) }}
+      <a class="btn" href="/entities">{{ t('apartments.entities_link') }}</a>
+      <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
+    </div>
+  </div>
+{% endset %}
 {{ page_header(
   t('apartments.title'),
   t('apartments.lede'),
-  actions='<a class="btn" href="/entities">' ~ t('apartments.entities_link') ~ '</a><a class="btn primary" href="/apartments/new">' ~ t('apartments.add') ~ '</a>'
+  actions=header_actions
 ) }}
 
 {% if rows %}
