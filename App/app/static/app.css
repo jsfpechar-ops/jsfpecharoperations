@@ -767,13 +767,43 @@ a.notification-link:hover { background: var(--surface-2); }
 }
 .page-toolbar-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 .page-toolbar-row form { margin: 0; }
 .page-toolbar-meta { margin: 0; font-size: 12px; line-height: 1.35; }
+.sync-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.sync-cta-form { margin: 0; }
+.sync-cta-meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  max-width: 220px;
+}
+.btn.sync-btn {
+  min-height: 42px;
+  padding: 10px 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.btn.sync-btn .nav-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.btn.primary.sync-btn {
+  box-shadow: 0 1px 2px rgba(173, 73, 66, 0.2), 0 8px 18px rgba(173, 73, 66, 0.16);
+}
+.btn.primary.sync-btn:hover {
+  box-shadow: 0 1px 2px rgba(173, 73, 66, 0.24), 0 10px 22px rgba(173, 73, 66, 0.2);
+}
 .entity-edit-panel { margin-bottom: 16px; }
 
 /* --- tables ------------------------------------------------------------ */
