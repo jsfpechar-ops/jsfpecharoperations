@@ -97,9 +97,6 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     # pages must not sit in history, the back/forward cache, or a proxy.
     if not request.url.path.startswith("/static/"):
         response.headers.setdefault("Cache-Control", "no-store, private")
-        # Pages answer in the visitor's language, so a shared cache must not
-        # hand a Czech page to someone who asked for English.
-        response.headers.setdefault("Vary", "Accept-Language")
     return response
 
 

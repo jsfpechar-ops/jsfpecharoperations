@@ -2532,36 +2532,13 @@ def supported_language(value: str | None) -> str | None:
     return value if value in LANGUAGES else None
 
 
-def _from_accept_header(request: Request) -> str | None:
-    """The visitor's preferred language, honouring the q-values they sent."""
-    ranked = []
-    header = request.headers.get("accept-language", "")
-    for position, part in enumerate(header.split(",")):
-        tag, _, parameters = part.strip().partition(";")
-        quality = 1.0
-        for parameter in parameters.split(";"):
-            name, _, raw = parameter.partition("=")
-            if name.strip().lower() == "q":
-                try:
-                    quality = float(raw)
-                except ValueError:
-                    quality = 0.0
-        ranked.append((-quality, position, tag))
-    for _, _, tag in sorted(ranked):
-        spoken = supported_language(tag)
-        if spoken:
-            return spoken
-    return None
-
-
 def resolve_language(request: Request | None, default: str = DEFAULT_LANGUAGE) -> str:
-    """A ?lang= link wins, then the saved choice, then the browser's headers."""
+    """Use stable language URLs: explicit link, saved choice, then page default."""
     if request is None:
         return normalise_language(default)
     signals = (
         supported_language(request.query_params.get("lang")),
         supported_language(request.cookies.get(LANG_COOKIE)),
-        _from_accept_header(request),
     )
     for signal in signals:
         if signal:

@@ -78,7 +78,7 @@ def test_the_login_page_describes_itself_for_the_search_snippet():
 
 
 def test_a_visitor_with_no_stated_preference_gets_czech():
-    """Googlebot sends no language header, and the product is Czech."""
+    """The canonical URL is stable Czech regardless of crawler headers."""
     page = _client().get("/login")
 
     assert 'lang="cs"' in page.text
@@ -86,17 +86,17 @@ def test_a_visitor_with_no_stated_preference_gets_czech():
     assert _meta_description(page.text) == host_i18n.translate("cs", "login.meta_description")
 
 
-def test_an_english_browser_still_gets_english():
+def test_a_browser_header_cannot_change_the_canonical_pages_language():
     page = _client().get("/login", headers={"Accept-Language": "en-GB,en;q=0.9"})
 
-    assert 'lang="en"' in page.text
-    assert _title(page.text) == host_i18n.translate("en", "login.page_title")
-
-
-def test_the_browsers_first_choice_wins_over_a_lower_ranked_one():
-    page = _client().get("/login", headers={"Accept-Language": "de;q=0.9, en;q=0.8, cs;q=1.0"})
-
     assert 'lang="cs"' in page.text
+    assert _title(page.text) == host_i18n.translate("cs", "login.page_title")
+
+
+def test_the_explicit_english_alternate_is_english():
+    page = _client().get("/login?lang=en", headers={"Accept-Language": "cs"})
+
+    assert 'lang="en"' in page.text
 
 
 def test_a_language_link_is_remembered_like_the_switcher():
