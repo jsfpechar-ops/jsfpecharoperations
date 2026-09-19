@@ -506,9 +506,8 @@ def sweep_reminders() -> Dict[str, int]:
             alerts.raise_alert(
                 "warning",
                 "guest_incomplete_checkin",
-                f"{reservation['internal_name']}: check-in today and forms are incomplete.",
-                f"Claimed as {masked}. The guest can still complete the form using "
-                f"their registration link.",
+                f"{reservation['internal_name']} · check-in today",
+                "Forms incomplete",
                 dedupe_key=f"guest_incomplete_checkin:{reservation['id']}",
                 apartment_id=reservation["apartment_id"],
                 reservation_id=reservation["id"],

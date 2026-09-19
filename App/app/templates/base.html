@@ -170,8 +170,8 @@
       {% endif %}
           <span class="notification-icon" aria-hidden="true">!</span>
           <span class="grow">
-            <strong>{{ alert.message }}</strong>
-            {% if alert.detail %}<small>{{ alert.detail }}</small>{% endif %}
+            <strong>{{ alert.display_title or alert.message }}</strong>
+            {% if alert.display_detail or alert.detail %}<small>{{ alert.display_detail or alert.detail }}</small>{% endif %}
             {% if alert.reservation_id %}<small class="notification-action">{{ t('notification.open_stay') }}</small>
             {% elif alert.apartment_id %}<small class="notification-action">{{ t('notification.open_property') }}</small>{% endif %}
           </span>

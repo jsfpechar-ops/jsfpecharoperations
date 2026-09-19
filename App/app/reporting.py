@@ -987,13 +987,25 @@ def check_deadlines(
             continue
         level = deadlines.urgency(start, now)
         if level in ("overdue", "urgent"):
+            filled = progress["filled"]
+            expected = progress["expected"] if progress["expected"] is not None else "?"
+            start_label = start.strftime("%d.%m.%Y")
+            end = validation.parse_iso_date(reservation["date_to"])
+            end_label = end.strftime("%d.%m.%Y") if end else ""
+            dates = f"{start_label} – {end_label}" if end_label else start_label
+            title = f"{reservation['internal_name']} · {dates}"
+            if level == "overdue":
+                countdown = deadlines.describe_time_left(start, now)
+                if countdown.startswith("overdue"):
+                    countdown = countdown[0].upper() + countdown[1:]
+                detail = f"{countdown} · {filled}/{expected}"
+            else:
+                detail = f"Due now · {filled}/{expected}"
             alerts.raise_alert(
                 "critical" if level == "overdue" else "warning",
                 "deadline",
-                f"{reservation['internal_name']}: stay from {reservation['date_from']} is "
-                f"{deadlines.describe_time_left(start, now)} and is not fully reported.",
-                f"Status: {STATUS_LABELS.get(progress['status'], progress['status'])}. "
-                f"{progress['filled']} of {progress['expected'] or '?'} guest form(s) complete.",
+                title,
+                detail,
                 dedupe_key=key,
                 apartment_id=reservation["apartment_id"],
                 reservation_id=reservation["id"],
