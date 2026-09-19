@@ -187,7 +187,6 @@ def test_the_sitemap_lists_both_languages_of_every_public_page():
 
 
 def test_original_guides_are_public_and_indexable_in_both_languages():
-    client = _client()
     expected = {
         "/pruvodce/hlaseni-cizincu-ubyport": (
             "Hlášení cizinců přes UbyPort",
@@ -200,6 +199,7 @@ def test_original_guides_are_public_and_indexable_in_both_languages():
     }
 
     for path, (czech, english) in expected.items():
+        client = _client()
         page = client.get(path)
         assert page.status_code == 200
         assert 'lang="cs"' in page.text
