@@ -53,10 +53,11 @@ CSS (`.brand-word`), not baked into the PNG. That keeps the name sharp at 17 px.
 One color only in the mark. Do not add a second brick, a gradient, a drop
 shadow, or a white tile behind it.
 
-Artwork files currently have a **white** raster background. On product surfaces
-they are blended with `mix-blend-mode: multiply` so the white disappears over
-`#F7F7F5`, `#FFFFFF`, and the faintly tinted login hero / sidebar. Do not remove
-that blend without first exporting true transparent PNGs.
+Artwork files are transparent PNGs (white canvas removed). Keep
+`mix-blend-mode: multiply` on light product surfaces as a belt-and-braces
+anti-aliasing aid. Do not reintroduce opaque white fills: they show as boxes
+whenever the mark sits on a tinted surface. The e-mail JPEG keeps a baked-in
+white canvas on purpose.
 
 ## Files
 
@@ -66,7 +67,7 @@ All live under `App/app/static/`.
 | --- | --- | --- |
 | `ubyhost-mark.png` | Mark only, 512 × 512 | Sidebar, mobile app bar, onboarding, landing accents |
 | `ubyhost-logo.png` | Horizontal, 1200 × 272 | Login form (left), public landing and guide headers |
-| `ubyhost-logo-stacked.png` | Stacked, 900 × 730 | Login hero (right) |
+| `ubyhost-logo-stacked.png` | Stacked, 900 × 746 | Login hero (right) |
 | `ubyhost-logo.jpg` | Horizontal on white | E-mail / signature |
 | `favicon.png` | Mark only, 64 × 64 | Browser tab (host, guest, auth) |
 | `apple-touch-icon.png` | Mark on `#F7F7F5`, 180 × 180 | Home screen |
@@ -93,10 +94,11 @@ large enough for 2× screens.
 | Login hero, above the description | `ubyhost-logo-stacked.png` | `.auth-hero-mark` | **300 px** wide (`min(300px, 100%)`) | `#FFFFFF` → `#F1F1EF` with a faint coral wash |
 | Admin sidebar, top left | `ubyhost-mark.png` + live “UbyHost” | `.sidebar-brand .brand-logo` | **28 × 28 px** | lavender-tinted white → `#FFFFFF` |
 | Mobile app bar | `ubyhost-mark.png` | `.appbar .brand-logo` | **24 × 24 px** | translucent white |
-| Onboarding welcome | `ubyhost-mark.png` | `.onboarding-logo` | **120 px** wide | `#FFFFFF` |
+| Onboarding welcome | `ubyhost-mark.png` | `.onboarding-logo` | **120 px** wide | `#FFFFFF` with a faint coral wash |
 | Public landing / guide header | `ubyhost-logo.png` | `.landing-brand img` | **152 px** wide | `#F7F7F5` |
-| Landing workflow step (on coral) | `ubyhost-mark.png` | `.workflow-mark img` | **22 × 22 px**, inverted to white | `--brand` |
-| Browser tab | `favicon.png` | `<link rel="icon">` | **64 × 64** (browser scales to ~16–32) | browser chrome |
+| Landing product mock (sidebar accent) | `ubyhost-mark.png` | `.product-shell aside img` | **28 × 28 px** | lavender-tinted white |
+| Landing final CTA | `ubyhost-mark.png` | `.landing-final img` | **64 × 64 px** | warm canvas wash |
+| Browser tab | `favicon.png` | `<link rel="icon">` | **64 × 64** (browser scales to ~16–32) | transparent |
 | Home screen | `apple-touch-icon.png` | `<link rel="apple-touch-icon">` | **180 × 180** | `#F7F7F5` |
 | E-mail signature | `ubyhost-logo.jpg` | `width="180"` HTML attribute | **180 px** wide | baked-in white |
 
@@ -108,10 +110,11 @@ only logo on small screens.
 - Keep clear space around the mark roughly a quarter of its height.
 - Prefer the mark-only file below ~40 px of display height.
 - Keep `mix-blend-mode: multiply` on `.brand-logo`, `.auth-logo`,
-  `.auth-hero-mark`, and `.onboarding-logo` while the PNGs still have white
-  fills.
-- Bump the `app.css?v=` cache query in the templates if you replace a file
-  in place.
+  `.auth-hero-mark`, `.onboarding-logo`, `.landing-brand img`,
+  `.product-shell aside img`, and `.landing-final img` as a light-surface
+  safeguard.
+- Bump the `app.css?v=` / `landing.css?v=` cache query in the templates if you
+  replace a file in place.
 
 ## Do not
 
@@ -130,7 +133,8 @@ only logo on small screens.
 
 1. Keep the ligature geometry. Recolor only to `#D35445` / `#1B1F25` if the
    generator drifted.
-2. Crop empty margin; square the mark; export PNG (and JPEG on white for mail).
+2. Crop empty margin; square the mark; export a **transparent** PNG (and JPEG
+   on white for mail). Opaque white fills show as boxes on tinted surfaces.
 3. Overwrite the matching file in `App/app/static/`.
 4. If the new PNG is truly transparent, you can drop `mix-blend-mode: multiply`.
 5. Update this document if sizes or slots change.

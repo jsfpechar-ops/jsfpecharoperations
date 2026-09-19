@@ -52,10 +52,11 @@ def test_the_public_homepage_targets_the_service_people_search_for():
     assert page.status_code == 200
     assert 'lang="cs"' in page.text
     assert _title(page.text) == host_i18n.translate("cs", "landing.page_title")
+    assert _title(page.text).startswith("UbyHost:"), "lead with the brand on branded searches"
     assert "Online ubytovací kniha" in page.text
     assert "UbyPort" in page.text
     assert "Airbnb" in page.text
-    assert "<h1>" in page.text
+    assert "<h1 " in page.text
     assert '<link rel="canonical" href="' + config.PUBLIC_BASE_URL + '/">' in page.text
 
 
@@ -65,8 +66,26 @@ def test_the_homepage_has_honest_machine_readable_product_information():
     assert 'lang="en"' in page.text
     assert '"@type": "SoftwareApplication"' in page.text
     assert '"applicationCategory": "BusinessApplication"' in page.text
+    assert '"@type": "Organization"' in page.text
+    assert f'"logo": "{config.PUBLIC_BASE_URL}/static/apple-touch-icon.png"' in page.text
     assert '"aggregateRating"' not in page.text, "never invent testimonials for a rich result"
     assert '"offers"' not in page.text, "the public page makes no price claim"
+
+
+def test_the_marketing_page_renders_translated_copy_not_raw_keys():
+    """New landing strings must be wired into host_i18n or the hero shows keys."""
+    for lang, guides, mock_label, feature_icon in (
+        ("en", "Guides", "Guest reporting queue", "01 / Sync"),
+        ("cs", "Průvodce", "Fronta hlášení hostů", "01 / Napojení"),
+    ):
+        page = _client().get(f"/?lang={lang}")
+        assert page.status_code == 200
+        html = page.text
+        assert f">{guides}</a>" in html
+        assert mock_label in html
+        assert feature_icon in html
+        leaked = re.findall(r">landing\.[a-z0-9_.]+<", html)
+        assert leaked == [], f"untranslated landing keys for {lang}: {leaked}"
 
 
 def test_the_login_page_describes_itself_for_the_search_snippet():
