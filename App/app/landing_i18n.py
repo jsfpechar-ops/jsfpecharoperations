@@ -45,21 +45,25 @@ LANDING_STRINGS = {
             "Collect the required details once. UbyHost keeps the stay, signed guest form, "
             "house-book entry, and UbyPort response together."
         ),
+        "landing.feature.calendar.icon": "01 / Sync",
         "landing.feature.calendar.title": "Airbnb and Booking.com calendars",
         "landing.feature.calendar.body": (
             "Connect iCal feeds so upcoming stays appear automatically and you know which "
             "guest forms are still missing."
         ),
+        "landing.feature.form.icon": "02 / Collect",
         "landing.feature.form.title": "Online guest check-in form",
         "landing.feature.form.body": (
             "Share one stable link. Guests enter and sign their details on a phone or "
             "computer before arrival."
         ),
+        "landing.feature.book.icon": "03 / Keep",
         "landing.feature.book.title": "Online house book",
         "landing.feature.book.body": (
             "Keep a chronological record of guests and export the records you need for "
             "your accommodation files."
         ),
+        "landing.feature.ubyport.icon": "04 / Report",
         "landing.feature.ubyport.title": "Direct UbyPort reporting",
         "landing.feature.ubyport.body": (
             "Send completed foreign-guest records through the UbyPort web service and "
@@ -150,21 +154,25 @@ LANDING_STRINGS = {
             "Údaje získáte jednou. UbyHost drží pobyt, podepsaný formulář, zápis v domovní "
             "knize i odpověď UbyPortu pohromadě."
         ),
+        "landing.feature.calendar.icon": "01 / Napojení",
         "landing.feature.calendar.title": "Kalendáře Airbnb a Booking.com",
         "landing.feature.calendar.body": (
             "Připojte iCal kalendáře. Budoucí pobyty se objeví automaticky a hned vidíte, "
             "které formuláře ještě chybí."
         ),
+        "landing.feature.form.icon": "02 / Sběr",
         "landing.feature.form.title": "Online check-in formulář",
         "landing.feature.form.body": (
             "Sdílejte jeden stálý odkaz. Hosté vyplní a podepíší údaje na telefonu nebo "
             "počítači ještě před příjezdem."
         ),
+        "landing.feature.book.icon": "03 / Evidence",
         "landing.feature.book.title": "Online domovní kniha",
         "landing.feature.book.body": (
             "Veďte chronologickou evidenci ubytovaných hostů a exportujte záznamy potřebné "
             "pro dokumentaci ubytování."
         ),
+        "landing.feature.ubyport.icon": "04 / Hlášení",
         "landing.feature.ubyport.title": "Přímé hlášení do UbyPortu",
         "landing.feature.ubyport.body": (
             "Odesílejte hotové záznamy cizinců přes webovou službu UbyPort a uchovejte "

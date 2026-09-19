@@ -156,7 +156,7 @@
       </div>
       <div class="landing-feature-grid">
         <article class="feature-calendar">
-          <span class="feature-icon" aria-hidden="true">01 / SYNC</span>
+          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.calendar.icon') }}</span>
           <div class="feature-calendar-visual" aria-hidden="true">
             <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
             {% for day in range(1, 15) %}<i class="{{ 'booked' if day in (3, 4, 5, 10, 11) else '' }}">{{ day }}</i>{% endfor %}
@@ -165,7 +165,7 @@
           <p>{{ t('landing.feature.calendar.body') }}</p>
         </article>
         <article class="feature-form">
-          <span class="feature-icon" aria-hidden="true">02 / COLLECT</span>
+          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.form.icon') }}</span>
           <div class="feature-form-visual" aria-hidden="true">
             <span></span><span></span><span class="short"></span>
             <i>✓</i>
@@ -174,7 +174,7 @@
           <p>{{ t('landing.feature.form.body') }}</p>
         </article>
         <article class="feature-book">
-          <span class="feature-icon" aria-hidden="true">03 / KEEP</span>
+          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.book.icon') }}</span>
           <div class="feature-book-visual" aria-hidden="true">
             <span><i>01</i><b>Anna K.</b><em>12—18/09</em></span>
             <span><i>02</i><b>Jan M.</b><em>20—23/09</em></span>
@@ -184,7 +184,7 @@
           <p>{{ t('landing.feature.book.body') }}</p>
         </article>
         <article class="feature-report">
-          <span class="feature-icon" aria-hidden="true">04 / REPORT</span>
+          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.ubyport.icon') }}</span>
           <div class="feature-report-visual" aria-hidden="true">
             <span>✓</span>
             <div><b>UbyPort</b><small>{{ t('landing.mock.receipt') }}</small></div>
