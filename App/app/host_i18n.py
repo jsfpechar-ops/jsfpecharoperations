@@ -27,6 +27,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.reports": "Reports",
         "nav.housebook": "House book",
         "nav.properties": "Properties",
+        "nav.properties_more": "%(count)s more properties — open search",
         "nav.entities": "Legal entities",
         "nav.automation": "Automation",
         "nav.guest_links": "Guest links",
@@ -82,6 +83,24 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "and guest e-mail stays off until delivery is configured."
         ),
         "onboarding.finish_line": "Complete these five checks and your first guest journey is ready.",
+        "onboarding.finish_line_done": "All five checks are done — share the link below with your guests.",
+        "onboarding.finish_kicker": "You are ready",
+        "onboarding.finish_title": "Guest link and PIN are live",
+        "onboarding.finish_lede": (
+            "%(property)s can welcome guests now. Copy the permanent link and PIN into every "
+            "portal's pre-arrival message."
+        ),
+        "onboarding.finish_link_label": "Permanent guest link",
+        "onboarding.finish_message_tip": (
+            "Optional host welcome message lives under Communication on the property page —"
+        ),
+        "onboarding.finish_message_link": "edit host message",
+        "onboarding.finish_passport_tip": "Passport or ID photo policy for this property:",
+        "onboarding.finish_reopen_tip": (
+            "You can skip this guidance any time and reopen it later from Overview or the setup checklist."
+        ),
+        "onboarding.finish_open_communication": "Open communication settings",
+        "onboarding.finish_preview": "Preview guest page",
         "onboarding.step_of": "Setup step %(n)s of %(total)s: %(title)s",
         "onboarding.step_done": "Done",
         "onboarding.continue": "Continue: %(action)s",
@@ -909,6 +928,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.reports": "Hlášení",
         "nav.housebook": "Domovní kniha",
         "nav.properties": "Ubytování",
+        "nav.properties_more": "Dalších %(count)s ubytování — otevřít hledání",
         "nav.entities": "Právnické osoby",
         "nav.automation": "Automatizace",
         "nav.guest_links": "Odkazy pro hosty",
@@ -964,6 +984,24 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "neodešlou a e-maily hostům zůstanou vypnuté, dokud není připraveno doručení."
         ),
         "onboarding.finish_line": "Dokončete těchto pět kontrol a první cesta hosta je připravena.",
+        "onboarding.finish_line_done": "Všech pět kontrol je hotových — odkaz níže pošlete hostům.",
+        "onboarding.finish_kicker": "Jste připraveni",
+        "onboarding.finish_title": "Odkaz pro hosty a PIN jsou aktivní",
+        "onboarding.finish_lede": (
+            "%(property)s už může vítat hosty. Trvalý odkaz a PIN vložte do zprávy před příjezdem "
+            "na každém portálu."
+        ),
+        "onboarding.finish_link_label": "Trvalý odkaz pro hosty",
+        "onboarding.finish_message_tip": (
+            "Volitelná uvítací zpráva hostitele je v sekci Komunikace na stránce ubytování —"
+        ),
+        "onboarding.finish_message_link": "upravit zprávu hostitele",
+        "onboarding.finish_passport_tip": "Politika fotografie pasu nebo dokladu u tohoto ubytování:",
+        "onboarding.finish_reopen_tip": (
+            "Průvodce můžete kdykoli skrýt a znovu otevřít z Přehledu nebo kontrolního seznamu."
+        ),
+        "onboarding.finish_open_communication": "Otevřít nastavení komunikace",
+        "onboarding.finish_preview": "Náhled stránky pro hosty",
         "onboarding.step_of": "Krok nastavení %(n)s z %(total)s: %(title)s",
         "onboarding.step_done": "Hotovo",
         "onboarding.continue": "Pokračovat: %(action)s",

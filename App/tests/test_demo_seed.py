@@ -113,6 +113,33 @@ def test_seed_imports_stays_without_fetching_the_calendar(monkeypatch):
         )
         assert czech_guests and all(g["nationality"] == "CZE" for g in czech_guests)
 
+        loft_stays = db.query(
+            "SELECT * FROM reservation WHERE apartment_id = ? ORDER BY date_from",
+            (loft["id"],),
+        )
+        cancelled = next(
+            s
+            for s in loft_stays
+            if s["date_from"] == (today + timedelta(days=45)).isoformat()
+        )
+        assert cancelled["status"] == "cancelled"
+
+        passport_stay = next(
+            s
+            for s in loft_stays
+            if s["date_from"] == (today + timedelta(days=1)).isoformat()
+        )
+        passport_guest = db.query_one(
+            "SELECT * FROM guest WHERE reservation_id = ? AND is_lead = 1",
+            (passport_stay["id"],),
+        )
+        assert passport_guest["nationality"] == "FRA"
+        assert passport_guest["passport_photo_at"]
+        from app import passport_photos, reporting
+
+        assert passport_photos.has_photo(int(passport_guest["id"]))
+        assert reporting.guest_has_passport_photo(passport_guest)
+
         feed = db.query_one(
             "SELECT * FROM ical_feed WHERE apartment_id = ?", (apartment_id,)
         )

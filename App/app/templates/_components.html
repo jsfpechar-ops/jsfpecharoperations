@@ -192,6 +192,74 @@
   </span>
 {% endmacro %}
 
+{% macro copy_icon() %}
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+  <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+  <path d="M4.5 10.5H3.5a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1H9.5a1 1 0 0 1 1 1V4.5" stroke="currentColor" stroke-width="1.4"/>
+</svg>
+{% endmacro %}
+
+{% macro copy_button(target_id) %}
+  <button class="btn-icon" type="button" data-copy="{{ target_id }}"
+          data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
+          aria-label="{{ t('common.copy') }}">{{ copy_icon() }}</button>
+{% endmacro %}
+
+{# Copy a value straight from a list row, so chasing a guest is one click. #}
+{% macro copy_inline(target_id, value, label='') %}
+  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
+  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copy-label="{{ t('common.copy') }}"
+          data-copied-label="{{ t('common.copied') }}"
+          title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
+{% endmacro %}
+
+{% macro onboarding_finish(onboarding) %}
+  {% if onboarding and onboarding.finished and onboarding.finish %}
+    {% set finish = onboarding.finish %}
+    <section class="onboarding-finish" aria-label="{{ t('onboarding.finish_title') }}">
+      <header class="onboarding-finish-intro">
+        <p class="onboarding-kicker">{{ t('onboarding.finish_kicker') }}</p>
+        <h2>{{ t('onboarding.finish_title') }}</h2>
+        <p class="lede">{{ t('onboarding.finish_lede', property=finish.name) }}</p>
+      </header>
+      <div class="onboarding-finish-share">
+        <div class="onboarding-finish-field">
+          <span class="onboarding-finish-label">{{ t('onboarding.finish_link_label') }}</span>
+          <code id="onboarding-finish-link">{{ finish.permalink }}</code>
+          {{ copy_button('onboarding-finish-link') }}
+        </div>
+        <div class="onboarding-finish-field">
+          <span class="onboarding-finish-label">{{ t('guest_links.pin') }}</span>
+          <strong id="onboarding-finish-pin" class="onboarding-finish-pin">{{ finish.pin }}</strong>
+          {{ copy_button('onboarding-finish-pin') }}
+        </div>
+      </div>
+      <ul class="onboarding-finish-tips">
+        <li>{{ t('onboarding.finish_message_tip') }}
+          <a href="{{ finish.communication_url }}">{{ t('onboarding.finish_message_link') }}</a></li>
+        <li>{{ t('onboarding.finish_passport_tip') }}
+          <a href="{{ finish.communication_url }}">{{ t('apartment.form.passport_policy.' ~ ('required' if finish.passport_policy == 'required_foreign' else 'off')) }}</a></li>
+        <li>{{ t('onboarding.finish_reopen_tip') }}</li>
+      </ul>
+      <div class="onboarding-finish-actions">
+        <a class="btn primary" href="{{ finish.communication_url }}">{{ t('onboarding.finish_open_communication') }}</a>
+        <a class="btn" href="/l/{{ finish.permalink_token }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
+        {% if not onboarding.dismissed %}
+          <form method="post" action="/onboarding/dismiss">
+            <input type="hidden" name="return_to" value="{{ request.url.path }}">
+            <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
+          </form>
+        {% else %}
+          <form method="post" action="/onboarding/resume">
+            <input type="hidden" name="return_to" value="{{ request.url.path }}">
+            <button class="btn ghost" type="submit">{{ t('onboarding.resume') }}</button>
+          </form>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+{% endmacro %}
+
 {% macro onboarding_banner(onboarding) %}
   {% if onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
     <aside class="onboarding-banner" aria-label="{{ t('onboarding.welcome_title') }}">
@@ -245,7 +313,9 @@
       </div>
     </header>
 
-    {% if onboarding.current %}
+    {% if onboarding.finished %}
+      {{ onboarding_finish(onboarding) }}
+    {% elif onboarding.current %}
       <div class="onboarding-now">
         <div class="onboarding-now-label">
           <span>{{ onboarding.completed + 1 }}</span>
@@ -264,7 +334,13 @@
       </div>
     {% endif %}
 
-    <p class="onboarding-finish-line">{{ t('onboarding.finish_line') }}</p>
+    <p class="onboarding-finish-line">
+      {% if onboarding.finished %}
+        {{ t('onboarding.finish_line_done') }}
+      {% else %}
+        {{ t('onboarding.finish_line') }}
+      {% endif %}
+    </p>
     <div class="onboarding-steps" aria-label="{{ t('onboarding.welcome_title') }}">
       {% for step in onboarding.steps %}
         <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
@@ -307,27 +383,6 @@
       {% endif %}
     </div>
   </section>
-{% endmacro %}
-
-{% macro copy_icon() %}
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-  <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
-  <path d="M4.5 10.5H3.5a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1H9.5a1 1 0 0 1 1 1V4.5" stroke="currentColor" stroke-width="1.4"/>
-</svg>
-{% endmacro %}
-
-{% macro copy_button(target_id) %}
-  <button class="btn-icon" type="button" data-copy="{{ target_id }}"
-          data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
-          aria-label="{{ t('common.copy') }}">{{ copy_icon() }}</button>
-{% endmacro %}
-
-{# Copy a value straight from a list row, so chasing a guest is one click. #}
-{% macro copy_inline(target_id, value, label='') %}
-  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
-  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copy-label="{{ t('common.copy') }}"
-          data-copied-label="{{ t('common.copied') }}"
-          title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
 {% endmacro %}
 
 {% macro row_menu_begin(label='') %}

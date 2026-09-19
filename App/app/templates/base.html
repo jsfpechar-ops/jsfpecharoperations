@@ -8,8 +8,8 @@
   <title>{% block title %}UbyHost{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260918b">
-  <link rel="stylesheet" href="/static/components.css?v=20260914d">
+  <link rel="stylesheet" href="/static/app.css?v=20260919a">
+  <link rel="stylesheet" href="/static/components.css?v=20260919a">
 </head>
 <body class="layout-host {{ 'no-nav' if not (show_nav | default(true)) }}">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
@@ -64,13 +64,23 @@
   </button>
   <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
   {% if apartments is defined and apartments %}
+  {# Keep the rail calm: up to 8 letter marks wrap in the narrow sidebar;
+     anything beyond opens the command palette so nothing scrolls off-screen. #}
+  {% set property_mark_limit = 8 %}
+  {% set visible_apartments = apartments[:property_mark_limit] %}
+  {% set hidden_property_count = apartments|length - visible_apartments|length %}
   <div class="property-switcher" aria-label="{{ t('nav.properties') }}">
-    {% for apartment in apartments[:6] %}
+    {% for apartment in visible_apartments %}
       <a href="/reservations?range=upcoming&apartment={{ apartment.id }}" title="{{ apartment.internal_name }}">
         <span class="property-mark property-tone-{{ apartment.id % 10 }}" aria-hidden="true">{{ apartment.internal_name[:1] }}</span>
         <span>{{ apartment.internal_name }}</span>
       </a>
     {% endfor %}
+    {% if hidden_property_count > 0 %}
+      <button class="property-switcher-more" type="button" data-command-open
+              title="{{ t('nav.properties_more', count=hidden_property_count) }}"
+              aria-label="{{ t('nav.properties_more', count=hidden_property_count) }}">+{{ hidden_property_count }}</button>
+    {% endif %}
   </div>
   {% endif %}
   <nav class="sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">

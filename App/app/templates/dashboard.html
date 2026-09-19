@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_welcome, next_action, property_identity with context %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_welcome, next_action, property_identity with context %}
 
 {% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
   {% if items %}
@@ -89,7 +89,11 @@
   {% endif %}
 {% else %}
 
-  {{ onboarding_banner(onboarding) }}
+  {% if onboarding.finished and not onboarding.dismissed %}
+    {{ onboarding_finish(onboarding) }}
+  {% else %}
+    {{ onboarding_banner(onboarding) }}
+  {% endif %}
 
   {% if focus %}
     {% set f_res = focus.reservation %}
