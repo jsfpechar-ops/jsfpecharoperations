@@ -152,19 +152,21 @@ Re-check after a dashboard reset or plan change.
 | **SSL/TLS mode** | SSL/TLS → Overview | **Full (strict)** |
 | **Always Use HTTPS** | SSL/TLS → Edge Certificates | On |
 | **HSTS** | SSL/TLS → Edge Certificates → HSTS | **On**; max-age **6 months**; **includeSubDomains off**; **preload off**; **No-Sniff on** |
-| **Bot Fight Mode** | Security → Settings (one-click) or Bots | **On** — plus the SEO **Skip** custom rules below so Google can fetch `/`, guides, and `sitemap.xml` |
+| **Bot Fight Mode** | Security → Bots | **Off** for crawlable SEO (see [SEO section](#seo-cloudflare-rules-for-google--bing)) — Free BFM cannot be path-skipped; replace with the custom Managed Challenge rules below |
 | **Leaked credentials mitigation** | Security → Settings | **On** (challenges or rate-limits login traffic that matches leaked-password signals) |
 | **Client-side security** | Security → Settings | **On** (inventories third-party scripts in browsers; Page Shield / client-side monitoring) |
+| **AI / crawler controls** | Security → Bots / AI Crawl Control | Prefer **Disallow AI Training**, not **Block** AI bots — a hard block can also stop Google/Bing search crawlers |
 | **Turnstile** | application env (`TURNSTILE_*`) | Host login in production; guest PIN after repeated failures — see [SECURITY.md](SECURITY.md) |
 | **Search Console** | Google (outside Cloudflare) | Domain property + sitemap — [SEARCH_CONSOLE.md](SEARCH_CONSOLE.md) |
 
 Do **not** enable HSTS **preload** or **includeSubDomains** unless every hostname under the zone is HTTPS-only (mail, staging, future subdomains).
 
-After toggling Bot Fight Mode or leaked-credential rules, try:
+After changing bot / challenge rules, try:
 
 1. Host login at `https://ubyhost.com/login`
 2. A guest permalink (`/l/…`) and PIN
-3. Security → Events for false positives labelled Bot Fight Mode
+3. `curl -sS https://ubyhost.com/sitemap.xml` → XML, not “Just a moment…”
+4. Security → Events for unexpected Managed Challenge on Googlebot
 
 ### Still optional
 
@@ -180,15 +182,17 @@ After toggling Bot Fight Mode or leaked-credential rules, try:
 
 ---
 
-## SEO: let Google crawl without disabling Bot Fight Mode
+## SEO: Cloudflare rules for Google / Bing
 
-Bot Fight Mode is **on** for `ubyhost.com`. That is good for login abuse, but it
-can challenge crawlers with a “Just a moment…” interstitial before they reach the
-origin. Search engines then index the challenge page (or fail to fetch
-`sitemap.xml`) instead of the Czech landing page and guides.
+**Problem (live as of docs refresh):** `https://ubyhost.com/robots.txt` is
+reachable, but `/sitemap.xml` and HTML pages often return Cloudflare’s
+“Just a moment…” challenge (HTTP 403) to automated clients. Google then cannot
+reliably ingest the sitemap or refresh titles (old **Continue** login snippet).
 
-Keep Bot Fight Mode **on**. Add **Custom rules** that **Skip → Bot Fight Mode**
-only for the public, indexable surface and for Cloudflare’s known good bots.
+**Hard constraint (Free plan):** [Bot Fight Mode cannot be skipped](https://developers.cloudflare.com/bots/troubleshooting/false-positives/)
+with WAF custom rules, Page Rules, or “Skip → Bot Fight Mode”. That product
+runs outside the Ruleset Engine. The earlier idea of Skip-BFM rules **A/B/C
+does not work** on Free.
 
 Google Search Console steps (property, sitemap, indexing) are in
 **[SEARCH_CONSOLE.md](SEARCH_CONSOLE.md)**.
@@ -205,31 +209,31 @@ Google Search Console steps (property, sitemap, indexing) are in
 | `/sitemap.xml` | URL list for Google and Bing |
 
 Everything under `/l/`, `/reservations`, `/settings`, etc. stays disallowed in
-`robots.txt` and must remain protected by Bot Fight Mode / Turnstile.
+`robots.txt` and must stay behind challenges + Turnstile.
 
-### Rule order (Security → WAF → Custom rules)
+---
 
-Create these on the **Free** plan. Put them **above** any catch-all challenge
-rules. Use **Skip** → tick **Bot Fight Mode** (and leave other skips unchecked
-unless you know you need them).
+### Recommended (Free plan) — turn BFM off, challenge the app yourself
 
-#### Rule A — Never challenge robots or the sitemap
+This is the config to apply in the Cloudflare dashboard for `ubyhost.com`.
 
-**Name:** `SEO — skip BFM on robots and sitemap`
+#### 1. Bots
+
+| Setting | Value |
+|---------|-------|
+| **Bot Fight Mode** | **Off** |
+| AI Crawl Control / Block AI bots | **Disallow AI Training** (or off) — do **not** use a hard **Block** that also stops search crawlers |
+
+#### 2. Custom rules (Security → Security rules → Custom rules)
+
+Create in this order (top = first). Dashboard path names vary slightly
+(“WAF → Custom rules” on older UIs).
+
+##### Rule 1 — Verified bots skip later challenges on the public surface
+
+**Name:** `SEO — verified bots skip challenges on public pages`
 
 **Expression (Edit expression):**
-
-```txt
-(http.request.uri.path eq "/robots.txt") or (http.request.uri.path eq "/sitemap.xml")
-```
-
-**Action:** Skip → **Bot Fight Mode**
-
-#### Rule B — Skip BFM for Cloudflare-known good bots on public pages
-
-**Name:** `SEO — skip BFM for known bots on public pages`
-
-**Expression:**
 
 ```txt
 (cf.client.bot) and (
@@ -239,72 +243,121 @@ unless you know you need them).
   http.request.uri.path eq "/terms" or
   http.request.uri.path eq "/privacy" or
   http.request.uri.path eq "/dpa" or
+  http.request.uri.path eq "/robots.txt" or
+  http.request.uri.path eq "/sitemap.xml" or
   starts_with(http.request.uri.path, "/pruvodce/")
 )
 ```
 
-**Action:** Skip → **Bot Fight Mode**
+**Action:** Skip → **All remaining custom rules**  
+(optional: also skip Browser Integrity Check / Security Level if those product
+checkboxes appear)
 
-`cf.client.bot` is the Free-plan signal for Cloudflare’s list of known good
-bots (including verified Googlebot when Cloudflare recognises the client). It
-is **not** the same as “any User-Agent that says Googlebot”.
+`cf.client.bot` is Cloudflare’s verified-good-bot signal (real Googlebot /
+Bingbot when recognised). It is **not** “User-Agent contains Googlebot”.
 
-#### Rule C (optional) — Skip BFM for all traffic on the marketing homepage only
+##### Rule 2 — Challenge host login automation (humans + Turnstile still OK)
 
-Use only if URL Inspection in Search Console still cannot fetch `/` after A+B.
-Prefer keeping this **off** so anonymous scrapers still hit Bot Fight Mode.
-
-**Name:** `SEO — skip BFM on marketing homepage`
+**Name:** `Protect — managed challenge on /login`
 
 **Expression:**
 
 ```txt
-(http.request.uri.path eq "/")
+(http.request.uri.path eq "/login")
 ```
 
-**Action:** Skip → **Bot Fight Mode**
+**Action:** **Managed Challenge**
 
-### Cache: do not serve a stale “Continue” login title
+Verified bots never hit this rule because Rule 1 skips the rest of the custom
+ruleset for them on `/login`. Humans solve the challenge (or pass low-risk
+scores); Turnstile still runs in the app.
 
-The app already sends `Cache-Control: no-store, private` for non-static HTML.
-Still verify the edge does not hold old HTML:
+##### Rule 3 — Challenge private app / guest surfaces
+
+**Name:** `Protect — managed challenge on private app paths`
+
+**Expression:**
+
+```txt
+starts_with(http.request.uri.path, "/l/") or
+starts_with(http.request.uri.path, "/account") or
+starts_with(http.request.uri.path, "/admin") or
+starts_with(http.request.uri.path, "/api/") or
+starts_with(http.request.uri.path, "/apartments") or
+starts_with(http.request.uri.path, "/automation") or
+starts_with(http.request.uri.path, "/entities") or
+starts_with(http.request.uri.path, "/guest-links") or
+starts_with(http.request.uri.path, "/guests/") or
+starts_with(http.request.uri.path, "/guide") or
+starts_with(http.request.uri.path, "/housebook") or
+starts_with(http.request.uri.path, "/reservations") or
+starts_with(http.request.uri.path, "/settings") or
+starts_with(http.request.uri.path, "/submissions")
+```
+
+**Action:** **Managed Challenge**
+
+#### 3. Cache purge (once after SEO HTML deploy)
 
 1. **Caching** → **Configuration** → Browser Cache TTL can stay default.
-2. **Caching** → **Cache Rules** (or Page Rules on older Free UIs):
+2. Optional **Cache Rules**: bypass cache for `/`, `/login`, `/pruvodce/*`,
+   legal pages; allow short TTL cache for `/robots.txt` and `/sitemap.xml`.
+3. **Caching** → **Configuration** → **Purge Everything** once so GSC and
+   browsers drop the old **Continue** login HTML.
 
-| When | Then |
-|------|------|
-| URI Path equals `/sitemap.xml` | Eligible for cache (short TTL is fine) |
-| URI Path equals `/robots.txt` | Eligible for cache |
-| URI Path is `/` **or** starts with `/pruvodce/` **or** is in `{/login,/legal,/terms,/privacy,/dpa}` | **Bypass cache** |
+#### 4. Verify
 
-3. After deploying SEO HTML, **Caching** → **Configuration** → **Purge Everything**
-   once (or purge those paths) so visitors and GSC stop seeing pre-deploy HTML.
+| Check | Expected |
+|-------|----------|
+| Incognito `https://ubyhost.com/` | Czech landing; title starts with *Online ubytovací kniha…* |
+| Incognito `https://ubyhost.com/login` | **Přihlášení · UbyHost** or **Log in · UbyHost**, never **Continue** |
+| `curl -sS https://ubyhost.com/robots.txt` | Includes `Sitemap: https://ubyhost.com/sitemap.xml` |
+| `curl -sS https://ubyhost.com/sitemap.xml` | XML `<urlset>`, **not** “Just a moment…” |
+| GSC → URL Inspection → Test live URL for `/` and `/sitemap.xml` | Available to Google |
 
-### Verify the rules
+---
 
-After saving:
+### Alternative A (Free) — keep Bot Fight Mode on via IP Access Allow
 
-1. Incognito window → `https://ubyhost.com/` → Czech landing (`Přihlášení` is
-   **not** the homepage title; homepage title starts with *Online ubytovací kniha…*).
-2. Incognito → `https://ubyhost.com/login` → title **Přihlášení · UbyHost** or
-   **Log in · UbyHost**, never **Continue**.
-3. `curl -sS https://ubyhost.com/robots.txt` → includes `Sitemap: https://ubyhost.com/sitemap.xml`.
-4. `curl -sS https://ubyhost.com/sitemap.xml` → XML `<urlset>`, not a Cloudflare
-   HTML challenge.
-5. Security → **Events**: confirmed Googlebot / Bingbot on `/` and `/sitemap.xml`
-   should show **Skip** from the rules above, not Bot Fight Mode challenge.
-6. Google Search Console → URL Inspection → **Test live URL** for `/` and
-   `/sitemap.xml` (see [SEARCH_CONSOLE.md](SEARCH_CONSOLE.md)).
+Only if you refuse to turn BFM off. Cloudflare documents that **matching IP
+Access Allow rules prevent Bot Fight Mode from triggering** on that request.
+
+**Security → WAF → Tools → IP Access rules** (or Security → IP Access Rules):
+
+| Value | Type | Action | Notes |
+|-------|------|--------|-------|
+| `15169` | ASN | **Allow** | Google |
+| `8075` | ASN | **Allow** | Microsoft / Bing |
+
+**Trade-off:** Allow on an ASN bypasses custom rules, rate limits, and Managed
+Rules for **all** traffic from that ASN — not only Googlebot. Prefer the
+recommended BFM-off + Rules 1–3 setup above.
+
+---
+
+### Alternative B (Pro+) — Super Bot Fight Mode
+
+If the zone is on **Pro** or higher:
+
+1. Turn **Bot Fight Mode** off; enable **Super Bot Fight Mode**.
+2. Set **Verified bots** to **Allow** (do not challenge).
+3. Definitely / likely automated: Managed Challenge or Block as you prefer.
+4. Optional custom rule — Skip → **All Super Bot Fight Mode rules** for the
+   same public-path expression as Rule 1 (API phase `http_request_sbfm`).
+
+Skip works for Super Bot Fight Mode; it does **not** work for free Bot Fight Mode.
+
+---
 
 ### What not to do
 
 | Don’t | Why |
 |-------|-----|
-| Turn Bot Fight Mode **off** globally | Re-opens cheap credential stuffing on `/login` |
-| Skip BFM for all paths | Guests’ `/l/…` and host app stay scrapeable |
-| Trust `User-Agent` contains `Googlebot` alone | Trivial to spoof; use `cf.client.bot` |
-| Challenge `/sitemap.xml` | Search Console cannot submit or refresh the map |
+| Rely on “Skip → Bot Fight Mode” custom rules | Free BFM is not skippable; dashboard may not even offer that product tick |
+| Trust `User-Agent` contains `Googlebot` alone | Trivial to spoof; use `cf.client.bot` or real Google ASN allowlists |
+| Leave BFM on with no IP Access Allow | `/sitemap.xml` stays challenge-walled for many fetchers (GSC “Couldn’t fetch”) |
+| Hard-block all AI bots if that also blocks search crawlers | Use Disallow AI Training / Google-Extended instead |
+| Challenge `/robots.txt` or `/sitemap.xml` for everyone | Search Console cannot submit or refresh the map |
 
 ---
 

@@ -1,8 +1,10 @@
 # Google Search Console for ubyhost.com
 
 Free configuration so Google can discover the Czech and English public pages
-UbyHost publishes. Pair this with the Cloudflare Bot Fight Mode skip rules in
-**[CLOUDFLARE.md](CLOUDFLARE.md#seo-let-google-crawl-without-disabling-bot-fight-mode)**.
+UbyHost publishes. Pair this with the Cloudflare bot/challenge rules in
+**[CLOUDFLARE.md](CLOUDFLARE.md#seo-cloudflare-rules-for-google--bing)** —
+especially **Bot Fight Mode Off** + custom Managed Challenge rules (Free BFM
+cannot be path-skipped).
 
 Nothing here is paid ads. Ranking still depends on useful content and links;
 GSC only controls **verification, crawl, and reporting**.
@@ -29,13 +31,16 @@ app deploys.
 If Cloudflare offers **Add to Search Console** under the zone, you can use that
 shortcut; the property still ends up in the same GSC UI.
 
+**GSC has no extra “SEO enable” switch** beyond verification + sitemap +
+indexing requests below. hreflang is already in the app HTML/sitemap.
+
 ---
 
 ## 2. Confirm the live site is crawlable
 
 Before submitting a sitemap, Cloudflare must not serve a challenge HTML page to
-Google. Apply rules **A** and **B** in [CLOUDFLARE.md](CLOUDFLARE.md), purge
-cache once, then:
+Google. Apply the **recommended Free config** in [CLOUDFLARE.md](CLOUDFLARE.md)
+(BFM off + Rules 1–3), purge cache once, then:
 
 | Check | Expected |
 |-------|----------|
@@ -49,7 +54,7 @@ In GSC → **URL Inspection** → paste `https://ubyhost.com/` → **Test live U
 | Live test result | Meaning |
 |------------------|---------|
 | URL is available to Google | Good — continue |
-| Soft 404 / Redirect / Server error / Crawled – currently not indexed with challenge HTML | Fix Cloudflare skip rules / cache first |
+| Soft 404 / Redirect / Server error / Crawled – currently not indexed with challenge HTML | Fix Cloudflare bot settings / cache first (BFM still on is the usual cause) |
 
 Repeat the live test for `https://ubyhost.com/sitemap.xml`.
 
@@ -67,8 +72,9 @@ Repeat the live test for `https://ubyhost.com/sitemap.xml`.
 3. Submit.
 
 Status should become **Success** after Google fetches it (minutes to a day).
-If it stays **Couldn’t fetch**, the edge is still challenging `/sitemap.xml`
-(see Cloudflare rule A).
+If it stays **Couldn’t fetch** / HTTP 403, the edge is still challenging
+`/sitemap.xml` — turn **Bot Fight Mode** off (or use IP Access Allow AS15169)
+per [CLOUDFLARE.md](CLOUDFLARE.md).
 
 The app serves both languages under `?lang=cs` / `?lang=en` with reciprocal
 `hreflang` tags. You do **not** submit separate sitemaps per language.
@@ -129,14 +135,14 @@ every host-app deploy.
    or verify via DNS.
 2. Submit the same `https://ubyhost.com/sitemap.xml`.
 
-Cloudflare rule B’s `cf.client.bot` covers Bingbot when Cloudflare recognises it.
+Cloudflare Rule 1’s `cf.client.bot` covers Bingbot when Cloudflare recognises it.
 
 ---
 
 ## Checklist (copy into go-live notes)
 
 - [ ] GSC **Domain** property `ubyhost.com` verified (DNS TXT)
-- [ ] Cloudflare SEO skip rules A+B live; cache purged once
+- [ ] Cloudflare: Bot Fight Mode **Off**; custom Rules 1–3 live; cache purged once
 - [ ] Live URL test OK for `/` and `/sitemap.xml`
 - [ ] Sitemap `sitemap.xml` submitted → Success
 - [ ] Indexing requested for `/`, `/login`, both guides (CS, then EN)
