@@ -961,11 +961,11 @@ a { color: inherit; }
 }
 
 .landing-hero h1 {
-  max-width: 840px;
-  font-size: clamp(2.6rem, 5.2vw, 4.4rem);
-  font-weight: 700;
-  line-height: 1.04;
-  letter-spacing: -.035em;
+  max-width: 900px;
+  font-size: clamp(3.1rem, 6.6vw, 5.8rem);
+  font-weight: 800;
+  line-height: .94;
+  letter-spacing: -.058em;
 }
 
 .landing-hero .landing-lede {
@@ -1204,7 +1204,7 @@ a { color: inherit; }
 
 .landing-section { padding-block: clamp(60px, 8vw, 100px); }
 .landing-section-head { max-width: 800px; }
-.landing-section-head h2, .quick-steps h2 { font-size: clamp(2rem, 3.6vw, 3.1rem); line-height: 1.08; letter-spacing: -.035em; }
+.landing-section-head h2, .quick-steps h2 { font-size: clamp(2.4rem, 4.8vw, 4.1rem); font-weight: 780; line-height: .99; letter-spacing: -.052em; }
 .benefit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
 .benefit-card {
   min-height: 270px;
@@ -1215,7 +1215,7 @@ a { color: inherit; }
   box-shadow: 0 1px 3px rgba(32, 32, 30, .05);
 }
 .benefit-card > span { display: grid; width: 48px; height: 48px; border-radius: 12px; font-size: 1.35rem; font-weight: 700; place-items: center; }
-.benefit-card h3 { margin: 46px 0 10px; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.15; letter-spacing: -.025em; }
+.benefit-card h3 { margin: 46px 0 10px; font-size: clamp(1.45rem, 2.4vw, 1.95rem); font-weight: 740; line-height: 1.06; letter-spacing: -.04em; }
 .benefit-card p { max-width: 30ch; margin: 0; color: var(--ink-secondary); font-size: var(--text-md); }
 .benefit-blue > span { color: var(--blue); background: var(--blue-bg); }
 .benefit-yellow > span { color: var(--amber); background: var(--amber-bg); }
@@ -1226,7 +1226,7 @@ a { color: inherit; }
 .quick-steps ol { margin: 0; padding: 0; list-style: none; }
 .quick-steps li { display: grid; grid-template-columns: 48px 1fr; gap: 16px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--border); }
 .quick-steps li span { color: var(--brand-ink); font-family: var(--font-mono); font-size: var(--text-sm); }
-.quick-steps li strong { font-size: clamp(1.15rem, 2vw, 1.5rem); }
+.quick-steps li strong { font-size: clamp(1.25rem, 2.2vw, 1.7rem); font-weight: 720; letter-spacing: -.03em; }
 .quick-steps > a { grid-column: 2; color: var(--brand-ink); font-weight: 750; }
 
 .landing-final {
@@ -1244,7 +1244,7 @@ a { color: inherit; }
   box-shadow: 0 1px 3px rgba(32, 32, 30, .05);
 }
 .landing-final img { width: 56px; margin: 0; mix-blend-mode: multiply; }
-.landing-final h2 { margin: 0; font-size: clamp(1.6rem, 2.8vw, 2.3rem); letter-spacing: -.03em; }
+.landing-final h2 { margin: 0; font-size: clamp(1.85rem, 3.2vw, 2.8rem); font-weight: 760; line-height: 1.04; letter-spacing: -.045em; }
 .landing-final p { margin: 5px 0 0; color: var(--ink-secondary); }
 
 @keyframes booking-drop { from { opacity: 0; transform: translateY(-28px) scale(.94); } }
@@ -1278,7 +1278,7 @@ a { color: inherit; }
   .landing-actions { gap: 9px; }
   .landing-languages a { min-width: 32px; }
   .landing-hero { padding-top: 64px; }
-  .landing-hero h1 { font-size: clamp(2.2rem, 10vw, 3rem); }
+  .landing-hero h1 { font-size: clamp(2.7rem, 13vw, 3.9rem); }
   .landing-hero .landing-lede { font-size: 1.05rem; }
   .landing-hero-actions { width: 100%; }
   .landing-button { width: 100%; }
@@ -1327,11 +1327,12 @@ a { color: inherit; }
   text-align: center;
 }
 .product-details-hero h1 {
-  max-width: 860px;
+  max-width: 920px;
   margin: 0 auto;
-  font-size: clamp(2.4rem, 4.6vw, 3.8rem);
-  line-height: 1.06;
-  letter-spacing: -.035em;
+  font-size: clamp(2.9rem, 5.8vw, 5rem);
+  font-weight: 790;
+  line-height: .96;
+  letter-spacing: -.055em;
 }
 .product-details-hero > p:not(.landing-eyebrow) {
   max-width: 720px;
@@ -1348,9 +1349,10 @@ a { color: inherit; }
 .product-faq h2,
 .product-guides h2 {
   margin: 0;
-  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
-  line-height: 1.1;
-  letter-spacing: -.035em;
+  font-size: clamp(2.3rem, 4.4vw, 3.8rem);
+  font-weight: 780;
+  line-height: 1;
+  letter-spacing: -.05em;
 }
 .product-feature-section > header > p:last-child { color: var(--ink-secondary); font-size: var(--text-lg); }
 .product-feature-list { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -1367,7 +1369,7 @@ a { color: inherit; }
 }
 .product-feature-row > span { color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-sm); }
 .product-feature-row div > p:first-child { margin: 0; font-size: var(--text-xs); font-weight: 720; letter-spacing: .07em; text-transform: uppercase; }
-.product-feature-row h3 { margin: 40px 0 10px; font-size: clamp(1.2rem, 2vw, 1.55rem); line-height: 1.18; letter-spacing: -.025em; }
+.product-feature-row h3 { margin: 40px 0 10px; font-size: clamp(1.4rem, 2.3vw, 1.85rem); font-weight: 740; line-height: 1.08; letter-spacing: -.04em; }
 .product-feature-row div > p:last-child { margin: 0; color: var(--ink-secondary); }
 .tone-blue > span, .tone-blue div > p:first-child { color: var(--blue); }
 .tone-yellow > span, .tone-yellow div > p:first-child { color: var(--amber); }
@@ -1411,12 +1413,12 @@ a { color: inherit; }
   padding: clamp(90px, 12vw, 160px) 0 clamp(100px, 12vw, 160px);
 }
 .pricing-hero-copy h1 {
-  max-width: 640px;
+  max-width: 680px;
   margin: 0;
-  font-size: clamp(2.4rem, 4.6vw, 3.8rem);
-  font-weight: 700;
-  line-height: 1.06;
-  letter-spacing: -.035em;
+  font-size: clamp(2.9rem, 5.6vw, 4.9rem);
+  font-weight: 800;
+  line-height: .95;
+  letter-spacing: -.057em;
 }
 .pricing-hero-copy > p:last-child {
   max-width: 590px;
@@ -1448,10 +1450,10 @@ a { color: inherit; }
 .pricing-price {
   display: block;
   margin-top: clamp(28px, 4vw, 44px);
-  font-size: clamp(2.3rem, 4vw, 3.4rem);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -.035em;
+  font-size: clamp(2.8rem, 5vw, 4.3rem);
+  font-weight: 800;
+  line-height: .96;
+  letter-spacing: -.055em;
 }
 .pricing-note { max-width: 40ch; margin: 13px 0 26px; color: var(--ink-secondary); font-size: var(--text-md); }
 .pricing-includes { padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--canvas-subtle); }
@@ -1474,9 +1476,10 @@ a { color: inherit; }
 .pricing-factors > header { max-width: 790px; }
 .pricing-factors h2 {
   margin: 0;
-  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
-  line-height: 1.1;
-  letter-spacing: -.035em;
+  font-size: clamp(2.3rem, 4.4vw, 3.8rem);
+  font-weight: 780;
+  line-height: 1;
+  letter-spacing: -.05em;
 }
 .pricing-factor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
 .pricing-factor-grid article {
@@ -1488,7 +1491,7 @@ a { color: inherit; }
   box-shadow: 0 1px 3px rgba(32, 32, 30, .05);
 }
 .pricing-factor-grid article > span { font-family: var(--font-mono); font-size: var(--text-xs); }
-.pricing-factor-grid h3 { margin: 44px 0 10px; font-size: clamp(1.2rem, 2vw, 1.55rem); line-height: 1.18; letter-spacing: -.025em; }
+.pricing-factor-grid h3 { margin: 44px 0 10px; font-size: clamp(1.4rem, 2.3vw, 1.85rem); font-weight: 740; line-height: 1.08; letter-spacing: -.04em; }
 .pricing-factor-grid p { margin: 0; color: var(--ink-secondary); font-size: var(--text-md); }
 .factor-blue > span { color: var(--blue); }
 .factor-yellow > span { color: var(--amber); }
@@ -1511,8 +1514,8 @@ a { color: inherit; }
   .pricing-hero,
   .pricing-factors { width: min(100% - 28px, 1120px); }
   .pricing-hero { padding-top: 65px; }
-  .pricing-hero-copy h1 { font-size: clamp(2.1rem, 9vw, 2.9rem); }
+  .pricing-hero-copy h1 { font-size: clamp(2.6rem, 12vw, 3.7rem); }
   .pricing-card { padding: 23px; box-shadow: 0 10px 28px rgba(32, 32, 30, .1); }
-  .pricing-price { font-size: clamp(2.1rem, 9vw, 2.8rem); }
+  .pricing-price { font-size: clamp(2.6rem, 12vw, 3.6rem); }
   .pricing-includes { padding: 18px; }
 }
