@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "replace the guest privacy notice shown to your guests — that notice names you (or your "
             "legal entity) as data controller."
         ),
-        "privacy.effective": "Effective date: 15 September 2026. Version 1.2.",
+        "privacy.effective": "Effective date: 18 September 2026. Version 1.3.",
         "privacy.operator_title": "Data controller for this policy",
         "privacy.footer_link": "Privacy Policy",
         "privacy.footer_short": "Privacy",
@@ -75,7 +75,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "and workspace settings; legal entity names, addresses, and contact e-mails you enter for "
             "guest notices; property and stay metadata; UbyPort or calendar integration credentials "
             "(stored encrypted at rest); audit and activity logs you generate in-app; communications "
-            "you send to us; and billing or plan information if fees apply. We do not require Host "
+            "you send to us; transactional e-mail settings and delivery records; and billing or plan "
+            "information if fees apply. We do not require Host "
             "Users to provide special categories of data about themselves unless you voluntarily "
             "include such information in free-text fields."
         ),
@@ -83,7 +84,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s05_body": (
             "When Hosts use the Service, we process Guest Data they or their Guests submit: identity "
             "and travel document details, dates of stay, nationality, addresses, signatures, "
-            "optional passport photos or PDFs uploaded for verification, house book entries, and "
+            "reservation-claim e-mail addresses, declared party size, house book entries, claim links, "
+            "incomplete-registration reminders, completion receipts (including a copy to the Host), and "
             "data formatted for transmission toward UbyPort or related police reporting channels "
             "when enabled. Purposes, legal bases, and retention for Guests are determined by the "
             "Host as controller and explained in the guest privacy notice. The Operator implements "
@@ -105,8 +107,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s07_body": (
             "The Service uses strictly necessary cookies and similar storage: signed session cookies "
             "for Host login (and optional extended duration if \"remember me\" is selected); language "
-            "preference cookies; and, on guest links, cookies that remember PIN verification or "
-            "language for a limited period. Production traffic to ubyhost.com is proxied by Cloudflare. "
+            "preference cookies; and, on guest links, cookies that remember PIN verification (up to "
+            "7 days), language, confirmed-reservation access, and forms submitted on that device "
+            "(up to 60 days). Production traffic to ubyhost.com is proxied by Cloudflare. "
             "We may use Cloudflare Turnstile on production login and, after repeated failed guest PIN "
             "attempts, on guest PIN pages; Bot Fight Mode to challenge automated traffic; leaked-credential "
             "checks that compare login attempts against known leaked-password signals at the edge "
@@ -137,8 +140,10 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Render.com (cloud hosting for staging or other tiers; commonly EU Frankfurt), DNS or "
             "CDN providers such as Cloudflare (including Turnstile, Bot Fight Mode, leaked-credential "
             "mitigation, client-side script monitoring, and HSTS when enabled for the production zone), "
-            "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and e-mail "
-            "or support tools where used. Guest Data may be transmitted to the Czech Police UbyPort "
+            "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a "
+            "transactional e-mail provider (including Amazon SES when enabled) or support tools. "
+            "Completion receipts may disclose the guest recipient address to the Host copied on the "
+            "message. Guest Data may be transmitted to the Czech Police UbyPort "
             "systems or related endpoints when a Host enables reporting — that transmission occurs on "
             "the Host's instructions as processor. We require subprocessors that process personal data "
             "on our behalf to provide appropriate safeguards (GDPR Art. 28). Material changes are "
@@ -159,7 +164,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "six-year house book rules); the Operator may retain encrypted database and key backups "
             "on the server and, when configured, encrypted off-site copies (for example weekly to "
             "Google Drive and monthly to Amazon S3) for disaster recovery for a limited period before "
-            "purging. Security logs are kept for short rolling windows unless an incident requires "
+            "purging. Completed or terminal e-mail delivery rows and staging console copies are normally "
+            "purged after 14 days; claim e-mails remain linked to retained reservations unless the Host "
+            "releases the claim. Security logs are kept for short rolling windows unless an incident requires "
             "longer storage. When retention ends, we delete or anonymise data unless statutory storage "
             "applies."
         ),
@@ -226,8 +233,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Hosts must provide lawful bases and transparent notices to Guests, respond to data subject "
             "requests, maintain records of processing where required, conduct DPIAs when appropriate, "
             "and ensure instructions to the Operator are lawful. Hosts must not upload unnecessary "
-            "special-category data. Use of passport images should be limited to what law and risk "
-            "assessment justify, with clear guest information."
+            "special-category data."
         ),
         "privacy.s20_title": "20. Changes to this Policy",
         "privacy.s20_body": (
@@ -258,7 +264,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "nenahrazují informaci pro hosty — v ní je jako správce uveden vy (nebo vaše právnická "
             "osoba)."
         ),
-        "privacy.effective": "Účinnost od: 15. září 2026. Verze 1.2.",
+        "privacy.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
         "privacy.operator_title": "Správce údajů podle těchto zásad",
         "privacy.footer_link": "Zásady ochrany osobních údajů",
         "privacy.footer_short": "Soukromí",
@@ -311,14 +317,16 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "volitelné „zapamatovat\", šifrované tajemství TOTP pro dvoufázové ověření a jednosměrné "
             "hashe obnovovacích kódů); nastavení; názvy a kontakty právnických osob pro informace "
             "hostům; metadata ubytování a pobytů; přihlašovací údaje k UbyPortu nebo kalendářům "
-            "(šifrovaně); auditní záznamy; komunikaci s námi; fakturační údaje. Zvláštní kategorie "
+            "(šifrovaně); auditní záznamy; komunikaci s námi; nastavení transakčních e-mailů a "
+            "záznamy o doručení; fakturační údaje. Zvláštní kategorie "
             "údajů o ubytovateli nevyžadujeme, pokud je sami nezadáte v textových polích."
         ),
         "privacy.s05_title": "5. Údaje hostů na pokyn ubytovatele",
         "privacy.s05_body": (
             "Při používání Služby zpracováváme údaje, které ubytovatel nebo host zadá: identitu a "
-            "doklady, termíny pobytu, státní příslušnost, adresy, podpisy, volitelné fotografie nebo "
-            "PDF pasu, záznamy domovní knihy a data pro přenos do UbyPortu či souvisejících systémů "
+            "doklady, termíny pobytu, státní příslušnost, adresy, podpisy, e-maily k převzetí rezervace, "
+            "nahlášený počet hostů, záznamy domovní knihy, odkazy k převzetí, upozornění na nedokončení, potvrzení o dokončení "
+            "(včetně kopie ubytovateli) a data pro přenos do UbyPortu či souvisejících systémů "
             "policie, pokud je funkce zapnuta. Účely, právní základy a dobu uchování pro hosty "
             "určuje ubytovatel jako správce v informaci pro hosty. Provozovatel zajišťuje technická "
             "a organizační opatření, ale ne rozhoduje o účelu zpracování údajů hostů ve smyslu GDPR."
@@ -334,7 +342,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s07_title": "7. Cookies a podobné technologie",
         "privacy.s07_body": (
             "Služba používá nezbytné cookies: relaci přihlášení ubytovatele (delší při „zapamatovat\"); "
-            "jazyk; u hostovských odkazů cookies pro PIN (omezená doba) a jazyk. Produkční provoz "
+            "jazyk; u hostovských odkazů cookies pro PIN (nejvýše 7 dní), jazyk, přístup k potvrzené "
+            "rezervaci a formuláře odeslané z daného zařízení (nejvýše 60 dní). Produkční provoz "
             "ubyhost.com zprostředkovává Cloudflare. Můžeme použít Cloudflare Turnstile na produkčním "
             "přihlášení a po opakovaných neúspěšných pokusech o PIN; Bot Fight Mode proti automatizované "
             "návštěvnosti; kontrolu uniklých přihlašovacích údajů, která na okraji sítě porovnává pokusy "
@@ -361,7 +370,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "produkci), Render.com (staging a další úrovně; často EU Frankfurt), DNS/CDN včetně "
             "Cloudflare (včetně Turnstile, Bot Fight Mode, kontroly uniklých přihlašovacích údajů, "
             "monitoringu skriptů na straně klienta a HSTS v produkční zóně), Google Drive a/nebo Amazon S3 při nastavených "
-            "off-site zálohách a případně e-mail či podpora. Údaje hostů mohou být přeneseny do "
+            "off-site zálohách, poskytovatel transakčních e-mailů (včetně Amazon SES po zapnutí) "
+            "a případně podpora. Kopie potvrzení o dokončení může ubytovateli zpřístupnit adresu "
+            "hosta uvedenou jako příjemce. Údaje hostů mohou být přeneseny do "
             "UbyPort Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít "
             "vhodné záruky (čl. 28 GDPR). Podstatné změny promítneme do těchto Zásad."
         ),
@@ -377,7 +388,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "a zákonu. Údaje hostů řídí nastavení a povinnosti ubytovatele (včetně typické šestileté "
             "domovní knihy); Provozovatel může uchovávat šifrované zálohy databáze a klíčů na serveru "
             "a při nastavení off-site kopie (např. týdně na Google Drive a měsíčně na Amazon S3) pro "
-            "obnovu po havárii po omezenou dobu. Bezpečnostní logy po krátkou dobu. Po uplynutí mažeme "
+            "obnovu po havárii po omezenou dobu. Dokončené či konečné záznamy doručení a konzolové "
+            "kopie ve stagingu se běžně mažou po 14 dnech; e-mail k převzetí zůstává spojen s uchovanou "
+            "rezervací, pokud ubytovatel převzetí neuvolní. Bezpečnostní logy po krátkou dobu. Po uplynutí mažeme "
             "nebo anonymizujeme, pokud zákon nevyžaduje jinak."
         ),
         "privacy.s12_title": "12. Bezpečnost",
@@ -429,8 +442,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s19_title": "19. Povinnosti ubytovatele jako správce",
         "privacy.s19_body": (
             "Ubytovatel musí hostům sdělit právní základy a informace, vyřizovat žádosti subjektů, vést "
-            "záznamy, provádět DPIA kde je třeba a dávat Provozovateli jen zákonné pokyny. Fotografie "
-            "pasů jen v nezbytném rozsahu s jasnou informací pro hosty."
+            "záznamy, provádět DPIA kde je třeba a dávat Provozovateli jen zákonné pokyny."
         ),
         "privacy.s20_title": "20. Změny Zásad",
         "privacy.s20_body": (

@@ -420,6 +420,25 @@ def test_legal_entity_rows_are_clickable_and_can_be_archived():
         _clean_accounts()
 
 
+def test_host_admin_portal_shows_ubyhost_support_email():
+    db.init_db()
+    _clean_accounts()
+    _account("boundary-support")
+    try:
+        host = _login("boundary-support")
+        overview = host.get("/")
+        assert overview.status_code == 200
+        assert 'href="mailto:support@ubyhost.com"' in overview.text
+        assert "support@ubyhost.com" in overview.text
+        settings = host.get("/settings")
+        assert settings.status_code == 200
+        assert "UbyHost support" in settings.text
+        assert "support@ubyhost.com" in settings.text
+        assert "Guests with a stay question" in settings.text
+    finally:
+        _clean_accounts()
+
+
 def test_settings_archived_hub_lists_and_restores_entities():
     db.init_db()
     _clean_accounts()
@@ -548,7 +567,10 @@ def test_privacy_page_shows_operator_identity():
     assert "24005169" in response.text
     assert "Privacy Policy" in response.text or "Zásady ochrany osobních údajů" in response.text
     assert "ÚOOÚ" in response.text or "uoou.cz" in response.text
-    assert "Version 1.2" in response.text or "Verze 1.2" in response.text
+    assert (
+        f"Version {config.PRIVACY_VERSION}" in response.text
+        or f"Verze {config.PRIVACY_VERSION}" in response.text
+    )
     assert "Bot Fight Mode" in response.text
     assert "HSTS" in response.text
 
@@ -704,13 +726,17 @@ def test_every_id_route_is_ownership_scoped():
     assert not unscoped, f"routes reachable by id without ownership scoping: {unscoped}"
 
 
-def test_production_without_accounts_fails_closed(monkeypatch):
+def test_production_without_accounts_only_exposes_the_public_landing_page(monkeypatch):
     db.init_db()
     _clean_accounts()
     monkeypatch.setattr(config, "BOOTSTRAP_ADMIN", False)
     monkeypatch.setattr(config, "DEPLOYMENT", "production")
 
-    response = TestClient(app).get("/", follow_redirects=False)
+    client = TestClient(app)
+    response = client.get("/", follow_redirects=False)
 
-    assert response.status_code == 303
-    assert response.headers["location"].startswith("/login")
+    assert response.status_code == 200
+    assert "UbyHost" in response.text
+    private = client.get("/settings", follow_redirects=False)
+    assert private.status_code == 303
+    assert private.headers["location"].startswith("/login")

@@ -49,7 +49,7 @@ def test_test_endpoint_allowed_on_lightsail_production():
         scheduler_enabled=True,
         public_base_url="https://ubyhost.com",
         domain="ubyhost.com",
-        environ={},
+        environ={"UBYHOST_MAIL_BACKEND": "disabled"},
     )
     assert warnings == ["guest e-mail is disabled on production"]
 
@@ -62,7 +62,7 @@ def test_prod_allowed_on_lightsail_production():
         scheduler_enabled=True,
         public_base_url="https://ubyhost.com",
         domain="ubyhost.com",
-        environ={},
+        environ={"UBYHOST_MAIL_BACKEND": "disabled"},
     )
     assert warnings == ["guest e-mail is disabled on production"]
 

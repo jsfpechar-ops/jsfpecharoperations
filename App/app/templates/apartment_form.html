@@ -211,8 +211,8 @@
         <label for="automation_mode">{{ t('automation.timing_title') }}</label>
         <select id="automation_mode" name="automation_mode"
                 data-automation-mode data-hours-target="submit_after_hours">
-          <option value="manual" selected>{{ t('automation.mode.manual') }}</option>
-          <option value="scheduled">{{ t('apartment.form.automation.mode.scheduled') }}</option>
+          <option value="manual">{{ t('automation.mode.manual') }}</option>
+          <option value="scheduled" selected>{{ t('apartment.form.automation.mode.scheduled') }}</option>
           <option value="immediate">{{ t('automation.mode.immediate') }}</option>
         </select>
       </div>
@@ -237,6 +237,12 @@
 
   <div class="panel" id="communication">
     <h2 style="margin-top:0">{{ t('nav.guest_links') }}</h2>
+    <div class="field">
+      <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <textarea id="guest_message" name="guest_message" maxlength="1000"
+                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ apartment.guest_message or '' if editing else '' }}</textarea>
+      <div class="hint">{{ t('apartment.form.guest_message.hint') }}</div>
+    </div>
     {% if editing %}
       <p class="small muted" style="margin-top:-4px">
         {{ t('apartment.form.guest_link.lede') }}
@@ -259,14 +265,6 @@
         <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
                value="{{ apartment.permalink_window_days }}">
         <div class="hint">{{ t('apartment.form.guest_link.window_hint') }}</div>
-      </div>
-      <div class="field" style="max-width:320px">
-        <label for="passport_photo_policy">{{ t('apartment.form.passport_policy.label') }}</label>
-        <select id="passport_photo_policy" name="passport_photo_policy">
-          <option value="off" {% if (apartment.passport_photo_policy if editing else 'off') != 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.off') }}</option>
-          <option value="required_foreign" {% if editing and apartment.passport_photo_policy == 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.required') }}</option>
-        </select>
-        <div class="hint">{{ t('apartment.form.passport_policy.hint') }}</div>
       </div>
       <details class="message-details" open>
         <summary>{{ t('guest_links.message_title') }}</summary>

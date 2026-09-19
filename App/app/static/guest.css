@@ -141,6 +141,17 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 }
 .g-intro { font-size: 14.5px; color: var(--g-muted); margin: 0 0 16px; }
 
+.g-host-message {
+  border-color: color-mix(in srgb, var(--g-accent) 30%, var(--g-line));
+  background: color-mix(in srgb, var(--g-accent) 5%, var(--g-surface));
+}
+.g-host-message p:last-child {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
 .g-host-info p { margin: 0 0 14px; font-size: 15px; line-height: 1.55; color: var(--g-ink-2); }
 .g-host-info strong {
   display: block;

@@ -140,11 +140,11 @@
     <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
     <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
     <div class="metric-note">
-      {% if progress.status == 'ready' and reservation.automation_mode == 'immediate' %}
+      {% if progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'immediate' %}
         {{ t('stay.detail.note.ready_immediate') }}
       {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
         {{ t('stay.detail.note.ready_manual') }}
-      {% elif progress.status == 'ready' and reservation.automation_mode == 'scheduled' %}
+      {% elif progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'scheduled' %}
         {{ t('stay.detail.note.ready_scheduled', hours=reservation.submit_after_hours) }}
       {% else %}
         {{ t('stay.detail.note.automation') }}
@@ -243,9 +243,6 @@
         <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form guest-card-action">
           <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
           <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
-          {% if row.has_passport_photo %}
-            <a class="small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('host.verify_view_photo') }}</a>
-          {% endif %}
         </form>
       {% endif %}
       {% if guest.note %}

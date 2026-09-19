@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#faf6f2">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}UbyHost{% endblock %}</title>
+  {% include "_seo_head.html" %}
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
@@ -109,6 +110,10 @@
         <a href="/privacy">{{ t('privacy.footer_short') }}</a>
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/dpa">{{ t('dpa.footer_short') }}</a>
+        {% if operator().email %}
+          <span class="sidebar-footer-sep" aria-hidden="true">·</span>
+          <a href="mailto:{{ operator().email }}">{{ t('nav.support') }} — {{ operator().email }}</a>
+        {% endif %}
       </nav>
       <div class="sidebar-footer-row">
         <form method="post" action="/language" class="lang-switch compact">

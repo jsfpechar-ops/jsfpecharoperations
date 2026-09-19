@@ -6,7 +6,7 @@ import re
 from fastapi.testclient import TestClient
 from fastapi.responses import Response
 
-from app import auth, client_ip, config, db, rate_limit, security
+from app import auth, client_ip, config, db, host_i18n, rate_limit, security
 from app.main import app
 from app.routes import admin as admin_routes
 from tests.test_accounts import _account, _clean_accounts, _login
@@ -434,7 +434,10 @@ def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
         # Login says it too. It is where a host who keeps a practice instance
         # alongside a real one finds out they opened the wrong one, which is
         # the cheapest moment to correct. It discloses nothing new: /healthz
-        # already reports the environment without any authentication.
-        assert "Nothing is being reported" in TestClient(app).get("/login").text
+        # already reports the environment without any authentication. The
+        # signed-out page answers in Czech unless the visitor asks otherwise.
+        signed_out = TestClient(app).get("/login").text
+        assert host_i18n.translate("cs", "env.mock_title") in signed_out
+        assert "Nothing is being reported" in TestClient(app).get("/login?lang=en").text
     finally:
         _clean_accounts()

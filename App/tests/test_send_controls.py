@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import base64
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from app import db, reporting
 
@@ -139,9 +139,131 @@ def test_count_sendable_stays_includes_ready_manual_stays():
 
 
 def test_status_label_reflects_automation():
-    assert reporting.status_label("ready", "immediate") == "Verified — auto-send after you confirm"
+    assert reporting.status_label("ready", "immediate") == "Complete — sending automatically"
+    assert (
+        reporting.status_label("awaiting_verification", "scheduled")
+        == "Complete — scheduled send"
+    )
     assert reporting.status_label("awaiting_guest", "immediate") == "Waiting for guest"
     assert reporting.status_label("ready", "manual") == "Ready — send manually"
+
+
+def test_scheduled_mode_waits_from_registration_completion():
+    apartment, reservation, _guest_id = _seed("scheduled", "tok-completion-delay")
+    completed = "2026-09-18T12:00:00+00:00"
+    reporting.refresh_registration_completed_at(reservation["id"], completed)
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ?", (reservation["id"],)
+    )
+
+    assert not reporting.due_for_automatic_send(
+        apartment,
+        reservation,
+        datetime(2026, 9, 19, 11, 59, tzinfo=timezone.utc),
+    )
+    assert reporting.due_for_automatic_send(
+        apartment,
+        reservation,
+        datetime(2026, 9, 19, 12, 0, tzinfo=timezone.utc),
+    )
+
+
+def test_immediate_mode_sends_only_when_all_declared_forms_are_complete(monkeypatch):
+    apartment, reservation, guest_id = _seed("immediate", "tok-completion-now")
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    db.update(
+        "reservation",
+        reservation["id"],
+        {"expected_guests_override": 2, "registration_completed_at": None},
+    )
+    calls = []
+    monkeypatch.setattr(
+        reporting,
+        "submit_for_apartment",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or [],
+    )
+
+    reporting.maybe_submit_after_completion(apartment["id"], reservation["id"])
+    assert calls == []
+    assert not db.query_one(
+        "SELECT registration_completed_at FROM reservation WHERE id = ?",
+        (reservation["id"],),
+    )["registration_completed_at"]
+
+    db.update(
+        "reservation", reservation["id"], {"expected_guests_override": 1}
+    )
+    reporting.maybe_submit_after_completion(apartment["id"], reservation["id"])
+
+    assert len(calls) == 1
+    assert calls[0][0] == (apartment["id"],)
+    assert calls[0][1]["only_guest_ids"] == [guest_id]
+    assert calls[0][1]["ignore_automation"] is True
+    assert db.query_one(
+        "SELECT registration_completed_at FROM reservation WHERE id = ?",
+        (reservation["id"],),
+    )["registration_completed_at"]
+
+
+def test_completion_timestamp_clears_if_party_becomes_incomplete():
+    _apartment, reservation, _guest_id = _seed(
+        "scheduled", "tok-completion-reset"
+    )
+    reporting.refresh_registration_completed_at(
+        reservation["id"], "2026-09-18T12:00:00+00:00"
+    )
+    db.update(
+        "reservation", reservation["id"], {"expected_guests_override": 2}
+    )
+
+    assert reporting.refresh_registration_completed_at(reservation["id"]) is None
+    assert not db.query_one(
+        "SELECT registration_completed_at FROM reservation WHERE id = ?",
+        (reservation["id"],),
+    )["registration_completed_at"]
+
+
+def test_delayed_automation_does_not_wait_for_identity_verification():
+    apartment, reservation, guest_id = _seed(
+        "scheduled", "tok-completion-unverified"
+    )
+    db.update(
+        "guest",
+        guest_id,
+        {"identity_verified_at": None, "identity_verified_by": None},
+    )
+    completed = datetime.now(timezone.utc) - timedelta(hours=25)
+    reporting.refresh_registration_completed_at(
+        reservation["id"], completed.replace(microsecond=0).isoformat()
+    )
+
+    pairs = reporting.collect_sendable(apartment["id"])
+
+    assert [guest["id"] for guest, _reservation in pairs] == [guest_id]
+    assert not db.query_one(
+        "SELECT identity_verified_at FROM guest WHERE id = ?", (guest_id,)
+    )["identity_verified_at"]
+
+
+def test_legacy_completed_reservation_is_not_auto_eligible_on_deploy():
+    apartment, reservation, guest_id = _seed(
+        "immediate", "tok-legacy-complete"
+    )
+    assert not reservation["registration_completed_at"]
+
+    assert not reporting.due_for_automatic_send(apartment, reservation)
+    assert reporting.collect_sendable(apartment["id"]) == []
+    assert db.query_one(
+        "SELECT submit_state FROM guest WHERE id = ?", (guest_id,)
+    )["submit_state"] == reporting.PENDING
+    assert not db.query_one(
+        "SELECT registration_completed_at FROM reservation WHERE id = ?",
+        (reservation["id"],),
+    )["registration_completed_at"]
 
 
 def test_unverified_foreign_guest_can_send():
@@ -169,23 +291,6 @@ def test_foreign_guest_online_checkin_complete_without_passport_photo():
     )
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
     assert reporting.guest_is_complete(guest, reservation)
-
-
-def test_ensure_identity_verified_for_send_marks_guest_on_send():
-    _apartment, _reservation, guest_id = _seed("manual", "tok-on-send")
-    db.update(
-        "guest",
-        guest_id,
-        {"identity_verified_at": None, "identity_verified_by": None},
-    )
-    reporting.ensure_identity_verified_for_send([guest_id], verified_by_user_id=None)
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
-    assert guest["identity_verified_at"]
-    assert guest["identity_verified_by"] is None
-    audit = db.query_one(
-        "SELECT * FROM audit WHERE action = 'guest_identity_verified' ORDER BY id DESC LIMIT 1"
-    )
-    assert "on_send=1" in (audit["detail"] or "")
 
 
 def test_unsigned_foreign_guest_blocks_send():

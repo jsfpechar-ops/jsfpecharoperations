@@ -259,6 +259,12 @@ def command_palette(request: Request):
 
 @router.get("/")
 def dashboard(request: Request):
+    if not auth.current_user(request):
+        return render(
+            request,
+            "landing.html",
+            {"show_nav": False, "open_alerts": []},
+        )
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -558,12 +564,14 @@ APARTMENT_TEXT_FIELDS = (
     "uby_name",
     "uby_contact",
     "uby_ws_user",
+    "guest_message",
     "notes",
 )
 
 
 def _apartment_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = {field: _form_str(form, field) for field in APARTMENT_TEXT_FIELDS}
+    payload["guest_message"] = payload["guest_message"][:1000]
     payload["uby_mark"] = payload["uby_mark"].upper()
     payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
     payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
@@ -571,10 +579,9 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
-    policy = _form_str(form, "passport_photo_policy", "off")
-    payload["passport_photo_policy"] = (
-        policy if policy in ("off", "required_foreign") else "off"
-    )
+    # Passport uploads are retired. Preserve the column for a non-destructive
+    # migration, but every saved property is forced to the disabled policy.
+    payload["passport_photo_policy"] = "off"
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
@@ -1225,6 +1232,14 @@ async def reservation_update(reservation_id: int, request: Request):
         row = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
         if row:
             claim.expire_on_cancel(row)
+    else:
+        current = db.query_one(
+            "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
+        )
+        if current:
+            reporting.maybe_submit_after_completion(
+                current["apartment_id"], reservation_id
+            )
     return _back(f"/reservations/{reservation_id}", msg="Saved.")
 
 
@@ -1246,6 +1261,9 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
     db.update("reservation", reservation_id, payload)
+    reporting.maybe_submit_after_completion(
+        reservation["apartment_id"], reservation_id
+    )
     if request.headers.get("X-Requested-With") == "fetch":
         return JSONResponse({"ok": True})
     return _back(f"/reservations/{reservation_id}", msg="Saved.")
@@ -1622,28 +1640,6 @@ async def guest_verify_identity(guest_id: int, request: Request):
     return _back(return_to, msg="ID check recorded.")
 
 
-@router.get("/guests/{guest_id}/passport-photo")
-def guest_passport_photo(guest_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    guest = access.guest(request, guest_id)
-    if not guest or not reporting.guest_has_passport_photo(guest):
-        return Response("Not found.", status_code=404)
-    payload = passport_photos.read_photo(guest_id)
-    if not payload:
-        return Response("Not found.", status_code=404)
-    content, media_type = payload
-    return Response(
-        content,
-        media_type=media_type,
-        headers={
-            "Cache-Control": "no-store",
-            "Content-Security-Policy": "sandbox; default-src 'none'",
-        },
-    )
-
-
 @router.post("/guests/{guest_id}/archive")
 async def guest_archive(guest_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1663,6 +1659,14 @@ async def guest_archive(guest_id: int, request: Request):
     return_to = security.safe_local_path(str(form.get("return_to") or ""), "/housebook")
     db.update("guest", guest_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("guest_archived", f"id={guest_id}")
+    reservation = db.query_one(
+        "SELECT apartment_id FROM reservation WHERE id = ?",
+        (guest["reservation_id"],),
+    )
+    if reservation:
+        reporting.maybe_submit_after_completion(
+            reservation["apartment_id"], guest["reservation_id"]
+        )
     return _back(return_to, msg="House-book entry archived. Restore it from the archive below.")
 
 
@@ -1680,6 +1684,14 @@ async def guest_unarchive(guest_id: int, request: Request):
         return _back(return_to, err="Not archived.")
     db.update("guest", guest_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("guest_unarchived", f"id={guest_id}")
+    reservation = db.query_one(
+        "SELECT apartment_id FROM reservation WHERE id = ?",
+        (guest["reservation_id"],),
+    )
+    if reservation:
+        reporting.maybe_submit_after_completion(
+            reservation["apartment_id"], guest["reservation_id"]
+        )
     return _back(return_to, msg="House-book entry restored.")
 
 
@@ -1700,6 +1712,13 @@ def guest_delete(guest_id: int, request: Request):
     passport_photos.delete_photo(guest_id)
     db.execute("DELETE FROM guest WHERE id = ?", (guest_id,))
     db.audit("guest_deleted", f"id={guest_id}")
+    reservation = db.query_one(
+        "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    if reservation:
+        reporting.maybe_submit_after_completion(
+            reservation["apartment_id"], reservation_id
+        )
     return _back(f"/reservations/{reservation_id}", msg="Guest removed.")
 
 

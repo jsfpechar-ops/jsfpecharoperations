@@ -60,29 +60,53 @@ Verify both services: `curl https://<host>/healthz` should return JSON with
 
 ## Guest e-mail (staging first)
 
-Claim links and reminders are **not** delivered on production yet.
+Claim links, the guest's single day-before incomplete-registration reminder, host incomplete-registration warnings, and completion receipts are **not** delivered on production until SES is deliberately enabled.
 
 | Host | `UBYHOST_MAIL_BACKEND` | Where messages go |
 |------|------------------------|-------------------|
 | **ubyhost-staging** (Render) | `console` | Settings → Guest e-mails (copy the `#c=` confirmation link) |
-| **Lightsail production** | `disabled` | Nothing is queued or sent |
-| SES | refused unless `UBYHOST_DEPLOYMENT=production` and credentials are complete | Not enabled in this rollout |
+| **Lightsail production** | `disabled` (default) | Nothing is queued or sent |
+| **Lightsail + SES** | `ses` only when `UBYHOST_DEPLOYMENT=production` and credentials are complete | Amazon SES (`eu-central-1`) |
 
-After a manual deploy of this branch to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` must keep `UBYHOST_MAIL_BACKEND=disabled`.
+After a manual deploy of a claim build to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` must keep `UBYHOST_MAIL_BACKEND=disabled` until the [SES enablement runbook](SES.md) is complete (domain DKIM/MAIL FROM verified, IAM keys, `_send_ses` deployed, then `.env` flip).
+
+**Contact split:** the host admin portal (sidebar and Settings) shows **`support@ubyhost.com`** for software questions. The guest form shows the **host** legal-entity name, e-mail, and phone for anything about the stay. Do not send guests to UbyHost support for bookings.
+
+### Required owner acceptance before production
+
+Do **not** promote this guest-claim build to production until the product owner has personally tested it on **ubyhost-staging** and explicitly approved the exact revision. Keep production guest mail disabled during review.
+
+The staging acceptance check covers:
+
+- host sidebar and Settings show `support@ubyhost.com`;
+- property legal-entity name, e-mail, and phone appear on the guest form;
+- the optional per-property custom guest message can be saved, edited, cleared, and renders with line breaks;
+- PIN, date selection, guest count, e-mail claim, explicit magic-link confirmation, masked assignment, and lock/reopen/release work;
+- incomplete claimed forms remain open after check-in until finished or explicitly locked by the host, the host receives the check-in-day warning, and stay-specific links keep incomplete past stays reachable;
+- immediate reporting sends only after the whole declared party is complete; delayed reporting uses the saved completion time plus the configured hours (24 by default), then sends without host verification;
+- check-in visibility, one day-before guest reminder, host incomplete-registration warning, completion receipt/CC, absence of passport-upload controls, and all three reporting gates behave as configured; verify reminder deduplication;
+- English and Czech guest flows are clear;
+- console mail contains the expected messages without contacting real guests.
+
+After approval, deploy the code and database migration first with `UBYHOST_MAIL_BACKEND=disabled` and UbyPort still on `test`. Back up production and run smoke checks before separately enabling SES or real UbyPort reporting. A failed check returns the revision to staging.
 
 ## Promotion workflow (staging → production)
 
 Use this whenever you ship a change that affects hosts or guests.
 
-1. **Merge to `main`** — GitHub Actions must pass (tests + smoke).
-2. **Staging** (optional) — Render → **`ubyhost-staging`** → Manual Deploy.
-3. **Production (Lightsail)** — SSH to the instance, then:
+1. **Staging** (required for this build) — Render → **`ubyhost-staging`** → Manual Deploy of the PR branch. Record the tested commit and obtain explicit product-owner approval using the checklist above.
+2. **Merge the approved revision to `main`** — GitHub Actions must pass (tests + smoke). Keep `LIGHTSAIL_AUTO_DEPLOY=0` until the owner approves production deployment.
+3. **Production (Lightsail)** — after approval and green CI, SSH to the instance, then:
    ```bash
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
    ```
    Or GitHub → **Actions → Deploy production → Run workflow** (`workflow_dispatch`).
-   CI-triggered deploys after green `main` run when SSH secrets are set (default on). Set `LIGHTSAIL_AUTO_DEPLOY=0` to pause.
+   CI-triggered deploys after green `main` run when SSH secrets are set (default on). For this build, keep `LIGHTSAIL_AUTO_DEPLOY=0` until the owner’s staging acceptance and production approval are recorded.
+   `deploy.sh` refuses to replace a running release unless it can create and
+   integrity-check a SQLite backup first. It then dry-runs the new schema
+   migration against a copy of that backup and compares critical live table
+   row counts after startup.
 4. **Smoke production** — `./scripts/status.sh` and `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`

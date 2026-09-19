@@ -20,7 +20,7 @@ import re
 import secrets
 import time
 import zipfile
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import alerts, codelists, config, db, deadlines, passport_photos, validation
@@ -149,29 +149,8 @@ def guest_has_passport_photo(guest) -> bool:
 
 
 def guest_needs_passport_photo(guest, apartment=None) -> bool:
-    """Online foreign guests upload a photo only when the property requires it."""
-    if apartment is None:
-        reservation = db.query_one(
-            "SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],)
-        )
-        if not reservation:
-            return False
-        apartment = db.query_one(
-            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
-        )
-    policy = "off"
-    if apartment is not None:
-        try:
-            policy = (apartment["passport_photo_policy"] or "off").strip().lower()
-        except (KeyError, IndexError, TypeError):
-            policy = "off"
-    if policy != "required_foreign":
-        return False
-    return (
-        validation.guest_is_reportable(guest["nationality"])
-        and _guest_entered_by(guest) != "host"
-        and not guest_identity_verified(guest)
-    )
+    """Passport uploads are retired; retained for upgrade compatibility."""
+    return False
 
 
 def guest_issues(guest, reservation) -> List[validation.Issue]:
@@ -345,16 +324,16 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
 
 def status_label(status: str, automation_mode: Optional[str] = None) -> str:
     """Human label for a stay's reporting status, with automation context."""
+    if status in ("ready", "awaiting_verification") and automation_mode == "immediate":
+        return "Complete — sending automatically"
+    if status in ("ready", "awaiting_verification") and automation_mode == "scheduled":
+        return "Complete — scheduled send"
     if status == "awaiting_verification":
         return "Verify passport before reporting"
     if status in ("awaiting_guest", "incomplete") and automation_mode == "immediate":
         return "Waiting for guest"
-    if status == "ready" and automation_mode == "immediate":
-        return "Verified — auto-send after you confirm"
     if status == "ready" and automation_mode == "manual":
         return "Ready — send manually"
-    if status == "ready" and automation_mode == "scheduled":
-        return "Ready — scheduled send"
     return STATUS_LABELS.get(status, status)
 
 
@@ -417,27 +396,81 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
 
 def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
-    """Immediate automation after host save or ID check (never on raw guest save)."""
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
-    if not apartment or apartment["automation_mode"] != "immediate":
-        return
+    """Compatibility wrapper for callers that have a guest id."""
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
-    if not guest:
+    if guest:
+        maybe_submit_after_completion(apartment_id, guest["reservation_id"])
+
+
+def refresh_registration_completed_at(
+    reservation_id: int, completed_at: Optional[str] = None
+) -> Optional[str]:
+    """Persist the first instant all declared guest forms became complete."""
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    if not reservation:
+        return None
+    progress = reservation_progress(reservation)
+    complete = (
+        progress["expected"] is not None
+        and progress["filled"] >= progress["expected"]
+        and not progress["incomplete"]
+    )
+    existing = reservation["registration_completed_at"]
+    if complete and not existing:
+        candidate = completed_at or db.utcnow()
+        db.execute(
+            "UPDATE reservation SET registration_completed_at = ?, updated_at = ? "
+            "WHERE id = ? AND registration_completed_at IS NULL",
+            (candidate, db.utcnow(), reservation_id),
+        )
+        existing = db.query_one(
+            "SELECT registration_completed_at FROM reservation WHERE id = ?",
+            (reservation_id,),
+        )["registration_completed_at"]
+    elif not complete and existing:
+        db.update(
+            "reservation",
+            reservation_id,
+            {"registration_completed_at": None, "updated_at": db.utcnow()},
+        )
+        existing = None
+    return existing
+
+
+def maybe_submit_after_completion(apartment_id: int, reservation_id: int) -> None:
+    """Send an immediate-mode stay once every declared form is complete."""
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
         return
-    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
+    completed_at = refresh_registration_completed_at(reservation_id)
+    if not completed_at or apartment["automation_mode"] != "immediate":
+        return
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ?", (reservation_id,)
+    )
     if not reservation or reservation["status"] != "active":
         return
-    if not guest_is_complete(guest, reservation) or not validation.guest_is_reportable(guest["nationality"]):
-        return
-    if guest["submit_state"] == SENT:
-        return
+    guest_ids = [
+        row["id"]
+        for row in db.query(
+            "SELECT id FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
+            (reservation_id,),
+        )
+    ]
     try:
-        submit_for_apartment(apartment_id, only_guest_ids=[guest_id], mode="immediate", ignore_automation=True)
+        submit_for_apartment(
+            apartment_id,
+            only_guest_ids=guest_ids,
+            mode="completion_immediate",
+            ignore_automation=True,
+        )
     except Exception as exc:
         alerts.raise_alert(
             "warning",
             "submission_immediate",
-            f"{apartment['internal_name']}: auto-send failed after the form was saved.",
+            f"{apartment['internal_name']}: automatic send failed after registration completed.",
             str(exc),
             dedupe_key=f"submission_immediate:{apartment_id}",
             apartment_id=apartment_id,
@@ -445,13 +478,13 @@ def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
 
 
 def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
-    """Host-entered records are verified on save; immediate mode may send then."""
+    """Re-evaluate completion after a host saves a guest."""
     try_immediate_submit(apartment_id, guest_id)
 
 
 def maybe_submit_after_verify(apartment_id: int, guest_id: int) -> None:
-    """Immediate automation fires once the host confirms passport details."""
-    try_immediate_submit(apartment_id, guest_id)
+    """Verification no longer gates automatic submission."""
+    return None
 
 
 def count_sendable_stays(reservations: List[Any]) -> int:
@@ -468,18 +501,29 @@ def count_sendable_stays(reservations: List[Any]) -> int:
 
 
 def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
-    """Whether the apartment's automation setting says to send this now."""
-    now = deadlines.local_now(now)
+    """Whether completion-based automation says to send this stay now."""
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
-    if mode == "immediate":
+    # Do not backfill this during a scheduler sweep. Existing production
+    # reservations predate completion-based automation and must not suddenly
+    # become eligible merely because the new code was deployed.
+    completed_at = reservation["registration_completed_at"]
+    if not completed_at:
         return False
-    start = validation.parse_iso_date(reservation["date_from"])
-    if not start:
+    try:
+        completed = datetime.fromisoformat(completed_at)
+    except (TypeError, ValueError):
         return False
-    delay = timedelta(hours=apartment["submit_after_hours"] or 24)
-    return now >= datetime.combine(start, datetime.min.time()) + delay
+    if completed.tzinfo is None:
+        completed = completed.replace(tzinfo=timezone.utc)
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    delay = timedelta(
+        hours=0 if mode == "immediate" else (apartment["submit_after_hours"] or 24)
+    )
+    return current.astimezone(timezone.utc) >= completed.astimezone(timezone.utc) + delay
 
 
 # --- client construction -------------------------------------------------
@@ -536,14 +580,6 @@ def record_host_identity_confirmation(
     )
 
 
-def ensure_identity_verified_for_send(
-    guest_ids: List[int], verified_by_user_id: Optional[int]
-) -> None:
-    """Mark reportable guests verified when the host sends to UbyPort."""
-    for guest_id in guest_ids:
-        record_host_identity_confirmation(guest_id, verified_by_user_id, on_send=True)
-
-
 # --- submission ----------------------------------------------------------
 
 def blocked_as_duplicate(guest) -> bool:
@@ -598,8 +634,6 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if not guest_is_complete(guest, reservation):
             continue
         if not ignore_automation:
-            if apartment["automation_mode"] == "immediate" and not guest_identity_verified(guest):
-                continue
             if not due_for_automatic_send(apartment, reservation):
                 continue
         out.append((guest, reservation))
@@ -726,9 +760,6 @@ def submit_batch(
                     "updated_at": now,
                 },
             )
-            record_host_identity_confirmation(
-                guest["id"], verified_by_user_id, on_send=True
-            )
             accepted_count += 1
         else:
             new_state = BLOCKED if state == "not_correctable" else ERROR
@@ -749,9 +780,6 @@ def submit_batch(
                 update_values["submitted_at"] = guest["submitted_at"] or now
             db.update("guest", guest["id"], update_values)
             if new_state == SENT:
-                record_host_identity_confirmation(
-                    guest["id"], verified_by_user_id, on_send=True
-                )
                 if guest["submit_state"] == SENT:
                     blocked_count += 1
                 else:

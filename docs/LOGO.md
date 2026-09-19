@@ -64,8 +64,8 @@ All live under `App/app/static/`.
 
 | File | Version | Use |
 | --- | --- | --- |
-| `ubyhost-mark.png` | Mark only, 512 × 512 | Sidebar, mobile app bar, onboarding |
-| `ubyhost-logo.png` | Horizontal, 1200 × 272 | Login form (left) |
+| `ubyhost-mark.png` | Mark only, 512 × 512 | Sidebar, mobile app bar, onboarding, landing accents |
+| `ubyhost-logo.png` | Horizontal, 1200 × 272 | Login form (left), public landing and guide headers |
 | `ubyhost-logo-stacked.png` | Stacked, 900 × 730 | Login hero (right) |
 | `ubyhost-logo.jpg` | Horizontal on white | E-mail / signature |
 | `favicon.png` | Mark only, 64 × 64 | Browser tab (host, guest, auth) |
@@ -79,6 +79,7 @@ Templates:
 - Login / password: `App/app/templates/auth_base.html`
 - Host chrome: `App/app/templates/base.html`
 - Guest form: `App/app/templates/guest/base.html`
+- Public landing / guide: `App/app/templates/landing.html`, `public_guide.html`
 - Onboarding card: `App/app/templates/_components.html`
 
 ## Placements and display sizes
@@ -93,6 +94,8 @@ large enough for 2× screens.
 | Admin sidebar, top left | `ubyhost-mark.png` + live “UbyHost” | `.sidebar-brand .brand-logo` | **28 × 28 px** | lavender-tinted white → `#FFFFFF` |
 | Mobile app bar | `ubyhost-mark.png` | `.appbar .brand-logo` | **24 × 24 px** | translucent white |
 | Onboarding welcome | `ubyhost-mark.png` | `.onboarding-logo` | **120 px** wide | `#FFFFFF` |
+| Public landing / guide header | `ubyhost-logo.png` | `.landing-brand img` | **152 px** wide | `#F7F7F5` |
+| Landing workflow step (on coral) | `ubyhost-mark.png` | `.workflow-mark img` | **22 × 22 px**, inverted to white | `--brand` |
 | Browser tab | `favicon.png` | `<link rel="icon">` | **64 × 64** (browser scales to ~16–32) | browser chrome |
 | Home screen | `apple-touch-icon.png` | `<link rel="apple-touch-icon">` | **180 × 180** | `#F7F7F5` |
 | E-mail signature | `ubyhost-logo.jpg` | `width="180"` HTML attribute | **180 px** wide | baked-in white |

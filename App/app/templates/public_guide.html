@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{{ guide.title }} · UbyHost</title>
+  <meta name="description" content="{{ guide.description }}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {% for code, href in alternate_urls %}
+  <link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
+  {% endfor %}
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="UbyHost">
+  <meta property="og:title" content="{{ guide.title }}">
+  <meta property="og:description" content="{{ guide.description }}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+  <link rel="stylesheet" href="/static/landing.css?v=20260919b">
+  <script type="application/ld+json">
+  {{ {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": guide.title,
+    "description": guide.description,
+    "inLanguage": lang,
+    "datePublished": "2026-09-19",
+    "dateModified": "2026-09-19",
+    "mainEntityOfPage": canonical_url,
+    "author": {"@type": "Organization", "name": "UbyHost", "url": public_base_url ~ "/"},
+    "publisher": {"@type": "Organization", "name": "UbyHost", "url": public_base_url ~ "/"}
+  } | tojson }}
+  </script>
+</head>
+<body>
+  <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
+  <header class="landing-header">
+    <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
+      <img src="/static/ubyhost-logo.png" alt="UbyHost">
+    </a>
+    <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
+      <a href="/?lang={{ lang }}#features">{{ t('landing.nav.features') }}</a>
+      <a href="/?lang={{ lang }}#how">{{ t('landing.nav.how') }}</a>
+      <a href="/?lang={{ lang }}#questions">{{ t('landing.nav.faq') }}</a>
+    </nav>
+    <div class="landing-actions">
+      <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
+        <a href="/pruvodce/{{ current_slug }}?lang=cs" lang="cs" hreflang="cs"
+           class="{{ 'active' if lang == 'cs' }}">CZ</a>
+        <a href="/pruvodce/{{ current_slug }}?lang=en" lang="en" hreflang="en"
+           class="{{ 'active' if lang == 'en' }}">EN</a>
+      </div>
+      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
+    </div>
+  </header>
+
+  <main id="content" class="guide-shell">
+    <nav class="guide-breadcrumbs" aria-label="{{ t('guide.breadcrumb_nav') }}">
+      <a href="/?lang={{ lang }}">UbyHost</a><span aria-hidden="true">/</span><span>{{ t('guide.breadcrumb') }}</span>
+    </nav>
+    <article>
+      <header class="guide-hero">
+        <p class="landing-eyebrow">{{ guide.eyebrow }}</p>
+        <h1>{{ guide.title }}</h1>
+        <p>{{ guide.lede }}</p>
+      </header>
+
+      <div class="guide-layout">
+        <div class="guide-content">
+          {% for section in guide.sections %}
+            <section>
+              <h2>{{ section.heading }}</h2>
+              {% for paragraph in section.paragraphs %}
+                <p>{{ paragraph }}</p>
+              {% endfor %}
+            </section>
+          {% endfor %}
+        </div>
+
+        <aside class="guide-checklist">
+          <p class="landing-eyebrow">{{ t('guide.checklist') }}</p>
+          <ul>
+            {% for item in guide.checklist %}
+              <li><span aria-hidden="true">✓</span>{{ item }}</li>
+            {% endfor %}
+          </ul>
+          <a href="/login?lang={{ lang }}" class="landing-button primary">{{ t('landing.cta') }}</a>
+        </aside>
+      </div>
+
+      <aside class="landing-official guide-official">
+        <div>
+          <strong>{{ t('guide.official_title') }}</strong>
+          <p>{{ t('landing.disclaimer') }}</p>
+        </div>
+        <a href="{{ guide.official_url }}" rel="noopener noreferrer" target="_blank">ipc.gov.cz ↗</a>
+      </aside>
+
+      <nav class="guide-more" aria-label="{{ t('guide.more_nav') }}">
+        <strong>{{ t('guide.more') }}</strong>
+        {% for slug, other in guides.items() %}
+          {% if slug != current_slug %}
+            <a href="/pruvodce/{{ slug }}?lang={{ lang }}">{{ other.title }} →</a>
+          {% endif %}
+        {% endfor %}
+      </nav>
+    </article>
+  </main>
+
+  <footer class="landing-footer">
+    <a class="landing-brand" href="/?lang={{ lang }}"><img src="/static/ubyhost-logo.png" alt="UbyHost"></a>
+    <nav aria-label="{{ t('legal.footer_nav_label') }}">
+      <a href="/legal?lang={{ lang }}">{{ t('legal.footer_short') }}</a>
+      <a href="/terms?lang={{ lang }}">{{ t('terms.footer_short') }}</a>
+      <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
+      <a href="/login?lang={{ lang }}">{{ t('landing.footer.login') }}</a>
+    </nav>
+    <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>
+  </footer>
+</body>
+</html>

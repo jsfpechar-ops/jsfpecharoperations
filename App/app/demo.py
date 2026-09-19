@@ -8,9 +8,9 @@ from __future__ import annotations
 import logging
 from datetime import date, timedelta
 from typing import Optional
-from urllib.parse import urlparse
 
 from . import auth, codelists, config, db, icalsync, reporting, validation
+from .sample_calendar import sample_airbnb_ics
 
 log = logging.getLogger("ubyhost.demo")
 
@@ -30,10 +30,11 @@ def is_demo_apartment(apartment) -> bool:
 
 
 def sample_calendar_url() -> str:
-    """Sample feed on the mock server locally, or bundled with the app in production."""
-    if config.UBYPORT_ENV == "mock":
-        parsed = urlparse(config.endpoint_for("mock"))
-        return f"{parsed.scheme}://{parsed.netloc}/sample-airbnb.ics"
+    """The app serves this feed itself, so it never points at the mock server.
+
+    A mock endpoint is a loopback address, which the SSRF screening in
+    feed_url.py rejects everywhere except local development.
+    """
     return f"{config.PUBLIC_BASE_URL}/sample-airbnb.ics"
 
 
@@ -112,7 +113,7 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
             "created_at": db.utcnow(),
         },
     )
-    db.insert(
+    feed_id = db.insert(
         "ical_feed",
         {
             "apartment_id": apartment_id,
@@ -124,7 +125,8 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         },
     )
 
-    stats = icalsync.sync_all(apartment_id)
+    feed = db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+    stats = icalsync.sync_feed(feed, ics_text=sample_airbnb_ics())
     log.info("demo: imported %s stay(s) from the sample calendar", stats.get("created"))
 
     try:
