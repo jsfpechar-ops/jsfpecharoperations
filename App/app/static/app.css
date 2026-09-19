@@ -2294,6 +2294,7 @@ body.layout-host {
 .sidebar-nav a:hover,
 .nav-button:hover { color: var(--ink); background: var(--canvas-subtle); transform: translateX(2px); }
 .sidebar-nav a.active,
+.nav-group:nth-child(1) a.active,
 .nav-group:nth-child(2) a.active,
 .nav-group:nth-child(3) a.active {
   color: var(--surface);
@@ -2301,6 +2302,7 @@ body.layout-host {
   box-shadow: 3px 3px 0 color-mix(in srgb, var(--brand) 55%, transparent);
 }
 .sidebar-nav a.active .nav-icon,
+.nav-group:nth-child(1) a.active .nav-icon,
 .nav-group:nth-child(2) a.active .nav-icon,
 .nav-group:nth-child(3) a.active .nav-icon { color: var(--surface); }
 .sidebar-footer { border-top: 1px solid var(--border); }
@@ -2539,6 +2541,10 @@ label { color: var(--ink); font-weight: 700; }
   .focus-card { margin-inline: 0; box-shadow: 5px 6px 0 var(--ink); }
   .filters { padding: 13px; }
   .table-cards tr { padding: 16px; }
+  .onboarding-welcome { padding: 30px 16px 28px; }
+  .onboarding-step { grid-template-columns: auto minmax(0, 1fr); padding: 13px; }
+  .onboarding-step > .btn,
+  .onboarding-step > .pill { grid-column: 1 / -1; width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
