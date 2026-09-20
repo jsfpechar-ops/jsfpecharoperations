@@ -36,11 +36,30 @@
             var label = button.getAttribute("data-copied-label");
             var copyLabel = button.getAttribute("data-copy-label") || button.getAttribute("aria-label") || "";
             var original = button.textContent;
-            if (label) button.textContent = label;
-            if (label) button.setAttribute("aria-label", label);
+            // Icon buttons keep their icon and show the label beside it; writing
+            // to textContent would delete the SVG and never bring it back.
+            var slot = button.querySelector("[data-copy-label-slot]");
+            if (label) {
+              if (slot) {
+                slot.textContent = label;
+                slot.hidden = false;
+                button.classList.add("is-labelled");
+              } else {
+                button.textContent = label;
+              }
+              button.setAttribute("aria-label", label);
+            }
             setTimeout(function () {
               button.classList.remove("copied");
-              if (label) button.textContent = original;
+              if (label) {
+                if (slot) {
+                  slot.textContent = "";
+                  slot.hidden = true;
+                  button.classList.remove("is-labelled");
+                } else {
+                  button.textContent = original;
+                }
+              }
               if (copyLabel) button.setAttribute("aria-label", copyLabel);
             }, 1600);
           });
