@@ -234,8 +234,8 @@ def main():
     check(
         guest,
         f"/l/{token}",
-        must_contain=["Czech law", "Smoke Studio", "How your data is handled"],
-        must_not_contain=["Airbnb", "Booking.com"],
+        must_contain=["Czech law", "Smoke flat", "How your data is handled"],
+        must_not_contain=["Airbnb", "Booking.com", "Smoke Studio"],
     )
     privacy_expected = [
         "Smoke s.r.o.",

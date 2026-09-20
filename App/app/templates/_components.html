@@ -267,7 +267,7 @@
 {% macro copy_button(target_id) %}
   <button class="btn-icon" type="button" data-copy="{{ target_id }}"
           data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
-          aria-label="{{ t('common.copy') }}">{{ copy_icon() }}</button>
+          aria-label="{{ t('common.copy') }}">{{ copy_icon() }}<span class="btn-icon-label" data-copy-label-slot hidden></span></button>
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
