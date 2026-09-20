@@ -1049,6 +1049,10 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 }
 .btn-icon:hover { background: var(--surface-2); border-color: var(--brand); color: var(--brand); }
 .btn-icon.copied { color: var(--ok); border-color: rgba(15, 122, 74, 0.4); background: var(--ok-soft); }
+/* An icon button is a fixed square, so the confirmation label has to widen it
+   instead of spilling past the border. Czech "Zkopírováno" is the longest. */
+.btn-icon.is-labelled { width: auto; padding: 0 12px; gap: 7px; }
+.btn-icon-label { font-size: 13.5px; font-weight: 600; white-space: nowrap; }
 
 /* --- sticky action bar ------------------------------------------------- */
 
@@ -2742,7 +2746,6 @@ label { color: var(--ink-secondary); font-weight: 620; }
   font: 640 11px var(--font-sans);
   box-shadow: 0 8px 22px rgba(32, 32, 30, .1);
 }
-.auth-float-booking { top: 16%; right: 5%; color: var(--blue); }
 .auth-float-ready { right: 7%; bottom: 8%; color: var(--green); }
 
 @media (max-width: 900px) {
