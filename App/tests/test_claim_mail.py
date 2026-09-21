@@ -608,6 +608,69 @@ def test_provisional_hold_blocks_a_different_email_until_it_expires():
         _cleanup()
 
 
+def test_mistyped_address_takes_over_after_the_hold_grace(monkeypatch):
+    """A typo must not cost a guest the whole 30-minute hold."""
+    current, _past, _far, apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        ok, err, wrong_secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="typo@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert ok, err
+
+        # Inside the grace window another address is still held off.
+        held_ok, held_err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="correct@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert not held_ok
+        assert held_err == "held"
+
+        # Age the hold past the grace window but keep it inside the hold itself.
+        started = datetime.now(timezone.utc) - timedelta(
+            seconds=claim.HOLD_TAKEOVER_SECONDS + 5
+        )
+        until = (started + timedelta(minutes=claim.HOLD_MINUTES)).replace(
+            microsecond=0
+        ).isoformat()
+        db.execute(
+            "UPDATE reservation_claim SET provisional_until = ?, updated_at = ? "
+            "WHERE reservation_id = ?",
+            (until, db.utcnow(), current),
+        )
+
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        again_ok, again_err, right_secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="correct@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert again_ok, again_err
+
+        row = claim.ensure_row(current)
+        assert row["email"] == "correct@claim.test"
+        assert row["token_hash"] == claim.token_hash(right_secret)
+        # The link sent to the mistyped address is dead.
+        assert not claim.confirm(reservation, wrong_secret)
+    finally:
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
 def test_guest_facing_assignment_masks_email_and_lock_hides_it():
     current, _past, _far, _apartment_id = _seed()
     address = "private-address@claim.test"

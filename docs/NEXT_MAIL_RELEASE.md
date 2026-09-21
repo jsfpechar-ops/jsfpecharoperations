@@ -65,6 +65,9 @@ Implemented on `cursor/claim-mail-abuse-caps-3387` / [#88](https://github.com/js
   (loosened after the SES go-live — the original 2/3 per hour with a 5 min
   cooldown locked real guests out after one or two attempts. Values live in
   `App/app/claim.py`; the IP+token throttle is in `App/app/routes/guest.py`.)
+- A different address may take a stay over once its provisional hold is older
+  than `HOLD_TAKEOVER_SECONDS` (**60 s**), not only after the full 30-minute
+  hold, so a mistyped address stays recoverable
 - Production Turnstile on claim/resend (`guest_claim`)
 - EN/CS errors: cooldown, recipient_rate, bot
 
