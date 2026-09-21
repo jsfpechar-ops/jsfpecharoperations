@@ -423,8 +423,8 @@ def _lang_urls(request: Request, path: str = "") -> Dict[str, str]:
     return out
 
 
-def _facility(apartment) -> str:
-    """How the property identifies itself to a guest.
+def _display_name(apartment) -> str:
+    """The property's guest-facing name.
 
     The host's own name for the apartment, because that is the name the guest
     recognises from the booking. The name registered with the police is only a
@@ -433,7 +433,14 @@ def _facility(apartment) -> str:
     """
     if not apartment:
         return ""
-    name = (apartment["internal_name"] or "").strip() or (apartment["uby_name"] or "").strip()
+    return (apartment["internal_name"] or "").strip() or (apartment["uby_name"] or "").strip()
+
+
+def _facility(apartment) -> str:
+    """How the property identifies itself to a guest, including its city."""
+    if not apartment:
+        return ""
+    name = _display_name(apartment)
     city = (apartment["city_en"] or "").strip()
     return ", ".join(part for part in (name, city) if part)
 
@@ -447,6 +454,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "lang_urls": _lang_urls(request),
         "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang),
         "facility": _facility(apartment),
+        "property_name": _display_name(apartment),
         "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
         "controller": _controller(apartment) if apartment else {},
         "host": _host_contact(apartment) if apartment else {},

@@ -3,8 +3,8 @@
 
 <section class="g-arrival-hero" aria-labelledby="arrival-welcome">
   <p class="g-question-kicker">{{ t('arrival_kicker') }}</p>
-  <h2 id="arrival-welcome">{{ apartment.uby_name or apartment.internal_name }}</h2>
-  <p>{{ t('arrival_welcome', facility=apartment.uby_name or apartment.internal_name) }}</p>
+  <h2 id="arrival-welcome">{{ property_name }}</h2>
+  <p>{{ t('arrival_welcome', facility=property_name) }}</p>
   {% if apartment.city_en %}<p class="g-arrival-location">{{ apartment.city_en }}</p>{% endif %}
   {% if apartment.guest_message %}
     <details class="g-arrival-message">
