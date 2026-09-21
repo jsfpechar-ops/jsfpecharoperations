@@ -88,15 +88,27 @@ Recorded for reproducibility — steps 1–4 are all done in production.
    in the running container:
 
    ```bash
-   docker compose exec ubyhost env | grep UBYHOST_MAIL_BACKEND   # ses
+   # The env the container was created with, and when it last started:
+   docker inspect ubyhost --format '{{.State.StartedAt}}'
+   docker inspect ubyhost --format '{{range .Config.Env}}{{println .}}{{end}}' \
+     | grep UBYHOST_MAIL_BACKEND
+
+   # The env of the app process actually running (PID 1), not of a new exec:
+   docker compose exec ubyhost sh -c \
+     "tr '\0' '\n' < /proc/1/environ | grep UBYHOST_MAIL_BACKEND"
+
    docker compose logs --tail=100 ubyhost | grep -i "disabled on production"
    ```
 
    Editing `.env` alone changes nothing: `env_file` is read at container start,
-   so the app must be redeployed/restarted. The guard logs
+   so the app must be redeployed/restarted. Verify against `State.StartedAt` —
+   if the container started before the `.env` edit, the running app still holds
+   the old value even though the file says otherwise. Prefer
+   `docker inspect`/`/proc/1/environ` over `docker compose exec ... env`, which
+   resolves the service environment from the *current* `.env` and can therefore
+   report a value the running process never received. The guard logs
    `guest e-mail is disabled on production` whenever the *running* backend is
-   `disabled`, so that grep printing nothing (with `ses` above) is the proof the
-   flip took effect.
+   `disabled`, so that grep printing nothing is corroborating evidence.
 
 5. **From** = `noreply@ubyhost.com`. **Reply-To** = the property legal-entity
    contact e-mail when configured.
@@ -110,6 +122,12 @@ Recorded for reproducibility — steps 1–4 are all done in production.
   delivers. The startup guard validates configuration only; it cannot see
   sandbox status, sender/domain verification in `UBYHOST_SES_REGION`, or IAM
   `ses:SendEmail` permission. Watch outbox `last_error` and `mail_failed` alerts.
+  Two things suppress the party-count + e-mail screen and send the visitor
+  straight to the details wizard, which looks identical to "mail is off":
+  running the journey while signed into the host portal for that property
+  (the owner is never asked to e-mail themselves), and a browser that already
+  holds a 60-day claim cookie for that stay. Smoke it in a private window, or as
+  a guest who is not the host.
 - Staging must never use `ses`.
 - Rollback: set `UBYHOST_MAIL_BACKEND=disabled` and redeploy — guests return to
   PIN → dates → form without claim e-mail.
