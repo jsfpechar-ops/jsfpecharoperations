@@ -132,4 +132,40 @@ Recorded for reproducibility — steps 1–4 are all done in production.
 - Rollback: set `UBYHOST_MAIL_BACKEND=disabled` and redeploy — guests return to
   PIN → dates → form without claim e-mail.
 
+## Troubleshooting
+
+The outbox is the source of truth; every attempt records its `state`, `attempts`,
+`provider_id` and `last_error`:
+
+```bash
+cd /opt/ubyhost/deploy/lightsail
+docker compose exec -T ubyhost python - <<'PY'
+from app import db, config, mail
+print("backend:", mail.backend_name(), "| from:", config.MAIL_FROM, "| region:", config.SES_REGION)
+for r in db.query("SELECT id,kind,state,attempts,to_email,provider_id,sent_at,last_error "
+                  "FROM email_outbox ORDER BY id DESC LIMIT 8"):
+    print(dict(r))
+PY
+```
+
+A `provider_id` beginning with `console:` means the send never reached SES — that
+row was written by the console backend, so check `mail.backend_name()` above
+rather than the `.env` file. Rows stay `queued` and retry with backoff
+(`60 * 2**attempts`, capped at 6 h) until they reach 8 attempts, when they become
+`failed` and raise a `mail_failed` alert; the guest can also use **Resend** on the
+claim/assigned screen. The startup guard checks that the credential variables are
+present, never that they work — a well-formed deploy can still be unable to send.
+
+| `last_error` | Cause | Fix |
+| --- | --- | --- |
+| `InvalidClientTokenId` | AWS does not recognise the **key ID**: mistyped, truncated, deleted, or carrying a stray character | Correct `UBYHOST_AWS_ACCESS_KEY_ID`; it is exactly 20 characters, `AKIA…`, with no quotes or prefix |
+| `SignatureDoesNotMatch` | Key ID accepted, **secret** is wrong or belongs to another key | Re-copy `UBYHOST_AWS_SECRET_ACCESS_KEY` |
+| `UnrecognizedClientException` / `InvalidSignatureException` | Clock skew between the VM and AWS | Check `timedatectl` |
+| `MessageRejected`, `Email address is not verified` | Account still in the SES sandbox, or the sender identity is not verified in `UBYHOST_SES_REGION` | Verify `UBYHOST_MAIL_FROM`'s domain/address, or move out of the sandbox |
+| `AccessDenied` | IAM user lacks `ses:SendEmail` | Grant it (in `UBYHOST_SES_REGION`) |
+| `NoCredentialsError`, `Unable to locate credentials` | Both credential variables empty | Set both, then redeploy |
+
+`ASIA…` key IDs are temporary STS credentials that require a session token. This
+app does not send one, so use a long-term `AKIA…` key.
+
 See also [DEPLOYMENT.md](DEPLOYMENT.md) (guest e-mail section).
