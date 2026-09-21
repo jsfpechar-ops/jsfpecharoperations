@@ -108,11 +108,14 @@ def is_claimed(claim) -> bool:
     return bool(claim and claim["state"] == CLAIMED)
 
 
-# Abuse caps for transactional claim mail (strict before SES go-live).
-RESEND_COOLDOWN_SECONDS = 5 * 60
-CLAIM_MAIL_PER_RECIPIENT_MAX = 2
+# Abuse caps for transactional claim mail. These exist to bound bulk misuse, not
+# to punish a real guest: someone who mistypes an address, or whose mail never
+# arrives, must be able to try again. Keep them generous enough that a single
+# booking cannot be locked out by a couple of attempts.
+RESEND_COOLDOWN_SECONDS = 60
+CLAIM_MAIL_PER_RECIPIENT_MAX = 5
 CLAIM_MAIL_PER_RECIPIENT_WINDOW = 60 * 60
-CLAIM_MAIL_PER_RESERVATION_MAX = 3
+CLAIM_MAIL_PER_RESERVATION_MAX = 8
 CLAIM_MAIL_PER_RESERVATION_WINDOW = 60 * 60
 
 

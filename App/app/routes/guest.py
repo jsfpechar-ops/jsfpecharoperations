@@ -900,9 +900,12 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
                 ),
                 lang,
             )
-        # Strict IP+token cap: three claim attempts / 15 minutes.
+        # Coarse IP+token throttle on the claim endpoint. It bounds request
+        # hammering, not mail volume (the mail caps in claim.py do that), so it
+        # is deliberately loose: a guest fumbling the form must not be locked
+        # out after a couple of tries.
         key = rate_limit.client_key(request, f"claim:{token}")
-        if rate_limit.blocked("claim_start", key, 3):
+        if rate_limit.blocked("claim_start", key, 10):
             return _with_lang(
                 RedirectResponse(
                     _guest_link(token, reservation_id) + _lang_q(lang, "&claim_error=rate"),
