@@ -60,21 +60,21 @@ Verify both services: `curl https://<host>/healthz` should return JSON with
 
 ## Guest e-mail (staging first)
 
-Claim links, the guest's single day-before incomplete-registration reminder, host incomplete-registration warnings, and completion receipts are **not** delivered on production until SES is deliberately enabled.
+Claim links, the guest's single day-before incomplete-registration reminder, host incomplete-registration warnings, and completion receipts are delivered through Amazon SES. SES went live in production on 2026-09-21.
 
 | Host | `UBYHOST_MAIL_BACKEND` | Where messages go |
 |------|------------------------|-------------------|
 | **ubyhost-staging** (Render) | `console` | Settings → Guest e-mails (copy the `#c=` confirmation link) |
-| **Lightsail production** | `disabled` (default) | Nothing is queued or sent |
-| **Lightsail + SES** | `ses` only when `UBYHOST_DEPLOYMENT=production` and credentials are complete | Amazon SES (`eu-central-1`) |
+| **Lightsail production** | `ses` (live since 2026-09-21) | Amazon SES (`eu-central-1`) |
+| **Any `ses` value** | only when `UBYHOST_DEPLOYMENT=production` and `UBYHOST_MAIL_FROM`, `UBYHOST_SES_REGION`, `UBYHOST_AWS_ACCESS_KEY_ID`, `UBYHOST_AWS_SECRET_ACCESS_KEY` are all set | otherwise the app **refuses to start** |
 
-After a manual deploy of a claim build to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` must keep `UBYHOST_MAIL_BACKEND=disabled` until the [SES enablement runbook](SES.md) is complete (domain DKIM/MAIL FROM verified, IAM keys, `_send_ses` deployed, then `.env` flip).
+After a manual deploy of a claim build to **ubyhost-staging**, open Settings and confirm the backend is `console`. Production `.env` now sets `ses`; the [SES runbook](SES.md) records the domain/IAM/flip work and the one-line rollback.
 
 **Contact split:** the host admin portal (sidebar and Settings) shows **`support@ubyhost.com`** for software questions. The guest form shows the **host** legal-entity name, e-mail, and phone for anything about the stay. Do not send guests to UbyHost support for bookings.
 
 ### Required owner acceptance before production
 
-Do **not** promote this guest-claim build to production until the product owner has personally tested it on **ubyhost-staging** and explicitly approved the exact revision. Keep production guest mail disabled during review.
+Do **not** promote a guest-claim build to production until the product owner has personally tested it on **ubyhost-staging** and explicitly approved the exact revision. UbyHost 1.1.0 cleared this acceptance and went live on 2026-09-21; production guest mail then stays on (`ses`) for later promotions rather than being turned off for review again.
 
 The staging acceptance check covers:
 
@@ -92,7 +92,7 @@ The staging acceptance check covers:
   and controller/processor/subprocessor descriptions match the enabled behavior;
 - console mail contains the expected messages without contacting real guests.
 
-After approval, deploy the code and database migration first with `UBYHOST_MAIL_BACKEND=disabled` and UbyPort still on `test`. Back up production and run smoke checks before separately enabling SES or real UbyPort reporting. A failed check returns the revision to staging.
+After approval, deploy the code and database migration with UbyPort still on `test`. Back up production and run smoke checks before enabling real UbyPort reporting. Guest mail runs continuously on SES; if a delivery or configuration problem shows up, set `UBYHOST_MAIL_BACKEND=disabled` and redeploy — that is the documented rollback (guests return to PIN → dates → form without claim e-mail). A failed check returns the revision to staging.
 
 ## Promotion workflow (staging → production)
 

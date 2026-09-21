@@ -5,7 +5,7 @@ guest e-mail back on and ships the related guest, host, privacy, and reporting
 changes. UbyPort is the external police service; **1.1.0 is the UbyHost
 application version**, not an UbyPort version.
 
-**Implementation is consolidated in [#88](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/88). Do not merge or enable SES until the owner explicitly asks.** The former passport draft [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87) has been folded into #88.
+**Landed 2026-09-21.** [#88](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/88) is merged (merge commit `2986ebe`) and UbyHost 1.1.0 is deployed to production at `https://ubyhost.com`, with guest e-mail enabled (`UBYHOST_MAIL_BACKEND=ses`). The **Remaining release steps** and **Required regression analysis** sections below are the outstanding post-release items. The former passport draft [#87](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/87) has been folded into #88.
 
 **Related:** [DESIGN.md](DESIGN.md) (Arrival-lane picker, assigned screen, PM contact footer).
 
@@ -15,14 +15,14 @@ application version**, not an UbyPort version.
 |------|--------|
 | UbyHost application version | **1.1.0** |
 | Terms / Privacy Policy / DPA | **1.5**, coordinated EN/CS update with controller/PoC roles and public subprocessor register |
-| SES `_send_ses` + boto3 on production | Done (`#86`); mail still **disabled** |
+| SES `_send_ses` + boto3 on production | Done (`#86`); live in production since 2026-09-21 |
 | Domain DKIM / MAIL FROM / DMARC | Done (ops); Essentials; no dedicated IP |
 | Claim-mail abuse caps | Implemented in #88 |
 | Arrival-lane picker | Implemented in #88; always shown, including one stay |
-| SES flip to `ses` | Waiting on AWS production access |
+| SES flip to `ses` | **Done 2026-09-21** — Lightsail `.env` flipped and confirmed in the running container; first real delivery still to confirm |
 | Assigned UX, PM/controller split, passport toggle | Implemented and tested in #88 |
 | First-time host onboarding + safe two-property demo | Implemented in EN/CS; skip/restore supported; finish handoff shows guest link + PIN; demo blocked against real UbyPort |
-| Full regression suite | **415 passed** (latest `main`, legal 1.5/subprocessor register, host guest-form shortcut, compact notifications, onboarding/demo, and `#89`) |
+| Full regression suite | **436 passed** on the resolved branch head (`68ddd16`) before landing |
 
 ```mermaid
 flowchart TD
@@ -38,18 +38,18 @@ flowchart TD
 ## Already done
 
 - SES sender + `boto3` on production (`#86` / `1e7edf3`); Lightsail healthy
-- Production **`UBYHOST_MAIL_BACKEND=disabled`** (PIN → dates → form)
+- Production `UBYHOST_MAIL_BACKEND=ses` since 2026-09-21 (PIN → stay picker → party count + e-mail → claim mail)
 - Domain DNS: DKIM + MAIL FROM `mail.ubyhost.com` + DMARC `p=none`
-- IAM keys may be staged in Lightsail `.env` while mail stays disabled
+- IAM keys live in the Lightsail `.env` only (never committed)
 - `noreply@ubyhost.com` = From only (no mailbox required); Reply-To = legal entity
 
 ---
 
-## Owner ops (block SES flip)
+## Owner ops (SES flip — completed 2026-09-21)
 
-1. AWS production-access approval (Support reply with transactional use case if needed)
-2. Confirm DKIM / MAIL FROM Verified; IAM can send
-3. Only then: set `UBYHOST_MAIL_BACKEND=ses`, redeploy, smoke one claim email
+1. AWS production-access approval — granted
+2. DKIM / MAIL FROM verified; IAM can send
+3. `UBYHOST_MAIL_BACKEND=ses` set on the VM and redeployed; container confirmed on `ses`
 4. Rollback: set `disabled` + redeploy
 
 ---
@@ -129,7 +129,7 @@ updates and regression-checks:
 | Deployment/security docs | SES activation, rollback, environment separation, smoke and post-release checks |
 
 The application reports `1.1.0` in Settings and `/healthz`. Terms, Privacy
-Policy, and DPA display version `1.4`; host-login audit entries record the same
+Policy, and DPA display version `1.5`; host-login audit entries record the same
 three legal versions. Staging stays `console`.
 
 ### 9. Host chrome, onboarding finish, and demo walkthrough
@@ -144,10 +144,10 @@ three legal versions. Staging stays `console`.
   awaiting review), controller split, manual vs scheduled, Czech vs foreign,
   house book, guest message, PIN, cancelled stay, and calendar blocks.
 
-**Staging:** no auto-deploy hook. Manually deploy branch
-`cursor/claim-mail-abuse-caps-3387` to **ubyhost-staging only**. Keep
-`UBYHOST_MAIL_BACKEND=console` and UbyPort on `mock`. Do not deploy Lightsail
-or production.
+**Staging (how the acceptance run was done):** no auto-deploy hook. The branch
+`cursor/claim-mail-abuse-caps-3387` was deployed to **ubyhost-staging only**,
+with `UBYHOST_MAIL_BACKEND=console` and UbyPort on `mock`, before the production
+flip. Staging stays on `console`.
 
 ---
 
@@ -162,10 +162,11 @@ or production.
 
 ## Remaining release steps
 
-1. Review and merge #88 when the owner asks; deploy with production mail still `disabled`
-2. Receive AWS SES production access and credentials
-3. Set `.env` to `UBYHOST_MAIL_BACKEND=ses`, redeploy, then smoke claim/resend/reminder/completion mail
-4. Roll back to `disabled` immediately if delivery or configuration is unhealthy
+1. ~~Review and merge #88 when the owner asks~~ Done 2026-09-21 (merge commit `2986ebe`); 1.1.0 deployed to production
+2. ~~Receive AWS SES production access and credentials~~ Done
+3. ~~Set `.env` to `UBYHOST_MAIL_BACKEND=ses`, redeploy~~ Done; `ses` confirmed in the running container
+4. **Outstanding:** smoke claim / resend / reminder / completion mail with one real guest journey
+5. Roll back to `disabled` immediately if delivery or configuration is unhealthy
 
 ---
 
@@ -175,7 +176,7 @@ The release is not considered closed when deployment succeeds. Record a
 post-release regression report against the exact deployed commit:
 
 1. Confirm Settings and `/healthz` show UbyHost `1.1.0`; confirm the public
-   Terms, Privacy Policy, and DPA show `1.4` in both EN and CS.
+   Terms, Privacy Policy, and DPA show `1.5` in both EN and CS.
 2. Confirm deployment is `production`, the public URL is
    `https://ubyhost.com`, and UbyPort remains on the owner-approved target.
 3. Verify database migration health and compare critical row counts with the
