@@ -9,6 +9,7 @@ from . import config
 from .dpa_i18n import DPA_STRINGS
 from .landing_i18n import LANDING_STRINGS
 from .privacy_policy_i18n import PRIVACY_STRINGS
+from .subprocessors_i18n import SUBPROCESSOR_STRINGS
 from .terms_i18n import TERMS_STRINGS
 
 LANG_COOKIE = "ubyhost_lang"
@@ -33,6 +34,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.reports": "Reports",
         "nav.housebook": "House book",
         "nav.properties": "Properties",
+        "nav.properties_more": "%(count)s more properties — open search",
         "nav.all_properties": "All properties",
         "nav.per_property": "Set per property",
         "nav.account": "Account",
@@ -72,41 +74,97 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace — "
             "built for Czech short-term hosts."
         ),
-        "onboarding.welcome_title": "Welcome to UbyHost",
+        "onboarding.kicker": "Your five-step launch",
+        "onboarding.welcome_title": "Set it once. Welcome every guest calmly.",
         "onboarding.welcome_lede": (
-            "Let's get your first property ready for guest reporting. Follow the steps "
-            "below — most hosts finish in a few minutes."
+            "We will take you from legal details to a guest-ready link. One clear task at a time; "
+            "UbyHost remembers where you stopped."
         ),
+        "onboarding.progress": "%(done)s of %(total)s ready",
+        "onboarding.current_title": "Do this now",
+        "onboarding.learn": "Learn why",
+        "onboarding.all_steps": "See all setup steps",
+        "onboarding.skip": "Skip setup guidance",
+        "onboarding.skip_hint": "You can reopen the checklist whenever you want.",
+        "onboarding.resume": "Show setup guidance again",
+        "onboarding.skipped_title": "Setup guidance hidden",
+        "onboarding.skipped_body": (
+            "Continue on your own, or reopen the five-step checklist whenever you need it."
+        ),
+        "onboarding.open_checklist": "Open setup checklist",
+        "onboarding.safe_title": "Nothing goes live by accident",
+        "onboarding.safe_body": (
+            "New reporting starts in the mode you choose. Demo data never reaches the real police, "
+            "and guest e-mail stays off until delivery is configured."
+        ),
+        "onboarding.finish_line": "Complete these five checks and your first guest journey is ready.",
+        "onboarding.finish_line_done": "All five checks are done — share the link below with your guests.",
+        "onboarding.finish_kicker": "You are ready",
+        "onboarding.finish_title": "Guest link and PIN are live",
+        "onboarding.finish_lede": (
+            "%(property)s can welcome guests now. Copy the permanent link and PIN into every "
+            "portal's pre-arrival message."
+        ),
+        "onboarding.finish_link_label": "Permanent guest link",
+        "onboarding.finish_message_tip": (
+            "Optional host welcome message lives under Communication on the property page —"
+        ),
+        "onboarding.finish_message_link": "edit host message",
+        "onboarding.finish_passport_tip": "Passport or ID photo policy for this property:",
+        "onboarding.finish_reopen_tip": (
+            "You can skip this guidance any time and reopen it later from Overview or the setup checklist."
+        ),
+        "onboarding.finish_open_communication": "Open communication settings",
+        "onboarding.finish_preview": "Preview guest page",
         "onboarding.step_of": "Setup step %(n)s of %(total)s: %(title)s",
         "onboarding.step_done": "Done",
         "onboarding.continue": "Continue: %(action)s",
         "onboarding.entity.title": "Legal entity",
-        "onboarding.entity.detail": "The company or sole trader registered in UbyPort.",
+        "onboarding.entity.detail": "Name who operates the property and who controls guest data.",
+        "onboarding.entity.prepare": "Have ready: legal name, IČO, registered address, e-mail and phone.",
+        "onboarding.entity.why": "This identity appears in guest privacy information and host contact details.",
         "onboarding.entity.action": "Add legal entity",
         "onboarding.property.title": "Property",
-        "onboarding.property.detail": "Each flat or house you rent out.",
+        "onboarding.property.detail": "Match one flat or house to its official UbyPort registration.",
+        "onboarding.property.prepare": (
+            "Have ready: police facility letter, IDUB, mark, official name, address and UBY-WS login."
+        ),
+        "onboarding.property.why": "Exact values prevent UbyPort header rejections.",
         "onboarding.property.action": "Add property",
         "onboarding.calendars.title": "Calendar links",
         "onboarding.calendars.detail": (
-            "Airbnb or Booking.com iCal URLs so stays appear automatically."
+            "Connect Airbnb or Booking.com so stay dates arrive automatically."
         ),
+        "onboarding.calendars.prepare": "Copy each listing's private iCal export URL—not its public booking page.",
+        "onboarding.calendars.why": "iCal supplies dates only; guests provide names and documents securely.",
         "onboarding.calendars.action": "Connect calendars",
         "onboarding.automation.title": "Automation & UbyPort",
         "onboarding.automation.detail": (
-            "Choose immediate-after-completion, delayed automatic, or manual sending; then add "
-            "the web-service credentials and registration details exactly. UbyPort rejects a mismatch."
+            "Choose when complete foreign-guest records may be sent."
         ),
-        "onboarding.automation.action": "Finish automation",
+        "onboarding.automation.prepare": (
+            "Start with Manual if unsure. Immediate and Delayed send automatically after every declared form is complete."
+        ),
+        "onboarding.automation.why": "Timing controls reporting; identity verification remains a separate host action.",
+        "onboarding.automation.action": "Choose reporting mode",
         "onboarding.guest_link.title": "Guest link",
         "onboarding.guest_link.detail": (
-            "Review the PIN, optional host message, and e-mail/privacy behavior, "
-            "then copy the link into every booking portal's check-in message."
+            "Preview exactly what guests see, then share one permanent link."
         ),
-        "onboarding.guest_link.action": "Copy guest link",
+        "onboarding.guest_link.prepare": (
+            "Check the PIN, host message, contact, controller and optional passport policy before copying."
+        ),
+        "onboarding.guest_link.why": "Put the same link and PIN in every portal's pre-arrival message.",
+        "onboarding.guest_link.action": "Preview and copy guest link",
+        "onboarding.demo_title": "Want to learn before entering real details?",
+        "onboarding.demo_body": (
+            "Load two safe sample properties and try claims, passports, controllers, reporting and the house book."
+        ),
+        "onboarding.demo_hint": "Available only in mock/demo environments. Clear it whenever you are done.",
         "demo.load": "Explore with demo data",
         "demo.load_detail": (
-            "One sample property with stays and guests. Nothing is sent to the police unless you "
-            "submit real data yourself."
+            "Two sample properties covering the stay picker, claims, passport toggle, controller "
+            "split, reporting, and house book. Nothing is sent to the real police."
         ),
         "demo.clear": "Clear demo data",
         "data.export_csv_title": "Export CSV",
@@ -300,23 +358,27 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.guests.body": (
             "Each stay has a guest link meant for a phone. Guests pick their arrival dates, the lead "
             "guest states how many people are staying, claims the reservation by e-mail, then each "
-            "person fills in a short step-by-step form."
+            "person fills in a short step-by-step form. An incomplete claimed form remains reachable "
+            "after check-in until it is completed or you explicitly lock guest access."
         ),
         "guide.guests.step_email": (
             "The e-mail receives the private form link, one reminder if incomplete the day before "
             "check-in, and a completion receipt. The host gets a completion copy; public screens "
-            "mask the address. Necessary cookies preserve PIN, language, claim, and device access."
+            "mask the address. Necessary guest cookies preserve PIN access for up to 7 days and "
+            "language, confirmed-stay access, and forms submitted on the device for up to 60 days."
         ),
         "guide.guests.step_party": (
             "Headcount first — everyone in the group, including children, gets a separate form so "
-            "nobody sees anyone else's passport details."
+            "nobody sees anyone else's passport details. The count is stored with the stay to measure "
+            "whether all expected forms are complete and follows the stay's retention."
         ),
         "guide.guests.step_details": (
             "Each guest types name, birth date, nationality, and document number as printed on the "
             "travel document (no scanning or machine-readable line copying)."
         ),
         "guide.guests.step_photo": (
-            "UbyHost does not collect passport or ID images. Any document check is handled in person."
+            "Passport/ID upload is off by default. A property can require a temporary image or PDF "
+            "from foreign guests; it is never sent to UbyPort."
         ),
         "guide.guests.step_czech": (
             "Czech guests are still written to the house book but are not reported to the police."
@@ -334,7 +396,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.legal.verification_title": "Verify every foreign guest",
         "guide.legal.verification_body": (
             "You are legally responsible for accurate police records. Check the travel document "
-            "in person when your procedure or the law requires it; UbyHost does not collect an image. "
+            "in person when your procedure or the law requires it. An optional upload does not replace "
+            "that responsibility. "
             "If a guest refuses to show ID, you may "
             "refuse accommodation."
         ),
@@ -360,7 +423,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "script monitoring. Legitimate visitors may occasionally see a short challenge."
         ),
         "guide.security.passports": (
-            "Passport and ID images are not collected by the guest form."
+            "Passport/ID upload is off by default. When enabled, access is restricted to authorised "
+            "host users in the app; the file is deleted after verification, with a stale-file sweep "
+            "as a backstop. It is never sent to UbyPort."
         ),
         "guide.security.backups": (
             "Settings shows backup status. Production creates encrypted database backups; keep an independent "
@@ -467,8 +532,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "the host name, e-mail, and phone shown on the guest form."
         ),
         "guide.demo.body": (
-            "Load demo data anytime to explore with a sample flat. Demo guests are never sent to the real "
-            "police register."
+            "Load demo data to explore both sample properties: mail claim, assigned stays, late "
+            "incomplete forms, the optional passport toggle, a separate controller, and reporting. "
+            "On staging, open Settings → Guest e-mails for the confirmation links. Demo guests are "
+            "never sent to the real police register."
         ),
         "a11y.skip_to_content": "Skip to main content",
         "a11y.breadcrumb": "Breadcrumb",
@@ -512,6 +579,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "impersonation.exit": "Exit preview",
         "notification.open_stay": "Open the stay",
         "notification.open_property": "Open the property",
+        "notification.stay_title": "%(property)s · %(dates)s",
+        "notification.reason.overdue_forms": "Overdue by %(n)s days · %(filled)s/%(expected)s",
+        "notification.reason.overdue_forms.one": "Overdue by 1 day · %(filled)s/%(expected)s",
+        "notification.reason.overdue_forms.few": "Overdue by %(n)s days · %(filled)s/%(expected)s",
+        "notification.reason.overdue_hours_forms": "Overdue by %(n)s h · %(filled)s/%(expected)s",
+        "notification.reason.urgent_forms": "Due now · %(filled)s/%(expected)s",
+        "notification.reason.checkin_incomplete": "Check-in today · forms incomplete",
         "common.back": "Back",
         "common.close": "Close",
         "common.apply": "Apply",
@@ -639,6 +713,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "dashboard.table.deadline_by": "by %(when)s",
         "dashboard.row.open_stay": "Open stay",
         "dashboard.row.add_guest": "Add a guest",
+        "dashboard.row.open_guest_form": "Open guest form",
         "stays.title": "Stays",
         "stays.lede": "Calendar stays and manual bookings, earliest arrival first.",
         "stays.add_stay": "Add stay",
@@ -683,6 +758,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.table.portal": "portal →",
         "stays.row.open": "Open stay",
         "stays.row.add_guest": "Add a guest",
+        "stays.row.open_guest_form": "Open guest form",
         "stays.row.restore": "Restore",
         "stays.pagination.showing": "Showing %(from)s–%(to)s of %(total)s stay.",
         "stays.pagination.showing_plural": "Showing %(from)s–%(to)s of %(total)s stays.",
@@ -781,6 +857,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.inline.error": "Could not save. Try again.",
         "stay.detail.menu.restore": "Restore from archive",
         "stay.detail.menu.archive": "Archive stay",
+        "stay.detail.menu.open_guest_form": "Open guest form",
         "stay.detail.menu.guest_links": "Guest links & templates",
         "apartments.title": "Properties",
         "apartments.lede": "Each accommodation facility has its own UbyPort registration, calendars, and guest link.",
@@ -876,6 +953,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.reports": "Hlášení",
         "nav.housebook": "Domovní kniha",
         "nav.properties": "Ubytování",
+        "nav.properties_more": "Dalších %(count)s ubytování — otevřít hledání",
         "nav.all_properties": "Všechna ubytování",
         "nav.per_property": "Nastavuje se u ubytování",
         "nav.account": "Účet",
@@ -915,43 +993,99 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
             "pro krátkodobé pronájmy v Česku."
         ),
-        "onboarding.welcome_title": "Vítejte v UbyHostu",
+        "onboarding.kicker": "Spuštění v pěti krocích",
+        "onboarding.welcome_title": "Nastavte jednou. Každého hosta přivítejte v klidu.",
         "onboarding.welcome_lede": (
-            "Připravíme vaše první ubytování na hlášení hostů. Projděte kroky níže — "
-            "většina hostitelů to zvládne za několik minut."
+            "Provedeme vás od právních údajů až k odkazu připravenému pro hosty. Vždy jeden jasný "
+            "úkol; UbyHost si pamatuje, kde jste skončili."
         ),
+        "onboarding.progress": "Hotovo %(done)s z %(total)s",
+        "onboarding.current_title": "Teď udělejte toto",
+        "onboarding.learn": "Proč je to potřeba",
+        "onboarding.all_steps": "Zobrazit celé nastavení",
+        "onboarding.skip": "Přeskočit průvodce nastavením",
+        "onboarding.skip_hint": "Kontrolní seznam můžete kdykoli znovu otevřít.",
+        "onboarding.resume": "Znovu zobrazit průvodce nastavením",
+        "onboarding.skipped_title": "Průvodce nastavením je skrytý",
+        "onboarding.skipped_body": (
+            "Pokračujte sami, nebo si kdykoli znovu otevřete kontrolní seznam pěti kroků."
+        ),
+        "onboarding.open_checklist": "Otevřít kontrolní seznam",
+        "onboarding.safe_title": "Nic se nespustí omylem",
+        "onboarding.safe_body": (
+            "Hlášení začne v režimu, který zvolíte. Ukázková data se skutečné policii nikdy "
+            "neodešlou a e-maily hostům zůstanou vypnuté, dokud není připraveno doručení."
+        ),
+        "onboarding.finish_line": "Dokončete těchto pět kontrol a první cesta hosta je připravena.",
+        "onboarding.finish_line_done": "Všech pět kontrol je hotových — odkaz níže pošlete hostům.",
+        "onboarding.finish_kicker": "Jste připraveni",
+        "onboarding.finish_title": "Odkaz pro hosty a PIN jsou aktivní",
+        "onboarding.finish_lede": (
+            "%(property)s už může vítat hosty. Trvalý odkaz a PIN vložte do zprávy před příjezdem "
+            "na každém portálu."
+        ),
+        "onboarding.finish_link_label": "Trvalý odkaz pro hosty",
+        "onboarding.finish_message_tip": (
+            "Volitelná uvítací zpráva hostitele je v sekci Komunikace na stránce ubytování —"
+        ),
+        "onboarding.finish_message_link": "upravit zprávu hostitele",
+        "onboarding.finish_passport_tip": "Politika fotografie pasu nebo dokladu u tohoto ubytování:",
+        "onboarding.finish_reopen_tip": (
+            "Průvodce můžete kdykoli skrýt a znovu otevřít z Přehledu nebo kontrolního seznamu."
+        ),
+        "onboarding.finish_open_communication": "Otevřít nastavení komunikace",
+        "onboarding.finish_preview": "Náhled stránky pro hosty",
         "onboarding.step_of": "Krok nastavení %(n)s z %(total)s: %(title)s",
         "onboarding.step_done": "Hotovo",
         "onboarding.continue": "Pokračovat: %(action)s",
         "onboarding.entity.title": "Právnická osoba",
         "onboarding.entity.detail": (
-            "Firma nebo podnikatel registrovaný v UbyPortu."
+            "Uveďte provozovatele ubytování a správce údajů hostů."
         ),
+        "onboarding.entity.prepare": "Připravte si: právní název, IČO, sídlo, e-mail a telefon.",
+        "onboarding.entity.why": "Tato identita se zobrazí v informaci o soukromí a kontaktu pro hosty.",
         "onboarding.entity.action": "Přidat právnickou osobu",
         "onboarding.property.title": "Ubytování",
-        "onboarding.property.detail": "Každý byt nebo dům, který pronajímáte.",
+        "onboarding.property.detail": "Spojte byt nebo dům s jeho oficiální registrací UbyPort.",
+        "onboarding.property.prepare": (
+            "Připravte si: policejní dopis zařízení, IDUB, zkratku, oficiální název, adresu a login UBY-WS."
+        ),
+        "onboarding.property.why": "Přesné hodnoty zabrání odmítnutí hlavičky UbyPortem.",
         "onboarding.property.action": "Přidat ubytování",
         "onboarding.calendars.title": "Odkazy na kalendáře",
         "onboarding.calendars.detail": (
-            "iCal odkazy z Airbnb nebo Booking.com, aby se pobyty zobrazovaly automaticky."
+            "Připojte Airbnb nebo Booking.com, aby se termíny pobytů načítaly automaticky."
         ),
+        "onboarding.calendars.prepare": "Zkopírujte soukromou URL exportu iCal, ne veřejnou stránku nabídky.",
+        "onboarding.calendars.why": "iCal přináší jen termíny; jména a doklady host doplní bezpečně.",
         "onboarding.calendars.action": "Připojit kalendáře",
         "onboarding.automation.title": "Automatizace a UbyPort",
         "onboarding.automation.detail": (
-            "Zvolte okamžité po dokončení, odložené automatické nebo ruční odesílání; pak přesně "
-            "doplňte přístupové a registrační údaje. UbyPort neshodu odmítne."
+            "Zvolte, kdy se mohou odeslat kompletní záznamy zahraničních hostů."
         ),
-        "onboarding.automation.action": "Dokončit automatizaci",
+        "onboarding.automation.prepare": (
+            "Nejste-li si jistí, začněte Ručně. Okamžitý a Odložený režim odešlou po dokončení všech formulářů."
+        ),
+        "onboarding.automation.why": "Časování řídí hlášení; ověření totožnosti zůstává samostatným úkonem.",
+        "onboarding.automation.action": "Zvolit režim hlášení",
         "onboarding.guest_link.title": "Odkaz pro hosty",
         "onboarding.guest_link.detail": (
-            "Zkontrolujte PIN, volitelnou zprávu hostitele a e-mail/soukromí, "
-            "pak odkaz zkopírujte do zprávy k příjezdu na každém rezervačním portálu."
+            "Prohlédněte si přesně, co host uvidí, a pak sdílejte jeden trvalý odkaz."
         ),
-        "onboarding.guest_link.action": "Kopírovat odkaz pro hosty",
+        "onboarding.guest_link.prepare": (
+            "Před kopírováním zkontrolujte PIN, zprávu, kontakt, správce údajů a volbu pasu."
+        ),
+        "onboarding.guest_link.why": "Stejný odkaz a PIN vložte do zprávy před příjezdem na každém portálu.",
+        "onboarding.guest_link.action": "Prohlédnout a kopírovat odkaz",
+        "onboarding.demo_title": "Chcete se nejdřív učit bez skutečných údajů?",
+        "onboarding.demo_body": (
+            "Načtěte dvě bezpečná ukázková ubytování a vyzkoušejte převzetí, pasy, správce, hlášení i knihu."
+        ),
+        "onboarding.demo_hint": "Jen pro ukázkové/mock prostředí. Po dokončení je můžete kdykoli smazat.",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": (
-            "Ukázkové ubytování s pobytem a hosty. Na policii se nic neodešle, dokud sami "
-            "neodešlete skutečná data."
+            "Dvě ukázková ubytování: výběr pobytu, převzetí e-mailem, pas, oddělený správce, "
+            "hlášení a domovní kniha. Na skutečnou policii se nic neodešle."
         ),
         "demo.clear": "Smazat ukázková data",
         "data.export_csv_title": "Export CSV",
@@ -1144,23 +1278,28 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.guests.body": (
             "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, vedoucí host uvede "
-            "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář."
+            "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář. "
+            "Nedokončený převzatý formulář zůstává po příjezdu dostupný, dokud není dokončen nebo "
+            "přístup výslovně nezamknete."
         ),
         "guide.guests.step_email": (
             "Na e-mail přijde soukromý odkaz, jedno upozornění při nedokončení den před příjezdem "
             "a potvrzení o dokončení. Ubytovatel dostane kopii potvrzení; veřejné obrazovky adresu "
-            "zastřou. Nezbytné cookies uchovají PIN, jazyk, převzetí a přístup zařízení."
+            "zastřou. Nezbytné cookies pro hosty uchovají přístup přes PIN nejvýše 7 dní a jazyk, "
+            "přístup k potvrzenému pobytu a odeslané formuláře v zařízení nejvýše 60 dní."
         ),
         "guide.guests.step_party": (
             "Nejdřív počet osob — včetně dětí; každý má vlastní formulář, aby nikdo neviděl "
-            "údaje z pasu ostatních."
+            "údaje z pasu ostatních. Počet se ukládá k pobytu pro kontrolu, zda jsou hotové všechny "
+            "očekávané formuláře, a uchovává se stejně dlouho jako pobyt."
         ),
         "guide.guests.step_details": (
             "Každý host ručně zadá jméno, datum narození, státní občanství a číslo dokladu tak, "
             "jak jsou v cestovním dokladu (bez skenování ani přepisování strojově čitelných řádků)."
         ),
         "guide.guests.step_photo": (
-            "UbyHost obrázky pasů ani dokladů nesbírá. Případná kontrola dokladu probíhá osobně."
+            "Nahrávání pasu či dokladu je ve výchozím stavu vypnuté. Ubytování může od cizinců "
+            "vyžadovat dočasnou fotografii nebo PDF; do UbyPortu se nikdy neposílá."
         ),
         "guide.guests.step_czech": (
             "Občané ČR se zapisují do domovní knihy, policii se neoznamují."
@@ -1178,7 +1317,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.legal.verification_title": "Ověřte každého cizince",
         "guide.legal.verification_body": (
             "Za správnost policejních záznamů odpovídáte vy. Doklad zkontrolujte osobně, pokud to "
-            "vyžaduje váš postup nebo zákon; UbyHost jeho obrázek nesbírá. "
+            "vyžaduje váš postup nebo zákon. Volitelné nahrání dokladu tuto odpovědnost nenahrazuje. "
             "Odmítne-li host doklad ukázat, můžete odmítnout ubytování."
         ),
         "guide.reporting.scheduled": "Naplánované",
@@ -1202,7 +1341,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "v prohlížeči. Návštěvník může občas vidět krátkou výzvu."
         ),
         "guide.security.passports": (
-            "Fotografie pasů jsou při čekání na kontrolu šifrované a po ověření se ihned smažou."
+            "Nahrávání pasu či dokladu je ve výchozím stavu vypnuté. Po zapnutí k souboru v aplikaci "
+            "přistupují jen oprávnění uživatelé ubytovatele; po ověření se smaže a pojistkou je "
+            "automatické mazání starých souborů. Do UbyPortu se nikdy neposílá."
         ),
         "guide.security.backups": (
             "Nastavení ukazuje stav záloh. Produkce vytváří šifrované zálohy databáze; před ukončením "
@@ -1308,7 +1449,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "jméno, e-mail a telefon ubytovatele na formuláři pro hosty."
         ),
         "guide.demo.body": (
-            "Ukázková data lze načíst kdykoli. Na skutečnou policii se nikdy neodešlou."
+            "Načtěte ukázková data a projděte obě ubytování: převzetí e-mailem, přiřazené pobyty, "
+            "nedokončené formuláře po příjezdu, volitelný pas, odděleného správce a hlášení. "
+            "Na stagingu jsou potvrzovací odkazy v Nastavení → E-maily hostům. Na skutečnou "
+            "policii se ukázková data nikdy neodešlou."
         ),
         "a11y.skip_to_content": "Přeskočit na hlavní obsah",
         "a11y.breadcrumb": "Drobečková navigace",
@@ -1352,6 +1496,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "impersonation.exit": "Ukončit náhled",
         "notification.open_stay": "Otevřít pobyt",
         "notification.open_property": "Otevřít ubytování",
+        "notification.stay_title": "%(property)s · %(dates)s",
+        "notification.reason.overdue_forms": "Po termínu o %(n)s dní · %(filled)s/%(expected)s",
+        "notification.reason.overdue_forms.one": "Po termínu o 1 den · %(filled)s/%(expected)s",
+        "notification.reason.overdue_forms.few": "Po termínu o %(n)s dny · %(filled)s/%(expected)s",
+        "notification.reason.overdue_hours_forms": "Po termínu o %(n)s h · %(filled)s/%(expected)s",
+        "notification.reason.urgent_forms": "Termín teď · %(filled)s/%(expected)s",
+        "notification.reason.checkin_incomplete": "Příjezd dnes · formuláře neúplné",
         "common.back": "Zpět",
         "common.close": "Zavřít",
         "common.apply": "Použít",
@@ -1477,6 +1628,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "dashboard.table.deadline_by": "do %(when)s",
         "dashboard.row.open_stay": "Otevřít pobyt",
         "dashboard.row.add_guest": "Přidat hosta",
+        "dashboard.row.open_guest_form": "Otevřít formulář hosta",
         "stays.title": "Pobyty",
         "stays.lede": "Pobyty z kalendářů a ruční rezervace, nejdříve nejbližší příjezd.",
         "stays.add_stay": "Přidat pobyt",
@@ -1521,6 +1673,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.table.portal": "portál →",
         "stays.row.open": "Otevřít pobyt",
         "stays.row.add_guest": "Přidat hosta",
+        "stays.row.open_guest_form": "Otevřít formulář hosta",
         "stays.row.restore": "Obnovit",
         "stays.pagination.showing": "Zobrazen %(from)s–%(to)s z %(total)s pobytu.",
         "stays.pagination.showing_plural": "Zobrazeno %(from)s–%(to)s z %(total)s pobytů.",
@@ -1619,6 +1772,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.inline.error": "Uložení se nepodařilo. Zkuste to znovu.",
         "stay.detail.menu.restore": "Obnovit z archivu",
         "stay.detail.menu.archive": "Archivovat pobyt",
+        "stay.detail.menu.open_guest_form": "Otevřít formulář hosta",
         "stay.detail.menu.guest_links": "Odkazy a šablony pro hosty",
         "apartments.title": "Ubytování",
         "apartments.lede": "Každé ubytovací zařízení má vlastní registraci v UbyPortu, kalendáře a odkaz pro hosty.",
@@ -1817,8 +1971,14 @@ _INTERFACE_STRINGS = {
         "apartment.form.codelists_cached": 'Code lists cached %(date)s.',
         "apartment.form.create": 'Create apartment',
         "apartment.form.credentials_actions_help": 'Both use the saved credentials, so save first.',
-        "apartment.form.entity.hint": 'The IČO registered in UbyPort for this address. It is also the data controller named in the privacy notice guests are shown, so it cannot be left empty if you want that notice to be complete.',
-        "apartment.form.entity.label": 'Operating legal entity',
+        "apartment.form.entity.hint": 'The property manager / operating entity registered in UbyPort for this address. Guests use its phone and e-mail for stay questions.',
+        "apartment.form.entity.label": 'Property manager / operating legal entity',
+        "apartment.form.controller.same_label": 'The property manager is also the guest data controller and point of contact',
+        "apartment.form.controller.same_hint": 'Recommended default. The same legal entity appears in the guest privacy notice and remains the contact for stay questions.',
+        "apartment.form.controller.alternate_label": 'Guest data controller',
+        "apartment.form.controller.choose": 'Choose a legal entity',
+        "apartment.form.controller.alternate_hint": 'Choose the separate entity that determines why guest data is processed. The property manager above remains the guest point of contact for the stay.',
+        "apartment.form.controller.manage_entities": 'Manage legal entities',
         "apartment.form.feed.last_sync": 'Last sync',
         "apartment.form.feed.name": 'Name',
         "apartment.form.feed.portal": 'Portal',
@@ -1977,7 +2137,7 @@ _INTERFACE_STRINGS = {
         "entities.phone": "Phone",
         "entities.lede": "The company or sole trader that operates a property and controls guest data.",
         "entities.back": "Back to properties",
-        "entities.explainer": "This entity holds the UbyPort registration and is named as data controller in the guest privacy notice. Keep its registered seat and contact email current.",
+        "entities.explainer": "A legal entity can be a property manager, the guest data controller, or both. Keep its registered seat and contact details current.",
         "entities.edit": "Edit %(name)s",
         "entities.save": "Save changes",
         "entities.contact": "Contact",
@@ -2219,8 +2379,14 @@ _INTERFACE_STRINGS = {
         "apartment.form.codelists_cached": 'Číselníky uloženy %(date)s.',
         "apartment.form.create": 'Vytvořit ubytování',
         "apartment.form.credentials_actions_help": 'Obě akce používají uložené údaje — nejprve uložte.',
-        "apartment.form.entity.hint": 'IČO registrované v UbyPortu pro tuto adresu. Je také správcem údajů v informaci pro hosty, proto ji nelze nechat prázdnou, pokud chcete úplné znění.',
-        "apartment.form.entity.label": 'Provozující právnická osoba',
+        "apartment.form.entity.hint": 'Správce objektu / provozující osoba registrovaná v UbyPortu pro tuto adresu. Hosté používají její telefon a e-mail pro dotazy k pobytu.',
+        "apartment.form.entity.label": 'Správce objektu / provozující právnická osoba',
+        "apartment.form.controller.same_label": 'Správce objektu je také správcem osobních údajů hostů a kontaktní osobou',
+        "apartment.form.controller.same_hint": 'Doporučené výchozí nastavení. Stejná právnická osoba je uvedena v informaci o soukromí a zůstává kontaktem pro dotazy k pobytu.',
+        "apartment.form.controller.alternate_label": 'Správce osobních údajů hostů',
+        "apartment.form.controller.choose": 'Vyberte právnickou osobu',
+        "apartment.form.controller.alternate_hint": 'Vyberte samostatný subjekt, který určuje účel zpracování údajů hostů. Správce objektu uvedený výše zůstává kontaktem hosta pro pobyt.',
+        "apartment.form.controller.manage_entities": 'Spravovat právnické osoby',
         "apartment.form.feed.last_sync": 'Poslední sync',
         "apartment.form.feed.name": 'Název',
         "apartment.form.feed.portal": 'Portál',
@@ -2379,7 +2545,7 @@ _INTERFACE_STRINGS = {
         "entities.phone": "Telefon",
         "entities.lede": "Firma nebo podnikatel, který provozuje ubytování a spravuje údaje hostů.",
         "entities.back": "Zpět na ubytování",
-        "entities.explainer": "Tato osoba drží registraci v UbyPortu a je správcem údajů uvedeným v informaci pro hosty. Udržujte sídlo a kontaktní e-mail aktuální.",
+        "entities.explainer": "Právnická osoba může být správcem objektu, správcem údajů hostů nebo obojím. Udržujte její sídlo a kontaktní údaje aktuální.",
         "entities.edit": "Upravit %(name)s",
         "entities.save": "Uložit změny",
         "entities.contact": "Kontakt",
@@ -2525,6 +2691,9 @@ for _lang, _privacy in PRIVACY_STRINGS.items():
 
 for _lang, _dpa in DPA_STRINGS.items():
     STRINGS.setdefault(_lang, {}).update(_dpa)
+
+for _lang, _subprocessors in SUBPROCESSOR_STRINGS.items():
+    STRINGS.setdefault(_lang, {}).update(_subprocessors)
 
 
 def normalise_language(value: str | None) -> str:

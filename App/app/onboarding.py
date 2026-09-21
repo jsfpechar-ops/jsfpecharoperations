@@ -3,7 +3,22 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from . import db, validation
+from . import config, db, validation
+
+
+def _dismissed_key(owner_user_id: int) -> str:
+    return f"onboarding_dismissed_{owner_user_id}"
+
+
+def is_dismissed(owner_user_id: Optional[int]) -> bool:
+    return bool(
+        owner_user_id
+        and db.get_setting(_dismissed_key(owner_user_id), "0") == "1"
+    )
+
+
+def set_dismissed(owner_user_id: int, dismissed: bool) -> None:
+    db.set_setting(_dismissed_key(owner_user_id), "1" if dismissed else "0")
 
 
 def _apartment_issues(apartment) -> List[validation.Issue]:
@@ -17,6 +32,16 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     entity_count = int(
         db.query_one(
             "SELECT COUNT(*) AS n FROM legal_entity WHERE owner_user_id IS ?",
+            (owner_user_id,),
+        )["n"]
+    )
+    ready_entity_count = int(
+        db.query_one(
+            "SELECT COUNT(*) AS n FROM legal_entity "
+            "WHERE owner_user_id IS ? AND TRIM(COALESCE(name, '')) != '' "
+            "AND TRIM(COALESCE(seat, '')) != '' "
+            "AND TRIM(COALESCE(ico, '')) != '' "
+            "AND TRIM(COALESCE(contact_email, '')) != ''",
             (owner_user_id,),
         )["n"]
     )
@@ -43,18 +68,21 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     steps = [
         {
             "id": "entity",
-            "done": entity_count > 0,
+            "done": ready_entity_count > 0,
             "url": "/entities",
+            "learn_url": "/guide#setup",
         },
         {
             "id": "property",
             "done": apartment_count > 0,
             "url": "/apartments/new" if entity_count else "/entities",
+            "learn_url": "/guide#setup",
         },
         {
             "id": "calendars",
             "done": feed_count > 0,
             "url": f"/apartments/{first_apartment['id']}#calendars" if first_apartment else "/apartments/new",
+            "learn_url": "/guide#stays",
         },
         {
             "id": "automation",
@@ -64,6 +92,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
                 if first_apartment
                 else "/automation"
             ),
+            "learn_url": "/guide#reporting",
         },
         {
             "id": "guest_link",
@@ -77,17 +106,36 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
                 if first_apartment
                 else "/apartments"
             ),
+            "learn_url": "/guide#guests",
         },
     ]
 
     current = next((step for step in steps if not step["done"]), None)
     completed = sum(1 for step in steps if step["done"])
+    finished = completed == len(steps)
+    finish = None
+    if finished and first_apartment:
+        token = first_apartment["permalink_token"] or ""
+        policy = first_apartment["passport_photo_policy"] or "off"
+        finish = {
+            "apartment_id": first_apartment["id"],
+            "name": first_apartment["internal_name"],
+            "permalink": f"{config.PUBLIC_BASE_URL}/l/{token}",
+            "permalink_token": token,
+            "pin": first_apartment["permalink_pin"] or "",
+            "passport_policy": policy,
+            "communication_url": f"/apartments/{first_apartment['id']}#communication",
+            "property_url": f"/apartments/{first_apartment['id']}",
+        }
     return {
         "steps": steps,
         "current": current,
         "completed": completed,
         "total": len(steps),
-        "finished": completed == len(steps),
+        "percent": round((completed / len(steps)) * 100) if steps else 100,
+        "finished": finished,
+        "finish": finish,
+        "dismissed": is_dismissed(owner_user_id),
         "setup_issues": setup_issues,
         "first_apartment_id": first_apartment["id"] if first_apartment else None,
     }

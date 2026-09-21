@@ -4,11 +4,12 @@ import re
 
 from fastapi.testclient import TestClient
 
-from app import auth, db
+from app import auth, claim, db
 from app import alerts
 from app import demo
 from app import housebook
 from app.main import app
+from tests.conftest import complete_guest_claim
 
 TOKEN = "overhaultoken"
 PASSWORD = "Overhaul-Test-Password-123"
@@ -66,7 +67,7 @@ def _seed_stays():
     _cleanup()
     owner_id = _ensure_admin()
     now = db.utcnow()
-    today = date.today()
+    today = claim.prague_today()
     entity_id = db.insert(
         "legal_entity",
         {
@@ -385,6 +386,22 @@ def test_guest_pick_explains_law_without_portal_branding():
         _cleanup()
 
 
+def test_guest_assigned_screen_does_not_leak_police_name():
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, stays[0], party_size=1)
+        # A fresh browser without the claim cookie sees the "already assigned" screen.
+        stranger = TestClient(app)
+        page = stranger.get(f"/l/{TOKEN}/{stays[0]}", follow_redirects=True)
+        assert page.status_code == 200
+        assert "already assigned" in page.text.lower() or "přiřazena" in page.text.lower()
+        assert "Overhaul flat" in page.text
+        assert "Overhaul Studio" not in page.text
+    finally:
+        _cleanup()
+
+
 def test_guest_privacy_notice_names_controller():
     _seed_stays()
     try:
@@ -394,6 +411,70 @@ def test_guest_privacy_notice_names_controller():
         assert "privacy@overhaul.test" in page.text
         assert "6(1)(c)" in page.text
     finally:
+        _cleanup()
+
+
+def test_property_can_use_separate_pm_and_data_controller():
+    apartment_id, _stays, _past = _seed_stays()
+    controller_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Separate Controller a.s.",
+            "seat": "Praha 1",
+            "ico": "11223344",
+            "contact_email": "privacy@controller.test",
+            "owner_user_id": _ensure_admin(),
+            "created_at": db.utcnow(),
+        },
+    )
+    try:
+        saved = _browser().post(
+            f"/apartments/{apartment_id}",
+            data={
+                "internal_name": "Overhaul flat",
+                "legal_entity_id": str(
+                    db.query_one(
+                        "SELECT legal_entity_id FROM apartment WHERE id = ?",
+                        (apartment_id,),
+                    )["legal_entity_id"]
+                ),
+                "data_controller_entity_id": str(controller_id),
+                "active": "1",
+            },
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        assert db.query_one(
+            "SELECT data_controller_entity_id FROM apartment WHERE id = ?",
+            (apartment_id,),
+        )["data_controller_entity_id"] == controller_id
+        privacy = TestClient(app).get(f"/l/{TOKEN}/privacy")
+        assert "Separate Controller a.s." in privacy.text
+        assert "privacy@controller.test" in privacy.text
+        assert "Overhaul Test s.r.o." in privacy.text
+        assert "Your data controller" in privacy.text
+        assert "Questions about your stay" in privacy.text
+        assert privacy.text.index("Separate Controller a.s.") < privacy.text.index(
+            "Overhaul Test s.r.o."
+        )
+        assert "different name for the stay contact below does not change" in privacy.text
+
+        picker = TestClient(app).get(f"/l/{TOKEN}")
+        assert "privacy@overhaul.test" in picker.text
+        assert "privacy@controller.test" not in picker.text
+
+        settings = _browser().get(f"/apartments/{apartment_id}")
+        assert 'id="controller_is_operator"' in settings.text
+        assert re.search(
+            rf'<option value="{controller_id}"\s+selected', settings.text
+        )
+    finally:
+        db.update(
+            "apartment",
+            apartment_id,
+            {"data_controller_entity_id": None},
+        )
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (controller_id,))
         _cleanup()
 
 

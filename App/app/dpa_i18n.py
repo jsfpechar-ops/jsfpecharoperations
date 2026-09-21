@@ -12,7 +12,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "This DPA is incorporated into the Terms of Service; using the Service constitutes "
             "acceptance unless a separate signed agreement expressly replaces it."
         ),
-        "dpa.effective": "Effective date: 18 September 2026. Version 1.3.",
+        "dpa.effective": "Effective date: 19 September 2026. Version 1.5.",
         "dpa.operator_title": "Processor (service provider)",
         "dpa.footer_link": "Data Processing Agreement",
         "dpa.footer_short": "DPA",
@@ -44,7 +44,10 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(\"Controller\") and %(name)s, IČO %(ico)s (\"Processor\"), for the UbyHost service "
             "(\"Service\") described in the Terms of Service at /terms. By creating an account, "
             "logging in, or using the Service, the Controller agrees to this DPA on behalf of itself "
-            "and any legal entities it configures in the Service. If the Controller signs a separate "
+            "and any legal entities it configures in the Service, and warrants that it has authority "
+            "to bind each such entity. Merely naming an alternate controller in the Service does not "
+            "make that entity Controller unless it actually determines purposes and means of processing. "
+            "If the Controller signs a separate "
             "written data processing agreement with the Processor that expressly supersedes this DPA, "
             "that signed agreement prevails to the extent of conflict."
         ),
@@ -74,23 +77,32 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "of processing: collection, storage, organisation, retrieval, transactional e-mail "
             "delivery (claim links, incomplete reminders, completion receipts and Controller copies), transmission, encryption "
             "of credentials, display to authorised Controller users, formatting for export, and "
-            "transmission toward UbyPort or related endpoints when the Controller enables such features."
+            "transmission toward UbyPort or related endpoints when the Controller enables such features. "
+            "Optional passport/ID files are restricted to authorised Host users in the application, "
+            "excluded from UbyPort payloads, and deleted after verification or by the stale-file sweep."
         ),
         "dpa.s05_title": "5. Details of processing (Annex summary)",
         "dpa.s05_body": (
             "Categories of data subjects: Guests, and occasionally third parties named on travel "
             "documents. Types of personal data: identity and contact details, nationality, dates "
-            "of birth and stay, reservation-claim e-mail addresses, declared party size, travel "
-            "document numbers and types, addresses, signatures, and accommodation metadata. "
+            "of birth and stay, reservation-claim e-mail addresses, declared party size, travel document numbers and types, addresses, signatures, "
+            "accommodation metadata, and optional passport photographs or PDFs uploaded for "
+            "verification. Declared party size is used to determine whether all expected forms are "
+            "complete and is retained with the stay. Special categories: the Service may process document images that could "
+            "reveal ethnic origin or health only where the Controller instructs such upload and has "
+            "a lawful basis; the Controller is responsible for necessity and proportionality. "
             "Controller personnel data is outside this DPA except where listed in the Privacy Policy."
         ),
         "dpa.s06_title": "6. Controller obligations",
         "dpa.s06_body": (
             "The Controller shall: (a) comply with Applicable Data Protection Law; (b) provide lawful "
             "instructions and ensure a valid legal basis for processing; (c) maintain accurate guest "
-            "privacy notices naming the Controller entity and contact; (d) not instruct processing "
-            "that violates law; (e) ensure Host Users are authorised and trained; (f) respond to data "
-            "subject requests from Guests unless the Processor assists as stated below; (g) notify the "
+            "privacy notices naming the Controller entity and contact, including when it differs from "
+            "the property's operating manager; (d) ensure that any alternate configured Controller "
+            "actually determines purposes and means and has authorised the Host to instruct the "
+            "Processor on its behalf; (e) not instruct processing "
+            "that violates law; (f) ensure Host Users are authorised and trained; (g) respond to data "
+            "subject requests from Guests unless the Processor assists as stated below; (h) notify the "
             "Processor without undue delay if a Guest objects to processing that affects the Service."
         ),
         "dpa.s07_title": "7. Processor obligations",
@@ -125,7 +137,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "measures including: access controls and authentication for Host accounts; mandatory "
             "two-factor authentication (TOTP) in production; encryption of sensitive integration "
             "credentials and TOTP secrets at rest; HTTPS for data in transit including HSTS on the "
-            "production hostname; Cloudflare Turnstile where configured, plus Bot Fight Mode, "
+            "production hostname; Cloudflare Turnstile where configured, plus custom managed challenges, "
             "leaked-credential mitigation, and client-side script monitoring on the production zone; "
             "logical separation of customer data; rate limiting on authentication; "
             "backup and recovery procedures (including optional off-site copies to Google Drive and "
@@ -137,15 +149,15 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s11_title": "11. Subprocessors",
         "dpa.s11_body": (
             "The Controller provides general written authorisation for the Processor to engage "
-            "Subprocessors listed or described in the Privacy Policy at /privacy (including "
-            "infrastructure hosting such as AWS Lightsail, Render.com, Cloudflare (including Turnstile, "
-            "Bot Fight Mode, leaked-credential checks, client-side security, and HSTS), "
-            "Google Drive and Amazon S3 for configured backups, and, where used, DNS/CDN or transactional "
-            "e-mail providers including Amazon SES). The Processor will impose data protection terms on Subprocessors substantially "
+            "Subprocessors in the current register at /subprocessors (including, where enabled, "
+            "AWS Lightsail and SES, Cloudflare, Render staging, Google Drive and Amazon S3 backups). "
+            "The register identifies conditional use and transfer notes; the Privacy Policy at /privacy "
+            "provides additional context. The Processor will impose data protection terms on Subprocessors substantially "
             "similar to this DPA. The Processor remains liable to the Controller for Subprocessor "
             "performance to the extent required by Article 28(4). The Processor will inform the "
-            "Controller of intended changes to Subprocessors (e.g. by updating the Privacy Policy) and "
-            "allow the Controller to object on reasonable data-protection grounds; if unresolved, the "
+            "Controller of intended material changes at least 30 days in advance where practicable by "
+            "updating the register and notifying account contacts, and allow the Controller to object "
+            "on reasonable data-protection grounds; if unresolved, the "
             "Controller may terminate the affected Service as per the Terms."
         ),
         "dpa.s12_title": "12. Assistance with data subject rights",
@@ -252,7 +264,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(Provozovatel jako zpracovatel) o údajích hostů v UbyHostu. DPA je součástí obchodních "
             "podmínek; používáním Služby ji přijímáte, pokud ji nepřepíše samostatná písemná smlouva."
         ),
-        "dpa.effective": "Účinnost od: 18. září 2026. Verze 1.3.",
+        "dpa.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
         "dpa.operator_title": "Zpracovatel (poskytovatel služby)",
         "dpa.footer_link": "Smlouva o zpracování údajů (DPA)",
         "dpa.footer_short": "DPA",
@@ -281,7 +293,9 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "Tato smlouva o zpracování osobních údajů (\"DPA\") je součástí smlouvy mezi Ubytovatelem "
             "(\"Správce\") a %(name)s, IČO %(ico)s (\"Zpracovatel\"), o službě UbyHost (\"Služba\") "
             "dle podmínek na /terms. Vytvořením účtu, přihlášením nebo používáním Služby Správce "
-            "přijímá DPA za sebe i za nastavené právnické osoby. Samostatná písemná DPA mezi stranami "
+            "přijímá DPA za sebe i za nastavené právnické osoby a potvrzuje oprávnění každý takový "
+            "subjekt zavázat. Pouhé označení jiného správce ve Službě z něj správce nečiní, pokud "
+            "skutečně neurčuje účely a prostředky zpracování. Samostatná písemná DPA mezi stranami "
             "má přednost při rozporu."
         ),
         "dpa.s02_title": "2. Definice",
@@ -304,18 +318,25 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "policii. Doba: po dobu používání Služby a do smazání/vrácení dle čl. 15. Povaha: "
             "shromažďování, uložení, uspořádání, vyhledávání, doručování transakčních e-mailů "
             "(odkazy k převzetí, upozornění na nedokončení, potvrzení a kopie Správci), přenos, šifrování přihlašovacích údajů, "
-            "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí."
+            "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí. Volitelné "
+            "soubory pasů a dokladů jsou v aplikaci omezeny na oprávněné uživatele ubytovatele, "
+            "nejsou součástí dat pro UbyPort a mažou se po ověření nebo plánovaným úklidem."
         ),
         "dpa.s05_title": "5. Podrobnosti zpracování (shrnutí přílohy)",
         "dpa.s05_body": (
             "Subjekty: hosté a osoby na dokladech. Kategorie údajů: identita, e-mail k převzetí rezervace, "
             "nahlášený počet hostů, kontakt, státní příslušnost, "
-            "data pobytu, cestovní doklady, adresy, podpisy a metadata ubytování. Údaje personálu "
+            "data pobytu, cestovní doklady, adresy, podpisy, metadata ubytování, volitelné fotografie/PDF "
+            "pasu. Nahlášený počet slouží ke kontrole, zda jsou hotové všechny očekávané formuláře, "
+            "a uchovává se s pobytem. Zvláštní kategorie: snímky dokladů mohou odhalit původ či zdraví jen pokud Správce "
+            "nahrání pokyne a má právní základ; Správce odpovídá za nezbytnost. Údaje personálu "
             "Správce spadají do Zásad ochrany osobních údajů."
         ),
         "dpa.s06_title": "6. Povinnosti správce",
         "dpa.s06_body": (
-            "Správce: dodržuje právo; dává zákonné pokyny a právní titul; udržuje informace pro hosty; "
+            "Správce: dodržuje právo; dává zákonné pokyny a právní titul; udržuje informace pro hosty "
+            "se správným subjektem i tehdy, liší-li se od správce objektu; zajišťuje, že jiný nastavený "
+            "Správce skutečně určuje účely a prostředky a pověřil Ubytovatele k pokynům jeho jménem; "
             "neinstruuje protiprávní zpracování; zajišťuje oprávnění uživatelů; vyřizuje žádosti hostů; "
             "bez zbytečného odkladu informuje Zpracovatele o námitkách hostů dotýkajících se Služby."
         ),
@@ -341,7 +362,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s10_body": (
             "Zpracovatel uplatňuje přiměřená opatření: řízení přístupu, povinné dvoufázové ověření "
             "(TOTP) v produkci, šifrování citlivých údajů a TOTP, HTTPS včetně HSTS na produkční "
-            "doméně, Cloudflare Turnstile při nastavení a v produkční zóně také Bot Fight Mode, "
+            "doméně, Cloudflare Turnstile při nastavení a v produkční zóně také vlastní řízené výzvy, "
             "kontrolu uniklých přihlašovacích údajů a monitoring skriptů v prohlížeči, oddělení dat "
             "zákazníků, rate limiting přihlášení, zálohy včetně volitelných "
             "off-site kopií (Google Drive, Amazon S3) a omezený přístup do produkce. Správce "
@@ -349,12 +370,13 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "dpa.s11_title": "11. Subzpracovatelé",
         "dpa.s11_body": (
-            "Správce uděluje obecné povolení k subzpracovatelům uvedeným v Zásadách na /privacy "
-            "(včetně AWS Lightsail, Render.com, Cloudflare včetně Turnstile, Bot Fight Mode, kontroly "
-            "uniklých údajů, klientské bezpečnosti a HSTS, Google Drive a Amazon S3 "
-            "pro nastavené zálohy a případně DNS/CDN či transakční e-mail včetně Amazon SES). Zpracovatel ukládá obdobné povinnosti. "
+            "Správce uděluje obecné povolení k dalším zpracovatelům v aktuálním seznamu na "
+            "/subprocessors (podle zapnutých funkcí zejména AWS Lightsail a SES, Cloudflare, staging "
+            "Render a zálohy Google Drive či Amazon S3). Seznam uvádí podmíněné použití a informace "
+            "o předání; doplňují jej Zásady na /privacy. Zpracovatel ukládá obdobné povinnosti. "
             "Odpovídá za subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací "
-            "Zásad); Správce může vznést oprávněnou námitku a při neřešení ukončit Službu dle Podmínek."
+            "seznamu a, je-li to praktické, kontakty účtu nejméně 30 dní předem); Správce může vznést "
+            "oprávněnou námitku a při neřešení ukončit Službu dle Podmínek."
         ),
         "dpa.s12_title": "12. Pomoc s právy subjektů",
         "dpa.s12_body": (

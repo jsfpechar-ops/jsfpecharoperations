@@ -10,6 +10,7 @@
 
 <div class="g-card g-legal">
   <h3>{{ t('privacy_controller') }}</h3>
+  <p>{{ t('privacy_controller_body') }}</p>
   {% if controller and controller.name %}
     <p class="controller">
       <strong>{{ controller.name }}</strong>
@@ -25,6 +26,16 @@
     {% endif %}
   {% else %}
     <p>{{ t('privacy_controller_missing') }}</p>
+  {% endif %}
+
+  <h3>{{ t('privacy_stay_contact') }}</h3>
+  <p>{{ t('privacy_stay_contact_body') }}</p>
+  {% if host and host.name %}
+    <p class="controller">
+      <strong>{{ host.name }}</strong>
+      {% if host.email %}<br><a href="mailto:{{ host.email }}">{{ host.email }}</a>{% endif %}
+      {% if host.phone %}<br><a href="tel:{{ host.phone }}">{{ host.phone }}</a>{% endif %}
+    </p>
   {% endif %}
 
   <h3>{{ t('privacy_purpose') }}</h3>
@@ -45,6 +56,11 @@
   <h3>{{ t('privacy_cookies_title') }}</h3>
   <p>{{ t('privacy_cookies_body') }}</p>
 
+  {% if passport_photo_policy == 'required_foreign' %}
+  <h3>{{ t('privacy_passport_photo_title') }}</h3>
+  <p>{{ t('privacy_passport_photo_body') }}</p>
+  {% endif %}
+
   <h3>{{ t('privacy_recipients') }}</h3>
   <p>{{ t('privacy_recipients_body') if mail_enabled else t('privacy_recipients_body_no_email') }}</p>
 
@@ -52,7 +68,14 @@
   <p>{{ t('privacy_bot_protection_body') }}</p>
 
   <h3>{{ t('privacy_processor') }}</h3>
-  <p>{{ t('privacy_processor_body') }}</p>
+  {% set software_operator = operator() %}
+  <p>{{ t(
+    'privacy_processor_body',
+    name=software_operator.name,
+    ico=software_operator.ico,
+    address=software_operator.address,
+    email=software_operator.email
+  ) }}</p>
 
   <h3>{{ t('privacy_retention') }}</h3>
   <p>{{ t('privacy_retention_body') if mail_enabled else t('privacy_retention_body_no_email') }}</p>

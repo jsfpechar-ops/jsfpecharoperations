@@ -121,12 +121,13 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     for key, value in seo.head_links(request).items():
         data.setdefault(key, value)
     workspace = data["workspace_user"]
-    data.setdefault(
-        "open_alerts",
-        alerts.open_alerts(workspace["id"]) if workspace else (
-            [] if auth.accounts_exist() else alerts.open_alerts()
-        ),
-    )
+    if "open_alerts" not in data:
+        raw_alerts = (
+            alerts.open_alerts(workspace["id"]) if workspace else (
+                [] if auth.accounts_exist() else alerts.open_alerts()
+            )
+        )
+        data["open_alerts"] = alerts.present_many(raw_alerts, data["lang"])
     # The property switcher lives in the sidebar on every host page, so it must not
     # depend on which route remembered to pass its own list. Routes that need the
     # full rows (the dashboard) or the same list for a filter keep passing their own.
@@ -137,6 +138,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("celebration_milestone", None)
     data.setdefault("sent_guest_count", 0)
     data.setdefault("minutes_saved", 0)
+    data.setdefault("demo_available", config.UBYPORT_ENV == "mock")
     if workspace and workspace["id"]:
         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
     response = templates.TemplateResponse(request, name, data, status_code=status_code)

@@ -10,8 +10,8 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260920a">
-  <link rel="stylesheet" href="/static/components.css?v=20260919v">
+  <link rel="stylesheet" href="/static/app.css?v=20260921a">
+  <link rel="stylesheet" href="/static/components.css?v=20260921a">
 </head>
 <body class="layout-host {{ 'no-nav' if not (show_nav | default(true)) }}">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
@@ -67,13 +67,23 @@
   </button>
   <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
   {% if apartments is defined and apartments %}
+  {# Keep the rail calm: up to 8 letter marks wrap in the narrow sidebar;
+     anything beyond opens the command palette so nothing scrolls off-screen. #}
+  {% set property_mark_limit = 8 %}
+  {% set visible_apartments = apartments[:property_mark_limit] %}
+  {% set hidden_property_count = apartments|length - visible_apartments|length %}
   <div class="property-switcher" aria-label="{{ t('nav.properties') }}">
-    {% for apartment in apartments[:6] %}
+    {% for apartment in visible_apartments %}
       <a href="/reservations?range=upcoming&apartment={{ apartment.id }}" title="{{ apartment.internal_name }}">
         <span class="property-mark property-tone-{{ apartment.id % 10 }}" aria-hidden="true">{{ apartment.internal_name[:1] }}</span>
         <span>{{ apartment.internal_name }}</span>
       </a>
     {% endfor %}
+    {% if hidden_property_count > 0 %}
+      <button class="property-switcher-more" type="button" data-command-open
+              title="{{ t('nav.properties_more', count=hidden_property_count) }}"
+              aria-label="{{ t('nav.properties_more', count=hidden_property_count) }}">+{{ hidden_property_count }}</button>
+    {% endif %}
   </div>
   {% endif %}
   <nav class="sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">
@@ -119,6 +129,8 @@
         <a href="/privacy">{{ t('privacy.footer_short') }}</a>
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/dpa">{{ t('dpa.footer_short') }}</a>
+        <span class="sidebar-footer-sep" aria-hidden="true">·</span>
+        <a href="/subprocessors">{{ t('subprocessors.footer_short') }}</a>
         {% if operator().email %}
           <span class="sidebar-footer-sep" aria-hidden="true">·</span>
           <a href="mailto:{{ operator().email }}">{{ t('nav.support') }} — {{ operator().email }}</a>
@@ -172,8 +184,8 @@
       {% endif %}
           <span class="notification-icon" aria-hidden="true">!</span>
           <span class="grow">
-            <strong>{{ alert.message }}</strong>
-            {% if alert.detail %}<small>{{ alert.detail }}</small>{% endif %}
+            <strong>{{ alert.display_title or alert.message }}</strong>
+            {% if alert.display_detail or alert.detail %}<small>{{ alert.display_detail or alert.detail }}</small>{% endif %}
             {% if alert.reservation_id %}<small class="notification-action">{{ t('notification.open_stay') }}</small>
             {% elif alert.apartment_id %}<small class="notification-action">{{ t('notification.open_property') }}</small>{% endif %}
           </span>
@@ -294,6 +306,6 @@
 </dialog>
 
 <script src="/static/csrf.js?v=20260915a"></script>
-<script src="/static/app.js?v=20260920a"></script>
+<script src="/static/app.js?v=20260921a"></script>
 </body>
 </html>

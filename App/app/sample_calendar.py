@@ -1,13 +1,15 @@
 """Bundled Airbnb-shaped sample calendar for demo mode (works without the mock server)."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 from fastapi.responses import Response
 
+from . import deadlines
+
 
 def sample_airbnb_ics() -> str:
-    today = date.today()
+    today = deadlines.local_now().date()
     lines = [
         "BEGIN:VCALENDAR",
         "PRODID;X-RICAL-TZSOURCE=TZINFO:-//Airbnb Inc//Hosting Calendar 0.8.8//EN",
@@ -18,7 +20,13 @@ def sample_airbnb_ics() -> str:
     stays = [
         ("arriving-today", today, 4, "Reserved", "0431"),
         ("arrived-yesterday", today - timedelta(days=1), 3, "Reserved", "7788"),
+        ("tomorrow", today + timedelta(days=1), 3, "Reserved", "2201"),
+        ("two-days", today + timedelta(days=2), 2, "Reserved", "2202"),
         ("next-week", today + timedelta(days=7), 5, "Reserved", "1290"),
+        ("czech-visit", today + timedelta(days=9), 2, "Reserved", "3301"),
+        ("past-open", today - timedelta(days=8), 3, "Reserved", "4401"),
+        ("lock-me", today + timedelta(days=6), 2, "Reserved", "5501"),
+        ("far-ahead", today + timedelta(days=45), 4, "Reserved", "6601"),
         ("blocked", today + timedelta(days=3), 2, "Airbnb (Not available)", None),
     ]
     for name, start, nights, summary, phone in stays:

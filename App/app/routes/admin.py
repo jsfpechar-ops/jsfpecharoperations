@@ -24,6 +24,7 @@ from .. import (
     housebook,
     icalsync,
     mail,
+    onboarding,
     passport_photos,
     reporting,
     claim,
@@ -173,7 +174,10 @@ def load_demo(request: Request):
         return guard
     apartment_id = demo.seed(access.owner_id(request))
     if not apartment_id:
-        return _back("/", err="Demo data is only available before you add your first property.")
+        return _back(
+            "/",
+            err="Demo data is available only in a fresh staging or mock workspace.",
+        )
     return _back("/", msg="Demo property loaded. Use “Clear demo data” on Overview when finished.")
 
 
@@ -316,6 +320,43 @@ def guide_view(request: Request):
     return render(request, "guide.html")
 
 
+@router.get("/onboarding")
+def onboarding_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    return render(request, "onboarding.html")
+
+
+@router.post("/onboarding/dismiss")
+async def onboarding_dismiss(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    owner_user_id = access.owner_id(request)
+    onboarding.set_dismissed(owner_user_id, True)
+    db.audit("onboarding.dismissed", owner_user_id=owner_user_id)
+    return RedirectResponse(
+        security.safe_local_path(_form_str(form, "return_to"), "/"), status_code=303
+    )
+
+
+@router.post("/onboarding/resume")
+async def onboarding_resume(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    owner_user_id = access.owner_id(request)
+    onboarding.set_dismissed(owner_user_id, False)
+    db.audit("onboarding.resumed", owner_user_id=owner_user_id)
+    return RedirectResponse(
+        security.safe_local_path(_form_str(form, "return_to"), "/onboarding"),
+        status_code=303,
+    )
+
+
 @router.post("/celebrations/dismiss")
 async def dismiss_celebration(request: Request):
     guard = auth.require_login(request)
@@ -369,12 +410,14 @@ def entities(request: Request):
         return guard
     owner_user_id = access.owner_id(request)
     rows = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
         "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NULL ORDER BY e.name",
         (owner_user_id,),
     )
     archived = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE a.legal_entity_id = e.id) AS apartments "
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
         "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NOT NULL "
         "ORDER BY e.archived_at DESC",
         (owner_user_id,),
@@ -445,8 +488,9 @@ def archive_entity(entity_id: int, request: Request):
     if entity["archived_at"]:
         return _back("/entities", err="Already archived.")
     used = db.query_one(
-        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
-        (entity_id, access.owner_id(request)),
+        "SELECT COUNT(*) AS n FROM apartment WHERE "
+        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
+        (entity_id, entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
         return _back(
@@ -486,8 +530,9 @@ def delete_entity(entity_id: int, request: Request):
     if not entity["archived_at"]:
         return _back("/entities", err="Archive the legal entity before deleting it.")
     used = db.query_one(
-        "SELECT COUNT(*) AS n FROM apartment WHERE legal_entity_id = ? AND owner_user_id IS ?",
-        (entity_id, access.owner_id(request)),
+        "SELECT COUNT(*) AS n FROM apartment WHERE "
+        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
+        (entity_id, entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
         return _back("/entities", err="Detach the properties from this entity first.")
@@ -583,13 +628,17 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["uby_mark"] = payload["uby_mark"].upper()
     payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
     payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
+    payload["data_controller_entity_id"] = _form_int(
+        form, "data_controller_entity_id"
+    )
     mode = _form_str(form, "automation_mode", "scheduled")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
-    # Passport uploads are retired. Preserve the column for a non-destructive
-    # migration, but every saved property is forced to the disabled policy.
-    payload["passport_photo_policy"] = "off"
+    policy = _form_str(form, "passport_photo_policy", "off")
+    payload["passport_photo_policy"] = (
+        policy if policy in ("off", "required_foreign") else "off"
+    )
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
@@ -611,6 +660,12 @@ async def apartment_create(request: Request):
     payload["owner_user_id"] = access.owner_id(request)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
         return _back("/apartments/new", err="No such legal entity.")
+    if payload["data_controller_entity_id"] and not access.entity(
+        request, payload["data_controller_entity_id"]
+    ):
+        return _back("/apartments/new", err="No such data controller.")
+    if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
+        payload["data_controller_entity_id"] = None
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
@@ -661,6 +716,12 @@ async def apartment_update(apartment_id: int, request: Request):
     payload = _apartment_payload(form)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
         return _back(f"/apartments/{apartment_id}", err="No such legal entity.")
+    if payload["data_controller_entity_id"] and not access.entity(
+        request, payload["data_controller_entity_id"]
+    ):
+        return _back(f"/apartments/{apartment_id}", err="No such data controller.")
+    if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
+        payload["data_controller_entity_id"] = None
     for key in ("automation_mode", "submit_after_hours", "default_purpose"):
         payload.pop(key, None)
     password = _form_str(form, "uby_ws_password")
@@ -1648,6 +1709,28 @@ async def guest_verify_identity(guest_id: int, request: Request):
         )
     reporting.maybe_submit_after_verify(reservation["apartment_id"], guest_id)
     return _back(return_to, msg="ID check recorded.")
+
+
+@router.get("/guests/{guest_id}/passport-photo")
+def guest_passport_photo(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest or not reporting.guest_has_passport_photo(guest):
+        return Response("Not found.", status_code=404)
+    payload = passport_photos.read_photo(guest_id)
+    if not payload:
+        return Response("Not found.", status_code=404)
+    content, media_type = payload
+    return Response(
+        content,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Security-Policy": "sandbox; default-src 'none'",
+        },
+    )
 
 
 @router.post("/guests/{guest_id}/archive")

@@ -1,25 +1,45 @@
 {% extends "guest/base.html" %}
 {% block content %}
 
+<section class="g-arrival-hero" aria-labelledby="arrival-welcome">
+  <p class="g-question-kicker">{{ t('arrival_kicker') }}</p>
+  <h2 id="arrival-welcome">{{ property_name }}</h2>
+  <p>{{ t('arrival_welcome', facility=property_name) }}</p>
+  {% if apartment.city_en %}<p class="g-arrival-location">{{ apartment.city_en }}</p>{% endif %}
+  {% if apartment.guest_message %}
+    <details class="g-arrival-message">
+      <summary>{{ t('message_from_host') }}</summary>
+      <p>{{ apartment.guest_message }}</p>
+    </details>
+  {% endif %}
+</section>
+
 {% include "guest/_why.html" %}
 
-<h2 class="g-section">{{ t('pick_stay') }}</h2>
-<p class="g-intro">{{ t('pick_stay_help') }}</p>
+<section class="g-arrival-choice" aria-labelledby="arrival-question">
+  <h2 class="g-section" id="arrival-question">{{ t('arrival_question') }}</h2>
+  <p class="g-intro">{{ t('arrival_help') }}</p>
 
-{% for row in rows %}
-  {% set reservation = row.reservation %}
-  <a class="g-stay {{ 'yours' if row.yours }}" href="/l/{{ token }}/{{ reservation.id }}?lang={{ lang }}">
-    <span class="dates">
-      <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
-      <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
-      {% if row.yours %}
-        <span class="g-badge">{{ t('your_stay_badge') }}</span>
-      {% else %}
-        <span class="g-badge quiet">{{ t('stay_not_started') }}</span>
-      {% endif %}
-    </span>
-    <span class="arrow" aria-hidden="true">&rarr;</span>
-  </a>
-{% endfor %}
-
+  <div class="g-arrival-lanes">
+  {% for row in rows %}
+    {% set reservation = row.reservation %}
+    <a class="g-stay g-arrival-lane {{ 'yours' if row.yours }}" style="--lane-index: {{ loop.index0 }}"
+       href="/l/{{ token }}/{{ reservation.id }}?lang={{ lang }}">
+      <span class="g-range-cue" aria-hidden="true"><i></i></span>
+      <span class="dates">
+        <strong>{{ reservation.date_from | date_cz }} <span aria-hidden="true">&rarr;</span> {{ reservation.date_to | date_cz }}</strong>
+        <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+        {% if row.yours %}
+          <span class="g-lane-status">{{ t('your_stay_badge') }}</span>
+        {% elif row.ongoing %}
+          <span class="g-lane-status ongoing">{{ t('stay_ongoing') }}</span>
+        {% else %}
+          <span class="g-lane-status quiet">{{ t('stay_not_started') }}</span>
+        {% endif %}
+      </span>
+      <span class="g-lane-action">{{ t('arrival_cta') }} <span aria-hidden="true">&rarr;</span></span>
+    </a>
+  {% endfor %}
+  </div>
+</section>
 {% endblock %}

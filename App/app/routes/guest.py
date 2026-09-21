@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, i18n, mail, rate_limit, reporting, security, turnstile, validation
+from .. import alerts, auth, claim, codelists, config, db, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 
 router = APIRouter()
@@ -105,6 +105,20 @@ _CS_VALIDATION_PATTERNS = (
         "„{code}“ není platný třímístný kód země (např. GBR, USA, DEU).",
     ),
 )
+
+CS_PASSPORT_UPLOAD_MESSAGES = {
+    "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
+    "(for example a registration form with up to 11 guests).": (
+        "Nahrajte fotografii pasu (JPEG, PNG, WebP) nebo PDF "
+        "(např. registrační formulář až pro 11 hostů)."
+    ),
+    "The uploaded file looks empty.": "Nahraný soubor vypadá prázdně.",
+    "The PDF is too large. Use a file under 15 MB.": "PDF je příliš velké. Maximálně 15 MB.",
+    "The file does not look like a valid PDF.": "Soubor nevypadá jako platné PDF.",
+    "The photo is too large. Use a file under 5 MB.": "Fotografie je příliš velká. Maximálně 5 MB.",
+    "The file does not look like a valid image.": "Soubor nevypadá jako platný obrázek.",
+}
+
 
 def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-owned")
@@ -251,12 +265,24 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
     return _with_lang(render_guest(request, "guest/pin.html", context), lang)
 
 
+def _host_owns_apartment(request: Request, apartment) -> bool:
+    """Signed-in host filling the guest form for their own property."""
+    if not apartment:
+        return False
+    workspace = auth.workspace_user(request)
+    if not workspace:
+        return False
+    owner = apartment["owner_user_id"]
+    return owner is not None and int(owner) == int(workspace["id"])
+
+
 def _require_pin(request: Request, token: str, lang: str):
     if not config.GUEST_PIN_REQUIRED:
         return None
     apartment = _apartment_by_token(token)
-    if apartment and auth.pin_session_valid(
-        request, token, apartment["permalink_pin"] or ""
+    if apartment and (
+        _host_owns_apartment(request, apartment)
+        or auth.pin_session_valid(request, token, apartment["permalink_pin"] or "")
     ):
         return None
     return _pin_page(request, token, lang)
@@ -280,7 +306,8 @@ def _visible_reservations(apartment) -> List[Any]:
 
 
 def _can_pick_other_stays(apartment) -> bool:
-    return len(_visible_reservations(apartment)) > 1
+    """Whether the guest can return to the now-mandatory stay picker."""
+    return bool(_visible_reservations(apartment))
 
 
 def _registration_complete(reservation) -> bool:
@@ -396,8 +423,8 @@ def _lang_urls(request: Request, path: str = "") -> Dict[str, str]:
     return out
 
 
-def _facility(apartment) -> str:
-    """How the property identifies itself to a guest.
+def _display_name(apartment) -> str:
+    """The property's guest-facing name.
 
     The host's own name for the apartment, because that is the name the guest
     recognises from the booking. The name registered with the police is only a
@@ -406,7 +433,14 @@ def _facility(apartment) -> str:
     """
     if not apartment:
         return ""
-    name = (apartment["internal_name"] or "").strip() or (apartment["uby_name"] or "").strip()
+    return (apartment["internal_name"] or "").strip() or (apartment["uby_name"] or "").strip()
+
+
+def _facility(apartment) -> str:
+    """How the property identifies itself to a guest, including its city."""
+    if not apartment:
+        return ""
+    name = _display_name(apartment)
     city = (apartment["city_en"] or "").strip()
     return ", ".join(part for part in (name, city) if part)
 
@@ -420,19 +454,18 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "lang_urls": _lang_urls(request),
         "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang),
         "facility": _facility(apartment),
+        "property_name": _display_name(apartment),
         "facility_tone": int(apartment["id"]) % 10 if apartment else 0,
         "controller": _controller(apartment) if apartment else {},
+        "host": _host_contact(apartment) if apartment else {},
         "mail_enabled": mail.mail_enabled(),
     }
 
 
-def _controller(apartment) -> Dict[str, str]:
-    """The GDPR data controller: the legal entity operating the apartment."""
-    entity = None
-    if apartment["legal_entity_id"]:
-        entity = db.query_one(
-            "SELECT * FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],)
-        )
+def _entity_details(entity_id) -> Dict[str, str]:
+    if not entity_id:
+        return {}
+    entity = db.query_one("SELECT * FROM legal_entity WHERE id = ?", (entity_id,))
     if not entity:
         return {}
     return {
@@ -442,6 +475,24 @@ def _controller(apartment) -> Dict[str, str]:
         "email": (entity["contact_email"] if "contact_email" in entity.keys() else "") or "",
         "phone": (entity["contact_phone"] if "contact_phone" in entity.keys() else "") or "",
     }
+
+
+def _host_contact(apartment) -> Dict[str, str]:
+    """The property manager / operating entity guests contact about a stay."""
+    return _entity_details(apartment["legal_entity_id"] if apartment else None)
+
+
+def _controller(apartment) -> Dict[str, str]:
+    """The configured GDPR controller, defaulting to the property manager."""
+    if not apartment:
+        return {}
+    keys = apartment.keys()
+    controller_id = (
+        apartment["data_controller_entity_id"]
+        if "data_controller_entity_id" in keys
+        else None
+    )
+    return _entity_details(controller_id or apartment["legal_entity_id"])
 
 
 def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[str, Any]:
@@ -483,6 +534,9 @@ def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editin
 
 def _require_claim_session(request: Request, reservation, token: str, lang: str):
     if not mail.mail_enabled():
+        return None
+    apartment = _apartment_by_token(token)
+    if _host_owns_apartment(request, apartment):
         return None
     row = claim.ensure_row(reservation["id"])
     if not claim.guest_access_open(reservation, row):
@@ -578,6 +632,7 @@ def privacy_notice(token: str, request: Request):
     context.update(
         {
             "controller": _controller(apartment),
+            "passport_photo_policy": apartment["passport_photo_policy"] or "off",
             "back_url": back_url,
         }
     )
@@ -607,21 +662,25 @@ def pick_stay(token: str, request: Request):
             reservations.append(extra)
             visible_ids.add(extra["id"])
 
-    # With a single candidate there is nothing to choose; go straight in.
-    if len(reservations) == 1:
-        return _with_lang(
-            RedirectResponse(_guest_link(token, reservations[0]["id"]) + _lang_q(lang), status_code=303),
-            lang,
-        )
     if not reservations:
         return _with_lang(_unavailable(request, lang, "no_stays", 200, token), lang)
 
     owned = set(_owned_ids(request))
+    today = claim.prague_today()
     rows = []
     for reservation in reservations:
         progress = reporting.reservation_progress(reservation)
         yours = any(guest["id"] in owned for guest in progress["guests"])
-        rows.append({"reservation": reservation, "progress": progress, "yours": yours})
+        start = validation.parse_iso_date(reservation["date_from"])
+        end = validation.parse_iso_date(reservation["date_to"])
+        rows.append(
+            {
+                "reservation": reservation,
+                "progress": progress,
+                "yours": yours,
+                "ongoing": bool(start and end and start <= today < end),
+            }
+        )
     context = _shared(request, token, lang, apartment)
     context.update({"apartment": apartment, "rows": rows})
     return _with_lang(render_guest(request, "guest/pick.html", context), lang)
@@ -653,9 +712,19 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "mail_enabled": mail.mail_enabled(),
             "claim_error": request.query_params.get("claim_error") or "",
             "claim_sent": request.query_params.get("claim_sent") == "1",
+            "require_turnstile": turnstile.required(),
+            "claim_last_sent_at": (
+                db.query_one(
+                    "SELECT MAX(sent_at) AS sent_at FROM email_outbox "
+                    "WHERE reservation_id = ? AND kind IN ('claim', 'claim_resend') "
+                    "AND sent_at IS NOT NULL",
+                    (reservation["id"],),
+                )["sent_at"]
+                or ""
+            ),
         }
     )
-    if mail.mail_enabled():
+    if mail.mail_enabled() and not _host_owns_apartment(request, apartment):
         if not claim.is_claimed(claim_row):
             return _with_lang(render_guest(request, "guest/claim.html", context), lang)
         if reservation["id"] not in _claimed_reservation_ids(request):
@@ -820,8 +889,20 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     claim_row = claim.ensure_row(reservation["id"])
     resend = bool(form.get("resend"))
     if email or not claim.is_claimed(claim_row):
+        if turnstile.required() and not turnstile.verify(
+            request, form.get("cf-turnstile-response"), "guest_claim"
+        ):
+            return _with_lang(
+                RedirectResponse(
+                    _guest_link(token, reservation_id)
+                    + _lang_q(lang, "&claim_error=bot"),
+                    status_code=303,
+                ),
+                lang,
+            )
+        # Strict IP+token cap: three claim attempts / 15 minutes.
         key = rate_limit.client_key(request, f"claim:{token}")
-        if rate_limit.blocked("claim_start", key, 8):
+        if rate_limit.blocked("claim_start", key, 3):
             return _with_lang(
                 RedirectResponse(
                     _guest_link(token, reservation_id) + _lang_q(lang, "&claim_error=rate"),
@@ -838,7 +919,13 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             lang=lang,
             resend=resend or claim.is_claimed(claim_row),
         )
-        extra = "&claim_sent=1" if ok else f"&claim_error={err or 'bad_email'}"
+        if ok:
+            extra = "&claim_sent=1"
+        elif err == "already_sent":
+            # Active provisional hold for this address — show check-email, no new send.
+            extra = "&claim_sent=1"
+        else:
+            extra = f"&claim_error={err or 'bad_email'}"
         return _with_lang(
             RedirectResponse(
                 _guest_link(token, reservation_id) + _lang_q(lang, extra),
@@ -939,6 +1026,18 @@ def _form_context(
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
             "inpass": validation.INPASS,
             "remaining": remaining,
+            "has_existing_passport_photo": bool(
+                guest
+                and guest["passport_photo_at"]
+                and passport_photos.has_photo(int(guest["id"]))
+            ),
+            # Show the upload step whenever the property enables it; nationality
+            # gating (Czech vs foreign) is handled in the template JavaScript
+            # and again on save via guest_needs_passport_photo.
+            "require_passport": (
+                (apartment["passport_photo_policy"] or "off").strip().lower()
+                == "required_foreign"
+            ),
         }
     )
     return context
@@ -1112,6 +1211,38 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
+    passport_upload = form.get("passport_photo")
+    passport_bytes = None
+    passport_type = None
+    if reporting.guest_needs_passport_photo(
+        existing
+        or {
+            "nationality": values["nationality"],
+            "reservation_id": reservation_id,
+            "entered_by": "guest",
+            "identity_verified_at": None,
+        },
+        apartment,
+    ):
+        has_existing_photo = (
+            existing
+            and existing["passport_photo_at"]
+            and passport_photos.has_photo(existing["id"])
+        )
+        if passport_upload and hasattr(passport_upload, "read"):
+            try:
+                passport_bytes = await passport_photos.read_upload_limited(passport_upload)
+                passport_type = passport_photos.validate_upload(
+                    passport_bytes, passport_upload.content_type or ""
+                )
+            except ValueError as exc:
+                msg = str(exc)
+                if lang == "cs":
+                    msg = CS_PASSPORT_UPLOAD_MESSAGES.get(msg, msg)
+                issues.append(validation.Issue("passport_photo", msg))
+        elif not has_existing_photo:
+            issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))
+
     issues = _localize_issues(issues, lang)
 
     if validation.errors_only(issues):
@@ -1184,6 +1315,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             {"reservation_id": reservation_id, "is_lead": 1 if is_first else 0, "created_at": now}
         )
         saved_id = db.insert("guest", payload)
+
+    if passport_bytes and passport_type:
+        passport_photos.save_photo(saved_id, passport_bytes, passport_type)
+        db.update(
+            "guest",
+            saved_id,
+            {"passport_photo_at": now, "updated_at": now},
+        )
 
     db.audit(
         "guest_form_saved",

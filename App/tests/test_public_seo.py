@@ -17,7 +17,16 @@ from app.landing_i18n import LANDING_STRINGS
 from app.public_guides import GUIDE_TRANSLATIONS
 from tests.test_accounts import _account, _clean_accounts, _login
 
-PUBLIC_PAGES = ("/login", "/legal", "/terms", "/privacy", "/dpa", "/jak-to-funguje", "/cenik")
+PUBLIC_PAGES = (
+    "/login",
+    "/legal",
+    "/terms",
+    "/privacy",
+    "/dpa",
+    "/subprocessors",
+    "/jak-to-funguje",
+    "/cenik",
+)
 
 
 def _client() -> TestClient:

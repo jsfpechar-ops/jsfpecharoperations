@@ -108,6 +108,66 @@ def is_claimed(claim) -> bool:
     return bool(claim and claim["state"] == CLAIMED)
 
 
+# Abuse caps for transactional claim mail (strict before SES go-live).
+RESEND_COOLDOWN_SECONDS = 5 * 60
+CLAIM_MAIL_PER_RECIPIENT_MAX = 2
+CLAIM_MAIL_PER_RECIPIENT_WINDOW = 60 * 60
+CLAIM_MAIL_PER_RESERVATION_MAX = 3
+CLAIM_MAIL_PER_RESERVATION_WINDOW = 60 * 60
+
+
+def _parse_utc(stamp: Optional[str]) -> Optional[datetime]:
+    if not stamp:
+        return None
+    try:
+        return datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _recipient_rate_key(addr: str) -> str:
+    digest = hashlib.sha256(addr.encode("utf-8")).hexdigest()
+    return f"claim_to:{digest}"
+
+
+def _claim_mail_blocked(reservation_id: int, addr: str) -> Optional[str]:
+    """Return an error code when recipient or stay caps are exhausted."""
+    from . import rate_limit
+
+    if rate_limit.blocked(
+        "claim_mail_recipient",
+        _recipient_rate_key(addr),
+        CLAIM_MAIL_PER_RECIPIENT_MAX,
+        CLAIM_MAIL_PER_RECIPIENT_WINDOW,
+    ):
+        return "recipient_rate"
+    if rate_limit.blocked(
+        "claim_mail_reservation",
+        f"claim_res:{reservation_id}",
+        CLAIM_MAIL_PER_RESERVATION_MAX,
+        CLAIM_MAIL_PER_RESERVATION_WINDOW,
+    ):
+        return "rate"
+    return None
+
+
+def _record_claim_mail(reservation_id: int, addr: str) -> None:
+    from . import rate_limit
+
+    rate_limit.record("claim_mail_recipient", _recipient_rate_key(addr))
+    rate_limit.record("claim_mail_reservation", f"claim_res:{reservation_id}")
+
+
+def _resend_too_soon(claim) -> bool:
+    last = _parse_utc(claim["updated_at"] if claim else None)
+    if not last:
+        return False
+    now = _parse_utc(db.utcnow()) or datetime.now(timezone.utc)
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    return (now - last).total_seconds() < RESEND_COOLDOWN_SECONDS
+
+
 def start_claim(
     reservation,
     apartment,
@@ -135,10 +195,20 @@ def start_claim(
     if claim["state"] == CLAIMED and resend:
         if mail.normalise_email(claim["email"] or "") != addr:
             return False, "already_claimed", None
+    same_email = mail.normalise_email(claim["email"] or "") == addr
     if claim["state"] == PROVISIONAL and not resend:
         if _hold_still_active(claim["provisional_until"]):
-            if mail.normalise_email(claim["email"] or "") != addr:
+            if not same_email:
                 return False, "held", None
+            # Same address already has an active hold — do not rotate/send again.
+            return False, "already_sent", None
+    if resend or claim["state"] == CLAIMED:
+        if _resend_too_soon(claim):
+            return False, "cooldown", None
+
+    blocked = _claim_mail_blocked(int(reservation["id"]), addr)
+    if blocked:
+        return False, blocked, None
 
     secret = secrets.token_urlsafe(TOKEN_BYTES)
     now = db.utcnow()
@@ -194,6 +264,7 @@ def start_claim(
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
     )
+    _record_claim_mail(int(reservation["id"]), addr)
     mail.drain(limit=4)
     return True, "", secret
 
@@ -459,9 +530,8 @@ def sweep_reminders() -> Dict[str, int]:
             alerts.raise_alert(
                 "warning",
                 "guest_incomplete_checkin",
-                f"{reservation['internal_name']}: check-in today and forms are incomplete.",
-                f"Claimed as {masked}. The guest can still complete the form using "
-                f"their registration link.",
+                f"{reservation['internal_name']} · check-in today",
+                "Forms incomplete",
                 dedupe_key=f"guest_incomplete_checkin:{reservation['id']}",
                 apartment_id=reservation["apartment_id"],
                 reservation_id=reservation["id"],

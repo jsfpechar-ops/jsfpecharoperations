@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_welcome, next_action, property_identity, sync_calendars_button with context %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_welcome, next_action, property_identity, sync_calendars_button with context %}
 
 {% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
   {% if items %}
@@ -37,6 +37,9 @@
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('dashboard.row.open_stay') }}</a>
               <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
+              {% if reservation.permalink_token %}
+              <a class="row-menu-item" href="/l/{{ reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
+              {% endif %}
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form">
                 <input type="hidden" name="return_to" value="/">
                 <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
@@ -72,10 +75,25 @@
 ) }}
 
 {% if not apartments %}
-  {{ onboarding_welcome(onboarding) }}
+  {% if not onboarding.dismissed %}
+    {{ onboarding_welcome(onboarding) }}
+  {% else %}
+    <div class="panel empty onboarding-skipped">
+      <h2>{{ t('onboarding.skipped_title') }}</h2>
+      <p>{{ t('onboarding.skipped_body') }}</p>
+      <div class="actions">
+        <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
+        <a class="btn" href="/onboarding">{{ t('onboarding.open_checklist') }}</a>
+      </div>
+    </div>
+  {% endif %}
 {% else %}
 
-  {{ onboarding_banner(onboarding) }}
+  {% if onboarding and onboarding.finished and not onboarding.dismissed %}
+    {{ onboarding_finish(onboarding) }}
+  {% else %}
+    {{ onboarding_banner(onboarding) }}
+  {% endif %}
 
   {% if focus %}
     {% set f_res = focus.reservation %}
@@ -114,6 +132,11 @@
         {% endif %}
         <a class="btn {{ 'primary' if not focus.controls.get('send_enabled') else '' }}"
            href="/reservations/{{ f_res.id }}?return_to=/">{{ t('dashboard.focus.open_stay') }}</a>
+        {% if f_res.permalink_token %}
+        {{ row_menu_begin() }}
+          <a class="row-menu-item" href="/l/{{ f_res.permalink_token }}/{{ f_res.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
+        {{ row_menu_end() }}
+        {% endif %}
       </div>
     </section>
   {% endif %}

@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS legal_entity (
 CREATE TABLE IF NOT EXISTS apartment (
     id                    INTEGER PRIMARY KEY AUTOINCREMENT,
     legal_entity_id       INTEGER REFERENCES legal_entity(id),
+    data_controller_entity_id INTEGER REFERENCES legal_entity(id),
     owner_user_id         INTEGER REFERENCES user_account(id),
     internal_name         TEXT NOT NULL,
     city_en               TEXT,
@@ -321,6 +322,7 @@ ADDED_COLUMNS = (
     ("legal_entity", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
     ("legal_entity", "archived_at", "TEXT"),
     ("apartment", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
+    ("apartment", "data_controller_entity_id", "INTEGER REFERENCES legal_entity(id)"),
     ("apartment", "permalink_pin", "TEXT"),
     ("apartment", "archived_at", "TEXT"),
     ("reservation", "archived_at", "TEXT"),
