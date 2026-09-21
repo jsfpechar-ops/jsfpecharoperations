@@ -2,12 +2,14 @@
 
 UbyHost sends a small set of **transactional** messages (claim / continue link,
 one day-before guest reminder, host incomplete-registration warning, completion
-receipt with host CC). Production uses **Amazon SES in `eu-central-1`** when
-enabled. Staging on Render stays on the **console** backend forever.
+receipt with host CC). Production uses **Amazon SES in `eu-central-1`**. Staging
+on Render stays on the **console** backend forever.
 
-App code can call SES (`App/app/mail.py` `_send_ses`). Production must keep
-`UBYHOST_MAIL_BACKEND=disabled` until domain auth, IAM, and a deliberate `.env`
-flip are done.
+App code can call SES (`App/app/mail.py` `_send_ses`). **Production is live on
+`ses` since 2026-09-21** — UbyHost 1.1.0 is deployed and the Lightsail `.env` was
+flipped once domain auth and IAM were ready. Staging stays on `console` forever.
+[NEXT_MAIL_RELEASE.md](NEXT_MAIL_RELEASE.md) holds the release record and the
+outstanding post-release checks.
 
 ## Deliverability (what matters)
 
@@ -56,17 +58,21 @@ Region: **Europe (Frankfurt) `eu-central-1`**.
 Optional later: SNS → SQS bounce/complaint feedback
 (`UBYHOST_SES_FEEDBACK_QUEUE_URL` is reserved in config but unused today).
 
-## Application deploy (code before flip)
+## Application deploy (completed 2026-09-21)
 
-1. Merge a build that includes `_send_ses` and `boto3` in `App/requirements.txt`.
+Recorded for reproducibility — steps 1–4 are all done in production.
+
+1. Merge a build that includes `_send_ses` and `boto3` in
+   `App/requirements.txt`. **Done** — shipped in UbyHost 1.1.0.
 2. Deploy to Lightsail with mail still **disabled**:
 
    ```bash
    UBYHOST_MAIL_BACKEND=disabled
    ```
 
-3. Only after domain/IAM are ready, set on the VM
-   (`/opt/ubyhost/deploy/lightsail/.env`):
+   **Done** — production ran the claim build with mail off while it was reviewed.
+
+3. Then set on the VM (`/opt/ubyhost/deploy/lightsail/.env`):
 
    ```bash
    UBYHOST_DEPLOYMENT=production
@@ -78,7 +84,20 @@ Optional later: SNS → SQS bounce/complaint feedback
    ```
 
 4. Redeploy (`git pull` + `./scripts/deploy.sh`). Incomplete SES config **refuses
-   to start**. Settings should show backend `ses`.
+   to start**. Settings should show backend `ses`. **Done 2026-09-21** — confirmed
+   in the running container:
+
+   ```bash
+   docker compose exec ubyhost env | grep UBYHOST_MAIL_BACKEND   # ses
+   docker compose logs --tail=100 ubyhost | grep -i "disabled on production"
+   ```
+
+   Editing `.env` alone changes nothing: `env_file` is read at container start,
+   so the app must be redeployed/restarted. The guard logs
+   `guest e-mail is disabled on production` whenever the *running* backend is
+   `disabled`, so that grep printing nothing (with `ses` above) is the proof the
+   flip took effect.
+
 5. **From** = `noreply@ubyhost.com`. **Reply-To** = the property legal-entity
    contact e-mail when configured.
 
@@ -86,8 +105,11 @@ Optional later: SNS → SQS bounce/complaint feedback
 
 - Sandbox: verify your personal inbox in SES, claim a test stay with that
   address, confirm claim / completion mail.
-- After production access: one low-risk real path; watch outbox / `mail_failed`
-  alerts.
+- **Outstanding in production:** one real end-to-end journey — permalink → PIN →
+  stay → party count + e-mail → claim mail → magic link — to prove SES actually
+  delivers. The startup guard validates configuration only; it cannot see
+  sandbox status, sender/domain verification in `UBYHOST_SES_REGION`, or IAM
+  `ses:SendEmail` permission. Watch outbox `last_error` and `mail_failed` alerts.
 - Staging must never use `ses`.
 - Rollback: set `UBYHOST_MAIL_BACKEND=disabled` and redeploy — guests return to
   PIN → dates → form without claim e-mail.
