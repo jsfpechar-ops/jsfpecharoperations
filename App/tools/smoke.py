@@ -236,12 +236,12 @@ def main():
         f"/l/{token}",
         must_contain=[
             "Czech law",
-            "Smoke Studio",
+            "Smoke flat",
             "How your data is handled",
             "Which stay is yours?",
             "That’s my stay",
         ],
-        must_not_contain=["Airbnb", "Booking.com"],
+        must_not_contain=["Airbnb", "Booking.com", "Smoke Studio"],
     )
     privacy_expected = [
         "Smoke s.r.o.",

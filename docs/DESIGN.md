@@ -159,3 +159,12 @@ before proposing or shipping UI changes. When a task mentions “modern UI,”
 “Notion/Linear-style,” or “respect system theme,” **do not** interpret that as
 permission to add dark mode unless the user’s message in that task explicitly
 requests it.
+
+## Host admin hierarchy (competitive notes)
+
+When polishing the signed-in host UI, prefer clear page-header CTAs over quiet
+secondary buttons for frequent actions (calendar update, add property). Use the
+coral primary with an icon — not competitor pink/purple gradients. Keep row
+actions in the overflow menu; do not crowd tables with many colored chips.
+Czech labels should use everyday verbs (e.g. **Aktualizovat kalendáře**) rather
+than jargon when hosts will recognize the Airbo-equivalent action.

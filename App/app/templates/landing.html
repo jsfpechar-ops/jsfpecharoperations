@@ -24,7 +24,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/landing.css?v=20260919c">
+  <link rel="stylesheet" href="/static/landing.css?v=20260919y">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -66,10 +66,10 @@
       <img src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
     <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
-      <a href="#features">{{ t('landing.nav.features') }}</a>
-      <a href="#how">{{ t('landing.nav.how') }}</a>
-      <a href="#guides">{{ t('landing.nav.guides') }}</a>
-      <a href="#questions">{{ t('landing.nav.faq') }}</a>
+      <a href="#product">{{ t('landing.nav.features') }}</a>
+      <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.nav.how') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
     </nav>
     <div class="landing-actions">
       <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
@@ -82,205 +82,119 @@
 
   <main id="content">
     <section class="landing-hero" aria-labelledby="landing-title">
-      <div class="landing-hero-copy">
-        <p class="landing-eyebrow">{{ t('landing.eyebrow') }}</p>
-        <h1 id="landing-title">{{ t('landing.title') }}</h1>
-        <p class="landing-lede">{{ t('landing.lede') }}</p>
-        <div class="landing-hero-actions">
-          <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
-          <a class="landing-button secondary" href="mailto:support@ubyhost.com">{{ t('landing.contact') }}</a>
-        </div>
-        <p class="landing-trust">{{ t('landing.trust') }}</p>
+      <p class="landing-eyebrow">{{ t('landing.eyebrow') }}</p>
+      <h1 id="landing-title">{{ t('landing.title') }}</h1>
+      <p class="landing-lede">{{ t('landing.lede') }}</p>
+      <div class="landing-hero-actions">
+        <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+        <a class="landing-button secondary" href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.contact') }} <span aria-hidden="true">→</span></a>
       </div>
-      <div class="landing-product-stage" aria-label="{{ t('landing.mock.label') }}">
-        <div class="product-window">
-          <div class="product-window-bar" aria-hidden="true">
-            <span></span><span></span><span></span>
-            <small>ubyhost.com</small>
+      <p class="landing-trust">{{ t('landing.trust') }}</p>
+    </section>
+
+    <section class="demo-wrap" id="product" aria-labelledby="demo-title">
+      <div class="demo-float demo-float-form" aria-hidden="true">✓ {{ t('landing.mock.guest_form') }}</div>
+      <div class="demo-float demo-float-receipt" aria-hidden="true">UbyPort ✓</div>
+      <div class="product-reel" data-product-reel>
+        <div class="reel-bar">
+          <span class="reel-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="reel-address">ubyhost.com</span>
+          <button type="button" class="reel-toggle" data-reel-toggle
+                  data-play="{{ t('landing.demo.play') }}"
+                  data-pause="{{ t('landing.demo.pause') }}"
+                  aria-label="{{ t('landing.demo.pause') }}">
+            <span data-reel-icon aria-hidden="true">Ⅱ</span>
+          </button>
+        </div>
+        <div class="reel-screen">
+          <div class="reel-side" aria-hidden="true">
+            <img src="/static/ubyhost-mark.png" alt="">
+            <i class="is-active"></i><i></i><i></i><i></i>
           </div>
-          <div class="product-shell">
-            <aside aria-hidden="true">
-              <img src="/static/ubyhost-mark.png" alt="">
-              <i class="active"></i><i></i><i></i><i></i>
-            </aside>
-            <div class="product-queue">
-              <div class="product-queue-head">
-                <div>
-                  <small>{{ t('landing.mock.today') }}</small>
-                  <strong>{{ t('landing.mock.label') }}</strong>
+          <div class="reel-scenes" role="img" aria-label="{{ t('landing.demo.label') }}">
+            <article class="reel-scene scene-calendar is-active" data-scene="0">
+              <p class="scene-kicker">01 · {{ t('landing.demo.scene.calendar') }}</p>
+              <div class="demo-calendar">
+                <header><strong>{{ t('landing.demo.calendar.month') }}</strong><span>‹ &nbsp; ›</span></header>
+                <div class="calendar-days" aria-hidden="true">
+                  {% for day in ('M','T','W','T','F','S','S') %}<b>{{ day }}</b>{% endfor %}
+                  {% for day in range(1, 22) %}<i>{{ day }}</i>{% endfor %}
+                  <span class="calendar-booking">{{ t('landing.demo.calendar.booking') }}</span>
                 </div>
-                <span>{{ t('landing.mock.action') }}</span>
               </div>
-              <div class="product-stay is-ready">
-                <span class="stay-avatar">AK</span>
-                <div><strong>Anna K.</strong><small>{{ t('landing.mock.arrival') }}</small></div>
-                <span class="stay-state">{{ t('landing.mock.complete') }}</span>
+            </article>
+            <article class="reel-scene scene-form" data-scene="1">
+              <p class="scene-kicker">02 · {{ t('landing.demo.scene.form') }}</p>
+              <div class="demo-phone">
+                <div class="phone-speaker"></div>
+                <strong>{{ t('landing.demo.form.title') }}</strong>
+                <label><small>{{ t('landing.mock.guest_form') }}</small><span>{{ t('landing.demo.form.name') }}</span></label>
+                <label><small>{{ t('landing.demo.form.document') }}</small><span class="typed-line"></span></label>
+                <div class="signature"><svg viewBox="0 0 180 54" aria-hidden="true"><path d="M8 37c17-28 17 19 33-7s11 22 29 1 15 19 31 0 18 9 34-5 17 5 34-3"/></svg></div>
+                <div class="signed-pill">✓ {{ t('landing.demo.form.signed') }}</div>
               </div>
-              <div class="product-stay">
-                <span class="stay-avatar is-coral">JM</span>
-                <div><strong>Jan M.</strong><small>{{ t('landing.mock.guest_form') }}</small></div>
-                <span class="stay-state is-action">{{ t('landing.mock.missing') }}</span>
+            </article>
+            <article class="reel-scene scene-queue" data-scene="2">
+              <p class="scene-kicker">03 · {{ t('landing.demo.scene.queue') }}</p>
+              <div class="demo-queue">
+                <header><div><small>{{ t('landing.mock.today') }}</small><strong>{{ t('landing.demo.queue.title') }}</strong></div><span>3</span></header>
+                {% for initials, name, tone in (('AK','Anna K.','teal'),('JM','Jan M.','pink'),('LP','Lisa P.','indigo')) %}
+                <div class="queue-row">
+                  <i class="avatar {{ tone }}">{{ initials }}</i>
+                  <div><strong>{{ name }}</strong><small>12–16/09</small></div>
+                  <span class="queue-state {{ 'turn-ready' if loop.first }}">{{ t('landing.demo.queue.missing') if loop.first else t('landing.demo.queue.ready') }}</span>
+                </div>
+                {% endfor %}
               </div>
-              <div class="product-receipt">
-                <span aria-hidden="true">✓</span>
-                <div><strong>{{ t('landing.mock.report') }}</strong><small>{{ t('landing.mock.receipt') }}</small></div>
+            </article>
+            <article class="reel-scene scene-receipt" data-scene="3">
+              <p class="scene-kicker">04 · {{ t('landing.demo.scene.receipt') }}</p>
+              <div class="receipt-card">
+                <div class="receipt-mark">✓</div>
+                <small>UBYPORT · 2026-09-19</small>
+                <strong>{{ t('landing.demo.receipt.accepted') }}</strong>
+                <p>{{ t('landing.demo.receipt.saved') }}</p>
+                <span class="receipt-code">CZ-UHP-849271</span>
               </div>
-            </div>
+              <div class="accepted-toast"><span>✓</span>{{ t('landing.demo.receipt.accepted') }}</div>
+            </article>
           </div>
         </div>
-        <span class="stage-note stage-note-top">{{ t('landing.mock.note.forms') }}</span>
-        <span class="stage-note stage-note-bottom">{{ t('landing.mock.note.receipts') }}</span>
+        <div class="reel-progress" aria-hidden="true">
+          {% for i in range(4) %}<i class="{{ 'is-active' if i == 0 }}" data-progress="{{ i }}"><span></span></i>{% endfor %}
+        </div>
+        <p class="reel-caption" id="demo-title" aria-live="polite" data-reel-caption>{{ t('landing.demo.scene.calendar') }}</p>
+        <div hidden data-reel-labels
+             data-label-0="{{ t('landing.demo.scene.calendar') }}"
+             data-label-1="{{ t('landing.demo.scene.form') }}"
+             data-label-2="{{ t('landing.demo.scene.queue') }}"
+             data-label-3="{{ t('landing.demo.scene.receipt') }}"></div>
       </div>
     </section>
 
-    <section class="landing-proof" aria-label="{{ t('landing.proof.label') }}">
-      <div>
-        <strong>{{ t('landing.proof.deadline.value') }}</strong>
-        <span>{{ t('landing.proof.deadline.label') }}</span>
-      </div>
-      <div>
-        <strong>{{ t('landing.proof.link.value') }}</strong>
-        <span>{{ t('landing.proof.link.label') }}</span>
-      </div>
-      <div>
-        <strong>{{ t('landing.proof.receipt.value') }}</strong>
-        <span>{{ t('landing.proof.receipt.label') }}</span>
-      </div>
-    </section>
-
-    <section class="landing-section" id="features">
+    <section class="landing-section benefits" aria-labelledby="benefits-title">
       <div class="landing-section-head">
-        <p class="landing-eyebrow">{{ t('landing.features.eyebrow') }}</p>
-        <h2>{{ t('landing.features.title') }}</h2>
-        <p>{{ t('landing.features.lede') }}</p>
+        <p class="landing-eyebrow">{{ t('landing.benefits.eyebrow') }}</p>
+        <h2 id="benefits-title">{{ t('landing.benefits.title') }}</h2>
       </div>
-      <div class="landing-feature-grid">
-        <article class="feature-calendar">
-          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.calendar.icon') }}</span>
-          <div class="feature-calendar-visual" aria-hidden="true">
-            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
-            {% for day in range(1, 15) %}<i class="{{ 'booked' if day in (3, 4, 5, 10, 11) else '' }}">{{ day }}</i>{% endfor %}
-          </div>
-          <h3>{{ t('landing.feature.calendar.title') }}</h3>
-          <p>{{ t('landing.feature.calendar.body') }}</p>
-        </article>
-        <article class="feature-form">
-          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.form.icon') }}</span>
-          <div class="feature-form-visual" aria-hidden="true">
-            <span></span><span></span><span class="short"></span>
-            <i>✓</i>
-          </div>
-          <h3>{{ t('landing.feature.form.title') }}</h3>
-          <p>{{ t('landing.feature.form.body') }}</p>
-        </article>
-        <article class="feature-book">
-          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.book.icon') }}</span>
-          <div class="feature-book-visual" aria-hidden="true">
-            <span><i>01</i><b>Anna K.</b><em>12—18/09</em></span>
-            <span><i>02</i><b>Jan M.</b><em>20—23/09</em></span>
-            <span><i>03</i><b>Lisa P.</b><em>27—29/09</em></span>
-          </div>
-          <h3>{{ t('landing.feature.book.title') }}</h3>
-          <p>{{ t('landing.feature.book.body') }}</p>
-        </article>
-        <article class="feature-report">
-          <span class="feature-icon" aria-hidden="true">{{ t('landing.feature.ubyport.icon') }}</span>
-          <div class="feature-report-visual" aria-hidden="true">
-            <span>✓</span>
-            <div><b>UbyPort</b><small>{{ t('landing.mock.receipt') }}</small></div>
-          </div>
-          <h3>{{ t('landing.feature.ubyport.title') }}</h3>
-          <p>{{ t('landing.feature.ubyport.body') }}</p>
-        </article>
+      <div class="benefit-grid">
+        <article class="benefit-card benefit-blue"><span aria-hidden="true">▦</span><h3>{{ t('landing.benefit.calendar.title') }}</h3><p>{{ t('landing.benefit.calendar.body') }}</p></article>
+        <article class="benefit-card benefit-yellow"><span aria-hidden="true">✎</span><h3>{{ t('landing.benefit.guest.title') }}</h3><p>{{ t('landing.benefit.guest.body') }}</p></article>
+        <article class="benefit-card benefit-green"><span aria-hidden="true">✓</span><h3>{{ t('landing.benefit.ubyport.title') }}</h3><p>{{ t('landing.benefit.ubyport.body') }}</p></article>
       </div>
     </section>
 
-    <section class="landing-section landing-how" id="how">
-      <div class="landing-section-head">
-        <p class="landing-eyebrow">{{ t('landing.how.eyebrow') }}</p>
-        <h2>{{ t('landing.how.title') }}</h2>
-      </div>
-      <ol class="landing-steps">
-        {% for step in ('1', '2', '3') %}
-          <li>
-            <span>{{ step }}</span>
-            <div>
-              <h3>{{ t('landing.how.' ~ step ~ '.title') }}</h3>
-              <p>{{ t('landing.how.' ~ step ~ '.body') }}</p>
-            </div>
-          </li>
-        {% endfor %}
+    <section class="landing-section quick-steps" aria-labelledby="steps-title">
+      <h2 id="steps-title">{{ t('landing.steps.title') }}</h2>
+      <ol>
+        {% for step in ('1','2','3') %}<li><span>0{{ step }}</span><strong>{{ t('landing.steps.' ~ step) }}</strong></li>{% endfor %}
       </ol>
+      <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.details.link') }} →</a>
     </section>
-
-    <section class="landing-section landing-faq" id="questions">
-      <div class="landing-section-head">
-        <p class="landing-eyebrow">{{ t('landing.faq.eyebrow') }}</p>
-        <h2>{{ t('landing.faq.title') }}</h2>
-      </div>
-      <div class="landing-faq-list">
-        {% for item in ('1', '2', '3', '4') %}
-          <details>
-            <summary>{{ t('landing.faq.' ~ item ~ '.q') }}</summary>
-            <p>{{ t('landing.faq.' ~ item ~ '.a') }}</p>
-          </details>
-        {% endfor %}
-      </div>
-      <aside class="landing-official">
-        <div>
-          <strong>{{ t('landing.official') }}</strong>
-          <p>{{ t('landing.disclaimer') }}</p>
-        </div>
-        <a href="{{ 'https://ipc.gov.cz/en/accommodation-providers/general-information-for-accommodation-providers/' if lang == 'en' else 'https://ipc.gov.cz/pro-ubytovatele/obecne-informace-pro-ubytovatele/' }}"
-           rel="noopener noreferrer" target="_blank">ipc.gov.cz ↗</a>
-      </aside>
-    </section>
-
-    {% if lang == 'cs' %}
-      <section class="landing-section landing-guides" id="guides">
-        <div class="landing-section-head">
-          <p class="landing-eyebrow">Praktické průvodce</p>
-          <h2>UbyPort a evidence hostů srozumitelně</h2>
-          <p>Odpovědi na otázky, které ubytovatel řeší při nastavení evidence a hlášení.</p>
-        </div>
-        <div class="landing-guide-grid">
-          <a href="/pruvodce/hlaseni-cizincu-ubyport">
-            <span>UbyPort</span>
-            <strong>Hlášení cizinců přes UbyPort: postup pro ubytovatele</strong>
-            <small>Registrace, webová služba, lhůta a doručenky →</small>
-          </a>
-          <a href="/pruvodce/online-ubytovaci-kniha">
-            <span>Evidence hostů</span>
-            <strong>Online ubytovací kniha bez papírování</strong>
-            <small>Kalendáře, formuláře hostů a domovní kniha →</small>
-          </a>
-        </div>
-      </section>
-    {% else %}
-      <section class="landing-section landing-guides" id="guides">
-        <div class="landing-section-head">
-          <p class="landing-eyebrow">Practical guides</p>
-          <h2>UbyPort and guest records, clearly explained</h2>
-          <p>Answers to the questions accommodation providers face when setting up records and reporting.</p>
-        </div>
-        <div class="landing-guide-grid">
-          <a href="/pruvodce/hlaseni-cizincu-ubyport?lang=en">
-            <span>UbyPort</span>
-            <strong>Reporting foreign guests through UbyPort: a host’s guide</strong>
-            <small>Registration, web-service access, deadlines, and receipts →</small>
-          </a>
-          <a href="/pruvodce/online-ubytovaci-kniha?lang=en">
-            <span>Guest records</span>
-            <strong>Online guest book without the paperwork</strong>
-            <small>Calendars, guest forms, and the house book →</small>
-          </a>
-        </div>
-      </section>
-    {% endif %}
 
     <section class="landing-final">
       <img src="/static/ubyhost-mark.png" alt="">
-      <h2>{{ t('landing.title') }}</h2>
+      <div><h2>{{ t('landing.final.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
       <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
     </section>
   </main>
@@ -293,9 +207,13 @@
       <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
       <a href="/dpa?lang={{ lang }}">{{ t('dpa.footer_short') }}</a>
       <a href="/subprocessors?lang={{ lang }}">{{ t('subprocessors.footer_short') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">UbyPort</a>
+      <a href="/pruvodce/online-ubytovaci-kniha?lang={{ lang }}">{{ 'Guest book' if lang == 'en' else 'Ubytovací kniha' }}</a>
       <a href="/login?lang={{ lang }}">{{ t('landing.footer.login') }}</a>
     </nav>
     <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>
   </footer>
+  <script src="/static/landing.js?v=20260919a" defer></script>
 </body>
 </html>

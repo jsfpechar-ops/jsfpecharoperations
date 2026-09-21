@@ -11,6 +11,7 @@ from jinja2 import pass_context
 
 from . import (
     __version__,
+    access,
     alerts,
     auth,
     config,
@@ -127,6 +128,11 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
             )
         )
         data["open_alerts"] = alerts.present_many(raw_alerts, data["lang"])
+    # The property switcher lives in the sidebar on every host page, so it must not
+    # depend on which route remembered to pass its own list. Routes that need the
+    # full rows (the dashboard) or the same list for a filter keep passing their own.
+    if workspace and workspace["id"] and data.get("show_nav", True) and "apartments" not in data:
+        data["apartments"] = access.apartments(request, "id, internal_name")
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
     data.setdefault("celebration_milestone", None)

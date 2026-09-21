@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_welcome, next_action, property_identity with context %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_welcome, next_action, property_identity, sync_calendars_button with context %}
 
 {% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
   {% if items %}
@@ -59,16 +59,13 @@
 {% set header_actions %}
   <div class="page-toolbar">
     <div class="page-toolbar-row">
-      <form method="post" action="/sync"><button class="btn" type="submit">{{ t('dashboard.sync_calendars') }}</button></form>
+      {{ sync_calendars_button(return_to='/', last_sync=last_sync) }}
       {% if demo_loaded %}
         <form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">
           <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
         </form>
       {% endif %}
     </div>
-    {% if last_sync %}
-      <p class="small muted page-toolbar-meta">{{ t('dashboard.last_synced', when=last_sync[:16].replace('T', ' ')) }}</p>
-    {% endif %}
   </div>
 {% endset %}
 {{ page_header(
@@ -165,7 +162,7 @@
   {% if not rows %}
   <div class="panel empty">
     <p>{{ t('dashboard.empty.no_stays') }}</p>
-    <form method="post" action="/sync"><button class="btn primary" type="submit">{{ t('dashboard.empty.sync_now') }}</button></form>
+    {{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}
   </div>
   {% else %}
     <section id="needs-action">

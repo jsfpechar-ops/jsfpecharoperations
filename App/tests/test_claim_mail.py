@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
@@ -550,6 +550,61 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_expire_holds_releases_a_provisional_claim_after_the_window():
+    """Stale e-mail holds must free the stay for another guest address."""
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        claim.ensure_row(current)
+        past_until = (
+            datetime.now(timezone.utc) - timedelta(minutes=claim.HOLD_MINUTES + 1)
+        ).replace(microsecond=0).isoformat()
+        now = db.utcnow()
+        db.execute(
+            "UPDATE reservation_claim SET state = ?, email = ?, provisional_until = ?, "
+            "token_hash = 'held', updated_at = ? WHERE reservation_id = ?",
+            (claim.PROVISIONAL, "held@claim.test", past_until, now, current),
+        )
+
+        released = claim.expire_holds(now=now)
+        row = claim.ensure_row(current)
+
+        assert released == 1
+        assert row["state"] == claim.UNCLAIMED
+        assert row["token_hash"] is None
+        assert row["provisional_until"] is None
+    finally:
+        _cleanup()
+
+
+def test_provisional_hold_blocks_a_different_email_until_it_expires():
+    current, _past, _far, apartment_id = _seed()
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+    try:
+        ok, err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="first@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert ok, err
+
+        ok_other, err_other, _ = claim.start_claim(
+            reservation,
+            apartment,
+            email="second@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert not ok_other
+        assert err_other == "held"
+    finally:
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM console_mail_log")
         _cleanup()
 
 

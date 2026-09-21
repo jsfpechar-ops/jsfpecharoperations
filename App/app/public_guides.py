@@ -4,13 +4,14 @@ GUIDES = {
     "hlaseni-cizincu-ubyport": {
         "title": "Hlášení cizinců přes UbyPort: postup pro ubytovatele",
         "description": (
-            "Praktický postup pro hlášení ubytovaných cizinců přes UbyPort: registrace "
-            "zařízení, lhůta, webová služba, doručenky a kontrola chyb."
+            "UbyPort pro hostitele z Airbnb a Booking.com: registrace zařízení, "
+            "třídenní lhůta, webová služba, doručenky a kontrola chyb."
         ),
-        "eyebrow": "Průvodce pro ubytovatele",
+        "eyebrow": "UbyPort pro Airbnb a krátkodobé pronájmy",
         "lede": (
-            "Co je potřeba připravit, jak se liší běžný účet od přístupu k webové službě "
-            "a jak si pohlídat, že Policie ČR hlášení skutečně přijala."
+            "Praktický průvodce pro hostitele z Airbnb, Booking.com a dalších "
+            "krátkodobých pronájmů: co připravit a jak ověřit, že Policie ČR "
+            "hlášení skutečně přijala."
         ),
         "sections": [
             {
@@ -176,13 +177,13 @@ ENGLISH_GUIDES = {
     "hlaseni-cizincu-ubyport": {
         "title": "Reporting foreign guests through UbyPort: a host’s guide",
         "description": (
-            "A practical guide to reporting accommodated foreign nationals through UbyPort: "
-            "property registration, deadlines, web-service access, receipts, and errors."
+            "UbyPort for Airbnb and Booking.com hosts in Czechia: property registration, "
+            "the three-working-day deadline, web-service access, receipts, and errors."
         ),
-        "eyebrow": "Guide for accommodation providers",
+        "eyebrow": "UbyPort for Airbnb and short-term rentals",
         "lede": (
-            "What to prepare, how a normal portal account differs from web-service access, "
-            "and how to verify that the Czech Police actually received a report."
+            "A practical guide for Airbnb, Booking.com, and short-term-rental hosts: "
+            "what to prepare and how to verify that the Czech Police accepted a report."
         ),
         "sections": [
             {
