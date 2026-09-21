@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{{ t('product.page_title') }}</title>
+  <meta name="description" content="{{ t('product.meta_description') }}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {% for code, href in alternate_urls %}
+  <link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
+  {% endfor %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="UbyHost">
+  <meta property="og:title" content="{{ t('product.page_title') }}">
+  <meta property="og:description" content="{{ t('product.meta_description') }}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
+  <meta property="og:image" content="{{ public_base_url }}/static/apple-touch-icon.png">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+  <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+  <script type="application/ld+json">
+  {{ {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": t("landing.faq.1.q"), "acceptedAnswer": {"@type": "Answer", "text": t("landing.faq.1.a")}},
+      {"@type": "Question", "name": t("landing.faq.2.q"), "acceptedAnswer": {"@type": "Answer", "text": t("landing.faq.2.a")}},
+      {"@type": "Question", "name": t("landing.faq.3.q"), "acceptedAnswer": {"@type": "Answer", "text": t("landing.faq.3.a")}},
+      {"@type": "Question", "name": t("landing.faq.4.q"), "acceptedAnswer": {"@type": "Answer", "text": t("landing.faq.4.a")}}
+    ]
+  } | tojson }}
+  </script>
+</head>
+<body>
+  <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
+  <header class="landing-header">
+    <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
+      <img src="/static/ubyhost-logo.png" alt="UbyHost">
+    </a>
+    <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
+      <a href="/?lang={{ lang }}#product">{{ t('landing.nav.features') }}</a>
+      <a href="/jak-to-funguje?lang={{ lang }}" aria-current="page">{{ t('landing.nav.how') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
+    </nav>
+    <div class="landing-actions">
+      <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
+        <a href="/jak-to-funguje?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}">CZ</a>
+        <a href="/jak-to-funguje?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}">EN</a>
+      </div>
+      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
+    </div>
+  </header>
+
+  <main id="content" class="product-details">
+    <header class="product-details-hero">
+      <p class="landing-eyebrow">{{ t('product.eyebrow') }}</p>
+      <h1>{{ t('product.title') }}</h1>
+      <p>{{ t('product.lede') }}</p>
+      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+    </header>
+
+    <section class="product-feature-section" id="features" aria-labelledby="feature-title">
+      <header>
+        <p class="landing-eyebrow">{{ t('landing.features.eyebrow') }}</p>
+        <h2 id="feature-title">{{ t('product.features.title') }}</h2>
+        <p>{{ t('product.features.lede') }}</p>
+      </header>
+      <div class="product-feature-list">
+        {% for name, tone in (('calendar','blue'),('form','yellow'),('book','purple'),('ubyport','green')) %}
+        <article class="product-feature-row tone-{{ tone }}">
+          <span>0{{ loop.index }}</span>
+          <div>
+            <p>{{ t('landing.feature.' ~ name ~ '.icon') }}</p>
+            <h3>{{ t('landing.feature.' ~ name ~ '.title') }}</h3>
+            <p>{{ t('landing.feature.' ~ name ~ '.body') }}</p>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="product-faq" id="questions" aria-labelledby="faq-title">
+      <header>
+        <p class="landing-eyebrow">{{ t('landing.faq.eyebrow') }}</p>
+        <h2 id="faq-title">{{ t('product.faq.title') }}</h2>
+      </header>
+      <div class="landing-faq-list">
+        {% for item in ('1', '2', '3', '4') %}
+        <details>
+          <summary>{{ t('landing.faq.' ~ item ~ '.q') }}</summary>
+          <p>{{ t('landing.faq.' ~ item ~ '.a') }}</p>
+        </details>
+        {% endfor %}
+      </div>
+      <aside class="landing-official">
+        <div><strong>{{ t('landing.official') }}</strong><p>{{ t('landing.disclaimer') }}</p></div>
+        <a href="{{ 'https://ipc.gov.cz/en/accommodation-providers/general-information-for-accommodation-providers/' if lang == 'en' else 'https://ipc.gov.cz/pro-ubytovatele/obecne-informace-pro-ubytovatele/' }}"
+           rel="noopener noreferrer" target="_blank">ipc.gov.cz ↗</a>
+      </aside>
+    </section>
+
+    <section class="product-guides" id="guides" aria-labelledby="guides-title">
+      <p class="landing-eyebrow">{{ t('landing.nav.guides') }}</p>
+      <h2 id="guides-title">{{ t('product.guides.title') }}</h2>
+      <div class="landing-guide-grid">
+        <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">
+          <span>UbyPort</span>
+          <strong>{{ 'Reporting foreign guests through UbyPort: a host’s guide' if lang == 'en' else 'Hlášení cizinců přes UbyPort: postup pro ubytovatele' }}</strong>
+          <small>{{ 'Registration, access, deadlines, and receipts' if lang == 'en' else 'Registrace, přístup, lhůta a doručenky' }} →</small>
+        </a>
+        <a href="/pruvodce/online-ubytovaci-kniha?lang={{ lang }}">
+          <span>{{ 'Guest records' if lang == 'en' else 'Evidence hostů' }}</span>
+          <strong>{{ 'Online guest book without paperwork' if lang == 'en' else 'Online ubytovací kniha bez papírování' }}</strong>
+          <small>{{ 'Calendars, forms, and the house book' if lang == 'en' else 'Kalendáře, formuláře a domovní kniha' }} →</small>
+        </a>
+      </div>
+    </section>
+
+    <section class="landing-final product-final">
+      <img src="/static/ubyhost-mark.png" alt="">
+      <div><h2>{{ t('product.cta.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <a class="landing-brand" href="/?lang={{ lang }}"><img src="/static/ubyhost-logo.png" alt="UbyHost"></a>
+    <nav aria-label="{{ t('legal.footer_nav_label') }}">
+      <a href="/legal?lang={{ lang }}">{{ t('legal.footer_short') }}</a>
+      <a href="/terms?lang={{ lang }}">{{ t('terms.footer_short') }}</a>
+      <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
+      <a href="/dpa?lang={{ lang }}">{{ t('dpa.footer_short') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">UbyPort</a>
+    </nav>
+    <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>
+  </footer>
+</body>
+</html>

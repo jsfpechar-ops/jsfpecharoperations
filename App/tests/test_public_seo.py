@@ -13,10 +13,20 @@ from starlette.testclient import TestClient
 
 from app import config, db, host_i18n
 from app.main import app
+from app.landing_i18n import LANDING_STRINGS
 from app.public_guides import GUIDE_TRANSLATIONS
 from tests.test_accounts import _account, _clean_accounts, _login
 
-PUBLIC_PAGES = ("/login", "/legal", "/terms", "/privacy", "/dpa", "/subprocessors")
+PUBLIC_PAGES = (
+    "/login",
+    "/legal",
+    "/terms",
+    "/privacy",
+    "/dpa",
+    "/subprocessors",
+    "/jak-to-funguje",
+    "/cenik",
+)
 
 
 def _client() -> TestClient:
@@ -74,18 +84,51 @@ def test_the_homepage_has_honest_machine_readable_product_information():
 
 def test_the_marketing_page_renders_translated_copy_not_raw_keys():
     """New landing strings must be wired into host_i18n or the hero shows keys."""
-    for lang, guides, mock_label, feature_icon in (
-        ("en", "Guides", "Guest reporting queue", "01 / Sync"),
-        ("cs", "Průvodce", "Fronta hlášení hostů", "01 / Napojení"),
+    for lang, headline, scene_label, benefit in (
+        ("en", "Guests fill it in. UbyHost reports it.", "A reservation arrives", "Guest records start with bookings"),
+        ("cs", "Hosté vyplní. UbyHost nahlásí.", "Přijde rezervace", "Rezervace se objeví"),
     ):
         page = _client().get(f"/?lang={lang}")
         assert page.status_code == 200
         html = page.text
-        assert f">{guides}</a>" in html
-        assert mock_label in html
-        assert feature_icon in html
+        assert headline in html
+        assert scene_label in html
+        assert benefit in html
+        assert 'data-product-reel' in html
+        assert "/static/landing.js" in html
         leaked = re.findall(r">landing\.[a-z0-9_.]+<", html)
         assert leaked == [], f"untranslated landing keys for {lang}: {leaked}"
+
+
+def test_product_details_preserve_ubyport_search_content_off_the_short_homepage():
+    for lang, title in (
+        ("cs", "Jeden postup od rezervace z Airbnb po doručenku z UbyPortu."),
+        ("en", "One flow from Airbnb booking to UbyPort receipt."),
+    ):
+        page = _client().get(f"/jak-to-funguje?lang={lang}")
+        assert page.status_code == 200
+        assert title in page.text
+        assert '"@type": "FAQPage"' in page.text
+        assert '"@type": "Question"' in page.text
+        assert f'hreflang="{lang}"' in page.text
+        assert "Airbnb" in _meta_description(page.text)
+        assert "UbyPort" in _title(page.text)
+
+
+def test_pricing_is_contact_led_and_honest_in_both_languages():
+    for lang, price, cta in (
+        ("cs", "Dle domluvy", "Zeptat se na cenu"),
+        ("en", "By agreement", "Ask about pricing"),
+    ):
+        page = _client().get(f"/cenik?lang={lang}")
+        assert page.status_code == 200
+        assert price in page.text
+        assert cta in page.text
+        assert 'href="mailto:support@ubyhost.com?subject=UbyHost%20pricing"' in page.text
+        assert '"@type": "WebPage"' in page.text
+        assert '"@type": "Offer"' not in page.text
+        assert '"price"' not in page.text
+        assert f'hreflang="{lang}"' in page.text
 
 
 def test_the_login_page_describes_itself_for_the_search_snippet():
@@ -237,6 +280,10 @@ def test_original_guides_are_public_and_indexable_in_both_languages():
         assert "/en/accommodation-providers/" in english_page.text
 
 
+def test_landing_copy_has_matching_keys_in_both_languages():
+    assert LANDING_STRINGS["cs"].keys() == LANDING_STRINGS["en"].keys()
+
+
 def test_guide_translations_have_matching_content_structure():
     czech = GUIDE_TRANSLATIONS["cs"]
     english = GUIDE_TRANSLATIONS["en"]
@@ -257,7 +304,7 @@ def test_guides_are_linked_and_listed_for_discovery():
         "/pruvodce/hlaseni-cizincu-ubyport",
         "/pruvodce/online-ubytovaci-kniha",
     ):
-        assert f'href="{path}"' in homepage
+        assert f'href="{path}?lang=cs"' in homepage
         assert f'href="{path}?lang=en"' in english_homepage
         for lang in host_i18n.LANGUAGES:
             assert f"<loc>{config.PUBLIC_BASE_URL}{path}?lang={lang}</loc>" in sitemap

@@ -426,13 +426,14 @@ def _lang_urls(request: Request, path: str = "") -> Dict[str, str]:
 def _facility(apartment) -> str:
     """How the property identifies itself to a guest.
 
-    Deliberately the name registered with the police, not the listing name on
-    a booking site: this is a legal form, and which portal the guest came
-    through has nothing to do with it.
+    The host's own name for the apartment, because that is the name the guest
+    recognises from the booking. The name registered with the police is only a
+    fallback, for records old enough to predate the field. Nothing here reaches
+    the police: a report still carries ``uby_name``.
     """
     if not apartment:
         return ""
-    name = (apartment["uby_name"] or "").strip()
+    name = (apartment["internal_name"] or "").strip() or (apartment["uby_name"] or "").strip()
     city = (apartment["city_en"] or "").strip()
     return ", ".join(part for part in (name, city) if part)
 

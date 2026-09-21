@@ -20,6 +20,8 @@ INDEXABLE_PATHS = (
     "/privacy",
     "/dpa",
     "/subprocessors",
+    "/jak-to-funguje",
+    "/cenik",
     "/pruvodce/hlaseni-cizincu-ubyport",
     "/pruvodce/online-ubytovaci-kniha",
 )

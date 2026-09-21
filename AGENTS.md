@@ -9,5 +9,10 @@ it in the current task. UbyHost is light-mode only by policy.
 Application code lives under **`App/`**. Run tests from `App/` with:
 
 ```bash
-PYTHONPATH=App .venv/bin/python -m pytest tests -q
+.venv/bin/python -m pytest tests -q
 ```
+
+Do not add `PYTHONPATH=App` here. From `App/` that resolves to `App/App`, which
+on a case-insensitive filesystem (macOS) is the same directory as `App/app` —
+so `app/operator.py` shadows the standard library `operator` module and pytest
+fails during collection.

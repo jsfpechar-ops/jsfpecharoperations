@@ -102,6 +102,9 @@ large enough for 2× screens.
 | Home screen | `apple-touch-icon.png` | `<link rel="apple-touch-icon">` | **180 × 180** | `#F7F7F5` |
 | E-mail signature | `ubyhost-logo.jpg` | `width="180"` HTML attribute | **180 px** wide | baked-in white |
 
+Transactional mail is still plain text today, so `ubyhost-logo.jpg` is shipped
+for signatures / future HTML mail but is not referenced by templates yet.
+
 The login hero is hidden below 900 px; the left-hand horizontal lockup is the
 only logo on small screens.
 

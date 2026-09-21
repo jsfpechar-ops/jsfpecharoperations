@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{{ t('pricing.page_title') }}</title>
+  <meta name="description" content="{{ t('pricing.meta_description') }}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {% for code, href in alternate_urls %}
+  <link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
+  {% endfor %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="UbyHost">
+  <meta property="og:title" content="{{ t('pricing.page_title') }}">
+  <meta property="og:description" content="{{ t('pricing.meta_description') }}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
+  <meta property="og:image" content="{{ public_base_url }}/static/apple-touch-icon.png">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+  <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+  <script type="application/ld+json">
+  {{ {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": t("pricing.page_title"),
+    "description": t("pricing.meta_description"),
+    "url": canonical_url,
+    "inLanguage": lang,
+    "isPartOf": {"@type": "WebSite", "name": "UbyHost", "url": public_base_url ~ "/"}
+  } | tojson }}
+  </script>
+</head>
+<body>
+  <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
+  <header class="landing-header">
+    <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
+      <img src="/static/ubyhost-logo.png" alt="UbyHost">
+    </a>
+    <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
+      <a href="/?lang={{ lang }}#product">{{ t('landing.nav.features') }}</a>
+      <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.nav.how') }}</a>
+      <a href="/cenik?lang={{ lang }}" aria-current="page">{{ t('landing.nav.pricing') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
+    </nav>
+    <div class="landing-actions">
+      <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
+        <a href="/cenik?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}">CZ</a>
+        <a href="/cenik?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}">EN</a>
+      </div>
+      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
+    </div>
+  </header>
+
+  <main id="content" class="pricing-page">
+    <section class="pricing-hero" aria-labelledby="pricing-title">
+      <div class="pricing-hero-copy">
+        <p class="landing-eyebrow">{{ t('pricing.eyebrow') }}</p>
+        <h1 id="pricing-title">{{ t('pricing.title') }}</h1>
+        <p>{{ t('pricing.lede') }}</p>
+      </div>
+      <article class="pricing-card">
+        <div class="pricing-card-head">
+          <span>{{ t('pricing.card.kicker') }}</span>
+          <img src="/static/ubyhost-mark.png" alt="">
+        </div>
+        <strong class="pricing-price">{{ t('pricing.card.price') }}</strong>
+        <p class="pricing-note">{{ t('pricing.card.note') }}</p>
+        <div class="pricing-includes">
+          <h2>{{ t('pricing.includes.title') }}</h2>
+          <ul>
+            {% for item in ('1','2','3','4') %}
+            <li><span aria-hidden="true">✓</span>{{ t('pricing.includes.' ~ item) }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <a class="landing-button pricing-button"
+           href="mailto:support@ubyhost.com?subject=UbyHost%20pricing">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
+        <small>{{ t('pricing.card.reply') }}</small>
+      </article>
+    </section>
+
+    <section class="pricing-factors" aria-labelledby="factors-title">
+      <header>
+        <p class="landing-eyebrow">{{ t('pricing.factors.eyebrow') }}</p>
+        <h2 id="factors-title">{{ t('pricing.factors.title') }}</h2>
+      </header>
+      <div class="pricing-factor-grid">
+        <article class="factor-blue"><span>01</span><h3>{{ t('pricing.factor.properties.title') }}</h3><p>{{ t('pricing.factor.properties.body') }}</p></article>
+        <article class="factor-yellow"><span>02</span><h3>{{ t('pricing.factor.volume.title') }}</h3><p>{{ t('pricing.factor.volume.body') }}</p></article>
+        <article class="factor-green"><span>03</span><h3>{{ t('pricing.factor.workflow.title') }}</h3><p>{{ t('pricing.factor.workflow.body') }}</p></article>
+      </div>
+    </section>
+
+    <section class="landing-final pricing-final">
+      <img src="/static/ubyhost-mark.png" alt="">
+      <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
+      <a class="landing-button primary" href="mailto:support@ubyhost.com?subject=UbyHost%20pricing">{{ t('pricing.card.cta') }}</a>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <a class="landing-brand" href="/?lang={{ lang }}"><img src="/static/ubyhost-logo.png" alt="UbyHost"></a>
+    <nav aria-label="{{ t('legal.footer_nav_label') }}">
+      <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.nav.how') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
+      <a href="/legal?lang={{ lang }}">{{ t('legal.footer_short') }}</a>
+      <a href="/terms?lang={{ lang }}">{{ t('terms.footer_short') }}</a>
+      <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
+    </nav>
+    <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>
+  </footer>
+</body>
+</html>

@@ -570,7 +570,15 @@ def apartments_list(request: Request):
     archived_rows = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
     ]
-    return render(request, "apartments.html", {"rows": enriched, "archived_rows": archived_rows})
+    return render(
+        request,
+        "apartments.html",
+        {
+            "rows": enriched,
+            "archived_rows": archived_rows,
+            "last_sync": db.get_setting("last_ical_sync"),
+        },
+    )
 
 
 @router.get("/apartments/new")
@@ -926,15 +934,17 @@ def delete_feed(feed_id: int, request: Request):
 
 
 @router.post("/sync")
-def sync_now(request: Request):
+async def sync_now(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    form = await request.form()
+    return_to = _form_return_to(form, "/")
     owner_user_id = access.owner_id(request)
     totals = icalsync.sync_all(owner_user_id=owner_user_id)
     reporting.check_deadlines(owner_user_id=owner_user_id)
     return _back(
-        "/",
+        return_to,
         msg=(
             f"Synced {totals['feeds']} calendar(s): {totals['created']} new, "
             f"{totals['updated']} updated, {totals['cancelled']} cancelled."

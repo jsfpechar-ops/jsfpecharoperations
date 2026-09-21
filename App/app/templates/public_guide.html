@@ -21,7 +21,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/landing.css?v=20260919c">
+  <link rel="stylesheet" href="/static/landing.css?v=20260919y">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -44,9 +44,10 @@
       <img src="/static/ubyhost-logo.png" alt="UbyHost">
     </a>
     <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
-      <a href="/?lang={{ lang }}#features">{{ t('landing.nav.features') }}</a>
-      <a href="/?lang={{ lang }}#how">{{ t('landing.nav.how') }}</a>
-      <a href="/?lang={{ lang }}#questions">{{ t('landing.nav.faq') }}</a>
+      <a href="/?lang={{ lang }}#product">{{ t('landing.nav.features') }}</a>
+      <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.nav.how') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
+      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
     </nav>
     <div class="landing-actions">
       <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
@@ -90,6 +91,7 @@
             {% endfor %}
           </ul>
           <a href="/login?lang={{ lang }}" class="landing-button primary">{{ t('landing.cta') }}</a>
+          <a href="/jak-to-funguje?lang={{ lang }}" class="guide-product-link">{{ t('landing.details.link') }} →</a>
         </aside>
       </div>
 
@@ -120,6 +122,7 @@
       <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
       <a href="/dpa?lang={{ lang }}">{{ t('dpa.footer_short') }}</a>
       <a href="/subprocessors?lang={{ lang }}">{{ t('subprocessors.footer_short') }}</a>
+      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
       <a href="/login?lang={{ lang }}">{{ t('landing.footer.login') }}</a>
     </nav>
     <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>

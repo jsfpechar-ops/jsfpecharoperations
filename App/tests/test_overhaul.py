@@ -378,7 +378,9 @@ def test_guest_pick_explains_law_without_portal_branding():
         assert "0 of 2 people completed" not in page.text
         assert "Booking.com" not in page.text
         assert "Airbnb" not in page.text
-        assert "Overhaul Studio" in page.text
+        # The guest sees the host's own name for the flat, not the police registration.
+        assert "Overhaul flat" in page.text
+        assert "Overhaul Studio" not in page.text
     finally:
         _cleanup()
 
