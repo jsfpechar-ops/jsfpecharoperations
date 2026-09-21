@@ -4,7 +4,7 @@
 
 <div class="g-card g-assigned-stay">
   <p class="g-question-kicker">{{ t('assigned_stay_label') }}</p>
-  <h2>{{ apartment.uby_name or apartment.internal_name }}</h2>
+  <h2>{{ property_name }}</h2>
   {% if apartment.city_en %}<p class="g-assigned-location">{{ apartment.city_en }}</p>{% endif %}
   <p class="g-assigned-dates">
     <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>

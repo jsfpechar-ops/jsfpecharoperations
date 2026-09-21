@@ -9,6 +9,7 @@ from app import alerts
 from app import demo
 from app import housebook
 from app.main import app
+from tests.conftest import complete_guest_claim
 
 TOKEN = "overhaultoken"
 PASSWORD = "Overhaul-Test-Password-123"
@@ -379,6 +380,22 @@ def test_guest_pick_explains_law_without_portal_branding():
         assert "Booking.com" not in page.text
         assert "Airbnb" not in page.text
         # The guest sees the host's own name for the flat, not the police registration.
+        assert "Overhaul flat" in page.text
+        assert "Overhaul Studio" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_guest_assigned_screen_does_not_leak_police_name():
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, stays[0], party_size=1)
+        # A fresh browser without the claim cookie sees the "already assigned" screen.
+        stranger = TestClient(app)
+        page = stranger.get(f"/l/{TOKEN}/{stays[0]}", follow_redirects=True)
+        assert page.status_code == 200
+        assert "already assigned" in page.text.lower() or "přiřazena" in page.text.lower()
         assert "Overhaul flat" in page.text
         assert "Overhaul Studio" not in page.text
     finally:
