@@ -129,7 +129,22 @@ def test_stay_cards_are_links_not_radios():
         assert 'type="radio"' not in page.text
         assert f'href="/l/{token}/{wrong}?lang=en"' in page.text
         assert f'href="/l/{token}/{right}?lang=en"' in page.text
-        assert "Tap your arrival" in page.text
+        assert "Which stay is yours?" in page.text
+        assert "That’s my stay" in page.text
+        assert "guest registration for" in page.text
+    finally:
+        _cleanup()
+
+
+def test_single_visible_stay_still_uses_the_picker():
+    token, stay, other = _make_apartment_with_stays()
+    try:
+        db.execute("DELETE FROM reservation WHERE id = ?", (other,))
+        page = TestClient(app).get(f"/l/{token}", follow_redirects=False)
+        assert page.status_code == 200
+        assert f'href="/l/{token}/{stay}?lang=en"' in page.text
+        assert "Which stay is yours?" in page.text
+        assert 'name="guest_email"' not in page.text
     finally:
         _cleanup()
 
@@ -393,7 +408,37 @@ def test_every_guest_facing_validation_message_has_czech():
     assert checked >= len(cases)
 
 
-def test_guest_form_ignores_retired_passport_attachment():
+def test_guest_form_accepts_pdf_passport_attachment():
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, token, wrong, party_size=2)
+        apartment = db.query_one(
+            "SELECT id FROM apartment WHERE permalink_token = ?", (token,)
+        )
+        db.update(
+            "apartment",
+            apartment["id"],
+            {"passport_photo_policy": "required_foreign"},
+        )
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(),
+            files={"passport_photo": ("registration.pdf", MINIMAL_PDF, "application/pdf")},
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303, saved.text
+        guest = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (wrong,))
+        assert guest["passport_photo_at"]
+        assert passport_photos.is_pdf_attachment(guest["id"])
+        payload = passport_photos.read_photo(guest["id"])
+        assert payload is not None
+        assert payload[1] == "application/pdf"
+    finally:
+        _cleanup()
+
+
+def test_guest_form_ignores_passport_attachment_when_policy_off():
     token, wrong, _right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)

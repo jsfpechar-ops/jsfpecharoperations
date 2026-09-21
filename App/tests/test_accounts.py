@@ -420,6 +420,41 @@ def test_legal_entity_rows_are_clickable_and_can_be_archived():
         _clean_accounts()
 
 
+def test_controller_entity_cannot_be_archived_while_property_uses_it():
+    db.init_db()
+    _clean_accounts()
+    owner_id = _account("boundary-controller")
+    apartment_id = _apartment(
+        owner_id, "Controller reference flat", "boundary-controller-flat"
+    )
+    controller_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Controller only a.s.",
+            "owner_user_id": owner_id,
+            "created_at": db.utcnow(),
+        },
+    )
+    db.update(
+        "apartment",
+        apartment_id,
+        {"data_controller_entity_id": controller_id},
+    )
+    try:
+        response = _login("boundary-controller").post(
+            f"/entities/{controller_id}/archive",
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert "err=" in response.headers["location"]
+        assert db.query_one(
+            "SELECT archived_at FROM legal_entity WHERE id = ?",
+            (controller_id,),
+        )["archived_at"] is None
+    finally:
+        _clean_accounts()
+
+
 def test_host_admin_portal_shows_ubyhost_support_email():
     db.init_db()
     _clean_accounts()
@@ -544,6 +579,10 @@ def test_terms_page_shows_operator_identity():
     assert "***REMOVED***" in response.text
     assert "***REMOVED***" in response.text
     assert "Terms of Service" in response.text or "Obchodní podmínky" in response.text
+    assert (
+        f"Version {config.TERMS_VERSION}" in response.text
+        or f"Verze {config.TERMS_VERSION}" in response.text
+    )
 
 
 def test_login_page_links_to_terms():
@@ -571,7 +610,7 @@ def test_privacy_page_shows_operator_identity():
         f"Version {config.PRIVACY_VERSION}" in response.text
         or f"Verze {config.PRIVACY_VERSION}" in response.text
     )
-    assert "Bot Fight Mode" in response.text
+    assert "managed challenges" in response.text or "řízené výzvy" in response.text
     assert "HSTS" in response.text
 
 
@@ -595,6 +634,16 @@ def test_dpa_page_shows_operator_and_article_28():
     assert "***REMOVED***" in response.text
     assert "***REMOVED***" in response.text
     assert "Article 28" in response.text or "čl. 28" in response.text
+    assert (
+        f"Version {config.DPA_VERSION}" in response.text
+        or f"Verze {config.DPA_VERSION}" in response.text
+    )
+
+
+def test_release_legal_versions_are_coordinated():
+    assert config.TERMS_VERSION == "1.5"
+    assert config.PRIVACY_VERSION == "1.5"
+    assert config.DPA_VERSION == "1.5"
 
 
 def test_public_legal_pages_cross_link_dpa():
@@ -603,6 +652,19 @@ def test_public_legal_pages_cross_link_dpa():
         response = TestClient(app).get(path)
         assert response.status_code == 200
         assert 'href="/dpa"' in response.text
+
+
+def test_subprocessor_register_is_public_and_cross_linked():
+    response = TestClient(app).get("/subprocessors?lang=en")
+    assert response.status_code == 200
+    assert "Subprocessor register" in response.text
+    assert "Amazon Web Services" in response.text
+    assert "Cloudflare" in response.text
+    assert "Live Guest Data must not be entered into staging" in response.text
+    assert "accommodation provider or alternate controller" in response.text
+    for path in ("/legal", "/terms", "/privacy", "/dpa"):
+        page = TestClient(app).get(path)
+        assert 'href="/subprocessors"' in page.text
 
 
 def test_login_audit_includes_legal_versions():

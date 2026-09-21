@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, passport_photos
+from app import auth, claim, db, passport_photos
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -51,7 +51,7 @@ def _stay_id() -> int:
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    today = date.today()
+    today = claim.prague_today()
     entity_id = db.insert("legal_entity", {"name": "PIN gate test", "created_at": now})
     apartment_id = db.insert(
         "apartment",

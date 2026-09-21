@@ -207,56 +207,6 @@
   </span>
 {% endmacro %}
 
-{% macro onboarding_banner(onboarding) %}
-  {% if onboarding and onboarding.current and not onboarding.finished %}
-    <div class="onboarding-banner" role="status">
-      <div>
-        <strong>{{ t('onboarding.step_of', n=onboarding.completed + 1, total=onboarding.total,
-                     title=t('onboarding.' ~ onboarding.current.id ~ '.title')) }}</strong>
-        <small>{{ t('onboarding.' ~ onboarding.current.id ~ '.detail') }}</small>
-      </div>
-      <a class="btn primary small" href="{{ onboarding.current.url }}">
-        {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
-    </div>
-  {% endif %}
-{% endmacro %}
-
-{% macro onboarding_welcome(onboarding) %}
-  <div class="panel onboarding-welcome">
-    <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="UbyHost">
-    <h2>{{ t('onboarding.welcome_title') }}</h2>
-    <p class="lede">{{ t('onboarding.welcome_lede') }}</p>
-    <div class="onboarding-steps" aria-label="{{ t('onboarding.welcome_title') }}">
-      {% for step in onboarding.steps %}
-        <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
-          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
-          <div>
-            <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
-            <p>{{ t('onboarding.' ~ step.id ~ '.detail') }}</p>
-          </div>
-          {% if not step.done and onboarding.current and step.id == onboarding.current.id %}
-            <a class="btn primary small" href="{{ step.url }}">
-              {{ t('onboarding.' ~ step.id ~ '.action') }}</a>
-          {% elif step.done %}
-            <span class="pill green">{{ t('onboarding.step_done') }}</span>
-          {% endif %}
-        </article>
-      {% endfor %}
-    </div>
-    {% if onboarding.current %}
-      <a class="btn primary" href="{{ onboarding.current.url }}">
-        {{ t('onboarding.continue',
-              action=t('onboarding.' ~ onboarding.current.id ~ '.action')) }}</a>
-    {% endif %}
-    <div class="onboarding-demo">
-      <form method="post" action="/demo">
-        <button class="btn" type="submit">{{ t('demo.load') }}</button>
-      </form>
-      <p class="small muted" style="margin-top:8px">{{ t('demo.load_detail') }}</p>
-    </div>
-  </div>
-{% endmacro %}
-
 {% macro copy_icon() %}
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
   <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
@@ -276,6 +226,178 @@
   <button class="btn small" type="button" data-copy="{{ target_id }}" data-copy-label="{{ t('common.copy') }}"
           data-copied-label="{{ t('common.copied') }}"
           title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
+{% endmacro %}
+
+{% macro onboarding_finish(onboarding) %}
+  {% if onboarding and onboarding.finished and onboarding.finish %}
+    {% set finish = onboarding.finish %}
+    <section class="onboarding-finish" aria-label="{{ t('onboarding.finish_title') }}">
+      <header class="onboarding-finish-intro">
+        <p class="onboarding-kicker">{{ t('onboarding.finish_kicker') }}</p>
+        <h2>{{ t('onboarding.finish_title') }}</h2>
+        <p class="lede">{{ t('onboarding.finish_lede', property=finish.name) }}</p>
+      </header>
+      <div class="onboarding-finish-share">
+        <div class="onboarding-finish-field">
+          <span class="onboarding-finish-label">{{ t('onboarding.finish_link_label') }}</span>
+          <code id="onboarding-finish-link">{{ finish.permalink }}</code>
+          {{ copy_button('onboarding-finish-link') }}
+        </div>
+        <div class="onboarding-finish-field">
+          <span class="onboarding-finish-label">{{ t('guest_links.pin') }}</span>
+          <strong id="onboarding-finish-pin" class="onboarding-finish-pin">{{ finish.pin }}</strong>
+          {{ copy_button('onboarding-finish-pin') }}
+        </div>
+      </div>
+      <ul class="onboarding-finish-tips">
+        <li>{{ t('onboarding.finish_message_tip') }}
+          <a href="{{ finish.communication_url }}">{{ t('onboarding.finish_message_link') }}</a></li>
+        <li>{{ t('onboarding.finish_passport_tip') }}
+          <a href="{{ finish.communication_url }}">{{ t('apartment.form.passport_policy.' ~ ('required' if finish.passport_policy == 'required_foreign' else 'off')) }}</a></li>
+        <li>{{ t('onboarding.finish_reopen_tip') }}</li>
+      </ul>
+      <div class="onboarding-finish-actions">
+        <a class="btn primary" href="{{ finish.communication_url }}">{{ t('onboarding.finish_open_communication') }}</a>
+        <a class="btn" href="/l/{{ finish.permalink_token }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
+        {% if not onboarding.dismissed %}
+          <form method="post" action="/onboarding/dismiss">
+            <input type="hidden" name="return_to" value="{{ request.url.path }}">
+            <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
+          </form>
+        {% else %}
+          <form method="post" action="/onboarding/resume">
+            <input type="hidden" name="return_to" value="{{ request.url.path }}">
+            <button class="btn ghost" type="submit">{{ t('onboarding.resume') }}</button>
+          </form>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+{% endmacro %}
+
+{% macro onboarding_banner(onboarding) %}
+  {% if onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
+    <aside class="onboarding-banner" aria-label="{{ t('onboarding.welcome_title') }}">
+      <div class="onboarding-banner-progress" aria-hidden="true">
+        <span style="width:{{ onboarding.percent }}%"></span>
+      </div>
+      <div class="onboarding-banner-copy">
+        <small>{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</small>
+        <strong>{{ t('onboarding.step_of', n=onboarding.completed + 1, total=onboarding.total,
+                     title=t('onboarding.' ~ onboarding.current.id ~ '.title')) }}</strong>
+        <small>{{ t('onboarding.' ~ onboarding.current.id ~ '.detail') }}</small>
+      </div>
+      <div class="onboarding-banner-actions">
+        <a class="small" href="/onboarding">{{ t('onboarding.all_steps') }}</a>
+        <a class="btn primary small" href="{{ onboarding.current.url }}">
+          {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
+        <form method="post" action="/onboarding/dismiss">
+          <input type="hidden" name="return_to" value="{{ request.url.path }}">
+          <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
+        </form>
+      </div>
+    </aside>
+  {% endif %}
+{% endmacro %}
+
+{% macro onboarding_welcome(onboarding) %}
+  <section class="onboarding-welcome">
+    <header class="onboarding-intro">
+      <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="">
+      <div>
+        <p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>
+        <h1>{{ t('onboarding.welcome_title') }}</h1>
+        <p class="lede">{{ t('onboarding.welcome_lede') }}</p>
+      </div>
+      <div class="onboarding-meter" aria-label="{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}">
+        <strong>{{ onboarding.percent }}%</strong>
+        <span>{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</span>
+        <div aria-hidden="true"><i style="width:{{ onboarding.percent }}%"></i></div>
+        {% if onboarding.dismissed %}
+          <form method="post" action="/onboarding/resume">
+            <input type="hidden" name="return_to" value="{{ request.url.path }}">
+            <button class="btn ghost small" type="submit">{{ t('onboarding.resume') }}</button>
+          </form>
+        {% else %}
+          <form method="post" action="/onboarding/dismiss">
+            <input type="hidden" name="return_to" value="/">
+            <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
+          </form>
+          <small>{{ t('onboarding.skip_hint') }}</small>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if onboarding.finished %}
+      {{ onboarding_finish(onboarding) }}
+    {% elif onboarding.current %}
+      <div class="onboarding-now">
+        <div class="onboarding-now-label">
+          <span>{{ onboarding.completed + 1 }}</span>
+          <small>{{ t('onboarding.current_title') }}</small>
+        </div>
+        <div class="onboarding-now-copy">
+          <h2>{{ t('onboarding.' ~ onboarding.current.id ~ '.title') }}</h2>
+          <p>{{ t('onboarding.' ~ onboarding.current.id ~ '.detail') }}</p>
+          <p class="onboarding-prepare">{{ t('onboarding.' ~ onboarding.current.id ~ '.prepare') }}</p>
+        </div>
+        <div class="onboarding-now-actions">
+          <a class="btn primary" href="{{ onboarding.current.url }}">
+            {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
+          <a class="small" href="{{ onboarding.current.learn_url }}">{{ t('onboarding.learn') }} →</a>
+        </div>
+      </div>
+    {% endif %}
+
+    <p class="onboarding-finish-line">
+      {% if onboarding.finished %}
+        {{ t('onboarding.finish_line_done') }}
+      {% else %}
+        {{ t('onboarding.finish_line') }}
+      {% endif %}
+    </p>
+    <div class="onboarding-steps" aria-label="{{ t('onboarding.welcome_title') }}">
+      {% for step in onboarding.steps %}
+        <article class="onboarding-step {{ 'is-done' if step.done else '' }} {{ 'is-current' if onboarding.current and step.id == onboarding.current.id else '' }}">
+          <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
+          <div class="onboarding-step-copy">
+            <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
+            <p>{{ t('onboarding.' ~ step.id ~ '.detail') }}</p>
+            <small>{{ t('onboarding.' ~ step.id ~ '.prepare') }}</small>
+          </div>
+          {% if step.done %}
+            <span class="pill green">{{ t('onboarding.step_done') }}</span>
+          {% elif onboarding.current and step.id == onboarding.current.id %}
+            <span class="onboarding-current-dot" aria-hidden="true"></span>
+          {% endif %}
+          <details>
+            <summary>{{ t('onboarding.learn') }}</summary>
+            <p>{{ t('onboarding.' ~ step.id ~ '.why') }}</p>
+            <a href="{{ step.learn_url }}">{{ t('nav.guide') }} →</a>
+          </details>
+        </article>
+      {% endfor %}
+    </div>
+
+    <div class="onboarding-bottom {{ 'single' if not demo_available else '' }}">
+      <div class="onboarding-safety">
+        <strong>{{ t('onboarding.safe_title') }}</strong>
+        <p>{{ t('onboarding.safe_body') }}</p>
+      </div>
+      {% if demo_available %}
+      <div class="onboarding-demo">
+        <div>
+          <strong>{{ t('onboarding.demo_title') }}</strong>
+          <p>{{ t('onboarding.demo_body') }}</p>
+          <small>{{ t('onboarding.demo_hint') }}</small>
+        </div>
+        <form method="post" action="/demo">
+          <button class="btn" type="submit">{{ t('demo.load') }}</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </section>
 {% endmacro %}
 
 {% macro row_menu_begin(label='') %}

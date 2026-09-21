@@ -2,8 +2,9 @@
 {% set nav = 'guest_links' %}
 {% block title %}{{ t('guest_links.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, empty_state, copy_button, row_menu_begin, row_menu_end with context %}
+{% from "_components.html" import page_header, empty_state, copy_button, row_menu_begin, row_menu_end, onboarding_banner with context %}
 
+{{ onboarding_banner(onboarding) }}
 {{ page_header(
   t('guest_links.title'),
   t('guest_links.lede')

@@ -165,6 +165,54 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 
 /* --- stay pickers ------------------------------------------------------ */
 
+.g-arrival-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+  padding: 28px 24px 24px;
+  border: 1px solid color-mix(in srgb, var(--g-accent) 18%, var(--g-line));
+  border-radius: var(--g-radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--g-accent) 9%, var(--g-surface)) 0%,
+      var(--g-surface) 72%);
+}
+.g-arrival-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--g-accent);
+}
+.g-arrival-hero h2 {
+  max-width: 18ch;
+  margin: 0 0 8px;
+  color: var(--g-ink);
+  font-size: clamp(29px, 8vw, 42px);
+  line-height: 1.06;
+  letter-spacing: -0.045em;
+}
+.g-arrival-hero > p:not(.g-question-kicker) { margin: 0; color: var(--g-ink-2); }
+.g-arrival-hero .g-arrival-location {
+  margin-top: 5px;
+  color: var(--g-muted);
+  font-size: 14px;
+}
+.g-arrival-message {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--g-accent) 18%, var(--g-line));
+  color: var(--g-muted);
+  font-size: 14px;
+}
+.g-arrival-message summary { cursor: pointer; color: var(--g-ink); font-weight: 650; }
+.g-arrival-message p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.g-arrival-choice { margin-top: 24px; }
+.g-arrival-choice .g-section { margin-bottom: 5px; font-size: 23px; letter-spacing: -0.025em; }
+.g-arrival-lanes {
+  overflow: hidden;
+  border-block: 1px solid var(--g-line);
+}
+
 .g-stay {
   display: flex;
   align-items: center;
@@ -183,8 +231,92 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   box-shadow: var(--g-shadow);
   transition: border-color 0.16s var(--g-ease), transform 0.16s var(--g-ease);
 }
+.g-arrival-lane {
+  position: relative;
+  min-height: 92px;
+  margin: 0;
+  padding: 17px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--g-line);
+  border-radius: 0;
+  background: transparent;
+  animation: lane-enter 220ms var(--g-ease) both;
+  animation-delay: calc(var(--lane-index) * 45ms);
+}
+.g-arrival-lane:last-child { border-bottom: 0; }
+.g-arrival-lane:hover,
+.g-arrival-lane.yours {
+  border-color: var(--g-line);
+  background: color-mix(in srgb, var(--g-accent) 4%, transparent);
+  transform: none;
+}
+.g-range-cue {
+  position: relative;
+  align-self: stretch;
+  width: 18px;
+  flex: 0 0 18px;
+}
+.g-range-cue::before,
+.g-range-cue::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--g-line-2);
+  border-radius: 50%;
+  background: var(--g-surface);
+  transition: border-color 160ms var(--g-ease), background 160ms var(--g-ease);
+}
+.g-range-cue::before { top: 4px; }
+.g-range-cue::after { bottom: 4px; }
+.g-range-cue i {
+  position: absolute;
+  left: 8px;
+  top: 13px;
+  bottom: 13px;
+  width: 2px;
+  background: var(--g-line-2);
+  transition: background 160ms var(--g-ease);
+}
+.g-arrival-lane:hover .g-range-cue::before,
+.g-arrival-lane:hover .g-range-cue::after,
+.g-arrival-lane:focus-visible .g-range-cue::before,
+.g-arrival-lane:focus-visible .g-range-cue::after {
+  border-color: var(--g-accent);
+  background: var(--g-accent);
+}
+.g-arrival-lane:hover .g-range-cue i,
+.g-arrival-lane:focus-visible .g-range-cue i { background: var(--g-accent); }
+.g-arrival-lane:active { transform: translateY(1px); opacity: .88; }
+.g-lane-status { display: inline; margin-left: 8px; color: var(--g-ok) !important; font-weight: 650; }
+.g-lane-status::before { content: "\00b7"; margin-right: 8px; color: var(--g-muted); }
+.g-lane-status.quiet { color: var(--g-muted) !important; font-weight: 500; }
+.g-lane-status.ongoing { color: var(--g-accent) !important; }
+.g-lane-action {
+  flex: 0 0 auto;
+  color: var(--g-muted);
+  font-size: 13px;
+  font-weight: 650;
+  transition: color 160ms var(--g-ease);
+}
+.g-arrival-lane:hover .g-lane-action { color: var(--g-accent); }
+@keyframes lane-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 430px) {
+  .g-arrival-hero { padding: 24px 19px 20px; }
+  .g-arrival-lane { align-items: flex-start; gap: 10px; }
+  .g-lane-action { max-width: 78px; padding-top: 2px; text-align: right; }
+  .g-lane-status { display: block; margin-left: 0; }
+  .g-lane-status::before { content: none; }
+}
 .g-stay:hover { border-color: var(--g-line-2); transform: translateY(-1px); }
 .g-stay:active { transform: translateY(0); }
+.g-stay.g-arrival-lane:hover { border-color: var(--g-line); transform: none; }
+.g-stay.g-arrival-lane:active { transform: translateY(1px); opacity: .88; }
 .g-stay.yours { border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); background: var(--g-ok-soft); }
 .g-stay .dates { flex: 1; min-width: 0; }
 .g-stay .dates strong { display: block; font-size: 16.5px; color: var(--g-ink); }
@@ -225,6 +357,22 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 }
 .g-stay-summary strong { font-size: 16.5px; color: var(--g-ink); }
 .g-stay-summary span { font-size: 14px; color: var(--g-muted); }
+
+.g-assigned-stay h2 { margin-bottom: 2px; font-size: 22px; }
+.g-assigned-location { margin: 0 0 14px; color: var(--g-muted); font-size: 14px; }
+.g-assigned-dates { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; }
+.g-assigned-dates span { color: var(--g-muted); font-size: 14px; }
+.g-private-link-note {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 18px;
+  padding: 14px;
+  border-left: 3px solid var(--g-accent);
+  background: var(--g-accent-soft);
+  font-size: 14px;
+}
+.g-private-link-note strong { color: var(--g-ink); font-size: 16px; }
+.g-private-link-note small { color: var(--g-muted); }
 
 /* --- progress ---------------------------------------------------------- */
 
@@ -318,7 +466,7 @@ label {
 }
 label .opt { font-weight: 400; color: var(--g-muted); }
 
-input[type=text], input[type=date], input[type=number], select, textarea {
+input[type=text], input[type=email], input[type=date], input[type=number], select, textarea {
   width: 100%;
   /* 16px keeps iOS Safari from zooming the viewport on focus. */
   font: inherit;
