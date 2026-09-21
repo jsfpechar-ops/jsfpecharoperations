@@ -16,6 +16,10 @@ UNCLAIMED = "unclaimed"
 PROVISIONAL = "provisional"
 CLAIMED = "claimed"
 HOLD_MINUTES = 30
+# How long an unconfirmed hold keeps a *different* address out. Long enough to
+# stop two people racing the same booking, short enough that a guest who
+# mistyped their address is not stuck for the whole hold.
+HOLD_TAKEOVER_SECONDS = 60
 TOKEN_BYTES = 24
 
 
@@ -40,6 +44,19 @@ def _hold_still_active(provisional_until: Optional[str], now: Optional[str] = No
         return False
     now_utc = _parse_provisional_until(now or db.utcnow())
     return _parse_provisional_until(provisional_until) > now_utc
+
+
+def _hold_age_seconds(
+    provisional_until: Optional[str], now: Optional[str] = None
+) -> Optional[float]:
+    """Seconds since the current hold was created, derived from its deadline."""
+    if not provisional_until:
+        return None
+    started = _parse_provisional_until(provisional_until) - timedelta(
+        minutes=HOLD_MINUTES
+    )
+    now_utc = _parse_provisional_until(now or db.utcnow())
+    return (now_utc - started).total_seconds()
 
 
 def _row(reservation_id: int):
@@ -201,10 +218,15 @@ def start_claim(
     same_email = mail.normalise_email(claim["email"] or "") == addr
     if claim["state"] == PROVISIONAL and not resend:
         if _hold_still_active(claim["provisional_until"]):
-            if not same_email:
+            if same_email:
+                # Same address already has an active hold — do not rotate/send again.
+                return False, "already_sent", None
+            age = _hold_age_seconds(claim["provisional_until"])
+            if age is None or age < HOLD_TAKEOVER_SECONDS:
                 return False, "held", None
-            # Same address already has an active hold — do not rotate/send again.
-            return False, "already_sent", None
+            # Past the grace window the corrected address takes over: a mistyped
+            # address must stay recoverable. The token rotation below invalidates
+            # the link that went to the wrong address.
     if resend or claim["state"] == CLAIMED:
         if _resend_too_soon(claim):
             return False, "cooldown", None
