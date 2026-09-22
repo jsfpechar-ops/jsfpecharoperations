@@ -608,6 +608,69 @@ def test_provisional_hold_blocks_a_different_email_until_it_expires():
         _cleanup()
 
 
+def test_mistyped_address_takes_over_after_the_hold_grace(monkeypatch):
+    """A typo must not cost a guest the whole 30-minute hold."""
+    current, _past, _far, apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        ok, err, wrong_secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="typo@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert ok, err
+
+        # Inside the grace window another address is still held off.
+        held_ok, held_err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="correct@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert not held_ok
+        assert held_err == "held"
+
+        # Age the hold past the grace window but keep it inside the hold itself.
+        started = datetime.now(timezone.utc) - timedelta(
+            seconds=claim.HOLD_TAKEOVER_SECONDS + 5
+        )
+        until = (started + timedelta(minutes=claim.HOLD_MINUTES)).replace(
+            microsecond=0
+        ).isoformat()
+        db.execute(
+            "UPDATE reservation_claim SET provisional_until = ?, updated_at = ? "
+            "WHERE reservation_id = ?",
+            (until, db.utcnow(), current),
+        )
+
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        again_ok, again_err, right_secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="correct@claim.test",
+            party_size=2,
+            lang="en",
+        )
+        assert again_ok, again_err
+
+        row = claim.ensure_row(current)
+        assert row["email"] == "correct@claim.test"
+        assert row["token_hash"] == claim.token_hash(right_secret)
+        # The link sent to the mistyped address is dead.
+        assert not claim.confirm(reservation, wrong_secret)
+    finally:
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
 def test_guest_facing_assignment_masks_email_and_lock_hides_it():
     current, _past, _far, _apartment_id = _seed()
     address = "private-address@claim.test"
@@ -768,6 +831,103 @@ def test_claim_mail_caps_recipient_and_reservation(monkeypatch):
         )
         assert not ok3
         assert err3 == "rate"
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
+def test_default_claim_mail_caps_tolerate_a_retrying_guest(monkeypatch):
+    """The shipped caps must let a real guest retry.
+
+    A guest who mistypes an address, or whose link never arrives, submits the
+    form more than once; the abuse caps are there to stop bulk misuse, not to
+    lock a single booking out after a couple of attempts.
+    """
+    current, _past, _far, apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    try:
+        for attempt in range(claim.CLAIM_MAIL_PER_RECIPIENT_MAX):
+            claim.release(current)
+            reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+            ok, err, _secret = claim.start_claim(
+                reservation,
+                apartment,
+                email="retry@claim.test",
+                party_size=1,
+                lang="en",
+            )
+            assert ok, f"same-address attempt {attempt + 1} was blocked: {err}"
+
+        claim.release(current)
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        ok, err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="retry@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert not ok
+        assert err == "recipient_rate"
+
+        db.execute("DELETE FROM rate_limit_event WHERE scope LIKE 'claim_mail_%'")
+        for attempt in range(claim.CLAIM_MAIL_PER_RESERVATION_MAX):
+            claim.release(current)
+            reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+            ok, err, _secret = claim.start_claim(
+                reservation,
+                apartment,
+                email=f"group{attempt}@claim.test",
+                party_size=1,
+                lang="en",
+            )
+            assert ok, f"group attempt {attempt + 1} was blocked: {err}"
+
+        claim.release(current)
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        ok, err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="group-extra@claim.test",
+            party_size=1,
+            lang="en",
+        )
+        assert not ok
+        assert err == "rate"
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
+def test_party_post_stays_smooth_for_a_retrying_guest(monkeypatch):
+    """Fumbling the claim form must never surface the rate banner."""
+    current, _past, _far, _apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    try:
+        browser = TestClient(app)
+        typo = browser.post(
+            f"/l/{TOKEN}/{current}/party",
+            data={"party_size": "3", "guest_email": "not-an-email"},
+            follow_redirects=False,
+        )
+        assert typo.status_code == 303
+        assert "claim_error=rate" not in typo.headers["location"]
+        for attempt in range(5):
+            response = browser.post(
+                f"/l/{TOKEN}/{current}/party",
+                data={"party_size": "3", "guest_email": "smooth@example.com"},
+                follow_redirects=False,
+            )
+            assert response.status_code == 303
+            location = response.headers["location"]
+            assert "claim_error=rate" not in location, f"attempt {attempt + 1}: {location}"
     finally:
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
