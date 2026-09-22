@@ -140,6 +140,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "The dates may have changed, the booking may have been cancelled, or your host "
             "may have closed registration for this stay. Please message your host."
         ),
+        "form_expired_title": "This form timed out",
+        "form_expired_help": (
+            "Nothing was saved. Reload the page, or start again from the link below."
+        ),
         "not_yours_title": "This form cannot be opened on this device",
         "not_yours_help": (
             "So that one guest never sees another guest's passport details, a form can only "
@@ -588,6 +592,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_gone_help": (
             "Termín se mohl změnit, rezervace mohla být zrušena, nebo ubytovatel registraci "
             "pro tento pobyt uzavřel. Napište prosím ubytovateli."
+        ),
+        "form_expired_title": "Tomuto formuláři vypršela platnost",
+        "form_expired_help": (
+            "Nic se neuložilo. Načtěte stránku znovu nebo začněte znovu přes odkaz níže."
         ),
         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
         "not_yours_help": (

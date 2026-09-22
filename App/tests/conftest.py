@@ -4,6 +4,7 @@ These variables must be set before anything under ``app`` is imported, because
 ``app.config`` reads the environment once at import time.
 """
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -13,6 +14,7 @@ from pathlib import Path
 
 import pytest
 import requests
+from fastapi.testclient import TestClient
 
 _TMP = Path(tempfile.mkdtemp(prefix="ubyhost-tests-"))
 PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -96,6 +98,71 @@ def complete_guest_claim(
     )
     assert response.status_code == 303, response.text
     return secret
+
+
+# A guest page that always renders, needs no apartment row and carries the
+# ``csrf-token`` meta tag in ``guest/base.html``.
+CSRF_PRIMER_PATH = "/l/does-not-exist"
+
+_META_TOKEN_RE = re.compile(r'<meta name="csrf-token" content="([^"]*)"')
+
+
+def csrf_token_for(client) -> str:
+    """Return a CSRF token ``client`` can post with, loading a page if needed.
+
+    The token is only valid together with the ``ubyhost_csrf`` cookie the
+    response that rendered it sets, so a browser has to load a form first.
+    """
+    from app import security
+
+    cached = getattr(client, "_ubyhost_csrf_token", "")
+    if cached and client.cookies.get(security.CSRF_COOKIE):
+        return cached
+    match = _META_TOKEN_RE.search(client.get(CSRF_PRIMER_PATH).text)
+    client._ubyhost_csrf_token = match.group(1) if match else ""
+    return client._ubyhost_csrf_token
+
+
+@pytest.fixture(scope="session", autouse=True)
+def csrf_proof_on_form_posts():
+    """Make ``TestClient.post`` carry the token the page rendered.
+
+    Proposal, not an established convention: it keeps the existing form tests
+    testing what they were written to test (rate limits, the PIN gate,
+    redirect targets) now that the CSRF dependency no longer switches itself
+    off outside production. A test that wants the missing-proof path passes
+    ``_csrf: ""``, and a test that wants a stale one passes its own value.
+
+    Session scope on purpose: module- and session-scoped fixtures (``client``
+    in ``test_endtoend.py``) log in with a POST before any function-scoped
+    fixture has run.
+    """
+    from _pytest.monkeypatch import MonkeyPatch
+
+    from app import security
+
+    original_post = TestClient.post
+
+    def post(self, url, *args, **kwargs):
+        data = kwargs.get("data")
+        headers = kwargs.get("headers") or {}
+        spelled_out = isinstance(data, dict) and security.CSRF_FIELD in data
+        in_headers = any(str(key).lower() == security.CSRF_HEADER for key in headers)
+        if not spelled_out and not in_headers:
+            token = csrf_token_for(self)
+            if token:
+                if isinstance(data, dict):
+                    kwargs["data"] = {**data, security.CSRF_FIELD: token}
+                elif data is None:
+                    kwargs["data"] = {security.CSRF_FIELD: token}
+        return original_post(self, url, *args, **kwargs)
+
+    patcher = MonkeyPatch()
+    patcher.setattr(TestClient, "post", post)
+    try:
+        yield
+    finally:
+        patcher.undo()
 
 
 @pytest.fixture(scope="session")

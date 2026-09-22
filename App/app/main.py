@@ -74,6 +74,12 @@ async def expired_form_handler(_request: Request, exc: security.ExpiredFormError
     return RedirectResponse(exc.location, status_code=303)
 
 
+@app.exception_handler(security.GuestFormExpiredError)
+async def guest_form_expired_handler(request: Request, exc: security.GuestFormExpiredError):
+    """Tell a guest their form expired instead of returning a bare 403 body."""
+    return guest.csrf_expired_page(request, exc.token)
+
+
 @app.middleware("http")
 async def cloudflare_connecting_ip(request: Request, call_next):
     """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""

@@ -155,6 +155,7 @@ def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] 
     """Guest-facing pages never show host alerts."""
     data = dict(context or {})
     data["request"] = request
+    data["csrf_token"] = security.csrf_token(request)
     data["open_alerts"] = []
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))

@@ -18,7 +18,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 
@@ -27,7 +27,7 @@ import re
 from .. import alerts, auth, claim, codelists, config, db, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
 LANG_COOKIE = "ubyhost_lang"
 OWNED_COOKIE = "ubyhost_owned"
@@ -364,6 +364,7 @@ def _unavailable(
         "no_stays": ("no_stays", "no_stays_help"),
         "bad_link": ("bad_link_title", "bad_link_help"),
         "stay_gone": ("stay_gone_title", "stay_gone_help"),
+        "form_expired": ("form_expired_title", "form_expired_help"),
         "not_yours": ("not_yours_title", "not_yours_help"),
         "already_filed": ("already_filed_title", "already_filed_help"),
         "form_locked": ("form_locked_title", "form_locked_help"),
@@ -393,6 +394,22 @@ def _unavailable(
         "guest/unavailable.html",
         context,
         status_code=status_code,
+    )
+
+
+def csrf_expired_page(request: Request, token: str = ""):
+    """Guest-facing 403 for a form whose CSRF proof is gone.
+
+    Guest pages are served with ``Referrer-Policy: no-referrer``, so there is no
+    rendered form to send the visitor back to. The page tells them to reload and
+    links to the start of the flow, which issues a fresh token.
+    """
+    return _unavailable(
+        request,
+        _language(request),
+        "form_expired",
+        status_code=403,
+        token=(token or request.path_params.get("token") or None),
     )
 
 
