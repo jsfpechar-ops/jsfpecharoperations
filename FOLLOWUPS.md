@@ -276,3 +276,21 @@ fresh PIN is a fresh budget, so the host's action immediately unblocks the
 guest. A token-only key would have locked the link for 24 hours with no
 operator fix. If a future change makes rotation automatic, it must revisit this
 trade-off rather than assume the two are independent.
+
+### The Turnstile fail-open bound is per source address
+
+W3.8 fails open for five attempts per (source address, action) inside a
+15-minute window while the verifier is unreachable, so a real Cloudflare outage
+does not stop guest registration. The bound is deliberately per-address rather
+than global — a global counter would shut the whole site out after five guests,
+which is the failure the item exists to prevent — but it does mean an attacker
+who can both keep Turnstile unreachable *and* rotate source addresses gets an
+unbounded bypass for the duration. That is a strictly better position than the
+old behaviour (every guest blocked outright, no alert), and the outage is
+reported either way, so it was accepted. If the bound ever needs to be global,
+it should be a global *alert* threshold with a per-address allowance, not a
+global rejection.
+
+Note also that `verify` is shared: `routes/admin_accounts.py:33` (host login)
+fails open on the same terms, which is intended — a host who cannot log in
+during an outage cannot resolve the alert telling them about it.
