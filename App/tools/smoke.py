@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import sys
 import tempfile
 from datetime import date, timedelta
@@ -52,6 +53,20 @@ def check(client, path, expect=(200,), must_contain=(), must_not_contain=(), lab
     if "Internal Server Error" in body or "Traceback (most recent" in body:
         FAILURES.append(f"{name}: server error in body")
     return response
+
+
+def csrf_field(client, token):
+    """The CSRF token a rendered guest page carries, with its cookie in the jar.
+
+    Guest POSTs need the proof in every deployment, so the smoke run has to
+    load a page first, exactly like a browser.
+    """
+    page = client.get(f"/l/{token}")
+    match = re.search(r'<meta name="csrf-token" content="([^"]*)"', page.text)
+    if not match:
+        FAILURES.append(f"csrf: /l/{token} rendered no csrf-token meta tag")
+        return {}
+    return {"_csrf": match.group(1)}
 
 
 def seed():
@@ -135,7 +150,7 @@ def claim_stay(client, token, reservation_id, email, party_size=2):
     if not mail.mail_enabled():
         declared = client.post(
             f"/l/{token}/{reservation_id}/party",
-            data={"party_size": str(party_size)},
+            data={"party_size": str(party_size), **csrf_field(client, token)},
             follow_redirects=False,
         )
         if declared.status_code != 303:
@@ -168,7 +183,7 @@ def claim_stay(client, token, reservation_id, email, party_size=2):
     )
     confirmed = client.post(
         f"/l/{token}/{reservation_id}/claim/confirm",
-        data={"secret": secret},
+        data={"secret": secret, **csrf_field(client, token)},
         follow_redirects=False,
     )
     if confirmed.status_code != 303:
@@ -308,6 +323,7 @@ def main():
             "party_size": "2",
             "signature": signature,
             "legal_ack": "1",
+            **csrf_field(guest, token),
         },
         files={"passport_photo": ("passport.png", PNG_BYTES, "image/png")},
         follow_redirects=True,

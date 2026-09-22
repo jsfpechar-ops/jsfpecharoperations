@@ -46,6 +46,7 @@
       enctype="multipart/form-data" data-guest-wizard
       data-next-label="{{ t('next_step') }}" data-back-label="{{ t('previous_step') }}"
       data-progress-label="{{ t('form_step_progress', current='__CURRENT__', total='__TOTAL__') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   {% if guest %}<input type="hidden" name="guest_id" value="{{ guest.id }}">{% endif %}
   <input type="hidden" name="stay_from"
          value="{{ values.get('stay_from') or (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
@@ -232,7 +233,7 @@
       </div>
     </div>
     <input type="hidden" id="signature" name="signature"
-           value="{{ values.get('signature') or (guest.signature_png if guest and guest.signature_png else '') }}">
+           value="{{ values.get('signature') or stored_signature }}">
     {{ err_for('signature') }}
   </div>
 

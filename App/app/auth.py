@@ -304,7 +304,7 @@ def attach_session(response, token: str, remember: bool = False) -> None:
         max_age=SESSION_REMEMBER_MAX_AGE if remember else SESSION_MAX_AGE,
         httponly=True,
         samesite="strict",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         path="/",
     )
 
@@ -313,7 +313,7 @@ def clear_session(response) -> None:
     response.delete_cookie(
         SESSION_COOKIE,
         path="/",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         httponly=True,
         samesite="strict",
     )
@@ -419,9 +419,16 @@ def new_permalink_pin() -> str:
 
 
 def normalise_permalink_pin(value: str) -> Optional[str]:
-    """Return a valid guest PIN (4 legacy or 6 current digits) or None."""
+    """Return a valid guest PIN (six digits) or None.
+
+    Four-digit PINs are refused: a 10^4 space is walkable in hours, and with
+    ``UBYHOST_MAIL_BACKEND=disabled`` the link plus PIN is the only boundary on
+    the whole registration flow. Stored legacy PINs are rotated at startup —
+    see ``main.lifespan`` — because the guest gate compares against the stored
+    value and never consults this normaliser.
+    """
     value = (value or "").strip()
-    if value.isdigit() and len(value) in (4, 6):
+    if value.isdigit() and len(value) == 6:
         return value
     return None
 
@@ -434,7 +441,13 @@ def _pin_serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-guest-pin")
 
 
-def _pin_fingerprint(token: str, pin: str) -> str:
+def pin_fingerprint(token: str, pin: str) -> str:
+    """Keyed digest of one (link, PIN) pair.
+
+    Safe to keep outside the PIN's own column — the key lives in ``SECRET_KEY``
+    and the digest cannot be walked back — and stable enough to scope a lockout
+    to the exact PIN it was earned against.
+    """
     return hmac.new(
         config.SECRET_KEY.encode(),
         f"{token}\0{pin}".encode(),
@@ -445,13 +458,13 @@ def _pin_fingerprint(token: str, pin: str) -> str:
 def pin_matches(token: str, entered: str, expected: str) -> bool:
     """Compare PINs without exposing their length through an early return."""
     return hmac.compare_digest(
-        _pin_fingerprint(token, entered), _pin_fingerprint(token, expected)
+        pin_fingerprint(token, entered), pin_fingerprint(token, expected)
     )
 
 
 def issue_pin_session(token: str, pin: str) -> str:
     return _pin_serializer().dumps(
-        {"token": token, "pin": _pin_fingerprint(token, pin)}
+        {"token": token, "pin": pin_fingerprint(token, pin)}
     )
 
 
@@ -465,14 +478,23 @@ def pin_session_valid(request: Request, token: str, pin: str) -> bool:
             isinstance(payload, dict)
             and hmac.compare_digest(str(payload.get("token", "")), token)
             and hmac.compare_digest(
-                str(payload.get("pin", "")), _pin_fingerprint(token, pin)
+                str(payload.get("pin", "")), pin_fingerprint(token, pin)
             )
         )
     except BadSignature:
         return False
 
 
-def _secure_cookies() -> bool:
+def secure_cookies() -> bool:
+    """Whether session cookies may carry ``Secure``.
+
+    Either signal is enough: an https public base URL means the browser only
+    ever reaches us over TLS, and a production deployment must never hand out
+    a cookie without the flag even if the base URL was left at its http
+    default. The URL test alone let a production deployment that had not set
+    ``UBYHOST_PUBLIC_BASE_URL`` ship insecure cookies, so it is not the gate on
+    its own.
+    """
     return config.DEPLOYMENT == "production" or config.PUBLIC_BASE_URL.lower().startswith(
         "https://"
     )
@@ -485,7 +507,7 @@ def attach_pin_session(response, token: str, pin: str) -> None:
         max_age=_PIN_MAX_AGE,
         httponly=True,
         samesite="lax",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         path="/",
     )
 
@@ -494,7 +516,7 @@ def clear_pin_session(response) -> None:
     response.delete_cookie(
         PIN_COOKIE,
         path="/",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         httponly=True,
         samesite="lax",
     )

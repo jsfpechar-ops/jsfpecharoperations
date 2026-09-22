@@ -140,6 +140,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "The dates may have changed, the booking may have been cancelled, or your host "
             "may have closed registration for this stay. Please message your host."
         ),
+        "form_expired_title": "This form timed out",
+        "form_expired_help": (
+            "Nothing was saved. Reload the page, or start again from the link below."
+        ),
+        "rate_limited_title": "Too many attempts from your connection",
+        "rate_limited_help": (
+            "Nothing was saved. Wait about 15 minutes and try again — if you are stuck, "
+            "message your host."
+        ),
         "not_yours_title": "This form cannot be opened on this device",
         "not_yours_help": (
             "So that one guest never sees another guest's passport details, a form can only "
@@ -168,6 +177,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "pin_wrong": "That PIN is not correct. Check the message from your host.",
         "pin_recovery": "Can’t find the PIN? Ask your host to resend the registration message.",
         "pin_rate_limited": "Too many incorrect PIN attempts. Wait about 15 minutes and try again.",
+        "pin_locked_out": (
+            "Too many incorrect PIN attempts, so this link is paused for a day. "
+            "Ask your host to send a new PIN."
+        ),
         "security_check_failed": "Complete the security check and try again.",
         "start_over": "Start again",
         "nights": "nights",
@@ -589,6 +602,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Termín se mohl změnit, rezervace mohla být zrušena, nebo ubytovatel registraci "
             "pro tento pobyt uzavřel. Napište prosím ubytovateli."
         ),
+        "form_expired_title": "Tomuto formuláři vypršela platnost",
+        "form_expired_help": (
+            "Nic se neuložilo. Načtěte stránku znovu nebo začněte znovu přes odkaz níže."
+        ),
+        "rate_limited_title": "Příliš mnoho pokusů z vašeho připojení",
+        "rate_limited_help": (
+            "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu — pokud se "
+            "zaseknete, napište ubytovateli."
+        ),
         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
         "not_yours_help": (
             "Aby jeden host neviděl údaje z pasu druhého, lze formulář znovu otevřít pouze na "
@@ -615,6 +637,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "pin_wrong": "PIN není správný. Zkontrolujte zprávu od ubytovatele.",
         "pin_recovery": "Nemůžete PIN najít? Požádejte ubytovatele o nové zaslání registrační zprávy.",
         "pin_rate_limited": "Příliš mnoho chybných PINů. Počkejte asi 15 minut a zkuste to znovu.",
+        "pin_locked_out": (
+            "Příliš mnoho chybných pokusů o PIN, proto je tento odkaz na den pozastaven. "
+            "Požádejte ubytovatele o nový PIN."
+        ),
         "security_check_failed": "Dokončete bezpečnostní kontrolu a zkuste to znovu.",
         "start_over": "Začít znovu",
         "nights": "nocí",

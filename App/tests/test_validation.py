@@ -1,6 +1,16 @@
+import base64
 from datetime import date
 
 from app import validation as v
+
+# A real 1x1 PNG, because the validator checks the magic bytes.
+SIGNATURE = "data:image/png;base64," + base64.b64encode(
+    bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000a49444154789c6300010000050001od7a1f0000000049454e44ae42"
+        "6082".replace("od", "0d")
+    )
+).decode()
 
 
 def errors(issues):
@@ -146,6 +156,98 @@ def test_residence_part_cannot_be_only_digits():
 def test_departure_must_follow_arrival():
     issues = v.validate_guest(good_guest(), date(2026, 6, 5), date(2026, 6, 5))
     assert "stay_to" in errors(issues)
+
+
+def test_stay_dates_outside_the_booking_are_refused():
+    """The period is the police record's cFrom/cUntil and drives retention."""
+    early = v.validate_stay_dates(
+        date(2025, 6, 5), date(2026, 6, 10), date(2026, 6, 5), date(2026, 6, 10)
+    )
+    assert errors(early) == {"stay_from"}
+
+    late = v.validate_stay_dates(
+        date(2026, 6, 5), date(2027, 6, 10), date(2026, 6, 5), date(2026, 6, 10)
+    )
+    assert errors(late) == {"stay_to"}
+
+    inside = v.validate_stay_dates(
+        date(2026, 6, 6), date(2026, 6, 9), date(2026, 6, 5), date(2026, 6, 10)
+    )
+    assert inside == []
+    # The boundaries themselves are the booking, not an escape from it.
+    assert v.validate_stay_dates(
+        date(2026, 6, 5), date(2026, 6, 10), date(2026, 6, 5), date(2026, 6, 10)
+    ) == []
+    # A missing date is "not supplied", never "outside".
+    assert v.validate_stay_dates(None, None, date(2026, 6, 5), date(2026, 6, 10)) == []
+    assert v.validate_stay_dates(date(2026, 6, 5), None, None, None) == []
+    assert v.STAY_DATE_TOLERANCE_DAYS == 0
+
+
+def test_the_reach_back_window_never_widens_to_unbounded():
+    """W3.5 [F23]: a blank or hand-edited value must not open the whole history."""
+    assert v.normalise_reachback_days(None) == 365
+    assert v.normalise_reachback_days("") == 365
+    assert v.normalise_reachback_days("not a number") == 365
+    assert v.normalise_reachback_days(0) == 365
+    assert v.normalise_reachback_days(-30) == 365
+    assert v.normalise_reachback_days(1) == 1
+    assert v.normalise_reachback_days("30") == 30
+    assert v.normalise_reachback_days(10**9) == v.REACHBACK_DAYS_MAX
+    assert v.REACHBACK_DAYS_DEFAULT == 365
+
+
+def test_a_drawn_signature_must_be_a_png_or_jpeg_data_url():
+    """signature_png is TEXT in one SQLite file, and every "this guest signed"
+    check downstream is a look at its prefix, so this is the only gate."""
+    assert v.is_valid_signature(SIGNATURE)
+    assert v.parse_signature_data_url(SIGNATURE).startswith(b"\x89PNG\r\n\x1a\n")
+    # JPEG is allowed, and its magic bytes are checked the same way.
+    jpeg = "data:image/jpeg;base64," + base64.b64encode(
+        b"\xff\xd8\xff\xe0" + b"\x00" * 32
+    ).decode()
+    assert v.is_valid_signature(jpeg)
+
+    # An SVG is an image type, and a script container. Nothing here renders one.
+    assert not v.is_valid_signature("data:image/svg+xml;base64," + base64.b64encode(
+        b"<svg xmlns='http://www.w3.org/2000/svg'/>"
+    ).decode())
+    # PNG declared, but the bytes are something else.
+    assert not v.is_valid_signature(
+        "data:image/png;base64," + base64.b64encode(b"<html>hi</html>").decode()
+    )
+    # The paper-import marker is a marker, not a signature to be stored.
+    assert not v.is_valid_signature("imported")
+    assert not v.is_valid_signature("")
+    assert not v.is_valid_signature(None)
+    # A bare URL, a non-base64 payload, and an empty payload.
+    assert not v.is_valid_signature("https://example.com/sign.png")
+    assert not v.is_valid_signature("data:image/png;base64,!!!not base64!!!")
+    assert not v.is_valid_signature("data:image/png;base64,")
+
+
+def test_an_oversized_signature_is_refused():
+    """A hand-built request must not put a blob in the database file."""
+    def png_of(size: int) -> str:
+        return "data:image/png;base64," + base64.b64encode(
+            b"\x89PNG\r\n\x1a\n" + b"\x00" * (size - 8)
+        ).decode()
+
+    assert v.is_valid_signature(png_of(v.MAX_SIGNATURE_BYTES))
+    assert not v.is_valid_signature(png_of(v.MAX_SIGNATURE_BYTES + 1))
+    # Rejected on the payload's length, before anything is decoded.
+    assert not v.is_valid_signature(
+        "data:image/png;base64," + "A" * (v._MAX_SIGNATURE_PAYLOAD_CHARS + 4)
+    )
+
+
+def test_signature_issue_names_the_field_and_says_what_to_do():
+    issue = v.signature_issue("data:image/svg+xml;base64,PHN2Zy8+")
+    assert issue is not None
+    assert issue.field == "signature"
+    assert issue.is_error
+    assert issue.message == v.SIGNATURE_INVALID_MESSAGE
+    assert v.signature_issue(SIGNATURE) is None
 
 
 def test_compose_residence_format():

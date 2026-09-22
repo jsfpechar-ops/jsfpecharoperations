@@ -10,7 +10,7 @@
     if (method === "get") return false;
     try {
       var action = new URL(form.getAttribute("action") || window.location.href, window.location.href);
-      return action.origin === window.location.origin && action.pathname.indexOf("/l/") !== 0;
+      return action.origin === window.location.origin;
     } catch (error) {
       return false;
     }

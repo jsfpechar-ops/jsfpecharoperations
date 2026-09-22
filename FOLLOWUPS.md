@@ -204,3 +204,123 @@ computes the transition (`elif not complete and existing:`), so an alert raised
 there when a completion that had been set is cleared needs no gate change at
 all. That alert should land before, or together with, whichever gate behaviour
 is chosen.
+
+## From Phase 3 (guest access control)
+
+### W3.5 — the reach-back bound does not close ID enumeration inside the window
+
+The stay-specific link `/l/{token}/{id}` is now bounded by the new apartment
+field `permalink_reachback_days` (default 365). A stay whose `date_to` is older
+than that bound answers with the same `unavailable.html` and the same status as
+an id that was never part of the apartment, so the out-of-window case no longer
+discloses whether an id belongs to the apartment.
+
+The residual risk is deliberate and is the reason the forward side was left
+unbounded. The reach-back bound only hides ids for stays that have already
+drifted past the window; a stranger holding a valid apartment token can still
+learn whether a *recent* low id belongs to that apartment, because an in-window
+stay is genuinely reachable and must stay reachable — that is the documented
+affordance (a forgotten, incomplete form can still be finished). Bounding the
+forward side too would kill that affordance rather than protect anything, so it
+was not done.
+
+`/l/{token}/{id}/claim` (`claim_landing`, `guest.py`) performs its own
+reservation SELECT and carries **no** reach-back bound at all. It was left alone
+because the token in the URL is itself the access secret, `claim_confirm` fails
+without a matching stored secret, and `confirm()` never bumps
+`guest_access_reopened_at`, so its `guest_access_open` bypass is inert. If the
+claim landing page is ever given an unauthenticated success path, it needs the
+same bound as `_reservation_for_guest`.
+
+### The host-side language cookie still uses an https-prefix-only Secure test
+
+W3.6 moved the guest cookie flag onto `auth.secure_cookies()`, which treats
+`UBYHOST_DEPLOYMENT=production` as sufficient for `Secure` even when
+`PUBLIC_BASE_URL` is still `http://` (that combination is only *warned* about by
+`env_guard`, never blocked, so it is reachable in practice).
+
+`host_i18n.set_lang_cookie` (`App/app/host_i18n.py:2767`) still computes the
+narrower `PUBLIC_BASE_URL.lower().startswith("https://")`. It sets
+`ubyhost_lang` — the *same* cookie name that `routes/guest.py` defines as
+`LANG_COOKIE` and that W3.6 hardened. The host side was out of W3.6's stated
+scope (guest cookies), so it was left as-is, but it is the same class of gap and
+should be pointed at `auth.secure_cookies()` — the host routes already import
+`auth`. `security.py:110` computes the same expression inline for `ubyhost_csrf`;
+it is already behaviourally identical, so that one is cosmetic only.
+
+### `normalise_permalink_pin` is not the gate a guest meets
+
+W3.7 tightened `auth.normalise_permalink_pin` to six digits only, but that
+function has exactly one caller — the admin apartment save at
+`App/app/routes/admin.py:735`. The guest PIN gate does not use it:
+`routes/guest.py:verify_pin` calls `auth.pin_matches(token, entered,
+apartment["permalink_pin"])`, a fingerprint comparison against the **stored**
+value. Tightening the normaliser alone therefore does *not* retire F26 — a
+four-digit PIN already in the database keeps opening the form. The work item's
+text reads as if the normaliser is the control; it is not. The change that
+actually closes the weakness is the startup rotation in
+`main.rotate_weak_permalinks()`, which rewrites any stored PIN whose length is
+not six. Worth remembering when reading the plan: the normaliser guards new
+input, the rotation guards stored input, and neither substitutes for the other.
+
+### No automatic PIN rotation after `guest_pin_abuse`
+
+W3.7 raised the lockout from per-IP to per-link, and deliberately did **not**
+auto-rotate the PIN when the `guest_pin_abuse` alert fires. Rotating at that
+point would invalidate a PIN the host may already have sent to a legitimate
+guest, and the guest would have no way to recover without a new message; the
+alert already tells the host to rotate, and the `regenerate-pin` action exists
+for them to do it. To keep that remedy real, the lockout key is the pair
+`(token, pin_fingerprint(token, stored_pin))` rather than the token alone: a
+fresh PIN is a fresh budget, so the host's action immediately unblocks the
+guest. A token-only key would have locked the link for 24 hours with no
+operator fix. If a future change makes rotation automatic, it must revisit this
+trade-off rather than assume the two are independent.
+
+### The Turnstile fail-open bound is per source address
+
+W3.8 fails open for five attempts per (source address, action) inside a
+15-minute window while the verifier is unreachable, so a real Cloudflare outage
+does not stop guest registration. The bound is deliberately per-address rather
+than global — a global counter would shut the whole site out after five guests,
+which is the failure the item exists to prevent — but it does mean an attacker
+who can both keep Turnstile unreachable *and* rotate source addresses gets an
+unbounded bypass for the duration. That is a strictly better position than the
+old behaviour (every guest blocked outright, no alert), and the outage is
+reported either way, so it was accepted. If the bound ever needs to be global,
+it should be a global *alert* threshold with a per-address allowance, not a
+global rejection.
+
+Note also that `verify` is shared: `routes/admin_accounts.py:33` (host login)
+fails open on the same terms, which is intended — a host who cannot log in
+during an outage cannot resolve the alert telling them about it.
+
+### F32's proxy half is a deployment setting, not an app defect
+
+W3.9 fixed the two app-level halves of [F32]: `rate_limit.blocked()` no longer
+returns `False` for a falsy key (it fails closed), and `client_key()` maps a
+missing peer address to the shared `UNIDENTIFIED_CLIENT` bucket instead of an
+empty string, so a limit built on it still counts. The audit row's third point —
+"the proxy bucket is shared" — was not a code change. `client_ip.py` only ever
+*overwrites* `scope["client"]` with `CF-Connecting-IP` when the immediate peer is
+in `trusted_proxy_networks()` (`TRUSTED_PROXY_CIDRS`, or the RFC1918/loopback
+defaults when `CLOUDFLARE_PROXY` is on) **and** `_normalise_visitor_ip` accepts
+the header as an IP. With `TRUSTED_PROXY_CIDRS` unset and `CLOUDFLARE_PROXY` off
+— the state the audit was describing — no header is trusted at all, so every
+request behind a reverse proxy collapses onto the proxy's own address. That is a
+deployment configuration to document and set, not something the application can
+infer; changing it in code would mean trusting a client-supplied header by
+default, which is a worse defect than the one it would fix.
+
+### `GUEST_POST_MAX_ATTEMPTS = 30` is deliberately loose
+
+The new limit on `/save`, `/party` and `/another` allows 30 writes per (source
+address, link) per 15-minute window. It is set well above what a careful guest
+does — a guest fixing validation errors saves repeatedly, and each attempt is
+cheap — because the control it complements (the PIN gate and the claim cookie)
+is what decides *who* may post; this one only bounds *how often*. The tests pin
+the behaviour, not the number: they assert that the budget is spent and that a
+different address or a different scope is unaffected, so raising the constant
+would not fail the suite. A determined attacker can still spend 30 writes per
+link per address; if that ever proves too many, tighten the constant rather than
+adding a second limit on top of it.

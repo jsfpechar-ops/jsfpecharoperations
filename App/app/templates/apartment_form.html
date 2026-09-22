@@ -282,7 +282,7 @@
         <label for="permalink_pin">{{ t('guest_links.pin') }}</label>
         <div class="copyrow pin-row">
           <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
-                 inputmode="numeric" pattern="[0-9]{4}|[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
+                 inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
           {{ copy_button('permalink_pin') }}
         </div>
         <div class="hint">{{ t('apartment.form.guest_link.pin_hint') }}</div>
@@ -292,6 +292,12 @@
         <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
                value="{{ apartment.permalink_window_days }}">
         <div class="hint">{{ t('apartment.form.guest_link.window_hint') }}</div>
+      </div>
+      <div class="field" style="max-width:280px">
+        <label for="permalink_reachback_days">{{ t('apartment.form.guest_link.reachback_label') }}</label>
+        <input type="number" id="permalink_reachback_days" name="permalink_reachback_days" min="1" max="3650"
+               value="{{ apartment.permalink_reachback_days or 365 }}">
+        <div class="hint">{{ t('apartment.form.guest_link.reachback_hint') }}</div>
       </div>
       <div class="field" style="max-width:320px">
         <label for="passport_photo_policy">{{ t('apartment.form.passport_policy.label') }}</label>
