@@ -247,3 +247,32 @@ scope (guest cookies), so it was left as-is, but it is the same class of gap and
 should be pointed at `auth.secure_cookies()` — the host routes already import
 `auth`. `security.py:110` computes the same expression inline for `ubyhost_csrf`;
 it is already behaviourally identical, so that one is cosmetic only.
+
+### `normalise_permalink_pin` is not the gate a guest meets
+
+W3.7 tightened `auth.normalise_permalink_pin` to six digits only, but that
+function has exactly one caller — the admin apartment save at
+`App/app/routes/admin.py:735`. The guest PIN gate does not use it:
+`routes/guest.py:verify_pin` calls `auth.pin_matches(token, entered,
+apartment["permalink_pin"])`, a fingerprint comparison against the **stored**
+value. Tightening the normaliser alone therefore does *not* retire F26 — a
+four-digit PIN already in the database keeps opening the form. The work item's
+text reads as if the normaliser is the control; it is not. The change that
+actually closes the weakness is the startup rotation in
+`main.rotate_weak_permalinks()`, which rewrites any stored PIN whose length is
+not six. Worth remembering when reading the plan: the normaliser guards new
+input, the rotation guards stored input, and neither substitutes for the other.
+
+### No automatic PIN rotation after `guest_pin_abuse`
+
+W3.7 raised the lockout from per-IP to per-link, and deliberately did **not**
+auto-rotate the PIN when the `guest_pin_abuse` alert fires. Rotating at that
+point would invalidate a PIN the host may already have sent to a legitimate
+guest, and the guest would have no way to recover without a new message; the
+alert already tells the host to rotate, and the `regenerate-pin` action exists
+for them to do it. To keep that remedy real, the lockout key is the pair
+`(token, pin_fingerprint(token, stored_pin))` rather than the token alone: a
+fresh PIN is a fresh budget, so the host's action immediately unblocks the
+guest. A token-only key would have locked the link for 24 hours with no
+operator fix. If a future change makes rotation automatic, it must revisit this
+trade-off rather than assume the two are independent.

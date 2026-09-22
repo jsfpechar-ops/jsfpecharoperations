@@ -604,7 +604,16 @@ async def verify_pin(token: str, request: Request):
         return _unavailable(request, lang)
     form = await request.form()
     entered = (form.get("pin") or "").strip()
+    expected = apartment["permalink_pin"] or ""
     pin_key = rate_limit.client_key(request, token)
+    pin_lock_key = f"{token}:{auth.pin_fingerprint(token, expected)}"
+    if rate_limit.pin_token_blocked(pin_lock_key):
+        return _pin_page(
+            request,
+            token,
+            lang,
+            error=i18n.translator(lang)("pin_locked_out"),
+        )
     if rate_limit.pin_failure_count(pin_key) >= 3 and not turnstile.verify(
         request, form.get("cf-turnstile-response"), "guest_pin"
     ):
@@ -618,9 +627,8 @@ async def verify_pin(token: str, request: Request):
             lang,
             error=i18n.translator(lang)("pin_rate_limited"),
         )
-    expected = apartment["permalink_pin"] or ""
     if not auth.pin_matches(token, entered, expected):
-        rate_limit.record_pin_failure(pin_key)
+        rate_limit.record_pin_failure(pin_key, pin_lock_key)
         # Slow brute-force attempts without blocking legitimate guests for long.
         failures = rate_limit.pin_failure_count(pin_key)
         if failures >= rate_limit._PIN_MAX_FAILURES:

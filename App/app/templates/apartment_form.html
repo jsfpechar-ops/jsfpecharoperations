@@ -282,7 +282,7 @@
         <label for="permalink_pin">{{ t('guest_links.pin') }}</label>
         <div class="copyrow pin-row">
           <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
-                 inputmode="numeric" pattern="[0-9]{4}|[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
+                 inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
           {{ copy_button('permalink_pin') }}
         </div>
         <div class="hint">{{ t('apartment.form.guest_link.pin_hint') }}</div>
