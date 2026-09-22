@@ -680,8 +680,11 @@ def test_26_a_field_error_is_reported_back_as_correctable(host, mock_ubyport):
     guest_id = host_adds_guest(host, MANUAL_STAY["id"], surname="Bounced")
     # Plant a document number the police refuse. The app's own checks would
     # normally stop this, so the batch is handed straight to the transport to
-    # exercise what happens when the service rejects something anyway.
-    db.execute("UPDATE guest SET doc_number = 'BAD' WHERE id = ?", (guest_id,))
+    # exercise what happens when the service rejects something anyway. The
+    # write goes through db.update so it lands in the encrypted column exactly
+    # as a real edit would; writing the plaintext column by hand would be
+    # ignored now that the number is stored encrypted.
+    db.update("guest", guest_id, {"doc_number": "BAD"})
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
     stay = db.query_one("SELECT * FROM reservation WHERE id = ?", (MANUAL_STAY["id"],))
 

@@ -682,18 +682,57 @@ def expired_guest_ids(
     return [row["id"] for row in rows]
 
 
+def purge_orphan_submissions(
+    today: Optional[date] = None, owner_user_id: Optional[int] = None
+) -> int:
+    """Delete submission rows no surviving guest row points at.
+
+    ``guest.submission_id`` is the only link between the two, and it is
+    ``ON DELETE SET NULL``, so once a submission's guests have aged out the row
+    is unreachable from every screen while still holding the request envelope.
+
+    Only rows past the retention cutoff go, so that deleting a guest by hand
+    cannot take a recent Dorucenka with it: the receipt PDF is the host's proof
+    that something *was* filed, and it has to survive until the six years are
+    up. Blanking the envelope is what stops the passport numbers leaking, and
+    ``reporting.purge_submission_payloads`` does that after 90 days.
+    """
+    rows = db.query(
+        "SELECT s.id AS id FROM submission s "
+        "JOIN apartment a ON a.id = s.apartment_id "
+        "WHERE s.created_at < ? AND (? IS NULL OR a.owner_user_id = ?) "
+        "AND NOT EXISTS (SELECT 1 FROM guest g WHERE g.submission_id = s.id)",
+        (retention_cutoff(today).isoformat(), owner_user_id, owner_user_id),
+    )
+    if not rows:
+        return 0
+    ids = [row["id"] for row in rows]
+    marks = ", ".join("?" for _ in ids)
+    db.execute(f"DELETE FROM submission WHERE id IN ({marks})", ids)
+    db.audit(
+        "submission_orphan_purge",
+        f"deleted {len(ids)} submission record(s) with no surviving guest",
+    )
+    return len(ids)
+
+
 def purge_expired(
     today: Optional[date] = None, owner_user_id: Optional[int] = None
 ) -> int:
     ids = expired_guest_ids(today, owner_user_id=owner_user_id)
-    if not ids:
-        return 0
-    # Drop the image before the row: once the row is gone nothing in the app
-    # can find the file again, and an orphaned passport scan is the worst
-    # thing to leave behind at the exact moment the basis for holding it ends.
-    for guest_id in ids:
-        passport_photos.delete_photo(guest_id)
-    marks = ", ".join("?" for _ in ids)
-    db.execute(f"DELETE FROM guest WHERE id IN ({marks})", ids)
-    db.audit("retention_purge", f"deleted {len(ids)} guest record(s) older than {RETENTION_YEARS} years")
+    if ids:
+        # Drop the image before the row: once the row is gone nothing in the app
+        # can find the file again, and an orphaned passport scan is the worst
+        # thing to leave behind at the exact moment the basis for holding it ends.
+        for guest_id in ids:
+            passport_photos.delete_photo(guest_id)
+        marks = ", ".join("?" for _ in ids)
+        db.execute(f"DELETE FROM guest WHERE id IN ({marks})", ids)
+        db.audit(
+            "retention_purge",
+            f"deleted {len(ids)} guest record(s) older than {RETENTION_YEARS} years",
+        )
+    # The guests those submissions described are gone, so the envelope they
+    # carried has no owner left to be evidence for.
+    purge_orphan_submissions(today, owner_user_id=owner_user_id)
     return len(ids)
