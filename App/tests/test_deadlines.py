@@ -33,28 +33,40 @@ def test_weekends_are_not_working_days():
 
 
 def test_working_day_arithmetic_skips_weekend():
-    # Thursday 10 Sep 2026 + 3 working days = Tuesday 15 Sep.
-    assert d.add_working_days(date(2026, 9, 10), 3) == date(2026, 9, 15)
+    # Thursday 10 Sep 2026 is itself the first working day, so the third is
+    # Monday 14 Sep. Counting the arrival day is decision D3.
+    assert d.add_working_days(date(2026, 9, 10), 3) == date(2026, 9, 14)
 
 
 def test_working_day_arithmetic_skips_public_holiday():
     # 17 Nov 2026 is a public holiday (a Tuesday), so it does not count.
-    assert d.add_working_days(date(2026, 11, 16), 3) == date(2026, 11, 20)
+    assert d.add_working_days(date(2026, 11, 16), 3) == date(2026, 11, 19)
+
+
+def test_a_weekend_arrival_opens_the_count_on_the_next_working_day():
+    # Saturday 12 Sep 2026 cannot be a working day, so the window runs
+    # Monday 14, Tuesday 15, Wednesday 16.
+    assert d.add_working_days(date(2026, 9, 12), 3) == date(2026, 9, 16)
 
 
 def test_deadline_is_end_of_the_third_working_day():
     deadline = d.reporting_deadline(date(2026, 9, 10))
-    assert deadline == datetime(2026, 9, 15, 23, 59, 59)
+    assert deadline == datetime(2026, 9, 14, 23, 59, 59)
+
+
+def test_a_monday_check_in_files_by_wednesday():
+    """The plan's example for D3: Monday + three working days = Wednesday."""
+    assert d.reporting_deadline(date(2026, 9, 14)) == datetime(2026, 9, 16, 23, 59, 59)
 
 
 def test_aware_instants_are_compared_in_czech_civil_time_across_dst():
     check_in = date(2026, 3, 26)
-    assert d.reporting_deadline(check_in) == datetime(2026, 3, 31, 23, 59, 59)
+    assert d.reporting_deadline(check_in) == datetime(2026, 3, 30, 23, 59, 59)
     assert d.hours_left(
-        check_in, datetime(2026, 3, 31, 21, 59, tzinfo=timezone.utc)
+        check_in, datetime(2026, 3, 30, 21, 0, tzinfo=timezone.utc)
     ) > 0
     assert d.urgency(
-        check_in, datetime(2026, 3, 31, 22, 0, tzinfo=timezone.utc)
+        check_in, datetime(2026, 3, 30, 22, 0, tzinfo=timezone.utc)
     ) == "overdue"
 
 
@@ -62,9 +74,9 @@ def test_urgency_buckets():
     check_in = date(2026, 9, 10)
     assert d.urgency(check_in, datetime(2026, 9, 9, 12, 0)) == "future"
     assert d.urgency(check_in, datetime(2026, 9, 10, 12, 0)) == "ok"
-    assert d.urgency(check_in, datetime(2026, 9, 14, 12, 0)) == "soon"
-    assert d.urgency(check_in, datetime(2026, 9, 15, 12, 0)) == "urgent"
-    assert d.urgency(check_in, datetime(2026, 9, 16, 12, 0)) == "overdue"
+    assert d.urgency(check_in, datetime(2026, 9, 13, 12, 0)) == "soon"
+    assert d.urgency(check_in, datetime(2026, 9, 14, 12, 0)) == "urgent"
+    assert d.urgency(check_in, datetime(2026, 9, 15, 12, 0)) == "overdue"
 
 
 def test_urgency_order_puts_overdue_first():
@@ -73,7 +85,7 @@ def test_urgency_order_puts_overdue_first():
 
 
 def test_describe_time_left_reads_naturally():
-    assert "left" in d.describe_time_left(date(2026, 9, 10), datetime(2026, 9, 15, 12, 0))
+    assert "left" in d.describe_time_left(date(2026, 9, 10), datetime(2026, 9, 14, 12, 0))
     assert "overdue" in d.describe_time_left(date(2026, 9, 10), datetime(2026, 9, 17, 12, 0))
     assert "arrives in" in d.describe_time_left(date(2026, 9, 20), datetime(2026, 9, 15, 12, 0))
 
@@ -122,7 +134,7 @@ def test_time_left_parts_matches_the_english_sentence():
     from app import deadlines
 
     check_in = date(2026, 6, 1)  # Monday
-    now = datetime(2026, 6, 2, 12, 0)
+    now = datetime(2026, 6, 1, 12, 0)
     kind, amount = deadlines.time_left_parts(check_in, now)
     assert kind == "days_left"
     assert deadlines.describe_time_left(check_in, now) == f"{amount} days left"
@@ -206,21 +218,21 @@ def test_a_guest_arriving_early_moves_the_deadline_and_the_urgency(monkeypatch, 
         "anchor-earlier.sqlite3",
         date_from="2026-09-09",
         date_to="2026-09-14",
-        guests=[("2026-09-07", "2026-09-12", None)],
+        guests=[("2026-09-04", "2026-09-12", None)],
     )
 
     anchor = reporting.reservation_deadline_anchor(reservation)
 
-    assert anchor == date(2026, 9, 7)
-    assert (date(2026, 9, 9) - anchor).days == 2
-    assert d.reporting_deadline(anchor) == d.reporting_deadline(date(2026, 9, 7))
+    assert anchor == date(2026, 9, 4)
+    assert (date(2026, 9, 9) - anchor).days == 5
+    assert d.reporting_deadline(anchor) == d.reporting_deadline(date(2026, 9, 4))
     assert d.reporting_deadline(anchor) < d.reporting_deadline(date(2026, 9, 9))
 
-    # Saturday 12 Sep: still inside the window the reservation claims, already
-    # past the one the guest's arrival sets.
-    saturday = datetime(2026, 9, 12, 12, 0)
-    assert d.urgency(date(2026, 9, 9), saturday) == "ok"
-    assert d.urgency(anchor, saturday) == "overdue"
+    # Wednesday 9 Sep, noon: still inside the window the reservation claims,
+    # already past the one the guest's arrival sets.
+    thursday = datetime(2026, 9, 9, 12, 0)
+    assert d.urgency(date(2026, 9, 9), thursday) == "ok"
+    assert d.urgency(anchor, thursday) == "overdue"
 
 
 def test_a_stay_with_no_guest_dates_is_unchanged(monkeypatch, tmp_path):
@@ -312,4 +324,4 @@ def test_the_deadline_alert_runs_from_the_guest_arrival(monkeypatch, tmp_path):
     alert = alerts.open_alerts()
     assert len(alert) == 1
     assert alert[0]["level"] == "critical"
-    assert "Po termínu o 36 h" in alerts.present(alert[0], "cs")["display_detail"]
+    assert "Po termínu o 2 dny" in alerts.present(alert[0], "cs")["display_detail"]
