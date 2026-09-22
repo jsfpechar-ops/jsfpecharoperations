@@ -88,15 +88,27 @@ Recorded for reproducibility — steps 1–4 are all done in production.
    in the running container:
 
    ```bash
-   docker compose exec ubyhost env | grep UBYHOST_MAIL_BACKEND   # ses
+   # The env the container was created with, and when it last started:
+   docker inspect ubyhost --format '{{.State.StartedAt}}'
+   docker inspect ubyhost --format '{{range .Config.Env}}{{println .}}{{end}}' \
+     | grep UBYHOST_MAIL_BACKEND
+
+   # The env of the app process actually running (PID 1), not of a new exec:
+   docker compose exec ubyhost sh -c \
+     "tr '\0' '\n' < /proc/1/environ | grep UBYHOST_MAIL_BACKEND"
+
    docker compose logs --tail=100 ubyhost | grep -i "disabled on production"
    ```
 
    Editing `.env` alone changes nothing: `env_file` is read at container start,
-   so the app must be redeployed/restarted. The guard logs
+   so the app must be redeployed/restarted. Verify against `State.StartedAt` —
+   if the container started before the `.env` edit, the running app still holds
+   the old value even though the file says otherwise. Prefer
+   `docker inspect`/`/proc/1/environ` over `docker compose exec ... env`, which
+   resolves the service environment from the *current* `.env` and can therefore
+   report a value the running process never received. The guard logs
    `guest e-mail is disabled on production` whenever the *running* backend is
-   `disabled`, so that grep printing nothing (with `ses` above) is the proof the
-   flip took effect.
+   `disabled`, so that grep printing nothing is corroborating evidence.
 
 5. **From** = `noreply@ubyhost.com`. **Reply-To** = the property legal-entity
    contact e-mail when configured.
@@ -110,8 +122,50 @@ Recorded for reproducibility — steps 1–4 are all done in production.
   delivers. The startup guard validates configuration only; it cannot see
   sandbox status, sender/domain verification in `UBYHOST_SES_REGION`, or IAM
   `ses:SendEmail` permission. Watch outbox `last_error` and `mail_failed` alerts.
+  Two things suppress the party-count + e-mail screen and send the visitor
+  straight to the details wizard, which looks identical to "mail is off":
+  running the journey while signed into the host portal for that property
+  (the owner is never asked to e-mail themselves), and a browser that already
+  holds a 60-day claim cookie for that stay. Smoke it in a private window, or as
+  a guest who is not the host.
 - Staging must never use `ses`.
 - Rollback: set `UBYHOST_MAIL_BACKEND=disabled` and redeploy — guests return to
   PIN → dates → form without claim e-mail.
+
+## Troubleshooting
+
+The outbox is the source of truth; every attempt records its `state`, `attempts`,
+`provider_id` and `last_error`:
+
+```bash
+cd /opt/ubyhost/deploy/lightsail
+docker compose exec -T ubyhost python - <<'PY'
+from app import db, config, mail
+print("backend:", mail.backend_name(), "| from:", config.MAIL_FROM, "| region:", config.SES_REGION)
+for r in db.query("SELECT id,kind,state,attempts,to_email,provider_id,sent_at,last_error "
+                  "FROM email_outbox ORDER BY id DESC LIMIT 8"):
+    print(dict(r))
+PY
+```
+
+A `provider_id` beginning with `console:` means the send never reached SES — that
+row was written by the console backend, so check `mail.backend_name()` above
+rather than the `.env` file. Rows stay `queued` and retry with backoff
+(`60 * 2**attempts`, capped at 6 h) until they reach 8 attempts, when they become
+`failed` and raise a `mail_failed` alert; the guest can also use **Resend** on the
+claim/assigned screen. The startup guard checks that the credential variables are
+present, never that they work — a well-formed deploy can still be unable to send.
+
+| `last_error` | Cause | Fix |
+| --- | --- | --- |
+| `InvalidClientTokenId` | AWS does not recognise the **key ID**: mistyped, truncated, deleted, or carrying a stray character | Correct `UBYHOST_AWS_ACCESS_KEY_ID`; it is exactly 20 characters, `AKIA…`, with no quotes or prefix |
+| `SignatureDoesNotMatch` | Key ID accepted, **secret** is wrong or belongs to another key | Re-copy `UBYHOST_AWS_SECRET_ACCESS_KEY` |
+| `UnrecognizedClientException` / `InvalidSignatureException` | Clock skew between the VM and AWS | Check `timedatectl` |
+| `MessageRejected`, `Email address is not verified` | Account still in the SES sandbox, or the sender identity is not verified in `UBYHOST_SES_REGION` | Verify `UBYHOST_MAIL_FROM`'s domain/address, or move out of the sandbox |
+| `AccessDenied` | IAM user lacks `ses:SendEmail` | Grant it (in `UBYHOST_SES_REGION`) |
+| `NoCredentialsError`, `Unable to locate credentials` | Both credential variables empty | Set both, then redeploy |
+
+`ASIA…` key IDs are temporary STS credentials that require a session token. This
+app does not send one, so use a long-term `AKIA…` key.
 
 See also [DEPLOYMENT.md](DEPLOYMENT.md) (guest e-mail section).
