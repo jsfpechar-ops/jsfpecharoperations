@@ -16,7 +16,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
@@ -515,6 +515,30 @@ def validate_stay_dates(
     if stay_to and allowed_to and stay_to > allowed_to + slack:
         issues.append(Issue("stay_to", STAY_OUTSIDE_BOOKING_MESSAGE))
     return issues
+
+
+# How far back a stay-specific guest link keeps reaching. ``permalink_window_days``
+# is the forward lead window (which stays the apartment link lists); this is the
+# opposite direction, and the two must not be conflated: the reach-back window
+# exists so a forgotten form can still be finished, and it is deliberately a year
+# rather than the couple of weeks a lead window is measured in.
+REACHBACK_DAYS_DEFAULT = 365
+REACHBACK_DAYS_MAX = 3650
+
+
+def normalise_reachback_days(value: Any) -> int:
+    """A blank, missing or nonsensical reach-back window falls back to the default.
+
+    Never to "no bound": an unset or hand-edited value must not widen access, so
+    a value below a day is clamped up and one beyond the cap clamped down.
+    """
+    try:
+        days = int(value)
+    except (TypeError, ValueError):
+        return REACHBACK_DAYS_DEFAULT
+    if days <= 0:
+        return REACHBACK_DAYS_DEFAULT
+    return min(days, REACHBACK_DAYS_MAX)
 
 
 # The first bytes each accepted type has to start with. The browser draws into

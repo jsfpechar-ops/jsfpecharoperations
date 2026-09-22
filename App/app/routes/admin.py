@@ -635,6 +635,9 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
+    payload["permalink_reachback_days"] = validation.normalise_reachback_days(
+        _form_int(form, "permalink_reachback_days")
+    )
     policy = _form_str(form, "passport_photo_policy", "off")
     payload["passport_photo_policy"] = (
         policy if policy in ("off", "required_foreign") else "off"

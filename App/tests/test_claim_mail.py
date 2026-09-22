@@ -575,8 +575,15 @@ def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeyp
         _cleanup()
 
 
-def test_incomplete_past_stay_remains_reachable_via_stay_link():
-    """Apartment picker hides past arrivals; stay-specific link stays open."""
+def test_incomplete_stay_inside_the_reach_back_window_stays_reachable():
+    """Apartment picker hides past arrivals; the stay link still works.
+
+    W3.5 bounded this affordance by ``permalink_reachback_days``. The stay here
+    checked in yesterday, so it is inside any window: the point of this test is
+    that the reach-back bound did not close a forgotten form that is still
+    recent. The out-of-window half is
+    ``test_stay_link_reach_back_window_bounds_a_forgotten_form``.
+    """
     current, past, _far, _apartment_id = _seed()
     try:
         # Leave only a past incomplete stay in this apartment's calendar window.
@@ -615,6 +622,73 @@ def test_incomplete_past_stay_remains_reachable_via_stay_link():
         claim.lock_guest_access(past)
         locked = browser.get(f"/l/{TOKEN}/{past}")
         assert locked.status_code == 404
+    finally:
+        _cleanup()
+
+
+def test_stay_link_reach_back_window_bounds_a_forgotten_form():
+    """W3.5 [F23]: a stay link reaches back a bounded number of days.
+
+    Inverted from the behaviour this file used to pin: an incomplete past stay
+    stayed reachable for ever, so an out-of-window id answered 200 where an id
+    that never existed answered 404 — which told a stranger which reservation
+    ids belong to the apartment.
+    """
+    _current, _past, _far, apartment_id = _seed()
+    today = claim.prague_today()
+    now = db.utcnow()
+    try:
+        recent = db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id,
+                "source": "airbnb",
+                "uid": "claim-recent",
+                "date_from": (today - timedelta(days=7)).isoformat(),
+                "date_to": (today - timedelta(days=5)).isoformat(),
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        old = db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id,
+                "source": "airbnb",
+                "uid": "claim-old",
+                "date_from": (today - timedelta(days=732)).isoformat(),
+                "date_to": (today - timedelta(days=730)).isoformat(),
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+
+        browser = TestClient(app)
+        # Inside the default year: a stay that ended last week can still be filed.
+        assert browser.get(f"/l/{TOKEN}/{recent}").status_code == 200
+
+        out_of_window = browser.get(f"/l/{TOKEN}/{old}")
+        assert out_of_window.status_code == 404
+        assert "no longer open" in out_of_window.text
+
+        # A stranger cannot tell an old id from an id that never existed. The
+        # language switcher echoes the path that was asked for, so normalise
+        # only that echo: everything else has to be byte-identical.
+        def shape(response, reservation_id):
+            return response.status_code, response.text.replace(
+                f"/l/{TOKEN}/{reservation_id}", "/l/{TOKEN}/{ID}"
+            )
+
+        never_existed = browser.get(f"/l/{TOKEN}/987654")
+        assert never_existed.status_code == 404
+        assert shape(never_existed, 987654) == shape(out_of_window, old)
+
+        # The window is the apartment's setting, not a hard-coded year.
+        db.update("apartment", apartment_id, {"permalink_reachback_days": 1})
+        assert browser.get(f"/l/{TOKEN}/{recent}").status_code == 404
+        assert browser.get(f"/l/{TOKEN}/{old}").status_code == 404
     finally:
         _cleanup()
 

@@ -184,6 +184,19 @@ def test_stay_dates_outside_the_booking_are_refused():
     assert v.STAY_DATE_TOLERANCE_DAYS == 0
 
 
+def test_the_reach_back_window_never_widens_to_unbounded():
+    """W3.5 [F23]: a blank or hand-edited value must not open the whole history."""
+    assert v.normalise_reachback_days(None) == 365
+    assert v.normalise_reachback_days("") == 365
+    assert v.normalise_reachback_days("not a number") == 365
+    assert v.normalise_reachback_days(0) == 365
+    assert v.normalise_reachback_days(-30) == 365
+    assert v.normalise_reachback_days(1) == 1
+    assert v.normalise_reachback_days("30") == 30
+    assert v.normalise_reachback_days(10**9) == v.REACHBACK_DAYS_MAX
+    assert v.REACHBACK_DAYS_DEFAULT == 365
+
+
 def test_a_drawn_signature_must_be_a_png_or_jpeg_data_url():
     """signature_png is TEXT in one SQLite file, and every "this guest signed"
     check downstream is a look at its prefix, so this is the only gate."""
