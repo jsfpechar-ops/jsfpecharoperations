@@ -1337,6 +1337,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
         apartment,
     )
+    # The form just signed shows the stay's current dates, so the warning that a
+    # calendar change moved the dates under an older signature is now stale.
+    alerts.resolve(f"dates_changed_resign:{reservation_id}")
     reporting.maybe_submit_after_completion(apartment["id"], reservation_id)
 
     response = RedirectResponse(

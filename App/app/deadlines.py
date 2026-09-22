@@ -73,9 +73,15 @@ def is_working_day(day: date) -> bool:
 
 
 def add_working_days(start: date, count: int) -> date:
-    """The date `count` working days after `start` (start itself not counted)."""
+    """The date the `count`th working day of a window opening on `start` falls on.
+
+    The day accommodation starts is the first working day when it is one, per
+    decision D3: a Monday check-in gives a Wednesday deadline, not a Thursday
+    one. A check-in on a weekend or a public holiday opens the count on the next
+    working day, since a day that is not a working day cannot be counted.
+    """
     current = start
-    remaining = count
+    remaining = count - 1 if is_working_day(current) else count
     while remaining > 0:
         current += timedelta(days=1)
         if is_working_day(current):
@@ -84,7 +90,7 @@ def add_working_days(start: date, count: int) -> date:
 
 
 def reporting_deadline(check_in: date) -> datetime:
-    """End of the third working day after accommodation began."""
+    """End of the third working day of the window that opens on arrival."""
     return datetime.combine(add_working_days(check_in, REPORTING_WORKING_DAYS), time(23, 59, 59))
 
 

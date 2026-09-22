@@ -39,6 +39,13 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
 
+# How long a stay must go untouched before the party is taken as final. A guest
+# link holder can raise the declared headcount, so the completion gate must not
+# wait forever for forms that are never coming: once every form on file is
+# complete and none has been touched for this long, the stay is ready to file
+# and any shortfall is raised as a headcount_mismatch warning.
+HEADCOUNT_QUIET_HOURS = 12
+
 
 # --- payload mapping -----------------------------------------------------
 
@@ -423,6 +430,24 @@ def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
         maybe_submit_after_completion(apartment_id, guest["reservation_id"])
 
 
+def _forms_quiet_for(progress: Dict[str, Any], hours: int) -> bool:
+    """True when no guest form on the stay has been touched for ``hours``."""
+    stamps = [
+        guest["updated_at"] or guest["created_at"]
+        for guest in progress["guests"]
+        if guest["updated_at"] or guest["created_at"]
+    ]
+    if not stamps:
+        return False
+    try:
+        newest = datetime.fromisoformat(str(max(stamps)))
+    except ValueError:
+        return False
+    if newest.tzinfo is None:
+        newest = newest.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - newest >= timedelta(hours=hours)
+
+
 def refresh_registration_completed_at(
     reservation_id: int, completed_at: Optional[str] = None
 ) -> Optional[str]:
@@ -433,11 +458,21 @@ def refresh_registration_completed_at(
     if not reservation:
         return None
     progress = reservation_progress(reservation)
-    complete = (
+    # The ordinary path: everyone the host declared has signed.
+    declared_filled = (
         progress["expected"] is not None
         and progress["filled"] >= progress["expected"]
         and not progress["incomplete"]
     )
+    # The decoupled path: the declared headcount is not a gate the guest link
+    # can hold open. Every form on file is complete and the party has stopped
+    # growing, so the stay is as final as it will ever get.
+    forms_settled = (
+        bool(progress["guests"])
+        and not progress["incomplete"]
+        and _forms_quiet_for(progress, HEADCOUNT_QUIET_HOURS)
+    )
+    complete = declared_filled or forms_settled
     existing = reservation["registration_completed_at"]
     if complete and not existing:
         candidate = completed_at or db.utcnow()
@@ -960,6 +995,26 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
 
 # --- deadline monitoring -------------------------------------------------
 
+def reservation_deadline_anchor(reservation: Dict[str, Any]) -> Optional[date]:
+    """The date the statutory clock starts from.
+
+    The record filed with the police carries each guest's own ``stay_from``, so
+    the deadline has to run from the earliest of those. Earliest, because the
+    clock starts at the first arrival. Falls back to the reservation's own
+    ``date_from`` when no guest has given a date.
+    """
+    rows = db.query(
+        "SELECT stay_from FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+        "AND stay_from IS NOT NULL AND stay_from != ''",
+        (reservation["id"],),
+    )
+    starts = [validation.parse_iso_date(row["stay_from"]) for row in rows]
+    starts = [start for start in starts if start]
+    if starts:
+        return min(starts)
+    return validation.parse_iso_date(reservation["date_from"])
+
+
 def check_deadlines(
     now: Optional[datetime] = None, owner_user_id: Optional[int] = None
 ) -> int:
@@ -977,23 +1032,47 @@ def check_deadlines(
         (owner_user_id, owner_user_id, now.date().isoformat()),
     )
     for reservation in rows:
-        start = validation.parse_iso_date(reservation["date_from"])
+        start = reservation_deadline_anchor(reservation)
         if not start:
             continue
         progress = reservation_progress(reservation)
         key = f"deadline:{reservation['id']}"
-        if progress["status"] in ("reported", "not_required"):
+        mismatch_key = f"headcount_mismatch:{reservation['id']}"
+        settled = progress["status"] in ("reported", "not_required")
+        expected_count = progress["expected"]
+        check_in = validation.parse_iso_date(reservation["date_from"])
+        stay_end = validation.parse_iso_date(reservation["date_to"])
+        dates = check_in.strftime("%d.%m.%Y") if check_in else ""
+        if stay_end:
+            dates = f"{dates} – {stay_end.strftime('%d.%m.%Y')}"
+        title = f"{reservation['internal_name']} · {dates}"
+        # "Waiting for guest" and "the guest link held the filing open" look
+        # identical on the dashboard. Once the stay has started, say which one
+        # it is, so a shortfall is chased instead of quietly waited on.
+        if (
+            not settled
+            and expected_count is not None
+            and progress["filled"] < expected_count
+            and start < now.date()
+        ):
+            alerts.raise_alert(
+                "warning",
+                "headcount_mismatch",
+                title,
+                f"Waiting for guest forms · {progress['filled']}/{expected_count}",
+                dedupe_key=mismatch_key,
+                apartment_id=reservation["apartment_id"],
+                reservation_id=reservation["id"],
+            )
+        else:
+            alerts.resolve(mismatch_key)
+        if settled:
             alerts.resolve(key)
             continue
         level = deadlines.urgency(start, now)
         if level in ("overdue", "urgent"):
             filled = progress["filled"]
             expected = progress["expected"] if progress["expected"] is not None else "?"
-            start_label = start.strftime("%d.%m.%Y")
-            end = validation.parse_iso_date(reservation["date_to"])
-            end_label = end.strftime("%d.%m.%Y") if end else ""
-            dates = f"{start_label} – {end_label}" if end_label else start_label
-            title = f"{reservation['internal_name']} · {dates}"
             if level == "overdue":
                 countdown = deadlines.describe_time_left(start, now)
                 if countdown.startswith("overdue"):

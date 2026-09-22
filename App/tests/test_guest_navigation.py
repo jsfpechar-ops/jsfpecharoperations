@@ -1,10 +1,10 @@
 """Guest navigation: picking the wrong stay, then the right one, must never dead-end."""
 import base64
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
-from app import claim, db, passport_photos
+from app import alerts, claim, db, icalsync, passport_photos, reporting
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -465,3 +465,216 @@ def test_guest_english_and_czech_carry_the_same_keys():
     czech = set(i18n.STRINGS["cs"])
     assert english - czech == set(), f"missing Czech: {sorted(english - czech)}"
     assert czech - english == set(), f"missing English: {sorted(czech - english)}"
+
+
+def test_re_signing_a_moved_stay_clears_the_date_change_alert(monkeypatch):
+    """W1.1: the host's warning is stale once the guest signs the new dates."""
+    db.init_db()
+    _cleanup()
+    now = db.utcnow()
+    today = claim.prague_today()
+    entity_id = db.insert("legal_entity", {"name": "Nav Test", "created_at": now})
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "internal_name": "Nav moved apartment",
+            "permalink_token": TOKEN,
+            "permalink_window_days": 90,
+            "default_purpose": "10",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    feed_id = db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/nav-moved.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    stay = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "ical_feed_id": feed_id,
+            "source": "airbnb",
+            "uid": "nav-moved",
+            "date_from": (today + timedelta(days=2)).isoformat(),
+            "date_to": (today + timedelta(days=5)).isoformat(),
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    moved_from = today + timedelta(days=20)
+    moved_to = today + timedelta(days=23)
+    moved = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        f"DTSTART;VALUE=DATE:{moved_from:%Y%m%d}\n"
+        f"DTEND;VALUE=DATE:{moved_to:%Y%m%d}\n"
+        "UID:nav-moved\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+    )
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: moved)
+    key = f"dates_changed_resign:{stay}"
+    try:
+        browser = TestClient(app)
+        complete_guest_claim(browser, TOKEN, stay, party_size=2)
+        assert browser.post(
+            f"/l/{TOKEN}/{stay}/save",
+            data=_form(party_size="2"),
+            files=_passport_files(),
+            follow_redirects=False,
+        ).status_code == 303
+
+        icalsync.sync_feed(
+            db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+        )
+        assert db.query_one(
+            "SELECT id FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
+        )
+
+        # The next guest to sign the stay signs the moved dates, so the warning
+        # that the filed dates moved is stale.
+        again = browser.post(
+            f"/l/{TOKEN}/{stay}/save",
+            data=_form(surname="Jones", first_name="Mary", party_size="2"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert again.status_code == 303, again.text
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
+        )["n"] == 2
+        assert db.query_one(
+            "SELECT resolved_at FROM alert WHERE dedupe_key = ?", (key,)
+        )["resolved_at"]
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (stay,))
+        db.execute("DELETE FROM alert WHERE dedupe_key = ?", (f"feed_incomplete:{feed_id}",))
+        _cleanup()
+
+
+# --- W1.5: the declared headcount must not hold the filing open -----------
+
+def _backdate_forms(reservation_id, hours):
+    """Age every form on the stay as if nobody had touched it for ``hours``."""
+    stale = (datetime.now(timezone.utc) - timedelta(hours=hours)).replace(
+        microsecond=0
+    ).isoformat()
+    db.execute(
+        "UPDATE guest SET created_at = ?, updated_at = ? WHERE reservation_id = ?",
+        (stale, stale, reservation_id),
+    )
+
+
+def _one_signed_guest(browser, token, stay, *, party_size, surname="Smith"):
+    complete_guest_claim(browser, token, stay, party_size=party_size)
+    saved = browser.post(
+        f"/l/{token}/{stay}/save",
+        data=_form(surname=surname, party_size=str(party_size)),
+        files=_passport_files(),
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303, saved.text
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
+    )["n"] == 1
+
+
+def test_a_raised_headcount_no_longer_holds_the_filing_open():
+    """W1.5: the link holder declares 60 people and fills in one.
+
+    The declared party is not a gate the guest link can hold shut. Once every
+    form on file is complete and nobody has touched it for the quiet window, the
+    stay is as final as it will ever be.
+    """
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        _one_signed_guest(TestClient(app), token, stay, party_size=60)
+
+        # 1 of 60 signed, and the form is fresh: the gate still waits.
+        assert reporting.refresh_registration_completed_at(stay) is None
+        assert db.query_one(
+            "SELECT registration_completed_at FROM reservation WHERE id = ?", (stay,)
+        )["registration_completed_at"] is None
+
+        _backdate_forms(stay, reporting.HEADCOUNT_QUIET_HOURS + 1)
+
+        completed = reporting.refresh_registration_completed_at(stay)
+        assert completed
+        assert db.query_one(
+            "SELECT registration_completed_at FROM reservation WHERE id = ?", (stay,)
+        )["registration_completed_at"] == completed
+    finally:
+        _cleanup()
+
+
+def test_the_quiet_window_never_files_a_half_filled_form():
+    """Waiting is bounded; filing an unfinished form is not acceptable."""
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        _one_signed_guest(TestClient(app), token, stay, party_size=60)
+        db.execute("UPDATE reservation SET declared_guests = 1 WHERE id = ?", (stay,))
+        # A second person started the form and never signed it.
+        now = db.utcnow()
+        db.insert(
+            "guest",
+            {
+                "reservation_id": stay,
+                "surname": "Unfinished",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        _backdate_forms(stay, reporting.HEADCOUNT_QUIET_HOURS + 1)
+
+        assert reporting.refresh_registration_completed_at(stay) is None
+    finally:
+        _cleanup()
+
+
+def test_a_full_party_still_completes_without_waiting():
+    """The ordinary path must not have been put behind the quiet window."""
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        _one_signed_guest(TestClient(app), token, stay, party_size=1)
+
+        assert reporting.refresh_registration_completed_at(stay)
+    finally:
+        _cleanup()
+
+
+def test_a_short_party_is_flagged_once_the_stay_has_started():
+    """W1.5: 'waiting for guest' and 'held open by the link' must differ."""
+    token, stay, _right = _make_apartment_with_stays()
+    key = f"headcount_mismatch:{stay}"
+    try:
+        _one_signed_guest(TestClient(app), token, stay, party_size=60)
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+
+        reporting.check_deadlines(tomorrow)
+
+        row = db.query_one(
+            "SELECT * FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
+        )
+        assert row, "a 1-of-60 party must not sit silently"
+        assert row["level"] == "warning"
+        assert row["reservation_id"] == stay
+        assert "Waiting for guest forms" in row["detail"]
+        card = alerts.present(row, "cs")
+        assert "Čeká se na formuláře hostů" in card["display_detail"]
+        assert "1/60" in card["display_detail"]
+
+        # The host fixes the declared party; the warning is stale at once.
+        db.execute("UPDATE reservation SET declared_guests = 1 WHERE id = ?", (stay,))
+        reporting.check_deadlines(tomorrow)
+        assert db.query_one(
+            "SELECT resolved_at FROM alert WHERE dedupe_key = ?", (key,)
+        )["resolved_at"]
+    finally:
+        db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+        _cleanup()
