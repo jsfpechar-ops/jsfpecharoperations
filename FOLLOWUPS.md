@@ -40,13 +40,16 @@ broken `test_completed_party_can_add_another_person` and
 `test_an_unexpected_extra_guest_can_still_register`. Option 2 was chosen
 deliberately and the reasoning belongs in the PR description.
 
-### D3 — the reporting window start is still undefined
+### D3 — the inclusive reading still needs counsel, not just a decision
 
-`deadlines.add_working_days` counts from the day *after* arrival. W1.4 moved
-every deadline caller onto `reporting.reservation_deadline_anchor`, but did not
-touch `add_working_days`, because D3 in the plan's Decisions table is
-unanswered. If the window is meant to include the arrival day, the fix is a
-one-line change plus its test.
+D3 was answered by the owner: the arrival day counts as the first working day
+when it is one, so a Monday check-in now files by Wednesday. That is a product
+call implementing the stricter reading of §100(c); the plan itself notes it
+"needs counsel or a citation", and no citation has been recorded. If counsel
+reads the window as starting the day after arrival, `deadlines.add_working_days`
+reverts to `remaining = count` and the eight tests that pin the arithmetic will
+need the same one-day shift. Worth one line of citation in `deadlines.py`
+either way.
 
 ### W1.7 — an empty feed is now reported as incomplete
 
