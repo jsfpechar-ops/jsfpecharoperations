@@ -33,6 +33,12 @@ LANG_COOKIE = "ubyhost_lang"
 OWNED_COOKIE = "ubyhost_owned"
 CLAIM_COOKIE = "ubyhost_claim"
 
+# Per-(address, link) budget for the guest POSTs that write something. Deliberately
+# loose: a guest fixing validation errors saves repeatedly, so this bounds
+# hammering rather than pacing a careful person. The PIN and the claim cookie are
+# the controls on *who* may post; this only bounds how often.
+GUEST_POST_MAX_ATTEMPTS = 30
+
 CS_VALIDATION_MESSAGES = {
     "Date of birth is required.": "Datum narození je povinné.",
     "Enter the full date as DD/MM/YYYY.": "Zadejte celé datum ve formátu DD/MM/RRRR.",
@@ -379,6 +385,7 @@ def _unavailable(
         "bad_link": ("bad_link_title", "bad_link_help"),
         "stay_gone": ("stay_gone_title", "stay_gone_help"),
         "form_expired": ("form_expired_title", "form_expired_help"),
+        "rate_limited": ("rate_limited_title", "rate_limited_help"),
         "not_yours": ("not_yours_title", "not_yours_help"),
         "already_filed": ("already_filed_title", "already_filed_help"),
         "form_locked": ("form_locked_title", "form_locked_help"),
@@ -856,6 +863,20 @@ def claim_landing(token: str, reservation_id: int, request: Request):
     return _with_lang(render_guest(request, "guest/confirm.html", context), lang)
 
 
+def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
+    """Refuse a writing guest POST that has used up its budget.
+
+    Keyed on the peer address *and* the link, so one guest cannot spend another
+    guest's allowance and a shared address cannot be exhausted by a single link.
+    Returns the response to send, or None to carry on.
+    """
+    key = rate_limit.client_key(request, f"guest:{token}")
+    if rate_limit.blocked(scope, key, GUEST_POST_MAX_ATTEMPTS):
+        return _unavailable(request, lang, "rate_limited", 429, token)
+    rate_limit.record(scope, key)
+    return None
+
+
 @router.post("/l/{token}/{reservation_id}/claim/confirm")
 async def claim_confirm(token: str, reservation_id: int, request: Request):
     lang = _language(request)
@@ -913,6 +934,9 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_party", lang)
+    if throttle:
+        return throttle
     form = await request.form()
     try:
         count = int((form.get("party_size") or "").strip())
@@ -1014,6 +1038,9 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
     reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_another", lang)
+    if throttle:
+        return throttle
     claim_guard = _require_claim_session(request, reservation, token, lang)
     if claim_guard:
         return _with_lang(claim_guard, lang)
@@ -1201,6 +1228,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_save", lang)
+    if throttle:
+        return throttle
     claim_guard = _require_claim_session(request, reservation, token, lang)
     if claim_guard:
         return _with_lang(claim_guard, lang)

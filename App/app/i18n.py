@@ -144,6 +144,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_expired_help": (
             "Nothing was saved. Reload the page, or start again from the link below."
         ),
+        "rate_limited_title": "Too many attempts from your connection",
+        "rate_limited_help": (
+            "Nothing was saved. Wait about 15 minutes and try again — if you are stuck, "
+            "message your host."
+        ),
         "not_yours_title": "This form cannot be opened on this device",
         "not_yours_help": (
             "So that one guest never sees another guest's passport details, a form can only "
@@ -600,6 +605,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_expired_title": "Tomuto formuláři vypršela platnost",
         "form_expired_help": (
             "Nic se neuložilo. Načtěte stránku znovu nebo začněte znovu přes odkaz níže."
+        ),
+        "rate_limited_title": "Příliš mnoho pokusů z vašeho připojení",
+        "rate_limited_help": (
+            "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu — pokud se "
+            "zaseknete, napište ubytovateli."
         ),
         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
         "not_yours_help": (
