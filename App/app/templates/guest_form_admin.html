@@ -206,7 +206,7 @@
       </div>
     </div>
     <input type="hidden" id="signature" name="signature"
-           value="{{ guest.signature_png if guest and guest.signature_png and guest.signature_png.startswith('data:image/') else '' }}">
+           value="{{ signature_value }}">
     {{ err_for('signature') }}
   </div>
 

@@ -60,6 +60,9 @@ CS_VALIDATION_MESSAGES = {
         "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se "
         "obraťte na ubytovatele."
     ),
+    validation.SIGNATURE_INVALID_MESSAGE: (
+        "Tento podpis se nepodařilo uložit. Podepište se znovu do podpisového pole."
+    ),
     validation.NON_LATIN_MESSAGE: (
         "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově "
         "čitelných řádcích na konci vašeho pasu."
@@ -1045,6 +1048,15 @@ def _form_context(
             "expected_people": expected,
             "issues": issues or [],
             "values": values or {},
+            # The re-render guard for [F33]: only a value the save paths would
+            # accept may go back into the hidden signature field. A row written
+            # before the validator existed (a junk data URL, or "imported") must
+            # not be handed back as if it were a drawn signature.
+            "stored_signature": (
+                guest["signature_png"]
+                if guest and validation.is_valid_signature(guest["signature_png"])
+                else ""
+            ),
             "countries": codelists.nationality_options(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
@@ -1212,7 +1224,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     stay_from = (form.get("stay_from") or "").strip() or reservation["date_from"]
     stay_to = (form.get("stay_to") or "").strip() or reservation["date_to"]
     signature = (form.get("signature") or "").strip()
-    if not signature.startswith("data:image/") and existing and (existing["signature_png"] or "").startswith("data:image/"):
+    if (
+        not validation.is_valid_signature(signature)
+        and existing
+        and validation.is_valid_signature(existing["signature_png"])
+    ):
+        # A re-render without a redrawn signature keeps the one already
+        # collected. The stored value has to pass the same check: a row written
+        # before this check existed must not be carried forward as signed.
         signature = existing["signature_png"]
 
     party_raw = (form.get("party_size") or "").strip()
@@ -1251,8 +1270,12 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     if reporting.expected_guest_count(reservation) is None and not existing:
         if party_size < 1 or party_size > 60:
             issues.append(validation.Issue("party_size", translate("error_party_size")))
-    if not signature.startswith("data:image/"):
+    if not signature:
         issues.append(validation.Issue("signature", translate("signature_missing")))
+    else:
+        bad_signature = validation.signature_issue(signature)
+        if bad_signature:
+            issues.append(bad_signature)
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
@@ -1307,7 +1330,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "stay_to": stay_to,
                 "child_in_passport": child_in_passport,
                 "parent_doc_number": form.get("parent_doc_number") or "",
-                "signature": signature,
+                # Echo back only a signature the validator accepts: a hand-built
+                # request must not get its blob mirrored into the next render.
+                "signature": signature if validation.is_valid_signature(signature) else "",
                 "party_size": party_raw,
                 "legal_ack": form.get("legal_ack") or "",
             }

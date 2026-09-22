@@ -1,17 +1,31 @@
 """Hosts can open the guest form from stay menus without the PIN gate."""
 from __future__ import annotations
 
+import base64
+import re
 from datetime import timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db
+from app import auth, claim, db, reporting, validation
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
 TOKEN = "hostform-token"
 PIN = "246810"
+
+# A real 1x1 PNG: the save paths check the magic bytes now, not just the prefix.
+SIGNATURE = "data:image/png;base64," + base64.b64encode(
+    bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000a49444154789c6300010000050001od7a1f0000000049454e44ae42"
+        "6082".replace("od", "0d")
+    )
+).decode()
+SVG_SIGNATURE = "data:image/svg+xml;base64," + base64.b64encode(
+    b"<svg xmlns='http://www.w3.org/2000/svg'/>"
+).decode()
 
 
 @pytest.fixture
@@ -30,6 +44,10 @@ def _cleanup():
         (apartment["id"],),
     )
     db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
+    # A save that succeeds writes an audit row and can raise an alert, and both
+    # point at the owner account, so the account cannot go first.
+    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (apartment["owner_user_id"],))
+    db.execute("DELETE FROM alert WHERE owner_user_id = ?", (apartment["owner_user_id"],))
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
     if apartment["legal_entity_id"]:
         db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
@@ -137,7 +155,7 @@ def _claimed_guest(stay_id: int) -> TestClient:
     return client
 
 
-def _save(client: TestClient, stay_id: int, lang: str = "en", **fields):
+def _save(client: TestClient, stay_id: int, lang: str = "en", files=None, **fields):
     today = claim.prague_today()
     data = {
         "stay_from": today.isoformat(),
@@ -149,8 +167,70 @@ def _save(client: TestClient, stay_id: int, lang: str = "en", **fields):
         f"/l/{TOKEN}/{stay_id}/save",
         params={"lang": lang},
         data=data,
+        files=files,
         follow_redirects=False,
     )
+
+
+def _complete_guest(**overrides) -> dict:
+    """A payload the form accepts, so only the signature under test can fail."""
+    fields = {
+        "surname": "Smith",
+        "first_name": "John",
+        "birth_date": "1.1.1990",
+        "nationality": "GBR",
+        "doc_number": "P1234567",
+        "res_street": "Baker Street 221B",
+        "res_city": "London",
+        "res_country": "GBR",
+        "purpose": "10",
+        "party_size": "1",
+        "signature": SIGNATURE,
+        "legal_ack": "1",
+    }
+    fields.update(overrides)
+    return fields
+
+
+def _hidden_signature(html: str) -> str:
+    """What the hidden signature field would post back."""
+    tag = re.search(r'<input type="hidden" id="signature"[^>]*>', html, re.S)
+    assert tag, "the form must render its hidden signature field"
+    value = re.search(r'value="([^"]*)"', tag.group(0))
+    return value.group(1) if value else ""
+
+
+def _signature_error(html: str) -> str:
+    """The message rendered against the signature field, if any.
+
+    The signature pad carries ``signature_missing`` in a ``data-`` attribute for
+    its script, so a plain "is this string in the page" check cannot tell the
+    rendered error apart from that attribute.
+    """
+    match = re.search(r'id="signature-error">(.*?)</div>', html, re.S)
+    return match.group(1).strip() if match else ""
+
+
+def _host_guest(stay_id: int, **overrides) -> int:
+    """A filed guest row, the way the host entry form leaves one."""
+    values = {
+        "reservation_id": stay_id,
+        "surname": "Smith",
+        "first_name": "John",
+        "birth_date": "1990-01-01",
+        "nationality": "GBR",
+        "doc_number": "P1234567",
+        "res_street": "Baker Street 221B",
+        "res_city": "London",
+        "res_country": "GBR",
+        "purpose": "10",
+        "signature_png": SIGNATURE,
+        "entered_by": "host",
+        "created_at": db.utcnow(),
+        "updated_at": db.utcnow(),
+    }
+    values.update(overrides)
+    return db.insert("guest", values)
 
 
 def test_guest_save_refuses_a_stay_outside_the_booking():
@@ -193,5 +273,185 @@ def test_the_stay_refusal_is_translated():
         assert response.status_code == 422
         assert "neodpovídají vaší rezervaci" in response.text
         assert "do not match your booking" not in response.text
+    finally:
+        _cleanup()
+
+
+def test_a_complete_guest_form_is_saved_and_locked():
+    """The baseline the signature tests below measure against."""
+    _owner_id, stay_id = _host_stay()
+    try:
+        client = _claimed_guest(stay_id)
+        response = _save(client, stay_id, **_complete_guest())
+        assert response.status_code == 303, response.text
+
+        guest = db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (stay_id,))
+        assert guest["signature_png"] == SIGNATURE
+        assert reporting.guest_has_signature(guest)
+        assert reporting.guest_is_complete(guest, db.query_one(
+            "SELECT * FROM reservation WHERE id = ?", (stay_id,)
+        ))
+    finally:
+        _cleanup()
+
+
+def test_an_svg_signature_is_refused():
+    """An SVG is an image type and a script container; nothing here renders one."""
+    _owner_id, stay_id = _host_stay()
+    try:
+        client = _claimed_guest(stay_id)
+        response = _save(client, stay_id, **_complete_guest(signature=SVG_SIGNATURE))
+        assert response.status_code == 422
+        assert _signature_error(response.text) == validation.SIGNATURE_INVALID_MESSAGE
+        # Refused, not stored, and not handed back for the next submit.
+        assert db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (stay_id,)) is None
+        assert _hidden_signature(response.text) == ""
+    finally:
+        _cleanup()
+
+
+def test_a_png_signature_whose_bytes_are_not_a_png_is_refused():
+    _owner_id, stay_id = _host_stay()
+    try:
+        client = _claimed_guest(stay_id)
+        not_a_png = "data:image/png;base64," + base64.b64encode(b"<html>hi</html>").decode()
+        response = _save(client, stay_id, **_complete_guest(signature=not_a_png))
+        assert response.status_code == 422
+        assert _signature_error(response.text) == validation.SIGNATURE_INVALID_MESSAGE
+        assert db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (stay_id,)) is None
+    finally:
+        _cleanup()
+
+
+def test_an_oversized_signature_is_refused():
+    _owner_id, stay_id = _host_stay()
+    try:
+        client = _claimed_guest(stay_id)
+        huge = "data:image/png;base64," + base64.b64encode(
+            b"\x89PNG\r\n\x1a\n" + b"\x00" * validation.MAX_SIGNATURE_BYTES
+        ).decode()
+        response = _save(client, stay_id, **_complete_guest(signature=huge))
+        assert response.status_code == 422
+        assert _signature_error(response.text) == validation.SIGNATURE_INVALID_MESSAGE
+        assert db.query_one("SELECT * FROM guest WHERE reservation_id = ?", (stay_id,)) is None
+    finally:
+        _cleanup()
+
+
+def test_the_signature_refusal_is_translated():
+    _owner_id, stay_id = _host_stay()
+    try:
+        client = _claimed_guest(stay_id)
+        response = _save(
+            client, stay_id, lang="cs", **_complete_guest(signature=SVG_SIGNATURE)
+        )
+        assert response.status_code == 422
+        assert _signature_error(response.text) == (
+            "Tento podpis se nepodařilo uložit. Podepište se znovu do podpisového pole."
+        )
+        assert validation.SIGNATURE_INVALID_MESSAGE not in response.text
+    finally:
+        _cleanup()
+
+
+def test_a_stored_junk_signature_is_not_offered_back_to_the_guest():
+    """[F33]: the re-render must not hand back a value the save paths reject."""
+    _owner_id, stay_id = _host_stay()
+    try:
+        client = _claimed_guest(stay_id)
+        assert _save(client, stay_id, **_complete_guest()).status_code == 303
+        guest_id = db.query_one(
+            "SELECT id FROM guest WHERE reservation_id = ?", (stay_id,)
+        )["id"]
+        # A row written before the validator existed: a data:image/ prefix over
+        # something that is not a signature. Incomplete, so it is still editable.
+        # db.update, not raw SQL: doc_number is encrypted now.
+        db.update(
+            "guest", guest_id, {"signature_png": SVG_SIGNATURE, "doc_number": ""}
+        )
+        page = client.get(f"/l/{TOKEN}/{stay_id}/edit/{guest_id}", follow_redirects=False)
+        assert page.status_code == 200
+        assert _hidden_signature(page.text) == ""
+    finally:
+        _cleanup()
+
+
+def test_a_stored_junk_signature_cannot_be_carried_forward():
+    """Resubmitting the form must not turn a junk row into a signed one."""
+    _owner_id, stay_id = _host_stay()
+    try:
+        client = _claimed_guest(stay_id)
+        assert _save(client, stay_id, **_complete_guest()).status_code == 303
+        guest_id = db.query_one(
+            "SELECT id FROM guest WHERE reservation_id = ?", (stay_id,)
+        )["id"]
+        db.update(
+            "guest", guest_id, {"signature_png": SVG_SIGNATURE, "doc_number": ""}
+        )
+        # No signature field at all, as a browser with an empty pad would post.
+        response = _save(
+            client, stay_id, guest_id=str(guest_id), **_complete_guest(signature="")
+        )
+        assert response.status_code == 422
+        # "Please sign before submitting." - the junk row is not a signature.
+        assert _signature_error(response.text) == "Please sign before submitting."
+        assert validation.SIGNATURE_INVALID_MESSAGE not in response.text
+        assert db.query_one(
+            "SELECT signature_png FROM guest WHERE id = ?", (guest_id,)
+        )["signature_png"] == SVG_SIGNATURE
+    finally:
+        _cleanup()
+
+
+def test_the_host_entry_form_refuses_a_bogus_signature():
+    """The host save path shares the validator: a junk value is neither filed as
+    a collected signature nor taken in place of a real one."""
+    owner_id, stay_id = _host_stay()
+    try:
+        client = _host_client(owner_id)
+        unsigned_id = _host_guest(stay_id, signature_png=None)
+        response = client.post(
+            f"/guests/{unsigned_id}",
+            data=_complete_guest(signature=SVG_SIGNATURE),
+            follow_redirects=False,
+        )
+        assert response.status_code == 200
+        assert validation.SIGNATURE_INVALID_MESSAGE in response.text
+        # Refused, not stored, and not handed back for the next submit.
+        assert not db.query_one(
+            "SELECT signature_png FROM guest WHERE id = ?", (unsigned_id,)
+        )["signature_png"]
+        assert _hidden_signature(response.text) == ""
+
+        # With a real signature already stored the junk post keeps it, rather
+        # than replacing it with something nothing here can render.
+        signed_id = _host_guest(stay_id)
+        response = client.post(
+            f"/guests/{signed_id}",
+            data=_complete_guest(signature=SVG_SIGNATURE),
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert db.query_one(
+            "SELECT signature_png FROM guest WHERE id = ?", (signed_id,)
+        )["signature_png"] == SIGNATURE
+    finally:
+        _cleanup()
+
+
+def test_a_stored_junk_signature_is_not_offered_back_to_the_host():
+    """[F33] on the host form too: an old row's junk value is not re-posted."""
+    owner_id, stay_id = _host_stay()
+    try:
+        guest_id = _host_guest(stay_id, signature_png=SVG_SIGNATURE)
+        client = _host_client(owner_id)
+        page = client.get(f"/guests/{guest_id}", follow_redirects=False)
+        assert page.status_code == 200
+        assert _hidden_signature(page.text) == ""
+
+        # A real signature still round-trips into the field.
+        db.update("guest", guest_id, {"signature_png": SIGNATURE})
+        page = client.get(f"/guests/{guest_id}", follow_redirects=False)
+        assert _hidden_signature(page.text) == SIGNATURE
     finally:
         _cleanup()

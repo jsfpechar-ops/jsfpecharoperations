@@ -233,7 +233,7 @@
       </div>
     </div>
     <input type="hidden" id="signature" name="signature"
-           value="{{ values.get('signature') or (guest.signature_png if guest and guest.signature_png else '') }}">
+           value="{{ values.get('signature') or stored_signature }}">
     {{ err_for('signature') }}
   </div>
 

@@ -1501,11 +1501,37 @@ def _guest_payload(form) -> Dict[str, Any]:
 
 def _guest_signature_from_form(form, existing=None) -> str:
     signature = _form_str(form, "signature")
-    if not signature.startswith("data:image/") and existing:
+    if not validation.is_valid_signature(signature) and existing:
         kept = (existing["signature_png"] or "").strip()
-        if kept.startswith("data:image/"):
+        if validation.is_valid_signature(kept):
             return kept
     return signature
+
+
+def _guest_issues(preview, reservation, signature) -> List[validation.Issue]:
+    """Issues blocking a host-entered guest, including a bogus signature.
+
+    ``reporting.guest_has_signature`` only looks at the prefix, so a signature
+    that is present but not a real image would otherwise be filed as collected.
+    """
+    issues = reporting.guest_issues(preview, reservation)
+    if signature:
+        bad_signature = validation.signature_issue(signature)
+        if bad_signature:
+            issues.append(bad_signature)
+    return issues
+
+
+def _signature_for_display(guest) -> str:
+    """What the hidden signature field may post back, if anything.
+
+    [F33]: a row can hold a value the save paths refuse (one filed before the
+    validator existed, or a preview of a rejected submit). Handing it back would
+    only re-submit it, so it is shown as blank - which means "keep what is
+    stored".
+    """
+    value = (guest["signature_png"] or "") if guest else ""
+    return value if validation.is_valid_signature(value) else ""
 
 
 def _render_host_guest_form(
@@ -1524,6 +1550,7 @@ def _render_host_guest_form(
             "guest": guest,
             "issues": issues,
             "editing": editing,
+            "signature_value": _signature_for_display(guest),
             "countries": codelists.nationality_options("en"),
             "purposes": codelists.purpose_options("en"),
             "has_passport_photo": reporting.guest_has_passport_photo(guest) if guest else False,
@@ -1569,7 +1596,7 @@ async def guest_create(reservation_id: int, request: Request):
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form)
     preview = {**payload, "signature_png": signature, "entered_by": "host"}
-    issues = reporting.guest_issues(preview, reservation)
+    issues = _guest_issues(preview, reservation, signature)
     if validation.errors_only(issues):
         return _render_host_guest_form(
             request,
@@ -1649,7 +1676,7 @@ async def guest_update(guest_id: int, request: Request):
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form, guest)
     preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
-    issues = reporting.guest_issues(preview, reservation)
+    issues = _guest_issues(preview, reservation, signature)
     if validation.errors_only(issues):
         return _render_host_guest_form(
             request,

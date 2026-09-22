@@ -9,6 +9,7 @@ submission, rather than discovering it after the legal deadline has passed.
 """
 from __future__ import annotations
 
+import base64
 import json
 import re
 import unicodedata
@@ -514,6 +515,85 @@ def validate_stay_dates(
     if stay_to and allowed_to and stay_to > allowed_to + slack:
         issues.append(Issue("stay_to", STAY_OUTSIDE_BOOKING_MESSAGE))
     return issues
+
+
+# The first bytes each accepted type has to start with. The browser draws into
+# a canvas and hands over ``canvas.toDataURL("image/png")``, so PNG is the only
+# type this app itself produces; JPEG is allowed for a signature pad embedded
+# elsewhere (for example a camera-captured paper form).
+SIGNATURE_MIME_MAGIC = {
+    "image/png": b"\x89PNG\r\n\x1a\n",
+    "image/jpeg": b"\xff\xd8\xff",
+}
+
+# A drawn signature is a few kilobytes of mostly transparent canvas PNG. The cap
+# exists because ``signature_png`` is a TEXT column in a single SQLite file: it
+# is generous enough for a dense signature on a large screen, and small enough
+# that a hand-built request cannot put a blob in the database.
+MAX_SIGNATURE_BYTES = 256 * 1024
+
+SIGNATURE_INVALID_MESSAGE = (
+    "That signature could not be saved. Sign again on the signature pad."
+)
+
+# The whole value has to be one base64 data URL of an allowed image type. The
+# prefix is matched before decoding so an oversized body is never decoded.
+_SIGNATURE_DATA_URL = re.compile(
+    r"^data:(?P<mime>image/[a-z0-9.+-]+);base64,(?P<payload>[A-Za-z0-9+/=]*)$"
+)
+# 4 base64 characters carry 3 bytes, so this is the longest payload that can
+# still decode to an allowed number of bytes.
+_MAX_SIGNATURE_PAYLOAD_CHARS = 4 * (MAX_SIGNATURE_BYTES // 3) + 4
+
+
+def parse_signature_data_url(value: Optional[str]) -> bytes:
+    """Return the image bytes of a drawn signature, or raise ``ValueError``.
+
+    ``signature_png`` is a TEXT column on a single-file SQLite database, and
+    every downstream "this guest signed" check is a look at its prefix, so this
+    is the one place that decides what may be stored: a base64 data URL of a PNG
+    or JPEG, under ``MAX_SIGNATURE_BYTES``, whose first bytes really are that
+    type's magic bytes. ``image/svg+xml`` is refused even though it is an image
+    - an SVG is a script container, and nothing here renders one.
+    """
+    match = _SIGNATURE_DATA_URL.match((value or "").strip())
+    if not match:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    magic = SIGNATURE_MIME_MAGIC.get(match.group("mime").lower())
+    if magic is None:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    payload = match.group("payload")
+    if not payload or len(payload) > _MAX_SIGNATURE_PAYLOAD_CHARS:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    try:
+        # validate=True: a payload that is not base64 must not be silently
+        # repaired into bytes that happen to start with a magic number.
+        content = base64.b64decode(payload, validate=True)
+    except ValueError:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE) from None
+    if not content or len(content) > MAX_SIGNATURE_BYTES:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    if not content.startswith(magic):
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    return content
+
+
+def signature_issue(value: Optional[str]) -> Optional[Issue]:
+    """The ``signature`` issue a value would raise, or ``None`` when it is fine."""
+    try:
+        parse_signature_data_url(value)
+    except ValueError as exc:
+        return Issue("signature", str(exc))
+    return None
+
+
+def is_valid_signature(value: Optional[str]) -> bool:
+    """True for a value both save paths may store as a collected signature.
+
+    Not the same question as ``reporting.guest_has_signature``, which also
+    accepts the ``"imported"`` marker a paper house-book row carries.
+    """
+    return signature_issue(value) is None
 
 
 def guest_is_reportable(nationality: Optional[str]) -> bool:
