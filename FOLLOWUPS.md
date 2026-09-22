@@ -67,3 +67,70 @@ it has since been committed to `main` as `CURSOR_REMEDIATION_PLAN.md` (root,
 `f984560`). Two path notes: the plan's own header calls itself a companion to
 `UBYHOST_CODE_AUDIT.md`, which lives under `docs/`, so the two documents do not
 sit together; and the plan's `[Fnn]` references point at the audit in `docs/`.
+
+## From Phase 2 (guest passport data at rest)
+
+### W2.1 — the orphan-submission delete waits for the retention clock
+
+The plan says to delete `submission` rows that have no surviving `guest` rows
+after the guest purge. It is implemented that way *and* gated on the six-year
+`retention_cutoff`, because a submission row with no guests is not always a
+submission that never happened: a host who deletes a guest entered by mistake
+would otherwise lose the Doručenka for a filing that really was sent, and the
+receipt is the evidence the host has to be able to produce. Pinned by
+`test_deleting_a_guest_by_hand_does_not_take_a_recent_receipt_with_it`. If the
+intent was the literal reading, the gate comes out and that test is inverted.
+
+### W2.1 — "terminal state" was read as every settled state
+
+`reporting.purge_submission_payloads` blanks a payload once the submission is
+no longer in flight (`ok`, `partial`, `error`, `transport_error`). The plan says
+"terminal" without defining it. `running` is the only state excluded, so an
+attempt that failed and will never be retried keeps its XML until the 90 days
+elapse. The narrower reading — only `ok` — would retain envelopes for failures
+the host may still need to diagnose.
+
+### W2.2 — the plaintext columns are already dead, and are not dropped
+
+The plan's step 3 says to write through both columns and step 5 says to stop
+writing the plaintext one "only in a later release". Those two cannot both hold
+with the plan's own required test that the stored value must not be the
+plaintext, so plaintext writing stopped immediately and the plaintext column
+survives only as a read fallback for rows the backfill has not reached. Two
+things follow that a later release should pick up:
+
+1. **The backfill is a manual deploy step.** `App/scripts/migrate_encrypt_doc_fields.py`
+   is documented in `docs/OPERATIONS.md` but is not wired into
+   `deploy/lightsail/scripts/deploy.sh`. Nothing runs it automatically, so
+   production stays on the fallback until someone runs it. Wiring it in (or
+   gating the deploy on it) is the durable fix; it was left out here because
+   changing the deploy script is outside this work item.
+2. **The plaintext columns are never dropped.** Once production is confirmed
+   backfilled, `doc_number` and `visa_number` can stop being read and can be
+   dropped, which removes the fallback path and the `_hydrate` shim with it.
+
+### W2.2 — names and birth dates are still cleartext
+
+The plan scopes this work item to `doc_number` and `visa_number` and defers the
+rest. Guest `surname`, `given_names`, `birth_date` and `birth_place` are still
+stored as plaintext and are the same class of personal data; they were deferred
+because they appear in search, sort and PDF paths, so encrypting them changes
+more than a column. Worth doing as its own change if the owner wants it.
+
+### W2.4 — a link queued before this release still sends
+
+`mail.delivery_body` passes a body with no marker through untouched, which is
+what lets a rolling deploy finish the rows the previous release queued with a
+cleartext link. That also means a cleartext link in a payload written before
+this release keeps working until it is sent or purged. Once no such row can
+exist — 14 days of retention, so one release cycle — the pass-through can
+become a hard error.
+
+### W2.4 — the platform-admin console view still reveals the secret
+
+`recent_console_messages(None)` returns every workspace's console rows and puts
+the secret back in each, because that is what it did before this change and who
+may see what is not part of this work item. A platform admin therefore still
+sees a working claim link for any host's guest. Narrowing that branch is a
+product decision about platform-admin access, not a fix to the retention
+finding.
