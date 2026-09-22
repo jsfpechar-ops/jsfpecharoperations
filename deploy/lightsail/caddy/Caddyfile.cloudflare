@@ -6,6 +6,13 @@
 
 {$UBYHOST_DOMAIN} {
 	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+	# The guest form posts its signature and its passport upload as one
+	# multipart body, so this must stay above passport_photos.MAX_PDF_BYTES
+	# (15 MB). 20 MB admits every legitimate body and rejects an unbounded one
+	# with 413 before the app buffers it.
+	request_body {
+		max_size 20MB
+	}
 	encode gzip
 	reverse_proxy ubyhost:8080
 }
