@@ -1,14 +1,17 @@
 """Security regression tests."""
 from __future__ import annotations
 
+import base64
 import re
+from datetime import timedelta
 
 from fastapi.testclient import TestClient
 from fastapi.responses import Response
 
-from app import auth, client_ip, config, db, host_i18n, rate_limit, security
+from app import auth, claim, client_ip, config, db, host_i18n, rate_limit, security
 from app.main import app
 from app.routes import admin as admin_routes
+from tests.conftest import complete_guest_claim
 from tests.test_accounts import _account, _clean_accounts, _login
 
 
@@ -441,3 +444,158 @@ def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
         assert "Nothing is being reported" in TestClient(app).get("/login?lang=en").text
     finally:
         _clean_accounts()
+
+
+
+
+# The guest cookies W3.6 covers, by the helper in app/routes/guest.py that sets
+# each one: _remember_owned, _remember_claim and _with_lang.
+GUEST_COOKIE_NAMES = ("ubyhost_owned", "ubyhost_claim", "ubyhost_lang")
+
+_GUEST_TOKEN = "security-cookie-token"
+# A one-pixel PNG data URL: the only shape validation.parse_signature_data_url
+# accepts, so the save gets as far as handing out the owned cookie.
+_GUEST_SIGNATURE = "data:image/png;base64," + base64.b64encode(
+    bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000a49444154789c63000100000500010d7a1f0000000049454e44ae42"
+        "6082"
+    )
+).decode()
+
+
+def _clean_guest_cookie_fixture():
+    apartment = db.query_one(
+        "SELECT * FROM apartment WHERE permalink_token = ?", (_GUEST_TOKEN,)
+    )
+    if not apartment:
+        return
+    db.execute(
+        "DELETE FROM guest WHERE reservation_id IN "
+        "(SELECT id FROM reservation WHERE apartment_id = ?)",
+        (apartment["id"],),
+    )
+    db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
+    db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
+    db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
+
+
+def _guest_cookie_fixture() -> int:
+    """One apartment and one stay, so all three guest cookies can be set."""
+    db.init_db()
+    _clean_guest_cookie_fixture()
+    now = db.utcnow()
+    today = claim.prague_today()
+    entity_id = db.insert("legal_entity", {"name": "Security cookies", "created_at": now})
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "internal_name": "Cookie flat",
+            "permalink_token": _GUEST_TOKEN,
+            "permalink_window_days": 14,
+            "default_purpose": "10",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    return db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "source": "manual",
+            "uid": "security-cookie-stay",
+            "date_from": today.isoformat(),
+            "date_to": (today + timedelta(days=3)).isoformat(),
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+
+
+def _guest_save_payload() -> dict:
+    return {
+        "surname": "Smith",
+        "first_name": "John",
+        "birth_date": "01/01/1990",
+        "nationality": "GBR",
+        "doc_number": "P1234567",
+        "res_street": "Baker Street 221B",
+        "res_city": "London",
+        "res_country": "GBR",
+        "purpose": "10",
+        "party_size": "2",
+        "signature": _GUEST_SIGNATURE,
+        "legal_ack": "1",
+    }
+
+
+def _secure_flags(*responses) -> dict:
+    """Cookie name -> the Secure attribute the server actually sent.
+
+    Read from Set-Cookie rather than from the client's cookie jar. A browser
+    (and httpx) refuses a Secure cookie that arrives over http, so the jar
+    would report the flag by the cookie's absence, for a reason that has
+    nothing to do with what the server marked it with.
+    """
+    flags = {}
+    for response in responses:
+        for header in response.headers.get_list("set-cookie"):
+            name, _, rest = header.partition("=")
+            flags[name.strip()] = "secure" in rest.lower()
+    return flags
+
+
+def _drive_guest_cookies(deployment: str) -> dict:
+    """Set all three guest cookies and report what the server marked them with."""
+    stay_id = _guest_cookie_fixture()
+    # https so the client keeps the cookies and the flow runs to the end. The
+    # scheme is not what the app looks at; config.PUBLIC_BASE_URL is, and the
+    # test leaves that on its http default.
+    browser = TestClient(app, base_url="https://ubyhost.com")
+    previous = config.DEPLOYMENT
+    config.DEPLOYMENT = deployment
+    try:
+        lang = browser.get(f"/l/{_GUEST_TOKEN}/{stay_id}?lang=cs", follow_redirects=False)
+        assert lang.status_code == 200, lang.text
+        captured: list = []
+        assert complete_guest_claim(browser, _GUEST_TOKEN, stay_id, capture=captured)
+        saved = browser.post(
+            f"/l/{_GUEST_TOKEN}/{stay_id}/save",
+            data=_guest_save_payload(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303, saved.text
+    finally:
+        config.DEPLOYMENT = previous
+    return _secure_flags(lang, captured[0], saved)
+
+
+def test_guest_cookies_are_secure_in_production_without_an_https_base_url():
+    """W3.6 [F25]: production must not depend on the base URL to be https.
+
+    All three guest cookies were marked Secure only when ``PUBLIC_BASE_URL``
+    started with ``https://``. ``env_guard`` only *warns* when a production
+    deployment is left on the http default, so a production instance that never
+    set ``UBYHOST_PUBLIC_BASE_URL`` handed out guest session cookies a browser
+    was free to send over plain http. The deployment name is the signal that
+    says a real instance is behind TLS, and it is now consulted as well.
+    """
+    try:
+        # The misconfiguration being guarded, asserted rather than assumed.
+        assert config.PUBLIC_BASE_URL.lower().startswith("http://")
+
+        flags = _drive_guest_cookies("production")
+        for name in GUEST_COOKIE_NAMES:
+            assert name in flags, f"{name} was never set: the test drove no cookie"
+            assert flags[name] is True, f"{name} was sent without Secure"
+
+        # Counterfactual, so the assertion cannot pass on a hard-coded flag:
+        # outside production, an http base URL still omits it.
+        local_flags = _drive_guest_cookies("local")
+        for name in GUEST_COOKIE_NAMES:
+            assert local_flags[name] is False, f"{name} is Secure outside production"
+    finally:
+        _clean_guest_cookie_fixture()
