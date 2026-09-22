@@ -204,3 +204,30 @@ computes the transition (`elif not complete and existing:`), so an alert raised
 there when a completion that had been set is cleared needs no gate change at
 all. That alert should land before, or together with, whichever gate behaviour
 is chosen.
+
+## From Phase 3 (guest access control)
+
+### W3.5 — the reach-back bound does not close ID enumeration inside the window
+
+The stay-specific link `/l/{token}/{id}` is now bounded by the new apartment
+field `permalink_reachback_days` (default 365). A stay whose `date_to` is older
+than that bound answers with the same `unavailable.html` and the same status as
+an id that was never part of the apartment, so the out-of-window case no longer
+discloses whether an id belongs to the apartment.
+
+The residual risk is deliberate and is the reason the forward side was left
+unbounded. The reach-back bound only hides ids for stays that have already
+drifted past the window; a stranger holding a valid apartment token can still
+learn whether a *recent* low id belongs to that apartment, because an in-window
+stay is genuinely reachable and must stay reachable — that is the documented
+affordance (a forgotten, incomplete form can still be finished). Bounding the
+forward side too would kill that affordance rather than protect anything, so it
+was not done.
+
+`/l/{token}/{id}/claim` (`claim_landing`, `guest.py`) performs its own
+reservation SELECT and carries **no** reach-back bound at all. It was left alone
+because the token in the URL is itself the access secret, `claim_confirm` fails
+without a matching stored secret, and `confirm()` never bumps
+`guest_access_reopened_at`, so its `guest_access_open` bypass is inert. If the
+claim landing page is ever given an unauthenticated success path, it needs the
+same bound as `_reservation_for_guest`.

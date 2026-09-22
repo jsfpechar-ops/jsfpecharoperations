@@ -332,8 +332,11 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
 
     The apartment picker only lists the lead window. Stay-specific links also
     keep incomplete, unlocked past registrations reachable so a forgotten form
-    can still be finished. Completed forms outside the window stay reachable
-    only on a device that already confirmed the claim.
+    can still be finished, but only for ``permalink_reachback_days`` (a year by
+    default): without a lower bound an old id answered differently from an id
+    that never existed, which told a stranger which reservations belong to the
+    apartment. Completed forms outside both windows stay reachable only on a
+    device that already confirmed the claim.
     """
     for reservation in _visible_reservations(apartment):
         if reservation["id"] == reservation_id:
@@ -344,6 +347,10 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
         (reservation_id, apartment["id"]),
     )
     if not reservation:
+        return None
+    reachback = validation.normalise_reachback_days(apartment["permalink_reachback_days"])
+    cutoff = (claim.prague_today() - timedelta(days=reachback)).isoformat()
+    if (reservation["date_to"] or "") < cutoff:
         return None
     row = claim.ensure_row(reservation["id"])
     if not claim.guest_access_open(reservation, row):

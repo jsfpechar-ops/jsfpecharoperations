@@ -155,6 +155,7 @@ def test_03_apartment_is_created_with_encrypted_credentials(host):
             "automation_mode": "immediate",
             "default_purpose": "10",
             "permalink_window_days": "3",
+            "permalink_reachback_days": "30",
             "guest_message": "Welcome — please complete the registration before arrival.",
             "active": "on",
         },
@@ -170,6 +171,13 @@ def test_03_apartment_is_created_with_encrypted_credentials(host):
     assert db.decrypt_secret(apartment["uby_ws_password_enc"]) == "police-secret"
     assert apartment["permalink_token"]
     assert apartment["guest_message"] == "Welcome — please complete the registration before arrival."
+    # W3.5: the reach-back window is a real setting, and the form shows it back.
+    assert apartment["permalink_reachback_days"] == 30
+    settings = host.get(f"/apartments/{apartment['id']}")
+    assert settings.status_code == 200
+    assert re.search(
+        r'name="permalink_reachback_days"[^>]*value="30"', settings.text
+    ), "the apartment form must expose the reach-back window"
 
 
 def test_04_connection_test_reaches_the_service(host):
