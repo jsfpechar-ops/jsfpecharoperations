@@ -90,6 +90,7 @@ templates.env.globals.update(
     describe_time_left=_template_time_left,
     urgency=deadlines.urgency,
     reporting_deadline=deadlines.reporting_deadline,
+    deadline_anchor=reporting.reservation_deadline_anchor,
     purpose_label=validation.purpose_label,
     country_name=validation.country_name,
     format_birth_date=validation.format_birth_date,

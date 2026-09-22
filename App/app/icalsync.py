@@ -39,7 +39,7 @@ from typing import Any, Dict, List, Optional
 
 from icalendar import Calendar
 
-from . import alerts, db
+from . import alerts, db, deadlines, host_i18n
 from .feed_fetch import CalendarFetchError, fetch_calendar_text
 from .feed_url import FeedUrlError
 
@@ -89,6 +89,12 @@ PLATFORM_HINTS = (
 
 class FeedError(Exception):
     pass
+
+
+# A feed must still return at least this fraction of the future stays already
+# stored for it before any of them is treated as cancelled upstream. Below it,
+# the sync is assumed to be broken rather than the calendar empty.
+FEED_COMPLETENESS_THRESHOLD = 0.5
 
 
 def fetch_feed(url: str) -> str:
@@ -198,7 +204,7 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
     )
     if not existing or existing["status"] != "active":
         return
-    if existing["date_from"] < date.today().isoformat():
+    if existing["date_from"] < deadlines.local_now().date().isoformat():
         return
     reported = db.query_one(
         "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
@@ -237,7 +243,9 @@ def sync_feed(
         if ics_text is None:
             ics_text = fetch_feed(feed["url"])
         events = parse_events(ics_text)
-    except (FeedError, ValueError) as exc:
+    except Exception as exc:
+        # Deliberately broad: an unexpected exception from one malformed feed
+        # must not abort the sync of every other apartment.
         db.update(
             "ical_feed",
             feed["id"],
@@ -298,16 +306,37 @@ def sync_feed(
                 db.update("reservation", existing["id"], changed)
                 stats["updated"] += 1
             if dates_changed:
+                # Only guests still sitting on the reservation's old dates move
+                # with it: one who legitimately leaves earlier keeps their own
+                # window. The signature is deliberately left alone - it names
+                # the dates the guest actually signed for, so wiping it would
+                # destroy evidence the host may still need. The host is told
+                # instead.
                 db.execute(
-                    "UPDATE guest SET stay_from = ?, stay_to = ?, signature_png = NULL, "
-                    "signed_at = NULL, updated_at = ? "
-                    "WHERE reservation_id = ? AND submit_state != 'sent'",
+                    "UPDATE guest SET stay_from = ?, stay_to = ?, updated_at = ? "
+                    "WHERE reservation_id = ? AND submit_state != 'sent' "
+                    "AND stay_from = ? AND stay_to = ?",
                     (
                         event["date_from"],
                         event["date_to"],
                         now,
                         existing["id"],
+                        existing["date_from"],
+                        existing["date_to"],
                     ),
+                )
+                alerts.raise_alert(
+                    "critical",
+                    "dates_changed_resign",
+                    host_i18n.translate(
+                        host_i18n.DEFAULT_LANGUAGE, "notification.dates_changed_resign.title"
+                    ),
+                    host_i18n.translate(
+                        host_i18n.DEFAULT_LANGUAGE, "notification.reason.dates_changed_resign"
+                    ),
+                    dedupe_key=f"dates_changed_resign:{existing['id']}",
+                    apartment_id=feed["apartment_id"],
+                    reservation_id=existing["id"],
                 )
                 log.warning(
                     "ical_dates_changed_resign_required apartment_id=%s reservation_id=%s",
@@ -339,41 +368,65 @@ def sync_feed(
 
     # A future stay that has vanished from the feed was cancelled upstream.
     # Past stays are left alone: they may already be reported to the police.
-    cutoff = date.today().isoformat()
+    cutoff = deadlines.local_now().date().isoformat()
     candidates = db.query(
         "SELECT id, uid, date_from FROM reservation "
         "WHERE apartment_id = ? AND ical_feed_id = ? AND status = 'active' AND date_from >= ?",
         (feed["apartment_id"], feed["id"], cutoff),
     )
-    if candidates and not seen_uids:
+    # A feed that suddenly returns a fraction of what is stored is far more
+    # likely to be broken than to mean nine guests cancelled at once, so the
+    # cancellation sweep waits until the feed is trusted again.
+    if candidates and len(seen_uids) < FEED_COMPLETENESS_THRESHOLD * len(candidates):
+        db.update(
+            "ical_feed",
+            feed["id"],
+            {"last_sync_at": now, "last_status": "suspect", "last_error": None},
+        )
+        alerts.raise_alert(
+            "warning",
+            "feed_incomplete",
+            host_i18n.translate(
+                host_i18n.DEFAULT_LANGUAGE,
+                "notification.feed_incomplete.title",
+                property=feed["own_name"] or feed["label"] or feed["id"],
+            ),
+            host_i18n.translate(
+                host_i18n.DEFAULT_LANGUAGE, "notification.reason.feed_incomplete"
+            ),
+            dedupe_key=f"feed_incomplete:{feed['id']}",
+            apartment_id=feed["apartment_id"],
+        )
         log.warning(
-            "ical_empty_feed_retained apartment_id=%s feed_id=%s retained_stays=%s",
+            "ical_incomplete_feed_retained apartment_id=%s feed_id=%s retained_stays=%s returned_events=%s",
             feed["apartment_id"],
             feed["id"],
             len(candidates),
+            len(seen_uids),
         )
-    else:
-        for row in candidates:
-            if row["uid"] in seen_uids:
-                continue
-            reported = db.query_one(
-                "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
-                (row["id"],),
+        return stats
+    alerts.resolve(f"feed_incomplete:{feed['id']}")
+    for row in candidates:
+        if row["uid"] in seen_uids:
+            continue
+        reported = db.query_one(
+            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
+            (row["id"],),
+        )
+        if reported and reported["n"]:
+            alerts.raise_alert(
+                "warning",
+                "cancelled_after_report",
+                f"A stay from {row['date_from']} disappeared from the calendar after it had "
+                "already been reported to the police.",
+                "Check whether the booking was cancelled or merely moved.",
+                dedupe_key=f"cancelled_after_report:{row['id']}",
+                apartment_id=feed["apartment_id"],
+                reservation_id=row["id"],
             )
-            if reported and reported["n"]:
-                alerts.raise_alert(
-                    "warning",
-                    "cancelled_after_report",
-                    f"A stay from {row['date_from']} disappeared from the calendar after it had "
-                    "already been reported to the police.",
-                    "Check whether the booking was cancelled or merely moved.",
-                    dedupe_key=f"cancelled_after_report:{row['id']}",
-                    apartment_id=feed["apartment_id"],
-                    reservation_id=row["id"],
-                )
-                continue
-            db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
-            stats["cancelled"] += 1
+            continue
+        db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
+        stats["cancelled"] += 1
 
     db.update(
         "ical_feed",
@@ -401,7 +454,11 @@ def sync_all(
     totals = {"feeds": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0}
     for feed in feeds:
         totals["feeds"] += 1
-        stats = sync_feed(feed)
+        try:
+            stats = sync_feed(feed)
+        except Exception as exc:  # noqa: BLE001 - one feed must not stop the rest
+            log.exception("ical feed %s failed", feed["id"])
+            stats = {"error": str(exc)}
         if stats.get("error"):
             totals["errors"] += 1
             continue

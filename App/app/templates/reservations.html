@@ -132,7 +132,7 @@
     {% for row in rows %}
       {% set reservation = row.reservation %}
       {% set progress = row.progress %}
-      {% set check_in = parse_iso_date(reservation.date_from) %}
+      {% set check_in = deadline_anchor(reservation) %}
       {% set check_out = parse_iso_date(reservation.date_to) %}
       <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to }}"
           tabindex="0" role="link"

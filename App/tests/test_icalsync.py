@@ -192,9 +192,17 @@ def test_empty_calendar_does_not_mass_cancel_future_stays(monkeypatch, tmp_path)
     )["status"] == "active"
 
 
-def test_moved_ical_stay_updates_guest_dates_and_requires_new_signature(
-    monkeypatch, tmp_path
+MOVED_STAY_FEED = (
+    "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+    "DTSTART;VALUE=DATE:20990210\nDTEND;VALUE=DATE:20990212\n"
+    "UID:moved-stay\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+)
+
+
+def _moved_stay(
+    tmp_path, monkeypatch, *, guest_stay_from="2099-01-10", guest_stay_to="2099-01-12"
 ):
+    """One stay dated 2099-01-10..12 whose feed then reports it two months later."""
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "moved-feed.sqlite3")
     db.init_db()
     now = db.utcnow()
@@ -233,8 +241,8 @@ def test_moved_ical_stay_updates_guest_dates_and_requires_new_signature(
         "guest",
         {
             "reservation_id": reservation_id,
-            "stay_from": "2099-01-10",
-            "stay_to": "2099-01-12",
+            "stay_from": guest_stay_from,
+            "stay_to": guest_stay_to,
             "signature_png": "data:image/png;base64,signed",
             "signed_at": now,
             "entered_by": "guest",
@@ -243,17 +251,293 @@ def test_moved_ical_stay_updates_guest_dates_and_requires_new_signature(
             "updated_at": now,
         },
     )
-    moved = (
-        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
-        "DTSTART;VALUE=DATE:20990210\nDTEND;VALUE=DATE:20990212\n"
-        "UID:moved-stay\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
-    )
-    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: moved)
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: MOVED_STAY_FEED)
+    return feed_id, reservation_id, guest_id
 
-    icalsync.sync_feed(db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,)))
+
+def _sync(feed_id):
+    return icalsync.sync_feed(
+        db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+    )
+
+
+def test_moved_ical_stay_keeps_the_signature_it_collected(monkeypatch, tmp_path):
+    """D1 = keep, recorded as a test: the signature names the dates signed for."""
+    feed_id, _reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+
+    _sync(feed_id)
 
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
     assert guest["stay_from"] == "2099-02-10"
     assert guest["stay_to"] == "2099-02-12"
-    assert guest["signature_png"] is None
-    assert guest["signed_at"] is None
+    assert guest["signature_png"] == "data:image/png;base64,signed"
+    assert guest["signed_at"] is not None
+
+
+def test_moved_ical_stay_alerts_the_host(monkeypatch, tmp_path):
+    feed_id, reservation_id, _guest_id = _moved_stay(tmp_path, monkeypatch)
+
+    _sync(feed_id)
+
+    alert = db.query_one(
+        "SELECT * FROM alert WHERE dedupe_key = ?",
+        (f"dates_changed_resign:{reservation_id}",),
+    )
+    assert alert is not None
+    assert alert["kind"] == "dates_changed_resign"
+    assert alert["level"] == "critical"
+    assert alert["reservation_id"] == reservation_id
+    assert alert["resolved_at"] is None
+    assert alert["message"] and alert["detail"]
+
+
+def test_moved_ical_stay_leaves_a_guest_with_their_own_dates_alone(
+    monkeypatch, tmp_path
+):
+    """A guest who legitimately leaves a day early keeps their own window."""
+    feed_id, _reservation_id, guest_id = _moved_stay(
+        tmp_path,
+        monkeypatch,
+        guest_stay_from="2099-01-10",
+        guest_stay_to="2099-01-11",
+    )
+
+    _sync(feed_id)
+
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["stay_from"] == "2099-01-10"
+    assert guest["stay_to"] == "2099-01-11"
+
+
+# --- one bad feed must not stop every apartment --------------------------
+
+def _feed_calendar(uids, *, start="2099-03-01", end="2099-03-05"):
+    events = "".join(
+        f"BEGIN:VEVENT\nDTSTART;VALUE=DATE:{start.replace('-', '')}\n"
+        f"DTEND;VALUE=DATE:{end.replace('-', '')}\nUID:{uid}\n"
+        f"SUMMARY:Reserved\nEND:VEVENT\n"
+        for uid in uids
+    )
+    return f"BEGIN:VCALENDAR\nVERSION:2.0\n{events}END:VCALENDAR\n"
+
+
+def _three_feeds(tmp_path, monkeypatch, name):
+    """Three apartments, one feed each. Returns (feed_ids, url_by_id)."""
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / name)
+    db.init_db()
+    now = db.utcnow()
+    feed_ids = []
+    urls = {}
+    for index in ("first", "middle", "third"):
+        apartment_id = db.insert(
+            "apartment",
+            {
+                "internal_name": f"{index} apartment",
+                "automation_mode": "manual",
+                "active": 1,
+                "created_at": now,
+            },
+        )
+        url = f"https://calendar.example/{index}.ics"
+        urls[index] = url
+        feed_ids.append(
+            db.insert(
+                "ical_feed",
+                {
+                    "apartment_id": apartment_id,
+                    "url": url,
+                    "active": 1,
+                    "created_at": now,
+                },
+            )
+        )
+    return feed_ids, urls
+
+
+def test_one_broken_feed_does_not_stop_the_others(monkeypatch, tmp_path):
+    feed_ids, urls = _three_feeds(tmp_path, monkeypatch, "one-bad-feed.sqlite3")
+    db.set_setting("last_ical_sync", "2000-01-01T00:00:00+00:00")
+
+    def fetch(url):
+        if url == urls["middle"]:
+            raise AttributeError("'NoneType' object has no attribute 'text'")
+        return _feed_calendar([f"stay-{url.rsplit('/', 1)[-1]}"])
+
+    monkeypatch.setattr(icalsync, "fetch_feed", fetch)
+
+    totals = icalsync.sync_all()
+
+    assert totals["feeds"] == 3
+    assert totals["errors"] == 1
+    assert totals["created"] == 2
+
+    first, middle, third = (
+        db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+        for feed_id in feed_ids
+    )
+    assert first["last_status"] == "ok"
+    assert third["last_status"] == "ok"
+    assert middle["last_status"] == "error"
+    assert "has no attribute" in middle["last_error"]
+
+    for feed in (first, third):
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM reservation WHERE apartment_id = ?",
+            (feed["apartment_id"],),
+        )["n"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM reservation WHERE apartment_id = ?",
+        (middle["apartment_id"],),
+    )["n"] == 0
+
+    # The whole pass still counts as done, so the host is not told the sync
+    # never happened.
+    assert db.get_setting("last_ical_sync") != "2000-01-01T00:00:00+00:00"
+
+
+def test_a_feed_that_escapes_sync_feed_does_not_stop_the_others(monkeypatch, tmp_path):
+    """Belt and braces: the failure is caught even outside sync_feed's own try."""
+    feed_ids, urls = _three_feeds(tmp_path, monkeypatch, "escaped-feed.sqlite3")
+    db.set_setting("last_ical_sync", "2000-01-01T00:00:00+00:00")
+    real = icalsync.sync_feed
+    middle_id = feed_ids[1]
+
+    def flaky(feed):
+        if feed["id"] == middle_id:
+            raise AttributeError("sync_feed itself blew up")
+        return real(feed)
+
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda url: _feed_calendar([url]))
+    monkeypatch.setattr(icalsync, "sync_feed", flaky)
+
+    totals = icalsync.sync_all()
+
+    assert totals["feeds"] == 3
+    assert totals["errors"] == 1
+    assert totals["created"] == 2
+    assert db.get_setting("last_ical_sync") != "2000-01-01T00:00:00+00:00"
+
+
+# --- a feed returning a fraction of its stays must not mass-cancel --------
+
+def _stored_stays(tmp_path, monkeypatch, name, *, stored, returned):
+    """A feed holding ``stored`` future stays whose calendar now returns
+    ``returned`` of them (the first N UIDs)."""
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / name)
+    db.init_db()
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Ratio apartment",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    feed_id = db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/ratio.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    uids = [f"ratio-{index}" for index in range(stored)]
+    for uid in uids:
+        db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id,
+                "ical_feed_id": feed_id,
+                "uid": uid,
+                "date_from": "2099-03-01",
+                "date_to": "2099-03-05",
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+    monkeypatch.setattr(
+        icalsync, "fetch_feed", lambda _url: _feed_calendar(uids[:returned])
+    )
+    return feed_id, apartment_id, uids
+
+
+def _active_count(apartment_id):
+    return db.query_one(
+        "SELECT COUNT(*) AS n FROM reservation WHERE apartment_id = ? AND status = 'active'",
+        (apartment_id,),
+    )["n"]
+
+
+def test_a_feed_returning_a_fraction_of_its_stays_cancels_nothing(monkeypatch, tmp_path):
+    from app import alerts
+
+    feed_id, apartment_id, _uids = _stored_stays(
+        tmp_path, monkeypatch, "ratio-fraction.sqlite3", stored=10, returned=1
+    )
+
+    stats = icalsync.sync_feed(
+        db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+    )
+
+    assert stats["cancelled"] == 0
+    assert _active_count(apartment_id) == 10
+    feed = db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+    assert feed["last_status"] == "suspect"
+    assert feed["last_error"] is None
+
+    open_alerts = alerts.open_alerts()
+    assert len(open_alerts) == 1
+    assert open_alerts[0]["kind"] == "feed_incomplete"
+    assert open_alerts[0]["level"] == "warning"
+    assert open_alerts[0]["dedupe_key"] == f"feed_incomplete:{feed_id}"
+    assert open_alerts[0]["apartment_id"] == apartment_id
+
+
+def test_a_feed_missing_one_of_ten_stays_cancels_only_that_one(monkeypatch, tmp_path):
+    from app import alerts
+
+    feed_id, apartment_id, uids = _stored_stays(
+        tmp_path, monkeypatch, "ratio-missing-one.sqlite3", stored=10, returned=9
+    )
+    # A previous incomplete sync left its warning open; a trustworthy pass clears it.
+    alerts.raise_alert(
+        "warning",
+        "feed_incomplete",
+        "Calendar could not be trusted.",
+        dedupe_key=f"feed_incomplete:{feed_id}",
+        apartment_id=apartment_id,
+    )
+
+    stats = icalsync.sync_feed(
+        db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+    )
+
+    assert stats["cancelled"] == 1
+    assert _active_count(apartment_id) == 9
+    gone = db.query_one(
+        "SELECT status FROM reservation WHERE apartment_id = ? AND uid = ?",
+        (apartment_id, uids[-1]),
+    )
+    assert gone["status"] == "cancelled"
+    assert db.query_one(
+        "SELECT last_status FROM ical_feed WHERE id = ?", (feed_id,)
+    )["last_status"] == "ok"
+    assert alerts.open_alerts() == []
+
+
+def test_an_incomplete_feed_alert_is_refreshed_not_duplicated(monkeypatch, tmp_path):
+    from app import alerts
+
+    feed_id, _apartment_id, _uids = _stored_stays(
+        tmp_path, monkeypatch, "ratio-refresh.sqlite3", stored=10, returned=1
+    )
+    feed = db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,))
+
+    icalsync.sync_feed(feed)
+    icalsync.sync_feed(feed)
+
+    assert len(alerts.open_alerts()) == 1

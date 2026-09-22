@@ -135,7 +135,7 @@ def dashboard_rows(
     )
     out: List[Dict[str, Any]] = []
     for reservation in rows:
-        check_in = validation.parse_iso_date(reservation["date_from"])
+        check_in = reporting.reservation_deadline_anchor(reservation)
         progress = reporting.reservation_progress(reservation)
         level = deadlines.urgency(check_in) if check_in else "future"
         # A finished stay with nothing outstanding is noise on a dashboard.
@@ -1252,7 +1252,7 @@ def reservation_detail(reservation_id: int, request: Request):
                 ),
             }
         )
-    check_in = validation.parse_iso_date(reservation["date_from"])
+    check_in = reporting.reservation_deadline_anchor(reservation)
     submissions = db.query(
         "SELECT * FROM submission WHERE id IN ("
         "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
