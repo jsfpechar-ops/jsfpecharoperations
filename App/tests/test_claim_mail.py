@@ -5,6 +5,7 @@ import base64
 import json
 from datetime import date, datetime, time, timedelta, timezone
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app import claim, config, db, mail, reporting
@@ -293,7 +294,14 @@ def test_magic_link_get_does_not_assign():
         _cleanup()
 
 
-def test_console_backend_logs_claim_link(monkeypatch):
+def test_console_backend_logs_claim_link_without_its_secret(monkeypatch):
+    """The console log holds a usable link for the owner and no secret at rest.
+
+    This test used to assert that the logged body carried the working secret.
+    That was the finding being fixed, so the assertion is inverted rather than
+    removed: what is stored must not be usable, and what the owner is shown
+    must be.
+    """
     current, _past, _far, _apartment_id = _seed()
     try:
         monkeypatch.setattr(mail, "backend_name", lambda: "console")
@@ -310,8 +318,23 @@ def test_console_backend_logs_claim_link(monkeypatch):
         assert ok, err
         logged = db.query_one("SELECT * FROM console_mail_log ORDER BY id DESC")
         assert logged
-        assert mail.extract_claim_secret(logged["body_text"]) == secret
         assert "#c=" in logged["body_text"]
+        assert mail.CLAIM_SECRET_MARKER in logged["body_text"]
+        assert mail.extract_claim_secret(logged["body_text"]) == ""
+        assert secret not in logged["body_text"]
+
+        queued = db.query_one(
+            "SELECT payload FROM email_outbox WHERE kind = ? ORDER BY id DESC",
+            ("claim",),
+        )
+        assert queued
+        payload = json.loads(queued["payload"])
+        assert secret not in payload["text"]
+        assert mail.delivery_body(payload).count(secret) == 1
+
+        # What Settings shows the owner is the delivered body, secret included.
+        shown = mail.recent_console_messages(apartment["owner_user_id"])[0]
+        assert mail.extract_claim_secret(shown["body_text"]) == secret
     finally:
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
@@ -966,4 +989,227 @@ def test_party_post_does_not_enqueue_duplicate_claim_mail(monkeypatch):
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
         db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
+# --- W2.4: a stored claim link must not carry its secret -------------------
+
+class _FakeSes:
+    def __init__(self):
+        self.calls = []
+
+    def send_email(self, **kwargs):
+        self.calls.append(kwargs)
+        return {"MessageId": "fake-message-id"}
+
+
+def _claim_outbox_row(reservation, apartment, email="w24@claim.test"):
+    """Queue one real claim message and return (outbox row, secret)."""
+    ok, err, secret = claim.start_claim(
+        reservation,
+        apartment,
+        email=email,
+        party_size=1,
+        lang="en",
+    )
+    assert ok, err
+    row = db.query_one("SELECT * FROM email_outbox ORDER BY id DESC")
+    assert row
+    return row, secret
+
+
+def test_the_stored_payload_holds_no_usable_claim_secret():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        row, secret = _claim_outbox_row(reservation, apartment)
+        stored = row["payload"]
+        assert secret not in stored
+        assert mail.CLAIM_SECRET_MARKER in stored
+        assert mail.extract_claim_secret(stored) == ""
+        # And the secret that is stored is not stored as itself.
+        assert mail.delivery_body(json.loads(stored)).count(secret) == 1
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_a_claim_link_that_cannot_be_opened_does_not_send():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        row, _secret = _claim_outbox_row(reservation, apartment)
+        logged_before = db.query_one("SELECT COUNT(*) AS n FROM console_mail_log")["n"]
+        # Retry from a clean queue so drain picks the row up immediately.
+        db.update(
+            "email_outbox",
+            row["id"],
+            {"next_attempt_at": db.utcnow(), "state": mail.QUEUED},
+        )
+
+        def _refuse(_token, fallback=None):
+            raise db.DecryptionError("bad key")
+
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(mail, "mail_enabled", lambda: True)
+            patch.setattr(db, "decrypt_field", _refuse)
+            summary = mail.drain(limit=4)
+
+        assert summary["sent"] == 0
+        after = db.query_one("SELECT * FROM email_outbox WHERE id = ?", (row["id"],))
+        # Still queued, so a key problem is recoverable rather than losing the
+        # guest's link. Terminal failure comes after eight attempts.
+        assert after["state"] == mail.QUEUED
+        assert "bad key" in after["last_error"]
+        # Nothing was logged as sent: the retry left no second log entry.
+        assert (
+            db.query_one("SELECT COUNT(*) AS n FROM console_mail_log")["n"] == logged_before
+        )
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_a_message_without_a_claim_link_is_delivered_unchanged():
+    payload = {"text": "Your stay starts tomorrow.", "lang": "en"}
+    assert mail.delivery_body(payload) == "Your stay starts tomorrow."
+    assert mail.stored_body(payload) == "Your stay starts tomorrow."
+    # Settings renders every logged body through the same reveal path, so a
+    # message with no claim link must come out untouched.
+    assert mail._reveal_claim_secret("Your stay starts tomorrow.", None) == (
+        "Your stay starts tomorrow."
+    )
+    assert mail._reveal_claim_secret("Your stay starts tomorrow.", "{}") == (
+        "Your stay starts tomorrow."
+    )
+
+
+def test_a_link_queued_before_the_secret_was_split_out_still_sends():
+    """A rolling deploy leaves older rows holding a cleartext link.
+
+    Those rows carry no marker, so they are delivered as stored. The release
+    after this one can stop honouring them once the queue has drained.
+    """
+    payload = {"text": "Open .../claim#c=" + "A" * 32, "lang": "en"}
+    assert mail.delivery_body(payload) == payload["text"]
+
+
+def test_the_owner_sees_a_working_link_and_another_host_does_not():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        _row, secret = _claim_outbox_row(reservation, apartment)
+        db.update(
+            "email_outbox",
+            db.query_one("SELECT MAX(id) AS id FROM email_outbox")["id"],
+            {"owner_user_id": 987001},
+        )
+
+        mine = mail.recent_console_messages(987001)
+        assert len(mine) == 1
+        assert mail.extract_claim_secret(mine[0]["body_text"]) == secret
+        assert set(mine[0]) >= {"id", "to_email", "subject", "body_text"}
+        assert "outbox_payload" not in mine[0]
+
+        assert mail.recent_console_messages(987002) == []
+        # A platform admin already saw the working link before this change, and
+        # who may see what is not part of this work item, so the branch that
+        # owns no workspace keeps its old behaviour.
+        for row in mail.recent_console_messages(None):
+            assert mail.extract_claim_secret(row["body_text"]) == secret
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_a_secret_that_cannot_be_read_leaves_the_marker_rather_than_failing():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        _row, _secret = _claim_outbox_row(reservation, apartment)
+
+        def _refuse(_token, fallback=None):
+            raise db.DecryptionError("bad key")
+
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(db, "decrypt_field", _refuse)
+            shown = mail.recent_console_messages(apartment["owner_user_id"])
+
+        assert shown
+        assert mail.CLAIM_SECRET_MARKER in shown[0]["body_text"]
+        assert mail.extract_claim_secret(shown[0]["body_text"]) == ""
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_settings_shows_the_host_a_working_claim_link(monkeypatch):
+    from tests.test_accounts import _account, _apartment, _clean_accounts, _login
+
+    current, _past, _far, _apartment_id = _seed()
+    _clean_accounts()
+    owner_id = _account("boundary-w24")
+    host_apartment_id = _apartment(owner_id, "W24 flat", "w24tok")
+    try:
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        row, secret = _claim_outbox_row(reservation, apartment)
+        db.update("email_outbox", row["id"], {"owner_user_id": owner_id})
+        # The apartment the outbox row points at belongs to the host too, so
+        # the Settings query finds it.
+        db.update("apartment", apartment["id"], {"owner_user_id": owner_id})
+
+        page = _login("boundary-w24").get("/settings")
+        assert page.status_code == 200
+        assert mail.CLAIM_SECRET_MARKER not in page.text
+        assert f"#c={secret}" in page.text
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.update("apartment", _apartment_id, {"owner_user_id": None})
+        _cleanup()
+        _clean_accounts()
+        assert host_apartment_id
+
+
+def test_ses_delivers_the_secret_but_never_stores_it(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+        row, secret = _claim_outbox_row(reservation, apartment)
+        db.update(
+            "email_outbox",
+            row["id"],
+            {"next_attempt_at": db.utcnow(), "state": mail.QUEUED},
+        )
+
+        fake = _FakeSes()
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(mail, "backend_name", lambda: "ses")
+            patch.setattr(mail, "mail_enabled", lambda: True)
+            patch.setattr(mail, "_ses_client", lambda: fake)
+            patch.setattr(config, "MAIL_FROM", "host@claim.test")
+            summary = mail.drain(limit=4)
+
+        assert summary["sent"] == 1
+        assert len(fake.calls) == 1
+        sent = fake.calls[0]["Message"]["Body"]["Text"]["Data"]
+        assert f"#c={secret}" in sent
+        assert mail.CLAIM_SECRET_MARKER not in sent
+        stored = db.query_one("SELECT payload FROM email_outbox WHERE id = ?", (row["id"],))
+        assert secret not in stored["payload"]
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
         _cleanup()
