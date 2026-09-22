@@ -231,3 +231,19 @@ without a matching stored secret, and `confirm()` never bumps
 `guest_access_reopened_at`, so its `guest_access_open` bypass is inert. If the
 claim landing page is ever given an unauthenticated success path, it needs the
 same bound as `_reservation_for_guest`.
+
+### The host-side language cookie still uses an https-prefix-only Secure test
+
+W3.6 moved the guest cookie flag onto `auth.secure_cookies()`, which treats
+`UBYHOST_DEPLOYMENT=production` as sufficient for `Secure` even when
+`PUBLIC_BASE_URL` is still `http://` (that combination is only *warned* about by
+`env_guard`, never blocked, so it is reachable in practice).
+
+`host_i18n.set_lang_cookie` (`App/app/host_i18n.py:2767`) still computes the
+narrower `PUBLIC_BASE_URL.lower().startswith("https://")`. It sets
+`ubyhost_lang` — the *same* cookie name that `routes/guest.py` defines as
+`LANG_COOKIE` and that W3.6 hardened. The host side was out of W3.6's stated
+scope (guest cookies), so it was left as-is, but it is the same class of gap and
+should be pointed at `auth.secure_cookies()` — the host routes already import
+`auth`. `security.py:110` computes the same expression inline for `ubyhost_csrf`;
+it is already behaviourally identical, so that one is cosmetic only.

@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Optional
 
 import pytest
 import requests
@@ -50,10 +51,14 @@ def complete_guest_claim(
     email: str = "guest@example.test",
     party_size: int = 2,
     lang: str = "en",
+    capture: Optional[list] = None,
 ) -> str:
     """Assign the stay to an e-mail and set the browser claim cookie.
 
     GET of the magic link must not assign; tests confirm with POST like a guest.
+
+    ``capture``, when given, receives the confirmation response, for a test that
+    needs to look at what the server sent with it (its cookies, for instance).
     """
     from app import claim, db, mail
 
@@ -97,6 +102,8 @@ def complete_guest_claim(
         follow_redirects=False,
     )
     assert response.status_code == 303, response.text
+    if capture is not None:
+        capture.append(response)
     return secret
 
 

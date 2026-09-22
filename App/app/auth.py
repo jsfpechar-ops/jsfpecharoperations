@@ -304,7 +304,7 @@ def attach_session(response, token: str, remember: bool = False) -> None:
         max_age=SESSION_REMEMBER_MAX_AGE if remember else SESSION_MAX_AGE,
         httponly=True,
         samesite="strict",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         path="/",
     )
 
@@ -313,7 +313,7 @@ def clear_session(response) -> None:
     response.delete_cookie(
         SESSION_COOKIE,
         path="/",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         httponly=True,
         samesite="strict",
     )
@@ -472,7 +472,16 @@ def pin_session_valid(request: Request, token: str, pin: str) -> bool:
         return False
 
 
-def _secure_cookies() -> bool:
+def secure_cookies() -> bool:
+    """Whether session cookies may carry ``Secure``.
+
+    Either signal is enough: an https public base URL means the browser only
+    ever reaches us over TLS, and a production deployment must never hand out
+    a cookie without the flag even if the base URL was left at its http
+    default. The URL test alone let a production deployment that had not set
+    ``UBYHOST_PUBLIC_BASE_URL`` ship insecure cookies, so it is not the gate on
+    its own.
+    """
     return config.DEPLOYMENT == "production" or config.PUBLIC_BASE_URL.lower().startswith(
         "https://"
     )
@@ -485,7 +494,7 @@ def attach_pin_session(response, token: str, pin: str) -> None:
         max_age=_PIN_MAX_AGE,
         httponly=True,
         samesite="lax",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         path="/",
     )
 
@@ -494,7 +503,7 @@ def clear_pin_session(response) -> None:
     response.delete_cookie(
         PIN_COOKIE,
         path="/",
-        secure=_secure_cookies(),
+        secure=secure_cookies(),
         httponly=True,
         samesite="lax",
     )

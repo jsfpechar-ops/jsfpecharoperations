@@ -160,7 +160,7 @@ def _remember_owned(response, guest_ids: List[int]) -> None:
         max_age=60 * 60 * 24 * 60,
         httponly=True,
         samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=auth.secure_cookies(),
         path="/",
     )
 
@@ -185,7 +185,7 @@ def _remember_claim(response, reservation_id: int, request: Optional[Request] = 
         max_age=60 * 60 * 24 * 60,
         httponly=True,
         samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=auth.secure_cookies(),
         path="/",
     )
 
@@ -196,7 +196,7 @@ def _with_lang(response, lang: str):
         lang,
         max_age=60 * 60 * 24 * 60,
         samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=auth.secure_cookies(),
         path="/",
     )
     return response
