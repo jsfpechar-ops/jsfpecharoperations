@@ -148,6 +148,32 @@ def test_departure_must_follow_arrival():
     assert "stay_to" in errors(issues)
 
 
+def test_stay_dates_outside_the_booking_are_refused():
+    """The period is the police record's cFrom/cUntil and drives retention."""
+    early = v.validate_stay_dates(
+        date(2025, 6, 5), date(2026, 6, 10), date(2026, 6, 5), date(2026, 6, 10)
+    )
+    assert errors(early) == {"stay_from"}
+
+    late = v.validate_stay_dates(
+        date(2026, 6, 5), date(2027, 6, 10), date(2026, 6, 5), date(2026, 6, 10)
+    )
+    assert errors(late) == {"stay_to"}
+
+    inside = v.validate_stay_dates(
+        date(2026, 6, 6), date(2026, 6, 9), date(2026, 6, 5), date(2026, 6, 10)
+    )
+    assert inside == []
+    # The boundaries themselves are the booking, not an escape from it.
+    assert v.validate_stay_dates(
+        date(2026, 6, 5), date(2026, 6, 10), date(2026, 6, 5), date(2026, 6, 10)
+    ) == []
+    # A missing date is "not supplied", never "outside".
+    assert v.validate_stay_dates(None, None, date(2026, 6, 5), date(2026, 6, 10)) == []
+    assert v.validate_stay_dates(date(2026, 6, 5), None, None, None) == []
+    assert v.STAY_DATE_TOLERANCE_DAYS == 0
+
+
 def test_compose_residence_format():
     # The police read this field, so the country is named in Czech.
     composed = v.compose_residence("Baker Street 221B", "London", "GBR")

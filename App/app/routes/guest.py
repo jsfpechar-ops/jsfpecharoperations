@@ -56,6 +56,10 @@ CS_VALIDATION_MESSAGES = {
         "Odstraňte znak | a všechny konce řádků."
     ),
     "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
+    validation.STAY_OUTSIDE_BOOKING_MESSAGE: (
+        "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se "
+        "obraťte na ubytovatele."
+    ),
     validation.NON_LATIN_MESSAGE: (
         "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově "
         "čitelných řádcích na konci vašeho pasu."
@@ -1222,6 +1226,27 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         validation.parse_iso_date(stay_from),
         validation.parse_iso_date(stay_to),
         raw=raw,
+    )
+    # A host may record a guest's real stay outside the booking (an early
+    # arrival, a late departure), so the guest's own stored period is part of
+    # what they are allowed to re-submit - otherwise the host's own edit would
+    # leave the guest unable to save the form again.
+    booked_from = validation.parse_iso_date(reservation["date_from"])
+    booked_to = validation.parse_iso_date(reservation["date_to"])
+    if existing:
+        stored_from = validation.parse_iso_date(existing["stay_from"])
+        stored_to = validation.parse_iso_date(existing["stay_to"])
+        if stored_from:
+            booked_from = min(booked_from, stored_from) if booked_from else stored_from
+        if stored_to:
+            booked_to = max(booked_to, stored_to) if booked_to else stored_to
+    issues.extend(
+        validation.validate_stay_dates(
+            validation.parse_iso_date(stay_from),
+            validation.parse_iso_date(stay_to),
+            booked_from,
+            booked_to,
+        )
     )
     if reporting.expected_guest_count(reservation) is None and not existing:
         if party_size < 1 or party_size > 60:
