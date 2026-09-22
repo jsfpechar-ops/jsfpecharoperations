@@ -25,6 +25,7 @@
   <h2>{{ t('claim_title') }}</h2>
   <p class="g-intro">{{ t('claim_help') }}</p>
   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <div class="g-field">
       <label for="party_size">{{ t('party_question') }}</label>
       <input type="number" id="party_size" name="party_size" min="1" max="60"

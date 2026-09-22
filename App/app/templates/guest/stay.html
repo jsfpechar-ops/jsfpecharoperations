@@ -20,6 +20,7 @@
     <h2>{{ t('party_question') }}</h2>
     <p class="g-intro">{{ t('party_help') }}</p>
     <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <div class="g-field">
         <label for="party_size">{{ t('party_question') }}</label>
         <input type="number" id="party_size" name="party_size" min="1" max="60"
@@ -37,6 +38,7 @@
     </div>
     {% if can_raise_party %}
       <form method="post" action="/l/{{ token }}/{{ reservation.id }}/another?lang={{ lang }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <p class="g-intro">{{ t('someone_missing') }}</p>
         <button class="g-btn ghost slim" type="submit">{{ t('add_another') }}</button>
       </form>
@@ -110,6 +112,7 @@
   <a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a>
 {% elif can_raise_party %}
   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/another?lang={{ lang }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <button class="g-btn" type="submit">{{ t('add_another') }}</button>
   </form>
 {% endif %}

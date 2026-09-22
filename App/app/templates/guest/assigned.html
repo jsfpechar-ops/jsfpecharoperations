@@ -27,6 +27,7 @@
     {% endif %}
   </div>
   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="resend" value="1">
     <input type="hidden" name="party_size" value="{{ claim.declared_guests or 1 }}">
     <p class="g-intro">{{ t('assigned_resend_help') }}</p>

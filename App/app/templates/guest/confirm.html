@@ -10,6 +10,7 @@
   <h2>{{ t('claim_confirm_title') }}</h2>
   <p class="g-intro">{{ t('claim_confirm_help') }}</p>
   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/claim/confirm?lang={{ lang }}" id="claim-confirm-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="secret" id="claim-secret" value="">
     <button class="g-btn" type="submit">{{ t('claim_confirm_button') }}</button>
   </form>

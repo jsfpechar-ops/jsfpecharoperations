@@ -5,6 +5,7 @@
   <p class="g-intro">{{ t('pin_help') }}</p>
   {% if error %}<div class="g-err">{{ error }}</div>{% endif %}
   <form method="post" action="/l/{{ token }}/pin?lang={{ lang }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="return_to" value="{{ return_to }}">
     <div class="g-field">
       <label for="pin">{{ t('pin_label') }}</label>
