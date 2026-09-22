@@ -1750,6 +1750,10 @@ async def guest_archive(guest_id: int, request: Request):
         return _back(f"/guests/{guest_id}", err="Already archived.")
     form = await request.form()
     return_to = security.safe_local_path(str(form.get("return_to") or ""), "/housebook")
+    # Archiving hides the record from the house book but keeps it in the
+    # database, so the scan of the passport it was checked against must go the
+    # same way it does on delete: the photo's only purpose was that check.
+    passport_photos.delete_photo(guest_id)
     db.update("guest", guest_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("guest_archived", f"id={guest_id}")
     reservation = db.query_one(
