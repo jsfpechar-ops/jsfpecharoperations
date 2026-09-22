@@ -818,6 +818,18 @@ def claim_landing(token: str, reservation_id: int, request: Request):
     )
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    if reservation_id in _claimed_reservation_ids(request) and claim.is_claimed(
+        claim.ensure_row(reservation_id)
+    ):
+        # Confirming spends the link, so a device that already confirmed would
+        # otherwise land on a spent confirmation form. The cookie is what grants
+        # access now; continue to the stay instead of asking the guest again.
+        return _with_lang(
+            RedirectResponse(
+                _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
+            ),
+            lang,
+        )
     context = _shared(request, token, lang, apartment)
     context.update(
         {
