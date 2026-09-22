@@ -13,7 +13,7 @@ import json
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -479,6 +479,40 @@ def validate_guest(
     if stay_from and stay_to and stay_to <= stay_from:
         issues.append(Issue("stay_to", "Departure date must be later than the arrival date."))
 
+    return issues
+
+
+STAY_OUTSIDE_BOOKING_MESSAGE = (
+    "These dates do not match your booking. Reload this page, or ask your host."
+)
+
+# The product does not let a guest record a stay outside their booking: a guest
+# who really did arrive early is told to ask the host, rather than having the
+# period in the police record rewritten for them. The knob is here so that a
+# future decision to allow a day of slack at each end is a one-line change.
+STAY_DATE_TOLERANCE_DAYS = 0
+
+
+def validate_stay_dates(
+    stay_from: Optional[date],
+    stay_to: Optional[date],
+    allowed_from: Optional[date],
+    allowed_to: Optional[date],
+) -> List[Issue]:
+    """Reasons a stay period falls outside the window its host set for it.
+
+    ``stay_from``/``stay_to`` reach the guest save route as hidden fields, so a
+    period outside the window is either a page the host has since re-dated or a
+    hand-built request. Both are refused rather than clamped: the period is
+    what UbyPort receives as ``cFrom``/``cUntil``, and ``stay_to`` is what
+    decides how long a passport scan is kept.
+    """
+    issues: List[Issue] = []
+    slack = timedelta(days=STAY_DATE_TOLERANCE_DAYS)
+    if stay_from and allowed_from and stay_from < allowed_from - slack:
+        issues.append(Issue("stay_from", STAY_OUTSIDE_BOOKING_MESSAGE))
+    if stay_to and allowed_to and stay_to > allowed_to + slack:
+        issues.append(Issue("stay_to", STAY_OUTSIDE_BOOKING_MESSAGE))
     return issues
 
 
