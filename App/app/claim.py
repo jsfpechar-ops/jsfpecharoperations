@@ -355,14 +355,30 @@ def confirm(reservation, secret: str) -> bool:
         if claim["provisional_until"] and claim["provisional_until"] < db.utcnow():
             return False
     now = db.utcnow()
+    version = int(claim["token_version"] or 0)
+    # Confirming spends the secret: token_hash is cleared, so the link in the
+    # e-mail cannot be replayed. From here the stay is reached with the
+    # ubyhost_claim cookie, or with a freshly issued secret if the host resends.
+    # token_version is part of the condition so a resend that landed between the
+    # read above and this write cannot be confirmed with the superseded secret.
     db.execute(
-        "UPDATE reservation_claim SET state = ?, claimed_at = ?, "
+        "UPDATE reservation_claim SET state = ?, claimed_at = ?, token_hash = NULL, "
         "provisional_until = NULL, updated_at = ? "
-        "WHERE reservation_id = ? AND token_hash = ? AND state IN (?, ?)",
-        (CLAIMED, now, now, reservation["id"], claim["token_hash"], PROVISIONAL, CLAIMED),
+        "WHERE reservation_id = ? AND token_hash = ? AND token_version = ? "
+        "AND state IN (?, ?)",
+        (
+            CLAIMED,
+            now,
+            now,
+            reservation["id"],
+            claim["token_hash"],
+            version,
+            PROVISIONAL,
+            CLAIMED,
+        ),
     )
     row = _row(reservation["id"])
-    return bool(row and row["state"] == CLAIMED)
+    return bool(row and row["state"] == CLAIMED and row["token_hash"] is None)
 
 
 def secret_matches(claim, secret: str) -> bool:

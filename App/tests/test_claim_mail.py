@@ -294,6 +294,160 @@ def test_magic_link_get_does_not_assign():
         _cleanup()
 
 
+def _claim_secret(current, *, email="guest@claim.test", resend=False):
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+    apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+    ok, err, secret = claim.start_claim(
+        reservation,
+        apartment,
+        email=email,
+        party_size=2,
+        lang="en",
+        resend=resend,
+    )
+    assert ok, err
+    return reservation, secret
+
+
+def _age_claim(current, seconds):
+    """Move the claim's clock back so the resend cooldown has elapsed."""
+    stamp = (datetime.now(timezone.utc) - timedelta(seconds=seconds)).replace(
+        microsecond=0
+    ).isoformat()
+    db.execute(
+        "UPDATE reservation_claim SET updated_at = ? WHERE reservation_id = ?",
+        (stamp, current),
+    )
+
+
+def test_claim_secret_is_spent_by_the_confirmation():
+    """The e-mailed secret confirms once; the cookie is the access after that."""
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, secret = _claim_secret(current)
+        assert claim.confirm(reservation, secret)
+
+        row = claim.ensure_row(current)
+        assert row["state"] == "claimed"
+        assert row["token_hash"] is None
+        assert not claim.confirm(reservation, secret)
+        assert not claim.confirm(reservation, secret)
+    finally:
+        _cleanup()
+
+
+def test_claim_confirm_checks_the_token_version(monkeypatch):
+    """A secret is only good for the issue of the claim it came from.
+
+    ``_row`` is patched to hand the first read a version one behind the row on
+    disk, which is what a re-issue landing between the read and the write looks
+    like. The confirmation must then match no row at all.
+    """
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, secret = _claim_secret(current)
+        real_row = claim._row
+        reads = []
+
+        def stale_first_read(reservation_id):
+            row = real_row(reservation_id)
+            reads.append(row)
+            if len(reads) == 1 and row is not None:
+                stale = dict(row)
+                stale["token_version"] = int(row["token_version"] or 0) - 1
+                return stale
+            return row
+
+        monkeypatch.setattr(claim, "_row", stale_first_read)
+        assert not claim.confirm(reservation, secret)
+        assert claim.ensure_row(current)["state"] == "provisional"
+        assert claim.ensure_row(current)["token_hash"]
+        assert claim.confirm(reservation, secret)
+        assert claim.ensure_row(current)["state"] == "claimed"
+    finally:
+        _cleanup()
+
+
+def test_claim_confirm_refuses_a_superseded_secret_on_a_claimed_row(monkeypatch):
+    """A stale secret cannot ride on the claim already being CLAIMED.
+
+    The first read is forged to look like the issue the old secret came from,
+    so the write matches no row at all. The confirmation must report failure
+    instead of reading the claimed state back and calling that a success, and
+    the live secret must be untouched.
+    """
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, first = _claim_secret(current)
+        assert claim.confirm(reservation, first)
+        _age_claim(current, claim.RESEND_COOLDOWN_SECONDS + 5)
+        reservation, second = _claim_secret(current, resend=True)
+
+        real_row = claim._row
+        forged = dict(real_row(current))
+        forged["token_hash"] = claim.token_hash(first)
+        forged["token_version"] = int(forged["token_version"] or 0) - 1
+        reads = []
+
+        def first_read_forged(reservation_id):
+            reads.append(reservation_id)
+            return forged if len(reads) == 1 else real_row(reservation_id)
+
+        monkeypatch.setattr(claim, "_row", first_read_forged)
+        assert not claim.confirm(reservation, first)
+        assert claim.ensure_row(current)["token_hash"] == claim.token_hash(second)
+        assert claim.confirm(reservation, second)
+    finally:
+        _cleanup()
+
+
+def test_reissued_claim_secret_retires_the_previous_one():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, first = _claim_secret(current)
+        assert claim.confirm(reservation, first)
+        _age_claim(current, claim.RESEND_COOLDOWN_SECONDS + 5)
+
+        reservation, second = _claim_secret(current, resend=True)
+        assert second != first
+        assert not claim.confirm(reservation, first)
+        assert claim.confirm(reservation, second)
+    finally:
+        _cleanup()
+
+
+def test_confirmed_device_keeps_access_and_a_replayed_link_does_not():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        _reservation, secret = _claim_secret(current)
+        browser = TestClient(app)
+        confirmed = browser.post(
+            f"/l/{TOKEN}/{current}/claim/confirm",
+            data={"secret": secret},
+            follow_redirects=False,
+        )
+        assert confirmed.status_code == 303
+        assert "claim_error" not in confirmed.headers["location"]
+        assert browser.get(f"/l/{TOKEN}/{current}").status_code == 200
+        # Re-opening the spent link on the confirmed device continues to the stay.
+        reopened = browser.get(f"/l/{TOKEN}/{current}/claim", follow_redirects=False)
+        assert reopened.status_code == 303
+        assert reopened.headers["location"] == f"/l/{TOKEN}/{current}?lang=en"
+
+        stranger = TestClient(app)
+        replay = stranger.post(
+            f"/l/{TOKEN}/{current}/claim/confirm",
+            data={"secret": secret},
+            follow_redirects=False,
+        )
+        assert replay.status_code == 303
+        assert "claim_error=1" in replay.headers["location"]
+        assert claim.ensure_row(current)["state"] == "claimed"
+        assert claim.ensure_row(current)["token_hash"] is None
+    finally:
+        _cleanup()
+
+
 def test_console_backend_logs_claim_link_without_its_secret(monkeypatch):
     """The console log holds a usable link for the owner and no secret at rest.
 
