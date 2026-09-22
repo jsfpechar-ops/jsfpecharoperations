@@ -237,7 +237,11 @@ Automatic:
   the check the host has now made. The 30-day sweep is the backstop for a host
   who never pressed Verify.
 - **Mail rows** — `email_outbox` and `console_mail_log` older than 14 days.
-  These bodies contain working claim links, so this sweep matters.
+  A stored body never holds a working claim link: the secret is kept beside it
+  in the payload, encrypted, and put back when the message is sent. The sweep
+  still matters for the rest of the body — the guest's address, the apartment
+  name, the stay dates — but a row that outlives its welcome cannot be used to
+  open someone's registration.
 - **Submission envelopes** — `submission.request_xml` and `response_xml` are
   blanked 90 days after the submission was created, by the 12-hour sweep and by
   the Settings button. These envelopes hold every reported guest's name, birth

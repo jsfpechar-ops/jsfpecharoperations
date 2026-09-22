@@ -266,7 +266,7 @@ def start_claim(
         )
     link = (
         f"{config_public(apartment)}/l/{apartment['permalink_token']}/"
-        f"{reservation['id']}/claim#c={secret}"
+        f"{reservation['id']}/claim#c={mail.CLAIM_SECRET_MARKER}"
     )
     kind = "claim_resend" if resend or claim["state"] == CLAIMED else "claim"
     subject = (
@@ -275,7 +275,14 @@ def start_claim(
         else "Pokračujte v registraci hostů"
     )
     text = _claim_text(lang, apartment, reservation, link)
-    payload = {"text": text, "lang": lang}
+    # The body is stored with the marker standing in for the secret and the
+    # secret beside it, encrypted, so the queued message holds a link the guest
+    # can use once sent and nothing usable while it waits.
+    payload = {
+        "text": text,
+        "lang": lang,
+        mail.CLAIM_SECRET_KEY: db.encrypt_field(secret),
+    }
     reply_to = _reply_to_for_apartment(apartment)
     if reply_to:
         payload["reply_to"] = reply_to
