@@ -127,6 +127,8 @@ CREATE TABLE IF NOT EXISTS guest (
     nationality    TEXT,
     doc_number     TEXT,
     visa_number    TEXT,
+    doc_number_enc TEXT,
+    visa_number_enc TEXT,
     res_street     TEXT,
     res_city       TEXT,
     res_country    TEXT,
@@ -337,6 +339,8 @@ ADDED_COLUMNS = (
     ("apartment", "guest_message", "TEXT"),
     ("reservation_claim", "guest_access_reopened_at", "TEXT"),
     ("reservation", "registration_completed_at", "TEXT"),
+    ("guest", "doc_number_enc", "TEXT"),
+    ("guest", "visa_number_enc", "TEXT"),
 )
 
 
@@ -358,10 +362,70 @@ def init_db() -> None:
 
 # --- small query helpers -------------------------------------------------
 
+class _HydratedRow(dict):
+    """A row that still answers to both a column name and a position.
+
+    Decrypted values are merged into the row so templates, exports and the
+    police payload keep reading ``row["doc_number"]`` unchanged. Indexing and
+    iteration follow ``sqlite3.Row`` rather than ``dict``: an integer or slice
+    yields values, and iterating the row yields values in column order, because
+    that is what a caller holding a plain row would have got.
+    """
+
+    __slots__ = ("_order",)
+
+    def __init__(self, mapping: Dict[str, Any], order: Iterable[str]) -> None:
+        super().__init__(mapping)
+        self._order = tuple(order)
+
+    def __getitem__(self, key: Any) -> Any:
+        if isinstance(key, (int, slice)):
+            return tuple(dict.__getitem__(self, name) for name in self._order)[key]
+        return dict.__getitem__(self, key)
+
+    def __iter__(self):
+        return iter(dict.__getitem__(self, name) for name in self._order)
+
+
+def _hydrate(row: sqlite3.Row) -> Any:
+    """Merge decrypted guest fields into a row, leaving other rows untouched.
+
+    A row only qualifies when it actually selected one of the encrypted
+    columns, so the cost is paid by guest reads and nothing else.
+    """
+    keys = row.keys()
+    present = [name for name, enc in ENCRYPTED_GUEST_COLUMNS.items() if enc in keys]
+    if not present:
+        return row
+    values: Dict[str, Any] = dict(row)
+    for name in present:
+        values[name] = decrypt_field(
+            row[ENCRYPTED_GUEST_COLUMNS[name]], row[name] if name in keys else None
+        )
+    return _HydratedRow(values, keys)
+
+
+def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
+    """Redirect a guest field to its encrypted column and blank the plaintext.
+
+    Blanking on write means an existing row loses the copy the backfill has not
+    reached yet the first time anything saves it again.
+    """
+    out: Dict[str, Any] = {}
+    for key, value in values.items():
+        enc = ENCRYPTED_GUEST_COLUMNS.get(key)
+        if enc is None:
+            out[key] = value
+        else:
+            out[enc] = encrypt_field(value)
+            out[key] = None
+    return out
+
+
 def query(sql: str, params: Iterable[Any] = ()) -> List[sqlite3.Row]:
     conn = connect()
     try:
-        return conn.execute(sql, tuple(params)).fetchall()
+        return [_hydrate(row) for row in conn.execute(sql, tuple(params)).fetchall()]
     finally:
         conn.close()
 
@@ -381,6 +445,8 @@ def execute(sql: str, params: Iterable[Any] = ()) -> int:
 
 
 def insert(table: str, values: Dict[str, Any]) -> int:
+    if table == "guest":
+        values = _guest_write_values(values)
     cols = ", ".join(values)
     marks = ", ".join("?" for _ in values)
     return execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(values.values()))
@@ -389,6 +455,8 @@ def insert(table: str, values: Dict[str, Any]) -> int:
 def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
     if not values:
         return
+    if table == "guest":
+        values = _guest_write_values(values)
     sets = ", ".join(f"{k} = ?" for k in values)
     execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
 
@@ -448,3 +516,46 @@ def decrypt_secret(token: Optional[str]) -> str:
     except (InvalidToken, ValueError):
         # Wrong or rotated SECRET_KEY: treat as missing so the UI prompts again.
         return ""
+
+
+# --- guest travel-document fields ----------------------------------------
+#
+# A guest's passport and visa numbers are the two fields the police register
+# actually turns on, and the audit found them sitting in the clear in every
+# copy of the database file. They are now stored Fernet-encrypted in the *_enc
+# columns. The plaintext columns are kept only as a read fallback for rows a
+# backfill has not reached yet; nothing writes them any more.
+
+ENCRYPTED_GUEST_COLUMNS = {
+    "doc_number": "doc_number_enc",
+    "visa_number": "visa_number_enc",
+}
+
+
+class DecryptionError(RuntimeError):
+    """A stored guest field could not be decrypted with the current key."""
+
+
+def encrypt_field(plain: Optional[str]) -> Optional[str]:
+    """Encrypt one guest field for storage. An absent value stays absent."""
+    if not plain:
+        return None
+    return encrypt_secret(plain)
+
+
+def decrypt_field(token: Optional[str], fallback: Optional[str] = None) -> Optional[str]:
+    """Decrypt one guest field, falling back to its plaintext column.
+
+    Deliberately stricter than decrypt_secret: a value that will not decrypt
+    raises instead of becoming empty. An empty cDocN filed with the police is
+    worse than an error the host can see and act on.
+
+    With no ciphertext the fallback is returned verbatim, ``None`` included, so
+    a column that was never filled in still reads the way it always did.
+    """
+    if not token:
+        return fallback
+    try:
+        return _fernet().decrypt(token.encode("ascii")).decode("utf-8")
+    except (InvalidToken, ValueError) as exc:
+        raise DecryptionError("stored guest document field could not be decrypted") from exc

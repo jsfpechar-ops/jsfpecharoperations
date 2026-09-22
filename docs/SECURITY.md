@@ -12,7 +12,7 @@ summarises the threat model, controls, and known limitations.
 | **Host 2FA** | Authenticator-app TOTP required in production; one-use recovery codes |
 | **Guest access** | 100-bit permalink token + optional six-digit PIN + signed PIN cookie bound to token and current PIN |
 | **Multi-tenant** | All host routes resolve resources through `access.*` joins on `owner_user_id` |
-| **Secrets** | UbyPort passwords encrypted at rest (Fernet); `SECRET_KEY` in `data/secret_key` |
+| **Secrets** | UbyPort passwords, host TOTP secrets and guest travel-document numbers encrypted at rest (Fernet); `SECRET_KEY` in `data/secret_key` |
 | **Uploads** | Passport photos/PDFs: type/size/magic-byte checks; host-only download route |
 
 ## Hardening (application)
@@ -31,6 +31,7 @@ summarises the threat model, controls, and known limitations.
 - **Health check**: production returns only status, version, and data-volume writability; deployment and UbyPort environment are shown only outside production.
 - **Calendar response limits**: iCal downloads stop at 5 MiB and at three redirects; every redirect target is revalidated.
 - **Secrets and backups**: generated key/initial-credential files and local backup directories are owner-only. Backups still require operator-managed encryption before off-server storage.
+- **Guest document numbers at rest**: `guest.doc_number` and `guest.visa_number` are stored Fernet-encrypted (`doc_number_enc`, `visa_number_enc`) and the plaintext columns are blanked on every write. Reads go through `db.decrypt_field`, which **raises** on a value it cannot decrypt rather than returning empty, so a lost key cannot turn into an empty `cDocN` in a police filing. A one-shot backfill (`App/scripts/migrate_encrypt_doc_fields.py`) moves pre-existing rows across; the plaintext column stays readable as a fallback until it has run.
 - **UbyPort transport**: production/test endpoints keep TLS verification enabled and SOAP/NTLM requests reject redirects.
 - **Filesystem permissions**: the data directory is owner-only, the SQLite database and deployment `.env` are mode `0600`, and deployment scripts repair those modes.
 
