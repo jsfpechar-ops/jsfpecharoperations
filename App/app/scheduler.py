@@ -5,10 +5,49 @@ import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from . import claim, config, db, icalsync, mail, passport_photos, reporting
+from . import (
+    alerts,
+    claim,
+    config,
+    host_i18n,
+    icalsync,
+    mail,
+    passport_photos,
+    reporting,
+)
 
 log = logging.getLogger("ubyhost.scheduler")
 _scheduler = None
+
+# Losing the deadline watch or the submission sweep loses compliance
+# monitoring, so those two failures are critical; the rest are warnings.
+_JOB_LEVELS = {
+    "ical": "warning",
+    "submit": "critical",
+    "deadlines": "critical",
+    "mail": "warning",
+    "photo_sweep": "warning",
+}
+
+
+def _job_failed(job_id: str) -> None:
+    """Tell the host a background job died instead of only logging it."""
+    lang = host_i18n.DEFAULT_LANGUAGE
+    alerts.raise_alert(
+        _JOB_LEVELS[job_id],
+        "job_failed",
+        host_i18n.translate(
+            lang,
+            "notification.job_failed.title",
+            job=host_i18n.translate(lang, f"notification.job_name.{job_id}"),
+        ),
+        host_i18n.translate(lang, "notification.job_failed.detail"),
+        dedupe_key=f"job_failed:{job_id}",
+    )
+
+
+def _job_ok(job_id: str) -> None:
+    alerts.resolve(f"job_failed:{job_id}")
 
 
 def _job_sync_calendars() -> None:
@@ -17,6 +56,9 @@ def _job_sync_calendars() -> None:
         log.info("calendar sync: %s", totals)
     except Exception:
         log.exception("calendar sync failed")
+        _job_failed("ical")
+        return
+    _job_ok("ical")
 
 
 def _job_submit() -> None:
@@ -26,6 +68,9 @@ def _job_submit() -> None:
             log.info("ubyport sweep: %s", summary)
     except Exception:
         log.exception("ubyport sweep failed")
+        _job_failed("submit")
+        return
+    _job_ok("submit")
 
 
 def _job_deadlines() -> None:
@@ -35,6 +80,9 @@ def _job_deadlines() -> None:
             log.info("deadline watch raised %s alert(s)", raised)
     except Exception:
         log.exception("deadline watch failed")
+        _job_failed("deadlines")
+        return
+    _job_ok("deadlines")
 
 
 def _job_mail() -> None:
@@ -51,6 +99,9 @@ def _job_mail() -> None:
             log.info("mail purge deleted %s row(s)", purged)
     except Exception:
         log.exception("mail drain failed")
+        _job_failed("mail")
+        return
+    _job_ok("mail")
 
 
 def _job_photo_sweep() -> None:
@@ -61,6 +112,9 @@ def _job_photo_sweep() -> None:
             log.info("passport photo sweep deleted %s file(s)", removed)
     except Exception:
         log.exception("passport photo sweep failed")
+        _job_failed("photo_sweep")
+        return
+    _job_ok("photo_sweep")
 
 
 def start() -> None:
@@ -70,7 +124,7 @@ def start() -> None:
     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
     _scheduler.add_job(
         _job_sync_calendars, "interval", minutes=config.ICAL_POLL_MINUTES,
-        id="ical", next_run_time=None, max_instances=1, coalesce=True,
+        id="ical", max_instances=1, coalesce=True, next_run_time=_soon(),
     )
     _scheduler.add_job(
         _job_submit, "interval", minutes=config.SUBMIT_SWEEP_MINUTES,
@@ -87,10 +141,6 @@ def start() -> None:
         max_instances=1, coalesce=True, next_run_time=_soon(),
     )
     _scheduler.start()
-    # Kick off a first calendar sync shortly after boot rather than waiting
-    # a full interval, but only if feeds actually exist.
-    if db.query_one("SELECT 1 AS x FROM ical_feed WHERE active = 1"):
-        _scheduler.modify_job("ical", next_run_time=_soon())
     log.info(
         "scheduler started (ical every %s min, submit every %s min)",
         config.ICAL_POLL_MINUTES,
@@ -100,8 +150,9 @@ def start() -> None:
 
 def _soon():
     from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
 
-    return datetime.now() + timedelta(seconds=20)
+    return datetime.now(ZoneInfo(config.TIMEZONE)) + timedelta(seconds=20)
 
 
 def shutdown() -> None:

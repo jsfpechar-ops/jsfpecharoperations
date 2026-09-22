@@ -146,3 +146,170 @@ def test_deadline_watch_uses_czech_time_and_keeps_old_compliance_debt(monkeypatc
 
     assert "date_from >= ?" not in captured["sql"]
     assert captured["params"][-1] == "2026-09-15"
+
+
+# --- the anchor the deadline actually runs from --------------------------
+
+def _stay_with_guests(monkeypatch, tmp_path, name, *, date_from, date_to, guests):
+    """One reservation plus guest rows carrying their own stay dates."""
+    from app import config, db
+
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / name)
+    db.init_db()
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Anchor test",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "uid": f"anchor-{name}",
+            "date_from": date_from,
+            "date_to": date_to,
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    for index, (stay_from, stay_to, archived) in enumerate(guests):
+        db.insert(
+            "guest",
+            {
+                "reservation_id": reservation_id,
+                "surname": f"Guest {index}",
+                "first_name": "Test",
+                "nationality": "DEU",
+                "stay_from": stay_from,
+                "stay_to": stay_to,
+                "archived_at": archived,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+    return db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+
+
+def test_a_guest_arriving_early_moves_the_deadline_and_the_urgency(monkeypatch, tmp_path):
+    """The filed cFrom is the guest's arrival, so the clock starts there."""
+    from app import reporting
+
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "anchor-earlier.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[("2026-09-07", "2026-09-12", None)],
+    )
+
+    anchor = reporting.reservation_deadline_anchor(reservation)
+
+    assert anchor == date(2026, 9, 7)
+    assert (date(2026, 9, 9) - anchor).days == 2
+    assert d.reporting_deadline(anchor) == d.reporting_deadline(date(2026, 9, 7))
+    assert d.reporting_deadline(anchor) < d.reporting_deadline(date(2026, 9, 9))
+
+    # Saturday 12 Sep: still inside the window the reservation claims, already
+    # past the one the guest's arrival sets.
+    saturday = datetime(2026, 9, 12, 12, 0)
+    assert d.urgency(date(2026, 9, 9), saturday) == "ok"
+    assert d.urgency(anchor, saturday) == "overdue"
+
+
+def test_a_stay_with_no_guest_dates_is_unchanged(monkeypatch, tmp_path):
+    from app import reporting
+
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "anchor-none.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[],
+    )
+
+    assert reporting.reservation_deadline_anchor(reservation) == date(2026, 9, 9)
+
+
+def test_a_guest_without_dates_falls_back_to_the_reservation(monkeypatch, tmp_path):
+    from app import reporting
+
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "anchor-blank.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[(None, None, None), ("", "", None)],
+    )
+
+    assert reporting.reservation_deadline_anchor(reservation) == date(2026, 9, 9)
+
+
+def test_the_earliest_guest_arrival_wins(monkeypatch, tmp_path):
+    from app import reporting
+
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "anchor-earliest.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[
+            ("2026-09-08", "2026-09-12", None),
+            ("2026-09-06", "2026-09-12", None),
+            ("2026-09-07", "2026-09-12", None),
+        ],
+    )
+
+    assert reporting.reservation_deadline_anchor(reservation) == date(2026, 9, 6)
+
+
+def test_an_archived_guest_does_not_pull_the_deadline_earlier(monkeypatch, tmp_path):
+    from app import reporting
+
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "anchor-archived.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[
+            ("2026-09-01", "2026-09-12", "2026-09-02T00:00:00Z"),
+            ("2026-09-08", "2026-09-12", None),
+        ],
+    )
+
+    assert reporting.reservation_deadline_anchor(reservation) == date(2026, 9, 8)
+
+
+def test_the_deadline_alert_runs_from_the_guest_arrival(monkeypatch, tmp_path):
+    """The dashboard and the alert must not disagree with the filed record."""
+    from app import alerts, reporting
+
+    _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "anchor-alert.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[("2026-09-07", "2026-09-12", None)],
+    )
+    monkeypatch.setattr(
+        reporting.deadlines, "local_now", lambda _now=None: datetime(2026, 9, 12, 12, 0)
+    )
+
+    raised = reporting.check_deadlines(datetime(2026, 9, 12, 12, 0))
+
+    assert raised == 1
+    alert = alerts.open_alerts()
+    assert len(alert) == 1
+    assert alert[0]["level"] == "critical"
+    assert "Po termínu o 36 h" in alerts.present(alert[0], "cs")["display_detail"]
