@@ -1119,3 +1119,58 @@ def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
             archive.writestr(receipt_zip_name(row), raw)
             count += 1
     return count
+
+
+# --- retention -----------------------------------------------------------
+
+# Every state a submission row can settle in. A row is only 'running' while
+# the submit call is in flight, and the envelope is stored at the moment the
+# row moves to one of these, so a 'running' row has no envelope to purge.
+TERMINAL_SUBMISSION_STATES = ("ok", "partial", "error", "transport_error")
+
+# The envelope is the only thing in the row that carries guest data, and the
+# row outlives the six-year purge of the guests it describes, so it goes far
+# sooner than they do.
+SUBMISSION_PAYLOAD_DAYS = 90
+
+
+def purge_submission_payloads(
+    owner_user_id: Optional[int] = None, days: int = SUBMISSION_PAYLOAD_DAYS
+) -> int:
+    """Blank the request and response envelopes on settled submissions.
+
+    ``request_xml`` carries every reported guest's passport number, and nothing
+    else in the codebase ever deleted it: the guest rows age out after six
+    years, the submission row does not. The Dorucenka and the pseudo stamp stay,
+    because those are the evidence the host has to be able to produce, and
+    neither of them contains guest data.
+
+    Returns the number of rows that were carrying an envelope and lost it.
+    """
+    cutoff = (
+        datetime.now(timezone.utc) - timedelta(days=days)
+    ).replace(microsecond=0).isoformat()
+    marks = ", ".join("?" for _ in TERMINAL_SUBMISSION_STATES)
+    rows = db.query(
+        f"SELECT s.id AS id FROM submission s "
+        f"JOIN apartment a ON a.id = s.apartment_id "
+        f"WHERE s.created_at < ? AND s.state IN ({marks}) "
+        f"AND (? IS NULL OR a.owner_user_id = ?) "
+        f"AND (s.request_xml IS NOT NULL OR s.response_xml IS NOT NULL)",
+        (cutoff, *TERMINAL_SUBMISSION_STATES, owner_user_id, owner_user_id),
+    )
+    if not rows:
+        return 0
+    ids = [row["id"] for row in rows]
+    id_marks = ", ".join("?" for _ in ids)
+    db.execute(
+        f"UPDATE submission SET request_xml = NULL, response_xml = NULL "
+        f"WHERE id IN ({id_marks})",
+        ids,
+    )
+    db.audit(
+        "submission_payload_purge",
+        f"blanked the request and response envelope on {len(ids)} submission(s) "
+        f"older than {days} days",
+    )
+    return len(ids)
