@@ -27,6 +27,18 @@ class ExpiredFormError(Exception):
         super().__init__("Invalid or expired form token.")
 
 
+class GuestFormExpiredError(Exception):
+    """A guest form lost its CSRF proof and has to be reloaded.
+
+    Guest pages are served with ``Referrer-Policy: no-referrer``, so unlike the
+    host flow there is no rendered form to send the visitor back to.
+    """
+
+    def __init__(self, token: str = ""):
+        self.token = token
+        super().__init__("Invalid or expired form token.")
+
+
 def safe_local_path(value: Optional[str], default: str = "/") -> str:
     """Return a normalized same-site path, or ``default`` for unsafe input."""
     raw = (value or "").strip()
@@ -170,15 +182,24 @@ async def _supplied_csrf_token(request: Request) -> str:
     return str(form.get(CSRF_FIELD, ""))
 
 
-async def protect_host_post(request: Request) -> None:
-    """Require CSRF proof for state-changing host requests in production."""
+async def _require_csrf(request: Request, *, guest: bool) -> None:
     if request.method in {"GET", "HEAD", "OPTIONS", "TRACE"}:
-        return
-    if config.DEPLOYMENT != "production":
         return
     supplied = await _supplied_csrf_token(request)
     if csrf_token_valid(request, supplied):
         return
     if not _request_is_same_site(request):
         raise HTTPException(status_code=403, detail="Cross-site request rejected.")
+    if guest:
+        raise GuestFormExpiredError(token=str(request.path_params.get("token") or ""))
     raise ExpiredFormError(_csrf_recovery_location(request))
+
+
+async def protect_host_post(request: Request) -> None:
+    """Require CSRF proof for state-changing host requests."""
+    await _require_csrf(request, guest=False)
+
+
+async def protect_guest_post(request: Request) -> None:
+    """Require CSRF proof for state-changing guest requests."""
+    await _require_csrf(request, guest=True)

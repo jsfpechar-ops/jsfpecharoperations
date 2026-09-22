@@ -9,7 +9,18 @@ from fastapi import Depends, FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, client_ip, config, db, env_guard, host_i18n, scheduler, security, seo
+from . import (
+    alerts,
+    auth,
+    client_ip,
+    config,
+    db,
+    env_guard,
+    host_i18n,
+    scheduler,
+    security,
+    seo,
+)
 from .routes import admin, guest, legal
 from .sample_calendar import sample_calendar_response
 
@@ -18,6 +29,44 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
 )
 log = logging.getLogger("ubyhost")
+
+
+def rotate_weak_permalinks() -> int:
+    """Replace missing or legacy short guest PINs; returns how many were rotated.
+
+    ``auth.normalise_permalink_pin`` no longer accepts four digits, but that is
+    not the gate the guest actually meets: ``verify_pin`` compares against the
+    *stored* value, so a short PIN already in the database keeps opening the form
+    until something replaces it. Rotating it here is what retires the weakness,
+    and it is deliberately noisy — a log line and an apartment-scoped alert —
+    because the host has to put the new PIN into the messages they send guests.
+
+    Idempotent: a six-digit PIN is never selected, so a second run is a no-op.
+    """
+    weak = db.query(
+        "SELECT id, permalink_pin FROM apartment "
+        "WHERE permalink_pin IS NULL OR permalink_pin = '' OR LENGTH(permalink_pin) <> 6"
+    )
+    for row in weak:
+        db.update("apartment", row["id"], {"permalink_pin": auth.new_permalink_pin()})
+        log.warning(
+            "Rotated the guest PIN for apartment %s to six digits (the stored one was %s). "
+            "The old PIN no longer opens the guest form; share the new one.",
+            row["id"],
+            "missing" if not row["permalink_pin"] else f"{len(row['permalink_pin'])} digits",
+        )
+        alerts.raise_alert(
+            "warning",
+            "guest_pin_rotated",
+            "The guest link PIN was replaced with a new six-digit PIN.",
+            detail=(
+                "Four-digit PINs are no longer accepted. Copy the new PIN from the "
+                "apartment's guest link page and put it in the messages you send guests."
+            ),
+            dedupe_key=f"guest_pin_rotated:{row['id']}",
+            apartment_id=row["id"],
+        )
+    return len(weak)
 
 
 @asynccontextmanager
@@ -36,11 +85,7 @@ async def lifespan(_app: FastAPI):
             "Created the first administrator (%s). Log in using UBYHOST_ADMIN_PASSWORD.",
             admin_username,
         )
-    missing_pins = db.query(
-        "SELECT id FROM apartment WHERE permalink_pin IS NULL OR permalink_pin = ''"
-    )
-    for row in missing_pins:
-        db.update("apartment", row["id"], {"permalink_pin": auth.new_permalink_pin()})
+    rotate_weak_permalinks()
     log.info("database ready at %s", config.DB_PATH)
     log.info(
         "deployment=%s ubyport=%s endpoint=%s",
@@ -72,6 +117,12 @@ app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
 async def expired_form_handler(_request: Request, exc: security.ExpiredFormError):
     """Refresh stale same-site forms without exposing a downloadable JSON body."""
     return RedirectResponse(exc.location, status_code=303)
+
+
+@app.exception_handler(security.GuestFormExpiredError)
+async def guest_form_expired_handler(request: Request, exc: security.GuestFormExpiredError):
+    """Tell a guest their form expired instead of returning a bare 403 body."""
+    return guest.csrf_expired_page(request, exc.token)
 
 
 @app.middleware("http")

@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS apartment (
     submit_after_hours    INTEGER NOT NULL DEFAULT 24,
     permalink_token       TEXT UNIQUE,
     permalink_window_days INTEGER NOT NULL DEFAULT 2,
+    permalink_reachback_days INTEGER NOT NULL DEFAULT 365,
     default_purpose       TEXT NOT NULL DEFAULT '10',
     checkin_info          TEXT,
     checkout_info         TEXT,
@@ -341,6 +342,7 @@ ADDED_COLUMNS = (
     ("reservation", "registration_completed_at", "TEXT"),
     ("guest", "doc_number_enc", "TEXT"),
     ("guest", "visa_number_enc", "TEXT"),
+    ("apartment", "permalink_reachback_days", "INTEGER NOT NULL DEFAULT 365"),
 )
 
 

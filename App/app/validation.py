@@ -9,13 +9,14 @@ submission, rather than discovering it after the legal deadline has passed.
 """
 from __future__ import annotations
 
+import base64
 import json
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
@@ -480,6 +481,143 @@ def validate_guest(
         issues.append(Issue("stay_to", "Departure date must be later than the arrival date."))
 
     return issues
+
+
+STAY_OUTSIDE_BOOKING_MESSAGE = (
+    "These dates do not match your booking. Reload this page, or ask your host."
+)
+
+# The product does not let a guest record a stay outside their booking: a guest
+# who really did arrive early is told to ask the host, rather than having the
+# period in the police record rewritten for them. The knob is here so that a
+# future decision to allow a day of slack at each end is a one-line change.
+STAY_DATE_TOLERANCE_DAYS = 0
+
+
+def validate_stay_dates(
+    stay_from: Optional[date],
+    stay_to: Optional[date],
+    allowed_from: Optional[date],
+    allowed_to: Optional[date],
+) -> List[Issue]:
+    """Reasons a stay period falls outside the window its host set for it.
+
+    ``stay_from``/``stay_to`` reach the guest save route as hidden fields, so a
+    period outside the window is either a page the host has since re-dated or a
+    hand-built request. Both are refused rather than clamped: the period is
+    what UbyPort receives as ``cFrom``/``cUntil``, and ``stay_to`` is what
+    decides how long a passport scan is kept.
+    """
+    issues: List[Issue] = []
+    slack = timedelta(days=STAY_DATE_TOLERANCE_DAYS)
+    if stay_from and allowed_from and stay_from < allowed_from - slack:
+        issues.append(Issue("stay_from", STAY_OUTSIDE_BOOKING_MESSAGE))
+    if stay_to and allowed_to and stay_to > allowed_to + slack:
+        issues.append(Issue("stay_to", STAY_OUTSIDE_BOOKING_MESSAGE))
+    return issues
+
+
+# How far back a stay-specific guest link keeps reaching. ``permalink_window_days``
+# is the forward lead window (which stays the apartment link lists); this is the
+# opposite direction, and the two must not be conflated: the reach-back window
+# exists so a forgotten form can still be finished, and it is deliberately a year
+# rather than the couple of weeks a lead window is measured in.
+REACHBACK_DAYS_DEFAULT = 365
+REACHBACK_DAYS_MAX = 3650
+
+
+def normalise_reachback_days(value: Any) -> int:
+    """A blank, missing or nonsensical reach-back window falls back to the default.
+
+    Never to "no bound": an unset or hand-edited value must not widen access, so
+    a value below a day is clamped up and one beyond the cap clamped down.
+    """
+    try:
+        days = int(value)
+    except (TypeError, ValueError):
+        return REACHBACK_DAYS_DEFAULT
+    if days <= 0:
+        return REACHBACK_DAYS_DEFAULT
+    return min(days, REACHBACK_DAYS_MAX)
+
+
+# The first bytes each accepted type has to start with. The browser draws into
+# a canvas and hands over ``canvas.toDataURL("image/png")``, so PNG is the only
+# type this app itself produces; JPEG is allowed for a signature pad embedded
+# elsewhere (for example a camera-captured paper form).
+SIGNATURE_MIME_MAGIC = {
+    "image/png": b"\x89PNG\r\n\x1a\n",
+    "image/jpeg": b"\xff\xd8\xff",
+}
+
+# A drawn signature is a few kilobytes of mostly transparent canvas PNG. The cap
+# exists because ``signature_png`` is a TEXT column in a single SQLite file: it
+# is generous enough for a dense signature on a large screen, and small enough
+# that a hand-built request cannot put a blob in the database.
+MAX_SIGNATURE_BYTES = 256 * 1024
+
+SIGNATURE_INVALID_MESSAGE = (
+    "That signature could not be saved. Sign again on the signature pad."
+)
+
+# The whole value has to be one base64 data URL of an allowed image type. The
+# prefix is matched before decoding so an oversized body is never decoded.
+_SIGNATURE_DATA_URL = re.compile(
+    r"^data:(?P<mime>image/[a-z0-9.+-]+);base64,(?P<payload>[A-Za-z0-9+/=]*)$"
+)
+# 4 base64 characters carry 3 bytes, so this is the longest payload that can
+# still decode to an allowed number of bytes.
+_MAX_SIGNATURE_PAYLOAD_CHARS = 4 * (MAX_SIGNATURE_BYTES // 3) + 4
+
+
+def parse_signature_data_url(value: Optional[str]) -> bytes:
+    """Return the image bytes of a drawn signature, or raise ``ValueError``.
+
+    ``signature_png`` is a TEXT column on a single-file SQLite database, and
+    every downstream "this guest signed" check is a look at its prefix, so this
+    is the one place that decides what may be stored: a base64 data URL of a PNG
+    or JPEG, under ``MAX_SIGNATURE_BYTES``, whose first bytes really are that
+    type's magic bytes. ``image/svg+xml`` is refused even though it is an image
+    - an SVG is a script container, and nothing here renders one.
+    """
+    match = _SIGNATURE_DATA_URL.match((value or "").strip())
+    if not match:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    magic = SIGNATURE_MIME_MAGIC.get(match.group("mime").lower())
+    if magic is None:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    payload = match.group("payload")
+    if not payload or len(payload) > _MAX_SIGNATURE_PAYLOAD_CHARS:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    try:
+        # validate=True: a payload that is not base64 must not be silently
+        # repaired into bytes that happen to start with a magic number.
+        content = base64.b64decode(payload, validate=True)
+    except ValueError:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE) from None
+    if not content or len(content) > MAX_SIGNATURE_BYTES:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    if not content.startswith(magic):
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    return content
+
+
+def signature_issue(value: Optional[str]) -> Optional[Issue]:
+    """The ``signature`` issue a value would raise, or ``None`` when it is fine."""
+    try:
+        parse_signature_data_url(value)
+    except ValueError as exc:
+        return Issue("signature", str(exc))
+    return None
+
+
+def is_valid_signature(value: Optional[str]) -> bool:
+    """True for a value both save paths may store as a collected signature.
+
+    Not the same question as ``reporting.guest_has_signature``, which also
+    accepts the ``"imported"`` marker a paper house-book row carries.
+    """
+    return signature_issue(value) is None
 
 
 def guest_is_reportable(nationality: Optional[str]) -> bool:

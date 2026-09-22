@@ -22,6 +22,14 @@ DEMO_PINS = {
     DEMO_APARTMENT: "246810",
     DEMO_LOFT: "135790",
 }
+# A drawn signature is a data URL, so the demo record carries the smallest real
+# PNG (1x1). It has to be a real image: the save paths check magic bytes, and a
+# placeholder that is not one would stop behaving like a signed record as soon
+# as a host re-saved the form.
+DEMO_SIGNATURE = (
+    "data:image/png;base64,"
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
+)
 
 
 def is_demo_apartment(apartment) -> bool:
@@ -53,9 +61,7 @@ def _guest(reservation_id: int, is_lead: bool, **fields) -> int:
             values,
             reservation_id=reservation_id,
             is_lead=1 if is_lead else 0,
-            # A drawn signature is a data URL; this is a placeholder so the
-            # record looks and behaves like a signed one.
-            signature_png="data:image/png;base64,demo",
+            signature_png=DEMO_SIGNATURE,
             signed_at=now,
             filled_at=now,
             entered_by="guest",

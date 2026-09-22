@@ -294,6 +294,160 @@ def test_magic_link_get_does_not_assign():
         _cleanup()
 
 
+def _claim_secret(current, *, email="guest@claim.test", resend=False):
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+    apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
+    ok, err, secret = claim.start_claim(
+        reservation,
+        apartment,
+        email=email,
+        party_size=2,
+        lang="en",
+        resend=resend,
+    )
+    assert ok, err
+    return reservation, secret
+
+
+def _age_claim(current, seconds):
+    """Move the claim's clock back so the resend cooldown has elapsed."""
+    stamp = (datetime.now(timezone.utc) - timedelta(seconds=seconds)).replace(
+        microsecond=0
+    ).isoformat()
+    db.execute(
+        "UPDATE reservation_claim SET updated_at = ? WHERE reservation_id = ?",
+        (stamp, current),
+    )
+
+
+def test_claim_secret_is_spent_by_the_confirmation():
+    """The e-mailed secret confirms once; the cookie is the access after that."""
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, secret = _claim_secret(current)
+        assert claim.confirm(reservation, secret)
+
+        row = claim.ensure_row(current)
+        assert row["state"] == "claimed"
+        assert row["token_hash"] is None
+        assert not claim.confirm(reservation, secret)
+        assert not claim.confirm(reservation, secret)
+    finally:
+        _cleanup()
+
+
+def test_claim_confirm_checks_the_token_version(monkeypatch):
+    """A secret is only good for the issue of the claim it came from.
+
+    ``_row`` is patched to hand the first read a version one behind the row on
+    disk, which is what a re-issue landing between the read and the write looks
+    like. The confirmation must then match no row at all.
+    """
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, secret = _claim_secret(current)
+        real_row = claim._row
+        reads = []
+
+        def stale_first_read(reservation_id):
+            row = real_row(reservation_id)
+            reads.append(row)
+            if len(reads) == 1 and row is not None:
+                stale = dict(row)
+                stale["token_version"] = int(row["token_version"] or 0) - 1
+                return stale
+            return row
+
+        monkeypatch.setattr(claim, "_row", stale_first_read)
+        assert not claim.confirm(reservation, secret)
+        assert claim.ensure_row(current)["state"] == "provisional"
+        assert claim.ensure_row(current)["token_hash"]
+        assert claim.confirm(reservation, secret)
+        assert claim.ensure_row(current)["state"] == "claimed"
+    finally:
+        _cleanup()
+
+
+def test_claim_confirm_refuses_a_superseded_secret_on_a_claimed_row(monkeypatch):
+    """A stale secret cannot ride on the claim already being CLAIMED.
+
+    The first read is forged to look like the issue the old secret came from,
+    so the write matches no row at all. The confirmation must report failure
+    instead of reading the claimed state back and calling that a success, and
+    the live secret must be untouched.
+    """
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, first = _claim_secret(current)
+        assert claim.confirm(reservation, first)
+        _age_claim(current, claim.RESEND_COOLDOWN_SECONDS + 5)
+        reservation, second = _claim_secret(current, resend=True)
+
+        real_row = claim._row
+        forged = dict(real_row(current))
+        forged["token_hash"] = claim.token_hash(first)
+        forged["token_version"] = int(forged["token_version"] or 0) - 1
+        reads = []
+
+        def first_read_forged(reservation_id):
+            reads.append(reservation_id)
+            return forged if len(reads) == 1 else real_row(reservation_id)
+
+        monkeypatch.setattr(claim, "_row", first_read_forged)
+        assert not claim.confirm(reservation, first)
+        assert claim.ensure_row(current)["token_hash"] == claim.token_hash(second)
+        assert claim.confirm(reservation, second)
+    finally:
+        _cleanup()
+
+
+def test_reissued_claim_secret_retires_the_previous_one():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        reservation, first = _claim_secret(current)
+        assert claim.confirm(reservation, first)
+        _age_claim(current, claim.RESEND_COOLDOWN_SECONDS + 5)
+
+        reservation, second = _claim_secret(current, resend=True)
+        assert second != first
+        assert not claim.confirm(reservation, first)
+        assert claim.confirm(reservation, second)
+    finally:
+        _cleanup()
+
+
+def test_confirmed_device_keeps_access_and_a_replayed_link_does_not():
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        _reservation, secret = _claim_secret(current)
+        browser = TestClient(app)
+        confirmed = browser.post(
+            f"/l/{TOKEN}/{current}/claim/confirm",
+            data={"secret": secret},
+            follow_redirects=False,
+        )
+        assert confirmed.status_code == 303
+        assert "claim_error" not in confirmed.headers["location"]
+        assert browser.get(f"/l/{TOKEN}/{current}").status_code == 200
+        # Re-opening the spent link on the confirmed device continues to the stay.
+        reopened = browser.get(f"/l/{TOKEN}/{current}/claim", follow_redirects=False)
+        assert reopened.status_code == 303
+        assert reopened.headers["location"] == f"/l/{TOKEN}/{current}?lang=en"
+
+        stranger = TestClient(app)
+        replay = stranger.post(
+            f"/l/{TOKEN}/{current}/claim/confirm",
+            data={"secret": secret},
+            follow_redirects=False,
+        )
+        assert replay.status_code == 303
+        assert "claim_error=1" in replay.headers["location"]
+        assert claim.ensure_row(current)["state"] == "claimed"
+        assert claim.ensure_row(current)["token_hash"] is None
+    finally:
+        _cleanup()
+
+
 def test_console_backend_logs_claim_link_without_its_secret(monkeypatch):
     """The console log holds a usable link for the owner and no secret at rest.
 
@@ -421,8 +575,15 @@ def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeyp
         _cleanup()
 
 
-def test_incomplete_past_stay_remains_reachable_via_stay_link():
-    """Apartment picker hides past arrivals; stay-specific link stays open."""
+def test_incomplete_stay_inside_the_reach_back_window_stays_reachable():
+    """Apartment picker hides past arrivals; the stay link still works.
+
+    W3.5 bounded this affordance by ``permalink_reachback_days``. The stay here
+    checked in yesterday, so it is inside any window: the point of this test is
+    that the reach-back bound did not close a forgotten form that is still
+    recent. The out-of-window half is
+    ``test_stay_link_reach_back_window_bounds_a_forgotten_form``.
+    """
     current, past, _far, _apartment_id = _seed()
     try:
         # Leave only a past incomplete stay in this apartment's calendar window.
@@ -461,6 +622,73 @@ def test_incomplete_past_stay_remains_reachable_via_stay_link():
         claim.lock_guest_access(past)
         locked = browser.get(f"/l/{TOKEN}/{past}")
         assert locked.status_code == 404
+    finally:
+        _cleanup()
+
+
+def test_stay_link_reach_back_window_bounds_a_forgotten_form():
+    """W3.5 [F23]: a stay link reaches back a bounded number of days.
+
+    Inverted from the behaviour this file used to pin: an incomplete past stay
+    stayed reachable for ever, so an out-of-window id answered 200 where an id
+    that never existed answered 404 — which told a stranger which reservation
+    ids belong to the apartment.
+    """
+    _current, _past, _far, apartment_id = _seed()
+    today = claim.prague_today()
+    now = db.utcnow()
+    try:
+        recent = db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id,
+                "source": "airbnb",
+                "uid": "claim-recent",
+                "date_from": (today - timedelta(days=7)).isoformat(),
+                "date_to": (today - timedelta(days=5)).isoformat(),
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        old = db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id,
+                "source": "airbnb",
+                "uid": "claim-old",
+                "date_from": (today - timedelta(days=732)).isoformat(),
+                "date_to": (today - timedelta(days=730)).isoformat(),
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+
+        browser = TestClient(app)
+        # Inside the default year: a stay that ended last week can still be filed.
+        assert browser.get(f"/l/{TOKEN}/{recent}").status_code == 200
+
+        out_of_window = browser.get(f"/l/{TOKEN}/{old}")
+        assert out_of_window.status_code == 404
+        assert "no longer open" in out_of_window.text
+
+        # A stranger cannot tell an old id from an id that never existed. The
+        # language switcher echoes the path that was asked for, so normalise
+        # only that echo: everything else has to be byte-identical.
+        def shape(response, reservation_id):
+            return response.status_code, response.text.replace(
+                f"/l/{TOKEN}/{reservation_id}", "/l/{TOKEN}/{ID}"
+            )
+
+        never_existed = browser.get(f"/l/{TOKEN}/987654")
+        assert never_existed.status_code == 404
+        assert shape(never_existed, 987654) == shape(out_of_window, old)
+
+        # The window is the apartment's setting, not a hard-coded year.
+        db.update("apartment", apartment_id, {"permalink_reachback_days": 1})
+        assert browser.get(f"/l/{TOKEN}/{recent}").status_code == 404
+        assert browser.get(f"/l/{TOKEN}/{old}").status_code == 404
     finally:
         _cleanup()
 

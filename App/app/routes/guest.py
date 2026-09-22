@@ -18,7 +18,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 
@@ -27,11 +27,17 @@ import re
 from .. import alerts, auth, claim, codelists, config, db, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
 LANG_COOKIE = "ubyhost_lang"
 OWNED_COOKIE = "ubyhost_owned"
 CLAIM_COOKIE = "ubyhost_claim"
+
+# Per-(address, link) budget for the guest POSTs that write something. Deliberately
+# loose: a guest fixing validation errors saves repeatedly, so this bounds
+# hammering rather than pacing a careful person. The PIN and the claim cookie are
+# the controls on *who* may post; this only bounds how often.
+GUEST_POST_MAX_ATTEMPTS = 30
 
 CS_VALIDATION_MESSAGES = {
     "Date of birth is required.": "Datum narození je povinné.",
@@ -56,6 +62,13 @@ CS_VALIDATION_MESSAGES = {
         "Odstraňte znak | a všechny konce řádků."
     ),
     "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
+    validation.STAY_OUTSIDE_BOOKING_MESSAGE: (
+        "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se "
+        "obraťte na ubytovatele."
+    ),
+    validation.SIGNATURE_INVALID_MESSAGE: (
+        "Tento podpis se nepodařilo uložit. Podepište se znovu do podpisového pole."
+    ),
     validation.NON_LATIN_MESSAGE: (
         "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově "
         "čitelných řádcích na konci vašeho pasu."
@@ -153,7 +166,7 @@ def _remember_owned(response, guest_ids: List[int]) -> None:
         max_age=60 * 60 * 24 * 60,
         httponly=True,
         samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=auth.secure_cookies(),
         path="/",
     )
 
@@ -178,7 +191,7 @@ def _remember_claim(response, reservation_id: int, request: Optional[Request] = 
         max_age=60 * 60 * 24 * 60,
         httponly=True,
         samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=auth.secure_cookies(),
         path="/",
     )
 
@@ -189,7 +202,7 @@ def _with_lang(response, lang: str):
         lang,
         max_age=60 * 60 * 24 * 60,
         samesite="lax",
-        secure=config.PUBLIC_BASE_URL.lower().startswith("https://"),
+        secure=auth.secure_cookies(),
         path="/",
     )
     return response
@@ -325,8 +338,11 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
 
     The apartment picker only lists the lead window. Stay-specific links also
     keep incomplete, unlocked past registrations reachable so a forgotten form
-    can still be finished. Completed forms outside the window stay reachable
-    only on a device that already confirmed the claim.
+    can still be finished, but only for ``permalink_reachback_days`` (a year by
+    default): without a lower bound an old id answered differently from an id
+    that never existed, which told a stranger which reservations belong to the
+    apartment. Completed forms outside both windows stay reachable only on a
+    device that already confirmed the claim.
     """
     for reservation in _visible_reservations(apartment):
         if reservation["id"] == reservation_id:
@@ -337,6 +353,10 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
         (reservation_id, apartment["id"]),
     )
     if not reservation:
+        return None
+    reachback = validation.normalise_reachback_days(apartment["permalink_reachback_days"])
+    cutoff = (claim.prague_today() - timedelta(days=reachback)).isoformat()
+    if (reservation["date_to"] or "") < cutoff:
         return None
     row = claim.ensure_row(reservation["id"])
     if not claim.guest_access_open(reservation, row):
@@ -364,6 +384,8 @@ def _unavailable(
         "no_stays": ("no_stays", "no_stays_help"),
         "bad_link": ("bad_link_title", "bad_link_help"),
         "stay_gone": ("stay_gone_title", "stay_gone_help"),
+        "form_expired": ("form_expired_title", "form_expired_help"),
+        "rate_limited": ("rate_limited_title", "rate_limited_help"),
         "not_yours": ("not_yours_title", "not_yours_help"),
         "already_filed": ("already_filed_title", "already_filed_help"),
         "form_locked": ("form_locked_title", "form_locked_help"),
@@ -393,6 +415,22 @@ def _unavailable(
         "guest/unavailable.html",
         context,
         status_code=status_code,
+    )
+
+
+def csrf_expired_page(request: Request, token: str = ""):
+    """Guest-facing 403 for a form whose CSRF proof is gone.
+
+    Guest pages are served with ``Referrer-Policy: no-referrer``, so there is no
+    rendered form to send the visitor back to. The page tells them to reload and
+    links to the start of the flow, which issues a fresh token.
+    """
+    return _unavailable(
+        request,
+        _language(request),
+        "form_expired",
+        status_code=403,
+        token=(token or request.path_params.get("token") or None),
     )
 
 
@@ -573,7 +611,16 @@ async def verify_pin(token: str, request: Request):
         return _unavailable(request, lang)
     form = await request.form()
     entered = (form.get("pin") or "").strip()
+    expected = apartment["permalink_pin"] or ""
     pin_key = rate_limit.client_key(request, token)
+    pin_lock_key = f"{token}:{auth.pin_fingerprint(token, expected)}"
+    if rate_limit.pin_token_blocked(pin_lock_key):
+        return _pin_page(
+            request,
+            token,
+            lang,
+            error=i18n.translator(lang)("pin_locked_out"),
+        )
     if rate_limit.pin_failure_count(pin_key) >= 3 and not turnstile.verify(
         request, form.get("cf-turnstile-response"), "guest_pin"
     ):
@@ -587,9 +634,8 @@ async def verify_pin(token: str, request: Request):
             lang,
             error=i18n.translator(lang)("pin_rate_limited"),
         )
-    expected = apartment["permalink_pin"] or ""
     if not auth.pin_matches(token, entered, expected):
-        rate_limit.record_pin_failure(pin_key)
+        rate_limit.record_pin_failure(pin_key, pin_lock_key)
         # Slow brute-force attempts without blocking legitimate guests for long.
         failures = rate_limit.pin_failure_count(pin_key)
         if failures >= rate_limit._PIN_MAX_FAILURES:
@@ -794,6 +840,18 @@ def claim_landing(token: str, reservation_id: int, request: Request):
     )
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    if reservation_id in _claimed_reservation_ids(request) and claim.is_claimed(
+        claim.ensure_row(reservation_id)
+    ):
+        # Confirming spends the link, so a device that already confirmed would
+        # otherwise land on a spent confirmation form. The cookie is what grants
+        # access now; continue to the stay instead of asking the guest again.
+        return _with_lang(
+            RedirectResponse(
+                _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
+            ),
+            lang,
+        )
     context = _shared(request, token, lang, apartment)
     context.update(
         {
@@ -803,6 +861,20 @@ def claim_landing(token: str, reservation_id: int, request: Request):
         }
     )
     return _with_lang(render_guest(request, "guest/confirm.html", context), lang)
+
+
+def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
+    """Refuse a writing guest POST that has used up its budget.
+
+    Keyed on the peer address *and* the link, so one guest cannot spend another
+    guest's allowance and a shared address cannot be exhausted by a single link.
+    Returns the response to send, or None to carry on.
+    """
+    key = rate_limit.client_key(request, f"guest:{token}")
+    if rate_limit.blocked(scope, key, GUEST_POST_MAX_ATTEMPTS):
+        return _unavailable(request, lang, "rate_limited", 429, token)
+    rate_limit.record(scope, key)
+    return None
 
 
 @router.post("/l/{token}/{reservation_id}/claim/confirm")
@@ -862,6 +934,9 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
     reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_party", lang)
+    if throttle:
+        return throttle
     form = await request.form()
     try:
         count = int((form.get("party_size") or "").strip())
@@ -963,6 +1038,9 @@ async def add_another_person(token: str, reservation_id: int, request: Request):
     reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_another", lang)
+    if throttle:
+        return throttle
     claim_guard = _require_claim_session(request, reservation, token, lang)
     if claim_guard:
         return _with_lang(claim_guard, lang)
@@ -1024,6 +1102,15 @@ def _form_context(
             "expected_people": expected,
             "issues": issues or [],
             "values": values or {},
+            # The re-render guard for [F33]: only a value the save paths would
+            # accept may go back into the hidden signature field. A row written
+            # before the validator existed (a junk data URL, or "imported") must
+            # not be handed back as if it were a drawn signature.
+            "stored_signature": (
+                guest["signature_png"]
+                if guest and validation.is_valid_signature(guest["signature_png"])
+                else ""
+            ),
             "countries": codelists.nationality_options(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
@@ -1141,6 +1228,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     reservation = _reservation_for_guest(apartment, reservation_id, request)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_save", lang)
+    if throttle:
+        return throttle
     claim_guard = _require_claim_session(request, reservation, token, lang)
     if claim_guard:
         return _with_lang(claim_guard, lang)
@@ -1191,7 +1281,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     stay_from = (form.get("stay_from") or "").strip() or reservation["date_from"]
     stay_to = (form.get("stay_to") or "").strip() or reservation["date_to"]
     signature = (form.get("signature") or "").strip()
-    if not signature.startswith("data:image/") and existing and (existing["signature_png"] or "").startswith("data:image/"):
+    if (
+        not validation.is_valid_signature(signature)
+        and existing
+        and validation.is_valid_signature(existing["signature_png"])
+    ):
+        # A re-render without a redrawn signature keeps the one already
+        # collected. The stored value has to pass the same check: a row written
+        # before this check existed must not be carried forward as signed.
         signature = existing["signature_png"]
 
     party_raw = (form.get("party_size") or "").strip()
@@ -1206,11 +1303,36 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         validation.parse_iso_date(stay_to),
         raw=raw,
     )
+    # A host may record a guest's real stay outside the booking (an early
+    # arrival, a late departure), so the guest's own stored period is part of
+    # what they are allowed to re-submit - otherwise the host's own edit would
+    # leave the guest unable to save the form again.
+    booked_from = validation.parse_iso_date(reservation["date_from"])
+    booked_to = validation.parse_iso_date(reservation["date_to"])
+    if existing:
+        stored_from = validation.parse_iso_date(existing["stay_from"])
+        stored_to = validation.parse_iso_date(existing["stay_to"])
+        if stored_from:
+            booked_from = min(booked_from, stored_from) if booked_from else stored_from
+        if stored_to:
+            booked_to = max(booked_to, stored_to) if booked_to else stored_to
+    issues.extend(
+        validation.validate_stay_dates(
+            validation.parse_iso_date(stay_from),
+            validation.parse_iso_date(stay_to),
+            booked_from,
+            booked_to,
+        )
+    )
     if reporting.expected_guest_count(reservation) is None and not existing:
         if party_size < 1 or party_size > 60:
             issues.append(validation.Issue("party_size", translate("error_party_size")))
-    if not signature.startswith("data:image/"):
+    if not signature:
         issues.append(validation.Issue("signature", translate("signature_missing")))
+    else:
+        bad_signature = validation.signature_issue(signature)
+        if bad_signature:
+            issues.append(bad_signature)
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 
@@ -1265,7 +1387,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "stay_to": stay_to,
                 "child_in_passport": child_in_passport,
                 "parent_doc_number": form.get("parent_doc_number") or "",
-                "signature": signature,
+                # Echo back only a signature the validator accepts: a hand-built
+                # request must not get its blob mirrored into the next render.
+                "signature": signature if validation.is_valid_signature(signature) else "",
                 "party_size": party_raw,
                 "legal_ack": form.get("legal_ack") or "",
             }

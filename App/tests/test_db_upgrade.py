@@ -70,7 +70,16 @@ def test_older_apartment_schema_migrates_and_serves_pages(monkeypatch, tmp_path)
         "archived_at",
         "guest_message",
         "data_controller_entity_id",
+        "permalink_reachback_days",
     } <= columns
+    # A legacy row gets the reach-back default, not NULL: an unbounded window is
+    # what W3.5 removed, so an upgrade must not reintroduce one.
+    assert (
+        db.query_one("SELECT permalink_reachback_days FROM apartment")[
+            "permalink_reachback_days"
+        ]
+        == 365
+    )
     reservation_columns = {
         row["name"] for row in db.query("PRAGMA table_info(reservation)")
     }
