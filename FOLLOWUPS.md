@@ -60,9 +60,10 @@ cancelled, but a legitimately empty calendar will warn once per sync cycle.
 Treating a fully empty parse as "nothing to compare against" instead is a
 judgement call.
 
-### The remediation plan itself is not in the repository
+### Where the remediation plan lives
 
-`docs/audit/CURSOR_REMEDIATION_PLAN.md` was supplied as an attachment and does
-not exist on disk; the audit it references lives at `docs/UBYHOST_CODE_AUDIT.md`,
-not `docs/audit/UBYHOST_CODE_AUDIT.md`. If the plan is meant to be the durable
-record of this work, it needs committing alongside the code.
+The plan was supplied as an attachment while Phase 1 ran and was not on disk;
+it has since been committed to `main` as `CURSOR_REMEDIATION_PLAN.md` (root,
+`f984560`). Two path notes: the plan's own header calls itself a companion to
+`UBYHOST_CODE_AUDIT.md`, which lives under `docs/`, so the two documents do not
+sit together; and the plan's `[Fnn]` references point at the audit in `docs/`.
