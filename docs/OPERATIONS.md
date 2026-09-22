@@ -163,15 +163,30 @@ Rules that follow from this:
 - There is no downgrade path. A rollback to an earlier image leaves the extra
   columns in place, which is harmless, but the reverse is not.
 
+One change could not be made by adding a column alone. `guest.doc_number` and
+`guest.visa_number` are now stored encrypted in `doc_number_enc` and
+`visa_number_enc`, and an added column arrives empty — it does not carry the
+existing rows across. The release that introduced the pair also ships
+`App/scripts/migrate_encrypt_doc_fields.py`, which has to be run once as a
+deploy step:
+
+    .venv/bin/python scripts/migrate_encrypt_doc_fields.py --dry-run
+    .venv/bin/python scripts/migrate_encrypt_doc_fields.py
+
+It is idempotent and safe to re-run, and it blanks the plaintext column as it
+goes. Until it has run, the numbers are still in the clear in that database;
+the app keeps reading the plaintext column as a fallback so nothing breaks in
+the meantime.
+
 `deploy/lightsail/scripts/deploy.sh` dry-runs the new schema against a copy of
 the live database before switching over. Do not skip it.
 
 ## If the secret key is lost or rotated
 
 `UBYHOST_SECRET_KEY` (or `data/secret_key`) signs cookies and CSRF tokens, and
-derives the Fernet key that encrypts **UbyPort web-service passwords and host
-TOTP secrets**. Losing it or changing it has a wide, and partly silent, blast
-radius.
+derives the Fernet key that encrypts **UbyPort web-service passwords, host
+TOTP secrets and guest travel-document numbers**. Losing it or changing it has
+a wide, and partly silent, blast radius.
 
 What happens, in the order you will notice it:
 
@@ -186,6 +201,11 @@ What happens, in the order you will notice it:
    rather than raising, so each apartment fails its setup validation, raises an
    `apartment_setup` warning, and every send returns `not_configured`. Nothing
    is lost and nothing is sent. The deadline clock keeps running.
+5. **Stored guest document numbers will not decrypt either, and this one is
+   loud.** `db.decrypt_field` raises instead of returning empty, so opening a
+   guest, exporting the house book or filing to the police fails with an error
+   the host can see. That is deliberate: an empty `cDocN` filed with the police
+   is worse than a visible failure. Restoring the old key clears it.
 
 Recovery:
 
@@ -265,6 +285,8 @@ tell you:
   integrity_check;'` then start the app against a copy and check that the
   submissions list renders and one Doručenka downloads. A truncated WAL
   restore can look fine until a blob is read.
-- **Backups are not encrypted** by the supplied scripts. They contain every
-  guest's passport number. Encrypting them off-host is an operator action that
-  nothing here performs for you.
+- **Backups are not encrypted** by the supplied scripts. Guest passport
+  numbers are encrypted *inside* the database, but the key that decrypts them
+  travels in the same backup, so a copy of both is as readable as a copy of the
+  plaintext was. Encrypting them off-host is an operator action that nothing
+  here performs for you.
