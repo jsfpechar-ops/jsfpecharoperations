@@ -17,6 +17,14 @@ _PIN_TOKEN_MAX_FAILURES = 3 * _PIN_MAX_FAILURES
 _PIN_TOKEN_LOCK_SECONDS = 24 * 60 * 60
 _BLOCK_SECONDS = 15 * 60
 
+#: Used when the ASGI server hands us no peer address. It is a *single shared*
+#: bucket — every such request counts against the same key — so a limit built on
+#: it means "refuse once this bucket fills", not "refuse this visitor". That is
+#: acceptable because uvicorn always supplies a peer and `client_ip` only ever
+#: *overwrites* it with a verified visitor address; the constant exists so the
+#: shared nature is visible at the point of use instead of hidden in a literal.
+UNIDENTIFIED_CLIENT = "unknown"
+
 
 def _prune(scope: str, key: str, window: int) -> None:
     cutoff = time.time() - window
@@ -43,8 +51,16 @@ def record(scope: str, key: str) -> None:
 
 
 def blocked(scope: str, key: str, max_events: int, window: int = _WINDOW_SECONDS) -> bool:
+    """True when ``key`` has used up its budget in ``scope``.
+
+    Fails *closed* on an empty key. Returning False there — the old behaviour —
+    means a caller that cannot name its subject silently loses the limit, which
+    is a bypass reachable by anything that can produce an empty key. No current
+    caller can (`client_key` never returns one), so this is a guard against the
+    next one rather than a behaviour change.
+    """
     if not key:
-        return False
+        return True
     return _count(scope, key, window) >= max_events
 
 
@@ -88,5 +104,11 @@ def pin_failure_count(client_key: str) -> int:
 
 
 def client_key(request, suffix: str = "") -> str:
-    host = request.client.host if request.client else "unknown"
+    """Identify a caller by peer address, never by a value the caller controls.
+
+    A missing address becomes `UNIDENTIFIED_CLIENT` rather than an empty string,
+    so it stays a *shared bucket* that limits still count against — never a key
+    that `blocked` would have to fail closed on.
+    """
+    host = (request.client.host if request.client else "") or UNIDENTIFIED_CLIENT
     return f"{host}:{suffix}" if suffix else host

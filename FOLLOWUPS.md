@@ -294,3 +294,33 @@ global rejection.
 Note also that `verify` is shared: `routes/admin_accounts.py:33` (host login)
 fails open on the same terms, which is intended — a host who cannot log in
 during an outage cannot resolve the alert telling them about it.
+
+### F32's proxy half is a deployment setting, not an app defect
+
+W3.9 fixed the two app-level halves of [F32]: `rate_limit.blocked()` no longer
+returns `False` for a falsy key (it fails closed), and `client_key()` maps a
+missing peer address to the shared `UNIDENTIFIED_CLIENT` bucket instead of an
+empty string, so a limit built on it still counts. The audit row's third point —
+"the proxy bucket is shared" — was not a code change. `client_ip.py` only ever
+*overwrites* `scope["client"]` with `CF-Connecting-IP` when the immediate peer is
+in `trusted_proxy_networks()` (`TRUSTED_PROXY_CIDRS`, or the RFC1918/loopback
+defaults when `CLOUDFLARE_PROXY` is on) **and** `_normalise_visitor_ip` accepts
+the header as an IP. With `TRUSTED_PROXY_CIDRS` unset and `CLOUDFLARE_PROXY` off
+— the state the audit was describing — no header is trusted at all, so every
+request behind a reverse proxy collapses onto the proxy's own address. That is a
+deployment configuration to document and set, not something the application can
+infer; changing it in code would mean trusting a client-supplied header by
+default, which is a worse defect than the one it would fix.
+
+### `GUEST_POST_MAX_ATTEMPTS = 30` is deliberately loose
+
+The new limit on `/save`, `/party` and `/another` allows 30 writes per (source
+address, link) per 15-minute window. It is set well above what a careful guest
+does — a guest fixing validation errors saves repeatedly, and each attempt is
+cheap — because the control it complements (the PIN gate and the claim cookie)
+is what decides *who* may post; this one only bounds *how often*. The tests pin
+the behaviour, not the number: they assert that the budget is spent and that a
+different address or a different scope is unaffected, so raising the constant
+would not fail the suite. A determined attacker can still spend 30 writes per
+link per address; if that ever proves too many, tighten the constant rather than
+adding a second limit on top of it.
