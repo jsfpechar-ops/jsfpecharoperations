@@ -1750,6 +1750,10 @@ async def guest_archive(guest_id: int, request: Request):
         return _back(f"/guests/{guest_id}", err="Already archived.")
     form = await request.form()
     return_to = security.safe_local_path(str(form.get("return_to") or ""), "/housebook")
+    # Archiving hides the record from the house book but keeps it in the
+    # database, so the scan of the passport it was checked against must go the
+    # same way it does on delete: the photo's only purpose was that check.
+    passport_photos.delete_photo(guest_id)
     db.update("guest", guest_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("guest_archived", f"id={guest_id}")
     reservation = db.query_one(
@@ -2311,11 +2315,16 @@ def purge_expired_records(request: Request):
     # A passport image has no six-year basis, so the same button clears the
     # ones left over from stays that ended long ago.
     photos = passport_photos.purge_stale(owner_user_id=owner_user_id)
+    # The request envelope holds every reported guest's passport number, so it
+    # goes on a much shorter clock than the record it belongs to.
+    blanked = reporting.purge_submission_payloads(owner_user_id=owner_user_id)
     parts = []
     if deleted:
         parts.append(f"{deleted} guest record(s) past the retention period")
     if photos:
         parts.append(f"{photos} passport image(s) no longer needed")
+    if blanked:
+        parts.append(f"{blanked} submission envelope(s) no longer needed")
     if not parts:
         return _back("/settings", msg="Nothing to delete - no record is past the retention period.")
     return _back("/settings", msg="Deleted " + " and ".join(parts) + ".")

@@ -9,7 +9,7 @@ even when the host never presses Verify.
 from __future__ import annotations
 
 import base64
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -35,6 +35,7 @@ def _purge():
         db.execute("DELETE FROM reservation WHERE apartment_id = ?", (row["id"],))
         db.execute("DELETE FROM apartment WHERE id = ?", (row["id"],))
     db.execute("DELETE FROM legal_entity WHERE name = 'Test'")
+    db.execute("DELETE FROM user_account WHERE username LIKE 'retention-%'")
 
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
@@ -98,6 +99,83 @@ def _seed_guest(stay_end: date, verified: bool = False) -> int:
     passport_photos.save_photo(guest_id, PNG_BYTES, "image/png")
     assert passport_photos.has_photo(guest_id)
     return guest_id
+
+
+SUBMISSION_REQUEST = (
+    "<request><guest><cDocN>P1234567</cDocN></guest></request>"
+)
+SUBMISSION_RESPONSE = "<response><result>OK</result></response>"
+RECEIPT_B64 = base64.b64encode(b"%PDF-1.4 Dorucenka").decode()
+
+_tok_counter = 0
+
+
+def _seed_owner(username: str) -> int:
+    """One host account, so a purge can be scoped to it."""
+    db.init_db()
+    now = db.utcnow()
+    return db.insert(
+        "user_account",
+        {
+            "username": username,
+            "display_name": username,
+            "password_hash": "x",
+            "role": "host",
+            "created_at": now,
+        },
+    )
+
+
+def _seed_submission(
+    created_days_ago: int,
+    state: str = "ok",
+    owner_user_id: int | None = None,
+    guest_id: int | None = None,
+) -> int:
+    """A submission row as the app writes one, envelope and receipt included."""
+    global _tok_counter
+    _tok_counter += 1
+    db.init_db()
+    now = db.utcnow()
+    entity_id = db.insert(
+        "legal_entity",
+        {"name": "Test", "seat": "Praha", "ico": "12345678", "created_at": now},
+    )
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "owner_user_id": owner_user_id,
+            "internal_name": "Flat",
+            "city_en": "Prague",
+            "permalink_token": f"tok-sub-{_tok_counter}",
+            "automation_mode": "manual",
+            "default_purpose": "10",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    created_at = (
+        datetime.now(timezone.utc) - timedelta(days=created_days_ago)
+    ).replace(microsecond=0).isoformat()
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment_id,
+            "created_at": created_at,
+            "finished_at": created_at,
+            "mode": "manual",
+            "state": state,
+            "guest_ids": "[]",
+            "pseudo_stamp": "20260101120000-abc",
+            "receipt_pdf": RECEIPT_B64,
+            "request_xml": SUBMISSION_REQUEST,
+            "response_xml": SUBMISSION_RESPONSE,
+        },
+    )
+    if guest_id is not None:
+        db.update("guest", guest_id, {"submission_id": submission_id})
+    return submission_id
 
 
 def test_retention_purge_takes_the_passport_photo_with_the_record():
@@ -176,3 +254,98 @@ def test_a_reported_guest_cannot_be_deleted_before_the_six_years_are_up():
 
     assert housebook.purge_expired() == 0
     assert db.query_one("SELECT 1 AS x FROM guest WHERE id = ?", (guest_id,))
+
+
+# --- submission envelopes ------------------------------------------------
+#
+# The request envelope holds every reported guest's passport number, and the
+# submission row outlives the six-year purge of the guest row it describes.
+# Nothing in the application ever deleted it.
+
+def test_an_old_submission_keeps_its_receipt_but_loses_its_envelope():
+    """The Dorucenka is evidence; the envelope is only a copy of the data."""
+    submission_id = _seed_submission(created_days_ago=200)
+
+    assert reporting.purge_submission_payloads() == 1
+
+    row = db.query_one("SELECT * FROM submission WHERE id = ?", (submission_id,))
+    assert row["request_xml"] is None, "the passport numbers are still on disk"
+    assert row["response_xml"] is None
+    assert row["receipt_pdf"] == RECEIPT_B64, (
+        "the Dorucenka is the evidence the host must still be able to produce"
+    )
+    assert row["pseudo_stamp"]
+
+
+def test_a_recent_submission_keeps_its_envelope():
+    """A host disputing last month's filing needs the envelope it was sent in."""
+    submission_id = _seed_submission(created_days_ago=10)
+
+    assert reporting.purge_submission_payloads() == 0
+
+    row = db.query_one("SELECT * FROM submission WHERE id = ?", (submission_id,))
+    assert row["request_xml"] == SUBMISSION_REQUEST
+    assert row["response_xml"] == SUBMISSION_RESPONSE
+
+
+def test_the_payload_purge_can_be_run_twice_without_touching_anything_else():
+    """The sweep runs every 12 hours, so it has to be idempotent."""
+    submission_id = _seed_submission(created_days_ago=200)
+
+    assert reporting.purge_submission_payloads() == 1
+    assert reporting.purge_submission_payloads() == 0
+
+    row = db.query_one("SELECT * FROM submission WHERE id = ?", (submission_id,))
+    assert row["receipt_pdf"] == RECEIPT_B64
+
+
+def test_a_submission_whose_guests_were_purged_is_deleted():
+    """`guest.submission_id` is ON DELETE SET NULL, so the row goes unreachable.
+
+    Once the guests age out, no screen in the app can reach the submission
+    again, and it still holds the envelope they were reported in.
+    """
+    guest_id = _seed_guest(date.today() - timedelta(days=365 * 7))
+    submission_id = _seed_submission(created_days_ago=365 * 7, guest_id=guest_id)
+
+    assert housebook.purge_expired() == 1
+
+    assert not db.query_one(
+        "SELECT 1 AS x FROM submission WHERE id = ?", (submission_id,)
+    ), "the guests are gone but the submission that carried them is still here"
+
+
+def test_deleting_a_guest_by_hand_does_not_take_a_recent_receipt_with_it():
+    """The receipt is proof that something was filed, and it is not the guest's.
+
+    A host who removes a guest entered by mistake must not thereby lose the
+    Dorucenka for a filing that really happened.
+    """
+    guest_id = _seed_guest(date.today() - timedelta(days=30))
+    submission_id = _seed_submission(created_days_ago=30, guest_id=guest_id)
+    db.execute("DELETE FROM guest WHERE id = ?", (guest_id,))
+
+    housebook.purge_expired()
+
+    assert db.query_one(
+        "SELECT 1 AS x FROM submission WHERE id = ?", (submission_id,)
+    ), "a recent submission was deleted because its guest row was removed"
+
+
+def test_purging_one_owner_leaves_another_owners_envelope_alone():
+    """One host's purge button must never reach into another host's filings."""
+    mine = _seed_owner("retention-a")
+    theirs = _seed_owner("retention-b")
+    my_submission = _seed_submission(created_days_ago=200, owner_user_id=mine)
+    their_submission = _seed_submission(created_days_ago=200, owner_user_id=theirs)
+
+    assert reporting.purge_submission_payloads(owner_user_id=mine) == 1
+
+    assert db.query_one(
+        "SELECT request_xml FROM submission WHERE id = ?", (my_submission,)
+    )["request_xml"] is None
+    assert db.query_one(
+        "SELECT request_xml FROM submission WHERE id = ?", (their_submission,)
+    )["request_xml"] == SUBMISSION_REQUEST, (
+        "one host's purge blanked another host's submission envelope"
+    )

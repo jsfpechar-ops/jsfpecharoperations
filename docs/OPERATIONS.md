@@ -29,7 +29,7 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
 | `submit` | `UBYHOST_SUBMIT_SWEEP_MINUTES` (10) | Sends everything currently sendable for apartments not in `manual` mode. |
 | `deadlines` | 30 min | Raises and clears `deadline` alerts for stays running out of statutory time. |
 | `mail` | 5 min | Expires 30-minute claim holds, drains the guest e-mail outbox, sends day-before reminders, purges mail rows older than 14 days. |
-| `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files. |
+| `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files, and blanks the request/response envelopes on submissions older than 90 days. |
 
 Two behaviours to know:
 
@@ -163,15 +163,30 @@ Rules that follow from this:
 - There is no downgrade path. A rollback to an earlier image leaves the extra
   columns in place, which is harmless, but the reverse is not.
 
+One change could not be made by adding a column alone. `guest.doc_number` and
+`guest.visa_number` are now stored encrypted in `doc_number_enc` and
+`visa_number_enc`, and an added column arrives empty — it does not carry the
+existing rows across. The release that introduced the pair also ships
+`App/scripts/migrate_encrypt_doc_fields.py`, which has to be run once as a
+deploy step:
+
+    .venv/bin/python scripts/migrate_encrypt_doc_fields.py --dry-run
+    .venv/bin/python scripts/migrate_encrypt_doc_fields.py
+
+It is idempotent and safe to re-run, and it blanks the plaintext column as it
+goes. Until it has run, the numbers are still in the clear in that database;
+the app keeps reading the plaintext column as a fallback so nothing breaks in
+the meantime.
+
 `deploy/lightsail/scripts/deploy.sh` dry-runs the new schema against a copy of
 the live database before switching over. Do not skip it.
 
 ## If the secret key is lost or rotated
 
 `UBYHOST_SECRET_KEY` (or `data/secret_key`) signs cookies and CSRF tokens, and
-derives the Fernet key that encrypts **UbyPort web-service passwords and host
-TOTP secrets**. Losing it or changing it has a wide, and partly silent, blast
-radius.
+derives the Fernet key that encrypts **UbyPort web-service passwords, host
+TOTP secrets and guest travel-document numbers**. Losing it or changing it has
+a wide, and partly silent, blast radius.
 
 What happens, in the order you will notice it:
 
@@ -186,6 +201,11 @@ What happens, in the order you will notice it:
    rather than raising, so each apartment fails its setup validation, raises an
    `apartment_setup` warning, and every send returns `not_configured`. Nothing
    is lost and nothing is sent. The deadline clock keeps running.
+5. **Stored guest document numbers will not decrypt either, and this one is
+   loud.** `db.decrypt_field` raises instead of returning empty, so opening a
+   guest, exporting the house book or filing to the police fails with an error
+   the host can see. That is deliberate: an empty `cDocN` filed with the police
+   is worse than a visible failure. Restoring the old key clears it.
 
 Recovery:
 
@@ -212,27 +232,44 @@ Automatic:
 
 - **Passport images** — every 12 hours, for stays that ended more than 30 days
   ago, plus orphaned files. Also deleted immediately when a host confirms a
-  guest's identity against the document. Note that *archiving* a guest does
-  **not** delete their passport image; only deleting the guest, or the sweep,
-  does.
+  guest's identity against the document, and when the guest is archived or
+  deleted: archiving keeps the row but hides it, and the scan existed only for
+  the check the host has now made. The 30-day sweep is the backstop for a host
+  who never pressed Verify.
 - **Mail rows** — `email_outbox` and `console_mail_log` older than 14 days.
-  These bodies contain working claim links, so this sweep matters.
+  A stored body never holds a working claim link: the secret is kept beside it
+  in the payload, encrypted, and put back when the message is sent. The sweep
+  still matters for the rest of the body — the guest's address, the apartment
+  name, the stay dates — but a row that outlives its welcome cannot be used to
+  open someone's registration.
+- **Submission envelopes** — `submission.request_xml` and `response_xml` are
+  blanked 90 days after the submission was created, by the 12-hour sweep and by
+  the Settings button. These envelopes hold every reported guest's name, birth
+  date and travel-document number, so this is the clock that matters for the
+  reported data. The Doručenka (`receipt_pdf`), the error PDF and the pseudo
+  stamp are **kept**: they are the evidence the host has to be able to produce,
+  and none of them carries guest data.
 
 Manual only:
 
 - **Expired house-book records** — the six-year duty is displayed per record and
   computed from the end of each stay, but expiry is **not** deleted on a
   schedule. It is the "purge expired records" button in Settings. If nobody
-  presses it, expired guest rows stay indefinitely.
+  presses it, expired guest rows stay indefinitely. The same button also clears
+  the passport images and blanks the submission envelopes described above, so a
+  host who never presses it is still covered by the sweeps.
+
+Deleted by either path:
+
+- **Orphaned submission rows** — a submission that no surviving `guest` row
+  points at, and that is itself older than the six-year cutoff, is deleted by
+  the retention purge. `guest.submission_id` is `ON DELETE SET NULL`, so once
+  the guests age out the row is unreachable from every screen. The cutoff is
+  applied here so that deleting a guest by hand cannot take a recent Doručenka
+  with it.
 
 Never deleted by any code path today:
 
-- **`submission.request_xml` / `response_xml` / `receipt_pdf` / `error_pdf`.**
-  There is no `DELETE FROM submission` anywhere in the application. The
-  envelopes hold every reported guest's name, birth date and travel-document
-  number in cleartext, so a passport number survives the purge of the guest row
-  it came from. The Doručenka has an evidential reason to be kept; the request
-  and response XML do not have the same justification, and nothing prunes them.
 - **`guest.filled_ip`**, retained for the life of the house-book record.
 
 ## Backup and restore
@@ -253,6 +290,8 @@ tell you:
   integrity_check;'` then start the app against a copy and check that the
   submissions list renders and one Doručenka downloads. A truncated WAL
   restore can look fine until a blob is read.
-- **Backups are not encrypted** by the supplied scripts. They contain every
-  guest's passport number. Encrypting them off-host is an operator action that
-  nothing here performs for you.
+- **Backups are not encrypted** by the supplied scripts. Guest passport
+  numbers are encrypted *inside* the database, but the key that decrypts them
+  travels in the same backup, so a copy of both is as readable as a copy of the
+  plaintext was. Encrypting them off-host is an operator action that nothing
+  here performs for you.

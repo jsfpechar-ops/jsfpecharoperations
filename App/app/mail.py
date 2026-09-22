@@ -35,6 +35,16 @@ KINDS = (
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+# A claim link's secret is the one thing a stored mail body must not contain.
+# The body carries this marker where the secret belongs and the secret itself
+# sits beside it in the payload, encrypted, so a send that has to be retried
+# still has a working link to retry with while the 14 days the outbox and the
+# console log live hold nothing anyone could use. The marker is deliberately
+# not shaped like a secret, so a body that still has it in is obviously not a
+# link rather than a subtly broken one.
+CLAIM_SECRET_MARKER = "{{claim_secret}}"
+CLAIM_SECRET_KEY = "claim_secret_enc"
+
 
 class MailConfigError(RuntimeError):
     """Mail environment is unsafe to start."""
@@ -169,9 +179,55 @@ def enqueue(
         return int(row["id"]) if row else None
 
 
+def stored_body(payload: Dict[str, Any]) -> str:
+    """The body as it is stored: a claim link with its secret left out."""
+    return payload.get("text") or ""
+
+
+def delivery_body(payload: Dict[str, Any]) -> str:
+    """The body as it goes out, with the real claim secret put back in it.
+
+    Raises when the secret cannot be produced. A body still carrying the marker
+    reads like a working link and is not one, and the guest is the one who
+    finds that out. A body with no marker either never had a secret or was
+    queued by the release before this one, and is passed through untouched.
+    """
+    body = stored_body(payload)
+    if CLAIM_SECRET_MARKER not in body:
+        return body
+    token = payload.get(CLAIM_SECRET_KEY)
+    if not token:
+        raise db.DecryptionError("outbox payload has a claim link with no secret")
+    return body.replace(CLAIM_SECRET_MARKER, db.decrypt_field(token))
+
+
+def _reveal_claim_secret(body: str, payload_json: Optional[str]) -> str:
+    """Put the claim secret back for the owner reading the console log.
+
+    Copying the link out of Settings is what the console backend is for on
+    staging, so the secret has to come back. This is best-effort on purpose:
+    Settings renders whatever the key situation is, so a secret that cannot be
+    read leaves the marker standing instead of failing the page.
+    """
+    if CLAIM_SECRET_MARKER not in body:
+        return body
+    try:
+        payload = json.loads(payload_json or "{}")
+        token = payload.get(CLAIM_SECRET_KEY)
+        if not token:
+            return body
+        return body.replace(CLAIM_SECRET_MARKER, db.decrypt_field(token))
+    except (db.DecryptionError, ValueError):
+        return body
+
+
 def _send_console(row) -> str:
     payload = json.loads(row["payload"] or "{}")
-    body = payload.get("text") or ""
+    # Build the delivered form first: if the claim secret cannot be produced
+    # this raises, and the row retries with an alert rather than leaving a log
+    # entry that claims a link went out. What is written to the log is the
+    # stored form, so the copy that lives for 14 days holds no working link.
+    delivery_body(payload)
     db.insert(
         "console_mail_log",
         {
@@ -179,7 +235,7 @@ def _send_console(row) -> str:
             "to_email": row["to_email"],
             "cc_email": row["cc_email"],
             "subject": row["subject"],
-            "body_text": body,
+            "body_text": stored_body(payload),
             "created_at": db.utcnow(),
         },
     )
@@ -211,7 +267,7 @@ def _send_ses(row) -> str:
         raise MailConfigError("UBYHOST_MAIL_FROM is required for SES sending.")
 
     payload = json.loads(row["payload"] or "{}")
-    body = payload.get("text") or ""
+    body = delivery_body(payload)
     reply_to = normalise_email(str(payload.get("reply_to") or ""))
 
     destination: Dict[str, List[str]] = {"ToAddresses": [row["to_email"]]}
@@ -316,19 +372,40 @@ def purge_old(days: int = 14) -> int:
     return count
 
 
-def recent_console_messages(owner_user_id: Optional[int], limit: int = 30) -> List[Any]:
+def recent_console_messages(
+    owner_user_id: Optional[int], limit: int = 30
+) -> List[Dict[str, Any]]:
+    """Recent console messages, with any claim link made usable again.
+
+    The stored body keeps the secret out, so it has to be put back for the
+    owner. Rows carry their outbox payload alongside so that needs no second
+    query; the LEFT JOIN on the platform-admin branch is there only to fetch
+    that payload and filters nothing out.
+    """
+    columns = "l.*, o.payload AS outbox_payload"
     if owner_user_id is None:
-        return db.query(
-            "SELECT * FROM console_mail_log ORDER BY id DESC LIMIT ?",
+        rows = db.query(
+            f"SELECT {columns} FROM console_mail_log l "
+            "LEFT JOIN email_outbox o ON o.id = l.outbox_id "
+            "ORDER BY l.id DESC LIMIT ?",
             (limit,),
         )
-    return db.query(
-        "SELECT l.* FROM console_mail_log l "
-        "JOIN email_outbox o ON o.id = l.outbox_id "
-        "WHERE o.owner_user_id IS ? "
-        "ORDER BY l.id DESC LIMIT ?",
-        (owner_user_id, limit),
-    )
+    else:
+        rows = db.query(
+            f"SELECT {columns} FROM console_mail_log l "
+            "JOIN email_outbox o ON o.id = l.outbox_id "
+            "WHERE o.owner_user_id IS ? "
+            "ORDER BY l.id DESC LIMIT ?",
+            (owner_user_id, limit),
+        )
+    messages = []
+    for row in rows:
+        item = dict(row)
+        item["body_text"] = _reveal_claim_secret(
+            item.get("body_text") or "", item.pop("outbox_payload", None)
+        )
+        messages.append(item)
+    return messages
 
 
 def extract_claim_secret(body: str) -> str:
