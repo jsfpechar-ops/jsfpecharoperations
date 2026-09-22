@@ -29,7 +29,7 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
 | `submit` | `UBYHOST_SUBMIT_SWEEP_MINUTES` (10) | Sends everything currently sendable for apartments not in `manual` mode. |
 | `deadlines` | 30 min | Raises and clears `deadline` alerts for stays running out of statutory time. |
 | `mail` | 5 min | Expires 30-minute claim holds, drains the guest e-mail outbox, sends day-before reminders, purges mail rows older than 14 days. |
-| `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files. |
+| `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files, and blanks the request/response envelopes on submissions older than 90 days. |
 
 Two behaviours to know:
 
@@ -217,22 +217,34 @@ Automatic:
   does.
 - **Mail rows** — `email_outbox` and `console_mail_log` older than 14 days.
   These bodies contain working claim links, so this sweep matters.
+- **Submission envelopes** — `submission.request_xml` and `response_xml` are
+  blanked 90 days after the submission was created, by the 12-hour sweep and by
+  the Settings button. These envelopes hold every reported guest's name, birth
+  date and travel-document number, so this is the clock that matters for the
+  reported data. The Doručenka (`receipt_pdf`), the error PDF and the pseudo
+  stamp are **kept**: they are the evidence the host has to be able to produce,
+  and none of them carries guest data.
 
 Manual only:
 
 - **Expired house-book records** — the six-year duty is displayed per record and
   computed from the end of each stay, but expiry is **not** deleted on a
   schedule. It is the "purge expired records" button in Settings. If nobody
-  presses it, expired guest rows stay indefinitely.
+  presses it, expired guest rows stay indefinitely. The same button also clears
+  the passport images and blanks the submission envelopes described above, so a
+  host who never presses it is still covered by the sweeps.
+
+Deleted by either path:
+
+- **Orphaned submission rows** — a submission that no surviving `guest` row
+  points at, and that is itself older than the six-year cutoff, is deleted by
+  the retention purge. `guest.submission_id` is `ON DELETE SET NULL`, so once
+  the guests age out the row is unreachable from every screen. The cutoff is
+  applied here so that deleting a guest by hand cannot take a recent Doručenka
+  with it.
 
 Never deleted by any code path today:
 
-- **`submission.request_xml` / `response_xml` / `receipt_pdf` / `error_pdf`.**
-  There is no `DELETE FROM submission` anywhere in the application. The
-  envelopes hold every reported guest's name, birth date and travel-document
-  number in cleartext, so a passport number survives the purge of the guest row
-  it came from. The Doručenka has an evidential reason to be kept; the request
-  and response XML do not have the same justification, and nothing prunes them.
 - **`guest.filled_ip`**, retained for the life of the house-book record.
 
 ## Backup and restore

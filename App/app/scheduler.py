@@ -105,11 +105,19 @@ def _job_mail() -> None:
 
 
 def _job_photo_sweep() -> None:
-    """Delete passport images the host never got round to verifying."""
+    """Delete passport images the host never got round to verifying.
+
+    Retention runs here too because it is the same question - what may we still
+    hold - and this is the only job that runs on a long enough cycle to be a
+    backstop for the Settings button.
+    """
     try:
         removed = passport_photos.purge_stale()
         if removed:
             log.info("passport photo sweep deleted %s file(s)", removed)
+        blanked = reporting.purge_submission_payloads()
+        if blanked:
+            log.info("submission payload purge blanked %s envelope(s)", blanked)
     except Exception:
         log.exception("passport photo sweep failed")
         _job_failed("photo_sweep")

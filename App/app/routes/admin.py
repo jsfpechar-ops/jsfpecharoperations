@@ -2311,11 +2311,16 @@ def purge_expired_records(request: Request):
     # A passport image has no six-year basis, so the same button clears the
     # ones left over from stays that ended long ago.
     photos = passport_photos.purge_stale(owner_user_id=owner_user_id)
+    # The request envelope holds every reported guest's passport number, so it
+    # goes on a much shorter clock than the record it belongs to.
+    blanked = reporting.purge_submission_payloads(owner_user_id=owner_user_id)
     parts = []
     if deleted:
         parts.append(f"{deleted} guest record(s) past the retention period")
     if photos:
         parts.append(f"{photos} passport image(s) no longer needed")
+    if blanked:
+        parts.append(f"{blanked} submission envelope(s) no longer needed")
     if not parts:
         return _back("/settings", msg="Nothing to delete - no record is past the retention period.")
     return _back("/settings", msg="Deleted " + " and ".join(parts) + ".")
