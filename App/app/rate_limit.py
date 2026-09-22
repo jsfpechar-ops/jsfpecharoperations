@@ -10,6 +10,11 @@ _WINDOW_SECONDS = 15 * 60
 _LOGIN_MAX_FAILURES = 12
 _LOGIN_IP_MAX_FAILURES = 30
 _PIN_MAX_FAILURES = 10
+# A per-IP window can be sidestepped by rotating source addresses, so the same
+# failures are also counted against the token alone; three windows' worth locks
+# the link for a day.
+_PIN_TOKEN_MAX_FAILURES = 3 * _PIN_MAX_FAILURES
+_PIN_TOKEN_LOCK_SECONDS = 24 * 60 * 60
 _BLOCK_SECONDS = 15 * 60
 
 
@@ -60,8 +65,22 @@ def pin_blocked(client_key: str) -> bool:
     return blocked("pin_fail", client_key, _PIN_MAX_FAILURES)
 
 
-def record_pin_failure(client_key: str) -> None:
+def pin_token_blocked(lock_key: str) -> bool:
+    """Long cool-off once one link has burned a day's worth of attempts.
+
+    The key is the link *and* the PIN it was tested against, so spreading the
+    guesses over many source addresses — the weakness in the per-IP window —
+    does not reset the budget, while generating a new PIN does: the host's
+    ``regenerate-pin`` button is the remedy for a locked-out guest, and a
+    token-only key would leave that guest shut out for a day.
+    """
+    return blocked("pin_fail_token", lock_key, _PIN_TOKEN_MAX_FAILURES, _PIN_TOKEN_LOCK_SECONDS)
+
+
+def record_pin_failure(client_key: str, lock_key: str = "") -> None:
     record("pin_fail", client_key)
+    if lock_key:
+        record("pin_fail_token", lock_key)
 
 
 def pin_failure_count(client_key: str) -> int:

@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db, passport_photos
-from app.main import app
+from app import auth, claim, db, passport_photos, rate_limit
+from app.main import app, rotate_weak_permalinks
 from tests.conftest import complete_guest_claim
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -23,7 +23,8 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
 PNG_BYTES = base64.b64decode(SIGNATURE.split(",", 1)[1])
 
 TOKEN = "pingate-token"
-PIN = "4321"
+PIN = "432199"
+LEGACY_PIN = "4321"
 
 
 @pytest.fixture
@@ -125,11 +126,22 @@ def test_party_and_another_posts_require_pin(pin_required):
         _cleanup()
 
 
-def test_pin_page_accepts_the_length_the_app_generates(pin_required):
-    """A 6-digit PIN in a maxlength=4 box cannot be typed at all."""
+def test_pin_page_requires_six_digits(pin_required):
+    """A 4-digit PIN is no longer a PIN.
+
+    This inverts the assertion that used to live here: the test used to *require*
+    that a legacy 4-digit PIN kept working, which is exactly the weakness F26
+    names. Four digits is a 10^4 space, and with mail disabled the link plus PIN
+    is the only boundary on the whole registration flow, so short PINs are now
+    refused at the door, at the input pattern, and at startup (see
+    ``test_startup_rotates_a_legacy_four_digit_pin``).
+    """
     generated = auth.new_permalink_pin()
     assert len(generated) == 6
     assert auth.normalise_permalink_pin(generated) == generated
+    assert auth.normalise_permalink_pin(LEGACY_PIN) is None
+    assert auth.normalise_permalink_pin("12345") is None
+    assert auth.normalise_permalink_pin("1234567") is None
 
     stay_id = _stay_id()
     try:
@@ -144,7 +156,8 @@ def test_pin_page_accepts_the_length_the_app_generates(pin_required):
         assert field, "the PIN page should render a pin input"
         markup = field.group(0)
         assert 'maxlength="6"' in markup, markup
-        assert "[0-9]{4}|[0-9]{6}" in markup, markup
+        assert 'pattern="[0-9]{6}"' in markup, markup
+        assert "{4}" not in markup, markup
 
         accepted = client.post(
             f"/l/{TOKEN}/pin",
@@ -152,18 +165,110 @@ def test_pin_page_accepts_the_length_the_app_generates(pin_required):
             follow_redirects=False,
         )
         assert accepted.status_code == 303
-        # A legacy 4-digit PIN must keep working for links already sent out.
+    finally:
+        _cleanup()
+
+
+def test_startup_rotates_a_legacy_four_digit_pin(pin_required):
+    """The normaliser is not on the guest path, so startup has to replace the stored value."""
+    _stay_id()
+    apartment_id = db.query_one(
+        "SELECT id FROM apartment WHERE permalink_token = ?", (TOKEN,)
+    )["id"]
+    try:
         db.execute(
             "UPDATE apartment SET permalink_pin = ? WHERE permalink_token = ?",
-            (PIN, TOKEN),
+            (LEGACY_PIN, TOKEN),
         )
-        legacy = TestClient(app).post(
+
+        assert rotate_weak_permalinks() >= 1
+        rotated = db.query_one(
+            "SELECT permalink_pin FROM apartment WHERE permalink_token = ?", (TOKEN,)
+        )["permalink_pin"]
+        assert len(rotated) == 6 and rotated.isdigit()
+
+        alert = db.query_one(
+            "SELECT * FROM alert WHERE kind = ? AND apartment_id = ?",
+            ("guest_pin_rotated", apartment_id),
+        )
+        assert alert is not None, "the host has to be told the PIN they sent out changed"
+
+        # Idempotent: the rotated value is six digits, so a second run touches nothing.
+        assert rotate_weak_permalinks() == 0
+    finally:
+        db.execute("DELETE FROM alert WHERE kind = ?", ("guest_pin_rotated",))
+        _cleanup()
+
+
+def test_pin_lockout_survives_a_fresh_ip(pin_required, monkeypatch):
+    """Guessing across many source addresses must still lock the link."""
+    _stay_id()
+    monkeypatch.setattr("app.routes.guest.asyncio.sleep", AsyncMock())
+    try:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
+        for attempt in range(rate_limit._PIN_TOKEN_MAX_FAILURES):
+            client = TestClient(app, client=(f"10.0.0.{attempt}", 50000))
+            blocked = client.post(
+                f"/l/{TOKEN}/pin",
+                data={"pin": "000000", "return_to": f"/l/{TOKEN}"},
+                follow_redirects=False,
+            )
+            assert blocked.status_code == 200
+
+        # Every attempt came from a different address, so no per-IP window ever
+        # filled: the only thing that can stop the next one is the token scope.
+        assert rate_limit.pin_token_blocked(
+            f"{TOKEN}:{auth.pin_fingerprint(TOKEN, PIN)}"
+        )
+
+        fresh = TestClient(app, client=("10.0.1.1", 50000))
+        refused = fresh.post(
             f"/l/{TOKEN}/pin",
             data={"pin": PIN, "return_to": f"/l/{TOKEN}"},
             follow_redirects=False,
         )
-        assert legacy.status_code == 303
+        assert refused.status_code == 200, "the correct PIN must not open a locked link"
+        assert 'name="pin"' in refused.text
     finally:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
+        db.execute("DELETE FROM rate_limit_event WHERE scope = ?", ("pin_fail_token",))
+        _cleanup()
+
+
+def test_a_new_pin_lifts_the_lockout(pin_required, monkeypatch):
+    """The host's regenerate-pin button has to be the remedy for a locked-out guest."""
+    _stay_id()
+    monkeypatch.setattr("app.routes.guest.asyncio.sleep", AsyncMock())
+    try:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
+        for attempt in range(rate_limit._PIN_TOKEN_MAX_FAILURES):
+            TestClient(app, client=(f"10.0.0.{attempt}", 50000)).post(
+                f"/l/{TOKEN}/pin",
+                data={"pin": "000000", "return_to": f"/l/{TOKEN}"},
+                follow_redirects=False,
+            )
+        assert rate_limit.pin_token_blocked(
+            f"{TOKEN}:{auth.pin_fingerprint(TOKEN, PIN)}"
+        )
+
+        replacement = auth.new_permalink_pin()
+        db.execute(
+            "UPDATE apartment SET permalink_pin = ? WHERE permalink_token = ?",
+            (replacement, TOKEN),
+        )
+
+        assert not rate_limit.pin_token_blocked(
+            f"{TOKEN}:{auth.pin_fingerprint(TOKEN, replacement)}"
+        )
+        allowed = TestClient(app, client=("10.0.1.1", 50000)).post(
+            f"/l/{TOKEN}/pin",
+            data={"pin": replacement, "return_to": f"/l/{TOKEN}"},
+            follow_redirects=False,
+        )
+        assert allowed.status_code == 303
+    finally:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
+        db.execute("DELETE FROM rate_limit_event WHERE scope = ?", ("pin_fail_token",))
         _cleanup()
 
 
