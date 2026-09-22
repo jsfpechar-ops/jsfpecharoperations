@@ -17,6 +17,12 @@ LEVEL_ORDER = {"critical": 0, "warning": 1, "info": 2}
 # hosts see the same compact card regardless of the English log text stored.
 _STAY_ALERT_KINDS = frozenset({"deadline", "guest_incomplete_checkin"})
 
+# These kinds store English text only as a log/fallback copy; their card is
+# rebuilt from i18n at render time so a Czech host never reads English.
+_TRANSLATED_ALERT_KINDS = frozenset(
+    {"dates_changed_resign", "headcount_mismatch", "feed_incomplete", "job_failed"}
+)
+
 
 def _fmt_date(value: Optional[str]) -> str:
     parsed = validation.parse_iso_date(value)
@@ -82,6 +88,56 @@ def checkin_incomplete_reason(lang: str) -> str:
     return host_i18n.translate(lang, "notification.reason.checkin_incomplete")
 
 
+def _reservation_row(reservation_id: Any) -> Any:
+    return db.query_one(
+        "SELECT r.*, a.internal_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (reservation_id,),
+    )
+
+
+def _present_translated(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]:
+    """Rebuild the card text of an alert whose stored copy is English-only."""
+    if kind == "job_failed":
+        job_id = (row.get("dedupe_key") or "").split(":", 1)[-1]
+        row["display_title"] = host_i18n.translate(
+            lang,
+            "notification.job_failed.title",
+            job=host_i18n.translate(lang, f"notification.job_name.{job_id}") if job_id else "",
+        )
+        row["display_detail"] = host_i18n.translate(lang, "notification.job_failed.detail")
+        return row
+    if kind == "feed_incomplete":
+        apartment = db.query_one(
+            "SELECT internal_name FROM apartment WHERE id = ?", (row.get("apartment_id"),)
+        )
+        row["display_title"] = host_i18n.translate(
+            lang,
+            "notification.feed_incomplete.title",
+            property=(apartment["internal_name"] if apartment else "") or "",
+        )
+        row["display_detail"] = host_i18n.translate(
+            lang, "notification.reason.feed_incomplete"
+        )
+        return row
+    reservation = _reservation_row(row["reservation_id"]) if row.get("reservation_id") else None
+    if not reservation:
+        return row
+    row["display_title"] = stay_title(lang, reservation["internal_name"] or "", reservation)
+    if kind == "dates_changed_resign":
+        row["display_detail"] = host_i18n.translate(
+            lang, "notification.reason.dates_changed_resign"
+        )
+        return row
+    from . import reporting
+
+    filled, expected = _forms_count(reporting.reservation_progress(reservation))
+    row["display_detail"] = host_i18n.translate(
+        lang, "notification.reason.headcount_mismatch", filled=filled, expected=expected
+    )
+    return row
+
+
 def present(alert: Any, lang: str) -> Dict[str, Any]:
     """Compact title + reason for the notification card.
 
@@ -90,16 +146,14 @@ def present(alert: Any, lang: str) -> Dict[str, Any]:
     """
     row = dict(alert)
     kind = row.get("kind") or ""
+    if kind in _TRANSLATED_ALERT_KINDS:
+        return _present_translated(row, kind, lang)
     if kind not in _STAY_ALERT_KINDS or not row.get("reservation_id"):
         row["display_title"] = row.get("message") or ""
         row["display_detail"] = row.get("detail") or ""
         return row
 
-    reservation = db.query_one(
-        "SELECT r.*, a.internal_name FROM reservation r "
-        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
-        (row["reservation_id"],),
-    )
+    reservation = _reservation_row(row["reservation_id"])
     if not reservation:
         row["display_title"] = row.get("message") or ""
         row["display_detail"] = row.get("detail") or ""
@@ -113,7 +167,7 @@ def present(alert: Any, lang: str) -> Dict[str, Any]:
 
     from . import reporting
 
-    start = validation.parse_iso_date(reservation["date_from"])
+    start = reporting.reservation_deadline_anchor(reservation)
     progress = reporting.reservation_progress(reservation)
     if start:
         row["display_detail"] = deadline_reason(lang, start, progress)
