@@ -232,9 +232,10 @@ Automatic:
 
 - **Passport images** — every 12 hours, for stays that ended more than 30 days
   ago, plus orphaned files. Also deleted immediately when a host confirms a
-  guest's identity against the document. Note that *archiving* a guest does
-  **not** delete their passport image; only deleting the guest, or the sweep,
-  does.
+  guest's identity against the document, and when the guest is archived or
+  deleted: archiving keeps the row but hides it, and the scan existed only for
+  the check the host has now made. The 30-day sweep is the backstop for a host
+  who never pressed Verify.
 - **Mail rows** — `email_outbox` and `console_mail_log` older than 14 days.
   These bodies contain working claim links, so this sweep matters.
 - **Submission envelopes** — `submission.request_xml` and `response_xml` are
