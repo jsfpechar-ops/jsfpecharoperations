@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db
 from app import alerts
 from app import demo
-from app import housebook
+from app import host_i18n, housebook
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -369,7 +369,7 @@ def test_demo_reset_removes_only_named_mock_data():
 def test_guest_pick_explains_law_without_portal_branding():
     _seed_stays()
     try:
-        page = TestClient(app).get(f"/l/{TOKEN}")
+        page = TestClient(app).get(f"/l/{TOKEN}?lang=en")
         assert page.status_code == 200
         assert "Czech law" in page.text
         assert "Why you are filling this in" in page.text
@@ -405,7 +405,7 @@ def test_guest_assigned_screen_does_not_leak_police_name():
 def test_guest_privacy_notice_names_controller():
     _seed_stays()
     try:
-        page = TestClient(app).get(f"/l/{TOKEN}/privacy")
+        page = TestClient(app).get(f"/l/{TOKEN}/privacy?lang=en")
         assert page.status_code == 200
         assert "Overhaul Test s.r.o." in page.text
         assert "privacy@overhaul.test" in page.text
@@ -448,7 +448,7 @@ def test_property_can_use_separate_pm_and_data_controller():
             "SELECT data_controller_entity_id FROM apartment WHERE id = ?",
             (apartment_id,),
         )["data_controller_entity_id"] == controller_id
-        privacy = TestClient(app).get(f"/l/{TOKEN}/privacy")
+        privacy = TestClient(app).get(f"/l/{TOKEN}/privacy?lang=en")
         assert "Separate Controller a.s." in privacy.text
         assert "privacy@controller.test" in privacy.text
         assert "Overhaul Test s.r.o." in privacy.text
@@ -459,7 +459,7 @@ def test_property_can_use_separate_pm_and_data_controller():
         )
         assert "different name for the stay contact below does not change" in privacy.text
 
-        picker = TestClient(app).get(f"/l/{TOKEN}")
+        picker = TestClient(app).get(f"/l/{TOKEN}?lang=en")
         assert "privacy@overhaul.test" in picker.text
         assert "privacy@controller.test" not in picker.text
 
@@ -482,6 +482,7 @@ def test_guest_unavailable_states_are_distinct():
     _seed_stays()
     try:
         browser = TestClient(app)
+        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
         bad_stay = browser.get(f"/l/{TOKEN}/999999")
         assert bad_stay.status_code == 404
         assert "no longer open" in bad_stay.text

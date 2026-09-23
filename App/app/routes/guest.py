@@ -14,7 +14,7 @@ guest's personal data.
 from __future__ import annotations
 
 import asyncio
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
 
@@ -24,8 +24,11 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
+from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
+from .admin_helpers import guest_form_raw as _guest_form_raw
+from .admin_helpers import kept_signature as _kept_signature
+from .admin_helpers import stay_dates_from_form as _stay_dates_from_form
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
@@ -134,17 +137,24 @@ CS_PASSPORT_UPLOAD_MESSAGES = {
 
 
 def _serializer() -> URLSafeSerializer:
-    return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-owned")
+    return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-owned")
 
 
 def _claim_serializer() -> URLSafeSerializer:
-    return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-claim")
+    return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-claim")
 
 
 def _language(request: Request) -> str:
-    return i18n.normalise_language(
-        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE) or ""
-    )
+    """The guest's language: what they asked for, else the public default.
+
+    A guest arriving from a host's link has made no choice, and the host is
+    Czech, so the form is Czech until the guest says otherwise -- through a
+    ``?lang=`` on a link, or the switcher's cookie. The catalog's own
+    ``i18n.DEFAULT_LANGUAGE`` is only what a missing *key* falls back to.
+    """
+    return host_i18n.supported_language(
+        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
+    ) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
 
 
 def _owned_ids(request: Request) -> List[int]:
@@ -1256,40 +1266,18 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             return _unavailable(request, lang, "form_locked", 403, token)
 
     child_in_passport = bool(form.get("child_in_passport"))
-    raw = {
-        "surname": form.get("surname") or "",
-        "first_name": form.get("first_name") or "",
-        "birth_date": form.get("birth_date") or "",
-        "nationality": form.get("nationality") or "",
-        "doc_number": validation.INPASS if child_in_passport else (form.get("doc_number") or ""),
-        "visa_number": form.get("visa_number") or "",
-        "res_street": form.get("res_street") or "",
-        "res_city": form.get("res_city") or "",
-        "res_country": form.get("res_country") or "",
-        "purpose": form.get("purpose") or apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
-        "note": form.get("note") or "",
-    }
-    if child_in_passport:
-        parent_doc = validation.normalise_document(form.get("parent_doc_number") or "")
-        if parent_doc:
-            prefix = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
-            raw["note"] = (prefix + parent_doc + (" " + raw["note"] if raw["note"] else ""))[:255]
+    # One extractor for the host entry form and this one: the fields are the
+    # same, and a field read in only one of them silently drops data from
+    # whichever path was forgotten.
+    raw = _guest_form_raw(form, apartment)
 
     # Un-clamped so an over-long name is reported back to the guest instead of
     # being cut mid-word and filed against a passport it no longer matches.
     values = validation.normalise_guest(raw, clamp=False)
-    stay_from = (form.get("stay_from") or "").strip() or reservation["date_from"]
-    stay_to = (form.get("stay_to") or "").strip() or reservation["date_to"]
-    signature = (form.get("signature") or "").strip()
-    if (
-        not validation.is_valid_signature(signature)
-        and existing
-        and validation.is_valid_signature(existing["signature_png"])
-    ):
-        # A re-render without a redrawn signature keeps the one already
-        # collected. The stored value has to pass the same check: a row written
-        # before this check existed must not be carried forward as signed.
-        signature = existing["signature_png"]
+    stay_from, stay_to = _stay_dates_from_form(
+        form, (reservation["date_from"], reservation["date_to"])
+    )
+    signature = _kept_signature(form.get("signature"), existing["signature_png"] if existing else None)
 
     party_raw = (form.get("party_size") or "").strip()
     try:
@@ -1327,12 +1315,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     if reporting.expected_guest_count(reservation) is None and not existing:
         if party_size < 1 or party_size > 60:
             issues.append(validation.Issue("party_size", translate("error_party_size")))
-    if not signature:
-        issues.append(validation.Issue("signature", translate("signature_missing")))
-    else:
-        bad_signature = validation.signature_issue(signature)
-        if bad_signature:
-            issues.append(bad_signature)
+    signature_issue = reporting.guest_signature_issue(signature, translate)
+    if signature_issue:
+        issues.append(signature_issue)
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
 

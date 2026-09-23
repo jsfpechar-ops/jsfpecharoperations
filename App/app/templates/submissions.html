@@ -35,7 +35,7 @@
         <td data-label="{{ t('reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
         <td class="mono small" data-label="{{ t('reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
         <td class="nowrap row-actions" data-label="">
-          {% if submission.receipt_pdf %}
+          {% if submission.has_receipt %}
             <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.receipt') }}</a>
           {% endif %}
           <a class="btn small" href="/submissions/{{ submission.id }}">{{ t('reports.details') }}</a>

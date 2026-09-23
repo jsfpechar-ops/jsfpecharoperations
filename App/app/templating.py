@@ -28,9 +28,9 @@ from . import (
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
 
-def _fmt_date(value: Optional[str]) -> str:
-    parsed = validation.parse_iso_date(value)
-    return parsed.strftime("%d.%m.%Y") if parsed else (value or "")
+# One date format for the whole app: a page, an alert and an e-mail must never
+# print the same stay differently.
+_fmt_date = validation.fmt_date
 
 
 def _weekday(value: Optional[str]) -> str:
@@ -96,7 +96,6 @@ templates.env.globals.update(
     format_birth_date=validation.format_birth_date,
     display_birth_date=validation.display_birth_date,
     compose_residence=validation.compose_residence,
-    status_labels=reporting.STATUS_LABELS,
     nights=_nights,
     parse_iso_date=validation.parse_iso_date,
     today=lambda: date.today(),

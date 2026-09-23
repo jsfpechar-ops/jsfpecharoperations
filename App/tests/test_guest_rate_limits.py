@@ -112,13 +112,15 @@ def test_writing_guest_posts_are_rate_limited(path):
         client = TestClient(app)
         for attempt in range(GUEST_POST_MAX_ATTEMPTS):
             response = client.post(
-                f"/l/{TOKEN}/{stay_id}/{path}", data={}, follow_redirects=False
+                f"/l/{TOKEN}/{stay_id}/{path}?lang=en", data={}, follow_redirects=False
             )
             assert response.status_code != 429, (
                 f"attempt {attempt + 1} of {GUEST_POST_MAX_ATTEMPTS} was refused early"
             )
 
-        blocked = client.post(f"/l/{TOKEN}/{stay_id}/{path}", data={}, follow_redirects=False)
+        blocked = client.post(
+            f"/l/{TOKEN}/{stay_id}/{path}?lang=en", data={}, follow_redirects=False
+        )
         assert blocked.status_code == 429
         assert i18n.translator("en")("rate_limited_title") in blocked.text
 

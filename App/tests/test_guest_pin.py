@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import base64
 import re
-from datetime import date, timedelta
+from datetime import timedelta
 from unittest.mock import AsyncMock
 
 import pytest
@@ -143,7 +143,7 @@ def test_pin_page_requires_six_digits(pin_required):
     assert auth.normalise_permalink_pin("12345") is None
     assert auth.normalise_permalink_pin("1234567") is None
 
-    stay_id = _stay_id()
+    _stay_id()
     try:
         db.execute(
             "UPDATE apartment SET permalink_pin = ? WHERE permalink_token = ?",

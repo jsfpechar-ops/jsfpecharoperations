@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import time
-from typing import Optional
 
 from . import db
 
@@ -15,7 +14,6 @@ _PIN_MAX_FAILURES = 10
 # the link for a day.
 _PIN_TOKEN_MAX_FAILURES = 3 * _PIN_MAX_FAILURES
 _PIN_TOKEN_LOCK_SECONDS = 24 * 60 * 60
-_BLOCK_SECONDS = 15 * 60
 
 #: Used when the ASGI server hands us no peer address. It is a *single shared*
 #: bucket — every such request counts against the same key — so a limit built on

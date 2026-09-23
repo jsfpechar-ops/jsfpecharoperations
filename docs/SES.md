@@ -77,8 +77,9 @@ Region: **Europe (Frankfurt) `eu-central-1`**.
    `ses:SendRawEmail` in this region. Create access keys for Lightsail; never
    commit them.
 
-Optional later: SNS → SQS bounce/complaint feedback
-(`UBYHOST_SES_FEEDBACK_QUEUE_URL` is reserved in config but unused today).
+Optional later: SNS → SQS bounce/complaint feedback. The reserved
+`UBYHOST_SES_FEEDBACK_QUEUE_URL` setting was removed because nothing read it;
+bounce/complaint handling is still unimplemented.
 
 ## Application deploy (completed 2026-09-21)
 

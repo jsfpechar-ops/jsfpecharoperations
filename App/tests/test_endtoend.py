@@ -520,7 +520,7 @@ def test_21_registration_pdf_is_produced_per_guest(host):
 def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch):
     from app import housebook
 
-    page = host.get("/housebook")
+    page = host.get("/housebook?lang=en")
     assert page.status_code == 200
     assert "Your legal duty" in page.text
 

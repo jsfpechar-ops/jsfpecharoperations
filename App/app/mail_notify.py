@@ -70,9 +70,9 @@ def _esc(value: Any) -> str:
     return html.escape("" if value is None else str(value))
 
 
-def _fmt_date(value: Optional[str]) -> str:
-    parsed = validation.parse_iso_date(value)
-    return parsed.strftime("%d.%m.%Y") if parsed else (value or "")
+# One date format for the whole app: an e-mail, an alert and a page must never
+# print the same stay differently.
+_fmt_date = validation.fmt_date
 
 
 def _clamp_reason(reason: str) -> str:
@@ -193,10 +193,7 @@ def _reason_text(state: str, reason: str, transport: bool, lang: str) -> str:
 
 
 def _fmt_dates(date_from: Optional[str], date_to: Optional[str]) -> str:
-    start, end = _fmt_date(date_from), _fmt_date(date_to)
-    if start and end:
-        return f"{start} \u2013 {end}"
-    return start or end
+    return validation.fmt_date_range(date_from, date_to)
 
 
 def _block_heading(text: str) -> str:

@@ -30,9 +30,30 @@ def entity(request: Request, entity_id: int):
     )
 
 
-def reservation(request: Request, reservation_id: int):
+def apartment_for_reservation(reservation, owner_user_id: int | None = None):
+    """The apartment a reservation belongs to.
+
+    A caller that already holds a reservation from an owner-scoped query passes
+    no owner; one working from a bare apartment id passes the owner so the same
+    join guards it. Either way the apartment a route acts on is reached through
+    this module rather than a bare ``SELECT * FROM apartment``.
+    """
     return db.query_one(
-        "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "SELECT * FROM apartment WHERE id = ? AND (? IS NULL OR owner_user_id IS ?)",
+        (reservation["apartment_id"], owner_user_id, owner_user_id),
+    )
+
+
+def reservation(request: Request, reservation_id: int, columns: str = "r.*"):
+    """One reservation, reached through its apartment's owner.
+
+    ``columns`` exists because several routes need a couple of apartment columns
+    alongside the stay (the permalink, the automation mode). Passing them here
+    keeps the ownership join in one place instead of a route writing its own
+    copy of the join and quietly forgetting the ``owner_user_id`` clause.
+    """
+    return db.query_one(
+        f"SELECT {columns} FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.id = ? AND a.owner_user_id IS ?",
         (reservation_id, owner_id(request)),
     )
@@ -48,9 +69,10 @@ def guest(request: Request, guest_id: int):
     )
 
 
-def submission(request: Request, submission_id: int):
+def submission(request: Request, submission_id: int, columns: str = "s.*"):
+    """One submission, reached through its apartment's owner (see ``reservation``)."""
     return db.query_one(
-        "SELECT s.* FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+        f"SELECT {columns} FROM submission s JOIN apartment a ON a.id = s.apartment_id "
         "WHERE s.id = ? AND a.owner_user_id IS ?",
         (submission_id, owner_id(request)),
     )

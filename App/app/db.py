@@ -201,7 +201,8 @@ CREATE TABLE IF NOT EXISTS alert (
     message        TEXT NOT NULL,
     detail         TEXT,
     created_at     TEXT NOT NULL,
-    resolved_at    TEXT
+    resolved_at    TEXT,
+    params         TEXT
 );
 
 CREATE TABLE IF NOT EXISTS codelist (
@@ -225,11 +226,16 @@ CREATE TABLE IF NOT EXISTS audit (
 
 CREATE INDEX IF NOT EXISTS idx_res_apartment_dates ON reservation (apartment_id, date_from);
 CREATE INDEX IF NOT EXISTS idx_guest_reservation   ON guest (reservation_id);
-CREATE INDEX IF NOT EXISTS idx_guest_state         ON guest (submit_state);
+-- idx_guest_state is dropped, not created: nothing filters on submit_state in
+-- SQL - the send gate reads it in Python - so the index was maintained on every
+-- guest write and never read.
+DROP INDEX IF EXISTS idx_guest_state;
 CREATE INDEX IF NOT EXISTS idx_apartment_owner     ON apartment (owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_entity_owner        ON legal_entity (owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_alert_owner         ON alert (owner_user_id, resolved_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_dedupe ON alert (dedupe_key) WHERE resolved_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_submission_apartment ON submission (apartment_id);
+CREATE INDEX IF NOT EXISTS idx_audit_owner         ON audit (owner_user_id, id);
 
 CREATE TABLE IF NOT EXISTS rate_limit_event (
     id    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -286,6 +292,7 @@ CREATE TABLE IF NOT EXISTS email_outbox (
     updated_at       TEXT NOT NULL,
     sent_at          TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_outbox_state_attempt ON email_outbox (state, next_attempt_at);
 
 CREATE TABLE IF NOT EXISTS console_mail_log (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -313,9 +320,6 @@ def connect() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
-    # Self-heal older databases even if the server was already running when the
-    # file was replaced or restored from an older copy.
-    _add_missing_columns(conn)
     return conn
 
 
@@ -367,19 +371,41 @@ ADDED_COLUMNS = (
     ("guest", "receipt_submission_id", "INTEGER REFERENCES submission(id) ON DELETE SET NULL"),
     ("console_mail_log", "body_html", "TEXT"),
     ("guest", "submit_attempts", "INTEGER NOT NULL DEFAULT 0"),
+    # The values an alert's card interpolates, as JSON, so the card can be
+    # rebuilt in the host's language at render time instead of storing prose.
+    ("alert", "params", "TEXT"),
 )
 
 
 def _add_missing_columns(conn: sqlite3.Connection) -> None:
+    """Bring a database created by an older release up to the current columns.
+
+    One ``PRAGMA table_info`` per table, not one per column: this used to run on
+    every connection and every query opens one, so the schema check was most of
+    the statements the process executed. It runs at startup now, from
+    ``init_db``.
+    """
+    columns: Dict[str, set] = {}
     for table, column, decl in ADDED_COLUMNS:
-        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
-        if existing and column not in existing:
+        if table not in columns:
+            columns[table] = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if columns[table] and column not in columns[table]:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+            columns[table].add(column)
 
 
 def init_db() -> None:
+    # The data directory has to exist before sqlite opens the database inside
+    # it, and creating it is no longer an import-time side effect of config.
+    config.ensure_data_dir()
     conn = connect()
     try:
+        # Migrate before the schema, because SCHEMA also creates indexes over
+        # columns a legacy database is missing and CREATE TABLE IF NOT EXISTS
+        # will not add them. Migrate again after it, because SCHEMA's own table
+        # definitions do not carry every later column - a fresh database gets
+        # those from ADDED_COLUMNS. Both passes are one PRAGMA per table, once.
+        _add_missing_columns(conn)
         conn.executescript(SCHEMA)
         _add_missing_columns(conn)
     finally:
@@ -524,7 +550,7 @@ def audit(
 # --- secret handling -----------------------------------------------------
 
 def _fernet() -> Fernet:
-    digest = hashlib.sha256(config.SECRET_KEY.encode("utf-8")).digest()
+    digest = hashlib.sha256(config.secret_key().encode("utf-8")).digest()
     return Fernet(base64.urlsafe_b64encode(digest))
 
 

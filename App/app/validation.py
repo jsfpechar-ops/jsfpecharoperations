@@ -50,6 +50,12 @@ MAX_NOTE = 255
 # "INPASS" and the parent's document number must then go into the note.
 INPASS = "INPASS"
 
+# The note is the only free-text field that travels with the record, so the
+# parent's document number is written in front of whatever else it holds. Both
+# forms build it here so a child filed by the host reads the same as one filed
+# from the guest link.
+INPASS_NOTE_PREFIX = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
+
 # Purpose-of-stay code list (kodovnik uctu pobytu). The web service is
 # authoritative via DejMiCiselnik(UcelyPobytu); this is the offline fallback.
 PURPOSES: List[Tuple[str, str, str]] = [
@@ -187,14 +193,21 @@ def normalise_note(value: Optional[str]) -> str:
     return collapse_spaces(strip_forbidden(value))[:MAX_NOTE]
 
 
+def note_for_parent_document(parent_document: Optional[str], note: str = "") -> str:
+    """The note a child travelling on a parent's passport must carry.
+
+    Appendix 3 wants the parent's document number on the record, and the note is
+    the only free-text field that reaches UbyPort, so it is written in front of
+    whatever the person already typed there.
+    """
+    parent = normalise_document(parent_document)
+    if not parent:
+        return note
+    return (INPASS_NOTE_PREFIX + parent + (f" {note}" if note else ""))[:MAX_NOTE]
+
+
 def normalise_zip(value: Optional[str]) -> str:
     return "".join(ch for ch in (value or "") if ch.isdigit())
-
-
-def ascii_fold(value: str) -> str:
-    """Diacritics-free copy, used for search and for MRZ comparison."""
-    decomposed = unicodedata.normalize("NFKD", value or "")
-    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
 
 # --- birth date ----------------------------------------------------------
@@ -282,12 +295,6 @@ def validate_birth_date(ddmmyyyy: str, stay_from: Optional[date]) -> List[Issue]
     return []
 
 
-def age_on(birth: Optional[date], when: date) -> Optional[int]:
-    if not birth:
-        return None
-    return when.year - birth.year - ((when.month, when.day) < (birth.month, birth.day))
-
-
 # --- permanent residence abroad -----------------------------------------
 
 def compose_residence(street: str, city: str, country_code: str, lang: str = "cs") -> str:
@@ -327,6 +334,24 @@ def validate_residence(street: str, city: str, country_code: str) -> List[Issue]
 
 
 # --- guest record --------------------------------------------------------
+
+# Every field ``normalise_guest`` reads and ``validate_guest`` checks. The host
+# form, the guest form and the UbyPort payload all describe the same record, so
+# they all iterate this one tuple - a field added here reaches every path at
+# once instead of being silently dropped by whichever copy was forgotten.
+GUEST_TEXT_FIELDS = (
+    "surname",
+    "first_name",
+    "birth_date",
+    "nationality",
+    "doc_number",
+    "visa_number",
+    "res_street",
+    "res_city",
+    "res_country",
+    "purpose",
+    "note",
+)
 
 GUEST_LENGTH_LIMITS = {
     "surname": MAX_SURNAME,
@@ -742,3 +767,21 @@ def parse_iso_date(value: Optional[str]) -> Optional[date]:
         return datetime.strptime(value[:10], "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def fmt_date(value: Optional[str]) -> str:
+    """An ISO date as the Czech ``DD.MM.YYYY`` the forms and mail both print.
+
+    Unparseable input is passed through unchanged rather than blanked: a value
+    that got here is a date someone needs to see, even if it is malformed.
+    """
+    parsed = parse_iso_date(value)
+    return parsed.strftime("%d.%m.%Y") if parsed else (value or "")
+
+
+def fmt_date_range(date_from: Optional[str], date_to: Optional[str]) -> str:
+    """``from - to``, with an en dash, or whichever end exists."""
+    start, end = fmt_date(date_from), fmt_date(date_to)
+    if start and end:
+        return f"{start} \u2013 {end}"
+    return start or end

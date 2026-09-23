@@ -10,6 +10,19 @@ The rules this file exists to honour, all from the Ubyport operating rules:
   of a successful notification.
 * Developer notice of 1 Sep 2025 - duplicates are rejected and count against
   the host, so an already-accepted record is never resent automatically.
+
+Timestamps
+----------
+Every timestamp this module reads back - ``registration_completed_at``,
+``guest.updated_at``, ``guest.created_at`` - is **UTC**, because that is what
+``db.utcnow`` writes (an offset-aware ``+00:00`` ISO string). The stored values
+are compared against ``datetime.now(timezone.utc)``, never against Prague civil
+time. A value that arrives without an offset is therefore read as UTC by
+``_as_utc`` rather than as local time; ``deadlines.local_now`` deliberately
+keeps a *separate* naive Prague-civil convention for the date arithmetic that
+legal deadlines are counted in. Do not mix the two: converting a UTC stamp to
+Prague civil before comparing it to a deadline is a real calendar-day error,
+and the reverse silently shifts every automation window by an hour or two.
 """
 from __future__ import annotations
 
@@ -23,7 +36,7 @@ import zipfile
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
+from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
 
@@ -38,6 +51,18 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
+
+# A record filed by hand from a paper house book carries no signature to
+# collect. The host vouches for it instead of forging one, so the marker stands
+# in for a drawn signature everywhere completeness is judged.
+IMPORTED_SIGNATURE = "imported"
+
+# Shown to the host on the entry form, where "sign on the host form" is the
+# instruction that can actually be followed. The guest link passes its own
+# catalog string to ``guest_issues`` instead.
+HOST_SIGNATURE_REQUIRED_MESSAGE = (
+    "A guest signature is required. Use the guest link or sign on the host form."
+)
 
 # How many times the unattended sweep may offer the same guest before it stops
 # and asks a human to look. A code 112 covers both an interrupted connection
@@ -135,9 +160,30 @@ def guest_dict(guest) -> Dict[str, Optional[str]]:
 def guest_has_signature(guest) -> bool:
     """True when the record has a drawn signature or a declared paper import."""
     signature = (guest["signature_png"] or "").strip()
-    if signature == "imported":
+    if signature == IMPORTED_SIGNATURE:
         return True
     return signature.startswith("data:image/")
+
+
+def guest_signature_issue(value: Optional[str], translate=None) -> Optional[validation.Issue]:
+    """The one ``signature`` issue a value raises, or ``None`` when it is fine.
+
+    Both the stored-record check and the two save paths read this, so a value
+    one of them rejects can never be filed as collected by another.
+
+    ``translate`` is the guest catalog lookup: the host sees the form and needs
+    to be told where the signature can come from, while a guest is looking at
+    the pad itself, so the guest route passes its own (already localised)
+    sentence instead.
+    """
+    text = (value or "").strip()
+    if text == IMPORTED_SIGNATURE:
+        return None
+    if not text:
+        if translate is not None:
+            return validation.Issue("signature", translate("signature_missing"))
+        return validation.Issue("signature", HOST_SIGNATURE_REQUIRED_MESSAGE)
+    return validation.signature_issue(value)
 
 
 def guest_identity_verified(guest) -> bool:
@@ -169,17 +215,13 @@ def guest_has_passport_photo(guest) -> bool:
     return bool(guest["passport_photo_at"]) and passport_photos.has_photo(int(guest_id))
 
 
-def guest_needs_passport_photo(guest, apartment=None) -> bool:
-    """Online foreign guests upload a photo only when the property requires it."""
-    if apartment is None:
-        reservation = db.query_one(
-            "SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],)
-        )
-        if not reservation:
-            return False
-        apartment = db.query_one(
-            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
-        )
+def guest_needs_passport_photo(guest, apartment) -> bool:
+    """Online foreign guests upload a photo only when the property requires it.
+
+    ``apartment`` is required: every caller holds one, and the ad-hoc
+    reservation-to-apartment lookup this used to fall back to was a second,
+    unscoped way to reach the same row.
+    """
     policy = "off"
     if apartment is not None:
         try:
@@ -195,16 +237,17 @@ def guest_needs_passport_photo(guest, apartment=None) -> bool:
     )
 
 
-def guest_issues(guest, reservation) -> List[validation.Issue]:
+def guest_issues(guest, reservation, translate=None) -> List[validation.Issue]:
+    """Everything wrong with a stored guest record - the single completeness source.
+
+    ``translate`` is an optional catalog lookup for the one sentence here that
+    is shown to a person rather than logged; without it the host wording is used.
+    """
     start, end = _stay_dates(guest, reservation)
     issues = validation.validate_guest(guest_dict(guest), start, end)
-    if not guest_has_signature(guest):
-        issues.append(
-            validation.Issue(
-                "signature",
-                "A guest signature is required. Use the guest link or sign on the host form.",
-            )
-        )
+    signature = guest_signature_issue(guest["signature_png"], translate)
+    if signature is not None:
+        issues.append(signature)
     return issues
 
 
@@ -241,11 +284,15 @@ def reservation_progress(reservation) -> Dict[str, Any]:
     )
     expected = expected_guest_count(reservation)
     complete = [g for g in guests if guest_is_complete(g, reservation)]
+    complete_ids = {g["id"] for g in complete}
     reportable = [g for g in complete if validation.guest_is_reportable(g["nationality"])]
     unverified = [g for g in reportable if not guest_identity_verified(g)]
     sent = [g for g in guests if g["submit_state"] == SENT]
     failed = [g for g in guests if g["submit_state"] in (ERROR, BLOCKED)]
-    incomplete = [g for g in guests if not guest_is_complete(g, reservation)]
+    # The complement of ``complete`` rather than a second pass of the same
+    # predicate: validating every guest twice per dashboard row was the single
+    # most expensive thing on the queue.
+    incomplete = [g for g in guests if g["id"] not in complete_ids]
 
     missing = None
     if expected is not None:
@@ -281,16 +328,6 @@ def reservation_progress(reservation) -> Dict[str, Any]:
         "status": status,
     }
 
-
-STATUS_LABELS = {
-    "awaiting_guest": "Waiting for guest",
-    "incomplete": "Incomplete",
-    "awaiting_verification": "Awaiting passport check",
-    "ready": "Ready to report",
-    "reported": "Reported",
-    "not_required": "No reporting duty",
-    "failed": "Rejected",
-}
 
 # Statuses only the host can clear. "awaiting_verification" belongs here even
 # though sending would verify implicitly: a manual apartment never sends on its
@@ -364,21 +401,6 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
     ]
 
 
-def status_label(status: str, automation_mode: Optional[str] = None) -> str:
-    """Human label for a stay's reporting status, with automation context."""
-    if status in ("ready", "awaiting_verification") and automation_mode == "immediate":
-        return "Complete — sending automatically"
-    if status in ("ready", "awaiting_verification") and automation_mode == "scheduled":
-        return "Complete — scheduled send"
-    if status == "awaiting_verification":
-        return "Verify passport before reporting"
-    if status in ("awaiting_guest", "incomplete") and automation_mode == "immediate":
-        return "Waiting for guest"
-    if status == "ready" and automation_mode == "manual":
-        return "Ready — send manually"
-    return STATUS_LABELS.get(status, status)
-
-
 def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str, Any]:
     """Whether Send actions should appear on a stay row."""
     from . import demo
@@ -437,6 +459,63 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     }
 
 
+def dashboard_rows(
+    days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Every stay worth looking at, ordered by how urgent it is."""
+    start = (date.today() - timedelta(days=days_back)).isoformat()
+    end = (date.today() + timedelta(days=days_ahead)).isoformat()
+    rows = db.query(
+        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.status = 'active' AND a.active = 1 AND a.archived_at IS NULL "
+        "AND r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
+        "AND r.date_from BETWEEN ? AND ? "
+        "ORDER BY r.date_from",
+        (owner_user_id, owner_user_id, start, end),
+    )
+    out: List[Dict[str, Any]] = []
+    for reservation in rows:
+        check_in = reservation_deadline_anchor(reservation)
+        progress = reservation_progress(reservation)
+        level = deadlines.urgency(check_in) if check_in else "future"
+        # A finished stay with nothing outstanding is noise on a dashboard.
+        if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
+            if check_in and check_in < date.today() - timedelta(days=3):
+                continue
+        apartment = access.apartment_for_reservation(reservation, owner_user_id)
+        controls = send_controls(reservation, apartment, progress) if apartment else {}
+        out.append(
+            {
+                "reservation": reservation,
+                "progress": progress,
+                "controls": controls,
+                "urgency": level,
+                "check_in": check_in,
+                "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
+            }
+        )
+    out.sort(
+        key=lambda row: (
+            0 if row["progress"]["status"] in ("failed",) else 1,
+            deadlines.URGENCY_ORDER.get(row["urgency"], 9),
+            row["reservation"]["date_from"],
+        )
+    )
+    return out
+
+
+def _as_utc(value) -> Optional[datetime]:
+    """Parse a stored timestamp and read a naive one as UTC (see module docstring)."""
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
 def _forms_quiet_for(progress: Dict[str, Any], hours: int) -> bool:
     """True when no guest form on the stay has been touched for ``hours``."""
     stamps = [
@@ -446,12 +525,9 @@ def _forms_quiet_for(progress: Dict[str, Any], hours: int) -> bool:
     ]
     if not stamps:
         return False
-    try:
-        newest = datetime.fromisoformat(str(max(stamps)))
-    except ValueError:
+    newest = _as_utc(max(stamps))
+    if newest is None:
         return False
-    if newest.tzinfo is None:
-        newest = newest.replace(tzinfo=timezone.utc)
     return datetime.now(timezone.utc) - newest >= timedelta(hours=hours)
 
 
@@ -542,20 +618,8 @@ def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
             str(exc),
             dedupe_key=f"submission_immediate:{apartment_id}",
             apartment_id=apartment_id,
+            params={"property": apartment["internal_name"], "error": str(exc)},
         )
-
-
-def count_sendable_stays(reservations: List[Any]) -> int:
-    """How many stays can be sent right now with the bulk action."""
-    count = 0
-    for reservation in reservations:
-        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
-        if not apartment or not apartment["active"]:
-            continue
-        progress = reservation_progress(reservation)
-        if send_controls(reservation, apartment, progress)["send_enabled"]:
-            count += 1
-    return count
 
 
 def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
@@ -569,12 +633,9 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
     completed_at = reservation["registration_completed_at"]
     if not completed_at:
         return False
-    try:
-        completed = datetime.fromisoformat(completed_at)
-    except (TypeError, ValueError):
+    completed = _as_utc(completed_at)
+    if completed is None:
         return False
-    if completed.tzinfo is None:
-        completed = completed.replace(tzinfo=timezone.utc)
     current = now or datetime.now(timezone.utc)
     if current.tzinfo is None:
         current = current.replace(tzinfo=timezone.utc)
@@ -719,9 +780,23 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         params.extend(only_guest_ids)
     sql += " ORDER BY r.date_from, g.id"
 
+    # The stay rows, fetched once for the whole apartment instead of once per
+    # guest. ``g.*, r.*`` in the query above cannot stand in for this: both
+    # tables have id, created_at and archived_at, and a duplicated column name
+    # resolves to the first (the guest's) value, so callers reading
+    # ``reservation["id"]`` would silently be handed the guest id.
+    reservations = {
+        row["id"]: row
+        for row in db.query(
+            "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
+            "AND archived_at IS NULL",
+            (apartment_id,),
+        )
+    }
+
     out: List[Tuple[Any, Any]] = []
     for guest in db.query(sql, params):
-        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
+        reservation = reservations.get(guest["reservation_id"])
         if not reservation:
             continue
         if not validation.guest_is_reportable(guest["nationality"]):
@@ -783,7 +858,6 @@ def submit_batch(
     apartment,
     pairs: List[Tuple[Any, Any]],
     mode: str = "auto",
-    want_pdf: bool = True,
     env: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Send up to one batch of guests and record the outcome.
@@ -817,7 +891,7 @@ def submit_batch(
 
     client = client_for(apartment, env)
     try:
-        result: SubmissionResult = client.submit(header, guests, want_pdf=want_pdf)
+        result: SubmissionResult = client.submit(header, guests)
     except (UbyportTransportError, UbyportError) as exc:
         log.error(
             "ubyport_submission_failed apartment_id=%s owner_user_id=%s "
@@ -847,6 +921,7 @@ def submit_batch(
             str(exc),
             dedupe_key=f"submission_transport:{apartment['id']}",
             apartment_id=apartment["id"],
+            params={"property": apartment["internal_name"], "error": str(exc)},
         )
         # The host is not watching the screen when this fires -- the whole point
         # of the automatic send is that nobody is. Mail the same event to the
@@ -1033,14 +1108,13 @@ def submit_batch(
             blocked_count,
         )
         detail_bits = []
+        header_errors = ""
         if result.header_errors:
-            detail_bits.append(
-                "Report header rejected: "
-                + ", ".join(
-                    uby_errors.describe(c, codebook)
-                    for c in uby_errors.split_codes(result.header_errors)
-                )
+            header_errors = ", ".join(
+                uby_errors.describe(c, codebook)
+                for c in uby_errors.split_codes(result.header_errors)
             )
+            detail_bits.append(f"Report header rejected: {header_errors}")
         detail_bits.append(f"{failed_count} record(s) to fix, {blocked_count} that resending will not fix.")
         alerts.raise_alert(
             "critical",
@@ -1050,6 +1124,13 @@ def submit_batch(
             " ".join(detail_bits),
             dedupe_key=f"submission_rejected:{apartment['id']}",
             apartment_id=apartment["id"],
+            params={
+                "property": apartment["internal_name"],
+                "count": failed_count + blocked_count,
+                "failed": failed_count,
+                "blocked": blocked_count,
+                "header": header_errors,
+            },
         )
         # Same event, same reasoning as the transport branch: an alert only
         # reaches someone who is looking at the app, and the automatic send
@@ -1080,6 +1161,11 @@ def submit_batch(
             "police for a copy if you need written proof.",
             dedupe_key=f"receipt_missing:{apartment['id']}",
             apartment_id=apartment["id"],
+            params={
+                "property": apartment["internal_name"],
+                "submission": submission_id,
+                "count": first_accepts,
+            },
         )
 
     db.audit(
@@ -1133,6 +1219,7 @@ def submit_for_apartment(
             validation.issues_to_text(setup_errors),
             dedupe_key=f"apartment_setup:{apartment_id}",
             apartment_id=apartment_id,
+            params={"property": apartment["internal_name"]},
         )
         return [{"state": "not_configured", "error": validation.issues_to_text(setup_errors)}]
     alerts.resolve(f"apartment_setup:{apartment_id}")
