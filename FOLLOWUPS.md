@@ -324,3 +324,65 @@ different address or a different scope is unaffected, so raising the constant
 would not fail the suite. A determined attacker can still spend 30 writes per
 link per address; if that ever proves too many, tighten the constant rather than
 adding a second limit on top of it.
+
+## Found while landing Phase 3 (deploy path)
+
+Unlike the sections above, the first entry here was acted on: the owner
+authorised the fix as a follow-up PR after Phase 3 merged. It is recorded here
+because it was found while verifying the Phase 3 deploy, not because it was in
+the plan.
+
+### The deploy never reloaded Caddy, so Caddyfile changes sat inert
+
+Phase 3's W3.3 added `request_body { max_size 20MB }` to all three Caddyfiles.
+The production deploy that followed (`35766856980`) succeeded, but the running
+Caddy was still on the old config — its log showed `Container ubyhost-caddy-1
+Running` rather than a recreate, and `Up 20 hours`.
+
+Three facts combine to cause this:
+
+- `deploy/lightsail/scripts/deploy.sh` copies the chosen Caddyfile to
+  `caddy/Caddyfile.active` before starting the stack.
+- The same script then runs only `docker compose up -d --remove-orphans`. The
+  caddy service definition is unchanged by a config-only edit (the file is
+  bind-mounted, so its *content* is not part of the service spec), so Compose
+  sees no diff and never recreates the container.
+- The compose service sets no `command:` override, so Caddy runs the image
+  default `caddy run --config /etc/caddy/Caddyfile` with no `--watch`. Caddy
+  documents `--watch` as development-only, so relying on it is not an option
+  even if it were enabled.
+
+The fix is an unconditional `caddy reload` after `up -d`, using the admin API
+(`localhost:2019` inside the container, enabled by default). `caddy reload` is a
+graceful, zero-downtime config swap; `docker compose restart caddy` would drop
+live connections and is unnecessary.
+
+**A change-detection design would have been the wrong fix**, and this is worth
+recording because it is the intuitive first idea. Because the script copies the
+new Caddyfile into place *before* the reload would run, on exactly the deploy
+that needs a reload the deployed file already matches the mounted one — so
+comparing them would report "no change" and skip the reload, leaving the cap
+inert forever. The reload must be unconditional, and it must fail the deploy
+when it fails: Caddy validates a new config before applying it and keeps the
+running config if validation fails, so aborting on a bad config is safe.
+
+Generalisation: any config consumed through a bind mount and applied by a
+process that neither watches the file nor gets recreated by `up -d` has this
+gap. Auditing the other bind-mounted configs for the same pattern is its own
+follow-up.
+
+### `FAIL https://ubyhost.com/login → HTTP 403 (expected 200)` in the public smoke
+
+The post-deploy public smoke (`scripts/smoke-remote.sh`) reports a failure for
+`/login` returning 403 where it expects 200. It is **not** a Phase 3 regression:
+the identical failure appears in the Phase 1 (`35740871070`) and Phase 2
+(`35743759624`) production deploys, before Phase 3 existed. The check is a
+warning, not a gate — the script prints `WARNING: public smoke failed` and the
+deploy still succeeds — so it has been silently tolerated for at least three
+deploys.
+
+The likely cause is Cloudflare bot protection challenging the CI runner, since
+the same URL is fine from a browser and the internal `/healthz` check passes. It
+needs its own investigation: either the smoke should assert something a bot
+challenge cannot break, or the runner needs to be allow-listed. Until then the
+warning should not be treated as evidence of an application defect.
