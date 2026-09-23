@@ -1699,9 +1699,13 @@ async def guest_update(guest_id: int, request: Request):
         # Rule 10.4(5): correcting a rejected record must make it sendable again.
         payload["submit_state"] = reporting.PENDING
         payload["last_errors"] = None
+        # The retry budget restarts too, or a record the sweep had given up on
+        # would stay given up on even after the host fixed what was wrong.
+        payload["submit_attempts"] = 0
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
     if reservation:
+        reporting.clear_stuck_alert_if_recovered(reservation["id"])
         reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
     return _back(f"/guests/{guest_id}", msg="Saved.")
 
