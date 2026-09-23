@@ -145,10 +145,16 @@ CREATE TABLE IF NOT EXISTS guest (
     entered_by     TEXT NOT NULL DEFAULT 'guest',
     submit_state   TEXT NOT NULL DEFAULT 'pending',
     submitted_at   TEXT,
+    -- The latest submission that carried this guest. Overwritten on every send.
     submission_id  INTEGER REFERENCES submission(id) ON DELETE SET NULL,
     last_errors    TEXT,
     created_at     TEXT NOT NULL,
-    updated_at     TEXT NOT NULL
+    updated_at     TEXT NOT NULL,
+    -- The submission whose response holds this guest's Dorucenka, which is not
+    -- always the one above: a duplicate answer proves the register already held
+    -- the record, so the receipt sits on the submission that first filed it.
+    -- NULL when no confirmation was ever stored for this guest.
+    receipt_submission_id INTEGER REFERENCES submission(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS submission (
@@ -343,6 +349,7 @@ ADDED_COLUMNS = (
     ("guest", "doc_number_enc", "TEXT"),
     ("guest", "visa_number_enc", "TEXT"),
     ("apartment", "permalink_reachback_days", "INTEGER NOT NULL DEFAULT 365"),
+    ("guest", "receipt_submission_id", "INTEGER REFERENCES submission(id) ON DELETE SET NULL"),
 )
 
 

@@ -647,6 +647,25 @@ def blocked_as_duplicate(guest) -> bool:
     return any(uby_errors.is_duplicate(part) for part in stored.split(" | "))
 
 
+def receipt_submission_id(previous_submission_id: Optional[int]) -> Optional[int]:
+    """Where this guest's Dorucenka lives, given the submission that carried it.
+
+    A duplicate answer carries no confirmation, because the register already
+    held the record: the receipt, if we ever received one, belongs to the
+    submission that filed the guest for the first time. Returns None when that
+    submission is unknown or holds no receipt, which is what the UI needs in
+    order to say so instead of inventing a link.
+    """
+    if not previous_submission_id:
+        return None
+    row = db.query_one(
+        "SELECT receipt_pdf FROM submission WHERE id = ?", (previous_submission_id,)
+    )
+    if row and row["receipt_pdf"]:
+        return previous_submission_id
+    return None
+
+
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
                      ignore_automation: bool = False, allow_resend: bool = False
                      ) -> List[Tuple[Any, Any]]:
@@ -800,6 +819,16 @@ def submit_batch(
     accepted_count = 0
     failed_count = 0
     blocked_count = 0
+    # Records the register refused because it already held them. This is the
+    # causal fact behind "ok_duplicate", so the state is keyed on it rather than
+    # on the absence of a receipt, which is only a proxy and would misfire on a
+    # first-time accept that came back without a confirmation document.
+    duplicate_accepts = 0
+    # Records the service accepted outright, with no error codes at all. This is
+    # what separates a real filing from a batch that only confirmed records the
+    # register already had: accepted_count also counts the latter, because a
+    # duplicate does move a guest to sent for the first time.
+    first_accepts = 0
 
     for index, (guest, _reservation) in enumerate(pairs):
         record_error = per_record[index] if index < len(per_record) else ""
@@ -812,11 +841,18 @@ def submit_batch(
                     "submit_state": SENT,
                     "submitted_at": now,
                     "submission_id": submission_id,
+                    # Keep pointing at the last submission that actually holds
+                    # a Dorucenka when this attempt returned none, so a resend
+                    # without a receipt request does not lose the link.
+                    "receipt_submission_id": (
+                        submission_id if result.receipt_pdf else guest["receipt_submission_id"]
+                    ),
                     "last_errors": None,
                     "updated_at": now,
                 },
             )
             accepted_count += 1
+            first_accepts += 1
         else:
             new_state = BLOCKED if state == "not_correctable" else ERROR
             # A duplicate response proves the register already has this guest.
@@ -826,6 +862,7 @@ def submit_batch(
             )
             if duplicate:
                 new_state = SENT
+                duplicate_accepts += 1
             update_values = {
                 "submit_state": new_state,
                 "submission_id": submission_id,
@@ -834,11 +871,20 @@ def submit_batch(
             }
             if new_state == SENT:
                 update_values["submitted_at"] = guest["submitted_at"] or now
+                # The confirmation for this record, if there is one, is on the
+                # submission that carried it before this one.
+                update_values["receipt_submission_id"] = receipt_submission_id(
+                    guest["submission_id"]
+                )
             db.update("guest", guest["id"], update_values)
             if new_state == SENT:
-                if guest["submit_state"] == SENT:
-                    blocked_count += 1
-                else:
+                # A duplicate for a guest we already had as sent means the
+                # register confirms it holds the record. Nothing was refused and
+                # nothing is left to do, so it counts as neither accepted nor
+                # blocked: duplicate_accepts already records it, and counting it
+                # as blocked would raise a critical rejection - and tell the
+                # host "were rejected" - for a filing that succeeded.
+                if guest["submit_state"] != SENT:
                     accepted_count += 1
             elif new_state == ERROR:
                 failed_count += 1
@@ -847,6 +893,15 @@ def submit_batch(
 
     if failed_count or blocked_count:
         state = "partial" if accepted_count else "error"
+    elif first_accepts:
+        # Something was filed for the first time, so this is a plain success even
+        # if other records in the same batch came back as duplicates.
+        state = "ok"
+    elif duplicate_accepts:
+        # Nothing new was filed: the register already held every record, so no
+        # Dorucenka came back for this attempt. That is a success, but not the
+        # same thing as a first-time accept with a confirmation behind it.
+        state = "ok_duplicate"
     else:
         state = "ok"
 
@@ -866,7 +921,7 @@ def submit_batch(
         },
     )
 
-    if state == "ok":
+    if state in ("ok", "ok_duplicate"):
         alerts.resolve(f"submission_rejected:{apartment['id']}")
     else:
         log.error(
@@ -899,6 +954,24 @@ def submit_batch(
             f"guest record(s).",
             " ".join(detail_bits),
             dedupe_key=f"submission_rejected:{apartment['id']}",
+            apartment_id=apartment["id"],
+        )
+
+    # The third product promise: the Dorucenka is kept. A first-time accept that
+    # came back with neither a stamp nor a confirmation document means the
+    # register has the record and we hold no proof of it. A duplicate accept is
+    # not evidence of that either way, so it neither raises nor resolves this.
+    if result.pseudo_stamp or result.receipt_pdf:
+        alerts.resolve(f"receipt_missing:{apartment['id']}")
+    elif state == "ok" and first_accepts:
+        alerts.raise_alert(
+            "warning",
+            "receipt_missing",
+            f"{apartment['internal_name']}: UbyPort accepted the report but returned no confirmation.",
+            f"Submission {submission_id} recorded {first_accepts} accepted guest record(s) "
+            "with no Dorucenka and no stamp behind them. The register has them; ask the "
+            "police for a copy if you need written proof.",
+            dedupe_key=f"receipt_missing:{apartment['id']}",
             apartment_id=apartment["id"],
         )
 
@@ -1126,7 +1199,7 @@ def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
 # Every state a submission row can settle in. A row is only 'running' while
 # the submit call is in flight, and the envelope is stored at the moment the
 # row moves to one of these, so a 'running' row has no envelope to purge.
-TERMINAL_SUBMISSION_STATES = ("ok", "partial", "error", "transport_error")
+TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transport_error")
 
 # The envelope is the only thing in the row that carries guest data, and the
 # row outlives the six-year purge of the guests it describes, so it goes far

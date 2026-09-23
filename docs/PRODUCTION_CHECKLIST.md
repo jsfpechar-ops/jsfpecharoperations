@@ -145,7 +145,7 @@ Codes are interpreted in `App/app/ubyport/errors.py` and shown on the guest/repo
 | **106** | Invalid guest field | Fix the field, resend that guest |
 | **1** | Incorrect file extension | Should not occur for SOAP; check Doručenka; do not loop |
 | **112** | Reported late (3 working days) | **Do not resend** as a fix; `not_correctable`. Note for the file; police may still hold/refuse |
-| **150** / text contains `duplic` | Duplicate — register already has the row | App treats this as already sent / not blindly retried. **Do not** hammer submit |
+| **150** / text contains `duplic` | Duplicate — register already has the row | App treats this as already sent / not blindly retried. Submission is recorded as `ok_duplicate`; the Doručenka link points at the submission that holds it. **Do not** hammer submit |
 | Other correctable codes | Rejected, worth a fix | Edit guest, one resend |
 | `not_correctable` | Duplicate, late, or similar | Stop; read Doručenka |
 | `transport_error` / `UbyportTransportError` | Timeout, NTLM/auth, TLS, SOAP fault | Alert: “could not deliver”. Guests stay **pending**. Fix network/password; retry **once**. No data deleted |
@@ -168,7 +168,7 @@ XML for a submission is stored on the `submission` row (`request_xml` / `respons
 | Stay id / label | TEST … |
 | Guest nationality (no full PII in git) | e.g. GBR |
 | Submission id | |
-| Submission `state` | ok / partial / error / transport_error |
+| Submission `state` | ok / ok_duplicate / partial / error / transport_error |
 | Doručenka downloaded | yes / no |
 | XML stored in Reports | yes / no |
 | House book row | yes / no |
