@@ -554,6 +554,27 @@ bounded but real: a structurally invalid record is re-sent every ten minutes
 indefinitely, and each attempt is another submission against the host's
 web-service access.
 
+**Closed.** `guest.submit_attempts` now exists and the sweep stops offering a
+record after `SUBMISSION_MAX_AUTO_ATTEMPTS = 3` consecutive refusals
+(`App/app/reporting.py`). Three decisions were taken, and they differ from the
+sketch above in two places on purpose:
+
+- **The record is not flipped to `BLOCKED`.** `blocked` means "resending will
+  not fix this", which is a claim about the *data* that a 112 does not support —
+  the same code covers an interrupted connection. A stranded record stays
+  `error`; only the automatic sweep declines to keep offering it.
+- **The bound is on the unattended path alone.** Every host-initiated send
+  passes `ignore_automation=True`, so the cap can never refuse a host action.
+  The intended flow is: sweep hits the bound, a warning card names the stay, the
+  host checks the data, the host sends by hand — which still works.
+- **The count resets on any answer, not only on a non-112 one.** An accept and a
+  duplicate (`150`) both restart it at 0, and so does the host saving the guest
+  form, so correcting the data is the remedy rather than a second dead end.
+
+The `submission_stuck` card is raised once per stay at the bound and resolves
+itself when no guest on that stay is stranded any more. `docs/OPERATIONS.md`
+now describes the enforced bound rather than advising one.
+
 ### The host notification e-mail is always English
 
 `App/app/mail_notify.py` sends the submission-problem notice in

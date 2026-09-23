@@ -28,6 +28,7 @@ _TRANSLATED_ALERT_KINDS = frozenset(
         "feed_recurring_event",
         "moved_after_report",
         "job_failed",
+        "submission_stuck",
     }
 )
 
@@ -135,7 +136,7 @@ def _present_translated(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, 
     if not reservation:
         return row
     row["display_title"] = stay_title(lang, reservation["internal_name"] or "", reservation)
-    if kind in ("dates_changed_resign", "moved_after_report"):
+    if kind in ("dates_changed_resign", "moved_after_report", "submission_stuck"):
         row["display_detail"] = host_i18n.translate(lang, f"notification.reason.{kind}")
         return row
     from . import reporting

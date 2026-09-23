@@ -151,6 +151,12 @@ CREATE TABLE IF NOT EXISTS guest (
     -- submission.guest_ids is for.
     submission_id  INTEGER REFERENCES submission(id) ON DELETE SET NULL,
     last_errors    TEXT,
+    -- Consecutive failed submissions for this guest, counted only on the
+    -- unattended sweep. It is the brake that stops a record the register keeps
+    -- refusing from being re-offered every sweep forever. Reset to 0 on any
+    -- accept or duplicate, and by the host saving the form, so correcting the
+    -- data restarts the count. Never consulted for a host-initiated send.
+    submit_attempts INTEGER NOT NULL DEFAULT 0,
     created_at     TEXT NOT NULL,
     updated_at     TEXT NOT NULL,
     -- The submission whose response holds this guest's Dorucenka, which is not
@@ -360,6 +366,7 @@ ADDED_COLUMNS = (
     ("apartment", "permalink_reachback_days", "INTEGER NOT NULL DEFAULT 365"),
     ("guest", "receipt_submission_id", "INTEGER REFERENCES submission(id) ON DELETE SET NULL"),
     ("console_mail_log", "body_html", "TEXT"),
+    ("guest", "submit_attempts", "INTEGER NOT NULL DEFAULT 0"),
 )
 
 
