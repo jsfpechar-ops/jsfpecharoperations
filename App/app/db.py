@@ -288,6 +288,7 @@ CREATE TABLE IF NOT EXISTS console_mail_log (
     cc_email   TEXT,
     subject    TEXT,
     body_text  TEXT,
+    body_html  TEXT,
     created_at TEXT NOT NULL
 );
 """
@@ -358,6 +359,7 @@ ADDED_COLUMNS = (
     ("guest", "visa_number_enc", "TEXT"),
     ("apartment", "permalink_reachback_days", "INTEGER NOT NULL DEFAULT 365"),
     ("guest", "receipt_submission_id", "INTEGER REFERENCES submission(id) ON DELETE SET NULL"),
+    ("console_mail_log", "body_html", "TEXT"),
 )
 
 

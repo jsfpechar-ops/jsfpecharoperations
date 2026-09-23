@@ -11,6 +11,7 @@ you need when something has gone wrong and the answer is not in either.
 - [Scheduled jobs](#scheduled-jobs)
 - [The `submit_state` state machine](#the-submit_state-state-machine)
 - [UbyPort error codes, and what 112 and 150 really do](#ubyport-error-codes-and-what-112-and-150-really-do)
+- [The host notification e-mail](#the-host-notification-e-mail)
 - [Alert kinds](#alert-kinds)
 - [Schema migrations](#schema-migrations)
 - [If the secret key is lost or rotated](#if-the-secret-key-is-lost-or-rotated)
@@ -171,6 +172,49 @@ The `request_xml` and `response_xml` columns on the `submission` row hold the
 exact envelope sent and received. They are the authoritative record for an
 incident, and they contain guest passport numbers in cleartext — treat a copy
 of them as you would a copy of the passports.
+
+## The host notification e-mail
+
+When a filing fails, the alert banner is only useful to someone who is looking
+at the app. The host may not be — so the same event also sends an e-mail to the
+property's contact address (`legal_entity.contact_email`, the address used by
+the day-before reminder too). There is **no per-user address**: `user_account`
+has no e-mail column, so the legal entity's contact address is the only host
+address the app has.
+
+The message is composed in `App/app/mail_notify.py` and queued as kind
+`submission_problem`. It is sent from two places in `reporting.py`:
+
+| Trigger | Message says |
+| --- | --- |
+| UbyPort could not be reached (`transport_error`) | Nothing from this attempt reached the register. An interrupted connection clears itself when the report is sent again. |
+| UbyPort answered with rejections (`error` / `partial`) | The reason UbyPort gave, then: open the stay, check nationality, date of birth and document number against the travel document, and send again. |
+
+It carries the UbyHost logo, links to **every stay in the batch** and to the
+Doručenka, and the same links in a plain-text part, so it reads correctly in a
+client that strips markup. The batch's stays come from `submission.guest_ids`
+(the batch frozen at send time), not from `guest.submission_id`, which a later
+resend overwrites.
+
+Behaviour worth knowing:
+
+- **One mail per property per Prague day.** The idempotency key is
+  `submission_problem:{apartment_id}:{local date}`, so a retry loop that fails
+  every ten minutes does not send a hundred mails. A second failure the same day
+  updates the alert and sends nothing further; a failure the next day sends a
+  fresh mail.
+- **It is best-effort.** The composer catches every exception and logs
+  `submission_problem_mail_failed`. A missing or malformed contact address, a
+  template bug, or a broken database read must never turn a filing failure into
+  a filing crash. The alert is still raised either way.
+- **The raw transport error is not in the mail.** `connection reset by peer`
+  is not host copy; it lives in the alert `detail` and on the submission row,
+  where someone can act on it.
+- **Success sends nothing.** Only a failure or a partial does.
+- Delivery goes through the normal outbox, so it retries like any other mail
+  and raises `mail_failed` if it exhausts its attempts. The owner's Settings →
+  Mail view shows the message, and the HTML part can be previewed there in a
+  sandboxed frame.
 
 ## Alert kinds
 

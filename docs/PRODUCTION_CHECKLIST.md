@@ -82,9 +82,9 @@ Fill the report at the bottom of this file. No guest PII in git.
 1. [ ] Create or import one controlled stay (label TEST). Screenshot: Stays list.
 2. [ ] Complete guest registration (host-entered **or** guest link) with realistic **foreign** guest data that passes validation (nationality codes, residence, purpose of stay). Screenshot: stay detail complete.
 3. [ ] Submit batch to UbyPort **test**. Screenshot: Reports row.
-4. [ ] Confirm submission `state` is `ok` (or document `partial` / `error`). Download Doručenka PDF. In Reports, stored request XML matches what you intended to send. House book row exists.
+4. [ ] Confirm submission `state` is `ok` (or document `partial` / `error`). Download Doručenka PDF. In Reports, stored request XML matches what you intended to send. House book row exists. If the state is `partial` or `error`, confirm the host contact address received the **submission-problem e-mail** (logo, the UbyPort reason, links to the affected stays) — and that an `ok` run sent no such mail.
 5. [ ] Duplicate: submit the same guest again **once** on **test**. Expect code **150** / duplicate handling — guest should not be blindly retried. Screenshot: blocked/duplicate messaging. Do **not** spam.
-6. [ ] Transport failure (test only): wrong WS password **once**, or briefly set an unreachable timeout if you can, then restore the real password. Host must see **Could not reach UbyPort** / transport alert; guests stay pending (no silent drop). Screenshot: alert + Reports `transport_error`.
+6. [ ] Transport failure (test only): wrong WS password **once**, or briefly set an unreachable timeout if you can, then restore the real password. Host must see **Could not reach UbyPort** / transport alert; guests stay pending (no silent drop). Screenshot: alert + Reports `transport_error`. Confirm the host contact address received the **submission-problem e-mail**, and that the raw transport error text is *not* in it (it belongs in the alert).
 7. [ ] Export house book CSV — fields match the submitted guest.
 
 If UBY-WS credentials are not on this machine, stop after documenting SSH steps; do not invent a SOAP success.

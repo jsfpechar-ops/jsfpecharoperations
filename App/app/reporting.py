@@ -23,7 +23,7 @@ import zipfile
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import alerts, codelists, config, db, deadlines, passport_photos, validation
+from . import alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
 
@@ -798,6 +798,17 @@ def submit_batch(
             dedupe_key=f"submission_transport:{apartment['id']}",
             apartment_id=apartment["id"],
         )
+        # The host is not watching the screen when this fires -- the whole point
+        # of the automatic send is that nobody is. Mail the same event to the
+        # address on the legal entity so a batch that never left is not only
+        # discoverable by logging in. Best-effort: it cannot fail the filing.
+        mail_notify.submission_problem(
+            apartment,
+            submission_id,
+            state="transport_error",
+            reason=str(exc),
+            transport=True,
+        )
         # Guests stay pending so the next sweep retries them.
         return {"submitted": 0, "submission_id": submission_id, "state": "transport_error",
                 "error": str(exc)}
@@ -948,6 +959,18 @@ def submit_batch(
             " ".join(detail_bits),
             dedupe_key=f"submission_rejected:{apartment['id']}",
             apartment_id=apartment["id"],
+        )
+        # Same event, same reasoning as the transport branch: an alert only
+        # reaches someone who is looking at the app, and the automatic send
+        # exists precisely so nobody has to. The mail carries the UbyPort reason
+        # text and a link back to the affected stays. It is sent for a manual
+        # send too -- the host asked for that one, but the record of what the
+        # register said is still worth having in the inbox.
+        mail_notify.submission_problem(
+            apartment,
+            submission_id,
+            state=state,
+            reason=" ".join(detail_bits),
         )
 
     # The third product promise: the Dorucenka is kept. A first-time accept that

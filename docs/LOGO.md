@@ -100,10 +100,18 @@ large enough for 2× screens.
 | Landing final CTA | `ubyhost-mark.png` | `.landing-final img` | **64 × 64 px** | warm canvas wash |
 | Browser tab | `favicon.png` | `<link rel="icon">` | **64 × 64** (browser scales to ~16–32) | transparent |
 | Home screen | `apple-touch-icon.png` | `<link rel="apple-touch-icon">` | **180 × 180** | `#F7F7F5` |
-| E-mail signature | `ubyhost-logo.jpg` | `width="180"` HTML attribute | **180 px** wide | baked-in white |
+| E-mail signature / host notification | `ubyhost-logo.jpg` | `width="180"` HTML attribute | **180 px** wide | baked-in white |
 
-Transactional mail is still plain text today, so `ubyhost-logo.jpg` is shipped
-for signatures / future HTML mail but is not referenced by templates yet.
+`ubyhost-logo.jpg` is referenced by the host notification mail built in
+`App/app/mail_notify.py` — the only HTML mail the app sends today. It sits at
+the top of the card at `width="180"` with a baked-in white canvas, exactly as
+the table above specifies. The transparent PNGs are still not used in mail:
+they assume `mix-blend-mode: multiply`, which mail clients do not support.
+
+All other transactional mail (claim links, reminders) remains plain text, and
+that is deliberate — those messages are short and a plain-text part always
+accompanies the HTML part, so a client that strips markup still gets the whole
+message.
 
 The login hero is hidden below 900 px; the left-hand horizontal lockup is the
 only logo on small screens.

@@ -31,6 +31,7 @@ KINDS = (
     "reminder_host",
     "completion",
     "dates_changed",
+    "submission_problem",
 )
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -179,26 +180,47 @@ def enqueue(
         return int(row["id"]) if row else None
 
 
-def stored_body(payload: Dict[str, Any]) -> str:
-    """The body as it is stored: a claim link with its secret left out."""
-    return payload.get("text") or ""
+def _with_secret(value: str, payload: Dict[str, Any]) -> str:
+    """Put the real claim secret back into one body part.
 
-
-def delivery_body(payload: Dict[str, Any]) -> str:
-    """The body as it goes out, with the real claim secret put back in it.
-
-    Raises when the secret cannot be produced. A body still carrying the marker
-    reads like a working link and is not one, and the guest is the one who
-    finds that out. A body with no marker either never had a secret or was
-    queued by the release before this one, and is passed through untouched.
+    Raises when the marker is present and the secret cannot be produced. A body
+    still carrying the marker reads like a working link and is not one, and the
+    guest is the one who finds that out.
     """
-    body = stored_body(payload)
-    if CLAIM_SECRET_MARKER not in body:
-        return body
+    if CLAIM_SECRET_MARKER not in value:
+        return value
     token = payload.get(CLAIM_SECRET_KEY)
     if not token:
         raise db.DecryptionError("outbox payload has a claim link with no secret")
-    return body.replace(CLAIM_SECRET_MARKER, db.decrypt_field(token))
+    return value.replace(CLAIM_SECRET_MARKER, db.decrypt_field(token))
+
+
+def stored_body(payload: Dict[str, Any]) -> str:
+    """The text part as it is stored: a claim link with its secret left out."""
+    return payload.get("text") or ""
+
+
+def stored_html(payload: Dict[str, Any]) -> str:
+    """The HTML part as it is stored, subject to the same rule as the text."""
+    return payload.get("html") or ""
+
+
+def delivery_body(payload: Dict[str, Any]) -> str:
+    """The text part as it goes out, with the real claim secret put back in.
+
+    A body with no marker either never had a secret or was queued by the
+    release before this one, and is passed through untouched.
+    """
+    return _with_secret(stored_body(payload), payload)
+
+
+def delivery_html(payload: Dict[str, Any]) -> str:
+    """The HTML part as it goes out. Empty when the mail has no HTML part.
+
+    The secret is substituted here too, so a future HTML mail that carries a
+    claim link cannot leak the marker into a delivered message.
+    """
+    return _with_secret(stored_html(payload), payload)
 
 
 def _reveal_claim_secret(body: str, payload_json: Optional[str]) -> str:
@@ -228,6 +250,7 @@ def _send_console(row) -> str:
     # entry that claims a link went out. What is written to the log is the
     # stored form, so the copy that lives for 14 days holds no working link.
     delivery_body(payload)
+    delivery_html(payload)
     db.insert(
         "console_mail_log",
         {
@@ -236,6 +259,7 @@ def _send_console(row) -> str:
             "cc_email": row["cc_email"],
             "subject": row["subject"],
             "body_text": stored_body(payload),
+            "body_html": stored_html(payload) or None,
             "created_at": db.utcnow(),
         },
     )
@@ -268,6 +292,7 @@ def _send_ses(row) -> str:
 
     payload = json.loads(row["payload"] or "{}")
     body = delivery_body(payload)
+    html = delivery_html(payload)
     reply_to = normalise_email(str(payload.get("reply_to") or ""))
 
     destination: Dict[str, List[str]] = {"ToAddresses": [row["to_email"]]}
@@ -275,12 +300,20 @@ def _send_ses(row) -> str:
     if cc:
         destination["CcAddresses"] = [cc]
 
+    ses_body: Dict[str, Dict[str, str]] = {"Text": {"Data": body, "Charset": "UTF-8"}}
+    if html:
+        # A multipart/alternative message: the client picks the HTML part and
+        # falls back to the text part. The text part is never dropped, so a
+        # client that refuses HTML still gets the whole message including the
+        # link.
+        ses_body["Html"] = {"Data": html, "Charset": "UTF-8"}
+
     kwargs: Dict[str, Any] = {
         "Source": config.MAIL_FROM,
         "Destination": destination,
         "Message": {
             "Subject": {"Data": row["subject"] or "", "Charset": "UTF-8"},
-            "Body": {"Text": {"Data": body, "Charset": "UTF-8"}},
+            "Body": ses_body,
         },
     }
     if reply_to:
@@ -380,7 +413,9 @@ def recent_console_messages(
     The stored body keeps the secret out, so it has to be put back for the
     owner. Rows carry their outbox payload alongside so that needs no second
     query; the LEFT JOIN on the platform-admin branch is there only to fetch
-    that payload and filters nothing out.
+    that payload and filters nothing out. Both body parts are revealed: the
+    HTML one is what the host previews, so a marker left standing there would
+    be the same broken link in a nicer wrapper.
     """
     columns = "l.*, o.payload AS outbox_payload"
     if owner_user_id is None:
@@ -401,8 +436,12 @@ def recent_console_messages(
     messages = []
     for row in rows:
         item = dict(row)
+        payload_json = item.pop("outbox_payload", None)
         item["body_text"] = _reveal_claim_secret(
-            item.get("body_text") or "", item.pop("outbox_payload", None)
+            item.get("body_text") or "", payload_json
+        )
+        item["body_html"] = _reveal_claim_secret(
+            item.get("body_html") or "", payload_json
         )
         messages.append(item)
     return messages

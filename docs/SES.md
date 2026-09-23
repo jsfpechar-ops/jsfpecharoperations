@@ -2,8 +2,16 @@
 
 UbyHost sends a small set of **transactional** messages (claim / continue link,
 one day-before guest reminder, host incomplete-registration warning, completion
-receipt with host CC). Production uses **Amazon SES in `eu-central-1`**. Staging
-on Render stays on the **console** backend forever.
+receipt with host CC, and the host submission-problem notice described below).
+Production uses **Amazon SES in `eu-central-1`**. Staging on Render stays on the
+**console** backend forever.
+
+The **host submission-problem** notice (`submission_problem` kind, composed in
+`App/app/mail_notify.py`) is the only message sent as **multipart/alternative**:
+a plain-text part plus an HTML part with the UbyHost logo, the reason UbyPort
+gave, and links to each affected stay and to the Doručenka. The text part is
+always present and carries the same links, so nothing is lost in a client that
+strips markup. See [OPERATIONS.md](OPERATIONS.md) for when it is sent.
 
 App code can call SES (`App/app/mail.py` `_send_ses`). **Production is live on
 `ses` since 2026-09-21** — UbyHost 1.1.0 is deployed and the Lightsail `.env` was
