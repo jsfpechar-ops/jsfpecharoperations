@@ -523,3 +523,33 @@ process-global, so it is deliberate — but it means the adapter cannot be cache
 reused and every fetch allocates fresh class objects. At the current cadence (one
 poll per apartment per interval, plus "Sync now") this is irrelevant. It is worth
 revisiting only if feed fetching ever becomes hot.
+
+### W4.2 — 112 is now retryable with no cap, backoff, or attempt counter
+
+Making 112 correctable is the right call, but it introduced a state the code has
+no brake on. A guest that comes back 112 stays `error`, `collect_sendable` only
+skips `SENT` and `BLOCKED`, so the record is offered to the next sweep every
+`UBYHOST_SUBMIT_SWEEP_MINUTES` (10) for as long as it keeps failing. The
+`attempts` / `next_attempt_at` columns at `App/app/db.py:275` belong to the mail
+queue, not to guests, so nothing counts submissions for a guest.
+
+That matters because a *transient* 112 (interrupted connection) and a *data* 112
+(invalid character in the generated `.UNZ`/`.XML`, empty mandatory field) arrive
+as the same code. Retrying is exactly right for the first and futile for the
+second, and the police's own remedy — check the guest's card, repeat the
+submission — assumes a human is looking. Today the only signal that a record is
+stuck is the `submission_rejected` critical banner, which is dedupe-keyed and so
+updates in place rather than escalating, and `docs/OPERATIONS.md` can only
+*advise* "if a record comes back 112 twice, stop retrying and check the data".
+The application does not enforce it, and `docs/PRODUCTION_CHECKLIST.md` says the
+same thing in prose.
+
+A `guest.submit_attempts` column (append-only, `NOT NULL DEFAULT 0`) plus a
+threshold — say the third consecutive 112 flipping the record to `BLOCKED` with
+a distinct alert kind, so it leaves the automatic queue and becomes a human task
+— would close it. It is out of scope here because it changes `submit_state`
+transitions again and needs a decision from the owner on the threshold and on
+whether the count resets on any non-112 outcome. Until then the exposure is
+bounded but real: a structurally invalid record is re-sent every ten minutes
+indefinitely, and each attempt is another submission against the host's
+web-service access.
