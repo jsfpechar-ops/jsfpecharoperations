@@ -65,7 +65,16 @@
               <div class="small muted">{{ guest.nationality }} &middot; {{ guest.doc_number }}</div>
             </td>
             <td data-label="{{ t('reports.detail.result') }}">
-              {% if guest.submit_state == 'sent' %}<span class="pill green">{{ t('submission.accepted') }}</span>
+              {% if submission.state == 'ok_duplicate' %}
+                <span class="pill amber">{{ t('submission.duplicate') }}</span>
+                {% if guest.receipt_submission_id %}
+                  <div class="small muted">{{ t('reports.detail.receipt_elsewhere') }}
+                    <a href="/submissions/{{ guest.receipt_submission_id }}">{{ t('reports.detail.title', id=guest.receipt_submission_id) }}</a>
+                  </div>
+                {% else %}
+                  <div class="small muted">{{ t('reports.detail.receipt_none') }}</div>
+                {% endif %}
+              {% elif guest.submit_state == 'sent' %}<span class="pill green">{{ t('submission.accepted') }}</span>
               {% elif guest.submit_state == 'blocked' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
               {% elif guest.submit_state == 'error' %}<span class="pill red">{{ t('submission.rejected') }}</span>
               {% else %}<span class="pill grey">{{ guest.submit_state }}</span>{% endif %}

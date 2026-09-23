@@ -66,6 +66,23 @@
               <tr>
                 <td colspan="2"><pre class="small" style="white-space:pre-wrap">{{ item.body_text }}</pre></td>
               </tr>
+              {% if item.body_html %}
+                <tr>
+                  <td colspan="2">
+                    <details>
+                      <summary class="small muted">{{ t('settings.mail.preview') }}</summary>
+                      {# Rendered in a sandboxed frame with no allowances so the
+                         stored markup cannot run script or reach the app. The
+                         value is autoescaped, which is what srcdoc wants: the
+                         attribute parser decodes the entities back into the
+                         markup before it is parsed. #}
+                      <iframe srcdoc="{{ item.body_html }}" sandbox=""
+                              title="{{ t('settings.mail.preview') }}"
+                              style="width:100%;min-height:420px;margin-top:8px;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>
+                    </details>
+                  </td>
+                </tr>
+              {% endif %}
             {% endfor %}
           </tbody>
         </table>

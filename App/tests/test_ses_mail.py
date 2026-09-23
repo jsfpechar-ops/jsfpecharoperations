@@ -64,12 +64,38 @@ def test_send_ses_builds_expected_request(monkeypatch):
     assert provider_id == "ses-message-123"
     assert len(fake.calls) == 1
     call = fake.calls[0]
-    assert call["Source"] == "noreply@ubyhost.com"
+    assert call["Source"] == "UbyHost <noreply@ubyhost.com>"
     assert call["Destination"]["ToAddresses"] == ["guest@example.com"]
     assert call["Destination"]["CcAddresses"] == ["host@claim.test"]
     assert call["ReplyToAddresses"] == ["host@claim.test"]
     assert call["Message"]["Subject"]["Data"].startswith("Continue")
     assert "#c=secret" in call["Message"]["Body"]["Text"]["Data"]
+
+
+def test_the_from_line_carries_a_display_name(monkeypatch):
+    """A bare address in From is a bulk-mail tell; the name must be there."""
+    fake = _FakeSesClient()
+    monkeypatch.setattr(mail.config, "MAIL_BACKEND", "ses")
+    monkeypatch.setattr(mail.config, "MAIL_FROM", "noreply@ubyhost.com")
+    monkeypatch.setattr(mail, "_ses_client", lambda: fake)
+
+    mail._send_ses(_queue_row(payload={"text": "hello"}))
+    assert fake.calls[0]["Source"] == "UbyHost <noreply@ubyhost.com>"
+
+
+def test_an_operator_supplied_from_name_is_left_alone(monkeypatch):
+    fake = _FakeSesClient()
+    monkeypatch.setattr(mail.config, "MAIL_BACKEND", "ses")
+    monkeypatch.setattr(mail.config, "MAIL_FROM", "Ubytovani Novy <mail@example.test>")
+    monkeypatch.setattr(mail, "_ses_client", lambda: fake)
+
+    mail._send_ses(_queue_row(payload={"text": "hello"}))
+    assert fake.calls[0]["Source"] == "Ubytovani Novy <mail@example.test>"
+
+
+def test_display_from_is_a_no_op_for_an_unusable_value():
+    assert mail.display_from("") == ""
+    assert mail.display_from("not-an-address") == "not-an-address"
 
 
 def test_send_ses_omits_reply_to_when_absent(monkeypatch):

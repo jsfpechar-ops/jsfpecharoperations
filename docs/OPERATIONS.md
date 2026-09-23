@@ -11,6 +11,8 @@ you need when something has gone wrong and the answer is not in either.
 - [Scheduled jobs](#scheduled-jobs)
 - [The `submit_state` state machine](#the-submit_state-state-machine)
 - [UbyPort error codes, and what 112 and 150 really do](#ubyport-error-codes-and-what-112-and-150-really-do)
+- [The host notification e-mail](#the-host-notification-e-mail)
+- [Guest e-mail](#guest-e-mail)
 - [Alert kinds](#alert-kinds)
 - [Schema migrations](#schema-migrations)
 - [If the secret key is lost or rotated](#if-the-secret-key-is-lost-or-rotated)
@@ -31,13 +33,21 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
 | `mail` | 5 min | Expires 30-minute claim holds, drains the guest e-mail outbox, sends day-before reminders, purges mail rows older than 14 days. |
 | `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files, and blanks the request/response envelopes on submissions older than 90 days. |
 
-Two behaviours to know:
+Behaviours to know:
 
 - **The `ical` job is registered paused.** It is un-paused on boot only if at
   least one active feed already exists. A host who starts the app and *then*
   adds their first calendar gets the one inline sync that the "add feed" action
   performs, and no further automatic polling until the process restarts.
   Restart after adding the first feed.
+- **A calendar is imported one stay per booking, first occurrence only.** A
+  booking ID repeated in one document is imported once (`feed_duplicate_uid`);
+  a booking that repeats itself with `RRULE`, `RDATE` or `EXDATE` is imported as
+  its first occurrence only (`feed_recurring_event`); a stay whose summary reads
+  as a block is skipped when it is new, but an existing stay that starts
+  matching that wording is kept and left `active` rather than cancelled.
+  Recurrences are never expanded, because inventing stays would invent reporting
+  deadlines the calendar never confirmed.
 - **A job that raises is logged and forgotten.** Each job body catches
   `Exception`, writes `log.exception`, and returns. No alert is raised, so a
   repeatedly failing job is invisible in the UI. If ingestion or sending looks
@@ -57,14 +67,14 @@ whether that individual has been reported.
 | `pending` | Not yet accepted by UbyPort. The default, and where a record sits between the guest signing and the next sweep. |
 | `sent` | UbyPort holds this record. Never resent automatically. |
 | `error` | Rejected in a way that correcting the data can fix. |
-| `blocked` | Rejected in a way resending will not fix — in practice code 112, "reported late". |
+| `blocked` | Rejected in a way resending will not fix — in practice code 150, a duplicate. 112 does **not** belong here; see below. |
 | `not_required` | Czech national: house book only, no reporting duty. |
 
 Transitions:
 
 - `pending → sent` — the response carried no error codes for this record.
 - `pending → error` — correctable code(s) returned.
-- `pending → blocked` — a non-correctable code (112, or a codebook text
+- `pending → blocked` — a non-correctable code (150, or a codebook text
   matching `duplic`/`pozd`/`late`).
 - `error`/`blocked`/`pending` **→ `sent`** when the response says duplicate
   (code 150). See below.
@@ -91,7 +101,25 @@ understood even with an empty cache.
 
 Classification is partly **substring matching on the code book's Czech text**
 (`duplic`, `pozd`, `late`). A wording change on the police side can therefore
-reclassify records without any change here. The two codes that matter:
+reclassify records without any change here. Only 112 and 150 are pinned to their
+code, so they cannot be reclassified by prose.
+
+Each send writes one `submission` row. Its `state` is what the call itself
+produced, and it is independent of the guest's `submit_state` above:
+
+| `submission.state` | Meaning |
+| --- | --- |
+| `ok` | At least one record was accepted for the first time and no error codes came back. A Doručenka or a stamp is expected; `receipt_missing` fires if neither arrived. |
+| `ok_duplicate` | Every record was already held by the register (code 150). A success, but nothing new was filed and no Doručenka exists for this call — see below. |
+| `partial` | Some records were accepted for the first time and some were not. |
+| `error` | Records came back with correctable codes. The guest stays `error` and is retried. |
+| `transport_error` | The service could not be reached, or answered with a fault. Nothing was filed. |
+
+A `partial` row whose only rejection is a duplicate is still `partial`: the
+duplicate half is settled, the other half is not. `ok_duplicate` is reserved for
+a call where duplicates were the *whole* result.
+
+The two codes that matter:
 
 **150 — duplicate.** The register already holds this record. The app treats
 that as proof of acceptance and sets the guest to `sent`, backfilling
@@ -99,22 +127,142 @@ that as proof of acceptance and sets the guest to `sent`, backfilling
 path for a submission whose HTTP response was lost: the retry comes back as a
 duplicate, and the record correctly lands as reported.
 
-The consequence to be aware of: the stored `submission` row for that call ends
-up in state `ok` with **no Doručenka**, because a duplicate response carries no
-receipt. The evidence trail shows a successful filing with nothing behind it.
-If you need the receipt for such a record, it is on the *original* submission.
+The consequence to be aware of: a duplicate files nothing new, so the
+`submission` row for that call is recorded in state `ok_duplicate` — a success,
+but not the same thing as a first-time accept — and it carries **no Doručenka**,
+because a duplicate response has none. `guest.receipt_submission_id` therefore
+points at the submission that actually holds the confirmation, and the Reports
+detail page links to it. If you need the receipt for such a record, follow that
+link; if there is none, the app says so rather than implying a missing document.
 
-**112 — reported late.** Classified as not-correctable, so the guest goes to
-`blocked` and the stay's status reads "Rejected" indefinitely. The record is
-excluded from every automatic send from then on. Note that 112 does not
-necessarily mean the register refused the data — it means the filing was late.
-Read the Doručenka on that submission to establish what the register actually
-holds before deciding whether anything is outstanding.
+A submission row is `ok` only when at least one record was accepted for the
+first time *and* the service returned no error codes. `ok` with no stamp and no
+Doručenka behind it raises the `receipt_missing` warning — the register has the
+record and we hold no proof of it.
+
+**112 — critical transmission error.** The Foreign Police answered this in
+writing: in UBYPORT, 112 falls into the category of critical transmission
+errors (the 1xx series) and means **the batch of accommodated foreigners was
+not received at all**. The register does not hold the data. The usual causes
+they give are a structural fault in the submitted file (an invalid character in
+the generated `.UNZ`/`.XML`), an empty mandatory field, or an interrupted
+connection to the Police of the Czech Republic server during upload.
+
+So 112 is correctable, not permanent: the guest goes to `error`, stays in the
+queue, and the next send — automatic or manual — picks the record up again.
+The remedy the police prescribe is to check the guest's card in the
+accommodation system for correct nationality, date of birth and document
+number, and then **repeat the submission**.
+
+Be honest about what we cannot tell apart: an interrupted connection is
+transient and simply retrying is right, while an invalid character or an empty
+mandatory field is a data fault that no number of retries will clear. We
+receive the same code for both, so if a record comes back 112 twice, stop
+retrying and check the data — the guest card, and the generated file — before
+sending again.
+
+112 is pinned in `App/app/ubyport/errors.py` as correctable regardless of the
+code book's wording, so a police-side text change cannot quietly turn a batch
+that was never received into a record we abandon. The rest of the 1xx series is
+deliberately **not** generalised from this answer: no code book entry tells us
+the other 1xx codes mean the same thing, and treating a batch the service did
+accept as never received risks a strike against the host. An unrecognised code
+falls through to `error`, which is correctable anyway.
 
 The `request_xml` and `response_xml` columns on the `submission` row hold the
 exact envelope sent and received. They are the authoritative record for an
 incident, and they contain guest passport numbers in cleartext — treat a copy
 of them as you would a copy of the passports.
+
+## The host notification e-mail
+
+When a filing fails, the alert banner is only useful to someone who is looking
+at the app. The host may not be — so the same event also sends an e-mail to the
+property's contact address (`legal_entity.contact_email`, the address used by
+the day-before reminder too). There is **no per-user address**: `user_account`
+has no e-mail column, so the legal entity's contact address is the only host
+address the app has.
+
+The message is composed in `App/app/mail_notify.py` and queued as kind
+`submission_problem`. It is sent from two places in `reporting.py`:
+
+| Trigger | Message says |
+| --- | --- |
+| UbyPort could not be reached (`transport_error`) | Nothing from this attempt reached the register. An interrupted connection clears itself when the report is sent again. |
+| UbyPort answered with rejections (`error` / `partial`) | The reason UbyPort gave, then: open the stay, check nationality, date of birth and document number against the travel document, and send again. |
+
+It carries the UbyHost logo, links to **every stay in the batch** and to the
+Doručenka, and the same links in a plain-text part, so it reads correctly in a
+client that strips markup. The batch's stays come from `submission.guest_ids`
+(the batch frozen at send time), not from `guest.submission_id`, which a later
+resend overwrites.
+
+Behaviour worth knowing:
+
+- **One mail per property per Prague day.** The idempotency key is
+  `submission_problem:{apartment_id}:{local date}`, so a retry loop that fails
+  every ten minutes does not send a hundred mails. A second failure the same day
+  updates the alert and sends nothing further; a failure the next day sends a
+  fresh mail.
+- **It is best-effort.** The composer catches every exception and logs
+  `submission_problem_mail_failed`. A missing or malformed contact address, a
+  template bug, or a broken database read must never turn a filing failure into
+  a filing crash. The alert is still raised either way.
+- **The raw transport error is not in the mail.** `connection reset by peer`
+  is not host copy; it lives in the alert `detail` and on the submission row,
+  where someone can act on it.
+- **Success sends nothing.** Only a failure or a partial does.
+- Delivery goes through the normal outbox, so it retries like any other mail
+  and raises `mail_failed` if it exhausts its attempts. The owner's Settings →
+  Mail view shows the message, and the HTML part can be previewed there in a
+  sandboxed frame.
+
+## Guest e-mail
+
+Every message a guest receives is composed in `App/app/mail_notify.py`, queued
+through the outbox in `App/app/mail.py`, and sent as **multipart/alternative**:
+a plain-text part that stands on its own plus an HTML part built on the same
+card shell as the host notice — the UbyHost logo, the stay details, and one
+button pointing at the link the message is about. The text part is never
+dropped and never says "view this in HTML".
+
+| Kind | Sent from | When | Call to action |
+| --- | --- | --- | --- |
+| `claim` | `claim.start_claim` | The guest gives an address and starts a claim | The magic link `/l/{token}/{id}/claim` |
+| `claim_resend` | `claim.start_claim` | The same guest asks for the link again | The magic link, with resend wording |
+| `completion` | `claim.maybe_notify_completion` | The claim is confirmed; also CC'd to the host contact | The stay overview `/l/{token}/{id}` |
+| `reminder_guest` | `claim.sweep_reminders` | One day before arrival, while the claim is unfinished | The stay overview, or a fresh magic link if one is still live |
+| `reminder_host` | `claim.sweep_reminders` | One day before arrival, while the claim is unfinished | The host's stay view |
+
+Rules that matter operationally:
+
+- **The guest is always pointed at their host, never at UbyHost support.** The
+  footer names the property and the legal entity's contact address and phone.
+  `support@ubyhost.com` must not appear in guest copy — the guest has no
+  relationship with us.
+- **A guest message is translated; a host message is not.** Guest copy follows
+  the reservation's `lang` (`en`/`cs`); host copy is English regardless of the
+  host's UI language. New guest strings go in `App/app/i18n.py`, host strings in
+  `App/app/host_i18n.py`, and **both languages land in the same commit** — the
+  catalogues are at exact key parity and a missing key renders as its own name.
+- **The magic link is never recoverable after confirmation.** Only the token
+  *hash* is stored, so a reminder cannot re-issue the original link; it either
+  links to the stay overview (which works on the device that confirmed) or to a
+  freshly minted link when one is still live. The composer documents this.
+- **The secret is not in the stored payload.** The queued HTML carries
+  `{{claim_secret}}`, substituted at delivery time from the encrypted secret.
+  If the secret cannot be decrypted the row stays `QUEUED` and retries rather
+  than going out with a dead link.
+- **A composer bug must not cost the guest their link.** `claim._guest_mail_content`
+  catches every exception, logs `guest_mail_compose_failed`, and falls back to
+  the plain-text body it would have sent anyway — with a working link.
+
+Deliverability is deliberate and should not be "improved" casually: the logo is
+the only remotely fetched resource (no tracking pixel, no link rewriting); there
+is **no** `List-Unsubscribe` and **no** `Precedence: bulk`, which are wrong for
+transactional mail and are themselves bulk signals; and the `From` header
+carries the display name `UbyHost <noreply@ubyhost.com>` rather than a bare
+address. See [SES.md](SES.md).
 
 ## Alert kinds
 
@@ -127,10 +275,14 @@ condition, not by time.
 | --- | --- | --- | --- |
 | `deadline` | critical / warning | A stay is overdue or due now with data still missing. | The stay reaches `reported` or `not_required`. |
 | `submission_transport` | **critical** | UbyPort could not be reached, or returned a fault. | The next successful call to that apartment's endpoint. |
-| `submission_rejected` | **critical** | UbyPort did not accept one or more records. | A later submission for that apartment comes back clean. |
+| `submission_rejected` | **critical** | UbyPort did not accept one or more records. | A later submission for that apartment comes back clean — including one that only produced duplicates. |
+| `receipt_missing` | warning | UbyPort accepted records for the first time but returned neither a Doručenka nor a stamp, so the register holds them and we hold no proof. | A submission for that apartment returns a Doručenka or a stamp. |
 | `submission_immediate` | warning | An automatic send triggered by form completion threw. | Not auto-cleared; resolve by sending successfully. |
 | `apartment_setup` | warning | UbyPort settings are incomplete, so nothing can be reported for that apartment. | The settings validate. |
 | `feed_error` | warning | A calendar could not be fetched or parsed. | The next successful parse of that feed. |
+| `feed_duplicate_uid` | warning | A feed lists the same booking ID twice, so only the first entry was imported and one of the two stays may be missing. | A later sync of that feed returns each booking ID once. |
+| `feed_recurring_event` | warning | A feed repeats a booking (`RRULE`/`RDATE`/`EXDATE`), so only the first occurrence was imported. | A later sync of that feed returns no repeating event. |
+| `moved_after_report` | warning | A feed moved a stay's dates **after** the stay had already been filed, so the register holds the old dates. | Not auto-cleared; the host checks the new dates and resends. |
 | `cancelled_after_report` | warning | A stay vanished from the feed, or was cancelled in it, **after** it had already been reported. | Not auto-cleared; the host decides whether it was cancelled or moved. |
 | `guest_incomplete_checkin` | warning | Check-in day arrived with the guest's form still incomplete. | — |
 | `guest_pin_abuse` | warning | Repeated wrong PIN attempts on an apartment's guest link. | — |

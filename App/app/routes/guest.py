@@ -596,7 +596,7 @@ def _set_declared_guests(reservation, count: int) -> None:
         reservation["id"],
         {"declared_guests": count, "updated_at": db.utcnow()},
     )
-    reporting.maybe_submit_after_completion(
+    reporting.submit_stay_if_complete(
         reservation["apartment_id"], reservation["id"]
     )
 
@@ -1464,7 +1464,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # The form just signed shows the stay's current dates, so the warning that a
     # calendar change moved the dates under an older signature is now stale.
     alerts.resolve(f"dates_changed_resign:{reservation_id}")
-    reporting.maybe_submit_after_completion(apartment["id"], reservation_id)
+    reporting.submit_stay_if_complete(apartment["id"], reservation_id)
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303

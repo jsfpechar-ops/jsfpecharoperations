@@ -61,6 +61,7 @@ The app **refuses to start** if `UBYPORT_ENV=prod` without `DEPLOYMENT=productio
 - [ ] Paste Airbnb and Booking.com iCal export URLs.
 - [ ] Copy the guest permalink into check-in messages on both platforms.
 - [ ] Guest PIN enabled (`UBYHOST_GUEST_PIN=1`).
+- [ ] **Guest mail renders, in both languages.** From the public permalink, start a claim with a real address you control and open the received `claim` mail. Check: the logo shows (it is fetched from `https://ubyhost.com/static/ubyhost-logo.jpg` — a client that blocks images must still show the text part), the button and the copyable link both work, the footer names **your property and your contact address**, and `support@ubyhost.com` appears **nowhere**. Repeat with the UI in Czech and confirm the mail arrives in Czech. Confirm the `From` line reads `UbyHost <noreply@ubyhost.com>`, not a bare address. If it lands in spam, do not "fix" it by adding `List-Unsubscribe` or `Precedence: bulk` — check DKIM/SPF/DMARC instead ([SES.md](SES.md)).
 
 ## Phase 4 — Validate on test UbyPort (go-live gate)
 
@@ -82,9 +83,9 @@ Fill the report at the bottom of this file. No guest PII in git.
 1. [ ] Create or import one controlled stay (label TEST). Screenshot: Stays list.
 2. [ ] Complete guest registration (host-entered **or** guest link) with realistic **foreign** guest data that passes validation (nationality codes, residence, purpose of stay). Screenshot: stay detail complete.
 3. [ ] Submit batch to UbyPort **test**. Screenshot: Reports row.
-4. [ ] Confirm submission `state` is `ok` (or document `partial` / `error`). Download Doručenka PDF. In Reports, stored request XML matches what you intended to send. House book row exists.
+4. [ ] Confirm submission `state` is `ok` (or document `partial` / `error`). Download Doručenka PDF. In Reports, stored request XML matches what you intended to send. House book row exists. If the state is `partial` or `error`, confirm the host contact address received the **submission-problem e-mail** (logo, the UbyPort reason, links to the affected stays) — and that an `ok` run sent no such mail.
 5. [ ] Duplicate: submit the same guest again **once** on **test**. Expect code **150** / duplicate handling — guest should not be blindly retried. Screenshot: blocked/duplicate messaging. Do **not** spam.
-6. [ ] Transport failure (test only): wrong WS password **once**, or briefly set an unreachable timeout if you can, then restore the real password. Host must see **Could not reach UbyPort** / transport alert; guests stay pending (no silent drop). Screenshot: alert + Reports `transport_error`.
+6. [ ] Transport failure (test only): wrong WS password **once**, or briefly set an unreachable timeout if you can, then restore the real password. Host must see **Could not reach UbyPort** / transport alert; guests stay pending (no silent drop). Screenshot: alert + Reports `transport_error`. Confirm the host contact address received the **submission-problem e-mail**, and that the raw transport error text is *not* in it (it belongs in the alert).
 7. [ ] Export house book CSV — fields match the submitted guest.
 
 If UBY-WS credentials are not on this machine, stop after documenting SSH steps; do not invent a SOAP success.
@@ -144,10 +145,10 @@ Codes are interpreted in `App/app/ubyport/errors.py` and shown on the guest/repo
 | *(none)* / submission `ok` | Batch accepted | Archive Doručenka; done |
 | **106** | Invalid guest field | Fix the field, resend that guest |
 | **1** | Incorrect file extension | Should not occur for SOAP; check Doručenka; do not loop |
-| **112** | Reported late (3 working days) | **Do not resend** as a fix; `not_correctable`. Note for the file; police may still hold/refuse |
-| **150** / text contains `duplic` | Duplicate — register already has the row | App treats this as already sent / not blindly retried. **Do not** hammer submit |
+| **112** | Critical transmission error (1xx): **the register did not receive the batch at all** | Check the guest's card (nationality, date of birth, document number) and the generated file, then **repeat the submission**. The record stays `error` and is retried automatically. A *transient* cause (interrupted connection) and a *data* cause (invalid character, empty mandatory field) look identical to us, so retrying fixes the first and a second 112 means a human must fix the second |
+| **150** / text contains `duplic` | Duplicate — register already has the row | App treats this as already sent / not blindly retried. Submission is recorded as `ok_duplicate`; the Doručenka link points at the submission that holds it. **Do not** hammer submit |
 | Other correctable codes | Rejected, worth a fix | Edit guest, one resend |
-| `not_correctable` | Duplicate, late, or similar | Stop; read Doručenka |
+| `not_correctable` | Duplicate, or a codebook text matching `duplic`/`pozd`/`late` | Stop; read Doručenka |
 | `transport_error` / `UbyportTransportError` | Timeout, NTLM/auth, TLS, SOAP fault | Alert: “could not deliver”. Guests stay **pending**. Fix network/password; retry **once**. No data deleted |
 | `not_configured` | Missing mark/IDUB/WS login | Complete apartment UBY-WS settings |
 | Header errors on Doručenka | Whole batch problem | Open error PDF; fix apartment header (IDUB/mark/address) |
@@ -168,7 +169,7 @@ XML for a submission is stored on the `submission` row (`request_xml` / `respons
 | Stay id / label | TEST … |
 | Guest nationality (no full PII in git) | e.g. GBR |
 | Submission id | |
-| Submission `state` | ok / partial / error / transport_error |
+| Submission `state` | ok / ok_duplicate / partial / error / transport_error |
 | Doručenka downloaded | yes / no |
 | XML stored in Reports | yes / no |
 | House book row | yes / no |

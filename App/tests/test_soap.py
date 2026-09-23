@@ -204,10 +204,39 @@ def test_no_errors_means_accepted():
     assert messages == []
 
 
-def test_reported_late_cannot_be_corrected():
+def test_a_critical_transmission_error_can_be_corrected():
+    """112 means the batch never reached the register, so resending is the fix.
+
+    The Foreign Police answered this in writing: 112 is a critical transmission
+    error (1xx series) - the batch of accommodated foreigners was not received
+    at all. The guest must stay retryable, not land in `blocked`.
+    """
     state, messages = uby_errors.classify("", ";112;")
-    assert state == "not_correctable"
+    assert state == "error"
     assert any("112" in m for m in messages)
+
+
+def test_the_112_wording_carries_no_non_correctable_marker():
+    """The fallback wording is substring-matched, so it must not trip the filter.
+
+    classify() matches NON_CORRECTABLE_MARKERS against describe()'s output, and
+    describe() falls back to KNOWN_CODES when the live code book is silent. A
+    wording that happened to contain one of those markers would reclassify 112
+    on its own.
+    """
+    assert not uby_errors.is_non_correctable(uby_errors.KNOWN_CODES["112"])
+
+
+def test_a_reworded_112_from_the_code_book_is_still_correctable():
+    """The police's own prose for 112 must not override the written answer.
+
+    The cached code book is authoritative for what a code means to them, but it
+    is free text: a wording change must not silently abandon a record the
+    register never received.
+    """
+    book = {"112": "Pozdě podané hlášení - záznam nebyl přijat"}
+    state, _messages = uby_errors.classify("", ";112;", book)
+    assert state == "error"
 
 
 def test_duplicate_is_not_correctable_by_wording():
