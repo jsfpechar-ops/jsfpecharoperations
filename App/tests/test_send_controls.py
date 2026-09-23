@@ -5,6 +5,7 @@ import base64
 from datetime import date, datetime, timedelta, timezone
 
 from app import db, reporting
+from app.ubyport.client import SubmissionResult
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -391,3 +392,49 @@ def test_stay_submit_route_requires_duplicate_confirmation():
         "re-sending accepted records from the stay page must be confirmed, "
         "like the single-guest resend route"
     )
+
+
+def test_a_critical_transmission_error_leaves_the_guest_retryable(monkeypatch):
+    """112 means the register never received the batch, so retrying is the fix.
+
+    The police answered this in writing: 112 is a 1xx critical transmission
+    error, the batch was not received at all, and the remedy is to correct the
+    data and repeat the submission. Parking the guest in ``blocked`` would drop
+    them from every future automatic send, so the declaration would never
+    happen. This goes through ``submit_batch`` rather than ``classify`` because
+    the state the host sees, and the send gate that acts on it, are the parts
+    that matter.
+    """
+    apartment, _reservation, guest_id = _seed("manual", "tok-112")
+
+    class FakeClient:
+        def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+            return SubmissionResult(
+                endpoint="test",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                record_errors=[";112;"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: FakeClient())
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
+
+    try:
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert guest_id in [guest["id"] for guest, _ in pairs]
+
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "error"
+        assert result["blocked"] == 0
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.ERROR
+        assert guest["submit_state"] != reporting.BLOCKED
+
+        # The unattended sweep must pick the record back up: an ``error`` guest
+        # is retried without anyone opting into a duplicate resend.
+        again = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert guest_id in [guest["id"] for guest, _ in again]
+    finally:
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
+        db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))
