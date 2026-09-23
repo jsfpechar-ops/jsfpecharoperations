@@ -228,19 +228,18 @@ def test_a_file_with_no_guest_row_is_swept():
     assert not passport_photos.has_photo(orphan_id)
 
 
-def test_sending_counts_as_verifying_so_the_photo_goes_then():
-    """Most hosts verify by sending, not by pressing Verify.
+def test_verifying_deletes_the_passport_photo_there_and_then():
+    """The photo's whole purpose is the identity check, so it goes with it.
 
-    Sending stamps the identity check, which is the moment the photo stops
-    having a purpose. Leaving it for the sweep means a passport scan sits on
-    disk for weeks after the app decided it was no longer needed.
+    Leaving it for the retention sweep would keep a passport scan on disk for
+    weeks after the app decided it was no longer needed.
     """
     guest_id = _seed_guest(date.today(), verified=False)
 
-    reporting.record_host_identity_confirmation(guest_id, None, on_send=True)
+    reporting.record_host_identity_confirmation(guest_id, None)
 
     assert not passport_photos.has_photo(guest_id), (
-        "the record was verified on send but the passport image was kept"
+        "the record was verified but the passport image was kept"
     )
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
     assert guest["identity_verified_at"]
