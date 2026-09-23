@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
 from zoneinfo import ZoneInfo
 
-from . import config, db, deadlines, mail, reporting, validation
+from . import config, db, deadlines, i18n, mail, mail_notify, reporting, validation
 
 log = logging.getLogger("ubyhost.claim")
 
@@ -269,20 +269,27 @@ def start_claim(
         f"{reservation['id']}/claim#c={mail.CLAIM_SECRET_MARKER}"
     )
     kind = "claim_resend" if resend or claim["state"] == CLAIMED else "claim"
-    subject = (
-        "Continue your Prague guest registration"
-        if lang != "cs"
-        else "Pokračujte v registraci hostů"
-    )
     text = _claim_text(lang, apartment, reservation, link)
+    content = _guest_mail_content(
+        kind,
+        apartment,
+        reservation,
+        lang=lang,
+        link=link,
+        resend=kind == "claim_resend",
+        plain_text=text,
+    )
     # The body is stored with the marker standing in for the secret and the
     # secret beside it, encrypted, so the queued message holds a link the guest
-    # can use once sent and nothing usable while it waits.
+    # can use once sent and nothing usable while it waits. The marker sits in
+    # both the text and the HTML part, and mail.py substitutes it in each.
     payload = {
-        "text": text,
+        "text": content["text"],
         "lang": lang,
         mail.CLAIM_SECRET_KEY: db.encrypt_field(secret),
     }
+    if content.get("html"):
+        payload["html"] = content["html"]
     reply_to = _reply_to_for_apartment(apartment)
     if reply_to:
         payload["reply_to"] = reply_to
@@ -290,7 +297,7 @@ def start_claim(
         kind=kind,
         idempotency_key=f"{kind}:{reservation['id']}:v{version}",
         to_email=addr,
-        subject=subject,
+        subject=content["subject"],
         payload=payload,
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
@@ -299,6 +306,85 @@ def start_claim(
     _record_claim_mail(int(reservation["id"]), addr)
     mail.drain(limit=4)
     return True, "", secret
+
+
+def _guest_mail_content(
+    kind: str,
+    apartment,
+    reservation,
+    *,
+    lang: str,
+    plain_text: str,
+    link: Optional[str] = None,
+    resend: bool = False,
+    stay_url: Optional[str] = None,
+) -> Dict[str, str]:
+    """Compose a guest message, falling back to plain text on any failure.
+
+    A guest is mid-flow when this runs: in the claim path they are waiting on a
+    response that carries their link. So the caller's plain-text body is the
+    contract, and the branded HTML is an enhancement -- a composer bug costs the
+    guest the nicer message, never the link.
+    """
+    fallback = {
+        "subject": _guest_mail_subject(kind, lang),
+        "text": plain_text,
+    }
+    try:
+        property_name = mail_notify.property_label(apartment, lang)
+        dates = f"{reservation['date_from']} \u2013 {reservation['date_to']}"
+        host = mail_notify.host_details(
+            apartment["legal_entity_id"] if apartment else None
+        )
+        if kind in ("claim", "claim_resend"):
+            return mail_notify.build_claim_link(
+                lang=lang,
+                property_name=property_name,
+                dates=dates,
+                link=link or "",
+                resend=resend,
+                host=host,
+            )
+        if kind == "completion":
+            return mail_notify.build_completion(
+                lang=lang,
+                property_name=property_name,
+                dates=dates,
+                stay_url=stay_url or "",
+                host=host,
+            )
+        if kind == "reminder_guest":
+            return mail_notify.build_reminder_guest(
+                lang=lang,
+                property_name=property_name,
+                dates=dates,
+                stay_url=stay_url or "",
+                host=host,
+            )
+    except Exception:
+        log.exception(
+            "guest_mail_compose_failed kind=%s reservation_id=%s",
+            kind,
+            (reservation["id"] if reservation is not None else None),
+        )
+    return fallback
+
+
+def _guest_mail_subject(kind: str, lang: str) -> str:
+    key = {
+        "claim": "mail_claim_subject",
+        "claim_resend": "mail_claim_subject",
+        "completion": "mail_completion_subject",
+        "reminder_guest": "mail_reminder_guest_subject",
+    }.get(kind, "mail_claim_subject")
+    return i18n.translator(lang)(key)
+
+
+def _stay_link(apartment, reservation) -> str:
+    """The guest's stay address, absolute so it survives an e-mail client."""
+    return (
+        f"{config_public(apartment)}/l/{apartment['permalink_token']}/{reservation['id']}"
+    )
 
 
 def config_public(apartment) -> str:
@@ -445,11 +531,6 @@ def maybe_notify_completion(reservation, apartment) -> None:
     lang = claim["lang"] or "en"
     reply_to = _reply_to_for_apartment(apartment)
     cc = reply_to
-    subject = (
-        "Guest registration received"
-        if lang != "cs"
-        else "Registrace hostů byla přijata"
-    )
     name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
     text = (
         f"Thank you. Details for your stay at {name} "
@@ -462,7 +543,17 @@ def maybe_notify_completion(reservation, apartment) -> None:
         f"Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele mohou být "
         f"kompletní záznamy cizinců odeslány do UbyPortu automaticky."
     )
-    payload = {"text": text, "lang": lang}
+    content = _guest_mail_content(
+        "completion",
+        apartment,
+        reservation,
+        lang=lang,
+        plain_text=text,
+        stay_url=_stay_link(apartment, reservation),
+    )
+    payload = {"text": content["text"], "lang": lang}
+    if content.get("html"):
+        payload["html"] = content["html"]
     if reply_to:
         payload["reply_to"] = reply_to
     mail.enqueue(
@@ -470,7 +561,7 @@ def maybe_notify_completion(reservation, apartment) -> None:
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
         cc_email=cc,
-        subject=subject,
+        subject=content["subject"],
         payload=payload,
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
@@ -522,11 +613,6 @@ def sweep_reminders() -> Dict[str, int]:
             and not complete
         ):
             lang = reservation["claim_lang"] or "en"
-            subject = (
-                "Please finish your guest registration"
-                if lang != "cs"
-                else "Dokončete prosím registraci hostů"
-            )
             text = (
                 "Your stay starts tomorrow. Please finish the guest registration "
                 "using the private link we already sent you. This is the only "
@@ -536,7 +622,21 @@ def sweep_reminders() -> Dict[str, int]:
                 "pomocí soukromého odkazu, který jsme vám již poslali. Toto je jediné "
                 "upozornění na nedokončenou registraci, které vám pošleme."
             )
-            guest_payload = {"text": text, "lang": lang}
+            stay_url = (
+                f"{config.PUBLIC_BASE_URL.rstrip('/')}/l/{reservation['permalink_token']}"
+                f"/{reservation['id']}"
+            )
+            content = _guest_mail_content(
+                "reminder_guest",
+                reservation,
+                reservation,
+                lang=lang,
+                plain_text=text,
+                stay_url=stay_url,
+            )
+            guest_payload = {"text": content["text"], "lang": lang}
+            if content.get("html"):
+                guest_payload["html"] = content["html"]
             reply_to = _entity_contact_email(reservation["legal_entity_id"])
             if reply_to:
                 guest_payload["reply_to"] = reply_to
@@ -546,7 +646,7 @@ def sweep_reminders() -> Dict[str, int]:
                     f"reminder_guest:{reservation['id']}:{start.isoformat()}"
                 ),
                 to_email=reservation["claim_email"],
-                subject=subject,
+                subject=content["subject"],
                 payload=guest_payload,
                 reservation_id=reservation["id"],
                 apartment_id=reservation["apartment_id"],
@@ -555,22 +655,26 @@ def sweep_reminders() -> Dict[str, int]:
                 summary["guest"] += 1
         if start == today and not complete and now_local.hour >= 9:
             host_email = _entity_contact_email(reservation["legal_entity_id"])
-            masked = reservation["email_masked"] or "not claimed"
+            masked = reservation["email_masked"] or ""
             if host_email:
+                host_content = mail_notify.build_reminder_host(
+                    property_name=reservation["internal_name"] or "",
+                    date=reservation["date_from"],
+                    assigned=masked,
+                    stay_url=(
+                        f"{config.PUBLIC_BASE_URL.rstrip('/')}"
+                        f"/reservations/{reservation['id']}"
+                    ),
+                )
+                host_payload = {"text": host_content["text"], "lang": "en"}
+                if host_content.get("html"):
+                    host_payload["html"] = host_content["html"]
                 mail.enqueue(
                     kind="reminder_host",
                     idempotency_key=f"reminder_host:{reservation['id']}:{start.isoformat()}",
                     to_email=host_email,
-                    subject=f"Incomplete registration: {reservation['internal_name']}",
-                    payload={
-                        "text": (
-                            f"{reservation['internal_name']} check-in is today "
-                            f"({reservation['date_from']}). Guest forms are incomplete "
-                            f"(assigned to {masked}). The guest can still finish using "
-                            f"their registration link. "
-                            f"Open {config.PUBLIC_BASE_URL}/reservations/{reservation['id']}"
-                        )
-                    },
+                    subject=host_content["subject"],
+                    payload=host_payload,
                     reservation_id=reservation["id"],
                     apartment_id=reservation["apartment_id"],
                     owner_user_id=reservation["owner_user_id"],

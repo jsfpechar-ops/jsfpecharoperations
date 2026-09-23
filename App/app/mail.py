@@ -283,6 +283,21 @@ def _ses_client():
     return boto3.client("ses", **kwargs)
 
 
+def display_from(address: Optional[str] = None) -> str:
+    """The envelope From, with a readable name in front of the address.
+
+    A bare address in the From line is one of the cheapest ways to look like
+    bulk mail, and it reads badly in a guest's inbox. If the configured value
+    already carries a name, it is passed through untouched so an operator who
+    set one keeps it.
+    """
+    value = (address if address is not None else config.MAIL_FROM) or ""
+    value = value.strip()
+    if not value or "<" in value or "@" not in value:
+        return value
+    return f"UbyHost <{value}>"
+
+
 def _send_ses(row) -> str:
     """Deliver one outbox row through Amazon SES SendEmail."""
     if backend_name() != "ses":
@@ -309,7 +324,7 @@ def _send_ses(row) -> str:
         ses_body["Html"] = {"Data": html, "Charset": "UTF-8"}
 
     kwargs: Dict[str, Any] = {
-        "Source": config.MAIL_FROM,
+        "Source": display_from(),
         "Destination": destination,
         "Message": {
             "Subject": {"Data": row["subject"] or "", "Charset": "UTF-8"},

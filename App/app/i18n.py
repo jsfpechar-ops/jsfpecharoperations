@@ -476,6 +476,65 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_contact": "Contact",
         "fix_errors": "Please correct the following:",
         "back": "Back",
+        # E-mail the app sends to a guest. The plain-text and the HTML part are
+        # both built from these keys, so the two cannot drift apart.
+        "mail_claim_subject": "Continue your Prague guest registration",
+        "mail_claim_heading": "Confirm your stay",
+        "mail_claim_intro": (
+            "Confirm your stay at %(property)s (%(dates)s) by opening the link below."
+        ),
+        "mail_claim_action": "Confirm my stay",
+        "mail_link_fallback": (
+            "If the button does not work, copy this address into your browser:"
+        ),
+        "mail_claim_expiry": (
+            "The link is valid for 30 minutes and stops working as soon as you "
+            "confirm the stay."
+        ),
+        "mail_claim_expiry_resend": (
+            "This is a new link and the previous one has stopped working. It is "
+            "valid for 30 minutes and stops working as soon as you confirm the stay."
+        ),
+        "mail_claim_next_label": "What happens next",
+        "mail_claim_next_body": (
+            "You will enter the details of every guest of this stay and then sign. "
+            "It takes about two minutes per guest and works on a phone."
+        ),
+        "mail_completion_subject": "Guest registration received",
+        "mail_completion_heading": "Registration received",
+        "mail_completion_intro": (
+            "Thank you. We have received the details for your stay at %(property)s "
+            "(%(dates)s)."
+        ),
+        "mail_completion_action": "Open my stay",
+        "mail_completion_note_label": "Please note",
+        "mail_completion_note": (
+            "This receipt is not proof of police reporting. Depending on your host's "
+            "settings, complete foreign-guest records may be sent to UbyPort "
+            "automatically."
+        ),
+        "mail_reminder_guest_subject": "Please finish your guest registration",
+        "mail_reminder_guest_heading": "Your stay starts tomorrow",
+        "mail_reminder_guest_intro": (
+            "Your stay at %(property)s starts tomorrow and the guest registration is "
+            "not complete yet."
+        ),
+        "mail_reminder_guest_action": "Finish the registration",
+        "mail_reminder_guest_note_label": "One reminder only",
+        "mail_reminder_guest_note": (
+            "This is the only incomplete-registration reminder we will send."
+        ),
+        "mail_reminder_guest_help": (
+            "If you have already sent everything, you can ignore this message."
+        ),
+        # The footer. Guests are told to reach the host, never UbyHost support:
+        # the same rule the guest pages follow.
+        "mail_guest_footer_why": (
+            "You received this e-mail because your stay at %(property)s is registered "
+            "with this address."
+        ),
+        "mail_guest_footer_host_label": "Your host",
+        "mail_guest_footer_help": "Reply to this e-mail to reach your host.",
     },
     "cs": {
         "title": "Registrace ubytovaného",
@@ -926,6 +985,62 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_contact": "Kontakt",
         "fix_errors": "Opravte prosím následující:",
         "back": "Zpět",
+        # E-mail, který aplikace posílá hostovi. Textová i HTML část se skládá
+        # z těchto klíčů, takže se nemohou rozejít.
+        "mail_claim_subject": "Pokračujte v registraci hostů",
+        "mail_claim_heading": "Potvrďte svůj pobyt",
+        "mail_claim_intro": (
+            "Potvrďte pobyt v %(property)s (%(dates)s) otevřením odkazu níže."
+        ),
+        "mail_claim_action": "Potvrdit pobyt",
+        "mail_link_fallback": (
+            "Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:"
+        ),
+        "mail_claim_expiry": (
+            "Odkaz platí 30 minut a přestane fungovat ve chvíli, kdy pobyt potvrdíte."
+        ),
+        "mail_claim_expiry_resend": (
+            "Toto je nový odkaz, předchozí už nefunguje. Platí 30 minut a přestane "
+            "fungovat ve chvíli, kdy pobyt potvrdíte."
+        ),
+        "mail_claim_next_label": "Co bude následovat",
+        "mail_claim_next_body": (
+            "Vyplníte údaje ke každému hostovi tohoto pobytu a poté je podepíšete. "
+            "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu."
+        ),
+        "mail_completion_subject": "Registrace hostů byla přijata",
+        "mail_completion_heading": "Registrace byla přijata",
+        "mail_completion_intro": (
+            "Děkujeme. Obdrželi jsme údaje k vašemu pobytu v %(property)s (%(dates)s)."
+        ),
+        "mail_completion_action": "Otevřít můj pobyt",
+        "mail_completion_note_label": "Upozornění",
+        "mail_completion_note": (
+            "Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele "
+            "mohou být kompletní záznamy cizinců odeslány do UbyPortu automaticky."
+        ),
+        "mail_reminder_guest_subject": "Dokončete prosím registraci hostů",
+        "mail_reminder_guest_heading": "Váš pobyt začíná zítra",
+        "mail_reminder_guest_intro": (
+            "Váš pobyt v %(property)s začíná zítra a registrace hostů zatím není "
+            "dokončená."
+        ),
+        "mail_reminder_guest_action": "Dokončit registraci",
+        "mail_reminder_guest_note_label": "Pouze jedno upozornění",
+        "mail_reminder_guest_note": (
+            "Toto je jediné upozornění na nedokončenou registraci, které vám pošleme."
+        ),
+        "mail_reminder_guest_help": (
+            "Pokud jste už vše odeslali, můžete tuto zprávu ignorovat."
+        ),
+        # Patička. Hosté se obracejí na ubytovatele, nikdy na podporu UbyHostu:
+        # stejné pravidlo jako na stránkách pro hosty.
+        "mail_guest_footer_why": (
+            "Tento e-mail dostáváte, protože je s touto adresou veden váš pobyt "
+            "v %(property)s."
+        ),
+        "mail_guest_footer_host_label": "Váš hostitel",
+        "mail_guest_footer_help": "Odpovězte na tento e-mail a spojíte se s hostitelem.",
     },
 }
 
