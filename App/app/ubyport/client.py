@@ -15,7 +15,15 @@ try:
 except ImportError:  # pragma: no cover - dependency is declared
     HttpNtlmAuth = None
 
-INCLUDE_WSA_HEADER = os.environ.get("UBYHOST_SOAP_WSA_HEADER", "0") not in ("0", "false", "no")
+
+def include_wsa_header() -> bool:
+    """Whether to send the WS-Addressing header, read per call.
+
+    A runtime read rather than a module constant: the flag is an
+    interoperability switch for the police service, and an operator turning it
+    on in the environment should not have to wait for a rebuild.
+    """
+    return os.environ.get("UBYHOST_SOAP_WSA_HEADER", "0") not in ("0", "false", "no")
 
 
 class UbyportError(Exception):
@@ -40,13 +48,6 @@ class SubmissionResult:
     receipt_pdf: str = ""
     error_pdf: str = ""
     pseudo_stamp: str = ""
-
-    @property
-    def accepted(self) -> bool:
-        """True when the whole batch came back clean."""
-        return not self.header_errors and not any(
-            code.strip(";").strip() for code in self.record_errors
-        )
 
 
 class UbyportClient:
@@ -125,13 +126,13 @@ class UbyportClient:
     # --- operations ------------------------------------------------------
 
     def test_availability(self) -> bool:
-        envelope = soap.build_simple_call("TestDostupnosti", self.auth_code, "", INCLUDE_WSA_HEADER)
+        envelope = soap.build_simple_call("TestDostupnosti", self.auth_code, "", include_wsa_header())
         text = self._post("TestDostupnosti", envelope)
         return (soap.parse_scalar_response(text, "TestDostupnosti") or "").lower() == "true"
 
     def max_batch_size(self) -> Optional[int]:
         envelope = soap.build_simple_call(
-            "MaximalniDelkaSeznamu", self.auth_code, "", INCLUDE_WSA_HEADER
+            "MaximalniDelkaSeznamu", self.auth_code, "", include_wsa_header()
         )
         text = self._post("MaximalniDelkaSeznamu", envelope)
         value = soap.parse_scalar_response(text, "MaximalniDelkaSeznamu")
@@ -142,7 +143,7 @@ class UbyportClient:
 
     def code_list(self, kind: str) -> List[Dict[str, str]]:
         """kind is one of Staty, UcelyPobytu, Chyby."""
-        envelope = soap.build_dej_mi_ciselnik(kind, self.auth_code, INCLUDE_WSA_HEADER)
+        envelope = soap.build_dej_mi_ciselnik(kind, self.auth_code, include_wsa_header())
         text = self._post("DejMiCiselnik", envelope)
         return soap.parse_ciselnik_response(text)
 
@@ -150,12 +151,11 @@ class UbyportClient:
         self,
         header: Dict[str, Optional[str]],
         guests: List[Dict[str, Any]],
-        want_pdf: bool = True,
     ) -> SubmissionResult:
         if not guests:
             raise UbyportError("Nothing to submit: the guest list is empty.")
         envelope = soap.build_zapis_ubytovane(
-            header, guests, want_pdf, self.auth_code, INCLUDE_WSA_HEADER
+            header, guests, self.auth_code, include_wsa_header()
         )
         text = self._post("ZapisUbytovane", envelope)
         try:

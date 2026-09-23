@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Iterable, List, Mapping, Optional, Sequence
+from typing import List, Mapping, Optional, Sequence
 
 from . import config, mail
 
@@ -152,7 +152,3 @@ def apply(warnings: Optional[Sequence[str]] = None) -> List[str]:
     for message in found:
         log.warning("%s", message)
     return found
-
-
-def format_warnings(messages: Iterable[str]) -> str:
-    return "\n".join(f"WARNING: {item}" for item in messages)

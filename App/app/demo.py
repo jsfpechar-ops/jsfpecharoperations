@@ -9,7 +9,7 @@ import logging
 from datetime import date, timedelta
 from typing import Optional
 
-from . import auth, claim, codelists, config, db, icalsync, mail, reporting, validation
+from . import auth, claim, codelists, config, db, icalsync, reporting, validation
 from .sample_calendar import sample_airbnb_ics
 
 log = logging.getLogger("ubyhost.demo")
@@ -34,6 +34,11 @@ DEMO_SIGNATURE = (
 
 def is_demo_apartment(apartment) -> bool:
     if not apartment:
+        return False
+    # Demo data can only be seeded while pointed at the mock server, so on a
+    # real deployment nothing can be a demo apartment and the legal_entity
+    # lookup below is a query per dashboard row for a name that cannot exist.
+    if config.UBYPORT_ENV != "mock":
         return False
     if apartment["internal_name"] in (DEMO_APARTMENT, DEMO_LOFT):
         return True

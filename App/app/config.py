@@ -1,24 +1,42 @@
-"""Runtime configuration, read from the environment with safe local defaults."""
+"""Runtime configuration, read from the environment with safe local defaults.
+
+Everything here is a plain read of the environment except the data directory
+and the signing key, and those two are deliberately *not* done at import time:
+importing this module is what a test run, a lint or a one-off tool does, and
+none of them should create a directory on the host or write a secret to disk.
+``ensure_data_dir()`` and ``secret_key()`` do that work when the application is
+actually starting or actually signing something.
+"""
 from __future__ import annotations
 
 import os
 import secrets
 from pathlib import Path
+from typing import Optional
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
-DATA_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-try:
-    DATA_DIR.chmod(0o700)
-except OSError:
-    pass
 
 DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
 
 # The secret key signs session cookies and derives the key that encrypts
 # UbyPort passwords at rest. Losing it means re-entering those passwords.
 _SECRET_FILE = DATA_DIR / "secret_key"
+
+
+def ensure_data_dir() -> Path:
+    """Create the private data directory. Idempotent, and safe to call late.
+
+    Called from ``db.init_db()`` and from the app lifespan rather than at
+    import, so importing the module cannot write to the filesystem.
+    """
+    DATA_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    try:
+        DATA_DIR.chmod(0o700)
+    except OSError:
+        pass
+    return DATA_DIR
 
 
 def _load_secret() -> str:
@@ -46,7 +64,23 @@ def _load_secret() -> str:
     return generated
 
 
-SECRET_KEY = _load_secret()
+_SECRET_KEY: Optional[str] = None
+
+
+def secret_key() -> str:
+    """The signing/encryption key, generated on first use.
+
+    A function rather than a module constant because generating it writes a
+    file, and because a constant loaded at import is a constant that cannot be
+    absent — an empty one would sign sessions with a key anyone can guess and
+    derive the database encryption key from it. This way there is no state in
+    which the app runs with no key at all.
+    """
+    global _SECRET_KEY
+    if _SECRET_KEY is None:
+        _SECRET_KEY = _load_secret()
+    return _SECRET_KEY
+
 
 # "mock" | "test" | "prod".  Controls which UbyPort endpoint submissions go to.
 UBYPORT_ENV = os.environ.get("UBYHOST_UBYPORT_ENV", "mock").lower()
@@ -125,7 +159,6 @@ MAIL_FROM = os.environ.get("UBYHOST_MAIL_FROM", "").strip()
 SES_REGION = os.environ.get("UBYHOST_SES_REGION", "eu-central-1").strip()
 AWS_ACCESS_KEY_ID = os.environ.get("UBYHOST_AWS_ACCESS_KEY_ID", "").strip()
 AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").strip()
-SES_FEEDBACK_QUEUE_URL = os.environ.get("UBYHOST_SES_FEEDBACK_QUEUE_URL", "").strip()
 
 # Bumped when the public Privacy Policy changes materially.
 PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.5")

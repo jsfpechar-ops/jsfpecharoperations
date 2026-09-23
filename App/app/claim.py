@@ -467,10 +467,6 @@ def confirm(reservation, secret: str) -> bool:
     return bool(row and row["state"] == CLAIMED and row["token_hash"] is None)
 
 
-def secret_matches(claim, secret: str) -> bool:
-    return bool(claim and secret and claim["token_hash"] == token_hash(secret))
-
-
 def release(reservation_id: int) -> None:
     now = db.utcnow()
     db.execute(

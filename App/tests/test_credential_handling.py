@@ -20,7 +20,7 @@ PASSWORD = "Tr0ub4dour-Test-Pass"
 def admin():
     db.init_db()
     _purge()
-    account_id = auth.create_account(
+    auth.create_account(
         "cred-admin", PASSWORD, "Credential admin", role="admin",
         must_change_password=False,
     )

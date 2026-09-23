@@ -153,232 +153,6 @@ def housebook_rows(
     return [_housebook_export_row(row) for row in db.query(sql, params)]
 
 
-def _parse_import_date(value: str) -> Optional[str]:
-    """Accept ISO dates or Czech DD.MM.YYYY from exported spreadsheets."""
-    value = (value or "").strip()
-    if not value:
-        return None
-    if len(value) == 10 and value[4] == "-" and value[7] == "-":
-        return value
-    if len(value) == 10 and value[2] == "." and value[5] == ".":
-        day, month, year = value.split(".")
-        if day.isdigit() and month.isdigit() and year.isdigit():
-            return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
-    return None
-
-
-def _parse_import_birth(value: str) -> str:
-    value = (value or "").strip()
-    if not value:
-        return ""
-    if len(value) == 10 and value[2] == "." and value[5] == ".":
-        day, month, year = value.split(".")
-        if day.isdigit() and month.isdigit() and year.isdigit():
-            return f"{day.zfill(2)}{month.zfill(2)}{year}"
-    digits = "".join(ch for ch in value if ch.isdigit())
-    return digits[:8] if len(digits) >= 8 else ""
-
-
-def _split_residence(value: str) -> tuple[str, str, str]:
-    """Best-effort split of a one-line residence into street, city, country."""
-    value = (value or "").strip()
-    if not value:
-        return "", "", ""
-    parts = [part.strip() for part in value.split(",") if part.strip()]
-    if len(parts) >= 3:
-        return parts[0], parts[1], parts[-1][:3].upper()
-    if len(parts) == 2:
-        return parts[0], parts[1], ""
-    return value, "", ""
-
-
-def _as_date(value: Optional[str]) -> Optional[date]:
-    try:
-        return date.fromisoformat(value) if value else None
-    except ValueError:
-        return None
-
-
-def import_csv(content: bytes, apartment_id: int) -> Dict[str, Any]:
-    """Import historical house-book rows from a semicolon-separated CSV export."""
-    text = content.decode("utf-8-sig", errors="replace")
-    reader = csv.reader(io.StringIO(text), delimiter=";")
-    rows = list(reader)
-    if not rows:
-        return {"imported": 0, "skipped": 0, "errors": ["The file is empty."]}
-
-    header = [cell.strip().lower() for cell in rows[0]]
-    label_to_key = {label.lower(): key for key, label in HOUSEBOOK_COLUMNS}
-    indexes: Dict[str, int] = {}
-    for index, label in enumerate(header):
-        key = label_to_key.get(label)
-        if key:
-            indexes[key] = index
-    required = ("stay_from", "stay_to", "surname", "first_name")
-    missing = [name for name in required if name not in indexes]
-    if missing:
-        return {
-            "imported": 0,
-            "skipped": 0,
-            "errors": [
-                "Could not find required columns: "
-                + ", ".join(name.replace("_", " ") for name in missing)
-                + ". Use the same format as the house-book export."
-            ],
-        }
-
-    apartment = db.query_one("SELECT id FROM apartment WHERE id = ?", (apartment_id,))
-    if not apartment:
-        return {"imported": 0, "skipped": 0, "errors": ["Unknown apartment."]}
-
-    imported = 0
-    skipped = 0
-    errors: List[str] = []
-    now = db.utcnow()
-
-    for line_no, row in enumerate(rows[1:], start=2):
-        if not any(cell.strip() for cell in row):
-            continue
-
-        def cell(key: str) -> str:
-            index = indexes.get(key)
-            if index is None or index >= len(row):
-                return ""
-            return row[index].strip()
-
-        stay_from = _parse_import_date(cell("stay_from"))
-        stay_to = _parse_import_date(cell("stay_to"))
-        surname = cell("surname")
-        first_name = cell("first_name")
-        if not (stay_from and stay_to and surname):
-            skipped += 1
-            errors.append(f"Line {line_no}: missing stay dates or surname.")
-            continue
-
-        residence = cell("residence")
-        street, city, country = _split_residence(residence)
-        reported = cell("reported").lower()
-        if reported.startswith("yes"):
-            submit_state = "sent"
-            submitted_at = cell("reported_at") or now
-        elif reported.startswith("not required"):
-            submit_state = "not_required"
-            submitted_at = None
-        else:
-            submit_state = "pending"
-            submitted_at = None
-
-        uid = f"import-{apartment_id}-{stay_from}-{stay_to}-{surname}-{first_name}-{line_no}"
-        reservation = db.query_one(
-            "SELECT id FROM reservation WHERE apartment_id = ? AND uid = ?",
-            (apartment_id, uid),
-        )
-        if not reservation:
-            reservation_id = db.insert(
-                "reservation",
-                {
-                    "apartment_id": apartment_id,
-                    "source": "import",
-                    "uid": uid,
-                    "date_from": stay_from,
-                    "date_to": stay_to,
-                    "summary": f"Imported: {surname} {first_name}".strip(),
-                    "status": "active",
-                    "created_at": now,
-                    "updated_at": now,
-                },
-            )
-        else:
-            reservation_id = reservation["id"]
-            if db.query_one(
-                "SELECT 1 AS present FROM guest WHERE reservation_id = ? LIMIT 1",
-                (reservation_id,),
-            ):
-                skipped += 1
-                continue
-
-        signed = cell("signed").lower().startswith("y")
-        # Through the same normaliser as every other way a guest is recorded.
-        # This import used to write raw cells with its own length limits, which
-        # were wider than the police allow, so a spreadsheet could put a pipe
-        # or a 35-character given name straight into a later SOAP batch.
-        fields = validation.normalise_guest(
-            {
-                "surname": surname,
-                "first_name": first_name,
-                "birth_date": _parse_import_birth(cell("birth_date")),
-                "nationality": cell("nationality"),
-                "doc_number": cell("doc_number"),
-                "visa_number": cell("visa_number"),
-                "res_street": street,
-                "res_city": city,
-                "res_country": country,
-                "purpose": (cell("purpose") or "10").split()[0],
-                "note": cell("note"),
-            }
-        )
-        # Rows already filed elsewhere are the six-year legal record, so they
-        # are kept even when they would fail today's rules. A row this app will
-        # have to send is refused now, while there is still time to fix it,
-        # rather than at submission time with the deadline running.
-        if submit_state == "pending" and validation.guest_is_reportable(fields["nationality"]):
-            problems = validation.errors_only(
-                validation.validate_guest(
-                    fields, _as_date(stay_from), _as_date(stay_to)
-                )
-            )
-            if problems:
-                skipped += 1
-                errors.append(
-                    f"Line {line_no}: {problems[0].message} "
-                    "(not imported - it could not be reported as it stands)."
-                )
-                continue
-        db.insert(
-            "guest",
-            {
-                "reservation_id": reservation_id,
-                **fields,
-                "stay_from": stay_from,
-                "stay_to": stay_to,
-                "signature_png": "imported" if signed else None,
-                "signed_at": now if signed else None,
-                "filled_at": now,
-                "entered_by": "import",
-                "submit_state": submit_state,
-                "submitted_at": submitted_at,
-                "created_at": now,
-                "updated_at": now,
-            },
-        )
-        imported += 1
-
-    if imported:
-        db.audit("housebook_import", f"apartment={apartment_id} rows={imported}")
-    return {"imported": imported, "skipped": skipped, "errors": errors[:8]}
-
-
-SAMPLE_HOUSEBOOK_ROW = {
-    "apartment": "My apartment",
-    "idub": "100227887600",
-    "stay_from": "2026-09-03",
-    "stay_to": "2026-09-10",
-    "surname": "SMITH",
-    "first_name": "John Paul",
-    "birth_date": "15.03.1985",
-    "nationality": "GBR",
-    "doc_number": "123456789",
-    "visa_number": "",
-    "residence": "Baker Street 221B, London, GBR",
-    "purpose": "10 - TURISTIKA",
-    "note": "",
-    "signed": "yes",
-    "reported": "yes",
-    "reported_at": "2026-09-04",
-    "stamp": "",
-}
-
-
 def housebook_archived_rows(
     apartment_id: Optional[int] = None, owner_user_id: Optional[int] = None
 ) -> List[Dict[str, Any]]:
@@ -413,11 +187,6 @@ def housebook_archived_rows(
     return out
 
 
-def sample_housebook_csv() -> bytes:
-    """Filled example guests can copy when importing a paper house book."""
-    return housebook_csv([SAMPLE_HOUSEBOOK_ROW])
-
-
 def iter_housebook_csv_rows(rows: List[Dict[str, Any]]) -> Iterator[bytes]:
     """Stream an already-fetched house-book export row-by-row."""
     buffer = io.StringIO()
@@ -432,18 +201,6 @@ def iter_housebook_csv_rows(rows: List[Dict[str, Any]]) -> Iterator[bytes]:
         yield buffer.getvalue().encode("utf-8")
         buffer.seek(0)
         buffer.truncate(0)
-
-
-def iter_housebook_csv(
-    apartment_id: Optional[int] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    owner_user_id: Optional[int] = None,
-) -> Iterator[bytes]:
-    """Stream house-book CSV row-by-row instead of buffering the whole file."""
-    yield from iter_housebook_csv_rows(
-        housebook_rows(apartment_id, date_from, date_to, owner_user_id)
-    )
 
 
 def housebook_csv(rows: List[Dict[str, Any]]) -> bytes:
@@ -498,18 +255,6 @@ def build_housebook_pdfs_zip(rows: List[Dict[str, Any]], dest_path: str) -> int:
             archive.writestr(_pdf_entry_name(row), registration_form_pdf(int(guest_id)))
             count += 1
     return count
-
-
-def housebook_pdfs_zip(rows: List[Dict[str, Any]]) -> bytes:
-    """In-memory zip for tests. Production uses build_housebook_pdfs_zip on disk."""
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        for row in rows:
-            guest_id = row.get("_guest_id")
-            if not guest_id:
-                continue
-            archive.writestr(_pdf_entry_name(row), registration_form_pdf(int(guest_id)))
-    return buffer.getvalue()
 
 
 def registration_form_pdf(guest_id: int) -> bytes:
@@ -648,10 +393,6 @@ def _house_label(row) -> str:
     if house and orient:
         return f"{house}/{orient}"
     return house or orient
-
-
-def retention_expiry(last_entry: date) -> date:
-    return date(last_entry.year + RETENTION_YEARS, last_entry.month, last_entry.day)
 
 
 # --- retention -----------------------------------------------------------

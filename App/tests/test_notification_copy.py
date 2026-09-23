@@ -1,7 +1,7 @@
 """Host notification cards stay short: property + dates, one reason line."""
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 
 from app import alerts, host_i18n

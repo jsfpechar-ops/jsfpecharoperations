@@ -271,6 +271,7 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
             dedupe_key=f"cancelled_after_report:{existing['id']}",
             apartment_id=apartment_id,
             reservation_id=existing["id"],
+            params={"date": existing["date_from"], "variant": "cancelled"},
         )
         return
     db.update("reservation", existing["id"], {"status": "cancelled", "updated_at": now})
@@ -400,6 +401,10 @@ def sync_feed(
             str(exc),
             dedupe_key=f"feed_error:{feed['id']}",
             apartment_id=feed["apartment_id"],
+            params={
+                "feed": feed["own_name"] or feed["label"] or feed["id"],
+                "error": str(exc),
+            },
         )
         return {"error": str(exc), **stats}
 
@@ -631,6 +636,7 @@ def sync_feed(
                 dedupe_key=f"cancelled_after_report:{row['id']}",
                 apartment_id=feed["apartment_id"],
                 reservation_id=row["id"],
+                params={"date": row["date_from"], "variant": "disappeared"},
             )
             continue
         db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})

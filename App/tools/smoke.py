@@ -22,7 +22,7 @@ os.environ["UBYHOST_GUEST_PIN"] = "0"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import claim, db, mail  # noqa: E402
+from app import claim, db, host_i18n, mail  # noqa: E402
 from app.main import app  # noqa: E402
 
 FAILURES = []
@@ -245,7 +245,22 @@ def main():
             pass  # dd.mm.yyyy strings do not sort; checked properly in the test suite
 
     print("guest pages")
+    # A guest who has made no choice gets Czech: that is the page default
+    # (host_i18n.PUBLIC_DEFAULT_LANGUAGE), not English. English is one click
+    # away, and both are asserted below so neither default can rot unnoticed.
     guest = TestClient(app)
+    guest.cookies.set(host_i18n.LANG_COOKIE, "en")
+    default = TestClient(app)
+    check(
+        default,
+        f"/l/{token}",
+        must_contain=[
+            "Který pobyt je váš?",
+            "To je můj pobyt",
+            "Jak nakládáme s vašimi údaji",
+        ],
+    )
+    check(default, f"/l/{token}/privacy", must_contain=["Nezbytné cookies"])
     check(
         guest,
         f"/l/{token}",
@@ -335,6 +350,16 @@ def main():
     check(guest, f"/l/{token}/{stay_a}", must_contain=["1 of 2 people completed"])
     check(guest, f"/l/{token}/{stay_a}/new", must_contain=['name="surname"', "Person 2"])
     czech.cookies.update(guest.cookies)
+    # Drop the English choice so this browser is again "a guest who chose
+    # nothing" - the state whose default language is under test.
+    czech.cookies.delete(host_i18n.LANG_COOKIE)
+    check(
+        czech,
+        f"/l/{token}/{stay_a}",
+        must_contain=["vyplněno 1 z 2 osob"],
+    )
+    # The legal notice lives on the form page, not on the stay overview.
+    check(czech, f"/l/{token}/{stay_a}/new", must_contain=["Osoba 2 z 2", "Právní informace"])
     czech_saved = czech.get(f"/l/{token}/{stay_a}?saved=1&lang=cs", follow_redirects=True)
     if czech_saved.status_code != 200 or (
         "Údaje uloženy" not in czech_saved.text

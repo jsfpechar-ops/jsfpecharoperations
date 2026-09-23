@@ -674,3 +674,190 @@ A migration that reset every `blocked` row would not be safe as written, because
 `not_correctable`, and a duplicate is correctly not resendable). Any automatic
 sweep would have to distinguish the two, which is why this is recorded as a
 deliberate manual step rather than fixed in code.
+
+## From Phase 5 (W5.1 dead code)
+
+### W5.1 — CSV migration of existing reservations / a paper house book
+
+`stays_import.import_csv` and `housebook.import_csv` were deleted because no
+route, form, or CLI reached either of them, and `housebook.import_csv`'s only
+tests (`App/tests/test_housebook_import.py`) exercised it in isolation. The
+feature they were written for is real and still unbuilt: a host arriving from a
+paper house book, or from a spreadsheet of already-booked reservations, has no
+way to get that history into UbyHost today. Rebuilding it needs a decision on
+which of these is wanted before any code exists:
+
+1. **Import historical reservations** so past stays appear in reports and the
+   retention clock, accepting that their guests were filed on paper and carry no
+   UbyPort receipt.
+2. **Import a paper house book** as already-filed records, which is what the
+   deleted code assumed — it wrote the literal marker `imported` into the row in
+   place of a signature image, and refused to submit anything it imported.
+3. **Neither**, on the grounds that a back-filled record is weaker evidence than
+   a fresh filing and the operator should enter only what is still actionable.
+
+Options 1 and 2 need upload UI, a parser, duplicate/collision handling against
+existing stays, and an audit trail — none of which existed. `docs/TECHNICAL_
+COMPLIANCE_AUDIT.md` used to reason about option 2 through a symbol
+(`import_housebook_rows`) that appears nowhere in the repository; that row has
+been corrected to describe only the PDF that the application actually generates.
+
+### W5.1 — unreferenced tools and guide screenshots
+
+`tools/walkthrough.py`, `tools/feature_smoke.py`, and `tools/pin_gate_check.py`
+were removed, as were `static/guide/housebook-filters.png` and
+`static/guide/help-link.png`. Nothing in the repository referenced any of them.
+`tools/design_matrix.py` was kept: its `IndentationError` at the `print(target)`
+line was a stray over-indent, and the script is the screenshot matrix referenced
+by the design workflow. CI does not lint `tools/`, so these had been invisible to
+every gate; making CI lint `tools/` is W6.1.
+
+### W5.1 — the SES feedback queue setting is documented in an old patch file
+
+`config.SES_FEEDBACK_QUEUE_URL` was deleted because nothing read it, and
+`docs/ENVIRONMENT.md` plus `docs/SES.md` were updated to say so.
+`docs/ubyhost-docs-update.patch` still contains the removed row. It is a
+historical patch artifact rather than live documentation, so it was left alone.
+
+## From Phase 5 (W5.2 duplication collapse)
+
+### W5.2 — two naive-timestamp conventions still coexist
+
+`reporting.py` now documents its module-level convention — a naive timestamp
+stored by the application is UTC — and `_as_utc()` is the single converter the
+send-decision code uses. `deadlines.local_now()` deliberately keeps the other
+convention: a naive timestamp compared against it is Prague civil time, because
+it is answering "what does the guest's phone say", not "when did we record
+this". The split is intentional and now documented on both sides, but it is
+still a trap for the next reader: the same column can mean two things depending
+on which module reads it. The durable fix is to store every timestamp as an
+explicit UTC ISO-8601 value with a `Z` and convert at the edge, which is a
+migration and was out of scope here.
+
+## From Phase 5 (W5.3 efficiency)
+
+### W5.3 — `connect()` no longer repairs a database swapped under a running server
+
+The schema check used to run on every `connect()`, which is why a database file
+restored from an older backup, or replaced under a server that was already
+running, healed itself on the next query. It now runs only in `init_db()`, at
+startup, which is what took a 29-pragma cost off the query path. A database
+replaced while the process is up is therefore no longer healed until restart.
+Nothing in the deployment does that today — `deploy-production.yml` restarts the
+service around a data change — so the trade was worth taking, but if a
+hot-restore path is ever added it needs an explicit re-check rather than a
+reliance on `connect()`.
+
+### W5.3 — `init_db()` migrates the schema twice, and should not have to
+
+`SCHEMA`'s `CREATE TABLE guest` is missing eight columns that only
+`ADDED_COLUMNS` supplies (`archived_at`, `passport_photo_at`,
+`identity_verified_at`, `identity_verified_by`, `doc_number_enc`,
+`visa_number_enc`, `receipt_submission_id`, `submit_attempts`), and `SCHEMA`
+creates indexes over `owner_user_id`, which an older database also lacks. So
+`init_db()` now runs `_add_missing_columns()` both before `executescript(SCHEMA)`
+(because the indexes would otherwise fail on a legacy database) and after it
+(because a fresh database has no tables for the first pass to inspect). Two
+passes, nine pragmas each, once at startup: cheap, but a symptom. The fix is for
+`SCHEMA` to describe the current shape of every table and for `ADDED_COLUMNS` to
+carry only what an upgrade genuinely needs — which the append-only migration rule
+forbids doing in place, so it is a deliberate re-baseline rather than a patch.
+
+## From Phase 5 (W5.4 language)
+
+### W5.4 — the guest page default moved from English to Czech
+
+`host_i18n.PUBLIC_DEFAULT_LANGUAGE` is `"cs"` and `i18n.DEFAULT_LANGUAGE` is
+`"en"`, which read as a contradiction until the two roles were separated in the
+docstrings: `cs` is the language a *signed-out visitor* gets, `en` is only what a
+*missing key* falls back to. A guest following a host's link with no `?lang=` and
+no language cookie now reads a Czech form where they used to read an English one.
+That is the intended behaviour for a Czech host, but it is a visible change and
+it silently inverted roughly two dozen tests that asserted English guest copy;
+those now ask for English explicitly. If a host ever wants to onboard a
+non-Czech guest, the language switcher is the only escape hatch and it is
+cookie-scoped, not per-link.
+
+### W5.4 — the alert-language split needs a migration to be complete
+
+Alert rows are now language-neutral: `message` and `detail` hold English log and
+fallback copy, and a new `alert.params` column holds the interpolation values as
+JSON so `alerts.present()` can rebuild the card in whatever language the reader
+is using. The catch is that `params` is added by `ADDED_COLUMNS` and every
+pre-existing row has `NULL` there. A stored alert whose copy interpolates
+therefore still renders English after the upgrade, because `_localised` refuses
+to substitute into a card whose parameters it does not have. New alerts are
+correct immediately. A one-off backfill cannot fix the old rows — the values
+were never stored, only baked into the English sentence — so the practical
+answer is to let the old alerts age out, or to resolve them by hand if any
+matter.
+
+### W5.4 — the `err=` flash messages are still English
+
+The plan asked for the `msg=` flashes, and those are converted: 40 sites in
+`routes/admin.py` and 3 in `routes/admin_accounts.py` now go through
+`admin_helpers.flash(request, key, **params)`, which translates at the raise
+because `back()` carries a plain string in a URL query parameter. The sibling
+`err=` parameter is untouched: **87 sites in `admin.py` and 5 in
+`admin_accounts.py` still flash hardcoded English error copy** to a Czech host.
+The mechanism is identical, so the conversion is mechanical, but it is a large
+enough diff to deserve its own review pass and was explicitly out of scope for
+W5.4.
+
+### W5.4 — two plan items were already satisfied and needed no change
+
+The plan asks for the guest-visible English validation error at
+`reporting.py:184-186` to be routed through the guest catalog, and for the "dead
+English deadline prose at `reporting.py:997-1003`" to be deleted. The first was
+already fixed by W5.2's single completeness predicate: the message now comes from
+`reporting.guest_issues(..., translate=...)` with the guest translator passed by
+the guest route. The second describes a block that no longer exists at any line —
+`reporting.py` has been rewritten twice since the plan was written (the code-112
+retry fix, then W5.2), and no dead English deadline prose remains. Both are
+recorded here rather than re-done so the audit trail shows they were checked.
+
+### W5.4 — the alert language had to be a presentation concern, not a key rename
+
+The plan implies the alert copy can be moved key-by-key into `host_i18n` the way
+the flash messages were. It cannot, for the alerts whose card is rebuilt from
+live data (`_COMPUTED_ALERT_KINDS`) or whose wording depends on a state the
+stored English sentence happens to describe: the reader's language is not known
+when the alert is raised, and a card is read long after the event that raised it.
+So `raise_alert` now takes `params=` and stores them, and `present()` dispatches
+between a stored card and a computed one. Any future alert kind that interpolates
+must pass `params=`; a test walks the AST of `app/**` to enforce that, because
+the failure mode is silent — the card simply stays English.
+
+### W5.5 — `require_login` short-circuits when the database has no accounts
+
+Found while writing the split's test. `auth.require_login` deliberately returns
+`None` — i.e. grants access — when `accounts_exist()` is false, bootstrap is
+disabled and the deployment is not production (`auth.py:274-279`). In the test
+environment `UBYHOST_BOOTSTRAP_ADMIN=0`, so an anonymous request renders a host
+page instead of redirecting to `/login`. That is intended for a first run, but it
+means any test asserting "an anonymous request is redirected" has to create an
+account first or it silently tests nothing.
+
+### W5.5 — `/onboarding` renders an undefined template variable with no workspace
+
+Same investigation. `templating.render` sets the `onboarding` template global only
+when a workspace user exists (`templating.py:142-143`), but
+`routes/onboarding.py::onboarding_view` renders `onboarding.html`, which reads it.
+With no accounts and bootstrap off, `require_login` lets the request through and
+the template raises `jinja2.exceptions.UndefinedError: 'onboarding' is undefined`.
+This is **pre-existing** — the route and the render path are unchanged by the
+split (the moved function is byte-identical to its `HEAD` version) — and it is
+only reachable in the no-accounts development configuration, where the page has
+nothing to show anyway. Recorded rather than fixed: making it a 404 or a redirect
+to `/setup` is a product decision, not a refactor.
+
+### W5.5 — five routes the plan's wording could have moved were deliberately left
+
+The plan names `submissions_list`, `submission_detail`, `housebook_view`,
+`dismiss_alert` and `settings_view` in the exports work item's parenthetical. Read
+in context those names document the *functions the export routes call* (and the
+`ARCHIVED_TYPES` constant `settings_archived_view` needs), not move targets; the
+plan's own "what remains in `admin.py`" list never mentions submissions or the
+settings page, and the move would have split those pages across two modules.
+`guide_view` is likewise left in place because the plan does not ask for it. All
+six are recorded here so the choice is visible in review rather than implied.

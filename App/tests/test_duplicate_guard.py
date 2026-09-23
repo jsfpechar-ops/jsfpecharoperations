@@ -201,7 +201,6 @@ def test_concurrent_sends_claim_each_guest_once(monkeypatch):
         _apartment,
         pairs,
         mode="auto",
-        want_pdf=True,
         env=None,
     ):
         calls.append([guest["id"] for guest, _reservation in pairs])
@@ -248,7 +247,7 @@ def test_duplicate_after_lost_success_is_recorded_as_a_duplicate(monkeypatch):
     )
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -296,7 +295,7 @@ def test_a_duplicate_filing_resolves_the_rejection_alert(monkeypatch):
     )
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -314,22 +313,20 @@ def test_a_duplicate_filing_resolves_the_rejection_alert(monkeypatch):
     )
 
 
-def test_an_accept_without_a_receipt_request_is_not_a_duplicate(monkeypatch):
-    """`want_pdf=False` asks for no Dorucenka. That is not a duplicate.
+def test_an_accept_without_a_receipt_is_not_a_duplicate(monkeypatch):
+    """A receipt is always requested, so a reply without one is not a duplicate.
 
     Keying the state on the absence of a receipt would label every accepted
-    batch that did not request a PDF as "already registered".
+    batch whose reply carried no PDF as "already registered".
     """
     apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok9")
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     pairs = reporting.collect_sendable(
         apartment_id, only_guest_ids=[guest_id], ignore_automation=True
     )
-    asked = []
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
-            asked.append(want_pdf)
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -338,9 +335,8 @@ def test_an_accept_without_a_receipt_request_is_not_a_duplicate(monkeypatch):
 
     monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
 
-    result = reporting.submit_batch(apartment, pairs, want_pdf=False)
+    result = reporting.submit_batch(apartment, pairs)
 
-    assert asked == [False]
     assert result["state"] == "ok"
 
 
@@ -353,7 +349,7 @@ def test_an_accept_with_no_confirmation_raises_a_warning(monkeypatch):
     )
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -389,7 +385,7 @@ def test_a_receipt_clears_the_missing_confirmation_warning(monkeypatch):
     )
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -444,7 +440,7 @@ def test_a_duplicate_resend_points_at_the_submission_that_holds_the_receipt(monk
     assert _ids(pairs) == [guest_id]
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -468,7 +464,7 @@ def test_a_duplicate_resend_points_at_the_submission_that_holds_the_receipt(monk
 
 
 def test_an_accept_without_a_receipt_keeps_the_receipt_it_already_had(monkeypatch):
-    """Resending without asking for a PDF must not lose the receipt on file."""
+    """A reply that carries no PDF must not lose the receipt on file."""
     apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok13")
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     first_id = db.insert(
@@ -499,7 +495,7 @@ def test_an_accept_without_a_receipt_keeps_the_receipt_it_already_had(monkeypatc
     )
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -508,7 +504,7 @@ def test_an_accept_without_a_receipt_keeps_the_receipt_it_already_had(monkeypatc
 
     monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
 
-    reporting.submit_batch(apartment, pairs, want_pdf=False)
+    reporting.submit_batch(apartment, pairs)
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
 
     assert guest["receipt_submission_id"] == first_id
@@ -523,7 +519,7 @@ def test_transport_failure_does_not_mark_identity_verified(monkeypatch):
     )
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             raise UbyportTransportError("offline")
 
     monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _apartment: [])
@@ -567,7 +563,7 @@ def test_a_later_send_does_not_erase_the_older_batch(monkeypatch):
     db.update("guest", guest_id, {"submission_id": first_id})
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -626,7 +622,7 @@ def test_resending_an_accepted_record_as_a_duplicate_is_not_a_rejection(monkeypa
     assert _ids(pairs) == [guest_id], "the host asked for this resend explicitly"
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",
@@ -699,7 +695,7 @@ def test_a_batch_that_files_one_record_and_confirms_another_is_a_plain_success(
     )
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="mock",
                 request_xml="<request/>",

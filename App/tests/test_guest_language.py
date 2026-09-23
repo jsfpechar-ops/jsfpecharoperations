@@ -1,0 +1,147 @@
+"""The language a guest gets when they have not chosen one, and the guard on the
+guest catalog's interpolation.
+
+Two things are pinned here. The form speaks the signed-out public default (Czech)
+until the guest picks a language, because the host is Czech and a guest arriving
+from a host's link has made no choice; and a catalog entry whose placeholders do
+not match the values handed to it renders its raw text instead of raising in the
+middle of a form a guest is filling in.
+"""
+from __future__ import annotations
+
+from datetime import timedelta
+
+from fastapi.testclient import TestClient
+
+from app import claim, db, host_i18n, i18n
+from app.main import app
+
+TOKEN = "guestlangtoken"
+
+
+def _cleanup():
+    apartment = db.query_one(
+        "SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,)
+    )
+    if not apartment:
+        return
+    db.execute(
+        "DELETE FROM guest WHERE reservation_id IN "
+        "(SELECT id FROM reservation WHERE apartment_id = ?)",
+        (apartment["id"],),
+    )
+    db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
+    db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
+    db.execute(
+        "DELETE FROM legal_entity WHERE name = ? AND id NOT IN "
+        "(SELECT legal_entity_id FROM apartment WHERE legal_entity_id IS NOT NULL)",
+        ("Guest Lang Test",),
+    )
+
+
+def _seed():
+    db.init_db()
+    _cleanup()
+    now = db.utcnow()
+    today = claim.prague_today()
+    entity_id = db.insert("legal_entity", {"name": "Guest Lang Test", "created_at": now})
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "internal_name": "Lang flat",
+            "permalink_token": TOKEN,
+            "permalink_window_days": 14,
+            "default_purpose": "10",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    stay_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "source": "airbnb",
+            "uid": "guest-lang-1",
+            "date_from": today.isoformat(),
+            "date_to": (today + timedelta(days=4)).isoformat(),
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    return stay_id
+
+
+def test_a_guest_without_a_language_choice_gets_the_public_default():
+    _seed()
+    try:
+        page = TestClient(app).get(f"/l/{TOKEN}", follow_redirects=True)
+        assert page.status_code == 200
+        assert f'<html lang="{host_i18n.PUBLIC_DEFAULT_LANGUAGE}">' in page.text
+        # And it really is the Czech copy, not an English page with a Czech tag.
+        assert i18n.STRINGS["cs"]["arrival_question"] in page.text
+        assert i18n.STRINGS["en"]["arrival_question"] not in page.text
+    finally:
+        _cleanup()
+
+
+def test_the_guest_can_still_ask_for_english_and_the_choice_is_remembered():
+    _seed()
+    try:
+        browser = TestClient(app)
+        english = browser.get(f"/l/{TOKEN}?lang=en", follow_redirects=True)
+        assert '<html lang="en">' in english.text
+        assert i18n.STRINGS["en"]["arrival_question"] in english.text
+
+        # The switcher writes the cookie, so the next page -- and the one after
+        # a redirect -- stays in the language the guest picked.
+        remembered = browser.get(f"/l/{TOKEN}", follow_redirects=True)
+        assert '<html lang="en">' in remembered.text
+        assert browser.cookies.get(host_i18n.LANG_COOKIE) == "en"
+    finally:
+        _cleanup()
+
+
+def test_an_unknown_language_falls_back_rather_than_breaking_the_page():
+    _seed()
+    try:
+        page = TestClient(app).get(f"/l/{TOKEN}?lang=de", follow_redirects=True)
+        assert page.status_code == 200
+        assert f'<html lang="{host_i18n.PUBLIC_DEFAULT_LANGUAGE}">' in page.text
+    finally:
+        _cleanup()
+
+
+def test_a_key_without_the_placeholders_the_caller_supplies_does_not_raise():
+    """A stray or missing value must not cost the guest the form.
+
+    The guest lookup used to interpolate unguarded, so a translator dropping a
+    ``%(facility)s`` turned a form render into a traceback.
+    """
+    translate = i18n.translator("cs")
+    raw = i18n.STRINGS["cs"]["arrival_welcome"]
+    assert translate("arrival_welcome", nope=1) == raw
+    assert translate("arrival_welcome") == raw
+    # The matching call still interpolates.
+    assert translate("arrival_welcome", facility="Lang flat") == raw % {
+        "facility": "Lang flat"
+    }
+
+
+def test_both_engines_normalise_a_language_code_the_same_way():
+    """One code-to-language decision, so the two catalogs cannot disagree.
+
+    The guest engine no longer carries its own copy of the rule; it asks the
+    host engine, which is also what decides which catalog a *missing* key falls
+    back to.
+    """
+    for value in ("en", "cs", "CS", "cs-CZ", "de", "", None):
+        expected = host_i18n.normalise_language(value)
+        assert expected in host_i18n.LANGUAGES
+        # An unrecognised code lands on the host catalog's own default, and the
+        # guest engine reads the same catalog for it.
+        assert i18n.translator(value)("arrival_question") == i18n.STRINGS[expected]["arrival_question"]
+    assert host_i18n.normalise_language("de") == host_i18n.DEFAULT_LANGUAGE
+    assert i18n.translator("de")("arrival_question") == i18n.STRINGS["en"]["arrival_question"]
