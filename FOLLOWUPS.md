@@ -827,3 +827,37 @@ So `raise_alert` now takes `params=` and stores them, and `present()` dispatches
 between a stored card and a computed one. Any future alert kind that interpolates
 must pass `params=`; a test walks the AST of `app/**` to enforce that, because
 the failure mode is silent — the card simply stays English.
+
+### W5.5 — `require_login` short-circuits when the database has no accounts
+
+Found while writing the split's test. `auth.require_login` deliberately returns
+`None` — i.e. grants access — when `accounts_exist()` is false, bootstrap is
+disabled and the deployment is not production (`auth.py:274-279`). In the test
+environment `UBYHOST_BOOTSTRAP_ADMIN=0`, so an anonymous request renders a host
+page instead of redirecting to `/login`. That is intended for a first run, but it
+means any test asserting "an anonymous request is redirected" has to create an
+account first or it silently tests nothing.
+
+### W5.5 — `/onboarding` renders an undefined template variable with no workspace
+
+Same investigation. `templating.render` sets the `onboarding` template global only
+when a workspace user exists (`templating.py:142-143`), but
+`routes/onboarding.py::onboarding_view` renders `onboarding.html`, which reads it.
+With no accounts and bootstrap off, `require_login` lets the request through and
+the template raises `jinja2.exceptions.UndefinedError: 'onboarding' is undefined`.
+This is **pre-existing** — the route and the render path are unchanged by the
+split (the moved function is byte-identical to its `HEAD` version) — and it is
+only reachable in the no-accounts development configuration, where the page has
+nothing to show anyway. Recorded rather than fixed: making it a 404 or a redirect
+to `/setup` is a product decision, not a refactor.
+
+### W5.5 — five routes the plan's wording could have moved were deliberately left
+
+The plan names `submissions_list`, `submission_detail`, `housebook_view`,
+`dismiss_alert` and `settings_view` in the exports work item's parenthetical. Read
+in context those names document the *functions the export routes call* (and the
+`ARCHIVED_TYPES` constant `settings_archived_view` needs), not move targets; the
+plan's own "what remains in `admin.py`" list never mentions submissions or the
+settings page, and the move would have split those pages across two modules.
+`guide_view` is likewise left in place because the plan does not ask for it. All
+six are recorded here so the choice is visible in review rather than implied.

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Dict, Optional, Tuple
 from urllib.parse import quote
 
+from fastapi import Request
 from fastapi.responses import RedirectResponse
 
 from .. import host_i18n, validation
@@ -109,3 +110,18 @@ def stay_dates_from_form(form, fallback: Optional[Tuple[str, str]] = None) -> Tu
         form_str(form, "stay_from") or fallback_from or None,
         form_str(form, "stay_to") or fallback_to or None,
     )
+
+
+def query_int(request: Request, key: str) -> Optional[int]:
+    """A hand-edited query string must never produce a 500."""
+    raw = (request.query_params.get(key) or "").strip()
+    try:
+        return int(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def query_date(request: Request, key: str) -> str:
+    raw = (request.query_params.get(key) or "").strip()
+    parsed = validation.parse_iso_date(raw)
+    return parsed.isoformat() if parsed else ""

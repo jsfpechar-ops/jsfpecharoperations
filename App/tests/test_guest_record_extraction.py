@@ -14,7 +14,7 @@ import pytest
 from starlette.background import BackgroundTasks
 
 from app import alerts, mail_notify, reporting, validation
-from app.routes import admin
+from app.routes import exports
 from app.routes.admin_helpers import (
     guest_form_payload,
     guest_form_raw,
@@ -223,7 +223,7 @@ def test_the_zip_helper_streams_what_the_builder_wrote(tmp_path):
             handle.write(b"PK\x05\x06" + b"\x00" * 18)
         return 2
 
-    response = admin._zip_download(background, ["a", "b"], builder, "dorucenky-20260101.zip")
+    response = exports._zip_download(background, ["a", "b"], builder, "dorucenky-20260101.zip")
     assert response is not None
     assert response.media_type == "application/zip"
     assert seen["rows"] == ["a", "b"]
@@ -239,7 +239,7 @@ def test_the_zip_helper_reports_an_empty_archive_instead_of_streaming_it():
             handle.write(b"PK\x05\x06" + b"\x00" * 18)
         return 0
 
-    assert admin._zip_download(BackgroundTasks(), ["a"], builder, "x.zip") is None
+    assert exports._zip_download(BackgroundTasks(), ["a"], builder, "x.zip") is None
 
 
 def test_the_zip_helper_cleans_up_when_the_builder_raises():
@@ -250,5 +250,5 @@ def test_the_zip_helper_cleans_up_when_the_builder_raises():
         raise RuntimeError("boom")
 
     with pytest.raises(RuntimeError):
-        admin._zip_download(BackgroundTasks(), ["a"], builder, "x.zip")
+        exports._zip_download(BackgroundTasks(), ["a"], builder, "x.zip")
     assert not os.path.exists(caught["path"])

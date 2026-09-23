@@ -36,7 +36,7 @@ import zipfile
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
+from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
 
@@ -457,6 +457,52 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
         "auto_immediate": auto_immediate,
         "pending_count": len(pending),
     }
+
+
+def dashboard_rows(
+    days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
+) -> List[Dict[str, Any]]:
+    """Every stay worth looking at, ordered by how urgent it is."""
+    start = (date.today() - timedelta(days=days_back)).isoformat()
+    end = (date.today() + timedelta(days=days_ahead)).isoformat()
+    rows = db.query(
+        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE r.status = 'active' AND a.active = 1 AND a.archived_at IS NULL "
+        "AND r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
+        "AND r.date_from BETWEEN ? AND ? "
+        "ORDER BY r.date_from",
+        (owner_user_id, owner_user_id, start, end),
+    )
+    out: List[Dict[str, Any]] = []
+    for reservation in rows:
+        check_in = reservation_deadline_anchor(reservation)
+        progress = reservation_progress(reservation)
+        level = deadlines.urgency(check_in) if check_in else "future"
+        # A finished stay with nothing outstanding is noise on a dashboard.
+        if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
+            if check_in and check_in < date.today() - timedelta(days=3):
+                continue
+        apartment = access.apartment_for_reservation(reservation, owner_user_id)
+        controls = send_controls(reservation, apartment, progress) if apartment else {}
+        out.append(
+            {
+                "reservation": reservation,
+                "progress": progress,
+                "controls": controls,
+                "urgency": level,
+                "check_in": check_in,
+                "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
+            }
+        )
+    out.sort(
+        key=lambda row: (
+            0 if row["progress"]["status"] in ("failed",) else 1,
+            deadlines.URGENCY_ORDER.get(row["urgency"], 9),
+            row["reservation"]["date_from"],
+        )
+    )
+    return out
 
 
 def _as_utc(value) -> Optional[datetime]:

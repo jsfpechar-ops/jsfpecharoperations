@@ -1,14 +1,20 @@
-"""Host-facing routes: dashboard, apartments, reservations, submissions, exports."""
+"""Host-facing pages: legal entities, apartments and feeds, stays and guests.
+
+The routes that answer with JSON, with a download, or that belong to first-run
+onboarding live in ``routes/api.py``, ``routes/exports.py`` and
+``routes/onboarding.py``. This router includes them, so the host POST
+protection and the registered paths are exactly what they were.
+"""
+
 from __future__ import annotations
 
-import base64
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
-from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from .. import (
     access,
@@ -24,25 +30,27 @@ from .. import (
     housebook,
     icalsync,
     mail,
-    onboarding,
     passport_photos,
     reporting,
     claim,
     security,
-    stays_import,
     validation,
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
-from . import admin_accounts
+from . import admin_accounts, api, exports, onboarding
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import form_str as _form_str
 from .admin_helpers import guest_form_payload as _guest_form_payload
 from .admin_helpers import kept_signature as _kept_signature
+from .admin_helpers import query_date as _query_date
+from .admin_helpers import query_int as _query_int
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
+router.include_router(api.router)
+router.include_router(onboarding.router)
 
 
 # --- helpers -------------------------------------------------------------
@@ -106,163 +114,8 @@ def _form_int(form, key: str) -> Optional[int]:
         return None
 
 
-def _query_int(request: Request, key: str) -> Optional[int]:
-    """A hand-edited query string must never produce a 500."""
-    raw = (request.query_params.get(key) or "").strip()
-    try:
-        return int(raw) if raw else None
-    except ValueError:
-        return None
-
-
-def _query_date(request: Request, key: str) -> str:
-    raw = (request.query_params.get(key) or "").strip()
-    parsed = validation.parse_iso_date(raw)
-    return parsed.isoformat() if parsed else ""
-
-
-def dashboard_rows(
-    days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
-) -> List[Dict[str, Any]]:
-    """Every stay worth looking at, ordered by how urgent it is."""
-    start = (date.today() - timedelta(days=days_back)).isoformat()
-    end = (date.today() + timedelta(days=days_ahead)).isoformat()
-    rows = db.query(
-        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode "
-        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.status = 'active' AND a.active = 1 AND a.archived_at IS NULL "
-        "AND r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
-        "AND r.date_from BETWEEN ? AND ? "
-        "ORDER BY r.date_from",
-        (owner_user_id, owner_user_id, start, end),
-    )
-    out: List[Dict[str, Any]] = []
-    for reservation in rows:
-        check_in = reporting.reservation_deadline_anchor(reservation)
-        progress = reporting.reservation_progress(reservation)
-        level = deadlines.urgency(check_in) if check_in else "future"
-        # A finished stay with nothing outstanding is noise on a dashboard.
-        if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
-            if check_in and check_in < date.today() - timedelta(days=3):
-                continue
-        apartment = access.apartment_for_reservation(reservation, owner_user_id)
-        controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
-        out.append(
-            {
-                "reservation": reservation,
-                "progress": progress,
-                "controls": controls,
-                "urgency": level,
-                "check_in": check_in,
-                "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
-            }
-        )
-    out.sort(
-        key=lambda row: (
-            0 if row["progress"]["status"] in ("failed",) else 1,
-            deadlines.URGENCY_ORDER.get(row["urgency"], 9),
-            row["reservation"]["date_from"],
-        )
-    )
-    return out
-
-
-# --- setup and login -----------------------------------------------------
-
-@router.post("/demo")
-def load_demo(request: Request):
-    """Fill an empty install with something to click through."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment_id = demo.seed(access.owner_id(request))
-    if not apartment_id:
-        return _back(
-            "/",
-            err="Demo data is available only in a fresh staging or mock workspace.",
-        )
-    return _back("/", msg=_flash(request, "flash.demo.loaded"))
-
-
-@router.post("/demo/reset")
-def reset_demo(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    if not demo.clear(access.owner_id(request)):
-        return _back("/", err="The built-in demo dataset was not found.")
-    return _back("/", msg=_flash(request, "flash.demo.cleared"))
-
-
 # --- dashboard -----------------------------------------------------------
 
-@router.get("/api/command-palette")
-def command_palette(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return JSONResponse({"items": []}, status_code=401)
-    owner_user_id = access.owner_id(request)
-    lang = host_i18n.lang_from_request(request)
-    t = lambda key, **kwargs: host_i18n.translate(lang, key, **kwargs)
-    items: List[Dict[str, Any]] = [
-        {"label": t("nav.overview"), "group": t("command.group.pages"), "url": "/", "keywords": "dashboard"},
-        {"label": t("nav.stays"), "group": t("command.group.pages"), "url": "/reservations", "keywords": "bookings calendar"},
-        {"label": t("nav.reports"), "group": t("command.group.pages"), "url": "/submissions", "keywords": "ubyport dorucenka"},
-        {"label": t("nav.housebook"), "group": t("command.group.pages"), "url": "/housebook", "keywords": "export csv"},
-        {"label": t("nav.settings"), "group": t("command.group.pages"), "url": "/settings", "keywords": "environment account"},
-        {"label": t("dashboard.sync_calendars"), "group": t("command.group.actions"), "url": "/sync", "method": "post", "keywords": "ical refresh"},
-        {"label": t("stays.add_stay"), "group": t("command.group.actions"), "url": "/reservations?new=1", "keywords": "booking reservation"},
-    ]
-    apartments = access.apartments(request)
-    for apartment in apartments:
-        items.append({
-            "label": apartment["internal_name"],
-            "meta": t("command.property"),
-            "group": t("nav.properties"),
-            "url": f"/apartments/{apartment['id']}",
-            "tone": int(apartment["id"]) % 10,
-            "keywords": f"{apartment['uby_name'] or ''} {apartment['city_en'] or ''}",
-        })
-        if apartment["permalink_token"]:
-            items.append({
-                "label": t("command.copy_property_link", property=apartment["internal_name"]),
-                "group": t("command.group.actions"),
-                "copy": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
-                "tone": int(apartment["id"]) % 10,
-                "keywords": "guest permalink pin",
-            })
-    reservations = db.query(
-        "SELECT r.id, r.apartment_id, r.date_from, r.date_to, r.summary, a.internal_name "
-        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
-        "ORDER BY r.date_from DESC LIMIT 80",
-        (owner_user_id, owner_user_id),
-    )
-    for stay in reservations:
-        items.append({
-            "label": f"{stay['internal_name']} · {stay['date_from']} – {stay['date_to']}",
-            "meta": stay["summary"] or t("command.stay"),
-            "group": t("nav.stays"),
-            "url": f"/reservations/{stay['id']}",
-            "tone": int(stay["apartment_id"]) % 10,
-            "keywords": stay["summary"] or "",
-        })
-    submissions = db.query(
-        "SELECT s.id, s.apartment_id, s.created_at, s.state, a.internal_name "
-        "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE (? IS NULL OR a.owner_user_id = ?) ORDER BY s.id DESC LIMIT 40",
-        (owner_user_id, owner_user_id),
-    )
-    for submission in submissions:
-        items.append({
-            "label": t("reports.detail.title", id=submission["id"]),
-            "meta": f"{submission['internal_name']} · {submission['state']}",
-            "group": t("nav.reports"),
-            "url": f"/submissions/{submission['id']}",
-            "tone": int(submission["apartment_id"]) % 10,
-            "keywords": submission["created_at"],
-        })
-    return JSONResponse({"items": items})
 
 @router.get("/")
 def dashboard(request: Request):
@@ -277,7 +130,7 @@ def dashboard(request: Request):
         return guard
     owner_user_id = access.owner_id(request)
     apartments = access.apartments(request)
-    rows = dashboard_rows(owner_user_id=owner_user_id)
+    rows = reporting.dashboard_rows(owner_user_id=owner_user_id)
     queue = reporting.queue_groups(rows)
     counts = reporting.queue_counts(rows, queue)
     needs_action, waiting = queue["needs_action"], queue["waiting"]
@@ -321,58 +174,6 @@ def guide_view(request: Request):
     if guard:
         return guard
     return render(request, "guide.html")
-
-
-@router.get("/onboarding")
-def onboarding_view(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    return render(request, "onboarding.html")
-
-
-@router.post("/onboarding/dismiss")
-async def onboarding_dismiss(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    form = await request.form()
-    owner_user_id = access.owner_id(request)
-    onboarding.set_dismissed(owner_user_id, True)
-    db.audit("onboarding.dismissed", owner_user_id=owner_user_id)
-    return RedirectResponse(
-        security.safe_local_path(_form_str(form, "return_to"), "/"), status_code=303
-    )
-
-
-@router.post("/onboarding/resume")
-async def onboarding_resume(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    form = await request.form()
-    owner_user_id = access.owner_id(request)
-    onboarding.set_dismissed(owner_user_id, False)
-    db.audit("onboarding.resumed", owner_user_id=owner_user_id)
-    return RedirectResponse(
-        security.safe_local_path(_form_str(form, "return_to"), "/onboarding"),
-        status_code=303,
-    )
-
-
-@router.post("/celebrations/dismiss")
-async def dismiss_celebration(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    form = await request.form()
-    milestone = int(_form_str(form, "milestone") or "0")
-    owner_user_id = access.owner_id(request)
-    if owner_user_id and milestone:
-        celebrations.acknowledge(owner_user_id, milestone)
-    return RedirectResponse(
-        security.safe_local_path(_form_str(form, "return_to"), "/"), status_code=303
-    )
 
 
 # --- guest communication ------------------------------------------------
@@ -1177,27 +978,12 @@ async def reservation_create(request: Request):
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.created"))
 
 
-@router.get("/reservations.csv")
-def reservations_export(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    date_from = _query_date(request, "from")
-    date_to = _query_date(request, "to")
-    if not (date_from and date_to):
-        return _back("/reservations", err="Choose a date range for the export.")
-    stamp = datetime.now().strftime("%Y%m%d")
-    sql, params = stays_import._export_sql(
-        date_from=date_from,
-        date_to=date_to,
-        apartment_id=_query_int(request, "apartment"),
-        owner_user_id=access.owner_id(request),
-    )
-    return StreamingResponse(
-        stays_import.iter_export_csv_rows(db.query(sql, params)),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="stays-{stamp}.csv"'},
-    )
+# --- exports -------------------------------------------------------------
+# /reservations.csv and /submissions/receipts.zip are literal siblings of the
+# int-typed /reservations/{id} and /submissions/{id} routes, so the export
+# router has to be included before those are declared.
+router.include_router(exports.router)
+
 
 @router.post("/reservations/submit-ready")
 async def reservations_submit_ready(request: Request):
@@ -1890,100 +1676,7 @@ async def guest_resend(guest_id: int, request: Request):
     return _back(f"/guests/{guest_id}", err="Re-sent but UbyPort rejected it again - see the Doručenka.")
 
 
-@router.get("/guests/{guest_id}/form.pdf")
-def guest_form_pdf(guest_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    if not access.guest(request, guest_id):
-        return _back("/reservations", err="No such guest.")
-    try:
-        pdf = housebook.registration_form_pdf(guest_id)
-    except ValueError:
-        return _back("/reservations", err="No such guest.")
-    return Response(
-        pdf,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="registration-form-{guest_id}.pdf"'},
-    )
-
-
-def _zip_download(
-    background_tasks: BackgroundTasks,
-    rows: List[Any],
-    builder,
-    filename: str,
-):
-    """Build a zip on disk, stream it, and unlink the temp file afterwards.
-
-    Returns None when the builder wrote no entries, so the caller can answer
-    with a message instead of an empty archive.
-    """
-    import os
-    import tempfile
-
-    from starlette.responses import FileResponse
-
-    fd, path = tempfile.mkstemp(suffix=".zip")
-    os.close(fd)
-    try:
-        written = builder(rows, path)
-    except Exception:
-        os.unlink(path)
-        raise
-    if not written:
-        os.unlink(path)
-        return None
-    background_tasks.add_task(os.unlink, path)
-    return FileResponse(path, media_type="application/zip", filename=filename)
-
-
 # --- submissions ---------------------------------------------------------
-
-@router.get("/submissions/receipts.zip")
-def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks):
-    """Bulk-download stored Doručenka PDFs as a zip built on disk."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    owner_id = access.owner_id(request)
-    date_from = _query_date(request, "from")
-    date_to = _query_date(request, "to")
-    sql = (
-        # build_receipts_zip reads these four columns and nothing else; s.* would
-        # pull both SOAP envelopes and the error PDF as well.
-        "SELECT s.id, s.created_at, s.pseudo_stamp, s.receipt_pdf "
-        "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
-    )
-    params: List[Any] = [owner_id]
-    if date_from:
-        sql += " AND date(s.created_at) >= ?"
-        params.append(date_from)
-    if date_to:
-        sql += " AND date(s.created_at) <= ?"
-        params.append(date_to)
-    sql += " ORDER BY s.created_at DESC"
-    rows = db.query(sql, params)
-    if not rows:
-        return _back("/submissions", err="No Doručenka receipts to download yet.")
-    if len(rows) > reporting.MAX_RECEIPT_DOWNLOADS:
-        return _back(
-            "/submissions",
-            err=(
-                f"Too many receipts ({len(rows)}) for one download. "
-                f"Narrow the date filter to {reporting.MAX_RECEIPT_DOWNLOADS} or fewer."
-            ),
-        )
-    response = _zip_download(
-        background_tasks,
-        rows,
-        reporting.build_receipts_zip,
-        f"dorucenky-{datetime.now().strftime('%Y%m%d')}.zip",
-    )
-    if response is None:
-        return _back("/submissions", err="No Doručenka receipts to download yet.")
-    return response
 
 
 @router.get("/submissions")
@@ -2046,58 +1739,6 @@ def submission_detail(submission_id: int, request: Request):
     )
 
 
-def _pdf_response(base64_text: Optional[str], filename: str):
-    if not base64_text:
-        return Response("No document was returned for this submission.", status_code=404,
-                        media_type="text/plain")
-    try:
-        raw = base64.b64decode(base64_text)
-    except Exception:
-        return Response("Stored document is not valid base64.", status_code=500, media_type="text/plain")
-    return Response(
-        raw,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
-
-
-@router.get("/submissions/{submission_id}/receipt.pdf")
-def submission_receipt(submission_id: int, request: Request):
-    """The Doručenka. Rule 10.4(3) and (4): the host must be able to see and save it."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    owned = access.submission(request, submission_id)
-    row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
-    return _pdf_response(row["receipt_pdf"] if row else None, f"dorucenka-{submission_id}.pdf")
-
-
-@router.get("/submissions/{submission_id}/errors.pdf")
-def submission_errors(submission_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    owned = access.submission(request, submission_id)
-    row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
-    return _pdf_response(row["error_pdf"] if row else None, f"dorucenka-chyby-{submission_id}.pdf")
-
-
-@router.get("/submissions/{submission_id}/{which}.xml")
-def submission_xml(submission_id: int, which: str, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    if which not in ("request", "response"):
-        return Response("Unknown document.", status_code=404, media_type="text/plain")
-    owned = access.submission(request, submission_id)
-    if not owned:
-        return Response("Not found.", status_code=404, media_type="text/plain")
-    row = db.query_one(
-        f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,)
-    )
-    return Response((row["body"] if row else "") or "", media_type="application/xml")
-
-
 # --- house book ----------------------------------------------------------
 
 @router.get("/housebook")
@@ -2132,57 +1773,6 @@ def housebook_view(request: Request):
     )
 
 
-@router.get("/housebook.csv")
-def housebook_download(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    stamp = datetime.now().strftime("%Y%m%d")
-    rows = housebook.housebook_rows(
-        _query_int(request, "apartment"),
-        _query_date(request, "from") or None,
-        _query_date(request, "to") or None,
-        owner_user_id=access.owner_id(request),
-    )
-    return StreamingResponse(
-        housebook.iter_housebook_csv_rows(rows),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="domovni-kniha-{stamp}.csv"'},
-    )
-
-
-@router.get("/housebook/pdfs.zip")
-def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    rows = housebook.housebook_rows(
-        _query_int(request, "apartment"),
-        _query_date(request, "from") or None,
-        _query_date(request, "to") or None,
-        owner_user_id=access.owner_id(request),
-    )
-    if not rows:
-        return _back("/housebook", err="No house-book entries match this filter.")
-    if len(rows) > housebook.MAX_INSPECTION_PDFS:
-        return _back(
-            "/housebook",
-            err=(
-                f"Too many entries ({len(rows)}) for one download. "
-                f"Narrow the date or property filter to {housebook.MAX_INSPECTION_PDFS} or fewer."
-            ),
-        )
-    response = _zip_download(
-        background_tasks,
-        rows,
-        housebook.build_housebook_pdfs_zip,
-        f"domovni-kniha-pdf-{datetime.now().strftime('%Y%m%d')}.zip",
-    )
-    if response is None:
-        return _back("/housebook", err="No house-book entries match this filter.")
-    return response
-
-
 # --- alerts and settings -------------------------------------------------
 
 @router.post("/alerts/{alert_id}/dismiss")
@@ -2196,100 +1786,6 @@ def dismiss_alert(alert_id: int, request: Request):
     if request.headers.get("x-requested-with") == "fetch":
         return Response(status_code=204)
     return RedirectResponse(_redirect_path_from_referer(request), status_code=303)
-
-
-ARCHIVED_TYPES = ("all", "stays", "properties", "housebook", "entities")
-
-
-@router.get("/settings/archived")
-def settings_archived_view(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    owner_id = access.owner_id(request)
-    item_type = request.query_params.get("type", "all")
-    if item_type not in ARCHIVED_TYPES:
-        item_type = "all"
-
-    counts = {
-        "stays": int(
-            db.query_one(
-                "SELECT COUNT(*) AS n FROM reservation r "
-                "JOIN apartment a ON a.id = r.apartment_id "
-                "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ?",
-                (owner_id,),
-            )["n"]
-        ),
-        "properties": int(
-            db.query_one(
-                "SELECT COUNT(*) AS n FROM apartment "
-                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
-                (owner_id,),
-            )["n"]
-        ),
-        "housebook": int(
-            db.query_one(
-                "SELECT COUNT(*) AS n FROM guest g "
-                "JOIN reservation r ON r.id = g.reservation_id "
-                "JOIN apartment a ON a.id = r.apartment_id "
-                "WHERE g.archived_at IS NOT NULL AND a.owner_user_id IS ?",
-                (owner_id,),
-            )["n"]
-        ),
-        "entities": int(
-            db.query_one(
-                "SELECT COUNT(*) AS n FROM legal_entity "
-                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
-                (owner_id,),
-            )["n"]
-        ),
-    }
-    counts["all"] = counts["stays"] + counts["properties"] + counts["housebook"] + counts["entities"]
-
-    archived_stays: List[Dict[str, Any]] = []
-    archived_properties: List[Dict[str, Any]] = []
-    archived_housebook: List[Dict[str, Any]] = []
-    archived_entities: List[Dict[str, Any]] = []
-
-    if item_type in ("all", "stays"):
-        archived_stays = db.query(
-            "SELECT r.*, a.internal_name FROM reservation r "
-            "JOIN apartment a ON a.id = r.apartment_id "
-            "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ? "
-            "ORDER BY r.archived_at DESC, r.id DESC",
-            (owner_id,),
-        )
-    if item_type in ("all", "properties"):
-        archived_properties = db.query(
-            "SELECT a.*, "
-            "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id) AS reservations "
-            "FROM apartment a "
-            "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? "
-            "ORDER BY a.archived_at DESC",
-            (owner_id,),
-        )
-    if item_type in ("all", "housebook"):
-        archived_housebook = housebook.housebook_archived_rows(owner_user_id=owner_id)
-    if item_type in ("all", "entities"):
-        archived_entities = db.query(
-            "SELECT e.* FROM legal_entity e "
-            "WHERE e.archived_at IS NOT NULL AND e.owner_user_id IS ? "
-            "ORDER BY e.archived_at DESC",
-            (owner_id,),
-        )
-
-    return render(
-        request,
-        "settings_archived.html",
-        {
-            "item_type": item_type,
-            "counts": counts,
-            "archived_stays": archived_stays,
-            "archived_properties": archived_properties,
-            "archived_housebook": archived_housebook,
-            "archived_entities": archived_entities,
-        },
-    )
 
 
 @router.get("/settings")
@@ -2341,30 +1837,3 @@ def settings_view(request: Request):
     )
 
 
-@router.post("/settings/purge-expired")
-def purge_expired_records(request: Request):
-    """Storage limitation: delete what the six-year duty no longer covers."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    owner_user_id = access.owner_id(request)
-    deleted = housebook.purge_expired(owner_user_id=owner_user_id)
-    # A passport image has no six-year basis, so the same button clears the
-    # ones left over from stays that ended long ago.
-    photos = passport_photos.purge_stale(owner_user_id=owner_user_id)
-    # The request envelope holds every reported guest's passport number, so it
-    # goes on a much shorter clock than the record it belongs to.
-    blanked = reporting.purge_submission_payloads(owner_user_id=owner_user_id)
-    parts = []
-    if deleted:
-        parts.append(f"{deleted} guest record(s) past the retention period")
-    if photos:
-        parts.append(f"{photos} passport image(s) no longer needed")
-    if blanked:
-        parts.append(f"{blanked} submission envelope(s) no longer needed")
-    if not parts:
-        return _back("/settings", msg=_flash(request, "flash.settings.nothing_to_purge"))
-    return _back(
-        "/settings",
-        msg=_flash(request, "flash.settings.purged", parts=" and ".join(parts)),
-    )
