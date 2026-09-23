@@ -37,6 +37,8 @@ from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts
 from .admin_helpers import back as _back
 from .admin_helpers import form_str as _form_str
+from .admin_helpers import guest_form_payload as _guest_form_payload
+from .admin_helpers import kept_signature as _kept_signature
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
@@ -142,7 +144,7 @@ def dashboard_rows(
         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
             if check_in and check_in < date.today() - timedelta(days=3):
                 continue
-        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+        apartment = access.apartment_for_reservation(reservation, owner_user_id)
         controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
         out.append(
             {
@@ -425,10 +427,7 @@ def entities(request: Request):
     edit_entity = None
     edit_id = request.query_params.get("edit")
     if edit_id and edit_id.isdigit():
-        edit_entity = db.query_one(
-            "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id IS ?",
-            (int(edit_id), owner_user_id),
-        )
+        edit_entity = access.entity(request, int(edit_id))
     return render(
         request,
         "entities.html",
@@ -1194,7 +1193,7 @@ async def reservations_submit_ready(request: Request):
     sent_stays = 0
     sent_guests = 0
     for reservation in reservations:
-        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+        apartment = access.apartment_for_reservation(reservation, access.owner_id(request))
         if not apartment:
             continue
         progress = reporting.reservation_progress(reservation)
@@ -1228,11 +1227,10 @@ def reservation_detail(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    reservation = db.query_one(
-        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
-        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.id = ? AND a.owner_user_id IS ?",
-        (reservation_id, access.owner_id(request)),
+    reservation = access.reservation(
+        request,
+        reservation_id,
+        "r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours",
     )
     if not reservation:
         return _back("/reservations", err="No such stay.")
@@ -1477,50 +1475,16 @@ async def reservation_submit(reservation_id: int, request: Request):
 
 # --- guests --------------------------------------------------------------
 
-GUEST_TEXT_FIELDS = (
-    "surname",
-    "first_name",
-    "birth_date",
-    "nationality",
-    "doc_number",
-    "visa_number",
-    "res_street",
-    "res_city",
-    "res_country",
-    "purpose",
-    "note",
-)
-
-
 def _guest_payload(form) -> Dict[str, Any]:
-    raw = {field: _form_str(form, field) for field in GUEST_TEXT_FIELDS}
-    payload: Dict[str, Any] = dict(validation.normalise_guest(raw, clamp=False))
+    payload: Dict[str, Any] = dict(_guest_form_payload(form))
     payload["stay_from"] = _form_str(form, "stay_from") or None
     payload["stay_to"] = _form_str(form, "stay_to") or None
     return payload
 
 
 def _guest_signature_from_form(form, existing=None) -> str:
-    signature = _form_str(form, "signature")
-    if not validation.is_valid_signature(signature) and existing:
-        kept = (existing["signature_png"] or "").strip()
-        if validation.is_valid_signature(kept):
-            return kept
-    return signature
-
-
-def _guest_issues(preview, reservation, signature) -> List[validation.Issue]:
-    """Issues blocking a host-entered guest, including a bogus signature.
-
-    ``reporting.guest_has_signature`` only looks at the prefix, so a signature
-    that is present but not a real image would otherwise be filed as collected.
-    """
-    issues = reporting.guest_issues(preview, reservation)
-    if signature:
-        bad_signature = validation.signature_issue(signature)
-        if bad_signature:
-            issues.append(bad_signature)
-    return issues
+    stored = existing["signature_png"] if existing else None
+    return _kept_signature(_form_str(form, "signature"), stored)
 
 
 def _signature_for_display(guest) -> str:
@@ -1574,11 +1538,8 @@ def guest_new(reservation_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    reservation = db.query_one(
-        "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
-        "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE r.id = ? AND a.owner_user_id IS ?",
-        (reservation_id, access.owner_id(request)),
+    reservation = access.reservation(
+        request, reservation_id, "r.*, a.default_purpose, a.internal_name"
     )
     if not reservation:
         return _back("/reservations", err="No such stay.")
@@ -1597,7 +1558,7 @@ async def guest_create(reservation_id: int, request: Request):
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form)
     preview = {**payload, "signature_png": signature, "entered_by": "host"}
-    issues = _guest_issues(preview, reservation, signature)
+    issues = reporting.guest_issues(preview, reservation)
     if validation.errors_only(issues):
         return _render_host_guest_form(
             request,
@@ -1677,7 +1638,7 @@ async def guest_update(guest_id: int, request: Request):
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form, guest)
     preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
-    issues = _guest_issues(preview, reservation, signature)
+    issues = reporting.guest_issues(preview, reservation)
     if validation.errors_only(issues):
         return _render_host_guest_form(
             request,
@@ -1913,6 +1874,36 @@ def guest_form_pdf(guest_id: int, request: Request):
     )
 
 
+def _zip_download(
+    background_tasks: BackgroundTasks,
+    rows: List[Any],
+    builder,
+    filename: str,
+):
+    """Build a zip on disk, stream it, and unlink the temp file afterwards.
+
+    Returns None when the builder wrote no entries, so the caller can answer
+    with a message instead of an empty archive.
+    """
+    import os
+    import tempfile
+
+    from starlette.responses import FileResponse
+
+    fd, path = tempfile.mkstemp(suffix=".zip")
+    os.close(fd)
+    try:
+        written = builder(rows, path)
+    except Exception:
+        os.unlink(path)
+        raise
+    if not written:
+        os.unlink(path)
+        return None
+    background_tasks.add_task(os.unlink, path)
+    return FileResponse(path, media_type="application/zip", filename=filename)
+
+
 # --- submissions ---------------------------------------------------------
 
 @router.get("/submissions/receipts.zip")
@@ -1947,28 +1938,15 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
                 f"Narrow the date filter to {reporting.MAX_RECEIPT_DOWNLOADS} or fewer."
             ),
         )
-    import os
-    import tempfile
-
-    from starlette.responses import FileResponse
-
-    fd, path = tempfile.mkstemp(suffix=".zip")
-    os.close(fd)
-    try:
-        written = reporting.build_receipts_zip(rows, path)
-    except Exception:
-        os.unlink(path)
-        raise
-    if not written:
-        os.unlink(path)
-        return _back("/submissions", err="No Doručenka receipts to download yet.")
-    stamp = datetime.now().strftime("%Y%m%d")
-    background_tasks.add_task(os.unlink, path)
-    return FileResponse(
-        path,
-        media_type="application/zip",
-        filename=f"dorucenky-{stamp}.zip",
+    response = _zip_download(
+        background_tasks,
+        rows,
+        reporting.build_receipts_zip,
+        f"dorucenky-{datetime.now().strftime('%Y%m%d')}.zip",
     )
+    if response is None:
+        return _back("/submissions", err="No Doručenka receipts to download yet.")
+    return response
 
 
 @router.get("/submissions")
@@ -1990,11 +1968,7 @@ def submission_detail(submission_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    submission = db.query_one(
-        "SELECT s.*, a.internal_name FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE s.id = ? AND a.owner_user_id IS ?",
-        (submission_id, access.owner_id(request)),
-    )
+    submission = access.submission(request, submission_id, "s.*, a.internal_name")
     if not submission:
         return _back("/submissions", err="No such submission.")
     guest_ids = json.loads(submission["guest_ids"] or "[]")
@@ -2155,25 +2129,15 @@ def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks)
                 f"Narrow the date or property filter to {housebook.MAX_INSPECTION_PDFS} or fewer."
             ),
         )
-    import os
-    import tempfile
-
-    from starlette.responses import FileResponse
-
-    fd, path = tempfile.mkstemp(suffix=".zip")
-    os.close(fd)
-    try:
-        housebook.build_housebook_pdfs_zip(rows, path)
-    except Exception:
-        os.unlink(path)
-        raise
-    stamp = datetime.now().strftime("%Y%m%d")
-    background_tasks.add_task(os.unlink, path)
-    return FileResponse(
-        path,
-        media_type="application/zip",
-        filename=f"domovni-kniha-pdf-{stamp}.zip",
+    response = _zip_download(
+        background_tasks,
+        rows,
+        housebook.build_housebook_pdfs_zip,
+        f"domovni-kniha-pdf-{datetime.now().strftime('%Y%m%d')}.zip",
     )
+    if response is None:
+        return _back("/housebook", err="No house-book entries match this filter.")
+    return response
 
 
 # --- alerts and settings -------------------------------------------------

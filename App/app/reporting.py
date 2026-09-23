@@ -10,6 +10,19 @@ The rules this file exists to honour, all from the Ubyport operating rules:
   of a successful notification.
 * Developer notice of 1 Sep 2025 - duplicates are rejected and count against
   the host, so an already-accepted record is never resent automatically.
+
+Timestamps
+----------
+Every timestamp this module reads back - ``registration_completed_at``,
+``guest.updated_at``, ``guest.created_at`` - is **UTC**, because that is what
+``db.utcnow`` writes (an offset-aware ``+00:00`` ISO string). The stored values
+are compared against ``datetime.now(timezone.utc)``, never against Prague civil
+time. A value that arrives without an offset is therefore read as UTC by
+``_as_utc`` rather than as local time; ``deadlines.local_now`` deliberately
+keeps a *separate* naive Prague-civil convention for the date arithmetic that
+legal deadlines are counted in. Do not mix the two: converting a UTC stamp to
+Prague civil before comparing it to a deadline is a real calendar-day error,
+and the reverse silently shifts every automation window by an hour or two.
 """
 from __future__ import annotations
 
@@ -38,6 +51,18 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
+
+# A record filed by hand from a paper house book carries no signature to
+# collect. The host vouches for it instead of forging one, so the marker stands
+# in for a drawn signature everywhere completeness is judged.
+IMPORTED_SIGNATURE = "imported"
+
+# Shown to the host on the entry form, where "sign on the host form" is the
+# instruction that can actually be followed. The guest link passes its own
+# catalog string to ``guest_issues`` instead.
+HOST_SIGNATURE_REQUIRED_MESSAGE = (
+    "A guest signature is required. Use the guest link or sign on the host form."
+)
 
 # How many times the unattended sweep may offer the same guest before it stops
 # and asks a human to look. A code 112 covers both an interrupted connection
@@ -135,9 +160,30 @@ def guest_dict(guest) -> Dict[str, Optional[str]]:
 def guest_has_signature(guest) -> bool:
     """True when the record has a drawn signature or a declared paper import."""
     signature = (guest["signature_png"] or "").strip()
-    if signature == "imported":
+    if signature == IMPORTED_SIGNATURE:
         return True
     return signature.startswith("data:image/")
+
+
+def guest_signature_issue(value: Optional[str], translate=None) -> Optional[validation.Issue]:
+    """The one ``signature`` issue a value raises, or ``None`` when it is fine.
+
+    Both the stored-record check and the two save paths read this, so a value
+    one of them rejects can never be filed as collected by another.
+
+    ``translate`` is the guest catalog lookup: the host sees the form and needs
+    to be told where the signature can come from, while a guest is looking at
+    the pad itself, so the guest route passes its own (already localised)
+    sentence instead.
+    """
+    text = (value or "").strip()
+    if text == IMPORTED_SIGNATURE:
+        return None
+    if not text:
+        if translate is not None:
+            return validation.Issue("signature", translate("signature_missing"))
+        return validation.Issue("signature", HOST_SIGNATURE_REQUIRED_MESSAGE)
+    return validation.signature_issue(value)
 
 
 def guest_identity_verified(guest) -> bool:
@@ -169,17 +215,13 @@ def guest_has_passport_photo(guest) -> bool:
     return bool(guest["passport_photo_at"]) and passport_photos.has_photo(int(guest_id))
 
 
-def guest_needs_passport_photo(guest, apartment=None) -> bool:
-    """Online foreign guests upload a photo only when the property requires it."""
-    if apartment is None:
-        reservation = db.query_one(
-            "SELECT apartment_id FROM reservation WHERE id = ?", (guest["reservation_id"],)
-        )
-        if not reservation:
-            return False
-        apartment = db.query_one(
-            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
-        )
+def guest_needs_passport_photo(guest, apartment) -> bool:
+    """Online foreign guests upload a photo only when the property requires it.
+
+    ``apartment`` is required: every caller holds one, and the ad-hoc
+    reservation-to-apartment lookup this used to fall back to was a second,
+    unscoped way to reach the same row.
+    """
     policy = "off"
     if apartment is not None:
         try:
@@ -195,16 +237,17 @@ def guest_needs_passport_photo(guest, apartment=None) -> bool:
     )
 
 
-def guest_issues(guest, reservation) -> List[validation.Issue]:
+def guest_issues(guest, reservation, translate=None) -> List[validation.Issue]:
+    """Everything wrong with a stored guest record - the single completeness source.
+
+    ``translate`` is an optional catalog lookup for the one sentence here that
+    is shown to a person rather than logged; without it the host wording is used.
+    """
     start, end = _stay_dates(guest, reservation)
     issues = validation.validate_guest(guest_dict(guest), start, end)
-    if not guest_has_signature(guest):
-        issues.append(
-            validation.Issue(
-                "signature",
-                "A guest signature is required. Use the guest link or sign on the host form.",
-            )
-        )
+    signature = guest_signature_issue(guest["signature_png"], translate)
+    if signature is not None:
+        issues.append(signature)
     return issues
 
 
@@ -412,6 +455,17 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     }
 
 
+def _as_utc(value) -> Optional[datetime]:
+    """Parse a stored timestamp and read a naive one as UTC (see module docstring)."""
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
 def _forms_quiet_for(progress: Dict[str, Any], hours: int) -> bool:
     """True when no guest form on the stay has been touched for ``hours``."""
     stamps = [
@@ -421,12 +475,9 @@ def _forms_quiet_for(progress: Dict[str, Any], hours: int) -> bool:
     ]
     if not stamps:
         return False
-    try:
-        newest = datetime.fromisoformat(str(max(stamps)))
-    except ValueError:
+    newest = _as_utc(max(stamps))
+    if newest is None:
         return False
-    if newest.tzinfo is None:
-        newest = newest.replace(tzinfo=timezone.utc)
     return datetime.now(timezone.utc) - newest >= timedelta(hours=hours)
 
 
@@ -544,12 +595,9 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
     completed_at = reservation["registration_completed_at"]
     if not completed_at:
         return False
-    try:
-        completed = datetime.fromisoformat(completed_at)
-    except (TypeError, ValueError):
+    completed = _as_utc(completed_at)
+    if completed is None:
         return False
-    if completed.tzinfo is None:
-        completed = completed.replace(tzinfo=timezone.utc)
     current = now or datetime.now(timezone.utc)
     if current.tzinfo is None:
         current = current.replace(tzinfo=timezone.utc)

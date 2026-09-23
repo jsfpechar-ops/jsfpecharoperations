@@ -38,17 +38,13 @@ _TRANSLATED_ALERT_KINDS = frozenset(
 _FEED_ALERT_KINDS = frozenset({"feed_incomplete", "feed_duplicate_uid", "feed_recurring_event"})
 
 
-def _fmt_date(value: Optional[str]) -> str:
-    parsed = validation.parse_iso_date(value)
-    return parsed.strftime("%d.%m.%Y") if parsed else (value or "")
+# One date format for the whole app: an alert, an e-mail and a page must never
+# print the same stay differently.
+_fmt_date = validation.fmt_date
 
 
 def _stay_dates(reservation: Any) -> str:
-    start = _fmt_date(reservation["date_from"])
-    end = _fmt_date(reservation["date_to"])
-    if start and end:
-        return f"{start} – {end}"
-    return start or end
+    return validation.fmt_date_range(reservation["date_from"], reservation["date_to"])
 
 
 def _plural_key(base: str, n: int) -> str:
