@@ -139,16 +139,6 @@ def test_count_sendable_stays_includes_ready_manual_stays():
     assert reporting.count_sendable_stays([reservation]) == 1
 
 
-def test_status_label_reflects_automation():
-    assert reporting.status_label("ready", "immediate") == "Complete — sending automatically"
-    assert (
-        reporting.status_label("awaiting_verification", "scheduled")
-        == "Complete — scheduled send"
-    )
-    assert reporting.status_label("awaiting_guest", "immediate") == "Waiting for guest"
-    assert reporting.status_label("ready", "manual") == "Ready — send manually"
-
-
 def test_scheduled_mode_waits_from_registration_completion():
     apartment, reservation, _guest_id = _seed("scheduled", "tok-completion-delay")
     completed = "2026-09-18T12:00:00+00:00"
@@ -408,7 +398,7 @@ def test_a_critical_transmission_error_leaves_the_guest_retryable(monkeypatch):
     apartment, _reservation, guest_id = _seed("manual", "tok-112")
 
     class FakeClient:
-        def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+        def submit(self, _header, _guests):  # noqa: ARG002
             return SubmissionResult(
                 endpoint="test",
                 request_xml="<request/>",
@@ -484,7 +474,7 @@ def test_sending_does_not_stamp_identity_verification(monkeypatch):
     db.update("guest", guest_id, {"identity_verified_at": None, "identity_verified_by": None})
 
     class FakeClient:
-        def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+        def submit(self, _header, _guests):  # noqa: ARG002
             return SubmissionResult(
                 endpoint="test",
                 request_xml="<request/>",

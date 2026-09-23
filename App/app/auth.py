@@ -267,10 +267,6 @@ def workspace_user(request: Request):
     return account
 
 
-def is_logged_in(request: Request) -> bool:
-    return current_user(request) is not None
-
-
 def require_login(request: Request) -> Optional[RedirectResponse]:
     """Return a redirect unless a valid account session identifies this host."""
     # Test/development databases may deliberately disable bootstrap and have no
@@ -301,7 +297,7 @@ def attach_session(response, token: str, remember: bool = False) -> None:
     response.set_cookie(
         SESSION_COOKIE,
         token,
-        max_age=SESSION_REMEMBER_MAX_AGE if remember else SESSION_MAX_AGE,
+        max_age=session_max_age({"rm": 1} if remember else None),
         httponly=True,
         samesite="strict",
         secure=secure_cookies(),
@@ -509,14 +505,4 @@ def attach_pin_session(response, token: str, pin: str) -> None:
         samesite="lax",
         secure=secure_cookies(),
         path="/",
-    )
-
-
-def clear_pin_session(response) -> None:
-    response.delete_cookie(
-        PIN_COOKIE,
-        path="/",
-        secure=secure_cookies(),
-        httponly=True,
-        samesite="lax",
     )

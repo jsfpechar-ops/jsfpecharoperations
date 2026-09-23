@@ -94,7 +94,6 @@ def test_countdown_is_translated_for_a_czech_host():
     """The deadline is the most important text on the queue; it must not be
     the one English string left on a Czech page."""
     from app import host_i18n
-    from app.deadlines import time_left_parts
 
     def render(kind, amount):
         key = f"deadline.{kind}"

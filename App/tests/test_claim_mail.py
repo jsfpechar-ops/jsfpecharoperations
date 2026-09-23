@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient

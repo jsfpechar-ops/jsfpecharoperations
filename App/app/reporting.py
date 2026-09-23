@@ -282,16 +282,6 @@ def reservation_progress(reservation) -> Dict[str, Any]:
     }
 
 
-STATUS_LABELS = {
-    "awaiting_guest": "Waiting for guest",
-    "incomplete": "Incomplete",
-    "awaiting_verification": "Awaiting passport check",
-    "ready": "Ready to report",
-    "reported": "Reported",
-    "not_required": "No reporting duty",
-    "failed": "Rejected",
-}
-
 # Statuses only the host can clear. "awaiting_verification" belongs here even
 # though sending would verify implicitly: a manual apartment never sends on its
 # own, so leaving it off the queue means nobody is told before the window shuts.
@@ -362,21 +352,6 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
         and guest_has_signature(guest)
         and guest["submit_state"] not in (SENT, BLOCKED)
     ]
-
-
-def status_label(status: str, automation_mode: Optional[str] = None) -> str:
-    """Human label for a stay's reporting status, with automation context."""
-    if status in ("ready", "awaiting_verification") and automation_mode == "immediate":
-        return "Complete — sending automatically"
-    if status in ("ready", "awaiting_verification") and automation_mode == "scheduled":
-        return "Complete — scheduled send"
-    if status == "awaiting_verification":
-        return "Verify passport before reporting"
-    if status in ("awaiting_guest", "incomplete") and automation_mode == "immediate":
-        return "Waiting for guest"
-    if status == "ready" and automation_mode == "manual":
-        return "Ready — send manually"
-    return STATUS_LABELS.get(status, status)
 
 
 def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str, Any]:
@@ -783,7 +758,6 @@ def submit_batch(
     apartment,
     pairs: List[Tuple[Any, Any]],
     mode: str = "auto",
-    want_pdf: bool = True,
     env: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Send up to one batch of guests and record the outcome.
@@ -817,7 +791,7 @@ def submit_batch(
 
     client = client_for(apartment, env)
     try:
-        result: SubmissionResult = client.submit(header, guests, want_pdf=want_pdf)
+        result: SubmissionResult = client.submit(header, guests)
     except (UbyportTransportError, UbyportError) as exc:
         log.error(
             "ubyport_submission_failed apartment_id=%s owner_user_id=%s "

@@ -83,7 +83,6 @@ isolated to its source.
 | `UBYHOST_SES_REGION` | `eu-central-1` | |
 | `UBYHOST_AWS_ACCESS_KEY_ID` | unset | |
 | `UBYHOST_AWS_SECRET_ACCESS_KEY` | unset | |
-| `UBYHOST_SES_FEEDBACK_QUEUE_URL` | unset | Read into a constant and **not used** — bounce/complaint handling is not implemented. See [SES.md](SES.md). |
 
 ## Accounts
 

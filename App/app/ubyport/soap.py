@@ -16,7 +16,6 @@ NS_SOAP = "http://schemas.xmlsoap.org/soap/envelope/"
 NS_METHOD = "http://UBY.pcr.cz/WS_UBY"
 NS_DATA = "http://schemas.datacontract.org/2004/07/WS_UBY"
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
-NS_ARRAYS = "http://schemas.microsoft.com/2003/10/Serialization/Arrays"
 NS_WSA_NONE = "http://schemas.microsoft.com/ws/2005/05/addressing/none"
 
 ACTION_PREFIX = "http://UBY.pcr.cz/WS_UBY/IWS_UBY/"
@@ -84,7 +83,6 @@ def build_envelope(method: str, body_inner: str, include_wsa_header: bool = Fals
 def build_zapis_ubytovane(
     header: Dict[str, Optional[str]],
     guests: List[Dict[str, Any]],
-    want_pdf: bool = True,
     auth_code: str = "X",
     include_wsa_header: bool = False,
 ) -> str:
@@ -98,7 +96,7 @@ def build_zapis_ubytovane(
         f'<Seznam xmlns:d="{NS_DATA}" xmlns:i="{NS_XSI}">'
         f"<d:Ubytovani>{''.join(guest_xml)}</d:Ubytovani>"
         + "".join(_node("d", name, header.get(name)) for name in HEADER_FIELDS)
-        + _node("d", "VracetPDF", bool(want_pdf))
+        + _node("d", "VracetPDF", True)
         + "</Seznam>"
     )
     body = (

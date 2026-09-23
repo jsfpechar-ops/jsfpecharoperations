@@ -96,7 +96,6 @@ templates.env.globals.update(
     format_birth_date=validation.format_birth_date,
     display_birth_date=validation.display_birth_date,
     compose_residence=validation.compose_residence,
-    status_labels=reporting.STATUS_LABELS,
     nights=_nights,
     parse_iso_date=validation.parse_iso_date,
     today=lambda: date.today(),

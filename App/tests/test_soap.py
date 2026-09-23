@@ -1,3 +1,4 @@
+import inspect
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -69,6 +70,19 @@ def test_header_fields_are_in_expected_order_with_vracetpdf_last():
     assert names[0] == "Ubytovani"
     assert names[1:-1] == list(soap.HEADER_FIELDS)
     assert names[-1] == "VracetPDF"
+
+
+def test_the_receipt_pdf_is_always_requested():
+    """The Dorucenka is the receipt the law requires, so the request cannot opt out.
+
+    There is deliberately no parameter for this: there is exactly one correct
+    answer, so the wire format fixes it.
+    """
+    assert "want_pdf" not in inspect.signature(soap.build_zapis_ubytovane).parameters
+    envelope = soap.build_zapis_ubytovane(HEADER, [GUEST])
+    root = ET.fromstring(envelope)
+    vracet = next(el for el in root.iter() if el.tag.endswith("VracetPDF"))
+    assert vracet.text == "true"
 
 
 def test_none_values_become_nil_elements():
