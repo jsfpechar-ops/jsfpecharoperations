@@ -31,13 +31,21 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
 | `mail` | 5 min | Expires 30-minute claim holds, drains the guest e-mail outbox, sends day-before reminders, purges mail rows older than 14 days. |
 | `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files, and blanks the request/response envelopes on submissions older than 90 days. |
 
-Two behaviours to know:
+Behaviours to know:
 
 - **The `ical` job is registered paused.** It is un-paused on boot only if at
   least one active feed already exists. A host who starts the app and *then*
   adds their first calendar gets the one inline sync that the "add feed" action
   performs, and no further automatic polling until the process restarts.
   Restart after adding the first feed.
+- **A calendar is imported one stay per booking, first occurrence only.** A
+  booking ID repeated in one document is imported once (`feed_duplicate_uid`);
+  a booking that repeats itself with `RRULE`, `RDATE` or `EXDATE` is imported as
+  its first occurrence only (`feed_recurring_event`); a stay whose summary reads
+  as a block is skipped when it is new, but an existing stay that starts
+  matching that wording is kept and left `active` rather than cancelled.
+  Recurrences are never expanded, because inventing stays would invent reporting
+  deadlines the calendar never confirmed.
 - **A job that raises is logged and forgotten.** Each job body catches
   `Exception`, writes `log.exception`, and returns. No alert is raised, so a
   repeatedly failing job is invisible in the UI. If ingestion or sending looks
@@ -180,6 +188,9 @@ condition, not by time.
 | `submission_immediate` | warning | An automatic send triggered by form completion threw. | Not auto-cleared; resolve by sending successfully. |
 | `apartment_setup` | warning | UbyPort settings are incomplete, so nothing can be reported for that apartment. | The settings validate. |
 | `feed_error` | warning | A calendar could not be fetched or parsed. | The next successful parse of that feed. |
+| `feed_duplicate_uid` | warning | A feed lists the same booking ID twice, so only the first entry was imported and one of the two stays may be missing. | A later sync of that feed returns each booking ID once. |
+| `feed_recurring_event` | warning | A feed repeats a booking (`RRULE`/`RDATE`/`EXDATE`), so only the first occurrence was imported. | A later sync of that feed returns no repeating event. |
+| `moved_after_report` | warning | A feed moved a stay's dates **after** the stay had already been filed, so the register holds the old dates. | Not auto-cleared; the host checks the new dates and resends. |
 | `cancelled_after_report` | warning | A stay vanished from the feed, or was cancelled in it, **after** it had already been reported. | Not auto-cleared; the host decides whether it was cancelled or moved. |
 | `guest_incomplete_checkin` | warning | Check-in day arrived with the guest's form still incomplete. | — |
 | `guest_pin_abuse` | warning | Repeated wrong PIN attempts on an apartment's guest link. | — |
