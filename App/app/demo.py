@@ -35,6 +35,11 @@ DEMO_SIGNATURE = (
 def is_demo_apartment(apartment) -> bool:
     if not apartment:
         return False
+    # Demo data can only be seeded while pointed at the mock server, so on a
+    # real deployment nothing can be a demo apartment and the legal_entity
+    # lookup below is a query per dashboard row for a name that cannot exist.
+    if config.UBYPORT_ENV != "mock":
+        return False
     if apartment["internal_name"] in (DEMO_APARTMENT, DEMO_LOFT):
         return True
     entity = db.query_one(

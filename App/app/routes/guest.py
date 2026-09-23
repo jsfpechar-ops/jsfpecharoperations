@@ -137,11 +137,11 @@ CS_PASSPORT_UPLOAD_MESSAGES = {
 
 
 def _serializer() -> URLSafeSerializer:
-    return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-owned")
+    return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-owned")
 
 
 def _claim_serializer() -> URLSafeSerializer:
-    return URLSafeSerializer(config.SECRET_KEY, salt="ubyhost-guest-claim")
+    return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-claim")
 
 
 def _language(request: Request) -> str:

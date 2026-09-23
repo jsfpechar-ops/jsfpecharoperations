@@ -32,11 +32,11 @@ _dummy_password_hash: Optional[str] = None
 
 
 def _serializer() -> URLSafeTimedSerializer:
-    return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-session")
+    return URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-session")
 
 
 def _two_factor_serializer() -> URLSafeTimedSerializer:
-    return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-2fa-pending")
+    return URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-2fa-pending")
 
 
 def issue_two_factor_pending(user_id: int, remember: bool = False, next_path: str = "/") -> str:
@@ -64,7 +64,7 @@ def totp_uri(secret: str, username: str) -> str:
 def recovery_code_hash(code: str) -> str:
     normalized = (code or "").replace("-", "").replace(" ", "").upper()
     return hmac.new(
-        config.SECRET_KEY.encode(), normalized.encode(), hashlib.sha256
+        config.secret_key().encode(), normalized.encode(), hashlib.sha256
     ).hexdigest()
 
 
@@ -434,7 +434,7 @@ _PIN_MAX_AGE = 60 * 60 * 24 * 7  # Limit exposure on shared or lost phones.
 
 
 def _pin_serializer() -> URLSafeTimedSerializer:
-    return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-guest-pin")
+    return URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-guest-pin")
 
 
 def pin_fingerprint(token: str, pin: str) -> str:
@@ -445,7 +445,7 @@ def pin_fingerprint(token: str, pin: str) -> str:
     to the exact PIN it was earned against.
     """
     return hmac.new(
-        config.SECRET_KEY.encode(),
+        config.secret_key().encode(),
         f"{token}\0{pin}".encode(),
         hashlib.sha256,
     ).hexdigest()

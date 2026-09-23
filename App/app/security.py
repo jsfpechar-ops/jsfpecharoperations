@@ -61,7 +61,7 @@ def safe_local_path(value: Optional[str], default: str = "/") -> str:
 
 
 def _csrf_serializer() -> URLSafeTimedSerializer:
-    return URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-csrf")
+    return URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-csrf")
 
 
 def _csrf_nonce(request: Request) -> str:
