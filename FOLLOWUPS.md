@@ -371,18 +371,79 @@ process that neither watches the file nor gets recreated by `up -d` has this
 gap. Auditing the other bind-mounted configs for the same pattern is its own
 follow-up.
 
-### `FAIL https://ubyhost.com/login → HTTP 403 (expected 200)` in the public smoke
+### Cloudflare challenges `/login`, `/admin*` and `/l/*`, which the public smoke cannot see past
 
 The post-deploy public smoke (`scripts/smoke-remote.sh`) reports a failure for
 `/login` returning 403 where it expects 200. It is **not** a Phase 3 regression:
 the identical failure appears in the Phase 1 (`35740871070`) and Phase 2
 (`35743759624`) production deploys, before Phase 3 existed. The check is a
-warning, not a gate — the script prints `WARNING: public smoke failed` and the
-deploy still succeeds — so it has been silently tolerated for at least three
-deploys.
+warning, not a gate — `deploy.sh` prints `WARNING: public smoke failed` and the
+deploy still succeeds — so it was silently tolerated for at least three deploys.
 
-The likely cause is Cloudflare bot protection challenging the CI runner, since
-the same URL is fine from a browser and the internal `/healthz` check passes. It
-needs its own investigation: either the smoke should assert something a bot
-challenge cannot break, or the runner needs to be allow-listed. Until then the
-warning should not be treated as evidence of an application defect.
+**An earlier version of this entry was wrong and this corrects it.** It
+attributed the 403 to bot protection aimed at the CI runner, on the grounds that
+"the same URL is fine from a browser". Probing production by path from an
+ordinary client on an ordinary network shows a **Cloudflare managed challenge**
+(`cf-mitigated: challenge`, `server: cloudflare`, interstitial title
+`Just a moment...`, `cType: 'managed'`) on a specific set of path patterns — not
+something specific to CI:
+
+| Path | Response |
+| --- | --- |
+| `/`, `/healthz`, `/legal`, `/privacy` | 200 — the app answers |
+| `/login` | 403 — Cloudflare challenge |
+| `/admin`, `/admin/login` | 403 — Cloudflare challenge |
+| `/l/*` | 403 — Cloudflare challenge |
+
+`/l` without a trailing slash 404s while `/l/` is challenged, which is the shape
+of an edge path rule rather than anything the app does: the app's own guest
+routes are `/l/{token}` (`routes/guest.py`) and links are built as
+`{PUBLIC_BASE_URL}/l/{permalink_token}` (`routes/admin.py`). So the challenge
+covers **the link every guest is sent**, plus host login and the admin console.
+
+For a browser this is friction, not an outage — a managed challenge self-solves in
+about a second, so a guest with JavaScript enabled still reaches their form. What
+it does block is every non-JS client: the deploy smoke, `curl`, uptime monitoring.
+The residual risk is a guest on a hardened browser, with JavaScript disabled, or
+on a restrictive network, being stopped at the interstitial with no app-level
+error and nothing in the app's logs. It has been present in every deploy log at
+least as far back as Phase 1, so when it was configured is not recorded here.
+
+Two ways out, neither of which is a code decision:
+
+1. **Scope the challenge off `/l/*`** in Cloudflare, keeping it on `/login` and
+   `/admin*`. This is the only option that removes the guest-facing friction, and
+   it is a production configuration change requiring the owner's authorisation.
+2. **Accept it and make the smoke honest about it.** Done: `smoke-remote.sh` now
+   recognises a Cloudflare challenge and reports `SKIP … (Cloudflare challenge;
+   origin not reached)` and counts it, rather than emitting a `FAIL` that the
+   deploy then ignores. Any other unexpected status — 500, 502, 404 — still
+   fails, so the smoke still asserts what a challenge cannot produce. A challenge
+   is never a pass and never a failure, because the origin was never reached.
+
+Option 2 removes the false alarm; it does not by itself establish that a real
+guest can reach `/l/*`. Only option 1, or a browser check, settles that.
+
+### The Caddy reload can race the admin API on a brand-new host
+
+The unconditional reload added above runs `docker compose exec -T caddy caddy
+reload` immediately after `docker compose up -d`. `up -d` returns when a container
+is *started*, not when it is *ready*, and the `caddy` service declares no
+`healthcheck` in `deploy/lightsail/docker-compose.yml` — unlike `ubyhost`, which
+is `service_healthy` and is what `caddy` itself waits on. On the ordinary deploy
+path this is invisible: the container has been up for hours and only its mounted
+config changed.
+
+On a first-ever deploy (the `docs/LIGHTSAIL.md` bootstrap path) or after a
+`docker compose down`, the container is genuinely fresh and Caddy may not have
+bound its admin API on `localhost:2019` yet when the reload runs. The deploy then
+aborts with `Caddy reload failed — the deployed Caddyfile is NOT active.` That is
+the intended fail-closed behaviour and the Caddyfile is correctly mounted either
+way, so a re-run succeeds — but on the one deploy where the operator is least sure
+of the system, the message reads like a real failure.
+
+Not fixed here, because both remedies are changes to the deploy path beyond the
+reload fix that was authorised: a bounded retry around the reload (poll
+`caddy version` before reloading), or a `healthcheck` on the caddy service plus
+`docker compose up -d --wait`. A healthcheck alone is not sufficient, because
+nothing `depends_on` caddy.
