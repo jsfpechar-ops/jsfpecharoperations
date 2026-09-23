@@ -1,0 +1,528 @@
+"""The automatic retry budget for a record the register keeps refusing.
+
+The police answered in writing that 112 is a 1xx critical transmission error:
+the batch was never received and the remedy is to correct the data and repeat
+the submission. So a 112 must stay retryable -- parking the guest in ``blocked``
+would drop them from every future send and the declaration would never happen.
+
+But "retryable" was implemented as "retried for ever": ``collect_sendable``
+skipped only ``sent`` and ``blocked``, so a record the register refused on every
+attempt was re-offered by the unattended sweep every ten minutes, indefinitely,
+for every guest of every property. Nobody watches that stream, and a value the
+register will never accept (a bad document number, a nationality it does not
+take) is a value no amount of resending fixes.
+
+These tests pin the bound, the fact that it binds *only* the sweep, and the two
+ways the count restarts.
+"""
+from __future__ import annotations
+
+import base64
+from datetime import date, datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app import alerts, auth, db, reporting
+from app.ubyport.client import SubmissionResult, UbyportTransportError
+
+SIGNATURE = "data:image/png;base64," + base64.b64encode(
+    bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000a49444154789c6300010000050001od7a1f0000000049454e44ae42"
+        "6082".replace("od", "0d")
+    )
+).decode()
+
+# The policy value, written out rather than read from the module, so changing
+# the constant without meaning to fails here instead of quietly redefining what
+# these tests assert.
+BOUND = 3
+
+PASSWORD = "RetryCapTestPassword1"
+USERNAME = "retry-cap-admin"
+
+
+class RefusingClient:
+    """A register that answers every record with 112, the retryable refusal."""
+
+    def submit(self, _header, guests, want_pdf=True):  # noqa: ARG002
+        return SubmissionResult(
+            endpoint="test",
+            request_xml="<request/>",
+            response_xml="<response/>",
+            # One entry per record, so a batch of two is refused twice.
+            record_errors=[";112;"] * len(guests),
+        )
+
+
+class AcceptingClient:
+    def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+        return SubmissionResult(
+            endpoint="test",
+            request_xml="<request/>",
+            response_xml="<response/>",
+            record_errors=[],
+        )
+
+
+class DuplicateClient:
+    """150 is the register saying it already holds the record."""
+
+    def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+        return SubmissionResult(
+            endpoint="test",
+            request_xml="<request/>",
+            response_xml="<response/>",
+            record_errors=[";150;"],
+        )
+
+
+def _seed(token: str, surname: str = "Smith", auto: bool = False):
+    """A complete, reportable guest on an active stay.
+
+    ``auto`` makes the stay eligible for the unattended sweep, which is a
+    different gate from "a host may send this": the sweep also needs a
+    non-manual mode, a completed registration, and the lead time to have passed.
+    It is deliberately not ``immediate``, so saving a form does not itself
+    trigger a send.
+    """
+    db.init_db()
+    now = db.utcnow()
+    today = date.today()
+    completed_at = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    # Host routes reach a guest only through its apartment owner, so a seeded
+    # stay must belong to the account the ``host`` fixture logs in as.
+    account = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
+    owner_user_id = account["id"] if account else None
+    entity_id = db.insert(
+        "legal_entity",
+        {
+            "name": "Retry Cap",
+            "seat": "Praha",
+            "ico": "12345678",
+            "owner_user_id": owner_user_id,
+            "created_at": now,
+        },
+    )
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "owner_user_id": owner_user_id,
+            "internal_name": "Flat",
+            "city_en": "Prague",
+            "permalink_token": token,
+            "automation_mode": "auto" if auto else "manual",
+            "submit_after_hours": 1,
+            "default_purpose": "10",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "source": "manual",
+            "uid": f"stay-{token}",
+            "date_from": today.isoformat(),
+            "date_to": (today + timedelta(days=3)).isoformat(),
+            "status": "active",
+            "expected_guests_override": 1,
+            "registration_completed_at": completed_at if auto else None,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": reservation_id,
+            "surname": surname,
+            "first_name": "John",
+            "birth_date": "01011990",
+            "nationality": "GBR",
+            "doc_number": "P1234567",
+            "res_street": "Street 1",
+            "res_city": "London",
+            "res_country": "GBR",
+            "purpose": "10",
+            "is_lead": 1,
+            "entered_by": "host",
+            "signature_png": SIGNATURE,
+            "signed_at": now,
+            "identity_verified_at": now,
+            "submit_state": reporting.PENDING,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    return apartment, reservation, guest_id
+
+
+def _attempts(guest_id: int) -> int:
+    return db.query_one("SELECT submit_attempts FROM guest WHERE id = ?", (guest_id,))[
+        "submit_attempts"
+    ]
+
+
+def _stuck_alerts(apartment_id: int):
+    return db.query(
+        "SELECT * FROM alert WHERE kind = 'submission_stuck' AND apartment_id = ? "
+        "AND resolved_at IS NULL",
+        (apartment_id,),
+    )
+
+
+def _cleanup(apartment_id: int) -> None:
+    db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment_id,))
+    db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment_id,))
+    db.execute(
+        "DELETE FROM submission_claim WHERE guest_id IN "
+        "(SELECT id FROM guest WHERE reservation_id IN "
+        "(SELECT id FROM reservation WHERE apartment_id = ?))",
+        (apartment_id,),
+    )
+
+
+def _fail(apartment, guest_id: int, monkeypatch, client=RefusingClient) -> dict:
+    """One send through the batch path, the way every caller reaches it."""
+    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: client())
+    pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+    assert guest_id in [guest["id"] for guest, _ in pairs], (
+        "a host-initiated send must always be able to reach the record"
+    )
+    return reporting.submit_batch(apartment, pairs, mode="manual")
+
+
+def test_the_bound_is_three_automatic_attempts():
+    assert reporting.SUBMISSION_MAX_AUTO_ATTEMPTS == BOUND
+
+
+def test_the_sweep_stops_offering_a_record_at_the_bound():
+    """The sweep is the unattended path, so it is the one that has to stop."""
+    apartment, _reservation, guest_id = _seed("tok-cap-sweep", auto=True)
+
+    try:
+        # Below the bound the sweep still offers the record: the count is a
+        # brake on a loop, not a verdict on the first refusal.
+        for attempts in range(BOUND):
+            db.update(
+                "guest",
+                guest_id,
+                {"submit_attempts": attempts, "submit_state": reporting.ERROR},
+            )
+            sweep = reporting.collect_sendable(apartment["id"])
+            assert guest_id in [guest["id"] for guest, _ in sweep], (
+                f"{attempts} refusals must still be retried"
+            )
+
+        db.update(
+            "guest", guest_id, {"submit_attempts": BOUND, "submit_state": reporting.ERROR}
+        )
+        assert reporting.collect_sendable(apartment["id"]) == [], (
+            "at the bound the sweep must stop offering the record"
+        )
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_a_host_send_is_never_bound_by_the_retry_cap(monkeypatch):
+    """The cap must not be able to block a host action.
+
+    A host resending a corrected record is the whole recovery path, so if the
+    bound applied to it the record would be stranded with no way back.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-host", auto=True)
+
+    try:
+        db.update(
+            "guest",
+            guest_id,
+            {"submit_attempts": BOUND * 10, "submit_state": reporting.ERROR},
+        )
+        # The stay is sweep-eligible, so this empty result is the cap acting and
+        # not the automation mode.
+        assert reporting.collect_sendable(apartment["id"]) == []
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert guest_id in [guest["id"] for guest, _ in pairs]
+
+        # And it really goes out: the batch reaches the register.
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: AcceptingClient())
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+        assert result["submitted"] == 1
+        assert _attempts(guest_id) == 0
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_each_refusal_counts_and_the_count_resets_on_accept(monkeypatch):
+    """One refusal is one attempt, and a record the register takes starts over."""
+    apartment, _reservation, guest_id = _seed("tok-cap-count")
+
+    try:
+        for expected in range(1, BOUND + 1):
+            _fail(apartment, guest_id, monkeypatch)
+            assert _attempts(guest_id) == expected
+
+        _fail(apartment, guest_id, monkeypatch, client=AcceptingClient)
+        assert _attempts(guest_id) == 0, (
+            "the register took the record, so the count of refusals restarts"
+        )
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_a_duplicate_also_resets_the_count(monkeypatch):
+    """A duplicate is the register answering, not refusing.
+
+    It proves the record is filed, so it must restart the count exactly as an
+    accept does -- otherwise a record whose HTTP response was lost would keep
+    accumulating refusals it never earned.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-dup")
+
+    try:
+        _fail(apartment, guest_id, monkeypatch)
+        _fail(apartment, guest_id, monkeypatch)
+        assert _attempts(guest_id) == 2
+
+        _fail(apartment, guest_id, monkeypatch, client=DuplicateClient)
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.SENT
+        assert guest["submit_attempts"] == 0
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_the_card_is_raised_at_the_bound_and_not_before(monkeypatch):
+    """The stop has to be visible, or it is a silent drop of a legal duty."""
+    apartment, _reservation, guest_id = _seed("tok-cap-alert")
+
+    try:
+        for _ in range(BOUND - 1):
+            _fail(apartment, guest_id, monkeypatch)
+            assert _stuck_alerts(apartment["id"]) == [], (
+                "no card while the record is still being retried"
+            )
+
+        _fail(apartment, guest_id, monkeypatch)
+        cards = _stuck_alerts(apartment["id"])
+        assert len(cards) == 1, "exactly one card per stay, not one per attempt"
+        assert "Smith" in cards[0]["detail"], "the host has to be told which guest"
+
+        # A further failure must not stack a second card.
+        _fail(apartment, guest_id, monkeypatch)
+        assert len(_stuck_alerts(apartment["id"])) == 1
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_the_card_clears_once_the_record_moves_again(monkeypatch):
+    """A warning that never clears teaches the host to ignore warnings."""
+    apartment, _reservation, guest_id = _seed("tok-cap-clear")
+
+    try:
+        for _ in range(BOUND):
+            _fail(apartment, guest_id, monkeypatch)
+        assert len(_stuck_alerts(apartment["id"])) == 1
+
+        _fail(apartment, guest_id, monkeypatch, client=AcceptingClient)
+        assert _stuck_alerts(apartment["id"]) == []
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_one_recovered_guest_does_not_clear_another_still_stuck(monkeypatch):
+    """The card is per stay, so it clears per stay."""
+    apartment, reservation, guest_id = _seed("tok-cap-two")
+
+    try:
+        other_id = db.insert(
+            "guest",
+            {
+                "reservation_id": reservation["id"],
+                "surname": "Stuck",
+                "first_name": "Jane",
+                "birth_date": "02021991",
+                "nationality": "GBR",
+                "doc_number": "P7654321",
+                "res_street": "Street 2",
+                "res_city": "London",
+                "res_country": "GBR",
+                "purpose": "10",
+                "is_lead": 0,
+                "entered_by": "host",
+                "signature_png": SIGNATURE,
+                "signed_at": db.utcnow(),
+                "identity_verified_at": db.utcnow(),
+                "submit_state": reporting.ERROR,
+                "submit_attempts": BOUND,
+                "created_at": db.utcnow(),
+                "updated_at": db.utcnow(),
+            },
+        )
+        for _ in range(BOUND):
+            _fail(apartment, guest_id, monkeypatch)
+        assert len(_stuck_alerts(apartment["id"])) == 1
+
+        # Recover the first guest. The second is still stranded, so the card has
+        # to stay up or the remaining record stops being sent with nobody told.
+        db.update("guest", guest_id, {"submit_state": reporting.SENT, "submit_attempts": 0})
+        reporting.clear_stuck_alert_if_recovered(reservation["id"])
+        assert len(_stuck_alerts(apartment["id"])) == 1, (
+            "a card that clears while a record is still stranded is a silent drop"
+        )
+
+        db.update("guest", other_id, {"submit_state": reporting.SENT, "submit_attempts": 0})
+        reporting.clear_stuck_alert_if_recovered(reservation["id"])
+        assert _stuck_alerts(apartment["id"]) == []
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_the_card_is_shown_in_the_host_language(monkeypatch):
+    """Rule 5: the host reads their own language, not English stored text."""
+    from app import host_i18n
+
+    apartment, reservation, guest_id = _seed("tok-cap-lang")
+
+    try:
+        for _ in range(BOUND):
+            _fail(apartment, guest_id, monkeypatch)
+        card = _stuck_alerts(apartment["id"])[0]
+
+        cs = alerts.present(card, "cs")
+        en = alerts.present(card, "en")
+        assert cs["display_detail"] == host_i18n.translate(
+            "cs", "notification.reason.submission_stuck"
+        )
+        assert en["display_detail"] == host_i18n.translate(
+            "en", "notification.reason.submission_stuck"
+        )
+        assert cs["display_detail"] != en["display_detail"]
+        # A stay-scoped card names the property, so the host can find the stay.
+        assert apartment["internal_name"] in cs["display_title"]
+        assert cs["display_detail"] != card["detail"], (
+            "the card must not fall back to the stored English text"
+        )
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_the_translated_key_exists_in_both_languages():
+    """A missing CS key would render the raw key to a Czech host."""
+    from app import host_i18n
+
+    for lang in ("en", "cs"):
+        value = host_i18n.translate(lang, "notification.reason.submission_stuck")
+        assert value and not value.startswith("notification."), lang
+
+
+def test_a_transport_failure_does_not_spend_the_budget(monkeypatch):
+    """A network blip must not count against a record, or an outage would use up
+    the budget for every guest on the site and strand the lot of them."""
+    apartment, _reservation, guest_id = _seed("tok-cap-transport", auto=True)
+
+    class OfflineClient:
+        def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+            raise UbyportTransportError("offline")
+
+    try:
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: OfflineClient())
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "transport_error"
+        assert _attempts(guest_id) == 0
+        # The record is still offered, so the next sweep retries it.
+        assert guest_id in [
+            guest["id"]
+            for guest, _ in reporting.collect_sendable(apartment["id"])
+        ]
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_a_legacy_row_without_the_column_reads_as_no_attempts():
+    """A hand-built or pre-migration row must not raise in the send gate."""
+    assert reporting.auto_attempts({}) == 0
+    assert reporting.auto_attempts({"submit_attempts": None}) == 0
+    assert reporting.auto_attempts({"submit_attempts": "2"}) == 2
+
+
+@pytest.fixture(scope="module")
+def host(mock_ubyport):  # noqa: ARG001
+    """An authenticated administrator browser, for the recovery paths."""
+    from app.main import app
+
+    db.init_db()
+    account = db.query_one("SELECT * FROM user_account WHERE username = ?", (USERNAME,))
+    if not account:
+        auth.create_account(
+            USERNAME,
+            PASSWORD,
+            "Retry cap admin",
+            role="admin",
+            must_change_password=False,
+        )
+    with TestClient(app) as test_client:
+        response = test_client.post(
+            "/login",
+            data={"username": USERNAME, "password": PASSWORD},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        # A refused login also redirects, so check where it went.
+        assert "err=" not in response.headers["location"]
+        yield test_client
+
+
+def test_correcting_the_guest_restarts_the_count(host, monkeypatch):
+    """Recovery path 1: the host fixes the data and saves the form.
+
+    Without the reset the record would stay given up on even after the value the
+    register refused had been corrected, so the fix would look like it failed.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-form", auto=True)
+
+    try:
+        for _ in range(BOUND):
+            _fail(apartment, guest_id, monkeypatch)
+        assert _attempts(guest_id) == BOUND
+        assert len(_stuck_alerts(apartment["id"])) == 1
+
+        saved = host.post(
+            f"/guests/{guest_id}",
+            data={
+                "surname": "Corrected",
+                "first_name": "John",
+                "birth_date": "01.01.1990",
+                "nationality": "GBR",
+                "doc_number": "P7654321",
+                "res_street": "Street 1",
+                "res_city": "London",
+                "res_country": "GBR",
+                "purpose": "10",
+                "signature": SIGNATURE,
+            },
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.PENDING
+        assert guest["submit_attempts"] == 0, (
+            "the retry budget has to restart when the host corrects the record"
+        )
+        assert _stuck_alerts(apartment["id"]) == [], (
+            "a corrected record is no longer stranded"
+        )
+        assert reporting.collect_sendable(apartment["id"]), (
+            "the sweep must pick the corrected record back up"
+        )
+    finally:
+        _cleanup(apartment["id"])

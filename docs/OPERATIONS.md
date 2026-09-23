@@ -80,7 +80,11 @@ Transitions:
   (code 150). See below.
 - `error`/`blocked`/`not_required` → `pending` when a host edits the guest —
   rule 10.4(5), correcting a rejected record must make it sendable again. A host
-  edit of a reportable guest also stamps `identity_verified_at`.
+  edit of a reportable guest also stamps `identity_verified_at`, and it resets
+  `submit_attempts` to 0.
+- **Nothing changes state when the automatic sweep gives a record up.** After
+  three consecutive refusals the sweep stops offering it (`submit_attempts`),
+  but the row stays `error` and a host send still works. See 112 below.
 - anything → `not_required` when the nationality is changed to Czech.
 - **A transport failure changes nothing.** The guest stays `pending` and the
   `submission` row is marked `transport_error`, so the next sweep retries. This
@@ -157,9 +161,16 @@ number, and then **repeat the submission**.
 Be honest about what we cannot tell apart: an interrupted connection is
 transient and simply retrying is right, while an invalid character or an empty
 mandatory field is a data fault that no number of retries will clear. We
-receive the same code for both, so if a record comes back 112 twice, stop
-retrying and check the data — the guest card, and the generated file — before
-sending again.
+receive the same code for both, so **UbyHost stops offering the record after
+three consecutive refusals** — the count applies only to the automatic sweep
+(`UBYHOST_SUBMIT_SWEEP_MINUTES`), never to a send you start by hand.
+
+When that happens the stay gets a warning card naming the guests that were
+dropped, and the automatic send stops re-offering them. Nothing is lost and
+nothing is marked permanently rejected: check the guest card, and the generated
+file, correct whatever the police's causes point at, and **send the stay again
+by hand** — that always works, whatever the count says. Saving the guest form
+also resets the count, so a corrected record rejoins the automatic queue.
 
 112 is pinned in `App/app/ubyport/errors.py` as correctable regardless of the
 code book's wording, so a police-side text change cannot quietly turn a batch

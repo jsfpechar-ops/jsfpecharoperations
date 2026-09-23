@@ -39,6 +39,20 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
 
+# How many times the unattended sweep may offer the same guest before it stops
+# and asks a human to look. A code 112 covers both an interrupted connection
+# (where retrying is exactly right) and a bad value in the generated record
+# (where retrying is futile and the register records another refusal), and the
+# response does not say which. Retrying a few times therefore costs little, but
+# retrying forever is not a policy: it is an unbounded stream of rejections
+# nobody is watching. This bounds it, and crossing the bound raises an alert so
+# the stop is visible rather than silent.
+#
+# Only the automatic sweep is bound. A host-initiated send always goes through,
+# and saving the guest form resets the count, so "fix the data and send again"
+# is never blocked by this.
+SUBMISSION_MAX_AUTO_ATTEMPTS = 3
+
 # How long a stay must go untouched before the party is taken as final. A guest
 # link holder can raise the declared headcount, so the completion gate must not
 # wait forever for forms that are never coming: once every form on file is
@@ -654,6 +668,36 @@ def receipt_submission_id(previous_submission_id: Optional[int]) -> Optional[int
     return None
 
 
+def auto_attempts(guest) -> int:
+    """Consecutive failed automatic submissions for one guest row.
+
+    Tolerates a row selected before the column existed, so a caller that builds
+    its own dict (or an old cached row) reads as "no attempts yet" rather than
+    raising.
+    """
+    try:
+        return max(0, int(guest["submit_attempts"] or 0))
+    except (KeyError, IndexError, TypeError, ValueError):
+        return 0
+
+
+def clear_stuck_alert_if_recovered(reservation_id: int) -> None:
+    """Drop the stranded-records card once nothing on the stay is stranded.
+
+    The card is raised per stay, so it is cleared per stay: recovering one guest
+    must not silently clear the warning while another guest on the same stay is
+    still stranded, or the record would stop being sent with no card left to
+    say so.
+    """
+    remaining = db.query_one(
+        "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? "
+        "AND archived_at IS NULL AND submit_state = ? AND submit_attempts >= ?",
+        (reservation_id, ERROR, SUBMISSION_MAX_AUTO_ATTEMPTS),
+    )
+    if not remaining or not remaining["n"]:
+        alerts.resolve(f"submission_stuck:{reservation_id}")
+
+
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
                      ignore_automation: bool = False, allow_resend: bool = False
                      ) -> List[Tuple[Any, Any]]:
@@ -693,6 +737,12 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         # accepted on a second try, so sending it again buys nothing and adds
         # another unjustified duplicate against the host.
         if guest["submit_state"] == BLOCKED and blocked_as_duplicate(guest):
+            continue
+        # The unattended sweep stops offering a record the register keeps
+        # refusing, so a bad value cannot be resubmitted every ten minutes for
+        # ever. This bounds only the sweep: a host-initiated send is how the
+        # host takes the record back after fixing it, so it is never bound.
+        if not ignore_automation and auto_attempts(guest) >= SUBMISSION_MAX_AUTO_ATTEMPTS:
             continue
         if not guest_is_complete(guest, reservation):
             continue
@@ -831,6 +881,10 @@ def submit_batch(
     # register already had: accepted_count also counts the latter, because a
     # duplicate does move a guest to sent for the first time.
     first_accepts = 0
+    # (guest, reservation) pairs that just crossed the automatic retry bound on
+    # this attempt. Each one has stopped being offered to the sweep, which the
+    # host has to be told or the stop is silent.
+    exhausted: List[Any] = []
 
     for index, (guest, _reservation) in enumerate(pairs):
         record_error = per_record[index] if index < len(per_record) else ""
@@ -852,6 +906,8 @@ def submit_batch(
                         submission_id if result.receipt_pdf else guest["receipt_submission_id"]
                     ),
                     "last_errors": None,
+                    # The register took it, so the count of refusals restarts.
+                    "submit_attempts": 0,
                     "updated_at": now,
                 },
             )
@@ -867,10 +923,17 @@ def submit_batch(
             if duplicate:
                 new_state = SENT
                 duplicate_accepts += 1
+            # A refusal counts against the automatic retry budget, a duplicate
+            # does not: the register holding the record is an answer, not a
+            # failure, so it restarts the count the same way an accept does.
+            attempts = 0 if new_state == SENT else auto_attempts(guest) + 1
+            if new_state == ERROR and attempts >= SUBMISSION_MAX_AUTO_ATTEMPTS:
+                exhausted.append((guest, _reservation))
             update_values = {
                 "submit_state": new_state,
                 "submission_id": submission_id,
                 "last_errors": " | ".join(messages),
+                "submit_attempts": attempts,
                 "updated_at": now,
             }
             if new_state == SENT:
@@ -894,6 +957,34 @@ def submit_batch(
                 failed_count += 1
             else:
                 blocked_count += 1
+
+    if exhausted:
+        # The stop has to be visible. Without this the sweep simply stops
+        # offering the record and the only trace is a red guest row nobody was
+        # told to look at. One card per stay, so the host can click straight to
+        # the guests that need looking at.
+        by_reservation: Dict[int, List[Any]] = {}
+        for guest, _reservation in exhausted:
+            by_reservation.setdefault(_reservation["id"], []).append(guest)
+        for reservation_id, guests in by_reservation.items():
+            names = [
+                (f"{g['surname'] or ''} {g['first_name'] or ''}".strip() or f"#{g['id']}")
+                for g in guests
+            ]
+            alerts.raise_alert(
+                "warning",
+                "submission_stuck",
+                f"{len(guests)} guest record(s) are no longer being sent automatically.",
+                f"UbyPort refused these records on {SUBMISSION_MAX_AUTO_ATTEMPTS} consecutive "
+                "attempts, so the automatic send has stopped offering them. Check the guest "
+                "data, then send the stay again by hand: " + ", ".join(names),
+                dedupe_key=f"submission_stuck:{reservation_id}",
+                apartment_id=apartment["id"],
+                reservation_id=reservation_id,
+            )
+
+    for _reservation_id in {_reservation["id"] for _guest, _reservation in pairs}:
+        clear_stuck_alert_if_recovered(_reservation_id)
 
     if failed_count or blocked_count:
         state = "partial" if accepted_count else "error"
