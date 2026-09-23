@@ -152,6 +152,18 @@ def validate_calendar_url(url: str) -> str:
     return resolve_calendar_target(url).url
 
 
+def _scheme_of(url: str) -> str:
+    try:
+        return (urlparse(url).scheme or "").lower()
+    except ValueError:
+        return ""
+
+
 def resolve_redirect_url(current: str, location: str) -> str:
     joined = urljoin(current, location)
+    if _scheme_of(current) == "https" and _scheme_of(joined) != "https":
+        raise FeedError(
+            "Calendar redirect would drop HTTPS, which would let the feed be tampered with "
+            "in transit. Point the feed at the address it redirects to."
+        )
     return validate_calendar_url(joined)
