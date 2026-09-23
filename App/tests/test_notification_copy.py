@@ -17,6 +17,11 @@ def test_notification_copy_keys_exist_in_en_and_cs():
         "notification.reason.urgent_forms",
         "notification.reason.checkin_incomplete",
         "notification.open_stay",
+        "notification.feed_duplicate_uid.title",
+        "notification.reason.feed_duplicate_uid",
+        "notification.feed_recurring_event.title",
+        "notification.reason.feed_recurring_event",
+        "notification.reason.moved_after_report",
     ]
     for key in keys:
         for lang in ("en", "cs"):
@@ -136,3 +141,80 @@ def test_base_template_keeps_compact_notification_structure():
     assert "notification-action" in text
     assert "data-notification-dismiss" in text
     assert "notification.open_stay" in text
+
+
+# --- W4.6: the new calendar cards must read in the host's language [F5, F6, F12]
+
+def _feed_card(kind, monkeypatch, property_name="Karlín Loft (demo)"):
+    monkeypatch.setattr(
+        alerts.db, "query_one", lambda sql, params=(): {"internal_name": property_name}
+    )
+    alert = {
+        "kind": kind,
+        "apartment_id": 1,
+        "message": "english log copy",
+        "detail": "english log copy",
+    }
+    return alerts.present(alert, "en"), alerts.present(alert, "cs")
+
+
+def test_a_duplicate_booking_card_is_rebuilt_in_both_languages(monkeypatch):
+    en, cs = _feed_card("feed_duplicate_uid", monkeypatch)
+    assert en["display_title"] == "Karlín Loft (demo): one booking is listed twice."
+    assert en["display_detail"] == (
+        "The calendar returns the same booking ID more than once. Only the first "
+        "entry of each was imported – check the portal, because one of the two "
+        "stays may be missing."
+    )
+    assert cs["display_title"] == "Karlín Loft (demo): jedna rezervace je uvedena dvakrát."
+    assert cs["display_detail"] == (
+        "Kalendář vrací stejné ID rezervace vícekrát. Importoval se vždy jen první "
+        "záznam – zkontrolujte portál, jeden z pobytů může chybět."
+    )
+    assert "english log copy" not in (cs["display_title"] + cs["display_detail"])
+
+
+def test_a_repeating_booking_card_is_rebuilt_in_both_languages(monkeypatch):
+    en, cs = _feed_card("feed_recurring_event", monkeypatch)
+    assert en["display_title"] == "Karlín Loft (demo): a booking repeats."
+    assert en["display_detail"] == (
+        "The calendar repeats a booking, but only the first occurrence was "
+        "imported. Add the other stays by hand."
+    )
+    assert cs["display_title"] == "Karlín Loft (demo): rezervace se opakuje."
+    assert cs["display_detail"] == (
+        "Kalendář opakuje rezervaci, ale importoval se jen první výskyt. Ostatní "
+        "pobyty zadejte ručně."
+    )
+    assert "english log copy" not in (cs["display_title"] + cs["display_detail"])
+
+
+def test_a_stay_moved_after_reporting_gets_a_reason_line(monkeypatch):
+    reservation = {
+        "id": 7,
+        "date_from": "2026-09-19",
+        "date_to": "2026-09-21",
+        "internal_name": "Vinohrady Studio (demo)",
+    }
+    monkeypatch.setattr(alerts.db, "query_one", lambda sql, params=(): reservation)
+    alert = {
+        "kind": "moved_after_report",
+        "reservation_id": 7,
+        "message": "english log copy",
+        "detail": "english log copy",
+    }
+    en = alerts.present(alert, "en")
+    assert en["display_title"] == "Vinohrady Studio (demo) · 19.09.2026 – 21.09.2026"
+    assert en["display_detail"] == (
+        "The calendar moved this stay after it was reported to the police. The "
+        "filed record names the old dates – check the new dates with the guests "
+        "and resend."
+    )
+    cs = alerts.present(alert, "cs")
+    assert "Vinohrady Studio (demo)" in cs["display_title"]
+    assert cs["display_detail"] == (
+        "Kalendář posunul tento pobyt poté, co byl nahlášen policii. Odeslaný "
+        "záznam uvádí původní termíny – zkontrolujte s hosty nové termíny a "
+        "odešlete znovu."
+    )
+    assert "english log copy" not in (cs["display_title"] + cs["display_detail"])
