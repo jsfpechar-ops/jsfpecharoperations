@@ -57,14 +57,14 @@ whether that individual has been reported.
 | `pending` | Not yet accepted by UbyPort. The default, and where a record sits between the guest signing and the next sweep. |
 | `sent` | UbyPort holds this record. Never resent automatically. |
 | `error` | Rejected in a way that correcting the data can fix. |
-| `blocked` | Rejected in a way resending will not fix — in practice code 112, "reported late". |
+| `blocked` | Rejected in a way resending will not fix — in practice code 150, a duplicate. 112 does **not** belong here; see below. |
 | `not_required` | Czech national: house book only, no reporting duty. |
 
 Transitions:
 
 - `pending → sent` — the response carried no error codes for this record.
 - `pending → error` — correctable code(s) returned.
-- `pending → blocked` — a non-correctable code (112, or a codebook text
+- `pending → blocked` — a non-correctable code (150, or a codebook text
   matching `duplic`/`pozd`/`late`).
 - `error`/`blocked`/`pending` **→ `sent`** when the response says duplicate
   (code 150). See below.
@@ -130,12 +130,34 @@ first time *and* the service returned no error codes. `ok` with no stamp and no
 Doručenka behind it raises the `receipt_missing` warning — the register has the
 record and we hold no proof of it.
 
-**112 — reported late.** Classified as not-correctable, so the guest goes to
-`blocked` and the stay's status reads "Rejected" indefinitely. The record is
-excluded from every automatic send from then on. Note that 112 does not
-necessarily mean the register refused the data — it means the filing was late.
-Read the Doručenka on that submission to establish what the register actually
-holds before deciding whether anything is outstanding.
+**112 — critical transmission error.** The Foreign Police answered this in
+writing: in UBYPORT, 112 falls into the category of critical transmission
+errors (the 1xx series) and means **the batch of accommodated foreigners was
+not received at all**. The register does not hold the data. The usual causes
+they give are a structural fault in the submitted file (an invalid character in
+the generated `.UNZ`/`.XML`), an empty mandatory field, or an interrupted
+connection to the Police of the Czech Republic server during upload.
+
+So 112 is correctable, not permanent: the guest goes to `error`, stays in the
+queue, and the next send — automatic or manual — picks the record up again.
+The remedy the police prescribe is to check the guest's card in the
+accommodation system for correct nationality, date of birth and document
+number, and then **repeat the submission**.
+
+Be honest about what we cannot tell apart: an interrupted connection is
+transient and simply retrying is right, while an invalid character or an empty
+mandatory field is a data fault that no number of retries will clear. We
+receive the same code for both, so if a record comes back 112 twice, stop
+retrying and check the data — the guest card, and the generated file — before
+sending again.
+
+112 is pinned in `App/app/ubyport/errors.py` as correctable regardless of the
+code book's wording, so a police-side text change cannot quietly turn a batch
+that was never received into a record we abandon. The rest of the 1xx series is
+deliberately **not** generalised from this answer: no code book entry tells us
+the other 1xx codes mean the same thing, and treating a batch the service did
+accept as never received risks a strike against the host. An unrecognised code
+falls through to `error`, which is correctable anyway.
 
 The `request_xml` and `response_xml` columns on the `submission` row hold the
 exact envelope sent and received. They are the authoritative record for an

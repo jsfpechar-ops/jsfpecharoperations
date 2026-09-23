@@ -144,10 +144,10 @@ Codes are interpreted in `App/app/ubyport/errors.py` and shown on the guest/repo
 | *(none)* / submission `ok` | Batch accepted | Archive Doručenka; done |
 | **106** | Invalid guest field | Fix the field, resend that guest |
 | **1** | Incorrect file extension | Should not occur for SOAP; check Doručenka; do not loop |
-| **112** | Reported late (3 working days) | **Do not resend** as a fix; `not_correctable`. Note for the file; police may still hold/refuse |
+| **112** | Critical transmission error (1xx): **the register did not receive the batch at all** | Check the guest's card (nationality, date of birth, document number) and the generated file, then **repeat the submission**. The record stays `error` and is retried automatically. A *transient* cause (interrupted connection) and a *data* cause (invalid character, empty mandatory field) look identical to us, so retrying fixes the first and a second 112 means a human must fix the second |
 | **150** / text contains `duplic` | Duplicate — register already has the row | App treats this as already sent / not blindly retried. Submission is recorded as `ok_duplicate`; the Doručenka link points at the submission that holds it. **Do not** hammer submit |
 | Other correctable codes | Rejected, worth a fix | Edit guest, one resend |
-| `not_correctable` | Duplicate, late, or similar | Stop; read Doručenka |
+| `not_correctable` | Duplicate, or a codebook text matching `duplic`/`pozd`/`late` | Stop; read Doručenka |
 | `transport_error` / `UbyportTransportError` | Timeout, NTLM/auth, TLS, SOAP fault | Alert: “could not deliver”. Guests stay **pending**. Fix network/password; retry **once**. No data deleted |
 | `not_configured` | Missing mark/IDUB/WS login | Complete apartment UBY-WS settings |
 | Header errors on Doručenka | Whole batch problem | Open error PDF; fix apartment header (IDUB/mark/address) |
