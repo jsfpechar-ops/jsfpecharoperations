@@ -61,6 +61,7 @@ The app **refuses to start** if `UBYPORT_ENV=prod` without `DEPLOYMENT=productio
 - [ ] Paste Airbnb and Booking.com iCal export URLs.
 - [ ] Copy the guest permalink into check-in messages on both platforms.
 - [ ] Guest PIN enabled (`UBYHOST_GUEST_PIN=1`).
+- [ ] **Guest mail renders, in both languages.** From the public permalink, start a claim with a real address you control and open the received `claim` mail. Check: the logo shows (it is fetched from `https://ubyhost.com/static/ubyhost-logo.jpg` — a client that blocks images must still show the text part), the button and the copyable link both work, the footer names **your property and your contact address**, and `support@ubyhost.com` appears **nowhere**. Repeat with the UI in Czech and confirm the mail arrives in Czech. Confirm the `From` line reads `UbyHost <noreply@ubyhost.com>`, not a bare address. If it lands in spam, do not "fix" it by adding `List-Unsubscribe` or `Precedence: bulk` — check DKIM/SPF/DMARC instead ([SES.md](SES.md)).
 
 ## Phase 4 — Validate on test UbyPort (go-live gate)
 

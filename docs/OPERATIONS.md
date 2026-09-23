@@ -12,6 +12,7 @@ you need when something has gone wrong and the answer is not in either.
 - [The `submit_state` state machine](#the-submit_state-state-machine)
 - [UbyPort error codes, and what 112 and 150 really do](#ubyport-error-codes-and-what-112-and-150-really-do)
 - [The host notification e-mail](#the-host-notification-e-mail)
+- [Guest e-mail](#guest-e-mail)
 - [Alert kinds](#alert-kinds)
 - [Schema migrations](#schema-migrations)
 - [If the secret key is lost or rotated](#if-the-secret-key-is-lost-or-rotated)
@@ -215,6 +216,53 @@ Behaviour worth knowing:
   and raises `mail_failed` if it exhausts its attempts. The owner's Settings →
   Mail view shows the message, and the HTML part can be previewed there in a
   sandboxed frame.
+
+## Guest e-mail
+
+Every message a guest receives is composed in `App/app/mail_notify.py`, queued
+through the outbox in `App/app/mail.py`, and sent as **multipart/alternative**:
+a plain-text part that stands on its own plus an HTML part built on the same
+card shell as the host notice — the UbyHost logo, the stay details, and one
+button pointing at the link the message is about. The text part is never
+dropped and never says "view this in HTML".
+
+| Kind | Sent from | When | Call to action |
+| --- | --- | --- | --- |
+| `claim` | `claim.start_claim` | The guest gives an address and starts a claim | The magic link `/l/{token}/{id}/claim` |
+| `claim_resend` | `claim.start_claim` | The same guest asks for the link again | The magic link, with resend wording |
+| `completion` | `claim.maybe_notify_completion` | The claim is confirmed; also CC'd to the host contact | The stay overview `/l/{token}/{id}` |
+| `reminder_guest` | `claim.sweep_reminders` | One day before arrival, while the claim is unfinished | The stay overview, or a fresh magic link if one is still live |
+| `reminder_host` | `claim.sweep_reminders` | One day before arrival, while the claim is unfinished | The host's stay view |
+
+Rules that matter operationally:
+
+- **The guest is always pointed at their host, never at UbyHost support.** The
+  footer names the property and the legal entity's contact address and phone.
+  `support@ubyhost.com` must not appear in guest copy — the guest has no
+  relationship with us.
+- **A guest message is translated; a host message is not.** Guest copy follows
+  the reservation's `lang` (`en`/`cs`); host copy is English regardless of the
+  host's UI language. New guest strings go in `App/app/i18n.py`, host strings in
+  `App/app/host_i18n.py`, and **both languages land in the same commit** — the
+  catalogues are at exact key parity and a missing key renders as its own name.
+- **The magic link is never recoverable after confirmation.** Only the token
+  *hash* is stored, so a reminder cannot re-issue the original link; it either
+  links to the stay overview (which works on the device that confirmed) or to a
+  freshly minted link when one is still live. The composer documents this.
+- **The secret is not in the stored payload.** The queued HTML carries
+  `{{claim_secret}}`, substituted at delivery time from the encrypted secret.
+  If the secret cannot be decrypted the row stays `QUEUED` and retries rather
+  than going out with a dead link.
+- **A composer bug must not cost the guest their link.** `claim._guest_mail_content`
+  catches every exception, logs `guest_mail_compose_failed`, and falls back to
+  the plain-text body it would have sent anyway — with a working link.
+
+Deliverability is deliberate and should not be "improved" casually: the logo is
+the only remotely fetched resource (no tracking pixel, no link rewriting); there
+is **no** `List-Unsubscribe` and **no** `Precedence: bulk`, which are wrong for
+transactional mail and are themselves bulk signals; and the `From` header
+carries the display name `UbyHost <noreply@ubyhost.com>` rather than a bare
+address. See [SES.md](SES.md).
 
 ## Alert kinds
 
