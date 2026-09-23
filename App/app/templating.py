@@ -28,9 +28,9 @@ from . import (
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
 
-def _fmt_date(value: Optional[str]) -> str:
-    parsed = validation.parse_iso_date(value)
-    return parsed.strftime("%d.%m.%Y") if parsed else (value or "")
+# One date format for the whole app: a page, an alert and an e-mail must never
+# print the same stay differently.
+_fmt_date = validation.fmt_date
 
 
 def _weekday(value: Optional[str]) -> str:
