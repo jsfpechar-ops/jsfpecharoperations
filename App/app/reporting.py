@@ -749,6 +749,10 @@ def submit_batch(
     guest_ids = [g["id"] for g, _ in pairs]
     endpoint = config.endpoint_for(env)
 
+    # The batch's membership, recorded once and never rewritten. It is the only
+    # record of who was in this submission: guest.submission_id is a single
+    # current pointer that a later resend moves elsewhere, so the submission
+    # detail page reads this column, not that one.
     submission_id = db.insert(
         "submission",
         {
@@ -827,6 +831,8 @@ def submit_batch(
                 {
                     "submit_state": SENT,
                     "submitted_at": now,
+                    # The current pointer, moved on every send - it is not the
+                    # batch record, which lives in submission.guest_ids.
                     "submission_id": submission_id,
                     # Keep pointing at the last submission that actually holds
                     # a Dorucenka when this attempt returned none, so a resend

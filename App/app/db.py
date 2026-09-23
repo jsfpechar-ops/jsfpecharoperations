@@ -145,7 +145,10 @@ CREATE TABLE IF NOT EXISTS guest (
     entered_by     TEXT NOT NULL DEFAULT 'guest',
     submit_state   TEXT NOT NULL DEFAULT 'pending',
     submitted_at   TEXT,
-    -- The latest submission that carried this guest. Overwritten on every send.
+    -- The latest submission that carried this guest: the current pointer, and
+    -- the authority for "which submission filed this guest". Overwritten on
+    -- every send, so it cannot say who was in an older batch; that is what
+    -- submission.guest_ids is for.
     submission_id  INTEGER REFERENCES submission(id) ON DELETE SET NULL,
     last_errors    TEXT,
     created_at     TEXT NOT NULL,
@@ -164,6 +167,11 @@ CREATE TABLE IF NOT EXISTS submission (
     finished_at   TEXT,
     mode          TEXT,
     state         TEXT NOT NULL DEFAULT 'running',
+    -- The guests that were in the batch when it went out, frozen at send time.
+    -- Not derivable from guest.submission_id: a later resend overwrites that
+    -- pointer, so deriving would empty an older submission's guest list. The
+    -- two answer different questions - this one "who was in this batch", that
+    -- one "what filed this guest" - and both are written by submit_batch.
     guest_ids     TEXT,
     header_errors TEXT,
     record_errors TEXT,

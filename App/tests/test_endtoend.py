@@ -365,6 +365,9 @@ def test_13_completed_party_is_reported_without_passport_verification(client, ho
     assert submission["state"] == "ok", submission["error_text"]
     assert submission["pseudo_stamp"], "the pseudo-stamp identifies the transmission"
     assert json.loads(submission["guest_ids"]) == [guest["id"]]
+    assert guest["submission_id"] == submission["id"], (
+        "the guest must point back at the submission that carried it"
+    )
 
 
 def test_14_the_receipt_is_a_real_pdf_the_host_can_save(host):

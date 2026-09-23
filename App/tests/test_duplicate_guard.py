@@ -542,6 +542,56 @@ def test_transport_failure_does_not_mark_identity_verified(monkeypatch):
     assert guest["identity_verified_at"] is None
 
 
+def test_a_later_send_does_not_erase_the_older_batch(monkeypatch):
+    """The two links are not two spellings of one thing.
+
+    ``guest.submission_id`` is a single current pointer that every send moves,
+    so a resend would wipe the guest off the batch it was first filed in. The
+    submission detail page reads ``submission.guest_ids`` for exactly that
+    reason, and collapsing the pair would empty old submissions.
+    """
+    apartment_id, guest_id = _seed(reporting.SENT, None, "duptok14")
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    first_id = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment_id,
+            "created_at": db.utcnow(),
+            "finished_at": db.utcnow(),
+            "mode": "auto",
+            "state": "ok",
+            "guest_ids": json.dumps([guest_id]),
+            "pseudo_stamp": "20260101120000-abc",
+        },
+    )
+    db.update("guest", guest_id, {"submission_id": first_id})
+
+    class Client:
+        def submit(self, _header, _guests, want_pdf=True):
+            return SubmissionResult(
+                endpoint="mock",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                pseudo_stamp="20260102120000-def",
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+
+    pairs = reporting.collect_sendable(
+        apartment_id, only_guest_ids=[guest_id], ignore_automation=True, allow_resend=True
+    )
+    second = reporting.submit_batch(apartment, pairs)
+
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["submission_id"] == second["submission_id"]
+    assert guest["submission_id"] != first_id
+
+    first = db.query_one("SELECT * FROM submission WHERE id = ?", (first_id,))
+    assert json.loads(first["guest_ids"]) == [guest_id], (
+        "the older batch still has to say who was in it"
+    )
+
+
 def test_resending_an_accepted_record_as_a_duplicate_is_not_a_rejection(monkeypatch):
     """A duplicate on a record we already had as sent is a confirmation.
 
