@@ -553,3 +553,31 @@ whether the count resets on any non-112 outcome. Until then the exposure is
 bounded but real: a structurally invalid record is re-sent every ten minutes
 indefinitely, and each attempt is another submission against the host's
 web-service access.
+
+### The host notification e-mail is always English
+
+`App/app/mail_notify.py` sends the submission-problem notice in
+`host_i18n.DEFAULT_LANGUAGE` ("en") and passes no `lang` to
+`build_submission_problem`. The web UI is fully bilingual and honours the
+`ubyhost_lang` cookie, so a Czech host reads the app in Czech and then receives a
+failure e-mail in English — the one message that most needs to be understood.
+
+The reason is structural, not an oversight: **there is no stored language
+preference anywhere.** `user_account` (`App/app/db.py:24-38`) has no language
+column, and `reservation.lang` is the *guest's* language for the claim flow, not
+the host's. The cookie is the only record of the host's choice, and the send
+happens in a background sweep where there is no request and therefore no cookie.
+
+Fixing it properly means an `owner_user_id`-keyed language column with a
+migration, plus a decision on what a platform-admin or multi-owner account
+defaults to. A cheaper interim would be to store the language on the
+`legal_entity` row beside `contact_email`, which is the address the mail already
+goes to — but that is still a schema change and an owner decision, so it is
+recorded rather than guessed at.
+
+Two related behaviours are deliberate and not defects: the mail is sent at most
+once per property per Prague day (a same-day repeat updates the alert but does
+not re-send, so the host keeps the first explanation rather than a stream of
+them), and it goes only to the host. Guests are not mailed about a filing
+failure; the guest-facing incomplete-registration reminder is a different
+message on a different trigger.
