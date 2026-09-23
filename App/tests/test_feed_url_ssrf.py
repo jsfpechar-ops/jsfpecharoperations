@@ -86,6 +86,29 @@ def test_redirects_are_revalidated_not_followed_blindly():
     ) == "https://www.google.com/calendar/ical/y.ics"
 
 
+def test_a_redirect_that_drops_https_is_refused():
+    """[F16] A TLS feed must not be silently downgraded to cleartext."""
+    from app.feed_url import resolve_redirect_url
+
+    with pytest.raises(FeedUrlError):
+        resolve_redirect_url(
+            "https://www.google.com/calendar/ical/x.ics",
+            "http://www.google.com/calendar/ical/x.ics",
+        )
+    with pytest.raises(FeedUrlError):
+        resolve_redirect_url(
+            "https://www.google.com/calendar/ical/x.ics",
+            "HTTP://www.google.com/calendar/ical/x.ics",
+        )
+    # Plain http was already cleartext, and upgrading to https is always fine.
+    assert resolve_redirect_url(
+        "http://www.google.com/calendar/ical/x.ics", "http://www.google.com/calendar/ical/y.ics"
+    ) == "http://www.google.com/calendar/ical/y.ics"
+    assert resolve_redirect_url(
+        "http://www.google.com/calendar/ical/x.ics", "https://www.google.com/calendar/ical/y.ics"
+    ) == "https://www.google.com/calendar/ical/y.ics"
+
+
 def test_allows_public_https_calendar():
     # Does not fetch — only DNS resolution; use a stable public host.
     url = validate_calendar_url("https://www.google.com/calendar/ical/test/basic.ics")
