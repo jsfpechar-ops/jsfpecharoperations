@@ -283,7 +283,7 @@
           <td data-label="{{ t('stay.detail.reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
           <td class="mono small" data-label="{{ t('stay.detail.reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
           <td class="nowrap row-actions" data-label="">
-            {% if submission.receipt_pdf %}
+            {% if submission.has_receipt %}
               <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
             {% endif %}
             {{ row_menu_begin() }}

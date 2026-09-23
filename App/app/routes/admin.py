@@ -1079,9 +1079,14 @@ def reservations_list(request: Request):
                 "reservation": row,
                 "progress": progress,
                 "controls": reporting.send_controls(row, apartment, progress) if apartment else {},
+                # The bulk action only reaches stays in a live apartment, so the
+                # count has to ignore the rest even though their row is listed.
+                "apartment_active": bool(apartment and apartment["active"]),
             }
         )
-    ready_send_count = reporting.count_sendable_stays([item["reservation"] for item in rows])
+    ready_send_count = sum(
+        1 for item in rows if item["controls"].get("send_enabled") and item["apartment_active"]
+    )
     query_params = [(key, value) for key, value in request.query_params.multi_items() if key != "page"]
 
     def page_url(number: int) -> str:
@@ -1254,7 +1259,11 @@ def reservation_detail(reservation_id: int, request: Request):
         )
     check_in = reporting.reservation_deadline_anchor(reservation)
     submissions = db.query(
-        "SELECT * FROM submission WHERE id IN ("
+        # The stay's report list renders four columns; the envelope and the
+        # stored receipts are the bulk of the row and neither is shown.
+        "SELECT id, created_at, state, pseudo_stamp, "
+        "       (receipt_pdf IS NOT NULL AND TRIM(receipt_pdf) != '') AS has_receipt "
+        "FROM submission WHERE id IN ("
         "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
         ") AND apartment_id = ? ORDER BY created_at DESC",
         (reservation_id, reservation["apartment_id"]),
@@ -1916,7 +1925,10 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
     sql = (
-        "SELECT s.* FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+        # build_receipts_zip reads these four columns and nothing else; s.* would
+        # pull both SOAP envelopes and the error PDF as well.
+        "SELECT s.id, s.created_at, s.pseudo_stamp, s.receipt_pdf "
+        "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
         "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
     )
     params: List[Any] = [owner_id]
@@ -1955,11 +1967,17 @@ def submissions_list(request: Request):
     if guard:
         return guard
     rows = db.query(
-        "SELECT s.*, a.internal_name FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+        # Only what the list renders: s.* would drag every stored receipt PDF
+        # (base64) and both SOAP envelopes across for 200 rows.
+        "SELECT s.id, s.created_at, s.apartment_id, s.mode, s.guest_ids, s.state, "
+        "       s.pseudo_stamp, "
+        "       (s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != '') AS has_receipt, "
+        "       a.internal_name "
+        "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
         "WHERE a.owner_user_id IS ? ORDER BY s.created_at DESC LIMIT 200",
         (access.owner_id(request),),
     )
-    receipt_count = sum(1 for row in rows if row["receipt_pdf"])
+    receipt_count = sum(1 for row in rows if row["has_receipt"])
     return render(request, "submissions.html", {"rows": rows, "receipt_count": receipt_count})
 
 

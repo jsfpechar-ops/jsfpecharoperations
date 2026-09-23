@@ -718,3 +718,47 @@ every gate; making CI lint `tools/` is W6.1.
 `docs/ENVIRONMENT.md` plus `docs/SES.md` were updated to say so.
 `docs/ubyhost-docs-update.patch` still contains the removed row. It is a
 historical patch artifact rather than live documentation, so it was left alone.
+
+## From Phase 5 (W5.2 duplication collapse)
+
+### W5.2 — two naive-timestamp conventions still coexist
+
+`reporting.py` now documents its module-level convention — a naive timestamp
+stored by the application is UTC — and `_as_utc()` is the single converter the
+send-decision code uses. `deadlines.local_now()` deliberately keeps the other
+convention: a naive timestamp compared against it is Prague civil time, because
+it is answering "what does the guest's phone say", not "when did we record
+this". The split is intentional and now documented on both sides, but it is
+still a trap for the next reader: the same column can mean two things depending
+on which module reads it. The durable fix is to store every timestamp as an
+explicit UTC ISO-8601 value with a `Z` and convert at the edge, which is a
+migration and was out of scope here.
+
+## From Phase 5 (W5.3 efficiency)
+
+### W5.3 — `connect()` no longer repairs a database swapped under a running server
+
+The schema check used to run on every `connect()`, which is why a database file
+restored from an older backup, or replaced under a server that was already
+running, healed itself on the next query. It now runs only in `init_db()`, at
+startup, which is what took a 29-pragma cost off the query path. A database
+replaced while the process is up is therefore no longer healed until restart.
+Nothing in the deployment does that today — `deploy-production.yml` restarts the
+service around a data change — so the trade was worth taking, but if a
+hot-restore path is ever added it needs an explicit re-check rather than a
+reliance on `connect()`.
+
+### W5.3 — `init_db()` migrates the schema twice, and should not have to
+
+`SCHEMA`'s `CREATE TABLE guest` is missing eight columns that only
+`ADDED_COLUMNS` supplies (`archived_at`, `passport_photo_at`,
+`identity_verified_at`, `identity_verified_by`, `doc_number_enc`,
+`visa_number_enc`, `receipt_submission_id`, `submit_attempts`), and `SCHEMA`
+creates indexes over `owner_user_id`, which an older database also lacks. So
+`init_db()` now runs `_add_missing_columns()` both before `executescript(SCHEMA)`
+(because the indexes would otherwise fail on a legacy database) and after it
+(because a fresh database has no tables for the first pass to inspect). Two
+passes, nine pragmas each, once at startup: cheap, but a symptom. The fix is for
+`SCHEMA` to describe the current shape of every table and for `ADDED_COLUMNS` to
+carry only what an upgrade genuinely needs — which the append-only migration rule
+forbids doing in place, so it is a deliberate re-baseline rather than a patch.

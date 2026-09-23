@@ -284,11 +284,15 @@ def reservation_progress(reservation) -> Dict[str, Any]:
     )
     expected = expected_guest_count(reservation)
     complete = [g for g in guests if guest_is_complete(g, reservation)]
+    complete_ids = {g["id"] for g in complete}
     reportable = [g for g in complete if validation.guest_is_reportable(g["nationality"])]
     unverified = [g for g in reportable if not guest_identity_verified(g)]
     sent = [g for g in guests if g["submit_state"] == SENT]
     failed = [g for g in guests if g["submit_state"] in (ERROR, BLOCKED)]
-    incomplete = [g for g in guests if not guest_is_complete(g, reservation)]
+    # The complement of ``complete`` rather than a second pass of the same
+    # predicate: validating every guest twice per dashboard row was the single
+    # most expensive thing on the queue.
+    incomplete = [g for g in guests if g["id"] not in complete_ids]
 
     missing = None
     if expected is not None:
@@ -571,19 +575,6 @@ def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
         )
 
 
-def count_sendable_stays(reservations: List[Any]) -> int:
-    """How many stays can be sent right now with the bulk action."""
-    count = 0
-    for reservation in reservations:
-        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
-        if not apartment or not apartment["active"]:
-            continue
-        progress = reservation_progress(reservation)
-        if send_controls(reservation, apartment, progress)["send_enabled"]:
-            count += 1
-    return count
-
-
 def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
     """Whether completion-based automation says to send this stay now."""
     mode = apartment["automation_mode"]
@@ -742,9 +733,23 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         params.extend(only_guest_ids)
     sql += " ORDER BY r.date_from, g.id"
 
+    # The stay rows, fetched once for the whole apartment instead of once per
+    # guest. ``g.*, r.*`` in the query above cannot stand in for this: both
+    # tables have id, created_at and archived_at, and a duplicated column name
+    # resolves to the first (the guest's) value, so callers reading
+    # ``reservation["id"]`` would silently be handed the guest id.
+    reservations = {
+        row["id"]: row
+        for row in db.query(
+            "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
+            "AND archived_at IS NULL",
+            (apartment_id,),
+        )
+    }
+
     out: List[Tuple[Any, Any]] = []
     for guest in db.query(sql, params):
-        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
+        reservation = reservations.get(guest["reservation_id"])
         if not reservation:
             continue
         if not validation.guest_is_reportable(guest["nationality"]):

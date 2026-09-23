@@ -2,10 +2,16 @@
 from __future__ import annotations
 
 import base64
+import re
 from datetime import date, datetime, timedelta, timezone
 
-from app import db, reporting
+from fastapi.testclient import TestClient
+
+from app import auth, db, reporting
+from app.main import app
 from app.ubyport.client import SubmissionResult
+
+PASSWORD = "Secure-Password-123"
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -16,7 +22,7 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
 ).decode()
 
 
-def _seed(mode: str = "manual", token: str = "tok"):
+def _seed(mode: str = "manual", token: str = "tok", owner_user_id: int | None = None):
     db.init_db()
     now = db.utcnow()
     today = date.today()
@@ -36,6 +42,7 @@ def _seed(mode: str = "manual", token: str = "tok"):
             "default_purpose": "10",
             "active": 1,
             "created_at": now,
+            "owner_user_id": owner_user_id,
         },
     )
     reservation_id = db.insert(
@@ -134,9 +141,48 @@ def test_czech_guest_explains_nothing_to_send():
     assert controls["send_hint_key"] == "hint.nothing_duty"
 
 
-def test_count_sendable_stays_includes_ready_manual_stays():
-    apartment, reservation, _guest_id = _seed("manual", "tok-count")
-    assert reporting.count_sendable_stays([reservation]) == 1
+def _bulk_send_button(html: str) -> str:
+    match = re.search(r"<button[^>]*send-all.*?</button>", html, re.S)
+    assert match, "the send-all button is missing from the reservations list"
+    return match.group(0)
+
+
+def _ready_count_from_page(html: str) -> int | None:
+    label = re.search(r"\((\d+)\)", _bulk_send_button(html))
+    return int(label.group(1)) if label else None
+
+
+def test_the_ready_count_on_the_list_matches_what_the_bulk_action_can_send():
+    """count_sendable_stays was deleted; the list derives the same number.
+
+    The helper re-queried the apartment and checked it was active before
+    counting a stay as sendable, so the derived count has to keep that guard:
+    an archived apartment's otherwise-sendable stay is still not sendable.
+    """
+    db.init_db()
+    username = "readycount"
+    existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+    owner_id = existing["id"] if existing else auth.create_account(
+        username, PASSWORD, "Ready Count", must_change_password=False
+    )
+    apartment, _reservation, _guest_id = _seed("manual", "tok-count", owner_user_id=owner_id)
+
+    client = TestClient(app)
+    client.post(
+        "/login",
+        data={"username": username, "password": PASSWORD},
+        follow_redirects=False,
+    )
+
+    page = client.get("/reservations?range=all")
+    assert page.status_code == 200
+    assert _ready_count_from_page(page.text) == 1
+    assert "disabled" not in _bulk_send_button(page.text)
+
+    db.update("apartment", apartment["id"], {"active": 0})
+    archived = client.get("/reservations?range=all")
+    assert _ready_count_from_page(archived.text) is None
+    assert "disabled" in _bulk_send_button(archived.text)
 
 
 def test_scheduled_mode_waits_from_registration_completion():
