@@ -402,6 +402,11 @@ def drain(limit: int = 8) -> Dict[str, int]:
                     dedupe_key=f"mail_failed:{row['id']}",
                     apartment_id=row["apartment_id"],
                     reservation_id=row["reservation_id"],
+                    params={
+                        "kind": row["kind"],
+                        "to": mask_email(row["to_email"]),
+                        "error": str(exc),
+                    },
                 )
     return summary
 

@@ -36,6 +36,7 @@ from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts
 from .admin_helpers import back as _back
+from .admin_helpers import flash as _flash
 from .admin_helpers import form_str as _form_str
 from .admin_helpers import guest_form_payload as _guest_form_payload
 from .admin_helpers import kept_signature as _kept_signature
@@ -180,7 +181,7 @@ def load_demo(request: Request):
             "/",
             err="Demo data is available only in a fresh staging or mock workspace.",
         )
-    return _back("/", msg="Demo property loaded. Use “Clear demo data” on Overview when finished.")
+    return _back("/", msg=_flash(request, "flash.demo.loaded"))
 
 
 @router.post("/demo/reset")
@@ -190,7 +191,7 @@ def reset_demo(request: Request):
         return guard
     if not demo.clear(access.owner_id(request)):
         return _back("/", err="The built-in demo dataset was not found.")
-    return _back("/", msg="Demo data cleared.")
+    return _back("/", msg=_flash(request, "flash.demo.cleared"))
 
 
 # --- dashboard -----------------------------------------------------------
@@ -454,9 +455,9 @@ async def create_entity(request: Request):
     if not apartments:
         return _back(
             f"/apartments/new?legal_entity_id={entity_id}",
-            msg=f"Added {payload['name']}. Next, add your first property.",
+            msg=_flash(request, "flash.entities.added_first", name=payload["name"]),
         )
-    return _back("/entities", msg=f"Added {payload['name']}.")
+    return _back("/entities", msg=_flash(request, "flash.entities.added", name=payload["name"]))
 
 
 @router.post("/entities/{entity_id}")
@@ -473,7 +474,7 @@ async def update_entity(entity_id: int, request: Request):
     if not payload["name"]:
         return _back("/entities", err="Name is required.")
     db.update("legal_entity", entity_id, payload)
-    return _back("/entities", msg="Saved.")
+    return _back("/entities", msg=_flash(request, "flash.entities.saved"))
 
 
 @router.post("/entities/{entity_id}/archive")
@@ -498,7 +499,7 @@ def archive_entity(entity_id: int, request: Request):
         )
     db.update("legal_entity", entity_id, {"archived_at": db.utcnow()})
     db.audit("entity_archived", f"id={entity_id}")
-    return _back("/entities", msg=f"“{entity['name']}” archived.")
+    return _back("/entities", msg=_flash(request, "flash.entities.archived", name=entity["name"]))
 
 
 @router.post("/entities/{entity_id}/unarchive")
@@ -515,7 +516,7 @@ async def unarchive_entity(entity_id: int, request: Request):
         return _back(return_to, err="Not archived.")
     db.update("legal_entity", entity_id, {"archived_at": None})
     db.audit("entity_unarchived", f"id={entity_id}")
-    return _back(return_to, msg=f"“{entity['name']}” restored.")
+    return _back(return_to, msg=_flash(request, "flash.entities.restored", name=entity["name"]))
 
 
 @router.post("/entities/{entity_id}/delete")
@@ -537,7 +538,7 @@ def delete_entity(entity_id: int, request: Request):
         return _back("/entities", err="Detach the properties from this entity first.")
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
     db.audit("entity_deleted", f"id={entity_id}")
-    return _back("/entities", msg="Deleted permanently.")
+    return _back("/entities", msg=_flash(request, "flash.entities.deleted"))
 
 
 # --- apartments ----------------------------------------------------------
@@ -674,7 +675,7 @@ async def apartment_create(request: Request):
     db.audit("apartment_created", f"id={apartment_id}")
     return _back(
         f"/apartments/{apartment_id}#calendars",
-        msg="Property created. Next, paste your Airbnb or Booking.com calendar link.",
+        msg=_flash(request, "flash.apartments.created"),
     )
 
 
@@ -738,7 +739,7 @@ async def apartment_update(apartment_id: int, request: Request):
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
     db.audit("apartment_updated", f"id={apartment_id}")
-    return _back(return_to, msg="Saved.")
+    return _back(return_to, msg=_flash(request, "flash.apartments.saved"))
 
 
 @router.post("/apartments/{apartment_id}/regenerate-pin")
@@ -755,7 +756,7 @@ async def regenerate_pin(apartment_id: int, request: Request):
     db.audit("pin_rotated", f"apartment={apartment_id}")
     return _back(
         _form_return_to(form, "/guest-links"),
-        msg=f"New PIN generated: {pin}",
+        msg=_flash(request, "flash.apartments.pin_rotated", pin=pin),
     )
 
 
@@ -779,7 +780,7 @@ async def regenerate_link(apartment_id: int, request: Request):
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
         _form_return_to(form, "/guest-links"),
-        msg="New guest link and PIN generated. Update your automated messages on the booking portals.",
+        msg=_flash(request, "flash.apartments.guest_link"),
     )
 
 
@@ -844,7 +845,7 @@ async def automation_update(apartment_id: int, request: Request):
     db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
     return _back(
         _form_return_to(form, f"/automation#apartment-{apartment_id}"),
-        msg=f"Saved settings for {apartment['internal_name']}.",
+        msg=_flash(request, "flash.apartments.settings_saved", name=apartment["internal_name"]),
     )
 
 
@@ -864,7 +865,7 @@ def archive_apartment(apartment_id: int, request: Request):
         {"archived_at": db.utcnow(), "active": 0},
     )
     db.audit("apartment_archived", f"id={apartment_id}")
-    return _back("/apartments", msg=f"“{apartment['internal_name']}” archived. Its history is kept.")
+    return _back("/apartments", msg=_flash(request, "flash.apartments.archived", name=apartment["internal_name"]))
 
 
 @router.post("/apartments/{apartment_id}/unarchive")
@@ -885,7 +886,7 @@ async def unarchive_apartment(apartment_id: int, request: Request):
         {"archived_at": None, "active": 1},
     )
     db.audit("apartment_unarchived", f"id={apartment_id}")
-    return _back(return_to, msg="Property restored from archive.")
+    return _back(return_to, msg=_flash(request, "flash.apartments.restored"))
 
 
 @router.post("/apartments/{apartment_id}/feeds")
@@ -919,7 +920,7 @@ async def add_feed(apartment_id: int, request: Request):
         return _back(f"/apartments/{apartment_id}", err="Calendar added but could not be read - see the alert above.")
     return _back(
         f"/apartments/{apartment_id}",
-        msg=f"Calendar added. {totals['created']} stay(s) imported.",
+        msg=_flash(request, "flash.feeds.added", count=totals["created"]),
     )
 
 
@@ -932,7 +933,7 @@ def delete_feed(feed_id: int, request: Request):
     if not feed:
         return _back("/apartments", err="No such calendar.")
     db.execute("DELETE FROM ical_feed WHERE id = ?", (feed_id,))
-    return _back(f"/apartments/{feed['apartment_id']}", msg="Calendar removed. Existing stays were kept.")
+    return _back(f"/apartments/{feed['apartment_id']}", msg=_flash(request, "flash.feeds.removed"))
 
 
 @router.post("/sync")
@@ -948,8 +949,14 @@ async def sync_now(request: Request):
     return _back(
         return_to,
         msg=(
-            f"Synced {totals['feeds']} calendar(s): {totals['created']} new, "
-            f"{totals['updated']} updated, {totals['cancelled']} cancelled."
+            _flash(
+                request,
+                "flash.feeds.synced",
+                feeds=totals["feeds"],
+                created=totals["created"],
+                updated=totals["updated"],
+                cancelled=totals["cancelled"],
+            )
         ),
         err="Some calendars could not be read." if totals["errors"] else "",
     )
@@ -969,10 +976,16 @@ async def test_connection(apartment_id: int, request: Request):
     try:
         available = client.test_availability()
         limit = client.max_batch_size()
-        message = (
-            f"UbyPort reachable at {client.endpoint} (available={available}"
-            + (f", max batch {limit}" if limit else "")
-            + ")."
+        message = _flash(
+            request,
+            "flash.apartments.connection_ok",
+            endpoint=client.endpoint,
+            available=available,
+            batch=(
+                _flash(request, "flash.apartments.connection_batch", limit=limit)
+                if limit
+                else ""
+            ),
         )
         return _back(return_to, msg=message)
     except (UbyportTransportError, UbyportError) as exc:
@@ -996,8 +1009,13 @@ async def refresh_codelists(apartment_id: int, request: Request):
     return _back(
         return_to,
         msg=(
-            f"Code lists refreshed from UbyPort: {written.get('staty', 0)} countries, "
-            f"{written.get('ucely', 0)} purposes, {written.get('chyby', 0)} error codes."
+            _flash(
+                request,
+                "flash.apartments.codelists_refreshed",
+                countries=written.get("staty", 0),
+                purposes=written.get("ucely", 0),
+                errors=written.get("chyby", 0),
+            )
         ),
     )
 
@@ -1156,7 +1174,7 @@ async def reservation_create(request: Request):
             "updated_at": db.utcnow(),
         },
     )
-    return _back(f"/reservations/{reservation_id}", msg="Stay created.")
+    return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.created"))
 
 
 @router.get("/reservations.csv")
@@ -1224,7 +1242,10 @@ async def reservations_submit_ready(request: Request):
             return_to,
             err="No stays were ready to send. Complete guest forms for foreign nationals first.",
         )
-    return _back(return_to, msg=f"Sent {sent_guests} guest record(s) across {sent_stays} stay(s).")
+    return _back(
+        return_to,
+        msg=_flash(request, "flash.reservations.sent", guests=sent_guests, stays=sent_stays),
+    )
 
 
 @router.get("/reservations/{reservation_id}")
@@ -1320,7 +1341,9 @@ async def reservation_update(reservation_id: int, request: Request):
             reporting.submit_stay_if_complete(
                 current["apartment_id"], reservation_id
             )
-    return _back(f"/reservations/{reservation_id}", msg="Saved.")
+    return _back(
+        f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.saved")
+    )
 
 
 @router.post("/reservations/{reservation_id}/quick-edit")
@@ -1346,7 +1369,9 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
     )
     if request.headers.get("X-Requested-With") == "fetch":
         return JSONResponse({"ok": True})
-    return _back(f"/reservations/{reservation_id}", msg="Saved.")
+    return _back(
+        f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.saved")
+    )
 
 
 @router.post("/reservations/{reservation_id}/archive")
@@ -1385,7 +1410,7 @@ async def reservation_unarchive(reservation_id: int, request: Request):
         return _back(return_to, err="Not archived.")
     db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("reservation_unarchived", f"id={reservation_id}")
-    return _back(return_to, msg="Stay restored from archive."    )
+    return _back(return_to, msg=_flash(request, "flash.reservations.restored"))
 
 
 @router.post("/reservations/{reservation_id}/reopen-guest")
@@ -1398,7 +1423,7 @@ async def reservation_reopen_guest(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     claim.reopen_guest_access(reservation_id)
     db.audit("guest_access_reopened", f"reservation={reservation_id}")
-    return _back(f"/reservations/{reservation_id}", msg="Guest access reopened.")
+    return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.access_reopened"))
 
 
 @router.post("/reservations/{reservation_id}/release-claim")
@@ -1411,7 +1436,7 @@ async def reservation_release_claim(reservation_id: int, request: Request):
         return _back("/reservations", err="No such stay.")
     claim.release(reservation_id)
     db.audit("guest_claim_released", f"reservation={reservation_id}")
-    return _back(f"/reservations/{reservation_id}", msg="Guest claim released.")
+    return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.claim_released"))
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -1476,10 +1501,10 @@ async def reservation_submit(reservation_id: int, request: Request):
     if failed:
         return _back(
             return_to,
-            msg=f"{sent} guest(s) accepted.",
+            msg=_flash(request, "flash.reservations.accepted", count=sent),
             err=f"{failed} guest(s) were rejected - open the Doručenka for details.",
         )
-    return _back(return_to, msg=f"{sent} guest(s) reported to UbyPort.")
+    return _back(return_to, msg=_flash(request, "flash.reservations.reported", count=sent))
 
 
 # --- guests --------------------------------------------------------------
@@ -1605,7 +1630,7 @@ async def guest_create(reservation_id: int, request: Request):
     guest_id = db.insert("guest", payload)
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
     reporting.submit_stay_if_complete(reservation["apartment_id"], reservation_id)
-    return _back(f"/reservations/{reservation_id}", msg="Guest added.")
+    return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.guests.added"))
 
 
 @router.get("/guests/{guest_id}")
@@ -1677,7 +1702,7 @@ async def guest_update(guest_id: int, request: Request):
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
         reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
-    return _back(f"/guests/{guest_id}", msg="Saved.")
+    return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.saved"))
 
 
 @router.post("/guests/{guest_id}/verify-identity")
@@ -1691,7 +1716,7 @@ async def guest_verify_identity(guest_id: int, request: Request):
     if not validation.guest_is_reportable(guest["nationality"]):
         return _back(f"/guests/{guest_id}", err="Czech guests do not need passport verification.")
     if guest["identity_verified_at"]:
-        return _back(f"/guests/{guest_id}", msg="Identity already verified.")
+        return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.identity_verified"))
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
     if not reservation:
         return _back("/reservations", err="No such stay.")
@@ -1709,7 +1734,7 @@ async def guest_verify_identity(guest_id: int, request: Request):
             guest_id,
             {"passport_photo_at": None, "updated_at": now},
         )
-    return _back(return_to, msg="ID check recorded.")
+    return _back(return_to, msg=_flash(request, "flash.guests.id_check_recorded"))
 
 
 @router.get("/guests/{guest_id}/passport-photo")
@@ -1765,7 +1790,7 @@ async def guest_archive(guest_id: int, request: Request):
         reporting.submit_stay_if_complete(
             reservation["apartment_id"], guest["reservation_id"]
         )
-    return _back(return_to, msg="House-book entry archived. Restore it from the archive below.")
+    return _back(return_to, msg=_flash(request, "flash.housebook.archived"))
 
 
 @router.post("/guests/{guest_id}/unarchive")
@@ -1790,7 +1815,7 @@ async def guest_unarchive(guest_id: int, request: Request):
         reporting.submit_stay_if_complete(
             reservation["apartment_id"], guest["reservation_id"]
         )
-    return _back(return_to, msg="House-book entry restored.")
+    return _back(return_to, msg=_flash(request, "flash.housebook.restored"))
 
 
 @router.post("/guests/{guest_id}/delete")
@@ -1817,7 +1842,7 @@ def guest_delete(guest_id: int, request: Request):
         reporting.submit_stay_if_complete(
             reservation["apartment_id"], reservation_id
         )
-    return _back(f"/reservations/{reservation_id}", msg="Guest removed.")
+    return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.guests.removed"))
 
 
 @router.post("/guests/{guest_id}/resend")
@@ -1861,7 +1886,7 @@ async def guest_resend(guest_id: int, request: Request):
     if result.get("state") == "transport_error":
         return _back(f"/guests/{guest_id}", err=f"Could not reach UbyPort: {result.get('error')}")
     if result.get("submitted"):
-        return _back(f"/guests/{guest_id}", msg="Re-sent and accepted.")
+        return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.resent"))
     return _back(f"/guests/{guest_id}", err="Re-sent but UbyPort rejected it again - see the Doručenka.")
 
 
@@ -2338,5 +2363,8 @@ def purge_expired_records(request: Request):
     if blanked:
         parts.append(f"{blanked} submission envelope(s) no longer needed")
     if not parts:
-        return _back("/settings", msg="Nothing to delete - no record is past the retention period.")
-    return _back("/settings", msg="Deleted " + " and ".join(parts) + ".")
+        return _back("/settings", msg=_flash(request, "flash.settings.nothing_to_purge"))
+    return _back(
+        "/settings",
+        msg=_flash(request, "flash.settings.purged", parts=" and ".join(parts)),
+    )

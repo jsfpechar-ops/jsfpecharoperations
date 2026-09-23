@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
+from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -145,9 +145,16 @@ def _claim_serializer() -> URLSafeSerializer:
 
 
 def _language(request: Request) -> str:
-    return i18n.normalise_language(
-        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE) or ""
-    )
+    """The guest's language: what they asked for, else the public default.
+
+    A guest arriving from a host's link has made no choice, and the host is
+    Czech, so the form is Czech until the guest says otherwise -- through a
+    ``?lang=`` on a link, or the switcher's cookie. The catalog's own
+    ``i18n.DEFAULT_LANGUAGE`` is only what a missing *key* falls back to.
+    """
+    return host_i18n.supported_language(
+        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
+    ) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
 
 
 def _owned_ids(request: Request) -> List[int]:

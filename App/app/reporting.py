@@ -572,6 +572,7 @@ def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
             str(exc),
             dedupe_key=f"submission_immediate:{apartment_id}",
             apartment_id=apartment_id,
+            params={"property": apartment["internal_name"], "error": str(exc)},
         )
 
 
@@ -874,6 +875,7 @@ def submit_batch(
             str(exc),
             dedupe_key=f"submission_transport:{apartment['id']}",
             apartment_id=apartment["id"],
+            params={"property": apartment["internal_name"], "error": str(exc)},
         )
         # The host is not watching the screen when this fires -- the whole point
         # of the automatic send is that nobody is. Mail the same event to the
@@ -1060,14 +1062,13 @@ def submit_batch(
             blocked_count,
         )
         detail_bits = []
+        header_errors = ""
         if result.header_errors:
-            detail_bits.append(
-                "Report header rejected: "
-                + ", ".join(
-                    uby_errors.describe(c, codebook)
-                    for c in uby_errors.split_codes(result.header_errors)
-                )
+            header_errors = ", ".join(
+                uby_errors.describe(c, codebook)
+                for c in uby_errors.split_codes(result.header_errors)
             )
+            detail_bits.append(f"Report header rejected: {header_errors}")
         detail_bits.append(f"{failed_count} record(s) to fix, {blocked_count} that resending will not fix.")
         alerts.raise_alert(
             "critical",
@@ -1077,6 +1078,13 @@ def submit_batch(
             " ".join(detail_bits),
             dedupe_key=f"submission_rejected:{apartment['id']}",
             apartment_id=apartment["id"],
+            params={
+                "property": apartment["internal_name"],
+                "count": failed_count + blocked_count,
+                "failed": failed_count,
+                "blocked": blocked_count,
+                "header": header_errors,
+            },
         )
         # Same event, same reasoning as the transport branch: an alert only
         # reaches someone who is looking at the app, and the automatic send
@@ -1107,6 +1115,11 @@ def submit_batch(
             "police for a copy if you need written proof.",
             dedupe_key=f"receipt_missing:{apartment['id']}",
             apartment_id=apartment["id"],
+            params={
+                "property": apartment["internal_name"],
+                "submission": submission_id,
+                "count": first_accepts,
+            },
         )
 
     db.audit(
@@ -1160,6 +1173,7 @@ def submit_for_apartment(
             validation.issues_to_text(setup_errors),
             dedupe_key=f"apartment_setup:{apartment_id}",
             apartment_id=apartment_id,
+            params={"property": apartment["internal_name"]},
         )
         return [{"state": "not_configured", "error": validation.issues_to_text(setup_errors)}]
     alerts.resolve(f"apartment_setup:{apartment_id}")

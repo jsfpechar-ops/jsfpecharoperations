@@ -188,7 +188,7 @@ def test_guest_posts_without_a_token_are_refused_and_change_nothing(path, payloa
         before = _snapshot(stay_id)
         client = TestClient(app)
         refused = client.post(
-            path.format(token=TOKEN, stay=stay_id),
+            path.format(token=TOKEN, stay=stay_id) + "?lang=en",
             data={**payload, "_csrf": ""},
             follow_redirects=False,
         )
@@ -246,9 +246,9 @@ def test_the_guest_refusal_is_an_actionable_page_not_a_bare_403():
     stay_id = _stay_id()
     try:
         client = TestClient(app)
-        client.get(f"/l/{TOKEN}/{stay_id}")
+        client.get(f"/l/{TOKEN}/{stay_id}?lang=en")
         refused = client.post(
-            f"/l/{TOKEN}/{stay_id}/party",
+            f"/l/{TOKEN}/{stay_id}/party?lang=en",
             data={"party_size": "2", "_csrf": ""},
             follow_redirects=False,
         )

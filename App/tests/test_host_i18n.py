@@ -65,3 +65,55 @@ def test_release_help_describes_optional_passports_and_cookie_lifetimes():
         assert ("7 days" in cookies and "60 days" in cookies) or (
             "7 dní" in cookies and "60 dní" in cookies
         )
+
+
+def test_the_guest_engine_delegates_to_the_single_lookup():
+    """One interpolation guard for both engines - the guest form must not raise."""
+    from app import i18n
+
+    assert not hasattr(i18n, "normalise_language"), (
+        "normalise_language belongs to host_i18n only"
+    )
+    assert i18n.translator("cs")("arrival_question") == host_i18n.lookup(
+        i18n.STRINGS["cs"], i18n.STRINGS[i18n.DEFAULT_LANGUAGE], "arrival_question"
+    )
+
+
+def test_a_malformed_key_returns_raw_text_instead_of_raising():
+    from app import i18n
+
+    cases = (
+        (host_i18n.STRINGS, host_i18n.DEFAULT_LANGUAGE, "dashboard.minutes_saved"),
+        (i18n.STRINGS, i18n.DEFAULT_LANGUAGE, "arrival_welcome"),
+    )
+    for table, fallback, key in cases:
+        for lang in ("en", "cs"):
+            catalog = table[lang]
+            # A missing key renders itself rather than raising.
+            assert host_i18n.lookup(catalog, table[fallback], "missing.key") == (
+                "missing.key"
+            )
+            # A real key called with the wrong values renders its raw text.
+            raw = host_i18n.lookup(catalog, table[fallback], key)
+            assert "%(" in raw
+            assert host_i18n.lookup(
+                catalog, table[fallback], key, wrong="x"
+            ) == raw
+
+
+def test_the_page_default_is_the_public_language_not_the_key_fallback():
+    """A Czech guest with no ?lang= must get Czech, not the English key fallback."""
+    from app import i18n
+    from app.routes.guest import _language
+
+    assert host_i18n.PUBLIC_DEFAULT_LANGUAGE == "cs"
+    assert i18n.DEFAULT_LANGUAGE == "en"
+    # The host UI keeps its own default; only the guest page moved.
+    assert host_i18n.resolve_language(None) == host_i18n.DEFAULT_LANGUAGE
+    assert host_i18n.supported_language("de") is None
+
+    class _NoSignals:
+        query_params: dict = {}
+        cookies: dict = {}
+
+    assert _language(_NoSignals()) == "cs"
