@@ -395,7 +395,7 @@ def test_16_an_accepted_record_is_never_resent_automatically(host):
     assert db.query_one("SELECT COUNT(*) AS n FROM submission")["n"] == before
 
 
-def test_17_a_deliberate_resend_is_rejected_as_a_duplicate(host):
+def test_17_a_deliberate_resend_is_confirmed_as_a_duplicate(host):
     guest = db.query_one("SELECT * FROM guest ORDER BY id DESC")
 
     # Without the explicit acknowledgement nothing is sent at all.
@@ -421,10 +421,14 @@ def test_17_a_deliberate_resend_is_rejected_as_a_duplicate(host):
     assert after["submitted_at"]
 
     submission = db.query_one("SELECT * FROM submission ORDER BY id DESC")
-    assert submission["state"] == "error"
-    assert db.query_one(
+    # A duplicate is not a rejection: the register confirms it already holds the
+    # record, so nothing was refused and nothing is left for the host to fix.
+    # Treating this as a failure raised a critical submission_rejected alert and
+    # told the host guests "were rejected" for a filing that had succeeded.
+    assert submission["state"] == "ok_duplicate"
+    assert not db.query_one(
         "SELECT * FROM alert WHERE kind = 'submission_rejected' AND resolved_at IS NULL"
-    ), "the host has to learn that the record bounced"
+    ), "a duplicate the register confirmed must not read as a rejection"
 
 
 def test_18_a_second_guest_completes_the_party(client, host):

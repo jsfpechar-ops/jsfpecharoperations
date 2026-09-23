@@ -202,6 +202,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.guests": "Guests in this transmission",
         "reports.detail.guest": "Guest",
         "reports.detail.result": "Result",
+        "reports.detail.receipt_elsewhere": "Already in the register — the Doručenka is on",
+        "reports.detail.receipt_none": (
+            "Already in the register — no Doručenka is stored for it."
+        ),
         "reports.detail.technical": "Technical details",
         "reports.detail.technical_help": "The exact computer messages exchanged with UbyPort. You normally only need these when support investigates a rejection.",
         "housebook.legal_title": "Your legal duty (house book)",
@@ -621,6 +625,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "submission.accepted": "Accepted",
         "submission.partial": "Partly accepted",
         "submission.rejected": "Rejected",
+        "submission.duplicate": "Already registered",
         "submission.not_delivered": "Not delivered",
         "submission.setup_incomplete": "Setup incomplete",
         "submission.in_progress": "In progress",
@@ -1135,6 +1140,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.guests": "Hosté v tomto přenosu",
         "reports.detail.guest": "Host",
         "reports.detail.result": "Výsledek",
+        "reports.detail.receipt_elsewhere": "Již v evidenci — doručenka je u",
+        "reports.detail.receipt_none": (
+            "Již v evidenci — doručenka k němu není uložena."
+        ),
         "reports.detail.technical": "Technické podrobnosti",
         "reports.detail.technical_help": "Přesné zprávy mezi UbyHostem a UbyPortem. Potřebujete je obvykle jen při řešení odmítnutí.",
         "housebook.legal_title": "Vaše zákonná povinnost (domovní kniha)",
@@ -1550,6 +1559,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "submission.accepted": "Přijato",
         "submission.partial": "Částečně přijato",
         "submission.rejected": "Odmítnuto",
+        "submission.duplicate": "Již evidováno",
         "submission.not_delivered": "Nedoručeno",
         "submission.setup_incomplete": "Nedokončené nastavení",
         "submission.in_progress": "Probíhá",

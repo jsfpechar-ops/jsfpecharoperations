@@ -91,7 +91,25 @@ understood even with an empty cache.
 
 Classification is partly **substring matching on the code book's Czech text**
 (`duplic`, `pozd`, `late`). A wording change on the police side can therefore
-reclassify records without any change here. The two codes that matter:
+reclassify records without any change here. Only 112 and 150 are pinned to their
+code, so they cannot be reclassified by prose.
+
+Each send writes one `submission` row. Its `state` is what the call itself
+produced, and it is independent of the guest's `submit_state` above:
+
+| `submission.state` | Meaning |
+| --- | --- |
+| `ok` | At least one record was accepted for the first time and no error codes came back. A Doručenka or a stamp is expected; `receipt_missing` fires if neither arrived. |
+| `ok_duplicate` | Every record was already held by the register (code 150). A success, but nothing new was filed and no Doručenka exists for this call — see below. |
+| `partial` | Some records were accepted for the first time and some were not. |
+| `error` | Records came back with correctable codes. The guest stays `error` and is retried. |
+| `transport_error` | The service could not be reached, or answered with a fault. Nothing was filed. |
+
+A `partial` row whose only rejection is a duplicate is still `partial`: the
+duplicate half is settled, the other half is not. `ok_duplicate` is reserved for
+a call where duplicates were the *whole* result.
+
+The two codes that matter:
 
 **150 — duplicate.** The register already holds this record. The app treats
 that as proof of acceptance and sets the guest to `sent`, backfilling
@@ -99,10 +117,18 @@ that as proof of acceptance and sets the guest to `sent`, backfilling
 path for a submission whose HTTP response was lost: the retry comes back as a
 duplicate, and the record correctly lands as reported.
 
-The consequence to be aware of: the stored `submission` row for that call ends
-up in state `ok` with **no Doručenka**, because a duplicate response carries no
-receipt. The evidence trail shows a successful filing with nothing behind it.
-If you need the receipt for such a record, it is on the *original* submission.
+The consequence to be aware of: a duplicate files nothing new, so the
+`submission` row for that call is recorded in state `ok_duplicate` — a success,
+but not the same thing as a first-time accept — and it carries **no Doručenka**,
+because a duplicate response has none. `guest.receipt_submission_id` therefore
+points at the submission that actually holds the confirmation, and the Reports
+detail page links to it. If you need the receipt for such a record, follow that
+link; if there is none, the app says so rather than implying a missing document.
+
+A submission row is `ok` only when at least one record was accepted for the
+first time *and* the service returned no error codes. `ok` with no stamp and no
+Doručenka behind it raises the `receipt_missing` warning — the register has the
+record and we hold no proof of it.
 
 **112 — reported late.** Classified as not-correctable, so the guest goes to
 `blocked` and the stay's status reads "Rejected" indefinitely. The record is
@@ -127,7 +153,8 @@ condition, not by time.
 | --- | --- | --- | --- |
 | `deadline` | critical / warning | A stay is overdue or due now with data still missing. | The stay reaches `reported` or `not_required`. |
 | `submission_transport` | **critical** | UbyPort could not be reached, or returned a fault. | The next successful call to that apartment's endpoint. |
-| `submission_rejected` | **critical** | UbyPort did not accept one or more records. | A later submission for that apartment comes back clean. |
+| `submission_rejected` | **critical** | UbyPort did not accept one or more records. | A later submission for that apartment comes back clean — including one that only produced duplicates. |
+| `receipt_missing` | warning | UbyPort accepted records for the first time but returned neither a Doručenka nor a stamp, so the register holds them and we hold no proof. | A submission for that apartment returns a Doručenka or a stamp. |
 | `submission_immediate` | warning | An automatic send triggered by form completion threw. | Not auto-cleared; resolve by sending successfully. |
 | `apartment_setup` | warning | UbyPort settings are incomplete, so nothing can be reported for that apartment. | The settings validate. |
 | `feed_error` | warning | A calendar could not be fetched or parsed. | The next successful parse of that feed. |

@@ -687,9 +687,10 @@ def purge_orphan_submissions(
 ) -> int:
     """Delete submission rows no surviving guest row points at.
 
-    ``guest.submission_id`` is the only link between the two, and it is
-    ``ON DELETE SET NULL``, so once a submission's guests have aged out the row
-    is unreachable from every screen while still holding the request envelope.
+    ``guest.submission_id`` is the current link and ``guest.receipt_submission_id``
+    is where that guest's Dorucenka lives; both are ``ON DELETE SET NULL``, so a
+    submission no surviving guest points at through either column is unreachable
+    from every screen while still holding the request envelope.
 
     Only rows past the retention cutoff go, so that deleting a guest by hand
     cannot take a recent Dorucenka with it: the receipt PDF is the host's proof
@@ -701,7 +702,8 @@ def purge_orphan_submissions(
         "SELECT s.id AS id FROM submission s "
         "JOIN apartment a ON a.id = s.apartment_id "
         "WHERE s.created_at < ? AND (? IS NULL OR a.owner_user_id = ?) "
-        "AND NOT EXISTS (SELECT 1 FROM guest g WHERE g.submission_id = s.id)",
+        "AND NOT EXISTS (SELECT 1 FROM guest g "
+        "                WHERE g.submission_id = s.id OR g.receipt_submission_id = s.id)",
         (retention_cutoff(today).isoformat(), owner_user_id, owner_user_id),
     )
     if not rows:
