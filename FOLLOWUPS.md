@@ -602,3 +602,54 @@ Either decision needs the same treatment the other guest kinds just got: a
 composer in `mail_notify.py`, EN/CS strings in `i18n.py`, and a test. If the
 kind is not going to be used, it should be removed from `KINDS` so the list
 reflects what the app actually sends.
+
+### W4.2 — records already stored `blocked` by an earlier 112 are not swept
+
+The corrected 112 classification is applied when a response is *received*, so it
+only changes what happens to filings attempted after this phase deploys. A guest
+who was already stored `blocked` by an earlier 112 — which, before W4.2, was
+every guest in such a batch — is not picked up by anything afterwards. Nothing
+resets the stored state: `submit_state` appears in `App/app/db.py` only in the
+`SCHEMA` literal and an index, never in a migration, and the state machine has no
+age-out. `reporting.pending_reportable` excludes `BLOCKED` outright
+(`App/app/reporting.py:349`), so neither an automatic nor a scheduled send will
+ever put that record back in the queue, and `reporting.py:689` skips `BLOCKED`
+again on the send path unless the caller passes `allow_resend`.
+
+The result is a record that is silently stranded: the UI shows no signal that
+anything is wrong, because the guest never re-enters the queue to be noticed.
+
+This is a gap in *bulk and automatic* recovery, not in recoverability. Two manual
+paths work today, both confirmed on this branch:
+
+1. **Saving the guest's form resets the state.** `App/app/routes/admin.py:1698`
+   moves `submit_state` out of `(ERROR, BLOCKED, NOT_REQUIRED)` back to `PENDING`
+   and clears `last_errors` (the "Rule 10.4(5)" comment at line 1699), and the
+   trailing `reporting.submit_stay_if_complete(...)` at line 1705 then fires a
+   send. This is the more natural path, and the right one when the 112 had a
+   *data* cause — a bad nationality, date of birth or document number — because
+   the operator has to correct the field anyway.
+2. **The single-guest resend works on a 112-blocked record.**
+   `POST /guests/{guest_id}/resend` (`App/app/routes/admin.py:1849`) refuses only
+   when `reporting.blocked_as_duplicate(guest)` is true, and that reads
+   `guest["last_errors"]` through `uby_errors.is_duplicate` for a duplicate
+   marker (`App/app/reporting.py:629-635`) — which a 112 record does not carry, so
+   the route proceeds with `allow_resend=True` and `reporting.py:695` lets it
+   through. The control is in the guest form's danger zone,
+   `App/app/templates/guest_form_admin.html:226-236`. This is the right path when
+   the 112 had a *transient* cause — an interrupted connection — and no field
+   needs changing.
+
+**What this means for the deploy.** Deploying this phase does not fix the
+records that are already blocked; it only stops new ones from joining them. After
+deploy, an operator must walk the existing `blocked` list deliberately and take
+each record through one of the two paths above. That list is the honest measure
+of how many guests the pre-W4.2 behaviour left undeclared, and until it is
+cleared those guests stay unreported to the Foreign Police with no automatic
+signal that anything is outstanding.
+
+A migration that reset every `blocked` row would not be safe as written, because
+`BLOCKED` also holds genuine duplicates (`reporting.py:861` sets `BLOCKED` for
+`not_correctable`, and a duplicate is correctly not resendable). Any automatic
+sweep would have to distinguish the two, which is why this is recorded as a
+deliberate manual step rather than fixed in code.
