@@ -203,7 +203,6 @@ def test_concurrent_sends_claim_each_guest_once(monkeypatch):
         mode="auto",
         want_pdf=True,
         env=None,
-        verified_by_user_id=None,
     ):
         calls.append([guest["id"] for guest, _reservation in pairs])
         entered.set()

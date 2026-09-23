@@ -423,13 +423,6 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     }
 
 
-def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
-    """Compatibility wrapper for callers that have a guest id."""
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
-    if guest:
-        maybe_submit_after_completion(apartment_id, guest["reservation_id"])
-
-
 def _forms_quiet_for(progress: Dict[str, Any], hours: int) -> bool:
     """True when no guest form on the stay has been touched for ``hours``."""
     stamps = [
@@ -495,8 +488,13 @@ def refresh_registration_completed_at(
     return existing
 
 
-def maybe_submit_after_completion(apartment_id: int, reservation_id: int) -> None:
-    """Send an immediate-mode stay once every declared form is complete."""
+def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
+    """Send a stay the moment its declared forms are all complete.
+
+    Only ``immediate`` apartments send on completion; every other mode waits for
+    the scheduler or for the host. Called from wherever a form can become the
+    last one missing, so the trigger is the save rather than the state.
+    """
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return
@@ -531,16 +529,6 @@ def maybe_submit_after_completion(apartment_id: int, reservation_id: int) -> Non
             dedupe_key=f"submission_immediate:{apartment_id}",
             apartment_id=apartment_id,
         )
-
-
-def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
-    """Re-evaluate completion after a host saves a guest."""
-    try_immediate_submit(apartment_id, guest_id)
-
-
-def maybe_submit_after_verify(apartment_id: int, guest_id: int) -> None:
-    """Verification no longer gates automatic submission."""
-    return None
 
 
 def count_sendable_stays(reservations: List[Any]) -> int:
@@ -604,10 +592,12 @@ def client_for(apartment, env: Optional[str] = None) -> UbyportClient:
 def record_host_identity_confirmation(
     guest_id: int,
     verified_by_user_id: Optional[int],
-    *,
-    on_send: bool = False,
 ) -> None:
-    """Host confirms guest details against a travel document (optional before send)."""
+    """Host confirms guest details against a travel document.
+
+    Optional before sending, and recorded only here, from the explicit Verify
+    route: this is a human attestation, so nothing unattended may make it.
+    """
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
     if not guest or not validation.guest_is_reportable(guest["nationality"]):
         return
@@ -615,8 +605,7 @@ def record_host_identity_confirmation(
         return
     now = db.utcnow()
     # Verification is the whole reason the photo exists, so it goes here rather
-    # than only on the explicit Verify route. Most hosts verify by sending, and
-    # that path used to leave the scan on disk until the retention sweep.
+    # than waiting for the retention sweep to get round to it.
     passport_photos.delete_photo(guest_id)
     db.update(
         "guest",
@@ -628,10 +617,9 @@ def record_host_identity_confirmation(
             "updated_at": now,
         },
     )
-    flag = "on_send=1" if on_send else "on_send=0"
     db.audit(
         "guest_identity_verified",
-        f"id={guest_id} {flag}",
+        f"id={guest_id}",
         owner_user_id=verified_by_user_id,
     )
 
@@ -747,7 +735,6 @@ def submit_batch(
     mode: str = "auto",
     want_pdf: bool = True,
     env: Optional[str] = None,
-    verified_by_user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Send up to one batch of guests and record the outcome.
 
@@ -998,9 +985,14 @@ def submit_for_apartment(
     ignore_automation: bool = False,
     allow_resend: bool = False,
     env: Optional[str] = None,
-    verified_by_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Send everything currently sendable for one apartment, in batches."""
+    """Send everything currently sendable for one apartment, in batches.
+
+    Deliberately takes no actor. Verification of a guest's identity is a host
+    attestation against a travel document, recorded by the explicit Verify
+    route; this function also runs unattended from the scheduler, where nobody
+    has looked at anything and stamping a verification would be a fabrication.
+    """
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return []
@@ -1033,7 +1025,6 @@ def submit_for_apartment(
     if not pairs:
         return []
     try:
-        actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
         limit = config.UBYPORT_MAX_BATCH
         results = []
         for start in range(0, len(pairs), limit):
@@ -1043,7 +1034,6 @@ def submit_for_apartment(
                     pairs[start:start + limit],
                     mode=mode,
                     env=env,
-                    verified_by_user_id=actor,
                 )
             )
         return results

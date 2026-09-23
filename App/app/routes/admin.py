@@ -1208,7 +1208,6 @@ async def reservations_submit_ready(request: Request):
             only_guest_ids=guest_ids,
             mode="manual_bulk",
             ignore_automation=True,
-            verified_by_user_id=access.owner_id(request),
         )
         if not results:
             continue
@@ -1311,7 +1310,7 @@ async def reservation_update(reservation_id: int, request: Request):
             "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
         )
         if current:
-            reporting.maybe_submit_after_completion(
+            reporting.submit_stay_if_complete(
                 current["apartment_id"], reservation_id
             )
     return _back(f"/reservations/{reservation_id}", msg="Saved.")
@@ -1335,7 +1334,7 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
     db.update("reservation", reservation_id, payload)
-    reporting.maybe_submit_after_completion(
+    reporting.submit_stay_if_complete(
         reservation["apartment_id"], reservation_id
     )
     if request.headers.get("X-Requested-With") == "fetch":
@@ -1452,7 +1451,6 @@ async def reservation_submit(reservation_id: int, request: Request):
         mode="manual",
         ignore_automation=True,
         allow_resend=allow_resend,
-        verified_by_user_id=access.owner_id(request),
     )
     if not results:
         return _back(
@@ -1636,7 +1634,7 @@ async def guest_create(reservation_id: int, request: Request):
     )
     guest_id = db.insert("guest", payload)
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
-    reporting.maybe_submit_after_host_save(reservation["apartment_id"], guest_id)
+    reporting.submit_stay_if_complete(reservation["apartment_id"], reservation_id)
     return _back(f"/reservations/{reservation_id}", msg="Guest added.")
 
 
@@ -1704,7 +1702,7 @@ async def guest_update(guest_id: int, request: Request):
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
     if reservation:
-        reporting.maybe_submit_after_host_save(reservation["apartment_id"], guest_id)
+        reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
     return _back(f"/guests/{guest_id}", msg="Saved.")
 
 
@@ -1728,7 +1726,7 @@ async def guest_verify_identity(guest_id: int, request: Request):
         str(form.get("return_to") or ""), f"/guests/{guest_id}"
     )
     owner_id = access.owner_id(request)
-    reporting.record_host_identity_confirmation(guest_id, owner_id, on_send=False)
+    reporting.record_host_identity_confirmation(guest_id, owner_id)
     now = db.utcnow()
     if passport_photos.has_photo(guest_id):
         passport_photos.delete_photo(guest_id)
@@ -1737,7 +1735,6 @@ async def guest_verify_identity(guest_id: int, request: Request):
             guest_id,
             {"passport_photo_at": None, "updated_at": now},
         )
-    reporting.maybe_submit_after_verify(reservation["apartment_id"], guest_id)
     return _back(return_to, msg="ID check recorded.")
 
 
@@ -1791,7 +1788,7 @@ async def guest_archive(guest_id: int, request: Request):
         (guest["reservation_id"],),
     )
     if reservation:
-        reporting.maybe_submit_after_completion(
+        reporting.submit_stay_if_complete(
             reservation["apartment_id"], guest["reservation_id"]
         )
     return _back(return_to, msg="House-book entry archived. Restore it from the archive below.")
@@ -1816,7 +1813,7 @@ async def guest_unarchive(guest_id: int, request: Request):
         (guest["reservation_id"],),
     )
     if reservation:
-        reporting.maybe_submit_after_completion(
+        reporting.submit_stay_if_complete(
             reservation["apartment_id"], guest["reservation_id"]
         )
     return _back(return_to, msg="House-book entry restored.")
@@ -1843,7 +1840,7 @@ def guest_delete(guest_id: int, request: Request):
         "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
     )
     if reservation:
-        reporting.maybe_submit_after_completion(
+        reporting.submit_stay_if_complete(
             reservation["apartment_id"], reservation_id
         )
     return _back(f"/reservations/{reservation_id}", msg="Guest removed.")
@@ -1882,7 +1879,6 @@ async def guest_resend(guest_id: int, request: Request):
         mode="manual_resend",
         ignore_automation=True,
         allow_resend=True,
-        verified_by_user_id=access.owner_id(request),
     )
     if not results:
         return _back(f"/guests/{guest_id}", err="Record is not sendable - fix the validation errors first.")
