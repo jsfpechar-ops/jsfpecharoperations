@@ -36,10 +36,11 @@ import logging
 import re
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo
 
 from icalendar import Calendar
 
-from . import alerts, db, deadlines, host_i18n
+from . import alerts, config, db, deadlines, host_i18n
 from .feed_fetch import CalendarFetchError, fetch_calendar_text
 from .feed_url import FeedUrlError
 
@@ -107,7 +108,18 @@ def fetch_feed(url: str) -> str:
 
 
 def _as_date(value: Any) -> Optional[date]:
+    """The local calendar date an iCal value means.
+
+    ``DTSTART:20260910T230000Z`` is 10 September 23:00 UTC, which in Prague is
+    01:00 on the 11th: taking ``.date()`` off the aware datetime stores a stay
+    that starts a day early. So an aware value is converted to
+    ``config.TIMEZONE`` first. A floating value (no tzinfo) already means local
+    wall-clock time to the feed's author, and a ``VALUE=DATE`` value is a bare
+    date, so both are taken as they are.
+    """
     if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            value = value.astimezone(ZoneInfo(config.TIMEZONE))
         return value.date()
     if isinstance(value, date):
         return value

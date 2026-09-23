@@ -541,3 +541,123 @@ def test_an_incomplete_feed_alert_is_refreshed_not_duplicated(monkeypatch, tmp_p
     icalsync.sync_feed(feed)
 
     assert len(alerts.open_alerts()) == 1
+
+
+# --- Timezones ---------------------------------------------------------------
+# Prague is UTC+1 in winter and UTC+2 in summer (CEST), so a UTC timestamp in
+# the evening belongs to the next local day. Taking .date() off an aware
+# datetime without converting used to store the previous day, which shifted a
+# stay's arrival - and with it the three-working-day reporting deadline.
+
+
+def _one_event(ics: str):
+    events = icalsync.parse_events(ics)
+    assert len(events) == 1, events
+    return events[0]
+
+
+def test_a_utc_evening_start_is_the_next_prague_day():
+    # 20260910T230000Z is 2026-09-11 01:00 CEST.
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART:20260910T230000Z\n"
+        "DTEND:20260912T100000Z\n"
+        "UID:utc-evening@airbnb.com\n"
+        "SUMMARY:Reserved\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-09-11"
+    assert event["date_to"] == "2026-09-12"
+
+
+def test_a_utc_midnight_start_is_the_same_prague_day():
+    # 20260910T220000Z is 2026-09-11 00:00 CEST: the boundary itself.
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART:20260910T220000Z\n"
+        "DTEND:20260911T100000Z\n"
+        "UID:utc-midnight@airbnb.com\n"
+        "SUMMARY:Reserved\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-09-11"
+
+
+def test_a_utc_winter_evening_uses_the_winter_offset():
+    # January is UTC+1, so 20260110T230000Z is 2026-01-11 00:00 CET.
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART:20260110T230000Z\n"
+        "DTEND:20260112T100000Z\n"
+        "UID:utc-winter@airbnb.com\n"
+        "SUMMARY:Reserved\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-01-11"
+
+
+def test_a_tzid_start_is_read_in_prague_time():
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;TZID=Europe/Prague:20260910T140000\n"
+        "DTEND;TZID=Europe/Prague:20260913T100000\n"
+        "UID:tzid@booking.com\n"
+        "SUMMARY:CLOSED - Not available\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-09-10"
+    assert event["date_to"] == "2026-09-13"
+
+
+def test_a_foreign_tzid_is_converted_to_prague():
+    # 20260911T020000 in Tokyo is 2026-09-10 19:00 CEST.
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;TZID=Asia/Tokyo:20260911T020000\n"
+        "DTEND;TZID=Asia/Tokyo:20260912T020000\n"
+        "UID:tokyo@agoda.com\n"
+        "SUMMARY:Reserved\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-09-10"
+
+
+def test_a_floating_start_is_taken_as_local_wall_clock():
+    # No timezone at all: the feed means local time, so no conversion is right.
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART:20260910T140000\n"
+        "DTEND:20260913T100000\n"
+        "UID:floating@vrbo.com\n"
+        "SUMMARY:Reserved\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-09-10"
+
+
+def test_an_all_day_value_date_is_unchanged():
+    # VALUE=DATE is a bare calendar day and must not be shifted by a timezone.
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20260910\n"
+        "DTEND;VALUE=DATE:20260913\n"
+        "UID:allday@airbnb.com\n"
+        "SUMMARY:Reserved\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-09-10"
+    assert event["date_to"] == "2026-09-13"
+
+
+def test_the_timezone_used_is_the_configured_one(monkeypatch):
+    """The conversion follows config.TIMEZONE rather than a hard-coded zone."""
+    monkeypatch.setattr(config, "TIMEZONE", "UTC")
+    event = _one_event(
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART:20260910T230000Z\n"
+        "DTEND:20260912T100000Z\n"
+        "UID:tz-config@airbnb.com\n"
+        "SUMMARY:Reserved\n"
+        "END:VEVENT\nEND:VCALENDAR\n"
+    )
+    assert event["date_from"] == "2026-09-10"
