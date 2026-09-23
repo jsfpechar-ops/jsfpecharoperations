@@ -72,7 +72,7 @@ def main() -> None:
                 html = session.get(BASE + url).text
                 target = OUT / f"{name}-{width}-light-{language}.png"
                 render(html, target, width=width, height=1000)
-                    print(target)
+                print(target)
 
 
 if __name__ == "__main__":

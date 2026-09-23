@@ -258,20 +258,6 @@ def resolve_by_id(alert_id: int, user_dismissed: bool = False) -> None:
     )
 
 
-def resolve_kind(kind: str, apartment_id: Optional[int] = None) -> None:
-    if apartment_id is None:
-        db.execute(
-            "UPDATE alert SET resolved_at = ? WHERE kind = ? AND resolved_at IS NULL",
-            (db.utcnow(), kind),
-        )
-    else:
-        db.execute(
-            "UPDATE alert SET resolved_at = ? WHERE kind = ? AND apartment_id = ? "
-            "AND resolved_at IS NULL",
-            (db.utcnow(), kind, apartment_id),
-        )
-
-
 def open_alerts(owner_user_id: Optional[int] = None) -> List:
     rows = db.query(
         "SELECT * FROM alert WHERE resolved_at IS NULL AND (? IS NULL OR owner_user_id = ?) "
@@ -279,10 +265,3 @@ def open_alerts(owner_user_id: Optional[int] = None) -> List:
         (owner_user_id, owner_user_id),
     )
     return sorted(rows, key=lambda r: LEVEL_ORDER.get(r["level"], 9))
-
-
-def count_critical() -> int:
-    row = db.query_one(
-        "SELECT COUNT(*) AS n FROM alert WHERE resolved_at IS NULL AND level = 'critical'"
-    )
-    return row["n"] if row else 0

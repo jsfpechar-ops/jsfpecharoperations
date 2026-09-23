@@ -674,3 +674,47 @@ A migration that reset every `blocked` row would not be safe as written, because
 `not_correctable`, and a duplicate is correctly not resendable). Any automatic
 sweep would have to distinguish the two, which is why this is recorded as a
 deliberate manual step rather than fixed in code.
+
+## From Phase 5 (W5.1 dead code)
+
+### W5.1 — CSV migration of existing reservations / a paper house book
+
+`stays_import.import_csv` and `housebook.import_csv` were deleted because no
+route, form, or CLI reached either of them, and `housebook.import_csv`'s only
+tests (`App/tests/test_housebook_import.py`) exercised it in isolation. The
+feature they were written for is real and still unbuilt: a host arriving from a
+paper house book, or from a spreadsheet of already-booked reservations, has no
+way to get that history into UbyHost today. Rebuilding it needs a decision on
+which of these is wanted before any code exists:
+
+1. **Import historical reservations** so past stays appear in reports and the
+   retention clock, accepting that their guests were filed on paper and carry no
+   UbyPort receipt.
+2. **Import a paper house book** as already-filed records, which is what the
+   deleted code assumed — it wrote the literal marker `imported` into the row in
+   place of a signature image, and refused to submit anything it imported.
+3. **Neither**, on the grounds that a back-filled record is weaker evidence than
+   a fresh filing and the operator should enter only what is still actionable.
+
+Options 1 and 2 need upload UI, a parser, duplicate/collision handling against
+existing stays, and an audit trail — none of which existed. `docs/TECHNICAL_
+COMPLIANCE_AUDIT.md` used to reason about option 2 through a symbol
+(`import_housebook_rows`) that appears nowhere in the repository; that row has
+been corrected to describe only the PDF that the application actually generates.
+
+### W5.1 — unreferenced tools and guide screenshots
+
+`tools/walkthrough.py`, `tools/feature_smoke.py`, and `tools/pin_gate_check.py`
+were removed, as were `static/guide/housebook-filters.png` and
+`static/guide/help-link.png`. Nothing in the repository referenced any of them.
+`tools/design_matrix.py` was kept: its `IndentationError` at the `print(target)`
+line was a stray over-indent, and the script is the screenshot matrix referenced
+by the design workflow. CI does not lint `tools/`, so these had been invisible to
+every gate; making CI lint `tools/` is W6.1.
+
+### W5.1 — the SES feedback queue setting is documented in an old patch file
+
+`config.SES_FEEDBACK_QUEUE_URL` was deleted because nothing read it, and
+`docs/ENVIRONMENT.md` plus `docs/SES.md` were updated to say so.
+`docs/ubyhost-docs-update.patch` still contains the removed row. It is a
+historical patch artifact rather than live documentation, so it was left alone.

@@ -9,7 +9,7 @@ import logging
 from datetime import date, timedelta
 from typing import Optional
 
-from . import auth, claim, codelists, config, db, icalsync, mail, reporting, validation
+from . import auth, claim, codelists, config, db, icalsync, reporting, validation
 from .sample_calendar import sample_airbnb_ics
 
 log = logging.getLogger("ubyhost.demo")

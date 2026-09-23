@@ -125,7 +125,6 @@ MAIL_FROM = os.environ.get("UBYHOST_MAIL_FROM", "").strip()
 SES_REGION = os.environ.get("UBYHOST_SES_REGION", "eu-central-1").strip()
 AWS_ACCESS_KEY_ID = os.environ.get("UBYHOST_AWS_ACCESS_KEY_ID", "").strip()
 AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").strip()
-SES_FEEDBACK_QUEUE_URL = os.environ.get("UBYHOST_SES_FEEDBACK_QUEUE_URL", "").strip()
 
 # Bumped when the public Privacy Policy changes materially.
 PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.5")

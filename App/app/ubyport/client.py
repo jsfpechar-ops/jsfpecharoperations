@@ -41,13 +41,6 @@ class SubmissionResult:
     error_pdf: str = ""
     pseudo_stamp: str = ""
 
-    @property
-    def accepted(self) -> bool:
-        """True when the whole batch came back clean."""
-        return not self.header_errors and not any(
-            code.strip(";").strip() for code in self.record_errors
-        )
-
 
 class UbyportClient:
     def __init__(
@@ -150,12 +143,11 @@ class UbyportClient:
         self,
         header: Dict[str, Optional[str]],
         guests: List[Dict[str, Any]],
-        want_pdf: bool = True,
     ) -> SubmissionResult:
         if not guests:
             raise UbyportError("Nothing to submit: the guest list is empty.")
         envelope = soap.build_zapis_ubytovane(
-            header, guests, want_pdf, self.auth_code, INCLUDE_WSA_HEADER
+            header, guests, self.auth_code, INCLUDE_WSA_HEADER
         )
         text = self._post("ZapisUbytovane", envelope)
         try:

@@ -243,7 +243,7 @@ def test_hosts_cannot_set_new_four_digit_pins():
 def test_admin_can_open_a_host_workspace_without_knowing_the_password():
     db.init_db()
     _clean_accounts()
-    admin_id = _account("boundary-admin", role="admin")
+    _account("boundary-admin", role="admin")
     host_id = _account("boundary-host")
     _apartment(host_id, "Host workspace flat", "boundaryhost")
     try:
@@ -360,7 +360,7 @@ def test_generate_password_meets_policy():
 def test_admin_create_host_generates_password_when_missing():
     db.init_db()
     _clean_accounts()
-    admin_id = _account("boundary-admin", role="admin")
+    _account("boundary-admin", role="admin")
     try:
         admin = _login("boundary-admin")
         response = admin.post(

@@ -157,7 +157,7 @@ class _RejectingClient:
     def __init__(self, code: str = ";112;"):
         self.code = code
 
-    def submit(self, _header, _guests, want_pdf=True):
+    def submit(self, _header, _guests):
         return SubmissionResult(
             endpoint="test",
             request_xml="<request/>",
@@ -167,7 +167,7 @@ class _RejectingClient:
 
 
 class _FailingClient:
-    def submit(self, _header, _guests, want_pdf=True):
+    def submit(self, _header, _guests):
         raise UbyportTransportError("connection reset by peer")
 
 
@@ -223,7 +223,7 @@ def test_a_successful_report_sends_no_email(monkeypatch):
     apartment, _reservation, _guest_id = _seed("mailnotify3")
 
     class Client:
-        def submit(self, _header, _guests, want_pdf=True):
+        def submit(self, _header, _guests):
             return SubmissionResult(
                 endpoint="test",
                 request_xml="<request/>",

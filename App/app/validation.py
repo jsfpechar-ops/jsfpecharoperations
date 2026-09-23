@@ -191,12 +191,6 @@ def normalise_zip(value: Optional[str]) -> str:
     return "".join(ch for ch in (value or "") if ch.isdigit())
 
 
-def ascii_fold(value: str) -> str:
-    """Diacritics-free copy, used for search and for MRZ comparison."""
-    decomposed = unicodedata.normalize("NFKD", value or "")
-    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-
-
 # --- birth date ----------------------------------------------------------
 
 def normalise_birth_date(value: Optional[str]) -> str:
@@ -280,12 +274,6 @@ def validate_birth_date(ddmmyyyy: str, stay_from: Optional[date]) -> List[Issue]
     if exact and exact > date.today():
         return [Issue("birth_date", "Date of birth cannot be in the future.")]
     return []
-
-
-def age_on(birth: Optional[date], when: date) -> Optional[int]:
-    if not birth:
-        return None
-    return when.year - birth.year - ((when.month, when.day) < (birth.month, birth.day))
 
 
 # --- permanent residence abroad -----------------------------------------

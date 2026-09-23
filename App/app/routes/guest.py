@@ -14,7 +14,7 @@ guest's personal data.
 from __future__ import annotations
 
 import asyncio
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
 

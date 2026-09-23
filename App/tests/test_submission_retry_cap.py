@@ -46,7 +46,7 @@ USERNAME = "retry-cap-admin"
 class RefusingClient:
     """A register that answers every record with 112, the retryable refusal."""
 
-    def submit(self, _header, guests, want_pdf=True):  # noqa: ARG002
+    def submit(self, _header, guests):
         return SubmissionResult(
             endpoint="test",
             request_xml="<request/>",
@@ -57,7 +57,7 @@ class RefusingClient:
 
 
 class AcceptingClient:
-    def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+    def submit(self, _header, _guests):  # noqa: ARG002
         return SubmissionResult(
             endpoint="test",
             request_xml="<request/>",
@@ -69,7 +69,7 @@ class AcceptingClient:
 class DuplicateClient:
     """150 is the register saying it already holds the record."""
 
-    def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+    def submit(self, _header, _guests):  # noqa: ARG002
         return SubmissionResult(
             endpoint="test",
             request_xml="<request/>",
@@ -428,7 +428,7 @@ def test_a_transport_failure_does_not_spend_the_budget(monkeypatch):
     apartment, _reservation, guest_id = _seed("tok-cap-transport", auto=True)
 
     class OfflineClient:
-        def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+        def submit(self, _header, _guests):  # noqa: ARG002
             raise UbyportTransportError("offline")
 
     try:
