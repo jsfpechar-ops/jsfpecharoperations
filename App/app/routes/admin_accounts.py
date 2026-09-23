@@ -12,6 +12,7 @@ from fastapi.responses import RedirectResponse, Response
 from .. import auth, config, db, rate_limit, security, turnstile
 from ..templating import render
 from .admin_helpers import back as _back
+from .admin_helpers import flash as _flash
 from .admin_helpers import form_str as _form_str
 
 router = APIRouter()
@@ -165,7 +166,7 @@ def two_factor_setup_form(request: Request):
     if not account:
         return RedirectResponse("/login", status_code=303)
     if account["totp_enabled"]:
-        return _back("/settings", msg="Two-factor authentication is already enabled.")
+        return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
     try:
         secret = db.decrypt_secret(account["totp_secret_enc"]) if account["totp_secret_enc"] else ""
     except Exception:
@@ -236,7 +237,7 @@ async def account_password_update(request: Request):
             (config.DATA_DIR / "initial_admin_credentials").unlink(missing_ok=True)
         except OSError:
             pass
-    response = _back("/", msg="Password changed.")
+    response = _back("/", msg=_flash(request, "flash.accounts.password_changed"))
     auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
     db.audit("password_changed", actor=account["username"], owner_user_id=account["id"])
     return response
@@ -363,7 +364,14 @@ def user_toggle(user_id: int, request: Request):
         actor=account["username"],
         owner_user_id=user_id,
     )
-    return _back("/admin/users", msg=f"{target['username']} {'enabled' if active else 'disabled'}.")
+    return _back(
+        "/admin/users",
+        msg=_flash(
+            request,
+            "flash.accounts.enabled" if active else "flash.accounts.disabled",
+            username=target["username"],
+        ),
+    )
 
 
 @router.post("/admin/stop-impersonating")

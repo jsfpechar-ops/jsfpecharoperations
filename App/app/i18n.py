@@ -1,11 +1,15 @@
 """Guest-facing strings in English and Czech.
 
-Guests are by definition foreigners, so English is the default, but the form
-also stands in for a Czech legal document and hosts asked for a Czech view.
+Guests are by definition foreigners, so English is the catalog a missing key
+falls back to, and the language the form speaks until the guest chooses. The
+*page* default is the signed-out public default, which the host pages share --
+see ``host_i18n.PUBLIC_DEFAULT_LANGUAGE``.
 """
 from __future__ import annotations
 
 from typing import Dict
+
+from . import host_i18n
 
 LANGUAGES = ("en", "cs")
 DEFAULT_LANGUAGE = "en"
@@ -1045,18 +1049,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
 }
 
 
-def normalise_language(value: str) -> str:
-    value = (value or "").lower()[:2]
-    return value if value in LANGUAGES else DEFAULT_LANGUAGE
-
-
 def translator(lang: str):
-    lang = normalise_language(lang)
-    table = STRINGS[lang]
+    table = STRINGS[host_i18n.normalise_language(lang)]
     fallback = STRINGS[DEFAULT_LANGUAGE]
 
     def translate(key: str, **kwargs) -> str:
-        text = table.get(key, fallback.get(key, key))
-        return text % kwargs if kwargs else text
+        return host_i18n.lookup(table, fallback, key, **kwargs)
 
     return translate

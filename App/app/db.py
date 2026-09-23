@@ -201,7 +201,8 @@ CREATE TABLE IF NOT EXISTS alert (
     message        TEXT NOT NULL,
     detail         TEXT,
     created_at     TEXT NOT NULL,
-    resolved_at    TEXT
+    resolved_at    TEXT,
+    params         TEXT
 );
 
 CREATE TABLE IF NOT EXISTS codelist (
@@ -370,6 +371,9 @@ ADDED_COLUMNS = (
     ("guest", "receipt_submission_id", "INTEGER REFERENCES submission(id) ON DELETE SET NULL"),
     ("console_mail_log", "body_html", "TEXT"),
     ("guest", "submit_attempts", "INTEGER NOT NULL DEFAULT 0"),
+    # The values an alert's card interpolates, as JSON, so the card can be
+    # rebuilt in the host's language at render time instead of storing prose.
+    ("alert", "params", "TEXT"),
 )
 
 

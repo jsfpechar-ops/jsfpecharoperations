@@ -762,3 +762,68 @@ passes, nine pragmas each, once at startup: cheap, but a symptom. The fix is for
 `SCHEMA` to describe the current shape of every table and for `ADDED_COLUMNS` to
 carry only what an upgrade genuinely needs — which the append-only migration rule
 forbids doing in place, so it is a deliberate re-baseline rather than a patch.
+
+## From Phase 5 (W5.4 language)
+
+### W5.4 — the guest page default moved from English to Czech
+
+`host_i18n.PUBLIC_DEFAULT_LANGUAGE` is `"cs"` and `i18n.DEFAULT_LANGUAGE` is
+`"en"`, which read as a contradiction until the two roles were separated in the
+docstrings: `cs` is the language a *signed-out visitor* gets, `en` is only what a
+*missing key* falls back to. A guest following a host's link with no `?lang=` and
+no language cookie now reads a Czech form where they used to read an English one.
+That is the intended behaviour for a Czech host, but it is a visible change and
+it silently inverted roughly two dozen tests that asserted English guest copy;
+those now ask for English explicitly. If a host ever wants to onboard a
+non-Czech guest, the language switcher is the only escape hatch and it is
+cookie-scoped, not per-link.
+
+### W5.4 — the alert-language split needs a migration to be complete
+
+Alert rows are now language-neutral: `message` and `detail` hold English log and
+fallback copy, and a new `alert.params` column holds the interpolation values as
+JSON so `alerts.present()` can rebuild the card in whatever language the reader
+is using. The catch is that `params` is added by `ADDED_COLUMNS` and every
+pre-existing row has `NULL` there. A stored alert whose copy interpolates
+therefore still renders English after the upgrade, because `_localised` refuses
+to substitute into a card whose parameters it does not have. New alerts are
+correct immediately. A one-off backfill cannot fix the old rows — the values
+were never stored, only baked into the English sentence — so the practical
+answer is to let the old alerts age out, or to resolve them by hand if any
+matter.
+
+### W5.4 — the `err=` flash messages are still English
+
+The plan asked for the `msg=` flashes, and those are converted: 40 sites in
+`routes/admin.py` and 3 in `routes/admin_accounts.py` now go through
+`admin_helpers.flash(request, key, **params)`, which translates at the raise
+because `back()` carries a plain string in a URL query parameter. The sibling
+`err=` parameter is untouched: **87 sites in `admin.py` and 5 in
+`admin_accounts.py` still flash hardcoded English error copy** to a Czech host.
+The mechanism is identical, so the conversion is mechanical, but it is a large
+enough diff to deserve its own review pass and was explicitly out of scope for
+W5.4.
+
+### W5.4 — two plan items were already satisfied and needed no change
+
+The plan asks for the guest-visible English validation error at
+`reporting.py:184-186` to be routed through the guest catalog, and for the "dead
+English deadline prose at `reporting.py:997-1003`" to be deleted. The first was
+already fixed by W5.2's single completeness predicate: the message now comes from
+`reporting.guest_issues(..., translate=...)` with the guest translator passed by
+the guest route. The second describes a block that no longer exists at any line —
+`reporting.py` has been rewritten twice since the plan was written (the code-112
+retry fix, then W5.2), and no dead English deadline prose remains. Both are
+recorded here rather than re-done so the audit trail shows they were checked.
+
+### W5.4 — the alert language had to be a presentation concern, not a key rename
+
+The plan implies the alert copy can be moved key-by-key into `host_i18n` the way
+the flash messages were. It cannot, for the alerts whose card is rebuilt from
+live data (`_COMPUTED_ALERT_KINDS`) or whose wording depends on a state the
+stored English sentence happens to describe: the reader's language is not known
+when the alert is raised, and a card is read long after the event that raised it.
+So `raise_alert` now takes `params=` and stores them, and `present()` dispatches
+between a stored card and a computed one. Any future alert kind that interpolates
+must pass `params=`; a test walks the AST of `app/**` to enforce that, because
+the failure mode is silent — the card simply stays English.

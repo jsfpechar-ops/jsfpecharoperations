@@ -4,31 +4,40 @@ Appendix 5 section 10.4(2) requires an application that reports automatically
 to inform the host "without delay" and "by an effective means" when a record
 was not accepted - it explicitly suggests a prominent warning on every screen.
 These rows drive the banner rendered in the base template.
+
+Language: the ``message``/``detail`` columns hold English prose and are the log
+copy, the mail copy and the fallback. The card a host *reads* is rebuilt at
+render time from ``notification.*`` keys, so a Czech host never meets English.
+An alert that interpolates values (a property name, a count, a UbyPort error)
+stores them as JSON in ``params`` when it is raised; the render formats them.
+Two kinds of detail stay English on purpose, because there is nothing to
+translate: an exception message from a remote server, and the code list UbyPort
+itself returns.
 """
 from __future__ import annotations
 
+import json
 from typing import Any, Dict, List, Optional
 
 from . import db, deadlines, host_i18n, validation
 
 LEVEL_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
-# Stay-related kinds get short i18n titles/reasons at render time so EN/CS
-# hosts see the same compact card regardless of the English log text stored.
-_STAY_ALERT_KINDS = frozenset({"deadline", "guest_incomplete_checkin"})
-
-# These kinds store English text only as a log/fallback copy; their card is
-# rebuilt from i18n at render time so a Czech host never reads English.
-_TRANSLATED_ALERT_KINDS = frozenset(
+# Kinds whose card is computed from the live reservation rather than rendered
+# from what was stored: the numbers move as time passes (a deadline gets more
+# overdue), so rendering them from a snapshot taken at raise time would lie.
+_COMPUTED_ALERT_KINDS = frozenset(
     {
-        "dates_changed_resign",
+        "deadline",
+        "guest_incomplete_checkin",
         "headcount_mismatch",
+        "dates_changed_resign",
+        "moved_after_report",
+        "submission_stuck",
+        "job_failed",
         "feed_incomplete",
         "feed_duplicate_uid",
         "feed_recurring_event",
-        "moved_after_report",
-        "job_failed",
-        "submission_stuck",
     }
 )
 
@@ -98,6 +107,35 @@ def checkin_incomplete_reason(lang: str) -> str:
     return host_i18n.translate(lang, "notification.reason.checkin_incomplete")
 
 
+def stored_params(row: Any) -> Dict[str, Any]:
+    """The interpolation values an alert stored, or ``{}`` if it stored none."""
+    raw = row.get("params") if hasattr(row, "get") else None
+    if not raw:
+        return {}
+    try:
+        values = json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+    return values if isinstance(values, dict) else {}
+
+
+def _localised(lang: str, key: str, stored: str, params: Dict[str, Any]) -> str:
+    """The translated twin of a stored string, or the stored string itself.
+
+    Falling back is deliberate and not only for a missing key: an alert raised
+    before this release carries no ``params``, and a card that interpolates
+    values cannot be rebuilt without them - showing ``%(property)s`` to a host
+    would be worse than showing English.
+    """
+    table = host_i18n.STRINGS[host_i18n.normalise_language(lang)]
+    text = table.get(key)
+    if text is None:
+        return stored or ""
+    if "%(" in text and not params:
+        return stored or ""
+    return host_i18n.lookup(table, table, key, **params)
+
+
 def _reservation_row(reservation_id: Any) -> Any:
     return db.query_one(
         "SELECT r.*, a.internal_name FROM reservation r "
@@ -106,8 +144,45 @@ def _reservation_row(reservation_id: Any) -> Any:
     )
 
 
-def _present_translated(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]:
-    """Rebuild the card text of an alert whose stored copy is English-only."""
+def _title_key(kind: str, params: Dict[str, Any], lang: str) -> str:
+    """The title key for a kind, allowing a ``variant`` to pick a wording.
+
+    One kind can describe two different events - a stay cancelled in the
+    calendar and a stay that vanished from it are both
+    ``cancelled_after_report`` - so the variant names the wording. A variant
+    with no key of its own falls back to the plain kind.
+    """
+    base = f"notification.{kind}.title"
+    variant = params.get("variant")
+    if not variant:
+        return base
+    table = host_i18n.STRINGS[host_i18n.normalise_language(lang)]
+    return f"{base}.{variant}" if f"{base}.{variant}" in table else base
+
+
+def _present_stored(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]:
+    """Render an alert from its stored parameters and the ``notification.*`` copy.
+
+    A detail that is assembled from more than one sentence uses a leading
+    clause under ``notification.<kind>.header``; it is rendered only when the
+    ``header`` value it interpolates is non-empty, which is how an optional
+    sentence stays optional without a branch at the call site.
+    """
+    params = stored_params(row)
+    row["display_title"] = _localised(
+        lang, _title_key(kind, params, lang), row.get("message"), params
+    )
+    detail = _localised(lang, f"notification.{kind}.detail", row.get("detail"), params)
+    if params.get("header"):
+        leading = _localised(lang, f"notification.{kind}.header", "", params)
+        if leading:
+            detail = f"{leading} {detail}".strip()
+    row["display_detail"] = detail
+    return row
+
+
+def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]:
+    """Rebuild the card of an alert whose text is derived from live data."""
     if kind == "job_failed":
         job_id = (row.get("dedupe_key") or "").split(":", 1)[-1]
         row["display_title"] = host_i18n.translate(
@@ -130,51 +205,26 @@ def _present_translated(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, 
         return row
     reservation = _reservation_row(row["reservation_id"]) if row.get("reservation_id") else None
     if not reservation:
+        row["display_title"] = row.get("message") or ""
+        row["display_detail"] = row.get("detail") or ""
         return row
     row["display_title"] = stay_title(lang, reservation["internal_name"] or "", reservation)
     if kind in ("dates_changed_resign", "moved_after_report", "submission_stuck"):
         row["display_detail"] = host_i18n.translate(lang, f"notification.reason.{kind}")
         return row
-    from . import reporting
-
-    filled, expected = _forms_count(reporting.reservation_progress(reservation))
-    row["display_detail"] = host_i18n.translate(
-        lang, "notification.reason.headcount_mismatch", filled=filled, expected=expected
-    )
-    return row
-
-
-def present(alert: Any, lang: str) -> Dict[str, Any]:
-    """Compact title + reason for the notification card.
-
-    Known stay alerts are rebuilt from the reservation so hosts see short
-    EN/CS copy with Czech-style dates. Other kinds keep the stored text.
-    """
-    row = dict(alert)
-    kind = row.get("kind") or ""
-    if kind in _TRANSLATED_ALERT_KINDS:
-        return _present_translated(row, kind, lang)
-    if kind not in _STAY_ALERT_KINDS or not row.get("reservation_id"):
-        row["display_title"] = row.get("message") or ""
-        row["display_detail"] = row.get("detail") or ""
-        return row
-
-    reservation = _reservation_row(row["reservation_id"])
-    if not reservation:
-        row["display_title"] = row.get("message") or ""
-        row["display_detail"] = row.get("detail") or ""
-        return row
-
-    property_name = reservation["internal_name"] or ""
-    row["display_title"] = stay_title(lang, property_name, reservation)
     if kind == "guest_incomplete_checkin":
         row["display_detail"] = checkin_incomplete_reason(lang)
         return row
-
     from . import reporting
 
-    start = reporting.reservation_deadline_anchor(reservation)
     progress = reporting.reservation_progress(reservation)
+    if kind == "headcount_mismatch":
+        filled, expected = _forms_count(progress)
+        row["display_detail"] = host_i18n.translate(
+            lang, "notification.reason.headcount_mismatch", filled=filled, expected=expected
+        )
+        return row
+    start = reporting.reservation_deadline_anchor(reservation)
     if start:
         row["display_detail"] = deadline_reason(lang, start, progress)
     else:
@@ -186,6 +236,20 @@ def present(alert: Any, lang: str) -> Dict[str, Any]:
             expected=expected,
         )
     return row
+
+
+def present(alert: Any, lang: str) -> Dict[str, Any]:
+    """Compact title + reason for the notification card.
+
+    Stay alerts are rebuilt from the reservation so hosts see short EN/CS copy
+    with Czech-style dates. Every other kind is rebuilt from the parameters it
+    stored, and falls back to its English log copy when it stored none.
+    """
+    row = dict(alert)
+    kind = row.get("kind") or ""
+    if kind in _COMPUTED_ALERT_KINDS:
+        return _present_computed(row, kind, lang)
+    return _present_stored(row, kind, lang)
 
 
 def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
@@ -201,8 +265,15 @@ def raise_alert(
     apartment_id: Optional[int] = None,
     reservation_id: Optional[int] = None,
     owner_user_id: Optional[int] = None,
+    params: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """Record an alert, refreshing the message if the same one is already open."""
+    """Record an alert, refreshing the message if the same one is already open.
+
+    ``message`` and ``detail`` are the English log copy and the fallback; the
+    card a host reads is built from ``params`` at render time. Passing the
+    values rather than pre-formatted prose is what lets a Czech host read the
+    card in Czech.
+    """
     if owner_user_id is None and apartment_id:
         apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
         owner_user_id = apartment["owner_user_id"] if apartment else None
@@ -214,6 +285,7 @@ def raise_alert(
         )
         owner_user_id = reservation["owner_user_id"] if reservation else None
     key = dedupe_key or f"{kind}:{apartment_id}:{reservation_id}:{message}"
+    stored = json.dumps(params, ensure_ascii=False, sort_keys=True) if params else None
     existing = db.query_one(
         "SELECT id FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
     )
@@ -221,7 +293,13 @@ def raise_alert(
         db.update(
             "alert",
             existing["id"],
-            {"level": level, "message": message, "detail": detail, "created_at": db.utcnow()},
+            {
+                "level": level,
+                "message": message,
+                "detail": detail,
+                "params": stored,
+                "created_at": db.utcnow(),
+            },
         )
         return
     db.insert(
@@ -235,6 +313,7 @@ def raise_alert(
             "dedupe_key": key,
             "message": message,
             "detail": detail,
+            "params": stored,
             "created_at": db.utcnow(),
         },
     )

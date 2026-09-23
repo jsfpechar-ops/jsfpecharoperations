@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from fastapi.responses import RedirectResponse
 
-from .. import validation
+from .. import host_i18n, validation
 
 
 def back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
@@ -24,6 +24,16 @@ def back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
         return RedirectResponse(f"{base}{sep}{qs}#{fragment}", status_code=303)
     sep = "&" if "?" in path else "?"
     return RedirectResponse(f"{path}{sep}{qs}", status_code=303)
+
+
+def flash(request, key: str, **params) -> str:
+    """A flash message in the host's own language.
+
+    ``back()`` carries the message through the query string, so it must already
+    be a plain string by the time it gets there - which means a message has to
+    be translated where it is raised, not where it is rendered.
+    """
+    return host_i18n.translate(host_i18n.lang_from_request(request), key, **params)
 
 
 def form_str(form, key: str, default: str = "") -> str:

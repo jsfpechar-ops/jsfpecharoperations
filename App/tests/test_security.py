@@ -327,6 +327,7 @@ def test_pin_rate_limit_not_bypassed_by_spoofed_cf_header(monkeypatch):
     )
     try:
         client = TestClient(app)
+        client.cookies.set(host_i18n.LANG_COOKIE, "en")
         for _ in range(rate_limit._PIN_MAX_FAILURES):
             client.post(f"/l/{token}/pin", data={"pin": "000000"}, follow_redirects=False)
         blocked = client.post(f"/l/{token}/pin", data={"pin": "000000"}, follow_redirects=False)
