@@ -101,6 +101,30 @@ fi
 echo "==> Starting stack"
 docker compose up -d --remove-orphans
 
+# Reload Caddy unconditionally, every deploy.
+#
+# The Caddyfile is bind-mounted into the container, and the compose service
+# sets no command: override, so Caddy runs the image default
+# `caddy run --config /etc/caddy/Caddyfile` — which does NOT watch the file.
+# Caddy documents --watch as development-only, so we must not rely on it.
+# An unchanged service definition also means `up -d` never recreates the
+# caddy container, so a config change alone would sit inert on disk forever.
+# A change-detection check would be worse than useless here: the Caddyfile is
+# copied into place above, before this point, so on exactly the deploy that
+# needs a reload the file would already compare equal.
+#
+# `caddy reload` is a graceful, zero-downtime config swap over the admin API
+# (localhost:2019 inside the container, enabled by default) — unlike
+# `docker compose restart caddy`, it does not drop live connections. Caddy
+# validates the new config before applying it and keeps the running config if
+# validation fails, so aborting here on a bad config is safe.
+echo "==> Reloading Caddy"
+if ! docker compose exec -T caddy caddy reload \
+  --config /etc/caddy/Caddyfile --adapter caddyfile; then
+  echo "Caddy reload failed — the deployed Caddyfile is NOT active." >&2
+  exit 1
+fi
+
 echo "==> Waiting for health check"
 for _ in $(seq 1 30); do
   if docker compose exec -T ubyhost python -c \
