@@ -23,7 +23,7 @@ import zipfile
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import alerts, codelists, config, db, deadlines, passport_photos, validation
+from . import alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
 
@@ -423,13 +423,6 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     }
 
 
-def try_immediate_submit(apartment_id: int, guest_id: int) -> None:
-    """Compatibility wrapper for callers that have a guest id."""
-    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
-    if guest:
-        maybe_submit_after_completion(apartment_id, guest["reservation_id"])
-
-
 def _forms_quiet_for(progress: Dict[str, Any], hours: int) -> bool:
     """True when no guest form on the stay has been touched for ``hours``."""
     stamps = [
@@ -495,8 +488,13 @@ def refresh_registration_completed_at(
     return existing
 
 
-def maybe_submit_after_completion(apartment_id: int, reservation_id: int) -> None:
-    """Send an immediate-mode stay once every declared form is complete."""
+def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
+    """Send a stay the moment its declared forms are all complete.
+
+    Only ``immediate`` apartments send on completion; every other mode waits for
+    the scheduler or for the host. Called from wherever a form can become the
+    last one missing, so the trigger is the save rather than the state.
+    """
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return
@@ -531,16 +529,6 @@ def maybe_submit_after_completion(apartment_id: int, reservation_id: int) -> Non
             dedupe_key=f"submission_immediate:{apartment_id}",
             apartment_id=apartment_id,
         )
-
-
-def maybe_submit_after_host_save(apartment_id: int, guest_id: int) -> None:
-    """Re-evaluate completion after a host saves a guest."""
-    try_immediate_submit(apartment_id, guest_id)
-
-
-def maybe_submit_after_verify(apartment_id: int, guest_id: int) -> None:
-    """Verification no longer gates automatic submission."""
-    return None
 
 
 def count_sendable_stays(reservations: List[Any]) -> int:
@@ -604,10 +592,12 @@ def client_for(apartment, env: Optional[str] = None) -> UbyportClient:
 def record_host_identity_confirmation(
     guest_id: int,
     verified_by_user_id: Optional[int],
-    *,
-    on_send: bool = False,
 ) -> None:
-    """Host confirms guest details against a travel document (optional before send)."""
+    """Host confirms guest details against a travel document.
+
+    Optional before sending, and recorded only here, from the explicit Verify
+    route: this is a human attestation, so nothing unattended may make it.
+    """
     guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
     if not guest or not validation.guest_is_reportable(guest["nationality"]):
         return
@@ -615,8 +605,7 @@ def record_host_identity_confirmation(
         return
     now = db.utcnow()
     # Verification is the whole reason the photo exists, so it goes here rather
-    # than only on the explicit Verify route. Most hosts verify by sending, and
-    # that path used to leave the scan on disk until the retention sweep.
+    # than waiting for the retention sweep to get round to it.
     passport_photos.delete_photo(guest_id)
     db.update(
         "guest",
@@ -628,10 +617,9 @@ def record_host_identity_confirmation(
             "updated_at": now,
         },
     )
-    flag = "on_send=1" if on_send else "on_send=0"
     db.audit(
         "guest_identity_verified",
-        f"id={guest_id} {flag}",
+        f"id={guest_id}",
         owner_user_id=verified_by_user_id,
     )
 
@@ -645,6 +633,25 @@ def blocked_as_duplicate(guest) -> bool:
     except (IndexError, KeyError):
         return False
     return any(uby_errors.is_duplicate(part) for part in stored.split(" | "))
+
+
+def receipt_submission_id(previous_submission_id: Optional[int]) -> Optional[int]:
+    """Where this guest's Dorucenka lives, given the submission that carried it.
+
+    A duplicate answer carries no confirmation, because the register already
+    held the record: the receipt, if we ever received one, belongs to the
+    submission that filed the guest for the first time. Returns None when that
+    submission is unknown or holds no receipt, which is what the UI needs in
+    order to say so instead of inventing a link.
+    """
+    if not previous_submission_id:
+        return None
+    row = db.query_one(
+        "SELECT receipt_pdf FROM submission WHERE id = ?", (previous_submission_id,)
+    )
+    if row and row["receipt_pdf"]:
+        return previous_submission_id
+    return None
 
 
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
@@ -728,7 +735,6 @@ def submit_batch(
     mode: str = "auto",
     want_pdf: bool = True,
     env: Optional[str] = None,
-    verified_by_user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Send up to one batch of guests and record the outcome.
 
@@ -743,6 +749,10 @@ def submit_batch(
     guest_ids = [g["id"] for g, _ in pairs]
     endpoint = config.endpoint_for(env)
 
+    # The batch's membership, recorded once and never rewritten. It is the only
+    # record of who was in this submission: guest.submission_id is a single
+    # current pointer that a later resend moves elsewhere, so the submission
+    # detail page reads this column, not that one.
     submission_id = db.insert(
         "submission",
         {
@@ -788,6 +798,17 @@ def submit_batch(
             dedupe_key=f"submission_transport:{apartment['id']}",
             apartment_id=apartment["id"],
         )
+        # The host is not watching the screen when this fires -- the whole point
+        # of the automatic send is that nobody is. Mail the same event to the
+        # address on the legal entity so a batch that never left is not only
+        # discoverable by logging in. Best-effort: it cannot fail the filing.
+        mail_notify.submission_problem(
+            apartment,
+            submission_id,
+            state="transport_error",
+            reason=str(exc),
+            transport=True,
+        )
         # Guests stay pending so the next sweep retries them.
         return {"submitted": 0, "submission_id": submission_id, "state": "transport_error",
                 "error": str(exc)}
@@ -800,6 +821,16 @@ def submit_batch(
     accepted_count = 0
     failed_count = 0
     blocked_count = 0
+    # Records the register refused because it already held them. This is the
+    # causal fact behind "ok_duplicate", so the state is keyed on it rather than
+    # on the absence of a receipt, which is only a proxy and would misfire on a
+    # first-time accept that came back without a confirmation document.
+    duplicate_accepts = 0
+    # Records the service accepted outright, with no error codes at all. This is
+    # what separates a real filing from a batch that only confirmed records the
+    # register already had: accepted_count also counts the latter, because a
+    # duplicate does move a guest to sent for the first time.
+    first_accepts = 0
 
     for index, (guest, _reservation) in enumerate(pairs):
         record_error = per_record[index] if index < len(per_record) else ""
@@ -811,12 +842,21 @@ def submit_batch(
                 {
                     "submit_state": SENT,
                     "submitted_at": now,
+                    # The current pointer, moved on every send - it is not the
+                    # batch record, which lives in submission.guest_ids.
                     "submission_id": submission_id,
+                    # Keep pointing at the last submission that actually holds
+                    # a Dorucenka when this attempt returned none, so a resend
+                    # without a receipt request does not lose the link.
+                    "receipt_submission_id": (
+                        submission_id if result.receipt_pdf else guest["receipt_submission_id"]
+                    ),
                     "last_errors": None,
                     "updated_at": now,
                 },
             )
             accepted_count += 1
+            first_accepts += 1
         else:
             new_state = BLOCKED if state == "not_correctable" else ERROR
             # A duplicate response proves the register already has this guest.
@@ -826,6 +866,7 @@ def submit_batch(
             )
             if duplicate:
                 new_state = SENT
+                duplicate_accepts += 1
             update_values = {
                 "submit_state": new_state,
                 "submission_id": submission_id,
@@ -834,11 +875,20 @@ def submit_batch(
             }
             if new_state == SENT:
                 update_values["submitted_at"] = guest["submitted_at"] or now
+                # The confirmation for this record, if there is one, is on the
+                # submission that carried it before this one.
+                update_values["receipt_submission_id"] = receipt_submission_id(
+                    guest["submission_id"]
+                )
             db.update("guest", guest["id"], update_values)
             if new_state == SENT:
-                if guest["submit_state"] == SENT:
-                    blocked_count += 1
-                else:
+                # A duplicate for a guest we already had as sent means the
+                # register confirms it holds the record. Nothing was refused and
+                # nothing is left to do, so it counts as neither accepted nor
+                # blocked: duplicate_accepts already records it, and counting it
+                # as blocked would raise a critical rejection - and tell the
+                # host "were rejected" - for a filing that succeeded.
+                if guest["submit_state"] != SENT:
                     accepted_count += 1
             elif new_state == ERROR:
                 failed_count += 1
@@ -847,6 +897,15 @@ def submit_batch(
 
     if failed_count or blocked_count:
         state = "partial" if accepted_count else "error"
+    elif first_accepts:
+        # Something was filed for the first time, so this is a plain success even
+        # if other records in the same batch came back as duplicates.
+        state = "ok"
+    elif duplicate_accepts:
+        # Nothing new was filed: the register already held every record, so no
+        # Dorucenka came back for this attempt. That is a success, but not the
+        # same thing as a first-time accept with a confirmation behind it.
+        state = "ok_duplicate"
     else:
         state = "ok"
 
@@ -866,7 +925,7 @@ def submit_batch(
         },
     )
 
-    if state == "ok":
+    if state in ("ok", "ok_duplicate"):
         alerts.resolve(f"submission_rejected:{apartment['id']}")
     else:
         log.error(
@@ -901,6 +960,36 @@ def submit_batch(
             dedupe_key=f"submission_rejected:{apartment['id']}",
             apartment_id=apartment["id"],
         )
+        # Same event, same reasoning as the transport branch: an alert only
+        # reaches someone who is looking at the app, and the automatic send
+        # exists precisely so nobody has to. The mail carries the UbyPort reason
+        # text and a link back to the affected stays. It is sent for a manual
+        # send too -- the host asked for that one, but the record of what the
+        # register said is still worth having in the inbox.
+        mail_notify.submission_problem(
+            apartment,
+            submission_id,
+            state=state,
+            reason=" ".join(detail_bits),
+        )
+
+    # The third product promise: the Dorucenka is kept. A first-time accept that
+    # came back with neither a stamp nor a confirmation document means the
+    # register has the record and we hold no proof of it. A duplicate accept is
+    # not evidence of that either way, so it neither raises nor resolves this.
+    if result.pseudo_stamp or result.receipt_pdf:
+        alerts.resolve(f"receipt_missing:{apartment['id']}")
+    elif state == "ok" and first_accepts:
+        alerts.raise_alert(
+            "warning",
+            "receipt_missing",
+            f"{apartment['internal_name']}: UbyPort accepted the report but returned no confirmation.",
+            f"Submission {submission_id} recorded {first_accepts} accepted guest record(s) "
+            "with no Dorucenka and no stamp behind them. The register has them; ask the "
+            "police for a copy if you need written proof.",
+            dedupe_key=f"receipt_missing:{apartment['id']}",
+            apartment_id=apartment["id"],
+        )
 
     db.audit(
         "ubyport_submit",
@@ -925,9 +1014,14 @@ def submit_for_apartment(
     ignore_automation: bool = False,
     allow_resend: bool = False,
     env: Optional[str] = None,
-    verified_by_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Send everything currently sendable for one apartment, in batches."""
+    """Send everything currently sendable for one apartment, in batches.
+
+    Deliberately takes no actor. Verification of a guest's identity is a host
+    attestation against a travel document, recorded by the explicit Verify
+    route; this function also runs unattended from the scheduler, where nobody
+    has looked at anything and stamping a verification would be a fabrication.
+    """
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return []
@@ -960,7 +1054,6 @@ def submit_for_apartment(
     if not pairs:
         return []
     try:
-        actor = verified_by_user_id if verified_by_user_id is not None else apartment["owner_user_id"]
         limit = config.UBYPORT_MAX_BATCH
         results = []
         for start in range(0, len(pairs), limit):
@@ -970,7 +1063,6 @@ def submit_for_apartment(
                     pairs[start:start + limit],
                     mode=mode,
                     env=env,
-                    verified_by_user_id=actor,
                 )
             )
         return results
@@ -1126,7 +1218,7 @@ def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
 # Every state a submission row can settle in. A row is only 'running' while
 # the submit call is in flight, and the envelope is stored at the moment the
 # row moves to one of these, so a 'running' row has no envelope to purge.
-TERMINAL_SUBMISSION_STATES = ("ok", "partial", "error", "transport_error")
+TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transport_error")
 
 # The envelope is the only thing in the row that carries guest data, and the
 # row outlives the six-year purge of the guests it describes, so it goes far

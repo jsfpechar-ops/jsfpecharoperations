@@ -20,8 +20,21 @@ _STAY_ALERT_KINDS = frozenset({"deadline", "guest_incomplete_checkin"})
 # These kinds store English text only as a log/fallback copy; their card is
 # rebuilt from i18n at render time so a Czech host never reads English.
 _TRANSLATED_ALERT_KINDS = frozenset(
-    {"dates_changed_resign", "headcount_mismatch", "feed_incomplete", "job_failed"}
+    {
+        "dates_changed_resign",
+        "headcount_mismatch",
+        "feed_incomplete",
+        "feed_duplicate_uid",
+        "feed_recurring_event",
+        "moved_after_report",
+        "job_failed",
+    }
 )
+
+# Kinds that belong to a calendar feed rather than to one stay. Their card is
+# rebuilt from the property name, so they are handled before the reservation
+# lookup below.
+_FEED_ALERT_KINDS = frozenset({"feed_incomplete", "feed_duplicate_uid", "feed_recurring_event"})
 
 
 def _fmt_date(value: Optional[str]) -> str:
@@ -107,27 +120,23 @@ def _present_translated(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, 
         )
         row["display_detail"] = host_i18n.translate(lang, "notification.job_failed.detail")
         return row
-    if kind == "feed_incomplete":
+    if kind in _FEED_ALERT_KINDS:
         apartment = db.query_one(
             "SELECT internal_name FROM apartment WHERE id = ?", (row.get("apartment_id"),)
         )
         row["display_title"] = host_i18n.translate(
             lang,
-            "notification.feed_incomplete.title",
+            f"notification.{kind}.title",
             property=(apartment["internal_name"] if apartment else "") or "",
         )
-        row["display_detail"] = host_i18n.translate(
-            lang, "notification.reason.feed_incomplete"
-        )
+        row["display_detail"] = host_i18n.translate(lang, f"notification.reason.{kind}")
         return row
     reservation = _reservation_row(row["reservation_id"]) if row.get("reservation_id") else None
     if not reservation:
         return row
     row["display_title"] = stay_title(lang, reservation["internal_name"] or "", reservation)
-    if kind == "dates_changed_resign":
-        row["display_detail"] = host_i18n.translate(
-            lang, "notification.reason.dates_changed_resign"
-        )
+    if kind in ("dates_changed_resign", "moved_after_report"):
+        row["display_detail"] = host_i18n.translate(lang, f"notification.reason.{kind}")
         return row
     from . import reporting
 

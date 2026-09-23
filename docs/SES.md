@@ -2,8 +2,30 @@
 
 UbyHost sends a small set of **transactional** messages (claim / continue link,
 one day-before guest reminder, host incomplete-registration warning, completion
-receipt with host CC). Production uses **Amazon SES in `eu-central-1`**. Staging
-on Render stays on the **console** backend forever.
+receipt with host CC, and the host submission-problem notice described below).
+Production uses **Amazon SES in `eu-central-1`**. Staging on Render stays on the
+**console** backend forever.
+
+Every message UbyHost sends is **multipart/alternative**: a plain-text part that
+stands on its own plus an HTML part built on a shared shell in
+`App/app/mail_notify.py` — the UbyHost logo, the relevant details, and a button
+pointing at the one link the message is about. The text part is always present,
+always carries the same absolute links, and never says "view this in HTML", so
+nothing is lost in a client that strips markup. The HTML part adds no remotely
+fetched resource other than the logo: no tracking pixel, no link rewriting, no
+`@media` rules and no dark-mode styling.
+
+Kinds that carry HTML today: `claim`, `claim_resend`, `completion`,
+`reminder_guest`, `reminder_host` and `submission_problem`. `dates_changed`
+stays plain text. The **host submission-problem** notice additionally names the
+reason UbyPort gave and links to each affected stay and to the Doručenka; see
+[OPERATIONS.md](OPERATIONS.md) for when it is sent.
+
+Host-facing copy is written in **English** regardless of the host's UI language;
+guest-facing copy follows the guest's `lang` (`en`/`cs`) from the reservation.
+The `From` header carries a display name — `UbyHost <noreply@ubyhost.com>` — so
+the message does not look like a bare-address bulk send. An operator-supplied
+`UBYHOST_MAIL_FROM` that already contains a name is passed through untouched.
 
 App code can call SES (`App/app/mail.py` `_send_ses`). **Production is live on
 `ses` since 2026-09-21** — UbyHost 1.1.0 is deployed and the Lightsail `.env` was
@@ -15,7 +37,7 @@ outstanding post-release checks.
 
 | Control | Do it? | Notes |
 |---------|--------|-------|
-| From = `noreply@ubyhost.com` on domain `ubyhost.com` | **Yes** | Never send as a raw amazonses.com address |
+| From = `UbyHost <noreply@ubyhost.com>` on domain `ubyhost.com` | **Yes** | Never send as a raw amazonses.com address; the display name avoids the bare-address bulk look |
 | Easy DKIM on the domain identity | **Yes** | Required |
 | Custom MAIL FROM (`mail.ubyhost.com`) + SPF | **Yes** | SPF alignment for DMARC |
 | DMARC TXT `_dmarc` with `p=none` first | **Yes** | Tighten later after monitoring |
@@ -110,8 +132,8 @@ Recorded for reproducibility — steps 1–4 are all done in production.
    `guest e-mail is disabled on production` whenever the *running* backend is
    `disabled`, so that grep printing nothing is corroborating evidence.
 
-5. **From** = `noreply@ubyhost.com`. **Reply-To** = the property legal-entity
-   contact e-mail when configured.
+5. **From** = `UbyHost <noreply@ubyhost.com>`. **Reply-To** = the property
+   legal-entity contact e-mail when configured.
 
 ## Smoke and rollback
 

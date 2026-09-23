@@ -171,6 +171,7 @@
 {% macro submission_pill(state) %}
   {% set labels = {
     'ok': t('submission.accepted'),
+    'ok_duplicate': t('submission.duplicate'),
     'partial': t('submission.partial'),
     'error': t('submission.rejected'),
     'failed': t('submission.rejected'),
@@ -181,6 +182,7 @@
   } %}
   {% set tones = {
     'ok': 'green',
+    'ok_duplicate': 'amber',
     'partial': 'amber',
     'error': 'red',
     'failed': 'red',

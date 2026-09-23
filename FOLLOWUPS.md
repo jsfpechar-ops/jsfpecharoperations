@@ -447,3 +447,158 @@ reload fix that was authorised: a bounded retry around the reload (poll
 `caddy version` before reloading), or a `healthcheck` on the caddy service plus
 `docker compose up -d --wait`. A healthcheck alone is not sufficient, because
 nothing `depends_on` caddy.
+
+## From Phase 4 (evidence trail and UbyPort semantics)
+
+### W4.2 — the 1xx series is not generalised beyond 112
+
+The Foreign Police's written answer describes 112 as a *critical transmission
+error in the 1xx series* and says the series means the batch was not received at
+all. Only 112 is treated as correctable. The other 1xx codes are left to the
+default, which is already `error` (correctable) for anything unrecognised, so the
+observed behaviour happens to match the series rule without asserting it.
+
+It is not asserted on purpose. We hold no code book listing the other 1xx values,
+and the register's own Czech prose is the only description we ever see for a code
+that is not in `KNOWN_CODES`. Hardcoding "1xx means not received" and
+blind-retrying a code that actually means "received, but this record was
+rejected" would resend a batch the service already accepted, and the module
+docstring in `App/app/ubyport/errors.py` warns that abusive resubmission can have
+web-service access revoked. If the owner ever obtains the full 1xx list,
+`CORRECTABLE_CODES` in that module is the single place to extend.
+
+### W4.2 — classification still depends on the register's Czech wording
+
+`classify()` now short-circuits 112 and 150, but every other code is classified by
+substring-matching the *described* text against `NON_CORRECTABLE_MARKERS`
+(`duplic`, `pozd`, `late`) and falling back to `KNOWN_CODES`. A wording change on
+the police side therefore silently reclassifies records: that is exactly what made
+the old 112 entry ("Reported late …") non-correctable, and the same trap is still
+armed for every other code. A comment records this at the point of use, and 112 no
+longer depends on it at all. Closing it properly means pinning classification to
+codes rather than prose, which needs a code book we do not have.
+
+### W4.3 — identity verification is advisory and never gates a send
+
+Deleting `verified_by_user_id` from the send path settles the immediate defect, but
+it leaves a wider question. Nothing checks `guest.identity_verified_at` before
+filing: `reporting.send_controls` lists `awaiting_verification` among the sendable
+statuses and `reporting.guest_issues` never consults the column, so an unverified
+record can be submitted and the only consequences are the "Verify passport before
+reporting" label and the `unverified` count in `reporting.registration_progress`.
+Under `automation_mode` of `immediate` or `scheduled` it is even labelled
+"Complete — sending automatically".
+
+That is deliberate per `record_host_identity_confirmation`'s docstring ("Optional
+before sending"), and it is why the parameter was deleted rather than wired up —
+stamping a human attestation from an unattended sweep would be a fabrication. But
+if the intent is that a foreign guest may not be filed before a human has checked
+the travel document, the gate does not exist yet.
+
+### W4.4 — there is still no normalised submission-to-guest link
+
+`guest.submission_id` and `submission.guest_ids` are now explicitly documented as
+two views of one fact, with tests covering both directions, but they remain two
+denormalised columns that can disagree. A `submission_guest` join table keyed on
+`(submission_id, guest_id)` would make the relationship the single authority and
+remove the "which column wins" question entirely. It is not a small change: it
+needs a backfill, and the append-only migration mechanism in `App/app/db.py`
+cannot transform data, so it would need an explicit one-shot migration script.
+
+### W4.6 — recurring events are detected and warned about, not expanded
+
+Per the owner's decision, `RRULE`/`RDATE`/`EXDATE` are recognised and reported as
+`feed_recurring_event` rather than expanded. A weekly cleaning block, for instance,
+imports only its first occurrence and the host is told. Correct expansion needs a
+recurrence engine (a new dependency, or a hand-written `RRULE` subset) plus a
+decision about which occurrence is *the stay* — a repeating event is not obviously
+one reservation. Until then the warning is the contract: a host who ignores it
+under-imports a series.
+
+### W4.7 — the pinned adapter builds its connection classes per request
+
+`feed_fetch._pinned_adapter` generates four classes per call, because the pinned
+address is class state. That is what makes the pin per-request rather than
+process-global, so it is deliberate — but it means the adapter cannot be cached or
+reused and every fetch allocates fresh class objects. At the current cadence (one
+poll per apartment per interval, plus "Sync now") this is irrelevant. It is worth
+revisiting only if feed fetching ever becomes hot.
+
+### W4.2 — 112 is now retryable with no cap, backoff, or attempt counter
+
+Making 112 correctable is the right call, but it introduced a state the code has
+no brake on. A guest that comes back 112 stays `error`, `collect_sendable` only
+skips `SENT` and `BLOCKED`, so the record is offered to the next sweep every
+`UBYHOST_SUBMIT_SWEEP_MINUTES` (10) for as long as it keeps failing. The
+`attempts` / `next_attempt_at` columns at `App/app/db.py:275` belong to the mail
+queue, not to guests, so nothing counts submissions for a guest.
+
+That matters because a *transient* 112 (interrupted connection) and a *data* 112
+(invalid character in the generated `.UNZ`/`.XML`, empty mandatory field) arrive
+as the same code. Retrying is exactly right for the first and futile for the
+second, and the police's own remedy — check the guest's card, repeat the
+submission — assumes a human is looking. Today the only signal that a record is
+stuck is the `submission_rejected` critical banner, which is dedupe-keyed and so
+updates in place rather than escalating, and `docs/OPERATIONS.md` can only
+*advise* "if a record comes back 112 twice, stop retrying and check the data".
+The application does not enforce it, and `docs/PRODUCTION_CHECKLIST.md` says the
+same thing in prose.
+
+A `guest.submit_attempts` column (append-only, `NOT NULL DEFAULT 0`) plus a
+threshold — say the third consecutive 112 flipping the record to `BLOCKED` with
+a distinct alert kind, so it leaves the automatic queue and becomes a human task
+— would close it. It is out of scope here because it changes `submit_state`
+transitions again and needs a decision from the owner on the threshold and on
+whether the count resets on any non-112 outcome. Until then the exposure is
+bounded but real: a structurally invalid record is re-sent every ten minutes
+indefinitely, and each attempt is another submission against the host's
+web-service access.
+
+### The host notification e-mail is always English
+
+`App/app/mail_notify.py` sends the submission-problem notice in
+`host_i18n.DEFAULT_LANGUAGE` ("en") and passes no `lang` to
+`build_submission_problem`. The web UI is fully bilingual and honours the
+`ubyhost_lang` cookie, so a Czech host reads the app in Czech and then receives a
+failure e-mail in English — the one message that most needs to be understood.
+
+The reason is structural, not an oversight: **there is no stored language
+preference anywhere.** `user_account` (`App/app/db.py:24-38`) has no language
+column, and `reservation.lang` is the *guest's* language for the claim flow, not
+the host's. The cookie is the only record of the host's choice, and the send
+happens in a background sweep where there is no request and therefore no cookie.
+
+Fixing it properly means an `owner_user_id`-keyed language column with a
+migration, plus a decision on what a platform-admin or multi-owner account
+defaults to. A cheaper interim would be to store the language on the
+`legal_entity` row beside `contact_email`, which is the address the mail already
+goes to — but that is still a schema change and an owner decision, so it is
+recorded rather than guessed at.
+
+Two related behaviours are deliberate and not defects: the mail is sent at most
+once per property per Prague day (a same-day repeat updates the alert but does
+not re-send, so the host keeps the first explanation rather than a stream of
+them), and it goes only to the host. Guests are not mailed about a filing
+failure; the guest-facing incomplete-registration reminder is a different
+message on a different trigger.
+
+### The `dates_changed` mail kind is registered but nothing ever sends it
+
+`mail.KINDS` lists `dates_changed`, and `mail.enqueue` will accept it, but no
+call site enqueues it — `grep -rn 'dates_changed' App/app/` finds only the
+`KINDS` tuple itself (the `dates_changed_resign` hits are the *alert* kind in
+`alerts.py` and `icalsync.py`, which is a different mechanism). So the promise
+that "any e-mail from UbyHost looks nice" is not violated by it, because no
+such e-mail exists to look at.
+
+The gap it implies is real, though: when the calendar moves a stay's dates after
+the guest signed, the host gets an alert (`dates_changed_resign`) and the guest
+gets nothing, even though the signed form names dates that are no longer true.
+Whether the guest should be told is a product decision — it is a change to a
+legal declaration, and telling the guest may be worse than telling only the
+host. Recorded rather than guessed at.
+
+Either decision needs the same treatment the other guest kinds just got: a
+composer in `mail_notify.py`, EN/CS strings in `i18n.py`, and a test. If the
+kind is not going to be used, it should be removed from `KINDS` so the list
+reflects what the app actually sends.

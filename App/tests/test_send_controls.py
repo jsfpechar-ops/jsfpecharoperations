@@ -5,6 +5,7 @@ import base64
 from datetime import date, datetime, timedelta, timezone
 
 from app import db, reporting
+from app.ubyport.client import SubmissionResult
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -187,7 +188,7 @@ def test_immediate_mode_sends_only_when_all_declared_forms_are_complete(monkeypa
         lambda *args, **kwargs: calls.append((args, kwargs)) or [],
     )
 
-    reporting.maybe_submit_after_completion(apartment["id"], reservation["id"])
+    reporting.submit_stay_if_complete(apartment["id"], reservation["id"])
     assert calls == []
     assert not db.query_one(
         "SELECT registration_completed_at FROM reservation WHERE id = ?",
@@ -197,7 +198,7 @@ def test_immediate_mode_sends_only_when_all_declared_forms_are_complete(monkeypa
     db.update(
         "reservation", reservation["id"], {"expected_guests_override": 1}
     )
-    reporting.maybe_submit_after_completion(apartment["id"], reservation["id"])
+    reporting.submit_stay_if_complete(apartment["id"], reservation["id"])
 
     assert len(calls) == 1
     assert calls[0][0] == (apartment["id"],)
@@ -391,3 +392,119 @@ def test_stay_submit_route_requires_duplicate_confirmation():
         "re-sending accepted records from the stay page must be confirmed, "
         "like the single-guest resend route"
     )
+
+
+def test_a_critical_transmission_error_leaves_the_guest_retryable(monkeypatch):
+    """112 means the register never received the batch, so retrying is the fix.
+
+    The police answered this in writing: 112 is a 1xx critical transmission
+    error, the batch was not received at all, and the remedy is to correct the
+    data and repeat the submission. Parking the guest in ``blocked`` would drop
+    them from every future automatic send, so the declaration would never
+    happen. This goes through ``submit_batch`` rather than ``classify`` because
+    the state the host sees, and the send gate that acts on it, are the parts
+    that matter.
+    """
+    apartment, _reservation, guest_id = _seed("manual", "tok-112")
+
+    class FakeClient:
+        def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+            return SubmissionResult(
+                endpoint="test",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                record_errors=[";112;"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: FakeClient())
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
+
+    try:
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert guest_id in [guest["id"] for guest, _ in pairs]
+
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "error"
+        assert result["blocked"] == 0
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.ERROR
+        assert guest["submit_state"] != reporting.BLOCKED
+
+        # The unattended sweep must pick the record back up: an ``error`` guest
+        # is retried without anyone opting into a duplicate resend.
+        again = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert guest_id in [guest["id"] for guest, _ in again]
+    finally:
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
+        db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))
+
+
+def test_the_send_path_takes_no_actor():
+    """Identity verification is a host attestation, so sending cannot make it.
+
+    The parameter existed but was never read, and wiring it up would have let
+    the unattended sweep stamp a verification, with the apartment owner's id,
+    for a guest nobody had looked at.
+    """
+    import inspect
+
+    for function in (reporting.submit_batch, reporting.submit_for_apartment):
+        assert "verified_by_user_id" not in inspect.signature(function).parameters
+
+    for phantom in (
+        "maybe_submit_after_verify",
+        "maybe_submit_after_host_save",
+        "try_immediate_submit",
+    ):
+        assert not hasattr(reporting, phantom), (
+            f"{phantom} should have been collapsed into submit_stay_if_complete"
+        )
+
+
+def test_the_verify_route_does_not_claim_to_trigger_a_submission():
+    """The route used to call a function whose whole body was `return None`."""
+    import inspect
+
+    from app.routes import admin
+
+    source = inspect.getsource(admin.guest_verify_identity)
+    assert "submit_stay_if_complete" not in source
+    assert "submit_for_apartment" not in source
+
+
+def test_sending_does_not_stamp_identity_verification(monkeypatch):
+    """A successful send is not an identity check.
+
+    ``identity_verified_at`` records that a human compared the record with the
+    guest's travel document. The scheduler sends without anyone doing that, so
+    the field has to stay empty until the host presses Verify.
+    """
+    apartment, _reservation, guest_id = _seed("manual", "tok-no-actor")
+    db.update("guest", guest_id, {"identity_verified_at": None, "identity_verified_by": None})
+
+    class FakeClient:
+        def submit(self, _header, _guests, want_pdf=True):  # noqa: ARG002
+            return SubmissionResult(
+                endpoint="test",
+                request_xml="<request/>",
+                response_xml="<response/>",
+                receipt_pdf="UEsDBAoAAAAAAA==",
+                pseudo_stamp="20260101120000-abc",
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: FakeClient())
+    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
+
+    try:
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "ok"
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.SENT
+        assert guest["identity_verified_at"] is None
+        assert guest["identity_verified_by"] is None
+    finally:
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
+        db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))

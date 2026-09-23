@@ -29,17 +29,24 @@ that rather than pretend otherwise:
 Because feeds only say *someone is arriving on these dates*, that is enough to
 open a stay record and start chasing guest data. A stay the host recognises as
 not a guest stay can be marked "ignored" and will stay that way across syncs.
+
+Two things these feeds can express that this model cannot are reported to the
+host instead of being guessed at: a repeating event (``RRULE``/``RDATE``) is
+imported as its first occurrence only, and a UID that appears more than once in
+one document is imported once.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo
 
 from icalendar import Calendar
 
-from . import alerts, db, deadlines, host_i18n
+from . import alerts, config, db, deadlines, host_i18n
 from .feed_fetch import CalendarFetchError, fetch_calendar_text
 from .feed_url import FeedUrlError
 
@@ -91,6 +98,11 @@ class FeedError(Exception):
     pass
 
 
+# Properties that make an event repeat. We import the first occurrence only -
+# expanding a recurrence would invent stays (and reporting deadlines) the feed
+# never confirmed - so a host has to be told the rest are missing.
+RECURRENCE_PROPERTIES = ("RRULE", "RDATE", "EXDATE")
+
 # A feed must still return at least this fraction of the future stays already
 # stored for it before any of them is treated as cancelled upstream. Below it,
 # the sync is assumed to be broken rather than the calendar empty.
@@ -107,7 +119,18 @@ def fetch_feed(url: str) -> str:
 
 
 def _as_date(value: Any) -> Optional[date]:
+    """The local calendar date an iCal value means.
+
+    ``DTSTART:20260910T230000Z`` is 10 September 23:00 UTC, which in Prague is
+    01:00 on the 11th: taking ``.date()`` off the aware datetime stores a stay
+    that starts a day early. So an aware value is converted to
+    ``config.TIMEZONE`` first. A floating value (no tzinfo) already means local
+    wall-clock time to the feed's author, and a ``VALUE=DATE`` value is a bare
+    date, so both are taken as they are.
+    """
     if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            value = value.astimezone(ZoneInfo(config.TIMEZONE))
         return value.date()
     if isinstance(value, date):
         return value
@@ -137,11 +160,30 @@ def _guest_name_hint(summary: str) -> str:
     return text[:80]
 
 
+def _synthetic_uid(summary: str, description: str, sequence: str) -> str:
+    """A key for a feed that sends no UID at all.
+
+    Deliberately not built from the dates: a UID-less booking that moves would
+    otherwise look like a new booking and the old one would be cancelled, losing
+    the guest details collected against it.
+    """
+    digest = hashlib.sha1(
+        "\x1f".join([summary or "", description or "", sequence or ""]).encode("utf-8")
+    ).hexdigest()
+    return f"synthetic-{digest[:16]}"
+
+
+def _legacy_synthetic_uid(date_from: str, date_to: str, summary: str) -> str:
+    """The key used before W4.6, which embedded the dates. Read-only."""
+    return f"synthetic-{date_from}-{date_to}-{summary[:20]}"
+
+
 def parse_events(ics_text: str) -> List[Dict[str, Any]]:
     """Extract the stays from an iCal document."""
     calendar = Calendar.from_ical(ics_text)
     calendar_cancelled = str(calendar.get("METHOD") or "").strip().upper() == "CANCEL"
     events: List[Dict[str, Any]] = []
+    synthetic_seen: set = set()
     for component in calendar.walk("VEVENT"):
         start = _as_date(component.get("DTSTART").dt) if component.get("DTSTART") else None
         end_prop = component.get("DTEND")
@@ -159,10 +201,18 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
 
         summary = str(component.get("SUMMARY") or "").strip()
         description = str(component.get("DESCRIPTION") or "").replace("\\n", "\n").strip()
+        sequence = str(component.get("SEQUENCE") or "").strip()
         uid = str(component.get("UID") or "").strip()
         if not uid:
             # Fall back to a stable synthetic key so re-syncs do not duplicate.
-            uid = f"synthetic-{start.isoformat()}-{end.isoformat()}-{summary[:20]}"
+            uid = _synthetic_uid(summary, description, sequence)
+            if uid in synthetic_seen:
+                # Two bookings this feed left unlabelled and identically
+                # worded are still two bookings. The collision is ours, not
+                # the feed's, so the dates keep them apart and neither is
+                # dropped as a duplicate.
+                uid = f"{uid}-{start.isoformat()}"
+            synthetic_seen.add(uid)
 
         status = _event_status(component)
         url_match = _URL_RE.search(description) or _URL_RE.search(str(component.get("URL") or ""))
@@ -178,6 +228,7 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
                 "description": description,
                 "is_block": is_block(summary),
                 "is_cancelled": calendar_cancelled or status in ("CANCELLED", "CANCELED"),
+                "recurring": any(component.get(name) for name in RECURRENCE_PROPERTIES),
                 "reservation_url": url_match.group(1).rstrip(".,);") if url_match else None,
                 "phone_last4": phone_match.group(1) if phone_match else None,
                 "guest_email": email_match.group(0) if email_match else None,
@@ -229,6 +280,97 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
     stats["cancelled"] += 1
 
 
+def _existing_reservation(apartment_id: int, event: Dict[str, Any], now: str):
+    """The stored stay this event refers to, or None.
+
+    Before W4.6 a UID-less event was keyed by its dates, so a moved one looked
+    brand new. Rows still carrying that old key are re-keyed on first sight -
+    without this, the very first sync after the change would cancel every
+    UID-less stay and create a second copy of it, stranding the guest details
+    already collected against the original.
+    """
+    uid = event["uid"]
+    row = db.query_one(
+        "SELECT * FROM reservation WHERE apartment_id = ? AND uid = ?",
+        (apartment_id, uid),
+    )
+    if row or not uid.startswith("synthetic-"):
+        return row
+    legacy = _legacy_synthetic_uid(event["date_from"], event["date_to"], event["summary"])
+    if legacy == uid:
+        return None
+    row = db.query_one(
+        "SELECT * FROM reservation WHERE apartment_id = ? AND uid = ?",
+        (apartment_id, legacy),
+    )
+    if not row:
+        return None
+    db.update("reservation", row["id"], {"uid": uid, "updated_at": now})
+    adopted = dict(row)
+    adopted["uid"] = uid
+    log.info("ical_synthetic_uid_rekeyed apartment_id=%s reservation_id=%s", apartment_id, row["id"])
+    return adopted
+
+
+def _reopen_guest_access(reservation_id: int) -> bool:
+    """Undo a cancellation's guest-access lock, if it is actually set.
+
+    ``claim.reopen_guest_access`` stamps ``guest_access_reopened_at`` whatever
+    it finds, so calling it on a stay that was never locked would record a
+    reopening that never happened.
+    """
+    row = db.query_one(
+        "SELECT guest_access_locked_at FROM reservation_claim WHERE reservation_id = ?",
+        (reservation_id,),
+    )
+    if not row or not row["guest_access_locked_at"]:
+        return False
+    from . import claim as stay_claim
+
+    stay_claim.reopen_guest_access(reservation_id)
+    return True
+
+
+def _report_import_limits(
+    feed, duplicate_uids: List[str], recurring_uids: List[str], events: List[Dict[str, Any]]
+) -> None:
+    """Warn about events this importer knowingly does not represent in full.
+
+    Neither is guessed at: a duplicate UID would reconcile two stays onto one
+    row, and expanding a recurrence would invent stays and reporting deadlines
+    the feed never confirmed. Both leave the host something to do by hand, so
+    silence is not an option.
+    """
+    summaries = {event["uid"]: event["summary"] for event in events}
+    property_name = feed["own_name"] or feed["label"] or feed["id"]
+    for kind, uids in (
+        ("feed_duplicate_uid", duplicate_uids),
+        ("feed_recurring_event", recurring_uids),
+    ):
+        key = f"{kind}:{feed['id']}"
+        if not uids:
+            alerts.resolve(key)
+            continue
+        alerts.raise_alert(
+            "warning",
+            kind,
+            host_i18n.translate(
+                host_i18n.DEFAULT_LANGUAGE, f"notification.{kind}.title", property=property_name
+            ),
+            host_i18n.translate(host_i18n.DEFAULT_LANGUAGE, f"notification.reason.{kind}"),
+            dedupe_key=key,
+            apartment_id=feed["apartment_id"],
+        )
+        log.warning(
+            "ical_%s apartment_id=%s feed_id=%s count=%s summaries=%s",
+            kind,
+            feed["apartment_id"],
+            feed["id"],
+            len(uids),
+            "; ".join((summaries.get(uid) or uid) for uid in uids[:5]),
+        )
+
+
 def sync_feed(
     feed, keep_past_days: int = 400, ics_text: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -264,19 +406,43 @@ def sync_feed(
     alerts.resolve(f"feed_error:{feed['id']}")
     platform = platform_of(feed["url"], ics_text)
     seen_uids: List[str] = []
+    handled_uids: set = set()
+    duplicate_uids: List[str] = []
+    recurring_uids: List[str] = []
 
     for event in events:
+        if event["uid"] in handled_uids:
+            # [F6] Two events under one UID reconcile against the same row, so
+            # the second would silently overwrite the first. The first wins and
+            # the host is told, because one of the two stays is missing.
+            duplicate_uids.append(event["uid"])
+            continue
+        handled_uids.add(event["uid"])
         if event["is_block"]:
             stats["blocks_skipped"] += 1
+            blocked = db.query_one(
+                "SELECT id, status FROM reservation WHERE apartment_id = ? AND uid = ?",
+                (feed["apartment_id"], event["uid"]),
+            )
+            if blocked and blocked["status"] == "active":
+                # [F13] The block wording lives in free-text SUMMARY, so a host
+                # who renames a booking must not lose the stay. A block counts
+                # only at first sight: the row exists, so the event keeps it
+                # alive and the sweep below cannot cancel it.
+                seen_uids.append(event["uid"])
+                log.warning(
+                    "ical_block_summary_kept_existing_stay apartment_id=%s reservation_id=%s",
+                    feed["apartment_id"],
+                    blocked["id"],
+                )
             continue
         if event.get("is_cancelled"):
             _cancel_existing_stay(feed["apartment_id"], event["uid"], event["date_from"], now, stats)
             continue
         seen_uids.append(event["uid"])
-        existing = db.query_one(
-            "SELECT * FROM reservation WHERE apartment_id = ? AND uid = ?",
-            (feed["apartment_id"], event["uid"]),
-        )
+        if event.get("recurring"):
+            recurring_uids.append(event["uid"])
+        existing = _existing_reservation(feed["apartment_id"], event, now)
         payload = {
             "date_from": event["date_from"],
             "date_to": event["date_to"],
@@ -305,6 +471,18 @@ def sync_feed(
                 changed["updated_at"] = now
                 db.update("reservation", existing["id"], changed)
                 stats["updated"] += 1
+            if existing["status"] == "cancelled":
+                # The stay is back, so the cancellation was wrong (or the room
+                # was rebooked). Cancelling closed guest access; reopen it so
+                # the guests can still reach their forms. A guest who had
+                # already claimed is not restored - cancelling destroyed their
+                # link - so the host still has to resend the invitation.
+                if _reopen_guest_access(existing["id"]):
+                    log.info(
+                        "ical_revival_reopened_guest_access apartment_id=%s reservation_id=%s",
+                        feed["apartment_id"],
+                        existing["id"],
+                    )
             if dates_changed:
                 # Only guests still sitting on the reservation's old dates move
                 # with it: one who legitimately leaves earlier keeps their own
@@ -343,6 +521,34 @@ def sync_feed(
                     feed["apartment_id"],
                     existing["id"],
                 )
+                reported = db.query_one(
+                    "SELECT COUNT(*) AS n FROM guest "
+                    "WHERE reservation_id = ? AND submit_state = 'sent'",
+                    (existing["id"],),
+                )
+                if reported and reported["n"]:
+                    # [F5] A sent guest keeps the dates that were filed - that
+                    # is deliberate, they are evidence - so the register now
+                    # holds a stay that has since moved. Only the host can
+                    # decide whether to correct and resend or to cancel it.
+                    alerts.raise_alert(
+                        "warning",
+                        "moved_after_report",
+                        f"A stay reported to the police for {existing['date_from']} to "
+                        f"{existing['date_to']} has moved in the calendar to "
+                        f"{event['date_from']} to {event['date_to']}.",
+                        f"{reported['n']} filed guest record(s) still carry the old dates. "
+                        "Check the booking, correct the guest's dates and resend.",
+                        dedupe_key=f"moved_after_report:{existing['id']}",
+                        apartment_id=feed["apartment_id"],
+                        reservation_id=existing["id"],
+                    )
+                    log.warning(
+                        "ical_moved_after_report apartment_id=%s reservation_id=%s guests=%s",
+                        feed["apartment_id"],
+                        existing["id"],
+                        reported["n"],
+                    )
             if event["guest_email"] and not existing["guest_email"]:
                 db.update("reservation", existing["id"], {"guest_email": event["guest_email"]})
         else:
@@ -365,6 +571,8 @@ def sync_feed(
                 },
             )
             stats["created"] += 1
+
+    _report_import_limits(feed, duplicate_uids, recurring_uids, events)
 
     # A future stay that has vanished from the feed was cancelled upstream.
     # Past stays are left alone: they may already be reported to the police.
