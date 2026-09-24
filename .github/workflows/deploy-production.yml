@@ -57,6 +57,11 @@ jobs:
                 ;;
             esac
           fi
+          # Validate the SHA before it is interpolated into the remote shell.
+          if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "DEPLOY_SHA is not a 40-character lowercase hex SHA: '${DEPLOY_SHA}'" >&2
+            exit 1
+          fi
           install -m 700 -d ~/.ssh
           printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
           chmod 600 ~/.ssh/lightsail_deploy.pem

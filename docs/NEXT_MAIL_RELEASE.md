@@ -22,7 +22,7 @@ application version**, not an UbyPort version.
 | SES flip to `ses` | **Done 2026-09-21** — Lightsail `.env` flipped and confirmed in the running container; first real delivery still to confirm |
 | Assigned UX, PM/controller split, passport toggle | Implemented and tested in #88 |
 | First-time host onboarding + safe two-property demo | Implemented in EN/CS; skip/restore supported; finish handoff shows guest link + PIN; demo blocked against real UbyPort |
-| Full regression suite | **729 passed** on the Phase 6 branch; from `App/`, `.venv/bin/python -m pytest tests -q -p no:logging` |
+| Full regression suite | **436 passed** on the resolved branch head (`68ddd16`) before landing; re-verified 24 September 2026 — `729 passed` from `App/` with `.venv/bin/python -m pytest tests -q -p no:logging` |
 
 ```mermaid
 flowchart TD

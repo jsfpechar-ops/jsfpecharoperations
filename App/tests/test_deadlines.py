@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from app import deadlines as d
 
@@ -79,14 +79,64 @@ def test_urgency_buckets():
     assert d.urgency(check_in, datetime(2026, 9, 15, 12, 0)) == "overdue"
 
 
-def test_urgency_order_puts_overdue_first():
-    rows = [
-        {"id": "future", "urgency": "future"},
-        {"id": "urgent", "urgency": "urgent"},
-        {"id": "overdue", "urgency": "overdue"},
+def test_dashboard_rows_orders_by_urgency_not_by_date(monkeypatch, tmp_path):
+    """`dashboard_rows` is the only consumer of `URGENCY_ORDER`. Assert the order
+    it actually returns, with the stored dates deliberately anti-correlated to
+    urgency so the query's own `ORDER BY r.date_from` cannot make this pass."""
+    from app import config, db, reporting
+
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "urgency-order.sqlite3")
+    db.init_db()
+    now = db.utcnow()
+    today = date.today()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Urgency order",
+            "automation_mode": "manual",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+
+    ids = {}
+    levels = {}
+    for label, offset, level in (
+        ("newest-future", 1, "future"),
+        ("middle-overdue", -1, "overdue"),
+        ("oldest-ok", -2, "ok"),
+    ):
+        check_in = (today + timedelta(days=offset)).isoformat()
+        ids[label] = db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id,
+                "uid": f"order-{label}",
+                "date_from": check_in,
+                "date_to": check_in,
+                "status": "active",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        levels[check_in] = level
+
+    # Sorted by `date_from` the query returns oldest-ok, middle-overdue,
+    # newest-future; by urgency it must return overdue, ok, future.
+    monkeypatch.setattr(
+        reporting.deadlines,
+        "urgency",
+        lambda check_in, now=None: levels[check_in.isoformat()],
+    )
+
+    ordered = [row["reservation"]["id"] for row in reporting.dashboard_rows()]
+
+    assert ordered == [ids["middle-overdue"], ids["oldest-ok"], ids["newest-future"]]
+    assert [row["urgency"] for row in reporting.dashboard_rows()] == [
+        "overdue",
+        "ok",
+        "future",
     ]
-    ordered = sorted(rows, key=lambda row: d.URGENCY_ORDER[row["urgency"]])
-    assert [row["id"] for row in ordered] == ["overdue", "urgent", "future"]
 
 
 def test_describe_time_left_reads_naturally():

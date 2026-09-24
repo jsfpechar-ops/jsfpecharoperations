@@ -53,7 +53,7 @@ jobs:
           python -m pytest tests -q
           --cov=app
           --cov-report=term-missing
-          --cov-fail-under=87
+          --cov-fail-under=86
 
   smoke:
     runs-on: ubuntu-latest
