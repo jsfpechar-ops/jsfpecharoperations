@@ -81,12 +81,20 @@ jobs:
           UBYHOST_UBYPORT_ENV: mock
           UBYHOST_DEPLOYMENT: staging
           UBYHOST_ENABLE_SCHEDULER: "0"
-          UBYHOST_ADMIN_USERNAME: ci-admin
-          UBYHOST_ADMIN_PASSWORD: Ci-Smoke-Password-2026!
+          # The smoke run drives the server as an anonymous staging host: no
+          # administrator is created, so no page answers with a redirect to
+          # /login. It also has to point the server at the same scratch data
+          # directory the script seeds, or the pages render without fixtures.
+          UBYHOST_BOOTSTRAP_ADMIN: "0"
+          UBYHOST_GUEST_PIN: "0"
+          UBYHOST_DATA_DIR: ${{ runner.temp }}/ubyhost-smoke
           PORT: "18080"
         run: |
           python -m mock_ubyport.server &
           sleep 2
           python -m uvicorn app.main:app --host 127.0.0.1 --port 18080 &
-          sleep 3
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:18080/healthz >/dev/null && break
+            sleep 1
+          done
           python tools/smoke.py http://127.0.0.1:18080

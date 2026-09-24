@@ -105,7 +105,10 @@ RECURRENCE_PROPERTIES = ("RRULE", "RDATE", "EXDATE")
 
 # A feed must still return at least this fraction of the future stays already
 # stored for it before any of them is treated as cancelled upstream. Below it,
-# the sync is assumed to be broken rather than the calendar empty.
+# the sync is assumed to be broken rather than the calendar empty. The fraction
+# is counted over the stays we hold that the feed actually returned, never over
+# the raw event count: a feed that answers with ten unrelated UIDs is a
+# different calendar, not evidence that ten bookings were cancelled.
 FEED_COMPLETENESS_THRESHOLD = 0.5
 
 
@@ -173,6 +176,54 @@ def _synthetic_uid(summary: str, description: str, sequence: str) -> str:
     return f"synthetic-{digest[:16]}"
 
 
+def _synthetic_digest(uid: str) -> str:
+    """The wording digest inside a W4.6 synthetic key, or "" for any other key."""
+    rest = uid[len("synthetic-"):]
+    digest = rest.split("-")[0]
+    return digest if re.fullmatch(r"[0-9a-f]{16}", digest) else ""
+
+
+def _ambiguous_synthetic_keys(components: List[Any]) -> set:
+    """Wording digests this feed uses for more than one unlabelled booking.
+
+    Keying every UID-less event by its dates would make a moved booking look new
+    again, so the dates only join the key for the bookings whose wording really
+    does collide. Which of them collide is a property of the whole feed, not of
+    one event, so it is decided before the events are read - a twin leaving the
+    feed must not change the surviving booking's key.
+    """
+    counts: Dict[str, int] = {}
+    for component in components:
+        if str(component.get("UID") or "").strip():
+            continue
+        if not component.get("DTSTART"):
+            continue
+        key = _synthetic_uid(
+            str(component.get("SUMMARY") or "").strip(),
+            str(component.get("DESCRIPTION") or "").replace("\\n", "\n").strip(),
+            str(component.get("SEQUENCE") or "").strip(),
+        )
+        counts[key] = counts.get(key, 0) + 1
+    return {key for key, count in counts.items() if count > 1}
+
+
+def _synthetic_aliases(uid: str, legacy: str, event: Dict[str, Any]) -> List[str]:
+    """Earlier keys this UID-less event may already be stored under.
+
+    Two schemes came before: the dates embedded in the key (pre-W4.6), and the
+    wording digest on its own. The digest alone is still the key whenever a
+    booking's wording is unique in its feed, so a booking moves between the bare
+    digest and the dated one as twins come and go; both directions have to be
+    recognised, or the stay is cancelled and the guests on it are stranded.
+    """
+    aliases = [legacy]
+    digest = _synthetic_digest(uid)
+    if digest:
+        bare = f"synthetic-{digest}"
+        aliases += [bare, f"{bare}-{event['date_from']}"]
+    return [alias for alias in aliases if alias and alias != uid]
+
+
 def _legacy_synthetic_uid(date_from: str, date_to: str, summary: str) -> str:
     """The key used before W4.6, which embedded the dates. Read-only."""
     return f"synthetic-{date_from}-{date_to}-{summary[:20]}"
@@ -183,8 +234,9 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
     calendar = Calendar.from_ical(ics_text)
     calendar_cancelled = str(calendar.get("METHOD") or "").strip().upper() == "CANCEL"
     events: List[Dict[str, Any]] = []
-    synthetic_seen: set = set()
-    for component in calendar.walk("VEVENT"):
+    components = list(calendar.walk("VEVENT"))
+    ambiguous = _ambiguous_synthetic_keys(components)
+    for component in components:
         start = _as_date(component.get("DTSTART").dt) if component.get("DTSTART") else None
         end_prop = component.get("DTEND")
         end = _as_date(end_prop.dt) if end_prop else None
@@ -206,13 +258,13 @@ def parse_events(ics_text: str) -> List[Dict[str, Any]]:
         if not uid:
             # Fall back to a stable synthetic key so re-syncs do not duplicate.
             uid = _synthetic_uid(summary, description, sequence)
-            if uid in synthetic_seen:
-                # Two bookings this feed left unlabelled and identically
-                # worded are still two bookings. The collision is ours, not
-                # the feed's, so the dates keep them apart and neither is
-                # dropped as a duplicate.
+            if uid in ambiguous:
+                # Two bookings this feed left unlabelled and identically worded
+                # are still two bookings. The collision is ours, not the feed's,
+                # so the dates keep them apart and neither is dropped as a
+                # duplicate - and every member of the colliding group carries
+                # its date, so removing one twin leaves the others' keys alone.
                 uid = f"{uid}-{start.isoformat()}"
-            synthetic_seen.add(uid)
 
         status = _event_status(component)
         url_match = _URL_RE.search(description) or _URL_RE.search(str(component.get("URL") or ""))
@@ -298,19 +350,27 @@ def _existing_reservation(apartment_id: int, event: Dict[str, Any], now: str):
     if row or not uid.startswith("synthetic-"):
         return row
     legacy = _legacy_synthetic_uid(event["date_from"], event["date_to"], event["summary"])
-    if legacy == uid:
-        return None
-    row = db.query_one(
-        "SELECT * FROM reservation WHERE apartment_id = ? AND uid = ?",
-        (apartment_id, legacy),
-    )
-    if not row:
-        return None
-    db.update("reservation", row["id"], {"uid": uid, "updated_at": now})
-    adopted = dict(row)
-    adopted["uid"] = uid
-    log.info("ical_synthetic_uid_rekeyed apartment_id=%s reservation_id=%s", apartment_id, row["id"])
-    return adopted
+    for candidate in _synthetic_aliases(uid, legacy, event):
+        row = db.query_one(
+            "SELECT * FROM reservation WHERE apartment_id = ? AND uid = ?",
+            (apartment_id, candidate),
+        )
+        if not row:
+            continue
+        # The wording alone does not identify a stay: two identically worded
+        # bookings differ only by their dates. An alias that is not the dated
+        # legacy key therefore has to match the dates exactly, or a booking that
+        # merely shares its wording would be re-keyed onto the wrong stay.
+        if candidate != legacy and (
+            row["date_from"] != event["date_from"] or row["date_to"] != event["date_to"]
+        ):
+            continue
+        db.update("reservation", row["id"], {"uid": uid, "updated_at": now})
+        adopted = dict(row)
+        adopted["uid"] = uid
+        log.info("ical_synthetic_uid_rekeyed apartment_id=%s reservation_id=%s", apartment_id, row["id"])
+        return adopted
+    return None
 
 
 def _reopen_guest_access(reservation_id: int) -> bool:
@@ -372,6 +432,34 @@ def _report_import_limits(
         )
 
 
+def _record_feed_failure(feed, exc: BaseException, now: str) -> None:
+    """A feed that threw anywhere must not keep a healthy-looking status.
+
+    Called from both places a sync can die: the fetch/parse step, and the
+    reconciliation itself, which ``sync_all`` catches per feed. Recording it
+    only in the first left a feed whose reconcile crashed reading ``ok`` from
+    the previous run, so the dashboard showed a healthy calendar and the host
+    was never told that nothing had been imported.
+    """
+    db.update(
+        "ical_feed",
+        feed["id"],
+        {"last_sync_at": now, "last_status": "error", "last_error": str(exc)},
+    )
+    alerts.raise_alert(
+        "warning",
+        "feed_error",
+        f"Calendar '{feed['own_name'] or feed['label'] or feed['id']}' could not be synchronised.",
+        str(exc),
+        dedupe_key=f"feed_error:{feed['id']}",
+        apartment_id=feed["apartment_id"],
+        params={
+            "feed": feed["own_name"] or feed["label"] or feed["id"],
+            "error": str(exc),
+        },
+    )
+
+
 def sync_feed(
     feed, keep_past_days: int = 400, ics_text: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -389,23 +477,7 @@ def sync_feed(
     except Exception as exc:
         # Deliberately broad: an unexpected exception from one malformed feed
         # must not abort the sync of every other apartment.
-        db.update(
-            "ical_feed",
-            feed["id"],
-            {"last_sync_at": now, "last_status": "error", "last_error": str(exc)},
-        )
-        alerts.raise_alert(
-            "warning",
-            "feed_error",
-            f"Calendar '{feed['own_name'] or feed['label'] or feed['id']}' could not be synchronised.",
-            str(exc),
-            dedupe_key=f"feed_error:{feed['id']}",
-            apartment_id=feed["apartment_id"],
-            params={
-                "feed": feed["own_name"] or feed["label"] or feed["id"],
-                "error": str(exc),
-            },
-        )
+        _record_feed_failure(feed, exc, now)
         return {"error": str(exc), **stats}
 
     alerts.resolve(f"feed_error:{feed['id']}")
@@ -489,43 +561,74 @@ def sync_feed(
                         existing["id"],
                     )
             if dates_changed:
-                # Only guests still sitting on the reservation's old dates move
-                # with it: one who legitimately leaves earlier keeps their own
-                # window. The signature is deliberately left alone - it names
-                # the dates the guest actually signed for, so wiping it would
-                # destroy evidence the host may still need. The host is told
-                # instead.
-                db.execute(
-                    "UPDATE guest SET stay_from = ?, stay_to = ?, updated_at = ? "
-                    "WHERE reservation_id = ? AND submit_state != 'sent' "
-                    "AND stay_from = ? AND stay_to = ?",
-                    (
-                        event["date_from"],
-                        event["date_to"],
-                        now,
+                # Guests whose window came from the booking move with it, and
+                # that is two cases, not one. A guest still sitting on the
+                # booking's *exact* old window inherited those dates and never
+                # chose them. A guest whose whole window now lies after the new
+                # stay ends cannot be staying here at all - the room is not
+                # booked then - so those dates are the old booking's too.
+                # Matching the old window exactly was the only case the sync
+                # used to move, so a booking that jumped a month backwards left
+                # its guests on dates the stay no longer covers: the deadline
+                # clock then ran from the stale arrival and the stay was never
+                # chased. A window that still overlaps the new stay - an early
+                # arrival, a departure a day short - is the guest's own and is
+                # left alone. The signature is deliberately left alone in every
+                # case: it names the dates the guest actually signed for, so
+                # wiping it would destroy evidence the host may still need. The
+                # host is told instead.
+                moved = 0
+                with db.cursor() as cur:
+                    cur.execute(
+                        "UPDATE guest SET stay_from = ?, stay_to = ?, updated_at = ? "
+                        "WHERE reservation_id = ? AND submit_state != 'sent' "
+                        "AND stay_from IS NOT NULL AND stay_to IS NOT NULL "
+                        "AND ((stay_from = ? AND stay_to = ?) OR stay_from > ?)",
+                        (
+                            event["date_from"],
+                            event["date_to"],
+                            now,
+                            existing["id"],
+                            existing["date_from"],
+                            existing["date_to"],
+                            event["date_to"],
+                        ),
+                    )
+                    moved = cur.rowcount
+                if moved:
+                    log.info(
+                        "ical_dates_moved_guests apartment_id=%s reservation_id=%s guests=%s",
+                        feed["apartment_id"],
                         existing["id"],
-                        existing["date_from"],
-                        existing["date_to"],
-                    ),
+                        moved,
+                    )
+                # A stay with nobody on it has no signature to re-collect, and
+                # a critical "the guest must sign again" alert for an empty
+                # stay is noise the host learns to ignore.
+                on_stay = db.query_one(
+                    "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? "
+                    "AND archived_at IS NULL",
+                    (existing["id"],),
                 )
-                alerts.raise_alert(
-                    "critical",
-                    "dates_changed_resign",
-                    host_i18n.translate(
-                        host_i18n.DEFAULT_LANGUAGE, "notification.dates_changed_resign.title"
-                    ),
-                    host_i18n.translate(
-                        host_i18n.DEFAULT_LANGUAGE, "notification.reason.dates_changed_resign"
-                    ),
-                    dedupe_key=f"dates_changed_resign:{existing['id']}",
-                    apartment_id=feed["apartment_id"],
-                    reservation_id=existing["id"],
-                )
-                log.warning(
-                    "ical_dates_changed_resign_required apartment_id=%s reservation_id=%s",
-                    feed["apartment_id"],
-                    existing["id"],
-                )
+                if on_stay and on_stay["n"]:
+                    alerts.raise_alert(
+                        "critical",
+                        "dates_changed_resign",
+                        host_i18n.translate(
+                            host_i18n.DEFAULT_LANGUAGE, "notification.dates_changed_resign.title"
+                        ),
+                        host_i18n.translate(
+                            host_i18n.DEFAULT_LANGUAGE, "notification.reason.dates_changed_resign"
+                        ),
+                        dedupe_key=f"dates_changed_resign:{existing['id']}",
+                        apartment_id=feed["apartment_id"],
+                        reservation_id=existing["id"],
+                    )
+                    log.warning(
+                        "ical_dates_changed_resign_required apartment_id=%s reservation_id=%s",
+                        feed["apartment_id"],
+                        existing["id"],
+                    )
                 reported = db.query_one(
                     "SELECT COUNT(*) AS n FROM guest "
                     "WHERE reservation_id = ? AND submit_state = 'sent'",
@@ -589,8 +692,12 @@ def sync_feed(
     )
     # A feed that suddenly returns a fraction of what is stored is far more
     # likely to be broken than to mean nine guests cancelled at once, so the
-    # cancellation sweep waits until the feed is trusted again.
-    if candidates and len(seen_uids) < FEED_COMPLETENESS_THRESHOLD * len(candidates):
+    # cancellation sweep waits until the feed is trusted again. The count is of
+    # stored stays the feed returned, not of events: a feed that answers with
+    # the same number of *different* UIDs - a rotated listing, another
+    # property's calendar - used to clear the bar and cancel every stay here.
+    returned_stays = {row["uid"] for row in candidates} & set(seen_uids)
+    if candidates and len(returned_stays) < FEED_COMPLETENESS_THRESHOLD * len(candidates):
         db.update(
             "ical_feed",
             feed["id"],
@@ -611,11 +718,12 @@ def sync_feed(
             apartment_id=feed["apartment_id"],
         )
         log.warning(
-            "ical_incomplete_feed_retained apartment_id=%s feed_id=%s retained_stays=%s returned_events=%s",
+            "ical_incomplete_feed_retained apartment_id=%s feed_id=%s retained_stays=%s returned_events=%s matched_stays=%s",
             feed["apartment_id"],
             feed["id"],
             len(candidates),
             len(seen_uids),
+            len(returned_stays),
         )
         return stats
     alerts.resolve(f"feed_incomplete:{feed['id']}")
@@ -672,6 +780,9 @@ def sync_all(
             stats = sync_feed(feed)
         except Exception as exc:  # noqa: BLE001 - one feed must not stop the rest
             log.exception("ical feed %s failed", feed["id"])
+            # The reconciliation died, so this feed did not import anything.
+            # Saying so is what stops a crashed sync from looking healthy.
+            _record_feed_failure(feed, exc, db.utcnow())
             stats = {"error": str(exc)}
         if stats.get("error"):
             totals["errors"] += 1

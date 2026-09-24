@@ -447,31 +447,40 @@ def confirm(reservation, secret: str) -> bool:
     # ubyhost_claim cookie, or with a freshly issued secret if the host resends.
     # token_version is part of the condition so a resend that landed between the
     # read above and this write cannot be confirmed with the superseded secret.
-    db.execute(
-        "UPDATE reservation_claim SET state = ?, claimed_at = ?, token_hash = NULL, "
-        "provisional_until = NULL, updated_at = ? "
-        "WHERE reservation_id = ? AND token_hash = ? AND token_version = ? "
-        "AND state IN (?, ?)",
-        (
-            CLAIMED,
-            now,
-            now,
-            reservation["id"],
-            claim["token_hash"],
-            version,
-            PROVISIONAL,
-            CLAIMED,
-        ),
-    )
-    row = _row(reservation["id"])
-    return bool(row and row["state"] == CLAIMED and row["token_hash"] is None)
+    #
+    # The result is the UPDATE's own row count, not the state read back after it:
+    # two confirms racing on the same secret both used to see the winner's CLAIMED
+    # row and both returned True, even though only one of them spent the link.
+    with db.cursor() as cur:
+        cur.execute(
+            "UPDATE reservation_claim SET state = ?, claimed_at = ?, token_hash = NULL, "
+            "provisional_until = NULL, updated_at = ? "
+            "WHERE reservation_id = ? AND token_hash = ? AND token_version = ? "
+            "AND state IN (?, ?)",
+            (
+                CLAIMED,
+                now,
+                now,
+                reservation["id"],
+                claim["token_hash"],
+                version,
+                PROVISIONAL,
+                CLAIMED,
+            ),
+        )
+        return cur.rowcount == 1
 
 
 def release(reservation_id: int) -> None:
     now = db.utcnow()
+    # Bumping the generation is what actually cuts the released device off:
+    # its ubyhost_claim cookie names the generation it confirmed, and this one
+    # no longer exists, so the next claimant's browser cannot restore access to
+    # the browser that was just released.
     db.execute(
         "UPDATE reservation_claim SET state = ?, email = NULL, email_masked = NULL, "
-        "token_hash = NULL, provisional_until = NULL, claimed_at = NULL, "
+        "token_hash = NULL, token_version = token_version + 1, "
+        "provisional_until = NULL, claimed_at = NULL, "
         "guest_access_locked_at = NULL, guest_access_reopened_at = ?, "
         "updated_at = ? WHERE reservation_id = ?",
         (UNCLAIMED, now, now, reservation_id),

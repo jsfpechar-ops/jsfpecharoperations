@@ -4,7 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
-from app import alerts, claim, db, host_i18n, icalsync, passport_photos, reporting
+from app import alerts, claim, db, icalsync, passport_photos, reporting
+from app.routes import guest
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -124,7 +125,7 @@ def test_stay_cards_are_links_not_radios():
     token, wrong, right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         page = browser.get(f"/l/{token}", follow_redirects=True)
         assert page.status_code == 200
         assert 'type="radio"' not in page.text
@@ -154,7 +155,7 @@ def test_tapping_an_empty_stay_opens_the_form():
     token, wrong, _right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         claim_page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert claim_page.status_code == 200
         assert 'name="guest_email"' in claim_page.text
@@ -172,7 +173,7 @@ def test_wrong_stay_then_correct_stay_opens_a_fresh_form():
     token, wrong, right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(browser, token, wrong, party_size=2)
         saved = browser.post(
             f"/l/{token}/{wrong}/save",
@@ -235,7 +236,7 @@ def test_completed_party_can_add_another_person():
     token, wrong, _right = _make_apartment_with_stays()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(browser, token, wrong, party_size=1)
         saved = browser.post(
             f"/l/{token}/{wrong}/save",
