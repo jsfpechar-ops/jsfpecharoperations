@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 from datetime import date, timedelta
 
 import pytest
@@ -18,6 +19,11 @@ from app import config, db, host_i18n, mail, mail_notify, reporting
 from app.ubyport.client import SubmissionResult, UbyportTransportError
 
 RECIPIENT = "host@mailnotify.test"
+
+# A key the host catalogue is missing renders as its own name, because
+# ``host_i18n.lookup`` falls back to the key. Requiring at least two dots keeps
+# ordinary prose ("…by e-mail.") out of the match.
+RAW_KEY = re.compile(r"\bmail\.[a-z0-9_]+(?:\.[a-z0-9_]+)+")
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -207,6 +213,15 @@ def test_a_transport_failure_emails_the_host(monkeypatch):
     explanation = "could not deliver the guest report"
     assert explanation in payload["text"]
     assert explanation in payload["html"]
+    # The transport reason is its own key. If it is missing from the host
+    # catalogue the host reads the key itself under "What UbyPort reported".
+    assert "mail.submission_problem.reason_transport" not in payload["text"]
+    assert "mail.submission_problem.reason_transport" not in payload["html"]
+    assert "The connection to UbyPort failed" in payload["text"]
+    assert "The connection to UbyPort failed" in payload["html"]
+    for part in ("text", "html"):
+        leaked = RAW_KEY.search(payload[part])
+        assert leaked is None, f"{part} shows a raw key: {leaked.group(0)}"
     # The raw exception is deliberately not host copy: it belongs in the alert
     # and on the submission, where someone can act on the detail, not in a
     # message the host reads on a phone.
