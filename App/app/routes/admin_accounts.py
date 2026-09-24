@@ -95,6 +95,12 @@ async def login_submit(request: Request):
     return response
 
 
+@router.get("/login/2fa")
+def two_factor_login_get():
+    """The 2FA page is a POST response. A stray GET must not show raw JSON."""
+    return RedirectResponse("/login?notice=2fa_expired", status_code=303)
+
+
 @router.post("/login/2fa")
 async def two_factor_login(request: Request):
     form = await request.form()
