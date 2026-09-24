@@ -9,6 +9,11 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_confirm:
+        description: "Type DEPLOY to deploy the current main revision without a workflow_run CI gate"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -16,7 +21,7 @@ permissions:
 jobs:
   lightsail:
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +31,12 @@ jobs:
           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
           LIGHTSAIL_AUTO_DEPLOY: ${{ secrets.LIGHTSAIL_AUTO_DEPLOY }}
           GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
         run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_confirm }}" != "DEPLOY" ]; then
+            echo "Manual deploy requires force_confirm=DEPLOY."
+            exit 1
+          fi
           if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
             echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
             echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
@@ -53,6 +63,7 @@ jobs:
           LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
           LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
+          DEPLOY_SHA="${DEPLOY_SHA}"
           set -euo pipefail
           INSTALL=/opt/ubyhost
           REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git"
@@ -62,10 +73,13 @@ jobs:
               cd "\${INSTALL}"
               git init
               git remote add origin "\${REPO}" 2>/dev/null || git remote set-url origin "\${REPO}"
-              git fetch --depth 1 origin main
-                 git reset --hard origin/main
+              git fetch --depth 1 origin "\${DEPLOY_SHA}"
+              git reset --hard "\${DEPLOY_SHA}"
             elif [ ! -e "\${INSTALL}" ] || [ -z "\$(ls -A "\${INSTALL}" 2>/dev/null)" ]; then
-              git clone --depth 1 --branch main "\${REPO}" "\${INSTALL}"
+              git clone --depth 1 "\${REPO}" "\${INSTALL}"
+              cd "\${INSTALL}"
+              git fetch --depth 1 origin "\${DEPLOY_SHA}"
+              git reset --hard "\${DEPLOY_SHA}"
             else
               echo "ERROR: \${INSTALL} is not a git repo and layout is unexpected" >&2
               exit 1
@@ -73,17 +87,18 @@ jobs:
           fi
           cd "\${INSTALL}"
           git remote set-url origin "\${REPO}"
-          git fetch origin main
-          git reset --hard origin/main
+          git fetch origin "\${DEPLOY_SHA}"
+          git reset --hard "\${DEPLOY_SHA}"
           cd deploy/lightsail
           chmod +x scripts/*.sh
           ./scripts/deploy.sh
           REMOTE
           rm -f ~/.ssh/lightsail_deploy.pem
+          curl --fail --show-error --silent --retry 5 --retry-delay 5 https://ubyhost.com/healthz
 
   render-staging:
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY') ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
