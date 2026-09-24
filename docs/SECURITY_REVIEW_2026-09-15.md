@@ -92,7 +92,7 @@ and secret rotation.
 
 ## Verification
 
-- Full application suite: `328 passed`.
+- Current Phase 6 verification: from `App/`, `.venv/bin/python -m pytest tests -q -p no:logging` — `729 passed`.
 - Focused security/tenancy/SSRF suite: `94 passed`.
 - Local mock smoke check: `32 pages checked`; no dead pages or server errors.
 - Dependency audit against `App/requirements.txt`: no known vulnerabilities.
