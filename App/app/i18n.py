@@ -501,7 +501,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_next_label": "What happens next",
         "mail_claim_next_body": (
             "You will enter the details of every guest of this stay and then sign. "
-            "It takes about two minutes per guest and works on a phone."
+            "It takes about two minutes per guest and works on a phone. If you're "
+            "asked for a PIN, use the one from your host's message."
         ),
         "mail_completion_subject": "Guest registration received",
         "mail_completion_heading": "Registration received",
@@ -1009,7 +1010,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_next_label": "Co bude následovat",
         "mail_claim_next_body": (
             "Vyplníte údaje ke každému hostovi tohoto pobytu a poté je podepíšete. "
-            "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu."
+            "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu. "
+            "Pokud se stránka zeptá na PIN, použijte ten ze zprávy od hostitele."
         ),
         "mail_completion_subject": "Registrace hostů byla přijata",
         "mail_completion_heading": "Registrace byla přijata",
