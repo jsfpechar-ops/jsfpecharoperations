@@ -145,7 +145,7 @@ def test_watermark_czech_diacritics_in_extracted_text():
 
 
 def test_watermark_renders_as_non_white_pixels():
-    pdfplumber = pytest.importorskip("pdfplumber")
+    import pdfplumber
 
     data = build_sample_pdf()
     with pdfplumber.open(io.BytesIO(data)) as doc:
