@@ -7,6 +7,7 @@ from it whenever working credentials exist. The bundled fallbacks in
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Dict, List, Optional, Tuple
 
 from . import db, validation
@@ -78,6 +79,40 @@ def error_codebook() -> Dict[str, str]:
 # The mock server ships a tiny country sample; the bundled ISO list is complete.
 _MIN_CACHED_COUNTRIES = 150
 
+# The nationalities a Czech host actually files, so the guest does not scroll a
+# 254-row wheel. Order is the order they are shown in.
+_COMMON_COUNTRIES = ("CZE", "SVK", "DEU", "POL", "AUT", "GBR", "USA", "UKR")
+
+
+def _fold(label: str) -> str:
+    """Sort key that reads Czech letters as their plain Latin neighbours.
+
+    ``sorted`` compares code points, which files "Česko" after "Zimbabwe". The
+    guest looking under "C" must find it, so the combining marks come off for
+    the comparison only; the displayed label keeps its diacritics.
+    """
+    stripped = unicodedata.normalize("NFD", label)
+    plain = "".join(ch for ch in stripped if not unicodedata.combining(ch))
+    return plain.casefold()
+
+
+def _all_countries(lang: str) -> List[Dict[str, str]]:
+    """Every country, accent-folded sorted, labelled in ``lang``."""
+    rows = cached(KIND_COUNTRIES)
+    if len(rows) >= _MIN_CACHED_COUNTRIES:
+        options = []
+        for row in rows:
+            label = (row["text_en"] if lang == "en" else row["text_cs"]) or row["text_cs"] or row["code"]
+            options.append({"code": row["code"], "label": label})
+        return sorted(options, key=lambda o: _fold(o["label"]))
+    return sorted(
+        (
+            {"code": c["code"], "label": c["en"] if lang == "en" else c["cs"]}
+            for c in validation.countries()
+        ),
+        key=lambda o: _fold(o["label"]),
+    )
+
 
 def nationality_options(lang: str = "en") -> List[Dict[str, str]]:
     """Country choices for the guest form.
@@ -85,20 +120,24 @@ def nationality_options(lang: str = "en") -> List[Dict[str, str]]:
     The police code list is preferred when it looks complete; otherwise the
     bundled ISO 3166-1 list keeps every nationality available offline.
     """
-    rows = cached(KIND_COUNTRIES)
-    if len(rows) >= _MIN_CACHED_COUNTRIES:
-        options = []
-        for row in rows:
-            label = (row["text_en"] if lang == "en" else row["text_cs"]) or row["text_cs"] or row["code"]
-            options.append({"code": row["code"], "label": label})
-        return sorted(options, key=lambda o: o["label"])
-    return sorted(
-        (
-            {"code": c["code"], "label": c["en"] if lang == "en" else c["cs"]}
-            for c in validation.countries()
-        ),
-        key=lambda o: o["label"],
-    )
+    return _all_countries(lang)
+
+
+def country_groups(lang: str = "en") -> List[Dict[str, object]]:
+    """The country list as two optgroups: the usual ones, then the rest.
+
+    ``key`` is an i18n key the template renders as the optgroup label, so the
+    group names stay in the guest's language. The common group keeps the order
+    of ``_COMMON_COUNTRIES``; a code the code list does not know is skipped
+    rather than shown empty.
+    """
+    options = _all_countries(lang)
+    by_code = {option["code"]: option for option in options}
+    common = [by_code[code] for code in _COMMON_COUNTRIES if code in by_code]
+    return [
+        {"key": "countries_common", "options": common},
+        {"key": "countries_all", "options": options},
+    ]
 
 
 def purpose_options(lang: str = "en") -> List[Dict[str, str]]:
