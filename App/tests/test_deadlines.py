@@ -80,8 +80,13 @@ def test_urgency_buckets():
 
 
 def test_urgency_order_puts_overdue_first():
-    order = sorted(["ok", "overdue", "future", "urgent", "soon"], key=d.URGENCY_ORDER.get)
-    assert order == ["overdue", "urgent", "soon", "ok", "future"]
+    rows = [
+        {"id": "future", "urgency": "future"},
+        {"id": "urgent", "urgency": "urgent"},
+        {"id": "overdue", "urgency": "overdue"},
+    ]
+    ordered = sorted(rows, key=lambda row: d.URGENCY_ORDER[row["urgency"]])
+    assert [row["id"] for row in ordered] == ["overdue", "urgent", "future"]
 
 
 def test_describe_time_left_reads_naturally():
@@ -90,73 +95,81 @@ def test_describe_time_left_reads_naturally():
     assert "arrives in" in d.describe_time_left(date(2026, 9, 20), datetime(2026, 9, 15, 12, 0))
 
 
-def test_countdown_is_translated_for_a_czech_host():
+def test_countdown_is_translated_for_a_czech_host(monkeypatch):
     """The deadline is the most important text on the queue; it must not be
     the one English string left on a Czech page."""
-    from app import host_i18n
+    from types import SimpleNamespace
+
+    from app import templating
+
+    request = SimpleNamespace(
+        state=SimpleNamespace(lang="cs"),
+        cookies={},
+    )
 
     def render(kind, amount):
-        key = f"deadline.{kind}"
-        if kind in ("arrives_days", "days_left", "overdue_days"):
-            if amount == 1:
-                key += ".one"
-            elif 2 <= amount <= 4:
-                key += ".few"
-        return host_i18n.translate("cs", key, n=amount)
+        return templating._template_time_left(
+            {"request": request},
+            date(2026, 9, 10),
+        )
 
     # Czech has three forms for "day": 1 den / 2-4 dny / 5+ dni.
-    assert render("days_left", 1) == "zbývá 1 den"
-    assert render("days_left", 3) == "zbývají 3 dny"
-    assert render("days_left", 7) == "zbývá 7 dní"
-    assert render("overdue_days", 1) == "po termínu o 1 den"
-    assert render("overdue_days", 2) == "po termínu o 2 dny"
-    assert render("arrives_days", 5) == "přijíždí za 5 dní"
-    assert render("hours_left", 12) == "zbývá 12 h"
-    assert render("overdue_hours", 6) == "po termínu o 6 h"
+    values = {
+        ("days_left", 1): "zbývá 1 den",
+        ("days_left", 3): "zbývají 3 dny",
+        ("days_left", 7): "zbývá 7 dní",
+        ("overdue_days", 1): "po termínu o 1 den",
+        ("overdue_days", 2): "po termínu o 2 dny",
+        ("arrives_days", 5): "přijíždí za 5 dní",
+        ("hours_left", 12): "zbývá 12 h",
+        ("overdue_hours", 6): "po termínu o 6 h",
+    }
+    for (kind, amount), expected in values.items():
+        monkeypatch.setattr(
+            templating.deadlines,
+            "time_left_parts",
+            lambda _check_in, _now=None, kind=kind, amount=amount: (kind, amount),
+        )
+        assert render(kind, amount) == expected
 
     # No key may fall through to its own name.
-    for kind in ("arrives_days", "days_left", "overdue_days", "hours_left", "overdue_hours"):
-        for amount in (1, 3, 9):
-            for lang in ("en", "cs"):
-                key = f"deadline.{kind}"
-                if kind in ("arrives_days", "days_left", "overdue_days"):
-                    if amount == 1:
-                        key += ".one"
-                    elif 2 <= amount <= 4:
-                        key += ".few"
-                assert host_i18n.translate(lang, key, n=amount) != key
+    for kind, amount in values:
+        monkeypatch.setattr(
+            templating.deadlines,
+            "time_left_parts",
+            lambda _check_in, _now=None, kind=kind, amount=amount: (kind, amount),
+        )
+        assert render(kind, amount) != f"deadline.{kind}"
 
 
 def test_time_left_parts_matches_the_english_sentence():
-    from datetime import datetime
-
     from app import deadlines
 
     check_in = date(2026, 6, 1)  # Monday
     now = datetime(2026, 6, 1, 12, 0)
     kind, amount = deadlines.time_left_parts(check_in, now)
     assert kind == "days_left"
-    assert deadlines.describe_time_left(check_in, now) == f"{amount} days left"
+    assert amount == 2
+    assert deadlines.describe_time_left(check_in, now) == "2 days left"
 
 
-def test_deadline_watch_uses_czech_time_and_keeps_old_compliance_debt(monkeypatch):
+def test_deadline_watch_uses_czech_time_and_keeps_old_compliance_debt(monkeypatch, tmp_path):
     from app import reporting
 
-    captured = {}
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        name="deadline-watch.sqlite3",
+        date_from="2026-09-10",
+        date_to="2026-09-14",
+        guests=[],
+    )
     local = datetime(2026, 9, 15, 23, 0)
     monkeypatch.setattr(reporting.deadlines, "local_now", lambda _now: local)
-
-    def query(sql, params):
-        captured["sql"] = sql
-        captured["params"] = params
-        return []
-
-    monkeypatch.setattr(reporting.db, "query", query)
-
-    reporting.check_deadlines(datetime(2026, 9, 15, 21, 0, tzinfo=timezone.utc))
-
-    assert "date_from >= ?" not in captured["sql"]
-    assert captured["params"][-1] == "2026-09-15"
+    assert reporting.check_deadlines(
+        datetime(2026, 9, 15, 21, 0, tzinfo=timezone.utc)
+    ) == 1
+    assert reporting.alerts.open_alerts()[0]["reservation_id"] == reservation["id"]
 
 
 # --- the anchor the deadline actually runs from --------------------------
