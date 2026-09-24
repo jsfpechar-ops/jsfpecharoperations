@@ -66,8 +66,19 @@ guest cannot get past the PIN gate or start a claim, and no alert is raised.
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `CLOUDFLARE_PROXY` | `0` | `1` trusts the Docker/Caddy peer ranges and honours `CF-Connecting-IP`. |
-| `UBYHOST_TRUSTED_PROXY_CIDRS` | unset | Comma-separated CIDRs allowed to set `CF-Connecting-IP`. **Overrides** the `CLOUDFLARE_PROXY` defaults when set. |
+| `CLOUDFLARE_PROXY` | `0` | `1` says Cloudflare fronts the origin (origin certs, Full (strict)). It does **not** grant trust by itself. |
+| `UBYHOST_TRUSTED_PROXY_CIDRS` | unset | Comma-separated CIDRs allowed to set `CF-Connecting-IP`. The only source of that trust. |
+
+`CF-Connecting-IP` is believed only when the immediate peer is in
+`UBYHOST_TRUSTED_PROXY_CIDRS`. `CLOUDFLARE_PROXY=1` used to imply the whole
+private space (loopback, `10/8`, `172.16/12`, `192.168/16`), which let anything
+that could reach the origin from a private address — a co-tenant container, a
+machine on the office LAN — name its own visitor address and walk past every
+per-address rate limit. The app cannot tell a real Caddy peer from any other
+private one, so it no longer guesses: set the proxy's network explicitly, for
+example `UBYHOST_TRUSTED_PROXY_CIDRS=172.16.0.0/12` for the Docker bridge pool
+that `deploy/lightsail` uses. An unset value logs a warning at the first request
+that needs it.
 
 If neither is set behind a proxy, every visitor appears to come from the proxy's
 address, so all PIN and claim rate limits share a single bucket — one guest
@@ -147,6 +158,7 @@ them; Render does.
 | `UBYHOST_INSTALL_DIR` | `/opt/ubyhost` | `setup-server.sh` |
 | `UBYHOST_DEPLOY_USER` | `ubuntu` | `setup-server.sh` |
 | `UBYHOST_BACKUP_DIR` | `./backups` | `App/scripts/backup_data.sh` |
+| `UBYHOST_SECRET_KEY` | unset | `App/scripts/backup_data.sh` — written into the snapshot when there is no `data/secret_key` file, so an off-site restore can be decrypted |
 | `UBYHOST_S3_BUCKET` | unset | `backup-s3.sh` |
 | `UBYHOST_S3_PREFIX` | unset | `backup-s3.sh` |
 | `RCLONE_REMOTE` | `gdrive` | `backup-gdrive.sh` |

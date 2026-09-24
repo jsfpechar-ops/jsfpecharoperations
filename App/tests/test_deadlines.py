@@ -204,22 +204,35 @@ def test_time_left_parts_matches_the_english_sentence():
 
 
 def test_deadline_watch_uses_czech_time_and_keeps_old_compliance_debt(monkeypatch, tmp_path):
+    """The watch reads the clock in Prague, not the UTC date of the instant.
+
+    The instant below is 22:30 UTC on 15 September — half an hour before the
+    23:59 deadline — which is already 00:30 on the 16th in Prague, and so
+    already late. A watch that took the UTC date would still call this stay
+    merely "due now" and raise a warning instead of a critical alert, which is
+    the bug this test is named for: the assertions below fail on that version.
+    """
     from app import reporting
 
     reservation = _stay_with_guests(
         monkeypatch,
         tmp_path,
         name="deadline-watch.sqlite3",
-        date_from="2026-09-10",
-        date_to="2026-09-14",
+        # Friday: the third working day ends on Tuesday the 15th, so the
+        # deadline falls at the very end of the civil day the instant is near.
+        date_from="2026-09-11",
+        date_to="2026-09-15",
         guests=[],
     )
-    local = datetime(2026, 9, 15, 23, 0)
-    monkeypatch.setattr(reporting.deadlines, "local_now", lambda _now: local)
-    assert reporting.check_deadlines(
-        datetime(2026, 9, 15, 21, 0, tzinfo=timezone.utc)
-    ) == 1
-    assert reporting.alerts.open_alerts()[0]["reservation_id"] == reservation["id"]
+    now = datetime(2026, 9, 15, 22, 30, tzinfo=timezone.utc)
+    assert reporting.deadlines.local_now(now).date() > now.date(), (
+        "the fixture only tests anything while the civil date differs"
+    )
+    assert reporting.check_deadlines(now) == 1
+    alert = reporting.alerts.open_alerts()[0]
+    assert alert["reservation_id"] == reservation["id"]
+    assert alert["kind"] == "deadline"
+    assert alert["level"] == "critical"
 
 
 # --- the anchor the deadline actually runs from --------------------------

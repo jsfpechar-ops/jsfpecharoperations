@@ -165,7 +165,8 @@ def guest_has_signature(guest) -> bool:
     return signature.startswith("data:image/")
 
 
-def guest_signature_issue(value: Optional[str], translate=None) -> Optional[validation.Issue]:
+def guest_signature_issue(value: Optional[str], translate=None, *,
+                          allow_imported: bool = True) -> Optional[validation.Issue]:
     """The one ``signature`` issue a value raises, or ``None`` when it is fine.
 
     Both the stored-record check and the two save paths read this, so a value
@@ -175,10 +176,20 @@ def guest_signature_issue(value: Optional[str], translate=None) -> Optional[vali
     to be told where the signature can come from, while a guest is looking at
     the pad itself, so the guest route passes its own (already localised)
     sentence instead.
+
+    ``allow_imported`` is True for a stored record and for the host's own
+    entry, where ``IMPORTED_SIGNATURE`` records that the host has the signature
+    on paper. A guest submission passes False: a guest posting
+    ``signature=imported`` used to be accepted and stored as signed, which made
+    an unsigned record sendable.
     """
     text = (value or "").strip()
     if text == IMPORTED_SIGNATURE:
-        return None
+        if allow_imported:
+            return None
+        if translate is not None:
+            return validation.Issue("signature", translate("signature_missing"))
+        return validation.Issue("signature", HOST_SIGNATURE_REQUIRED_MESSAGE)
     if not text:
         if translate is not None:
             return validation.Issue("signature", translate("signature_missing"))
@@ -568,7 +579,11 @@ def refresh_registration_completed_at(
             "SELECT registration_completed_at FROM reservation WHERE id = ?",
             (reservation_id,),
         )["registration_completed_at"]
-    elif not complete and existing:
+    elif not complete and existing and progress["incomplete"]:
+        # Only a form that is actually missing un-completes a stay. Touching a
+        # guest row restarts the quiet clock, and clearing the completion
+        # because of that meant any edit - a corrected surname, an archived
+        # duplicate, a re-saved form - could hold a stay open for ever.
         db.update(
             "reservation",
             reservation_id,
@@ -576,6 +591,27 @@ def refresh_registration_completed_at(
         )
         existing = None
     return existing
+
+
+def signature_dates_stale(guest, reservation) -> bool:
+    """Whether a signed form names dates the calendar has since moved away.
+
+    The sync deliberately leaves an already-signed guest on the dates they
+    signed - that window is what the police were given, so it is evidence - and
+    raises ``dates_changed_resign`` for the host. Nothing stopped the *filing*
+    though, so the stay went out with dates that contradict the booking.
+
+    Only a window that has fallen outside the booking counts. A guest who
+    signed a shorter period inside it - a late arrival, an early departure - is
+    a normal record and must still be filed.
+    """
+    stay_from, stay_to = guest["stay_from"], guest["stay_to"]
+    date_from, date_to = reservation["date_from"], reservation["date_to"]
+    if not stay_from and not stay_to:
+        return False
+    if stay_from and date_from and stay_from < date_from:
+        return True
+    return bool(stay_to and date_to and stay_to > date_to)
 
 
 def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
@@ -608,7 +644,7 @@ def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
             apartment_id,
             only_guest_ids=guest_ids,
             mode="completion_immediate",
-            ignore_automation=True,
+            ignore_schedule=True,
         )
     except Exception as exc:
         alerts.raise_alert(
@@ -627,9 +663,10 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
-    # Do not backfill this during a scheduler sweep. Existing production
-    # reservations predate completion-based automation and must not suddenly
-    # become eligible merely because the new code was deployed.
+    # No completion, no send. The sweep refreshes the quiet-window completion
+    # before it asks, so a stay that has gone quiet is not held open for ever;
+    # eligibility still comes from the guests' own forms, never from the fact
+    # that this code was deployed.
     completed_at = reservation["registration_completed_at"]
     if not completed_at:
         return False
@@ -729,6 +766,18 @@ def receipt_submission_id(previous_submission_id: Optional[int]) -> Optional[int
     return None
 
 
+def guest_correction_resets_attempts(existing) -> bool:
+    """Whether this save is a correction that restarts the automatic retry budget.
+
+    Rule 10.4(5): a correction makes the record sendable again, and a guest
+    fixing their own form is a correction like any other. Without the reset the
+    sweep kept skipping the row at SUBMISSION_MAX_AUTO_ATTEMPTS for ever while
+    the stranded-records card resolved itself, so the guest was never filed and
+    nothing said so.
+    """
+    return bool(existing) and existing["submit_state"] in (ERROR, BLOCKED, NOT_REQUIRED)
+
+
 def auto_attempts(guest) -> int:
     """Consecutive failed automatic submissions for one guest row.
 
@@ -760,9 +809,20 @@ def clear_stuck_alert_if_recovered(reservation_id: int) -> None:
 
 
 def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = None,
-                     ignore_automation: bool = False, allow_resend: bool = False
+                     ignore_automation: bool = False, allow_resend: bool = False,
+                     ignore_schedule: Optional[bool] = None
                      ) -> List[Tuple[Any, Any]]:
-    """Guest rows that may legitimately be sent right now, with reservations."""
+    """Guest rows that may legitimately be sent right now, with reservations.
+
+    ``ignore_automation`` is the host sending by hand: it lifts both the
+    completion delay and the retry cap, because taking a record back after
+    fixing it is exactly what the host is for. ``ignore_schedule`` lifts only
+    the delay, so a stay can be filed the moment it completes while still
+    stopping at ``SUBMISSION_MAX_AUTO_ATTEMPTS``. Automation uses the narrow
+    one; anything that is not a human pressing send does.
+    """
+    if ignore_schedule is None:
+        ignore_schedule = ignore_automation
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return []
@@ -821,7 +881,34 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
             continue
         if not guest_is_complete(guest, reservation):
             continue
-        if not ignore_automation:
+        # A form signed before the calendar moved names the old dates. Filing
+        # it would put a window in the register that the booking no longer
+        # contains, so the record waits for the re-sign the sync asked for.
+        if signature_dates_stale(guest, reservation):
+            log.warning(
+                "guest_signature_dates_stale guest=%s reservation=%s signed=%s..%s booking=%s..%s",
+                guest["id"],
+                reservation["id"],
+                guest["stay_from"],
+                guest["stay_to"],
+                reservation["date_from"],
+                reservation["date_to"],
+            )
+            continue
+        # A calendar move left this stay's signatures naming dates the booking
+        # no longer has, and the sync asked the host to have them re-signed.
+        # Filing anyway is how the old window reached the register. A host
+        # pressing send is the override, exactly as it is for the retry cap.
+        if not ignore_automation and alerts.open_alert(
+            f"dates_changed_resign:{reservation['id']}"
+        ):
+            log.warning(
+                "guest_signature_awaiting_resign guest=%s reservation=%s",
+                guest["id"],
+                reservation["id"],
+            )
+            continue
+        if not ignore_schedule:
             if not due_for_automatic_send(apartment, reservation):
                 continue
         out.append((guest, reservation))
@@ -831,7 +918,14 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
 def claim_sendable(
     pairs: List[Tuple[Any, Any]],
 ) -> Tuple[str, List[Tuple[Any, Any]]]:
-    """Atomically lease guests so concurrent workers cannot submit duplicates."""
+    """Atomically lease guests so concurrent workers cannot submit duplicates.
+
+    The lease alone is not enough: a worker that read its list before another
+    worker filed the record would still hold a lease on a guest the register
+    already has, and filing it again is a duplicate against the host. So the
+    claim re-reads the row inside the same transaction and drops any pair whose
+    record has moved on since the list was built.
+    """
     token = secrets.token_urlsafe(18)
     claimed_ids = set()
     with db.cursor() as cur:
@@ -840,6 +934,21 @@ def claim_sendable(
             (time.time() - SUBMISSION_CLAIM_TTL_SECONDS,),
         )
         for guest, _reservation in pairs:
+            cur.execute(
+                "SELECT submit_state, archived_at FROM guest WHERE id = ?", (guest["id"],)
+            )
+            row = cur.fetchone()
+            # Only a row that *moved on* since the list was built is dropped.
+            # A guest already sent when the list was built is the host's
+            # deliberate resend, which the collection allowed on purpose, and
+            # that decision has to survive the claim or the resend button
+            # would answer "not sendable" instead of filing the duplicate.
+            if (
+                row is None
+                or row["archived_at"]
+                or row["submit_state"] != guest["submit_state"]
+            ):
+                continue
             cur.execute(
                 "INSERT OR IGNORE INTO submission_claim (guest_id, claim_token, claimed_at) "
                 "VALUES (?, ?, ?)",
@@ -1014,9 +1123,14 @@ def submit_batch(
             if new_state == SENT:
                 update_values["submitted_at"] = guest["submitted_at"] or now
                 # The confirmation for this record, if there is one, is on the
-                # submission that carried it before this one.
-                update_values["receipt_submission_id"] = receipt_submission_id(
-                    guest["submission_id"]
+                # submission that carried it before this one. A pointer already
+                # on file wins: it names the submission that first filed the
+                # guest, and deriving again from submission_id - which moves on
+                # every send - would drop the link as soon as one duplicate
+                # without a confirmation came back.
+                update_values["receipt_submission_id"] = (
+                    guest["receipt_submission_id"]
+                    or receipt_submission_id(guest["submission_id"])
                 )
             db.update("guest", guest["id"], update_values)
             if new_state == SENT:
@@ -1191,6 +1305,7 @@ def submit_for_apartment(
     ignore_automation: bool = False,
     allow_resend: bool = False,
     env: Optional[str] = None,
+    ignore_schedule: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
     """Send everything currently sendable for one apartment, in batches.
 
@@ -1224,7 +1339,9 @@ def submit_for_apartment(
         return [{"state": "not_configured", "error": validation.issues_to_text(setup_errors)}]
     alerts.resolve(f"apartment_setup:{apartment_id}")
 
-    pairs = collect_sendable(apartment_id, only_guest_ids, ignore_automation, allow_resend)
+    pairs = collect_sendable(
+        apartment_id, only_guest_ids, ignore_automation, allow_resend, ignore_schedule
+    )
     if not pairs:
         return []
 
@@ -1257,7 +1374,38 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
         (owner_user_id, owner_user_id),
     ):
         summary["apartments"] += 1
-        for result in submit_for_apartment(apartment["id"], mode="auto"):
+        try:
+            # The quiet-window completion is the one decision nobody makes: the
+            # common case is a guest who simply stops filling the form in, and
+            # only a pass that runs when nobody is looking can notice it. It
+            # used to be evaluated only when a form was saved, so a stay whose
+            # party had gone quiet was never completed and never filed.
+            for pending in db.query(
+                "SELECT id FROM reservation WHERE apartment_id = ? AND status = 'active' "
+                "AND archived_at IS NULL AND registration_completed_at IS NULL",
+                (apartment["id"],),
+            ):
+                refresh_registration_completed_at(pending["id"])
+            results = submit_for_apartment(apartment["id"], mode="auto")
+        except db.DecryptionError:
+            # One guest row that will not decrypt used to abort the whole sweep,
+            # so no host anywhere was filed or alerted. Contain it to the one
+            # property it belongs to and name it.
+            log.exception("sweep stopped for apartment_id=%s", apartment["id"])
+            summary["failed"] += 1
+            alerts.raise_alert(
+                "critical",
+                "guest_record_unreadable",
+                f"{apartment['internal_name']}: a guest record cannot be read, so "
+                "nothing is being reported for this property.",
+                "A stored guest document field could not be decrypted. Restore the "
+                "encryption key, or have the guest's document entered again.",
+                dedupe_key=f"guest_record_unreadable:{apartment['id']}",
+                apartment_id=apartment["id"],
+                params={"property": apartment["internal_name"]},
+            )
+            continue
+        for result in results:
             summary["submitted"] += result.get("submitted", 0)
             summary["failed"] += result.get("failed", 0) + result.get("blocked", 0)
     return summary
@@ -1298,14 +1446,37 @@ def check_deadlines(
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
-        "AND (? IS NULL OR a.owner_user_id = ?) AND r.date_from <= ?",
-        (owner_user_id, owner_user_id, now.date().isoformat()),
+        "AND (? IS NULL OR a.owner_user_id = ?)",
+        (owner_user_id, owner_user_id),
     )
     for reservation in rows:
-        start = reservation_deadline_anchor(reservation)
-        if not start:
+        try:
+            # The clock runs from the earliest guest arrival, which can be
+            # earlier than the reservation's own start. Selecting rows by
+            # r.date_from therefore skipped exactly the stays that arrived early
+            # and were already late; the anchor decides, not the SQL filter.
+            start = reservation_deadline_anchor(reservation)
+            if not start:
+                continue
+            progress = reservation_progress(reservation)
+        except db.DecryptionError:
+            # A guest row that will not decrypt used to abort the whole watch,
+            # so no host anywhere was told about a deadline. Contain it to the
+            # stay that owns the row.
+            log.exception("deadline watch stopped for reservation_id=%s", reservation["id"])
+            alerts.raise_alert(
+                "critical",
+                "guest_record_unreadable",
+                f"{reservation['internal_name']}: a guest record cannot be read, so "
+                "this stay is not being watched.",
+                "A stored guest document field could not be decrypted. Restore the "
+                "encryption key, or have the guest's document entered again.",
+                dedupe_key=f"guest_record_unreadable:reservation:{reservation['id']}",
+                apartment_id=reservation["apartment_id"],
+                reservation_id=reservation["id"],
+                params={"property": reservation["internal_name"]},
+            )
             continue
-        progress = reservation_progress(reservation)
         key = f"deadline:{reservation['id']}"
         mismatch_key = f"headcount_mismatch:{reservation['id']}"
         settled = progress["status"] in ("reported", "not_required")

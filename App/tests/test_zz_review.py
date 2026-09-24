@@ -1,7 +1,7 @@
 """Reviewer reproductions (not for merge)."""
 from __future__ import annotations
 
-from app import alerts, db, icalsync, reporting
+from app import db, icalsync, reporting
 from app.ubyport.client import SubmissionResult
 from tests.test_submission_retry_cap import (
     BOUND, RefusingClient, _attempts, _cleanup, _fail, _seed, _stuck_alerts, host,  # noqa
@@ -72,9 +72,14 @@ def test_guest_side_correction_leaves_record_capped_and_card_clears(monkeypatch)
         for _ in range(BOUND):
             _fail(ap, gid, monkeypatch)
         assert len(_stuck_alerts(ap["id"])) == 1
-        # What routes/guest.py:1399-1405 writes when the guest re-saves the form.
-        db.update("guest", gid, {"submit_state": reporting.PENDING, "last_errors": None,
-                                 "doc_number": "P7654321", "updated_at": db.utcnow()})
+        # What routes/guest.py writes when the guest re-saves the form, through
+        # the same helper the route uses, so the reset cannot drift from the
+        # route's own condition.
+        payload = {"submit_state": reporting.PENDING, "last_errors": None,
+                   "doc_number": "P7654321", "updated_at": db.utcnow()}
+        if reporting.guest_correction_resets_attempts(_g(gid)):
+            payload["submit_attempts"] = 0
+        db.update("guest", gid, payload)
         print("attempts after guest fix:", _attempts(gid))
         swept = [g["id"] for g, _ in reporting.collect_sendable(ap["id"])]
         print("sweep offers:", swept)
