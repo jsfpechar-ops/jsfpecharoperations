@@ -107,9 +107,13 @@
         <label for="nationality">{{ t('nationality') }}</label>
         <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" required>
           <option value="">—</option>
-          {% for country in countries %}
-            <option value="{{ country.code }}" {% if val('nationality') == country.code %}selected{% endif %}>
-              {{ country.label }}</option>
+          {% for group in country_groups %}
+            <optgroup label="{{ t(group.key) }}">
+              {% for country in group.options %}
+                <option value="{{ country.code }}" {% if val('nationality') == country.code %}selected{% endif %}>
+                  {{ country.label }}</option>
+              {% endfor %}
+            </optgroup>
           {% endfor %}
         </select>
         {{ err_for('nationality') }}
@@ -182,9 +186,13 @@
         <label for="res_country">{{ t('res_country') }}</label>
         <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" required>
           <option value="">—</option>
-          {% for country in countries %}
-            <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
-              {{ country.label }}</option>
+          {% for group in country_groups %}
+            <optgroup label="{{ t(group.key) }}">
+              {% for country in group.options %}
+                <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
+                  {{ country.label }}</option>
+              {% endfor %}
+            </optgroup>
           {% endfor %}
         </select>
         {{ err_for('res_country') }}

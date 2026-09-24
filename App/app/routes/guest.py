@@ -1261,7 +1261,7 @@ def _form_context(
                 if guest and validation.is_valid_signature(guest["signature_png"])
                 else ""
             ),
-            "countries": codelists.nationality_options(lang),
+            "country_groups": codelists.country_groups(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
             "inpass": validation.INPASS,
