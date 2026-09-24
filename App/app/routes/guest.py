@@ -150,17 +150,37 @@ def _claim_serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-claim")
 
 
-def _language(request: Request) -> str:
-    """The guest's language: what they asked for, else the public default.
+def _accept_language(request: Request) -> str:
+    """What the guest's phone asks for: Czech or Slovak -> Czech, else English.
 
-    A guest arriving from a host's link has made no choice, and the host is
-    Czech, so the form is Czech until the guest says otherwise -- through a
-    ``?lang=`` on a link, or the switcher's cookie. The catalog's own
-    ``i18n.DEFAULT_LANGUAGE`` is only what a missing *key* falls back to.
+    Read only when the guest has said nothing themselves. A browser always
+    sends this header, so a German guest's first screen is English instead of
+    Czech. The first tag wins, because browsers list their languages in order
+    of preference.
     """
-    return host_i18n.supported_language(
-        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
-    ) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    header = request.headers.get("accept-language") or ""
+    for part in header.split(","):
+        tag = part.split(";")[0].strip().lower().replace("_", "-")
+        if tag[:2] in ("cs", "sk"):
+            return "cs"
+        if tag:
+            return "en"
+    return "en"
+
+
+def _language(request: Request) -> str:
+    """The guest's language: what they asked for, else what their phone asks for.
+
+    A ``?lang=`` on a link, or the switcher's cookie, is the guest saying so,
+    and wins. When they name a language we do not speak the public default
+    stands. A guest who has said nothing at all gets the language of their own
+    phone, because the catalog is written for foreigners and a German guest
+    should not land on "Zadejte přístupový PIN".
+    """
+    asked = request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
+    if asked:
+        return host_i18n.supported_language(asked) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    return _accept_language(request)
 
 
 def _chosen_language(request: Request) -> Optional[str]:
