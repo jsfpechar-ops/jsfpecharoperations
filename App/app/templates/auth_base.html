@@ -23,7 +23,7 @@
       {% block lang_switch %}
       <form method="post" action="/language" class="lang-switch auth-lang-switch">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <input type="hidden" name="next" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+        <input type="hidden" name="next" value="{{ lang_next | default(request.url.path ~ ('?' ~ request.url.query if request.url.query else '')) }}">
         <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
         <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
       </form>

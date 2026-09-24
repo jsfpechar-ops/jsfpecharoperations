@@ -1,4 +1,7 @@
 {% extends "auth_base.html" %}
+{# This page exists only as a POST response, so its own path is a dead end for
+   the language switch. Send the switch back to the login form instead. #}
+{% set lang_next = '/login' %}
 {% block title %}{{ t('account.2fa.code_title') }}{% endblock %}
 {% block auth_body %}
 <section class="auth-card">
