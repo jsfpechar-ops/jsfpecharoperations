@@ -281,13 +281,34 @@ def _with_lang(response, lang: str):
     return response
 
 
+_CLAIM_FRAGMENT = re.compile(r"c=[A-Za-z0-9_-]{16,128}\Z")
+
+
+def _safe_fragment(value: Optional[str]) -> str:
+    """Return the claim secret a fragment carries, or ``""``.
+
+    A fragment is never sent to the server, so it is not part of the redirect
+    target the browser posts back; the claim link keeps its one-time secret
+    there (``#c=…``) and ``claim.js`` reads it out again. Anything that is not
+    a plain claim secret is dropped rather than echoed into a ``Location``.
+    """
+    if not value or "#" not in value:
+        return ""
+    fragment = value.split("#", 1)[1]
+    if not _CLAIM_FRAGMENT.fullmatch(fragment):
+        return ""
+    return "#" + fragment
+
+
 def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     """Only ever bounce back inside this apartment's own permalink.
 
     A plain ``startswith`` check passes ``/l/{token}/../../somewhere-else``,
-    so the path is normalised before it is compared.
+    so the path is normalised before it is compared. The claim fragment is
+    kept: dropping it is what silently broke the link behind the PIN gate.
     """
     fallback = _guest_link(token) + _lang_q(lang)
+    fragment = _safe_fragment(requested)
     raw = security.safe_local_path(requested, "")
     if not raw:
         return fallback
@@ -298,7 +319,7 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     prefix = _guest_link(token)
     if path != prefix and not path.startswith(prefix + "/"):
         return fallback
-    return urlunsplit(("", "", path, split.query, ""))
+    return urlunsplit(("", "", path, split.query, "")) + fragment
 
 
 def _localize_message(message: str) -> str:

@@ -184,6 +184,18 @@
     if (target && typeof target.focus === "function") target.focus();
   }
 
+  /* The claim secret lives in the fragment (#c=…), which the browser never
+     sends to the server. Carry it across the PIN gate by hand, so a guest
+     whose mail app opened the link in its own browser does not lose it. */
+  function initPinReturn() {
+    var field = document.querySelector('form[action*="/pin"] input[name="return_to"]');
+    if (!field) return;
+    var hash = window.location.hash || "";
+    if (hash.indexOf("#c=") !== 0) return;
+    if (field.value.indexOf("#") !== -1) return;
+    field.value += hash;
+  }
+
   function initGuestWizard() {
     var form = document.querySelector("[data-guest-wizard]");
     if (!form) return;
@@ -277,6 +289,7 @@
     initBirthDate();
     initChildToggle();
     initResidenceCountry();
+    initPinReturn();
     initGuestWizard();
     focusFirstError();
   });
