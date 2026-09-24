@@ -97,6 +97,12 @@
       form.addEventListener("submit", function (event) {
         if (!hidden.value) {
           event.preventDefault();
+          // The signature step is not always the one on screen, and its
+          // message would be invisible there. Ask the wizard to reveal the
+          // step that owns the canvas before saying anything.
+          form.dispatchEvent(new CustomEvent("guest-wizard:show", {
+            detail: { target: canvas }
+          }));
           if (status) status.textContent = status.getAttribute("data-missing") || "";
           canvas.scrollIntoView({ behavior: "smooth", block: "center" });
           canvas.focus();
@@ -190,6 +196,17 @@
     var active = Math.max(0, steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); }));
 
     function stepIsValid(step) {
+      // The pad is a canvas and the signature itself is a hidden input, so no
+      // constraint ever fails here: without this the guest walks straight past
+      // an empty signature and only finds out at Submit.
+      var canvas = step.querySelector("#sig-canvas");
+      var signature = document.getElementById("signature");
+      if (canvas && signature && !signature.value) {
+        var status = document.getElementById("sig-status");
+        if (status) status.textContent = status.getAttribute("data-missing") || "";
+        canvas.focus();
+        return false;
+      }
       var fields = step.querySelectorAll("input, select, textarea");
       for (var i = 0; i < fields.length; i += 1) {
         if (!fields[i].checkValidity()) {
@@ -217,6 +234,16 @@
         steps[active].scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
+
+    // Other scripts (the signature pad's submit guard) need to bring their own
+    // step on screen without reaching into the wizard's state.
+    form.addEventListener("guest-wizard:show", function (event) {
+      var target = event.detail && event.detail.target;
+      if (!target) return;
+      for (var i = 0; i < steps.length; i += 1) {
+        if (steps[i].contains(target)) { show(i, false); return; }
+      }
+    });
 
     steps.forEach(function (step, index) {
       var nav = document.createElement("div");
