@@ -1,7 +1,9 @@
 """Demo data, so the app can be explored before any real credentials exist.
 
-Only reachable while pointed at the mock UbyPort server, so it can never put
-invented guests in front of the real police register.
+Seeding is only reachable while pointed at the mock UbyPort server, but
+detection is not environment-bound: a demo seeded under mock and then switched
+to test or prod is still recognised, so its invented guests can never be put in
+front of the real police register.
 """
 from __future__ import annotations
 
@@ -35,13 +37,18 @@ DEMO_SIGNATURE = (
 def is_demo_apartment(apartment) -> bool:
     if not apartment:
         return False
-    # Demo data can only be seeded while pointed at the mock server, so on a
-    # real deployment nothing can be a demo apartment and the legal_entity
-    # lookup below is a query per dashboard row for a name that cannot exist.
-    if config.UBYPORT_ENV != "mock":
-        return False
+    # The name is what the seed writes and what clear() matches on, so it is
+    # checked in every environment. This used to return False off the mock
+    # environment, which meant a demo seeded under mock and then switched to
+    # test or prod stopped being recognised: its guests were sent to the real
+    # register and the "Clear demo" button disappeared.
     if apartment["internal_name"] in (DEMO_APARTMENT, DEMO_LOFT):
         return True
+    # The legal_entity fallback is the expensive half - a query per dashboard
+    # row - and a demo can only be *seeded* while pointed at the mock server,
+    # so it is the only part that stays mock-only.
+    if config.UBYPORT_ENV != "mock":
+        return False
     entity = db.query_one(
         "SELECT name FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],)
     )

@@ -14,6 +14,7 @@ from datetime import timedelta
 from fastapi.testclient import TestClient
 
 from app import claim, db, host_i18n, i18n
+from app.routes import guest
 from app.main import app
 
 TOKEN = "guestlangtoken"
@@ -95,11 +96,14 @@ def test_the_guest_can_still_ask_for_english_and_the_choice_is_remembered():
         assert '<html lang="en">' in english.text
         assert i18n.STRINGS["en"]["arrival_question"] in english.text
 
-        # The switcher writes the cookie, so the next page -- and the one after
-        # a redirect -- stays in the language the guest picked.
+        # The switcher writes the guest's own cookie, so the next page -- and
+        # the one after a redirect -- stays in the language the guest picked.
         remembered = browser.get(f"/l/{TOKEN}", follow_redirects=True)
         assert '<html lang="en">' in remembered.text
-        assert browser.cookies.get(host_i18n.LANG_COOKIE) == "en"
+        assert browser.cookies.get(guest.LANG_COOKIE) == "en"
+        # The guest's choice is theirs: it must not reach the host's UI, which
+        # reads the same browser's ``ubyhost_lang``.
+        assert browser.cookies.get(host_i18n.LANG_COOKIE) is None
     finally:
         _cleanup()
 

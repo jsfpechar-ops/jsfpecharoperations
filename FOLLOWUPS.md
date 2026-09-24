@@ -331,14 +331,20 @@ missing peer address to the shared `UNIDENTIFIED_CLIENT` bucket instead of an
 empty string, so a limit built on it still counts. The audit row's third point —
 "the proxy bucket is shared" — was not a code change. `client_ip.py` only ever
 *overwrites* `scope["client"]` with `CF-Connecting-IP` when the immediate peer is
-in `trusted_proxy_networks()` (`TRUSTED_PROXY_CIDRS`, or the RFC1918/loopback
-defaults when `CLOUDFLARE_PROXY` is on) **and** `_normalise_visitor_ip` accepts
-the header as an IP. With `TRUSTED_PROXY_CIDRS` unset and `CLOUDFLARE_PROXY` off
-— the state the audit was describing — no header is trusted at all, so every
-request behind a reverse proxy collapses onto the proxy's own address. That is a
-deployment configuration to document and set, not something the application can
-infer; changing it in code would mean trusting a client-supplied header by
-default, which is a worse defect than the one it would fix.
+in `trusted_proxy_networks()` (`TRUSTED_PROXY_CIDRS` — the explicit list, and
+nothing else) **and** `_normalise_visitor_ip` accepts the header as an IP. With
+`TRUSTED_PROXY_CIDRS` unset — the state the audit was describing, and still the
+state with `CLOUDFLARE_PROXY=1`, which no longer implies any network — no header
+is trusted at all, so every request behind a reverse proxy collapses onto the
+proxy's own address. That is a deployment configuration to document and set, not
+something the application can infer; changing it in code would mean trusting a
+client-supplied header by default, which is a worse defect than the one it would
+fix. The review of Phases 1-6 then closed the remaining hole: `CLOUDFLARE_PROXY`
+used to imply the whole private space (loopback, `10/8`, `172.16/12`,
+`192.168/16`), so any host that could reach the origin from a private address —
+a co-tenant container, a machine on the office LAN — could name its own visitor
+address and walk past every per-address limit. The implied default is gone; the
+operator names the proxy network in `UBYHOST_TRUSTED_PROXY_CIDRS`.
 
 ### `GUEST_POST_MAX_ATTEMPTS = 30` is deliberately loose
 

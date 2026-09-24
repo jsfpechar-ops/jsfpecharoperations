@@ -158,7 +158,11 @@ def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = Non
         "SELECT g.id AS id, g.passport_photo_at AS marked FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE COALESCE(g.stay_to, r.date_to) < ? "
+        # date() rather than the raw column: a stay_to that is not a date (an
+        # old row saved before the form refused them) is NULL here and falls
+        # back to the booking, instead of comparing as text - where "garbage"
+        # sorts after every cutoff and would keep the photo forever.
+        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) < ? "
         "AND (? IS NULL OR a.owner_user_id = ?)",
         (stale_cutoff(today).isoformat(), owner_user_id, owner_user_id),
     )

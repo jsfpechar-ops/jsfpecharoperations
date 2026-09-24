@@ -239,23 +239,29 @@ def test_immediate_mode_sends_only_when_all_declared_forms_are_complete(monkeypa
     assert len(calls) == 1
     assert calls[0][0] == (apartment["id"],)
     assert calls[0][1]["only_guest_ids"] == [guest_id]
-    assert calls[0][1]["ignore_automation"] is True
+    # The completion trigger skips the wait, not the retry cap: it fires from
+    # every save, so it must stop at SUBMISSION_MAX_AUTO_ATTEMPTS like the sweep.
+    assert calls[0][1]["ignore_schedule"] is True
+    assert calls[0][1].get("ignore_automation", False) is False
     assert db.query_one(
         "SELECT registration_completed_at FROM reservation WHERE id = ?",
         (reservation["id"],),
     )["registration_completed_at"]
 
 
-def test_completion_timestamp_clears_if_party_becomes_incomplete():
+def test_completion_timestamp_clears_if_party_becomes_incomplete(monkeypatch):
     _apartment, reservation, _guest_id = _seed(
         "scheduled", "tok-completion-reset"
     )
     reporting.refresh_registration_completed_at(
         reservation["id"], "2026-09-18T12:00:00+00:00"
     )
-    db.update(
-        "reservation", reservation["id"], {"expected_guests_override": 2}
-    )
+    # A form on file stops being complete - the guest changed a document number
+    # to something the register rejects, say. That is the party being incomplete
+    # again, and the stay is no longer ready to file. Editing a field of a form
+    # that is still complete does not do this; see test_send_controls.py's
+    # sibling case for the completion holding through an unrelated touch.
+    monkeypatch.setattr(reporting, "guest_is_complete", lambda guest, res: False)
 
     assert reporting.refresh_registration_completed_at(reservation["id"]) is None
     assert not db.query_one(

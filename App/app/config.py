@@ -82,6 +82,22 @@ def secret_key() -> str:
     return _SECRET_KEY
 
 
+def require_secret_key() -> str:
+    """The key, refusing to create one.
+
+    ``secret_key()`` mints a key on first use, which is right for the app and
+    wrong for a tool that writes encrypted data: it would encrypt under a key
+    the running app has never seen, and every record it touched would be
+    unreadable. Such a tool calls this instead and stops when no key is
+    established yet.
+    """
+    if not os.environ.get("UBYHOST_SECRET_KEY") and not _SECRET_FILE.exists():
+        raise RuntimeError(
+            f"no UBYHOST_SECRET_KEY is set and there is no key file at {_SECRET_FILE}"
+        )
+    return secret_key()
+
+
 # "mock" | "test" | "prod".  Controls which UbyPort endpoint submissions go to.
 UBYPORT_ENV = os.environ.get("UBYHOST_UBYPORT_ENV", "mock").lower()
 
@@ -173,11 +189,13 @@ ICAL_ALLOW_PRIVATE = os.environ.get("UBYHOST_ICAL_ALLOW_PRIVATE", "0").lower() i
     "yes",
 )
 
-# When set (deploy/lightsail .env: CLOUDFLARE_PROXY=1), trust Caddy/Docker peers and
-# honour CF-Connecting-IP from them. Otherwise only UBYHOST_TRUSTED_PROXY_CIDRS applies.
+# Set in deploy/lightsail .env (CLOUDFLARE_PROXY=1) when Cloudflare fronts the origin.
+# It no longer implies which peers are the proxy: the app cannot tell a real Caddy
+# container from any other private address, so UBYHOST_TRUSTED_PROXY_CIDRS must name
+# the proxy network for CF-Connecting-IP to be honoured. See docs/CLOUDFLARE.md.
 CLOUDFLARE_PROXY = os.environ.get("CLOUDFLARE_PROXY", "0").lower() in ("1", "true", "yes")
 
-# Comma-separated CIDRs for reverse proxies that may set CF-Connecting-IP (overrides defaults).
+# Comma-separated CIDRs for reverse proxies that may set CF-Connecting-IP.
 TRUSTED_PROXY_CIDRS = os.environ.get("UBYHOST_TRUSTED_PROXY_CIDRS", "").strip()
 
 

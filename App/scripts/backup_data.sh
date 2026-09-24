@@ -36,6 +36,20 @@ for extra in secret_key initial_admin_credentials; do
   fi
 done
 
+# Production keeps the key in .env rather than in a file, and a backup without
+# it cannot be decrypted anywhere but on the machine that made it. Write it
+# alongside the snapshot when it was supplied through the environment.
+if [ ! -f "${DEST}/secret_key" ] && [ -n "${UBYHOST_SECRET_KEY:-}" ]; then
+  printf '%s\n' "${UBYHOST_SECRET_KEY}" > "${DEST}/secret_key"
+  chmod 600 "${DEST}/secret_key"
+fi
+
+if [ ! -f "${DEST}/secret_key" ]; then
+  echo "WARNING: no secret key in ${DEST}. This backup cannot be decrypted" \
+    "off-site. Set UBYHOST_SECRET_KEY for the backup, or copy data/secret_key" \
+    "into ${DATA_DIR}." >&2
+fi
+
 echo "Backup written to ${DEST}"
 find "${BACKUP_ROOT}" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +11 | xargs -r rm -rf
 echo "Kept the 10 most recent backups under ${BACKUP_ROOT}"

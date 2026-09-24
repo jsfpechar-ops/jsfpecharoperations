@@ -18,6 +18,13 @@ on:
 permissions:
   contents: read
 
+# One production deploy at a time: two overlapping runs would race the same
+# checkout on the server. The running one is never cancelled — a half-applied
+# deploy is worse than a late one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   lightsail:
     if: >-
@@ -36,6 +43,17 @@ jobs:
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_confirm }}" != "DEPLOY" ]; then
             echo "Manual deploy requires force_confirm=DEPLOY."
             exit 1
+          fi
+          # A manual dispatch runs from whatever branch it was started on, and
+          # github.sha would be that branch's HEAD — so a dispatch from a
+          # feature branch used to deploy it to production. Pin the run to main
+          # instead: the input says "the current main revision", and this is how
+          # it is made true.
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            DEPLOY_SHA="$(git ls-remote \
+              "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git" \
+              refs/heads/main | cut -f1)"
+            echo "Manual deploy pinned to main: ${DEPLOY_SHA}"
           fi
           if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
             echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."

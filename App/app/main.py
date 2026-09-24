@@ -74,6 +74,11 @@ async def lifespan(_app: FastAPI):
     # Explicit startup work, because importing config no longer creates the data
     # directory or writes the signing key to disk.
     config.ensure_data_dir()
+    # Read the key here, where a bad one stops the app from booting. Left lazy,
+    # it raised on the first page that signed a cookie: /healthz answered 200
+    # while /login answered 500, so the deploy's health check passed and the
+    # broken release went live.
+    config.secret_key()
     db.init_db()
     bootstrap_password = auth.ensure_bootstrap_admin()
     admin_username = auth.normalise_username(config.ADMIN_USERNAME) or "admin"

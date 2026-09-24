@@ -320,6 +320,10 @@ def connect() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
+    # Overwrite freed pages instead of leaving the old bytes behind. Without
+    # this, blanking a plaintext document number left it readable in the file
+    # until something happened to reuse the page.
+    conn.execute("PRAGMA secure_delete = ON")
     return conn
 
 

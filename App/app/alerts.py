@@ -319,6 +319,19 @@ def raise_alert(
     )
 
 
+def open_alert(dedupe_key: str) -> Optional[Any]:
+    """The alert still standing for ``dedupe_key``, if any.
+
+    Callers that gate work on a warning - filing a stay whose signatures the
+    calendar invalidated - need to ask about one key rather than scan the
+    dashboard list.
+    """
+    return db.query_one(
+        "SELECT * FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL",
+        (dedupe_key,),
+    )
+
+
 def resolve(dedupe_key: str) -> None:
     db.execute(
         "UPDATE alert SET resolved_at = ? WHERE dedupe_key = ? AND resolved_at IS NULL",
@@ -333,10 +346,19 @@ def resolve_by_id(alert_id: int, user_dismissed: bool = False) -> None:
     )
 
 
+# Kinds that belong to the installation rather than to one host. A dead
+# background job stops the sweep, the deadline watch and the calendar sync for
+# every workspace at once, so it is stored with no owner and shown to all of
+# them: a host who is never told cannot act on it.
+SYSTEM_ALERT_KINDS = frozenset({"job_failed"})
+
+
 def open_alerts(owner_user_id: Optional[int] = None) -> List:
+    marks = ", ".join("?" for _ in SYSTEM_ALERT_KINDS)
     rows = db.query(
-        "SELECT * FROM alert WHERE resolved_at IS NULL AND (? IS NULL OR owner_user_id = ?) "
+        f"SELECT * FROM alert WHERE resolved_at IS NULL AND ("
+        f"? IS NULL OR owner_user_id = ? OR kind IN ({marks})) "
         "ORDER BY created_at DESC",
-        (owner_user_id, owner_user_id),
+        (owner_user_id, owner_user_id, *SYSTEM_ALERT_KINDS),
     )
     return sorted(rows, key=lambda r: LEVEL_ORDER.get(r["level"], 9))

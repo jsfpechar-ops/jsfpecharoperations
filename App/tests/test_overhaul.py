@@ -7,8 +7,9 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db
 from app import alerts
 from app import demo
-from app import host_i18n, housebook
+from app import housebook
 from app.main import app
+from app.routes import guest as guest_routes
 from tests.conftest import complete_guest_claim
 
 TOKEN = "overhaultoken"
@@ -482,7 +483,7 @@ def test_guest_unavailable_states_are_distinct():
     _seed_stays()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest_routes.LANG_COOKIE, "en")
         bad_stay = browser.get(f"/l/{TOKEN}/999999")
         assert bad_stay.status_code == 404
         assert "no longer open" in bad_stay.text
