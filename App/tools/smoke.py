@@ -30,7 +30,8 @@ os.environ["UBYHOST_GUEST_PIN"] = "0"
 import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import claim, db, host_i18n, mail  # noqa: E402
+from app import claim, db, mail  # noqa: E402
+from app.routes import guest as guest_routes  # noqa: E402
 from app.main import app  # noqa: E402
 
 FAILURES = []
@@ -302,8 +303,10 @@ def main(url=None):
     # A guest who has made no choice gets Czech: that is the page default
     # (host_i18n.PUBLIC_DEFAULT_LANGUAGE), not English. English is one click
     # away, and both are asserted below so neither default can rot unnoticed.
+    # The cookie is the guest's own, not the host's: the two share a browser
+    # and a guest choosing English must not switch the host's UI.
     guest = browser(base)
-    guest.cookies.set(host_i18n.LANG_COOKIE, "en")
+    guest.cookies.set(guest_routes.LANG_COOKIE, "en")
     default = browser(base)
     check(
         default,
@@ -406,7 +409,7 @@ def main(url=None):
     czech.cookies.update(guest.cookies)
     # Drop the English choice so this browser is again "a guest who chose
     # nothing" - the state whose default language is under test.
-    czech.cookies.delete(host_i18n.LANG_COOKIE)
+    czech.cookies.delete(guest_routes.LANG_COOKIE)
     check(
         czech,
         f"/l/{token}/{stay_a}",
