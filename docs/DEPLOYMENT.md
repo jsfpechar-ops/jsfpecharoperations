@@ -1,9 +1,10 @@
 # Deployment and environments
 
 UbyHost runs in **three logical tiers**. The checked-in configuration points only
-**production** at the real police register. The application does not enforce
-this separation, so verify `UBYHOST_DEPLOYMENT` and `UBYHOST_UBYPORT_ENV`
-together before every deployment.
+**production** at the real police register. The application rejects the `prod`
+UbyPort target outside production and on Render, but it cannot prove that a
+staging instance kept its configured `mock` value; verify
+`UBYHOST_DEPLOYMENT` and `UBYHOST_UBYPORT_ENV` together before every deployment.
 
 **Operator setup (***REMOVED***):**
 
@@ -100,7 +101,13 @@ Use this whenever you ship a change that affects hosts or guests.
 
 1. **Staging** (required for this build) — Render → **`ubyhost-staging`** → Manual Deploy of the PR branch. Record the tested commit and obtain explicit product-owner approval using the checklist above.
 2. **Merge the approved revision to `main`** — GitHub Actions must pass (tests + smoke). Keep `LIGHTSAIL_AUTO_DEPLOY=0` until the owner approves production deployment.
-3. **Production (Lightsail)** — after approval and green CI, SSH to the instance, then:
+3. **Production (Lightsail)** — a CI-triggered deploy is pinned to the exact
+   `workflow_run.head_sha` that passed CI; it does not reset the host to a
+   newer `origin/main` tip. After the deploy, the workflow checks the public
+   `https://ubyhost.com/healthz` endpoint. For an intentional manual bypass,
+   use **Actions → Deploy production → Run workflow** and enter `DEPLOY` in
+   `force_confirm`; this deploys the current `main` revision and is an
+   operator-controlled bypass of the CI-triggered gate. SSH/manual fallback:
    ```bash
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
@@ -111,14 +118,17 @@ Use this whenever you ship a change that affects hosts or guests.
    integrity-check a SQLite backup first. It then dry-runs the new schema
    migration against a copy of that backup and compares critical live table
    row counts after startup.
-4. **Smoke production** — `./scripts/status.sh` and `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
+4. **Smoke production** — the workflow performs a public `/healthz` check;
+   operators should also run `./scripts/status.sh` and
+   `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
    - UbyPort target = `test` (until go-live) or `prod`
    - Public base URL = `https://ubyhost.com`
    Public `GET /healthz` in production does **not** include those labels (monitoring still gets `status` + `data_dir_writable`).
-5. **Rollback** — redeploy a previous git commit on Lightsail (`git checkout` / `git pull`
-   an older SHA, then `./scripts/deploy.sh`). SQLite on the Docker volume is **not**
-   rolled back with the code.
+5. **Rollback** — redeploy a previous known-good git commit on Lightsail:
+   fetch that SHA, reset the checkout to it, and run `./scripts/deploy.sh`.
+   Restore the SQLite volume separately only when the data itself is damaged;
+   SQLite on the Docker volume is **not** rolled back with the code.
 
 Immediately after the 1.1.0 deployment, complete and retain the
 [post-release regression analysis](NEXT_MAIL_RELEASE.md#required-regression-analysis-immediately-after-release).
