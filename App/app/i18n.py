@@ -215,18 +215,17 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "completed": "completed",
         "not_filled": "not filled in",
         "edit": "Edit",
-        "all_done_title": "Thank you, everything is complete",
+        "all_done_title": "Thank you — everyone is registered",
         "all_done_body": (
-            "All guest details for this stay have been submitted. There is nothing more you "
-            "need to do."
+            "There is nothing more you need to do. You can close this page."
         ),
+        "all_done_receipt": "We have sent a confirmation to %(email)s.",
         "checkin_info": "Check-in",
         "checkout_info": "Check-out",
         "still_missing": "Still missing details for %(n)s person(s).",
         "add_another": "Add another person",
         "someone_missing": (
-            "Is someone in your group still not registered? Every guest must be reported, "
-            "so add them here."
+            "Forgot someone? Everyone staying must be registered, including children."
         ),
         "continue_filling": "Continue filling in",
         "surname": "Surname",
@@ -734,15 +733,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "completed": "vyplněno",
         "not_filled": "nevyplněno",
         "edit": "Upravit",
-        "all_done_title": "Děkujeme, vše je vyplněno",
-        "all_done_body": "Údaje všech ubytovaných jsou odeslány. Nic dalšího už není potřeba.",
+        "all_done_title": "Děkujeme — všichni jsou zaregistrovaní",
+        "all_done_body": "Nic dalšího už dělat nemusíte. Stránku můžete zavřít.",
+        "all_done_receipt": "Potvrzení jsme poslali na %(email)s.",
         "checkin_info": "Příjezd",
         "checkout_info": "Odjezd",
         "still_missing": "Chybí ještě údaje %(n)s osob(y).",
         "add_another": "Přidat další osobu",
         "someone_missing": (
-            "Chybí ještě někdo z vaší skupiny? Ohlásit se musí každý ubytovaný, "
-            "proto ho zde přidejte."
+            "Zapomněli jste na někoho? Registrovat se musí každý ubytovaný, včetně dětí."
         ),
         "continue_filling": "Pokračovat ve vyplnění",
         "surname": "Příjmení",

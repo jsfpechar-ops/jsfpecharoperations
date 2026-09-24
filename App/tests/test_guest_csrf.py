@@ -33,7 +33,6 @@ GUEST_POST_FORMS = [
     ("pin.html", "/l/{{ token }}/pin?lang={{ lang }}"),
     ("stay.html", "/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}"),
     ("stay.html", "/l/{{ token }}/{{ reservation.id }}/another?lang={{ lang }}"),
-    ("stay.html", "/l/{{ token }}/{{ reservation.id }}/another?lang={{ lang }}"),
 ]
 
 FORM_OPEN_RE = re.compile(r"<form\b[^>]*>", re.I)

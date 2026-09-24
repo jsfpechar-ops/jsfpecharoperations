@@ -922,6 +922,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "can_raise_party": not reservation["expected_guests_override"],
             "can_pick_other": _can_pick_other_stays(apartment),
             "party_error": request.query_params.get("party_error") == "1",
+            "claim_email_masked": claim_row["email_masked"] or "",
             "just_saved": request.query_params.get("saved") == "1",
             "just_reported": (
                 request.query_params.get("saved") == "1"
