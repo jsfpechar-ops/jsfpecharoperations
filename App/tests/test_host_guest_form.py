@@ -233,6 +233,39 @@ def _host_guest(stay_id: int, **overrides) -> int:
     return db.insert("guest", values)
 
 
+def test_the_verify_identity_form_is_not_nested_in_the_guest_form():
+    """A <form> inside a <form> closes the outer one, which killed Save.
+
+    The verify panel used to hold its own form inside the main guest form. An
+    HTML parser ignores the inner start tag and the inner ``</form>`` closes the
+    outer form, so "Save changes" and the signature field ended up outside any
+    form and Save did nothing for an unverified foreign guest.
+    """
+    owner_id, stay_id = _host_stay()
+    try:
+        guest_id = _host_guest(stay_id)  # GBR, so the verify panel shows
+        html = _host_client(owner_id).get(f"/guests/{guest_id}").text
+
+        assert html.count("<form") == html.count("</form>")
+
+        # Counting alone cannot see the bug: the nesting swaps a close tag for
+        # an open one and the totals still match. Look inside the main form.
+        main_open = html.index(f'<form method="post" action="/guests/{guest_id}"')
+        main_close = html.index("</form>", main_open)
+        nested = html[main_open + 1 : main_close]
+        assert "<form" not in nested, "no form may open inside the main guest form"
+
+        # The two things the nesting used to strand outside the main form.
+        assert nested.index("Save changes") >= 0
+        assert 'id="signature"' in nested
+
+        # The verify button still submits, through the form attribute.
+        assert f'<form id="verify-{guest_id}"' in html
+        assert f'form="verify-{guest_id}"' in nested
+    finally:
+        _cleanup()
+
+
 def test_guest_save_refuses_a_stay_outside_the_booking():
     """stay_from/stay_to are hidden fields, so they arrive by hand or stale."""
     _owner_id, stay_id = _host_stay()
