@@ -1,7 +1,13 @@
 """Click through every page a host and a guest can reach, and fail on anything ugly.
 
-Run with:  .venv/bin/python tools/smoke.py
+Run with:  .venv/bin/python tools/smoke.py [http://host:port]
 It uses a scratch database, so it never touches real data.
+
+With a URL the run is a real HTTP client against a real server - the server has
+to answer, has to serve the data seeded below, and has to render every page.
+That is the mode CI uses, because a smoke run that drives the app in-process
+cannot fail when the server never booted. The URL is therefore not decoration:
+if the server is down, or answers on a different database, this exits non-zero.
 """
 from __future__ import annotations
 
@@ -12,6 +18,7 @@ import sys
 import tempfile
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("UBYHOST_DATA_DIR", tempfile.mkdtemp(prefix="ubyhost-smoke-"))
@@ -20,6 +27,7 @@ os.environ["UBYHOST_ENABLE_SCHEDULER"] = "0"
 os.environ["UBYHOST_BOOTSTRAP_ADMIN"] = "0"
 os.environ["UBYHOST_GUEST_PIN"] = "0"
 
+import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app import claim, db, host_i18n, mail  # noqa: E402
@@ -33,6 +41,10 @@ PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
     "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 )
+
+# The public permalink the seeded apartment answers on, shared by seed() and the
+# checks so a rerun can recognise and clear its own fixtures.
+SMOKE_TOKEN = "smoketoken"
 
 
 def check(client, path, expect=(200,), must_contain=(), must_not_contain=(), label=""):
@@ -71,6 +83,15 @@ def csrf_field(client, token):
 
 def seed():
     db.init_db()
+    # A rerun can land in the same scratch database (CI passes a data directory
+    # in, so the server and this script agree on it), so clear this run's
+    # fixtures first. Guests and reservations go with the apartment.
+    previous = db.query_one(
+        "SELECT id FROM apartment WHERE permalink_token = ?", (SMOKE_TOKEN,)
+    )
+    if previous:
+        db.execute("DELETE FROM apartment WHERE id = ?", (previous["id"],))
+        db.execute("DELETE FROM legal_entity WHERE name = ?", ("Smoke s.r.o.",))
     now = db.utcnow()
     today = date.today()
     entity_id = db.insert(
@@ -99,7 +120,7 @@ def seed():
             "addr_zip": "12000",
             "uby_ws_user": "UBY-WS12cdef",
             "uby_ws_password_enc": db.encrypt_secret("x"),
-            "permalink_token": "smoketoken",
+            "permalink_token": SMOKE_TOKEN,
             "permalink_window_days": 14,
             "default_purpose": "10",
             "automation_mode": "manual",
@@ -192,10 +213,43 @@ def claim_stay(client, token, reservation_id, email, party_size=2):
         )
 
 
-def main():
+def base_url(url: Optional[str] = None) -> Optional[str]:
+    """Probe the server the run was pointed at and return its base URL.
+
+    ``None`` means "no URL was given" - drive the app in-process instead. The
+    probe is ``/healthz``, the same check the deploy does, so a server that is
+    up but unhealthy stops the run here rather than as a pile of page failures.
+    """
+    if not url:
+        print("smoke: no URL given, driving the app in-process")
+        return None
+    base = url.rstrip("/")
+    try:
+        probe = httpx.get(f"{base}/healthz", timeout=15)
+    except httpx.HTTPError as exc:
+        print(f"smoke: {base} is not answering: {type(exc).__name__}: {exc}")
+        raise SystemExit(1)
+    if probe.status_code != 200:
+        print(f"smoke: {base}/healthz returned HTTP {probe.status_code}")
+        raise SystemExit(1)
+    print(f"smoke: driving the server at {base}")
+    return base
+
+
+def browser(base: Optional[str]):
+    """One browser with its own cookie jar, on the server or in-process."""
+    if base is None:
+        return TestClient(app)
+    return httpx.Client(base_url=base, timeout=30)
+
+
+def main(url=None):
+    # Contact the server before seeding: a URL that does not answer is the
+    # headline failure, and it should not be buried under fixture work.
+    base = base_url(url)
+    host = browser(base)
     apartment_id, (stay_a, stay_b) = seed()
-    host = TestClient(app)
-    token = "smoketoken"
+    token = SMOKE_TOKEN
 
     print("host pages")
     for path in (
@@ -248,9 +302,9 @@ def main():
     # A guest who has made no choice gets Czech: that is the page default
     # (host_i18n.PUBLIC_DEFAULT_LANGUAGE), not English. English is one click
     # away, and both are asserted below so neither default can rot unnoticed.
-    guest = TestClient(app)
+    guest = browser(base)
     guest.cookies.set(host_i18n.LANG_COOKIE, "en")
-    default = TestClient(app)
+    default = browser(base)
     check(
         default,
         f"/l/{token}",
@@ -293,7 +347,7 @@ def main():
         must_not_contain=privacy_absent,
     )
     # A separate browser, because ?lang=cs sets a sticky cookie.
-    czech = TestClient(app)
+    czech = browser(base)
     check(czech, f"/l/{token}/privacy?lang=cs", must_contain=["Právní základ", "Policii"])
 
     entry_marker = 'name="guest_email"' if mail.mail_enabled() else 'name="surname"'
@@ -378,4 +432,4 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else None))

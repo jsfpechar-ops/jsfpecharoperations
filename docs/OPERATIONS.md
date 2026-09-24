@@ -341,6 +341,31 @@ goes. Until it has run, the numbers are still in the clear in that database;
 the app keeps reading the plaintext column as a fallback so nothing breaks in
 the meantime.
 
+It refuses to run at all when no key is established — that is, when
+`UBYHOST_SECRET_KEY` is unset and there is no `secret_key` file in
+`UBYHOST_DATA_DIR`. Encrypting under a key this process invented would leave
+every document number unreadable to the app, so the script stops instead. Run it
+with the same `UBYHOST_SECRET_KEY` and `UBYHOST_DATA_DIR` the app runs with.
+
+The plaintext is not just overwritten in place: every connection the app opens
+sets `PRAGMA secure_delete = ON`, and the script vacuums the file once it has
+blanked anything, so the numbers are not left readable in the freed pages of the
+SQLite file. The same applies to a deleted guest row — with `secure_delete` on,
+deleting the row overwrites its bytes.
+
+### Rolling back before the encryption release
+
+The plaintext column stops being written, so an older release — which reads only
+`doc_number` — would file an empty `cDocN` with the police. Decrypt the numbers
+back into the plaintext column **before** rolling the code back:
+
+    .venv/bin/python scripts/migrate_encrypt_doc_fields.py --rollback --dry-run
+    .venv/bin/python scripts/migrate_encrypt_doc_fields.py --rollback
+
+It needs the same key as the forward run and is idempotent: a row with no
+ciphertext is left alone. Re-run the forward migration when you return to the
+encrypted release.
+
 `deploy/lightsail/scripts/deploy.sh` dry-runs the new schema against a copy of
 the live database before switching over. Do not skip it.
 

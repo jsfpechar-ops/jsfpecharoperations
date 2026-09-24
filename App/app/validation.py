@@ -512,6 +512,28 @@ STAY_OUTSIDE_BOOKING_MESSAGE = (
     "These dates do not match your booking. Reload this page, or ask your host."
 )
 
+STAY_DATE_UNREADABLE_MESSAGE = (
+    "The stay dates on this page are not readable. Reload the page and try again."
+)
+
+
+def validate_stay_date_text(
+    stay_from: Optional[str], stay_to: Optional[str]
+) -> List[Issue]:
+    """An unreadable stay date is refused, never stored.
+
+    ``stay_from``/``stay_to`` arrive as hidden fields, so they can be stale or
+    hand-built. A value that does not parse used to slip through the window
+    check entirely and be written to the row as typed - and ``stay_to`` in a
+    form like ``garbage`` then escaped the retention purge, which compares the
+    column as text. Both fields therefore have to be real ISO dates.
+    """
+    issues: List[Issue] = []
+    for field, value in (("stay_from", stay_from), ("stay_to", stay_to)):
+        if value and parse_iso_date(value) is None:
+            issues.append(Issue(field, STAY_DATE_UNREADABLE_MESSAGE))
+    return issues
+
 # The product does not let a guest record a stay outside their booking: a guest
 # who really did arrive early is told to ask the host, rather than having the
 # period in the police record rewritten for them. The knob is here so that a

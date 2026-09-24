@@ -8,7 +8,8 @@ from datetime import datetime, time, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from app import claim, config, db, host_i18n, mail, reporting
+from app import claim, config, db, mail, reporting
+from app.routes import guest
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -127,7 +128,7 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
     current, _past, _far, _apartment_id = _seed()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
         assert claim_page.status_code == 200
         assert "Your host" in claim_page.text
@@ -204,7 +205,7 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies(monkeypatch):
     monkeypatch.setattr(config, "OPERATOR_EMAIL", "release-privacy@ubyhost.test")
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
         assert "one reminder if the forms are incomplete" in claim_page.text
         assert "Strictly necessary cookies" in claim_page.text
@@ -240,7 +241,7 @@ def test_disabled_mail_uses_pin_date_form_without_collecting_email(monkeypatch):
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         form = browser.get(f"/l/{TOKEN}/{current}", follow_redirects=True)
         assert form.status_code == 200
         assert 'name="surname"' in form.text
@@ -271,7 +272,7 @@ def test_magic_link_get_does_not_assign():
     current, _past, _far, _apartment_id = _seed()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
         apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
         ok, err, secret = claim.start_claim(
@@ -425,7 +426,7 @@ def test_confirmed_device_keeps_access_and_a_replayed_link_does_not():
     try:
         _reservation, secret = _claim_secret(current)
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         confirmed = browser.post(
             f"/l/{TOKEN}/{current}/claim/confirm",
             data={"secret": secret},
@@ -523,7 +524,7 @@ def test_host_can_release_and_reopen_claim():
     current, _past, _far, _apartment_id = _seed()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(browser, TOKEN, current, party_size=1)
         claim.lock_guest_access(current)
         assert claim.ensure_row(current)["guest_access_locked_at"]
@@ -540,7 +541,7 @@ def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeyp
     check_in = claim.prague_today()
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(browser, TOKEN, current, party_size=1)
         reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
 
@@ -603,7 +604,7 @@ def test_incomplete_stay_inside_the_reach_back_window_stays_reachable():
             },
         )
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         address = "forgotten@claim.test"
         complete_guest_claim(browser, TOKEN, past, email=address, party_size=1)
 
@@ -674,7 +675,7 @@ def test_stay_link_reach_back_window_bounds_a_forgotten_form():
         )
 
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         # Inside the default year: a stay that ended last week can still be filed.
         assert browser.get(f"/l/{TOKEN}/{recent}").status_code == 200
 
@@ -714,7 +715,7 @@ def test_completed_past_stay_is_not_exposed_on_bare_stay_link():
             },
         )
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(browser, TOKEN, past, email="done@claim.test", party_size=1)
         now = db.utcnow()
         signature = "data:image/png;base64," + base64.b64encode(
@@ -775,7 +776,7 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
             },
         )
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(
             browser, TOKEN, current, email="guest-reminder@claim.test", party_size=1
         )
@@ -938,7 +939,7 @@ def test_guest_facing_assignment_masks_email_and_lock_hides_it():
     address = "private-address@claim.test"
     try:
         owner = TestClient(app)
-        owner.cookies.set(host_i18n.LANG_COOKIE, "en")
+        owner.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(owner, TOKEN, current, email=address, party_size=1)
 
         public = TestClient(app).get(f"/l/{TOKEN}/{current}?lang=en")
@@ -1175,7 +1176,7 @@ def test_party_post_stays_smooth_for_a_retrying_guest(monkeypatch):
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         typo = browser.post(
             f"/l/{TOKEN}/{current}/party",
             data={"party_size": "3", "guest_email": "not-an-email"},
@@ -1205,7 +1206,7 @@ def test_party_post_does_not_enqueue_duplicate_claim_mail(monkeypatch):
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     try:
         browser = TestClient(app)
-        browser.cookies.set(host_i18n.LANG_COOKIE, "en")
+        browser.cookies.set(guest.LANG_COOKIE, "en")
         first = browser.post(
             f"/l/{TOKEN}/{current}/party",
             data={"party_size": "2", "guest_email": "victim-abuse@example.com"},

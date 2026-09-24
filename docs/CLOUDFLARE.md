@@ -100,12 +100,19 @@ UBYHOST_DOMAIN=ubyhost.example.com
 UBYHOST_PUBLIC_BASE_URL=https://ubyhost.example.com
 ACME_EMAIL=you@example.com
 CLOUDFLARE_PROXY=1
+UBYHOST_TRUSTED_PROXY_CIDRS=172.16.0.0/12
 UBYHOST_DEPLOYMENT=production
 UBYHOST_ADMIN_PASSWORD=…
 ```
 
 `ACME_EMAIL` is still used as contact metadata; TLS comes from the origin cert,
 not Let's Encrypt, when `CLOUDFLARE_PROXY=1`.
+
+`UBYHOST_TRUSTED_PROXY_CIDRS` names the peer that is allowed to set
+`CF-Connecting-IP` — Caddy on the `ubyhost-web` network, which Docker draws from
+its default pool. `CLOUDFLARE_PROXY=1` on its own no longer grants that trust:
+any private address can reach the origin, so the app refuses to guess and would
+otherwise treat every visitor as the proxy's address.
 
 ---
 

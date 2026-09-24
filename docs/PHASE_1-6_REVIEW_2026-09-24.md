@@ -92,3 +92,40 @@ These are in `repro_tests/`. Drop them into `App/tests/` to run them.
 
 - `test_p1_review.py` (8) and `test_p3_review_repro.py` (9) **pass** on main because they assert the buggy behaviour.
 - `test_zz_review.py` (7) **fails** on main because it asserts the correct behaviour. It should go green once the fixes land.
+
+## Fix status — 2026-09-24
+
+Every High finding except #12, and all 19 Medium findings, are fixed in the same
+change that brought these reproduction tests into `App/tests/`. The reproduction
+tests were rewritten to assert the correct behaviour as each fix landed, so they
+now fail on `main` and pass on the fix. High #12 is not a code change: it is an
+operator action (rotate the two live iCal links and delete the leaked passport
+row from `a3b96a0`).
+
+| Finding | Status | Fix |
+|---|---|---|
+| High #1 demo guard | Fixed | `demo.is_demo_apartment` no longer keys off `UBYPORT_ENV` |
+| High #2 `signature=imported` | Fixed | `guest_signature_issue(..., allow_imported=False)` from the guest route |
+| High #3 retry cap | Fixed | the guest's own correction resets `submit_attempts` |
+| High #4 synthetic feed UIDs | Fixed | ambiguous made-up UIDs no longer swap two stays |
+| High #5 decryption containment | Fixed | `sweep()`/`check_deadlines()` contain `DecryptionError` per row and raise `guest_record_unreadable` |
+| High #6 smoke gate | Fixed | `smoke.py` talks to the URL it is given; `ci.yml` starts the server first |
+| High #7 job-failure alerts | Fixed | `SYSTEM_ALERT_KINDS` are returned to every host |
+| High #8 early arrival | Fixed | the deadline runs off `reservation_deadline_anchor` |
+| High #9 moved stays | Fixed | a moved booking moves the guests it can identify, and the re-sign alert is suppressed when nothing is left to re-sign |
+| High #10 quiet window | Fixed | the window is evaluated in the sweep, not only on save |
+| High #11 backfill key | Fixed | the script refuses to mint a key; `config.require_secret_key()` |
+| High #12 token rotation | **Open — operator action** | rotate both iCal links; delete the leaked row from `a3b96a0` |
+| Medium #103–#113 (19) | Fixed | see the list above; each is covered by the reproduction tests |
+| Low (abridged) | **Open** | out of scope for this pass |
+
+## Verification
+
+- Full application suite after the fixes: **757 passed** from `App/` with
+  `.venv/bin/python -m pytest tests -q --cov=app --cov-fail-under=86`;
+  coverage 86.77% against a required 86%.
+- `ruff` (the CI rule set, `E9,F63,F7,F82,F401,F841`): pass.
+- `test_endtoend.py` also passes on its own (28 tests); `db.init_db()` is not
+  idempotent, so that file is sensitive to what ran before it in one process.
+- The three reproduction files now assert the fixed behaviour:
+  `test_p1_review.py`, `test_p3_review_repro.py` and `test_zz_review.py` all pass.

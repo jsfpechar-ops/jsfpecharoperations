@@ -106,8 +106,12 @@ Use this whenever you ship a change that affects hosts or guests.
    newer `origin/main` tip. After the deploy, the workflow checks the public
    `https://ubyhost.com/healthz` endpoint. For an intentional manual bypass,
    use **Actions → Deploy production → Run workflow** and enter `DEPLOY` in
-   `force_confirm`; this deploys the current `main` revision and is an
-   operator-controlled bypass of the CI-triggered gate. SSH/manual fallback:
+   `force_confirm`; this deploys the current `main` revision — the workflow
+   resolves `refs/heads/main` itself, so a dispatch started from a feature
+   branch still deploys `main` — and is an
+   operator-controlled bypass of the CI-triggered gate. Deploys are serialised
+   by a `concurrency: deploy-production` group; a queued run waits for the
+   running one rather than cancelling it. SSH/manual fallback:
    ```bash
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
@@ -156,6 +160,13 @@ cd /opt/ubyhost/deploy/lightsail
 Backups land in the container under `/data/backups/` (last 10 kept). Off-site copy:
 **Google Drive** via `scripts/backup-gdrive.sh` (recommended). **S3** via
 `scripts/backup-s3.sh` is optional and can be deferred.
+
+`backup_data.sh` copies `data/secret_key` into the snapshot when that file
+exists, and otherwise writes `UBYHOST_SECRET_KEY` from the environment into it.
+A snapshot without the key cannot be decrypted anywhere but on the machine that
+took it, so the script warns loudly if it ends up with neither. Keep the
+snapshot itself confidential: it holds the key and the encrypted document
+numbers together.
 
 **Staging (Render)** uses ephemeral disk on the free tier — no production data there.
 

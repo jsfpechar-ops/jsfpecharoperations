@@ -32,7 +32,10 @@ from .admin_helpers import stay_dates_from_form as _stay_dates_from_form
 
 router = APIRouter(dependencies=[Depends(security.protect_guest_post)])
 
-LANG_COOKIE = "ubyhost_lang"
+# The guest's own language, deliberately not the host's ``ubyhost_lang``: the
+# two share a browser, and a guest who switched their form to English used to
+# switch the host's whole UI with it.
+LANG_COOKIE = "ubyhost_guest_lang"
 OWNED_COOKIE = "ubyhost_owned"
 CLAIM_COOKIE = "ubyhost_claim"
 
@@ -68,6 +71,9 @@ CS_VALIDATION_MESSAGES = {
     validation.STAY_OUTSIDE_BOOKING_MESSAGE: (
         "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se "
         "obraťte na ubytovatele."
+    ),
+    validation.STAY_DATE_UNREADABLE_MESSAGE: (
+        "Termíny pobytu na této stránce nejsou čitelné. Načtěte stránku znovu."
     ),
     validation.SIGNATURE_INVALID_MESSAGE: (
         "Tento podpis se nepodařilo uložit. Podepište se znovu do podpisového pole."
@@ -157,6 +163,24 @@ def _language(request: Request) -> str:
     ) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
 
 
+def _chosen_language(request: Request) -> Optional[str]:
+    """The language the guest actually asked for, or ``None`` if they did not.
+
+    ``_language`` falls back to Czech, because the link a host sends is Czech
+    and the guest has said nothing. That fallback is right for the page and
+    wrong for an e-mail: a foreign guest who never touched the switcher got a
+    Czech claim mail and a Czech reminder they could not read.
+    """
+    return host_i18n.supported_language(
+        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
+    )
+
+
+def _mail_language(request: Request) -> str:
+    """The language for a message sent to the guest, not rendered for them."""
+    return _chosen_language(request) or i18n.DEFAULT_LANGUAGE
+
+
 def _owned_ids(request: Request) -> List[int]:
     raw = request.cookies.get(OWNED_COOKIE)
     if not raw:
@@ -181,23 +205,62 @@ def _remember_owned(response, guest_ids: List[int]) -> None:
     )
 
 
-def _claimed_reservation_ids(request: Request) -> List[int]:
+def _claimed_claims(request: Request) -> Dict[int, int]:
+    """The stays this device confirmed, mapped to the claim generation it used.
+
+    The value is ``reservation_claim.token_version``: the counter bumped every
+    time a fresh secret is issued and every time the host releases the stay.
+    Recording the generation, not just the id, is what lets a release cut a
+    device off -- the old browser still names generation N while the stay has
+    moved to N+1, so it has to ask for the link again.
+    """
     raw = request.cookies.get(CLAIM_COOKIE)
     if not raw:
-        return []
+        return {}
     try:
         value = _claim_serializer().loads(raw)
-        return [int(v) for v in value] if isinstance(value, list) else []
     except (BadSignature, ValueError, TypeError):
-        return []
+        return {}
+    if not isinstance(value, dict):
+        # Cookies minted before the generation was recorded named ids only.
+        # They carry no claim to check against, so they grant nothing.
+        return {}
+    held: Dict[int, int] = {}
+    for key, generation in value.items():
+        try:
+            held[int(key)] = int(generation)
+        except (TypeError, ValueError):
+            continue
+    return held
+
+
+def _claimed_reservation_ids(request: Request) -> List[int]:
+    return list(_claimed_claims(request))
+
+
+def _device_holds_claim(request: Request, reservation_id: int, row) -> bool:
+    """True when this device confirmed the claim the stay is in *now*."""
+    generation = _claimed_claims(request).get(int(reservation_id))
+    return bool(
+        generation is not None
+        and row
+        and claim.is_claimed(row)
+        and int(row["token_version"] or 0) == generation
+    )
 
 
 def _remember_claim(response, reservation_id: int, request: Optional[Request] = None) -> None:
-    known = _claimed_reservation_ids(request) if request else []
-    unique = sorted({*known, int(reservation_id)})[-40:]
+    row = claim.ensure_row(int(reservation_id))
+    if not row or not claim.is_claimed(row):
+        # Nothing to remember: a cookie without a confirmed claim would assert
+        # access the stay does not grant.
+        return
+    held = _claimed_claims(request) if request else {}
+    held[int(reservation_id)] = int(row["token_version"] or 0)
+    kept = {str(k): held[k] for k in sorted(held)[-40:]}
     response.set_cookie(
         CLAIM_COOKIE,
-        _claim_serializer().dumps(unique),
+        _claim_serializer().dumps(kept),
         max_age=60 * 60 * 24 * 60,
         httponly=True,
         samesite="lax",
@@ -373,9 +436,33 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
         return None
     if not _registration_complete(reservation):
         return reservation
-    if request and reservation_id in _claimed_reservation_ids(request) and claim.is_claimed(row):
+    if request and _device_holds_claim(request, reservation_id, row):
         return reservation
     return None
+
+
+def _claimable_reservation(apartment, reservation_id: int):
+    """A stay the guest may be asked to confirm, or None.
+
+    Confirming spends the link and grants access to the stay, so the form is held
+    to the same bound as the stay page itself: an id outside the apartment's
+    reach-back, or one the host locked or cancelled, must answer exactly like an
+    id that never existed.
+    """
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
+        "AND status = 'active' AND archived_at IS NULL",
+        (reservation_id, apartment["id"]),
+    )
+    if not reservation:
+        return None
+    reachback = validation.normalise_reachback_days(apartment["permalink_reachback_days"])
+    cutoff = (claim.prague_today() - timedelta(days=reachback)).isoformat()
+    if (reservation["date_to"] or "") < cutoff:
+        return None
+    if not claim.guest_access_open(reservation):
+        return None
+    return reservation
 
 
 def _unavailable(
@@ -589,7 +676,7 @@ def _require_claim_session(request: Request, reservation, token: str, lang: str)
     row = claim.ensure_row(reservation["id"])
     if not claim.guest_access_open(reservation, row):
         return _unavailable(request, lang, "stay_gone", 404, token)
-    if not claim.is_claimed(row) or reservation["id"] not in _claimed_reservation_ids(request):
+    if not _device_holds_claim(request, reservation["id"], row):
         return RedirectResponse(
             _guest_link(token, reservation["id"]) + _lang_q(lang), status_code=303
         )
@@ -646,6 +733,24 @@ async def verify_pin(token: str, request: Request):
         )
     if not auth.pin_matches(token, entered, expected):
         rate_limit.record_pin_failure(pin_key, pin_lock_key)
+        # A lockout spread over many addresses is invisible in the per-IP count,
+        # so the host is told the moment the link itself burns its budget: every
+        # guest using it is refused for a day until the PIN is rotated.
+        if rate_limit.pin_token_blocked(pin_lock_key):
+            alerts.raise_alert(
+                "critical",
+                "guest_pin_locked_out",
+                "Guest link locked out for 24 hours after repeated wrong PINs.",
+                detail="Every guest using this link is refused until you generate a new PIN.",
+                dedupe_key=f"guest_pin_locked_out:{apartment['id']}",
+                apartment_id=apartment["id"],
+            )
+            db.audit(
+                "guest_pin_token_locked",
+                detail=f"apartment={apartment['id']}",
+                actor="anonymous",
+                owner_user_id=apartment["owner_user_id"],
+            )
         # Slow brute-force attempts without blocking legitimate guests for long.
         failures = rate_limit.pin_failure_count(pin_key)
         if failures >= rate_limit._PIN_MAX_FAILURES:
@@ -783,7 +888,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
     if mail.mail_enabled() and not _host_owns_apartment(request, apartment):
         if not claim.is_claimed(claim_row):
             return _with_lang(render_guest(request, "guest/claim.html", context), lang)
-        if reservation["id"] not in _claimed_reservation_ids(request):
+        if not _device_holds_claim(request, reservation["id"], claim_row):
             return _with_lang(render_guest(request, "guest/assigned.html", context), lang)
 
     progress = reporting.reservation_progress(reservation)
@@ -843,16 +948,10 @@ def claim_landing(token: str, reservation_id: int, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservation = db.query_one(
-        "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
-        "AND status = 'active' AND archived_at IS NULL",
-        (reservation_id, apartment["id"]),
-    )
+    reservation = _claimable_reservation(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
-    if reservation_id in _claimed_reservation_ids(request) and claim.is_claimed(
-        claim.ensure_row(reservation_id)
-    ):
+    if _device_holds_claim(request, reservation_id, claim.ensure_row(reservation_id)):
         # Confirming spends the link, so a device that already confirmed would
         # otherwise land on a spent confirmation form. The cookie is what grants
         # access now; continue to the stay instead of asking the guest again.
@@ -903,11 +1002,7 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
-    reservation = db.query_one(
-        "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
-        "AND status = 'active' AND archived_at IS NULL",
-        (reservation_id, apartment["id"]),
-    )
+    reservation = _claimable_reservation(apartment, reservation_id)
     if not reservation:
         return _unavailable(request, lang, "stay_gone", 404, token)
     form = await request.form()
@@ -1004,7 +1099,10 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             apartment,
             email=email,
             party_size=count,
-            lang=lang,
+            # The page is Czech by default; the e-mail is not, unless the guest
+            # chose Czech. This value is stored on the claim, so the reminder
+            # sent the day before the stay follows the same choice.
+            lang=_mail_language(request),
             resend=resend or claim.is_claimed(claim_row),
         )
         if ok:
@@ -1312,10 +1410,15 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             booked_to,
         )
     )
+    issues.extend(validation.validate_stay_date_text(stay_from, stay_to))
     if reporting.expected_guest_count(reservation) is None and not existing:
         if party_size < 1 or party_size > 60:
             issues.append(validation.Issue("party_size", translate("error_party_size")))
-    signature_issue = reporting.guest_signature_issue(signature, translate)
+    # A guest may not declare their own paper import: that marker is the host's
+    # attestation, and accepting it here stored an unsigned record as signed.
+    signature_issue = reporting.guest_signature_issue(
+        signature, translate, allow_imported=False
+    )
     if signature_issue:
         issues.append(signature_issue)
     if not form.get("legal_ack"):
@@ -1404,6 +1507,13 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "last_errors": None,
         }
     )
+    if reporting.guest_correction_resets_attempts(existing):
+        # Rule 10.4(5): a correction makes the record sendable again, and a
+        # guest fixing their own form is a correction like any other. Without
+        # this the sweep kept skipping the row at SUBMISSION_MAX_AUTO_ATTEMPTS
+        # for ever while the stranded-records card resolved itself, so the
+        # guest was never filed and nothing said so.
+        payload["submit_attempts"] = 0
 
     if existing:
         db.update("guest", existing["id"], payload)
@@ -1446,9 +1556,18 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
         apartment,
     )
-    # The form just signed shows the stay's current dates, so the warning that a
-    # calendar change moved the dates under an older signature is now stale.
-    alerts.resolve(f"dates_changed_resign:{reservation_id}")
+    # The form just signed shows the stay's current dates, so this save clears
+    # the warning - but only once *nobody* on the stay is still holding an
+    # older signature. Resolving on any one guest's save hid the warning while
+    # the rest of the party still had the old dates on file.
+    filing = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if filing:
+        still_stale = db.query(
+            "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
+            (reservation_id,),
+        )
+        if not any(reporting.signature_dates_stale(g, filing) for g in still_stale):
+            alerts.resolve(f"dates_changed_resign:{reservation_id}")
     reporting.submit_stay_if_complete(apartment["id"], reservation_id)
 
     response = RedirectResponse(

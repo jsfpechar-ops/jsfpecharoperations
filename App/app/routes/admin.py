@@ -1711,12 +1711,18 @@ def submission_detail(submission_id: int, request: Request):
     guests = []
     if guest_ids:
         marks = ", ".join("?" for _ in guest_ids)
-        guests = db.query(
+        found = db.query(
             "SELECT g.* FROM guest g "
             "JOIN reservation r ON r.id = g.reservation_id "
             f"WHERE g.id IN ({marks}) AND r.apartment_id = ?",
             [*guest_ids, submission["apartment_id"]],
         )
+        # IN (...) does not preserve order and the record errors are positional:
+        # record_errors[i] answers for guest_ids[i]. Rebuilding the batch order is
+        # what lets the result below come from this submission rather than from
+        # the guest's current state.
+        by_id = {row["id"]: row for row in found}
+        guests = [by_id[guest_id] for guest_id in guest_ids if guest_id in by_id]
     codebook = codelists.error_codebook()
     from ..ubyport import errors as uby_errors
 
@@ -1724,17 +1730,32 @@ def submission_detail(submission_id: int, request: Request):
         f"{code}: {uby_errors.describe(code, codebook)}"
         for code in uby_errors.split_codes(submission["header_errors"])
     ]
+    raw_record_errors = json.loads(submission["record_errors"] or "[]")
+    record_errors = [error for error in raw_record_errors if str(error).strip(" ;")]
+    # guest.submit_state is one current pointer that a later resend moves, so
+    # reading it here showed "Accepted" for a record this submission refused.
+    # The outcome belongs to the submission, and is read from its own errors.
+    rows = []
+    for index, guest in enumerate(guests):
+        error = raw_record_errors[index] if index < len(raw_record_errors) else ""
+        state, messages = uby_errors.classify(submission["header_errors"], error, codebook)
+        if state == "accepted":
+            result = "accepted"
+        elif "150" in uby_errors.split_codes(error) or any(
+            uby_errors.is_duplicate(message) for message in messages
+        ):
+            result = "duplicate"
+        else:
+            result = "rejected_final" if state == "not_correctable" else "rejected"
+        rows.append({**dict(guest), "result": result, "errors": " | ".join(messages)})
     return render(
         request,
         "submission_detail.html",
         {
             "submission": submission,
-            "guests": guests,
+            "guests": rows,
             "header_messages": header_messages,
-            "record_errors": [
-                error for error in json.loads(submission["record_errors"] or "[]")
-                if str(error).strip(" ;")
-            ],
+            "record_errors": record_errors,
         },
     )
 

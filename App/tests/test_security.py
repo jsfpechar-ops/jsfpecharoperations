@@ -11,6 +11,7 @@ from fastapi.responses import Response
 from app import auth, claim, client_ip, config, db, host_i18n, rate_limit, security
 from app.main import app
 from app.routes import admin as admin_routes
+from app.routes import guest as guest_routes
 from tests.conftest import complete_guest_claim
 from tests.test_accounts import _account, _clean_accounts, _login
 
@@ -327,7 +328,7 @@ def test_pin_rate_limit_not_bypassed_by_spoofed_cf_header(monkeypatch):
     )
     try:
         client = TestClient(app)
-        client.cookies.set(host_i18n.LANG_COOKIE, "en")
+        client.cookies.set(guest_routes.LANG_COOKIE, "en")
         for _ in range(rate_limit._PIN_MAX_FAILURES):
             client.post(f"/l/{token}/pin", data={"pin": "000000"}, follow_redirects=False)
         blocked = client.post(f"/l/{token}/pin", data={"pin": "000000"}, follow_redirects=False)
@@ -451,7 +452,7 @@ def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
 
 # The guest cookies W3.6 covers, by the helper in app/routes/guest.py that sets
 # each one: _remember_owned, _remember_claim and _with_lang.
-GUEST_COOKIE_NAMES = ("ubyhost_owned", "ubyhost_claim", "ubyhost_lang")
+GUEST_COOKIE_NAMES = ("ubyhost_owned", "ubyhost_claim", "ubyhost_guest_lang")
 
 _GUEST_TOKEN = "security-cookie-token"
 # A one-pixel PNG data URL: the only shape validation.parse_signature_data_url
