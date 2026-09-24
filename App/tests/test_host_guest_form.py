@@ -393,8 +393,12 @@ def test_a_stored_junk_signature_cannot_be_carried_forward():
             client, stay_id, guest_id=str(guest_id), **_complete_guest(signature="")
         )
         assert response.status_code == 422
-        # "Please sign before submitting." - the junk row is not a signature.
-        assert _signature_error(response.text) == "Please sign before submitting."
+        # "Please sign in the box before you continue." - the junk row is not a
+        # signature.
+        assert (
+            _signature_error(response.text)
+            == "Please sign in the box before you continue."
+        )
         assert validation.SIGNATURE_INVALID_MESSAGE not in response.text
         assert db.query_one(
             "SELECT signature_png FROM guest WHERE id = ?", (guest_id,)
