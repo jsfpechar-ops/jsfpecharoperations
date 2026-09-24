@@ -1,5 +1,9 @@
 # Defensive application security review — 2026-09-15
 
+> **Release boundary:** this review is scoped to 15 September 2026 and predates the
+> 1.1.0 / SES-live release of 21 September 2026, so its mail findings describe the
+> pre-flip state.
+
 ## Posture summary
 
 UbyHost has a sound application-level ownership model for a single-operator
@@ -92,7 +96,7 @@ and secret rotation.
 
 ## Verification
 
-- Full application suite: `328 passed`.
+- Full application suite at review time: `328 passed`. Re-verified 24 September 2026 (Phase 6): `729 passed` from `App/` with `.venv/bin/python -m pytest tests -q -p no:logging`.
 - Focused security/tenancy/SSRF suite: `94 passed`.
 - Local mock smoke check: `32 pages checked`; no dead pages or server errors.
 - Dependency audit against `App/requirements.txt`: no known vulnerabilities.
