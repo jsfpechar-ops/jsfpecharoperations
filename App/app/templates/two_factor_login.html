@@ -18,6 +18,24 @@
     </div>
     <button class="auth-submit" type="submit">{{ t('account.2fa.verify') }}</button>
   </form>
+  {# Outside the form above: a second <form> must never be nested inside it. #}
+  <details class="auth-help">
+    <summary>{{ t('account.2fa.lost_summary') }}</summary>
+    <form method="post" action="/login/2fa" class="auth-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="pending" value="{{ pending }}">
+      <div class="auth-field">
+        <label for="recovery-code">{{ t('account.2fa.recovery_label') }}</label>
+        <input type="text" id="recovery-code" name="code" required
+               inputmode="text" autocapitalize="characters" autocomplete="off"
+               spellcheck="false" placeholder="XXXX-XXXX">
+      </div>
+      <button class="auth-submit" type="submit">{{ t('account.2fa.verify') }}</button>
+    </form>
+    {% if operator().email %}
+      <p class="auth-help-note">{{ t('account.2fa.no_codes', email=operator().email) }}</p>
+    {% endif %}
+  </details>
   <div class="auth-foot"><a href="/login">{{ t('account.2fa.start_over') }}</a></div>
 </section>
 {% endblock %}

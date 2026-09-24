@@ -2438,6 +2438,12 @@ _INTERFACE_STRINGS = {
         "account.2fa.code_lede": "Enter the six-digit code from your authenticator app, or one recovery code.",
         "account.2fa.code_label": "Authentication code",
         "account.2fa.verify": "Verify and sign in",
+        "account.2fa.lost_summary": "Lost your phone? Use a recovery code",
+        "account.2fa.recovery_label": "Recovery code",
+        "account.2fa.no_codes": (
+            "No recovery codes either? Email %(email)s with your username and we'll reset "
+            "two-factor for you."
+        ),
         "account.2fa.start_over": "Start over",
         "account.2fa.setup_title": "Set up two-factor authentication",
         "account.2fa.setup_lede": "UbyHost contains identity documents, so every host account requires an authenticator app.",
@@ -2850,6 +2856,12 @@ _INTERFACE_STRINGS = {
         "account.2fa.code_lede": "Zadejte šestimístný kód z autentizační aplikace nebo jeden obnovovací kód.",
         "account.2fa.code_label": "Ověřovací kód",
         "account.2fa.verify": "Ověřit a přihlásit",
+        "account.2fa.lost_summary": "Ztratili jste telefon? Použijte obnovovací kód",
+        "account.2fa.recovery_label": "Obnovovací kód",
+        "account.2fa.no_codes": (
+            "Nemáte ani obnovovací kódy? Napište na %(email)s své uživatelské jméno a "
+            "dvoufázové ověření vám resetujeme."
+        ),
         "account.2fa.start_over": "Začít znovu",
         "account.2fa.setup_title": "Nastavit dvoufázové ověření",
         "account.2fa.setup_lede": "UbyHost obsahuje doklady totožnosti, proto každý účet hostitele vyžaduje autentizační aplikaci.",

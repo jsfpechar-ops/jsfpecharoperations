@@ -2290,6 +2290,32 @@ details.raw pre {
   color: var(--muted);
 }
 
+/* Help that must stay reachable without competing with the main action. */
+.auth-help {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.auth-help > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--brand);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-help[open] > summary { margin-bottom: 8px; }
+.auth-help .auth-form { margin-top: 12px; }
+
+.auth-help-note {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 .auth-submit {
   width: 100%;
   margin-top: 4px;
