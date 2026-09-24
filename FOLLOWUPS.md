@@ -68,6 +68,34 @@ it has since been committed to `main` as `CURSOR_REMEDIATION_PLAN.md` (root,
 `UBYHOST_CODE_AUDIT.md`, which lives under `docs/`, so the two documents do not
 sit together; and the plan's `[Fnn]` references point at the audit in `docs/`.
 
+## From Phase 6 (CI, tests and remaining unknowns)
+
+### W6.3 — production ownership counts require owner-authorized access
+
+The current code still uses SQLite-compatible `owner_user_id IS ?` predicates
+in `App/app/access.py`. No production query was run. The owner must authorize
+an audited, read-only production path before the two requested NULL counts for
+`apartment.owner_user_id` and `legal_entity.owner_user_id` can be collected;
+until then, no `IS ?` → `= ?` change or NOT NULL migration is justified. This is
+not treated as an active W5.2.6 blocker on the Phase 5-complete branch.
+
+### W6.3 — retry-path verification
+
+The current call graph confirms that the unattended scheduler/deadline path
+uses the `collect_sendable` automation gate and the
+`SUBMISSION_MAX_AUTO_ATTEMPTS` bound. Host-initiated sends and explicit resends
+pass `ignore_automation=True`; the existing retry-cap tests cover both paths.
+No additional retry bug or cleared-`registration_completed_at` strand was
+identified, so no submission-policy change was made.
+
+### W6.3 — historical audit dates
+
+The two audit reports remain dated historical snapshots from 15 September 2026;
+the owner must decide whether to re-date them or append a separately scoped
+post-1.1.0 verification note. Phase 6 corrected the two stale technical-audit
+rows for environment/demo submission guards and updated the stale test-count
+references without rewriting the reports' review dates.
+
 ## From Phase 2 (guest passport data at rest)
 
 ### W2.1 — the orphan-submission delete waits for the retention clock

@@ -1,9 +1,10 @@
 # Deployment and environments
 
 UbyHost runs in **three logical tiers**. The checked-in configuration points only
-**production** at the real police register. The application does not enforce
-this separation, so verify `UBYHOST_DEPLOYMENT` and `UBYHOST_UBYPORT_ENV`
-together before every deployment.
+**production** at the real police register. The application rejects the `prod`
+UbyPort target outside production and on Render, but it cannot prove that a
+staging instance kept its configured `mock` value; verify
+`UBYHOST_DEPLOYMENT` and `UBYHOST_UBYPORT_ENV` together before every deployment.
 
 **Operator setup (***REMOVED***):**
 
