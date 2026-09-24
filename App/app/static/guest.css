@@ -101,8 +101,10 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   text-decoration: none;
   color: var(--g-muted);
   border-radius: var(--g-pill);
-  padding: 5px 11px;
-  line-height: 1;
+  min-height: 44px;
+  padding: 12px 14px;
+  display: inline-flex;
+  align-items: center;
   transition: background 0.16s var(--g-ease), color 0.16s var(--g-ease);
 }
 .g-lang a:hover { color: var(--g-ink); }

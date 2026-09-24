@@ -26,8 +26,8 @@
     </div>
     {% if lang_urls %}
     <div class="g-lang" role="group" aria-label="{{ t('language_label') }}">
-      <a href="{{ lang_urls.en }}" class="{{ 'on' if lang == 'en' }}" hreflang="en">EN</a>
-      <a href="{{ lang_urls.cs }}" class="{{ 'on' if lang == 'cs' }}" hreflang="cs">CS</a>
+      <a href="{{ lang_urls.en }}" class="{{ 'on' if lang == 'en' }}" hreflang="en" lang="en">English</a>
+      <a href="{{ lang_urls.cs }}" class="{{ 'on' if lang == 'cs' }}" hreflang="cs" lang="cs">Čeština</a>
     </div>
     {% endif %}
   </div>
