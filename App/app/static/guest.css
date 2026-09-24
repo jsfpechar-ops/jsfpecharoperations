@@ -590,6 +590,26 @@ select {
 .g-btn.secondary:hover { background: var(--g-surface-2); }
 .g-btn.slim { padding: 11px 16px; font-size: 15px; }
 
+/* Quiet text-button: an option that must stay available without competing with
+   the one primary action on the screen. */
+.g-quiet-action-row { margin: 12px 0 0; text-align: center; }
+.g-quiet-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--g-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.g-quiet-action:hover { color: var(--g-accent); }
+
 .passport-upload-actions {
   display: flex;
   flex-wrap: wrap;
