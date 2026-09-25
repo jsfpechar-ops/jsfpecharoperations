@@ -460,6 +460,74 @@ def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
         _cleanup()
 
 
+def test_the_legal_notice_talks_to_the_guest_instead_of_the_builder():
+    """The final step used to explain the app's own reporting pipeline to the guest."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert "Please read this before you send." in page.text
+        assert (
+            "Everyone staying must be registered. Foreign guests are reported to the Foreign "
+            "Police within three working days; Czech citizens only go into the house book. "
+            "This is required by law."
+        ) in page.text
+        assert (
+            "Enter everything exactly as in your passport or ID card. Your details may be "
+            "reported automatically, before your host checks them, and false details can mean "
+            "a fine for your host."
+        ) in page.text
+        assert (
+            "Complete records of foreign guests may be sent to the Czech Police automatically — "
+            "straight away or after a delay your host chooses. The same details stay in the house "
+            "book for six years."
+        ) in page.text
+        assert (
+            "My details are correct, and I have read the information above and the privacy "
+            "notice."
+        ) in page.text
+        # The software-liability disclaimer belongs to the privacy page, not the guest's task.
+        assert "does not replace legal advice" not in page.text
+        assert "without an in-app verification step" not in page.text
+        assert "without waiting for in-app identity verification" not in page.text
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert "Před odesláním si to prosím přečtěte." in cs_page.text
+        assert (
+            "Registrovat se musí každý ubytovaný. Cizince ubytovatel do tří pracovních dnů "
+            "ohlásí cizinecké policii, občany ČR jen zapíše do domovní knihy. Vyžaduje to zákon."
+        ) in cs_page.text
+        assert (
+            "Vše vyplňte přesně podle pasu nebo občanského průkazu. Údaje se mohou ohlásit "
+            "automaticky ještě předtím, než je ubytovatel zkontroluje, a za nepravdivé údaje "
+            "hrozí ubytovateli pokuta."
+        ) in cs_page.text
+        assert (
+            "Kompletní záznamy cizinců se mohou Policii ČR odeslat automaticky — hned, nebo "
+            "s odkladem, který nastaví ubytovatel. Stejné údaje zůstávají šest let v domovní "
+            "knize."
+        ) in cs_page.text
+        assert (
+            "Moje údaje jsou správné a přečetl(a) jsem si informace výše i zásady zpracování "
+            "údajů."
+        ) in cs_page.text
+        assert "nenahrazují právní poradenství" not in cs_page.text
+        assert "bez ověření v aplikaci" not in cs_page.text
+    finally:
+        _cleanup()
+
+
+def test_the_phone_submit_button_is_actually_the_one_the_css_targets():
+    """The sticky-submit rule named a child of <form>; the button lives one level deeper."""
+    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "guest.css").read_text()
+    assert '[data-guest-step] > .g-btn[type="submit"]' in css
+    assert 'form > .g-btn[type="submit"]' not in css
+
+
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:
