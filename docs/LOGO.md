@@ -85,8 +85,9 @@ Templates:
 
 ## Placements and display sizes
 
-Sizes are CSS display sizes in `App/app/static/app.css`. Assets are already
-large enough for 2× screens.
+Sizes are CSS display sizes in `App/app/static/app.css` (host and auth) and
+`App/app/static/landing.css` (public pages). Assets are already large enough
+for 2× screens.
 
 | Placement | File | CSS | Display | Background |
 | --- | --- | --- | --- | --- |
@@ -96,7 +97,8 @@ large enough for 2× screens.
 | Mobile app bar | `ubyhost-mark.png` | `.appbar .brand-logo` | **24 × 24 px** | translucent white |
 | Onboarding welcome | `ubyhost-mark.png` | `.onboarding-logo` | **120 px** wide | `#FFFFFF` with a faint coral wash |
 | Public landing / guide header | `ubyhost-logo.png` | `.landing-brand img` | **152 px** wide | `#F7F7F5` |
-| Landing product mock (sidebar accent) | `ubyhost-mark.png` | `.product-shell aside img` | **28 × 28 px** | lavender-tinted white |
+| Landing demo reel (sidebar accent) | `ubyhost-mark.png` | `.reel-side img` | **28 × 28 px** | lavender-tinted white |
+| Pricing card head | `ubyhost-mark.png` | `.pricing-card-head img` | **44 px** wide | `#FFFFFF` |
 | Landing final CTA | `ubyhost-mark.png` | `.landing-final img` | **64 × 64 px** | warm canvas wash |
 | Browser tab | `favicon.png` | `<link rel="icon">` | **64 × 64** (browser scales to ~16–32) | transparent |
 | Home screen | `apple-touch-icon.png` | `<link rel="apple-touch-icon">` | **180 × 180** | `#F7F7F5` |
@@ -122,8 +124,8 @@ only logo on small screens.
 - Keep clear space around the mark roughly a quarter of its height.
 - Prefer the mark-only file below ~40 px of display height.
 - Keep `mix-blend-mode: multiply` on `.brand-logo`, `.auth-logo`,
-  `.auth-hero-mark`, `.onboarding-logo`, `.landing-brand img`,
-  `.product-shell aside img`, and `.landing-final img` as a light-surface
+  `.auth-hero-mark`, `.onboarding-logo`, `.landing-brand img`, `.reel-side img`,
+  `.pricing-card-head img`, and `.landing-final img` as a light-surface
   safeguard.
 - Bump the `app.css?v=` / `landing.css?v=` cache query in the templates if you
   replace a file in place.
