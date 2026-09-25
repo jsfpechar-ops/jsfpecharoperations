@@ -413,6 +413,53 @@ def test_the_wizard_gives_each_step_a_history_entry_so_back_does_not_lose_the_fo
     assert "show(state.guestWizardStep, true)" in source
 
 
+def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
+    """The old help text explained the app's storage policy to the guest."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        apartment = db.query_one(
+            "SELECT id FROM apartment WHERE permalink_token = ?", (token,)
+        )
+        db.update(
+            "apartment",
+            apartment["id"],
+            {"passport_photo_policy": "required_foreign"},
+        )
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert (
+            "Your host must check your details against your document. Take a photo of the page "
+            "with your photo, or upload a PDF. Only your host can see it, and it is deleted after "
+            "they check it."
+        ) in page.text
+        assert "A JPEG, PNG or WebP photo up to 5 MB, or a PDF up to 15 MB." in page.text
+        assert "Choose your nationality in step 1 first." in page.text
+        assert (
+            "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
+            "sees it, to compare it with what you entered. It is deleted after the check, or "
+            "automatically after your stay. It is never sent to the police."
+        ) in page.text
+        # The internal storage policy is not the guest's problem.
+        assert "stale-file sweep" not in page.text
+        assert "Access in the app is restricted" not in page.text
+        assert "authorised host users" not in page.text
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert (
+            "Ubytovatel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
+            "nahrajte PDF. Uvidí ji jen ubytovatel a po kontrole se smaže."
+        ) in cs_page.text
+        assert "Fotka JPEG, PNG nebo WebP do 5 MB, nebo PDF do 15 MB." in cs_page.text
+        assert "Nejdřív v kroku 1 vyberte státní občanství." in cs_page.text
+        assert "pojistkou je plánované mazání" not in cs_page.text
+    finally:
+        _cleanup()
+
+
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:
