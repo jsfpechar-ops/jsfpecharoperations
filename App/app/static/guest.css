@@ -859,6 +859,24 @@ details.g-why .g-details {
 .g-summary-list dt { margin: 0; color: var(--g-muted); font-weight: 600; }
 .g-summary-list dd { margin: 0; color: var(--g-ink); }
 
+/* Last look at the answers before they are locked. The "Change" control is a
+   quiet text button so it never competes with "Submit my details" below. */
+.g-review-list { margin-bottom: 0; }
+.g-review-list dd { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.g-review-change {
+  margin-left: auto;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--g-accent);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.g-review-change:focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
+
 /* Guest variants of the shared primitives use larger touch targets and type. */
 .g-property {
   display: flex;

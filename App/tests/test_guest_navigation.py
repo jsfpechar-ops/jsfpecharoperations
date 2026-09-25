@@ -296,6 +296,34 @@ def test_save_says_saved_until_the_record_was_actually_reported():
         _cleanup()
 
 
+def test_the_last_step_offers_a_review_list_with_a_way_back():
+    """The form locks the moment it is sent, so the guest gets a last look."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=2)
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert "Check before you send" in page.text
+        assert "these details are locked and only your host can change them" in page.text
+        assert "data-wizard-review" in page.text
+        assert 'data-edit-label="Change"' in page.text
+        # Rows are read off the form's own labels and values, so the list ships
+        # empty and stays hidden when the script never runs.
+        assert '<dl class="g-summary-list g-review-list"></dl>' in page.text
+        # It sits in the last step, ahead of the legal notice it is checking.
+        assert page.text.index("data-wizard-review") < page.text.index('id="legal-notice"')
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert "Před odesláním zkontrolujte" in cs_page.text
+        assert "změnit je může už jen ubytovatel" in cs_page.text
+        assert 'data-edit-label="Změnit"' in cs_page.text
+    finally:
+        _cleanup()
+
+
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:
