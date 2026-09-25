@@ -70,11 +70,16 @@
     </div>
   </div>
 {% endset %}
+{# UX-142: on the zero state the welcome card below carries the page's only <h1>,
+   so the page header is skipped rather than printing a second heading. #}
+{% set show_welcome = not apartments and not onboarding.dismissed %}
+{% if not show_welcome %}
 {{ page_header(
   t('dashboard.title'),
   t('dashboard.lede'),
   actions=header_actions
 ) }}
+{% endif %}
 
 {% if not apartments %}
   {% if not onboarding.dismissed %}
