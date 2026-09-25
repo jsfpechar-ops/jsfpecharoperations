@@ -28,7 +28,7 @@
       <span class="g-range-cue" aria-hidden="true"><i></i></span>
       <span class="dates">
         <strong>{{ reservation.date_from | date_cz }} <span aria-hidden="true">&rarr;</span> {{ reservation.date_to | date_cz }}</strong>
-        <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+        <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
         {% if row.yours %}
           <span class="g-lane-status">{{ t('your_stay_badge') }}</span>
         {% elif row.ongoing %}

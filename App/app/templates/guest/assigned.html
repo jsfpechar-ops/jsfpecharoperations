@@ -8,7 +8,7 @@
   {% if apartment.city_en %}<p class="g-assigned-location">{{ apartment.city_en }}</p>{% endif %}
   <p class="g-assigned-dates">
     <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
-    <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+    <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
   </p>
 </div>
 
