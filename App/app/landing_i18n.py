@@ -50,7 +50,7 @@ LANDING_STRINGS = {
         "landing.benefit.calendar.title": "Guest records start with bookings",
         "landing.benefit.calendar.body": "Connect Airbnb and Booking.com calendars.",
         "landing.benefit.guest.title": "Guests do the typing",
-        "landing.benefit.guest.body": "One private link collects and signs their details.",
+        "landing.benefit.guest.body": "Guests fill in and sign their details through one private link.",
         "landing.benefit.ubyport.title": "UbyPort gets the report",
         "landing.benefit.ubyport.body": "Send it and keep the real delivery receipt.",
         "landing.steps.title": "From booking to reported in three moves.",
@@ -71,9 +71,9 @@ LANDING_STRINGS = {
             "Connect the calendar once. Guests provide their own details. UbyHost keeps "
             "the guest book and the exact response from UbyPort together."
         ),
-        "product.features.title": "Everything your guest report passes through",
-        "product.features.lede": "Four connected steps, with no spreadsheet in between.",
-        "product.faq.title": "UbyPort questions, answered clearly",
+        "product.features.title": "The whole reporting path in one place",
+        "product.features.lede": "Four connected steps, no copying into spreadsheets.",
+        "product.faq.title": "Common UbyPort questions",
         "product.guides.title": "Practical guides for Czech hosts",
         "product.cta.title": "Ready to simplify guest reporting?",
         "pricing.page_title": "UbyHost pricing: tailored for your accommodation",
@@ -256,7 +256,7 @@ LANDING_STRINGS = {
         "landing.benefit.calendar.title": "Rezervace se objeví",
         "landing.benefit.calendar.body": "Propojte kalendáře Airbnb a Booking.com.",
         "landing.benefit.guest.title": "Hosté údaje vyplní",
-        "landing.benefit.guest.body": "Jeden soukromý odkaz údaje získá i podepíše.",
+        "landing.benefit.guest.body": "Hosté vše vyplní a podepíší přes jeden soukromý odkaz.",
         "landing.benefit.ubyport.title": "UbyPort dostane hlášení",
         "landing.benefit.ubyport.body": "Odešlete ho a uchovejte skutečnou doručenku.",
         "landing.steps.title": "Od rezervace k hlášení ve třech krocích.",
@@ -266,7 +266,7 @@ LANDING_STRINGS = {
         "landing.final.title": "Evidence hostů na autopilota.",
         "landing.final.body": "Každý pobyt, formulář a odpověď UbyPortu na jednom místě.",
         "landing.details.link": "Jak to funguje",
-        "product.page_title": "UbyPort pro Airbnb a Booking.com hostitele · UbyHost",
+        "product.page_title": "UbyPort pro hostitele z Airbnb a Booking.com · UbyHost",
         "product.meta_description": (
             "Jak UbyHost propojí Airbnb a Booking.com, online formuláře hostů, ubytovací "
             "knihu a přímé hlášení cizinců do UbyPortu."
@@ -277,9 +277,9 @@ LANDING_STRINGS = {
             "Kalendář propojíte jednou. Hosté vyplní své údaje sami. UbyHost uchová "
             "ubytovací knihu i přesnou odpověď z UbyPortu pohromadě."
         ),
-        "product.features.title": "Vše, čím hlášení hosta prochází",
-        "product.features.lede": "Čtyři propojené kroky bez tabulky mezi nimi.",
-        "product.faq.title": "Otázky k UbyPortu, jasně zodpovězené",
+        "product.features.title": "Celá cesta hlášení na jednom místě",
+        "product.features.lede": "Čtyři navazující kroky, žádné přepisování do tabulek.",
+        "product.faq.title": "Nejčastější otázky k UbyPortu",
         "product.guides.title": "Praktické průvodce pro české ubytovatele",
         "product.cta.title": "Chcete si zjednodušit hlášení hostů?",
         "pricing.page_title": "Ceník UbyHostu: cena dle domluvy",
