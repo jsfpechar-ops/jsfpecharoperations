@@ -519,6 +519,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "to mandatory statutory rules. Nothing here changes who must register guests or keep the house "
             "book — that remains the accommodation provider."
         ),
+        "legal.back_home": "Back to UbyHost",
         "legal.back_login": "Back to login",
         "legal.footer_link": "Legal notice",
         "legal.footer_short": "Legal",
@@ -1691,6 +1692,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "povinnými zákonnými pravidly. Tím se nemění, kdo musí hosty registrovat a vést domovní "
             "knihu — to zůstává na poskytovateli ubytování."
         ),
+        "legal.back_home": "Zpět na UbyHost",
         "legal.back_login": "Zpět na přihlášení",
         "legal.footer_link": "Právní informace",
         "legal.footer_short": "Právní",

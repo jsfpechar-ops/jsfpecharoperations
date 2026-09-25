@@ -1,5 +1,4 @@
-{% extends "base.html" %}
-{% set show_nav = false %}
+{% extends "public_legal_base.html" %}
 {% block title %}{{ t('privacy.page_title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
@@ -53,6 +52,6 @@
   &middot;
   <a href="/subprocessors">{{ t('subprocessors.footer_link') }}</a>
   &middot;
-  <a href="/login">{{ t('legal.back_login') }}</a>
+  <a href="/?lang={{ lang }}">{{ t('legal.back_home') }}</a>
 </p>
 {% endblock %}
