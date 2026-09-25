@@ -241,6 +241,33 @@ function initSignature() {
     });
   }
 
+  /* A Schengen visa is something a guest needs in order to enter. A Czech or
+     EU/EEA/Swiss guest is entering on their own document, so the question can
+     only be answered one way — the majority of guests were being asked to
+     decide something they cannot have. The field is hidden and emptied rather
+     than removed, so a number typed before the nationality was picked cannot
+     be saved behind the guest's back. */
+  var VISA_FREE_COUNTRIES = [
+    "AUT", "BEL", "BGR", "CHE", "CYP", "CZE", "DEU", "DNK", "ESP", "EST",
+    "FIN", "FRA", "GRC", "HRV", "HUN", "IRL", "ISL", "ITA", "LIE", "LTU",
+    "LUX", "LVA", "MLT", "NLD", "NOR", "POL", "PRT", "ROU", "SVK", "SVN",
+    "SWE"
+  ];
+
+  function initVisaVisibility() {
+    var nationality = document.getElementById("nationality");
+    var visa = document.getElementById("visa_number");
+    if (!nationality || !visa) return;
+    var wrap = visa.closest(".g-field") || visa;
+    function apply() {
+      var free = VISA_FREE_COUNTRIES.indexOf(nationality.value) !== -1;
+      wrap.style.display = free ? "none" : "";
+      if (free) visa.value = "";
+    }
+    nationality.addEventListener("change", apply);
+    apply();
+  }
+
   /* The last step saves and locks the record, so the guest gets one final look
      at what they typed — with a way straight back to the step that owns each
      answer, instead of hunting for it behind a step that is no longer shown. */
@@ -570,6 +597,7 @@ function initSignature() {
     initBirthDate();
     initChildToggle();
     initResidenceCountry();
+    initVisaVisibility();
     initPinReturn();
     initGuestWizard();
     initErrorSummary();
