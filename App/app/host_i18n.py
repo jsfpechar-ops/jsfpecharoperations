@@ -1,7 +1,7 @@
 """Host-facing UI strings in English and Czech."""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, List, Optional
 
 from fastapi import Request
 
@@ -2677,6 +2677,7 @@ _INTERFACE_STRINGS = {
         "guest_links.pin": "Access PIN",
         "guest_links.pin_help": "Guests enter this before the form opens.",
         "guest_links.message_title": "Suggested portal message",
+        "guest_links.message_lede": "Guests from abroad read the English part; the form itself opens in their language.",
         "guest_links.message": (
             "Dear guests,\n\nCzech law requires us to register every guest before arrival and "
             "report foreign nationals to the Foreign Police.\n\nPlease fill in one short form "
@@ -2684,6 +2685,7 @@ _INTERFACE_STRINGS = {
             "explains why the information is required and how it is handled.\n\nThank you."
         ),
         "guest_links.copy_message": "Copy this message",
+        "guest_links.copy_message_en": "Copy English only",
         "guest_links.message_copied": "Message copied",
         "guest_links.property_setup": "Property setup",
         "guest_links.options": "Link and PIN options",
@@ -3139,6 +3141,7 @@ _INTERFACE_STRINGS = {
         "guest_links.pin": "Přístupový PIN",
         "guest_links.pin_help": "Hosté ho zadají před otevřením formuláře.",
         "guest_links.message_title": "Doporučená zpráva pro portál",
+        "guest_links.message_lede": "Zahraniční hosté si přečtou anglickou část; samotný formulář se otevře v jejich jazyce.",
         "guest_links.message": (
             "Vážení hosté,\n\nčeský zákon vyžaduje evidenci každého hosta před příjezdem a "
             "oznámení cizinců cizinecké policii.\n\nVyplňte prosím jeden krátký formulář za "
@@ -3146,6 +3149,7 @@ _INTERFACE_STRINGS = {
             "vysvětluje, proč jsou údaje povinné a jak se s nimi nakládá.\n\nDěkujeme."
         ),
         "guest_links.copy_message": "Kopírovat zprávu",
+        "guest_links.copy_message_en": "Kopírovat jen anglicky",
         "guest_links.message_copied": "Zpráva zkopírována",
         "guest_links.property_setup": "Nastavení ubytování",
         "guest_links.options": "Možnosti odkazu a PIN",
@@ -3387,3 +3391,14 @@ def translate(lang: str, key: str, **kwargs) -> str:
         key,
         **kwargs,
     )
+
+
+def bilingual_message(key: str, languages: Optional[List[str]] = None, **kwargs) -> str:
+    """One key's text in more than one language, in the order given.
+
+    The suggested portal message is pasted into Airbnb or Booking, where the
+    readers are the foreign nationals who have to register - but the host may
+    also have Czech-speaking guests. Sending the message in both languages
+    costs the host nothing and spares the guest a language they do not read.
+    """
+    return "\n\n".join(translate(lang, key, **kwargs) for lang in (languages or ["en", "cs"]))
