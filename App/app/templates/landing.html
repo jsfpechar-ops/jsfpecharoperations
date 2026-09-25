@@ -162,11 +162,11 @@
         <p class="landing-eyebrow">{{ t('landing.benefits.eyebrow') }}</p>
         <h2 id="benefits-title">{{ t('landing.benefits.title') }}</h2>
       </div>
-      <div class="benefit-grid">
-        <article class="benefit-card benefit-blue"><span aria-hidden="true">▦</span><h3>{{ t('landing.benefit.calendar.title') }}</h3><p>{{ t('landing.benefit.calendar.body') }}</p></article>
-        <article class="benefit-card benefit-yellow"><span aria-hidden="true">✎</span><h3>{{ t('landing.benefit.guest.title') }}</h3><p>{{ t('landing.benefit.guest.body') }}</p></article>
-        <article class="benefit-card benefit-green"><span aria-hidden="true">✓</span><h3>{{ t('landing.benefit.ubyport.title') }}</h3><p>{{ t('landing.benefit.ubyport.body') }}</p></article>
-      </div>
+      <ol class="benefit-list">
+        {% for name in ('calendar', 'guest', 'ubyport') %}
+        <li><span>0{{ loop.index }}</span><div><h3>{{ t('landing.benefit.' ~ name ~ '.title') }}</h3><p>{{ t('landing.benefit.' ~ name ~ '.body') }}</p></div></li>
+        {% endfor %}
+      </ol>
     </section>
 
     <section class="landing-section quick-steps" aria-labelledby="steps-title">

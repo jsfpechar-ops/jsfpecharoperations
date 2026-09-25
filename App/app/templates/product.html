@@ -55,8 +55,8 @@
         <p>{{ t('product.features.lede') }}</p>
       </header>
       <div class="product-feature-list">
-        {% for name, tone in (('calendar','blue'),('form','yellow'),('book','purple'),('ubyport','green')) %}
-        <article class="product-feature-row tone-{{ tone }}">
+        {% for name in ('calendar', 'form', 'book', 'ubyport') %}
+        <article class="product-feature-row">
           <span>0{{ loop.index }}</span>
           <div>
             <p>{{ t('landing.feature.' ~ name ~ '.icon') }}</p>
