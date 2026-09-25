@@ -7,7 +7,7 @@
 <section class="auth-card">
   <h1 class="auth-title">{{ t('account.2fa.code_title') }}</h1>
   <p class="auth-lede">{{ t('account.2fa.code_lede') }}</p>
-  {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}</div>{% endif %}
+  {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}{% if error == 'auth.error.code_locked' %} <a href="/login">{{ t('auth.error.code_locked_again') }}</a>{% endif %}</div>{% endif %}
   <form method="post" action="/login/2fa" class="auth-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="pending" value="{{ pending }}">

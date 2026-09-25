@@ -127,7 +127,10 @@ async def two_factor_login(request: Request):
     form = await request.form()
     pending = auth.read_two_factor_pending(_form_str(form, "pending"))
     if not pending:
-        return RedirectResponse("/login", status_code=303)
+        # The pending token lives 10 minutes, which is shorter than the 15-minute
+        # lockout the host was just told to wait out. Say so instead of dropping
+        # them on a bare login form with no explanation.
+        return RedirectResponse("/login?notice=2fa_expired", status_code=303)
     account = db.query_one(
         "SELECT * FROM user_account WHERE id = ? AND active = 1", (pending["uid"],)
     )
