@@ -672,16 +672,30 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 
 /* Alerts behave like phone notifications: they arrive above the page instead
    of moving it, the whole message opens the relevant item, and × dismisses it
-   without a navigation. */
+   without a navigation. They sit bottom right so the page's own primary action
+   keeps the top right corner, and above the toast layer so a dismissal toast
+   never hides the warning Appendix 5 requires. */
 .notification-stack {
   position: fixed;
-  top: 14px;
   right: 14px;
-  z-index: 70;
+  bottom: 20px;
+  z-index: calc(var(--z-toast) + 10);
   display: grid;
   gap: 8px;
   width: min(340px, calc(100vw - 24px));
   pointer-events: none;
+}
+.notification-more {
+  pointer-events: auto;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+  font-size: 13px;
+  font-weight: 650;
+  text-align: center;
+  text-decoration: none;
 }
 .notification-bubble {
   position: relative;
@@ -1703,7 +1717,19 @@ details.raw pre {
 /* Stacked table rows: on a phone a row becomes a small card, so the daily
    work stays usable without pinch-zooming. */
 @media (max-width: 720px) {
-  .notification-stack { top: 10px; right: 10px; width: calc(100vw - 20px); }
+  /* On a phone the stack would cover the app bar and the page title, so it
+     becomes one full-width strip tucked directly under the app bar. */
+  .notification-stack {
+    top: 59px;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    gap: 0;
+  }
+  .notification-bubble,
+  .notification-more { border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
+  .notification-bubble + .notification-bubble,
+  .notification-more { border-top: 0; }
   .pagination { justify-content: space-between; }
   .table-cards thead { display: none; }
   .col-name, .col-address, .col-purpose { min-width: 0; }
