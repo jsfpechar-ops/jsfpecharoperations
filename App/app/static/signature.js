@@ -130,6 +130,13 @@
   function initBirthDate() {
     var input = document.getElementById("birth_date");
     if (!input) return;
+    var readback = document.getElementById("birth-date-readback");
+    var template = readback ? readback.getAttribute("data-template") || "" : "";
+    var locale = readback && readback.getAttribute("data-locale") === "cs" ? "cs-CZ" : "en-GB";
+    var formatter = null;
+    try {
+      formatter = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" });
+    } catch (e) { formatter = null; }
 
     function formatDigits(digits) {
       var out = digits.slice(0, 2);
@@ -138,10 +145,47 @@
       return out;
     }
 
+    // "1990-07-04" is year-first. Reading it as eight digits would give
+    // 19/90/0704, so reorder it before anything else touches the value.
+    function fromIso(value) {
+      var match = /^\s*(\d{4})-(\d{2})-(\d{2})\s*$/.exec(String(value || ""));
+      return match ? match[3] + match[2] + match[1] : "";
+    }
+
+    function toDate(formatted) {
+      var match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formatted);
+      if (!match) return null;
+      var day = parseInt(match[1], 10);
+      var month = parseInt(match[2], 10);
+      var year = parseInt(match[3], 10);
+      var date = new Date(year, month - 1, day);
+      // 31/02 and friends roll over instead of failing, so round-trip them.
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+      return date;
+    }
+
+    function say(date) {
+      var pretty = "";
+      if (date && formatter) {
+        try { pretty = formatter.format(date); } catch (e) { pretty = ""; }
+      }
+      if (readback) {
+        var text = pretty && template ? template.replace("%(date)s", pretty) : "";
+        if (readback.textContent !== text) readback.textContent = text;
+      }
+      // The review list shows the date the guest just confirmed, not the
+      // ambiguous digits they typed.
+      if (pretty) input.setAttribute("data-review-value", pretty);
+      else input.removeAttribute("data-review-value");
+    }
+
     function apply(value) {
-      var digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+      var raw = String(value || "");
+      var iso = fromIso(raw);
+      var digits = iso || raw.replace(/\D/g, "").slice(0, 8);
       var formatted = formatDigits(digits);
       if (input.value !== formatted) input.value = formatted;
+      say(toDate(formatted));
     }
 
     input.addEventListener("input", function () { apply(input.value); });

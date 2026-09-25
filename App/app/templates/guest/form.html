@@ -101,6 +101,10 @@
                inputmode="numeric" placeholder="{{ t('date_placeholder') }}" maxlength="10" required
                autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
         <div class="hint">{{ t('birth_date_help') }}</div>
+        {# The read-back catches a swapped day and month, which the digits alone
+           cannot: nobody notices 04/07 vs 07/04 until the record is locked. #}
+        <div class="hint" id="birth-date-readback" aria-live="polite"
+             data-template="{{ t('birth_date_readback') }}" data-locale="{{ lang }}"></div>
         {{ err_for('birth_date') }}
       </div>
       <div class="g-field">
