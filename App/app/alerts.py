@@ -56,14 +56,6 @@ def _stay_dates(reservation: Any) -> str:
     return validation.fmt_date_range(reservation["date_from"], reservation["date_to"])
 
 
-def _plural_key(base: str, n: int) -> str:
-    if n == 1:
-        return f"{base}.one"
-    if 2 <= n <= 4:
-        return f"{base}.few"
-    return base
-
-
 def _forms_count(progress: Dict[str, Any]) -> tuple[str, str]:
     filled = str(progress.get("filled") or 0)
     expected = progress.get("expected")
@@ -83,7 +75,7 @@ def deadline_reason(lang: str, check_in, progress: Dict[str, Any], now=None) -> 
     filled, expected = _forms_count(progress)
     kind, amount = deadlines.time_left_parts(check_in, now)
     if kind == "overdue_days":
-        key = _plural_key("notification.reason.overdue_forms", amount)
+        key = host_i18n.plural_key("notification.reason.overdue_forms", amount)
         return host_i18n.translate(
             lang, key, n=amount, filled=filled, expected=expected
         )

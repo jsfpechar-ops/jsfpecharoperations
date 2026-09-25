@@ -47,13 +47,13 @@ def _nights(date_from: Optional[str], date_to: Optional[str]) -> int:
 
 
 def _nights_key(count: int) -> str:
-    """One/few/many already lives in ``alerts``; this only renames its suffix.
+    """One/few/many already lives in ``host_i18n``; this only renames its suffix.
 
     Czech picks its form from the count and English follows the same rule, so
     the decision is shared rather than written twice. A-13 fixes the guest key
     names, so ``nights.one`` becomes ``night_one``.
     """
-    suffix = alerts._plural_key("night", count).rpartition(".")[2]
+    suffix = host_i18n.plural_key("night", count).rpartition(".")[2]
     return {
         "one": "night_one",
         "few": "nights_few",
@@ -109,6 +109,18 @@ def _template_translate(context, key: str, **kwargs) -> str:
 
 
 @pass_context
+def _template_plural(context, base: str, n: int, **kwargs) -> str:
+    """A counted string, in the one/few/many form its count needs.
+
+    "3 nocí" and "1 nights" are both wrong, and both come from printing one
+    form of a key whatever the number was. Templates call ``tp('key', n)``.
+    """
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    return host_i18n.translate_plural(lang, base, n, **kwargs)
+
+
+@pass_context
 def _template_time_left(context, check_in) -> str:
     """The deadline countdown, in the host's language.
 
@@ -120,10 +132,8 @@ def _template_time_left(context, check_in) -> str:
     kind, amount = deadlines.time_left_parts(check_in)
     key = f"deadline.{kind}"
     if kind in ("arrives_days", "days_left", "overdue_days"):
-        if amount == 1:
-            key += ".one"
-        elif 2 <= amount <= 4:
-            key += ".few"
+        # Only these keys ship one/few forms; the hour countdowns are "5 h".
+        key = host_i18n.plural_key(key, amount)
     return host_i18n.translate(lang, key, n=amount)
 
 
@@ -222,6 +232,7 @@ templates.env.globals.update(
     source_label=_source_label,
     entered_by_label=_entered_by_label,
     report_mode_label=_report_mode_label,
+    tp=_template_plural,
     parse_iso_date=validation.parse_iso_date,
     today=lambda: date.today(),
     now=lambda: datetime.now(),

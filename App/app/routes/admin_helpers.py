@@ -37,6 +37,24 @@ def flash(request, key: str, **params) -> str:
     return host_i18n.translate(host_i18n.lang_from_request(request), key, **params)
 
 
+def flash_plural(request, key: str, n: int, **params) -> str:
+    """A counted flash, in the one/few/many form its count needs."""
+    return host_i18n.translate_plural(
+        host_i18n.lang_from_request(request), key, n, **params
+    )
+
+
+def plural_param(request, key: str, n: int) -> str:
+    """A counted fragment for a sentence that carries more than one count.
+
+    "Sent 3 guest records across 2 stays" has two numbers that each need their
+    own form, and Czech agrees them differently ("ve 2 pobytech", not "ve 2
+    pobyty"), so the two halves are translated separately and the sentence
+    around them stays fixed.
+    """
+    return host_i18n.translate_plural(host_i18n.lang_from_request(request), key, n)
+
+
 def form_str(form, key: str, default: str = "") -> str:
     value = form.get(key)
     return (value or default).strip() if isinstance(value, str) else default

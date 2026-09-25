@@ -142,7 +142,7 @@
             {{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}
           </a>
           <div class="small muted">
-            {{ t('stays.table.nights', count=nights(reservation.date_from, reservation.date_to)) }}
+            {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}
             {%- if check_in and check_out and check_in <= today() <= check_out %}
               &middot; <span class="pill blue">{{ t('stays.table.in_house') }}</span>
             {%- endif %}

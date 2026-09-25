@@ -904,7 +904,7 @@ Insert **inside the `#money` group** — the slot UX_AUDIT C-16 [UX-81] reserved
 {% set fee_review = stay_fee.people | selectattr('claim') | rejectattr('host_decision') | list %}
 <section class="panel" id="stay-fee">
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
-    <h2 style="margin:0">{{ t('stay.fee.title') }}{% if fee_review %} <span class="small warn-text">· {{ t('stay.fee.to_review', n=fee_review | length) }}</span>{% endif %}</h2>
+    <h2 style="margin:0">{{ t('stay.fee.title') }}{% if fee_review %} <span class="small warn-text">· {{ tp('stay.fee.to_review', fee_review | length) }}</span>{% endif %}</h2>
     <span class="small muted">{{ t('stay.fee.rate', rate=stay_fee.rate_czk) }}</span>
   </div>
   {% if stay_fee_expected and stay_fee.people | length < stay_fee_expected %}
@@ -917,7 +917,7 @@ Insert **inside the `#money` group** — the slot UX_AUDIT C-16 [UX-81] reserved
     <li class="fee-row {{ 'needs-review' if review }}">
       <div class="fee-row-main">
         <strong>{{ stay_fee_names.get(p.guest_id) or '—' }}</strong>
-        <span class="small muted">{{ t('stay.fee.nights', n=p.nights) }}</span>
+        <span class="small muted">{{ tp('stay.fee.nights', p.nights) }}</span>
         <span class="fee-amount">{{ p.amount_czk }} Kč</span>
       </div>
       {% if p.reason %}
@@ -1189,8 +1189,12 @@ Values for `export_csv`:
 | `stay.fee.title` | Stay fee | Poplatek z pobytu |
 | `stay.fee.rate` | Rate for this stay: %(rate)s Kč per person per night | Sazba pro tento pobyt: %(rate)s Kč za osobu a noc |
 | `stay.fee.headcount` | Only %(signed)s of %(expected)s guests have signed a form. Unregistered guests are not in the total. | Formulář podepsalo jen %(signed)s z %(expected)s hostů. Neregistrovaní hosté nejsou v celkové částce. |
-| `stay.fee.nights` | %(n)s night(s) | %(n)s noc(í) |
-| `stay.fee.to_review` | %(n)s to review | %(n)s ke kontrole |
+| `stay.fee.nights` | %(count)s nights | %(count)s nocí |
+| `stay.fee.nights.one` | %(count)s night | %(count)s noc |
+| `stay.fee.nights.few` | %(count)s nights | %(count)s noci |
+| `stay.fee.to_review` | %(count)s to review | %(count)s ke kontrole |
+| `stay.fee.to_review.one` | %(count)s to review | %(count)s ke kontrole |
+| `stay.fee.to_review.few` | %(count)s to review | %(count)s ke kontrole |
 | `stay.fee.change` | Change | Změnit |
 | `stay.fee.reason.under_18` | under 18 | mladší 18 let |
 | `stay.fee.reason.over_60_days` | stay over 60 days | pobyt delší než 60 dnů |
@@ -1225,6 +1229,8 @@ Values for `export_csv`:
 | `guest.doc_type.op` … `guest.doc_type.zadatel_docasna_ochrana` | same texts as the guest `doc_type_*` keys in §13.1 | same texts as §13.1 |
 
 (The last row means nine keys: `guest.doc_type.<code>` for every code in `DOC_TYPES`, with the same EN/CS text as the guest keys.)
+
+**Counted keys go through `tp(key, n)`**, the template global UX-85 added (`host_i18n.plural_key` picks `.one` / `.few` / the bare key). Every key whose text varies with a number — `stay.fee.nights`, `stay.fee.to_review`, and anything added later — ships all three forms, even where the EN text reads the same, because the bare key is the *many* form and a missing `.one` renders the raw key name. Flash messages that carry a count use `flash_plural` / `plural_param` from `routes/admin_helpers.py` instead.
 
 ---
 
