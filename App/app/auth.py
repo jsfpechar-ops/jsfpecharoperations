@@ -272,6 +272,19 @@ def workspace_user(request: Request):
     return account
 
 
+def session_remembers(request: Request) -> bool:
+    """Whether the session in this request was started with "Remember me".
+
+    Re-issuing a session — a password change or switching 2FA on — mints a
+    fresh cookie, so the flag has to be carried across by hand or the host
+    silently drops back to the short lifetime.
+    """
+    if current_user(request) is None:
+        return False
+    payload = getattr(request.state, "session_payload", None) or {}
+    return bool(payload.get("rm"))
+
+
 def require_login(request: Request) -> Optional[RedirectResponse]:
     """Return a redirect unless a valid account session identifies this host."""
     # Test/development databases may deliberately disable bootstrap and have no
