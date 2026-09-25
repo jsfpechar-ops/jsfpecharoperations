@@ -7,10 +7,10 @@
   <title>{{ t('landing.page_title') }}</title>
   <meta name="description" content="{{ t('landing.meta_description') }}">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="{{ public_base_url }}/">
-  <link rel="alternate" hreflang="cs" href="{{ public_base_url }}/?lang=cs">
-  <link rel="alternate" hreflang="en" href="{{ public_base_url }}/?lang=en">
-  <link rel="alternate" hreflang="x-default" href="{{ public_base_url }}/">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {% for code, href in alternate_urls %}
+  <link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
+  {% endfor %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="UbyHost">
   <meta property="og:title" content="{{ t('landing.page_title') }}">
