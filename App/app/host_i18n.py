@@ -67,13 +67,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Email %(email)s with your username. We'll set a temporary password for you, "
             "and you'll choose a new one when you log in."
         ),
-        "login.acceptance_before": "By logging in or using UbyHost, you agree to the ",
-        "login.acceptance_and": " and ",
-        "login.acceptance_between_terms_privacy": ", the ",
-        "login.acceptance_between_privacy_legal": ", and the ",
-        "login.acceptance_after": (
-            ". If you do not agree, do not log in or use the Service."
-        ),
+        "login.acceptance_before": "By logging in, you agree to the ",
+        "login.acceptance_terms": "Terms of Service",
+        "login.acceptance_dpa": "DPA",
+        "login.acceptance_between_terms_dpa": " (incl. ",
+        "login.acceptance_between_dpa_privacy": "), ",
+        "login.acceptance_privacy": "Privacy Policy",
+        "login.acceptance_between_privacy_legal": " and ",
+        "login.acceptance_legal": "Legal notice",
+        "login.acceptance_after": ".",
         "login.hero_title": "Guest reporting, handled for you.",
         "login.hero_body": (
             "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace — "
@@ -1244,13 +1246,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Napište na %(email)s a uveďte své uživatelské jméno. Nastavíme vám dočasné "
             "heslo a při přihlášení si zvolíte nové."
         ),
-        "login.acceptance_before": "Přihlášením nebo používáním UbyHostu souhlasíte s ",
-        "login.acceptance_and": " a ",
-        "login.acceptance_between_terms_privacy": ", ",
+        "login.acceptance_before": "Přihlášením souhlasíte s ",
+        "login.acceptance_terms": "obchodními podmínkami",
+        "login.acceptance_dpa": "DPA",
+        "login.acceptance_between_terms_dpa": " (vč. ",
+        "login.acceptance_between_dpa_privacy": "), ",
+        "login.acceptance_privacy": "zásadami ochrany osobních údajů",
         "login.acceptance_between_privacy_legal": " a ",
-        "login.acceptance_after": (
-            ". Pokud nesouhlasíte, nepřihlašujte se ani Službu nepoužívejte."
-        ),
+        "login.acceptance_legal": "právními informacemi",
+        "login.acceptance_after": ".",
         "login.hero_title": "Hlášení hostů bez zbytečné práce.",
         "login.hero_body": (
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
