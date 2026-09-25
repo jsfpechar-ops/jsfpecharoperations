@@ -13,7 +13,7 @@
   <h2>{% if new_credential.reset %}{{ t('users.credential.reset_title') }}{% else %}{{ t('users.credential.created_title') }}{% endif %}</h2>
   <p class="small muted">
     {{ t('users.credential.copy_now') }}
-    {% if new_credential.reset %}{{ t('users.credential.old_password_invalid') }}{% endif %}
+    {% if new_credential.reset %}{{ t('users.credential.old_password_invalid') }} {{ t('users.credential.reset_2fa') }}{% endif %}
   </p>
   <dl class="credential-pair">
     <dt>{{ t('users.credential.username') }}</dt>
@@ -23,6 +23,9 @@
   </dl>
   <p class="small muted">
     {{ t('users.credential.choose_on_login') }}
+  </p>
+  <p class="small muted">
+    {{ t('users.credential.next_steps', url=public_base_url ~ '/login') }}
   </p>
 </div>
 {% endif %}
