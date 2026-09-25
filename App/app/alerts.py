@@ -253,7 +253,29 @@ def present(alert: Any, lang: str) -> Dict[str, Any]:
 
 
 def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
-    return [present(alert, lang) for alert in alerts]
+    """One card per stay, most severe first.
+
+    A deadline and an incomplete guest list are raised for the same booking, so
+    the host used to read the same stay twice and dismiss it twice. Rows that
+    share a reservation collapse into the most severe of them, at the position
+    the first one held; the list arrives already ordered by level.
+    """
+    cards: List[Dict[str, Any]] = []
+    seen: Dict[Any, int] = {}
+    for alert in alerts:
+        card = present(alert, lang)
+        reservation_id = card.get("reservation_id")
+        if not reservation_id:
+            cards.append(card)
+            continue
+        index = seen.get(reservation_id)
+        if index is None:
+            seen[reservation_id] = len(cards)
+            cards.append(card)
+            continue
+        if LEVEL_ORDER.get(card.get("level"), 9) < LEVEL_ORDER.get(cards[index].get("level"), 9):
+            cards[index] = card
+    return cards
 
 
 def raise_alert(
