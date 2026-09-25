@@ -1227,8 +1227,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Stays, properties, house-book entries, and operators you archived are collected in one place. "
             "Restore anything you hid by mistake. The retention purge below is the only way guest records are permanently deleted."
         ),
-        "settings.nav.overview": "Overview",
-        "settings.nav.mail": "Guest e-mails",
         "settings.lede": "Advanced system status, security, data protection, and activity log.",
         "settings.nav.retention": "Data protection",
         "settings.nav.archive": "Archive",
@@ -2447,8 +2445,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Archivované pobyty, ubytování, záznamy knihy a provozovatelé jsou na jednom místě. "
             "Obnovte, co jste skryli omylem. Trvalé smazání hostů provede pouze retence níže."
         ),
-        "settings.nav.overview": "Přehled",
-        "settings.nav.mail": "E-maily hostům",
         "settings.lede": "Pokročilý stav systému, zabezpečení, ochrana údajů a protokol aktivit.",
         "settings.nav.retention": "Ochrana údajů",
         "settings.nav.archive": "Archiv",
@@ -2916,6 +2912,7 @@ _INTERFACE_STRINGS = {
         "account.2fa.recovery_copy_all": "Copy all",
         "account.2fa.recovery_print": "Print",
         "account.2fa.recovery_continue": "I saved them — continue",
+        "settings.technical.title": "Technical details",
         "settings.destination.title": "Where reports go",
         "settings.destination.deployment": "Deployment",
         "settings.destination.target": "UbyPort target",
@@ -3428,6 +3425,7 @@ _INTERFACE_STRINGS = {
         "account.2fa.recovery_copy_all": "Kopírovat vše",
         "account.2fa.recovery_print": "Vytisknout",
         "account.2fa.recovery_continue": "Mám je uložené — pokračovat",
+        "settings.technical.title": "Technické údaje",
         "settings.destination.title": "Kam hlášení směřují",
         "settings.destination.deployment": "Nasazení",
         "settings.destination.target": "Cíl UbyPort",
