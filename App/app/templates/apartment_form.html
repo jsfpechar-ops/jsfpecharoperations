@@ -31,7 +31,7 @@
   <a href="#basics">{{ t('apartment.form.nav.basics') }}</a>
   <a href="#address">{{ t('apartment.form.nav.address') }}</a>
   {% if editing %}
-    <a href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.nav.automation_ubyport') }}</a>
+    <a href="#ubyport">{{ t('apartment.form.nav.police_reporting') }}</a>
     <a href="#communication">{{ t('apartment.form.nav.guest_link') }}</a>
     <a href="#calendars">{{ t('apartment.form.nav.calendars') }}</a>
   {% else %}
@@ -243,7 +243,7 @@
     <h2 style="margin-top:0">{{ t('nav.automation') }}</h2>
     <p class="small muted" style="margin-top:-4px">
       {{ t('apartment.form.automation.editing_lede_before') }}
-      <a href="/automation#apartment-{{ apartment.id }}">{{ t('automation.title') }}</a>{{ t('apartment.form.automation.editing_lede_after') }}
+      <a href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.automation.page_name') }}</a>{{ t('apartment.form.automation.editing_lede_after') }}
     </p>
     <dl class="kv">
       <dt>{{ t('automation.timing_label') }}</dt>
