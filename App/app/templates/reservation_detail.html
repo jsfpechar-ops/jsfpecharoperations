@@ -38,7 +38,9 @@
     <div>
       <div class="eyebrow">{{ t('stay.detail.next_step') }}</div>
       <p class="stay-command-note">
-        {% if send_controls.send_enabled %}
+        {% if progress.status == 'failed' %}
+          {{ t('hint.failed') }}
+        {% elif send_controls.send_enabled %}
           {{ t('stay.detail.ready_count', count=send_controls.pending_count) }}
         {% else %}
           {{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}
@@ -50,13 +52,27 @@
     </div>
     <div class="stay-command-actions">
       {% if send_controls.send_enabled %}
-        <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
-          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-          <button class="btn accent primary" type="submit" title="{{ t(send_controls.send_hint_key) }}">
-            {{ t('stay.detail.cta.send') }}
-          </button>
-        </form>
+        {% if progress.status == 'failed' %}
+          {# Fix-first: the coral leads to the refusal, and "Send again" only
+             takes it once a refused guest has been edited since the refusal,
+             so the page never invites an unchanged resend. #}
+          <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
+          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+            <button class="btn{% if send_controls.rejected_edited %} accent primary{% endif %}" type="submit">
+              {{ t('stay.detail.cta.send_again') }}
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+            <button class="btn accent primary" type="submit" title="{{ t(send_controls.send_hint_key) }}">
+              {{ t('stay.detail.cta.send') }}
+            </button>
+          </form>
+        {% endif %}
       {% elif progress.status == 'failed' %}
         <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
       {% elif progress.status == 'reported' and submissions %}
