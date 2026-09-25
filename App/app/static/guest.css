@@ -671,6 +671,9 @@ select {
 }
 .g-err ul { margin: 7px 0 0; padding-left: 20px; }
 .g-err li { margin-bottom: 3px; }
+/* Each item is a link into the wizard, so it has to read as the error rather
+   than as a coral link sitting on a red background. */
+.g-err a { color: inherit; }
 .g-ok {
   background: var(--g-ok-soft);
   border: 1px solid color-mix(in srgb, var(--g-ok) 28%, transparent);

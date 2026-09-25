@@ -23,7 +23,9 @@
   <div class="g-err">
     <strong>{{ t('fix_errors') }}</strong>
     <ul>
-      {% for issue in issues if issue.is_error %}<li>{{ issue.message }}</li>{% endfor %}
+      {# A plain "#field" jump cannot reach a field on a step the wizard is not
+         showing, so each item is a link the wizard's own script drives. #}
+      {% for issue in issues if issue.is_error %}<li><a href="#{{ issue.field }}">{{ issue.message }}</a></li>{% endfor %}
     </ul>
   </div>
 {% endif %}
