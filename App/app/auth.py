@@ -290,7 +290,12 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     ):
         return RedirectResponse("/account/password", status_code=303)
     if config.DEPLOYMENT == "production" and not account["totp_enabled"] and request.url.path not in (
-        "/account/2fa/setup", "/logout"
+        # The first run is three screens in a row: choose a password, connect an
+        # authenticator app, write down the recovery codes. The password screen
+        # has to stay reachable while 2FA is still pending: the guard above sends
+        # a host with a temporary password there, so bouncing them onward makes
+        # step 1 unreachable and the numbering on the other screens start at 2.
+        "/account/password", "/account/2fa/setup", "/logout"
     ):
         return RedirectResponse("/account/2fa/setup", status_code=303)
     workspace = workspace_user(request)

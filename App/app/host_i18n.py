@@ -2735,7 +2735,7 @@ _INTERFACE_STRINGS = {
         "reports.detail.error_codes_help": "UbyPort returns one code for each guest it could not accept. The codes identify the exact problem.",
         "reports.detail.error_codes_about": "About guest error codes",
         "account.password.choose": "Choose your password",
-        "account.password.choose_lede": "Replace the temporary password before opening your workspace.",
+        "account.password.choose_lede": "Replace the temporary password with your own.",
         "account.password.change": "Change password",
         "account.password.change_lede": "Changing it signs out your other sessions.",
         "account.password.current": "Current password",
@@ -2746,6 +2746,7 @@ _INTERFACE_STRINGS = {
         "account.password.repeat": "Repeat new password",
         "account.password.repeat_ph": "Repeat new password…",
         "account.password.save": "Save password",
+        "account.step_prefix": "Step %(n)s of 3 · ",
         "auth.error.admins_only": "Administrators only.",
         "auth.error.bad_credentials": (
             "That username and password don't match. Check for typos and Caps Lock."
@@ -2789,6 +2790,7 @@ _INTERFACE_STRINGS = {
             "This page was open too long. Please log in again."
         ),
         "auth.notice.logged_out": "You're logged out.",
+        "auth.not_you": "Not you? Log out",
         "auth.password.digit": "Add at least one number.",
         "auth.password.mixed_case": "Use both upper- and lower-case letters.",
         "auth.password.too_long": "Use no more than 256 characters.",
@@ -3226,7 +3228,7 @@ _INTERFACE_STRINGS = {
         "reports.detail.error_codes_help": "UbyPort vrací kód pro každého nepřijatého hosta. Kódy určují přesný problém.",
         "reports.detail.error_codes_about": "O chybových kódech hostů",
         "account.password.choose": "Zvolte si heslo",
-        "account.password.choose_lede": "Před otevřením pracovního prostoru nahraďte dočasné heslo.",
+        "account.password.choose_lede": "Nahraďte dočasné heslo vlastním.",
         "account.password.change": "Změnit heslo",
         "account.password.change_lede": "Změna odhlásí ostatní relace.",
         "account.password.current": "Současné heslo",
@@ -3237,6 +3239,7 @@ _INTERFACE_STRINGS = {
         "account.password.repeat": "Zopakujte nové heslo",
         "account.password.repeat_ph": "Zopakujte nové heslo…",
         "account.password.save": "Uložit heslo",
+        "account.step_prefix": "Krok %(n)s ze 3 · ",
         "auth.error.admins_only": "Pouze pro administrátory.",
         "auth.error.bad_credentials": (
             "Uživatelské jméno a heslo nesedí. Zkontrolujte překlepy a Caps Lock."
@@ -3280,6 +3283,7 @@ _INTERFACE_STRINGS = {
             "Stránka byla otevřená příliš dlouho. Přihlaste se prosím znovu."
         ),
         "auth.notice.logged_out": "Odhlásili jste se.",
+        "auth.not_you": "Nejste to vy? Odhlásit se",
         "auth.password.digit": "Přidejte alespoň jednu číslici.",
         "auth.password.mixed_case": "Použijte malá i velká písmena.",
         "auth.password.too_long": "Použijte nejvýše 256 znaků.",

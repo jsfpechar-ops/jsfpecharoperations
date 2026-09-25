@@ -178,7 +178,24 @@ def account_password_form(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return render(request, "account_password.html", {})
+    account = auth.current_user(request)
+    return render(request, "account_password.html", _first_run_step(account, 1))
+
+
+def _first_run_step(account: dict, step: int) -> dict:
+    """Context for the forced first-run sequence: password → 2FA → recovery codes.
+
+    In production 2FA is mandatory, so a host who has not switched it on yet is
+    walked through all three screens with no way to skip. Only there do the
+    screens number themselves; anywhere else the ledes read as plain sentences.
+    Step 3 is the screen right after 2FA is switched on, so ``totp_enabled`` is
+    already set by then.
+    """
+    if config.DEPLOYMENT != "production":
+        return {}
+    if step < 3 and account["totp_enabled"]:
+        return {}
+    return {"first_run_step": step}
 
 
 def _totp_qr_data(uri: str) -> str:
@@ -203,11 +220,9 @@ def two_factor_setup_form(request: Request):
         secret = auth.new_totp_secret()
         auth.stage_totp(account["id"], secret)
     uri = auth.totp_uri(secret, account["username"])
-    return render(
-        request,
-        "two_factor_setup.html",
-        {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri},
-    )
+    context = {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri}
+    context.update(_first_run_step(account, 2))
+    return render(request, "two_factor_setup.html", context)
 
 
 @router.post("/account/2fa/setup")
@@ -229,21 +244,20 @@ async def two_factor_setup_submit(request: Request):
         secret = ""
     if not secret or not pyotp.TOTP(secret).verify(code, valid_window=1):
         uri = auth.totp_uri(secret, account["username"]) if secret else ""
-        return render(
-            request,
-            "two_factor_setup.html",
-            {
-                "secret": secret,
-                "qr_data": _totp_qr_data(uri) if uri else "",
-                "totp_uri": uri,
-                "error": "auth.error.setup_code_invalid",
-            },
-            status_code=400,
-        )
+        context = {
+            "secret": secret,
+            "qr_data": _totp_qr_data(uri) if uri else "",
+            "totp_uri": uri,
+            "error": "auth.error.setup_code_invalid",
+        }
+        context.update(_first_run_step(account, 2))
+        return render(request, "two_factor_setup.html", context, status_code=400)
     recovery_codes = auth.new_recovery_codes()
     auth.enable_totp(account["id"], secret, recovery_codes)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
-    response = render(request, "two_factor_recovery.html", {"recovery_codes": recovery_codes})
+    context = {"recovery_codes": recovery_codes}
+    context.update(_first_run_step(refreshed, 3))
+    response = render(request, "two_factor_recovery.html", context)
     auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
     db.audit("two_factor_enabled", actor=account["username"], owner_user_id=account["id"])
     return response
