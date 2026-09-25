@@ -386,6 +386,14 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-muted);
   margin-bottom: 14px;
 }
+/* The count of people still to register, said in words rather than as a
+   plural the sentence has to agree with. */
+.g-still-missing {
+  margin: 10px 0 0;
+  color: var(--g-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
 .g-form-line {
   display: flex;
   flex-wrap: wrap;
@@ -870,7 +878,31 @@ details.g-why.g-fold > summary.g-why-summary::after { display: none; }
 .g-saved { background: var(--g-ok-soft); border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); }
 .g-saved h2 { color: var(--g-ok); }
 
-.g-summary-name { font-size: 17.5px; font-weight: 700; color: var(--g-ink); margin: 0 0 14px; }
+/* Each submission folds to its name and state, so the records sit below the
+   status and the one next action instead of pushing them down the page. */
+details.g-summary { padding: 0; }
+details.g-summary > summary.g-summary-fold {
+  list-style: none;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 18px 20px;
+  font-size: 17.5px;
+  font-weight: 700;
+  color: var(--g-ink);
+}
+details.g-summary > summary.g-summary-fold::-webkit-details-marker { display: none; }
+details.g-summary > summary.g-summary-fold::after {
+  content: "▾";
+  float: right;
+  color: var(--g-muted);
+  font-weight: 400;
+}
+details.g-summary[open] > summary.g-summary-fold::after { content: "▴"; }
+details.g-summary[open] > summary.g-summary-fold {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--g-line);
+}
+details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-summary-list {
   display: grid;
   grid-template-columns: minmax(118px, 38%) 1fr;
