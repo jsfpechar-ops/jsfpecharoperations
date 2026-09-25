@@ -620,7 +620,7 @@ def test_save_does_not_overshoot_the_declared_party_size():
 def test_every_guest_facing_validation_message_has_czech():
     """A Czech guest must never be handed an untranslated UbyPort rule."""
     from app import validation as v
-    from app.routes.guest import _localize_message
+    from app.validation_i18n import localize as _localize_message
 
     long_name = "X" * 80
     cases = [

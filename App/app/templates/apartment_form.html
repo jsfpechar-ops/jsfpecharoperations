@@ -47,7 +47,7 @@
   <div class="banner warning">
     <div class="grow">
       <strong>{{ t('apartment.form.blocking_title') }}</strong>
-      <small>{% for issue in blocking %}{{ issue.message }} {% endfor %}</small>
+      <small>{% for issue in blocking %}{{ validation_message(issue.message) }} {% endfor %}</small>
     </div>
   </div>
   {% endif %}

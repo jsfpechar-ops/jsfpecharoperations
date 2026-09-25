@@ -746,7 +746,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Code lists couldn't be refreshed — try again in a few minutes."
         ),
         "flash.error.ubyport_not_configured": (
-            "UbyPort isn't set up completely for this property: %(detail)s"
+            "UbyPort isn't set up completely for this property — check the connection "
+            "settings."
         ),
         "flash.error.ubyport_unreachable": (
             "UbyPort couldn't be reached — try again in a few minutes."
@@ -1911,7 +1912,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Číselníky se nepodařilo obnovit — zkuste to za pár minut."
         ),
         "flash.error.ubyport_not_configured": (
-            "UbyPort není pro toto ubytování kompletně nastaven: %(detail)s"
+            "UbyPort není pro toto ubytování kompletně nastaven — zkontrolujte nastavení "
+            "spojení."
         ),
         "flash.error.ubyport_unreachable": (
             "UbyPort se nepodařilo kontaktovat — zkuste to za pár minut."

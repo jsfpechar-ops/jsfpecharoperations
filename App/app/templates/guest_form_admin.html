@@ -5,7 +5,7 @@
 
 {% macro err_for(field) %}
   {% for issue in issues if issue.field == field %}
-    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ issue.message }}</div>
+    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ validation_message(issue.message) }}</div>
   {% endfor %}
 {% endmacro %}
 {% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}

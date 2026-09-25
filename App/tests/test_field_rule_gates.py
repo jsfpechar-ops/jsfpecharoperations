@@ -11,8 +11,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from app import validation
-from app.routes import guest as guest_routes
+from app import validation, validation_i18n
 
 
 def _record(**overrides):
@@ -80,7 +79,7 @@ def test_every_new_message_has_czech():
     """A Czech guest must not be handed an English field rule."""
     for record in (_record(purpose=""), _record(surname="A|B")):
         for message in _messages(record):
-            assert message in guest_routes.CS_VALIDATION_MESSAGES, message
+            assert message in validation_i18n.CS_MESSAGES, message
 
 
 def test_normalising_still_removes_them_so_the_forms_are_not_dead_ends():

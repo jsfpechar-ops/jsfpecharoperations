@@ -276,7 +276,7 @@
         <p class="guest-card-note">{{ t('stay.detail.guests.note', text=guest.note) }}</p>
       {% endif %}
       {% for issue in row.issues %}
-        <p class="guest-card-note {{ 'err-text' if issue.is_error else 'warn-text' }}">{{ issue.message }}</p>
+        <p class="guest-card-note {{ 'err-text' if issue.is_error else 'warn-text' }}">{{ validation_message(issue.message) }}</p>
       {% endfor %}
       {% if guest.last_errors %}
         <p class="guest-card-note err-text">{{ guest.last_errors }}</p>
