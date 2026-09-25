@@ -172,6 +172,60 @@ def test_the_incomplete_hint_does_not_demand_a_passport_check():
         assert "předmětem hlášení" not in copy["hint.nothing_duty"]
 
 
+def test_a_stay_short_of_its_guests_is_told_how_many_are_missing():
+    """The incomplete hint talked about signatures even when the problem was a
+    number: one guest registered where the host expected three.
+    """
+    apartment, reservation, _guest_id = _seed("manual", "tok-missing")
+    db.update("reservation", reservation["id"], {"expected_guests_override": 3})
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["status"] == "incomplete"
+    assert (progress["filled"], progress["expected"]) == (1, 3)
+    assert controls["send_hint_key"] == "hint.missing_guests"
+
+
+def test_the_missing_guests_hint_names_the_counts_and_the_way_out():
+    from app import host_i18n
+
+    for lang in ("en", "cs"):
+        copy = host_i18n.STRINGS[lang]["hint.missing_guests"]
+        assert "%(filled)s" in copy and "%(expected)s" in copy
+    rendered = host_i18n.translate("en", "hint.missing_guests", filled=1, expected=3)
+    assert rendered.startswith("Guest forms: 1/3.")
+    assert "lower the guest count" in rendered
+
+
+def test_the_missing_guests_hint_offers_the_guest_count_it_talks_about():
+    """The hint says "lower the guest count"; the field lives behind a
+    collapsed disclosure, so the sentence has to carry a link to it.
+    """
+    db.init_db()
+    username = "missingcount"
+    existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+    owner_id = existing["id"] if existing else auth.create_account(
+        username, PASSWORD, "Missing Count", must_change_password=False
+    )
+    _apartment, reservation, _guest_id = _seed(
+        "manual", "tok-missing-page", owner_user_id=owner_id
+    )
+    db.update("reservation", reservation["id"], {"expected_guests_override": 3})
+    client = TestClient(app)
+    response = client.post(
+        "/login?lang=en",
+        data={"username": username, "password": PASSWORD},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    page = client.get(f"/reservations/{reservation['id']}")
+    assert page.status_code == 200
+    assert "Guest forms: 1/3." in page.text
+    assert 'href="#stay-quick-edit" data-open-details' in page.text
+    assert "Change guest count" in page.text
+
+
 def _bulk_send_button(html: str) -> str:
     match = re.search(r"<button[^>]*send-all.*?</button>", html, re.S)
     assert match, "the send-all button is missing from the reservations list"
