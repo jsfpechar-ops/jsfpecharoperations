@@ -679,6 +679,9 @@ def sweep_reminders() -> Dict[str, int]:
                         f"{config.PUBLIC_BASE_URL.rstrip('/')}"
                         f"/reservations/{reservation['id']}"
                     ),
+                    claimed=reservation["claim_state"] == CLAIMED,
+                    filled=progress["filled"],
+                    expected=progress["expected"],
                 )
                 host_payload = {"text": host_content["text"], "lang": "en"}
                 if host_content.get("html"):
