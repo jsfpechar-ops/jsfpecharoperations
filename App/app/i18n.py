@@ -18,7 +18,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "title": "Guest registration",
         "language_label": "Language",
-        "date_placeholder": "DD/MM/YYYY",
+        "date_placeholder": "DD.MM.YYYY",
         "legal_intro": (
             "Czech law treats every rented apartment as an accommodation facility. Your host "
             "must write each guest into a house book and report every foreign guest to the "
@@ -234,7 +234,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "surname": "Surname",
         "first_name": "Given name(s)",
         "birth_date": "Date of birth",
-        "birth_date_help": "Day, month, year — e.g. 04/07/1990 for 4 July 1990. Slashes are added for you.",
+        "birth_date_help": "Day, month, year — e.g. 04.07.1990 for 4 July 1990. Dots are added for you.",
         "birth_date_readback": "That is %(date)s.",
         "residence_help": "Your permanent home address, as in your passport or ID card. Required by law.",
         "residence_copied": "Copied from %(name)s — change it if this person lives elsewhere.",
@@ -582,7 +582,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     "cs": {
         "title": "Registrace ubytovaného",
         "language_label": "Jazyk",
-        "date_placeholder": "DD/MM/RRRR",
+        "date_placeholder": "DD.MM.RRRR",
         "legal_intro": (
             "Podle českého práva je pronajímaný apartmán ubytovacím zařízením. Ubytovatel musí "
             "každého hosta zapsat do domovní knihy a každého ubytovaného cizince oznámit "
@@ -789,7 +789,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "surname": "Příjmení",
         "first_name": "Jméno",
         "birth_date": "Datum narození",
-        "birth_date_help": "Den, měsíc, rok — např. 04/07/1990 pro 4. července 1990. Lomítka se doplní sama.",
+        "birth_date_help": "Den, měsíc, rok — např. 04.07.1990 pro 4. července 1990. Tečky se doplní samy.",
         "birth_date_readback": "Tedy %(date)s.",
         "residence_help": "Adresa trvalého bydliště podle pasu nebo občanského průkazu. Vyžaduje ji zákon.",
         "residence_copied": "Převzato od: %(name)s. Pokud tato osoba bydlí jinde, adresu změňte.",

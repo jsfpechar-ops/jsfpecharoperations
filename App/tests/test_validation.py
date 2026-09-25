@@ -85,7 +85,7 @@ def test_birth_date_formats():
     assert v.normalise_birth_date("1. 1. 1990") == "01011990"
     assert v.normalise_birth_date("01/01/1990") == "01011990"
     assert v.normalise_birth_date("9/9/1990") == "09091990"
-    assert v.display_birth_date("01011990") == "01/01/1990"
+    assert v.display_birth_date("01011990") == "01.01.1990"
     # An unknown day is written as zero, which appendix 3 allows.
     assert v.normalise_birth_date("00.05.1950") == "00051950"
 

@@ -120,8 +120,8 @@
   function initBirthDateInputs() {
     function formatDigits(digits) {
       var out = digits.slice(0, 2);
-      if (digits.length > 2) out += "/" + digits.slice(2, 4);
-      if (digits.length > 4) out += "/" + digits.slice(4, 8);
+      if (digits.length > 2) out += "." + digits.slice(2, 4);
+      if (digits.length > 4) out += "." + digits.slice(4, 8);
       return out;
     }
 
