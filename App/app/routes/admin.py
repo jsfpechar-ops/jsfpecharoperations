@@ -1140,7 +1140,7 @@ async def reservation_create(request: Request):
             "uid": f"manual-{secrets.token_hex(8)}",
             "date_from": date_from,
             "date_to": date_to,
-            "summary": _form_str(form, "summary") or "Manual entry",
+            "summary": _form_str(form, "summary") or None,
             "expected_guests_override": _form_int(form, "expected_guests"),
             "guest_email": _form_str(form, "guest_email"),
             "host_note": _form_str(form, "host_note"),

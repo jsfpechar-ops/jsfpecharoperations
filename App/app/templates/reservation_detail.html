@@ -6,7 +6,7 @@
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {{ page_header(
   reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
-  t('stays.table.nights', count=nights(reservation.date_from, reservation.date_to)) ~ ' · ' ~ (reservation.summary or reservation.source),
+  t('stays.table.nights', count=nights(reservation.date_from, reservation.date_to)) ~ ' · ' ~ source_label(reservation),
   return_to,
   t('stay.detail.back'),
   ''
@@ -262,7 +262,7 @@
         </div>
         <div>
           <dt>{{ t('stay.detail.guests.entered_by') }}</dt>
-          <dd>{{ guest.entered_by }}</dd>
+          <dd>{{ entered_by_label(guest.entered_by) }}</dd>
         </div>
       </dl>
 
