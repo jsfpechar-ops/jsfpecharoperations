@@ -239,6 +239,7 @@ async def two_factor_setup_submit(request: Request):
     # set of recovery codes and silently kill the ones already written down.
     if account["totp_enabled"]:
         return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
+    remember = auth.session_remembers(request)
     form = await request.form()
     # Authenticator apps show the code as "123 456", so a pasted one arrives
     # with a space in it; the login route strips spaces the same way.
@@ -263,7 +264,11 @@ async def two_factor_setup_submit(request: Request):
     context = {"recovery_codes": recovery_codes}
     context.update(_first_run_step(refreshed, 3))
     response = render(request, "two_factor_recovery.html", context)
-    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
+    auth.attach_session(
+        response,
+        auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+        remember=remember,
+    )
     db.audit("two_factor_enabled", actor=account["username"], owner_user_id=account["id"])
     return response
 
@@ -348,8 +353,13 @@ async def account_password_update(request: Request):
     # The forced first-login branch carries on to 2FA setup; the in-app change
     # came from Settings, so it goes back there.
     target = "/" if account["must_change_password"] else "/settings#settings-account"
+    remember = auth.session_remembers(request)
     response = _back(target, msg=_flash(request, "flash.accounts.password_changed"))
-    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
+    auth.attach_session(
+        response,
+        auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+        remember=remember,
+    )
     db.audit("password_changed", actor=account["username"], owner_user_id=account["id"])
     return response
 
