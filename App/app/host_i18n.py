@@ -2498,8 +2498,13 @@ _INTERFACE_STRINGS = {
         "account.2fa.start_over": "Start over",
         "account.2fa.setup_title": "Set up two-factor authentication",
         "account.2fa.setup_lede": "UbyHost contains identity documents, so every host account requires an authenticator app.",
-        "account.2fa.setup_scan": "Scan this QR code in your authenticator app, or add a TOTP entry for UbyHost.",
-        "account.2fa.setup_key": "Or enter this setup key manually:",
+        "account.2fa.setup_scan": (
+            "Open an authenticator app (for example Google Authenticator, Microsoft "
+            "Authenticator or 1Password) and scan this QR code."
+        ),
+        "account.2fa.setup_key": "Can't scan? Type this key into the app:",
+        "account.2fa.setup_open_app": "Add to authenticator app on this phone",
+        "account.2fa.qr_alt": "QR code that adds UbyHost to your authenticator app",
         "account.2fa.setup_enter": "Enter the generated six-digit code below.",
         "account.2fa.six_digit": "Six-digit code",
         "account.2fa.enable": "Enable two-factor authentication",
@@ -2955,8 +2960,13 @@ _INTERFACE_STRINGS = {
         "account.2fa.start_over": "Začít znovu",
         "account.2fa.setup_title": "Nastavit dvoufázové ověření",
         "account.2fa.setup_lede": "UbyHost obsahuje doklady totožnosti, proto každý účet hostitele vyžaduje autentizační aplikaci.",
-        "account.2fa.setup_scan": "Naskenujte QR kód v autentizační aplikaci nebo přidejte záznam TOTP pro UbyHost.",
-        "account.2fa.setup_key": "Nebo ručně zadejte tento klíč:",
+        "account.2fa.setup_scan": (
+            "Otevřete autentizační aplikaci (třeba Google Authenticator, Microsoft "
+            "Authenticator nebo 1Password) a naskenujte tento QR kód."
+        ),
+        "account.2fa.setup_key": "Nejde naskenovat? Zadejte do aplikace tento klíč:",
+        "account.2fa.setup_open_app": "Přidat do autentizační aplikace v tomto telefonu",
+        "account.2fa.qr_alt": "QR kód pro přidání UbyHostu do autentizační aplikace",
         "account.2fa.setup_enter": "Níže zadejte vygenerovaný šestimístný kód.",
         "account.2fa.six_digit": "Šestimístný kód",
         "account.2fa.enable": "Zapnout dvoufázové ověření",

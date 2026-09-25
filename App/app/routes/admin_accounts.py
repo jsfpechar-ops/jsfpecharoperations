@@ -202,7 +202,7 @@ def two_factor_setup_form(request: Request):
     return render(
         request,
         "two_factor_setup.html",
-        {"secret": secret, "qr_data": _totp_qr_data(uri)},
+        {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri},
     )
 
 
@@ -212,16 +212,24 @@ async def two_factor_setup_submit(request: Request):
     if not account:
         return RedirectResponse("/login", status_code=303)
     form = await request.form()
+    # Authenticator apps show the code as "123 456", so a pasted one arrives
+    # with a space in it; the login route strips spaces the same way.
+    code = _form_str(form, "code").replace(" ", "")
     try:
         secret = db.decrypt_secret(account["totp_secret_enc"])
     except Exception:
         secret = ""
-    if not secret or not pyotp.TOTP(secret).verify(_form_str(form, "code"), valid_window=1):
+    if not secret or not pyotp.TOTP(secret).verify(code, valid_window=1):
         uri = auth.totp_uri(secret, account["username"]) if secret else ""
         return render(
             request,
             "two_factor_setup.html",
-            {"secret": secret, "qr_data": _totp_qr_data(uri) if uri else "", "error": "auth.error.setup_code_invalid"},
+            {
+                "secret": secret,
+                "qr_data": _totp_qr_data(uri) if uri else "",
+                "totp_uri": uri,
+                "error": "auth.error.setup_code_invalid",
+            },
             status_code=400,
         )
     recovery_codes = auth.new_recovery_codes()
