@@ -42,9 +42,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Czech citizens are not reported to the police — only the house-book entry is made."
         ),
         "why_point_passport": (
-            "If your host asks for it, you upload a photo of your passport or ID "
-            "page so they can verify your details. Only the host sees it; it is deleted "
-            "immediately after verification."
+            "If your host requires it, foreign guests upload a photo of their passport or ID "
+            "page so the host can check the details. Only your host sees it, and it is deleted "
+            "after the check."
         ),
         "why_point_accuracy": (
             "You must enter truthful information that matches your travel document. The host "
@@ -574,8 +574,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Občané ČR se policii neoznamují — provede se pouze zápis do domovní knihy."
         ),
         "why_point_passport": (
-            "Pokud nejste občanem ČR, musíte nahrát fotografii stránky pasu nebo průkazu, "
-            "aby hostitel mohl ověřit údaje. Vidí ji jen hostitel; po ověření je smazána."
+            "Pokud to hostitel vyžaduje, cizinci nahrají fotku stránky pasu nebo průkazu, "
+            "aby mohl údaje zkontrolovat. Vidí ji jen hostitel a po kontrole se smaže."
         ),
         "why_point_accuracy": (
             "Musíte uvést pravdivé údaje shodné s cestovním dokladem. Hostitel za správnost "
