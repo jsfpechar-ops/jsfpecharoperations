@@ -113,15 +113,16 @@ a { color: inherit; }
   background: var(--brand-soft);
 }
 
+/* Log in is not this page's primary, so it carries no coral fill: the hero's
+   one CTA owns that. It stays a quiet text link, but keeps a full-size tap
+   target so it is still easy to hit on a phone. */
 .landing-login {
-  padding: 9px 16px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-pill);
-  color: var(--on-brand);
-  background: var(--brand-action);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 10px;
+  color: var(--ink-secondary);
 }
-
-.landing-login:hover { color: var(--on-brand); background: var(--brand-pressed); }
 
 .landing-hero {
   display: grid;
