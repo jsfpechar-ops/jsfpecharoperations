@@ -141,6 +141,37 @@ def test_czech_guest_explains_nothing_to_send():
     assert controls["send_hint_key"] == "hint.nothing_duty"
 
 
+def test_a_reported_stay_is_told_it_is_done_not_that_nothing_was_due():
+    """The old hint said "no guest record is subject to the reporting duty".
+
+    On a reported stay the same panel showed "2 reported · 2 subject to the
+    duty" right below it, so the two halves of the page disagreed.
+    """
+    apartment, reservation, guest_id = _seed("manual", "tok-reported")
+    db.update("guest", guest_id, {"submit_state": reporting.SENT})
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
+    progress = reporting.reservation_progress(reservation)
+    controls = reporting.send_controls(reservation, apartment, progress)
+    assert progress["status"] == "reported"
+    assert progress["reportable"]
+    assert controls["send_hint_key"] == "hint.all_reported"
+
+
+def test_the_incomplete_hint_does_not_demand_a_passport_check():
+    """DESIGN.md keeps the document check optional, and hint.ready_id_optional
+    says so; the incomplete hint used to contradict both.
+    """
+    from app import host_i18n
+
+    for lang in ("en", "cs"):
+        copy = host_i18n.STRINGS[lang]
+        assert "passport" not in copy["hint.not_ready"].lower()
+        assert "pas" not in copy["hint.not_ready"].lower()
+        assert "hint.all_reported" in copy
+        assert "subject to the reporting duty" not in copy["hint.nothing_duty"]
+        assert "předmětem hlášení" not in copy["hint.nothing_duty"]
+
+
 def _bulk_send_button(html: str) -> str:
     match = re.search(r"<button[^>]*send-all.*?</button>", html, re.S)
     assert match, "the send-all button is missing from the reservations list"
