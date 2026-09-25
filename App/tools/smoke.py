@@ -30,7 +30,7 @@ os.environ["UBYHOST_GUEST_PIN"] = "0"
 import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import claim, db, mail  # noqa: E402
+from app import claim, db, i18n, mail  # noqa: E402
 from app.routes import guest as guest_routes  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -402,9 +402,17 @@ def main(url=None):
     )
     if saved.status_code != 200:
         FAILURES.append(f"guest save: HTTP {saved.status_code}")
-    elif "Details saved" not in saved.text and "Details submitted and reported" not in saved.text:
+    elif (
+        i18n.STRINGS["en"]["saved_title"] not in saved.text
+        and i18n.STRINGS["en"]["reported_title"] not in saved.text
+    ):
         FAILURES.append("guest save: no confirmation shown")
-    check(guest, f"/l/{token}/{stay_a}", must_contain=["1 of 2 people completed"])
+    # Read the expected copy out of the catalogue rather than repeating it here,
+    # so a deliberate wording change cannot leave this script asserting copy
+    # the app no longer ships.
+    progress_en = i18n.STRINGS["en"]["people_progress"] % {"done": 1, "total": 2}
+    progress_cs = i18n.STRINGS["cs"]["people_progress"] % {"done": 1, "total": 2}
+    check(guest, f"/l/{token}/{stay_a}", must_contain=[progress_en])
     check(guest, f"/l/{token}/{stay_a}/new", must_contain=['name="surname"', "Person 2"])
     czech.cookies.update(guest.cookies)
     # Drop the English choice so this browser is again "a guest who chose
@@ -413,14 +421,14 @@ def main(url=None):
     check(
         czech,
         f"/l/{token}/{stay_a}",
-        must_contain=["vyplněno 1 z 2 osob"],
+        must_contain=[progress_cs],
     )
     # The legal notice lives on the form page, not on the stay overview.
     check(czech, f"/l/{token}/{stay_a}/new", must_contain=["Osoba 2 z 2", "Právní informace"])
     czech_saved = czech.get(f"/l/{token}/{stay_a}?saved=1&lang=cs", follow_redirects=True)
     if czech_saved.status_code != 200 or (
-        "Údaje uloženy" not in czech_saved.text
-        and "Údaje byly odeslány a oznámeny" not in czech_saved.text
+        i18n.STRINGS["cs"]["saved_title"] not in czech_saved.text
+        and i18n.STRINGS["cs"]["reported_title"] not in czech_saved.text
     ):
         FAILURES.append("czech guest save banner: missing confirmation")
 
