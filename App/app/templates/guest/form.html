@@ -23,29 +23,27 @@
   <div class="g-err">
     <strong>{{ t('fix_errors') }}</strong>
     <ul>
-      {% for issue in issues if issue.is_error %}<li>{{ issue.message }}</li>{% endfor %}
+      {# A plain "#field" jump cannot reach a field on a step the wizard is not
+         showing, so each item is a link the wizard's own script drives. #}
+      {% for issue in issues if issue.is_error %}<li><a href="#{{ issue.field }}">{{ issue.message }}</a></li>{% endfor %}
     </ul>
   </div>
 {% endif %}
 
-{% include "guest/_why.html" %}
+{% with why_classes = 'g-card g-why g-fold' %}{% include "guest/_why.html" %}{% endwith %}
 
 {% if apartment.guest_message %}
-<div class="g-card g-host-message">
-  <p class="g-question-kicker">{{ t('message_from_host') }}</p>
+<details class="g-card g-host-message g-fold">
+  <summary>{{ t('message_from_host') }}</summary>
   <p>{{ apartment.guest_message }}</p>
-</div>
+</details>
 {% endif %}
-
-<div class="g-card g-stay-summary">
-  <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
-  <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
-</div>
 
 <form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
       enctype="multipart/form-data" data-guest-wizard
       data-next-label="{{ t('next_step') }}" data-back-label="{{ t('previous_step') }}"
-      data-progress-label="{{ t('form_step_progress', current='__CURRENT__', total='__TOTAL__') }}">
+      data-progress-label="{{ t('form_step_progress', current='__CURRENT__', total='__TOTAL__') }}"
+      data-progress-title="{{ t('form_step_progress_title', progress='__PROGRESS__', title='__TITLE__') }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   {% if guest %}<input type="hidden" name="guest_id" value="{{ guest.id }}">{% endif %}
   <input type="hidden" name="stay_from"
@@ -53,14 +51,18 @@
   <input type="hidden" name="stay_to"
          value="{{ values.get('stay_to') or (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
 
-  {% if person_number and expected_people %}
-    <div class="g-person-progress">{{ t('person_progress', current=person_number, total=expected_people) }}</div>
-  {% endif %}
+  <p class="g-form-line">
+    <span>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</span>
+    <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
+    {% if person_number and expected_people %}
+      <span>{{ t('person_progress', current=person_number, total=expected_people) }}</span>
+    {% endif %}
+  </p>
   <div class="g-wizard-progress" data-wizard-progress aria-live="polite" hidden>
     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
   </div>
 
-  <div class="g-card" data-guest-step>
+  <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}">
     <h2>
       {{ t('your_details') }}
       {% if person_number and person_number > 1 %}
@@ -101,15 +103,23 @@
                inputmode="numeric" placeholder="{{ t('date_placeholder') }}" maxlength="10" required
                autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
         <div class="hint">{{ t('birth_date_help') }}</div>
+        {# The read-back catches a swapped day and month, which the digits alone
+           cannot: nobody notices 04/07 vs 07/04 until the record is locked. #}
+        <div class="hint" id="birth-date-readback" aria-live="polite"
+             data-template="{{ t('birth_date_readback') }}" data-locale="{{ lang }}"></div>
         {{ err_for('birth_date') }}
       </div>
       <div class="g-field">
         <label for="nationality">{{ t('nationality') }}</label>
         <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" required>
           <option value="">—</option>
-          {% for country in countries %}
-            <option value="{{ country.code }}" {% if val('nationality') == country.code %}selected{% endif %}>
-              {{ country.label }}</option>
+          {% for group in country_groups %}
+            <optgroup label="{{ t(group.key) }}">
+              {% for country in group.options %}
+                <option value="{{ country.code }}" {% if val('nationality') == country.code %}selected{% endif %}>
+                  {{ country.label }}</option>
+              {% endfor %}
+            </optgroup>
           {% endfor %}
         </select>
         {{ err_for('nationality') }}
@@ -137,9 +147,9 @@
 
     <div class="g-field" id="parent-doc-wrap" style="display:none">
       <label for="parent_doc_number">{{ t('parent_doc') }}</label>
-      <input type="text" id="parent_doc_number" name="parent_doc_number" maxlength="30"
+      <input class="{{ bad('parent_doc_number') }}" {{ invalid('parent_doc_number') }} type="text" id="parent_doc_number" name="parent_doc_number" maxlength="30"
              autocapitalize="characters" value="{{ values.get('parent_doc_number', '') }}">
-      {{ err_for('note') }}
+      {{ err_for('parent_doc_number') }}
     </div>
 
     <div class="g-field">
@@ -162,13 +172,16 @@
     </div>
   </div>
 
-  <div class="g-card" data-guest-step>
+  <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">
     <h2>{{ t('residence_title') }}</h2>
     <p class="g-intro">{{ t('residence_help') }}</p>
+    {% if residence_copied_from %}
+      <p class="hint" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
+    {% endif %}
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>
       <input class="{{ bad('res_street') }}" {{ invalid('res_street') }} type="text" id="res_street" name="res_street" maxlength="42"
-             autocomplete="street-address" required value="{{ val('res_street') }}">
+             autocomplete="address-line1" required value="{{ val('res_street') }}">
       {{ err_for('res_street') }}
     </div>
     <div class="g-row">
@@ -180,11 +193,15 @@
       </div>
       <div class="g-field">
         <label for="res_country">{{ t('res_country') }}</label>
-        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" required>
+        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" autocomplete="country" required>
           <option value="">—</option>
-          {% for country in countries %}
-            <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
-              {{ country.label }}</option>
+          {% for group in country_groups %}
+            <optgroup label="{{ t(group.key) }}">
+              {% for country in group.options %}
+                <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
+                  {{ country.label }}</option>
+              {% endfor %}
+            </optgroup>
           {% endfor %}
         </select>
         {{ err_for('res_country') }}
@@ -193,7 +210,8 @@
   </div>
 
   {% if require_passport %}
-  <div class="g-card" id="passport-photo-card" data-guest-step
+  <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}"
+       data-guest-step-skip-when="CZE"
        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
     <h2>{{ t('passport_photo_title') }}</h2>
     <p class="g-intro">{{ t('passport_photo_help') }}</p>
@@ -212,14 +230,15 @@
       </div>
       <input class="{{ bad('passport_photo') }}" {{ invalid('passport_photo') }} type="file" id="passport_photo" name="passport_photo" hidden>
       <p class="passport-file-name" id="passport-file-name" hidden></p>
-      <p class="passport-file-err err" id="passport-file-err" role="alert" hidden></p>
+      <p class="passport-file-err err" id="passport-file-err" role="alert" hidden
+         data-missing="{{ t('passport_photo_missing') }}"></p>
       <div class="hint">{{ t('passport_photo_hint') }}</div>
       {{ err_for('passport_photo') }}
     </div>
   </div>
   {% endif %}
 
-  <div class="g-card" data-guest-step>
+  <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}">
     <h2>{{ t('signature') }}</h2>
     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
     <div class="g-sign">
@@ -237,7 +256,14 @@
     {{ err_for('signature') }}
   </div>
 
-  <div data-guest-step>
+  <div data-guest-step data-step-title="{{ t('legal_notice_title') }}">
+    <div class="g-card g-review" data-wizard-review
+         data-edit-label="{{ t('review_edit') }}" hidden>
+      <h2>{{ t('review_title') }}</h2>
+      <p class="g-intro">{{ t('review_help') }}</p>
+      <dl class="g-summary-list g-review-list"></dl>
+    </div>
+
     {% include "guest/_legal_notice.html" %}
 
     <button class="g-btn" type="submit">{{ t('submit') }}</button>

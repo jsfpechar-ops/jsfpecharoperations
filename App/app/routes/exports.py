@@ -44,7 +44,7 @@ def reservations_export(request: Request):
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
     if not (date_from and date_to):
-        return _back("/reservations", err="Choose a date range for the export.")
+        return _back("/reservations", err=_flash(request, "flash.error.export_range_required"))
     stamp = datetime.now().strftime("%Y%m%d")
     sql, params = stays_export._export_sql(
         date_from=date_from,
@@ -65,11 +65,11 @@ def guest_form_pdf(guest_id: int, request: Request):
     if guard:
         return guard
     if not access.guest(request, guest_id):
-        return _back("/reservations", err="No such guest.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     try:
         pdf = housebook.registration_form_pdf(guest_id)
     except ValueError:
-        return _back("/reservations", err="No such guest.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     return Response(
         pdf,
         media_type="application/pdf",
@@ -133,13 +133,15 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
     sql += " ORDER BY s.created_at DESC"
     rows = db.query(sql, params)
     if not rows:
-        return _back("/submissions", err="No Doručenka receipts to download yet.")
+        return _back("/submissions", err=_flash(request, "flash.error.no_receipts"))
     if len(rows) > reporting.MAX_RECEIPT_DOWNLOADS:
         return _back(
             "/submissions",
-            err=(
-                f"Too many receipts ({len(rows)}) for one download. "
-                f"Narrow the date filter to {reporting.MAX_RECEIPT_DOWNLOADS} or fewer."
+            err=_flash(
+                request,
+                "flash.error.too_many_receipts",
+                count=len(rows),
+                limit=reporting.MAX_RECEIPT_DOWNLOADS,
             ),
         )
     response = _zip_download(
@@ -149,7 +151,7 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
         f"dorucenky-{datetime.now().strftime('%Y%m%d')}.zip",
     )
     if response is None:
-        return _back("/submissions", err="No Doručenka receipts to download yet.")
+        return _back("/submissions", err=_flash(request, "flash.error.no_receipts"))
     return response
 
 
@@ -236,13 +238,15 @@ def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks)
         owner_user_id=access.owner_id(request),
     )
     if not rows:
-        return _back("/housebook", err="No house-book entries match this filter.")
+        return _back("/housebook", err=_flash(request, "flash.error.no_housebook_matches"))
     if len(rows) > housebook.MAX_INSPECTION_PDFS:
         return _back(
             "/housebook",
-            err=(
-                f"Too many entries ({len(rows)}) for one download. "
-                f"Narrow the date or property filter to {housebook.MAX_INSPECTION_PDFS} or fewer."
+            err=_flash(
+                request,
+                "flash.error.too_many_entries",
+                count=len(rows),
+                limit=housebook.MAX_INSPECTION_PDFS,
             ),
         )
     response = _zip_download(
@@ -252,7 +256,7 @@ def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks)
         f"domovni-kniha-pdf-{datetime.now().strftime('%Y%m%d')}.zip",
     )
     if response is None:
-        return _back("/housebook", err="No house-book entries match this filter.")
+        return _back("/housebook", err=_flash(request, "flash.error.no_housebook_matches"))
     return response
 
 

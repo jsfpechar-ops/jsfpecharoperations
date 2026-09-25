@@ -237,3 +237,169 @@ def test_host_can_skip_and_restore_setup_guidance():
     assert resumed.headers["location"] == "/"
     assert onboarding.progress(owner_id)["dismissed"] is False
     assert 'class="onboarding-welcome"' in client.get("/").text
+
+
+def _unique_apartment(owner_id: int, entity_id: int, token: str, *, ready: bool = False) -> int:
+    """A fresh property per test -- ``permalink_token`` is unique across the DB."""
+    data = {
+        "legal_entity_id": entity_id,
+        "owner_user_id": owner_id,
+        "internal_name": "Studio",
+        "permalink_token": token,
+        "permalink_pin": "1234",
+        "automation_mode": "manual",
+        "submit_after_hours": 24,
+        "active": 1,
+        "created_at": db.utcnow(),
+    }
+    if ready:
+        data.update(
+            {
+                "uby_idub": "100227887600",
+                "uby_mark": "CZGFW",
+                "uby_name": "Ready Studio",
+                "uby_contact": "host@example.com",
+                "addr_okres": "Praha 2",
+                "addr_obec": "Praha",
+                "addr_obec_cast": "Vinohrady",
+                "addr_street": "Korunní",
+                "addr_house_no": "1234",
+                "addr_orient_no": "12a",
+                "addr_zip": "12000",
+                "uby_ws_user": "UBY-WS12cdef",
+                "uby_ws_password_enc": db.encrypt_secret("demo-password"),
+            }
+        )
+    return db.insert("apartment", data)
+
+
+def _manual_stay(apartment_id: int, uid: str) -> int:
+    return db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "source": "manual",
+            "uid": uid,
+            "date_from": "2026-11-02",
+            "date_to": "2026-11-05",
+            "status": "active",
+            "created_at": db.utcnow(),
+            "updated_at": db.utcnow(),
+        },
+    )
+
+
+def test_a_hand_typed_stay_satisfies_the_calendar_step():
+    """A host who takes direct bookings has no iCal feed to connect."""
+    owner_id = auth.create_account("onboard-manual", "Secure-Password-123", role="host")
+    entity_id = _entity(owner_id)
+    apartment_id = _unique_apartment(owner_id, entity_id, "manualtoken1")
+
+    assert onboarding.progress(owner_id)["current"]["id"] == "calendars"
+
+    _manual_stay(apartment_id, "hand-typed-1")
+
+    progress = onboarding.progress(owner_id)
+    assert progress["steps"][2]["id"] == "calendars"
+    assert progress["steps"][2]["done"] is True, "a hand-typed stay left step 3 unfinished"
+
+
+def test_a_hand_typed_stay_also_lets_the_guest_link_step_finish():
+    """Step 5 repeated the iCal requirement, so fixing step 3 alone was not enough."""
+    owner_id = auth.create_account("onboard-manual-end", "Secure-Password-123", role="host")
+    entity_id = _entity(owner_id)
+    apartment_id = _unique_apartment(owner_id, entity_id, "manualtoken2", ready=True)
+    _manual_stay(apartment_id, "hand-typed-2")
+
+    progress = onboarding.progress(owner_id)
+
+    assert progress["finished"] is True
+    assert progress["completed"] == progress["total"] == 5
+    assert progress["finish"]["permalink"].endswith("/l/manualtoken2")
+
+
+def test_a_cancelled_hand_typed_stay_does_not_satisfy_the_calendar_step():
+    owner_id = auth.create_account("onboard-cancelled", "Secure-Password-123", role="host")
+    entity_id = _entity(owner_id)
+    apartment_id = _unique_apartment(owner_id, entity_id, "manualtoken3")
+    stay_id = _manual_stay(apartment_id, "hand-typed-3")
+    db.update("reservation", stay_id, {"status": "cancelled"})
+
+    assert onboarding.progress(owner_id)["current"]["id"] == "calendars"
+
+
+def test_the_calendar_step_offers_adding_a_stay_by_hand():
+    owner_id = auth.create_account(
+        "onboard-manual-copy",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    entity_id = _entity(owner_id)
+    _unique_apartment(owner_id, entity_id, "manualtoken4")
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    page = client.get("/onboarding?lang=en")
+
+    assert page.status_code == 200
+    assert "Connect Airbnb or Booking.com — or add a direct booking by hand." in page.text
+    assert "Add a stay by hand" in page.text
+    assert 'href="/reservations#add-stay-panel"' in page.text
+
+    czech = client.get("/onboarding?lang=cs")
+
+    assert "Připojte Airbnb nebo Booking.com — nebo přidejte přímou rezervaci ručně." in czech.text
+    assert "Přidat pobyt ručně" in czech.text
+
+
+def test_the_police_reporting_step_points_at_the_property_page():
+    """The credentials and the address are both on the property page, and the
+    automation card only carries the credentials, so that is where the step has
+    to land."""
+    owner_id = auth.create_account("onboard-ubyport", "Secure-Password-123", role="host")
+    entity_id = _entity(owner_id)
+    apartment_id = _unique_apartment(owner_id, entity_id, "ubyportstep1")
+
+    progress = onboarding.progress(owner_id)
+    step = progress["steps"][3]
+
+    assert step["id"] == "automation"
+    assert step["url"] == f"/apartments/{apartment_id}#ubyport"
+
+
+def test_the_police_reporting_step_is_named_for_what_it_asks_for():
+    owner_id = auth.create_account(
+        "onboard-ubyport-copy",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    entity_id = _entity(owner_id)
+    _unique_apartment(owner_id, entity_id, "ubyportstep2")
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    english = client.get("/onboarding?lang=en")
+
+    assert "Police reporting details" in english.text
+
+    czech = client.get("/onboarding?lang=cs")
+
+    assert "Údaje pro hlášení policii" in czech.text
+
+
+def test_the_police_reporting_step_without_a_property_offers_creating_one():
+    owner_id = auth.create_account("onboard-ubyport-none", "Secure-Password-123", role="host")
+    _entity(owner_id)
+
+    assert onboarding.progress(owner_id)["current"]["id"] == "property"
+    assert onboarding.progress(owner_id)["steps"][3]["url"] == "/apartments/new"

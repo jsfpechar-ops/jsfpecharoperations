@@ -1,29 +1,32 @@
 {% extends "guest/base.html" %}
 {% block content %}
-{% include "guest/_why.html" %}
 
 {% if can_pick_other %}
   <a class="g-back" href="/l/{{ token }}?lang={{ lang }}">&larr; {{ t('back_to_stays') }}</a>
 {% endif %}
 
+{% include "guest/_why.html" %}
+
 <div class="g-card g-stay-summary">
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
-  <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+  <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
 </div>
 
 {% if claim_sent %}
   <div class="g-card g-saved">
     <h2>{{ t('claim_sent_title') }}</h2>
-    <p class="g-intro">{{ t('claim_sent_body') }}</p>
+    <p class="g-intro">{{ t('claim_sent_body', email=claim.email_masked or '') }}</p>
   </div>
 {% endif %}
 {% if claim_error %}
   <div class="g-err">{{ t('claim_error_' + claim_error) if claim_error in ['bad_email','bad_party','held','already_claimed','rate','cooldown','recipient_rate','bot'] else t('error_party_size') }}</div>
 {% endif %}
 
-<div class="g-card g-question-card">
-  <h2>{{ t('claim_title') }}</h2>
-  <p class="g-intro">{{ t('claim_help') }}</p>
+{% if claim_sent %}<details class="g-card g-fold"><summary>{{ t('claim_sent_retry') }}</summary>{% else %}<div class="g-card g-question-card">{% endif %}
+  {% if not claim_sent %}
+    <h2>{{ t('claim_title') }}</h2>
+    <p class="g-intro">{{ t('claim_help') }}</p>
+  {% endif %}
   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <div class="g-field">
@@ -47,7 +50,7 @@
     {% endif %}
     <button class="g-btn" type="submit">{{ t('claim_submit') }}</button>
   </form>
-</div>
+{% if claim_sent %}</details>{% else %}</div>{% endif %}
 {% if require_turnstile and turnstile_site_key %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}

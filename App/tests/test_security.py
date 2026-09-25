@@ -417,6 +417,35 @@ def test_pin_return_to_cannot_escape_the_apartment_permalink():
         assert ".." not in landing
 
 
+def test_only_a_claim_secret_survives_a_return_to_round_trip():
+    """The claim secret rides in the fragment, so it must survive the gate —
+    but nothing else may, or the redirect echoes whatever it was handed."""
+    from app.routes.guest import _safe_return_to
+
+    token = "abc123"
+    secret = "A" * 32
+    claim = f"/l/{token}/42/claim"
+    assert _safe_return_to(f"{claim}#c={secret}", token, "en") == f"{claim}#c={secret}"
+
+    for junk in (
+        f"{claim}#c=",
+        f"{claim}#c=short",
+        f"{claim}#c={'A' * 129}",
+        f"{claim}#c=has spaces",
+        f"{claim}#c=has%20encoding",
+        f"{claim}#other={secret}",
+        f"{claim}#{secret}",
+        f"{claim}#c={secret}&x=1",
+        f"{claim}#c={secret}#c={secret}",
+    ):
+        assert _safe_return_to(junk, token, "en") == claim, junk
+
+    # An escape keeps its rejection even when it carries a plausible secret.
+    escape = f"/l/{token}/../../apartments#c={secret}"
+    landing = _safe_return_to(escape, token, "en")
+    assert landing == f"/l/{token}?lang=en", landing
+
+
 def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
     """On mock, stays go green while nothing reaches the police. Say so."""
     db.init_db()

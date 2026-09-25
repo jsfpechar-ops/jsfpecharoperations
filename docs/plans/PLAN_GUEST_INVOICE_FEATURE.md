@@ -526,7 +526,7 @@ BEGIN SELECT RAISE(ABORT, 'invoice is issued and immutable'); END;
 ```
 
 **Existing code that must respect these tables:**
-- `routes/admin.py::delete_entity`: add a check before deleting: `SELECT COUNT(*) FROM invoice WHERE legal_entity_id = ?`. If > 0, `err="This entity has issued invoices; it can be archived but not deleted."` The FK default (NO ACTION) would also block it; the check gives a readable message.
+- `routes/admin.py::delete_entity`: add a check before deleting: `SELECT COUNT(*) FROM invoice WHERE legal_entity_id = ?`. If > 0, `err=_flash(request, "flash.error.entity_has_invoices")` — a translated key, never an English literal (UX-34, `tests/test_flash_literals.py`). The FK default (NO ACTION) would also block it; the check gives a readable message. Add the EN + CS wording to `host_i18n.py` in the same commit.
 - `update_entity` edits never touch issued invoices (snapshots). Say so in the entity form hint `entities.invoice.snapshot_hint`.
 - Reservation deletion/archive: `reservation_id ON DELETE SET NULL` keeps the invoice. `stay_label` / `stay_from` / `stay_to` keep it readable.
 

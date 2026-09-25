@@ -326,13 +326,22 @@ def _guest_mail_content(
     contract, and the branded HTML is an enhancement -- a composer bug costs the
     guest the nicer message, never the link.
     """
+    # The subject names the property, so the label has to resolve before the
+    # fallback subject is built. It is also the one value here that must never
+    # cost the guest their mail: a label that cannot be read falls back to an
+    # empty name, not to the plain-text body.
+    try:
+        property_name = mail_notify.property_label(apartment, lang)
+    except Exception:
+        property_name = ""
     fallback = {
-        "subject": _guest_mail_subject(kind, lang),
+        "subject": _guest_mail_subject(kind, lang, property_name),
         "text": plain_text,
     }
     try:
-        property_name = mail_notify.property_label(apartment, lang)
-        dates = f"{reservation['date_from']} \u2013 {reservation['date_to']}"
+        dates = validation.fmt_date_range(
+            reservation["date_from"], reservation["date_to"]
+        )
         host = mail_notify.host_details(
             apartment["legal_entity_id"] if apartment else None
         )
@@ -370,14 +379,14 @@ def _guest_mail_content(
     return fallback
 
 
-def _guest_mail_subject(kind: str, lang: str) -> str:
+def _guest_mail_subject(kind: str, lang: str, property_name: str = "") -> str:
     key = {
         "claim": "mail_claim_subject",
-        "claim_resend": "mail_claim_subject",
+        "claim_resend": "mail_claim_resend_subject",
         "completion": "mail_completion_subject",
         "reminder_guest": "mail_reminder_guest_subject",
     }.get(kind, "mail_claim_subject")
-    return i18n.translator(lang)(key)
+    return i18n.translator(lang)(key, property=property_name)
 
 
 def _stay_link(apartment, reservation) -> str:
@@ -537,16 +546,18 @@ def maybe_notify_completion(reservation, apartment) -> None:
     reply_to = _reply_to_for_apartment(apartment)
     cc = reply_to
     name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
+    stay_dates = validation.fmt_date_range(
+        reservation["date_from"], reservation["date_to"]
+    )
     text = (
-        f"Thank you. Details for your stay at {name} "
-        f"({reservation['date_from']} – {reservation['date_to']}) have been received. "
-        f"This receipt is not proof of police reporting. Depending on your host's settings, "
-        f"complete foreign-guest records may be sent to UbyPort automatically."
+        f"Everyone for {name} ({stay_dates}) is registered. "
+        f"There is nothing else you need to do. "
+        f"Your host takes care of the official registration with the authorities. "
+        f"This e-mail is your receipt, not an official confirmation."
         if lang != "cs"
-        else f"Děkujeme. Údaje k pobytu v {name} "
-        f"({reservation['date_from']} – {reservation['date_to']}) jsme přijali. "
-        f"Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele mohou být "
-        f"kompletní záznamy cizinců odeslány do UbyPortu automaticky."
+        else f"Všichni hosté pro {name} ({stay_dates}) jsou zaregistrovaní. "
+        f"Nic dalšího dělat nemusíte. Úřední hlášení vyřizuje váš hostitel. "
+        f"Tento e-mail je potvrzení pro vás, nikoli úřední doklad."
     )
     content = _guest_mail_content(
         "completion",
@@ -664,12 +675,15 @@ def sweep_reminders() -> Dict[str, int]:
             if host_email:
                 host_content = mail_notify.build_reminder_host(
                     property_name=reservation["internal_name"] or "",
-                    date=reservation["date_from"],
+                    date=validation.fmt_date(reservation["date_from"]),
                     assigned=masked,
                     stay_url=(
                         f"{config.PUBLIC_BASE_URL.rstrip('/')}"
                         f"/reservations/{reservation['id']}"
                     ),
+                    claimed=reservation["claim_state"] == CLAIMED,
+                    filled=progress["filled"],
+                    expected=progress["expected"],
                 )
                 host_payload = {"text": host_content["text"], "lang": "en"}
                 if host_content.get("html"):

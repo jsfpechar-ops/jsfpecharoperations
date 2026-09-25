@@ -4,21 +4,36 @@
 <section class="auth-card">
   <h1 class="auth-title">{{ t('account.2fa.setup_title') }}</h1>
   <p class="auth-lede">{{ t('account.2fa.setup_lede') }}</p>
-  {% if error %}<div class="auth-alert" role="alert">{{ error }}</div>{% endif %}
+  {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}</div>{% endif %}
   {% if qr_data %}
-    <img src="{{ qr_data }}" alt="QR code for your authenticator app"
-         style="display:block;width:220px;max-width:100%;margin:18px auto;border-radius:12px">
+    <div class="auth-setup-media">
+      <img src="{{ qr_data }}" alt="{{ t('account.2fa.qr_alt') }}"
+           style="display:block;width:220px;max-width:100%;margin:18px auto;border-radius:12px">
+      {% if totp_uri %}
+        <a class="btn auth-setup-open" href="{{ totp_uri }}">{{ t('account.2fa.setup_open_app') }}</a>
+      {% endif %}
+    </div>
   {% endif %}
   <ol class="small">
     <li>{{ t('account.2fa.setup_scan') }}</li>
-    <li>{{ t('account.2fa.setup_key') }} <code>{{ secret }}</code></li>
+    <li>
+      {{ t('account.2fa.setup_key') }}
+      {# Grouped for reading aloud and typing; the secret itself is unchanged. #}
+      <span class="auth-setup-key">
+        <code id="totp-setup-key">{{ secret | batch(4) | map('join') | join(' ') }}</code>
+        <button class="btn small ghost" type="button" data-copy="totp-setup-key"
+                data-copy-label="{{ t('common.copy') }}"
+                data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
+      </span>
+    </li>
     <li>{{ t('account.2fa.setup_enter') }}</li>
   </ol>
   <form method="post" action="/account/2fa/setup" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <div class="auth-field">
       <label for="code">{{ t('account.2fa.six_digit') }}</label>
       <input type="text" id="code" name="code" required autofocus
-             inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6">
+             inputmode="numeric" autocomplete="one-time-code" maxlength="7">
     </div>
     <button class="auth-submit" type="submit">{{ t('account.2fa.enable') }}</button>
   </form>

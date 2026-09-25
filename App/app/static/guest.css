@@ -101,8 +101,10 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   text-decoration: none;
   color: var(--g-muted);
   border-radius: var(--g-pill);
-  padding: 5px 11px;
-  line-height: 1;
+  min-height: 44px;
+  padding: 12px 14px;
+  display: inline-flex;
+  align-items: center;
   transition: background 0.16s var(--g-ease), color 0.16s var(--g-ease);
 }
 .g-lang a:hover { color: var(--g-ink); }
@@ -163,6 +165,16 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-muted);
 }
 
+/* A phone number and an e-mail address are what a guest with a problem taps
+   for. An inline link is only as tall as its own text, so each one becomes a
+   44px row, and the paragraph spacing around them tightens to match. */
+#host-contact p { margin: 0 0 6px; }
+#host-contact a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 /* --- stay pickers ------------------------------------------------------ */
 
 .g-arrival-hero {
@@ -199,12 +211,23 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 }
 .g-arrival-message {
   margin-top: 18px;
-  padding-top: 14px;
+  /* The summary is a 44px tap target now, so the padding that used to sit
+     between the rule and the text has moved inside the summary. */
+  padding-top: 2px;
   border-top: 1px solid color-mix(in srgb, var(--g-accent) 18%, var(--g-line));
   color: var(--g-muted);
   font-size: 14px;
 }
-.g-arrival-message summary { cursor: pointer; color: var(--g-ink); font-weight: 650; }
+/* A guest taps this to read the host's note, so it needs to be thumb-sized
+   even though it is only one line of 14px text. The padding is what centres
+   the label; the min-height is the guarantee. */
+.g-arrival-message summary {
+  cursor: pointer;
+  color: var(--g-ink);
+  font-weight: 650;
+  min-height: 44px;
+  padding: 12px 0;
+}
 .g-arrival-message p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .g-arrival-choice { margin-top: 24px; }
 .g-arrival-choice .g-section { margin-bottom: 5px; font-size: 23px; letter-spacing: -0.025em; }
@@ -384,12 +407,28 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-muted);
   margin-bottom: 14px;
 }
-.g-person-progress {
+/* The count of people still to register, said in words rather than as a
+   plural the sentence has to agree with. */
+.g-still-missing {
+  margin: 10px 0 0;
+  color: var(--g-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+.g-form-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   margin: 0 0 8px;
   color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: .02em;
+  font-size: 14px;
+  font-weight: 600;
+}
+.g-form-line span + span::before {
+  content: "·";
+  margin: 0 7px;
+  color: var(--ink-muted);
+  font-weight: 400;
 }
 .g-wizard-progress {
   position: sticky;
@@ -402,8 +441,9 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   padding: 10px 4px;
   background: color-mix(in srgb, var(--canvas) 94%, transparent);
   backdrop-filter: blur(10px);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
 }
 .g-wizard-progress[hidden] { display: none; }
 .g-wizard-progress .g-bar { height: 6px; }
@@ -590,6 +630,26 @@ select {
 .g-btn.secondary:hover { background: var(--g-surface-2); }
 .g-btn.slim { padding: 11px 16px; font-size: 15px; }
 
+/* Quiet text-button: an option that must stay available without competing with
+   the one primary action on the screen. */
+.g-quiet-action-row { margin: 12px 0 0; text-align: center; }
+.g-quiet-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--g-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.g-quiet-action:hover { color: var(--g-accent); }
+
 .passport-upload-actions {
   display: flex;
   flex-wrap: wrap;
@@ -632,6 +692,9 @@ select {
 }
 .g-err ul { margin: 7px 0 0; padding-left: 20px; }
 .g-err li { margin-bottom: 3px; }
+/* Each item is a link into the wizard, so it has to read as the error rather
+   than as a coral link sitting on a red background. */
+.g-err a { color: inherit; }
 .g-ok {
   background: var(--g-ok-soft);
   border: 1px solid color-mix(in srgb, var(--g-ok) 28%, transparent);
@@ -663,7 +726,8 @@ select {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 9px 12px;
+  /* The bar is as tall as the 44px Clear button it holds. */
+  padding: 3px 12px;
   border-top: 1px solid var(--g-line);
   background: var(--g-surface-2);
   font-size: 13px;
@@ -675,9 +739,17 @@ select {
   font: inherit;
   font-weight: 650;
   cursor: pointer;
-  padding: 4px 2px;
+  /* The guest's thumb, not the pointer: "Clear" sits next to a canvas they
+     are already drawing on. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 6px;
 }
 .g-sign .bar .err { color: var(--g-bad); font-weight: 600; }
+/* The same line carries the "your signature is still saved" reassurance, which
+   is not a problem and must not be dressed like one. */
+.g-sign .bar .hint { color: var(--g-muted); }
 
 /* --- legal / explainer ------------------------------------------------- */
 
@@ -731,6 +803,9 @@ details.g-why .g-details {
   gap: 9px;
   list-style: none;
   cursor: pointer;
+  /* A folded-away block is still something the guest taps, and a bare
+     summary is only as tall as its text. */
+  min-height: 44px;
   color: var(--g-accent);
   font-size: 14px;
   font-weight: 650;
@@ -748,6 +823,19 @@ details.g-why .g-details {
 }
 .g-fold[open] > summary::before { transform: rotate(45deg); }
 .g-fold[open] > summary { margin-bottom: 11px; }
+
+/* On the form the explainer keeps .g-fold's single-line shape. The caret is
+   .g-fold's, so the explainer's own marker steps aside. */
+details.g-why.g-fold > summary.g-why-summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 18px;
+  color: var(--g-accent);
+  font-size: 14px;
+  font-weight: 650;
+}
+details.g-why.g-fold > summary.g-why-summary::after { display: none; }
 
 .g-chip {
   display: inline-block;
@@ -799,9 +887,14 @@ details.g-why .g-details {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  /* A back link is the one thing a lost guest reaches for. */
+  min-height: 44px;
+  padding: 0 2px;
   font-size: 14.5px;
   font-weight: 600;
-  margin-bottom: 16px;
+  /* The link is 44px tall now, so the space under it shrinks to keep the
+     heading where it was. */
+  margin-bottom: 4px;
   color: var(--g-muted);
   text-decoration: none;
 }
@@ -826,7 +919,31 @@ details.g-why .g-details {
 .g-saved { background: var(--g-ok-soft); border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); }
 .g-saved h2 { color: var(--g-ok); }
 
-.g-summary-name { font-size: 17.5px; font-weight: 700; color: var(--g-ink); margin: 0 0 14px; }
+/* Each submission folds to its name and state, so the records sit below the
+   status and the one next action instead of pushing them down the page. */
+details.g-summary { padding: 0; }
+details.g-summary > summary.g-summary-fold {
+  list-style: none;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 18px 20px;
+  font-size: 17.5px;
+  font-weight: 700;
+  color: var(--g-ink);
+}
+details.g-summary > summary.g-summary-fold::-webkit-details-marker { display: none; }
+details.g-summary > summary.g-summary-fold::after {
+  content: "▾";
+  float: right;
+  color: var(--g-muted);
+  font-weight: 400;
+}
+details.g-summary[open] > summary.g-summary-fold::after { content: "▴"; }
+details.g-summary[open] > summary.g-summary-fold {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--g-line);
+}
+details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-summary-list {
   display: grid;
   grid-template-columns: minmax(118px, 38%) 1fr;
@@ -836,6 +953,24 @@ details.g-why .g-details {
 }
 .g-summary-list dt { margin: 0; color: var(--g-muted); font-weight: 600; }
 .g-summary-list dd { margin: 0; color: var(--g-ink); }
+
+/* Last look at the answers before they are locked. The "Change" control is a
+   quiet text button so it never competes with "Submit my details" below. */
+.g-review-list { margin-bottom: 0; }
+.g-review-list dd { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.g-review-change {
+  margin-left: auto;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--g-accent);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.g-review-change:focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
 
 /* Guest variants of the shared primitives use larger touch targets and type. */
 .g-property {
@@ -876,7 +1011,7 @@ details.g-why .g-details {
 /* The submit button is the whole point of the page; on a phone it should
    never be the thing you have to scroll to find. */
 @media (max-width: 560px) {
-  form > .g-btn[type="submit"] {
+  [data-guest-step] > .g-btn[type="submit"] {
     position: sticky;
     bottom: 12px;
     box-shadow: 0 1px 2px rgba(22, 25, 27, 0.1), 0 10px 28px rgba(22, 25, 27, 0.2);

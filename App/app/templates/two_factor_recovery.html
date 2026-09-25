@@ -1,13 +1,16 @@
 {% extends "auth_base.html" %}
 {% block title %}{{ t('account.2fa.recovery_title') }}{% endblock %}
+{# No language switch here: this page has no safe GET to return to, and flipping
+   the language would throw the codes away for good. #}
+{% block lang_switch %}{% endblock %}
 {% block auth_body %}
 <section class="auth-card">
   <h1 class="auth-title">{{ t('account.2fa.recovery_title') }}</h1>
   <p class="auth-lede">{{ t('account.2fa.recovery_lede') }}</p>
+  <p class="small"><strong>{{ t('account.2fa.recovery_once') }}</strong></p>
   <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     {% for code in recovery_codes %}<code>{{ code }}</code>{% endfor %}
   </div>
-  <p class="small"><strong>{{ t('account.2fa.recovery_once') }}</strong></p>
   <a class="auth-submit" href="/" style="display:block;text-align:center;text-decoration:none">{{ t('account.2fa.recovery_continue') }}</a>
 </section>
 {% endblock %}

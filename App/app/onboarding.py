@@ -55,6 +55,18 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     )
     apartment_count = len(apartments)
     feed_count = sum(int(apartment["feeds"] or 0) for apartment in apartments)
+    # A host who takes direct bookings has no iCal feed to connect. A stay typed
+    # in by hand has to satisfy the calendar step, or that host can never finish.
+    manual_stays = int(
+        db.query_one(
+            "SELECT COUNT(*) AS n FROM reservation r "
+            "JOIN apartment a ON a.id = r.apartment_id "
+            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL "
+            "AND r.status = 'active' AND r.source = 'manual'",
+            (owner_user_id,),
+        )["n"]
+    )
+    has_stays = feed_count > 0 or manual_stays > 0
     setup_issues = []
     for apartment in apartments:
         issues = _apartment_issues(apartment)
@@ -80,17 +92,20 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         },
         {
             "id": "calendars",
-            "done": feed_count > 0,
+            "done": has_stays,
             "url": f"/apartments/{first_apartment['id']}#calendars" if first_apartment else "/apartments/new",
+            "manual_url": "/reservations#add-stay-panel",
             "learn_url": "/guide#stays",
         },
         {
             "id": "automation",
             "done": apartment_count > 0 and not setup_issues,
+            # The credentials and the address both live on the property page, so
+            # this is the one place the step can actually be finished.
             "url": (
-                f"/automation#apartment-{first_apartment['id']}"
+                f"/apartments/{first_apartment['id']}#ubyport"
                 if first_apartment
-                else "/automation"
+                else "/apartments/new"
             ),
             "learn_url": "/guide#reporting",
         },
@@ -98,7 +113,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
             "id": "guest_link",
             "done": (
                 apartment_count > 0
-                and feed_count > 0
+                and has_stays
                 and not setup_issues
             ),
             "url": (

@@ -5,7 +5,7 @@
 
 {% macro err_for(field) %}
   {% for issue in issues if issue.field == field %}
-    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ issue.message }}</div>
+    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ validation_message(issue.message) }}</div>
   {% endfor %}
 {% endmacro %}
 {% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
@@ -175,11 +175,11 @@
       </div>
     {% endif %}
     <p class="small muted" style="margin:0 0 10px">{{ t('host.verify_in_person') }}</p>
-    <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
-      <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
-    </form>
+    {# The form element itself renders after the main form, further down: a <form>
+       nested inside another one closes the outer form early, which killed Save. #}
+    <div class="verify-form">
+      <button class="btn small" type="submit" form="verify-{{ guest.id }}">{{ t('host.verify_button') }}</button>
+    </div>
   </div>
   {% elif editing and guest.identity_verified_at and guest.nationality != 'CZE' %}
   <div class="panel quiet">
@@ -219,6 +219,13 @@
   </div>
 </form>
 
+{% if editing and needs_verification %}
+<form id="verify-{{ guest.id }}" method="post" action="/guests/{{ guest.id }}/verify-identity">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
+</form>
+{% endif %}
+
 {% if editing and guest.id %}
 <details class="panel danger-zone" style="margin-top:24px">
   <summary>{{ t('guest.admin.danger.summary') }}</summary>
@@ -247,5 +254,5 @@
 {% endif %}
 </details>
 {% endif %}
-<script src="/static/signature.js?v=20260912d"></script>
+<script src="/static/signature.js?v=20260914e"></script>
 {% endblock %}

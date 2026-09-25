@@ -113,15 +113,16 @@ a { color: inherit; }
   background: var(--brand-soft);
 }
 
+/* Log in is not this page's primary, so it carries no coral fill: the hero's
+   one CTA owns that. It stays a quiet text link, but keeps a full-size tap
+   target so it is still easy to hit on a phone. */
 .landing-login {
-  padding: 9px 16px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-pill);
-  color: var(--on-brand);
-  background: var(--brand-action);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 10px;
+  color: var(--ink-secondary);
 }
-
-.landing-login:hover { color: var(--on-brand); background: var(--brand-pressed); }
 
 .landing-hero {
   display: grid;
@@ -909,7 +910,9 @@ a { color: inherit; }
     width: min(100% - 28px, 1160px);
   }
 
-  .landing-login { display: none; }
+  /* Log in stays reachable at every width: on a phone it is the one thing a
+     returning host opens the site for. The lockup gives up the room. */
+  .landing-brand img { width: 112px; }
   .landing-hero { padding-top: 58px; }
   .landing-product-stage { margin-inline: -8px; }
   .product-shell { grid-template-columns: 44px 1fr; min-height: 400px; }
@@ -1517,4 +1520,73 @@ a { color: inherit; }
   .pricing-card { padding: 23px; box-shadow: 0 10px 28px rgba(32, 32, 30, .1); }
   .pricing-price { font-size: clamp(2.6rem, 12vw, 3.6rem); }
   .pricing-includes { padding: 18px; }
+}
+
+/* The phone menu. Below 900px `.landing-nav` is hidden, so this disclosure is
+   the only route between the public pages; it is a plain <details> so it opens
+   with no JavaScript and no network round trip. */
+.landing-menu { display: none; }
+
+@media (max-width: 900px) {
+  .landing-menu {
+    display: block;
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border);
+  }
+
+  .landing-menu > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding-block: 6px;
+    color: var(--ink-secondary);
+    font-size: var(--text-sm);
+    font-weight: 650;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .landing-menu > summary::-webkit-details-marker { display: none; }
+
+  .landing-menu > summary::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+  }
+
+  .landing-menu[open] > summary { color: var(--ink); }
+  .landing-menu[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+
+  .landing-menu > summary:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .landing-menu nav {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 10px;
+  }
+
+  .landing-menu nav a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--ink-secondary);
+    font-size: var(--text-sm);
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .landing-menu nav a:hover { color: var(--ink); }
+  .landing-menu nav a[aria-current="page"] { color: var(--brand-ink); }
+
+  .landing-menu nav a:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
 }

@@ -1,16 +1,19 @@
 """The language a guest gets when they have not chosen one, and the guard on the
 guest catalog's interpolation.
 
-Two things are pinned here. The form speaks the signed-out public default (Czech)
-until the guest picks a language, because the host is Czech and a guest arriving
-from a host's link has made no choice; and a catalog entry whose placeholders do
-not match the values handed to it renders its raw text instead of raising in the
-middle of a form a guest is filling in.
+Two things are pinned here. A guest arriving from a host's link has made no
+choice, so the form follows the language their own phone asks for -- Czech and
+Slovak phones get Czech, everything else gets English, and a phone that says
+nothing gets English; an explicit ``?lang=`` or the switcher's cookie always
+wins. And a catalog entry whose placeholders do not match the values handed to
+it renders its raw text instead of raising in the middle of a form a guest is
+filling in.
 """
 from __future__ import annotations
 
 from datetime import timedelta
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app import claim, db, host_i18n, i18n
@@ -75,15 +78,51 @@ def _seed():
     return stay_id
 
 
-def test_a_guest_without_a_language_choice_gets_the_public_default():
+@pytest.mark.parametrize(
+    ("header", "expected"),
+    [
+        ("cs-CZ,cs;q=0.9,en;q=0.8", "cs"),
+        ("sk-SK,sk;q=0.9,cs;q=0.8", "cs"),
+        ("de-DE,de;q=0.9,en;q=0.8", "en"),
+        ("en-GB,en;q=0.9", "en"),
+        # A client that names no language at all is not a foreign guest, so the
+        # documented guest-link default stands. Every real browser sends this
+        # header, so this only ever describes a harness.
+        ("", "cs"),
+        ("*", "cs"),
+    ],
+)
+def test_a_guest_without_a_language_choice_gets_the_language_of_their_phone(
+    header, expected
+):
+    """The host is Czech but the guest is by definition a foreigner.
+
+    The default used to be Czech, which put "Zadejte přístupový PIN" in front of
+    a German guest. It now follows the phone, and the first tag wins because
+    browsers list their languages in order of preference.
+    """
+    _seed()
+    try:
+        page = TestClient(app).get(
+            f"/l/{TOKEN}", headers={"Accept-Language": header}, follow_redirects=True
+        )
+        assert page.status_code == 200
+        assert f'<html lang="{expected}">' in page.text
+        # And it really is that language's copy, not just the right lang tag.
+        assert i18n.STRINGS[expected]["arrival_question"] in page.text
+        other = "en" if expected == "cs" else "cs"
+        assert i18n.STRINGS[other]["arrival_question"] not in page.text
+    finally:
+        _cleanup()
+
+
+def test_the_switcher_offers_endonyms_a_foreigner_can_read():
+    """A German guest knows "English", not the ISO code "EN"."""
     _seed()
     try:
         page = TestClient(app).get(f"/l/{TOKEN}", follow_redirects=True)
-        assert page.status_code == 200
-        assert f'<html lang="{host_i18n.PUBLIC_DEFAULT_LANGUAGE}">' in page.text
-        # And it really is the Czech copy, not an English page with a Czech tag.
-        assert i18n.STRINGS["cs"]["arrival_question"] in page.text
-        assert i18n.STRINGS["en"]["arrival_question"] not in page.text
+        assert 'hreflang="en" lang="en">English</a>' in page.text
+        assert 'hreflang="cs" lang="cs">Čeština</a>' in page.text
     finally:
         _cleanup()
 

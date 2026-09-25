@@ -1,5 +1,4 @@
-{% extends "base.html" %}
-{% set show_nav = false %}
+{% extends "public_legal_base.html" %}
 {% block title %}{{ t('dpa.page_title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
@@ -7,6 +6,8 @@
 {{ page_header(t('dpa.page_title'), t('dpa.page_lede', name=operator.name)) }}
 
 <p class="small muted">{{ t('dpa.effective') }}</p>
+
+{% with sections = dpa_sections, prefix = 'dpa' %}{% include "_legal_toc.html" %}{% endwith %}
 
 <div class="panel legal-operator">
   <h2 style="margin-top:0">{{ t('dpa.operator_title') }}</h2>
@@ -33,10 +34,11 @@
 <p class="small muted">{{ t('dpa.incorporation_note') }}</p>
 
 {% for sid in dpa_sections %}
-<div class="panel">
-  <h2 style="margin-top:0">{{ t('dpa.s' ~ sid ~ '_title') }}</h2>
-  <div class="small muted terms-section">{{ t('dpa.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) }}</div>
-</div>
+<section class="legal-section" id="s{{ sid }}">
+  <h2>{{ t('dpa.s' ~ sid ~ '_title') }}</h2>
+  <div class="terms-section">{{ t('dpa.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) }}</div>
+  <p class="legal-back"><a href="#legal-contents">{{ t('legal.back_to_toc') }} <span aria-hidden="true">&uarr;</span></a></p>
+</section>
 {% endfor %}
 
 <div class="panel quiet">
@@ -53,6 +55,6 @@
   &middot;
   <a href="/subprocessors">{{ t('subprocessors.footer_link') }}</a>
   &middot;
-  <a href="/login">{{ t('legal.back_login') }}</a>
+  <a href="/?lang={{ lang }}">{{ t('legal.back_home') }}</a>
 </p>
 {% endblock %}

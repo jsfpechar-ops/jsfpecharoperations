@@ -28,14 +28,24 @@ def test_host_chrome_uses_mark_only_with_live_wordmark():
     assert "ubyhost-logo-stacked.png" not in sidebar
 
 
+PUBLIC_PAGE_TEMPLATES = (
+    "landing.html",
+    "pricing.html",
+    "product.html",
+    "public_guide.html",
+)
+
+
 def test_public_surfaces_use_horizontal_lockup_and_mark_accents():
+    header = _read("_public_header.html")
+    footer = _read("_public_footer.html")
     landing = _read("landing.html")
-    guide = _read("public_guide.html")
-    assert landing.count('src="/static/ubyhost-logo.png"') >= 2
+    # The lockup now lives in the shared chrome every public page includes.
+    assert header.count('src="/static/ubyhost-logo.png"') >= 1
+    assert footer.count('src="/static/ubyhost-logo.png"') >= 1
     assert 'src="/static/ubyhost-mark.png"' in landing
-    assert guide.count('src="/static/ubyhost-logo.png"') >= 2
-    assert "ubyhost-logo-stacked.png" not in landing
-    assert "ubyhost-logo-stacked.png" not in guide
+    for name in PUBLIC_PAGE_TEMPLATES + ("_public_header.html", "_public_footer.html"):
+        assert "ubyhost-logo-stacked.png" not in _read(name)
 
 
 def test_onboarding_uses_mark_only():

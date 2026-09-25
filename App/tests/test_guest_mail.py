@@ -8,7 +8,9 @@ UbyHost support, and the secret handling that must survive the new HTML part.
 """
 from __future__ import annotations
 
+import html
 import json
+import re
 from datetime import timedelta
 
 import pytest
@@ -27,7 +29,10 @@ HOST_KINDS = ("reminder_host",)
 # generic parity mismatch somewhere else.
 NEW_GUEST_KEYS = (
     "mail_claim_subject",
+    "mail_claim_resend_subject",
+    "mail_claim_preheader",
     "mail_claim_heading",
+    "mail_claim_resend_heading",
     "mail_claim_intro",
     "mail_claim_action",
     "mail_link_fallback",
@@ -39,7 +44,6 @@ NEW_GUEST_KEYS = (
     "mail_completion_heading",
     "mail_completion_intro",
     "mail_completion_action",
-    "mail_completion_note_label",
     "mail_completion_note",
     "mail_reminder_guest_subject",
     "mail_reminder_guest_heading",
@@ -55,12 +59,14 @@ NEW_GUEST_KEYS = (
 
 NEW_HOST_KEYS = (
     "mail.reminder_host.subject",
+    "mail.reminder_host.subject_unclaimed",
     "mail.reminder_host.heading",
     "mail.reminder_host.intro",
     "mail.reminder_host.assigned_label",
     "mail.reminder_host.assigned_unknown",
     "mail.reminder_host.next_label",
-    "mail.reminder_host.next_steps",
+    "mail.reminder_host.next_steps_claimed",
+    "mail.reminder_host.next_steps_unclaimed",
     "mail.reminder_host.action_stay",
     "mail.reminder_host.footer",
 )
@@ -188,13 +194,26 @@ def _reminder_guest_content(lang: str = "en"):
     )
 
 
-def _reminder_host_content(lang: str = "en"):
+def _host_copy(lang: str, key: str, **kwargs) -> str:
+    """The raw host string, interpolated here.
+
+    ``host_i18n.translate`` silently returns the key when a placeholder does not
+    match, so a test that wants to prove the real copy reads the catalogue.
+    """
+    text = host_i18n.STRINGS[lang][key]
+    return text % kwargs if kwargs else text
+
+
+def _reminder_host_content(lang: str = "en", *, claimed: bool = True):
     return mail_notify.build_reminder_host(
         property_name="Guest flat",
         date="2026-01-05",
         assigned="g***@example.test",
         stay_url=f"{config.PUBLIC_BASE_URL}/reservations/1",
         lang=lang,
+        claimed=claimed,
+        filled=1,
+        expected=3,
     )
 
 
@@ -344,22 +363,129 @@ def test_the_completion_mail_links_to_the_stay():
     stay = f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1"
     assert stay in content["html"]
     assert stay in content["text"]
-    assert content["html"].count(stay) >= 2, "button and copyable address"
+    # The address is readable, not just a button target: a guest whose client
+    # mangles the markup can still copy it out of the message.
+    assert f">{stay}</a>" in content["html"]
 
 
-def test_the_completion_mail_says_the_receipt_is_not_proof_of_reporting():
-    content = _completion_content()
-    assert "not proof of police reporting" in content["text"]
-    assert "not proof of police reporting" in content["html"]
+def test_the_completion_mail_closes_with_nothing_left_to_do():
+    """E-7: the receipt used to read like a report that was still in flight."""
+    for lang, heading, subject, intro, note, action in (
+        (
+            "en",
+            "You're all set",
+            "You're registered for Guest Mail Flat \u2014 nothing else to do",
+            "Everyone for Guest Mail Flat (2026-01-05 \u2013 2026-01-08) is registered.",
+            "Your host takes care of the official registration with the authorities.",
+            "See your stay page",
+        ),
+        (
+            "cs",
+            "Hotovo",
+            "Registrace hotov\u00e1 \u2013 Guest Mail Flat. Nic dal\u0161\u00edho nemus\u00edte d\u011blat",
+            "V\u0161ichni host\u00e9 pro Guest Mail Flat (2026-01-05 \u2013 2026-01-08) "
+            "jsou zaregistrovan\u00ed.",
+            "\u00da\u0159edn\u00ed hl\u00e1\u0161en\u00ed vy\u0159izuje v\u00e1\u0161 hostitel.",
+            "Zobrazit str\u00e1nku pobytu",
+        ),
+    ):
+        content = _completion_content(lang)
+        # The HTML part is escaped, so an apostrophe arrives as ``&#39;``.
+        html_part = html.unescape(content["html"])
+        assert content["subject"] == subject, lang
+        assert heading in html_part, lang
+        assert intro in html_part, lang
+        assert note in html_part, lang
+        assert note in content["text"], lang
+        assert action in html_part, lang
+        assert action in content["text"], lang
+        # The closing line is a muted paragraph, not a coral callout box.
+        assert f"background:{mail_notify.BRAND_SOFT}" not in html_part, lang
+        # And the receipt no longer carries a coral button: nothing here is an
+        # action the guest still owes the host.
+        assert f"background:{mail_notify.BRAND};" not in html_part, lang
+
+
+def test_the_completion_mail_stops_blaming_ubyport():
+    """E-7: 'sent to UbyPort automatically' answered a question nobody asked."""
+    for lang in ("cs", "en"):
+        content = _completion_content(lang)
+        assert "UbyPort" not in content["html"], lang
+        assert "UbyPort" not in content["text"], lang
 
 
 def test_the_guest_language_is_honoured():
-    assert _claim_content("cs")["subject"] == i18n.STRINGS["cs"]["mail_claim_subject"]
-    assert _claim_content("en")["subject"] == i18n.STRINGS["en"]["mail_claim_subject"]
+    for lang in ("cs", "en"):
+        expected = i18n.STRINGS[lang]["mail_claim_subject"] % {
+            "property": "Guest Mail Flat"
+        }
+        assert _claim_content(lang)["subject"] == expected
     assert _claim_content("cs")["subject"] != _claim_content("en")["subject"]
     czech = _completion_content("cs")["html"]
-    assert "Registrace byla přijata" in czech
-    assert "Registration received" not in czech
+    assert "Hotovo" in czech
+    assert "You're all set" not in czech
+
+
+def test_the_claim_subject_names_the_stay_and_not_a_city():
+    """Forty unread mails: the inbox line has to identify this stay."""
+    for lang in ("en", "cs"):
+        subject = _claim_content(lang)["subject"]
+        assert "Guest Mail Flat" in subject, lang
+        assert "Prague" not in subject, lang
+        assert "Praha" not in subject, lang
+    assert _claim_content("en")["subject"].startswith("Confirm your stay at ")
+    assert _claim_content("cs")["subject"].startswith("Potvrďte svůj pobyt")
+
+
+def test_the_resend_subject_cannot_be_confused_with_the_link_it_replaces():
+    fresh = _claim_content()["subject"]
+    resent = _claim_content(resend=True)["subject"]
+    assert resent != fresh
+    assert "Guest Mail Flat" in resent
+    assert resent == i18n.STRINGS["en"]["mail_claim_resend_subject"] % {
+        "property": "Guest Mail Flat"
+    }
+
+
+def test_the_resend_mail_says_in_its_heading_that_it_is_the_new_link():
+    assert i18n.STRINGS["en"]["mail_claim_resend_heading"] in _claim_content(
+        resend=True
+    )["html"]
+    assert i18n.STRINGS["en"]["mail_claim_resend_heading"] not in _claim_content()["html"]
+    assert i18n.STRINGS["en"]["mail_claim_heading"] in _claim_content()["html"]
+
+
+def test_the_claim_mail_prints_dates_the_way_every_guest_page_does():
+    """An e-mail, an alert and a page must never print the same stay differently.
+
+    ``claim._guest_mail_content`` used to hand the composer the raw ISO values
+    out of the reservation row.
+    """
+    content = claim._guest_mail_content(
+        "claim",
+        {
+            "uby_name": "Vinohrady Studio",
+            "internal_name": "",
+            "legal_entity_id": None,
+        },
+        {"id": 1, "date_from": "2026-09-25", "date_to": "2026-09-28"},
+        lang="en",
+        plain_text="fallback",
+        link=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1/claim#c=x",
+    )
+    for part in ("text", "html"):
+        assert "25.09.2026 \u2013 28.09.2026" in content[part], part
+        assert "2026-09-25" not in content[part], part
+        assert "2026-09-28" not in content[part], part
+
+
+def test_the_claim_preheader_is_its_own_line_and_not_the_intro():
+    """The preheader is what the inbox shows beside the subject."""
+    html = _claim_content()["html"]
+    match = re.search(r"mso-hide:all;\">([^<]*)</div>", html)
+    assert match, html[:400]
+    assert match.group(1) == i18n.STRINGS["en"]["mail_claim_preheader"]
+    assert "Guest Mail Flat" not in match.group(1)
 
 
 def test_the_resend_mail_says_the_old_link_stopped_working():
@@ -371,14 +497,52 @@ def test_the_resend_mail_says_the_old_link_stopped_working():
 
 
 def test_the_host_reminder_is_host_facing_and_keeps_its_subject():
-    """The subject prefix is asserted elsewhere; keep it stable."""
+    """The subject leads with the count the host needs on check-in morning."""
     content = _reminder_host_content()
-    assert content["subject"].startswith("Incomplete registration:")
-    assert "Guest flat" in content["subject"]
-    assert "registration link" in content["text"]
+    assert content["subject"] == "Check-in today, 1/3 registered: Guest flat"
+    assert "Registration link sent to" in content["text"]
     # The host reminder is a host message, so it may name UbyHost support --
     # but it must not borrow the guest footer, which talks to the guest.
     assert "You received this e-mail because your stay" not in content["text"]
+
+
+def test_the_host_reminder_never_promises_a_link_the_host_cannot_send():
+    """The stay page has no "send a fresh link" control (UX-27, E-5).
+
+    The claimed variant points at the stay page; the unclaimed variant tells the
+    host to re-send the apartment link and PIN by hand, and drops the fact row
+    that would otherwise read "sent to: the guest has not claimed the stay yet".
+    """
+    for lang in ("en", "cs"):
+        claimed = _reminder_host_content(lang)
+        unclaimed = _reminder_host_content(lang, claimed=False)
+        for content in (claimed, unclaimed):
+            assert "fresh link" not in content["text"]
+            assert "nový odkaz" not in content["text"]
+        assert _host_copy(lang, "mail.reminder_host.next_steps_claimed", filled=1, expected=3) in claimed["text"]
+        assert _host_copy(lang, "mail.reminder_host.next_steps_unclaimed") in unclaimed["text"]
+        # The unclaimed mail has no fact row in either part.
+        assert _host_copy(lang, "mail.reminder_host.assigned_label") not in unclaimed["text"]
+        assert _host_copy(lang, "mail.reminder_host.assigned_unknown") not in unclaimed["text"]
+        assert _host_copy(lang, "mail.reminder_host.assigned_label") in claimed["text"]
+
+
+def test_the_host_reminder_subject_falls_back_when_the_party_is_unknown():
+    """An unclaimed stay has no declared party, so the count would read None."""
+    content = mail_notify.build_reminder_host(
+        property_name="Guest flat",
+        date="2026-01-05",
+        assigned="",
+        stay_url=f"{config.PUBLIC_BASE_URL}/reservations/1",
+        lang="en",
+        claimed=False,
+        filled=0,
+        expected=None,
+    )
+    assert content["subject"] == "Incomplete registration: Guest flat"
+    assert "None" not in content["subject"]
+    assert "None" not in content["text"]
+    assert "None" not in content["html"]
 
 
 def test_a_composer_bug_never_costs_the_guest_their_link(monkeypatch):

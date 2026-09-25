@@ -42,9 +42,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Czech citizens are not reported to the police — only the house-book entry is made."
         ),
         "why_point_passport": (
-            "If your host asks for it, you upload a photo of your passport or ID "
-            "page so they can verify your details. Only the host sees it; it is deleted "
-            "immediately after verification."
+            "If your host requires it, foreign guests upload a photo of their passport or ID "
+            "page so the host can check the details. Only your host sees it, and it is deleted "
+            "after the check."
         ),
         "why_point_accuracy": (
             "You must enter truthful information that matches your travel document. The host "
@@ -77,28 +77,28 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Use the phone or e-mail in the message that contained this link."
         ),
         "message_from_host": "A message from your host",
-        "claim_title": "Confirm the number of guests and your e-mail",
+        "claim_title": "How many people, and your e-mail",
         "claim_help": (
-            "We e-mail a private link to this address so only you can fill in the forms. "
-            "The public link then shows that the stay is assigned to your masked e-mail."
+            "We'll e-mail you a private link so only your group can open the forms."
         ),
         "claim_email": "What is your e-mail address?",
         "claim_email_help": (
-            "We use this address to secure this reservation, send the private form link, "
-            "one reminder if the forms are incomplete the day before check-in, and a completion "
-            "receipt. The property manager receives the completion copy and authorised host users "
-            "can see the address; public guest screens show only a masked version. No marketing."
+            "We send the link here, one reminder the day before arrival if forms are "
+            "missing, and a receipt (your host gets a copy). Elsewhere it is shown "
+            "masked. No marketing."
         ),
         "claim_cookie_help": (
-            "Strictly necessary cookies remember PIN access for up to 7 days and language, the "
-            "confirmed stay, and forms submitted on this device for up to 60 days. UbyHost uses "
-            "no advertising or analytics cookies."
+            "Only necessary cookies: PIN access (7 days), your language and this stay "
+            "(60 days)."
         ),
         "claim_submit": "Send me the form link",
         "claim_sent_title": "Check your e-mail",
         "claim_sent_body": (
-            "If the address is correct, open the confirmation link we just sent. "
-            "On staging, the host can also copy the link from Settings → Guest e-mails."
+            "We sent a link to %(email)s. Open it on this phone to continue — it works "
+            "for 30 minutes. If it asks for the PIN again, enter the same PIN."
+        ),
+        "claim_sent_retry": (
+            "No e-mail after a few minutes? Check spam, or send it again"
         ),
         "claim_error_bad_email": "Please enter a valid e-mail address.",
         "claim_error_bad_party": "Please enter how many people are staying (1–60).",
@@ -131,11 +131,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_not_started": "Select these dates",
         "error_no_stay": "Please select your stay dates.",
         "error_party_size": "Please enter how many people are staying (1–60).",
-        "no_stays": "There are no upcoming stays to fill in right now.",
+        "no_stays": "There's nothing to register yet",
         "no_stays_help": (
-            "The apartment link only lists stays that start in the next few days. If your "
-            "arrival has already passed, open the stay-specific link from your host or "
-            "confirmation e-mail, or message your host."
+            "Registration opens a few days before arrival. Come back to this same link then. "
+            "Already arrived? Message your host — they can send you a direct link to your stay."
         ),
         "bad_link_title": "This guest link is not valid",
         "bad_link_help": "It may be incomplete or may have been replaced. Please ask your host for a new link.",
@@ -146,7 +145,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "form_expired_title": "This form timed out",
         "form_expired_help": (
-            "Nothing was saved. Reload the page, or start again from the link below."
+            "Nothing was saved. Start again from the link below."
         ),
         "rate_limited_title": "Too many attempts from your connection",
         "rate_limited_help": (
@@ -170,7 +169,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "cannot be changed from this link. Please message your host if anything needs "
             "correcting."
         ),
-        "form_locked_short": "Saved and locked — contact your host to change anything.",
+        "form_locked_short": "Saved and locked. To change anything, contact your host.",
         "pin_title": "Enter the access PIN",
         "pin_help": (
             "Your host sent a PIN together with the registration link. "
@@ -187,54 +186,63 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "security_check_failed": "Complete the security check and try again.",
         "start_over": "Start again",
-        "nights": "nights",
+        "night_one": "%(n)s night",
+        "nights_few": "%(n)s nights",
+        "nights_many": "%(n)s nights",
         "arrive": "Arrival",
         "depart": "Departure",
         "select": "This is my stay",
         "party_question": "How many people are staying?",
         "party_help": "Count everyone, including children. Each person needs their own form.",
         "party_confirm": "Continue",
-        "people_progress": "%(done)s of %(total)s people completed",
+        "people_progress": "Registered: %(done)s of %(total)s",
         "person_progress": "Person %(current)s of %(total)s",
         "form_step_progress": "Step %(current)s of %(total)s",
+        "form_step_progress_title": "%(progress)s · %(title)s",
         "next_step": "Continue",
         "previous_step": "Back",
         "add_person": "Add a person",
         "add_first_person": "Start with your own details",
-        "saved_title": "Details saved",
-        "saved_body": "Thank you. Please check what you submitted below.",
+        "saved_title": "Saved — thank you",
+        "saved_body": (
+            "Your details are saved. Next, add the next person in your group."
+        ),
         "reported_title": "Details submitted and reported",
         "reported_body": (
             "Thank you. Your host has already reported this record. Contact your host if "
             "anything below needs correcting."
         ),
         "summary_title": "Your submission",
+        "summary_fold_saved": "saved ✓",
         "your_details": "Your details",
         "person": "Person",
         "you": "you",
         "completed": "completed",
         "not_filled": "not filled in",
         "edit": "Edit",
-        "all_done_title": "Thank you, everything is complete",
+        "all_done_title": "Thank you — everyone is registered",
         "all_done_body": (
-            "All guest details for this stay have been submitted. There is nothing more you "
-            "need to do."
+            "There is nothing more you need to do. You can close this page."
         ),
+        "all_done_receipt": "We have sent a confirmation to %(email)s.",
         "checkin_info": "Check-in",
         "checkout_info": "Check-out",
-        "still_missing": "Still missing details for %(n)s person(s).",
+        "still_missing": "Still to register: %(n)s",
         "add_another": "Add another person",
         "someone_missing": (
-            "Is someone in your group still not registered? Every guest must be reported, "
-            "so add them here."
+            "Forgot someone? Everyone staying must be registered, including children."
         ),
         "continue_filling": "Continue filling in",
         "surname": "Surname",
         "first_name": "Given name(s)",
         "birth_date": "Date of birth",
-        "birth_date_help": "Type the 8 digits from your passport — slashes are added automatically.",
-        "residence_help": "Your permanent home address abroad, as shown in your passport. Required for the police report.",
+        "birth_date_help": "Day, month, year — e.g. 04/07/1990 for 4 July 1990. Slashes are added for you.",
+        "birth_date_readback": "That is %(date)s.",
+        "residence_help": "Your permanent home address, as in your passport or ID card. Required by law.",
+        "residence_copied": "Copied from %(name)s — change it if this person lives elsewhere.",
         "nationality": "Nationality",
+        "countries_common": "Most common",
+        "countries_all": "All countries",
         "doc_number": "Travel document number",
         "doc_number_help": "Passport or ID card number.",
         "visa_number": "Visa number",
@@ -255,14 +263,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature": "Signature",
         "signature_help": "Sign with your finger or mouse. This is required by Czech law.",
         "signature_clear": "Clear",
-        "signature_missing": "Please sign before submitting.",
-        "signature_kept": "Signature already saved. Sign again only if you need to change it.",
+        "signature_missing": "Please sign in the box before you continue.",
+        "signature_kept": "Your signature is saved. Sign again only if you want to change it.",
         "passport_photo_title": "Passport or ID document",
         "passport_photo_help": (
-            "Your host must check your details against your travel document by law. "
-            "Take a photo of the ID page, or upload a PDF (for example a registration form "
-            "with up to 11 guests). Access in the app is restricted to authorised host users. "
-            "It is deleted when they confirm the details; a scheduled stale-file sweep is the backstop."
+            "Your host must check your details against your document. Take a photo of the page "
+            "with your photo, or upload a PDF. Only your host can see it, and it is deleted after "
+            "they check it."
         ),
         "passport_photo_label": "Passport or ID document",
         "passport_photo_take": "Take photo",
@@ -270,14 +277,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_retake": "Retake or choose another",
         "passport_photo_selected": "Selected: %(name)s",
         "passport_photo_pending_nat": (
-            "Choose your nationality above — foreign guests must upload a passport or ID photo here."
+            "Choose your nationality in step 1 first."
         ),
         "passport_photo_not_required": (
             "Czech citizens do not upload a passport photo in this form."
         ),
         "passport_photo_hint": (
-            "Photo: JPEG, PNG, or WebP, up to 5 MB. PDF: up to 15 MB "
-            "(e.g. a multi-guest registration form)."
+            "A JPEG, PNG or WebP photo up to 5 MB, or a PDF up to 15 MB."
         ),
         "passport_photo_too_large_image": "The photo is too large. Use a file under 5 MB.",
         "passport_photo_too_large_pdf": "The PDF is too large. Use a file under 15 MB.",
@@ -285,42 +291,39 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Use a JPEG, PNG, or WebP photo, or a PDF registration form."
         ),
         "passport_photo_missing": "Please upload a photo of your passport or ID card.",
-        "legal_notice_title": "Legal information",
-        "legal_notice_intro": (
-            "Please read this before submitting. Czech accommodation law requires both you "
-            "and your host to follow the rules below."
+        "review_title": "Check before you send",
+        "review_help": (
+            "After you send, these details are locked and only your host can change them."
         ),
+        "review_edit": "Change",
+        "legal_notice_title": "Legal information",
+        "legal_notice_intro": "Please read this before you send.",
         "legal_notice_disclaimer": (
             "UbyHost is a software tool and this information does not replace legal advice."
         ),
         "legal_notice_duty_title": "Your legal duty",
         "legal_notice_duty_body": (
-            "Every accommodated person must be registered. Foreign nationals are reported to "
-            "the Foreign Police within three working days of check-in. Czech citizens are "
-            "recorded in the house book only. Providing these details is a statutory "
-            "requirement — not optional."
+            "Everyone staying must be registered. Foreign guests are reported to the Foreign "
+            "Police within three working days; Czech citizens only go into the house book. "
+            "This is required by law."
         ),
         "legal_notice_accuracy_title": "Accurate information only",
         "legal_notice_accuracy_body": (
-            "All fields must match your passport or national ID card exactly. The host remains "
-            "responsible for accuracy and may check your document, but automatic reporting can "
-            "occur without an in-app verification step. False or misleading information can lead "
-            "to fines for the host and may affect your stay."
+            "Enter everything exactly as in your passport or ID card. Your details may be "
+            "reported automatically, before your host checks them, and false details can mean "
+            "a fine for your host."
         ),
         "legal_notice_passport_title": "Passport photo (foreign nationals)",
         "legal_notice_passport_body": (
-            "Non-Czech guests must upload a clear photo of the ID page or a PDF registration "
-            "form. Your host compares it to the details you enter. The file is stored "
-            "temporarily with access restricted to authorised host users in this app, and deleted "
-            "when they confirm the match. If it is not verified, a scheduled sweep removes stale "
-            "files after the stay. It is not sent to the police."
+            "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
+            "sees it, to compare it with what you entered. It is deleted after the check, or "
+            "automatically after your stay. It is never sent to the police."
         ),
         "legal_notice_reporting_title": "Police reporting and house book",
         "legal_notice_reporting_body": (
-            "Complete foreign-guest records may be sent electronically and automatically to the "
-            "Police of the Czech Republic (UbyPort), immediately or after the delay selected by "
-            "the host, without waiting for in-app identity verification. The same information is "
-            "kept in the house book for six years and must be shown at a police inspection."
+            "Complete records of foreign guests may be sent to the Czech Police automatically — "
+            "straight away or after a delay your host chooses. The same details stay in the house "
+            "book for six years."
         ),
         "legal_notice_retention_title": "How long data is kept",
         "legal_notice_retention_body": (
@@ -335,8 +338,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "lawfully refuse accommodation."
         ),
         "legal_ack_label": (
-            "I confirm that my details are accurate, I have read the legal information above "
-            "and the privacy notice, and I understand my obligations under Czech law."
+            "My details are correct, and I have read the information above and the privacy "
+            "notice."
         ),
         "legal_ack_missing": "Please confirm that you have read the legal information.",
         "submit": "Submit my details",
@@ -482,8 +485,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "back": "Back",
         # E-mail the app sends to a guest. The plain-text and the HTML part are
         # both built from these keys, so the two cannot drift apart.
-        "mail_claim_subject": "Continue your Prague guest registration",
+        "mail_claim_subject": "Confirm your stay at %(property)s (link valid 30 min)",
+        "mail_claim_resend_subject": "New link: confirm your stay at %(property)s",
+        "mail_claim_preheader": (
+            "Tap the button, then fill in each guest — about 2 minutes per person."
+        ),
         "mail_claim_heading": "Confirm your stay",
+        "mail_claim_resend_heading": "Here is your new link",
         "mail_claim_intro": (
             "Confirm your stay at %(property)s (%(dates)s) by opening the link below."
         ),
@@ -502,20 +510,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_next_label": "What happens next",
         "mail_claim_next_body": (
             "You will enter the details of every guest of this stay and then sign. "
-            "It takes about two minutes per guest and works on a phone."
+            "It takes about two minutes per guest and works on a phone. If you're "
+            "asked for a PIN, use the one from your host's message."
         ),
-        "mail_completion_subject": "Guest registration received",
-        "mail_completion_heading": "Registration received",
+        "mail_completion_subject": (
+            "You're registered for %(property)s — nothing else to do"
+        ),
+        "mail_completion_heading": "You're all set",
         "mail_completion_intro": (
-            "Thank you. We have received the details for your stay at %(property)s "
-            "(%(dates)s)."
+            "Everyone for %(property)s (%(dates)s) is registered. "
+            "There is nothing else you need to do."
         ),
-        "mail_completion_action": "Open my stay",
-        "mail_completion_note_label": "Please note",
+        "mail_completion_action": "See your stay page",
         "mail_completion_note": (
-            "This receipt is not proof of police reporting. Depending on your host's "
-            "settings, complete foreign-guest records may be sent to UbyPort "
-            "automatically."
+            "Your host takes care of the official registration with the authorities. "
+            "This e-mail is your receipt, not an official confirmation."
         ),
         "mail_reminder_guest_subject": "Please finish your guest registration",
         "mail_reminder_guest_heading": "Your stay starts tomorrow",
@@ -558,15 +567,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "cizinecké policie."
         ),
         "why_point_book": (
-            "Stejné údaje se zapisují do domovní knihy, kterou ubytovatel uchovává 6 let a "
+            "Stejné údaje se zapisují do domovní knihy, kterou hostitel uchovává 6 let a "
             "předkládá při kontrole policie."
         ),
         "why_point_czech": (
             "Občané ČR se policii neoznamují — provede se pouze zápis do domovní knihy."
         ),
         "why_point_passport": (
-            "Pokud nejste občanem ČR, musíte nahrát fotografii stránky pasu nebo průkazu, "
-            "aby hostitel mohl ověřit údaje. Vidí ji jen hostitel; po ověření je smazána."
+            "Pokud to hostitel vyžaduje, cizinci nahrají fotku stránky pasu nebo průkazu, "
+            "aby mohl údaje zkontrolovat. Vidí ji jen hostitel a po kontrole se smaže."
         ),
         "why_point_accuracy": (
             "Musíte uvést pravdivé údaje shodné s cestovním dokladem. Hostitel za správnost "
@@ -597,29 +606,28 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host_details_missing": (
             "Použijte telefon nebo e-mail ze zprávy, ve které byl tento odkaz."
         ),
-        "message_from_host": "Zpráva od vašeho ubytovatele",
-        "claim_title": "Potvrďte počet hostů a e-mail",
+        "message_from_host": "Zpráva od vašeho hostitele",
+        "claim_title": "Počet osob a váš e-mail",
         "claim_help": (
-            "Na tuto adresu pošleme soukromý odkaz, aby formuláře vyplnil jen host. "
-            "Veřejný odkaz pak ukáže, že pobyt je přiřazen k vašemu zastřenému e-mailu."
+            "Pošleme vám soukromý odkaz, aby formuláře otevřela jen vaše skupina."
         ),
         "claim_email": "Jaký je váš e-mail?",
         "claim_email_help": (
-            "Adresu používáme k zabezpečení této rezervace, zaslání soukromého odkazu, "
-            "jednoho upozornění při nedokončení den před příjezdem a potvrzení o dokončení. "
-            "Správce objektu obdrží kopii potvrzení a oprávnění uživatelé ubytovatele mohou adresu "
-            "vidět; veřejné obrazovky pro hosty zobrazují jen zastřenou podobu. Žádný marketing."
+            "Pošleme sem odkaz, jedno připomenutí den před příjezdem, pokud formuláře "
+            "chybí, a potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje "
+            "zakrytě. Žádný marketing."
         ),
         "claim_cookie_help": (
-            "Nezbytné cookies si pamatují přístup přes PIN nejvýše 7 dní a jazyk, potvrzený pobyt "
-            "a formuláře odeslané z tohoto zařízení nejvýše 60 dní. UbyHost nepoužívá reklamní "
-            "ani analytické cookies."
+            "Jen nezbytné cookies: přístup přes PIN (7 dní), jazyk a tento pobyt (60 dní)."
         ),
         "claim_submit": "Pošlete mi odkaz na formulář",
         "claim_sent_title": "Zkontrolujte e-mail",
         "claim_sent_body": (
-            "Pokud je adresa správně, otevřete potvrzovací odkaz. "
-            "Na stagingu může hostitel odkaz zkopírovat v Nastavení → E-maily hostům."
+            "Poslali jsme odkaz na %(email)s. Otevřete ho v tomto telefonu a pokračujte — "
+            "platí 30 minut. Pokud se znovu zeptá na PIN, zadejte stejný."
+        ),
+        "claim_sent_retry": (
+            "E-mail ani po pár minutách nepřišel? Zkontrolujte spam, nebo ho pošlete znovu"
         ),
         "claim_error_bad_email": "Zadejte platnou e-mailovou adresu.",
         "claim_error_bad_party": "Zadejte počet osob (1–60).",
@@ -652,105 +660,114 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_not_started": "Vybrat tento termín",
         "error_no_stay": "Vyberte prosím termín svého pobytu.",
         "error_party_size": "Zadejte počet osob (1–60).",
-        "no_stays": "Momentálně tu není žádná rezervace k vyplnění.",
+        "no_stays": "Zatím tu není co vyplnit",
         "no_stays_help": (
-            "Odkaz bytu zobrazuje jen pobyty začínající v nejbližších dnech. Pokud už "
-            "příjezd proběhl, otevřete odkaz konkrétního pobytu z e-mailu nebo od "
-            "ubytovatele, nebo ubytovateli napište."
+            "Registrace se otevírá pár dní před příjezdem. Pak se vraťte na tento odkaz. "
+            "Už jste na místě? Napište hostiteli, pošle vám přímý odkaz na váš pobyt."
         ),
         "bad_link_title": "Tento odkaz není platný",
-        "bad_link_help": "Odkaz může být neúplný nebo byl nahrazen. Požádejte ubytovatele o nový odkaz.",
+        "bad_link_help": "Odkaz může být neúplný nebo byl nahrazen. Požádejte hostitele o nový odkaz.",
         "stay_gone_title": "Tento pobyt už není otevřený k registraci",
         "stay_gone_help": (
-            "Termín se mohl změnit, rezervace mohla být zrušena, nebo ubytovatel registraci "
-            "pro tento pobyt uzavřel. Napište prosím ubytovateli."
+            "Termín se mohl změnit, rezervace mohla být zrušena, nebo hostitel registraci "
+            "pro tento pobyt uzavřel. Napište prosím hostiteli."
         ),
         "form_expired_title": "Tomuto formuláři vypršela platnost",
         "form_expired_help": (
-            "Nic se neuložilo. Načtěte stránku znovu nebo začněte znovu přes odkaz níže."
+            "Nic se neuložilo. Začněte znovu přes odkaz níže."
         ),
         "rate_limited_title": "Příliš mnoho pokusů z vašeho připojení",
         "rate_limited_help": (
             "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu — pokud se "
-            "zaseknete, napište ubytovateli."
+            "zaseknete, napište hostiteli."
         ),
         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
         "not_yours_help": (
             "Aby jeden host neviděl údaje z pasu druhého, lze formulář znovu otevřít pouze na "
-            "zařízení, ze kterého byl vyplněn. Potřebujete-li opravu, napište ubytovateli."
+            "zařízení, ze kterého byl vyplněn. Potřebujete-li opravu, napište hostiteli."
         ),
         "already_filed_title": "Tyto údaje již byly oznámeny",
         "already_filed_help": (
             "Kvůli správnosti zákonného záznamu nelze oznámené údaje v tomto formuláři měnit. "
-            "Potřebujete-li opravu, napište ubytovateli."
+            "Potřebujete-li opravu, napište hostiteli."
         ),
         "form_locked_title": "Formulář je uzamčen",
         "form_locked_help": (
             "Vaše údaje byly uloženy a podepsány. Abychom chránili vaše informace, "
-            "formulář už z tohoto odkazu nelze měnit. Potřebujete-li opravu, napište ubytovateli."
+            "formulář už z tohoto odkazu nelze měnit. Potřebujete-li opravu, napište hostiteli."
         ),
-        "form_locked_short": "Uloženo a uzamčeno — pro změnu kontaktujte ubytovatele.",
+        "form_locked_short": "Uloženo a uzamčeno. Pro změnu kontaktujte hostitele.",
         "pin_title": "Zadejte přístupový PIN",
         "pin_help": (
-            "Ubytovatel vám spolu s odkazem poslal PIN. "
+            "Hostitel vám spolu s odkazem poslal PIN. "
             "Zadejte ho pro otevření formuláře."
         ),
         "pin_label": "PIN",
         "pin_submit": "Pokračovat",
-        "pin_wrong": "PIN není správný. Zkontrolujte zprávu od ubytovatele.",
-        "pin_recovery": "Nemůžete PIN najít? Požádejte ubytovatele o nové zaslání registrační zprávy.",
+        "pin_wrong": "PIN není správný. Zkontrolujte zprávu od hostitele.",
+        "pin_recovery": "Nemůžete PIN najít? Požádejte hostitele o nové zaslání registrační zprávy.",
         "pin_rate_limited": "Příliš mnoho chybných PINů. Počkejte asi 15 minut a zkuste to znovu.",
         "pin_locked_out": (
             "Příliš mnoho chybných pokusů o PIN, proto je tento odkaz na den pozastaven. "
-            "Požádejte ubytovatele o nový PIN."
+            "Požádejte hostitele o nový PIN."
         ),
         "security_check_failed": "Dokončete bezpečnostní kontrolu a zkuste to znovu.",
         "start_over": "Začít znovu",
-        "nights": "nocí",
+        "night_one": "%(n)s noc",
+        "nights_few": "%(n)s noci",
+        "nights_many": "%(n)s nocí",
         "arrive": "Příjezd",
         "depart": "Odjezd",
         "select": "To je moje rezervace",
         "party_question": "Kolik osob bude ubytováno?",
         "party_help": "Započítejte všechny včetně dětí. Každá osoba má vlastní formulář.",
         "party_confirm": "Pokračovat",
-        "people_progress": "vyplněno %(done)s z %(total)s osob",
+        "people_progress": "Zaregistrováno: %(done)s z %(total)s",
         "person_progress": "Osoba %(current)s z %(total)s",
         "form_step_progress": "Krok %(current)s z %(total)s",
+        "form_step_progress_title": "%(progress)s · %(title)s",
         "next_step": "Pokračovat",
         "previous_step": "Zpět",
         "add_person": "Přidat osobu",
         "add_first_person": "Začněte svými údaji",
-        "saved_title": "Údaje uloženy",
-        "saved_body": "Děkujeme. Níže si prosím zkontrolujte odeslané údaje.",
+        "saved_title": "Uloženo — děkujeme",
+        "saved_body": (
+            "Vaše údaje jsou uložené. Teď přidejte další osobu ze skupiny."
+        ),
         "reported_title": "Údaje byly odeslány a oznámeny",
         "reported_body": (
-            "Děkujeme. Ubytovatel již tento záznam oznámil. Pokud je třeba něco opravit, "
-            "kontaktujte ubytovatele."
+            "Děkujeme. Hostitel již tento záznam oznámil. Pokud je třeba něco opravit, "
+            "kontaktujte hostitele."
         ),
         "summary_title": "Vaše údaje",
+        "summary_fold_saved": "uloženo ✓",
         "your_details": "Vaše údaje",
         "person": "Osoba",
         "you": "vy",
         "completed": "vyplněno",
         "not_filled": "nevyplněno",
         "edit": "Upravit",
-        "all_done_title": "Děkujeme, vše je vyplněno",
-        "all_done_body": "Údaje všech ubytovaných jsou odeslány. Nic dalšího už není potřeba.",
+        "all_done_title": "Děkujeme — všichni jsou zaregistrovaní",
+        "all_done_body": "Nic dalšího už dělat nemusíte. Stránku můžete zavřít.",
+        "all_done_receipt": "Potvrzení jsme poslali na %(email)s.",
         "checkin_info": "Příjezd",
         "checkout_info": "Odjezd",
-        "still_missing": "Chybí ještě údaje %(n)s osob(y).",
+        "still_missing": "Zbývá zaregistrovat: %(n)s",
         "add_another": "Přidat další osobu",
         "someone_missing": (
-            "Chybí ještě někdo z vaší skupiny? Ohlásit se musí každý ubytovaný, "
-            "proto ho zde přidejte."
+            "Zapomněli jste na někoho? Registrovat se musí každý ubytovaný, včetně dětí."
         ),
         "continue_filling": "Pokračovat ve vyplnění",
         "surname": "Příjmení",
         "first_name": "Jméno",
         "birth_date": "Datum narození",
-        "birth_date_help": "Zadejte 8 číslic z pasu — lomítka se doplní automaticky.",
-        "residence_help": "Trvalé bydliště v zahraničí podle pasu. Povinné pro oznámení policii.",
+        "birth_date_help": "Den, měsíc, rok — např. 04/07/1990 pro 4. července 1990. Lomítka se doplní sama.",
+        "birth_date_readback": "Tedy %(date)s.",
+        "residence_help": "Adresa trvalého bydliště podle pasu nebo občanského průkazu. Vyžaduje ji zákon.",
+        "residence_copied": "Převzato od: %(name)s. Pokud tato osoba bydlí jinde, adresu změňte.",
         "nationality": "Státní občanství",
+        "countries_common": "Nejčastější",
+        "countries_all": "Všechny státy",
         "doc_number": "Číslo cestovního dokladu",
         "doc_number_help": "Číslo pasu nebo občanského průkazu.",
         "visa_number": "Číslo víza",
@@ -771,14 +788,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature": "Podpis",
         "signature_help": "Podepište se prstem nebo myší. Podpis vyžaduje český zákon.",
         "signature_clear": "Vymazat",
-        "signature_missing": "Před odesláním se prosím podepište.",
-        "signature_kept": "Podpis je uložený. Podepište se znovu jen pokud ho chcete změnit.",
+        "signature_missing": "Než budete pokračovat, podepište se prosím do rámečku.",
+        "signature_kept": "Podpis máme uložený. Znovu se podepište, jen pokud ho chcete změnit.",
         "passport_photo_title": "Pas nebo průkaz totožnosti",
         "passport_photo_help": (
-            "Hostitel musí ze zákona zkontrolovat vaše údaje proti cestovnímu dokladu. "
-            "Vyfoťte stránku s údaji nebo nahrajte PDF (např. registrační formulář až pro "
-            "11 hostů). Přístup v aplikaci mají jen oprávnění uživatelé ubytovatele. Po ověření "
-            "se soubor smaže; pojistkou je plánované mazání starých souborů."
+            "Hostitel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
+            "nahrajte PDF. Uvidí ji jen hostitel a po kontrole se smaže."
         ),
         "passport_photo_label": "Pas nebo průkaz totožnosti",
         "passport_photo_take": "Vyfotit",
@@ -786,14 +801,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_retake": "Vyfotit nebo vybrat jiný",
         "passport_photo_selected": "Vybráno: %(name)s",
         "passport_photo_pending_nat": (
-            "Nejprve zvolte státní příslušnost — cizinci zde nahrají fotografii pasu nebo průkazu."
+            "Nejdřív v kroku 1 vyberte státní občanství."
         ),
         "passport_photo_not_required": (
             "Občané ČR v tomto formuláři fotografii pasu nenahrávají."
         ),
         "passport_photo_hint": (
-            "Fotografie: JPEG, PNG nebo WebP, max. 5 MB. PDF: max. 15 MB "
-            "(např. registrační formulář pro více hostů)."
+            "Fotka JPEG, PNG nebo WebP do 5 MB, nebo PDF do 15 MB."
         ),
         "passport_photo_too_large_image": "Fotografie je příliš velká. Maximálně 5 MB.",
         "passport_photo_too_large_pdf": "PDF je příliš velké. Maximálně 15 MB.",
@@ -801,39 +815,38 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Použijte fotografii JPEG, PNG nebo WebP, nebo PDF registrační formulář."
         ),
         "passport_photo_missing": "Nahrajte prosím fotografii pasu nebo občanského průkazu.",
-        "legal_notice_title": "Právní informace",
-        "legal_notice_intro": (
-            "Před odesláním si prosím přečtěte. Český zákon o ubytování vyžaduje, aby vy i "
-            "ubytovatel dodrželi níže uvedená pravidla."
+        "review_title": "Před odesláním zkontrolujte",
+        "review_help": (
+            "Po odeslání se údaje uzamknou a změnit je může už jen hostitel."
         ),
+        "review_edit": "Změnit",
+        "legal_notice_title": "Právní informace",
+        "legal_notice_intro": "Před odesláním si to prosím přečtěte.",
         "legal_notice_disclaimer": (
             "UbyHost je softwarový nástroj a tyto informace nenahrazují právní poradenství."
         ),
         "legal_notice_duty_title": "Vaše zákonná povinnost",
         "legal_notice_duty_body": (
-            "Každá ubytovaná osoba musí být evidována. Cizinci se oznamují cizinecké policii "
-            "do tří pracovních dnů od ubytování. Občané ČR se zapisují pouze do domovní knihy. "
-            "Poskytnutí údajů je zákonný požadavek — není dobrovolné."
+            "Registrovat se musí každý ubytovaný. Cizince ubytovatel do tří pracovních dnů "
+            "ohlásí cizinecké policii, občany ČR jen zapíše do domovní knihy. Vyžaduje to zákon."
         ),
         "legal_notice_accuracy_title": "Pouze pravdivé údaje",
         "legal_notice_accuracy_body": (
-            "Všechna pole musí přesně odpovídat pasu nebo občanskému průkazu. Ubytovatel nadále "
-            "odpovídá za správnost a může doklad zkontrolovat, automatické hlášení však může "
-            "proběhnout bez ověření v aplikaci. Nepravdivé údaje mohou vést k pokutám pro "
-            "ubytovatele a ovlivnit váš pobyt."
+            "Vše vyplňte přesně podle pasu nebo občanského průkazu. Údaje se mohou ohlásit "
+            "automaticky ještě předtím, než je ubytovatel zkontroluje, a za nepravdivé údaje "
+            "hrozí ubytovateli pokuta."
         ),
         "legal_notice_passport_title": "Fotografie pasu (cizinci)",
         "legal_notice_passport_body": (
-            "Cizinci musí nahrát čitelnou fotografii stránky s údaji nebo PDF registrační "
-            "formulář. Hostitel ho porovná s vyplněnými poli. Soubor je uložen dočasně a přístup "
-            "v aplikaci mají jen oprávnění uživatelé ubytovatele. Po potvrzení shody se smaže; "
-            "pokud ověřen není, plánovaná úloha odstraní starý soubor po pobytu. Policii se neposílá."
+            "Cizinci nahrají fotku stránky pasu nebo průkazu (nebo PDF). Uvidí ji jen ubytovatel, "
+            "aby ji porovnal s vyplněnými údaji. Po kontrole se smaže, jinak automaticky po "
+            "skončení pobytu. Policii se nikdy neposílá."
         ),
         "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
         "legal_notice_reporting_body": (
-            "Kompletní záznamy cizinců mohou být elektronicky a automaticky odeslány Policii ČR "
-            "(UbyPort), okamžitě nebo po prodlevě zvolené ubytovatelem, bez čekání na ověření "
-            "totožnosti v aplikaci. Stejné údaje se vedou v domovní knize šest let."
+            "Kompletní záznamy cizinců se mohou Policii ČR odeslat automaticky — hned, nebo "
+            "s odkladem, který nastaví ubytovatel. Stejné údaje zůstávají šest let v domovní "
+            "knize."
         ),
         "legal_notice_retention_title": "Jak dlouho se údaje uchovávají",
         "legal_notice_retention_body": (
@@ -848,8 +861,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "po právu odmítnout."
         ),
         "legal_ack_label": (
-            "Potvrzuji, že mé údaje jsou správné, že jsem si přečetl(a) právní informace výše "
-            "a informaci o zpracování údajů a rozumím svým povinnostem podle českého práva."
+            "Moje údaje jsou správné a přečetl(a) jsem si informace výše i zásady zpracování "
+            "údajů."
         ),
         "legal_ack_missing": "Potvrďte prosím, že jste si přečetli právní informace.",
         "submit": "Odeslat údaje",
@@ -991,8 +1004,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "back": "Zpět",
         # E-mail, který aplikace posílá hostovi. Textová i HTML část se skládá
         # z těchto klíčů, takže se nemohou rozejít.
-        "mail_claim_subject": "Pokračujte v registraci hostů",
+        "mail_claim_subject": (
+            "Potvrďte svůj pobyt – %(property)s (odkaz platí 30 minut)"
+        ),
+        "mail_claim_resend_subject": "Nový odkaz: potvrďte svůj pobyt – %(property)s",
+        "mail_claim_preheader": (
+            "Klepněte na tlačítko a vyplňte údaje hostů – asi 2 minuty na osobu."
+        ),
         "mail_claim_heading": "Potvrďte svůj pobyt",
+        "mail_claim_resend_heading": "Tady je váš nový odkaz",
         "mail_claim_intro": (
             "Potvrďte pobyt v %(property)s (%(dates)s) otevřením odkazu níže."
         ),
@@ -1010,18 +1030,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_next_label": "Co bude následovat",
         "mail_claim_next_body": (
             "Vyplníte údaje ke každému hostovi tohoto pobytu a poté je podepíšete. "
-            "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu."
+            "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu. "
+            "Pokud se stránka zeptá na PIN, použijte ten ze zprávy od hostitele."
         ),
-        "mail_completion_subject": "Registrace hostů byla přijata",
-        "mail_completion_heading": "Registrace byla přijata",
+        "mail_completion_subject": (
+            "Registrace hotová – %(property)s. Nic dalšího nemusíte dělat"
+        ),
+        "mail_completion_heading": "Hotovo",
         "mail_completion_intro": (
-            "Děkujeme. Obdrželi jsme údaje k vašemu pobytu v %(property)s (%(dates)s)."
+            "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
+            "Nic dalšího dělat nemusíte."
         ),
-        "mail_completion_action": "Otevřít můj pobyt",
-        "mail_completion_note_label": "Upozornění",
+        "mail_completion_action": "Zobrazit stránku pobytu",
         "mail_completion_note": (
-            "Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele "
-            "mohou být kompletní záznamy cizinců odeslány do UbyPortu automaticky."
+            "Úřední hlášení vyřizuje váš hostitel. Tento e-mail je potvrzení pro vás, "
+            "nikoli úřední doklad."
         ),
         "mail_reminder_guest_subject": "Dokončete prosím registraci hostů",
         "mail_reminder_guest_heading": "Váš pobyt začíná zítra",
