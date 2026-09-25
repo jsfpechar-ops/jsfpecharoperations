@@ -41,7 +41,7 @@ CS_MESSAGES: Dict[str, str] = {
     "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
     validation.STAY_OUTSIDE_BOOKING_MESSAGE: (
         "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se "
-        "obraťte na ubytovatele."
+        "obraťte na hostitele."
     ),
     validation.STAY_DATE_UNREADABLE_MESSAGE: (
         "Termíny pobytu na této stránce nejsou čitelné. Načtěte stránku znovu."

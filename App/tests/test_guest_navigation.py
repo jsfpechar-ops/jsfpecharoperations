@@ -319,7 +319,7 @@ def test_the_last_step_offers_a_review_list_with_a_way_back():
         cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
         assert cs_page.status_code == 200
         assert "Před odesláním zkontrolujte" in cs_page.text
-        assert "změnit je může už jen ubytovatel" in cs_page.text
+        assert "změnit je může už jen hostitel" in cs_page.text
         assert 'data-edit-label="Změnit"' in cs_page.text
     finally:
         _cleanup()
@@ -450,8 +450,8 @@ def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
         cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
         assert cs_page.status_code == 200
         assert (
-            "Ubytovatel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
-            "nahrajte PDF. Uvidí ji jen ubytovatel a po kontrole se smaže."
+            "Hostitel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
+            "nahrajte PDF. Uvidí ji jen hostitel a po kontrole se smaže."
         ) in cs_page.text
         assert "Fotka JPEG, PNG nebo WebP do 5 MB, nebo PDF do 15 MB." in cs_page.text
         assert "Nejdřív v kroku 1 vyberte státní občanství." in cs_page.text
