@@ -85,7 +85,11 @@ def _seed():
         ("sk-SK,sk;q=0.9,cs;q=0.8", "cs"),
         ("de-DE,de;q=0.9,en;q=0.8", "en"),
         ("en-GB,en;q=0.9", "en"),
-        ("", "en"),
+        # A client that names no language at all is not a foreign guest, so the
+        # documented guest-link default stands. Every real browser sends this
+        # header, so this only ever describes a harness.
+        ("", "cs"),
+        ("*", "cs"),
     ],
 )
 def test_a_guest_without_a_language_choice_gets_the_language_of_their_phone(
