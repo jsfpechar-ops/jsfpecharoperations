@@ -82,7 +82,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "built for Czech short-term hosts."
         ),
         "onboarding.kicker": "Your five-step launch",
-        "onboarding.welcome_title": "Set it once. Welcome every guest calmly.",
+        "onboarding.welcome_title": "Set up UbyHost in five steps",
         "onboarding.welcome_lede": (
             "We will take you from legal details to a guest-ready link. One clear task at a time; "
             "UbyHost remembers where you stopped."
@@ -104,7 +104,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "New reporting starts in the mode you choose. Demo data never reaches the real police, "
             "and guest e-mail stays off until delivery is configured."
         ),
-        "onboarding.finish_line": "Complete these five checks and your first guest journey is ready.",
+        "onboarding.finish_line": "Finish these five steps and you can send guests their registration link.",
         "onboarding.finish_line_done": "All five checks are done — share the link below with your guests.",
         "onboarding.finish_kicker": "You are ready",
         "onboarding.finish_strip": "Setup is done — your guest link and PIN are ready.",
@@ -119,7 +119,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Optional host welcome message lives under Communication on the property page —"
         ),
         "onboarding.finish_message_link": "edit host message",
-        "onboarding.finish_passport_tip": "Passport or ID photo policy for this property:",
+        "onboarding.finish_passport_tip": "Passport or ID photo for this property:",
         "onboarding.finish_reopen_tip": (
             "You can skip this guidance any time and reopen it later from Overview or the setup checklist."
         ),
@@ -1300,7 +1300,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "pro krátkodobé pronájmy v Česku."
         ),
         "onboarding.kicker": "Spuštění v pěti krocích",
-        "onboarding.welcome_title": "Nastavte jednou. Každého hosta přivítejte v klidu.",
+        "onboarding.welcome_title": "Nastavení UbyHostu v pěti krocích",
         "onboarding.welcome_lede": (
             "Provedeme vás od právních údajů až k odkazu připravenému pro hosty. Vždy jeden jasný "
             "úkol; UbyHost si pamatuje, kde jste skončili."
@@ -1322,7 +1322,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Hlášení začne v režimu, který zvolíte. Ukázková data se skutečné policii nikdy "
             "neodešlou a e-maily hostům zůstanou vypnuté, dokud není připraveno doručení."
         ),
-        "onboarding.finish_line": "Dokončete těchto pět kontrol a první cesta hosta je připravena.",
+        "onboarding.finish_line": "Dokončete těchto pět kroků a můžete hostům poslat odkaz k registraci.",
         "onboarding.finish_line_done": "Všech pět kontrol je hotových — odkaz níže pošlete hostům.",
         "onboarding.finish_kicker": "Jste připraveni",
         "onboarding.finish_strip": "Nastavení je hotové — odkaz a PIN pro hosty jsou připravené.",
@@ -1337,7 +1337,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Volitelná uvítací zpráva hostitele je v sekci Komunikace na stránce ubytování —"
         ),
         "onboarding.finish_message_link": "upravit zprávu hostitele",
-        "onboarding.finish_passport_tip": "Politika fotografie pasu nebo dokladu u tohoto ubytování:",
+        "onboarding.finish_passport_tip": "Fotka pasu nebo dokladu u tohoto ubytování:",
         "onboarding.finish_reopen_tip": (
             "Průvodce můžete kdykoli skrýt a znovu otevřít z Přehledu nebo kontrolního seznamu."
         ),
@@ -1358,7 +1358,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.property.prepare": (
             "Připravte si: policejní dopis zařízení, IDUB, zkratku, oficiální název, adresu a login UBY-WS."
         ),
-        "onboarding.property.why": "Přesné hodnoty zabrání odmítnutí hlavičky UbyPortem.",
+        "onboarding.property.why": "Přesné údaje zabrání tomu, aby UbyPort hlášení odmítl.",
         "onboarding.property.action": "Přidat ubytování",
         "onboarding.calendars.title": "Odkazy na kalendáře",
         "onboarding.calendars.detail": (
@@ -1386,7 +1386,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "onboarding.guest_link.why": "Stejný odkaz a PIN vložte do zprávy před příjezdem na každém portálu.",
         "onboarding.guest_link.action": "Prohlédnout a kopírovat odkaz",
-        "onboarding.demo_title": "Chcete se nejdřív učit bez skutečných údajů?",
+        "onboarding.demo_title": "Chcete si to nejdřív vyzkoušet nanečisto?",
         "onboarding.demo_body": (
             "Načtěte dvě bezpečná ukázková ubytování a vyzkoušejte převzetí, pasy, správce, hlášení i knihu."
         ),

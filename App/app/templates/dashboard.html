@@ -78,7 +78,7 @@
 
 {% if not apartments %}
   {% if not onboarding.dismissed %}
-    {{ onboarding_welcome(onboarding) }}
+    {{ onboarding_welcome(onboarding, compact=True) }}
   {% else %}
     <div class="panel empty onboarding-skipped">
       <h2>{{ t('onboarding.skipped_title') }}</h2>

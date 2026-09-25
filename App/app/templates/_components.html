@@ -318,7 +318,11 @@
   {% endif %}
 {% endmacro %}
 
-{% macro onboarding_welcome(onboarding) %}
+{% macro onboarding_welcome(onboarding, compact=False) %}
+  {# On the Overview the "Do this now" block already carries the current step's
+     detail and "Have ready" text, so the list below it collapses to one line per
+     step and the full checklist stays one click away at /onboarding. #}
+  {% set compact_list = compact and onboarding.current and not onboarding.finished %}
   <section class="onboarding-welcome">
     <header class="onboarding-intro">
       <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="">
@@ -384,22 +388,31 @@
           <div class="onboarding-step-index" aria-hidden="true">{% if step.done %}✓{% else %}{{ loop.index }}{% endif %}</div>
           <div class="onboarding-step-copy">
             <h3>{{ t('onboarding.' ~ step.id ~ '.title') }}</h3>
-            <p>{{ t('onboarding.' ~ step.id ~ '.detail') }}</p>
-            <small>{{ t('onboarding.' ~ step.id ~ '.prepare') }}</small>
+            {% if not compact_list %}
+              <p>{{ t('onboarding.' ~ step.id ~ '.detail') }}</p>
+              <small>{{ t('onboarding.' ~ step.id ~ '.prepare') }}</small>
+            {% endif %}
           </div>
           {% if step.done %}
             <span class="pill green">{{ t('onboarding.step_done') }}</span>
           {% elif onboarding.current and step.id == onboarding.current.id %}
             <span class="onboarding-current-dot" aria-hidden="true"></span>
           {% endif %}
-          <details>
-            <summary>{{ t('onboarding.learn') }}</summary>
-            <p>{{ t('onboarding.' ~ step.id ~ '.why') }}</p>
-            <a href="{{ step.learn_url }}">{{ t('nav.guide') }} →</a>
-          </details>
+          {% if not compact_list %}
+            <details>
+              <summary>{{ t('onboarding.learn') }}</summary>
+              <p>{{ t('onboarding.' ~ step.id ~ '.why') }}</p>
+              <a href="{{ step.learn_url }}">{{ t('nav.guide') }} →</a>
+            </details>
+          {% endif %}
         </article>
       {% endfor %}
     </div>
+    {% if compact_list %}
+      <p class="small muted" style="margin-top:10px">
+        <a href="/onboarding">{{ t('onboarding.all_steps') }}</a>
+      </p>
+    {% endif %}
 
     <div class="onboarding-bottom {{ 'single' if not demo_available else '' }}">
       <div class="onboarding-safety">
