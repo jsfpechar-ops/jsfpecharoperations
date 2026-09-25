@@ -263,7 +263,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_help": "Sign with your finger or mouse. This is required by Czech law.",
         "signature_clear": "Clear",
         "signature_missing": "Please sign in the box before you continue.",
-        "signature_kept": "Signature already saved. Sign again only if you need to change it.",
+        "signature_kept": "Your signature is saved. Sign again only if you want to change it.",
         "passport_photo_title": "Passport or ID document",
         "passport_photo_help": (
             "Your host must check your details against your document. Take a photo of the page "
@@ -787,7 +787,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_help": "Podepište se prstem nebo myší. Podpis vyžaduje český zákon.",
         "signature_clear": "Vymazat",
         "signature_missing": "Než budete pokračovat, podepište se prosím do rámečku.",
-        "signature_kept": "Podpis je uložený. Podepište se znovu jen pokud ho chcete změnit.",
+        "signature_kept": "Podpis máme uložený. Znovu se podepište, jen pokud ho chcete změnit.",
         "passport_photo_title": "Pas nebo průkaz totožnosti",
         "passport_photo_help": (
             "Ubytovatel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "

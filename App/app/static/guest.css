@@ -720,6 +720,9 @@ select {
   padding: 4px 2px;
 }
 .g-sign .bar .err { color: var(--g-bad); font-weight: 600; }
+/* The same line carries the "your signature is still saved" reassurance, which
+   is not a problem and must not be dressed like one. */
+.g-sign .bar .hint { color: var(--g-muted); }
 
 /* --- legal / explainer ------------------------------------------------- */
 
