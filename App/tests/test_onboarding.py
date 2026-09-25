@@ -355,3 +355,51 @@ def test_the_calendar_step_offers_adding_a_stay_by_hand():
 
     assert "Připojte Airbnb nebo Booking.com — nebo přidejte přímou rezervaci ručně." in czech.text
     assert "Přidat pobyt ručně" in czech.text
+
+
+def test_the_police_reporting_step_points_at_the_property_page():
+    """The credentials and the address are both on the property page, and the
+    automation card only carries the credentials, so that is where the step has
+    to land."""
+    owner_id = auth.create_account("onboard-ubyport", "Secure-Password-123", role="host")
+    entity_id = _entity(owner_id)
+    apartment_id = _unique_apartment(owner_id, entity_id, "ubyportstep1")
+
+    progress = onboarding.progress(owner_id)
+    step = progress["steps"][3]
+
+    assert step["id"] == "automation"
+    assert step["url"] == f"/apartments/{apartment_id}#ubyport"
+
+
+def test_the_police_reporting_step_is_named_for_what_it_asks_for():
+    owner_id = auth.create_account(
+        "onboard-ubyport-copy",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    entity_id = _entity(owner_id)
+    _unique_apartment(owner_id, entity_id, "ubyportstep2")
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    english = client.get("/onboarding?lang=en")
+
+    assert "Police reporting details" in english.text
+
+    czech = client.get("/onboarding?lang=cs")
+
+    assert "Údaje pro hlášení policii" in czech.text
+
+
+def test_the_police_reporting_step_without_a_property_offers_creating_one():
+    owner_id = auth.create_account("onboard-ubyport-none", "Secure-Password-123", role="host")
+    _entity(owner_id)
+
+    assert onboarding.progress(owner_id)["current"]["id"] == "property"
+    assert onboarding.progress(owner_id)["steps"][3]["url"] == "/apartments/new"

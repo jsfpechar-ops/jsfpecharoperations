@@ -627,20 +627,83 @@ def _automation_payload(form) -> Dict[str, Any]:
     return payload
 
 
+# What the property form calls each field the automation card can report as
+# missing. The anchor is the field's own id on that page, so the link lands on
+# the input the host has to fill in.
+_APARTMENT_FIELD_LABELS: Dict[str, Optional[str]] = {
+    "uby_idub": None,
+    "uby_mark": "apartment.form.ubyport.mark_label",
+    "uby_name": "automation.facility_name",
+    "uby_contact": "automation.contact",
+    "uby_ws_user": "automation.login",
+    "uby_ws_password": "automation.password",
+    "addr_okres": "apartment.form.addr.okres",
+    "addr_obec": "apartment.form.addr.obec",
+    "addr_obec_cast": "apartment.form.addr.obec_cast",
+    "addr_street": "apartment.form.addr.street",
+    "addr_house_no": "apartment.form.addr.house_no",
+    "addr_orient_no": "apartment.form.addr.orient_no",
+    "addr_zip": "apartment.form.addr.zip",
+    "legal_entity_id": "apartment.form.entity.label",
+}
+
+# The two labels that read the same in both languages, so they need no key.
+_APARTMENT_FIELD_LITERALS = {"uby_idub": "IDUB"}
+
+
+def _missing_fields(issues: List[validation.Issue]) -> List[Dict[str, str]]:
+    """The validation issues as links the host can act on.
+
+    One entry per field: a name that is both empty and too long is still one
+    thing to go and fix.
+    """
+    missing: List[Dict[str, str]] = []
+    for issue in issues:
+        if any(item["field"] == issue.field for item in missing):
+            continue
+        missing.append(
+            {
+                "field": issue.field,
+                "label_key": _APARTMENT_FIELD_LABELS.get(issue.field) or "",
+                "label": _APARTMENT_FIELD_LITERALS.get(issue.field, issue.field),
+            }
+        )
+    return missing
+
+
+def _save_automation_form(apartment_id: int, form) -> None:
+    """Persist the automation card.
+
+    Split out of ``automation_update`` because the credentials test on this page
+    has to save what the host just typed before it uses it. It is a *different*
+    payload from the property form's: the card posts no name, address or entity,
+    so saving it through ``_apartment_payload`` would blank them.
+    """
+    payload = _automation_payload(form)
+    password = _form_str(form, "uby_ws_password")
+    if password:
+        payload["uby_ws_password_enc"] = db.encrypt_secret(password)
+    db.update("apartment", apartment_id, payload)
+    db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
+
+
 @router.get("/automation")
 def automation_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
     apartments = access.apartments(request)
-    rows = [
-        {
-            "apartment": apartment,
-            "issues": validation.errors_only(_apartment_issues(apartment)),
-            "has_password": bool(apartment["uby_ws_password_enc"]),
-        }
-        for apartment in apartments
-    ]
+    rows = []
+    for apartment in apartments:
+        issues = validation.errors_only(_apartment_issues(apartment))
+        rows.append(
+            {
+                "apartment": apartment,
+                "issues": issues,
+                "missing": _missing_fields(issues),
+                "has_password": bool(apartment["uby_ws_password_enc"]),
+            }
+        )
     return render(
         request,
         "automation.html",
@@ -660,12 +723,7 @@ async def automation_update(apartment_id: int, request: Request):
     if not apartment:
         return _back("/automation", err=_flash(request, "flash.error.no_such_apartment"))
     form = await request.form()
-    payload = _automation_payload(form)
-    password = _form_str(form, "uby_ws_password")
-    if password:
-        payload["uby_ws_password_enc"] = db.encrypt_secret(password)
-    db.update("apartment", apartment_id, payload)
-    db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
+    _save_automation_form(apartment_id, form)
     return _back(
         _form_return_to(form, f"/automation#apartment-{apartment_id}"),
         msg=_flash(request, "flash.apartments.settings_saved", name=apartment["internal_name"]),
@@ -795,7 +853,12 @@ async def test_connection(apartment_id: int, request: Request):
     # A host pastes the credentials from the police letter and clicks the test.
     # Testing the saved values while the typed ones sat in the form was a
     # silent data loss, so the typed values are saved first and then tested.
-    if _posted_credentials(form):
+    if _form_str(form, "form_source") == "automation":
+        # The automation card posts only its own fields, so it has to be saved
+        # through its own payload; the property payload would blank the rest.
+        if access.apartment(request, apartment_id):
+            _save_automation_form(apartment_id, form)
+    elif _posted_credentials(form):
         rejected = _save_apartment_form(apartment_id, request, form)
         if rejected:
             return rejected

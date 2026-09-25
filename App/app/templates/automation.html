@@ -15,16 +15,28 @@
     <section class="panel" id="apartment-{{ apartment.id }}">
       <div class="section-heading" style="margin-top:0">
         <h2>{{ apartment.internal_name }}</h2>
-        {% if row.issues %}
-          <span class="pill red">{{ t('automation.to_fix', count=row.issues | length) }}</span>
-        {% else %}
+        {% if not row.missing %}
           <span class="pill green">{{ t('automation.ready') }}</span>
         {% endif %}
       </div>
       {% if apartment.uby_name %}<p class="small muted">{{ apartment.uby_name }}</p>{% endif %}
 
+      {% if row.missing %}
+      <div class="banner warning">
+        <div class="grow">
+          <strong>{{ t('automation.missing') }}</strong>
+          <small>
+            {% for item in row.missing %}<a href="/apartments/{{ apartment.id }}#{{ item.field }}">{{
+              t(item.label_key) if item.label_key else item.label
+            }}</a>{{ ', ' if not loop.last }}{% endfor %}
+          </small>
+        </div>
+      </div>
+      {% endif %}
+
       <form method="post" action="/automation/{{ apartment.id }}">
         <input type="hidden" name="return_to" value="/automation#apartment-{{ apartment.id }}">
+        <input type="hidden" name="form_source" value="automation">
 
         <h3>{{ t('automation.timing_title') }}</h3>
         <p class="small muted">{{ t('automation.timing_help') }}</p>
