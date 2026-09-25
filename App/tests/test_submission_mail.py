@@ -519,3 +519,33 @@ def test_the_new_strings_exist_in_both_languages():
 def test_the_submission_problem_kind_is_registered():
     """enqueue raises on an unknown kind, so the registration is load-bearing."""
     assert "submission_problem" in mail.KINDS
+
+
+def _problem(stays=None):
+    return mail_notify.build_submission_problem(
+        property_name="Riverside Loft",
+        state="error",
+        reason="112: critical transmission error",
+        transport=False,
+        stays=stays or [],
+        submission_id=None,
+        lang="en",
+    )
+
+
+def test_the_submission_mail_uses_the_action_colour_and_not_the_identity_coral():
+    """E-9: the stay links and the note label were the identity coral."""
+    stays = [
+        {
+            "id": 7,
+            "summary": "Novák family",
+            "property_name": "Riverside Loft",
+            "date_from": "2026-01-05",
+            "date_to": "2026-01-08",
+        }
+    ]
+    html = _problem(stays)["html"]
+    assert f"color:{mail_notify.BRAND_ACTION};text-decoration:underline;" in html
+    assert f"color:{mail_notify.BRAND_INK};" in html
+    assert "#c85a52" not in html
+

@@ -42,7 +42,14 @@ INK_MUTED = "#73736e"
 CANVAS = "#f7f7f5"
 SURFACE = "#ffffff"
 LINE = "#e4e4e1"
-BRAND = "#c85a52"
+# The two members of the brand ramp the web app actually puts text and buttons
+# in: tokens.css ``--brand-action`` for anything a guest has to read or tap, and
+# ``--brand-ink`` for a small label on the tinted note. The identity colour
+# itself (``--brand``, #c85a52) is deliberately absent: white on it is 4.17:1,
+# which fails AA, and it fails on white too. ``BRAND_SOFT`` is a background
+# only, where it carries no text.
+BRAND_ACTION = "#ad4942"
+BRAND_INK = "#963e38"
 BRAND_SOFT = "#f9e9e7"
 
 _FONT = (
@@ -244,7 +251,7 @@ def _block_note(label: str, body: str) -> str:
     return (
         f'<tr><td style="padding:24px 32px 0 32px;">'
         f'<div style="background:{BRAND_SOFT};border-radius:10px;padding:16px 18px;">'
-        f'<div style="font:600 13px/1.4 {_FONT};color:{BRAND};'
+        f'<div style="font:600 13px/1.4 {_FONT};color:{BRAND_INK};'
         f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 8px 0;">'
         f"{_esc(label)}</div>"
         f'<div style="font:400 14px/1.6 {_FONT};color:{INK};'
@@ -354,7 +361,7 @@ def _block_link(url: str, label: str) -> str:
         f"{_esc(label)}</div>"
         f'<div style="font:400 13px/1.6 {_FONT};color:{INK_SECONDARY};'
         f'word-break:break-all;">'
-        f'<a href="{_esc(url)}" style="color:{BRAND};text-decoration:underline;">'
+        f'<a href="{_esc(url)}" style="color:{BRAND_ACTION};text-decoration:underline;">'
         f"{_esc(url)}</a></div></td></tr>"
     )
 
@@ -587,13 +594,18 @@ def _build_text(
 
 
 def _button(url: str, label: str) -> str:
+    # The padding sits on the cell, not the anchor, because Outlook drops
+    # padding on an inline element and would otherwise leave a text-sized
+    # click target inside a painted box. The anchor is a block filling the
+    # padded cell, so the whole 48px-tall button is clickable everywhere.
     return (
         f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
         f'style="border-collapse:separate;margin:0 0 8px 0;">'
-        f'<tr><td style="background:{BRAND};border-radius:8px;">'
-        f'<a href="{_esc(url)}" style="display:inline-block;padding:11px 20px;'
-        f"font:600 15px/1 {_FONT};color:{SURFACE};text-decoration:none;"
-        f'border-radius:8px;">{_esc(label)}</a>'
+        f'<tr><td style="background:{BRAND_ACTION};border-radius:8px;'
+        f'padding:14px 24px;">'
+        f'<a href="{_esc(url)}" style="display:block;padding:0;'
+        f"font:600 16px/20px {_FONT};color:{SURFACE};text-decoration:none;"
+        f'">{_esc(label)}</a>'
         f"</td></tr></table>"
     )
 
@@ -627,7 +639,7 @@ def _build_html(
             f'<div style="font:400 14px/1.5 {_FONT};color:{INK_SECONDARY};">'
             f"{_esc(stay['property_name'])}</div>"
             f'<div style="padding:6px 0 0 0;"><a href="{_esc(url)}" '
-            f"style=\"font:600 14px/1.4 {_FONT};color:{BRAND};text-decoration:underline;"
+            f"style=\"font:600 14px/1.4 {_FONT};color:{BRAND_ACTION};text-decoration:underline;"
             f'">{_esc(action_stay)}</a></div>'
             f"</td></tr>"
             f'<tr><td style="height:10px;line-height:10px;font-size:0;">&nbsp;</td></tr>'
