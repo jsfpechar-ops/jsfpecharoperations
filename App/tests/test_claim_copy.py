@@ -48,11 +48,12 @@ AUDIT_COPY = {
 }
 
 # The guest pages that render the shared "why we collect this" fold.
+# UX-118 (audit A-31) dropped it from unavailable.html: a dead-end page has no
+# form to explain, so the fold only added length.
 GUEST_PAGES_WITH_WHY = (
     "claim.html",
     "form.html",
     "pick.html",
-    "unavailable.html",
 )
 
 
