@@ -197,7 +197,7 @@
         <div class="guest-card-state">
           {% if guest.submit_state == 'sent' %}
             <span class="pill green">{{ t('stay.detail.guests.reported') }}</span>
-            {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at[:16].replace('T', ' ') }}</span>{% endif %}
+            {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at | datetime_local }}</span>{% endif %}
           {% elif guest.submit_state == 'not_required' %}
             <span class="pill grey">{{ t('stay.detail.guests.exempt') }}</span>
           {% elif guest.submit_state == 'error' %}
@@ -319,7 +319,7 @@
       <tbody>
       {% for submission in submissions %}
         <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link">
-          <td class="nowrap small" data-label="{{ t('stay.detail.reports.when') }}">{{ submission.created_at[:16].replace('T', ' ') }}</td>
+          <td class="nowrap small" data-label="{{ t('stay.detail.reports.when') }}">{{ submission.created_at | datetime_local }}</td>
           <td data-label="{{ t('stay.detail.reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
           <td class="mono small" data-label="{{ t('stay.detail.reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
           <td class="nowrap row-actions" data-label="">

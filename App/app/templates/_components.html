@@ -111,7 +111,7 @@
       </button>
     </form>
     {% if last_sync %}
-      <p class="small muted sync-cta-meta">{{ t('dashboard.last_synced', when=last_sync[:16].replace('T', ' ')) }}</p>
+      <p class="small muted sync-cta-meta">{{ t('dashboard.last_synced', when=last_sync | datetime_local) }}</p>
     {% endif %}
   </div>
 {% endmacro %}

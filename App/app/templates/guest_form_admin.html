@@ -37,7 +37,7 @@
 {% if editing and guest.submit_state == 'sent' %}
   <div class="banner info">
     <div class="grow">
-      <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at[:16].replace('T', ' ')) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
+      <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
       <small>{{ t('guest.admin.banner.sent_help') }}</small>
     </div>
   </div>
@@ -184,7 +184,7 @@
   {% elif editing and guest.identity_verified_at and guest.nationality != 'CZE' %}
   <div class="panel quiet">
     <p class="small muted" style="margin:0">{{ t('host.verify_done') }}
-      {{ guest.identity_verified_at[:16].replace('T', ' ') }}.</p>
+      {{ guest.identity_verified_at | datetime_local }}.</p>
   </div>
   {% elif not editing %}
   <div class="panel quiet">

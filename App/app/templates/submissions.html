@@ -28,7 +28,7 @@
     {% for submission in rows %}
       <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link"
           aria-label="{{ t('reports.open', id=submission.id) }}">
-        <td class="nowrap small" data-label="{{ t('reports.when') }}">{{ submission.created_at[:16].replace('T', ' ') }}</td>
+        <td class="nowrap small" data-label="{{ t('reports.when') }}">{{ submission.created_at | datetime_local }}</td>
         <td data-label="{{ t('reports.property') }}">{{ property_identity(submission.apartment_id, submission.internal_name, true) }}</td>
         <td class="small" data-label="{{ t('reports.mode') }}">{{ report_mode_label(submission.mode) }}</td>
         <td class="num" data-label="{{ t('reports.guests') }}">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
