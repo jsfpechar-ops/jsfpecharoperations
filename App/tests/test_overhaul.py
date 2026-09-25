@@ -9,6 +9,7 @@ from app import auth, claim, db
 from app import alerts
 from app import demo
 from app import housebook
+from app import i18n
 from app.main import app
 from app.routes import guest as guest_routes
 from tests.conftest import complete_guest_claim
@@ -558,7 +559,7 @@ def test_guest_pick_explains_law_without_portal_branding():
         assert "Why you are filling this in" in page.text
         assert "What happens with what you enter" in page.text
         assert '<details class="g-details">' not in page.text
-        assert "Select these dates" in page.text
+        assert i18n.STRINGS["en"]["stay_not_started"] in page.text
         assert "0 of 2 people completed" not in page.text
         assert "Booking.com" not in page.text
         assert "Airbnb" not in page.text

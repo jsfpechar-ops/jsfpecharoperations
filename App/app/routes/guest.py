@@ -870,6 +870,7 @@ def pick_stay(token: str, request: Request):
                 "reservation": reservation,
                 "progress": progress,
                 "yours": yours,
+                "arriving_today": bool(start and start == today),
                 "ongoing": bool(start and end and start <= today < end),
             }
         )

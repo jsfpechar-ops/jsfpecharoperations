@@ -316,7 +316,6 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 .g-lane-status { display: inline; margin-left: 8px; color: var(--g-ok) !important; font-weight: 650; }
 .g-lane-status::before { content: "\00b7"; margin-right: 8px; color: var(--g-muted); }
 .g-lane-status.quiet { color: var(--g-muted) !important; font-weight: 500; }
-.g-lane-status.ongoing { color: var(--g-accent) !important; }
 .g-lane-action {
   flex: 0 0 auto;
   color: var(--g-muted);
