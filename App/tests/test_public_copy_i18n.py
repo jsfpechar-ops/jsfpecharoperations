@@ -70,3 +70,49 @@ def test_the_templates_no_longer_carry_this_copy():
     assert "Reporting foreign guests through UbyPort" not in _read("product.html")
     assert "Online guest book without paperwork" not in _read("product.html")
     assert "('M','T','W','T','F','S','S')" not in _read("landing.html")
+
+
+# --- UX-156 / D-25: the audited CS (and matching EN) rewrites --------------
+
+
+AUDITED_COPY = {
+    "landing.benefit.guest.body": (
+        "Guests fill in and sign their details through one private link.",
+        "Hosté vše vyplní a podepíší přes jeden soukromý odkaz.",
+    ),
+    "product.features.title": (
+        "The whole reporting path in one place",
+        "Celá cesta hlášení na jednom místě",
+    ),
+    "product.features.lede": (
+        "Four connected steps, no copying into spreadsheets.",
+        "Čtyři navazující kroky, žádné přepisování do tabulek.",
+    ),
+    "product.faq.title": (
+        "Common UbyPort questions",
+        "Nejčastější otázky k UbyPortu",
+    ),
+    "product.page_title": (
+        "UbyPort for Airbnb and Booking.com hosts · UbyHost",
+        "UbyPort pro hostitele z Airbnb a Booking.com · UbyHost",
+    ),
+}
+
+
+def test_the_audited_rewrites_are_in_both_dictionaries():
+    for key, (english, czech) in AUDITED_COPY.items():
+        assert LANDING_STRINGS["en"][key] == english, key
+        assert LANDING_STRINGS["cs"][key] == czech, key
+
+
+def test_the_awkward_czech_calques_are_gone_from_the_page():
+    page = _get("/jak-to-funguje", "cs")
+    for old in (
+        "Vše, čím hlášení hosta prochází",
+        "Čtyři propojené kroky bez tabulky mezi nimi.",
+        "Otázky k UbyPortu, jasně zodpovězené",
+    ):
+        assert old not in page
+    # And the audited rewrites are what the page actually renders.
+    for key in ("product.features.title", "product.features.lede", "product.faq.title"):
+        assert LANDING_STRINGS["cs"][key] in page
