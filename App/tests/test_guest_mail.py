@@ -795,6 +795,36 @@ def test_the_resend_mail_says_the_old_link_stopped_working():
     assert i18n.STRINGS["en"]["mail_claim_expiry_resend"] not in fresh["text"]
 
 
+def test_the_expiry_sits_under_the_button_and_reads_as_reassurance():
+    """E-11: the one time-critical fact used to be the last muted line."""
+    for resend in (False, True):
+        content = _claim_content(resend=resend)
+        expiry = i18n.STRINGS["en"][
+            "mail_claim_expiry_resend" if resend else "mail_claim_expiry"
+        ]
+        page = html.unescape(content["html"])
+        button_at = page.index(BUTTON_MARKER)
+        expiry_at = page.index(expiry)
+        fallback_at = page.index(i18n.STRINGS["en"]["mail_link_fallback"])
+        next_at = page.index(i18n.STRINGS["en"]["mail_claim_next_label"])
+        assert button_at < expiry_at < fallback_at < next_at, resend
+        # Normal 15px body text, not the muted 14px footnote it used to be.
+        above = page[expiry_at - 200 : expiry_at]
+        assert "font:400 15px/1.6" in above, resend
+        assert "font:400 14px/1.6" not in above, resend
+        assert expiry in content["text"], resend
+
+
+def test_the_claim_expiry_no_longer_reads_as_a_threat():
+    """The device remembers the guest, so "stops working" was the wrong picture."""
+    for key in ("mail_claim_expiry", "mail_claim_expiry_resend"):
+        for lang in ("en", "cs"):
+            text = i18n.STRINGS[lang][key]
+            assert "30" in text, (lang, key)
+    assert "remembers your stay" in i18n.STRINGS["en"]["mail_claim_expiry"]
+    assert "zapamatuje" in i18n.STRINGS["cs"]["mail_claim_expiry"]
+
+
 def test_the_host_reminder_is_host_facing_and_keeps_its_subject():
     """The subject leads with the count the host needs on check-in morning."""
     content = _reminder_host_content()
