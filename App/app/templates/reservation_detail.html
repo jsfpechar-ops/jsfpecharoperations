@@ -184,7 +184,7 @@
   </div>
 </div>
 {% endif %}
-{% if guest_rows %}
+{% if guest_rows or progress.not_registered %}
   <ul class="guest-cards">
   {% for row in guest_rows %}
     {% set guest = row.guest %}
@@ -284,6 +284,23 @@
       {% if guest.last_errors %}
         <p class="guest-card-note err-text">{{ guest.last_errors }}</p>
       {% endif %}
+    </li>
+  {% endfor %}
+  {# A guest the host declared but nobody registered used to be invisible: only
+     the cards that exist rendered, so there was nothing to act on. These rows
+     count the same people as the stay-fee headcount warning [C-37]. #}
+  {% for n in range(progress.guests | length + 1, (progress.expected or 0) + 1) %}
+    <li class="guest-card placeholder">
+      <div class="guest-card-head">
+        <div class="guest-card-who">
+          <h3>{{ t('stay.detail.guests.placeholder', n=n) }}</h3>
+        </div>
+        <div class="guest-card-state">
+          <button class="btn small" type="button" data-copy="stay-link"
+                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('common.copy_link') }}</button>
+          <a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
+        </div>
+      </div>
     </li>
   {% endfor %}
   </ul>
