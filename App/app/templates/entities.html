@@ -11,13 +11,14 @@
   </div>
   <div class="field">
     <label for="{{ prefix }}seat">{{ t('entities.seat') }}</label>
-    <input type="text" id="{{ prefix }}seat" name="seat" value="{{ entity.seat or '' if entity else '' }}"
+    <input type="text" id="{{ prefix }}seat" name="seat" required
+           value="{{ entity.seat or '' if entity else '' }}"
            placeholder="{{ t('entities.seat_placeholder') }}">
   </div>
   <div class="grid">
     <div class="field">
       <label for="{{ prefix }}ico">{{ t('entities.ico') }}</label>
-      <input type="text" id="{{ prefix }}ico" name="ico" inputmode="numeric"
+      <input type="text" id="{{ prefix }}ico" name="ico" inputmode="numeric" required
              value="{{ entity.ico or '' if entity else '' }}">
     </div>
     <div class="field">
@@ -28,8 +29,9 @@
   <div class="grid">
     <div class="field">
       <label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>
-      <input type="email" id="{{ prefix }}contact_email" name="contact_email"
+      <input type="email" id="{{ prefix }}contact_email" name="contact_email" required
              value="{{ entity.contact_email or '' if entity else '' }}">
+      <div class="hint">{{ t('entities.email_hint') }}</div>
     </div>
     <div class="field">
       <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }} <span class="opt">{{ t('common.optional') }}</span></label>

@@ -494,7 +494,7 @@ def test_settings_archived_hub_lists_and_restores_entities():
         page = admin.get("/settings/archived")
         assert page.status_code == 200
         assert "Hub Archive s.r.o." in page.text
-        assert "Legal entities (1)" in page.text
+        assert "Operators (1)" in page.text
 
         settings = admin.get("/settings")
         assert "Open archive hub" in settings.text
