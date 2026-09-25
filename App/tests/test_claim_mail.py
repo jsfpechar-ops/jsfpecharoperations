@@ -9,7 +9,7 @@ from datetime import datetime, time, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from app import claim, config, db, mail, mail_notify, reporting
+from app import claim, config, db, i18n, mail, mail_notify, reporting
 from app.routes import guest
 from app.main import app
 from tests.conftest import complete_guest_claim
@@ -849,7 +849,18 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
             ("guest-reminder@claim.test",),
         )
         assert reminder
-        assert reminder["subject"] == "Please finish your guest registration"
+        # E-12 [UX-78]: the subject names the stay and the count the sweep
+        # already had in hand -- the party is 1 and nobody has filled the form.
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (_apartment_id,)
+        )
+        property_name = mail_notify.property_label(apartment, "en")
+        assert reminder["subject"] == i18n.STRINGS["en"][
+            "mail_reminder_guest_subject"
+        ] % {"property": property_name, "filled": 0, "expected": 1}
+        assert i18n.STRINGS["en"]["mail_reminder_guest_intro"] % {
+            "missing": 1
+        } in reminder["body_text"]
         assert "only incomplete-registration reminder" in reminder["body_text"]
 
         claim.sweep_reminders()
@@ -859,6 +870,61 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
             "WHERE l.to_email = ? AND o.kind = 'reminder_guest'",
             ("guest-reminder@claim.test",),
         )["n"] == 1
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_the_emergency_reminder_body_keeps_the_count_and_the_device(monkeypatch):
+    """E-12 [UX-78]: the branded composer is an enhancement, not the contract.
+
+    When it raises, the caller's plain body is what the guest receives, so it
+    has to carry the same two facts the branded mail leads with.
+    """
+    current, _past, _far, _apartment_id = _seed()
+    today = claim.prague_today()
+    try:
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (today + timedelta(days=1)).isoformat(),
+                "date_to": (today + timedelta(days=4)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(
+            browser, TOKEN, current, email="guest-fallback@claim.test", party_size=1
+        )
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now or datetime.combine(today, time(10, 0)),
+        )
+
+        def _boom(**_kwargs):
+            raise RuntimeError("composer down")
+
+        monkeypatch.setattr(mail_notify, "build_reminder_guest", _boom)
+
+        assert claim.sweep_reminders()["guest"] == 1
+        reminder = db.query_one(
+            "SELECT l.* FROM console_mail_log l "
+            "JOIN email_outbox o ON o.id = l.outbox_id "
+            "WHERE l.to_email = ? AND o.kind = 'reminder_guest'",
+            ("guest-fallback@claim.test",),
+        )
+        assert reminder
+        assert "0 of 1 guests are registered." in reminder["body_text"]
+        assert "Open it on the phone or computer where you started." in (
+            reminder["body_text"]
+        )
+        assert not reminder["body_html"]
     finally:
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
         db.execute("DELETE FROM console_mail_log")

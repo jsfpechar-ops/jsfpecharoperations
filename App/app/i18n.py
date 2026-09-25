@@ -538,12 +538,23 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Your host takes care of the official registration with the authorities. "
             "This e-mail is your receipt, not an official confirmation."
         ),
-        "mail_reminder_guest_subject": "Please finish your guest registration",
+        "mail_reminder_guest_subject": (
+            "Tomorrow at %(property)s: %(filled)s of %(expected)s guests registered"
+        ),
+        # Used when the stay has no declared party size yet, so there is no
+        # count to quote.
+        "mail_reminder_guest_subject_no_count": (
+            "Tomorrow at %(property)s: the guest registration is not finished"
+        ),
         "mail_reminder_guest_preheader": (
             "Your stay starts tomorrow and the registration is not complete."
         ),
         "mail_reminder_guest_heading": "Your stay starts tomorrow",
         "mail_reminder_guest_intro": (
+            "%(missing)s more guest(s) still need to fill in the form before you "
+            "arrive."
+        ),
+        "mail_reminder_guest_intro_no_count": (
             "Your stay at %(property)s starts tomorrow and the guest registration is "
             "not complete yet."
         ),
@@ -552,8 +563,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_reminder_guest_note": (
             "This is the only incomplete-registration reminder we will send."
         ),
-        "mail_reminder_guest_help": (
-            "If you have already sent everything, you can ignore this message."
+        # The stay page only opens without friction on the device that claimed
+        # the stay; say so here instead of letting the guest meet the PIN.
+        "mail_reminder_guest_device": (
+            "Open it on the phone or computer where you started. On another device "
+            "you'll be asked for your host's PIN."
         ),
         # The footer. Guests are told to reach the host, never UbyHost support:
         # the same rule the guest pages follow.
@@ -1074,12 +1088,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Úřední hlášení vyřizuje váš hostitel. Tento e-mail je potvrzení pro vás, "
             "nikoli úřední doklad."
         ),
-        "mail_reminder_guest_subject": "Dokončete prosím registraci hostů",
+        "mail_reminder_guest_subject": (
+            "Zítra přijíždíte (%(property)s): zaregistrováno %(filled)s z %(expected)s "
+            "hostů"
+        ),
+        "mail_reminder_guest_subject_no_count": (
+            "Zítra přijíždíte (%(property)s): registrace hostů není dokončená"
+        ),
         "mail_reminder_guest_preheader": (
             "Pobyt začíná zítra a registrace není dokončená."
         ),
         "mail_reminder_guest_heading": "Váš pobyt začíná zítra",
         "mail_reminder_guest_intro": (
+            "Před příjezdem ještě musí formulář vyplnit další hosté: %(missing)s."
+        ),
+        "mail_reminder_guest_intro_no_count": (
             "Váš pobyt v %(property)s začíná zítra a registrace hostů zatím není "
             "dokončená."
         ),
@@ -1088,8 +1111,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_reminder_guest_note": (
             "Toto je jediné upozornění na nedokončenou registraci, které vám pošleme."
         ),
-        "mail_reminder_guest_help": (
-            "Pokud jste už vše odeslali, můžete tuto zprávu ignorovat."
+        "mail_reminder_guest_device": (
+            "Otevřete ho na telefonu nebo počítači, kde jste začali. Na jiném "
+            "zařízení budete potřebovat PIN od hostitele."
         ),
         # Patička. Hosté se obracejí na ubytovatele, nikdy na podporu UbyHostu:
         # stejné pravidlo jako na stránkách pro hosty.
