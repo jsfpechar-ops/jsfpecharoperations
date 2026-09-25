@@ -99,6 +99,21 @@ def checkin_incomplete_reason(lang: str) -> str:
     return host_i18n.translate(lang, "notification.reason.checkin_incomplete")
 
 
+def mail_kind_label(lang: str, kind: str) -> str:
+    """A name a host can read for an outbox kind.
+
+    The outbox stores codes like ``reminder_host``; a card that prints the code
+    asks the host to learn our schema. A kind with no name of its own - an
+    invoice kind added later, for instance - falls back to the code rather than
+    to a missing key.
+    """
+    key = f"notification.mail_kind.{kind}"
+    table = host_i18n.STRINGS[host_i18n.normalise_language(lang)]
+    if key not in table:
+        return kind
+    return host_i18n.translate(lang, key)
+
+
 def stored_params(row: Any) -> Dict[str, Any]:
     """The interpolation values an alert stored, or ``{}`` if it stored none."""
     raw = row.get("params") if hasattr(row, "get") else None
@@ -161,6 +176,10 @@ def _present_stored(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]
     sentence stays optional without a branch at the call site.
     """
     params = stored_params(row)
+    if kind == "mail_failed" and params.get("kind"):
+        # The copy names the mail in words; the stored code is for the log.
+        params = dict(params)
+        params["kind"] = mail_kind_label(lang, params["kind"])
     row["display_title"] = _localised(
         lang, _title_key(kind, params, lang), row.get("message"), params
     )
