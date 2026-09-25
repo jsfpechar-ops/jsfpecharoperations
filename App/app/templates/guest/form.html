@@ -246,6 +246,13 @@
   </div>
 
   <div data-guest-step>
+    <div class="g-card g-review" data-wizard-review
+         data-edit-label="{{ t('review_edit') }}" hidden>
+      <h2>{{ t('review_title') }}</h2>
+      <p class="g-intro">{{ t('review_help') }}</p>
+      <dl class="g-summary-list g-review-list"></dl>
+    </div>
+
     {% include "guest/_legal_notice.html" %}
 
     <button class="g-btn" type="submit">{{ t('submit') }}</button>

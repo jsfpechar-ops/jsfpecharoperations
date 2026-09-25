@@ -288,6 +288,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Use a JPEG, PNG, or WebP photo, or a PDF registration form."
         ),
         "passport_photo_missing": "Please upload a photo of your passport or ID card.",
+        "review_title": "Check before you send",
+        "review_help": (
+            "After you send, these details are locked and only your host can change them."
+        ),
+        "review_edit": "Change",
         "legal_notice_title": "Legal information",
         "legal_notice_intro": (
             "Please read this before submitting. Czech accommodation law requires both you "
@@ -808,6 +813,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Použijte fotografii JPEG, PNG nebo WebP, nebo PDF registrační formulář."
         ),
         "passport_photo_missing": "Nahrajte prosím fotografii pasu nebo občanského průkazu.",
+        "review_title": "Před odesláním zkontrolujte",
+        "review_help": (
+            "Po odeslání se údaje uzamknou a změnit je může už jen ubytovatel."
+        ),
+        "review_edit": "Změnit",
         "legal_notice_title": "Právní informace",
         "legal_notice_intro": (
             "Před odesláním si prosím přečtěte. Český zákon o ubytování vyžaduje, aby vy i "

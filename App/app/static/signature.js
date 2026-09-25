@@ -177,6 +177,116 @@
     });
   }
 
+  /* The last step saves and locks the record, so the guest gets one final look
+     at what they typed — with a way straight back to the step that owns each
+     answer, instead of hunting for it behind a step that is no longer shown. */
+  function initGuestReview() {
+    var form = document.querySelector("[data-guest-wizard]");
+    if (!form) return;
+    var card = form.querySelector("[data-wizard-review]");
+    if (!card) return;
+    var list = card.querySelector(".g-review-list");
+    if (!list) return;
+    var editLabel = card.getAttribute("data-edit-label") || "";
+    // Read the labels off the form itself rather than duplicating them here.
+    var groups = [
+      { ids: ["first_name", "surname"], join: " " },
+      { ids: ["birth_date"] },
+      { ids: ["nationality"] },
+      { ids: ["doc_number", "parent_doc_number"] },
+      { ids: ["res_street", "res_city", "res_country"], join: ", " }
+    ];
+
+    function labelFor(input) {
+      if (!input.id) return "";
+      var label = document.querySelector('label[for="' + input.id + '"]');
+      if (!label) return "";
+      var copy = label.cloneNode(true);
+      Array.prototype.forEach.call(copy.querySelectorAll(".opt, small"), function (node) {
+        node.parentNode.removeChild(node);
+      });
+      return copy.textContent.trim();
+    }
+
+    function valueFor(input) {
+      var override = input.getAttribute("data-review-value");
+      if (override) return override;
+      if (input.tagName === "SELECT") {
+        var option = input.options[input.selectedIndex];
+        return option ? option.textContent.trim() : "";
+      }
+      return String(input.value || "").trim();
+    }
+
+    function isHidden(input) {
+      var wrap = input.parentNode;
+      while (wrap && wrap !== form) {
+        // The wizard hides the steps you are not on. That says nothing about
+        // the field itself, so stop looking at the step boundary.
+        if (wrap.hasAttribute("data-guest-step")) return false;
+        if (wrap.style && wrap.style.display === "none") return true;
+        if (wrap.hidden) return true;
+        wrap = wrap.parentNode;
+      }
+      return false;
+    }
+
+    function collect() {
+      var rows = [];
+      groups.forEach(function (group) {
+        var values = [];
+        var labels = [];
+        var target = null;
+        group.ids.forEach(function (id) {
+          var input = document.getElementById(id);
+          if (!input || isHidden(input)) return;
+          var value = valueFor(input);
+          if (!value) return;
+          if (!target) target = input;
+          labels.push(labelFor(input));
+          values.push(value);
+        });
+        if (!target) return;
+        rows.push({
+          label: labels.filter(Boolean).join(" / "),
+          value: values.join(group.join || ", "),
+          target: target
+        });
+      });
+      return rows;
+    }
+
+    function build() {
+      var rows = collect();
+      list.textContent = "";
+      if (!rows.length) { card.hidden = true; return; }
+      rows.forEach(function (row) {
+        var dt = document.createElement("dt");
+        dt.textContent = row.label;
+        var dd = document.createElement("dd");
+        dd.appendChild(document.createTextNode(row.value));
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "g-review-change";
+        button.textContent = editLabel;
+        // Five buttons that all say "Change" are useless read aloud on their own.
+        button.setAttribute("aria-label", editLabel + ": " + row.label);
+        button.addEventListener("click", function () {
+          form.dispatchEvent(new CustomEvent("guest-wizard:show", { detail: { target: row.target } }));
+          if (typeof row.target.focus === "function") row.target.focus({ preventScroll: true });
+          row.target.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+        dd.appendChild(button);
+        list.appendChild(dt);
+        list.appendChild(dd);
+      });
+      card.hidden = false;
+    }
+
+    form.addEventListener("guest-wizard:shown", build);
+    build();
+  }
+
   function focusFirstError() {
     var first = document.querySelector(".g-field .bad, .g-sign .err:not(:empty)");
     if (!first) return;
@@ -245,6 +355,9 @@
         if (target) target.focus({ preventScroll: true });
         steps[active].scrollIntoView({ behavior: "smooth", block: "start" });
       }
+      // Anything that renders a summary of the answers (the review list) needs
+      // to rebuild it after the guest has been back and changed something.
+      form.dispatchEvent(new CustomEvent("guest-wizard:shown", { detail: { index: active } }));
     }
 
     // Other scripts (the signature pad's submit guard) need to bring their own
@@ -291,6 +404,7 @@
     initResidenceCountry();
     initPinReturn();
     initGuestWizard();
+    initGuestReview();
     focusFirstError();
   });
 })();
