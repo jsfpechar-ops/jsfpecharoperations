@@ -207,11 +207,13 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies(monkeypatch):
         browser = TestClient(app)
         browser.cookies.set(guest.LANG_COOKIE, "en")
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
-        assert "one reminder if the forms are incomplete" in claim_page.text
-        assert "Strictly necessary cookies" in claim_page.text
-        assert "up to 7 days" in claim_page.text
-        assert "up to 60 days" in claim_page.text
-        assert "no advertising or analytics cookies" in claim_page.text
+        assert "private link so only your group can open the forms" in claim_page.text
+        assert "one reminder the day before arrival if forms are missing" in claim_page.text
+        assert "a receipt (your host gets a copy)" in claim_page.text
+        assert "Only necessary cookies" in claim_page.text
+        assert "PIN access (7 days)" in claim_page.text
+        assert "this stay (60 days)" in claim_page.text
+        assert "No marketing." in claim_page.text
         assert "How your data is handled" in claim_page.text
 
         privacy = browser.get(f"/l/{TOKEN}/privacy")
@@ -1193,6 +1195,50 @@ def test_party_post_stays_smooth_for_a_retrying_guest(monkeypatch):
             assert response.status_code == 303
             location = response.headers["location"]
             assert "claim_error=rate" not in location, f"attempt {attempt + 1}: {location}"
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        db.execute("DELETE FROM rate_limit_event")
+        _cleanup()
+
+
+def test_the_sent_claim_page_confirms_the_address_and_folds_the_form_away(monkeypatch):
+    """Once a link is on its way the guest is done — don't render the form again."""
+    current, _past, _far, _apartment_id = _seed()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+
+        before = browser.get(f"/l/{TOKEN}/{current}")
+        assert 'class="g-card g-fold"' not in before.text
+        assert "No e-mail after a few minutes?" not in before.text
+
+        sent = browser.post(
+            f"/l/{TOKEN}/{current}/party",
+            data={"party_size": "2", "guest_email": "foldaway@example.com"},
+            follow_redirects=False,
+        )
+        assert sent.status_code == 303
+        assert "claim_sent=1" in sent.headers["location"]
+
+        page = browser.get(sent.headers["location"], follow_redirects=False)
+        assert page.status_code == 200
+        masked = db.query_one(
+            "SELECT email_masked FROM reservation_claim WHERE reservation_id = ?", (current,)
+        )["email_masked"]
+        assert masked
+        assert f"We sent a link to {masked}." in page.text
+        assert "it works for 30 minutes" in page.text
+        assert "If it asks for the PIN again, enter the same PIN." in page.text
+        # The form is still there, but behind a closed disclosure.
+        assert '<details class="g-card g-fold">' in page.text
+        assert "No e-mail after a few minutes? Check spam, or send it again" in page.text
+        assert "<details class=\"g-card g-fold\" open" not in page.text
+        assert 'name="guest_email"' in page.text
+        # And no staging instructions for a production guest.
+        assert "staging" not in page.text.lower()
     finally:
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
