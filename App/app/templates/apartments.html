@@ -9,7 +9,7 @@
     <div class="page-toolbar-row">
       {{ sync_calendars_button(return_to='/apartments', last_sync=last_sync) }}
       <a class="btn" href="/entities">{{ t('apartments.entities_link') }}</a>
-      <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
+      {% if rows %}<a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>{% endif %}
     </div>
   </div>
 {% endset %}
@@ -68,11 +68,17 @@
 </div>
 {% else %}
 <div class="panel empty">
-  <p>{{ t('apartments.empty.lede') }}</p>
-  <div class="actions" style="justify-content:center">
-    <a class="btn" href="/entities">{{ t('apartments.empty.entity') }}</a>
-    <a class="btn primary" href="/apartments/new">{{ t('apartments.empty.add') }}</a>
-  </div>
+  {% if has_operator %}
+    <p>{{ t('apartments.empty.lede_ready') }}</p>
+    <div class="actions" style="justify-content:center">
+      <a class="btn primary" href="/apartments/new">{{ t('apartments.empty.add') }}</a>
+    </div>
+  {% else %}
+    <p>{{ t('apartments.empty.lede') }}</p>
+    <div class="actions" style="justify-content:center">
+      <a class="btn primary" href="/entities">{{ t('apartments.empty.entity') }}</a>
+    </div>
+  {% endif %}
 </div>
 {% endif %}
 

@@ -462,6 +462,9 @@ def apartments_list(request: Request):
         {
             "rows": enriched,
             "archived_rows": archived_rows,
+            # With no operator there is nothing the property form can attach to,
+            # so the empty state names the operator as the first step instead.
+            "has_operator": bool(access.entities(request)),
             "last_sync": db.get_setting("last_ical_sync"),
         },
     )
