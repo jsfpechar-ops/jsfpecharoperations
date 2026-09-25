@@ -23,7 +23,6 @@
         <dd>
           {{ submission_pill(submission.state) }}
         </dd>
-        <dt>{{ t('reports.detail.endpoint') }}</dt><dd class="mono small">{{ submission.endpoint }}</dd>
         <dt>{{ t('reports.stamp') }}</dt><dd class="mono small">{{ submission.pseudo_stamp or '—' }}</dd>
         <dt>{{ t('reports.detail.finished') }}</dt><dd class="small">{{ (submission.finished_at | datetime_local(seconds=true)) or '—' }}</dd>
       </dl>
@@ -67,7 +66,7 @@
             <td class="num" data-label="#">{{ loop.index }}</td>
             <td data-label="{{ t('reports.detail.guest') }}">
               <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
-              <div class="small muted">{{ guest.nationality }} &middot; {{ guest.doc_number }}</div>
+              <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest.doc_number }}</div>
             </td>
             <td data-label="{{ t('reports.detail.result') }}">
               {% if guest.result == 'duplicate' %}
@@ -91,6 +90,8 @@
               {{ row_menu_end() }}
             </td>
           </tr>
+        {% else %}
+          <tr><td colspan="4" class="small muted">{{ t('reports.detail.guests_empty') }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -100,6 +101,10 @@
   <details class="panel technical">
     <summary>{{ t('reports.detail.technical') }}</summary>
     <p class="small muted">{{ t('reports.detail.technical_help') }}</p>
+    <dl class="kv">
+      <dt>{{ t('reports.detail.endpoint') }}</dt>
+      <dd class="mono small">{{ submission.endpoint or '—' }}</dd>
+    </dl>
     <h3>{{ t('reports.detail.messages') }}</h3>
     <div class="technical-downloads">
       <span class="technical-download">
