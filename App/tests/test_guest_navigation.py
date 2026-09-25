@@ -403,6 +403,16 @@ def test_a_hidden_file_input_fails_continue_with_a_visible_reason():
     assert "takeBtn.focus()" in source
 
 
+def test_the_wizard_gives_each_step_a_history_entry_so_back_does_not_lose_the_form():
+    """An OS back gesture used to leave the page and discard everything typed."""
+    source = (Path("app/static/signature.js")).read_text(encoding="utf-8")
+    assert 'history.replaceState({ guestWizardStep: active }, "")' in source
+    assert 'history.pushState({ guestWizardStep: active }, "")' in source
+    assert 'window.addEventListener("popstate"' in source
+    assert "typeof state.guestWizardStep !== \"number\"" in source
+    assert "show(state.guestWizardStep, true)" in source
+
+
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:
