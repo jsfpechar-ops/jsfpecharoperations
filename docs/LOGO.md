@@ -91,8 +91,8 @@ for 2× screens.
 
 | Placement | File | CSS | Display | Background |
 | --- | --- | --- | --- | --- |
-| Login form, above the fields | `ubyhost-logo.png` | `.auth-logo` | **220 px** wide (`min(220px, 70vw)`) | `#F7F7F5` |
-| Login hero, above the description | `ubyhost-logo-stacked.png` | `.auth-hero-mark` | **300 px** wide (`min(300px, 100%)`) | `#FFFFFF` → `#F1F1EF` with a faint coral wash |
+| Login form, above the fields | `ubyhost-logo.png` | `.auth-logo` | **178 px** wide (`min(178px, 60vw)`) | `#F7F7F5` |
+| Login hero, above the description | `ubyhost-logo-stacked.png` | `.auth-hero-mark` | **170 px** wide (`min(170px, 34%)`) | `#FFFFFF` → `#F1F1EF` with a faint coral wash |
 | Admin sidebar, top left | `ubyhost-mark.png` + live “UbyHost” | `.sidebar-brand .brand-logo` | **28 × 28 px** | lavender-tinted white → `#FFFFFF` |
 | Mobile app bar | `ubyhost-mark.png` | `.appbar .brand-logo` | **24 × 24 px** | translucent white |
 | Onboarding welcome | `ubyhost-mark.png` | `.onboarding-logo` | **120 px** wide | `#FFFFFF` with a faint coral wash |

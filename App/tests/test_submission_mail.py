@@ -316,7 +316,7 @@ def test_the_email_is_light_mode_only():
     )
     html = content["html"]
     assert "prefers-color-scheme" not in html
-    assert "color-scheme" not in html
+    assert '<meta name="color-scheme" content="light only">' in html
     assert "@media" not in html
     assert "background:#f7f7f5" in html
 

@@ -438,16 +438,16 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_bot_protection_title": "Protecting the registration link",
         "privacy_bot_protection_body": (
             "If someone repeatedly enters a wrong access PIN, the form may show Cloudflare Turnstile "
-            "to block automated abuse. Production pages may also be challenged by Cloudflare Bot Fight "
-            "Mode. Those checks may process technical connection data (such as IP address) under "
-            "Cloudflare's privacy notice. They are not used for marketing."
+            "to block automated abuse. Production pages may also be protected by Cloudflare against "
+            "automated abuse. Those checks may process technical connection data (such as IP address) "
+            "under Cloudflare's privacy notice. They are not used for marketing."
         ),
         "privacy_processor": "Who runs this website",
         "privacy_processor_body": (
             "The UbyHost software is operated by %(name)s, IČO %(ico)s, %(address)s, "
             "who processes data only on the configured controller's instructions to "
-            "run the registration form, transactional messages, and stored records. Software support "
-            "is %(email)s; questions about your stay go to your host, while personal-data "
+            "run the registration form, transactional messages, and stored records. "
+            "Questions about your stay go to your host, while personal-data "
             "rights requests go to the controller named above."
         ),
         "privacy_retention": "How long it is kept",
@@ -455,7 +455,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "House-book registration details and signatures are kept for six years from the last "
             "entry, as § 101 requires. The claim e-mail remains linked while the reservation record "
             "is retained unless the host releases the claim. Completed or failed message-delivery "
-            "records and staging console copies are normally deleted after 14 days; limited backup "
+            "records are normally deleted after 14 days; limited backup "
             "copies may persist until their retention cycle expires."
         ),
         "privacy_retention_body_no_email": (
@@ -998,24 +998,24 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_bot_protection_title": "Ochrana registračního odkazu",
         "privacy_bot_protection_body": (
             "Při opakovaně chybném PIN může formulář zobrazit Cloudflare Turnstile proti "
-            "automatizovanému zneužití. Produkční stránky může rovněž prověřit Cloudflare Bot Fight "
-            "Mode. Kontroly mohou zpracovat technické údaje o připojení (např. IP) podle zásad "
-            "Cloudflare. Nepoužívají se pro marketing."
+            "automatizovanému zneužití. Produkční stránky může Cloudflare rovněž chránit proti "
+            "automatizovanému zneužití. Kontroly mohou zpracovat technické údaje o připojení (např. IP) "
+            "podle zásad Cloudflare. Nepoužívají se pro marketing."
         ),
         "privacy_processor": "Kdo provozuje tento web",
         "privacy_processor_body": (
             "Software UbyHost provozuje %(name)s, IČO %(ico)s, %(address)s. Údaje zpracovává pouze "
             "na pokyn nastaveného správce údajů kvůli chodu registračního "
-            "formuláře, transakčním zprávám a uložení záznamů. Podpora software je "
-            "%(email)s; dotazy k pobytu směřujte na hostitele a žádosti o práva k osobním "
+            "formuláře, transakčním zprávám a uložení záznamů. "
+            "Dotazy k pobytu směřujte na hostitele a žádosti o práva k osobním "
             "údajům na správce uvedeného výše."
         ),
         "privacy_retention": "Jak dlouho se uchovávají",
         "privacy_retention_body": (
             "Registrační údaje domovní knihy a podpisy se uchovávají šest let od posledního zápisu "
             "podle § 101. E-mail k převzetí zůstává spojen s rezervací po dobu jejího uchování, "
-            "pokud ubytovatel převzetí neuvolní. Dokončené či neúspěšné záznamy doručení a konzolové "
-            "kopie ve stagingu se běžně mažou po 14 dnech; omezené zálohy mohou zůstat do konce cyklu."
+            "pokud ubytovatel převzetí neuvolní. Dokončené či neúspěšné záznamy doručení "
+            "se běžně mažou po 14 dnech; omezené zálohy mohou zůstat do konce cyklu."
         ),
         "privacy_retention_body_no_email": (
             "Registrační údaje domovní knihy a podpisy se uchovávají šest let od posledního zápisu "
