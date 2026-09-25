@@ -774,11 +774,17 @@ a { color: inherit; }
   line-height: 1;
 }
 
-.guide-hero > p:last-child {
+.guide-hero .guide-lede {
   max-width: 760px;
   margin: 28px 0 0;
   color: var(--ink-secondary);
   font-size: clamp(1.08rem, 2vw, 1.3rem);
+}
+
+.guide-updated {
+  margin: 14px 0 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
 }
 
 .guide-layout {
