@@ -59,7 +59,9 @@
 {% set header_actions %}
   <div class="page-toolbar">
     <div class="page-toolbar-row">
-      {{ sync_calendars_button(return_to='/', last_sync=last_sync) }}
+      {% if feed_count %}
+        {{ sync_calendars_button(return_to='/', last_sync=last_sync) }}
+      {% endif %}
       {% if demo_loaded %}
         <form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">
           <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
@@ -89,6 +91,7 @@
   {% endif %}
 {% else %}
 
+  {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
   {% if onboarding and onboarding.finished and not onboarding.dismissed %}
     {{ onboarding_finish(onboarding) }}
   {% else %}
@@ -141,7 +144,7 @@
     </section>
   {% endif %}
 
-  {% if setup_warnings %}
+  {% if setup_warnings and not banner_showing %}
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
       <h2>{{ t('dashboard.setup.title') }}</h2><a href="/apartments">{{ t('dashboard.setup.view_properties') }}</a>
@@ -161,8 +164,15 @@
 
   {% if not rows %}
   <div class="panel empty">
-    <p>{{ t('dashboard.empty.no_stays') }}</p>
-    {{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}
+    {% if feed_count %}
+      <p>{{ t('dashboard.empty.no_stays') }}</p>
+      {{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}
+    {% else %}
+      <p>{{ t('dashboard.empty.no_feed') }}</p>
+      <div class="actions">
+        <a class="btn primary" href="/apartments/{{ apartments[0].id }}#calendars">{{ t('dashboard.empty.connect_calendar') }}</a>
+      </div>
+    {% endif %}
   </div>
   {% else %}
     <section id="needs-action">
