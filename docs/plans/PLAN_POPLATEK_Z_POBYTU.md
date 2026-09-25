@@ -719,7 +719,7 @@ Add `payments` and `stay_fee` to the imports at the top of `routes/guest.py`.
 
 ### 10.2 `templates/guest/stay.html`
 
-**Where.** Insert directly **after** the `{% endif %}` that closes the big `{% if expected is none %} … {% elif remaining is not none and remaining <= 0 %} … {% else %} … {% endif %}` chain, and **before** `{% for person in people if person.mine %}`. This spot is right under the all-done card (when complete) or right under the progress bar (when not). The **Add person** button at the bottom stays the primary action while people are missing.
+**Where.** Insert directly **after** the `{% endif %}` that closes the big `{% if expected is none %} … {% elif remaining is not none and remaining <= 0 %} … {% else %} … {% endif %}` chain, and **before** `{% for person in people if person.mine %}`. Since UX-52 the hub reads ① status → ② the one next action → ③ money → ④ your records → ⑤ host footer, so this spot is ③: right under the all-done card (when complete) or right under the progress bar and the **Add person** button (when not). The **Add person** button no longer sits at the bottom of the page — it is directly under the progress card while people are missing, and it stays the only coral button on the screen until the fee is due.
 
 ```html
 {% if stay_fee %}

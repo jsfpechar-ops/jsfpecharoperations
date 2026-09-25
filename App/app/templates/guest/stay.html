@@ -10,6 +10,9 @@
   <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
 </div>
 
+{# Fixed vertical order: (1) status, (2) the one next action, (3) money —
+   the stay fee, then the invoice link — (4) your records, (5) the host
+   footer. PLAN_POPLATEK §10.2 inserts the money block between (2) and (4). #}
 {% if party_error %}
   <div class="g-err">{{ t('error_party_size') }}</div>
 {% endif %}
@@ -62,37 +65,45 @@
         <span>{{ t('people_progress', done=progress.filled, total=expected) }}</span>
         <span class="g-bar"><i style="width:{{ (100 * progress.filled / expected) | round }}%"></i></span>
       </div>
+      {% if remaining and remaining > 0 %}
+        <p class="g-still-missing">{{ t('still_missing', n=remaining) }}</p>
+      {% endif %}
     </div>
+  {% endif %}
+  {% if remaining and remaining > 0 %}
+    <a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a>
   {% endif %}
 {% endif %}
 
 {% for person in people if person.mine %}
-  <div class="g-card g-summary">
-    <h2>{{ t('summary_title') }}</h2>
-    <p class="g-summary-name">{% if person.name %}{{ person.name }}{% else %}{{ t('person') }} {{ person.index }}{% endif %}</p>
-    {% if person.summary %}
-      <dl class="g-summary-list">
-        <dt>{{ t('birth_date') }}</dt><dd>{{ person.summary.birth_date }}</dd>
-        <dt>{{ t('nationality') }}</dt><dd>{{ person.summary.nationality }}</dd>
-        {% if person.summary.doc_number %}
-          <dt>{{ t('doc_number') }}</dt><dd>{{ person.summary.doc_number }}</dd>
-        {% endif %}
-        <dt>{{ t('purpose') }}</dt><dd>{{ person.summary.purpose }}</dd>
-        {% if person.summary.residence %}
-          <dt>{{ t('residence_title') }}</dt><dd>{{ person.summary.residence }}</dd>
-        {% endif %}
-      </dl>
-    {% else %}
-      <p class="g-intro">{{ t('not_filled') }}</p>
-    {% endif %}
-    {% if not person.locked %}
-      <a class="g-btn ghost slim" href="/l/{{ token }}/{{ reservation.id }}/edit/{{ person.id }}?lang={{ lang }}">
-        {{ t('continue_filling') if not person.complete else t('edit') }}
-      </a>
-    {% elif person.complete %}
-      <p class="g-intro" style="margin:12px 0 0">{{ t('form_locked_short') }}</p>
-    {% endif %}
-  </div>
+  <details class="g-card g-summary">
+    <summary class="g-summary-fold">{% if person.name %}{{ person.name }}{% else %}{{ t('person') }} {{ person.index }}{% endif %} &middot; {{ t('summary_fold_saved') if person.complete else t('not_filled') }}</summary>
+    <div class="g-summary-body">
+      <h2>{{ t('summary_title') }}</h2>
+      {% if person.summary %}
+        <dl class="g-summary-list">
+          <dt>{{ t('birth_date') }}</dt><dd>{{ person.summary.birth_date }}</dd>
+          <dt>{{ t('nationality') }}</dt><dd>{{ person.summary.nationality }}</dd>
+          {% if person.summary.doc_number %}
+            <dt>{{ t('doc_number') }}</dt><dd>{{ person.summary.doc_number }}</dd>
+          {% endif %}
+          <dt>{{ t('purpose') }}</dt><dd>{{ person.summary.purpose }}</dd>
+          {% if person.summary.residence %}
+            <dt>{{ t('residence_title') }}</dt><dd>{{ person.summary.residence }}</dd>
+          {% endif %}
+        </dl>
+      {% else %}
+        <p class="g-intro">{{ t('not_filled') }}</p>
+      {% endif %}
+      {% if not person.locked %}
+        <a class="g-btn ghost slim" href="/l/{{ token }}/{{ reservation.id }}/edit/{{ person.id }}?lang={{ lang }}">
+          {{ t('continue_filling') if not person.complete else t('edit') }}
+        </a>
+      {% elif person.complete %}
+        <p class="g-intro" style="margin:12px 0 0">{{ t('form_locked_short') }}</p>
+      {% endif %}
+    </div>
+  </details>
 {% endfor %}
 
 {% if people | selectattr('mine') | list | length < people | length %}
@@ -106,15 +117,7 @@
         </div>
       </div>
     {% endfor %}
-    {% if remaining and remaining > 0 %}
-      <p class="g-intro" style="margin:14px 0 0">{{ t('still_missing', n=remaining) }}</p>
-    {% endif %}
   </div>
-{% endif %}
-
-{% if expected is none %}
-{% elif remaining > 0 %}
-  <a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a>
 {% endif %}
 
 {% endblock %}

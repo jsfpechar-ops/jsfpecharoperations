@@ -195,7 +195,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "party_question": "How many people are staying?",
         "party_help": "Count everyone, including children. Each person needs their own form.",
         "party_confirm": "Continue",
-        "people_progress": "%(done)s of %(total)s people completed",
+        "people_progress": "Registered: %(done)s of %(total)s",
         "person_progress": "Person %(current)s of %(total)s",
         "form_step_progress": "Step %(current)s of %(total)s",
         "form_step_progress_title": "%(progress)s · %(title)s",
@@ -213,6 +213,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "anything below needs correcting."
         ),
         "summary_title": "Your submission",
+        "summary_fold_saved": "saved ✓",
         "your_details": "Your details",
         "person": "Person",
         "you": "you",
@@ -226,7 +227,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "all_done_receipt": "We have sent a confirmation to %(email)s.",
         "checkin_info": "Check-in",
         "checkout_info": "Check-out",
-        "still_missing": "Still missing details for %(n)s person(s).",
+        "still_missing": "Still to register: %(n)s",
         "add_another": "Add another person",
         "someone_missing": (
             "Forgot someone? Everyone staying must be registered, including children."
@@ -720,7 +721,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "party_question": "Kolik osob bude ubytováno?",
         "party_help": "Započítejte všechny včetně dětí. Každá osoba má vlastní formulář.",
         "party_confirm": "Pokračovat",
-        "people_progress": "vyplněno %(done)s z %(total)s osob",
+        "people_progress": "Zaregistrováno: %(done)s z %(total)s",
         "person_progress": "Osoba %(current)s z %(total)s",
         "form_step_progress": "Krok %(current)s z %(total)s",
         "form_step_progress_title": "%(progress)s · %(title)s",
@@ -738,6 +739,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "kontaktujte ubytovatele."
         ),
         "summary_title": "Vaše údaje",
+        "summary_fold_saved": "uloženo ✓",
         "your_details": "Vaše údaje",
         "person": "Osoba",
         "you": "vy",
@@ -749,7 +751,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "all_done_receipt": "Potvrzení jsme poslali na %(email)s.",
         "checkin_info": "Příjezd",
         "checkout_info": "Odjezd",
-        "still_missing": "Chybí ještě údaje %(n)s osob(y).",
+        "still_missing": "Zbývá zaregistrovat: %(n)s",
         "add_another": "Přidat další osobu",
         "someone_missing": (
             "Zapomněli jste na někoho? Registrovat se musí každý ubytovaný, včetně dětí."
