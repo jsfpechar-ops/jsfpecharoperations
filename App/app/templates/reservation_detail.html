@@ -12,6 +12,22 @@
   ''
 ) }}
 
+{% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
+{% if reservation.status == 'cancelled' %}
+<div class="banner critical">
+  <div class="grow">{{ t('stay.detail.banner.cancelled') }}</div>
+</div>
+{% elif reservation.status == 'ignored' %}
+<div class="banner info">
+  <div class="grow">{{ t('stay.detail.banner.ignored') }}</div>
+</div>
+{% endif %}
+{% if reservation.archived_at %}
+<div class="banner warning">
+  <div class="grow">{{ t('stay.detail.banner.archived') }}</div>
+</div>
+{% endif %}
+
 <section class="panel stay-command-panel">
   <div class="stay-command-main">
     <div>
@@ -37,7 +53,7 @@
         <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
       {% elif progress.status == 'reported' and submissions %}
         <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
-      {% else %}
+      {% elif not stay_inactive %}
         <button class="btn primary" type="button" data-copy="stay-link"
                 data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
       {% endif %}
@@ -117,7 +133,8 @@
 </section>
 {% endif %}
 
-<div class="panel tight detail-hero">
+<div class="panel tight detail-hero{% if stay_inactive %} inactive{% endif %}">
+  {% if not stay_inactive %}
   <div class="detail-metric">
     <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
     <div class="metric-value deadline {{ urgency_level }}">
@@ -127,6 +144,7 @@
       <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
     {% endif %}
   </div>
+  {% endif %}
   <div class="detail-metric">
     <div class="metric-label">{{ t('stay.detail.metric.guests') }}</div>
     <div class="metric-value">
