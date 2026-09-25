@@ -76,7 +76,7 @@
     'incomplete': 'amber',
     'not_required': 'grey',
     'awaiting_guest': 'grey',
-    'awaiting_verification': 'amber'
+    'awaiting_verification': 'blue'
   } %}
   <span class="pill {{ tones.get(status, 'grey') }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
 {% endmacro %}

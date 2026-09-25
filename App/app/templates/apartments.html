@@ -46,7 +46,7 @@
           {% else %}<span class="pill grey">{{ t('apartments.automation.manual') }}</span>{% endif %}
         </td>
         <td data-label="{{ t('apartments.table.setup') }}">
-          {% if row.issues %}<span class="pill red">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
+          {% if row.issues %}<span class="pill amber">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
           {% elif not apartment.feeds %}<span class="pill amber">{{ t('apartments.setup.calendar') }}</span>
           {% else %}<span class="pill green">{{ t('apartments.setup.ready') }}</span>{% endif %}
         </td>

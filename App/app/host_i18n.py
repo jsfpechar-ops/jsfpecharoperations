@@ -288,10 +288,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
         "status.ready_immediate": "Complete — sending now",
         "status.ready_immediate_tip": "All declared forms are complete, so UbyHost sends automatically without waiting for verification.",
-        "status.awaiting_verification": "ID not checked",
-        "status.awaiting_verification_tip": (
-            "Guest forms are complete. You may record an ID check below; automatic reporting does not wait for it."
-        ),
+        "status.awaiting_verification": "Ready to report",
+        "status.awaiting_verification_tip": "ID not checked (optional)",
         "stay.detail.note.immediate": "after guest forms are complete",
         "legal.footer_short": "Legal",
         "legal.footer_nav_label": "Legal",
@@ -1508,10 +1506,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
         "status.ready_immediate": "Hotovo — odesílá se",
         "status.ready_immediate_tip": "Všechny nahlášené formuláře jsou hotové, proto UbyHost odešle automaticky bez čekání na ověření.",
-        "status.awaiting_verification": "Doklad nezkontrolován",
-        "status.awaiting_verification_tip": (
-            "Formuláře jsou hotové. Kontrolu dokladu můžete zaznamenat níže; automatické hlášení na ni nečeká."
-        ),
+        "status.awaiting_verification": "Připraveno k hlášení",
+        "status.awaiting_verification_tip": "Doklad nezkontrolován (volitelné)",
         "stay.detail.note.immediate": "po dokončení formulářů hostů",
         "legal.footer_short": "Právní",
         "legal.footer_nav_label": "Právní informace",
