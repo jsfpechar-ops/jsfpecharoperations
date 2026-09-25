@@ -20,6 +20,7 @@ LANDING_STRINGS = {
             "and keeps the guest book."
         ),
         "landing.cta": "Try UbyHost",
+        "landing.cta.note": "Or write to support@ubyhost.com — we reply with next steps.",
         "landing.contact": "How it works",
         "landing.trust": "Built for apartments, holiday rentals, and small accommodation providers in Czechia.",
         "landing.demo.label": "A quick tour of UbyHost",
@@ -78,17 +79,21 @@ LANDING_STRINGS = {
             "Ask for UbyHost pricing tailored to your number of properties, reservation "
             "volume, and UbyPort reporting workflow."
         ),
-        "pricing.eyebrow": "Simple agreement, no pretend pricing tiers",
+        "pricing.eyebrow": "One plan, priced for your properties",
         "pricing.title": "Pricing that fits your accommodation.",
         "pricing.lede": (
             "Tell us how you host. We will agree on a clear setup for your properties, "
             "guest volume, and UbyPort workflow."
         ),
-        "pricing.card.kicker": "UbyHost workspace",
+        "pricing.card.kicker": "What you get",
         "pricing.card.price": "By agreement",
-        "pricing.card.note": "A practical scope based on what you actually operate.",
-        "pricing.card.cta": "Ask about pricing",
-        "pricing.card.reply": "Write to us and we will reply with the next steps.",
+        "pricing.card.summary": (
+            "One plan with everything below. The monthly price depends on how many "
+            "properties you run — write to us and we reply with a quote."
+        ),
+        "pricing.card.note": "Priced for what you actually run.",
+        "pricing.card.cta": "Request access and a price",
+        "pricing.cta.subject": "UbyHost pricing",
         "pricing.includes.title": "The complete guest-reporting workflow",
         "pricing.includes.1": "Airbnb and Booking.com calendar connections",
         "pricing.includes.2": "Private online forms for guests",
@@ -212,6 +217,7 @@ LANDING_STRINGS = {
             "ubytovací knihu."
         ),
         "landing.cta": "Vyzkoušet UbyHost",
+        "landing.cta.note": "Nebo napište na support@ubyhost.com — ozveme se s dalším postupem.",
         "landing.contact": "Jak to funguje",
         "landing.trust": "Pro apartmány, krátkodobé pronájmy a menší ubytovací zařízení v Česku.",
         "landing.demo.label": "Rychlá ukázka UbyHostu",
@@ -270,17 +276,21 @@ LANDING_STRINGS = {
             "Zeptejte se na cenu UbyHostu podle počtu ubytování, objemu rezervací "
             "a způsobu hlášení hostů do UbyPortu."
         ),
-        "pricing.eyebrow": "Jednoduchá domluva, žádné umělé tarify",
+        "pricing.eyebrow": "Jeden tarif, cena podle vašeho ubytování",
         "pricing.title": "Cena, která sedí vašemu ubytování.",
         "pricing.lede": (
             "Napište nám, jak ubytováváte. Domluvíme jasné řešení podle počtu "
             "ubytování, hostů a způsobu práce s UbyPortem."
         ),
-        "pricing.card.kicker": "Pracovní prostor UbyHost",
+        "pricing.card.kicker": "Co dostanete",
         "pricing.card.price": "Dle domluvy",
-        "pricing.card.note": "Praktický rozsah podle toho, co skutečně provozujete.",
-        "pricing.card.cta": "Zeptat se na cenu",
-        "pricing.card.reply": "Napište nám a ozveme se s dalším postupem.",
+        "pricing.card.summary": (
+            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování "
+            "— napište nám a pošleme nabídku."
+        ),
+        "pricing.card.note": "Cenu nastavíme podle toho, co skutečně provozujete.",
+        "pricing.card.cta": "Požádat o přístup a cenu",
+        "pricing.cta.subject": "Cena UbyHostu",
         "pricing.includes.title": "Kompletní postup evidence a hlášení hostů",
         "pricing.includes.1": "Napojení kalendářů Airbnb a Booking.com",
         "pricing.includes.2": "Soukromé online formuláře pro hosty",

@@ -8,6 +8,7 @@ themselves, and answer in Czech to the hosts the product is built for.
 from __future__ import annotations
 
 import re
+from urllib.parse import quote
 
 from starlette.testclient import TestClient
 
@@ -129,19 +130,31 @@ def test_product_details_preserve_ubyport_search_content_off_the_short_homepage(
 
 
 def test_pricing_is_contact_led_and_honest_in_both_languages():
-    for lang, price, cta in (
-        ("cs", "Dle domluvy", "Zeptat se na cenu"),
-        ("en", "By agreement", "Ask about pricing"),
-    ):
+    for lang in ("cs", "en"):
+        strings = LANDING_STRINGS[lang]
         page = _client().get(f"/cenik?lang={lang}")
         assert page.status_code == 200
-        assert price in page.text
-        assert cta in page.text
-        assert 'href="mailto:support@ubyhost.com?subject=UbyHost%20pricing"' in page.text
+        assert strings["pricing.card.price"] in page.text
+        assert strings["pricing.card.summary"] in page.text
+        assert strings["pricing.card.cta"] in page.text
+        assert strings["landing.cta.note"] in page.text
+        subject = quote(strings["pricing.cta.subject"])
+        assert f'href="mailto:support@ubyhost.com?subject={subject}"' in page.text
+        other = "en" if lang == "cs" else "cs"
+        assert quote(LANDING_STRINGS[other]["pricing.cta.subject"]) not in page.text
         assert '"@type": "WebPage"' in page.text
         assert '"@type": "Offer"' not in page.text
         assert '"price"' not in page.text
         assert f'hreflang="{lang}"' in page.text
+
+
+def test_the_pricing_page_answers_the_price_question_in_the_first_sentence():
+    """The page said "By agreement" and then explained nothing for a screen."""
+    for lang in ("cs", "en"):
+        summary = LANDING_STRINGS[lang]["pricing.card.summary"]
+        page = _client().get(f"/cenik?lang={lang}")
+        price = page.text.index(LANDING_STRINGS[lang]["pricing.card.price"])
+        assert page.text.index(summary) > price, f"{lang}: the answer is not under the price"
 
 
 def test_the_login_page_describes_itself_for_the_search_snippet():
