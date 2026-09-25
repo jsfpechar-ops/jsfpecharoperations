@@ -419,7 +419,7 @@ def drain(limit: int = 8) -> Dict[str, int]:
                 alerts.raise_alert(
                     "warning",
                     "mail_failed",
-                    f"Guest e-mail could not be sent ({row['kind']}).",
+                    f"E-mail could not be sent ({row['kind']}).",
                     f"To {mask_email(row['to_email'])}: {exc}",
                     dedupe_key=f"mail_failed:{row['id']}",
                     apartment_id=row["apartment_id"],
