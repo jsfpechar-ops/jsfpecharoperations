@@ -437,7 +437,11 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
     if auto_immediate:
         send_hint_key = "hint.auto_immediate"
-    elif not has_pending and progress["status"] in ("not_required", "reported"):
+    elif not has_pending and progress["status"] == "reported":
+        # "Nothing is subject to the duty" contradicted the stay's own metric
+        # ("2 reported · 2 subject to the duty") on every reported stay.
+        send_hint_key = "hint.all_reported"
+    elif not has_pending and progress["status"] == "not_required":
         send_hint_key = "hint.nothing_duty"
     elif not progress.get("guests"):
         send_hint_key = "hint.awaiting_guest"
