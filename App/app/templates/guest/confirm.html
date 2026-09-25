@@ -2,6 +2,7 @@
 {% block content %}
 <div class="g-card g-stay-summary">
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+  <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
 </div>
 {% if claim_error %}
   <div class="g-err">{{ t('claim_confirm_failed') }}</div>
