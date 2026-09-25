@@ -32,6 +32,8 @@
   {% elif progress.status == 'incomplete' %}{{ t('action.incomplete') }}
   {% elif progress.status == 'awaiting_verification' %}{{ t('action.awaiting_verification') }}
   {% elif progress.status == 'awaiting_guest' %}{{ t('action.awaiting_guest') }}
+  {% elif progress.status == 'reported' %}{{ t('action.reported') }}
+  {% elif progress.status == 'not_required' %}{{ t('action.not_required') }}
   {% else %}{{ t('action.check_missing') }}{% endif %}
 {% endmacro %}
 
