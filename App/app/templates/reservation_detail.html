@@ -36,7 +36,10 @@
         {% if send_controls.send_enabled %}
           {{ t('stay.detail.ready_count', count=send_controls.pending_count) }}
         {% else %}
-          {{ t(send_controls.send_hint_key) }}
+          {{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}
+          {% if send_controls.send_hint_key == 'hint.missing_guests' %}
+            <a href="#stay-quick-edit" data-open-details>{{ t('stay.detail.change_guest_count') }}</a>
+          {% endif %}
         {% endif %}
       </p>
     </div>
