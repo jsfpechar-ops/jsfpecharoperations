@@ -6,8 +6,7 @@
 {{ page_header(t('nav.settings'), t('settings.lede')) }}
 
 <nav class="section-nav settings-nav" aria-label="{{ t('nav.settings') }}">
-  <a href="#settings-overview">{{ t('settings.nav.overview') }}</a>
-  <a href="#settings-mail">{{ t('settings.nav.mail') }}</a>
+  <a href="#settings-technical">{{ t('settings.technical.title') }}</a>
   <a href="#settings-retention">{{ t('settings.nav.retention') }}</a>
   <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
   <a href="#settings-audit">{{ t('settings.nav.audit') }}</a>
@@ -19,8 +18,10 @@
 
 <div class="split wide">
   <div>
-    <div class="panel" id="settings-overview">
-      <h2 style="margin-top:0">{{ t('settings.destination.title') }}</h2>
+    <details class="panel technical" id="settings-technical">
+      <summary>{{ t('settings.technical.title') }}</summary>
+
+      <h2 id="settings-overview" style="margin-top:0">{{ t('settings.destination.title') }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
         <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
@@ -40,10 +41,8 @@
         </div>
       {% endif %}
       <p class="small muted">{{ t('settings.destination.help') }}</p>
-    </div>
 
-    <div class="panel" id="settings-mail">
-      <h2 style="margin-top:0">{{ t('settings.mail.title') }}</h2>
+      <h2 id="settings-mail">{{ t('settings.mail.title') }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
         <dd class="mono">{{ mail_backend }}</dd>
@@ -87,7 +86,15 @@
           </tbody>
         </table>
       {% endif %}
-    </div>
+
+      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}</h2>
+      <dl class="kv">
+        <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
+      </dl>
+      <p class="small muted">{{ t('settings.codelists.help') }}</p>
+    </details>
 
     <div class="panel" id="settings-ubyport">
       <h2 style="margin-top:0">{{ t('settings.access.title') }}</h2>
@@ -96,14 +103,6 @@
         <dd>{{ t('settings.access.required') if guest_pin_required else t('settings.access.off') }}</dd>
       </dl>
       <p class="small muted">{{ t('settings.access.help') }}</p>
-
-      <h3 style="margin-top:20px">{{ t('settings.codelists.title') }}</h3>
-      <dl class="kv">
-        <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
-        <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
-        <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
-      </dl>
-      <p class="small muted">{{ t('settings.codelists.help') }}</p>
     </div>
 
     <div class="panel" id="settings-archive">
