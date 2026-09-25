@@ -326,12 +326,19 @@ def _guest_mail_content(
     contract, and the branded HTML is an enhancement -- a composer bug costs the
     guest the nicer message, never the link.
     """
+    # The subject names the property, so the label has to resolve before the
+    # fallback subject is built. It is also the one value here that must never
+    # cost the guest their mail: a label that cannot be read falls back to an
+    # empty name, not to the plain-text body.
+    try:
+        property_name = mail_notify.property_label(apartment, lang)
+    except Exception:
+        property_name = ""
     fallback = {
-        "subject": _guest_mail_subject(kind, lang),
+        "subject": _guest_mail_subject(kind, lang, property_name),
         "text": plain_text,
     }
     try:
-        property_name = mail_notify.property_label(apartment, lang)
         dates = f"{reservation['date_from']} \u2013 {reservation['date_to']}"
         host = mail_notify.host_details(
             apartment["legal_entity_id"] if apartment else None
@@ -370,14 +377,14 @@ def _guest_mail_content(
     return fallback
 
 
-def _guest_mail_subject(kind: str, lang: str) -> str:
+def _guest_mail_subject(kind: str, lang: str, property_name: str = "") -> str:
     key = {
         "claim": "mail_claim_subject",
-        "claim_resend": "mail_claim_subject",
+        "claim_resend": "mail_claim_resend_subject",
         "completion": "mail_completion_subject",
         "reminder_guest": "mail_reminder_guest_subject",
     }.get(kind, "mail_claim_subject")
-    return i18n.translator(lang)(key)
+    return i18n.translator(lang)(key, property=property_name)
 
 
 def _stay_link(apartment, reservation) -> str:

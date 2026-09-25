@@ -9,6 +9,7 @@ UbyHost support, and the secret handling that must survive the new HTML part.
 from __future__ import annotations
 
 import json
+import re
 from datetime import timedelta
 
 import pytest
@@ -27,7 +28,10 @@ HOST_KINDS = ("reminder_host",)
 # generic parity mismatch somewhere else.
 NEW_GUEST_KEYS = (
     "mail_claim_subject",
+    "mail_claim_resend_subject",
+    "mail_claim_preheader",
     "mail_claim_heading",
+    "mail_claim_resend_heading",
     "mail_claim_intro",
     "mail_claim_action",
     "mail_link_fallback",
@@ -354,12 +358,53 @@ def test_the_completion_mail_says_the_receipt_is_not_proof_of_reporting():
 
 
 def test_the_guest_language_is_honoured():
-    assert _claim_content("cs")["subject"] == i18n.STRINGS["cs"]["mail_claim_subject"]
-    assert _claim_content("en")["subject"] == i18n.STRINGS["en"]["mail_claim_subject"]
+    for lang in ("cs", "en"):
+        expected = i18n.STRINGS[lang]["mail_claim_subject"] % {
+            "property": "Guest Mail Flat"
+        }
+        assert _claim_content(lang)["subject"] == expected
     assert _claim_content("cs")["subject"] != _claim_content("en")["subject"]
     czech = _completion_content("cs")["html"]
     assert "Registrace byla přijata" in czech
     assert "Registration received" not in czech
+
+
+def test_the_claim_subject_names_the_stay_and_not_a_city():
+    """Forty unread mails: the inbox line has to identify this stay."""
+    for lang in ("en", "cs"):
+        subject = _claim_content(lang)["subject"]
+        assert "Guest Mail Flat" in subject, lang
+        assert "Prague" not in subject, lang
+        assert "Praha" not in subject, lang
+    assert _claim_content("en")["subject"].startswith("Confirm your stay at ")
+    assert _claim_content("cs")["subject"].startswith("Potvrďte svůj pobyt")
+
+
+def test_the_resend_subject_cannot_be_confused_with_the_link_it_replaces():
+    fresh = _claim_content()["subject"]
+    resent = _claim_content(resend=True)["subject"]
+    assert resent != fresh
+    assert "Guest Mail Flat" in resent
+    assert resent == i18n.STRINGS["en"]["mail_claim_resend_subject"] % {
+        "property": "Guest Mail Flat"
+    }
+
+
+def test_the_resend_mail_says_in_its_heading_that_it_is_the_new_link():
+    assert i18n.STRINGS["en"]["mail_claim_resend_heading"] in _claim_content(
+        resend=True
+    )["html"]
+    assert i18n.STRINGS["en"]["mail_claim_resend_heading"] not in _claim_content()["html"]
+    assert i18n.STRINGS["en"]["mail_claim_heading"] in _claim_content()["html"]
+
+
+def test_the_claim_preheader_is_its_own_line_and_not_the_intro():
+    """The preheader is what the inbox shows beside the subject."""
+    html = _claim_content()["html"]
+    match = re.search(r"mso-hide:all;\">([^<]*)</div>", html)
+    assert match, html[:400]
+    assert match.group(1) == i18n.STRINGS["en"]["mail_claim_preheader"]
+    assert "Guest Mail Flat" not in match.group(1)
 
 
 def test_the_resend_mail_says_the_old_link_stopped_working():
