@@ -386,12 +386,20 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   color: var(--g-muted);
   margin-bottom: 14px;
 }
-.g-person-progress {
+.g-form-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   margin: 0 0 8px;
   color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: .02em;
+  font-size: 14px;
+  font-weight: 600;
+}
+.g-form-line span + span::before {
+  content: "·";
+  margin: 0 7px;
+  color: var(--ink-muted);
+  font-weight: 400;
 }
 .g-wizard-progress {
   position: sticky;
@@ -404,8 +412,9 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   padding: 10px 4px;
   background: color-mix(in srgb, var(--canvas) 94%, transparent);
   backdrop-filter: blur(10px);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
 }
 .g-wizard-progress[hidden] { display: none; }
 .g-wizard-progress .g-bar { height: 6px; }
@@ -770,6 +779,19 @@ details.g-why .g-details {
 }
 .g-fold[open] > summary::before { transform: rotate(45deg); }
 .g-fold[open] > summary { margin-bottom: 11px; }
+
+/* On the form the explainer keeps .g-fold's single-line shape. The caret is
+   .g-fold's, so the explainer's own marker steps aside. */
+details.g-why.g-fold > summary.g-why-summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 18px;
+  color: var(--g-accent);
+  font-size: 14px;
+  font-weight: 650;
+}
+details.g-why.g-fold > summary.g-why-summary::after { display: none; }
 
 .g-chip {
   display: inline-block;

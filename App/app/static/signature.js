@@ -359,6 +359,7 @@
     var label = form.querySelector("[data-wizard-label]");
     var bar = form.querySelector("[data-wizard-bar]");
     var template = form.getAttribute("data-progress-label") || "";
+    var titleTemplate = form.getAttribute("data-progress-title") || "";
     var active = Math.max(0, steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); }));
     // The entry the page loaded on is the starting point for the back gesture;
     // it replaces rather than pushes so the guest is not trapped in the wizard.
@@ -413,9 +414,15 @@
       steps.forEach(function (step, i) { step.hidden = i !== active; });
       if (progress) progress.hidden = false;
       if (label) {
-        label.textContent = template
+        var progressText = template
           .replace("__CURRENT__", String(active + 1))
           .replace("__TOTAL__", String(steps.length));
+        // Which step you are on only means something if you are also told what
+        // the step is for, so the bar carries the step's own title.
+        var stepTitle = steps[active].getAttribute("data-step-title") || "";
+        label.textContent = stepTitle && titleTemplate
+          ? titleTemplate.replace("__PROGRESS__", progressText).replace("__TITLE__", stepTitle)
+          : progressText;
       }
       if (bar) bar.style.width = ((active + 1) / steps.length * 100) + "%";
       if (focus) {
