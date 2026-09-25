@@ -131,11 +131,12 @@
         <a href="/dpa">{{ t('dpa.footer_short') }}</a>
         <span class="sidebar-footer-sep" aria-hidden="true">·</span>
         <a href="/subprocessors">{{ t('subprocessors.footer_short') }}</a>
-        {% if operator().email %}
-          <span class="sidebar-footer-sep" aria-hidden="true">·</span>
-          <a href="mailto:{{ operator().email }}">{{ t('nav.support') }} — {{ operator().email }}</a>
-        {% endif %}
       </nav>
+      {% if operator().email %}
+      <div class="sidebar-footer-support">
+        <a href="mailto:{{ operator().email }}">{{ t('nav.support_help', email=operator().email) }}</a>
+      </div>
+      {% endif %}
       <div class="sidebar-footer-row">
         <form method="post" action="/language" class="lang-switch compact">
           <input type="hidden" name="next" value="{{ request.url.path }}">
@@ -284,7 +285,7 @@
     <h2 id="command-title" class="sr-only">{{ t('command.open') }}</h2>
     <div class="command-search">
       <span aria-hidden="true">⌕</span>
-      <input type="search" data-command-input placeholder="{{ t('command.placeholder') }}" autocomplete="off">
+      <input type="search" data-command-input aria-label="{{ t('command.open') }}" placeholder="{{ t('command.placeholder') }}" autocomplete="off">
       <button class="command-close" type="button" data-command-close aria-label="{{ t('shortcuts.close') }}">&times;</button>
     </div>
     <div class="command-results" data-command-results role="listbox" aria-live="polite"

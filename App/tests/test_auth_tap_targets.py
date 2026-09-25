@@ -53,7 +53,7 @@ def test_the_font_size_token_is_real():
 
 
 def test_the_switch_labels_are_unchanged():
-    """B-19 is a tap-target fix; the labels stay the product-wide "EN"/"CZ"."""
+    """B-19 is a tap-target fix; the labels stay the product-wide "EN"/"CS"."""
     html = AUTH_BASE.read_text(encoding="utf-8")
     assert 'class="lang-switch auth-lang-switch"' in html
     assert "flag" not in html.lower()

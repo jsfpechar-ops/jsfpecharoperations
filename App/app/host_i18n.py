@@ -23,7 +23,7 @@ PUBLIC_DEFAULT_LANGUAGE = "cs"
 STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "lang.en": "EN",
-        "lang.cs": "CZ",
+        "lang.cs": "CS",
         "lang.switch": "Language",
         "nav.guide": "Help",
         "nav.operations": "Operations",
@@ -44,7 +44,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.settings": "Settings",
         "nav.users": "Users",
         "nav.logout": "Log out",
-        "nav.support": "Support",
+        "nav.support_help": "Need help with UbyHost? %(email)s",
         "nav.administrator": "Administrator",
         "login.page_title": "Log in · UbyHost",
         "login.meta_description": (
@@ -1253,7 +1253,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     },
     "cs": {
         "lang.en": "EN",
-        "lang.cs": "CZ",
+        "lang.cs": "CS",
         "lang.switch": "Jazyk",
         "nav.operations": "Provoz",
         "nav.records": "Evidence",
@@ -1273,7 +1273,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "nav.settings": "Nastavení",
         "nav.users": "Uživatelé",
         "nav.logout": "Odhlásit se",
-        "nav.support": "Podpora",
+        "nav.support_help": "Potřebujete pomoc s UbyHostem? %(email)s",
         "nav.administrator": "Správce",
         "login.page_title": "Přihlášení · UbyHost",
         "login.meta_description": (
