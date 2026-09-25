@@ -269,10 +269,10 @@ def format_birth_date(ddmmyyyy: Optional[str]) -> str:
 
 
 def display_birth_date(value: Optional[str]) -> str:
-    """Guest form display: DD/MM/YYYY."""
+    """Guest and host form display: DD.MM.YYYY."""
     normalised = normalise_birth_date(value)
     if len(normalised) == 8 and normalised.isdigit():
-        return f"{normalised[:2]}/{normalised[2:4]}/{normalised[4:]}"
+        return f"{normalised[:2]}.{normalised[2:4]}.{normalised[4:]}"
     return (value or "").strip()
 
 
@@ -280,7 +280,7 @@ def validate_birth_date(ddmmyyyy: str, stay_from: Optional[date]) -> List[Issue]
     if not ddmmyyyy:
         return [Issue("birth_date", "Date of birth is required.")]
     if len(ddmmyyyy) != 8 or not ddmmyyyy.isdigit():
-        return [Issue("birth_date", "Enter the full date as DD/MM/YYYY.")]
+        return [Issue("birth_date", "Enter the full date as DD.MM.YYYY.")]
     day, month, year = int(ddmmyyyy[:2]), int(ddmmyyyy[2:4]), int(ddmmyyyy[4:])
     if year and year < 1900:
         return [Issue("birth_date", "Year must be 1900 or later.")]

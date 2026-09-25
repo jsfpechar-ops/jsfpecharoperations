@@ -155,20 +155,20 @@ function initSignature() {
 
     function formatDigits(digits) {
       var out = digits.slice(0, 2);
-      if (digits.length > 2) out += "/" + digits.slice(2, 4);
-      if (digits.length > 4) out += "/" + digits.slice(4, 8);
+      if (digits.length > 2) out += "." + digits.slice(2, 4);
+      if (digits.length > 4) out += "." + digits.slice(4, 8);
       return out;
     }
 
     // "1990-07-04" is year-first. Reading it as eight digits would give
-    // 19/90/0704, so reorder it before anything else touches the value.
+    // 19.90.0704, so reorder it before anything else touches the value.
     function fromIso(value) {
       var match = /^\s*(\d{4})-(\d{2})-(\d{2})\s*$/.exec(String(value || ""));
       return match ? match[3] + match[2] + match[1] : "";
     }
 
     function toDate(formatted) {
-      var match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formatted);
+      var match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(formatted);
       if (!match) return null;
       var day = parseInt(match[1], 10);
       var month = parseInt(match[2], 10);
