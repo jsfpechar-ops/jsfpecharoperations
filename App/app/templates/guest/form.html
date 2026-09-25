@@ -224,7 +224,8 @@
       </div>
       <input class="{{ bad('passport_photo') }}" {{ invalid('passport_photo') }} type="file" id="passport_photo" name="passport_photo" hidden>
       <p class="passport-file-name" id="passport-file-name" hidden></p>
-      <p class="passport-file-err err" id="passport-file-err" role="alert" hidden></p>
+      <p class="passport-file-err err" id="passport-file-err" role="alert" hidden
+         data-missing="{{ t('passport_photo_missing') }}"></p>
       <div class="hint">{{ t('passport_photo_hint') }}</div>
       {{ err_for('passport_photo') }}
     </div>
