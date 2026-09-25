@@ -131,11 +131,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_not_started": "Select these dates",
         "error_no_stay": "Please select your stay dates.",
         "error_party_size": "Please enter how many people are staying (1–60).",
-        "no_stays": "There are no upcoming stays to fill in right now.",
+        "no_stays": "There's nothing to register yet",
         "no_stays_help": (
-            "The apartment link only lists stays that start in the next few days. If your "
-            "arrival has already passed, open the stay-specific link from your host or "
-            "confirmation e-mail, or message your host."
+            "Registration opens a few days before arrival. Come back to this same link then. "
+            "Already arrived? Message your host — they can send you a direct link to your stay."
         ),
         "bad_link_title": "This guest link is not valid",
         "bad_link_help": "It may be incomplete or may have been replaced. Please ask your host for a new link.",
@@ -651,11 +650,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_not_started": "Vybrat tento termín",
         "error_no_stay": "Vyberte prosím termín svého pobytu.",
         "error_party_size": "Zadejte počet osob (1–60).",
-        "no_stays": "Momentálně tu není žádná rezervace k vyplnění.",
+        "no_stays": "Zatím tu není co vyplnit",
         "no_stays_help": (
-            "Odkaz bytu zobrazuje jen pobyty začínající v nejbližších dnech. Pokud už "
-            "příjezd proběhl, otevřete odkaz konkrétního pobytu z e-mailu nebo od "
-            "ubytovatele, nebo ubytovateli napište."
+            "Registrace se otevírá pár dní před příjezdem. Pak se vraťte na tento odkaz. "
+            "Už jste na místě? Napište ubytovateli, pošle vám přímý odkaz na váš pobyt."
         ),
         "bad_link_title": "Tento odkaz není platný",
         "bad_link_help": "Odkaz může být neúplný nebo byl nahrazen. Požádejte ubytovatele o nový odkaz.",
