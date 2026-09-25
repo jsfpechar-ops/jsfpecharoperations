@@ -970,7 +970,7 @@ Append to `static/app.css`:
 @router.post("/guests/{guest_id}/stay-fee")
 async def guest_stay_fee_decision(guest_id: int, request: Request):
     # guard = auth.require_login(request); if guard: return guard
-    # guest = access.guest(request, guest_id); if not guest: return _back("/reservations", err="No such guest.")
+    # guest = access.guest(request, guest_id); if not guest: return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     # form = await request.form()
     # decision = _form_str(form, "decision"); reason = _form_str(form, "reason")[:120]
     # if decision not in ("", "exempt", "charge"): decision = ""
@@ -980,12 +980,12 @@ async def guest_stay_fee_decision(guest_id: int, request: Request):
     # db.update("guest", guest_id, {"fee_host_decision": decision or None,
     #                               "fee_host_reason": reason or None, "updated_at": db.utcnow()})
     # db.audit("stay_fee_decision", f"guest={guest_id} decision={decision or 'auto'} reason={reason}")
-    # return _back(f"/reservations/{guest['reservation_id']}#stay-fee", msg="Saved.")
+    # return _back(f"/reservations/{guest['reservation_id']}#stay-fee", msg=_flash(request, "flash.stay_fee.saved"))
 
 
 @router.post("/reservations/{reservation_id}/stay-fee/paid")
 async def reservation_stay_fee_paid(reservation_id: int, request: Request):
-    # guard; reservation = access.reservation(request, reservation_id); if not: _back("/reservations", err="No such stay.")
+    # guard; reservation = access.reservation(request, reservation_id); if not: _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     # apartment = access.apartment(request, reservation["apartment_id"])
     # form = await request.form(); action = _form_str(form, "action")
     # if action == "paid":
@@ -995,10 +995,12 @@ async def reservation_stay_fee_paid(reservation_id: int, request: Request):
     # else:
     #     db.update("reservation", reservation_id, {"stay_fee_paid_at": None, "stay_fee_paid_amount_czk": None})
     # db.audit("stay_fee_paid" if action == "paid" else "stay_fee_unpaid", f"reservation={reservation_id}")
-    # return _back(f"/reservations/{reservation_id}#stay-fee", msg="Saved.")
+    # return _back(f"/reservations/{reservation_id}#stay-fee", msg=_flash(request, "flash.stay_fee.saved"))
 ```
 
 The commented lines are the exact body. Write them as real code in the repo's style. Check that `db.update` accepts a dict with `None` values; the existing `apartment_update` already does this.
+
+Flash messages go through `_flash(request, key, **params)`, never an English literal — see UX-34 in `UX_AUDIT.md` and `tests/test_flash_literals.py`. Add `flash.stay_fee.saved` to `host_i18n.py` in **both** EN and CS in the same commit as the route.
 
 ---
 

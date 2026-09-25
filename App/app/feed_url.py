@@ -10,7 +10,16 @@ from urllib.parse import urljoin, urlparse
 from . import config
 
 class FeedUrlError(Exception):
-    """Unsafe or invalid calendar URL."""
+    """Unsafe or invalid calendar URL.
+
+    ``key`` is the host-facing translation key for the reason, so a route can
+    flash the sentence in the host's own language. ``str(exc)`` stays the
+    English technical wording, which is what the sync log records.
+    """
+
+    def __init__(self, message: str, key: str = "flash.error.feed_url_malformed") -> None:
+        super().__init__(message)
+        self.key = key
 
 
 FeedError = FeedUrlError  # alias for callers expecting icalsync.FeedError shape
@@ -90,7 +99,9 @@ def _resolve_host_ips(hostname: str) -> list[ipaddress._BaseAddress]:
     try:
         infos = socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)
     except socket.gaierror as exc:
-        raise FeedError(f"Could not resolve calendar host: {exc}") from exc
+        raise FeedError(
+            f"Could not resolve calendar host: {exc}", "flash.error.feed_host_unresolved"
+        ) from exc
     ips: list[ipaddress._BaseAddress] = []
     for info in infos:
         try:
@@ -98,7 +109,7 @@ def _resolve_host_ips(hostname: str) -> list[ipaddress._BaseAddress]:
         except ValueError:
             continue
     if not ips:
-        raise FeedError("Could not resolve calendar host.")
+        raise FeedError("Could not resolve calendar host.", "flash.error.feed_host_unresolved")
     return ips
 
 
@@ -110,32 +121,45 @@ def resolve_calendar_target(url: str) -> CalendarFetchTarget:
         hostname = parsed.hostname
         port = parsed.port
     except ValueError as exc:
-        raise FeedError("Calendar URL is malformed.") from exc
+        raise FeedError(
+            "Calendar URL is malformed.", "flash.error.feed_url_malformed"
+        ) from exc
     if parsed.scheme not in ("http", "https"):
-        raise FeedError("Calendar URL must use http:// or https://.")
+        raise FeedError(
+            "Calendar URL must use http:// or https://.", "flash.error.feed_url_scheme"
+        )
     if not hostname:
-        raise FeedError("Calendar URL is missing a hostname.")
+        raise FeedError("Calendar URL is missing a hostname.", "flash.error.feed_url_no_host")
     if parsed.username is not None or parsed.password is not None:
-        raise FeedError("Calendar URL must not contain embedded credentials.")
+        raise FeedError(
+            "Calendar URL must not contain embedded credentials.",
+            "flash.error.feed_url_credentials",
+        )
     if port is not None and not 1 <= port <= 65535:
-        raise FeedError("Calendar URL has an invalid port.")
+        raise FeedError("Calendar URL has an invalid port.", "flash.error.feed_url_port")
     host = hostname.lower().rstrip(".")
     allow_private = config.ICAL_ALLOW_PRIVATE and config.DEPLOYMENT != "production"
     if not allow_private:
         if _ambiguous_numeric_host(host):
             raise FeedError(
-                "Calendar URL must use a canonical IP address or a public hostname."
+                "Calendar URL must use a canonical IP address or a public hostname.",
+                "flash.error.feed_url_host",
             )
         if host in _BLOCKED_HOSTNAMES or host.endswith(".local"):
-            raise FeedError("That calendar host is not allowed.")
+            raise FeedError("That calendar host is not allowed.", "flash.error.feed_host_blocked")
         if host == "127.0.0.1" or host.startswith("127."):
-            raise FeedError("Calendar URL must not point to a loopback address.")
+            raise FeedError(
+                "Calendar URL must not point to a loopback address.",
+                "flash.error.feed_host_blocked",
+            )
     ips = _resolve_host_ips(host)
     if not allow_private:
         for ip in ips:
             if _blocked_ip(ip):
                 raise FeedError(
-                    "Calendar URL must point to a public internet host, not a private or internal address."
+                    "Calendar URL must point to a public internet host, not a private "
+                    "or internal address.",
+                    "flash.error.feed_host_private",
                 )
     pinned = tuple(dict.fromkeys(str(ip) for ip in ips))
     return CalendarFetchTarget(
@@ -164,6 +188,7 @@ def resolve_redirect_url(current: str, location: str) -> str:
     if _scheme_of(current) == "https" and _scheme_of(joined) != "https":
         raise FeedError(
             "Calendar redirect would drop HTTPS, which would let the feed be tampered with "
-            "in transit. Point the feed at the address it redirects to."
+            "in transit. Point the feed at the address it redirects to.",
+            "flash.error.feed_redirect_insecure",
         )
     return validate_calendar_url(joined)
