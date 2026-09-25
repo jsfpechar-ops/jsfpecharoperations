@@ -1136,6 +1136,16 @@ def reservations_list(request: Request):
                 "WHERE a.owner_user_id IS ? LIMIT 1",
                 (access.owner_id(request),),
             )),
+            # Without a feed there is nothing to sync, so an empty list offers
+            # "connect a calendar" rather than sending the host to the properties.
+            "feed_count": int(
+                db.query_one(
+                    "SELECT COUNT(*) AS n FROM ical_feed f "
+                    "JOIN apartment a ON a.id = f.apartment_id "
+                    "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
+                    (access.owner_id(request),),
+                )["n"]
+            ),
             "return_to": quote(
                 request.url.path + (f"?{request.url.query}" if request.url.query else ""),
                 safe="",
