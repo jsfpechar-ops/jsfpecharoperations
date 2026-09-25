@@ -521,12 +521,12 @@ def test_the_submission_problem_kind_is_registered():
     assert "submission_problem" in mail.KINDS
 
 
-def _problem(stays=None):
+def _problem(stays=None, *, transport=False):
     return mail_notify.build_submission_problem(
         property_name="Riverside Loft",
         state="error",
         reason="112: critical transmission error",
-        transport=False,
+        transport=transport,
         stays=stays or [],
         submission_id=None,
         lang="en",
@@ -548,4 +548,32 @@ def test_the_submission_mail_uses_the_action_colour_and_not_the_identity_coral()
     assert f"color:{mail_notify.BRAND_ACTION};text-decoration:underline;" in html
     assert f"color:{mail_notify.BRAND_INK};" in html
     assert "#c85a52" not in html
+
+
+def _preheader(content):
+    """The hidden inbox-snippet line, with the invisible spacer stripped off."""
+    match = re.search(r"mso-hide:all;\">([^<]*)</div>", content["html"])
+    assert match, content["html"][:400]
+    captured = match.group(1)
+    assert captured.endswith(mail_notify.PREHEADER_SPACER), repr(captured[-60:])
+    return html.unescape(captured[: -len(mail_notify.PREHEADER_SPACER)])
+
+
+def test_the_submission_mail_has_its_own_preheader_not_the_intro():
+    """E-10: the snippet used to repeat the intro and then run into the logo."""
+    preheaders = {}
+    for transport in (False, True):
+        content = _problem(transport=transport)
+        key = (
+            "mail.submission_problem.preheader_transport"
+            if transport
+            else "mail.submission_problem.preheader"
+        )
+        preheader = _preheader(content)
+        assert preheader == host_i18n.STRINGS["en"][key], transport
+        # The bug this replaces: a preheader that repeats the first body line.
+        assert preheader not in content["text"], transport
+        preheaders[transport] = preheader
+    # A transport failure never reached UbyPort, so it must not blame the data.
+    assert preheaders[False] != preheaders[True]
 

@@ -490,6 +490,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_preheader": (
             "Tap the button, then fill in each guest — about 2 minutes per person."
         ),
+        "mail_claim_resend_preheader": (
+            "Your previous link has stopped working. Here is a new one."
+        ),
         "mail_claim_heading": "Confirm your stay",
         "mail_claim_resend_heading": "Here is your new link",
         "mail_claim_intro": (
@@ -519,6 +522,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_subject_fee": (
             "Registered — stay fee %(amount)s Kč to pay for %(property)s"
         ),
+        "mail_completion_preheader": (
+            "Everyone on this stay is registered — nothing else to do."
+        ),
         "mail_completion_heading": "You're all set",
         "mail_completion_intro": (
             "Everyone for %(property)s (%(dates)s) is registered. "
@@ -534,6 +540,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "This e-mail is your receipt, not an official confirmation."
         ),
         "mail_reminder_guest_subject": "Please finish your guest registration",
+        "mail_reminder_guest_preheader": (
+            "Your stay starts tomorrow and the registration is not complete."
+        ),
         "mail_reminder_guest_heading": "Your stay starts tomorrow",
         "mail_reminder_guest_intro": (
             "Your stay at %(property)s starts tomorrow and the guest registration is "
@@ -1018,6 +1027,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_preheader": (
             "Klepněte na tlačítko a vyplňte údaje hostů – asi 2 minuty na osobu."
         ),
+        "mail_claim_resend_preheader": (
+            "Předchozí odkaz už nefunguje. Tady je nový."
+        ),
         "mail_claim_heading": "Potvrďte svůj pobyt",
         "mail_claim_resend_heading": "Tady je váš nový odkaz",
         "mail_claim_intro": (
@@ -1046,6 +1058,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_subject_fee": (
             "Registrace hotová – zaplaťte poplatek z pobytu %(amount)s Kč (%(property)s)"
         ),
+        "mail_completion_preheader": (
+            "Všichni na tomto pobytu jsou zaregistrovaní – nic dalšího není potřeba."
+        ),
         "mail_completion_heading": "Hotovo",
         "mail_completion_intro": (
             "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
@@ -1061,6 +1076,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "nikoli úřední doklad."
         ),
         "mail_reminder_guest_subject": "Dokončete prosím registraci hostů",
+        "mail_reminder_guest_preheader": (
+            "Pobyt začíná zítra a registrace není dokončená."
+        ),
         "mail_reminder_guest_heading": "Váš pobyt začíná zítra",
         "mail_reminder_guest_intro": (
             "Váš pobyt v %(property)s začíná zítra a registrace hostů zatím není "
