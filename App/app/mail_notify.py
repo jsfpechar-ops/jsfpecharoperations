@@ -233,9 +233,12 @@ def _block_heading(text: str) -> str:
     )
 
 
-def _block_paragraph(text: str, *, muted: bool = False) -> str:
+def _block_paragraph(
+    text: str, *, muted: bool = False, size: Optional[int] = None
+) -> str:
+    """A body paragraph. ``size`` overrides the 16px / muted-14px default."""
     colour = INK_MUTED if muted else INK_SECONDARY
-    size = 14 if muted else 16
+    size = size or (14 if muted else 16)
     return (
         f'<tr><td style="padding:12px 32px 0 32px;">'
         f'<p style="margin:0;font:400 {size}px/1.6 {_FONT};color:{colour};">'
@@ -852,9 +855,12 @@ def build_claim_link(
         action_url=link,
         action_label=action,
         extra_blocks=[
+            # The expiry sits directly under the button: it is the one
+            # time-critical fact in the message, and it used to be the last
+            # muted line, after "what happens next".
+            _block_paragraph(expiry, size=15),
             _block_link(link, fallback),
             _block_section(next_label, next_body),
-            _block_paragraph(expiry, muted=True),
         ],
     )
     text = "\n".join(
@@ -863,9 +869,9 @@ def build_claim_link(
             "",
             f"{action}: {link}",
             "",
-            f"{next_label}: {next_body}",
-            "",
             expiry,
+            "",
+            f"{next_label}: {next_body}",
             "",
             "--",
             *footer_lines,

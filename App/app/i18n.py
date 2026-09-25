@@ -503,12 +503,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "If the button does not work, copy this address into your browser:"
         ),
         "mail_claim_expiry": (
-            "The link is valid for 30 minutes and stops working as soon as you "
-            "confirm the stay."
+            "The button works for 30 minutes. After you confirm, this phone or "
+            "computer remembers your stay — you won't need the link again on it."
         ),
         "mail_claim_expiry_resend": (
-            "This is a new link and the previous one has stopped working. It is "
-            "valid for 30 minutes and stops working as soon as you confirm the stay."
+            "This new link replaces the previous one and works for 30 minutes."
         ),
         "mail_claim_next_label": "What happens next",
         "mail_claim_next_body": (
@@ -1040,11 +1039,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:"
         ),
         "mail_claim_expiry": (
-            "Odkaz platí 30 minut a přestane fungovat ve chvíli, kdy pobyt potvrdíte."
+            "Tlačítko funguje 30 minut. Po potvrzení si váš pobyt zapamatuje tento "
+            "telefon nebo počítač – odkaz už na něm znovu potřebovat nebudete."
         ),
         "mail_claim_expiry_resend": (
-            "Toto je nový odkaz, předchozí už nefunguje. Platí 30 minut a přestane "
-            "fungovat ve chvíli, kdy pobyt potvrdíte."
+            "Tento nový odkaz nahrazuje předchozí a funguje 30 minut."
         ),
         "mail_claim_next_label": "Co bude následovat",
         "mail_claim_next_body": (
