@@ -392,18 +392,33 @@ def build_submission_problem(
     cannot drift apart.
     """
     lang = host_i18n.normalise_language(lang)
-    subject = _text(
-        lang, "mail.submission_problem.subject", property=property_name
+    subject_key = (
+        "mail.submission_problem.subject_transport"
+        if transport
+        else "mail.submission_problem.subject"
     )
+    subject = _text(lang, subject_key, property=property_name)
     intro_key = (
         "mail.submission_problem.intro_transport"
         if transport
         else "mail.submission_problem.intro"
     )
     intro = _text(lang, intro_key, property=property_name)
-    reason_label = _text(lang, "mail.submission_problem.reason_label")
+    # A transport failure never reached UbyPort, so the mail must not say
+    # UbyPort reported anything and must not send the host to fix guest data.
+    reason_label_key = (
+        "mail.submission_problem.reason_label_transport"
+        if transport
+        else "mail.submission_problem.reason_label"
+    )
+    reason_label = _text(lang, reason_label_key)
     next_label = _text(lang, "mail.submission_problem.next_label")
-    next_steps = _text(lang, "mail.submission_problem.next_steps")
+    next_steps_key = (
+        "mail.submission_problem.next_steps_transport"
+        if transport
+        else "mail.submission_problem.next_steps"
+    )
+    next_steps = _text(lang, next_steps_key)
     next_transient = _text(lang, "mail.submission_problem.next_transient")
     stays_label = _text(lang, "mail.submission_problem.stays_label")
     action_receipt = _text(lang, "mail.submission_problem.action_dorucenka")
