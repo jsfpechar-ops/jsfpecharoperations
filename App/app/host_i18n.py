@@ -51,8 +51,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "UbyHost brings calendars, guest forms, the house book and UbyPort reporting "
             "together for Czech short-term hosts. Log in to your account."
         ),
-        "login.title": "Your guest reporting workspace.",
-        "login.lede": "Log in to your UbyHost account",
+        "login.title": "Log in to UbyHost",
+        "login.lede": "Your guest reporting workspace.",
         "login.username": "Username",
         "login.password": "Password",
         "login.username_ph": "Enter your username…",
@@ -1267,8 +1267,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "UbyHost spojuje kalendáře, formuláře hostů, domovní knihu a hlášení do UbyPortu "
             "pro krátkodobé pronájmy v Česku. Přihlaste se ke svému účtu."
         ),
-        "login.title": "Váš pracovní prostor pro hlášení hostů.",
-        "login.lede": "Přihlaste se do UbyHost",
+        "login.title": "Přihlášení do UbyHostu",
+        "login.lede": "Váš pracovní prostor pro hlášení hostů.",
         "login.username": "Uživatelské jméno",
         "login.password": "Heslo",
         "login.username_ph": "Zadejte uživatelské jméno…",
