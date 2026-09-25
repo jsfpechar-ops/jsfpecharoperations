@@ -612,7 +612,12 @@ def test_incomplete_stay_inside_the_reach_back_window_stays_reachable():
 
         apartment_landing = TestClient(app).get(f"/l/{TOKEN}?lang=en")
         assert apartment_landing.status_code == 200
-        assert "There are no upcoming stays to fill in right now." in apartment_landing.text
+        # Jinja escapes the apostrophe in the rendered title.
+        assert "There&#39;s nothing to register yet" in apartment_landing.text
+        assert (
+            "Registration opens a few days before arrival. Come back to this same link then. "
+            "Already arrived? Message your host — they can send you a direct link to your stay."
+        ) in apartment_landing.text
         assert f"/l/{TOKEN}/{past}" not in apartment_landing.text
 
         stay = browser.get(f"/l/{TOKEN}/{past}", follow_redirects=True)
