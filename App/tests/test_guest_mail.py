@@ -21,6 +21,10 @@ TOKEN = "guestmailtok"
 HOST_EMAIL = "host@guestmail.test"
 HOST_PHONE = "+420999888777"
 
+# The filled coral box ``_button`` paints. Kept in one place so a colour change
+# is a one-line edit here rather than a hunt through the assertions.
+BUTTON_MARKER = f"background:{mail_notify.BRAND_ACTION};border-radius:8px;"
+
 GUEST_KINDS = ("claim", "completion", "reminder_guest")
 HOST_KINDS = ("reminder_host",)
 
@@ -317,6 +321,60 @@ def test_guest_mail_is_light_mode_only():
         assert "background:#f7f7f5" in html, kind
 
 
+# E-9: the identity coral. It fails AA both as a button fill (white on it is
+# 4.17:1) and as link text on white (4.17:1), so no mail may paint it.
+IDENTITY_CORAL = "#c85a52"
+
+
+def test_the_identity_coral_never_reaches_a_mail_client():
+    for kind, content in _all_content().items():
+        assert IDENTITY_CORAL not in content["html"], kind
+        assert IDENTITY_CORAL not in content["text"], kind
+
+
+def test_the_primary_button_uses_the_action_colour_and_a_48px_target():
+    """E-9: 15px/1 with 11px padding in the identity coral gave a 37px target.
+
+    The padding lives on the cell rather than the anchor, because Outlook drops
+    padding on an inline element; the anchor fills the padded cell so the whole
+    box is clickable in every client. 14px + 20px line + 14px = 48px.
+    """
+    for kind, content in _all_content().items():
+        html = content["html"]
+        if BUTTON_MARKER not in html:
+            # Only the completion mail can be buttonless: it grows one when a
+            # stay fee is still owed and has nothing to press otherwise.
+            assert kind == "completion", kind
+            continue
+        assert (
+            f"background:{mail_notify.BRAND_ACTION};border-radius:8px;"
+            "padding:14px 24px;"
+        ) in html, kind
+        assert 'style="display:block;padding:0;font:600 16px/20px' in html, kind
+    # And the fee button, which the money slot adds, is the same control.
+    fee_html = _fee_completion()["html"]
+    assert BUTTON_MARKER in fee_html
+    assert "padding:14px 24px;" in fee_html
+    assert "display:inline-block" not in fee_html
+
+
+def test_the_coral_links_use_the_action_colour_too():
+    """E-9: the fallback URL and the stay links were the identity coral."""
+    marker = f"color:{mail_notify.BRAND_ACTION};text-decoration:underline;"
+    for kind, content in _all_content().items():
+        html = content["html"]
+        assert marker in html, kind
+        assert f"color:{IDENTITY_CORAL}" not in html, kind
+
+
+def test_the_note_label_uses_the_brand_ink_colour():
+    """E-9: 13px uppercase in the identity coral on the tint was only 3.54:1."""
+    html = _reminder_guest_content()["html"]
+    assert f"background:{mail_notify.BRAND_SOFT}" in html
+    assert f"color:{mail_notify.BRAND_INK};" in html
+    assert f"color:{IDENTITY_CORAL}" not in html
+
+
 def test_guest_mail_looks_transactional_not_bulk():
     """The tells a spam filter looks for, and the ones we must not add."""
     for kind, content in _all_content().items():
@@ -405,7 +463,7 @@ def test_the_completion_mail_closes_with_nothing_left_to_do():
         assert f"background:{mail_notify.BRAND_SOFT}" not in html_part, lang
         # And the receipt no longer carries a coral button: nothing here is an
         # action the guest still owes the host.
-        assert f"background:{mail_notify.BRAND};" not in html_part, lang
+        assert f"background:{mail_notify.BRAND_ACTION};" not in html_part, lang
 
 
 def test_the_completion_mail_stops_blaming_ubyport():
@@ -481,7 +539,7 @@ def test_the_money_slot_keeps_the_stay_link_and_the_closing_note_after_it():
 
 def test_the_money_slot_renders_exactly_one_coral_button():
     """Two primaries means no primary: slot 2 owns the button, slot 1 has none."""
-    marker = f"background:{mail_notify.BRAND};border-radius:8px;"
+    marker = BUTTON_MARKER
     with_money = html.unescape(_fee_completion()["html"])
     assert with_money.count(marker) == 1
     # The money button, not the stay link, is the one that got it.
@@ -511,7 +569,7 @@ def test_the_secondary_note_sits_next_to_the_stay_link():
     assert html_part.index(stay) < html_part.index("The QR code for your banking app")
     assert "The QR code for your banking app is on your stay page." in content["text"]
     # No money slot, so still nothing coral.
-    assert f"background:{mail_notify.BRAND};border-radius:8px;" not in html_part
+    assert BUTTON_MARKER not in html_part
 
 
 def test_the_completion_subject_names_the_fee_that_is_still_owed():
