@@ -214,3 +214,34 @@ def test_the_product_features_are_lanes_with_no_tone():
     section = _section(_render("/jak-to-funguje"), "product-feature-list")
     assert section.count('class="product-feature-row"') == 4
     assert "tone-" not in section
+
+
+# --- UX-154 / D-23: hero type safe for Czech diacritics --------------------
+
+
+def test_the_hero_h1_is_set_loose_enough_for_czech_diacritics():
+    blocks = _blocks(".landing-hero h1")
+    assert blocks, "no .landing-hero h1 rule"
+    for block in blocks:
+        assert "line-height: .94" not in block
+        assert "line-height: 0.92" not in block
+        assert "-.058em" not in block
+        assert "-0.065em" not in block
+    assert any(
+        "line-height: 1.02" in block and "letter-spacing: -.04em" in block
+        for block in blocks
+    )
+
+
+def test_the_mobile_hero_eyebrow_is_plain_text_not_a_pill():
+    found = re.search(
+        r"@media \(max-width: 600px\) \{.*?"
+        r"\.landing-hero \.landing-eyebrow \{(.*?)\}",
+        CSS,
+        re.S,
+    )
+    assert found, "no mobile eyebrow rule"
+    body = found.group(1)
+    assert "background: transparent" in body
+    assert "border: 0" in body
+    assert "border-radius: 0" in body
