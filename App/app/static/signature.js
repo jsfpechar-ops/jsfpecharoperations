@@ -350,6 +350,27 @@
     field.value += hash;
   }
 
+  /* The error summary sits at the top of the page, but the field it names can
+     be three steps further in. A plain "#field" jump lands on a hidden step and
+     looks like nothing happened, so the link asks the wizard to bring that step
+     on screen first. */
+  function initErrorSummary() {
+    var links = document.querySelectorAll(".g-err a[href^='#']");
+    if (!links.length) return;
+    var form = document.querySelector("[data-guest-wizard]");
+    Array.prototype.forEach.call(links, function (link) {
+      link.addEventListener("click", function (event) {
+        var id = (link.getAttribute("href") || "").slice(1);
+        var field = id ? document.getElementById(id) : null;
+        if (!form || !field) return;
+        event.preventDefault();
+        form.dispatchEvent(new CustomEvent("guest-wizard:show", { detail: { target: field } }));
+        if (typeof field.focus === "function") field.focus({ preventScroll: true });
+        field.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
+  }
+
   function initGuestWizard() {
     var form = document.querySelector("[data-guest-wizard]");
     if (!form) return;
@@ -529,6 +550,7 @@
     initResidenceCountry();
     initPinReturn();
     initGuestWizard();
+    initErrorSummary();
     initGuestReview();
     focusFirstError();
   });

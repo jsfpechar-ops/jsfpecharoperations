@@ -145,7 +145,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "form_expired_title": "This form timed out",
         "form_expired_help": (
-            "Nothing was saved. Reload the page, or start again from the link below."
+            "Nothing was saved. Start again from the link below."
         ),
         "rate_limited_title": "Too many attempts from your connection",
         "rate_limited_help": (
@@ -673,7 +673,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "form_expired_title": "Tomuto formuláři vypršela platnost",
         "form_expired_help": (
-            "Nic se neuložilo. Načtěte stránku znovu nebo začněte znovu přes odkaz níže."
+            "Nic se neuložilo. Začněte znovu přes odkaz níže."
         ),
         "rate_limited_title": "Příliš mnoho pokusů z vašeho připojení",
         "rate_limited_help": (

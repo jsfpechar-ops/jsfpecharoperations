@@ -264,7 +264,7 @@ def _localize_message(message: str) -> str:
 
 
 def _localize_issues(issues, lang: str):
-    return validation_i18n.localize_issues(issues, lang)
+    return validation_i18n.guest_localize_issues(issues, lang)
 
 
 def _apartment_by_token(token: str):

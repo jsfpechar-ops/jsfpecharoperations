@@ -136,6 +136,41 @@ CS_MESSAGES: Dict[str, str] = {
     ),
 }
 
+# The guest form's own wording, in both languages. ``validation.py`` writes for
+# the host app, where a field is named by its column ("Country", "Nationality").
+# The guest form labels the same fields "Stát" / "Country" and "Státní
+# občanství" / "Nationality", and the birth-date sentences sit under a field
+# the guest knows as "Datum narození" / "Date of birth" — so the summary has to
+# name what the label names. Only the guest route reads these tables; the host
+# copy in ``validation.py`` is untouched.
+GUEST_EN_MESSAGES: Dict[str, str] = {
+    "Nationality is required.": "Choose your nationality.",
+    "Country is required.": "Choose the country of your home address.",
+    "Enter the full date as DD/MM/YYYY.": (
+        "Date of birth: enter the full date as DD/MM/YYYY."
+    ),
+    "Year must be 1900 or later.": "Date of birth: year must be 1900 or later.",
+    "Month must be between 01 and 12.": "Date of birth: month must be between 01 and 12.",
+    "Day must be between 01 and 31.": "Date of birth: day must be between 01 and 31.",
+    "That date does not exist - please check day and month.": (
+        "Date of birth: that date does not exist — check the day and month."
+    ),
+}
+
+GUEST_CS_MESSAGES: Dict[str, str] = {
+    "Nationality is required.": "Vyberte státní občanství.",
+    "Country is required.": "Vyberte stát trvalého bydliště.",
+    "Enter the full date as DD/MM/YYYY.": (
+        "Datum narození: zadejte celé datum ve formátu DD/MM/RRRR."
+    ),
+    "Year must be 1900 or later.": "Datum narození: rok musí být 1900 nebo pozdější.",
+    "Month must be between 01 and 12.": "Datum narození: měsíc musí být mezi 01 a 12.",
+    "Day must be between 01 and 31.": "Datum narození: den musí být mezi 01 a 31.",
+    "That date does not exist - please check day and month.": (
+        "Datum narození: takové datum neexistuje — zkontrolujte den a měsíc."
+    ),
+}
+
 # Sentences that embed a value the host typed, so they cannot be dictionary keys.
 CS_PATTERNS: Tuple[Tuple[re.Pattern, str], ...] = (
     (
@@ -169,5 +204,28 @@ def localize_issues(issues: List[validation.Issue], lang: str = "cs") -> List[va
         return issues
     return [
         validation.Issue(issue.field, localize(issue.message, lang), issue.severity)
+        for issue in issues
+    ]
+
+
+def guest_localize(message: str, lang: str = "cs") -> str:
+    """The sentence as the guest form should read it, in the guest's language.
+
+    The guest tables win, so a field is named the way its label names it; the
+    host table is still the fallback, so a sentence with no guest entry is
+    translated rather than left English.
+    """
+    if not message:
+        return message
+    table = GUEST_EN_MESSAGES if lang != "cs" else GUEST_CS_MESSAGES
+    return table.get(message) or localize(message, lang)
+
+
+def guest_localize_issues(
+    issues: List[validation.Issue], lang: str = "cs"
+) -> List[validation.Issue]:
+    """The same issues, worded for the guest form."""
+    return [
+        validation.Issue(issue.field, guest_localize(issue.message, lang), issue.severity)
         for issue in issues
     ]
