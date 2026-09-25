@@ -206,6 +206,7 @@
 
   {% if require_passport %}
   <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}"
+       data-guest-step-skip-when="CZE"
        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
     <h2>{{ t('passport_photo_title') }}</h2>
     <p class="g-intro">{{ t('passport_photo_help') }}</p>
