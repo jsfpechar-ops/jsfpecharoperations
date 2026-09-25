@@ -437,6 +437,52 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
 }
 .no-nav .panel { border-radius: var(--radius-lg); padding: 24px; }
 
+/* --- public legal documents (Terms, Privacy, DPA) ---------------------- */
+
+/* Contents. One clause is a section with a hairline above it, not a card:
+   twenty-seven cards read as twenty-seven separate documents. */
+.legal-toc {
+  margin: 22px 0 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.legal-toc-title { margin: 0 0 10px; font-weight: 660; color: var(--ink); }
+.legal-toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 32px; }
+.legal-toc li { margin: 0 0 6px; font-size: var(--text-sm); }
+.legal-toc a { color: var(--ink-secondary); }
+.legal-toc a:hover { color: var(--brand-ink); }
+/* A wide screen has room for the list; a phone gets the disclosure instead.
+   The two are the same list, and only the visible one is in the a11y tree. */
+.legal-toc-narrow { display: none; }
+
+.legal-section { padding: 26px 0; border-top: 1px solid var(--border); }
+.legal-section:first-of-type { border-top: 0; }
+.legal-section > h2:first-child { margin-top: 0; }
+
+/* 13px grey was designed for secondary UI notes, not for 17,000 characters of
+   contract. Fine print is exactly the impression the brief forbids. */
+.terms-section {
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--ink-secondary);
+  max-width: 70ch;
+}
+
+.legal-back { margin: 14px 0 0; font-size: var(--text-sm); }
+.legal-back a { color: var(--ink-muted); text-decoration: none; }
+.legal-back a:hover { color: var(--brand-ink); text-decoration: underline; }
+
+@media (max-width: 700px) {
+  .legal-toc { padding: 4px 14px; }
+  .legal-toc ol { columns: 1; }
+  .legal-toc-wide { display: none; }
+  .legal-toc-narrow { display: block; }
+  .legal-toc-narrow > summary { min-height: 44px; font-weight: 660; color: var(--ink); }
+  .legal-toc-narrow[open] > summary { margin-bottom: 4px; }
+}
+
 /* --- type -------------------------------------------------------------- */
 
 h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.035em; margin: 0 0 6px; font-weight: 700; color: var(--ink); }
