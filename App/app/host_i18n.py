@@ -1587,7 +1587,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.setup.step1_title": "Provozovatel",
         "guide.setup.step1": "Firma nebo osoba registrovaná u policie.",
         "guide.setup.step2_title": "Ubytování",
-        "guide.setup.step2": "IDUB, značka a adresa musí přesně sedět s UbyPortem.",
+        "guide.setup.step2": "IDUB, zkratka a adresa musí přesně sedět s UbyPortem.",
         "guide.setup.step3_title": "Kalendáře",
         "guide.setup.step3": "Vložte exportní iCal odkazy z Airbnb nebo Booking.com.",
         "guide.setup.step4_title": "Přihlašovací údaje UbyPort",
@@ -1596,7 +1596,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Anotovaná ukázka přesně ukazuje pole; prázdné již uložené heslo se při uložení zachová."
         ),
         "guide.setup.step5_title": "Odkaz pro hosty",
-        "guide.setup.step5": "Permalink vložte do zprávy při příjezdu na všech portálech.",
+        "guide.setup.step5": "Odkaz pro hosty vložte do zprávy při příjezdu na všech portálech.",
         "guide.stays.body": (
             "Pobyty přicházejí z kalendářů nebo ručního zadání. Otevřete řádek pro hosty, odkaz nebo odeslání."
         ),
@@ -1605,7 +1605,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "v nabídce Export CSV a balíček PDF pro kontrolu. Export respektuje aktuální filtry."
         ),
         "guide.guests.body": (
-            "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, vedoucí host uvede "
+            "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, hlavní host uvede "
             "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář. "
             "Nedokončený převzatý formulář zůstává po příjezdu dostupný, dokud není dokončen nebo "
             "přístup výslovně nezamknete."
