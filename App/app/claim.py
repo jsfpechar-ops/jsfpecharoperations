@@ -711,7 +711,10 @@ def sweep_reminders() -> Dict[str, int]:
                     filled=progress["filled"],
                     expected=progress["expected"],
                 )
-                host_payload = {"text": host_content["text"], "lang": "en"}
+                host_payload = {
+                    "text": host_content["text"],
+                    "lang": mail_notify.HOST_MAIL_LANGUAGE,
+                }
                 if host_content.get("html"):
                     host_payload["html"] = host_content["html"]
                 mail.enqueue(

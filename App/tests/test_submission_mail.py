@@ -577,3 +577,56 @@ def test_the_submission_mail_has_its_own_preheader_not_the_intro():
     # A transport failure never reached UbyPort, so it must not blame the data.
     assert preheaders[False] != preheaders[True]
 
+
+
+def test_host_mail_language_is_english_by_decision(monkeypatch):
+    """UX-80 (E-14): the host-mail language is a recorded decision.
+
+    The product owner chose English until a stored per-host preference exists,
+    so the fallback is a named constant rather than a literal at each call
+    site. Nothing here may start following the UI language by accident.
+    """
+    assert mail_notify.HOST_MAIL_LANGUAGE == "en"
+    apartment, _reservation, _guest_id = _seed("mailnotifylang")
+    result, _pairs = _submit(monkeypatch, apartment, client=_RejectingClient())
+    assert result["state"] == "error"
+    rows = _outbox()
+    assert rows, "a refused report still mails the host"
+    assert _payload(rows[0])["lang"] == "en"
+
+
+def test_the_host_mail_default_comes_from_the_named_constant(monkeypatch):
+    """The language is not read off the request or the host's UI language.
+
+    ``submission_problem`` is called by the sweep, where there is no request at
+    all; its default has to be the recorded decision. A caller that passes an
+    explicit language keeps it, which is the seam a stored per-host preference
+    would use later.
+    """
+    apartment, _reservation, _guest_id = _seed("mailnotifylangdefault")
+    sent = {}
+    real_enqueue = mail.enqueue
+
+    def _capture(**kwargs):
+        sent.update(kwargs)
+        return real_enqueue(**kwargs)
+
+    monkeypatch.setattr(mail, "enqueue", _capture)
+    mail_notify.submission_problem(apartment, None, state="error", reason="112")
+    assert sent["payload"]["lang"] == mail_notify.HOST_MAIL_LANGUAGE
+
+
+def test_no_host_mail_language_literal_is_left_hard_coded():
+    """The constant is the only place the host-mail language is written.
+
+    UX-80 was raised because ``claim.py`` carried ``"lang": "en"`` inline, so
+    English looked accidental. A new literal there would make the decision
+    invisible again.
+    """
+    from pathlib import Path
+
+    app_dir = Path(__file__).resolve().parent.parent / "app"
+    for name in ("claim.py", "mail_notify.py", "reporting.py"):
+        source = (app_dir / name).read_text(encoding="utf-8")
+        assert '"lang": "en"' not in source, name
+        assert '"lang": "cs"' not in source, name

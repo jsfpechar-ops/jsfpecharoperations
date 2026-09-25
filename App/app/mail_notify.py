@@ -33,6 +33,13 @@ log = logging.getLogger("ubyhost.mail_notify")
 LOGO_PATH = "/static/ubyhost-logo.jpg"
 LOGO_WIDTH = 180
 
+# Host mail is English by product-owner decision (audit E-14 [UX-80]). No
+# stored per-host language preference exists yet, so the fallback is named here
+# once instead of being a literal at each call site; when a preference does
+# exist, this constant is the single place that reads it. Guest mail is
+# unaffected -- it follows the language stored on the claim.
+HOST_MAIL_LANGUAGE = "en"
+
 # Brand tokens copied from static/tokens.css. Mail clients do not load the
 # stylesheet, so the values have to be literal here and cannot be custom
 # properties.
@@ -745,6 +752,7 @@ def _submission_problem(
         # host is not left uninformed; there is simply no address to also mail.
         return None
 
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
     stays = stays_for_submission(submission_id)
     content = build_submission_problem(
         property_name=apartment["internal_name"] or "",
@@ -753,12 +761,12 @@ def _submission_problem(
         transport=transport,
         stays=stays,
         submission_id=submission_id,
-        lang=lang or host_i18n.DEFAULT_LANGUAGE,
+        lang=lang,
     )
     payload: Dict[str, Any] = {
         "text": content["text"],
         "html": content["html"],
-        "lang": host_i18n.normalise_language(lang),
+        "lang": lang,
     }
     # One message per property per local day. A batch that is retried by the
     # sweep and fails again the same afternoon updates the alert but must not
