@@ -27,6 +27,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    host_i18n,
     housebook,
     icalsync,
     mail,
@@ -1952,8 +1953,9 @@ def submission_detail(submission_id: int, request: Request):
     codebook = codelists.error_codebook()
     from ..ubyport import errors as uby_errors
 
+    lang = host_i18n.lang_from_request(request)
     header_messages = [
-        f"{code}: {uby_errors.describe(code, codebook)}"
+        f"{code}: {uby_errors.describe(code, codebook, lang)}"
         for code in uby_errors.split_codes(submission["header_errors"])
     ]
     raw_record_errors = json.loads(submission["record_errors"] or "[]")
@@ -1964,7 +1966,9 @@ def submission_detail(submission_id: int, request: Request):
     rows = []
     for index, guest in enumerate(guests):
         error = raw_record_errors[index] if index < len(raw_record_errors) else ""
-        state, messages = uby_errors.classify(submission["header_errors"], error, codebook)
+        state, messages = uby_errors.classify(
+            submission["header_errors"], error, codebook, lang
+        )
         if state == "accepted":
             result = "accepted"
         elif "150" in uby_errors.split_codes(error) or any(
@@ -1974,6 +1978,9 @@ def submission_detail(submission_id: int, request: Request):
         else:
             result = "rejected_final" if state == "not_correctable" else "rejected"
         rows.append({**dict(guest), "result": result, "errors": " | ".join(messages)})
+    # A rejected report leads nowhere on its own: the guest data is fixed on the
+    # stay, and that is where the batch is sent again. The first guest names it.
+    fix_reservation_id = rows[0]["reservation_id"] if rows else None
     return render(
         request,
         "submission_detail.html",
@@ -1982,6 +1989,7 @@ def submission_detail(submission_id: int, request: Request):
             "guests": rows,
             "header_messages": header_messages,
             "record_errors": record_errors,
+            "fix_reservation_id": fix_reservation_id,
         },
     )
 

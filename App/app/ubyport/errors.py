@@ -69,6 +69,14 @@ NON_CORRECTABLE_MARKERS = ("duplic", "pozd", "late")
 # classify as correctable, so nothing is abandoned while we wait for the book.
 CORRECTABLE_CODES = {"112"}
 
+# What the host reads when the live code book has no entry for a code. It names
+# where the explanation comes from, because a rejected report has no Doručenka
+# to point at: the only PDF it produced is the error report.
+FALLBACK_TEXT: Dict[str, str] = {
+    "en": "UbyPort error %(code)s — refresh code lists on the property page to see the explanation.",
+    "cs": "Chyba UbyPortu %(code)s — vysvětlení uvidíte po obnovení číselníků na stránce ubytování.",
+}
+
 
 def split_codes(raw: Optional[str]) -> List[str]:
     """"5;6;7;" -> ["5", "6", "7"]."""
@@ -77,7 +85,9 @@ def split_codes(raw: Optional[str]) -> List[str]:
     return [part.strip() for part in raw.split(";") if part.strip()]
 
 
-def describe(code: str, codebook: Optional[Dict[str, str]] = None) -> str:
+def describe(
+    code: str, codebook: Optional[Dict[str, str]] = None, lang: str = "en"
+) -> str:
     codebook = codebook or {}
     padded = code.zfill(3)
     for key in (code, padded, f"ERR_CZE_{padded}"):
@@ -85,7 +95,7 @@ def describe(code: str, codebook: Optional[Dict[str, str]] = None) -> str:
             return codebook[key]
     if code in KNOWN_CODES:
         return KNOWN_CODES[code]
-    return f"UbyPort error {code} (see the Doručenka for details)"
+    return FALLBACK_TEXT.get(lang, FALLBACK_TEXT["en"]) % {"code": code}
 
 
 def is_non_correctable(text: str) -> bool:
@@ -108,6 +118,7 @@ def classify(
     header_errors: Optional[str],
     record_errors: Optional[str],
     codebook: Optional[Dict[str, str]] = None,
+    lang: str = "en",
 ) -> Tuple[str, List[str]]:
     """Return (state, human-readable messages) for one guest record.
 
@@ -115,6 +126,10 @@ def classify(
       "accepted"        - no errors reported
       "error"           - rejected, worth fixing and resending
       "not_correctable" - rejected or flagged in a way resending will not fix
+
+    ``lang`` only chooses the wording of the messages. The state is decided from
+    the English text, so translating the display can never change what the app
+    is willing to resend.
     """
     messages: List[str] = []
     codes = split_codes(header_errors) + split_codes(record_errors)
@@ -124,7 +139,8 @@ def classify(
     non_correctable = False
     for code in codes:
         text = describe(code, codebook)
-        messages.append(f"{code}: {text}")
+        shown = text if lang == "en" else describe(code, codebook, lang)
+        messages.append(f"{code}: {shown}")
         if code in CORRECTABLE_CODES:
             continue
         if is_non_correctable(text) or code in {"150"}:
