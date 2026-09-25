@@ -1594,6 +1594,22 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .guest-card-who h3 { margin: 0; font-size: 17.5px; letter-spacing: -0.01em; }
 .guest-card-state { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 
+/* A guest the host declared but nobody has registered yet. It has to read as a
+   slot to fill, not as a guest record, so it drops the card's elevation and
+   keeps only the actions. */
+.guest-card.placeholder {
+  background: var(--surface-2);
+  border-style: dashed;
+  box-shadow: none;
+}
+.guest-card.placeholder .guest-card-head {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  align-items: center;
+}
+.guest-card.placeholder .guest-card-who h3 { font-size: 15.5px; color: var(--muted); font-weight: 600; }
+
 .guest-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

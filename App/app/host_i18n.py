@@ -1136,6 +1136,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.guests.note": "Note: %(text)s",
         "stay.detail.guests.empty": "No guest has filled in the form yet.",
         "stay.detail.guests.empty_hint": "Copy the guest link above, or add the details yourself.",
+        # Counts the same people as stay.fee.headcount: someone the host
+        # declared but nobody has registered. Keep the two wordings in step.
+        "stay.detail.guests.placeholder": "Guest %(n)s — not registered yet",
+        "stay.detail.guests.add_by_hand": "Add by hand",
         "stay.detail.money.title": "Payments",
         "stay.detail.reports.title": "Reports sent for this stay",
         "stay.detail.reports.when": "When",
@@ -2361,6 +2365,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.guests.note": "Poznámka: %(text)s",
         "stay.detail.guests.empty": "Zatím žádný host nevyplnil formulář.",
         "stay.detail.guests.empty_hint": "Zkopírujte odkaz pro hosty výše, nebo údaje zadejte sami.",
+        "stay.detail.guests.placeholder": "Host č. %(n)s — zatím neregistrován",
+        "stay.detail.guests.add_by_hand": "Přidat ručně",
         "stay.detail.money.title": "Platby",
         "stay.detail.reports.title": "Hlášení odeslaná pro tento pobyt",
         "stay.detail.reports.when": "Kdy",
