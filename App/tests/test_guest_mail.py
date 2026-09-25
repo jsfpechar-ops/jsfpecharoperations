@@ -8,6 +8,7 @@ UbyHost support, and the secret handling that must survive the new HTML part.
 """
 from __future__ import annotations
 
+import html
 import json
 import re
 from datetime import timedelta
@@ -43,7 +44,6 @@ NEW_GUEST_KEYS = (
     "mail_completion_heading",
     "mail_completion_intro",
     "mail_completion_action",
-    "mail_completion_note_label",
     "mail_completion_note",
     "mail_reminder_guest_subject",
     "mail_reminder_guest_heading",
@@ -363,13 +363,55 @@ def test_the_completion_mail_links_to_the_stay():
     stay = f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1"
     assert stay in content["html"]
     assert stay in content["text"]
-    assert content["html"].count(stay) >= 2, "button and copyable address"
+    # The address is readable, not just a button target: a guest whose client
+    # mangles the markup can still copy it out of the message.
+    assert f">{stay}</a>" in content["html"]
 
 
-def test_the_completion_mail_says_the_receipt_is_not_proof_of_reporting():
-    content = _completion_content()
-    assert "not proof of police reporting" in content["text"]
-    assert "not proof of police reporting" in content["html"]
+def test_the_completion_mail_closes_with_nothing_left_to_do():
+    """E-7: the receipt used to read like a report that was still in flight."""
+    for lang, heading, subject, intro, note, action in (
+        (
+            "en",
+            "You're all set",
+            "You're registered for Guest Mail Flat \u2014 nothing else to do",
+            "Everyone for Guest Mail Flat (2026-01-05 \u2013 2026-01-08) is registered.",
+            "Your host takes care of the official registration with the authorities.",
+            "See your stay page",
+        ),
+        (
+            "cs",
+            "Hotovo",
+            "Registrace hotov\u00e1 \u2013 Guest Mail Flat. Nic dal\u0161\u00edho nemus\u00edte d\u011blat",
+            "V\u0161ichni host\u00e9 pro Guest Mail Flat (2026-01-05 \u2013 2026-01-08) "
+            "jsou zaregistrovan\u00ed.",
+            "\u00da\u0159edn\u00ed hl\u00e1\u0161en\u00ed vy\u0159izuje v\u00e1\u0161 hostitel.",
+            "Zobrazit str\u00e1nku pobytu",
+        ),
+    ):
+        content = _completion_content(lang)
+        # The HTML part is escaped, so an apostrophe arrives as ``&#39;``.
+        html_part = html.unescape(content["html"])
+        assert content["subject"] == subject, lang
+        assert heading in html_part, lang
+        assert intro in html_part, lang
+        assert note in html_part, lang
+        assert note in content["text"], lang
+        assert action in html_part, lang
+        assert action in content["text"], lang
+        # The closing line is a muted paragraph, not a coral callout box.
+        assert f"background:{mail_notify.BRAND_SOFT}" not in html_part, lang
+        # And the receipt no longer carries a coral button: nothing here is an
+        # action the guest still owes the host.
+        assert f"background:{mail_notify.BRAND};" not in html_part, lang
+
+
+def test_the_completion_mail_stops_blaming_ubyport():
+    """E-7: 'sent to UbyPort automatically' answered a question nobody asked."""
+    for lang in ("cs", "en"):
+        content = _completion_content(lang)
+        assert "UbyPort" not in content["html"], lang
+        assert "UbyPort" not in content["text"], lang
 
 
 def test_the_guest_language_is_honoured():
@@ -380,8 +422,8 @@ def test_the_guest_language_is_honoured():
         assert _claim_content(lang)["subject"] == expected
     assert _claim_content("cs")["subject"] != _claim_content("en")["subject"]
     czech = _completion_content("cs")["html"]
-    assert "Registrace byla přijata" in czech
-    assert "Registration received" not in czech
+    assert "Hotovo" in czech
+    assert "You're all set" not in czech
 
 
 def test_the_claim_subject_names_the_stay_and_not_a_city():

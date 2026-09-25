@@ -546,16 +546,18 @@ def maybe_notify_completion(reservation, apartment) -> None:
     reply_to = _reply_to_for_apartment(apartment)
     cc = reply_to
     name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
+    stay_dates = validation.fmt_date_range(
+        reservation["date_from"], reservation["date_to"]
+    )
     text = (
-        f"Thank you. Details for your stay at {name} "
-        f"({reservation['date_from']} – {reservation['date_to']}) have been received. "
-        f"This receipt is not proof of police reporting. Depending on your host's settings, "
-        f"complete foreign-guest records may be sent to UbyPort automatically."
+        f"Everyone for {name} ({stay_dates}) is registered. "
+        f"There is nothing else you need to do. "
+        f"Your host takes care of the official registration with the authorities. "
+        f"This e-mail is your receipt, not an official confirmation."
         if lang != "cs"
-        else f"Děkujeme. Údaje k pobytu v {name} "
-        f"({reservation['date_from']} – {reservation['date_to']}) jsme přijali. "
-        f"Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele mohou být "
-        f"kompletní záznamy cizinců odeslány do UbyPortu automaticky."
+        else f"Všichni hosté pro {name} ({stay_dates}) jsou zaregistrovaní. "
+        f"Nic dalšího dělat nemusíte. Úřední hlášení vyřizuje váš hostitel. "
+        f"Tento e-mail je potvrzení pro vás, nikoli úřední doklad."
     )
     content = _guest_mail_content(
         "completion",

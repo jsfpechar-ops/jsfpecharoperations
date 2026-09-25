@@ -757,28 +757,22 @@ def build_completion(
     access. The stay address works on the device that confirmed, which is where
     the guest just finished filling the form in.
     """
-    subject = _guest_text(lang, "mail_completion_subject")
+    subject = _guest_text(lang, "mail_completion_subject", property=property_name)
     intro = _guest_text(
         lang, "mail_completion_intro", property=property_name, dates=dates
     )
     action = _guest_text(lang, "mail_completion_action")
-    note_label = _guest_text(lang, "mail_completion_note_label")
     note = _guest_text(lang, "mail_completion_note")
-    fallback = _guest_text(lang, "mail_link_fallback")
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
-    blocks = _guest_blocks(
-        heading=_guest_text(lang, "mail_completion_heading"),
-        intro=intro,
-        action_url=stay_url,
-        action_label=action,
-        extra_blocks=[
-            _block_link(stay_url, fallback),
-            _block_note(note_label, note),
-        ],
-    )
+    blocks = [
+        _block_heading(_guest_text(lang, "mail_completion_heading")),
+        _block_paragraph(intro),
+        _block_link(stay_url, action),
+        _block_paragraph(note, muted=True),
+    ]
     text = "\n".join(
-        [intro, "", f"{action}: {stay_url}", "", f"{note_label}: {note}", "", "--", *footer_lines]
+        [intro, "", f"{action}: {stay_url}", "", note, "", "--", *footer_lines]
     )
     return {
         "subject": subject,
