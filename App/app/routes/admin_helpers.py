@@ -55,6 +55,16 @@ def plural_param(request, key: str, n: int) -> str:
     return host_i18n.translate_plural(host_i18n.lang_from_request(request), key, n)
 
 
+def host_text(request, key: str, **params) -> str:
+    """A host-language label that is not a flash on its own.
+
+    A flash that lists the fields still missing has to name them, and the names
+    live in the same catalogue as the rest of the interface, so they are
+    translated where the flash is raised.
+    """
+    return host_i18n.translate(host_i18n.lang_from_request(request), key, **params)
+
+
 def form_str(form, key: str, default: str = "") -> str:
     value = form.get(key)
     return (value or default).strip() if isinstance(value, str) else default
