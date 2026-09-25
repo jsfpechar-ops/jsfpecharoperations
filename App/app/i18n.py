@@ -569,6 +569,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         # The footer. Guests are told to reach the host, never UbyHost support:
         # the same rule the guest pages follow.
+        # The first line said "UbyHost" and nothing else: a guest has never
+        # heard of the brand, so it said nothing (audit E-17 [UX-131]).
+        "mail_guest_footer_about": (
+            "UbyHost is the guest-registration service your host uses."
+        ),
         "mail_guest_footer_why": (
             "You received this e-mail because your stay at %(property)s is registered "
             "with this address."
@@ -1116,6 +1121,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         # Patička. Hosté se obracejí na ubytovatele, nikdy na podporu UbyHostu:
         # stejné pravidlo jako na stránkách pro hosty.
+        "mail_guest_footer_about": (
+            "UbyHost je služba pro registraci hostů, kterou váš hostitel používá."
+        ),
         "mail_guest_footer_why": (
             "Tento e-mail dostáváte, protože jste touto adresou potvrdili pobyt: "
             "%(property)s."

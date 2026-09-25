@@ -383,13 +383,53 @@ def _block_link(url: str, label: str) -> str:
     )
 
 
+class _FooterLink:
+    """One tappable channel in a footer line.
+
+    A text part cannot carry a link, so the footer is built once and rendered
+    twice: ``_footer_text`` prints ``label``, the shell prints an anchor.
+    """
+
+    __slots__ = ("label", "href")
+
+    def __init__(self, label: str, href: str) -> None:
+        self.label = label
+        self.href = href
+
+
+# The same separator the guest pages use between two channels.
+_FOOTER_SEPARATOR = " \u00b7 "
+
+
+def _footer_text(lines: List[Any]) -> List[str]:
+    """The plain-text mirror of a footer, for the text part of a message."""
+    rendered = []
+    for line in lines:
+        if isinstance(line, list):
+            rendered.append(_FOOTER_SEPARATOR.join(link.label for link in line))
+        else:
+            rendered.append(line)
+    return rendered
+
+
+def _footer_line_html(line: Any) -> str:
+    """One footer line as HTML. A list of ``_FooterLink`` becomes anchors."""
+    if not isinstance(line, list):
+        return _esc(line)
+    return _FOOTER_SEPARATOR.join(
+        f'<a href="{_esc(link.href)}" style="color:{INK_SECONDARY};'
+        f'text-decoration:underline;">{_esc(link.label)}</a>'
+        for link in line
+    )
+
+
 def _shell(
     *,
     lang: str,
     title: str,
     preheader: str,
     blocks: List[str],
-    footer_lines: List[str],
+    footer_lines: List[Any],
 ) -> str:
     """Wrap composed rows in the branded card.
 
@@ -402,9 +442,9 @@ def _shell(
     """
     logo_url = _public(LOGO_PATH)
     footer_html = "".join(
-        f'<div style="padding:4px 0 0 0;">{_esc(line)}</div>'
+        f'<div style="padding:4px 0 0 0;">{_footer_line_html(line)}</div>'
         if index
-        else f"<div>{_esc(line)}</div>"
+        else f"<div>{_footer_line_html(line)}</div>"
         for index, line in enumerate(footer_lines)
     )
     preheader_html = ""
@@ -445,15 +485,16 @@ def _shell(
 
 def _guest_footer_lines(
     lang: str, property_name: str, host: Optional[Dict[str, str]]
-) -> List[str]:
+) -> List[Any]:
     """The closing lines of a guest message.
 
     A guest is told how to reach their host, never UbyHost support: the guest
     pages follow the same rule, and an address the guest cannot use reads as a
-    dead end.
+    dead end. The host's e-mail and phone are tappable in the HTML part (audit
+    E-17 [UX-131]) -- on a phone, a printed address means selecting it by hand.
     """
-    lines = [
-        "UbyHost",
+    lines: List[Any] = [
+        _guest_text(lang, "mail_guest_footer_about"),
         _guest_text(lang, "mail_guest_footer_why", property=property_name),
     ]
     host = host or {}
@@ -461,9 +502,11 @@ def _guest_footer_lines(
         lines.append(
             f"{_guest_text(lang, 'mail_guest_footer_host_label')}: {host['name']}"
         )
-    contact = " \u00b7 ".join(
-        part for part in (host.get("email"), host.get("phone")) if part
-    )
+    contact = []
+    if host.get("email"):
+        contact.append(_FooterLink(host["email"], f"mailto:{host['email']}"))
+    if host.get("phone"):
+        contact.append(_FooterLink(host["phone"], f"tel:{host['phone'].replace(' ', '')}"))
     if contact:
         lines.append(contact)
     if host.get("email"):
@@ -883,7 +926,7 @@ def build_claim_link(
             f"{next_label}: {next_body}",
             "",
             "--",
-            *footer_lines,
+            *_footer_text(footer_lines),
         ]
     )
     return {
@@ -980,7 +1023,7 @@ def build_completion(
     blocks.append(_block_paragraph(note, muted=True))
     text_lines.extend(["", note])
 
-    text = "\n".join([*text_lines, "", "--", *footer_lines])
+    text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
     return {
         "subject": subject,
         "text": text,
@@ -1063,7 +1106,7 @@ def build_reminder_guest(
             one_reminder,
             "",
             "--",
-            *footer_lines,
+            *_footer_text(footer_lines),
         ]
     )
     return {
