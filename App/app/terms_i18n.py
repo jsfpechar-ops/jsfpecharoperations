@@ -305,7 +305,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
     "cs": {
         "terms.page_title": "Obchodní podmínky",
         "terms.page_lede": (
-            "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kterí službu "
+            "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kteří službu "
             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
         ),
         "terms.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
