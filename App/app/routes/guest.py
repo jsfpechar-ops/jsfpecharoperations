@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
+from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -44,89 +44,6 @@ CLAIM_COOKIE = "ubyhost_claim"
 # hammering rather than pacing a careful person. The PIN and the claim cookie are
 # the controls on *who* may post; this only bounds how often.
 GUEST_POST_MAX_ATTEMPTS = 30
-
-CS_VALIDATION_MESSAGES = {
-    "Date of birth is required.": "Datum narození je povinné.",
-    "Enter the full date as DD/MM/YYYY.": "Zadejte celé datum ve formátu DD/MM/RRRR.",
-    "Year must be 1900 or later.": "Rok musí být 1900 nebo pozdější.",
-    "Month must be between 01 and 12.": "Měsíc musí být mezi 01 a 12.",
-    "Day must be between 01 and 31.": "Den musí být mezi 01 a 31.",
-    "That date does not exist - please check day and month.": "Toto datum neexistuje – zkontrolujte den a měsíc.",
-    "Date of birth cannot be after your arrival date.": "Datum narození nemůže být po datu příjezdu.",
-    "Date of birth cannot be in the future.": "Datum narození nemůže být v budoucnosti.",
-    "Surname is required.": "Příjmení je povinné.",
-    "Given name looks missing - please check the passport.": "Křestní jméno zřejmě chybí – zkontrolujte pas.",
-    "Nationality is required.": "Státní příslušnost je povinná.",
-    "Travel document number is required.": "Číslo cestovního dokladu je povinné.",
-    "Street and number are required.": "Ulice a číslo jsou povinné.",
-    "City is required.": "Město je povinné.",
-    "Country is required.": "Země je povinná.",
-    "Unknown country code.": "Neznámý kód země.",
-    "Unknown purpose-of-stay code.": "Neznámý účel pobytu.",
-    "Purpose of stay is required.": "Účel pobytu je povinný.",
-    "Remove the | character and any line breaks.": (
-        "Odstraňte znak | a všechny konce řádků."
-    ),
-    "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
-    validation.STAY_OUTSIDE_BOOKING_MESSAGE: (
-        "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se "
-        "obraťte na ubytovatele."
-    ),
-    validation.STAY_DATE_UNREADABLE_MESSAGE: (
-        "Termíny pobytu na této stránce nejsou čitelné. Načtěte stránku znovu."
-    ),
-    validation.SIGNATURE_INVALID_MESSAGE: (
-        "Tento podpis se nepodařilo uložit. Podepište se znovu do podpisového pole."
-    ),
-    validation.NON_LATIN_MESSAGE: (
-        "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově "
-        "čitelných řádcích na konci vašeho pasu."
-    ),
-    # Built from the same constants as the English text so the two cannot drift
-    # apart when a field limit changes.
-    f"Surname must be at most {validation.MAX_SURNAME} characters.": (
-        f"Příjmení může mít nejvýše {validation.MAX_SURNAME} znaků. Zkraťte ho, "
-        "prosím, podle pasu."
-    ),
-    f"Given name must be at most {validation.MAX_FIRST_NAME} characters.": (
-        f"Jméno může mít nejvýše {validation.MAX_FIRST_NAME} znaků. Uveďte, prosím, "
-        "jen první jména z pasu."
-    ),
-    f"Document number must be at least {validation.MIN_DOC} characters.": (
-        f"Číslo dokladu musí mít alespoň {validation.MIN_DOC} znaků."
-    ),
-    f"Document number must be at most {validation.MAX_DOC} characters.": (
-        f"Číslo dokladu může mít nejvýše {validation.MAX_DOC} znaků."
-    ),
-    f"Visa number must be at most {validation.MAX_VISA} characters.": (
-        f"Číslo víza může mít nejvýše {validation.MAX_VISA} znaků."
-    ),
-    f"Street must be at most {validation.MAX_RESIDENCE_PART} characters.": (
-        f"Ulice může mít nejvýše {validation.MAX_RESIDENCE_PART} znaků."
-    ),
-    f"City must be at most {validation.MAX_RESIDENCE_PART} characters.": (
-        f"Město může mít nejvýše {validation.MAX_RESIDENCE_PART} znaků."
-    ),
-    "Street cannot consist of digits only.": "Ulice nemůže obsahovat jen číslice.",
-    "City cannot consist of digits only.": "Město nemůže obsahovat jen číslice.",
-    "Home address is too long.": "Adresa bydliště je příliš dlouhá.",
-    f"Note must be at most {validation.MAX_NOTE} characters.": (
-        f"Poznámka může mít nejvýše {validation.MAX_NOTE} znaků."
-    ),
-    "For a child recorded in a parent's passport the note must contain "
-    "the parent's document number.": (
-        "U dítěte zapsaného v pasu rodiče musí poznámka obsahovat číslo dokladu rodiče."
-    ),
-}
-
-# The nationality message embeds the code the guest typed, so it cannot be a
-# dictionary key.
-_CS_VALIDATION_PATTERNS = (
-    (
-        re.compile(r"^'(?P<code>.*)' is not a valid three-letter country code\.$"),
-        "„{code}“ není platný třímístný kód země (např. GBR, USA, DEU).",
-    ),
-)
 
 CS_PASSPORT_UPLOAD_MESSAGES = {
     "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
@@ -343,23 +260,11 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
 
 
 def _localize_message(message: str) -> str:
-    translated = CS_VALIDATION_MESSAGES.get(message)
-    if translated:
-        return translated
-    for pattern, template in _CS_VALIDATION_PATTERNS:
-        match = pattern.match(message)
-        if match:
-            return template.format(**match.groupdict())
-    return message
+    return validation_i18n.localize(message)
 
 
 def _localize_issues(issues, lang: str):
-    if lang != "cs":
-        return issues
-    return [
-        validation.Issue(issue.field, _localize_message(issue.message), issue.severity)
-        for issue in issues
-    ]
+    return validation_i18n.localize_issues(issues, lang)
 
 
 def _apartment_by_token(token: str):

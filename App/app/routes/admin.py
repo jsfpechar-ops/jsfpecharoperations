@@ -1310,14 +1310,9 @@ async def reservation_submit(reservation_id: int, request: Request):
             err=_flash(request, first.get("error_key") or "flash.error.nothing_to_send"),
         )
     if first.get("state") == "not_configured":
-        return _back(
-            return_to,
-            err=_flash(
-                request,
-                "flash.error.ubyport_not_configured",
-                detail=first["error"],
-            ),
-        )
+        # The list of missing fields is on the property page, already in the
+        # host's language; repeating it here in English would undo UX-35.
+        return _back(return_to, err=_flash(request, "flash.error.ubyport_not_configured"))
     if first.get("state") == "transport_error":
         db.audit(
             "ubyport_send_failed",
