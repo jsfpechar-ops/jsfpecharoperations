@@ -2967,6 +2967,21 @@ label { color: var(--ink-secondary); font-weight: 620; }
 .auth-foot-legal { margin-top: 16px; }
 .auth-alert { border: 1px solid color-mix(in srgb, var(--bad) 32%, transparent); box-shadow: none; }
 
+/* A host reading this on a phone cannot scan a QR code shown on that phone, so
+   below 900px the "open in app" button comes first and the QR follows it. */
+.auth-setup-media { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.auth-setup-open { width: 100%; justify-content: center; text-align: center; }
+.auth-setup-key { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.auth-setup-key code {
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--canvas-subtle);
+  font-size: 13px;
+  letter-spacing: .02em;
+  word-break: break-word;
+}
+
 .auth-hero {
   position: relative;
   overflow: hidden;
@@ -3054,6 +3069,7 @@ label { color: var(--ink-secondary); font-weight: 620; }
 
 @media (max-width: 900px) {
   .auth-layout { display: block; min-height: 100vh; padding: 14px; }
+  .auth-setup-media { flex-direction: column-reverse; }
   .auth-panel {
     width: min(100%, 600px);
     margin: 0 auto;
