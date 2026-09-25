@@ -8,6 +8,7 @@
   const icon = reel.querySelector("[data-reel-icon]");
   const caption = reel.querySelector("[data-reel-caption]");
   const labels = reel.querySelector("[data-reel-labels]");
+  const announcer = reel.querySelector("[data-reel-announce]");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const stage = reel.closest(".demo-wrap");
   const dwellMs = 3000;
@@ -68,11 +69,22 @@
     schedule();
   }
 
+  function announce(text) {
+    if (!announcer || !text) return;
+    // Setting identical text again is silent, so clear it first and refill on
+    // the next frame — a second Replay press must still be heard.
+    announcer.textContent = "";
+    window.requestAnimationFrame(() => {
+      announcer.textContent = text;
+    });
+  }
+
   function replay() {
     active = 0;
     mode = "playing";
     render();
     schedule();
+    announce(caption.textContent);
   }
 
   function setMotionPreference() {
