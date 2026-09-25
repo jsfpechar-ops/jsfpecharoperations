@@ -6,12 +6,15 @@
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set stay_view = request.query_params.get('view', 'list') %}
 {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
+{% if apartments %}
 {% set header_actions %}
   {{ bulk_send_ready(ready_send_count, return_to) }}
-  {% if apartments %}
-    <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button>
-  {% endif %}
+  <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button>
 {% endset %}
+{% else %}
+{# Nothing to send and nothing to add to yet, so the header stays out of the way. #}
+{% set header_actions = '' %}
+{% endif %}
 {{ page_header(
   t('stays.title'),
   t('stays.lede'),
@@ -66,6 +69,9 @@
 
 {% endif %}
 
+{# With no property there is nothing to filter, switch views over, export or send,
+   so the page shows the empty state's one next step and nothing above it. #}
+{% if apartments %}
 <div class="stays-toolbar">
   <div class="chips">
     {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
@@ -121,6 +127,7 @@
     {{ csv_actions_menu(csv_export_params, true) }}
   </div>
 </form>
+{% endif %}
 
 {% if rows %}
 <div class="panel tight scroll-x stays-view stays-view-{{ stay_view }}">
@@ -221,18 +228,26 @@
 {% elif apartments %}
   <div class="panel empty">
     <p>{{ t('stays.empty.none') }}</p>
-    <a class="btn" href="/apartments">{{ t('stays.empty.go_apartments') }}</a>
+    {% if feed_count %}
+      <a class="btn" href="/apartments">{{ t('stays.empty.go_apartments') }}</a>
+    {% else %}
+      <a class="btn primary" href="/apartments/{{ apartments[0].id }}#calendars">{{ t('dashboard.empty.connect_calendar') }}</a>
+    {% endif %}
   </div>
 {% else %}
   <div class="panel empty">
     <p>{{ t('stays.empty.no_apartments') }}</p>
     <div class="actions" style="justify-content:center;margin-top:14px">
       <a class="btn primary" href="/apartments/new">{{ t('stays.empty.add_first') }}</a>
-      <form method="post" action="/demo" class="inline">
-        <button class="btn" type="submit">{{ t('demo.load') }}</button>
-      </form>
+      {% if demo_available %}
+        <form method="post" action="/demo" class="inline">
+          <button class="btn" type="submit">{{ t('demo.load') }}</button>
+        </form>
+      {% endif %}
     </div>
-    <p class="small muted" style="margin-top:12px">{{ t('demo.load_detail') }}</p>
+    {% if demo_available %}
+      <p class="small muted" style="margin-top:12px">{{ t('demo.load_detail') }}</p>
+    {% endif %}
   </div>
 {% endif %}
 {% endblock %}
