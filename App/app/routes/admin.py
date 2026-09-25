@@ -85,6 +85,62 @@ def _apartment_issues(apartment) -> List[validation.Issue]:
     return validation.validate_apartment(_apartment_with_secret(apartment))
 
 
+# The property form has two jobs, so the readiness checklist has two lists. The
+# reporting list is exactly the fields validate_apartment() calls errors: the
+# stay-fee and invoice fields the two planned features add are optional by
+# design and must never be counted here.
+_READINESS_REPORT_FIELDS = (
+    ("idub", "uby_idub", "ubyport"),
+    ("mark", "uby_mark", "ubyport"),
+    ("facility_name", "uby_name", "ubyport"),
+    ("house_no", "addr_house_no", "address"),
+    ("zip", "addr_zip", "address"),
+    ("obec", "addr_obec", "address"),
+    ("ws_user", "uby_ws_user", "ubyport"),
+    ("password", "uby_ws_password", "ubyport"),
+)
+
+
+def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
+    """What still stands between this property and its two jobs.
+
+    Every item carries the anchor of the field that answers it, so the checklist
+    is a set of links rather than a paragraph. Reporting items also carry their
+    own validation message, which is what the run-on banner used to say.
+    """
+    by_field: Dict[str, str] = {}
+    for issue in validation.errors_only(issues):
+        by_field.setdefault(issue.field, issue.message)
+    entity = next((e for e in entities if e["id"] == apartment["legal_entity_id"]), None)
+    invite = [
+        {
+            "key": "name",
+            "anchor": "basics",
+            "done": bool((apartment["internal_name"] or "").strip()),
+        },
+        {
+            "key": "operator",
+            "anchor": "basics",
+            "done": bool(entity and (entity["contact_email"] or "").strip()),
+        },
+        {"key": "stays", "anchor": "calendars", "done": has_stays},
+    ]
+    report = [
+        {
+            "key": key,
+            "anchor": anchor,
+            "done": field not in by_field,
+            "message": by_field.get(field),
+        }
+        for key, field, anchor in _READINESS_REPORT_FIELDS
+    ]
+    return {
+        "invite": invite,
+        "report": report,
+        "invite_ready": all(item["done"] for item in invite),
+    }
+
+
 def _form_return_to(form, default: str) -> str:
     return security.safe_local_path(_form_str(form, "return_to"), default)
 
@@ -503,14 +559,25 @@ def apartment_detail(apartment_id: int, request: Request):
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
+    entities = access.entities(request)
+    issues = _apartment_issues(apartment)
+    # A connected calendar or a hand-typed stay both mean guests are on their
+    # way, which is all the "Ready to invite guests" list asks about.
+    has_stays = any(feed["active"] for feed in feeds) or bool(
+        db.query_one(
+            "SELECT 1 AS present FROM reservation WHERE apartment_id = ? LIMIT 1",
+            (apartment_id,),
+        )
+    )
     return render(
         request,
         "apartment_form.html",
         {
             "apartment": apartment,
-            "entities": access.entities(request),
+            "entities": entities,
             "feeds": feeds,
-            "issues": _apartment_issues(apartment),
+            "issues": issues,
+            "readiness": _readiness(apartment, entities, issues, has_stays),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
             "pin": apartment["permalink_pin"] or "",
