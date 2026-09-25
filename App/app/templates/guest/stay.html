@@ -7,7 +7,7 @@
 
 <div class="g-card g-stay-summary">
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
-  <span>{{ nights(reservation.date_from, reservation.date_to) }} {{ t('nights') }}</span>
+  <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
 </div>
 
 {% if party_error %}
