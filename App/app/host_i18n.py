@@ -2781,6 +2781,14 @@ _INTERFACE_STRINGS = {
             "Use 3–32 lowercase letters, numbers, dots, dashes, or underscores."
         ),
         "auth.error.username_taken": "That username is already in use.",
+        "auth.notice.2fa_expired": (
+            "Signing in took more than 10 minutes, so we started over to keep your "
+            "account safe. Enter your password again."
+        ),
+        "auth.notice.form_expired": (
+            "This page was open too long. Please log in again."
+        ),
+        "auth.notice.logged_out": "You're logged out.",
         "auth.password.digit": "Add at least one number.",
         "auth.password.mixed_case": "Use both upper- and lower-case letters.",
         "auth.password.too_long": "Use no more than 256 characters.",
@@ -3264,6 +3272,14 @@ _INTERFACE_STRINGS = {
             "Použijte 3–32 malých písmen, číslic, teček, pomlček nebo podtržítek."
         ),
         "auth.error.username_taken": "Toto uživatelské jméno je již obsazené.",
+        "auth.notice.2fa_expired": (
+            "Přihlášení trvalo déle než 10 minut, a proto jsme kvůli bezpečnosti "
+            "začali znovu. Zadejte znovu heslo."
+        ),
+        "auth.notice.form_expired": (
+            "Stránka byla otevřená příliš dlouho. Přihlaste se prosím znovu."
+        ),
+        "auth.notice.logged_out": "Odhlásili jste se.",
         "auth.password.digit": "Přidejte alespoň jednu číslici.",
         "auth.password.mixed_case": "Použijte malá i velká písmena.",
         "auth.password.too_long": "Použijte nejvýše 256 znaků.",

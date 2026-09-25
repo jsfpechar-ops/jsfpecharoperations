@@ -2397,6 +2397,18 @@ details.raw pre {
   text-align: left;
 }
 
+.auth-notice {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas-subtle);
+  color: var(--ink-secondary);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+}
+
 .auth-form {
   display: grid;
   gap: 16px;

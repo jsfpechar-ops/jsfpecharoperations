@@ -168,7 +168,7 @@ async def two_factor_login(request: Request):
 
 @router.post("/logout")
 def logout():
-    response = RedirectResponse("/login", status_code=303)
+    response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
     return response
 
