@@ -853,14 +853,30 @@ Guests close the tab after the last form. The completion receipt already goes to
        return {"total": format_czk(summary["total_czk"]), **payment_details(reservation, apartment, summary)}
    ```
 2. **`claim.py::_guest_mail_content`** — in the `if kind == "completion":` branch, pass one extra argument to `mail_notify.build_completion(...)`: `stay_fee=stay_fee.mail_details(reservation, apartment)`. Add `stay_fee` to the imports in `claim.py`. There is no import cycle: `stay_fee` imports only `db`, `payments`, `reporting` and `validation`.
-3. **`mail_notify.py::build_completion`**:
-   - Add the keyword parameter `stay_fee: Optional[Dict[str, Any]] = None`.
-   - When it is set, insert these blocks into `extra_blocks` **before** `_block_note(note_label, note)`, in this order:
-     - `_block_section(_guest_text(lang, "mail_fee_title"), _guest_text(lang, "mail_fee_body", amount=stay_fee["total"]))`;
-     - if `payment_link`: `_block_button(stay_fee["payment_link"], _guest_text(lang, "fee_pay_online", amount=stay_fee["total"]))`;
-     - if `iban`: `_block_fact("IBAN", stay_fee["iban_display"])`, then `_block_fact("BIC / SWIFT", …)` if `bic`, then `_block_fact(_guest_text(lang, "fee_vs"), stay_fee["vs"])` and `_block_fact(_guest_text(lang, "fee_reference"), stay_fee["reference"])`;
-     - if `cash`: `_block_paragraph(_guest_text(lang, "fee_cash"), muted=True)`.
-   - Append the same facts to the plain-text `text`, as `label: value` lines after the action line.
+3. **`mail_notify.py::build_completion`** — the fee fills the **money slot** (`_block_panel`). Since UX-73 the receipt has a fixed order — status / money / secondary links / closing note / footer — and at most one coral button in the whole message, so the fee drops into the slot that was reserved for it instead of scattering four uppercase facts through the card.
+   - Add the keyword parameter `stay_fee: Optional[Dict[str, Any]] = None` and, when it is set, hand `build_completion` one `money` panel:
+     ```python
+     money = {
+         "amount": stay_fee["total"],                 # the bare number the subject names
+         "title": _guest_text(lang, "mail_fee_title"),
+         "rows": [
+             (_guest_text(lang, "mail_fee_total"), stay_fee["total"]),
+             ("IBAN", stay_fee["iban_display"], True),      # True → monospace, for copying
+             *([("BIC / SWIFT", stay_fee["bic"], True)] if stay_fee.get("bic") else []),
+             (_guest_text(lang, "fee_vs"), stay_fee["vs"], True),
+             (_guest_text(lang, "fee_reference"), stay_fee["reference"], True),
+         ],
+         "action": (
+             (stay_fee["payment_link"], _guest_text(lang, "fee_pay_online", amount=stay_fee["total"]))
+             if stay_fee.get("payment_link") else None
+         ),
+         "note": _guest_text(lang, "fee_cash") if stay_fee.get("cash") else None,
+     }
+     ```
+   - `_block_panel` renders that as one bordered sub-card on `CANVAS`: total first, then the transfer facts, then the cash line as muted text, then the button. Its button is the message's **only** coral button — the status slot stays buttonless and the stay link stays a quiet `_block_link`. A transfer-only fee (no `payment_link`) therefore has **no** button at all, which is why the panel's `action` is optional.
+   - The subject switches to the fee-due variant (`mail_completion_subject_fee`) because `money["amount"]` is set. The intro switches with it: `mail_completion_intro_fee` replaces the "There is nothing else you need to do." sentence with the fee lead-in, so the receipt never promises closure while money is owed. That key carries the wording this table used to give for `mail_fee_body`, which the mail no longer uses as a separate section (the panel below is the details).
+   - Pass the QR line as `secondary_note=_guest_text(lang, "mail_fee_qr_note")`, so it sits in the secondary-links slot next to the stay link.
+   - The plain-text part mirrors the slot order through the existing `_panel_text_lines`, so `label: value` lines follow the intro and precede the stay link.
    - The mail does **not** include the QR image: inline images are unreliable across mail clients. The stay-page link in the same mail shows it.
 
 ---
@@ -1136,7 +1152,8 @@ Values for `export_csv`:
 | `fee_as_agreed` | Please pay your host as agreed. | Zaplaťte prosím ubytovateli podle dohody. |
 | `fee_everyone` | Everyone staying must register, including children. | Registrovat se musí všichni ubytovaní, včetně dětí. |
 | `mail_fee_title` | Local stay fee | Poplatek z pobytu |
-| `mail_fee_body` | Your host collects the municipal stay fee: %(amount)s Kč for your group. Payment details are below and on your stay page. | Ubytovatel vybírá poplatek z pobytu: %(amount)s Kč za vaši skupinu. Platební údaje najdete níže a na stránce pobytu. |
+| `mail_fee_qr_note` | The QR code for your banking app is on your stay page. | QR kód pro bankovní aplikaci najdete na stránce pobytu. |
+| `mail_fee_total` | Total | Celkem |
 | `legal_notice_stay_fee_title` | Local stay fee | Poplatek z pobytu |
 | `legal_notice_stay_fee_body` | Your host must collect the municipal stay fee and keep a register of everyone staying (name, address, date of birth, document type and number, stay dates, fee), for 6 years (Act No. 565/1990 Coll., §3f–§3g). | Ubytovatel musí vybírat poplatek z pobytu a vést evidenční knihu všech ubytovaných (jméno, adresa, datum narození, druh a číslo dokladu, dny pobytu, poplatek) po dobu 6 let (zákon č. 565/1990 Sb., § 3f–3g). |
 | `privacy_stay_fee_title` | Stay-fee register | Evidenční kniha poplatku z pobytu |
