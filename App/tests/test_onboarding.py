@@ -83,7 +83,7 @@ def test_first_dashboard_is_a_guided_setup_journey():
     assert 'class="onboarding-welcome"' in page.text
     assert 'class="onboarding-now"' in page.text
     assert "Set it once. Welcome every guest calmly." in page.text
-    assert "Have ready: legal name, IČO" in page.text
+    assert "Have ready: name, IČO" in page.text
     assert 'href="/entities"' in page.text
     assert 'href="/guide#setup"' in page.text
 
