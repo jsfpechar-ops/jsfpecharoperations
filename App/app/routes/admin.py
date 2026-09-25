@@ -670,9 +670,11 @@ async def regenerate_pin(apartment_id: int, request: Request):
     pin = auth.new_permalink_pin()
     db.update("apartment", apartment_id, {"permalink_pin": pin})
     db.audit("pin_rotated", f"apartment={apartment_id}")
+    # The PIN itself stays out of the flash: ?msg= lands in browser history and
+    # access logs, and the guest link card already shows the new PIN.
     return _back(
         _form_return_to(form, "/guest-links"),
-        msg=_flash(request, "flash.apartments.pin_rotated", pin=pin),
+        msg=_flash(request, "flash.apartments.pin_rotated"),
     )
 
 
