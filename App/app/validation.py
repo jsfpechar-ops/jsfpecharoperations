@@ -58,22 +58,24 @@ INPASS_NOTE_PREFIX = "Dítě zapsané v pasu rodiče, číslo dokladu rodiče: "
 
 # Purpose-of-stay code list (kodovnik uctu pobytu). The web service is
 # authoritative via DejMiCiselnik(UcelyPobytu); this is the offline fallback.
+# The texts are display labels, not the police wording: sentence case, and the
+# numeric code stays out of them. Only the code is ever submitted (cPurp).
 PURPOSES: List[Tuple[str, str, str]] = [
-    ("00", "ZDRAVOTNÍ", "Medical"),
-    ("01", "OBCHODNÍ", "Business"),
-    ("02", "KULTURNÍ", "Cultural"),
-    ("03", "NÁVŠTĚVA RODINY NEBO PŘÁTEL", "Visiting family or friends"),
-    ("04", "POZVÁNÍ", "Invitation"),
-    ("05", "OFICIÁLNÍ (POLITICKÝ)", "Official (political)"),
-    ("06", "PODNIKÁNÍ – OSVČ", "Self-employment"),
-    ("07", "SPORTOVNÍ", "Sport"),
-    ("10", "TURISTIKA", "Tourism"),
-    ("11", "STUDIUM (ŠKOLENÍ, STÁŽ)", "Study (training, internship)"),
-    ("12", "TRANZIT (průjezd)", "Transit"),
-    ("13", "LETIŠTNÍ TRANZIT (letištní průjezd)", "Airport transit"),
-    ("27", "ZAMĚSTNÁNÍ", "Employment"),
-    ("93", "TZV. ADS vízum udělované občanu Číny", "ADS visa (Chinese nationals)"),
-    ("99", "OSTATNÍ / JINÉ", "Other"),
+    ("00", "Zdravotní", "Medical"),
+    ("01", "Obchodní", "Business"),
+    ("02", "Kulturní", "Cultural"),
+    ("03", "Návštěva rodiny nebo přátel", "Visiting family or friends"),
+    ("04", "Pozvání", "Invitation"),
+    ("05", "Oficiální (politický)", "Official (political)"),
+    ("06", "Podnikání (OSVČ)", "Self-employment"),
+    ("07", "Sportovní", "Sport"),
+    ("10", "Turistika", "Tourism"),
+    ("11", "Studium (školení, stáž)", "Study (training, internship)"),
+    ("12", "Tranzit (průjezd)", "Transit"),
+    ("13", "Letištní tranzit", "Airport transit"),
+    ("27", "Zaměstnání", "Employment"),
+    ("93", "Vízum ADS (občané Číny)", "ADS visa (Chinese nationals)"),
+    ("99", "Ostatní", "Other"),
 ]
 PURPOSE_CODES = {code for code, _cs, _en in PURPOSES}
 DEFAULT_PURPOSE = "99"
@@ -106,9 +108,10 @@ def country_name(code: str, lang: str = "en") -> str:
 
 
 def purpose_label(code: str, lang: str = "en") -> str:
+    """The purpose as a person reads it — no police code, sentence case."""
     for c, cs, en in PURPOSES:
         if c == code:
-            return f"{c} - {cs if lang == 'cs' else en}"
+            return cs if lang == "cs" else en
     return code or ""
 
 
@@ -310,6 +313,23 @@ def compose_residence(street: str, city: str, country_code: str, lang: str = "cs
         parts.append(city)
     if country_code:
         parts.append(f"{country_code}-{country_name(country_code, lang)}")
+    return ", ".join(parts)[:MAX_RESIDENCE]
+
+
+def display_residence(street: str, city: str, country_code: str, lang: str = "cs") -> str:
+    """The residence as a person reads it: the country by name, no ISO code.
+
+    UbyPort's "Bydliste" needs the "GBR-United Kingdom" shape, which is what
+    ``compose_residence`` builds. A guest looking at their own summary does
+    not, so the code is left out here.
+    """
+    parts = []
+    if street:
+        parts.append(street)
+    if city:
+        parts.append(city)
+    if country_code:
+        parts.append(country_name(country_code, lang))
     return ", ".join(parts)[:MAX_RESIDENCE]
 
 
