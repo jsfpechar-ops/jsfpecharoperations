@@ -268,7 +268,7 @@ Rate limit: `invoice_form` 20/h per client.
   {% elif name == 'invoice' %}
     <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 2.5h10v15l-2.5-1.5-2.5 1.5-2.5-1.5L5 17.5v-15Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 7h5M7.5 10h5M7.5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
   ```
-- **Stay detail** (`templates/reservation_detail.html`): `<section class="panel" id="invoice">` placed directly after the stay-fee panel `#stay-fee`. If that panel is not rendered, it goes directly before `{% if submissions %}`.. It shows:
+- **Stay detail** (`templates/reservation_detail.html`): `<section class="panel" id="invoice">` placed directly after the stay-fee panel `#stay-fee`, both inside the `#money` group — the slot UX_AUDIT C-16 [UX-81] reserved between the guest cards and `{% if submissions %}`, with `<h2>` copy "Payments" / "Platby". It shows:
   - open requests (buyer name, submitted at, *Vystavit*, *Odmítnout*);
   - issued documents (number, date, total, state, *PDF*, *Storno/ODD*);
   - *Vystavit fakturu*;
