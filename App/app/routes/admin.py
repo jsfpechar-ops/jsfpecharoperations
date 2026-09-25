@@ -27,7 +27,6 @@ from .. import (
     db,
     deadlines,
     demo,
-    host_i18n,
     housebook,
     icalsync,
     mail,
@@ -976,7 +975,7 @@ async def refresh_codelists(apartment_id: int, request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     try:
         written = codelists.refresh_all(reporting.client_for(apartment))
-    except (UbyportTransportError, UbyportError) as exc:
+    except (UbyportTransportError, UbyportError):
         return _back(return_to, err=_flash(request, "flash.error.codelists_refresh"))
     return _back(
         return_to,
@@ -1349,7 +1348,6 @@ async def reservation_archive(reservation_id: int, request: Request):
     return_to = _form_return_to(form, _redirect_path_from_referer(request, "/reservations"))
     db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("reservation_archived", f"id={reservation_id}")
-    lang = host_i18n.lang_from_request(request)
     target = (
         f"/reservations?range=archive&undo_stay={reservation_id}"
         f"&undo_return={quote(return_to, safe='')}"
