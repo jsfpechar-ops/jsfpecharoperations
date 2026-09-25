@@ -8,8 +8,7 @@
   {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}</div>{% endif %}
   {% if qr_data %}
     <div class="auth-setup-media">
-      <img src="{{ qr_data }}" alt="{{ t('account.2fa.qr_alt') }}"
-           style="display:block;width:220px;max-width:100%;margin:18px auto;border-radius:12px">
+      <img class="auth-setup-qr" src="{{ qr_data }}" alt="{{ t('account.2fa.qr_alt') }}">
       {% if totp_uri %}
         <a class="btn auth-setup-open" href="{{ totp_uri }}">{{ t('account.2fa.setup_open_app') }}</a>
       {% endif %}
