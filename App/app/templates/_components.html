@@ -277,6 +277,16 @@
   {% endif %}
 {% endmacro %}
 
+{% macro onboarding_finish_strip(onboarding) %}
+  {# One line, for when an overdue stay outranks the finish card. #}
+  {% if onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
+    <p class="onboarding-finish-strip">
+      <span>{{ t('onboarding.finish_strip') }}</span>
+      <a href="{{ onboarding.finish.communication_url }}">{{ t('onboarding.finish_strip_link') }}</a>
+    </p>
+  {% endif %}
+{% endmacro %}
+
 {% macro onboarding_banner(onboarding) %}
   {% if onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
     <aside class="onboarding-banner" aria-label="{{ t('onboarding.welcome_title') }}">

@@ -105,6 +105,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.finish_line": "Complete these five checks and your first guest journey is ready.",
         "onboarding.finish_line_done": "All five checks are done — share the link below with your guests.",
         "onboarding.finish_kicker": "You are ready",
+        "onboarding.finish_strip": "Setup is done — your guest link and PIN are ready.",
+        "onboarding.finish_strip_link": "Show link",
         "onboarding.finish_title": "Guest link and PIN are live",
         "onboarding.finish_lede": (
             "%(property)s can welcome guests now. Copy the permanent link and PIN into every "
@@ -1276,6 +1278,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.finish_line": "Dokončete těchto pět kontrol a první cesta hosta je připravena.",
         "onboarding.finish_line_done": "Všech pět kontrol je hotových — odkaz níže pošlete hostům.",
         "onboarding.finish_kicker": "Jste připraveni",
+        "onboarding.finish_strip": "Nastavení je hotové — odkaz a PIN pro hosty jsou připravené.",
+        "onboarding.finish_strip_link": "Zobrazit odkaz",
         "onboarding.finish_title": "Odkaz pro hosty a PIN jsou aktivní",
         "onboarding.finish_lede": (
             "%(property)s už může vítat hosty. Trvalý odkaz a PIN vložte do zprávy před příjezdem "
