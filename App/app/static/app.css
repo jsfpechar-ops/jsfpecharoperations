@@ -2494,11 +2494,6 @@ details.raw pre {
   line-height: 1.45;
 }
 
-.auth-foot-acceptance {
-  margin: 0 0 8px;
-  color: var(--muted);
-}
-
 .auth-foot-links {
   margin: 0;
   font-size: 12.5px;
@@ -2508,10 +2503,10 @@ details.raw pre {
 .auth-foot-legal a:hover { color: var(--brand); }
 
 .auth-acceptance {
-  margin: 0 0 14px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--muted);
+  margin: 14px 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--ink-muted);
 }
 
 .auth-acceptance a {
@@ -3111,7 +3106,6 @@ label { color: var(--ink-secondary); font-weight: 620; }
 }
 .auth-submit:hover { box-shadow: 0 4px 14px rgba(173, 73, 66, .24); }
 .auth-submit:active { transform: translateY(1px); box-shadow: 0 1px 4px rgba(173, 73, 66, .2); }
-.auth-acceptance { padding: 11px 13px; border-radius: 8px; background: var(--canvas-subtle); }
 .auth-foot { margin-top: 22px; padding-top: 17px; }
 .auth-foot-legal { margin-top: 16px; }
 .auth-alert { border: 1px solid color-mix(in srgb, var(--bad) 32%, transparent); box-shadow: none; }
