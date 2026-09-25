@@ -1641,6 +1641,19 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .settings-action-row small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.4; }
 .settings-action-row > .btn,
 .settings-action-row > .pill { flex: 0 0 auto; }
+.settings-move { border-bottom: 1px solid var(--line); }
+.settings-move > summary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 0;
+  cursor: pointer;
+}
+.settings-move[open] > summary { padding-bottom: 6px; }
+.settings-move > summary strong { color: var(--ink); font-size: 14px; }
+.settings-move > summary small { color: var(--muted); line-height: 1.4; }
+.settings-move-form { max-width: 420px; padding-bottom: 16px; }
+.settings-move-form .field { margin-bottom: 12px; }
 .document-links {
   display: grid;
   margin-top: 16px;

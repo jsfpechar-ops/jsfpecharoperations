@@ -200,6 +200,28 @@
             <a class="btn primary small" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
           {% endif %}
         </div>
+        {% if current_user.totp_enabled %}
+          <details class="settings-move">
+            <summary>
+              <strong>{{ t('settings.account.2fa_move') }}</strong>
+              <small>{{ t('settings.account.2fa_move_help') }}</small>
+            </summary>
+            <form method="post" action="/account/2fa/move" class="settings-move-form">
+              <div class="field">
+                <label for="move-current-password">{{ t('login.password') }}</label>
+                <input id="move-current-password" name="current_password" type="password"
+                       autocomplete="current-password" required>
+              </div>
+              <div class="field">
+                <label for="move-code">{{ t('settings.account.2fa_move_code') }}</label>
+                <input id="move-code" name="code" type="text" inputmode="numeric"
+                       autocomplete="one-time-code" aria-describedby="move-code-hint" required>
+                <p class="hint" id="move-code-hint">{{ t('settings.account.2fa_move_code_hint') }}</p>
+              </div>
+              <button class="btn small" type="submit">{{ t('settings.account.2fa_move_action') }}</button>
+            </form>
+          </details>
+        {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>
