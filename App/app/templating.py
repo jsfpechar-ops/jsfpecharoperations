@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any, Dict, Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
@@ -75,6 +76,29 @@ def _from_json(value: Optional[str]) -> Any:
         return json.loads(value or "[]")
     except (TypeError, ValueError):
         return []
+
+
+def _datetime_local(value: Optional[str], seconds: bool = False) -> str:
+    """A stored UTC timestamp, in the host's own time zone.
+
+    Every timestamp the app writes comes from ``db.utcnow()``, so a Prague host
+    was reading summer times two hours early: a batch that left at 19:37 showed
+    as "Sent at 17:37". The value is shown as stored if it cannot be parsed, so
+    an odd row stays visible instead of silently blanking out.
+    """
+    text = (value or "").strip()
+    if not text:
+        return ""
+    width = 19 if seconds else 16
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return text[:width].replace("T", " ")
+    if parsed.tzinfo is None:
+        # Every writer stores UTC, so a naive value is one of ours.
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    local = parsed.astimezone(ZoneInfo(config.TIMEZONE))
+    return local.strftime("%Y-%m-%d %H:%M:%S")[:width]
 
 
 @pass_context
@@ -172,6 +196,7 @@ def _report_mode_label(context, mode) -> str:
 
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
+templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
 templates.env.globals["t"] = _template_translate
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message

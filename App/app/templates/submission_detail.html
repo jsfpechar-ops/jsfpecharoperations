@@ -9,7 +9,7 @@
 ]) }}
 {{ page_header(
   t('reports.detail.title', id=submission.id),
-  submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ')
+  submission.internal_name ~ ' · ' ~ (submission.created_at | datetime_local(seconds=true))
     ~ ' · ' ~ report_mode_label(submission.mode),
   '/submissions',
   t('reports.detail.back')
@@ -25,7 +25,7 @@
         </dd>
         <dt>{{ t('reports.detail.endpoint') }}</dt><dd class="mono small">{{ submission.endpoint }}</dd>
         <dt>{{ t('reports.stamp') }}</dt><dd class="mono small">{{ submission.pseudo_stamp or '—' }}</dd>
-        <dt>{{ t('reports.detail.finished') }}</dt><dd class="small">{{ (submission.finished_at or '')[:19].replace('T', ' ') or '—' }}</dd>
+        <dt>{{ t('reports.detail.finished') }}</dt><dd class="small">{{ (submission.finished_at | datetime_local(seconds=true)) or '—' }}</dd>
       </dl>
 
       {% if submission.error_text %}

@@ -99,9 +99,9 @@
 
       <h3 style="margin-top:20px">{{ t('settings.codelists.title') }}</h3>
       <dl class="kv">
-        <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ codelists.countries[:19].replace('T', ' ') if codelists.countries else t('settings.codelists.bundled') }}</dd>
-        <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ codelists.purposes[:19].replace('T', ' ') if codelists.purposes else t('settings.codelists.bundled') }}</dd>
-        <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ codelists.errors[:19].replace('T', ' ') if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
+        <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
       </dl>
       <p class="small muted">{{ t('settings.codelists.help') }}</p>
     </div>
@@ -160,7 +160,7 @@
           <tbody>
           {% for entry in audit %}
             <tr>
-              <td class="nowrap small" data-label="{{ t('settings.audit.when') }}">{{ entry.at[:19].replace('T', ' ') }}</td>
+              <td class="nowrap small" data-label="{{ t('settings.audit.when') }}">{{ entry.at | datetime_local(seconds=true) }}</td>
               <td class="small" data-label="{{ t('settings.audit.who') }}">{{ entry.actor }}</td>
               <td class="small" data-label="{{ t('settings.audit.action') }}">{{ entry.action }}</td>
               <td class="small muted" data-label="{{ t('settings.audit.detail') }}">{{ entry.detail }}</td>
