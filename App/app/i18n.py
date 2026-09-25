@@ -480,8 +480,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "back": "Back",
         # E-mail the app sends to a guest. The plain-text and the HTML part are
         # both built from these keys, so the two cannot drift apart.
-        "mail_claim_subject": "Continue your Prague guest registration",
+        "mail_claim_subject": "Confirm your stay at %(property)s (link valid 30 min)",
+        "mail_claim_resend_subject": "New link: confirm your stay at %(property)s",
+        "mail_claim_preheader": (
+            "Tap the button, then fill in each guest — about 2 minutes per person."
+        ),
         "mail_claim_heading": "Confirm your stay",
+        "mail_claim_resend_heading": "Here is your new link",
         "mail_claim_intro": (
             "Confirm your stay at %(property)s (%(dates)s) by opening the link below."
         ),
@@ -989,8 +994,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "back": "Zpět",
         # E-mail, který aplikace posílá hostovi. Textová i HTML část se skládá
         # z těchto klíčů, takže se nemohou rozejít.
-        "mail_claim_subject": "Pokračujte v registraci hostů",
+        "mail_claim_subject": (
+            "Potvrďte svůj pobyt – %(property)s (odkaz platí 30 minut)"
+        ),
+        "mail_claim_resend_subject": "Nový odkaz: potvrďte svůj pobyt – %(property)s",
+        "mail_claim_preheader": (
+            "Klepněte na tlačítko a vyplňte údaje hostů – asi 2 minuty na osobu."
+        ),
         "mail_claim_heading": "Potvrďte svůj pobyt",
+        "mail_claim_resend_heading": "Tady je váš nový odkaz",
         "mail_claim_intro": (
             "Potvrďte pobyt v %(property)s (%(dates)s) otevřením odkazu níže."
         ),

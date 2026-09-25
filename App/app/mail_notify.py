@@ -672,7 +672,11 @@ def build_claim_link(
     host: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """The magic-link mail: the guest's way into the registration form."""
-    subject = _guest_text(lang, "mail_claim_subject")
+    subject = _guest_text(
+        lang,
+        "mail_claim_resend_subject" if resend else "mail_claim_subject",
+        property=property_name,
+    )
     intro = _guest_text(lang, "mail_claim_intro", property=property_name, dates=dates)
     action = _guest_text(lang, "mail_claim_action")
     expiry = _guest_text(
@@ -684,7 +688,9 @@ def build_claim_link(
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
     blocks = _guest_blocks(
-        heading=_guest_text(lang, "mail_claim_heading"),
+        heading=_guest_text(
+            lang, "mail_claim_resend_heading" if resend else "mail_claim_heading"
+        ),
         intro=intro,
         action_url=link,
         action_label=action,
@@ -714,7 +720,7 @@ def build_claim_link(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=_guest_text(lang, "mail_claim_preheader"),
             blocks=blocks,
             footer_lines=footer_lines,
         ),
