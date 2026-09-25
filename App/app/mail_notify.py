@@ -256,8 +256,8 @@ def _block_paragraph(
 def _block_section(label: str, body: str) -> str:
     return (
         f'<tr><td style="padding:24px 32px 0 32px;">'
-        f'<div style="font:600 13px/1.4 {_FONT};color:{INK_MUTED};'
-        f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 8px 0;">'
+        f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
+        f'padding:0 0 8px 0;">'
         f"{_esc(label)}</div>"
         f'<p style="margin:0;font:400 15px/1.6 {_FONT};color:{INK_SECONDARY};">'
         f"{_esc(body)}</p></td></tr>"
@@ -268,8 +268,8 @@ def _block_note(label: str, body: str) -> str:
     return (
         f'<tr><td style="padding:24px 32px 0 32px;">'
         f'<div style="background:{BRAND_SOFT};border-radius:10px;padding:16px 18px;">'
-        f'<div style="font:600 13px/1.4 {_FONT};color:{BRAND_INK};'
-        f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 8px 0;">'
+        f'<div style="font:600 14px/1.4 {_FONT};color:{BRAND_INK};'
+        f'padding:0 0 8px 0;">'
         f"{_esc(label)}</div>"
         f'<div style="font:400 14px/1.6 {_FONT};color:{INK};'
         f'white-space:pre-wrap;word-break:break-word;">{_esc(body)}</div>'
@@ -280,8 +280,8 @@ def _block_note(label: str, body: str) -> str:
 def _block_fact(label: str, value: str) -> str:
     return (
         f'<tr><td style="padding:20px 32px 0 32px;">'
-        f'<div style="font:600 13px/1.4 {_FONT};color:{INK_MUTED};'
-        f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 6px 0;">'
+        f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
+        f'padding:0 0 6px 0;">'
         f"{_esc(label)}</div>"
         f'<div style="font:400 15px/1.5 {_FONT};color:{INK};">{_esc(value)}</div>'
         f"</td></tr>"
@@ -725,8 +725,8 @@ def _build_html(
     if stay_rows:
         blocks.append(
             f'<tr><td style="padding:24px 32px 0 32px;">'
-            f'<div style="font:600 13px/1.4 {_FONT};color:{INK_MUTED};'
-            f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 10px 0;">'
+            f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
+            f'padding:0 0 10px 0;">'
             f"{_esc(stays_label)}</div>"
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
             f'border="0" style="border-collapse:collapse;">{stay_rows}</table>'
