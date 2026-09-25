@@ -60,7 +60,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.remember": "Remember me for 30 days",
         "login.submit": "Continue",
         "login.footnote": (
-            "No public sign-up. UbyHost is invite-only — ask your administrator for an account."
+            "No account yet? UbyHost is invite-only — write to %(email)s."
+        ),
+        "login.forgot_summary": "Forgot your password?",
+        "login.forgot_body": (
+            "Email %(email)s with your username. We'll set a temporary password for you, "
+            "and you'll choose a new one when you log in."
         ),
         "login.acceptance_before": "By logging in or using UbyHost, you agree to the ",
         "login.acceptance_and": " and ",
@@ -1097,7 +1102,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.remember": "Zapamatovat na 30 dní",
         "login.submit": "Pokračovat",
         "login.footnote": (
-            "Veřejná registrace není k dispozici. UbyHost je pouze na pozvání — účet vám vytvoří správce."
+            "Ještě nemáte účet? UbyHost je jen na pozvání — napište na %(email)s."
+        ),
+        "login.forgot_summary": "Zapomněli jste heslo?",
+        "login.forgot_body": (
+            "Napište na %(email)s a uveďte své uživatelské jméno. Nastavíme vám dočasné "
+            "heslo a při přihlášení si zvolíte nové."
         ),
         "login.acceptance_before": "Přihlášením nebo používáním UbyHostu souhlasíte s ",
         "login.acceptance_and": " a ",
