@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
-from app import alerts, claim, db, icalsync, passport_photos, reporting
+from app import alerts, claim, db, i18n, icalsync, passport_photos, reporting
 from app.routes import guest
 from app.main import app
 from tests.conftest import complete_guest_claim
@@ -255,6 +255,43 @@ def test_completed_party_can_add_another_person():
         assert raised.headers["location"].endswith(f"/l/{token}/{wrong}/new?lang=en")
         reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (wrong,))
         assert reservation["declared_guests"] == 2
+    finally:
+        _cleanup()
+
+
+def test_save_says_saved_until_the_record_was_actually_reported():
+    """Only a form that went out may be called "reported".
+
+    ``locked`` is true for any signed, complete form, so it cannot stand in for
+    "the police have this" — a manual-mode guest was told their record was
+    reported the moment they signed it.
+    """
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=2)
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="2"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+
+        page = browser.get(f"/l/{token}/{wrong}?lang=en&saved=1")
+        assert i18n.STRINGS["en"]["saved_title"] in page.text
+        assert i18n.STRINGS["en"]["saved_body"] in page.text
+        assert i18n.STRINGS["en"]["reported_title"] not in page.text
+        assert i18n.STRINGS["en"]["reported_body"] not in page.text
+
+        db.execute(
+            "UPDATE guest SET submit_state = ? WHERE reservation_id = ?",
+            (reporting.SENT, wrong),
+        )
+        sent = browser.get(f"/l/{token}/{wrong}?lang=en&saved=1")
+        assert i18n.STRINGS["en"]["reported_title"] in sent.text
+        assert i18n.STRINGS["en"]["saved_title"] not in sent.text
     finally:
         _cleanup()
 

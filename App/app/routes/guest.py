@@ -681,6 +681,7 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
         "name": f"{guest['first_name']} {guest['surname']}".strip() if is_mine else "",
         "complete": complete,
         "locked": reporting.guest_form_locked(guest, reservation),
+        "sent": guest["submit_state"] == reporting.SENT,
     }
     if is_mine:
         doc = guest["doc_number"] or ""
@@ -965,9 +966,13 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "party_error": request.query_params.get("party_error") == "1",
             "claim_email_masked": claim_row["email_masked"] or "",
             "just_saved": request.query_params.get("saved") == "1",
+            # "Reported" is a claim about the police, so it may only be made
+            # when a form actually went out. ``locked`` is true for any signed,
+            # complete form, which made the saved copy unreachable and told a
+            # manual-mode guest their record had been reported when it had not.
             "just_reported": (
                 request.query_params.get("saved") == "1"
-                and any(person["mine"] and person["locked"] for person in people)
+                and any(person["mine"] and person["sent"] for person in people)
             ),
         }
     )
