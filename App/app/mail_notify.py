@@ -989,26 +989,48 @@ def build_reminder_guest(
     *,
     lang: str,
     property_name: str,
-    dates: str,
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
+    filled: int = 0,
+    expected: Optional[int] = None,
 ) -> Dict[str, str]:
     """The day-before reminder for a stay whose forms are still incomplete.
 
     The original magic link is not recoverable -- only its hash is stored -- so
     this points at the stay instead. That is reachable on the device that
-    claimed it, which is the device the reminder is written for.
+    claimed it, which is the device the reminder is written for, so the copy
+    says as much rather than letting the guest meet the PIN unannounced.
+
+    The count is the one fact that tells the guest whether this mail is about
+    them or about somebody else in their party; without a declared party size
+    there is no count to quote, so both the subject and the intro fall back to
+    their count-free twin.
     """
-    subject = _guest_text(lang, "mail_reminder_guest_subject")
-    intro = _guest_text(
-        lang, "mail_reminder_guest_intro", property=property_name, dates=dates
+    missing = max(0, expected - filled) if expected is not None else None
+    subject = _guest_text(
+        lang,
+        "mail_reminder_guest_subject"
+        if expected is not None
+        else "mail_reminder_guest_subject_no_count",
+        property=property_name,
+        filled=filled,
+        expected=expected,
+    )
+    intro = (
+        _guest_text(lang, "mail_reminder_guest_intro", missing=missing)
+        if missing is not None
+        else _guest_text(lang, "mail_reminder_guest_intro_no_count", property=property_name)
     )
     action = _guest_text(lang, "mail_reminder_guest_action")
     note_label = _guest_text(lang, "mail_reminder_guest_note_label")
     note = _guest_text(lang, "mail_reminder_guest_note")
-    help_text = _guest_text(lang, "mail_reminder_guest_help")
+    device = _guest_text(lang, "mail_reminder_guest_device")
     fallback = _guest_text(lang, "mail_link_fallback")
     footer_lines = _guest_footer_lines(lang, property_name, host)
+    # The sending policy is a footnote, not a heading: the count above is the
+    # reason this mail exists, so the one-reminder fact drops to muted body text
+    # instead of the tinted box that used to shout over it.
+    one_reminder = f"{note_label} \u2014 {note}"
 
     blocks = _guest_blocks(
         heading=_guest_text(lang, "mail_reminder_guest_heading"),
@@ -1016,9 +1038,9 @@ def build_reminder_guest(
         action_url=stay_url,
         action_label=action,
         extra_blocks=[
+            _block_paragraph(device, muted=True),
             _block_link(stay_url, fallback),
-            _block_note(note_label, note),
-            _block_paragraph(help_text, muted=True),
+            _block_paragraph(one_reminder, muted=True),
         ],
     )
     text = "\n".join(
@@ -1027,9 +1049,9 @@ def build_reminder_guest(
             "",
             f"{action}: {stay_url}",
             "",
-            note,
+            device,
             "",
-            help_text,
+            one_reminder,
             "",
             "--",
             *footer_lines,

@@ -310,6 +310,8 @@ def _guest_mail_content(
     link: Optional[str] = None,
     resend: bool = False,
     stay_url: Optional[str] = None,
+    filled: int = 0,
+    expected: Optional[int] = None,
 ) -> Dict[str, str]:
     """Compose a guest message, falling back to plain text on any failure.
 
@@ -327,7 +329,9 @@ def _guest_mail_content(
     except Exception:
         property_name = ""
     fallback = {
-        "subject": _guest_mail_subject(kind, lang, property_name),
+        "subject": _guest_mail_subject(
+            kind, lang, property_name, filled=filled, expected=expected
+        ),
         "text": plain_text,
     }
     try:
@@ -358,9 +362,10 @@ def _guest_mail_content(
             return mail_notify.build_reminder_guest(
                 lang=lang,
                 property_name=property_name,
-                dates=dates,
                 stay_url=stay_url or "",
                 host=host,
+                filled=filled,
+                expected=expected,
             )
     except Exception:
         log.exception(
@@ -371,12 +376,29 @@ def _guest_mail_content(
     return fallback
 
 
-def _guest_mail_subject(kind: str, lang: str, property_name: str = "") -> str:
+def _guest_mail_subject(
+    kind: str,
+    lang: str,
+    property_name: str = "",
+    *,
+    filled: int = 0,
+    expected: Optional[int] = None,
+) -> str:
+    """The subject, rebuilt from the catalogue so a composer failure still
+    sends one that names the stay."""
+    if kind == "reminder_guest":
+        key = (
+            "mail_reminder_guest_subject"
+            if expected is not None
+            else "mail_reminder_guest_subject_no_count"
+        )
+        return i18n.translator(lang)(
+            key, property=property_name, filled=filled, expected=expected
+        )
     key = {
         "claim": "mail_claim_subject",
         "claim_resend": "mail_claim_resend_subject",
         "completion": "mail_completion_subject",
-        "reminder_guest": "mail_reminder_guest_subject",
     }.get(kind, "mail_claim_subject")
     return i18n.translator(lang)(key, property=property_name)
 
@@ -613,15 +635,38 @@ def sweep_reminders() -> Dict[str, int]:
             and not complete
         ):
             lang = reservation["claim_lang"] or "en"
-            text = (
-                "Your stay starts tomorrow. Please finish the guest registration "
-                "using the private link we already sent you. This is the only "
-                "incomplete-registration reminder we will send."
-                if lang != "cs"
-                else "Váš pobyt začíná zítra. Dokončete prosím registraci hostů "
-                "pomocí soukromého odkazu, který jsme vám již poslali. Toto je jediné "
-                "upozornění na nedokončenou registraci, které vám pošleme."
-            )
+            filled = progress["filled"]
+            expected = progress["expected"]
+            # The emergency body, handed back if the branded composer fails. It
+            # carries the same two facts the branded mail leads with: how much of
+            # the party is registered, and that the link wants the device that
+            # started the stay.
+            if lang == "cs":
+                lines = ["Váš pobyt začíná zítra."]
+                if expected is not None:
+                    lines.append(f"Zaregistrováno {filled} z {expected} hostů.")
+                lines.append(
+                    "Dokončete prosím registraci hostů pomocí soukromého odkazu, "
+                    "který jsme vám již poslali."
+                )
+                lines.append("Otevřete ho na telefonu nebo počítači, kde jste začali.")
+                lines.append(
+                    "Toto je jediné upozornění na nedokončenou registraci, které "
+                    "vám pošleme."
+                )
+            else:
+                lines = ["Your stay starts tomorrow."]
+                if expected is not None:
+                    lines.append(f"{filled} of {expected} guests are registered.")
+                lines.append(
+                    "Please finish the guest registration using the private link we "
+                    "already sent you."
+                )
+                lines.append("Open it on the phone or computer where you started.")
+                lines.append(
+                    "This is the only incomplete-registration reminder we will send."
+                )
+            text = " ".join(lines)
             stay_url = (
                 f"{config.PUBLIC_BASE_URL.rstrip('/')}/l/{reservation['permalink_token']}"
                 f"/{reservation['id']}"
@@ -633,6 +678,8 @@ def sweep_reminders() -> Dict[str, int]:
                 lang=lang,
                 plain_text=text,
                 stay_url=stay_url,
+                filled=filled,
+                expected=expected,
             )
             guest_payload = mail_notify.guest_payload(reservation, content, lang)
             if mail.enqueue(

@@ -54,13 +54,15 @@ NEW_GUEST_KEYS = (
     "mail_completion_action",
     "mail_completion_note",
     "mail_reminder_guest_subject",
+    "mail_reminder_guest_subject_no_count",
     "mail_reminder_guest_preheader",
     "mail_reminder_guest_heading",
     "mail_reminder_guest_intro",
+    "mail_reminder_guest_intro_no_count",
     "mail_reminder_guest_action",
     "mail_reminder_guest_note_label",
     "mail_reminder_guest_note",
-    "mail_reminder_guest_help",
+    "mail_reminder_guest_device",
     "mail_guest_footer_why",
     "mail_guest_footer_host_label",
     "mail_guest_footer_help",
@@ -194,13 +196,14 @@ def _completion_content(lang: str = "en"):
     )
 
 
-def _reminder_guest_content(lang: str = "en"):
+def _reminder_guest_content(lang: str = "en", *, filled: int = 0, expected=None):
     return mail_notify.build_reminder_guest(
         lang=lang,
         property_name="Guest Mail Flat",
-        dates="2026-01-05 \u2013 2026-01-08",
         stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
         host=_host(),
+        filled=filled,
+        expected=expected,
     )
 
 
@@ -232,7 +235,7 @@ def _all_content():
         "claim": _claim_content(),
         "claim_resend": _claim_content(resend=True),
         "completion": _completion_content(),
-        "reminder_guest": _reminder_guest_content(),
+        "reminder_guest": _reminder_guest_content(filled=1, expected=3),
         "reminder_host": _reminder_host_content(),
     }
 
@@ -372,11 +375,18 @@ def test_the_coral_links_use_the_action_colour_too():
 
 
 def test_the_note_label_uses_the_brand_ink_colour():
-    """E-9: 13px uppercase in the identity coral on the tint was only 3.54:1."""
-    html = _reminder_guest_content()["html"]
-    assert f"background:{mail_notify.BRAND_SOFT}" in html
-    assert f"color:{mail_notify.BRAND_INK};" in html
-    assert f"color:{IDENTITY_CORAL}" not in html
+    """E-9: 13px uppercase in the identity coral on the tint was only 3.54:1.
+
+    E-12 [UX-78] took the tinted box off the guest reminder, so the label E-9
+    repainted now lives only in the host problem notice, where
+    ``test_submission_mail.py`` covers it. What is left to prove here is that
+    nothing on the reminder fell back to the identity coral on the way out.
+    """
+    for lang in ("en", "cs"):
+        html = _reminder_guest_content(lang, filled=1, expected=3)["html"]
+        assert f"background:{mail_notify.BRAND_SOFT}" not in html, lang
+        assert f"color:{IDENTITY_CORAL}" not in html, lang
+        assert f"color:{mail_notify.INK_MUTED};" in html, lang
 
 
 def test_guest_mail_looks_transactional_not_bulk():
@@ -908,6 +918,81 @@ def test_a_guest_message_survives_an_apartment_without_a_name():
     )
     assert content["html"].strip()
     assert "your stay at  (" not in content["text"]
+
+
+# --- E-12 [UX-78]: the reminder says how much of the party is missing ---------
+
+
+def test_the_reminder_guest_leads_with_the_count_the_guest_needs():
+    """E-12: the sweep knew how far along the stay was and the mail never said.
+
+    Without the count the guest has to open the page to find out whether the
+    missing form is theirs or their partner's.
+    """
+    for lang in ("en", "cs"):
+        content = _reminder_guest_content(lang, filled=1, expected=3)
+        assert content["subject"] == i18n.STRINGS[lang][
+            "mail_reminder_guest_subject"
+        ] % {"property": "Guest Mail Flat", "filled": 1, "expected": 3}, lang
+        intro = i18n.STRINGS[lang]["mail_reminder_guest_intro"] % {"missing": 2}
+        assert intro in html.unescape(content["html"]), lang
+        assert intro in content["text"], lang
+        # The button label is the one piece of E-12 copy the audit kept.
+        action = i18n.STRINGS[lang]["mail_reminder_guest_action"]
+        assert f">{action}</a>" in content["html"], lang
+        assert f"{action}: " in content["text"], lang
+
+
+def test_the_reminder_guest_subject_names_the_stay_and_tomorrow():
+    """E-12: 'Please finish your guest registration' read like every other nag."""
+    for lang in ("en", "cs"):
+        subject = _reminder_guest_content(lang, filled=1, expected=3)["subject"]
+        assert "Guest Mail Flat" in subject, lang
+        assert subject.startswith("Tomorrow at " if lang == "en" else "Zítra"), lang
+
+
+def test_the_reminder_guest_still_reads_without_a_declared_party():
+    """No party size means no count to quote, and never a raw placeholder."""
+    for lang in ("en", "cs"):
+        content = _reminder_guest_content(lang)
+        assert content["subject"] == i18n.STRINGS[lang][
+            "mail_reminder_guest_subject_no_count"
+        ] % {"property": "Guest Mail Flat"}, lang
+        assert i18n.STRINGS[lang]["mail_reminder_guest_intro_no_count"] % {
+            "property": "Guest Mail Flat"
+        } in html.unescape(content["html"]), lang
+        for part in ("subject", "text", "html"):
+            assert "%(" not in content[part], (lang, part)
+
+
+def test_the_reminder_guest_tells_the_guest_which_device_opens_the_link():
+    """E-12: the PIN, the assigned page and the resend used to arrive unannounced.
+
+    The stay page only opens without friction on the device that claimed it.
+    """
+    for lang in ("en", "cs"):
+        device = i18n.STRINGS[lang]["mail_reminder_guest_device"]
+        content = _reminder_guest_content(lang, filled=1, expected=3)
+        assert device in html.unescape(content["html"]), lang
+        assert device in content["text"], lang
+        assert "PIN" in device, lang
+
+
+def test_the_one_reminder_fact_is_muted_and_the_help_line_is_gone():
+    """E-12: the coral box shouted a policy; 'you can ignore this' was false."""
+    for lang in ("en", "cs"):
+        content = _reminder_guest_content(lang, filled=1, expected=3)
+        html_part = html.unescape(content["html"])
+        assert f"background:{mail_notify.BRAND_SOFT}" not in html_part, lang
+        one_reminder = (
+            f"{i18n.STRINGS[lang]['mail_reminder_guest_note_label']} \u2014 "
+            f"{i18n.STRINGS[lang]['mail_reminder_guest_note']}"
+        )
+        assert one_reminder in html_part, lang
+        assert one_reminder in content["text"], lang
+        # The reminder is only sent while the stay is incomplete, so the line
+        # that invited the guest to ignore it is deleted from both catalogues.
+        assert "mail_reminder_guest_help" not in i18n.STRINGS[lang], lang
 
 
 def test_every_new_key_exists_in_both_languages():
