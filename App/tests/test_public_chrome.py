@@ -60,8 +60,17 @@ def _hrefs(chunk: str) -> list[str]:
     return re.findall(r'href="([^"]+)"', chunk)
 
 
+def _desktop_nav(chunk: str) -> str:
+    return _between(chunk, '<nav class="landing-nav"', "</nav>")
+
+
+def _menu_nav(chunk: str) -> str:
+    menu = _between(chunk, '<details class="landing-menu">', "</details>")
+    return _between(menu, "<nav ", "</nav>")
+
+
 def _nav_labels(chunk: str) -> list[str]:
-    nav = _between(chunk, '<nav class="landing-nav"', "</nav>")
+    nav = _desktop_nav(chunk)
     return [text.strip() for text in re.findall(r">([^<]+)</a>", nav)]
 
 
@@ -70,6 +79,25 @@ def _render(url: str, lang: str = "en") -> str:
     response = _client().get(f"{url}{joiner}lang={lang}")
     assert response.status_code == 200, f"{url} answered {response.status_code}"
     return response.text
+
+
+def _media_blocks(css: str, max_width: int) -> list[str]:
+    """The bodies of every `@media (max-width: Npx)` block in the stylesheet."""
+    blocks = []
+    marker = f"@media (max-width: {max_width}px)"
+    start = css.find(marker)
+    while start != -1:
+        depth = 0
+        for index in range(css.index("{", start), len(css)):
+            if css[index] == "{":
+                depth += 1
+            elif css[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    blocks.append(css[start : index + 1])
+                    break
+        start = css.find(marker, index)
+    return blocks
 
 
 def test_no_public_page_carries_its_own_copy_of_the_chrome():
@@ -107,9 +135,9 @@ def test_each_page_marks_its_own_nav_item_and_only_its_own():
         "/pruvodce/online-ubytovaci-kniha": None,
     }
     for url, label in expected.items():
-        header = _header(_render(url))
-        current = re.findall(r'<a href="[^"]*" aria-current="page">([^<]+)</a>', header)
-        assert current == ([] if label is None else [label]), url
+        for nav in (_desktop_nav(_header(_render(url))), _menu_nav(_header(_render(url)))):
+            current = re.findall(r'<a href="[^"]*" aria-current="page">([^<]+)</a>', nav)
+            assert current == ([] if label is None else [label]), url
 
 
 def test_the_product_anchor_stays_an_anchor_on_the_home_page():
@@ -117,6 +145,55 @@ def test_the_product_anchor_stays_an_anchor_on_the_home_page():
     assert 'href="#product"' in _header(_render("/"))
     # Anywhere else it has to travel back to the home page first.
     assert 'href="/?lang=en#product"' in _header(_render("/cenik"))
+
+
+def test_the_phone_menu_offers_the_same_destinations_as_the_desktop_nav():
+    for url in PUBLIC_URLS:
+        header = _header(_render(url))
+        desktop = re.findall(r'href="([^"]+)"', _desktop_nav(header))
+        menu = re.findall(r'href="([^"]+)"', _menu_nav(header))
+        assert menu == desktop, url
+
+
+def test_the_phone_menu_is_rendered_in_the_language_of_the_page():
+    menu = _between(_header(_render("/cenik", lang="en")), '<details class="landing-menu">', "</details>")
+    assert ">Menu<" in menu
+    czech = _between(_header(_render("/cenik", lang="cs")), '<details class="landing-menu">', "</details>")
+    assert ">Menu<" in czech
+    assert ">Jak to funguje<" in czech
+    assert ">Ceník<" in czech
+    assert "landing." not in czech
+
+
+def test_the_phone_menu_is_a_javascript_free_disclosure():
+    header = _header(_render("/"))
+    menu = _between(header, '<details class="landing-menu">', "</details>")
+    assert "<summary>" in menu
+    # A `<summary>` is the disclosure control; a button would need script.
+    assert "<button" not in menu
+
+
+def test_log_in_is_never_hidden_by_a_media_query():
+    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "landing.css").read_text(
+        encoding="utf-8"
+    )
+    assert re.search(r"\.landing-login\s*\{[^}]*display:\s*none", css) is None
+
+
+def test_the_phone_menu_only_appears_where_the_nav_is_hidden():
+    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "landing.css").read_text(
+        encoding="utf-8"
+    )
+    # Hidden by default, so on a wide screen the desktop nav is the only nav.
+    assert re.search(r"^\.landing-menu\s*\{\s*display:\s*none;\s*\}", css, re.M)
+    # Revealed only where the nav goes away, so there is never no nav and never
+    # two of them.
+    for block in _media_blocks(css, 900):
+        if ".landing-menu" in block and "display: block" in block:
+            break
+    else:
+        raise AssertionError("no max-width: 900px block reveals the phone menu")
+    assert any(".landing-nav { display: none; }" in block for block in _media_blocks(css, 900))
 
 
 def test_the_footer_is_byte_for_byte_the_same_on_every_page():
