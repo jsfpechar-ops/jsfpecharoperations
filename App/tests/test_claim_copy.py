@@ -36,7 +36,7 @@ AUDIT_COPY = {
         "are missing, and a receipt (your host gets a copy). Elsewhere it is "
         "shown masked. No marketing.",
         "Pošleme sem odkaz, jedno připomenutí den před příjezdem, pokud "
-        "formuláře chybí, a potvrzení (kopii dostane i ubytovatel). Jinde se "
+        "formuláře chybí, a potvrzení (kopii dostane i hostitel). Jinde se "
         "adresa zobrazuje zakrytě. Žádný marketing.",
     ),
     "claim_cookie_help": (

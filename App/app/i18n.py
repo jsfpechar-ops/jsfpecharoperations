@@ -567,7 +567,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "cizinecké policie."
         ),
         "why_point_book": (
-            "Stejné údaje se zapisují do domovní knihy, kterou ubytovatel uchovává 6 let a "
+            "Stejné údaje se zapisují do domovní knihy, kterou hostitel uchovává 6 let a "
             "předkládá při kontrole policie."
         ),
         "why_point_czech": (
@@ -606,7 +606,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host_details_missing": (
             "Použijte telefon nebo e-mail ze zprávy, ve které byl tento odkaz."
         ),
-        "message_from_host": "Zpráva od vašeho ubytovatele",
+        "message_from_host": "Zpráva od vašeho hostitele",
         "claim_title": "Počet osob a váš e-mail",
         "claim_help": (
             "Pošleme vám soukromý odkaz, aby formuláře otevřela jen vaše skupina."
@@ -614,7 +614,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_email": "Jaký je váš e-mail?",
         "claim_email_help": (
             "Pošleme sem odkaz, jedno připomenutí den před příjezdem, pokud formuláře "
-            "chybí, a potvrzení (kopii dostane i ubytovatel). Jinde se adresa zobrazuje "
+            "chybí, a potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje "
             "zakrytě. Žádný marketing."
         ),
         "claim_cookie_help": (
@@ -663,14 +663,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "no_stays": "Zatím tu není co vyplnit",
         "no_stays_help": (
             "Registrace se otevírá pár dní před příjezdem. Pak se vraťte na tento odkaz. "
-            "Už jste na místě? Napište ubytovateli, pošle vám přímý odkaz na váš pobyt."
+            "Už jste na místě? Napište hostiteli, pošle vám přímý odkaz na váš pobyt."
         ),
         "bad_link_title": "Tento odkaz není platný",
-        "bad_link_help": "Odkaz může být neúplný nebo byl nahrazen. Požádejte ubytovatele o nový odkaz.",
+        "bad_link_help": "Odkaz může být neúplný nebo byl nahrazen. Požádejte hostitele o nový odkaz.",
         "stay_gone_title": "Tento pobyt už není otevřený k registraci",
         "stay_gone_help": (
-            "Termín se mohl změnit, rezervace mohla být zrušena, nebo ubytovatel registraci "
-            "pro tento pobyt uzavřel. Napište prosím ubytovateli."
+            "Termín se mohl změnit, rezervace mohla být zrušena, nebo hostitel registraci "
+            "pro tento pobyt uzavřel. Napište prosím hostiteli."
         ),
         "form_expired_title": "Tomuto formuláři vypršela platnost",
         "form_expired_help": (
@@ -679,37 +679,37 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "rate_limited_title": "Příliš mnoho pokusů z vašeho připojení",
         "rate_limited_help": (
             "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu — pokud se "
-            "zaseknete, napište ubytovateli."
+            "zaseknete, napište hostiteli."
         ),
         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
         "not_yours_help": (
             "Aby jeden host neviděl údaje z pasu druhého, lze formulář znovu otevřít pouze na "
-            "zařízení, ze kterého byl vyplněn. Potřebujete-li opravu, napište ubytovateli."
+            "zařízení, ze kterého byl vyplněn. Potřebujete-li opravu, napište hostiteli."
         ),
         "already_filed_title": "Tyto údaje již byly oznámeny",
         "already_filed_help": (
             "Kvůli správnosti zákonného záznamu nelze oznámené údaje v tomto formuláři měnit. "
-            "Potřebujete-li opravu, napište ubytovateli."
+            "Potřebujete-li opravu, napište hostiteli."
         ),
         "form_locked_title": "Formulář je uzamčen",
         "form_locked_help": (
             "Vaše údaje byly uloženy a podepsány. Abychom chránili vaše informace, "
-            "formulář už z tohoto odkazu nelze měnit. Potřebujete-li opravu, napište ubytovateli."
+            "formulář už z tohoto odkazu nelze měnit. Potřebujete-li opravu, napište hostiteli."
         ),
-        "form_locked_short": "Uloženo a uzamčeno. Pro změnu kontaktujte ubytovatele.",
+        "form_locked_short": "Uloženo a uzamčeno. Pro změnu kontaktujte hostitele.",
         "pin_title": "Zadejte přístupový PIN",
         "pin_help": (
-            "Ubytovatel vám spolu s odkazem poslal PIN. "
+            "Hostitel vám spolu s odkazem poslal PIN. "
             "Zadejte ho pro otevření formuláře."
         ),
         "pin_label": "PIN",
         "pin_submit": "Pokračovat",
-        "pin_wrong": "PIN není správný. Zkontrolujte zprávu od ubytovatele.",
-        "pin_recovery": "Nemůžete PIN najít? Požádejte ubytovatele o nové zaslání registrační zprávy.",
+        "pin_wrong": "PIN není správný. Zkontrolujte zprávu od hostitele.",
+        "pin_recovery": "Nemůžete PIN najít? Požádejte hostitele o nové zaslání registrační zprávy.",
         "pin_rate_limited": "Příliš mnoho chybných PINů. Počkejte asi 15 minut a zkuste to znovu.",
         "pin_locked_out": (
             "Příliš mnoho chybných pokusů o PIN, proto je tento odkaz na den pozastaven. "
-            "Požádejte ubytovatele o nový PIN."
+            "Požádejte hostitele o nový PIN."
         ),
         "security_check_failed": "Dokončete bezpečnostní kontrolu a zkuste to znovu.",
         "start_over": "Začít znovu",
@@ -736,8 +736,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "reported_title": "Údaje byly odeslány a oznámeny",
         "reported_body": (
-            "Děkujeme. Ubytovatel již tento záznam oznámil. Pokud je třeba něco opravit, "
-            "kontaktujte ubytovatele."
+            "Děkujeme. Hostitel již tento záznam oznámil. Pokud je třeba něco opravit, "
+            "kontaktujte hostitele."
         ),
         "summary_title": "Vaše údaje",
         "summary_fold_saved": "uloženo ✓",
@@ -792,8 +792,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_kept": "Podpis máme uložený. Znovu se podepište, jen pokud ho chcete změnit.",
         "passport_photo_title": "Pas nebo průkaz totožnosti",
         "passport_photo_help": (
-            "Ubytovatel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
-            "nahrajte PDF. Uvidí ji jen ubytovatel a po kontrole se smaže."
+            "Hostitel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
+            "nahrajte PDF. Uvidí ji jen hostitel a po kontrole se smaže."
         ),
         "passport_photo_label": "Pas nebo průkaz totožnosti",
         "passport_photo_take": "Vyfotit",
@@ -817,7 +817,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_missing": "Nahrajte prosím fotografii pasu nebo občanského průkazu.",
         "review_title": "Před odesláním zkontrolujte",
         "review_help": (
-            "Po odeslání se údaje uzamknou a změnit je může už jen ubytovatel."
+            "Po odeslání se údaje uzamknou a změnit je může už jen hostitel."
         ),
         "review_edit": "Změnit",
         "legal_notice_title": "Právní informace",
