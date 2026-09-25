@@ -77,28 +77,28 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Use the phone or e-mail in the message that contained this link."
         ),
         "message_from_host": "A message from your host",
-        "claim_title": "Confirm the number of guests and your e-mail",
+        "claim_title": "How many people, and your e-mail",
         "claim_help": (
-            "We e-mail a private link to this address so only you can fill in the forms. "
-            "The public link then shows that the stay is assigned to your masked e-mail."
+            "We'll e-mail you a private link so only your group can open the forms."
         ),
         "claim_email": "What is your e-mail address?",
         "claim_email_help": (
-            "We use this address to secure this reservation, send the private form link, "
-            "one reminder if the forms are incomplete the day before check-in, and a completion "
-            "receipt. The property manager receives the completion copy and authorised host users "
-            "can see the address; public guest screens show only a masked version. No marketing."
+            "We send the link here, one reminder the day before arrival if forms are "
+            "missing, and a receipt (your host gets a copy). Elsewhere it is shown "
+            "masked. No marketing."
         ),
         "claim_cookie_help": (
-            "Strictly necessary cookies remember PIN access for up to 7 days and language, the "
-            "confirmed stay, and forms submitted on this device for up to 60 days. UbyHost uses "
-            "no advertising or analytics cookies."
+            "Only necessary cookies: PIN access (7 days), your language and this stay "
+            "(60 days)."
         ),
         "claim_submit": "Send me the form link",
         "claim_sent_title": "Check your e-mail",
         "claim_sent_body": (
-            "If the address is correct, open the confirmation link we just sent. "
-            "On staging, the host can also copy the link from Settings → Guest e-mails."
+            "We sent a link to %(email)s. Open it on this phone to continue — it works "
+            "for 30 minutes. If it asks for the PIN again, enter the same PIN."
+        ),
+        "claim_sent_retry": (
+            "No e-mail after a few minutes? Check spam, or send it again"
         ),
         "claim_error_bad_email": "Please enter a valid e-mail address.",
         "claim_error_bad_party": "Please enter how many people are staying (1–60).",
@@ -602,28 +602,27 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Použijte telefon nebo e-mail ze zprávy, ve které byl tento odkaz."
         ),
         "message_from_host": "Zpráva od vašeho ubytovatele",
-        "claim_title": "Potvrďte počet hostů a e-mail",
+        "claim_title": "Počet osob a váš e-mail",
         "claim_help": (
-            "Na tuto adresu pošleme soukromý odkaz, aby formuláře vyplnil jen host. "
-            "Veřejný odkaz pak ukáže, že pobyt je přiřazen k vašemu zastřenému e-mailu."
+            "Pošleme vám soukromý odkaz, aby formuláře otevřela jen vaše skupina."
         ),
         "claim_email": "Jaký je váš e-mail?",
         "claim_email_help": (
-            "Adresu používáme k zabezpečení této rezervace, zaslání soukromého odkazu, "
-            "jednoho upozornění při nedokončení den před příjezdem a potvrzení o dokončení. "
-            "Správce objektu obdrží kopii potvrzení a oprávnění uživatelé ubytovatele mohou adresu "
-            "vidět; veřejné obrazovky pro hosty zobrazují jen zastřenou podobu. Žádný marketing."
+            "Pošleme sem odkaz, jedno připomenutí den před příjezdem, pokud formuláře "
+            "chybí, a potvrzení (kopii dostane i ubytovatel). Jinde se adresa zobrazuje "
+            "zakrytě. Žádný marketing."
         ),
         "claim_cookie_help": (
-            "Nezbytné cookies si pamatují přístup přes PIN nejvýše 7 dní a jazyk, potvrzený pobyt "
-            "a formuláře odeslané z tohoto zařízení nejvýše 60 dní. UbyHost nepoužívá reklamní "
-            "ani analytické cookies."
+            "Jen nezbytné cookies: přístup přes PIN (7 dní), jazyk a tento pobyt (60 dní)."
         ),
         "claim_submit": "Pošlete mi odkaz na formulář",
         "claim_sent_title": "Zkontrolujte e-mail",
         "claim_sent_body": (
-            "Pokud je adresa správně, otevřete potvrzovací odkaz. "
-            "Na stagingu může hostitel odkaz zkopírovat v Nastavení → E-maily hostům."
+            "Poslali jsme odkaz na %(email)s. Otevřete ho v tomto telefonu a pokračujte — "
+            "platí 30 minut. Pokud se znovu zeptá na PIN, zadejte stejný."
+        ),
+        "claim_sent_retry": (
+            "E-mail ani po pár minutách nepřišel? Zkontrolujte spam, nebo ho pošlete znovu"
         ),
         "claim_error_bad_email": "Zadejte platnou e-mailovou adresu.",
         "claim_error_bad_party": "Zadejte počet osob (1–60).",
