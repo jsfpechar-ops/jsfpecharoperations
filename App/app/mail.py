@@ -30,7 +30,6 @@ KINDS = (
     "reminder_guest",
     "reminder_host",
     "completion",
-    "dates_changed",
     "submission_problem",
 )
 
@@ -49,7 +48,6 @@ GUEST_KINDS = (
 )
 HOST_KINDS = (
     "reminder_host",
-    "dates_changed",
     "submission_problem",
 )
 

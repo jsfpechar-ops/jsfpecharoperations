@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import pathlib
 import re
 from datetime import datetime, time, timedelta, timezone
 
@@ -1644,6 +1645,41 @@ def test_every_mail_kind_is_classified_as_guest_or_host():
     """
     assert set(mail.KINDS) == set(mail.GUEST_KINDS) | set(mail.HOST_KINDS)
     assert not set(mail.GUEST_KINDS) & set(mail.HOST_KINDS)
+
+
+def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
+    """UX-134: ``KINDS`` must describe what the app actually sends.
+
+    ``dates_changed`` sat in this tuple for months with no composer, no call
+    site and no copy, while ``docs/SES.md`` promised it stayed plain text. A
+    kind nobody can send is a promise the app does not keep, so the tuple is
+    pinned here: adding one back has to be a deliberate edit to this test.
+    """
+    assert set(mail.KINDS) == {
+        "claim",
+        "claim_resend",
+        "reminder_guest",
+        "reminder_host",
+        "completion",
+        "submission_problem",
+    }
+
+
+def test_no_registered_mail_kind_is_dead():
+    """Every kind in ``KINDS`` is reachable from somewhere outside ``mail.py``.
+
+    The kind has to be named as a string literal by a composer, a call site or
+    a copy key. ``dates_changed`` failed exactly this: it was only ever a local
+    variable name in ``icalsync.py``, never a kind anyone could send.
+    """
+    app_dir = pathlib.Path(mail.__file__).parent
+    sources = [
+        path.read_text(encoding="utf-8")
+        for path in app_dir.rglob("*.py")
+        if path.name != "mail.py"
+    ]
+    for kind in mail.KINDS:
+        assert any(f'"{kind}"' in text or f"'{kind}'" in text for text in sources), kind
 
 
 def test_every_guest_kind_sends_the_answer_back_to_the_host(monkeypatch):
