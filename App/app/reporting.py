@@ -1337,7 +1337,13 @@ def submit_for_apartment(
     from . import demo
 
     if demo.is_demo_apartment(apartment):
-        return [{"state": "noop", "error": "Demo data is for preview only and is never sent to the police."}]
+        return [
+            {
+                "state": "noop",
+                "error": "Demo data is for preview only and is never sent to the police.",
+                "error_key": "flash.error.demo_preview_only",
+            }
+        ]
 
     ap_dict = dict(apartment)
     ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])

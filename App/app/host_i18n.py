@@ -657,8 +657,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.apartments.settings_saved": "Saved settings for %(name)s.",
         "flash.apartments.archived": "“%(name)s” archived. Its history is kept.",
         "flash.apartments.restored": "Property restored from archive.",
-        "flash.apartments.connection_ok": "UbyPort reachable at %(endpoint)s (available=%(available)s%(batch)s).",
-        "flash.apartments.connection_batch": ", max batch %(limit)s",
+        "flash.apartments.connection_ok": (
+            "Connection works — UbyPort accepted your web-service login."
+        ),
         "flash.apartments.codelists_refreshed": "Code lists refreshed from UbyPort: %(countries)s countries, %(purposes)s purposes, %(errors)s error codes.",
         "flash.feeds.added": "Calendar added. %(count)s stay(s) imported.",
         "flash.feeds.removed": "Calendar removed. Existing stays were kept.",
@@ -668,7 +669,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.reservations.saved": "Saved.",
         "flash.reservations.restored": "Stay restored from archive.",
         "flash.reservations.access_reopened": "Guest access reopened.",
-        "flash.reservations.claim_released": "Guest claim released.",
+        "flash.reservations.claim_released": (
+            "Assignment released — another e-mail can now claim this stay."
+        ),
         "flash.reservations.accepted": "%(count)s guest(s) accepted.",
         "flash.reservations.reported": "%(count)s guest(s) reported to UbyPort.",
         "flash.guests.added": "Guest added.",
@@ -685,6 +688,117 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.accounts.password_changed": "Password changed.",
         "flash.accounts.enabled": "%(username)s enabled.",
         "flash.accounts.disabled": "%(username)s disabled.",
+        "flash.error.no_such_apartment": "This property no longer exists.",
+        "flash.error.no_such_stay": "This stay no longer exists.",
+        "flash.error.no_such_guest": "This guest no longer exists.",
+        "flash.error.no_such_housebook_guest": "That house-book entry no longer exists.",
+        "flash.error.no_such_entity": "This operator no longer exists.",
+        "flash.error.no_such_controller": "That data controller no longer exists.",
+        "flash.error.no_such_calendar": "That calendar no longer exists.",
+        "flash.error.no_such_submission": "That submission no longer exists.",
+        "flash.error.already_archived": "It's already archived.",
+        "flash.error.not_archived": "It isn't archived, so there's nothing to restore.",
+        "flash.error.name_required": "Please enter a name.",
+        "flash.error.pin_six_digits": "The PIN must be exactly 6 digits.",
+        "flash.error.stay_dates_required": "Pick a property and both dates.",
+        "flash.error.dates_order": "Departure must be after arrival.",
+        "flash.error.nothing_ready": (
+            "Nothing is ready to send yet — open a stay to see what's missing."
+        ),
+        "flash.error.nothing_sendable": (
+            "Nothing could be sent: every guest is incomplete, already reported, "
+            "or not reportable."
+        ),
+        "flash.error.nothing_to_send": "There was nothing to send.",
+        "flash.error.not_sendable": "This stay can't be sent right now.",
+        "flash.error.record_not_sendable": (
+            "This record can't be sent yet — fix the validation errors first."
+        ),
+        "flash.error.rejected": (
+            "UbyPort rejected %(count)s guest record(s) — open the stay to fix and resend."
+        ),
+        "flash.error.resent_rejected": (
+            "Re-sent, but UbyPort rejected it again — see the Doručenka."
+        ),
+        "flash.error.already_reported_duplicate": (
+            "UbyPort already holds this record, so re-sending can't be accepted and "
+            "would count as another duplicate. The guest is reported — see the Doručenka."
+        ),
+        "flash.error.reported_kept": (
+            "This guest was already reported to the police — the record must stay in "
+            "the house book."
+        ),
+        "flash.error.czech_no_verification": "Czech guests don't need their passport checked.",
+        "flash.error.confirm_duplicate": (
+            "Tick the box to confirm you understand the duplicate rules."
+        ),
+        "flash.error.confirm_duplicate_resend": (
+            "Tick the box to confirm you understand the duplicate rules before "
+            "re-sending accepted records."
+        ),
+        "flash.error.feeds_unreadable": (
+            "Some calendars couldn't be read — see the alert on the property."
+        ),
+        "flash.error.feed_added_unreadable": (
+            "Calendar added, but it couldn't be read — see the alert above."
+        ),
+        "flash.error.codelists_refresh": (
+            "Code lists couldn't be refreshed — try again in a few minutes."
+        ),
+        "flash.error.ubyport_not_configured": (
+            "UbyPort isn't set up completely for this property: %(detail)s"
+        ),
+        "flash.error.ubyport_unreachable": (
+            "UbyPort couldn't be reached — try again in a few minutes."
+        ),
+        "flash.error.connection_failed": (
+            "The connection test failed — check the web-service login and try again."
+        ),
+        "flash.error.entity_has_properties": (
+            "Detach or archive the properties linked to this operator first."
+        ),
+        "flash.error.detach_properties_first": (
+            "Detach the properties from this operator first."
+        ),
+        "flash.error.archive_entity_first": "Archive the operator before deleting it.",
+        "flash.error.export_range_required": "Choose a date range first.",
+        "flash.error.no_receipts": "There are no Doručenka receipts to download yet.",
+        "flash.error.no_housebook_matches": "No house-book entries match this filter.",
+        "flash.error.too_many_receipts": (
+            "Too many receipts (%(count)s) for one download. Narrow the date filter to "
+            "%(limit)s or fewer."
+        ),
+        "flash.error.too_many_entries": (
+            "Too many entries (%(count)s) for one download. Narrow the date or property "
+            "filter to %(limit)s or fewer."
+        ),
+        "flash.error.demo_staging_only": (
+            "Demo data is only available in a fresh staging or mock workspace."
+        ),
+        "flash.error.demo_missing": "The built-in demo dataset wasn't found.",
+        "flash.error.demo_preview_only": (
+            "Demo data is only a preview — it's never sent to the police."
+        ),
+        "flash.error.feed_url_malformed": (
+            "That doesn't look like a calendar link. Copy it again from Airbnb or "
+            "Booking.com."
+        ),
+        "flash.error.feed_url_scheme": "The link must start with http:// or https://.",
+        "flash.error.feed_url_no_host": "The link is missing the website address.",
+        "flash.error.feed_url_credentials": "Remove the username and password from the link.",
+        "flash.error.feed_url_port": "The link has an invalid port number.",
+        "flash.error.feed_url_host": (
+            "Use the address your calendar provider gave you, not a number."
+        ),
+        "flash.error.feed_host_blocked": "That calendar address isn't allowed.",
+        "flash.error.feed_host_private": (
+            "That address is on a private network, so UbyHost can't read it."
+        ),
+        "flash.error.feed_host_unresolved": "That calendar address can't be reached.",
+        "flash.error.feed_redirect_insecure": (
+            "The calendar redirects to an insecure address. Point the link at where it "
+            "redirects to."
+        ),
         "common.back": "Back",
         "common.close": "Close",
         "common.apply": "Apply",
@@ -1706,8 +1820,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.apartments.settings_saved": "Nastavení pro %(name)s bylo uloženo.",
         "flash.apartments.archived": "„%(name)s“ bylo archivováno. Historie zůstává zachována.",
         "flash.apartments.restored": "Ubytování bylo obnoveno z archivu.",
-        "flash.apartments.connection_ok": "UbyPort je dostupný na %(endpoint)s (dostupnost=%(available)s%(batch)s).",
-        "flash.apartments.connection_batch": ", maximální dávka %(limit)s",
+        "flash.apartments.connection_ok": (
+            "Spojení funguje — UbyPort přijal vaše přihlašovací údaje."
+        ),
         "flash.apartments.codelists_refreshed": "Číselníky byly obnoveny z UbyPortu: %(countries)s zemí, %(purposes)s účelů, %(errors)s chybových kódů.",
         "flash.feeds.added": "Kalendář byl přidán. Importováno %(count)s pobytů.",
         "flash.feeds.removed": "Kalendář byl odebrán. Stávající pobyty zůstaly zachovány.",
@@ -1717,7 +1832,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.reservations.saved": "Uloženo.",
         "flash.reservations.restored": "Pobyt byl obnoven z archivu.",
         "flash.reservations.access_reopened": "Přístup hosta byl znovu otevřen.",
-        "flash.reservations.claim_released": "Nárokování hosta bylo uvolněno.",
+        "flash.reservations.claim_released": (
+            "Přiřazení uvolněno — pobyt teď může převzít jiný e-mail."
+        ),
         "flash.reservations.accepted": "Přijato %(count)s hostů.",
         "flash.reservations.reported": "Nahlášeno na UbyPort: %(count)s hostů.",
         "flash.guests.added": "Host byl přidán.",
@@ -1734,6 +1851,124 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.accounts.password_changed": "Heslo bylo změněno.",
         "flash.accounts.enabled": "Uživatel %(username)s byl zapnut.",
         "flash.accounts.disabled": "Uživatel %(username)s byl vypnut.",
+        "flash.error.no_such_apartment": "Toto ubytování už neexistuje.",
+        "flash.error.no_such_stay": "Tento pobyt už neexistuje.",
+        "flash.error.no_such_guest": "Tento host už neexistuje.",
+        "flash.error.no_such_housebook_guest": "Tento záznam v domovní knize už neexistuje.",
+        "flash.error.no_such_entity": "Tento provozovatel už neexistuje.",
+        "flash.error.no_such_controller": "Tento správce údajů už neexistuje.",
+        "flash.error.no_such_calendar": "Tento kalendář už neexistuje.",
+        "flash.error.no_such_submission": "Toto podání už neexistuje.",
+        "flash.error.already_archived": "Už je v archivu.",
+        "flash.error.not_archived": "Není v archivu, takže není co obnovit.",
+        "flash.error.name_required": "Vyplňte prosím název.",
+        "flash.error.pin_six_digits": "PIN musí mít přesně 6 číslic.",
+        "flash.error.stay_dates_required": "Vyberte ubytování a oba termíny.",
+        "flash.error.dates_order": "Odjezd musí být po příjezdu.",
+        "flash.error.nothing_ready": (
+            "Zatím není nic připraveno k odeslání — otevřete pobyt a uvidíte, co chybí."
+        ),
+        "flash.error.nothing_sendable": (
+            "Nebylo co odeslat: všichni hosté jsou buď nedokončení, už nahlášení, "
+            "nebo se na ně hlášení nevztahuje."
+        ),
+        "flash.error.nothing_to_send": "Nebylo co odeslat.",
+        "flash.error.not_sendable": "Tento pobyt teď nelze odeslat.",
+        "flash.error.record_not_sendable": (
+            "Tento záznam zatím nelze odeslat — nejprve opravte chyby ve formuláři."
+        ),
+        "flash.error.rejected": (
+            "UbyPort odmítl záznamy hostů (%(count)s) — otevřete pobyt, opravte je a "
+            "odešlete znovu."
+        ),
+        "flash.error.resent_rejected": (
+            "Odesláno znovu, ale UbyPort záznam opět odmítl — podrobnosti najdete v "
+            "Doručence."
+        ),
+        "flash.error.already_reported_duplicate": (
+            "UbyPort tento záznam už má, takže opětovné odeslání nelze přijmout a "
+            "počítalo by se jako další duplicita. Host je nahlášen — podrobnosti "
+            "najdete v Doručence."
+        ),
+        "flash.error.reported_kept": (
+            "Tento host už byl nahlášen policii — záznam musí zůstat v domovní knize."
+        ),
+        "flash.error.czech_no_verification": "U českých hostů se doklad nekontroluje.",
+        "flash.error.confirm_duplicate": (
+            "Zaškrtněte políčko, kterým potvrdíte, že rozumíte pravidlům pro duplicity."
+        ),
+        "flash.error.confirm_duplicate_resend": (
+            "Zaškrtněte políčko, kterým potvrdíte, že rozumíte pravidlům pro duplicity, "
+            "než znovu odešlete přijaté záznamy."
+        ),
+        "flash.error.feeds_unreadable": (
+            "Některé kalendáře nešly načíst — podrobnosti najdete u ubytování."
+        ),
+        "flash.error.feed_added_unreadable": (
+            "Kalendář byl přidán, ale nepodařilo se ho načíst — viz upozornění výše."
+        ),
+        "flash.error.codelists_refresh": (
+            "Číselníky se nepodařilo obnovit — zkuste to za pár minut."
+        ),
+        "flash.error.ubyport_not_configured": (
+            "UbyPort není pro toto ubytování kompletně nastaven: %(detail)s"
+        ),
+        "flash.error.ubyport_unreachable": (
+            "UbyPort se nepodařilo kontaktovat — zkuste to za pár minut."
+        ),
+        "flash.error.connection_failed": (
+            "Test spojení se nezdařil — zkontrolujte přihlašovací údaje k webové službě "
+            "a zkuste to znovu."
+        ),
+        "flash.error.entity_has_properties": (
+            "Nejprve odpojte nebo archivujte ubytování přiřazená tomuto provozovateli."
+        ),
+        "flash.error.detach_properties_first": (
+            "Nejprve odpojte ubytování od tohoto provozovatele."
+        ),
+        "flash.error.archive_entity_first": (
+            "Před smazáním provozovatele ho nejprve archivujte."
+        ),
+        "flash.error.export_range_required": "Nejprve zvolte rozsah dat.",
+        "flash.error.no_receipts": "Zatím nejsou k dispozici žádné Doručenky ke stažení.",
+        "flash.error.no_housebook_matches": (
+            "Tomuto filtru neodpovídá žádný záznam v domovní knize."
+        ),
+        "flash.error.too_many_receipts": (
+            "Pro jedno stažení je příliš mnoho Doručenek (%(count)s). Zúžte filtr data "
+            "na %(limit)s nebo méně."
+        ),
+        "flash.error.too_many_entries": (
+            "Pro jedno stažení je příliš mnoho záznamů (%(count)s). Zúžte filtr data "
+            "nebo ubytování na %(limit)s nebo méně."
+        ),
+        "flash.error.demo_staging_only": (
+            "Demo data jsou dostupná jen v novém testovacím nebo mock pracovním prostředí."
+        ),
+        "flash.error.demo_missing": "Vestavěná demo data nebyla nalezena.",
+        "flash.error.demo_preview_only": (
+            "Demo data jsou jen náhled — na policii se nikdy neodesílají."
+        ),
+        "flash.error.feed_url_malformed": (
+            "Tohle nevypadá jako odkaz na kalendář. Zkopírujte ho znovu z Airbnb nebo "
+            "Booking.com."
+        ),
+        "flash.error.feed_url_scheme": "Odkaz musí začínat na http:// nebo https://.",
+        "flash.error.feed_url_no_host": "V odkazu chybí adresa webu.",
+        "flash.error.feed_url_credentials": "Odstraňte z odkazu uživatelské jméno a heslo.",
+        "flash.error.feed_url_port": "Odkaz obsahuje neplatné číslo portu.",
+        "flash.error.feed_url_host": (
+            "Použijte adresu, kterou vám dal poskytovatel kalendáře, ne číslo."
+        ),
+        "flash.error.feed_host_blocked": "Tato adresa kalendáře není povolena.",
+        "flash.error.feed_host_private": (
+            "Tato adresa je v privátní síti, takže ji UbyHost nedokáže načíst."
+        ),
+        "flash.error.feed_host_unresolved": "Na tuto adresu kalendáře se nelze připojit.",
+        "flash.error.feed_redirect_insecure": (
+            "Kalendář přesměrovává na nezabezpečenou adresu. Vložte odkaz rovnou na "
+            "cílovou adresu."
+        ),
         "common.back": "Zpět",
         "common.close": "Zavřít",
         "common.apply": "Použít",

@@ -29,7 +29,7 @@ def load_demo(request: Request):
     if not apartment_id:
         return _back(
             "/",
-            err="Demo data is available only in a fresh staging or mock workspace.",
+            err=_flash(request, "flash.error.demo_staging_only"),
         )
     return _back("/", msg=_flash(request, "flash.demo.loaded"))
 
@@ -40,7 +40,7 @@ def reset_demo(request: Request):
     if guard:
         return guard
     if not demo.clear(access.owner_id(request)):
-        return _back("/", err="The built-in demo dataset was not found.")
+        return _back("/", err=_flash(request, "flash.error.demo_missing"))
     return _back("/", msg=_flash(request, "flash.demo.cleared"))
 
 
