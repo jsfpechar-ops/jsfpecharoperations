@@ -14,6 +14,7 @@ from pathlib import Path
 from starlette.testclient import TestClient
 
 from app import db
+from app.landing_i18n import LANDING_STRINGS
 from app.main import app
 
 TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
@@ -117,14 +118,14 @@ def test_the_shared_chrome_lives_in_exactly_two_files():
     assert '<footer class="landing-footer">' in _read("_public_footer.html")
 
 
-def test_the_nav_is_the_same_four_destinations_on_every_page():
+def test_the_nav_is_the_same_three_destinations_on_every_page():
     seen = {}
     for url in PUBLIC_URLS:
         labels = _nav_labels(_header(_render(url)))
-        assert len(labels) == 4, url
+        assert len(labels) == 3, url
         seen[url] = labels
     assert len(set(tuple(labels) for labels in seen.values())) == 1
-    assert list(seen.values())[0] == ["Product", "How it works", "Pricing", "UbyPort"]
+    assert list(seen.values())[0] == ["How it works", "Pricing", "Guides"]
 
 
 def test_each_page_marks_its_own_nav_item_and_only_its_own():
@@ -132,7 +133,7 @@ def test_each_page_marks_its_own_nav_item_and_only_its_own():
         "/": None,
         "/cenik": "Pricing",
         "/jak-to-funguje": "How it works",
-        "/pruvodce/hlaseni-cizincu-ubyport": "UbyPort",
+        "/pruvodce/hlaseni-cizincu-ubyport": "Guides",
         "/pruvodce/online-ubytovaci-kniha": None,
     }
     for url, label in expected.items():
@@ -141,11 +142,30 @@ def test_each_page_marks_its_own_nav_item_and_only_its_own():
             assert current == ([] if label is None else [label]), url
 
 
-def test_the_product_anchor_stays_an_anchor_on_the_home_page():
-    assert _nav_labels(_header(_render("/")))[0] == "Product"
-    assert 'href="#product"' in _header(_render("/"))
-    # Anywhere else it has to travel back to the home page first.
-    assert 'href="/?lang=en#product"' in _header(_render("/cenik"))
+def test_every_nav_label_is_a_destination_not_an_anchor():
+    for url in PUBLIC_URLS:
+        header = _header(_render(url))
+        for nav in (_desktop_nav(header), _menu_nav(header)):
+            hrefs = _hrefs(nav)
+            assert len(hrefs) == 3, url
+            assert not any("#" in href for href in hrefs), url
+
+
+def test_no_nav_label_is_named_after_someone_elses_system():
+    header = _header(_render("/"))
+    for nav in (_desktop_nav(header), _menu_nav(header)):
+        assert ">UbyPort<" not in nav
+    # The guide the third item opens is still reachable, just named for what it is.
+    assert 'href="/pruvodce/hlaseni-cizincu-ubyport?lang=en">Guides</a>' in _desktop_nav(header)
+
+
+def test_the_product_page_has_one_name_across_the_site():
+    # "How it works" in the nav, "See how it works" on the hero, "Product details
+    # and common questions" at the foot of the body: three names for one page.
+    for lang in ("en", "cs"):
+        name = LANDING_STRINGS[lang]["landing.nav.how"]
+        assert LANDING_STRINGS[lang]["landing.contact"] == name, lang
+        assert LANDING_STRINGS[lang]["landing.details.link"] == name, lang
 
 
 def test_the_phone_menu_offers_the_same_destinations_as_the_desktop_nav():

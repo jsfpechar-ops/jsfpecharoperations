@@ -7,11 +7,9 @@ LANDING_STRINGS = {
             "Connect Airbnb and Booking.com calendars, collect guest details online, "
             "keep the guest book, and report foreign guests directly to UbyPort."
         ),
-        "landing.nav.features": "Product",
         "landing.nav.how": "How it works",
         "landing.nav.pricing": "Pricing",
         "landing.nav.guides": "Guides",
-        "landing.nav.faq": "UbyPort",
         "landing.nav.login": "Log in",
         "landing.nav.menu": "Menu",
         "landing.eyebrow": "From Airbnb booking to UbyPort receipt",
@@ -22,7 +20,7 @@ LANDING_STRINGS = {
             "and keeps the guest book."
         ),
         "landing.cta": "Try UbyHost",
-        "landing.contact": "See how it works",
+        "landing.contact": "How it works",
         "landing.trust": "Built for apartments, holiday rentals, and small accommodation providers in Czechia.",
         "landing.demo.label": "A quick tour of UbyHost",
         "landing.demo.play": "Play demo",
@@ -58,7 +56,7 @@ LANDING_STRINGS = {
         "landing.steps.3": "Keep the UbyPort receipt",
         "landing.final.title": "Your guest paperwork, on autopilot.",
         "landing.final.body": "See every stay, form, and UbyPort response in one place.",
-        "landing.details.link": "Product details and common questions",
+        "landing.details.link": "How it works",
         "product.page_title": "UbyPort for Airbnb and Booking.com hosts · UbyHost",
         "product.meta_description": (
             "See how UbyHost connects Airbnb and Booking.com calendars, online guest "
@@ -201,11 +199,9 @@ LANDING_STRINGS = {
             "Propojte Airbnb a Booking.com, sbírejte údaje hostů online, veďte ubytovací "
             "knihu a hlaste cizince přímo do UbyPortu."
         ),
-        "landing.nav.features": "Produkt",
         "landing.nav.how": "Jak to funguje",
         "landing.nav.pricing": "Ceník",
         "landing.nav.guides": "Průvodce",
-        "landing.nav.faq": "UbyPort",
         "landing.nav.login": "Přihlásit se",
         "landing.nav.menu": "Menu",
         "landing.eyebrow": "Od rezervace z Airbnb až po doručenku z UbyPortu",
@@ -252,7 +248,7 @@ LANDING_STRINGS = {
         "landing.steps.3": "Uložte doručenku z UbyPortu",
         "landing.final.title": "Evidence hostů na autopilota.",
         "landing.final.body": "Každý pobyt, formulář a odpověď UbyPortu na jednom místě.",
-        "landing.details.link": "Podrobnosti o produktu a časté otázky",
+        "landing.details.link": "Jak to funguje",
         "product.page_title": "UbyPort pro Airbnb a Booking.com hostitele · UbyHost",
         "product.meta_description": (
             "Jak UbyHost propojí Airbnb a Booking.com, online formuláře hostů, ubytovací "
