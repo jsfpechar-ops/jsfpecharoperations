@@ -900,6 +900,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.missing_guests": "Guest forms: %(filled)s/%(expected)s. Send the link to the others, add them yourself, or lower the guest count if fewer came.",
         "hint.ready_to_send": "Send completed guest records to UbyPort now",
         "hint.ready_id_optional": "Forms complete — send now or mark ID checked first (recorded on send)",
+        "hint.failed": "UbyPort rejected a guest record. Fix the details marked in red below, then send again.",
         "hint.demo_preview": "Demo stays are never sent — use a real property to report to UbyPort",
         # Czech needs three forms for "day" (1 / 2-4 / 5+), so every day-based
         # countdown carries .one and .few alongside the base many form.
@@ -1046,6 +1047,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.copy_link": "Copy guest link for this stay",
         "stay.detail.link_copied": "Link copied",
         "stay.detail.cta.send": "Send to UbyPort",
+        "stay.detail.cta.send_again": "Send again",
         "stay.detail.cta.fix": "Fix rejection",
         "stay.detail.cta.view_reports": "View reports",
         "stay.detail.cta.verify": "Verify passports",
@@ -2086,6 +2088,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.missing_guests": "Formuláře hostů: %(filled)s/%(expected)s. Pošlete ostatním odkaz, zadejte je sami, nebo snižte počet hostů, pokud jich přijelo méně.",
         "hint.ready_to_send": "Odeslat hotové záznamy hostů do UbyPortu",
         "hint.ready_id_optional": "Formuláře hotové — odešlete, nebo nejdřív označte kontrolu dokladu (zapíše se při odeslání)",
+        "hint.failed": "UbyPort odmítl záznam hosta. Opravte údaje označené červeně níže a odešlete znovu.",
         "hint.demo_preview": "Ukázkové pobyty se neodesílají — pro hlášení použijte skutečnou nemovitost",
         "deadline.arrives_days": "přijíždí za %(n)s dní",
         "deadline.arrives_days.one": "přijíždí za 1 den",
@@ -2230,6 +2233,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.copy_link": "Kopírovat odkaz pro hosty",
         "stay.detail.link_copied": "Odkaz zkopírován",
         "stay.detail.cta.send": "Odeslat do UbyPortu",
+        "stay.detail.cta.send_again": "Odeslat znovu",
         "stay.detail.cta.fix": "Opravit odmítnutí",
         "stay.detail.cta.view_reports": "Zobrazit hlášení",
         "stay.detail.cta.verify": "Ověřit pasy",

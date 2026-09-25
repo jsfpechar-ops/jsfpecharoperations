@@ -419,6 +419,24 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
     ]
 
 
+def rejected_edited_since(reservation_id: int) -> bool:
+    """True when a refused guest was edited after the refusal came back.
+
+    A refusal stamps the guest's ``updated_at`` and its submission's
+    ``finished_at`` with the same instant, so a later ``updated_at`` means the
+    host has changed something. Only then is re-sending worth offering as the
+    main action instead of fixing first.
+    """
+    return bool(
+        db.query(
+            "SELECT 1 FROM guest g JOIN submission s ON s.id = g.submission_id "
+            "WHERE g.reservation_id = ? AND g.submit_state IN (?, ?) "
+            "  AND g.updated_at > s.finished_at LIMIT 1",
+            (reservation_id, ERROR, BLOCKED),
+        )
+    )
+
+
 def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str, Any]:
     """Whether Send actions should appear on a stay row."""
     from . import demo
@@ -439,10 +457,15 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
             "send_hint_key": "hint.demo_preview",
             "auto_immediate": auto_immediate,
             "pending_count": len(pending),
+            "rejected_edited": False,
             "is_demo": True,
         }
 
-    if auto_immediate:
+    if progress["status"] == "failed":
+        # A refusal is not "ready to send": the record has to be corrected
+        # first, and the copy has to say so even though resending is allowed.
+        send_hint_key = "hint.failed"
+    elif auto_immediate:
         send_hint_key = "hint.auto_immediate"
     elif not has_pending and progress["status"] == "reported":
         # "Nothing is subject to the duty" contradicted the stay's own metric
@@ -483,6 +506,10 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
         "send_hint_key": send_hint_key,
         "auto_immediate": auto_immediate,
         "pending_count": len(pending),
+        "rejected_edited": (
+            progress["status"] == "failed"
+            and rejected_edited_since(reservation["id"])
+        ),
     }
 
 

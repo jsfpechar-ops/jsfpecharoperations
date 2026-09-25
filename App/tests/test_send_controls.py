@@ -635,3 +635,148 @@ def test_sending_does_not_stamp_identity_verification(monkeypatch):
     finally:
         db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))
+
+
+REFUSED_AT = "2026-09-20T10:00:00+00:00"
+
+
+def _refuse_the_guest(
+    apartment, guest_id, refused_at=REFUSED_AT, edited_at=None, state=reporting.ERROR
+):
+    """Park a stay's guest in the state UbyPort leaves behind after a refusal.
+
+    A refusal stamps the guest and the submission with the same instant, so
+    ``edited_at`` is what tells "nothing has changed" apart from "the host has
+    fixed something since".
+    """
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment["id"],
+            "created_at": refused_at,
+            "finished_at": refused_at,
+            "mode": "manual",
+            "state": "error",
+        },
+    )
+    db.update(
+        "guest",
+        guest_id,
+        {
+            "submit_state": state,
+            "last_errors": "106: Invalid value in a guest field",
+            "submission_id": submission_id,
+            "updated_at": edited_at or refused_at,
+        },
+    )
+    return submission_id
+
+
+def _controls_for(apartment, reservation):
+    return reporting.send_controls(
+        reservation, apartment, reporting.reservation_progress(reservation)
+    )
+
+
+def test_a_refused_stay_is_told_to_fix_first_not_that_it_is_ready():
+    """A refusal is not "ready to report": the record has to be corrected first.
+
+    ``failed`` is in ``sendable_statuses``, so the stay kept offering a coral
+    "Send to UbyPort" beside a Rejected pill and the note still counted the
+    guest as ready. The copy has to send the host to the fix instead.
+    """
+    apartment, reservation, guest_id = _seed("manual", "tok-refused")
+    _refuse_the_guest(apartment, guest_id)
+
+    controls = _controls_for(apartment, reservation)
+
+    assert reporting.reservation_progress(reservation)["status"] == "failed"
+    assert controls["send_enabled"] is True
+    assert controls["send_hint_key"] == "hint.failed"
+    assert controls["rejected_edited"] is False
+
+
+def test_a_refusal_outranks_the_automation_note():
+    """"Sends automatically" reads as "nothing for you to do" on a refusal."""
+    apartment, reservation, guest_id = _seed("immediate", "tok-refused-auto")
+    _refuse_the_guest(apartment, guest_id)
+
+    controls = _controls_for(apartment, reservation)
+
+    assert controls["send_hint_key"] == "hint.failed"
+    assert controls["rejected_edited"] is False
+
+
+def test_editing_a_refused_guest_makes_resending_worth_the_coral():
+    """Only a fix post-dating the refusal promotes "Send again" to primary."""
+    apartment, reservation, guest_id = _seed("manual", "tok-refused-edited")
+    _refuse_the_guest(apartment, guest_id, edited_at="2026-09-20T11:30:00+00:00")
+
+    controls = _controls_for(apartment, reservation)
+
+    assert controls["rejected_edited"] is True
+
+
+def test_a_blocked_guest_counts_as_a_refusal_too():
+    """Duplicate and malformed records are parked in ``blocked``, not ``error``."""
+    apartment, reservation, guest_id = _seed("manual", "tok-refused-blocked")
+    _refuse_the_guest(apartment, guest_id, state=reporting.BLOCKED)
+
+    controls = _controls_for(apartment, reservation)
+
+    assert controls["send_hint_key"] == "hint.failed"
+    assert controls["rejected_edited"] is False
+
+
+def test_the_refused_stay_page_leads_with_the_fix_and_keeps_send_secondary():
+    """The page, not just the controls: Fix first, "Send again" not coral yet."""
+    db.init_db()
+    username = "refusedpage"
+    existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+    owner_id = existing["id"] if existing else auth.create_account(
+        username, PASSWORD, "Refused Page", must_change_password=False
+    )
+    apartment, reservation, guest_id = _seed(
+        "manual", "tok-refused-page", owner_user_id=owner_id
+    )
+    _refuse_the_guest(apartment, guest_id)
+
+    client = TestClient(app)
+    client.post(
+        "/login?lang=en",
+        data={"username": username, "password": PASSWORD},
+        follow_redirects=False,
+    )
+
+    body = client.get(f"/reservations/{reservation['id']}").text
+
+    assert "UbyPort rejected a guest record." in body
+    assert 'class="btn accent primary" href="#guests"' in body
+    assert "Fix rejection" in body
+    assert "Send again" in body
+    assert body.index("Fix rejection") < body.index("Send again")
+    # Nothing has been changed since the refusal, so the resend is not primary.
+    assert 'class="btn accent primary" type="submit"' not in body
+    assert "Send to UbyPort" not in body
+
+    db.update("guest", guest_id, {"updated_at": "2026-09-20T12:00:00+00:00"})
+    fixed = client.get(f"/reservations/{reservation['id']}").text
+
+    assert 'class="btn accent primary" type="submit"' in fixed
+    assert "Fix rejection" in fixed
+
+
+def test_the_refusal_copy_ships_in_both_languages():
+    """Read the catalogues directly: ``lookup`` returns raw text on a mismatch."""
+    from app import host_i18n
+
+    assert host_i18n.STRINGS["en"]["hint.failed"] == (
+        "UbyPort rejected a guest record. Fix the details marked in red below, "
+        "then send again."
+    )
+    assert host_i18n.STRINGS["cs"]["hint.failed"] == (
+        "UbyPort odmítl záznam hosta. Opravte údaje označené červeně níže a "
+        "odešlete znovu."
+    )
+    assert host_i18n.STRINGS["en"]["stay.detail.cta.send_again"] == "Send again"
+    assert host_i18n.STRINGS["cs"]["stay.detail.cta.send_again"] == "Odeslat znovu"
