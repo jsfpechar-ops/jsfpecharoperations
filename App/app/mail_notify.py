@@ -234,7 +234,7 @@ def _fmt_dates(date_from: Optional[str], date_to: Optional[str]) -> str:
 
 def _block_heading(text: str) -> str:
     return (
-        f'<tr><td style="padding:20px 32px 0 32px;">'
+        f'<tr><td style="padding:20px 24px 0 24px;">'
         f'<h1 style="margin:0;font:600 22px/1.3 {_FONT};color:{INK};">'
         f"{_esc(text)}</h1></td></tr>"
     )
@@ -247,7 +247,7 @@ def _block_paragraph(
     colour = INK_MUTED if muted else INK_SECONDARY
     size = size or (14 if muted else 16)
     return (
-        f'<tr><td style="padding:12px 32px 0 32px;">'
+        f'<tr><td style="padding:12px 24px 0 24px;">'
         f'<p style="margin:0;font:400 {size}px/1.6 {_FONT};color:{colour};">'
         f"{_esc(text)}</p></td></tr>"
     )
@@ -255,7 +255,7 @@ def _block_paragraph(
 
 def _block_section(label: str, body: str) -> str:
     return (
-        f'<tr><td style="padding:24px 32px 0 32px;">'
+        f'<tr><td style="padding:24px 24px 0 24px;">'
         f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
         f'padding:0 0 8px 0;">'
         f"{_esc(label)}</div>"
@@ -266,7 +266,7 @@ def _block_section(label: str, body: str) -> str:
 
 def _block_note(label: str, body: str) -> str:
     return (
-        f'<tr><td style="padding:24px 32px 0 32px;">'
+        f'<tr><td style="padding:24px 24px 0 24px;">'
         f'<div style="background:{BRAND_SOFT};border-radius:10px;padding:16px 18px;">'
         f'<div style="font:600 14px/1.4 {_FONT};color:{BRAND_INK};'
         f'padding:0 0 8px 0;">'
@@ -279,7 +279,7 @@ def _block_note(label: str, body: str) -> str:
 
 def _block_fact(label: str, value: str) -> str:
     return (
-        f'<tr><td style="padding:20px 32px 0 32px;">'
+        f'<tr><td style="padding:20px 24px 0 24px;">'
         f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
         f'padding:0 0 6px 0;">'
         f"{_esc(label)}</div>"
@@ -289,7 +289,7 @@ def _block_fact(label: str, value: str) -> str:
 
 
 def _block_button(url: str, label: str) -> str:
-    return f'<tr><td style="padding:8px 32px 0 32px;">{_button(url, label)}</td></tr>'
+    return f'<tr><td style="padding:8px 24px 0 24px;">{_button(url, label)}</td></tr>'
 
 
 def _block_panel(
@@ -345,7 +345,7 @@ def _block_panel(
             f'<div style="padding:14px 0 0 0;">{_button(action[0], action[1])}</div>'
         )
     return (
-        '<tr><td style="padding:24px 32px 0 32px;">'
+        '<tr><td style="padding:24px 24px 0 24px;">'
         f'<div style="background:{CANVAS};border:1px solid {LINE};'
         f'border-radius:12px;padding:18px 20px;">' + "".join(parts) + "</div></td></tr>"
     )
@@ -373,7 +373,7 @@ def _block_link(url: str, label: str) -> str:
     substituted in both places by ``mail.delivery_html``.
     """
     return (
-        f'<tr><td style="padding:14px 32px 0 32px;">'
+        f'<tr><td style="padding:14px 24px 0 24px;">'
         f'<div style="font:400 13px/1.6 {_FONT};color:{INK_MUTED};">'
         f"{_esc(label)}</div>"
         f'<div style="font:400 13px/1.6 {_FONT};color:{INK_SECONDARY};'
@@ -466,11 +466,11 @@ def _shell(
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{CANVAS};border-collapse:collapse;">
 <tr><td align="center" style="padding:28px 12px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:{SURFACE};border:1px solid {LINE};border-radius:14px;border-collapse:separate;">
-<tr><td style="padding:28px 32px 0 32px;">
+<tr><td style="padding:28px 24px 0 24px;">
 <img src="{_esc(logo_url)}" width="{LOGO_WIDTH}" alt="UbyHost" style="display:block;border:0;outline:none;text-decoration:none;width:{LOGO_WIDTH}px;max-width:100%;height:auto;">
 </td></tr>
 {"".join(blocks)}
-<tr><td style="padding:28px 32px 28px 32px;">
+<tr><td style="padding:28px 24px 28px 24px;">
 <div style="border-top:1px solid {LINE};padding:16px 0 0 0;font:400 13px/1.6 {_FONT};color:{INK_MUTED};">
 {footer_html}
 </div>
@@ -724,7 +724,7 @@ def _build_html(
 
     if stay_rows:
         blocks.append(
-            f'<tr><td style="padding:24px 32px 0 32px;">'
+            f'<tr><td style="padding:24px 24px 0 24px;">'
             f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
             f'padding:0 0 10px 0;">'
             f"{_esc(stays_label)}</div>"
