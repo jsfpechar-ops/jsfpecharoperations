@@ -566,6 +566,10 @@ def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeyp
         assert host_mail
         assert "registration link" in host_mail["body_text"]
         assert "24-hour grace period" not in host_mail["body_text"]
+        # The host app prints the date as DD.MM.YYYY; the mail must not print
+        # the raw ISO the reservation table stores.
+        assert check_in.strftime("%d.%m.%Y") in host_mail["body_text"]
+        assert check_in.isoformat() not in host_mail["body_text"]
 
         next_day = datetime.combine(check_in + timedelta(days=1), time(0, 1))
         clock[0] = next_day

@@ -398,6 +398,30 @@ def test_the_resend_mail_says_in_its_heading_that_it_is_the_new_link():
     assert i18n.STRINGS["en"]["mail_claim_heading"] in _claim_content()["html"]
 
 
+def test_the_claim_mail_prints_dates_the_way_every_guest_page_does():
+    """An e-mail, an alert and a page must never print the same stay differently.
+
+    ``claim._guest_mail_content`` used to hand the composer the raw ISO values
+    out of the reservation row.
+    """
+    content = claim._guest_mail_content(
+        "claim",
+        {
+            "uby_name": "Vinohrady Studio",
+            "internal_name": "",
+            "legal_entity_id": None,
+        },
+        {"id": 1, "date_from": "2026-09-25", "date_to": "2026-09-28"},
+        lang="en",
+        plain_text="fallback",
+        link=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1/claim#c=x",
+    )
+    for part in ("text", "html"):
+        assert "25.09.2026 \u2013 28.09.2026" in content[part], part
+        assert "2026-09-25" not in content[part], part
+        assert "2026-09-28" not in content[part], part
+
+
 def test_the_claim_preheader_is_its_own_line_and_not_the_intro():
     """The preheader is what the inbox shows beside the subject."""
     html = _claim_content()["html"]

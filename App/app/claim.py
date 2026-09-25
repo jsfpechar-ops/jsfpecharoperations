@@ -339,7 +339,9 @@ def _guest_mail_content(
         "text": plain_text,
     }
     try:
-        dates = f"{reservation['date_from']} \u2013 {reservation['date_to']}"
+        dates = validation.fmt_date_range(
+            reservation["date_from"], reservation["date_to"]
+        )
         host = mail_notify.host_details(
             apartment["legal_entity_id"] if apartment else None
         )
@@ -671,7 +673,7 @@ def sweep_reminders() -> Dict[str, int]:
             if host_email:
                 host_content = mail_notify.build_reminder_host(
                     property_name=reservation["internal_name"] or "",
-                    date=reservation["date_from"],
+                    date=validation.fmt_date(reservation["date_from"]),
                     assigned=masked,
                     stay_url=(
                         f"{config.PUBLIC_BASE_URL.rstrip('/')}"
