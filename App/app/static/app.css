@@ -537,6 +537,66 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 .banner.info { background: var(--brand-soft); border-color: rgba(31, 86, 214, 0.18); color: var(--brand-ink); }
 .banner a { color: inherit; font-weight: 650; }
 
+/* Readiness checklist: the two lists that replace the old run-on red banner at
+   the top of the property form. */
+.readiness {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.readiness-group {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.readiness-title {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.readiness-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.readiness-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--muted);
+}
+.readiness-item.is-done { color: var(--ink-2); }
+.readiness-mark { font-weight: 700; }
+.readiness-item.is-done .readiness-mark { color: var(--ok); }
+.readiness-item:not(.is-done) .readiness-mark { color: var(--bad); }
+.readiness-item a { color: var(--brand); font-weight: 650; }
+.readiness-why { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+.readiness-ready {
+  margin: 10px 0 8px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ok);
+}
+.req-report {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: none;
+  white-space: nowrap;
+}
+
 .toast-stack {
   position: fixed;
   bottom: 20px;
