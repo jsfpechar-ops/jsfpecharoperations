@@ -1,10 +1,11 @@
 """Guest navigation: picking the wrong stay, then the right one, must never dead-end."""
 import base64
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app import alerts, claim, db, icalsync, passport_photos, reporting
+from app import alerts, claim, db, i18n, icalsync, passport_photos, reporting
 from app.routes import guest
 from app.main import app
 from tests.conftest import complete_guest_claim
@@ -259,6 +260,274 @@ def test_completed_party_can_add_another_person():
         _cleanup()
 
 
+def test_save_says_saved_until_the_record_was_actually_reported():
+    """Only a form that went out may be called "reported".
+
+    ``locked`` is true for any signed, complete form, so it cannot stand in for
+    "the police have this" — a manual-mode guest was told their record was
+    reported the moment they signed it.
+    """
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=2)
+        saved = browser.post(
+            f"/l/{token}/{wrong}/save",
+            data=_form(party_size="2"),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+
+        page = browser.get(f"/l/{token}/{wrong}?lang=en&saved=1")
+        assert i18n.STRINGS["en"]["saved_title"] in page.text
+        assert i18n.STRINGS["en"]["saved_body"] in page.text
+        assert i18n.STRINGS["en"]["reported_title"] not in page.text
+        assert i18n.STRINGS["en"]["reported_body"] not in page.text
+
+        db.execute(
+            "UPDATE guest SET submit_state = ? WHERE reservation_id = ?",
+            (reporting.SENT, wrong),
+        )
+        sent = browser.get(f"/l/{token}/{wrong}?lang=en&saved=1")
+        assert i18n.STRINGS["en"]["reported_title"] in sent.text
+        assert i18n.STRINGS["en"]["saved_title"] not in sent.text
+    finally:
+        _cleanup()
+
+
+def test_the_last_step_offers_a_review_list_with_a_way_back():
+    """The form locks the moment it is sent, so the guest gets a last look."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=2)
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert "Check before you send" in page.text
+        assert "these details are locked and only your host can change them" in page.text
+        assert "data-wizard-review" in page.text
+        assert 'data-edit-label="Change"' in page.text
+        # Rows are read off the form's own labels and values, so the list ships
+        # empty and stays hidden when the script never runs.
+        assert '<dl class="g-summary-list g-review-list"></dl>' in page.text
+        # It sits in the last step, ahead of the legal notice it is checking.
+        assert page.text.index("data-wizard-review") < page.text.index('id="legal-notice"')
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert "Před odesláním zkontrolujte" in cs_page.text
+        assert "změnit je může už jen hostitel" in cs_page.text
+        assert 'data-edit-label="Změnit"' in cs_page.text
+    finally:
+        _cleanup()
+
+
+def test_the_birth_date_field_reads_the_date_back_and_accepts_a_pasted_iso_date():
+    """Digits alone cannot show a swapped day and month; the read-back can."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert "Day, month, year — e.g. 04/07/1990 for 4 July 1990." in page.text
+        assert 'id="birth-date-readback"' in page.text
+        assert 'aria-live="polite"' in page.text
+        assert 'data-template="That is %(date)s."' in page.text
+        assert 'data-locale="en"' in page.text
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert "Den, měsíc, rok — např. 04/07/1990 pro 4. července 1990." in cs_page.text
+        assert 'data-template="Tedy %(date)s."' in cs_page.text
+        assert 'data-locale="cs"' in cs_page.text
+    finally:
+        _cleanup()
+
+
+def test_the_birth_date_script_localises_the_readback_and_reorders_an_iso_paste():
+    """There is no JS test harness here, so pin the two behaviours in the source."""
+    source = (Path("app/static/signature.js")).read_text(encoding="utf-8")
+    # "1990-07-04" read as eight digits becomes 19/90/0704 unless it is reordered.
+    assert "fromIso" in source
+    assert r"/^\s*(\d{4})-(\d{2})-(\d{2})\s*$/" in source
+    assert 'input.setAttribute("data-review-value", pretty)' in source
+    assert "new Intl.DateTimeFormat(locale" in source
+    # 31/02 rolls over to March instead of failing, so the date is round-tripped.
+    assert "date.getDate() !== day" in source
+
+
+def test_the_passport_error_line_carries_the_message_the_wizard_needs():
+    """The file input is hidden, so its "missing" text has to reach the wizard."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        apartment = db.query_one(
+            "SELECT id FROM apartment WHERE permalink_token = ?", (token,)
+        )
+        db.update(
+            "apartment",
+            apartment["id"],
+            {"passport_photo_policy": "required_foreign"},
+        )
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert 'id="passport-file-err"' in page.text
+        assert 'role="alert"' in page.text
+        assert 'data-missing="Please upload a photo of your passport or ID card."' in page.text
+        assert 'id="passport-take-btn"' in page.text
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert (
+            'data-missing="Nahrajte prosím fotografii pasu nebo občanského průkazu."'
+            in cs_page.text
+        )
+    finally:
+        _cleanup()
+
+
+def test_a_hidden_file_input_fails_continue_with_a_visible_reason():
+    """A browser cannot focus or bubble a hidden control, so Continue was mute."""
+    source = (Path("app/static/signature.js")).read_text(encoding="utf-8")
+    assert 'fields[i].type === "file" && fields[i].hidden' in source
+    assert 'document.getElementById("passport-file-err")' in source
+    assert 'fileErr.getAttribute("data-missing")' in source
+    assert 'document.getElementById("passport-take-btn")' in source
+    assert "takeBtn.focus()" in source
+
+
+def test_the_wizard_gives_each_step_a_history_entry_so_back_does_not_lose_the_form():
+    """An OS back gesture used to leave the page and discard everything typed."""
+    source = (Path("app/static/signature.js")).read_text(encoding="utf-8")
+    assert 'history.replaceState({ guestWizardStep: active }, "")' in source
+    assert 'history.pushState({ guestWizardStep: active }, "")' in source
+    assert 'window.addEventListener("popstate"' in source
+    assert "typeof state.guestWizardStep !== \"number\"" in source
+    assert "show(state.guestWizardStep, true)" in source
+
+
+def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
+    """The old help text explained the app's storage policy to the guest."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        apartment = db.query_one(
+            "SELECT id FROM apartment WHERE permalink_token = ?", (token,)
+        )
+        db.update(
+            "apartment",
+            apartment["id"],
+            {"passport_photo_policy": "required_foreign"},
+        )
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert (
+            "Your host must check your details against your document. Take a photo of the page "
+            "with your photo, or upload a PDF. Only your host can see it, and it is deleted after "
+            "they check it."
+        ) in page.text
+        assert "A JPEG, PNG or WebP photo up to 5 MB, or a PDF up to 15 MB." in page.text
+        assert "Choose your nationality in step 1 first." in page.text
+        assert (
+            "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
+            "sees it, to compare it with what you entered. It is deleted after the check, or "
+            "automatically after your stay. It is never sent to the police."
+        ) in page.text
+        # The internal storage policy is not the guest's problem.
+        assert "stale-file sweep" not in page.text
+        assert "Access in the app is restricted" not in page.text
+        assert "authorised host users" not in page.text
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert (
+            "Hostitel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
+            "nahrajte PDF. Uvidí ji jen hostitel a po kontrole se smaže."
+        ) in cs_page.text
+        assert "Fotka JPEG, PNG nebo WebP do 5 MB, nebo PDF do 15 MB." in cs_page.text
+        assert "Nejdřív v kroku 1 vyberte státní občanství." in cs_page.text
+        assert "pojistkou je plánované mazání" not in cs_page.text
+    finally:
+        _cleanup()
+
+
+def test_the_legal_notice_talks_to_the_guest_instead_of_the_builder():
+    """The final step used to explain the app's own reporting pipeline to the guest."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert "Please read this before you send." in page.text
+        assert (
+            "Everyone staying must be registered. Foreign guests are reported to the Foreign "
+            "Police within three working days; Czech citizens only go into the house book. "
+            "This is required by law."
+        ) in page.text
+        assert (
+            "Enter everything exactly as in your passport or ID card. Your details may be "
+            "reported automatically, before your host checks them, and false details can mean "
+            "a fine for your host."
+        ) in page.text
+        assert (
+            "Complete records of foreign guests may be sent to the Czech Police automatically — "
+            "straight away or after a delay your host chooses. The same details stay in the house "
+            "book for six years."
+        ) in page.text
+        assert (
+            "My details are correct, and I have read the information above and the privacy "
+            "notice."
+        ) in page.text
+        # The software-liability disclaimer belongs to the privacy page, not the guest's task.
+        assert "does not replace legal advice" not in page.text
+        assert "without an in-app verification step" not in page.text
+        assert "without waiting for in-app identity verification" not in page.text
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert "Před odesláním si to prosím přečtěte." in cs_page.text
+        assert (
+            "Registrovat se musí každý ubytovaný. Cizince ubytovatel do tří pracovních dnů "
+            "ohlásí cizinecké policii, občany ČR jen zapíše do domovní knihy. Vyžaduje to zákon."
+        ) in cs_page.text
+        assert (
+            "Vše vyplňte přesně podle pasu nebo občanského průkazu. Údaje se mohou ohlásit "
+            "automaticky ještě předtím, než je ubytovatel zkontroluje, a za nepravdivé údaje "
+            "hrozí ubytovateli pokuta."
+        ) in cs_page.text
+        assert (
+            "Kompletní záznamy cizinců se mohou Policii ČR odeslat automaticky — hned, nebo "
+            "s odkladem, který nastaví ubytovatel. Stejné údaje zůstávají šest let v domovní "
+            "knize."
+        ) in cs_page.text
+        assert (
+            "Moje údaje jsou správné a přečetl(a) jsem si informace výše i zásady zpracování "
+            "údajů."
+        ) in cs_page.text
+        assert "nenahrazují právní poradenství" not in cs_page.text
+        assert "bez ověření v aplikaci" not in cs_page.text
+    finally:
+        _cleanup()
+
+
+def test_the_phone_submit_button_is_actually_the_one_the_css_targets():
+    """The sticky-submit rule named a child of <form>; the button lives one level deeper."""
+    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "guest.css").read_text()
+    assert '[data-guest-step] > .g-btn[type="submit"]' in css
+    assert 'form > .g-btn[type="submit"]' not in css
+
+
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:
@@ -351,7 +620,7 @@ def test_save_does_not_overshoot_the_declared_party_size():
 def test_every_guest_facing_validation_message_has_czech():
     """A Czech guest must never be handed an untranslated UbyPort rule."""
     from app import validation as v
-    from app.routes.guest import _localize_message
+    from app.validation_i18n import localize as _localize_message
 
     long_name = "X" * 80
     cases = [

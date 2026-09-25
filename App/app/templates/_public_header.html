@@ -1,0 +1,44 @@
+{#- The header every public page shares. Include it with two variables:
+
+     active      the nav item that names this page ('' for none)
+     switch_path the path the CZ/EN switch comes back to
+
+   Four hand-copied headers had drifted apart; one include cannot. -#}
+{%- set active = active | default('') -%}
+{%- set switch_path = switch_path | default('/') -%}
+{#- The desktop nav and the phone menu are rendered from one list so they can
+    never disagree about where a label goes. The third element is the page that
+    the item names, or none for the in-page anchor, which names no page. -#}
+{%- set nav_items = [
+      ('#product' if active == 'home' else '/?lang=' ~ lang ~ '#product', 'landing.nav.features', none),
+      ('/jak-to-funguje?lang=' ~ lang, 'landing.nav.how', 'how'),
+      ('/cenik?lang=' ~ lang, 'landing.nav.pricing', 'pricing'),
+      ('/pruvodce/hlaseni-cizincu-ubyport?lang=' ~ lang, 'landing.nav.faq', 'ubyport'),
+    ] -%}
+  <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
+  <header class="landing-header">
+    <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
+      <img src="/static/ubyhost-logo.png" alt="UbyHost">
+    </a>
+    <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
+      {%- for href, key, names in nav_items %}
+      <a href="{{ href }}"{% if names is not none and active == names %} aria-current="page"{% endif %}>{{ t(key) }}</a>
+      {%- endfor %}
+    </nav>
+    <div class="landing-actions">
+      <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
+        <a href="{{ switch_path }}?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}">CZ</a>
+        <a href="{{ switch_path }}?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}">EN</a>
+      </div>
+      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
+    </div>
+    {#- Below 900px the nav above is hidden; this is the only way through it. -#}
+    <details class="landing-menu">
+      <summary>{{ t('landing.nav.menu') }}</summary>
+      <nav aria-label="{{ t('a11y.main_navigation') }}">
+        {%- for href, key, names in nav_items %}
+        <a href="{{ href }}"{% if names is not none and active == names %} aria-current="page"{% endif %}>{{ t(key) }}</a>
+        {%- endfor %}
+      </nav>
+    </details>
+  </header>

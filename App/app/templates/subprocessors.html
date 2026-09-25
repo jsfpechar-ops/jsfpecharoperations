@@ -1,5 +1,4 @@
-{% extends "base.html" %}
-{% set show_nav = false %}
+{% extends "public_legal_base.html" %}
 {% block title %}{{ t('subprocessors.page_title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
@@ -54,6 +53,6 @@
   &middot; <a href="/terms">{{ t('terms.footer_short') }}</a>
   &middot; <a href="/privacy">{{ t('privacy.footer_short') }}</a>
   &middot; <a href="/dpa">{{ t('dpa.footer_short') }}</a>
-  &middot; <a href="/login">{{ t('legal.back_login') }}</a>
+  &middot; <a href="/?lang={{ lang }}">{{ t('legal.back_home') }}</a>
 </p>
 {% endblock %}

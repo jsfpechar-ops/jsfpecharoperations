@@ -1,0 +1,40 @@
+{#- The shell every public legal page shares.
+
+    These five pages used to extend `base.html`, the signed-in host shell, with
+    `show_nav = false`. That meant an anonymous visitor — a prospect, or a
+    lawyer following a link out of the login page — was served the command
+    palette, the CSV-export dialog, the keyboard-shortcut sheet and `app.js` for
+    a page of prose, and the only way out was "Back to login".
+
+    Now they get the marketing header and footer, the CZ/EN switch, and a
+    reading column, and no host furniture at all.
+
+    `no-nav` stays only as the CSS hook that gives the reading column its width
+    and the page header its static position (`app.css`); it pulls in nothing. -#}
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{% block title %}UbyHost{% endblock %}</title>
+  {% include "_seo_head.html" %}
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+  {#- landing.css first so app.css keeps the reading typography and the link
+      colour; it is here only for the shared header and footer. -#}
+  <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+  <link rel="stylesheet" href="/static/app.css?v=20260922a">
+  <link rel="stylesheet" href="/static/components.css?v=20260921a">
+</head>
+<body class="layout-host no-nav">
+{#- No nav item names a legal page, and the language switch comes back here. -#}
+{% set active = '' %}{% set switch_path = request.url.path %}
+{% include "_public_header.html" %}
+<main id="content" class="wrap {{ wrap_class | default('') }}">
+  {% block content %}{% endblock %}
+</main>
+{% include "_public_footer.html" %}
+</body>
+</html>

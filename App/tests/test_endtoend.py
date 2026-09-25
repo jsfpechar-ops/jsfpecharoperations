@@ -96,7 +96,7 @@ def client(mock_ubyport):
         account_id = account["id"]
     with TestClient(app) as test_client:
         response = test_client.post(
-            "/login",
+            "/login?lang=en",
             data={"username": "e2e-admin", "password": PASSWORD},
             follow_redirects=False,
         )

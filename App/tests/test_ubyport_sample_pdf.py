@@ -56,7 +56,8 @@ def authed_client():
     )
     client = TestClient(app)
     assert client.post(
-        "/login", data={"username": username, "password": PASSWORD}, follow_redirects=False
+        "/login?lang=en", data={"username": username, "password": PASSWORD},
+        follow_redirects=False,
     ).status_code == 303
     yield client, apartment_id
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))

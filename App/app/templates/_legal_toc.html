@@ -1,0 +1,29 @@
+{#- Contents for a long legal document (Terms, Privacy, DPA).
+
+    The audit asked for a `<details open>` on a wide screen and a `<details>`
+    closed on a phone. One `<details>` cannot be both: no media query can set
+    the `open` attribute, and a closed `<details>` hides its content in a way
+    no stylesheet can override (verified in a browser). So the wide layout is a
+    plain <nav> and the phone layout is the disclosure — the same split the
+    public header already uses for its nav and its menu. Only one of the two is
+    ever in the accessibility tree, because the other is `display: none`.
+
+    Expects `sections` (the id tuple) and `prefix` (the i18n key prefix). -#}
+{% macro _toc_items(sections, prefix) -%}
+<ol>
+  {%- for sid in sections %}
+  <li><a href="#s{{ sid }}">{{ t(prefix ~ '.s' ~ sid ~ '_title') }}</a></li>
+  {%- endfor %}
+</ol>
+{%- endmacro %}
+
+<div class="legal-toc" id="legal-contents">
+  <nav class="legal-toc-wide" aria-label="{{ t('legal.toc') }}">
+    <p class="legal-toc-title" aria-hidden="true">{{ t('legal.toc') }}</p>
+    {{ _toc_items(sections, prefix) }}
+  </nav>
+  <details class="legal-toc-narrow">
+    <summary>{{ t('legal.toc') }}</summary>
+    <nav aria-label="{{ t('legal.toc') }}">{{ _toc_items(sections, prefix) }}</nav>
+  </details>
+</div>

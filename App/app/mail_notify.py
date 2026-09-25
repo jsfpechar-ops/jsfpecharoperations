@@ -392,18 +392,33 @@ def build_submission_problem(
     cannot drift apart.
     """
     lang = host_i18n.normalise_language(lang)
-    subject = _text(
-        lang, "mail.submission_problem.subject", property=property_name
+    subject_key = (
+        "mail.submission_problem.subject_transport"
+        if transport
+        else "mail.submission_problem.subject"
     )
+    subject = _text(lang, subject_key, property=property_name)
     intro_key = (
         "mail.submission_problem.intro_transport"
         if transport
         else "mail.submission_problem.intro"
     )
     intro = _text(lang, intro_key, property=property_name)
-    reason_label = _text(lang, "mail.submission_problem.reason_label")
+    # A transport failure never reached UbyPort, so the mail must not say
+    # UbyPort reported anything and must not send the host to fix guest data.
+    reason_label_key = (
+        "mail.submission_problem.reason_label_transport"
+        if transport
+        else "mail.submission_problem.reason_label"
+    )
+    reason_label = _text(lang, reason_label_key)
     next_label = _text(lang, "mail.submission_problem.next_label")
-    next_steps = _text(lang, "mail.submission_problem.next_steps")
+    next_steps_key = (
+        "mail.submission_problem.next_steps_transport"
+        if transport
+        else "mail.submission_problem.next_steps"
+    )
+    next_steps = _text(lang, next_steps_key)
     next_transient = _text(lang, "mail.submission_problem.next_transient")
     stays_label = _text(lang, "mail.submission_problem.stays_label")
     action_receipt = _text(lang, "mail.submission_problem.action_dorucenka")
@@ -672,7 +687,11 @@ def build_claim_link(
     host: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """The magic-link mail: the guest's way into the registration form."""
-    subject = _guest_text(lang, "mail_claim_subject")
+    subject = _guest_text(
+        lang,
+        "mail_claim_resend_subject" if resend else "mail_claim_subject",
+        property=property_name,
+    )
     intro = _guest_text(lang, "mail_claim_intro", property=property_name, dates=dates)
     action = _guest_text(lang, "mail_claim_action")
     expiry = _guest_text(
@@ -684,7 +703,9 @@ def build_claim_link(
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
     blocks = _guest_blocks(
-        heading=_guest_text(lang, "mail_claim_heading"),
+        heading=_guest_text(
+            lang, "mail_claim_resend_heading" if resend else "mail_claim_heading"
+        ),
         intro=intro,
         action_url=link,
         action_label=action,
@@ -714,7 +735,7 @@ def build_claim_link(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=_guest_text(lang, "mail_claim_preheader"),
             blocks=blocks,
             footer_lines=footer_lines,
         ),
@@ -736,28 +757,22 @@ def build_completion(
     access. The stay address works on the device that confirmed, which is where
     the guest just finished filling the form in.
     """
-    subject = _guest_text(lang, "mail_completion_subject")
+    subject = _guest_text(lang, "mail_completion_subject", property=property_name)
     intro = _guest_text(
         lang, "mail_completion_intro", property=property_name, dates=dates
     )
     action = _guest_text(lang, "mail_completion_action")
-    note_label = _guest_text(lang, "mail_completion_note_label")
     note = _guest_text(lang, "mail_completion_note")
-    fallback = _guest_text(lang, "mail_link_fallback")
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
-    blocks = _guest_blocks(
-        heading=_guest_text(lang, "mail_completion_heading"),
-        intro=intro,
-        action_url=stay_url,
-        action_label=action,
-        extra_blocks=[
-            _block_link(stay_url, fallback),
-            _block_note(note_label, note),
-        ],
-    )
+    blocks = [
+        _block_heading(_guest_text(lang, "mail_completion_heading")),
+        _block_paragraph(intro),
+        _block_link(stay_url, action),
+        _block_paragraph(note, muted=True),
+    ]
     text = "\n".join(
-        [intro, "", f"{action}: {stay_url}", "", f"{note_label}: {note}", "", "--", *footer_lines]
+        [intro, "", f"{action}: {stay_url}", "", note, "", "--", *footer_lines]
     )
     return {
         "subject": subject,
@@ -842,49 +857,67 @@ def build_reminder_host(
     assigned: str,
     stay_url: str,
     lang: Optional[str] = None,
+    claimed: bool = True,
+    filled: int = 0,
+    expected: Optional[int] = None,
 ) -> Dict[str, str]:
     """The check-in-day nudge for the host, in the host's language.
 
     Host copy is English today, like the submission notice; see FOLLOWUPS.md.
     """
     lang = host_i18n.normalise_language(lang)
-    subject = _text(lang, "mail.reminder_host.subject", property=property_name)
+    # The count is only known once the guest has claimed and declared a party;
+    # an unclaimed stay falls back to the count-free subject.
+    subject = _text(
+        lang,
+        "mail.reminder_host.subject"
+        if expected is not None
+        else "mail.reminder_host.subject_unclaimed",
+        property=property_name,
+        filled=filled,
+        expected=expected,
+    )
     heading = _text(lang, "mail.reminder_host.heading")
     intro = _text(lang, "mail.reminder_host.intro", property=property_name, date=date)
     assigned_label = _text(lang, "mail.reminder_host.assigned_label")
     assigned_value = assigned or _text(lang, "mail.reminder_host.assigned_unknown")
     next_label = _text(lang, "mail.reminder_host.next_label")
-    next_steps = _text(lang, "mail.reminder_host.next_steps")
+    next_steps = _text(
+        lang,
+        "mail.reminder_host.next_steps_claimed"
+        if claimed
+        else "mail.reminder_host.next_steps_unclaimed",
+        filled=filled,
+        expected=expected,
+    )
     action = _text(lang, "mail.reminder_host.action_stay")
     fallback = _guest_text(lang, "mail_link_fallback")
     footer = _text(lang, "mail.reminder_host.footer")
 
+    extra_blocks = [_block_link(stay_url, fallback)]
+    if claimed:
+        extra_blocks.append(_block_fact(assigned_label, assigned_value))
+    extra_blocks.append(_block_section(next_label, next_steps))
     blocks = _guest_blocks(
         heading=heading,
         intro=intro,
         action_url=stay_url,
         action_label=action,
-        extra_blocks=[
-            _block_link(stay_url, fallback),
-            _block_fact(assigned_label, assigned_value),
-            _block_section(next_label, next_steps),
-        ],
+        extra_blocks=extra_blocks,
     )
-    text = "\n".join(
-        [
-            intro,
-            "",
-            f"{assigned_label}: {assigned_value}",
-            "",
-            f"{next_label}: {next_steps}",
-            "",
-            f"{action}: {stay_url}",
-            "",
-            "--",
-            "UbyHost",
-            footer,
-        ]
-    )
+    text_lines = [intro, ""]
+    if claimed:
+        text_lines += [f"{assigned_label}: {assigned_value}", ""]
+    text_lines += [
+        f"{next_label}: {next_steps}",
+        "",
+        f"{action}: {stay_url}",
+        "",
+        "--",
+        "UbyHost",
+        footer,
+    ]
+    text = "\n".join(text_lines)
     return {
         "subject": subject,
         "text": text,

@@ -9,13 +9,29 @@ import qrcode
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import auth, config, db, rate_limit, security, turnstile
+from .. import auth, config, db, host_i18n, rate_limit, security, turnstile
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import form_str as _form_str
 
 router = APIRouter()
+
+
+def _keep_login_language(request: Request, response) -> None:
+    """Carry the login page's language into the signed-in pages.
+
+    Signed-out pages fall back to Czech and signed-in pages to English, so
+    without this a host who never touched the switch reads Czech, logs in, and
+    lands in English. A POST never renders, so the language is resolved here
+    with the signed-out default the login page itself used.
+    """
+    chosen = host_i18n.supported_language(getattr(request.state, "lang", None))
+    lang = chosen or host_i18n.resolve_language(
+        request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    )
+    if request.cookies.get(host_i18n.LANG_COOKIE) != lang:
+        host_i18n.remember_language(response, lang)
 
 
 @router.get("/login")
@@ -35,7 +51,7 @@ async def login_submit(request: Request):
         return render(
             request,
             "login.html",
-            {"error": "Security check failed. Please try again.", "username": username},
+            {"error": "auth.error.turnstile", "username": username},
             status_code=403,
         )
     if rate_limit.login_blocked(client_key, ip_key):
@@ -43,7 +59,7 @@ async def login_submit(request: Request):
             request,
             "login.html",
             {
-                "error": "Too many failed attempts. Wait about 15 minutes and try again.",
+                "error": "auth.error.locked",
                 "username": username,
             },
             status_code=429,
@@ -56,7 +72,7 @@ async def login_submit(request: Request):
             request,
             "login.html",
             {
-                "error": "That username or password is not correct.",
+                "error": "auth.error.bad_credentials",
                 "username": username,
             },
             status_code=401,
@@ -82,6 +98,7 @@ async def login_submit(request: Request):
         auth.issue_session(account["id"], account["session_version"], remember=remember),
         remember=remember,
     )
+    _keep_login_language(request, response)
     db.audit(
         "login",
         detail=(
@@ -93,6 +110,12 @@ async def login_submit(request: Request):
         owner_user_id=account["id"],
     )
     return response
+
+
+@router.get("/login/2fa")
+def two_factor_login_get():
+    """The 2FA page is a POST response. A stray GET must not show raw JSON."""
+    return RedirectResponse("/login?notice=2fa_expired", status_code=303)
 
 
 @router.post("/login/2fa")
@@ -112,7 +135,7 @@ async def two_factor_login(request: Request):
         return render(
             request,
             "two_factor_login.html",
-            {"pending": _form_str(form, "pending"), "error": "Too many attempts. Wait about 15 minutes."},
+            {"pending": _form_str(form, "pending"), "error": "auth.error.code_locked"},
             status_code=429,
         )
     if not auth.verify_second_factor(account, _form_str(form, "code")):
@@ -121,7 +144,7 @@ async def two_factor_login(request: Request):
         return render(
             request,
             "two_factor_login.html",
-            {"pending": _form_str(form, "pending"), "error": "That code is not valid."},
+            {"pending": _form_str(form, "pending"), "error": "auth.error.code_invalid"},
             status_code=401,
         )
     response = RedirectResponse(
@@ -134,6 +157,7 @@ async def two_factor_login(request: Request):
         ),
         remember=bool(pending.get("rm")),
     )
+    _keep_login_language(request, response)
     db.audit("two_factor_login", actor=account["username"], owner_user_id=account["id"])
     return response
 
@@ -178,7 +202,7 @@ def two_factor_setup_form(request: Request):
     return render(
         request,
         "two_factor_setup.html",
-        {"secret": secret, "qr_data": _totp_qr_data(uri)},
+        {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri},
     )
 
 
@@ -188,16 +212,24 @@ async def two_factor_setup_submit(request: Request):
     if not account:
         return RedirectResponse("/login", status_code=303)
     form = await request.form()
+    # Authenticator apps show the code as "123 456", so a pasted one arrives
+    # with a space in it; the login route strips spaces the same way.
+    code = _form_str(form, "code").replace(" ", "")
     try:
         secret = db.decrypt_secret(account["totp_secret_enc"])
     except Exception:
         secret = ""
-    if not secret or not pyotp.TOTP(secret).verify(_form_str(form, "code"), valid_window=1):
+    if not secret or not pyotp.TOTP(secret).verify(code, valid_window=1):
         uri = auth.totp_uri(secret, account["username"]) if secret else ""
         return render(
             request,
             "two_factor_setup.html",
-            {"secret": secret, "qr_data": _totp_qr_data(uri) if uri else "", "error": "That code is not valid."},
+            {
+                "secret": secret,
+                "qr_data": _totp_qr_data(uri) if uri else "",
+                "totp_uri": uri,
+                "error": "auth.error.setup_code_invalid",
+            },
             status_code=400,
         )
     recovery_codes = auth.new_recovery_codes()
@@ -218,13 +250,21 @@ async def account_password_update(request: Request):
     form = await request.form()
     if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
         return render(
-            request, "account_password.html", {"error": "Current password is wrong."},
+            request,
+            "account_password.html",
+            {
+                "error": "auth.error.temp_password_wrong"
+                if account["must_change_password"]
+                else "auth.error.current_password_wrong"
+            },
             status_code=400,
         )
     new_password = _form_str(form, "new_password")
     if new_password != _form_str(form, "confirm_password"):
         return render(
-            request, "account_password.html", {"error": "The new passwords do not match."},
+            request,
+            "account_password.html",
+            {"error": "auth.error.passwords_mismatch"},
             status_code=400,
         )
     try:
@@ -249,7 +289,7 @@ def _require_admin(request: Request):
         return None, guard
     account = auth.current_user(request)
     if not account or account["role"] != "admin":
-        return None, Response("Administrators only.", status_code=403)
+        return None, Response(_flash(request, "auth.error.admins_only"), status_code=403)
     return account, None
 
 
@@ -288,10 +328,12 @@ async def user_create(request: Request):
             must_change_password=True,
         )
     except ValueError as exc:
-        return _back("/admin/users", err=str(exc))
+        # ``auth`` raises catalogue keys, so the message travels as a key and is
+        # resolved in the language the host is reading the page in.
+        return _back("/admin/users", err=_flash(request, str(exc)))
     except Exception as exc:
         if "UNIQUE constraint failed" in str(exc):
-            return _back("/admin/users", err="That username is already in use.")
+            return _back("/admin/users", err=_flash(request, "auth.error.username_taken"))
         raise
     db.audit(
         "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
@@ -307,16 +349,16 @@ async def user_password_reset(user_id: int, request: Request):
     account, guard = _require_admin(request)
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if guard or not target:
-        return guard or Response("Administrators only.", status_code=403)
+        return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
     if user_id == account["id"]:
-        return _back("/account/password", err="Change your own password from your account page.")
+        return _back("/account/password", err=_flash(request, "auth.error.own_password"))
     form = await request.form()
     password = _form_str(form, "password") or auth.generate_password()
     try:
         auth.set_account_password(user_id, password, must_change=True)
         auth.reset_totp(user_id)
     except ValueError as exc:
-        return _back("/admin/users", err=str(exc))
+        return _back("/admin/users", err=_flash(request, str(exc)))
     db.audit("password_reset", actor=account["username"], owner_user_id=user_id)
     return _render_users(
         request,
@@ -331,7 +373,7 @@ def user_impersonate(user_id: int, request: Request):
         "SELECT * FROM user_account WHERE id = ? AND active = 1", (user_id,)
     )
     if guard or not target:
-        return guard or Response("Administrators only.", status_code=403)
+        return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
     response = RedirectResponse("/", status_code=303)
     auth.attach_session(
         response,
@@ -351,9 +393,9 @@ def user_toggle(user_id: int, request: Request):
     account, guard = _require_admin(request)
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if guard or not target:
-        return guard or Response("Administrators only.", status_code=403)
+        return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
     if user_id == account["id"]:
-        return _back("/admin/users", err="You cannot disable your own administrator account.")
+        return _back("/admin/users", err=_flash(request, "auth.error.own_disable"))
     active = 0 if target["active"] else 1
     db.execute(
         "UPDATE user_account SET active = ?, session_version = session_version + 1 WHERE id = ?",

@@ -1,5 +1,4 @@
-{% extends "base.html" %}
-{% set show_nav = false %}
+{% extends "public_legal_base.html" %}
 {% block title %}{{ t('terms.page_title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
@@ -7,6 +6,8 @@
 {{ page_header(t('terms.page_title'), t('terms.page_lede')) }}
 
 <p class="small muted">{{ t('terms.effective') }}</p>
+
+{% with sections = terms_sections, prefix = 'terms' %}{% include "_legal_toc.html" %}{% endwith %}
 
 <div class="panel legal-operator">
   <h2 style="margin-top:0">{{ t('terms.operator_title') }}</h2>
@@ -27,10 +28,11 @@
 </div>
 
 {% for sid in terms_sections %}
-<div class="panel">
-  <h2 style="margin-top:0">{{ t('terms.s' ~ sid ~ '_title') }}</h2>
-  <div class="small muted terms-section">{{ t('terms.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) }}</div>
-</div>
+<section class="legal-section" id="s{{ sid }}">
+  <h2>{{ t('terms.s' ~ sid ~ '_title') }}</h2>
+  <div class="terms-section">{{ t('terms.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) }}</div>
+  <p class="legal-back"><a href="#legal-contents">{{ t('legal.back_to_toc') }} <span aria-hidden="true">&uarr;</span></a></p>
+</section>
 {% endfor %}
 
 <div class="panel quiet">
@@ -47,6 +49,6 @@
   &middot;
   <a href="/subprocessors">{{ t('subprocessors.footer_link') }}</a>
   &middot;
-  <a href="/login">{{ t('legal.back_login') }}</a>
+  <a href="/?lang={{ lang }}">{{ t('legal.back_home') }}</a>
 </p>
 {% endblock %}

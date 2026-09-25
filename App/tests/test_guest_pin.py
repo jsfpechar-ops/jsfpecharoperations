@@ -126,6 +126,33 @@ def test_party_and_another_posts_require_pin(pin_required):
         _cleanup()
 
 
+def test_claim_secret_survives_the_pin_gate(pin_required):
+    """The claim secret rides in the fragment, which the browser never sends
+    to the server. ``signature.js`` copies it into ``return_to``, and the 303
+    must hand it back — otherwise the guest lands on the confirm page with an
+    empty secret and is told the link expired."""
+    stay_id = _stay_id()
+    secret = "A" * 32
+    claim_path = f"/l/{TOKEN}/{stay_id}/claim"
+    try:
+        client = TestClient(app)
+        gate = client.get(claim_path, follow_redirects=False)
+        assert gate.status_code == 200
+        assert "PIN" in gate.text
+        assert f'value="{claim_path}"' in gate.text, "the PIN form must offer the claim page back"
+
+        carried = f"{claim_path}#c={secret}"
+        response = client.post(
+            f"/l/{TOKEN}/pin",
+            data={"pin": PIN, "return_to": carried},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"] == carried
+    finally:
+        _cleanup()
+
+
 def test_pin_page_requires_six_digits(pin_required):
     """A 4-digit PIN is no longer a PIN.
 

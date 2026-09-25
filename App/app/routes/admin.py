@@ -9,6 +9,7 @@ protection and the registered paths are exactly what they were.
 from __future__ import annotations
 
 import json
+import secrets
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
@@ -26,7 +27,6 @@ from .. import (
     db,
     deadlines,
     demo,
-    host_i18n,
     housebook,
     icalsync,
     mail,
@@ -82,6 +82,62 @@ def _apartment_with_secret(apartment) -> Dict[str, Any]:
 
 def _apartment_issues(apartment) -> List[validation.Issue]:
     return validation.validate_apartment(_apartment_with_secret(apartment))
+
+
+# The property form has two jobs, so the readiness checklist has two lists. The
+# reporting list is exactly the fields validate_apartment() calls errors: the
+# stay-fee and invoice fields the two planned features add are optional by
+# design and must never be counted here.
+_READINESS_REPORT_FIELDS = (
+    ("idub", "uby_idub", "ubyport"),
+    ("mark", "uby_mark", "ubyport"),
+    ("facility_name", "uby_name", "ubyport"),
+    ("house_no", "addr_house_no", "address"),
+    ("zip", "addr_zip", "address"),
+    ("obec", "addr_obec", "address"),
+    ("ws_user", "uby_ws_user", "ubyport"),
+    ("password", "uby_ws_password", "ubyport"),
+)
+
+
+def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
+    """What still stands between this property and its two jobs.
+
+    Every item carries the anchor of the field that answers it, so the checklist
+    is a set of links rather than a paragraph. Reporting items also carry their
+    own validation message, which is what the run-on banner used to say.
+    """
+    by_field: Dict[str, str] = {}
+    for issue in validation.errors_only(issues):
+        by_field.setdefault(issue.field, issue.message)
+    entity = next((e for e in entities if e["id"] == apartment["legal_entity_id"]), None)
+    invite = [
+        {
+            "key": "name",
+            "anchor": "basics",
+            "done": bool((apartment["internal_name"] or "").strip()),
+        },
+        {
+            "key": "operator",
+            "anchor": "basics",
+            "done": bool(entity and (entity["contact_email"] or "").strip()),
+        },
+        {"key": "stays", "anchor": "calendars", "done": has_stays},
+    ]
+    report = [
+        {
+            "key": key,
+            "anchor": anchor,
+            "done": field not in by_field,
+            "message": by_field.get(field),
+        }
+        for key, field, anchor in _READINESS_REPORT_FIELDS
+    ]
+    return {
+        "invite": invite,
+        "report": report,
+        "invite_ready": all(item["done"] for item in invite),
+    }
 
 
 def _form_return_to(form, default: str) -> str:
@@ -143,6 +199,16 @@ def dashboard(request: Request):
     # dashboard_rows() is already sorted by legal urgency, so the first row that
     # needs work is the one thing worth putting at the top of the page.
     focus = next(iter(needs_action), None) or next(iter(waiting), None)
+    # Without a feed there is nothing to sync, so the page must offer "connect a
+    # calendar" instead of "update calendars".
+    feed_count = int(
+        db.query_one(
+            "SELECT COUNT(*) AS n FROM ical_feed f "
+            "JOIN apartment a ON a.id = f.apartment_id "
+            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
+            (owner_user_id,),
+        )["n"]
+    )
     milestone, sent_count, minutes_saved = celebrations.celebration_context(owner_user_id)
     return render(
         request,
@@ -158,6 +224,7 @@ def dashboard(request: Request):
             },
             "counts": counts,
             "apartments": apartments,
+            "feed_count": feed_count,
             "setup_warnings": setup_warnings,
             "last_sync": db.get_setting("last_ical_sync"),
             "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),
@@ -248,7 +315,7 @@ async def create_entity(request: Request):
     form = await request.form()
     payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
     if not payload["name"]:
-        return _back("/entities", err="Name is required.")
+        return _back("/entities", err=_flash(request, "flash.error.name_required"))
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
     entity_id = db.insert("legal_entity", payload)
@@ -269,11 +336,11 @@ async def update_entity(entity_id: int, request: Request):
     if guard:
         return guard
     if not access.entity(request, entity_id):
-        return _back("/entities", err="No such legal entity.")
+        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
     form = await request.form()
     payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
     if not payload["name"]:
-        return _back("/entities", err="Name is required.")
+        return _back("/entities", err=_flash(request, "flash.error.name_required"))
     db.update("legal_entity", entity_id, payload)
     return _back("/entities", msg=_flash(request, "flash.entities.saved"))
 
@@ -285,9 +352,9 @@ def archive_entity(entity_id: int, request: Request):
         return guard
     entity = access.entity(request, entity_id)
     if not entity:
-        return _back("/entities", err="No such legal entity.")
+        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
     if entity["archived_at"]:
-        return _back("/entities", err="Already archived.")
+        return _back("/entities", err=_flash(request, "flash.error.already_archived"))
     used = db.query_one(
         "SELECT COUNT(*) AS n FROM apartment WHERE "
         "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
@@ -296,7 +363,7 @@ def archive_entity(entity_id: int, request: Request):
     if used and used["n"]:
         return _back(
             "/entities",
-            err="Detach or archive the properties linked to this entity first.",
+            err=_flash(request, "flash.error.entity_has_properties"),
         )
     db.update("legal_entity", entity_id, {"archived_at": db.utcnow()})
     db.audit("entity_archived", f"id={entity_id}")
@@ -312,9 +379,9 @@ async def unarchive_entity(entity_id: int, request: Request):
     return_to = _form_return_to(form, f"/entities?edit={entity_id}")
     entity = access.entity(request, entity_id)
     if not entity:
-        return _back("/entities", err="No such legal entity.")
+        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
     if not entity["archived_at"]:
-        return _back(return_to, err="Not archived.")
+        return _back(return_to, err=_flash(request, "flash.error.not_archived"))
     db.update("legal_entity", entity_id, {"archived_at": None})
     db.audit("entity_unarchived", f"id={entity_id}")
     return _back(return_to, msg=_flash(request, "flash.entities.restored", name=entity["name"]))
@@ -327,16 +394,16 @@ def delete_entity(entity_id: int, request: Request):
         return guard
     entity = access.entity(request, entity_id)
     if not entity:
-        return _back("/entities", err="No such legal entity.")
+        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
     if not entity["archived_at"]:
-        return _back("/entities", err="Archive the legal entity before deleting it.")
+        return _back("/entities", err=_flash(request, "flash.error.archive_entity_first"))
     used = db.query_one(
         "SELECT COUNT(*) AS n FROM apartment WHERE "
         "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
         (entity_id, entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
-        return _back("/entities", err="Detach the properties from this entity first.")
+        return _back("/entities", err=_flash(request, "flash.error.detach_properties_first"))
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
     db.audit("entity_deleted", f"id={entity_id}")
     return _back("/entities", msg=_flash(request, "flash.entities.deleted"))
@@ -457,17 +524,17 @@ async def apartment_create(request: Request):
     form = await request.form()
     payload = _apartment_payload(form)
     if not payload["internal_name"]:
-        return _back("/apartments/new", err="Give the apartment a name.")
+        return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
     payload["permalink_token"] = auth.new_permalink_token()
     payload["permalink_pin"] = auth.new_permalink_pin()
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
-        return _back("/apartments/new", err="No such legal entity.")
+        return _back("/apartments/new", err=_flash(request, "flash.error.no_such_entity"))
     if payload["data_controller_entity_id"] and not access.entity(
         request, payload["data_controller_entity_id"]
     ):
-        return _back("/apartments/new", err="No such data controller.")
+        return _back("/apartments/new", err=_flash(request, "flash.error.no_such_controller"))
     if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
         payload["data_controller_entity_id"] = None
     password = _form_str(form, "uby_ws_password")
@@ -489,16 +556,27 @@ def apartment_detail(apartment_id: int, request: Request):
         access.apartment(request, apartment_id)
     )
     if not apartment:
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
+    entities = access.entities(request)
+    issues = _apartment_issues(apartment)
+    # A connected calendar or a hand-typed stay both mean guests are on their
+    # way, which is all the "Ready to invite guests" list asks about.
+    has_stays = any(feed["active"] for feed in feeds) or bool(
+        db.query_one(
+            "SELECT 1 AS present FROM reservation WHERE apartment_id = ? LIMIT 1",
+            (apartment_id,),
+        )
+    )
     return render(
         request,
         "apartment_form.html",
         {
             "apartment": apartment,
-            "entities": access.entities(request),
+            "entities": entities,
             "feeds": feeds,
-            "issues": _apartment_issues(apartment),
+            "issues": issues,
+            "readiness": _readiness(apartment, entities, issues, has_stays),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
             "pin": apartment["permalink_pin"] or "",
@@ -513,17 +591,31 @@ async def apartment_update(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/apartments", err="No such apartment.")
     form = await request.form()
+    rejected = _save_apartment_form(apartment_id, request, form)
+    if rejected:
+        return rejected
+    return _back(
+        _form_return_to(form, f"/apartments/{apartment_id}"),
+        msg=_flash(request, "flash.apartments.saved"),
+    )
+
+
+def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[Response]:
+    """Persist the property form, or return the redirect that rejects it.
+
+    Split out of ``apartment_update`` because the credentials test has to be
+    able to save the values the host just typed before it uses them.
+    """
+    if not access.apartment(request, apartment_id):
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     payload = _apartment_payload(form)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
-        return _back(f"/apartments/{apartment_id}", err="No such legal entity.")
+        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_entity"))
     if payload["data_controller_entity_id"] and not access.entity(
         request, payload["data_controller_entity_id"]
     ):
-        return _back(f"/apartments/{apartment_id}", err="No such data controller.")
+        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_controller"))
     if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
         payload["data_controller_entity_id"] = None
     for key in ("automation_mode", "submit_after_hours", "default_purpose"):
@@ -535,12 +627,11 @@ async def apartment_update(apartment_id: int, request: Request):
     if pin_raw:
         pin = auth.normalise_permalink_pin(pin_raw)
         if not pin or len(pin) != 6:
-            return _back(f"/apartments/{apartment_id}", err="PIN must be 6 digits.")
+            return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
         payload["permalink_pin"] = pin
-    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
     db.audit("apartment_updated", f"id={apartment_id}")
-    return _back(return_to, msg=_flash(request, "flash.apartments.saved"))
+    return None
 
 
 @router.post("/apartments/{apartment_id}/regenerate-pin")
@@ -551,7 +642,7 @@ async def regenerate_pin(apartment_id: int, request: Request):
     form = await request.form()
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     pin = auth.new_permalink_pin()
     db.update("apartment", apartment_id, {"permalink_pin": pin})
     db.audit("pin_rotated", f"apartment={apartment_id}")
@@ -569,7 +660,7 @@ async def regenerate_link(apartment_id: int, request: Request):
     form = await request.form()
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     db.update(
         "apartment",
         apartment_id,
@@ -593,6 +684,15 @@ UBYPORT_TEXT_FIELDS = (
     "uby_ws_user",
 )
 
+# The property form posts these; the bare test button posts none of them. That
+# is how the credentials test tells "test what I typed" from "test what is
+# saved" without a second route.
+UBYPORT_CREDENTIAL_FIELDS = UBYPORT_TEXT_FIELDS + ("uby_ws_password",)
+
+
+def _posted_credentials(form) -> bool:
+    return any(_form_str(form, field) for field in UBYPORT_CREDENTIAL_FIELDS)
+
 
 def _automation_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = {field: _form_str(form, field) for field in UBYPORT_TEXT_FIELDS}
@@ -605,20 +705,83 @@ def _automation_payload(form) -> Dict[str, Any]:
     return payload
 
 
+# What the property form calls each field the automation card can report as
+# missing. The anchor is the field's own id on that page, so the link lands on
+# the input the host has to fill in.
+_APARTMENT_FIELD_LABELS: Dict[str, Optional[str]] = {
+    "uby_idub": None,
+    "uby_mark": "apartment.form.ubyport.mark_label",
+    "uby_name": "automation.facility_name",
+    "uby_contact": "automation.contact",
+    "uby_ws_user": "automation.login",
+    "uby_ws_password": "automation.password",
+    "addr_okres": "apartment.form.addr.okres",
+    "addr_obec": "apartment.form.addr.obec",
+    "addr_obec_cast": "apartment.form.addr.obec_cast",
+    "addr_street": "apartment.form.addr.street",
+    "addr_house_no": "apartment.form.addr.house_no",
+    "addr_orient_no": "apartment.form.addr.orient_no",
+    "addr_zip": "apartment.form.addr.zip",
+    "legal_entity_id": "apartment.form.entity.label",
+}
+
+# The two labels that read the same in both languages, so they need no key.
+_APARTMENT_FIELD_LITERALS = {"uby_idub": "IDUB"}
+
+
+def _missing_fields(issues: List[validation.Issue]) -> List[Dict[str, str]]:
+    """The validation issues as links the host can act on.
+
+    One entry per field: a name that is both empty and too long is still one
+    thing to go and fix.
+    """
+    missing: List[Dict[str, str]] = []
+    for issue in issues:
+        if any(item["field"] == issue.field for item in missing):
+            continue
+        missing.append(
+            {
+                "field": issue.field,
+                "label_key": _APARTMENT_FIELD_LABELS.get(issue.field) or "",
+                "label": _APARTMENT_FIELD_LITERALS.get(issue.field, issue.field),
+            }
+        )
+    return missing
+
+
+def _save_automation_form(apartment_id: int, form) -> None:
+    """Persist the automation card.
+
+    Split out of ``automation_update`` because the credentials test on this page
+    has to save what the host just typed before it uses it. It is a *different*
+    payload from the property form's: the card posts no name, address or entity,
+    so saving it through ``_apartment_payload`` would blank them.
+    """
+    payload = _automation_payload(form)
+    password = _form_str(form, "uby_ws_password")
+    if password:
+        payload["uby_ws_password_enc"] = db.encrypt_secret(password)
+    db.update("apartment", apartment_id, payload)
+    db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
+
+
 @router.get("/automation")
 def automation_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
     apartments = access.apartments(request)
-    rows = [
-        {
-            "apartment": apartment,
-            "issues": validation.errors_only(_apartment_issues(apartment)),
-            "has_password": bool(apartment["uby_ws_password_enc"]),
-        }
-        for apartment in apartments
-    ]
+    rows = []
+    for apartment in apartments:
+        issues = validation.errors_only(_apartment_issues(apartment))
+        rows.append(
+            {
+                "apartment": apartment,
+                "issues": issues,
+                "missing": _missing_fields(issues),
+                "has_password": bool(apartment["uby_ws_password_enc"]),
+            }
+        )
     return render(
         request,
         "automation.html",
@@ -636,14 +799,9 @@ async def automation_update(apartment_id: int, request: Request):
         return guard
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/automation", err="No such apartment.")
+        return _back("/automation", err=_flash(request, "flash.error.no_such_apartment"))
     form = await request.form()
-    payload = _automation_payload(form)
-    password = _form_str(form, "uby_ws_password")
-    if password:
-        payload["uby_ws_password_enc"] = db.encrypt_secret(password)
-    db.update("apartment", apartment_id, payload)
-    db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
+    _save_automation_form(apartment_id, form)
     return _back(
         _form_return_to(form, f"/automation#apartment-{apartment_id}"),
         msg=_flash(request, "flash.apartments.settings_saved", name=apartment["internal_name"]),
@@ -657,9 +815,9 @@ def archive_apartment(apartment_id: int, request: Request):
         return guard
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     if apartment["archived_at"]:
-        return _back(f"/apartments/{apartment_id}", err="Already archived.")
+        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.already_archived"))
     db.update(
         "apartment",
         apartment_id,
@@ -678,9 +836,9 @@ async def unarchive_apartment(apartment_id: int, request: Request):
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     if not apartment["archived_at"]:
-        return _back(return_to, err="Not archived.")
+        return _back(return_to, err=_flash(request, "flash.error.not_archived"))
     db.update(
         "apartment",
         apartment_id,
@@ -696,7 +854,7 @@ async def add_feed(apartment_id: int, request: Request):
     if guard:
         return guard
     if not access.apartment(request, apartment_id):
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     form = await request.form()
     url = _form_str(form, "url")
     try:
@@ -704,7 +862,7 @@ async def add_feed(apartment_id: int, request: Request):
 
         url = validate_calendar_url(url)
     except FeedUrlError as exc:
-        return _back(f"/apartments/{apartment_id}", err=str(exc))
+        return _back(f"/apartments/{apartment_id}", err=_flash(request, exc.key))
     db.insert(
         "ical_feed",
         {
@@ -718,7 +876,7 @@ async def add_feed(apartment_id: int, request: Request):
     )
     totals = icalsync.sync_all(apartment_id)
     if totals["errors"]:
-        return _back(f"/apartments/{apartment_id}", err="Calendar added but could not be read - see the alert above.")
+        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.feed_added_unreadable"))
     return _back(
         f"/apartments/{apartment_id}",
         msg=_flash(request, "flash.feeds.added", count=totals["created"]),
@@ -732,7 +890,7 @@ def delete_feed(feed_id: int, request: Request):
         return guard
     feed = access.feed(request, feed_id)
     if not feed:
-        return _back("/apartments", err="No such calendar.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_calendar"))
     db.execute("DELETE FROM ical_feed WHERE id = ?", (feed_id,))
     return _back(f"/apartments/{feed['apartment_id']}", msg=_flash(request, "flash.feeds.removed"))
 
@@ -759,7 +917,7 @@ async def sync_now(request: Request):
                 cancelled=totals["cancelled"],
             )
         ),
-        err="Some calendars could not be read." if totals["errors"] else "",
+        err=_flash(request, "flash.error.feeds_unreadable") if totals["errors"] else "",
     )
 
 
@@ -770,27 +928,39 @@ async def test_connection(apartment_id: int, request: Request):
         return guard
     form = await request.form()
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
+    # A host pastes the credentials from the police letter and clicks the test.
+    # Testing the saved values while the typed ones sat in the form was a
+    # silent data loss, so the typed values are saved first and then tested.
+    if _form_str(form, "form_source") == "automation":
+        # The automation card posts only its own fields, so it has to be saved
+        # through its own payload; the property payload would blank the rest.
+        if access.apartment(request, apartment_id):
+            _save_automation_form(apartment_id, form)
+    elif _posted_credentials(form):
+        rejected = _save_apartment_form(apartment_id, request, form)
+        if rejected:
+            return rejected
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     client = reporting.client_for(apartment)
     try:
         available = client.test_availability()
         limit = client.max_batch_size()
-        message = _flash(
-            request,
-            "flash.apartments.connection_ok",
-            endpoint=client.endpoint,
-            available=available,
-            batch=(
-                _flash(request, "flash.apartments.connection_batch", limit=limit)
-                if limit
-                else ""
-            ),
-        )
-        return _back(return_to, msg=message)
     except (UbyportTransportError, UbyportError) as exc:
-        return _back(return_to, err=str(exc))
+        db.audit(
+            "ubyport_connection_failed",
+            f"apartment={apartment_id} endpoint={client.endpoint} error={exc}",
+        )
+        return _back(return_to, err=_flash(request, "flash.error.connection_failed"))
+    # The endpoint and the batch size are developer detail: the host only needs
+    # to know the login worked, so the numbers go to the activity log.
+    db.audit(
+        "ubyport_connection_ok",
+        f"apartment={apartment_id} endpoint={client.endpoint} "
+        f"available={available} max_batch={limit}",
+    )
+    return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
 @router.post("/apartments/{apartment_id}/refresh-codelists")
@@ -802,11 +972,11 @@ async def refresh_codelists(apartment_id: int, request: Request):
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/apartments", err="No such apartment.")
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     try:
         written = codelists.refresh_all(reporting.client_for(apartment))
-    except (UbyportTransportError, UbyportError) as exc:
-        return _back(return_to, err=f"Could not refresh code lists: {exc}")
+    except (UbyportTransportError, UbyportError):
+        return _back(return_to, err=_flash(request, "flash.error.codelists_refresh"))
     return _back(
         return_to,
         msg=(
@@ -953,17 +1123,21 @@ async def reservation_create(request: Request):
     date_from = _form_str(form, "date_from")
     date_to = _form_str(form, "date_to")
     if not (apartment_id and date_from and date_to):
-        return _back("/reservations", err="Apartment and both dates are required.")
+        return _back("/reservations", err=_flash(request, "flash.error.stay_dates_required"))
     if not access.apartment(request, apartment_id):
-        return _back("/reservations", err="No such apartment.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_apartment"))
     if date_to <= date_from:
-        return _back("/reservations", err="The departure date must be after the arrival date.")
+        return _back("/reservations", err=_flash(request, "flash.error.dates_order"))
     reservation_id = db.insert(
         "reservation",
         {
             "apartment_id": apartment_id,
             "source": "manual",
-            "uid": f"manual-{db.utcnow()}-{date_from}",
+            # A manual stay has no iCal uid to inherit. The old
+            # f"manual-{db.utcnow()}-{date_from}" had one-second resolution, so a
+            # double-click on "Create stay" hit the UNIQUE index and the second
+            # request died with a 500 after the first had already created it.
+            "uid": f"manual-{secrets.token_hex(8)}",
             "date_from": date_from,
             "date_to": date_to,
             "summary": _form_str(form, "summary") or "Manual entry",
@@ -1026,7 +1200,7 @@ async def reservations_submit_ready(request: Request):
     if not sent_guests:
         return _back(
             return_to,
-            err="No stays were ready to send. Complete guest forms for foreign nationals first.",
+            err=_flash(request, "flash.error.nothing_ready"),
         )
     return _back(
         return_to,
@@ -1045,7 +1219,7 @@ def reservation_detail(reservation_id: int, request: Request):
         "r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours",
     )
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     progress = reporting.reservation_progress(reservation)
     apartment = access.apartment(request, reservation["apartment_id"])
     send_controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
@@ -1102,7 +1276,7 @@ async def reservation_update(reservation_id: int, request: Request):
     if guard:
         return guard
     if not access.reservation(request, reservation_id):
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     form = await request.form()
     payload: Dict[str, Any] = {
         "guest_email": _form_str(form, "guest_email"),
@@ -1167,19 +1341,18 @@ async def reservation_archive(reservation_id: int, request: Request):
         return guard
     reservation = access.reservation(request, reservation_id)
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     if reservation["archived_at"]:
-        return _back(f"/reservations/{reservation_id}", err="Already archived.")
+        return _back(f"/reservations/{reservation_id}", err=_flash(request, "flash.error.already_archived"))
     form = await request.form()
     return_to = _form_return_to(form, _redirect_path_from_referer(request, "/reservations"))
     db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("reservation_archived", f"id={reservation_id}")
-    lang = host_i18n.lang_from_request(request)
     target = (
         f"/reservations?range=archive&undo_stay={reservation_id}"
         f"&undo_return={quote(return_to, safe='')}"
     )
-    return _back(target, msg=host_i18n.translate(lang, "archive.stay_moved"))
+    return _back(target, msg=_flash(request, "archive.stay_moved"))
 
 
 @router.post("/reservations/{reservation_id}/unarchive")
@@ -1191,9 +1364,9 @@ async def reservation_unarchive(reservation_id: int, request: Request):
     return_to = _form_return_to(form, f"/reservations/{reservation_id}")
     reservation = access.reservation(request, reservation_id)
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     if not reservation["archived_at"]:
-        return _back(return_to, err="Not archived.")
+        return _back(return_to, err=_flash(request, "flash.error.not_archived"))
     db.update("reservation", reservation_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("reservation_unarchived", f"id={reservation_id}")
     return _back(return_to, msg=_flash(request, "flash.reservations.restored"))
@@ -1206,7 +1379,7 @@ async def reservation_reopen_guest(reservation_id: int, request: Request):
         return guard
     reservation = access.reservation(request, reservation_id)
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     claim.reopen_guest_access(reservation_id)
     db.audit("guest_access_reopened", f"reservation={reservation_id}")
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.access_reopened"))
@@ -1219,7 +1392,7 @@ async def reservation_release_claim(reservation_id: int, request: Request):
         return guard
     reservation = access.reservation(request, reservation_id)
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     claim.release(reservation_id)
     db.audit("guest_claim_released", f"reservation={reservation_id}")
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.claim_released"))
@@ -1232,18 +1405,17 @@ async def reservation_submit(reservation_id: int, request: Request):
         return guard
     reservation = access.reservation(request, reservation_id)
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     apartment = access.apartment(request, reservation["apartment_id"])
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress) if apartment else {}
     if not controls.get("send_enabled"):
         return _back(
             f"/reservations/{reservation_id}",
-            err=host_i18n.translate(
-                host_i18n.lang_from_request(request),
-                controls.get("send_hint_key", ""),
-            )
-            or "This stay cannot be sent right now.",
+            err=_flash(
+                request,
+                controls.get("send_hint_key") or "flash.error.not_sendable",
+            ),
         )
     form = await request.form()
     # Re-sending an accepted record creates a duplicate, which UbyPort counts
@@ -1254,7 +1426,7 @@ async def reservation_submit(reservation_id: int, request: Request):
     if allow_resend and not form.get("confirm_duplicate"):
         return _back(
             f"/reservations/{reservation_id}",
-            err="Confirm you understand the duplicate rules before re-sending accepted records.",
+            err=_flash(request, "flash.error.confirm_duplicate_resend"),
         )
     return_to = security.safe_local_path(
         _form_str(form, "return_to"), f"/reservations/{reservation_id}"
@@ -1273,22 +1445,31 @@ async def reservation_submit(reservation_id: int, request: Request):
     if not results:
         return _back(
             return_to,
-            err="Nothing was sendable: every guest is either incomplete, already reported, or not reportable.",
+            err=_flash(request, "flash.error.nothing_sendable"),
         )
     first = results[0]
     if first.get("state") == "noop":
-        return _back(return_to, err=first.get("error") or "Nothing to send.")
+        return _back(
+            return_to,
+            err=_flash(request, first.get("error_key") or "flash.error.nothing_to_send"),
+        )
     if first.get("state") == "not_configured":
-        return _back(return_to, err=f"UbyPort settings incomplete: {first['error']}")
+        # The list of missing fields is on the property page, already in the
+        # host's language; repeating it here in English would undo UX-35.
+        return _back(return_to, err=_flash(request, "flash.error.ubyport_not_configured"))
     if first.get("state") == "transport_error":
-        return _back(return_to, err=f"Could not reach UbyPort: {first.get('error')}")
+        db.audit(
+            "ubyport_send_failed",
+            f"apartment={reservation['apartment_id']} error={first.get('error')}",
+        )
+        return _back(return_to, err=_flash(request, "flash.error.ubyport_unreachable"))
     sent = sum(r.get("submitted", 0) for r in results)
     failed = sum(r.get("failed", 0) + r.get("blocked", 0) for r in results)
     if failed:
         return _back(
             return_to,
             msg=_flash(request, "flash.reservations.accepted", count=sent),
-            err=f"{failed} guest(s) were rejected - open the Doručenka for details.",
+            err=_flash(request, "flash.error.rejected", count=failed),
         )
     return _back(return_to, msg=_flash(request, "flash.reservations.reported", count=sent))
 
@@ -1362,7 +1543,7 @@ def guest_new(reservation_id: int, request: Request):
         request, reservation_id, "r.*, a.default_purpose, a.internal_name"
     )
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     return _render_host_guest_form(request, reservation, None, [], editing=False)
 
 
@@ -1373,7 +1554,7 @@ async def guest_create(reservation_id: int, request: Request):
         return guard
     reservation = access.reservation(request, reservation_id)
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     form = await request.form()
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form)
@@ -1426,7 +1607,7 @@ def guest_edit(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/reservations", err="No such guest.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     reservation = db.query_one(
         "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
@@ -1448,7 +1629,7 @@ async def guest_update(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/reservations", err="No such guest.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     reservation = db.query_one(
         "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
@@ -1498,14 +1679,14 @@ async def guest_verify_identity(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/reservations", err="No such guest.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     if not validation.guest_is_reportable(guest["nationality"]):
-        return _back(f"/guests/{guest_id}", err="Czech guests do not need passport verification.")
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.czech_no_verification"))
     if guest["identity_verified_at"]:
         return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.identity_verified"))
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
     if not reservation:
-        return _back("/reservations", err="No such stay.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     form = await request.form()
     return_to = security.safe_local_path(
         str(form.get("return_to") or ""), f"/guests/{guest_id}"
@@ -1552,14 +1733,14 @@ async def guest_archive(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/housebook", err="No such guest record.")
+        return _back("/housebook", err=_flash(request, "flash.error.no_such_housebook_guest"))
     if guest["submit_state"] == reporting.SENT:
         return _back(
             f"/guests/{guest_id}",
-            err="This guest was already reported to the police; the record must stay in the house book.",
+            err=_flash(request, "flash.error.reported_kept"),
         )
     if guest["archived_at"]:
-        return _back(f"/guests/{guest_id}", err="Already archived.")
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.already_archived"))
     form = await request.form()
     return_to = security.safe_local_path(str(form.get("return_to") or ""), "/housebook")
     # Archiving hides the record from the house book but keeps it in the
@@ -1588,9 +1769,9 @@ async def guest_unarchive(guest_id: int, request: Request):
     return_to = _form_return_to(form, "/housebook")
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/housebook", err="No such guest record.")
+        return _back("/housebook", err=_flash(request, "flash.error.no_such_housebook_guest"))
     if not guest["archived_at"]:
-        return _back(return_to, err="Not archived.")
+        return _back(return_to, err=_flash(request, "flash.error.not_archived"))
     db.update("guest", guest_id, {"archived_at": None, "updated_at": db.utcnow()})
     db.audit("guest_unarchived", f"id={guest_id}")
     reservation = db.query_one(
@@ -1611,11 +1792,11 @@ def guest_delete(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/reservations", err="No such guest.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     if guest["submit_state"] == reporting.SENT:
         return _back(
             f"/guests/{guest_id}",
-            err="This guest was already reported to the police; the record is kept for the house book.",
+            err=_flash(request, "flash.error.reported_kept"),
         )
     reservation_id = guest["reservation_id"]
     passport_photos.delete_photo(guest_id)
@@ -1644,18 +1825,14 @@ async def guest_resend(guest_id: int, request: Request):
         return guard
     guest = access.guest(request, guest_id)
     if not guest:
-        return _back("/reservations", err="No such guest.")
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
     form = await request.form()
     if not form.get("confirm_duplicate"):
-        return _back(f"/guests/{guest_id}", err="Confirm you understand the duplicate rules first.")
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.confirm_duplicate"))
     if reporting.blocked_as_duplicate(guest):
         return _back(
             f"/guests/{guest_id}",
-            err=(
-                "UbyPort already holds this record, so re-sending cannot be accepted "
-                "and would count as another duplicate. The guest is reported - see the "
-                "Doručenka."
-            ),
+            err=_flash(request, "flash.error.already_reported_duplicate"),
         )
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
     results = reporting.submit_for_apartment(
@@ -1666,14 +1843,14 @@ async def guest_resend(guest_id: int, request: Request):
         allow_resend=True,
     )
     if not results:
-        return _back(f"/guests/{guest_id}", err="Record is not sendable - fix the validation errors first.")
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.record_not_sendable"))
     db.audit("guest_resent", f"id={guest_id}")
     result = results[0]
     if result.get("state") == "transport_error":
-        return _back(f"/guests/{guest_id}", err=f"Could not reach UbyPort: {result.get('error')}")
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_unreachable"))
     if result.get("submitted"):
         return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.resent"))
-    return _back(f"/guests/{guest_id}", err="Re-sent but UbyPort rejected it again - see the Doručenka.")
+    return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.resent_rejected"))
 
 
 # --- submissions ---------------------------------------------------------
@@ -1706,7 +1883,7 @@ def submission_detail(submission_id: int, request: Request):
         return guard
     submission = access.submission(request, submission_id, "s.*, a.internal_name")
     if not submission:
-        return _back("/submissions", err="No such submission.")
+        return _back("/submissions", err=_flash(request, "flash.error.no_such_submission"))
     guest_ids = json.loads(submission["guest_ids"] or "[]")
     guests = []
     if guest_ids:

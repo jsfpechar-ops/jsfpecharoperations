@@ -3,7 +3,7 @@
   <p class="g-intro">{{ t('host_details_help') }}</p>
   {% if host and (host.name or host.email or host.phone) %}
     {% if host.name %}<p>{{ host.name }}</p>{% endif %}
-    {% if host.phone %}<p><a href="tel:{{ host.phone }}">{{ host.phone }}</a></p>{% endif %}
+    {% if host.phone %}<p><a href="tel:{{ host.phone | replace(' ', '') }}">{{ host.phone }}</a></p>{% endif %}
     {% if host.email %}<p><a href="mailto:{{ host.email }}">{{ host.email }}</a></p>{% endif %}
   {% else %}
     <p class="hint">{{ t('host_details_missing') }}</p>

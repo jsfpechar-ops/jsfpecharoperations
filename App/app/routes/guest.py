@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation
+from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -44,89 +44,6 @@ CLAIM_COOKIE = "ubyhost_claim"
 # hammering rather than pacing a careful person. The PIN and the claim cookie are
 # the controls on *who* may post; this only bounds how often.
 GUEST_POST_MAX_ATTEMPTS = 30
-
-CS_VALIDATION_MESSAGES = {
-    "Date of birth is required.": "Datum narození je povinné.",
-    "Enter the full date as DD/MM/YYYY.": "Zadejte celé datum ve formátu DD/MM/RRRR.",
-    "Year must be 1900 or later.": "Rok musí být 1900 nebo pozdější.",
-    "Month must be between 01 and 12.": "Měsíc musí být mezi 01 a 12.",
-    "Day must be between 01 and 31.": "Den musí být mezi 01 a 31.",
-    "That date does not exist - please check day and month.": "Toto datum neexistuje – zkontrolujte den a měsíc.",
-    "Date of birth cannot be after your arrival date.": "Datum narození nemůže být po datu příjezdu.",
-    "Date of birth cannot be in the future.": "Datum narození nemůže být v budoucnosti.",
-    "Surname is required.": "Příjmení je povinné.",
-    "Given name looks missing - please check the passport.": "Křestní jméno zřejmě chybí – zkontrolujte pas.",
-    "Nationality is required.": "Státní příslušnost je povinná.",
-    "Travel document number is required.": "Číslo cestovního dokladu je povinné.",
-    "Street and number are required.": "Ulice a číslo jsou povinné.",
-    "City is required.": "Město je povinné.",
-    "Country is required.": "Země je povinná.",
-    "Unknown country code.": "Neznámý kód země.",
-    "Unknown purpose-of-stay code.": "Neznámý účel pobytu.",
-    "Purpose of stay is required.": "Účel pobytu je povinný.",
-    "Remove the | character and any line breaks.": (
-        "Odstraňte znak | a všechny konce řádků."
-    ),
-    "Departure date must be later than the arrival date.": "Datum odjezdu musí být po datu příjezdu.",
-    validation.STAY_OUTSIDE_BOOKING_MESSAGE: (
-        "Tyto termíny neodpovídají vaší rezervaci. Načtěte stránku znovu nebo se "
-        "obraťte na ubytovatele."
-    ),
-    validation.STAY_DATE_UNREADABLE_MESSAGE: (
-        "Termíny pobytu na této stránce nejsou čitelné. Načtěte stránku znovu."
-    ),
-    validation.SIGNATURE_INVALID_MESSAGE: (
-        "Tento podpis se nepodařilo uložit. Podepište se znovu do podpisového pole."
-    ),
-    validation.NON_LATIN_MESSAGE: (
-        "Zapište latinkou (A–Z) přesně tak, jak je to vytištěno ve dvou strojově "
-        "čitelných řádcích na konci vašeho pasu."
-    ),
-    # Built from the same constants as the English text so the two cannot drift
-    # apart when a field limit changes.
-    f"Surname must be at most {validation.MAX_SURNAME} characters.": (
-        f"Příjmení může mít nejvýše {validation.MAX_SURNAME} znaků. Zkraťte ho, "
-        "prosím, podle pasu."
-    ),
-    f"Given name must be at most {validation.MAX_FIRST_NAME} characters.": (
-        f"Jméno může mít nejvýše {validation.MAX_FIRST_NAME} znaků. Uveďte, prosím, "
-        "jen první jména z pasu."
-    ),
-    f"Document number must be at least {validation.MIN_DOC} characters.": (
-        f"Číslo dokladu musí mít alespoň {validation.MIN_DOC} znaků."
-    ),
-    f"Document number must be at most {validation.MAX_DOC} characters.": (
-        f"Číslo dokladu může mít nejvýše {validation.MAX_DOC} znaků."
-    ),
-    f"Visa number must be at most {validation.MAX_VISA} characters.": (
-        f"Číslo víza může mít nejvýše {validation.MAX_VISA} znaků."
-    ),
-    f"Street must be at most {validation.MAX_RESIDENCE_PART} characters.": (
-        f"Ulice může mít nejvýše {validation.MAX_RESIDENCE_PART} znaků."
-    ),
-    f"City must be at most {validation.MAX_RESIDENCE_PART} characters.": (
-        f"Město může mít nejvýše {validation.MAX_RESIDENCE_PART} znaků."
-    ),
-    "Street cannot consist of digits only.": "Ulice nemůže obsahovat jen číslice.",
-    "City cannot consist of digits only.": "Město nemůže obsahovat jen číslice.",
-    "Home address is too long.": "Adresa bydliště je příliš dlouhá.",
-    f"Note must be at most {validation.MAX_NOTE} characters.": (
-        f"Poznámka může mít nejvýše {validation.MAX_NOTE} znaků."
-    ),
-    "For a child recorded in a parent's passport the note must contain "
-    "the parent's document number.": (
-        "U dítěte zapsaného v pasu rodiče musí poznámka obsahovat číslo dokladu rodiče."
-    ),
-}
-
-# The nationality message embeds the code the guest typed, so it cannot be a
-# dictionary key.
-_CS_VALIDATION_PATTERNS = (
-    (
-        re.compile(r"^'(?P<code>.*)' is not a valid three-letter country code\.$"),
-        "„{code}“ není platný třímístný kód země (např. GBR, USA, DEU).",
-    ),
-)
 
 CS_PASSPORT_UPLOAD_MESSAGES = {
     "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF "
@@ -150,17 +67,40 @@ def _claim_serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-claim")
 
 
-def _language(request: Request) -> str:
-    """The guest's language: what they asked for, else the public default.
+def _accept_language(request: Request) -> str:
+    """What the guest's phone asks for: Czech or Slovak -> Czech, else English.
 
-    A guest arriving from a host's link has made no choice, and the host is
-    Czech, so the form is Czech until the guest says otherwise -- through a
-    ``?lang=`` on a link, or the switcher's cookie. The catalog's own
-    ``i18n.DEFAULT_LANGUAGE`` is only what a missing *key* falls back to.
+    Read only when the guest has said nothing themselves. A browser always
+    sends this header, so a German guest's first screen is English instead of
+    Czech. The first tag wins, because browsers list their languages in order
+    of preference. A request that asks for nothing in particular -- no header
+    at all, or a bare ``*`` -- is not a foreign guest, so the public default
+    stands rather than being quietly turned into English.
     """
-    return host_i18n.supported_language(
-        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
-    ) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    header = request.headers.get("accept-language") or ""
+    for part in header.split(","):
+        tag = part.split(";")[0].strip().lower().replace("_", "-")
+        if not tag or tag == "*":
+            continue
+        if tag[:2] in ("cs", "sk"):
+            return "cs"
+        return "en"
+    return host_i18n.PUBLIC_DEFAULT_LANGUAGE
+
+
+def _language(request: Request) -> str:
+    """The guest's language: what they asked for, else what their phone asks for.
+
+    A ``?lang=`` on a link, or the switcher's cookie, is the guest saying so,
+    and wins. When they name a language we do not speak the public default
+    stands. A guest who has said nothing at all gets the language of their own
+    phone, because the catalog is written for foreigners and a German guest
+    should not land on "Zadejte přístupový PIN".
+    """
+    asked = request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
+    if asked:
+        return host_i18n.supported_language(asked) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    return _accept_language(request)
 
 
 def _chosen_language(request: Request) -> Optional[str]:
@@ -203,6 +143,57 @@ def _remember_owned(response, guest_ids: List[int]) -> None:
         secure=auth.secure_cookies(),
         path="/",
     )
+
+
+def _guest_display_name(first_name, surname) -> str:
+    """A name fit to show a guest, not the police's shouting caps.
+
+    The record is stored the way UbyPort wants it, all upper case, so a hint
+    that read "Copied from JOHN PAUL SMITH" would look like the app was
+    shouting at the guest's own family.
+    """
+    parts = []
+    for raw in (first_name, surname):
+        part = (raw or "").strip()
+        if part:
+            parts.append(part.title())
+    return " ".join(parts)
+
+
+def _residence_prefill(request: Request, reservation) -> tuple:
+    """The address this device already gave for someone else on this stay.
+
+    Person 2 in a family types the same street, city and country as person 1,
+    and that run of typing is the longest one left in the form. The device
+    cookie already names the guests this browser filled in, so the address is
+    known - it was simply not being used. Only a completed guest is copied
+    from: a half-finished record is not something to repeat on someone else's
+    behalf.
+    """
+    owned = set(_owned_ids(request))
+    if not owned:
+        return {}, None
+    rows = db.query(
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+        "ORDER BY id DESC",
+        (reservation["id"],),
+    )
+    for row in rows:
+        if int(row["id"]) not in owned:
+            continue
+        if not reporting.guest_is_complete(row, reservation):
+            continue
+        street = (row["res_street"] or "").strip()
+        city = (row["res_city"] or "").strip()
+        country = (row["res_country"] or "").strip()
+        if not (street and city and country):
+            continue
+        name = _guest_display_name(row["first_name"], row["surname"])
+        return (
+            {"res_street": street, "res_city": city, "res_country": country},
+            name,
+        )
+    return {}, None
 
 
 def _claimed_claims(request: Request) -> Dict[int, int]:
@@ -281,13 +272,34 @@ def _with_lang(response, lang: str):
     return response
 
 
+_CLAIM_FRAGMENT = re.compile(r"c=[A-Za-z0-9_-]{16,128}\Z")
+
+
+def _safe_fragment(value: Optional[str]) -> str:
+    """Return the claim secret a fragment carries, or ``""``.
+
+    A fragment is never sent to the server, so it is not part of the redirect
+    target the browser posts back; the claim link keeps its one-time secret
+    there (``#c=…``) and ``claim.js`` reads it out again. Anything that is not
+    a plain claim secret is dropped rather than echoed into a ``Location``.
+    """
+    if not value or "#" not in value:
+        return ""
+    fragment = value.split("#", 1)[1]
+    if not _CLAIM_FRAGMENT.fullmatch(fragment):
+        return ""
+    return "#" + fragment
+
+
 def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     """Only ever bounce back inside this apartment's own permalink.
 
     A plain ``startswith`` check passes ``/l/{token}/../../somewhere-else``,
-    so the path is normalised before it is compared.
+    so the path is normalised before it is compared. The claim fragment is
+    kept: dropping it is what silently broke the link behind the PIN gate.
     """
     fallback = _guest_link(token) + _lang_q(lang)
+    fragment = _safe_fragment(requested)
     raw = security.safe_local_path(requested, "")
     if not raw:
         return fallback
@@ -298,26 +310,44 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     prefix = _guest_link(token)
     if path != prefix and not path.startswith(prefix + "/"):
         return fallback
-    return urlunsplit(("", "", path, split.query, ""))
+    return urlunsplit(("", "", path, split.query, "")) + fragment
 
 
 def _localize_message(message: str) -> str:
-    translated = CS_VALIDATION_MESSAGES.get(message)
-    if translated:
-        return translated
-    for pattern, template in _CS_VALIDATION_PATTERNS:
-        match = pattern.match(message)
-        if match:
-            return template.format(**match.groupdict())
-    return message
+    return validation_i18n.localize(message)
+
+
+# The child-on-a-parent's-passport check is keyed "note" in validation.py, where
+# the column really is called that. The guest form has no "note" box: it has the
+# parent's document number. So for the guest the issue is renamed onto the field
+# they can see, and the sentence names that box. The rename lives here rather
+# than in validation.py because the host form does have a "note" column and must
+# keep reading its own wording.
+_GUEST_ISSUE_FIELDS = {"note": "parent_doc_number"}
+_GUEST_ISSUE_MESSAGES = {
+    "note": (
+        "Enter the parent's passport or ID number.",
+        "Zadejte číslo pasu nebo průkazu rodiče.",
+    ),
+}
+
+
+def _guest_issue(issue, lang: str):
+    # Keyed by the field validation.py used, not by its sentence: the sentence
+    # has already been through the translation table by the time it gets here,
+    # and the field is what stays stable.
+    override = _GUEST_ISSUE_MESSAGES.get(issue.field)
+    field = _GUEST_ISSUE_FIELDS.get(issue.field, issue.field)
+    if override is None:
+        return issue
+    message = override[0 if lang != "cs" else 1]
+    return validation.Issue(field, message, issue.severity)
 
 
 def _localize_issues(issues, lang: str):
-    if lang != "cs":
-        return issues
     return [
-        validation.Issue(issue.field, _localize_message(issue.message), issue.severity)
-        for issue in issues
+        _guest_issue(issue, lang)
+        for issue in validation_i18n.guest_localize_issues(issues, lang)
     ]
 
 
@@ -640,6 +670,7 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
         "name": f"{guest['first_name']} {guest['surname']}".strip() if is_mine else "",
         "complete": complete,
         "locked": reporting.guest_form_locked(guest, reservation),
+        "sent": guest["submit_state"] == reporting.SENT,
     }
     if is_mine:
         doc = guest["doc_number"] or ""
@@ -649,7 +680,7 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
             or validation.format_birth_date(guest["birth_date"]),
             "doc_number": "" if doc == validation.INPASS else doc,
             "purpose": validation.purpose_label(guest["purpose"], lang),
-            "residence": validation.compose_residence(
+            "residence": validation.display_residence(
                 guest["res_street"] or "",
                 guest["res_city"] or "",
                 guest["res_country"] or "",
@@ -922,10 +953,15 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "can_raise_party": not reservation["expected_guests_override"],
             "can_pick_other": _can_pick_other_stays(apartment),
             "party_error": request.query_params.get("party_error") == "1",
+            "claim_email_masked": claim_row["email_masked"] or "",
             "just_saved": request.query_params.get("saved") == "1",
+            # "Reported" is a claim about the police, so it may only be made
+            # when a form actually went out. ``locked`` is true for any signed,
+            # complete form, which made the saved copy unreachable and told a
+            # manual-mode guest their record had been reported when it had not.
             "just_reported": (
                 request.query_params.get("saved") == "1"
-                and any(person["mine"] and person["locked"] for person in people)
+                and any(person["mine"] and person["sent"] for person in people)
             ),
         }
     )
@@ -1177,6 +1213,7 @@ def _form_context(
     issues=None,
     values=None,
     back_url: Optional[str] = None,
+    residence_copied_from: Optional[str] = None,
 ) -> Dict[str, Any]:
     token = apartment["permalink_token"]
     progress = reporting.reservation_progress(reservation)
@@ -1210,6 +1247,9 @@ def _form_context(
             "expected_people": expected,
             "issues": issues or [],
             "values": values or {},
+            # The name the address was copied from, so the guest knows why the
+            # boxes are already full and that they may change them.
+            "residence_copied_from": residence_copied_from,
             # The re-render guard for [F33]: only a value the save paths would
             # accept may go back into the hidden signature field. A row written
             # before the validator existed (a junk data URL, or "imported") must
@@ -1219,7 +1259,7 @@ def _form_context(
                 if guest and validation.is_valid_signature(guest["signature_png"])
                 else ""
             ),
-            "countries": codelists.nationality_options(lang),
+            "country_groups": codelists.country_groups(lang),
             "purposes": codelists.purpose_options(lang),
             "default_purpose": apartment["default_purpose"] or validation.DEFAULT_PURPOSE,
             "inpass": validation.INPASS,
@@ -1264,6 +1304,7 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
             RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303),
             lang,
         )
+    prefill, copied_from = _residence_prefill(request, reservation)
     return _with_lang(
         render_guest(
             request,
@@ -1274,6 +1315,8 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
                 reservation,
                 None,
                 lang,
+                values=prefill,
+                residence_copied_from=copied_from,
                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
             ),
         ),

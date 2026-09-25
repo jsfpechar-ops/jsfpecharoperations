@@ -101,9 +101,16 @@ def test_a_malformed_key_returns_raw_text_instead_of_raising():
             ) == raw
 
 
-def test_the_page_default_is_the_public_language_not_the_key_fallback():
-    """A Czech guest with no ?lang= must get Czech, not the English key fallback."""
+def test_the_page_default_follows_the_guests_own_phone():
+    """A guest who has chosen nothing gets the language their phone asks for.
+
+    This used to be the Czech public default, which put "Zadejte přístupový PIN"
+    in front of every foreigner. The product owner changed it, so a Czech or
+    Slovak phone gets Czech and any other phone gets English. The host UI and
+    the public site keep their own defaults.
+    """
     from app import i18n
+    from app.routes.guest import LANG_COOKIE as GUEST_LANG_COOKIE
     from app.routes.guest import _language
 
     assert host_i18n.PUBLIC_DEFAULT_LANGUAGE == "cs"
@@ -112,8 +119,25 @@ def test_the_page_default_is_the_public_language_not_the_key_fallback():
     assert host_i18n.resolve_language(None) == host_i18n.DEFAULT_LANGUAGE
     assert host_i18n.supported_language("de") is None
 
-    class _NoSignals:
-        query_params: dict = {}
-        cookies: dict = {}
+    class _Guest:
+        def __init__(self, lang=None, cookie=None, accept=None):
+            self.query_params = {"lang": lang} if lang else {}
+            self.cookies = {GUEST_LANG_COOKIE: cookie} if cookie else {}
+            self.headers = {"accept-language": accept} if accept else {}
 
-    assert _language(_NoSignals()) == "cs"
+    # Nothing at all: the phone is the only signal left, and a client that never
+    # told us anything is not a foreign guest, so the documented guest-link
+    # default stands. A real browser always sends this header.
+    assert _language(_Guest()) == "cs"
+    # A header that names no language is the same silent client.
+    assert _language(_Guest(accept="*")) == "cs"
+    assert _language(_Guest(accept=",,")) == "cs"
+    # A Czech or Slovak phone gets Czech, whatever it lists second.
+    assert _language(_Guest(accept="cs-CZ,cs;q=0.9,en;q=0.8")) == "cs"
+    assert _language(_Guest(accept="sk-SK,sk;q=0.9,cs;q=0.8")) == "cs"
+    # A language we do not speak still falls back to the public default, and a
+    # guest's own explicit choice beats the phone.
+    assert _language(_Guest(lang="de")) == "cs"
+    assert _language(_Guest(cookie="de")) == "cs"
+    assert _language(_Guest(lang="en", accept="cs-CZ")) == "en"
+    assert _language(_Guest(cookie="en", accept="cs-CZ")) == "en"

@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_welcome, next_action, property_identity, sync_calendars_button with context %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, property_identity, sync_calendars_button with context %}
 
 {% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
   {% if items %}
@@ -59,7 +59,9 @@
 {% set header_actions %}
   <div class="page-toolbar">
     <div class="page-toolbar-row">
-      {{ sync_calendars_button(return_to='/', last_sync=last_sync) }}
+      {% if feed_count %}
+        {{ sync_calendars_button(return_to='/', last_sync=last_sync) }}
+      {% endif %}
       {% if demo_loaded %}
         <form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">
           <button class="btn ghost" type="submit">{{ t('demo.clear') }}</button>
@@ -89,11 +91,9 @@
   {% endif %}
 {% else %}
 
-  {% if onboarding and onboarding.finished and not onboarding.dismissed %}
-    {{ onboarding_finish(onboarding) }}
-  {% else %}
-    {{ onboarding_banner(onboarding) }}
-  {% endif %}
+  {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
+  {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
+  {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
 
   {% if focus %}
     {% set f_res = focus.reservation %}
@@ -141,7 +141,13 @@
     </section>
   {% endif %}
 
-  {% if setup_warnings %}
+  {% if finish_card_showing and focus_is_urgent %}
+    {{ onboarding_finish_strip(onboarding) }}
+  {% endif %}
+
+  {{ onboarding_banner(onboarding) }}
+
+  {% if setup_warnings and not banner_showing %}
   <div class="panel">
     <div class="section-heading" style="margin-top:0">
       <h2>{{ t('dashboard.setup.title') }}</h2><a href="/apartments">{{ t('dashboard.setup.view_properties') }}</a>
@@ -161,8 +167,15 @@
 
   {% if not rows %}
   <div class="panel empty">
-    <p>{{ t('dashboard.empty.no_stays') }}</p>
-    {{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}
+    {% if feed_count %}
+      <p>{{ t('dashboard.empty.no_stays') }}</p>
+      {{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}
+    {% else %}
+      <p>{{ t('dashboard.empty.no_feed') }}</p>
+      <div class="actions">
+        <a class="btn primary" href="/apartments/{{ apartments[0].id }}#calendars">{{ t('dashboard.empty.connect_calendar') }}</a>
+      </div>
+    {% endif %}
   </div>
   {% else %}
     <section id="needs-action">
@@ -184,6 +197,11 @@
       <p class="small muted">{{ t('dashboard.reporting_modes_body') }}</p>
       {% if minutes_saved %}<p class="small muted">{{ t('dashboard.minutes_saved', minutes=minutes_saved) }}</p>{% endif %}
     </details>
+  {% endif %}
+
+  {# Nothing is overdue, so the finish card can have the room it deserves. #}
+  {% if finish_card_showing and not focus_is_urgent %}
+    {{ onboarding_finish(onboarding) }}
   {% endif %}
 {% endif %}
 {% endblock %}

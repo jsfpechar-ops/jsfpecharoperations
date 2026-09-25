@@ -306,8 +306,14 @@ def reservation_progress(reservation) -> Dict[str, Any]:
     incomplete = [g for g in guests if g["id"] not in complete_ids]
 
     missing = None
+    # People nobody has registered at all, as opposed to a guest who started
+    # the form and has not finished it. Only this count makes "send the link to
+    # the others / lower the guest count" the right advice; an unsigned guest
+    # needs the signature hint instead.
+    not_registered = None
     if expected is not None:
         missing = max(0, expected - len(complete))
+        not_registered = max(0, expected - len(guests))
 
     if failed:
         status = "failed"
@@ -331,6 +337,7 @@ def reservation_progress(reservation) -> Dict[str, Any]:
         "expected": expected,
         "filled": len(complete),
         "missing": missing,
+        "not_registered": not_registered,
         "incomplete": incomplete,
         "reportable": reportable,
         "unverified": unverified,
@@ -437,10 +444,19 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
     if auto_immediate:
         send_hint_key = "hint.auto_immediate"
-    elif not has_pending and progress["status"] in ("not_required", "reported"):
+    elif not has_pending and progress["status"] == "reported":
+        # "Nothing is subject to the duty" contradicted the stay's own metric
+        # ("2 reported · 2 subject to the duty") on every reported stay.
+        send_hint_key = "hint.all_reported"
+    elif not has_pending and progress["status"] == "not_required":
         send_hint_key = "hint.nothing_duty"
     elif not progress.get("guests"):
         send_hint_key = "hint.awaiting_guest"
+    elif progress["status"] == "incomplete" and progress.get("not_registered"):
+        # A stay short of the people it expects is not the same problem as a
+        # guest who has not signed: the fix is a number, not the guest. This
+        # outranks the branches below because it names the unregistered people.
+        send_hint_key = "hint.missing_guests"
     elif not has_pending:
         unsigned_foreign = [
             guest
@@ -1321,7 +1337,13 @@ def submit_for_apartment(
     from . import demo
 
     if demo.is_demo_apartment(apartment):
-        return [{"state": "noop", "error": "Demo data is for preview only and is never sent to the police."}]
+        return [
+            {
+                "state": "noop",
+                "error": "Demo data is for preview only and is never sent to the police.",
+                "error_key": "flash.error.demo_preview_only",
+            }
+        ]
 
     ap_dict = dict(apartment)
     ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])

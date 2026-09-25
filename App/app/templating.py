@@ -17,12 +17,14 @@ from . import (
     config,
     deadlines,
     host_i18n,
+    i18n,
     onboarding,
     operator,
     reporting,
     security,
     seo,
     validation,
+    validation_i18n,
 )
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
@@ -41,6 +43,31 @@ def _weekday(value: Optional[str]) -> str:
 def _nights(date_from: Optional[str], date_to: Optional[str]) -> int:
     start, end = validation.parse_iso_date(date_from), validation.parse_iso_date(date_to)
     return (end - start).days if start and end else 0
+
+
+def _nights_key(count: int) -> str:
+    """One/few/many already lives in ``alerts``; this only renames its suffix.
+
+    Czech picks its form from the count and English follows the same rule, so
+    the decision is shared rather than written twice. A-13 fixes the guest key
+    names, so ``nights.one`` becomes ``night_one``.
+    """
+    suffix = alerts._plural_key("night", count).rpartition(".")[2]
+    return {
+        "one": "night_one",
+        "few": "nights_few",
+    }.get(suffix, "nights_many")
+
+
+@pass_context
+def _nights_label(context, date_from: Optional[str], date_to: Optional[str]) -> str:
+    """The length of the stay, in words: "1 night" but "3 noci" and "5 nocí"."""
+    count = _nights(date_from, date_to)
+    request = context.get("request")
+    lang = context.get("lang") or (
+        host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    )
+    return i18n.translator(lang)(_nights_key(count), n=count)
 
 
 def _from_json(value: Optional[str]) -> Any:
@@ -76,10 +103,24 @@ def _template_time_left(context, check_in) -> str:
     return host_i18n.translate(lang, key, n=amount)
 
 
+@pass_context
+def _template_validation_message(context, message: str) -> str:
+    """A validation sentence in the host's language.
+
+    ``validation.py`` writes these in English because that is the language the
+    code reads in; the host reads them in the property banner and on the guest
+    cards. Translating at the point of display keeps one copy of the sentence.
+    """
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    return validation_i18n.localize(message, lang)
+
+
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["from_json"] = _from_json
 templates.env.globals["t"] = _template_translate
+templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals.update(
     app_version=__version__,
     operator=operator.details,
@@ -88,6 +129,7 @@ templates.env.globals.update(
     public_base_url=config.PUBLIC_BASE_URL,
     turnstile_site_key=config.TURNSTILE_SITE_KEY if config.TURNSTILE_ENABLED else "",
     describe_time_left=_template_time_left,
+    validation_message=_template_validation_message,
     urgency=deadlines.urgency,
     reporting_deadline=deadlines.reporting_deadline,
     deadline_anchor=reporting.reservation_deadline_anchor,
@@ -97,6 +139,7 @@ templates.env.globals.update(
     display_birth_date=validation.display_birth_date,
     compose_residence=validation.compose_residence,
     nights=_nights,
+    nights_label=_nights_label,
     parse_iso_date=validation.parse_iso_date,
     today=lambda: date.today(),
     now=lambda: datetime.now(),

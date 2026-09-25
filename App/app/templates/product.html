@@ -37,25 +37,8 @@
   </script>
 </head>
 <body>
-  <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
-  <header class="landing-header">
-    <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
-      <img src="/static/ubyhost-logo.png" alt="UbyHost">
-    </a>
-    <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
-      <a href="/?lang={{ lang }}#product">{{ t('landing.nav.features') }}</a>
-      <a href="/jak-to-funguje?lang={{ lang }}" aria-current="page">{{ t('landing.nav.how') }}</a>
-      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
-      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">{{ t('landing.nav.faq') }}</a>
-    </nav>
-    <div class="landing-actions">
-      <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
-        <a href="/jak-to-funguje?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}">CZ</a>
-        <a href="/jak-to-funguje?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}">EN</a>
-      </div>
-      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
-    </div>
-  </header>
+{% set active = 'how' %}{% set switch_path = '/jak-to-funguje' %}
+{% include "_public_header.html" %}
 
   <main id="content" class="product-details">
     <header class="product-details-hero">
@@ -129,17 +112,6 @@
     </section>
   </main>
 
-  <footer class="landing-footer">
-    <a class="landing-brand" href="/?lang={{ lang }}"><img src="/static/ubyhost-logo.png" alt="UbyHost"></a>
-    <nav aria-label="{{ t('legal.footer_nav_label') }}">
-      <a href="/legal?lang={{ lang }}">{{ t('legal.footer_short') }}</a>
-      <a href="/terms?lang={{ lang }}">{{ t('terms.footer_short') }}</a>
-      <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
-      <a href="/dpa?lang={{ lang }}">{{ t('dpa.footer_short') }}</a>
-      <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
-      <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">UbyPort</a>
-    </nav>
-    <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>
-  </footer>
+{% include "_public_footer.html" %}
 </body>
 </html>

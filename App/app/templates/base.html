@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/app.css?v=20260921a">
+  <link rel="stylesheet" href="/static/app.css?v=20260922a">
   <link rel="stylesheet" href="/static/components.css?v=20260921a">
 </head>
 <body class="layout-host {{ 'no-nav' if not (show_nav | default(true)) }}">
@@ -172,8 +172,10 @@
 </main>
 
 {% if open_alerts %}
+{% set alert_cards = open_alerts[:2] %}
+{% set alert_extra = open_alerts|length - alert_cards|length %}
 <aside class="notification-stack" aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
-  {% for alert in open_alerts %}
+  {% for alert in alert_cards %}
     <article class="notification-bubble {{ alert.level }}" data-notification>
       {% if alert.reservation_id %}
         <a class="notification-link" href="/reservations/{{ alert.reservation_id }}">
@@ -195,6 +197,9 @@
       </form>
     </article>
   {% endfor %}
+  {% if alert_extra %}
+    <a class="notification-more" href="/#needs-action">{{ t('notification.more', n=alert_extra) }}</a>
+  {% endif %}
 </aside>
 {% endif %}
 

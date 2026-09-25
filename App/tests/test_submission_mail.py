@@ -9,7 +9,9 @@ markup is escaped, light-mode and branded as ``docs/LOGO.md`` requires.
 from __future__ import annotations
 
 import base64
+import html
 import json
+import re
 from datetime import date, timedelta
 
 import pytest
@@ -18,6 +20,11 @@ from app import config, db, host_i18n, mail, mail_notify, reporting
 from app.ubyport.client import SubmissionResult, UbyportTransportError
 
 RECIPIENT = "host@mailnotify.test"
+
+# A key the host catalogue is missing renders as its own name, because
+# ``host_i18n.lookup`` falls back to the key. Requiring at least two dots keeps
+# ordinary prose ("…by e-mail.") out of the match.
+RAW_KEY = re.compile(r"\bmail\.[a-z0-9_]+(?:\.[a-z0-9_]+)+")
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -207,6 +214,26 @@ def test_a_transport_failure_emails_the_host(monkeypatch):
     explanation = "could not deliver the guest report"
     assert explanation in payload["text"]
     assert explanation in payload["html"]
+    # The transport reason is its own key. If it is missing from the host
+    # catalogue the host reads the key itself under "What UbyPort reported".
+    assert "mail.submission_problem.reason_transport" not in payload["text"]
+    assert "mail.submission_problem.reason_transport" not in payload["html"]
+    assert "The connection to UbyPort failed" in payload["text"]
+    assert "The connection to UbyPort failed" in payload["html"]
+    # UX-28: a transport failure gets its own subject, label and next steps.
+    # UbyPort never saw the report, so nothing may be attributed to UbyPort and
+    # the host must not be sent to check guest data they cannot fix.
+    assert rows[0]["subject"].startswith("Report for ")
+    assert "retrying automatically" in rows[0]["subject"]
+    assert "did not accept" not in rows[0]["subject"]
+    for part in ("text", "html"):
+        assert "What happened" in payload[part]
+        assert "What UbyPort reported" not in payload[part]
+        assert "Nothing to do now" in payload[part]
+        assert "check the guest's nationality" not in payload[part]
+    for part in ("text", "html"):
+        leaked = RAW_KEY.search(payload[part])
+        assert leaked is None, f"{part} shows a raw key: {leaked.group(0)}"
     # The raw exception is deliberately not host copy: it belongs in the alert
     # and on the submission, where someone can act on the detail, not in a
     # message the host reads on a phone.
@@ -365,6 +392,23 @@ def test_a_broken_composer_does_not_fail_the_filing(monkeypatch):
 
     assert result["state"] == "error", "a notification must never decide the filing"
     assert _outbox() == []
+
+
+def test_a_rejected_report_keeps_the_rejected_wording(monkeypatch):
+    """UX-28 must not leak the transport copy into a real rejection."""
+    apartment, _reservation, _guest_id = _seed("mailnotify10")
+    _submit(monkeypatch, apartment, client=_RejectingClient())
+
+    row = _outbox()[0]
+    assert "did not accept your report" in row["subject"]
+    assert "retrying automatically" not in row["subject"]
+    payload = _payload(row)
+    for part in ("text", "html"):
+        rendered = html.unescape(payload[part])
+        assert "What UbyPort reported" in rendered
+        assert "What happened" not in rendered
+        assert "check the guest's nationality" in rendered
+        assert "Nothing to do now" not in rendered
 
 
 def test_the_console_backend_keeps_the_html_part(monkeypatch):

@@ -34,10 +34,11 @@ def _ensure_admin() -> int:
 
 
 def _browser() -> TestClient:
+    """Sign in as an English host; the assertions below read the English UI."""
     _ensure_admin()
     client = TestClient(app)
     response = client.post(
-        "/login",
+        "/login?lang=en",
         data={"username": ADMIN_USERNAME, "password": PASSWORD},
         follow_redirects=False,
     )
@@ -282,6 +283,66 @@ def test_reservation_detail_shows_direct_guest_link():
         assert 'class="panel stay-command-panel"' in page.text
         assert page.text.count('name="expected_guests_override"') == 1
         assert 'href="/guest-links"' in page.text
+    finally:
+        _cleanup()
+
+
+COPY_LINK_PRIMARY = 'class="btn primary" type="button" data-copy="stay-link"'
+
+
+def test_a_cancelled_stay_says_so_at_the_top_and_stops_asking_for_the_link():
+    """A cancelled stay looked exactly like a live one.
+
+    The only trace was the pre-opened Stay-settings panel at the bottom of the
+    page, so a host could chase a guest who had already cancelled.
+    """
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        db.update("reservation", stays[0], {"status": "cancelled"})
+        page = _browser().get(f"/reservations/{stays[0]}")
+        assert page.status_code == 200
+        assert "This stay is cancelled" in page.text
+        assert COPY_LINK_PRIMARY not in page.text
+        assert "Reporting deadline" not in page.text
+        # The rest of the page is still there to work with.
+        assert "Guest forms" in page.text
+    finally:
+        _cleanup()
+
+
+def test_an_ignored_stay_says_what_ignored_means():
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        db.update("reservation", stays[0], {"status": "ignored"})
+        page = _browser().get(f"/reservations/{stays[0]}")
+        assert "Marked as not a guest stay" in page.text
+        assert COPY_LINK_PRIMARY not in page.text
+    finally:
+        _cleanup()
+
+
+def test_an_archived_stay_says_so():
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        db.update("reservation", stays[0], {"archived_at": db.utcnow()})
+        page = _browser().get(f"/reservations/{stays[0]}")
+        assert "Archived — hidden from your daily work." in page.text
+        assert COPY_LINK_PRIMARY not in page.text
+        assert "Reporting deadline" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_a_live_stay_keeps_its_deadline_and_copy_link():
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        page = _browser().get(f"/reservations/{stays[0]}")
+        assert "This stay is cancelled" not in page.text
+        assert "Marked as not a guest stay" not in page.text
+        assert "Archived — hidden from your daily work." not in page.text
+        assert COPY_LINK_PRIMARY in page.text
+        assert "Reporting deadline" in page.text
+        assert 'class="panel tight detail-hero inactive"' not in page.text
     finally:
         _cleanup()
 

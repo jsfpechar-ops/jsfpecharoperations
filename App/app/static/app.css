@@ -437,6 +437,52 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
 }
 .no-nav .panel { border-radius: var(--radius-lg); padding: 24px; }
 
+/* --- public legal documents (Terms, Privacy, DPA) ---------------------- */
+
+/* Contents. One clause is a section with a hairline above it, not a card:
+   twenty-seven cards read as twenty-seven separate documents. */
+.legal-toc {
+  margin: 22px 0 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.legal-toc-title { margin: 0 0 10px; font-weight: 660; color: var(--ink); }
+.legal-toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 32px; }
+.legal-toc li { margin: 0 0 6px; font-size: var(--text-sm); }
+.legal-toc a { color: var(--ink-secondary); }
+.legal-toc a:hover { color: var(--brand-ink); }
+/* A wide screen has room for the list; a phone gets the disclosure instead.
+   The two are the same list, and only the visible one is in the a11y tree. */
+.legal-toc-narrow { display: none; }
+
+.legal-section { padding: 26px 0; border-top: 1px solid var(--border); }
+.legal-section:first-of-type { border-top: 0; }
+.legal-section > h2:first-child { margin-top: 0; }
+
+/* 13px grey was designed for secondary UI notes, not for 17,000 characters of
+   contract. Fine print is exactly the impression the brief forbids. */
+.terms-section {
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--ink-secondary);
+  max-width: 70ch;
+}
+
+.legal-back { margin: 14px 0 0; font-size: var(--text-sm); }
+.legal-back a { color: var(--ink-muted); text-decoration: none; }
+.legal-back a:hover { color: var(--brand-ink); text-decoration: underline; }
+
+@media (max-width: 700px) {
+  .legal-toc { padding: 4px 14px; }
+  .legal-toc ol { columns: 1; }
+  .legal-toc-wide { display: none; }
+  .legal-toc-narrow { display: block; }
+  .legal-toc-narrow > summary { min-height: 44px; font-weight: 660; color: var(--ink); }
+  .legal-toc-narrow[open] > summary { margin-bottom: 4px; }
+}
+
 /* --- type -------------------------------------------------------------- */
 
 h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.035em; margin: 0 0 6px; font-weight: 700; color: var(--ink); }
@@ -536,6 +582,66 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 .banner.warning { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 25%, transparent); color: var(--warn); }
 .banner.info { background: var(--brand-soft); border-color: rgba(31, 86, 214, 0.18); color: var(--brand-ink); }
 .banner a { color: inherit; font-weight: 650; }
+
+/* Readiness checklist: the two lists that replace the old run-on red banner at
+   the top of the property form. */
+.readiness {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.readiness-group {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.readiness-title {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.readiness-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.readiness-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--muted);
+}
+.readiness-item.is-done { color: var(--ink-2); }
+.readiness-mark { font-weight: 700; }
+.readiness-item.is-done .readiness-mark { color: var(--ok); }
+.readiness-item:not(.is-done) .readiness-mark { color: var(--bad); }
+.readiness-item a { color: var(--brand); font-weight: 650; }
+.readiness-why { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+.readiness-ready {
+  margin: 10px 0 8px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ok);
+}
+.req-report {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: none;
+  white-space: nowrap;
+}
 
 .toast-stack {
   position: fixed;
@@ -672,16 +778,30 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 
 /* Alerts behave like phone notifications: they arrive above the page instead
    of moving it, the whole message opens the relevant item, and × dismisses it
-   without a navigation. */
+   without a navigation. They sit bottom right so the page's own primary action
+   keeps the top right corner, and above the toast layer so a dismissal toast
+   never hides the warning Appendix 5 requires. */
 .notification-stack {
   position: fixed;
-  top: 14px;
   right: 14px;
-  z-index: 70;
+  bottom: 20px;
+  z-index: calc(var(--z-toast) + 10);
   display: grid;
   gap: 8px;
   width: min(340px, calc(100vw - 24px));
   pointer-events: none;
+}
+.notification-more {
+  pointer-events: auto;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+  font-size: 13px;
+  font-weight: 650;
+  text-align: center;
+  text-decoration: none;
 }
 .notification-bubble {
   position: relative;
@@ -1404,6 +1524,7 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   overflow: hidden;
 }
 .detail-metric { padding: 18px 20px; background: var(--surface); }
+.detail-hero.inactive { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
 .detail-metric + .detail-metric { border-left: 1px solid var(--line); }
 .metric-label { color: var(--muted); font-size: 12.5px; font-weight: 600; }
 .metric-value { font-size: 21px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink); margin-top: 6px; }
@@ -1684,7 +1805,7 @@ details.raw pre {
   body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
   .page-header { align-items: flex-start; flex-direction: column; }
   .page-header { top: 59px; margin: -20px -16px 20px; padding: 16px; }
-  .detail-hero { grid-template-columns: 1fr; }
+  .detail-hero, .detail-hero.inactive { grid-template-columns: 1fr; }
   .detail-metric + .detail-metric { border-left: 0; border-top: 1px solid var(--line); }
   h1 { font-size: 25px; }
   .no-nav .wrap { padding-top: 16px; }
@@ -1702,7 +1823,19 @@ details.raw pre {
 /* Stacked table rows: on a phone a row becomes a small card, so the daily
    work stays usable without pinch-zooming. */
 @media (max-width: 720px) {
-  .notification-stack { top: 10px; right: 10px; width: calc(100vw - 20px); }
+  /* On a phone the stack would cover the app bar and the page title, so it
+     becomes one full-width strip tucked directly under the app bar. */
+  .notification-stack {
+    top: 59px;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    gap: 0;
+  }
+  .notification-bubble,
+  .notification-more { border-radius: 0; border-left: 0; border-right: 0; box-shadow: none; }
+  .notification-bubble + .notification-bubble,
+  .notification-more { border-top: 0; }
   .pagination { justify-content: space-between; }
   .table-cards thead { display: none; }
   .col-name, .col-address, .col-purpose { min-width: 0; }
@@ -1958,6 +2091,22 @@ details.raw pre {
 @media (max-width: 720px) {
   .onboarding-finish-share { grid-template-columns: 1fr; }
 }
+
+/* The finish card as one line, so an overdue stay can still come first. */
+.onboarding-finish-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--green) 28%, var(--line));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--green-bg) 45%, var(--surface));
+  font-size: 14px;
+}
+.onboarding-finish-strip a { font-weight: 650; }
 
 .onboarding-steps {
   display: grid;
@@ -2287,6 +2436,35 @@ details.raw pre {
   margin: 8px 0 0;
   font-size: 13px;
   line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Help that must stay reachable without competing with the main action. */
+.auth-help {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.auth-help > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--brand);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-help[open] > summary { margin-bottom: 8px; }
+.auth-help .auth-form { margin-top: 12px; }
+/* Inside a form the help belongs to the field above it, so the form's own gap
+   is the only space needed. */
+.auth-form .auth-help { margin-top: 0; }
+
+.auth-help-note {
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
   color: var(--muted);
 }
 
@@ -2938,6 +3116,21 @@ label { color: var(--ink-secondary); font-weight: 620; }
 .auth-foot-legal { margin-top: 16px; }
 .auth-alert { border: 1px solid color-mix(in srgb, var(--bad) 32%, transparent); box-shadow: none; }
 
+/* A host reading this on a phone cannot scan a QR code shown on that phone, so
+   below 900px the "open in app" button comes first and the QR follows it. */
+.auth-setup-media { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.auth-setup-open { width: 100%; justify-content: center; text-align: center; }
+.auth-setup-key { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.auth-setup-key code {
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--canvas-subtle);
+  font-size: 13px;
+  letter-spacing: .02em;
+  word-break: break-word;
+}
+
 .auth-hero {
   position: relative;
   overflow: hidden;
@@ -3025,6 +3218,7 @@ label { color: var(--ink-secondary); font-weight: 620; }
 
 @media (max-width: 900px) {
   .auth-layout { display: block; min-height: 100vh; padding: 14px; }
+  .auth-setup-media { flex-direction: column-reverse; }
   .auth-panel {
     width: min(100%, 600px);
     margin: 0 auto;
