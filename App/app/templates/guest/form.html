@@ -147,9 +147,9 @@
 
     <div class="g-field" id="parent-doc-wrap" style="display:none">
       <label for="parent_doc_number">{{ t('parent_doc') }}</label>
-      <input type="text" id="parent_doc_number" name="parent_doc_number" maxlength="30"
+      <input class="{{ bad('parent_doc_number') }}" {{ invalid('parent_doc_number') }} type="text" id="parent_doc_number" name="parent_doc_number" maxlength="30"
              autocapitalize="characters" value="{{ values.get('parent_doc_number', '') }}">
-      {{ err_for('note') }}
+      {{ err_for('parent_doc_number') }}
     </div>
 
     <div class="g-field">
