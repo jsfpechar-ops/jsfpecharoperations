@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import re
+from pathlib import Path
 from urllib.parse import quote
 
 import pyotp
@@ -133,6 +134,71 @@ def test_a_re_post_keeps_the_codes_already_written_down(host):
             (USERNAME,),
         )["recovery_codes_hash"]
         == stored
+    )
+
+
+def _recovery_page(host):
+    """Enable 2FA and return the one-shot recovery-codes page."""
+    code = pyotp.TOTP(_secret(host)).now()
+    page = host.post("/account/2fa/setup", data={"code": code}, follow_redirects=False)
+    assert page.status_code == 200, page.text
+    return page
+
+
+def _codes(page) -> list[str]:
+    return re.findall(r"<code>([^<]+)</code>", page.text)
+
+
+def test_the_recovery_page_offers_to_copy_every_code_at_once(host):
+    """Eight codes had to be selected by hand, one <code> at a time, on a phone."""
+    page = _recovery_page(host)
+    codes = _codes(page)
+    assert len(codes) == 8
+    assert 'data-copy="recovery-codes"' in page.text
+    assert host_i18n.translate("en", "account.2fa.recovery_copy_all") in _body(page)
+    assert 'data-copied-label="{}"'.format(
+        host_i18n.translate("en", "common.copied")
+    ) in page.text
+
+    container = page.text.split('id="recovery-codes">', 1)[1].split("</div>", 1)[0]
+    # The copy handler reads the container's text, so the codes have to be there
+    # one per line, not run together into a single unusable string.
+    assert re.sub(r"<[^>]+>", "", container) == "\n".join(codes)
+    # The grid used to be inline styles on a generic .panel.
+    assert "style=" not in container
+    assert 'class="auth-codes"' in page.text
+
+
+def test_the_recovery_page_can_be_printed_without_the_page_chrome(host):
+    page = _recovery_page(host)
+    assert "data-print" in page.text
+    assert host_i18n.translate("en", "account.2fa.recovery_print") in _body(page)
+    assert 'class="auth-submit auth-submit-link"' in page.text
+
+    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "app.css").read_text(
+        encoding="utf-8"
+    )
+    printed = css.split("@media print {", 1)[1]
+    assert ".auth-codes-actions, .auth-submit { display: none !important; }" in printed
+    assert ".auth-codes { break-inside: avoid;" in printed
+    assert ".auth-hero, .auth-brand, .auth-lang-switch" in printed
+
+
+def test_the_recovery_copy_is_the_wording_the_audit_signed_off(host):
+    page = _recovery_page(host)
+    assert (
+        "If you ever lose the phone with your authenticator app, each of these "
+        "codes lets you log in once. Keep them in a password manager or print them."
+    ) in _body(page)
+    assert host_i18n.translate("cs", "account.2fa.recovery_lede") == (
+        "Pokud někdy přijdete o telefon s autentizační aplikací, každý z těchto "
+        "kódů vás jednou přihlásí. Uložte si je do správce hesel nebo si je vytiskněte."
+    )
+    assert host_i18n.translate("en", "account.2fa.recovery_once") == (
+        "Save them before you leave this page — they can't be shown again."
+    )
+    assert host_i18n.translate("cs", "account.2fa.recovery_once") == (
+        "Uložte si je, než stránku opustíte — znovu je zobrazit nelze."
     )
 
 
