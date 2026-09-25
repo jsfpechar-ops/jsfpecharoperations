@@ -914,6 +914,7 @@ def build_claim_link(
     dates: str,
     link: str,
     resend: bool = False,
+    stay_complete: bool = False,
     host: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """The magic-link mail: the guest's way into the registration form."""
@@ -928,7 +929,11 @@ def build_claim_link(
         lang, "mail_claim_expiry_resend" if resend else "mail_claim_expiry"
     )
     next_label = _guest_text(lang, "mail_claim_next_label")
-    next_body = _guest_text(lang, "mail_claim_next_body")
+    # A link resent for a stay whose forms are all in is not an invitation to
+    # fill anything in, so it must not promise a form.
+    next_body = _guest_text(
+        lang, "mail_claim_next_done" if stay_complete else "mail_claim_next_body"
+    )
     fallback = _guest_text(lang, "mail_link_fallback")
     preheader = _guest_text(
         lang, "mail_claim_resend_preheader" if resend else "mail_claim_preheader"

@@ -513,6 +513,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "It takes about two minutes per guest and works on a phone. If you're "
             "asked for a PIN, use the one from your host's message."
         ),
+        "mail_claim_next_done": (
+            "Everyone is already registered — the link just opens your stay page."
+        ),
         "mail_completion_subject": (
             "You're registered for %(property)s — nothing else to do"
         ),
@@ -1068,6 +1071,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Vyplníte údaje ke každému hostovi tohoto pobytu a poté je podepíšete. "
             "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu. "
             "Pokud se stránka zeptá na PIN, použijte ten ze zprávy od hostitele."
+        ),
+        "mail_claim_next_done": (
+            "Všichni už jsou zaregistrovaní – odkaz jen otevře stránku vašeho pobytu."
         ),
         "mail_completion_subject": (
             "Registrace hotová – %(property)s. Nic dalšího nemusíte dělat"

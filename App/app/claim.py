@@ -188,6 +188,28 @@ def _resend_too_soon(claim) -> bool:
     return (now - last).total_seconds() < RESEND_COOLDOWN_SECONDS
 
 
+def _stay_forms_complete(reservation) -> bool:
+    """True when every declared guest has a finished form [E-25].
+
+    A link resent for such a stay opens the stay page; it does not lead back
+    into a form, so the mail must not promise one. Any doubt falls back to the
+    ordinary copy: the guest losing the link is the failure that matters.
+    """
+    try:
+        progress = reporting.reservation_progress(reservation)
+    except Exception:
+        log.exception(
+            "claim_progress_failed reservation_id=%s",
+            (reservation["id"] if reservation is not None else None),
+        )
+        return False
+    return (
+        progress["expected"] is not None
+        and progress["filled"] >= progress["expected"]
+        and not progress["incomplete"]
+    )
+
+
 def start_claim(
     reservation,
     apartment,
@@ -276,6 +298,7 @@ def start_claim(
         lang=lang,
         link=link,
         resend=kind == "claim_resend",
+        stay_complete=_stay_forms_complete(reservation),
     )
     # The body is stored with the marker standing in for the secret and the
     # secret beside it, encrypted, so the queued message holds a link the guest
@@ -309,6 +332,7 @@ def _guest_mail_content(
     stay_url: Optional[str] = None,
     filled: int = 0,
     expected: Optional[int] = None,
+    stay_complete: bool = False,
 ) -> Dict[str, str]:
     """Compose a guest message, falling back to plain text on any failure.
 
@@ -365,6 +389,7 @@ def _guest_mail_content(
                 dates=dates,
                 link=link or "",
                 resend=resend,
+                stay_complete=stay_complete,
                 host=host,
             )
         if kind == "completion":
