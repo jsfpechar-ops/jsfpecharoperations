@@ -516,8 +516,10 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["data_controller_entity_id"] = _form_int(
         form, "data_controller_entity_id"
     )
-    mode = _form_str(form, "automation_mode", "scheduled")
-    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
+    # A brand-new property starts on Manual: a first-time host should see one
+    # send themselves before anything leaves for the police.
+    mode = _form_str(form, "automation_mode", "manual")
+    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "manual"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
