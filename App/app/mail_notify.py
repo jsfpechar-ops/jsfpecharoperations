@@ -383,6 +383,22 @@ def _block_link(url: str, label: str) -> str:
     )
 
 
+def _block_quiet_link(url: str, label: str) -> str:
+    """A labelled link with no button around it.
+
+    The receipt is the second destination in this mail and the job the host
+    actually has to do is the first, so the receipt drops to a plain underlined
+    link: the same action colour as every other link, but no 600 weight and no
+    coral block competing with the button above it.
+    """
+    return (
+        f'<tr><td style="padding:14px 24px 0 24px;">'
+        f'<div style="font:400 14px/1.5 {_FONT};color:{INK_SECONDARY};">'
+        f'<a href="{_esc(url)}" style="color:{BRAND_ACTION};text-decoration:underline;">'
+        f"{_esc(label)}</a></div></td></tr>"
+    )
+
+
 class _FooterLink:
     """One tappable channel in a footer line.
 
@@ -614,6 +630,7 @@ def build_submission_problem(
         ),
         "html": _build_html(
             property_name=property_name,
+            transport=transport,
             intro=intro,
             preheader=preheader,
             reason_label=reason_label,
@@ -681,6 +698,7 @@ def _button(url: str, label: str) -> str:
 def _build_html(
     *,
     property_name: str,
+    transport: bool,
     intro: str,
     preheader: str,
     reason_label: str,
@@ -699,17 +717,31 @@ def _build_html(
     heading = _text(lang, "mail.submission_problem.heading")
     action_stay = _text(lang, "mail.submission_problem.action_stay")
 
+    # One stay means one job, so the coral button opens it and the receipt
+    # steps back to a quiet link. With several stays there is no single stay to
+    # promote, so each row keeps its own link and the receipt stays the button.
+    # A transport failure has no job to do yet, so it keeps the receipt button.
+    # Either way the row itself stays: it is what names the guest the mail is
+    # about.
+    one_stay = len(stay_urls) == 1 and not transport
     stay_rows = ""
     for stay, url in stay_urls:
+        stay_link = (
+            ""
+            if one_stay
+            else (
+                f'<div style="padding:6px 0 0 0;"><a href="{_esc(url)}" '
+                f"style=\"font:600 14px/1.4 {_FONT};color:{BRAND_ACTION};"
+                f'text-decoration:underline;">{_esc(action_stay)}</a></div>'
+            )
+        )
         stay_rows += (
             f'<tr><td style="padding:0 0 10px 0;border-bottom:1px solid {LINE};">'
             f'<div style="font:600 15px/1.4 {_FONT};color:{INK};">'
             f"{_esc(_stay_label(stay, lang))}</div>"
             f'<div style="font:400 14px/1.5 {_FONT};color:{INK_SECONDARY};">'
             f"{_esc(stay['property_name'])}</div>"
-            f'<div style="padding:6px 0 0 0;"><a href="{_esc(url)}" '
-            f"style=\"font:600 14px/1.4 {_FONT};color:{BRAND_ACTION};text-decoration:underline;"
-            f'">{_esc(action_stay)}</a></div>'
+            f"{stay_link}"
             f"</td></tr>"
             f'<tr><td style="height:10px;line-height:10px;font-size:0;">&nbsp;</td></tr>'
         )
@@ -733,7 +765,11 @@ def _build_html(
             f"</td></tr>"
         )
 
-    if submission_url:
+    if one_stay:
+        blocks.append(_block_button(stay_urls[0][1], action_stay))
+        if submission_url:
+            blocks.append(_block_quiet_link(submission_url, action_receipt))
+    elif submission_url:
         blocks.append(_block_button(submission_url, action_receipt))
 
     return _shell(
