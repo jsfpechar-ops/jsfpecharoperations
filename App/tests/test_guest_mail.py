@@ -41,8 +41,10 @@ NEW_GUEST_KEYS = (
     "mail_claim_next_label",
     "mail_claim_next_body",
     "mail_completion_subject",
+    "mail_completion_subject_fee",
     "mail_completion_heading",
     "mail_completion_intro",
+    "mail_completion_intro_fee",
     "mail_completion_action",
     "mail_completion_note",
     "mail_reminder_guest_subject",
@@ -412,6 +414,199 @@ def test_the_completion_mail_stops_blaming_ubyport():
         content = _completion_content(lang)
         assert "UbyPort" not in content["html"], lang
         assert "UbyPort" not in content["text"], lang
+
+
+# --- E-22 [UX-73]: the money slot -------------------------------------------
+
+
+def _fee_money(**overrides):
+    """What PLAN_POPLATEK will hand the money slot, so the layout is proven now."""
+    money = {
+        "amount": "400",
+        "title": "Local stay fee",
+        "rows": [
+            ("Total", "400 K\u010d"),
+            ("IBAN", "CZ6508000000192000145399", True),
+            ("Variable symbol", "1201001", True),
+        ],
+        "action": (f"{config.PUBLIC_BASE_URL}/pay/fee-token", "Pay 400 K\u010d online"),
+        "note": "You can also pay in cash on arrival.",
+    }
+    money.update(overrides)
+    return money
+
+
+def _fee_completion(lang: str = "en", **overrides):
+    return mail_notify.build_completion(
+        lang=lang,
+        property_name="Guest Mail Flat",
+        dates="2026-01-05 \u2013 2026-01-08",
+        stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
+        host=_host(),
+        money=_fee_money(**overrides),
+    )
+
+
+def test_the_money_slot_prints_one_panel_in_the_guest_order():
+    """The fee must not scatter four uppercase facts through the receipt."""
+    html_part = html.unescape(_fee_completion()["html"])
+    # One bordered sub-card, not four loose facts: the panel is the only thing
+    # on the canvas colour inside a 12px rounded, bordered box.
+    panel = (
+        f"background:{mail_notify.CANVAS};border:1px solid {mail_notify.LINE};"
+        "border-radius:12px;padding:18px 20px;"
+    )
+    assert html_part.count(panel) == 1
+    assert "text-transform:uppercase" not in html_part
+    # Title, then the rows in the order they were handed over.
+    positions = [
+        html_part.index("Local stay fee"),
+        html_part.index("Total"),
+        html_part.index("CZ6508000000192000145399"),
+        html_part.index("1201001"),
+    ]
+    assert positions == sorted(positions)
+    # The values a guest copies by hand are monospace.
+    assert mail_notify._MONO_FONT in html_part
+
+
+def test_the_money_slot_keeps_the_stay_link_and_the_closing_note_after_it():
+    """Slots run status, money, secondary links, closing note, footer."""
+    html_part = html.unescape(_fee_completion()["html"])
+    stay = f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1"
+    closing = i18n.STRINGS["en"]["mail_completion_note"]
+    assert html_part.index("Local stay fee") < html_part.index(stay)
+    assert html_part.index(stay) < html_part.index(closing)
+
+
+def test_the_money_slot_renders_exactly_one_coral_button():
+    """Two primaries means no primary: slot 2 owns the button, slot 1 has none."""
+    marker = f"background:{mail_notify.BRAND};border-radius:8px;"
+    with_money = html.unescape(_fee_completion()["html"])
+    assert with_money.count(marker) == 1
+    # The money button, not the stay link, is the one that got it.
+    assert "Pay 400 K\u010d online" in with_money
+    # Without money there is nothing to press and nothing coral at all.
+    plain = html.unescape(_completion_content()["html"])
+    assert plain.count(marker) == 0
+    # Nor when the host takes cash only and leaves the payment link empty.
+    cash_only = html.unescape(_fee_completion(action=None)["html"])
+    assert cash_only.count(marker) == 0
+    assert "You can also pay in cash on arrival." in cash_only
+
+
+def test_the_secondary_note_sits_next_to_the_stay_link():
+    """Slot 3: the QR line the fee plan needs, quiet and never a button."""
+    content = mail_notify.build_completion(
+        lang="en",
+        property_name="Guest Mail Flat",
+        dates="2026-01-05 \u2013 2026-01-08",
+        stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
+        host=_host(),
+        secondary_note="The QR code for your banking app is on your stay page.",
+    )
+    html_part = html.unescape(content["html"])
+    stay = f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1"
+    assert content["subject"] == "You're registered for Guest Mail Flat \u2014 nothing else to do"
+    assert html_part.index(stay) < html_part.index("The QR code for your banking app")
+    assert "The QR code for your banking app is on your stay page." in content["text"]
+    # No money slot, so still nothing coral.
+    assert f"background:{mail_notify.BRAND};border-radius:8px;" not in html_part
+
+
+def test_the_completion_subject_names_the_fee_that_is_still_owed():
+    """E-22: with a fee due, the subject must not read as 'all done'."""
+    for lang, expected in (
+        (
+            "en",
+            "Registered \u2014 stay fee 400 K\u010d to pay for Guest Mail Flat",
+        ),
+        (
+            "cs",
+            "Registrace hotov\u00e1 \u2013 zapla\u0165te poplatek z pobytu 400 K\u010d "
+            "(Guest Mail Flat)",
+        ),
+    ):
+        content = _fee_completion(lang)
+        assert content["subject"] == expected, lang
+        # The no-fee wording is the fallback, not the fee wording.
+        assert content["subject"] != _completion_content(lang)["subject"], lang
+
+
+def test_the_fee_intro_stops_saying_there_is_nothing_left_to_do():
+    """E-22: the second sentence has to match what the guest still owes."""
+    for lang, expected in (
+        (
+            "en",
+            "Everyone for Guest Mail Flat (2026-01-05 \u2013 2026-01-08) is "
+            "registered. Your host collects the municipal stay fee: 400 K\u010d "
+            "for your group.",
+        ),
+        (
+            "cs",
+            "V\u0161ichni host\u00e9 pro Guest Mail Flat (2026-01-05 \u2013 "
+            "2026-01-08) jsou zaregistrovan\u00ed. V\u00e1\u0161 hostitel vyb\u00edr\u00e1 "
+            "poplatek z pobytu: 400 K\u010d za va\u0161i skupinu.",
+        ),
+    ):
+        content = _fee_completion(lang)
+        html_part = html.unescape(content["html"])
+        assert expected in html_part, lang
+        assert "nothing else you need to do" not in html_part, lang
+        assert "Nic dal\u0161\u00edho d\u011blat nemus\u00edte" not in html_part, lang
+        # The inbox preview is the intro too, so it cannot promise closure the
+        # body no longer promises.
+        assert "nothing else you need to do" not in content["text"], lang
+    # With no fee the closure sentence is still there.
+    assert "There is nothing else you need to do." in html.unescape(
+        _completion_content()["html"]
+    )
+
+
+def test_the_completion_text_part_mirrors_the_slot_order():
+    """A client that drops the HTML still reads the receipt in one piece."""
+    content = _fee_completion()
+    text = content["text"]
+    stay = f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1"
+    closing = i18n.STRINGS["en"]["mail_completion_note"]
+    assert text.index("Local stay fee") < text.index("Total")
+    assert text.index("Total") < text.index("IBAN: CZ6508000000192000145399")
+    assert text.index("IBAN: CZ6508000000192000145399") < text.index(
+        f"Pay 400 K\u010d online: {config.PUBLIC_BASE_URL}/pay/fee-token"
+    )
+    assert text.index("Local stay fee") < text.index(stay)
+    assert text.index(stay) < text.index(closing)
+    # The signature block still closes the message.
+    assert text.index("\n--\n") > text.index(closing)
+
+
+def test_the_money_slot_escapes_whatever_the_host_typed():
+    """An IBAN is host data; it goes through the same escape as everything else."""
+    money = _fee_money(
+        title="<script>alert(1)</script>",
+        rows=[("Total", "<b>400</b>")],
+        note="<img src=x>",
+    )
+    content = mail_notify.build_completion(
+        lang="en",
+        property_name="Guest Mail Flat",
+        dates="2026-01-05 \u2013 2026-01-08",
+        stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
+        host=_host(),
+        money=money,
+    )
+    assert "<script>" not in content["html"]
+    assert "&lt;script&gt;" in content["html"]
+    assert "<b>400</b>" not in content["html"]
+    assert "<img src=x>" not in content["html"]
+
+
+def test_the_money_slot_survives_a_panel_with_nothing_in_it():
+    """A stay fee the host has not finished configuring must not break the mail."""
+    content = _fee_completion(title="", rows=[], action=None, note=None)
+    html_part = html.unescape(content["html"])
+    assert f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1" in html_part
+    assert content["text"].strip()
 
 
 def test_the_guest_language_is_honoured():

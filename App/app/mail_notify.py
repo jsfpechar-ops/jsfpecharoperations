@@ -23,7 +23,7 @@ from __future__ import annotations
 import html
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from . import config, db, deadlines, host_i18n, i18n, mail, validation
 
@@ -48,6 +48,12 @@ BRAND_SOFT = "#f9e9e7"
 _FONT = (
     "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',"
     "Arial,sans-serif"
+)
+
+# For values a guest copies by hand off a phone screen: an IBAN, a VS, a
+# reference. Several families, because a mail client picks the first it has.
+_MONO_FONT = (
+    "ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace"
 )
 
 # A UbyPort reason is a server message, not something we control. It is shown in
@@ -190,6 +196,15 @@ def _reason_text(state: str, reason: str, transport: bool, lang: str) -> str:
 # styles, the horizontal logo on white, and a footer. The pieces below are the
 # vocabulary the composers use, so the two audiences cannot end up with two
 # different-looking products.
+#
+# Two rules hold for the guest mail:
+#
+# 1. Blocks come in a fixed order -- status (heading + intro), money (one
+#    `_block_panel`), secondary links (quiet), closing note, footer. A new
+#    payment or invoice drops into the money slot instead of inventing a place
+#    for itself.
+# 2. At most one coral button per message. If the money slot has one, the
+#    status slot must not, because two primaries means no primary.
 
 
 def _fmt_dates(date_from: Optional[str], date_to: Optional[str]) -> str:
@@ -251,6 +266,80 @@ def _block_fact(label: str, value: str) -> str:
 
 def _block_button(url: str, label: str) -> str:
     return f'<tr><td style="padding:8px 32px 0 32px;">{_button(url, label)}</td></tr>'
+
+
+def _block_panel(
+    title: str,
+    rows: List[Tuple[str, ...]],
+    *,
+    action: Optional[Tuple[str, str]] = None,
+    note: Optional[str] = None,
+) -> str:
+    """One bordered sub-card: a title, label/value rows, at most one button.
+
+    This is the money slot of every guest message, so the stay fee and a later
+    invoice present the same way instead of scattering uppercase facts through
+    the card. A row given as ``(label, value, True)`` prints its value in a
+    monospace face, because an IBAN, a VS and a reference are meant to be copied
+    by hand. ``note`` is the muted line under the rows -- cash on arrival, for
+    the fee. The panel is on the canvas colour, which sets it slightly apart
+    from the white card without a second border weight.
+    """
+    rendered = []
+    for row in rows:
+        label, value = row[0], row[1]
+        mono = len(row) > 2 and bool(row[2])
+        value_style = (
+            f"font:400 14px/1.5 {_MONO_FONT};color:{INK};word-break:break-all;"
+            if mono
+            else f"font:600 15px/1.5 {_FONT};color:{INK};"
+        )
+        rendered.append(
+            "<tr>"
+            f'<td style="padding:0 12px 8px 0;font:400 13px/1.5 {_FONT};'
+            f'color:{INK_MUTED};vertical-align:top;white-space:nowrap;">'
+            f"{_esc(label)}</td>"
+            f'<td style="padding:0 0 8px 0;text-align:right;{value_style}'
+            f'vertical-align:top;">{_esc(value)}</td>'
+            "</tr>"
+        )
+    parts = [
+        f'<div style="font:600 15px/1.4 {_FONT};color:{INK};padding:0 0 10px 0;">'
+        f"{_esc(title)}</div>",
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'border="0" style="border-collapse:collapse;">'
+        + "".join(rendered)
+        + "</table>",
+    ]
+    if note:
+        parts.append(
+            f'<div style="font:400 13px/1.6 {_FONT};color:{INK_MUTED};'
+            f'padding:8px 0 0 0;">{_esc(note)}</div>'
+        )
+    if action:
+        parts.append(
+            f'<div style="padding:14px 0 0 0;">{_button(action[0], action[1])}</div>'
+        )
+    return (
+        '<tr><td style="padding:24px 32px 0 32px;">'
+        f'<div style="background:{CANVAS};border:1px solid {LINE};'
+        f'border-radius:12px;padding:18px 20px;">' + "".join(parts) + "</div></td></tr>"
+    )
+
+
+def _panel_text_lines(panel: Dict[str, Any]) -> List[str]:
+    """The plain-text mirror of a money panel, in the same order."""
+    lines = []
+    if panel.get("title"):
+        lines.append(str(panel["title"]))
+    for row in panel.get("rows") or []:
+        lines.append(f"{row[0]}: {row[1]}")
+    if panel.get("note"):
+        lines.append(str(panel["note"]))
+    action = panel.get("action")
+    if action:
+        lines.append(f"{action[1]}: {action[0]}")
+    return lines
 
 
 def _block_link(url: str, label: str) -> str:
@@ -749,6 +838,8 @@ def build_completion(
     dates: str,
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
+    money: Optional[Dict[str, Any]] = None,
+    secondary_note: Optional[str] = None,
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -756,24 +847,72 @@ def build_completion(
     have to be minted here; a receipt is the wrong place to rotate the guest's
     access. The stay address works on the device that confirmed, which is where
     the guest just finished filling the form in.
+
+    The blocks keep the guest order -- status, money, secondary links, closing
+    note, footer -- so a stay fee or an invoice can fill the money slot without
+    anything moving around it. ``money`` is that slot: ``title``, ``rows`` of
+    ``(label, value[, monospace])``, an optional ``action`` of ``(url, label)``
+    and an optional ``note``. Its ``amount`` is the bare number the fee-due
+    subject names, and its presence is what switches the subject over.
+    ``secondary_note`` is a muted line in the links slot, next to the stay link
+    -- the note about where the payment QR code lives, for the fee.
     """
-    subject = _guest_text(lang, "mail_completion_subject", property=property_name)
-    intro = _guest_text(
-        lang, "mail_completion_intro", property=property_name, dates=dates
-    )
+    amount = (money or {}).get("amount")
+    if amount:
+        subject = _guest_text(
+            lang,
+            "mail_completion_subject_fee",
+            property=property_name,
+            amount=amount,
+        )
+        # The second sentence stops promising there is nothing left to do.
+        intro = _guest_text(
+            lang,
+            "mail_completion_intro_fee",
+            property=property_name,
+            dates=dates,
+            amount=amount,
+        )
+    else:
+        subject = _guest_text(lang, "mail_completion_subject", property=property_name)
+        intro = _guest_text(
+            lang, "mail_completion_intro", property=property_name, dates=dates
+        )
     action = _guest_text(lang, "mail_completion_action")
     note = _guest_text(lang, "mail_completion_note")
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
+    # Slot 1: the status. Deliberately buttonless -- see the card rules above.
     blocks = [
         _block_heading(_guest_text(lang, "mail_completion_heading")),
         _block_paragraph(intro),
-        _block_link(stay_url, action),
-        _block_paragraph(note, muted=True),
     ]
-    text = "\n".join(
-        [intro, "", f"{action}: {stay_url}", "", note, "", "--", *footer_lines]
-    )
+    text_lines = [intro]
+
+    # Slot 2: the money, when there is any.
+    if money:
+        blocks.append(
+            _block_panel(
+                money.get("title", ""),
+                money.get("rows") or [],
+                action=money.get("action"),
+                note=money.get("note"),
+            )
+        )
+        text_lines.extend(["", *_panel_text_lines(money)])
+
+    # Slot 3: secondary links, quiet by design -- the primary is in the money.
+    blocks.append(_block_link(stay_url, action))
+    text_lines.extend(["", f"{action}: {stay_url}"])
+    if secondary_note:
+        blocks.append(_block_paragraph(secondary_note, muted=True))
+        text_lines.extend(["", secondary_note])
+
+    # Slot 4: the closing note.
+    blocks.append(_block_paragraph(note, muted=True))
+    text_lines.extend(["", note])
+
+    text = "\n".join([*text_lines, "", "--", *footer_lines])
     return {
         "subject": subject,
         "text": text,
