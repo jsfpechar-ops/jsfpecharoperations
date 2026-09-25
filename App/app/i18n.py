@@ -263,10 +263,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_kept": "Signature already saved. Sign again only if you need to change it.",
         "passport_photo_title": "Passport or ID document",
         "passport_photo_help": (
-            "Your host must check your details against your travel document by law. "
-            "Take a photo of the ID page, or upload a PDF (for example a registration form "
-            "with up to 11 guests). Access in the app is restricted to authorised host users. "
-            "It is deleted when they confirm the details; a scheduled stale-file sweep is the backstop."
+            "Your host must check your details against your document. Take a photo of the page "
+            "with your photo, or upload a PDF. Only your host can see it, and it is deleted after "
+            "they check it."
         ),
         "passport_photo_label": "Passport or ID document",
         "passport_photo_take": "Take photo",
@@ -274,14 +273,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_retake": "Retake or choose another",
         "passport_photo_selected": "Selected: %(name)s",
         "passport_photo_pending_nat": (
-            "Choose your nationality above — foreign guests must upload a passport or ID photo here."
+            "Choose your nationality in step 1 first."
         ),
         "passport_photo_not_required": (
             "Czech citizens do not upload a passport photo in this form."
         ),
         "passport_photo_hint": (
-            "Photo: JPEG, PNG, or WebP, up to 5 MB. PDF: up to 15 MB "
-            "(e.g. a multi-guest registration form)."
+            "A JPEG, PNG or WebP photo up to 5 MB, or a PDF up to 15 MB."
         ),
         "passport_photo_too_large_image": "The photo is too large. Use a file under 5 MB.",
         "passport_photo_too_large_pdf": "The PDF is too large. Use a file under 15 MB.",
@@ -318,11 +316,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_passport_title": "Passport photo (foreign nationals)",
         "legal_notice_passport_body": (
-            "Non-Czech guests must upload a clear photo of the ID page or a PDF registration "
-            "form. Your host compares it to the details you enter. The file is stored "
-            "temporarily with access restricted to authorised host users in this app, and deleted "
-            "when they confirm the match. If it is not verified, a scheduled sweep removes stale "
-            "files after the stay. It is not sent to the police."
+            "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
+            "sees it, to compare it with what you entered. It is deleted after the check, or "
+            "automatically after your stay. It is never sent to the police."
         ),
         "legal_notice_reporting_title": "Police reporting and house book",
         "legal_notice_reporting_body": (
@@ -789,10 +785,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_kept": "Podpis je uložený. Podepište se znovu jen pokud ho chcete změnit.",
         "passport_photo_title": "Pas nebo průkaz totožnosti",
         "passport_photo_help": (
-            "Hostitel musí ze zákona zkontrolovat vaše údaje proti cestovnímu dokladu. "
-            "Vyfoťte stránku s údaji nebo nahrajte PDF (např. registrační formulář až pro "
-            "11 hostů). Přístup v aplikaci mají jen oprávnění uživatelé ubytovatele. Po ověření "
-            "se soubor smaže; pojistkou je plánované mazání starých souborů."
+            "Ubytovatel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
+            "nahrajte PDF. Uvidí ji jen ubytovatel a po kontrole se smaže."
         ),
         "passport_photo_label": "Pas nebo průkaz totožnosti",
         "passport_photo_take": "Vyfotit",
@@ -800,14 +794,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "passport_photo_retake": "Vyfotit nebo vybrat jiný",
         "passport_photo_selected": "Vybráno: %(name)s",
         "passport_photo_pending_nat": (
-            "Nejprve zvolte státní příslušnost — cizinci zde nahrají fotografii pasu nebo průkazu."
+            "Nejdřív v kroku 1 vyberte státní občanství."
         ),
         "passport_photo_not_required": (
             "Občané ČR v tomto formuláři fotografii pasu nenahrávají."
         ),
         "passport_photo_hint": (
-            "Fotografie: JPEG, PNG nebo WebP, max. 5 MB. PDF: max. 15 MB "
-            "(např. registrační formulář pro více hostů)."
+            "Fotka JPEG, PNG nebo WebP do 5 MB, nebo PDF do 15 MB."
         ),
         "passport_photo_too_large_image": "Fotografie je příliš velká. Maximálně 5 MB.",
         "passport_photo_too_large_pdf": "PDF je příliš velké. Maximálně 15 MB.",
@@ -843,10 +836,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_passport_title": "Fotografie pasu (cizinci)",
         "legal_notice_passport_body": (
-            "Cizinci musí nahrát čitelnou fotografii stránky s údaji nebo PDF registrační "
-            "formulář. Hostitel ho porovná s vyplněnými poli. Soubor je uložen dočasně a přístup "
-            "v aplikaci mají jen oprávnění uživatelé ubytovatele. Po potvrzení shody se smaže; "
-            "pokud ověřen není, plánovaná úloha odstraní starý soubor po pobytu. Policii se neposílá."
+            "Cizinci nahrají fotku stránky pasu nebo průkazu (nebo PDF). Uvidí ji jen ubytovatel, "
+            "aby ji porovnal s vyplněnými údaji. Po kontrole se smaže, jinak automaticky po "
+            "skončení pobytu. Policii se nikdy neposílá."
         ),
         "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
         "legal_notice_reporting_body": (
