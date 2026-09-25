@@ -895,3 +895,34 @@ plan's own "what remains in `admin.py`" list never mentions submissions or the
 settings page, and the move would have split those pages across two modules.
 `guide_view` is likewise left in place because the plan does not ask for it. All
 six are recorded here so the choice is visible in review rather than implied.
+
+## From the UX audit — UX-80 (E-14): host mail is English by decision
+
+The audit flagged that host mail hard-coded `"lang": "en"` in one place and
+defaulted to `host_i18n.DEFAULT_LANGUAGE` in another, so nobody could tell
+whether English was a decision or an accident. **The product owner has decided:
+host mail stays English.** It is not to follow the host's UI language and not to
+use bilingual subjects. The reason is that there is no stored per-host language
+preference to read; guessing from the request would send a different language
+from the same host depending on which device happened to trigger the sweep.
+
+The choice is now named once: `mail_notify.HOST_MAIL_LANGUAGE = "en"`, used by
+`submission_problem()` and by the `reminder_host` payload that `claim.py`
+enqueues. It is a constant, not a literal, so the one place to change when a
+per-host preference eventually exists is obvious and greppable.
+
+**The Czech host-mail keys stay in `host_i18n.STRINGS["cs"]`.** The audit's
+"don't leave the CS keys dead" rule only applies to the CS-default scenario; with
+English chosen they are the copy a future per-host preference would select, and
+they keep the EN/CS parity test meaningful.
+
+**`PLAN_GUEST_INVOICE_FEATURE.md` was corrected in the same change.** Its
+`invoice_request_host` row specced the body in Czech ("Host X požádal o
+fakturu"), which contradicted the English decision; the row now specs English
+copy and cites E-14. Only the plan text changed — the invoice feature itself is
+still unbuilt.
+
+**Still open:** a stored per-host language preference would retire this interim
+rule and let the CS keys above go live. That is a schema change (a column on
+`user_account` or `legal_entity`) plus a Settings control, and it is not part of
+the audit.
