@@ -116,6 +116,60 @@ def _template_validation_message(context, message: str) -> str:
     return validation_i18n.localize(message, lang)
 
 
+# Portal names are proper nouns the host already reads on the portal itself.
+# Only the values UbyHost writes need translating, and an unknown slug falls
+# back to the slug so a new portal degrades to something, not to a raw key.
+_PORTAL_LABELS = {
+    "airbnb": "Airbnb",
+    "booking": "Booking.com",
+    "agoda": "Agoda",
+    "vrbo": "Vrbo",
+    "expedia": "Expedia",
+    "tripadvisor": "Tripadvisor",
+    "trip": "Trip.com",
+    "google": "Google Calendar",
+    "apple": "Apple Calendar",
+}
+_SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical"}
+_ENTERED_BY_KEYS = {
+    "guest": "stay.detail.guests.entered_by.guest",
+    "host": "stay.detail.guests.entered_by.host",
+    "import": "stay.detail.guests.entered_by.import",
+}
+
+
+@pass_context
+def _source_label(context, reservation) -> str:
+    """Where a stay came from, in the host's language.
+
+    ``reservation.summary`` is the portal's own event title ("Reserved"), so it
+    cannot label the Source column: the stored ``source`` is the only value
+    that means the same thing in both languages.
+    """
+    source = (reservation["source"] or "").strip()
+    if source in _PORTAL_LABELS:
+        return _PORTAL_LABELS[source]
+    key = _SOURCE_KEYS.get(source)
+    if key:
+        return _template_translate(context, key)
+    return source.replace("_", " ").capitalize()
+
+
+@pass_context
+def _entered_by_label(context, value) -> str:
+    """Who typed a guest record, as a word rather than the stored slug."""
+    key = _ENTERED_BY_KEYS.get((value or "").strip())
+    return _template_translate(context, key) if key else (value or "")
+
+
+@pass_context
+def _report_mode_label(context, mode) -> str:
+    """How a transmission was triggered, translated rather than humanised."""
+    key = f"reports.mode.{(mode or '').strip()}"
+    text = _template_translate(context, key)
+    return text if text != key else (mode or "").replace("_", " ").capitalize()
+
+
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["from_json"] = _from_json
@@ -140,6 +194,9 @@ templates.env.globals.update(
     compose_residence=validation.compose_residence,
     nights=_nights,
     nights_label=_nights_label,
+    source_label=_source_label,
+    entered_by_label=_entered_by_label,
+    report_mode_label=_report_mode_label,
     parse_iso_date=validation.parse_iso_date,
     today=lambda: date.today(),
     now=lambda: datetime.now(),

@@ -136,6 +136,14 @@ def _seed_stays():
     return apartment_id, stays, past
 
 
+def _stay_sources(page_text: str):
+    """What the Source column of a stays table actually renders, one per row."""
+    return [
+        value.strip()
+        for value in re.findall(r'data-label="Source">\s*([^<]+)', page_text)
+    ]
+
+
 def _seed_receipt_for(stay_id: int) -> int:
     """A finished submission with a stored receipt, attached to a stay guest."""
     now = db.utcnow()
@@ -199,8 +207,9 @@ def test_reservations_past_filter_hides_future():
     try:
         page = _browser().get(f"/reservations?range=past&apartment={apartment_id}")
         assert page.status_code == 200
-        assert "Booking.com reservation" in page.text
-        assert "Airbnb reservation" not in page.text
+        sources = _stay_sources(page.text)
+        assert "Booking.com" in sources
+        assert "Airbnb" not in sources
     finally:
         _cleanup()
 
@@ -261,7 +270,7 @@ def test_manual_dates_override_the_selected_preset_without_javascript():
         )
         assert page.status_code == 200
         assert f'data-href="/reservations/{past}' in page.text
-        assert "Airbnb reservation" not in page.text
+        assert "Airbnb" not in _stay_sources(page.text)
     finally:
         _cleanup()
 

@@ -10,7 +10,7 @@
 {{ page_header(
   t('reports.detail.title', id=submission.id),
   submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ')
-    ~ ' · ' ~ t('reports.mode.' ~ submission.mode),
+    ~ ' · ' ~ report_mode_label(submission.mode),
   '/submissions',
   t('reports.detail.back')
 ) }}
