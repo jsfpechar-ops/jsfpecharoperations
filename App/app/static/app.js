@@ -903,6 +903,31 @@
     });
   }
 
+  function initSubmitGuard() {
+    // A double-click on "Create stay" sent the same stay twice and the second
+    // request died on the UNIQUE index with a 500. The uid is collision proof
+    // now; this is the visible half of the fix, so a click has one effect.
+    document.querySelectorAll(".action-panel form").forEach(function (form) {
+      form.addEventListener("submit", function (event) {
+        // A confirm dialog or a fetch handler owns this submit and may hand it
+        // back, so never disable a button for a submission that did not start.
+        if (event.defaultPrevented) return;
+        var button = form.querySelector("[type=submit]");
+        if (!button || button.disabled) return;
+        button.disabled = true;
+        button.setAttribute("data-submit-guard", "1");
+      });
+    });
+    // Coming back with the browser's back button restores the button's own
+    // disabled state, so clear ours on every restore.
+    window.addEventListener("pageshow", function () {
+      document.querySelectorAll("[data-submit-guard]").forEach(function (button) {
+        button.disabled = false;
+        button.removeAttribute("data-submit-guard");
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initBirthDateInputs();
@@ -922,6 +947,7 @@
     initGeneratedPasswords();
     initResetPasswordDialog();
     initConfirmDialog();
+    initSubmitGuard();
     initPowerTools();
     initSavedViews();
     initInlineEdit();

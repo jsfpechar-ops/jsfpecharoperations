@@ -9,6 +9,7 @@ protection and the registered paths are exactly what they were.
 from __future__ import annotations
 
 import json
+import secrets
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
@@ -1066,7 +1067,11 @@ async def reservation_create(request: Request):
         {
             "apartment_id": apartment_id,
             "source": "manual",
-            "uid": f"manual-{db.utcnow()}-{date_from}",
+            # A manual stay has no iCal uid to inherit. The old
+            # f"manual-{db.utcnow()}-{date_from}" had one-second resolution, so a
+            # double-click on "Create stay" hit the UNIQUE index and the second
+            # request died with a 500 after the first had already created it.
+            "uid": f"manual-{secrets.token_hex(8)}",
             "date_from": date_from,
             "date_to": date_to,
             "summary": _form_str(form, "summary") or "Manual entry",
