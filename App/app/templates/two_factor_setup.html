@@ -4,7 +4,7 @@
 <section class="auth-card">
   <h1 class="auth-title">{{ t('account.2fa.setup_title') }}</h1>
   <p class="auth-lede">{{ t('account.2fa.setup_lede') }}</p>
-  {% if error %}<div class="auth-alert" role="alert">{{ error }}</div>{% endif %}
+  {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}</div>{% endif %}
   {% if qr_data %}
     <img src="{{ qr_data }}" alt="QR code for your authenticator app"
          style="display:block;width:220px;max-width:100%;margin:18px auto;border-radius:12px">

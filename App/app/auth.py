@@ -20,7 +20,7 @@ from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 import pyotp
 
-from . import config, db
+from . import config, db, host_i18n
 
 SESSION_COOKIE = "ubyhost_session"
 SESSION_MAX_AGE = 60 * 60 * 12
@@ -151,14 +151,19 @@ def username_is_valid(value: str) -> bool:
 
 
 def password_error(password: str) -> str:
+    """The catalogue key of the first rule this password breaks, or "".
+
+    The caller translates it: a rule broken on a Czech page must not be
+    reported in English.
+    """
     if len(password or "") > 256:
-        return "Use no more than 256 characters."
+        return "auth.password.too_long"
     if len(password or "") < 12:
-        return "Use at least 12 characters."
+        return "auth.password.too_short"
     if password.lower() == password or password.upper() == password:
-        return "Use both upper- and lower-case letters."
+        return "auth.password.mixed_case"
     if not any(char.isdigit() for char in password):
-        return "Add at least one number."
+        return "auth.password.digit"
     return ""
 
 
@@ -324,7 +329,7 @@ def create_account(
 ) -> int:
     username = normalise_username(username)
     if not username_is_valid(username):
-        raise ValueError("Use 3–32 lowercase letters, numbers, dots, dashes, or underscores.")
+        raise ValueError("auth.error.username")
     error = password_error(password)
     if error:
         raise ValueError(error)
@@ -374,7 +379,12 @@ def ensure_bootstrap_admin() -> Optional[str]:
     else:
         error = password_error(password)
         if error:
-            raise RuntimeError(f"UBYHOST_ADMIN_PASSWORD is not strong enough: {error}")
+            # Startup diagnostics stay readable: the log is read by an operator,
+            # not by a host, so this one is resolved to English here.
+            raise RuntimeError(
+                "UBYHOST_ADMIN_PASSWORD is not strong enough: "
+                f"{host_i18n.translate(host_i18n.DEFAULT_LANGUAGE, error)}"
+            )
         password_hash = hash_password(password)
         generated_password = "" if config.ADMIN_PASSWORD else password
     user_id = db.insert(
