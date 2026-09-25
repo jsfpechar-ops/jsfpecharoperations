@@ -39,10 +39,15 @@
         <ul class="small">
           {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
         </ul>
-        <p class="small muted">{{ t('reports.detail.header_help') }}</p>
+        <p class="small muted">{{ t('reports.detail.header_help') }}
+          <a href="/apartments/{{ submission.apartment_id }}#ubyport">{{ t('reports.detail.header_help_link') }}</a>
+        </p>
       {% endif %}
 
       <div class="actions">
+        {% if submission.state in ('error', 'failed') and fix_reservation_id %}
+          <a class="btn primary" href="/reservations/{{ fix_reservation_id }}#guests">{{ t('reports.detail.fix_stay') }}</a>
+        {% endif %}
         {% if submission.receipt_pdf %}
           <a class="btn primary" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
         {% endif %}
