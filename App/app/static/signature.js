@@ -2,7 +2,20 @@
 (function () {
   "use strict";
 
-  function initSignature() {
+/* The line under the pad says two different kinds of thing: the error that
+   stops a submit, and the reassurance that an already-saved signature is
+   still there. Red bold text announced as an alert is right for the first
+   and wrong for the second, so the line is re-dressed with every message. */
+function setSignatureStatus(text, kind) {
+  var status = document.getElementById("sig-status");
+  if (!status) return;
+  var hint = kind === "hint";
+  status.textContent = text;
+  status.className = hint ? "hint" : "err";
+  status.setAttribute("role", hint ? "status" : "alert");
+}
+
+function initSignature() {
     var canvas = document.getElementById("sig-canvas");
     if (!canvas) return;
     var hidden = document.getElementById("signature");
@@ -60,7 +73,7 @@
       drawing = false;
       if (dirty) {
         hidden.value = canvas.toDataURL("image/png");
-        if (status) status.textContent = "";
+        setSignatureStatus("");
       }
     }
 
@@ -80,7 +93,7 @@
         ctx.drawImage(kept, 0, 0, rect.width, rect.height);
       };
       kept.src = hidden.value;
-      if (status) status.textContent = status.getAttribute("data-kept") || "";
+      setSignatureStatus(status ? status.getAttribute("data-kept") || "" : "", "hint");
     }
 
     if (clearBtn) {
@@ -88,7 +101,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         hidden.value = "";
         dirty = false;
-        if (status) status.textContent = "";
+        setSignatureStatus("");
       });
     }
 
@@ -103,7 +116,9 @@
           form.dispatchEvent(new CustomEvent("guest-wizard:show", {
             detail: { target: canvas }
           }));
-          if (status) status.textContent = status.getAttribute("data-missing") || "";
+          setSignatureStatus(
+            status ? status.getAttribute("data-missing") || "" : "", "err"
+          );
           canvas.scrollIntoView({ behavior: "smooth", block: "center" });
           canvas.focus();
         }
@@ -414,7 +429,9 @@
       var signature = document.getElementById("signature");
       if (canvas && signature && !signature.value) {
         var status = document.getElementById("sig-status");
-        if (status) status.textContent = status.getAttribute("data-missing") || "";
+        setSignatureStatus(
+          status ? status.getAttribute("data-missing") || "" : "", "err"
+        );
         canvas.focus();
         return false;
       }
