@@ -312,7 +312,8 @@
       </div>
       <details class="message-details" open>
         <summary>{{ t('guest_links.message_title') }}</summary>
-        <pre>{{ t('guest_links.message', link=permalink, pin=pin) }}</pre>
+        <p class="small muted">{{ t('guest_links.message_lede') }}</p>
+        <pre>{{ bilingual_message('guest_links.message', link=permalink, pin=pin) }}</pre>
       </details>
       <p class="small muted">{{ t('apartment.form.guest_link.message_help') }}</p>
       <div class="setup-list" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">

@@ -94,6 +94,7 @@ templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["from_json"] = _from_json
 templates.env.globals["t"] = _template_translate
+templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals.update(
     app_version=__version__,
     operator=operator.details,
