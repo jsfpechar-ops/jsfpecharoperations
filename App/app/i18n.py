@@ -170,7 +170,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "cannot be changed from this link. Please message your host if anything needs "
             "correcting."
         ),
-        "form_locked_short": "Saved and locked — contact your host to change anything.",
+        "form_locked_short": "Saved and locked. To change anything, contact your host.",
         "pin_title": "Enter the access PIN",
         "pin_help": (
             "Your host sent a PIN together with the registration link. "
@@ -201,8 +201,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "previous_step": "Back",
         "add_person": "Add a person",
         "add_first_person": "Start with your own details",
-        "saved_title": "Details saved",
-        "saved_body": "Thank you. Please check what you submitted below.",
+        "saved_title": "Saved — thank you",
+        "saved_body": (
+            "Your details are saved. Next, add the next person in your group."
+        ),
         "reported_title": "Details submitted and reported",
         "reported_body": (
             "Thank you. Your host has already reported this record. Contact your host if "
@@ -691,7 +693,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Vaše údaje byly uloženy a podepsány. Abychom chránili vaše informace, "
             "formulář už z tohoto odkazu nelze měnit. Potřebujete-li opravu, napište ubytovateli."
         ),
-        "form_locked_short": "Uloženo a uzamčeno — pro změnu kontaktujte ubytovatele.",
+        "form_locked_short": "Uloženo a uzamčeno. Pro změnu kontaktujte ubytovatele.",
         "pin_title": "Zadejte přístupový PIN",
         "pin_help": (
             "Ubytovatel vám spolu s odkazem poslal PIN. "
@@ -722,8 +724,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "previous_step": "Zpět",
         "add_person": "Přidat osobu",
         "add_first_person": "Začněte svými údaji",
-        "saved_title": "Údaje uloženy",
-        "saved_body": "Děkujeme. Níže si prosím zkontrolujte odeslané údaje.",
+        "saved_title": "Uloženo — děkujeme",
+        "saved_body": (
+            "Vaše údaje jsou uložené. Teď přidejte další osobu ze skupiny."
+        ),
         "reported_title": "Údaje byly odeslány a oznámeny",
         "reported_body": (
             "Děkujeme. Ubytovatel již tento záznam oznámil. Pokud je třeba něco opravit, "
