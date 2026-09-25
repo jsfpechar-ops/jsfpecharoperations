@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, datetime, timezone
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo
@@ -9,6 +10,7 @@ from zoneinfo import ZoneInfo
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context
+from markupsafe import Markup, escape
 
 from . import (
     __version__,
@@ -204,10 +206,40 @@ def _report_mode_label(context, mode) -> str:
     return text if text != key else (mode or "").replace("_", " ").capitalize()
 
 
+# The legal documents name each other by path — "the Data Processing Agreement
+# at /dpa", "contact details on /legal" — which leaves the reader to retype the
+# URL. Only these five sibling paths are linkified, so no other slash-word in a
+# legal sentence is ever turned into a link, and the anchor text stays exactly
+# the path the sentence already prints: the legal copy is untouched and the
+# visible label remains the accessible name.
+_LEGAL_PATHS = ("/dpa", "/legal", "/privacy", "/subprocessors", "/terms")
+
+_LEGAL_PATH_RE = re.compile(
+    r"(^|(?<=[\s(]))("
+    + "|".join(re.escape(path) for path in _LEGAL_PATHS)
+    + r")(?=$|[\s.,;:)])"
+)
+
+
+def _legal_link(match: "re.Match[str]") -> str:
+    prefix, path = match.group(1), match.group(2)
+    return f'{prefix}<a href="{path}">{path}</a>'
+
+
+def _legal_links(value: object) -> Markup:
+    """Make the raw legal cross-references in a body clickable.
+
+    The input is escaped first and the markup added second, so a body can never
+    inject HTML through this filter.
+    """
+    return Markup(_LEGAL_PATH_RE.sub(_legal_link, escape(str(value))))
+
+
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
+templates.env.filters["legal_links"] = _legal_links
 templates.env.globals["t"] = _template_translate
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals.update(
