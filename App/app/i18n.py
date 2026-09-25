@@ -293,26 +293,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "review_edit": "Change",
         "legal_notice_title": "Legal information",
-        "legal_notice_intro": (
-            "Please read this before submitting. Czech accommodation law requires both you "
-            "and your host to follow the rules below."
-        ),
+        "legal_notice_intro": "Please read this before you send.",
         "legal_notice_disclaimer": (
             "UbyHost is a software tool and this information does not replace legal advice."
         ),
         "legal_notice_duty_title": "Your legal duty",
         "legal_notice_duty_body": (
-            "Every accommodated person must be registered. Foreign nationals are reported to "
-            "the Foreign Police within three working days of check-in. Czech citizens are "
-            "recorded in the house book only. Providing these details is a statutory "
-            "requirement — not optional."
+            "Everyone staying must be registered. Foreign guests are reported to the Foreign "
+            "Police within three working days; Czech citizens only go into the house book. "
+            "This is required by law."
         ),
         "legal_notice_accuracy_title": "Accurate information only",
         "legal_notice_accuracy_body": (
-            "All fields must match your passport or national ID card exactly. The host remains "
-            "responsible for accuracy and may check your document, but automatic reporting can "
-            "occur without an in-app verification step. False or misleading information can lead "
-            "to fines for the host and may affect your stay."
+            "Enter everything exactly as in your passport or ID card. Your details may be "
+            "reported automatically, before your host checks them, and false details can mean "
+            "a fine for your host."
         ),
         "legal_notice_passport_title": "Passport photo (foreign nationals)",
         "legal_notice_passport_body": (
@@ -322,10 +317,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_reporting_title": "Police reporting and house book",
         "legal_notice_reporting_body": (
-            "Complete foreign-guest records may be sent electronically and automatically to the "
-            "Police of the Czech Republic (UbyPort), immediately or after the delay selected by "
-            "the host, without waiting for in-app identity verification. The same information is "
-            "kept in the house book for six years and must be shown at a police inspection."
+            "Complete records of foreign guests may be sent to the Czech Police automatically — "
+            "straight away or after a delay your host chooses. The same details stay in the house "
+            "book for six years."
         ),
         "legal_notice_retention_title": "How long data is kept",
         "legal_notice_retention_body": (
@@ -340,8 +334,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "lawfully refuse accommodation."
         ),
         "legal_ack_label": (
-            "I confirm that my details are accurate, I have read the legal information above "
-            "and the privacy notice, and I understand my obligations under Czech law."
+            "My details are correct, and I have read the information above and the privacy "
+            "notice."
         ),
         "legal_ack_missing": "Please confirm that you have read the legal information.",
         "submit": "Submit my details",
@@ -814,25 +808,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "review_edit": "Změnit",
         "legal_notice_title": "Právní informace",
-        "legal_notice_intro": (
-            "Před odesláním si prosím přečtěte. Český zákon o ubytování vyžaduje, aby vy i "
-            "ubytovatel dodrželi níže uvedená pravidla."
-        ),
+        "legal_notice_intro": "Před odesláním si to prosím přečtěte.",
         "legal_notice_disclaimer": (
             "UbyHost je softwarový nástroj a tyto informace nenahrazují právní poradenství."
         ),
         "legal_notice_duty_title": "Vaše zákonná povinnost",
         "legal_notice_duty_body": (
-            "Každá ubytovaná osoba musí být evidována. Cizinci se oznamují cizinecké policii "
-            "do tří pracovních dnů od ubytování. Občané ČR se zapisují pouze do domovní knihy. "
-            "Poskytnutí údajů je zákonný požadavek — není dobrovolné."
+            "Registrovat se musí každý ubytovaný. Cizince ubytovatel do tří pracovních dnů "
+            "ohlásí cizinecké policii, občany ČR jen zapíše do domovní knihy. Vyžaduje to zákon."
         ),
         "legal_notice_accuracy_title": "Pouze pravdivé údaje",
         "legal_notice_accuracy_body": (
-            "Všechna pole musí přesně odpovídat pasu nebo občanskému průkazu. Ubytovatel nadále "
-            "odpovídá za správnost a může doklad zkontrolovat, automatické hlášení však může "
-            "proběhnout bez ověření v aplikaci. Nepravdivé údaje mohou vést k pokutám pro "
-            "ubytovatele a ovlivnit váš pobyt."
+            "Vše vyplňte přesně podle pasu nebo občanského průkazu. Údaje se mohou ohlásit "
+            "automaticky ještě předtím, než je ubytovatel zkontroluje, a za nepravdivé údaje "
+            "hrozí ubytovateli pokuta."
         ),
         "legal_notice_passport_title": "Fotografie pasu (cizinci)",
         "legal_notice_passport_body": (
@@ -842,9 +831,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
         "legal_notice_reporting_body": (
-            "Kompletní záznamy cizinců mohou být elektronicky a automaticky odeslány Policii ČR "
-            "(UbyPort), okamžitě nebo po prodlevě zvolené ubytovatelem, bez čekání na ověření "
-            "totožnosti v aplikaci. Stejné údaje se vedou v domovní knize šest let."
+            "Kompletní záznamy cizinců se mohou Policii ČR odeslat automaticky — hned, nebo "
+            "s odkladem, který nastaví ubytovatel. Stejné údaje zůstávají šest let v domovní "
+            "knize."
         ),
         "legal_notice_retention_title": "Jak dlouho se údaje uchovávají",
         "legal_notice_retention_body": (
@@ -859,8 +848,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "po právu odmítnout."
         ),
         "legal_ack_label": (
-            "Potvrzuji, že mé údaje jsou správné, že jsem si přečetl(a) právní informace výše "
-            "a informaci o zpracování údajů a rozumím svým povinnostem podle českého práva."
+            "Moje údaje jsou správné a přečetl(a) jsem si informace výše i zásady zpracování "
+            "údajů."
         ),
         "legal_ack_missing": "Potvrďte prosím, že jste si přečetli právní informace.",
         "submit": "Odeslat údaje",
