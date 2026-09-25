@@ -269,7 +269,6 @@ def start_claim(
         f"{reservation['id']}/claim#c={mail.CLAIM_SECRET_MARKER}"
     )
     kind = "claim_resend" if resend or claim["state"] == CLAIMED else "claim"
-    text = _claim_text(lang, apartment, reservation, link)
     content = _guest_mail_content(
         kind,
         apartment,
@@ -277,7 +276,6 @@ def start_claim(
         lang=lang,
         link=link,
         resend=kind == "claim_resend",
-        plain_text=text,
     )
     # The body is stored with the marker standing in for the secret and the
     # secret beside it, encrypted, so the queued message holds a link the guest
@@ -306,7 +304,6 @@ def _guest_mail_content(
     reservation,
     *,
     lang: str,
-    plain_text: str,
     link: Optional[str] = None,
     resend: bool = False,
     stay_url: Optional[str] = None,
@@ -316,9 +313,15 @@ def _guest_mail_content(
     """Compose a guest message, falling back to plain text on any failure.
 
     A guest is mid-flow when this runs: in the claim path they are waiting on a
-    response that carries their link. So the caller's plain-text body is the
-    contract, and the branded HTML is an enhancement -- a composer bug costs the
-    guest the nicer message, never the link.
+    response that carries their link. So the plain-text body is the contract,
+    and the branded HTML is an enhancement -- a composer bug costs the guest the
+    nicer message, never the link.
+
+    The plain-text body is built here from the same catalogue the branded one
+    reads, rather than handed in by each caller. Three callers used to write it
+    out by hand, which is how the Czech claim body came to say "your host" in
+    English and how the dates stayed in raw ISO on the one surface that mattered
+    most.
     """
     # The subject names the property, so the label has to resolve before the
     # fallback subject is built. It is also the one value here that must never
@@ -328,16 +331,30 @@ def _guest_mail_content(
         property_name = mail_notify.property_label(apartment, lang)
     except Exception:
         property_name = ""
-    fallback = {
-        "subject": _guest_mail_subject(
-            kind, lang, property_name, filled=filled, expected=expected
-        ),
-        "text": plain_text,
-    }
+    # The dates are read before the composer runs because the fallback body
+    # prints them too, and the fallback is what ships when the composer throws.
     try:
         dates = validation.fmt_date_range(
             reservation["date_from"], reservation["date_to"]
         )
+    except Exception:
+        dates = f"{reservation['date_from']} \u2013 {reservation['date_to']}"
+    fallback = {
+        "subject": _guest_mail_subject(
+            kind, lang, property_name, filled=filled, expected=expected
+        ),
+        "text": _guest_fallback_text(
+            kind,
+            lang,
+            property_name=property_name,
+            dates=dates,
+            link=link or stay_url or "",
+            resend=resend,
+            filled=filled,
+            expected=expected,
+        ),
+    }
+    try:
         host = mail_notify.host_details(
             apartment["legal_entity_id"] if apartment else None
         )
@@ -426,21 +443,66 @@ def _entity_contact_email(legal_entity_id) -> str:
     return mail.normalise_email((entity["contact_email"] if entity else "") or "")
 
 
-def _claim_text(lang: str, apartment, reservation, link: str) -> str:
-    name = (apartment["uby_name"] or apartment["internal_name"] or "your host").strip()
-    dates = f"{reservation['date_from']} – {reservation['date_to']}"
-    if lang == "cs":
-        return (
-            f"Dobrý den,\n\n"
-            f"potvrďte rezervaci v {name} ({dates}) otevřením tohoto odkazu:\n"
-            f"{link}\n\n"
-            f"Odkaz platí 30 minut, pokud rezervaci ještě nepotvrdíte.\n"
+def _guest_fallback_text(
+    kind: str,
+    lang: str,
+    *,
+    property_name: str,
+    dates: str,
+    link: str = "",
+    resend: bool = False,
+    filled: int = 0,
+    expected: Optional[int] = None,
+) -> str:
+    """The plain-text body, built from the same catalogue the branded one reads.
+
+    This ships only when the branded composer throws, so it must not be able to
+    throw itself: every string comes from ``i18n`` and the only work done here
+    is joining. It used to be written out by hand in this module, which is how
+    the Czech claim body came to say "your host" in English, how the dates
+    stayed in raw ISO, and how the reminder told the guest to open a link
+    without ever printing one.
+    """
+    t = i18n.translator(lang)
+    if kind in ("claim", "claim_resend"):
+        return "\n".join(
+            [
+                t("mail_claim_intro", property=property_name, dates=dates),
+                "",
+                f"{t('mail_claim_action')}: {link}",
+                "",
+                t("mail_claim_expiry_resend" if resend else "mail_claim_expiry"),
+            ]
         )
-    return (
-        f"Hello,\n\n"
-        f"Confirm your stay at {name} ({dates}) by opening this link:\n"
-        f"{link}\n\n"
-        f"The link expires in 30 minutes until you confirm the reservation.\n"
+    if kind == "completion":
+        return "\n".join(
+            [
+                t("mail_completion_intro", property=property_name, dates=dates),
+                "",
+                f"{t('mail_completion_action')}: {link}",
+                "",
+                t("mail_completion_note"),
+            ]
+        )
+    missing = max(0, expected - filled) if expected is not None else None
+    intro = (
+        t("mail_reminder_guest_intro", missing=missing)
+        if missing is not None
+        else t("mail_reminder_guest_intro_no_count", property=property_name)
+    )
+    return "\n".join(
+        [
+            t("mail_reminder_guest_heading"),
+            "",
+            intro,
+            "",
+            f"{t('mail_reminder_guest_action')}: {link}",
+            "",
+            t("mail_reminder_guest_device"),
+            "",
+            f"{t('mail_reminder_guest_note_label')} \u2014 "
+            f"{t('mail_reminder_guest_note')}",
+        ]
     )
 
 
@@ -553,26 +615,11 @@ def maybe_notify_completion(reservation, apartment) -> None:
     if expected is None or progress["filled"] < expected:
         return
     lang = claim["lang"] or "en"
-    name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
-    stay_dates = validation.fmt_date_range(
-        reservation["date_from"], reservation["date_to"]
-    )
-    text = (
-        f"Everyone for {name} ({stay_dates}) is registered. "
-        f"There is nothing else you need to do. "
-        f"Your host takes care of the official registration with the authorities. "
-        f"This e-mail is your receipt, not an official confirmation."
-        if lang != "cs"
-        else f"Všichni hosté pro {name} ({stay_dates}) jsou zaregistrovaní. "
-        f"Nic dalšího dělat nemusíte. Úřední hlášení vyřizuje váš hostitel. "
-        f"Tento e-mail je potvrzení pro vás, nikoli úřední doklad."
-    )
     content = _guest_mail_content(
         "completion",
         apartment,
         reservation,
         lang=lang,
-        plain_text=text,
         stay_url=_stay_link(apartment, reservation),
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
@@ -637,36 +684,6 @@ def sweep_reminders() -> Dict[str, int]:
             lang = reservation["claim_lang"] or "en"
             filled = progress["filled"]
             expected = progress["expected"]
-            # The emergency body, handed back if the branded composer fails. It
-            # carries the same two facts the branded mail leads with: how much of
-            # the party is registered, and that the link wants the device that
-            # started the stay.
-            if lang == "cs":
-                lines = ["Váš pobyt začíná zítra."]
-                if expected is not None:
-                    lines.append(f"Zaregistrováno {filled} z {expected} hostů.")
-                lines.append(
-                    "Dokončete prosím registraci hostů pomocí soukromého odkazu, "
-                    "který jsme vám již poslali."
-                )
-                lines.append("Otevřete ho na telefonu nebo počítači, kde jste začali.")
-                lines.append(
-                    "Toto je jediné upozornění na nedokončenou registraci, které "
-                    "vám pošleme."
-                )
-            else:
-                lines = ["Your stay starts tomorrow."]
-                if expected is not None:
-                    lines.append(f"{filled} of {expected} guests are registered.")
-                lines.append(
-                    "Please finish the guest registration using the private link we "
-                    "already sent you."
-                )
-                lines.append("Open it on the phone or computer where you started.")
-                lines.append(
-                    "This is the only incomplete-registration reminder we will send."
-                )
-            text = " ".join(lines)
             stay_url = (
                 f"{config.PUBLIC_BASE_URL.rstrip('/')}/l/{reservation['permalink_token']}"
                 f"/{reservation['id']}"
@@ -676,7 +693,6 @@ def sweep_reminders() -> Dict[str, int]:
                 reservation,
                 reservation,
                 lang=lang,
-                plain_text=text,
                 stay_url=stay_url,
                 filled=filled,
                 expected=expected,
