@@ -211,6 +211,10 @@ async def two_factor_setup_submit(request: Request):
     account = auth.current_user(request)
     if not account:
         return RedirectResponse("/login", status_code=303)
+    # A reload, or the browser's "resubmit form?", would otherwise mint a second
+    # set of recovery codes and silently kill the ones already written down.
+    if account["totp_enabled"]:
+        return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
     form = await request.form()
     # Authenticator apps show the code as "123 456", so a pasted one arrives
     # with a space in it; the login route strips spaces the same way.

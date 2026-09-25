@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import re
+from urllib.parse import quote
 
 import pyotp
 import pytest
@@ -105,6 +106,34 @@ def test_the_form_posts_a_csrf_token_and_accepts_a_spaced_code(host):
     )
     assert response.status_code == 200, response.text
     assert host_i18n.translate("en", "account.2fa.recovery_title") in _body(response)
+
+
+def test_a_re_post_keeps_the_codes_already_written_down(host):
+    """A reload must not mint a second set and kill the first one.
+
+    Only the hashes are stored, so a regenerated set is unrecoverable: the codes
+    on the host's printout would stop working with nothing on screen to say so.
+    """
+    code = pyotp.TOTP(_secret(host)).now()
+    first = host.post("/account/2fa/setup", data={"code": code}, follow_redirects=False)
+    assert first.status_code == 200, first.text
+    stored = db.query_one(
+        "SELECT recovery_codes_hash FROM user_account WHERE username = ?", (USERNAME,)
+    )["recovery_codes_hash"]
+    assert stored
+
+    again = host.post("/account/2fa/setup", data={"code": code}, follow_redirects=False)
+    assert again.status_code == 303, again.text
+    assert again.headers["location"] == "/settings?msg={}".format(
+        quote(host_i18n.translate("en", "flash.accounts.twofa_enabled"))
+    )
+    assert (
+        db.query_one(
+            "SELECT recovery_codes_hash FROM user_account WHERE username = ?",
+            (USERNAME,),
+        )["recovery_codes_hash"]
+        == stored
+    )
 
 
 def test_a_wrong_code_says_what_to_try_next(host):
