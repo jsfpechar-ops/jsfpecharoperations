@@ -120,9 +120,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "assigned_last_sent": "Private link last sent %(date)s",
         "assigned_not_mine": "This is not my reservation",
         "claim_confirm_title": "Is this your reservation?",
-        "claim_confirm_help": (
-            "E-mail scanners open links automatically. Click the button to prove this is you."
-        ),
+        "claim_confirm_help": "One tap to confirm it’s really you.",
         "claim_confirm_button": "Yes, this is my stay",
         "claim_confirm_failed": "That confirmation link is invalid or has expired.",
         "back_to_stays": "Choose different dates",
@@ -681,9 +679,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "assigned_last_sent": "Soukromý odkaz naposledy odeslán %(date)s",
         "assigned_not_mine": "Toto není moje rezervace",
         "claim_confirm_title": "Je to vaše rezervace?",
-        "claim_confirm_help": (
-            "E-mailové skenery odkazy otevírají samy. Potvrďte tlačítkem, že jste to vy."
-        ),
+        "claim_confirm_help": "Jedním klepnutím potvrďte, že jste to opravdu vy.",
         "claim_confirm_button": "Ano, to je můj pobyt",
         "claim_confirm_failed": "Potvrzovací odkaz je neplatný nebo vypršel.",
         "back_to_stays": "Vybrat jiný termín",
