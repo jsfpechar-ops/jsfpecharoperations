@@ -165,9 +165,13 @@ def test_every_body_list_is_a_hairline_lane_and_not_a_card():
         blocks = _lane_blocks(lane)
         assert blocks, f"{lane} has no rule left"
         assert any("border-bottom: 1px solid var(--border)" in b for b in blocks), lane
-        assert any(
-            "font-family: var(--font-mono)" in b and "color: var(--brand-ink)" in b for b in blocks
-        ), lane
+        # The benefit and pricing lanes carry their number in a mono span. UX-155
+        # removed the product lane's number, so that lane has no mono element.
+        if lane != ".product-feature-row":
+            assert any(
+                "font-family: var(--font-mono)" in b and "color: var(--brand-ink)" in b
+                for b in blocks
+            ), lane
         for block in blocks:
             assert "box-shadow" not in block, lane
             assert "border-radius" not in block, lane
@@ -217,6 +221,14 @@ def test_the_product_features_are_lanes_with_no_tone():
 
 
 # --- UX-154 / D-23: hero type safe for Czech diacritics --------------------
+
+
+def test_the_product_feature_rows_are_not_double_numbered():
+    section = _section(_render("/jak-to-funguje"), "product-feature-list")
+
+    assert "<span>01</span>" not in section, "the number span came back"
+    for number, word in ((1, "Sync"), (2, "Collect"), (3, "Keep"), (4, "Report")):
+        assert f"0{number} / {word}</p>" in section
 
 
 def test_the_hero_h1_is_set_loose_enough_for_czech_diacritics():
