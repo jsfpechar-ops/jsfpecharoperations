@@ -57,6 +57,13 @@ _FONT = (
     "Arial,sans-serif"
 )
 
+# Mail clients fill the inbox snippet with whatever comes after the hidden
+# preheader, which is why the preview used to run on into the logo and the H1.
+# This is the spacer docs/plans/UX_AUDIT.md E-9 specifies: a figure space, a
+# zero-width no-break space and a combining grapheme joiner, repeated until the
+# snippet is full. All three render as nothing in every client.
+PREHEADER_SPACER = "\u2007\ufeff\u034f" * 40
+
 # For values a guest copies by hand off a phone screen: an IBAN, a VS, a
 # reference. Several families, because a mail client picks the first it has.
 _MONO_FONT = (
@@ -380,7 +387,8 @@ def _shell(
     inbox list. It is hidden in the body with inline styles rather than a media
     query, because there is no ``@media`` rule anywhere in these messages: the
     product is light-mode only and a dark variant here would be the one place it
-    contradicted itself.
+    contradicted itself. It is followed by ``PREHEADER_SPACER`` so the client
+    does not read on into the logo and the heading.
     """
     logo_url = _public(LOGO_PATH)
     footer_html = "".join(
@@ -394,7 +402,7 @@ def _shell(
         preheader_html = (
             '<div style="display:none;font-size:1px;line-height:1px;max-height:0;'
             "max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">"
-            f"{_esc(preheader)}</div>"
+            f"{_esc(preheader)}{PREHEADER_SPACER}</div>"
         )
     return f"""<!doctype html>
 <html lang="{_esc(lang)}">
@@ -500,6 +508,12 @@ def build_submission_problem(
         else "mail.submission_problem.intro"
     )
     intro = _text(lang, intro_key, property=property_name)
+    preheader = _text(
+        lang,
+        "mail.submission_problem.preheader_transport"
+        if transport
+        else "mail.submission_problem.preheader",
+    )
     # A transport failure never reached UbyPort, so the mail must not say
     # UbyPort reported anything and must not send the host to fix guest data.
     reason_label_key = (
@@ -548,6 +562,7 @@ def build_submission_problem(
         "html": _build_html(
             property_name=property_name,
             intro=intro,
+            preheader=preheader,
             reason_label=reason_label,
             reason_text=reason_text,
             next_label=next_label,
@@ -614,6 +629,7 @@ def _build_html(
     *,
     property_name: str,
     intro: str,
+    preheader: str,
     reason_label: str,
     reason_text: str,
     next_label: str,
@@ -670,7 +686,7 @@ def _build_html(
     return _shell(
         lang=lang,
         title=property_name,
-        preheader=intro,
+        preheader=preheader,
         blocks=blocks,
         footer_lines=[footer, footer_support],
     )
@@ -823,6 +839,9 @@ def build_claim_link(
     next_label = _guest_text(lang, "mail_claim_next_label")
     next_body = _guest_text(lang, "mail_claim_next_body")
     fallback = _guest_text(lang, "mail_link_fallback")
+    preheader = _guest_text(
+        lang, "mail_claim_resend_preheader" if resend else "mail_claim_preheader"
+    )
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
     blocks = _guest_blocks(
@@ -858,7 +877,7 @@ def build_claim_link(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=_guest_text(lang, "mail_claim_preheader"),
+            preheader=preheader,
             blocks=blocks,
             footer_lines=footer_lines,
         ),
@@ -953,7 +972,7 @@ def build_completion(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=_guest_text(lang, "mail_completion_preheader"),
             blocks=blocks,
             footer_lines=footer_lines,
         ),
@@ -1016,7 +1035,7 @@ def build_reminder_guest(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=_guest_text(lang, "mail_reminder_guest_preheader"),
             blocks=blocks,
             footer_lines=footer_lines,
         ),
@@ -1052,6 +1071,7 @@ def build_reminder_host(
     )
     heading = _text(lang, "mail.reminder_host.heading")
     intro = _text(lang, "mail.reminder_host.intro", property=property_name, date=date)
+    preheader = _text(lang, "mail.reminder_host.preheader")
     assigned_label = _text(lang, "mail.reminder_host.assigned_label")
     assigned_value = assigned or _text(lang, "mail.reminder_host.assigned_unknown")
     next_label = _text(lang, "mail.reminder_host.next_label")
@@ -1097,7 +1117,7 @@ def build_reminder_host(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=preheader,
             blocks=blocks,
             footer_lines=["UbyHost", footer],
         ),

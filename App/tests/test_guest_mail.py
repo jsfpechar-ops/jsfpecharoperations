@@ -35,6 +35,7 @@ NEW_GUEST_KEYS = (
     "mail_claim_subject",
     "mail_claim_resend_subject",
     "mail_claim_preheader",
+    "mail_claim_resend_preheader",
     "mail_claim_heading",
     "mail_claim_resend_heading",
     "mail_claim_intro",
@@ -46,12 +47,14 @@ NEW_GUEST_KEYS = (
     "mail_claim_next_body",
     "mail_completion_subject",
     "mail_completion_subject_fee",
+    "mail_completion_preheader",
     "mail_completion_heading",
     "mail_completion_intro",
     "mail_completion_intro_fee",
     "mail_completion_action",
     "mail_completion_note",
     "mail_reminder_guest_subject",
+    "mail_reminder_guest_preheader",
     "mail_reminder_guest_heading",
     "mail_reminder_guest_intro",
     "mail_reminder_guest_action",
@@ -66,6 +69,7 @@ NEW_GUEST_KEYS = (
 NEW_HOST_KEYS = (
     "mail.reminder_host.subject",
     "mail.reminder_host.subject_unclaimed",
+    "mail.reminder_host.preheader",
     "mail.reminder_host.heading",
     "mail.reminder_host.intro",
     "mail.reminder_host.assigned_label",
@@ -737,8 +741,50 @@ def test_the_claim_preheader_is_its_own_line_and_not_the_intro():
     html = _claim_content()["html"]
     match = re.search(r"mso-hide:all;\">([^<]*)</div>", html)
     assert match, html[:400]
-    assert match.group(1) == i18n.STRINGS["en"]["mail_claim_preheader"]
+    assert match.group(1) == (
+        i18n.STRINGS["en"]["mail_claim_preheader"] + mail_notify.PREHEADER_SPACER
+    )
     assert "Guest Mail Flat" not in match.group(1)
+
+
+def _preheader(content):
+    """The hidden inbox-snippet line, with the spacer stripped off."""
+    match = re.search(r"mso-hide:all;\">([^<]*)</div>", content["html"])
+    assert match, content["html"][:400]
+    captured = match.group(1)
+    assert captured.endswith(mail_notify.PREHEADER_SPACER), repr(captured[-60:])
+    assert mail_notify.PREHEADER_SPACER.strip("\u2007\ufeff\u034f") == ""
+    return html.unescape(captured[: -len(mail_notify.PREHEADER_SPACER)])
+
+
+def test_every_kind_has_its_own_preheader_and_the_invisible_spacer():
+    """Each kind says something the intro does not, so the snippet is useful.
+
+    Before this, every builder passed ``preheader=intro``, so the inbox showed
+    the first body line twice and then ran on into the logo and the heading.
+    """
+    catalogue = {
+        "claim": i18n.STRINGS["en"]["mail_claim_preheader"],
+        "claim_resend": i18n.STRINGS["en"]["mail_claim_resend_preheader"],
+        "completion": i18n.STRINGS["en"]["mail_completion_preheader"],
+        "reminder_guest": i18n.STRINGS["en"]["mail_reminder_guest_preheader"],
+        "reminder_host": host_i18n.STRINGS["en"]["mail.reminder_host.preheader"],
+    }
+    seen = {}
+    for kind, content in _all_content().items():
+        preheader = _preheader(content)
+        assert preheader == catalogue[kind], kind
+        assert preheader.strip(), kind
+        # The bug this replaces: a preheader that repeats the first body line.
+        assert preheader not in content["text"], kind
+        seen[kind] = preheader
+    assert len(set(seen.values())) == len(seen), seen
+
+
+def test_the_preheader_spacer_is_invisible_to_every_client():
+    """A figure space, a BOM and a combining joiner — none of them visible."""
+    assert mail_notify.PREHEADER_SPACER == "\u2007\ufeff\u034f" * 40
+    assert all(ord(char) > 0x7F for char in mail_notify.PREHEADER_SPACER)
 
 
 def test_the_resend_mail_says_the_old_link_stopped_working():
