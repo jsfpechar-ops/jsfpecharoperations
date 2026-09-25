@@ -2308,6 +2308,9 @@ details.raw pre {
 
 .auth-help[open] > summary { margin-bottom: 8px; }
 .auth-help .auth-form { margin-top: 12px; }
+/* Inside a form the help belongs to the field above it, so the form's own gap
+   is the only space needed. */
+.auth-form .auth-help { margin-top: 0; }
 
 .auth-help-note {
   margin: 12px 0 0;

@@ -25,6 +25,10 @@
       <input type="password" id="password" name="password" required
              autocomplete="current-password" placeholder="{{ t('login.password_ph') }}">
     </div>
+    <details class="auth-help">
+      <summary>{{ t('login.forgot_summary') }}</summary>
+      <p class="auth-help-note">{{ t('login.forgot_body', email=operator().email) }}</p>
+    </details>
     <label class="auth-remember">
       <input type="checkbox" name="remember" value="1">
       <span>{{ t('login.remember') }}</span>
@@ -42,7 +46,7 @@
   </form>
 
   <div class="auth-foot">
-    <p>{{ t('login.footnote') }}</p>
+    <p>{{ t('login.footnote', email=operator().email) }}</p>
   </div>
 </section>
 {% if turnstile_site_key %}
