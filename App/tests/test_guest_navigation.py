@@ -361,6 +361,48 @@ def test_the_birth_date_script_localises_the_readback_and_reorders_an_iso_paste(
     assert "date.getDate() !== day" in source
 
 
+def test_the_passport_error_line_carries_the_message_the_wizard_needs():
+    """The file input is hidden, so its "missing" text has to reach the wizard."""
+    token, wrong, _right = _make_apartment_with_stays()
+    try:
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(browser, token, wrong, party_size=1)
+        apartment = db.query_one(
+            "SELECT id FROM apartment WHERE permalink_token = ?", (token,)
+        )
+        db.update(
+            "apartment",
+            apartment["id"],
+            {"passport_photo_policy": "required_foreign"},
+        )
+        page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
+        assert page.status_code == 200
+        assert 'id="passport-file-err"' in page.text
+        assert 'role="alert"' in page.text
+        assert 'data-missing="Please upload a photo of your passport or ID card."' in page.text
+        assert 'id="passport-take-btn"' in page.text
+
+        cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
+        assert cs_page.status_code == 200
+        assert (
+            'data-missing="Nahrajte prosím fotografii pasu nebo občanského průkazu."'
+            in cs_page.text
+        )
+    finally:
+        _cleanup()
+
+
+def test_a_hidden_file_input_fails_continue_with_a_visible_reason():
+    """A browser cannot focus or bubble a hidden control, so Continue was mute."""
+    source = (Path("app/static/signature.js")).read_text(encoding="utf-8")
+    assert 'fields[i].type === "file" && fields[i].hidden' in source
+    assert 'document.getElementById("passport-file-err")' in source
+    assert 'fileErr.getAttribute("data-missing")' in source
+    assert 'document.getElementById("passport-take-btn")' in source
+    assert "takeBtn.focus()" in source
+
+
 def test_czech_guest_validation_is_localized():
     token, wrong, _right = _make_apartment_with_stays()
     try:

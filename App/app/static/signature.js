@@ -376,6 +376,20 @@
       var fields = step.querySelectorAll("input, select, textarea");
       for (var i = 0; i < fields.length; i += 1) {
         if (!fields[i].checkValidity()) {
+          // The passport file input is hidden, and a browser cannot show a
+          // validation bubble on, or focus, a hidden control: Continue would
+          // silently do nothing. Say why in the error line and send the guest
+          // to the button that actually opens the picker.
+          if (fields[i].type === "file" && fields[i].hidden) {
+            var fileErr = document.getElementById("passport-file-err");
+            if (fileErr) {
+              fileErr.textContent = fileErr.getAttribute("data-missing") || "";
+              fileErr.hidden = !fileErr.textContent;
+            }
+            var takeBtn = document.getElementById("passport-take-btn");
+            if (takeBtn) takeBtn.focus();
+            return false;
+          }
           fields[i].reportValidity();
           fields[i].focus();
           return false;
