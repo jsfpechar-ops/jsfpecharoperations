@@ -143,6 +143,16 @@ def dashboard(request: Request):
     # dashboard_rows() is already sorted by legal urgency, so the first row that
     # needs work is the one thing worth putting at the top of the page.
     focus = next(iter(needs_action), None) or next(iter(waiting), None)
+    # Without a feed there is nothing to sync, so the page must offer "connect a
+    # calendar" instead of "update calendars".
+    feed_count = int(
+        db.query_one(
+            "SELECT COUNT(*) AS n FROM ical_feed f "
+            "JOIN apartment a ON a.id = f.apartment_id "
+            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
+            (owner_user_id,),
+        )["n"]
+    )
     milestone, sent_count, minutes_saved = celebrations.celebration_context(owner_user_id)
     return render(
         request,
@@ -158,6 +168,7 @@ def dashboard(request: Request):
             },
             "counts": counts,
             "apartments": apartments,
+            "feed_count": feed_count,
             "setup_warnings": setup_warnings,
             "last_sync": db.get_setting("last_ical_sync"),
             "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),

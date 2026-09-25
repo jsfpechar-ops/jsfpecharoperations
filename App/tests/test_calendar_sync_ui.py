@@ -134,13 +134,42 @@ def test_sync_rejects_an_off_site_return_to(monkeypatch):
 
 def test_sync_forms_embed_their_return_to_on_dashboard_and_properties():
     client = _host()
+    # The dashboard only offers a sync button once a calendar is connected, so
+    # this test needs one to have a form to inspect.
+    owner_id = db.query_one(
+        "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+    )["id"]
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Sync return property",
+            "automation_mode": "manual",
+            "active": 1,
+            "owner_user_id": owner_id,
+            "created_at": now,
+        },
+    )
+    db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/sync-return.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
 
-    dashboard = client.get("/")
-    apartments = client.get("/apartments")
+    try:
+        dashboard = client.get("/")
+        apartments = client.get("/apartments")
 
-    assert dashboard.status_code == 200
-    assert apartments.status_code == 200
-    assert 'action="/sync"' in dashboard.text
-    assert 'name="return_to" value="/"' in dashboard.text
-    assert 'action="/sync"' in apartments.text
-    assert 'name="return_to" value="/apartments"' in apartments.text
+        assert dashboard.status_code == 200
+        assert apartments.status_code == 200
+        assert 'action="/sync"' in dashboard.text
+        assert 'name="return_to" value="/"' in dashboard.text
+        assert 'action="/sync"' in apartments.text
+        assert 'name="return_to" value="/apartments"' in apartments.text
+    finally:
+        db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
