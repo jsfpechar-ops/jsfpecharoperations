@@ -175,10 +175,13 @@
   <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">
     <h2>{{ t('residence_title') }}</h2>
     <p class="g-intro">{{ t('residence_help') }}</p>
+    {% if residence_copied_from %}
+      <p class="hint" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
+    {% endif %}
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>
       <input class="{{ bad('res_street') }}" {{ invalid('res_street') }} type="text" id="res_street" name="res_street" maxlength="42"
-             autocomplete="street-address" required value="{{ val('res_street') }}">
+             autocomplete="address-line1" required value="{{ val('res_street') }}">
       {{ err_for('res_street') }}
     </div>
     <div class="g-row">
@@ -190,7 +193,7 @@
       </div>
       <div class="g-field">
         <label for="res_country">{{ t('res_country') }}</label>
-        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" required>
+        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" autocomplete="country" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
