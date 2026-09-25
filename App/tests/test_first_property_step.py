@@ -304,4 +304,9 @@ def test_the_header_does_not_compete_with_the_empty_state(host):
 def test_the_header_add_button_returns_once_a_property_exists(host_with_property):
     page = host_with_property.get("/apartments")
     assert page.status_code == 200, page.text
-    assert 'href="/apartments/new">Add a property' in page.text
+    label = host_i18n.STRINGS["en"]["apartments.add"]
+    assert re.search(
+        r'<a[^>]*href="/apartments/new"[^>]*>.*?' + re.escape(label) + r".*?</a>",
+        page.text,
+        re.S,
+    )
