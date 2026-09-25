@@ -639,24 +639,19 @@ message on a different trigger.
 
 ### The `dates_changed` mail kind is registered but nothing ever sends it
 
-`mail.KINDS` lists `dates_changed`, and `mail.enqueue` will accept it, but no
-call site enqueues it — `grep -rn 'dates_changed' App/app/` finds only the
-`KINDS` tuple itself (the `dates_changed_resign` hits are the *alert* kind in
-`alerts.py` and `icalsync.py`, which is a different mechanism). So the promise
-that "any e-mail from UbyHost looks nice" is not violated by it, because no
-such e-mail exists to look at.
+**Resolved by UX-134 (audit E-16).** `dates_changed` has been removed from
+`mail.KINDS` and `mail.HOST_KINDS`; the list now reflects what the app actually
+sends. `docs/SES.md` no longer promises a plain-text-only kind. Re-adding it
+needs a composer in `mail_notify.py`, EN/CS strings in `i18n.py`, and a test —
+and it belongs in exactly one of `GUEST_KINDS` / `HOST_KINDS`.
 
-The gap it implies is real, though: when the calendar moves a stay's dates after
-the guest signed, the host gets an alert (`dates_changed_resign`) and the guest
-gets nothing, even though the signed form names dates that are no longer true.
-Whether the guest should be told is a product decision — it is a change to a
-legal declaration, and telling the guest may be worse than telling only the
-host. Recorded rather than guessed at.
-
-Either decision needs the same treatment the other guest kinds just got: a
-composer in `mail_notify.py`, EN/CS strings in `i18n.py`, and a test. If the
-kind is not going to be used, it should be removed from `KINDS` so the list
-reflects what the app actually sends.
+The product gap the entry described is still open and unchanged: when the
+calendar moves a stay's dates after the guest signed, the host gets an alert
+(`dates_changed_resign`) and the guest gets nothing, even though the signed form
+names dates that are no longer true. Whether the guest should be told is a
+product decision — it is a change to a legal declaration, and telling the guest
+may be worse than telling only the host. The audit's own recommendation is to
+build it as a separate product item, because it adds a guest step.
 
 ### W4.2 — records already stored `blocked` by an earlier 112 are not swept
 
