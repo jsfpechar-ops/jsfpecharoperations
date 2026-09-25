@@ -3128,7 +3128,7 @@ label { color: var(--ink-secondary); font-weight: 620; }
   border-radius: var(--radius-pill);
   background: var(--surface);
 }
-.auth-lang-switch button { border-radius: var(--radius-pill); font-weight: 760; }
+.auth-lang-switch button { min-height: 44px; min-width: 44px; font-size: var(--text-sm); border-radius: var(--radius-pill); font-weight: 760; }
 .auth-lang-switch button.is-active { color: var(--brand-ink); background: var(--brand-soft); }
 
 .auth-title {
@@ -3153,7 +3153,7 @@ label { color: var(--ink-secondary); font-weight: 620; }
   border-color: var(--brand);
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
-.auth-remember { width: max-content; font-weight: 650; }
+.auth-remember { min-height: 44px; width: max-content; font-weight: 650; }
 .auth-remember input { accent-color: var(--brand); }
 .auth-submit {
   min-height: 50px;
