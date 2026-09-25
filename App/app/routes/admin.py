@@ -44,6 +44,7 @@ from .admin_helpers import flash as _flash
 from .admin_helpers import flash_plural as _flash_plural
 from .admin_helpers import form_str as _form_str
 from .admin_helpers import guest_form_payload as _guest_form_payload
+from .admin_helpers import host_text as _host_text
 from .admin_helpers import kept_signature as _kept_signature
 from .admin_helpers import plural_param as _plural_param
 from .admin_helpers import query_date as _query_date
@@ -140,6 +141,20 @@ def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
         "report": report,
         "invite_ready": all(item["done"] for item in invite),
     }
+
+
+def _missing_report_labels(request: Request, issues) -> List[str]:
+    """The names of the reporting fields this property still lacks.
+
+    The save confirmation lists them by name, in the same order as the
+    readiness checklist, so the flash and the checklist on the page agree.
+    """
+    missing = {issue.field for issue in validation.errors_only(issues)}
+    return [
+        _host_text(request, f"apartment.form.readiness.item.{key}")
+        for key, field, _anchor in _READINESS_REPORT_FIELDS
+        if field in missing
+    ]
 
 
 def _form_return_to(form, default: str) -> str:
@@ -597,10 +612,17 @@ async def apartment_update(apartment_id: int, request: Request):
     rejected = _save_apartment_form(apartment_id, request, form)
     if rejected:
         return rejected
-    return _back(
-        _form_return_to(form, f"/apartments/{apartment_id}"),
-        msg=_flash(request, "flash.apartments.saved"),
-    )
+    # "Saved." said nothing about whether the property can actually report, so
+    # the confirmation names what is still missing, or says there is nothing.
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    missing = _missing_report_labels(request, _apartment_issues(apartment))
+    if missing:
+        msg = _flash(request, "flash.apartments.saved", fields=", ".join(missing))
+    else:
+        msg = _flash(request, "flash.apartments.saved_ready")
+    return _back(_form_return_to(form, f"/apartments/{apartment_id}"), msg=msg)
 
 
 def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[Response]:
@@ -1679,7 +1701,20 @@ async def guest_update(guest_id: int, request: Request):
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
         reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
-    return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.saved"))
+    # "Saved." left the host guessing how far the stay had got. The count is
+    # read back after the update, and a stay with no declared guest count has
+    # nothing to count against, so it gets the plain confirmation.
+    progress = reporting.reservation_progress(reservation) if reservation else None
+    if progress and progress["expected"]:
+        msg = _flash(
+            request,
+            "flash.guests.saved",
+            filled=progress["filled"],
+            expected=progress["expected"],
+        )
+    else:
+        msg = _flash(request, "flash.guests.saved_plain")
+    return _back(f"/guests/{guest_id}", msg=msg)
 
 
 @router.post("/guests/{guest_id}/verify-identity")
