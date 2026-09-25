@@ -360,6 +360,10 @@
     var bar = form.querySelector("[data-wizard-bar]");
     var template = form.getAttribute("data-progress-label") || "";
     var active = Math.max(0, steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); }));
+    // The entry the page loaded on is the starting point for the back gesture;
+    // it replaces rather than pushes so the guest is not trapped in the wizard.
+    var pushed = active;
+    history.replaceState({ guestWizardStep: active }, "");
 
     function stepIsValid(step) {
       // The pad is a canvas and the signature itself is a hidden input, so no
@@ -400,6 +404,12 @@
 
     function show(index, focus) {
       active = Math.max(0, Math.min(index, steps.length - 1));
+      // The OS back gesture used to leave the page and throw the whole form
+      // away. Every step gets its own history entry, so back now steps back.
+      if (active !== pushed) {
+        pushed = active;
+        history.pushState({ guestWizardStep: active }, "");
+      }
       steps.forEach(function (step, i) { step.hidden = i !== active; });
       if (progress) progress.hidden = false;
       if (label) {
@@ -426,6 +436,13 @@
       for (var i = 0; i < steps.length; i += 1) {
         if (steps[i].contains(target)) { show(i, false); return; }
       }
+    });
+
+    window.addEventListener("popstate", function (event) {
+      var state = event.state;
+      if (!state || typeof state.guestWizardStep !== "number") return;
+      pushed = state.guestWizardStep;
+      show(state.guestWizardStep, true);
     });
 
     steps.forEach(function (step, index) {
