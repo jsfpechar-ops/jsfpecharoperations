@@ -142,6 +142,57 @@ def _remember_owned(response, guest_ids: List[int]) -> None:
     )
 
 
+def _guest_display_name(first_name, surname) -> str:
+    """A name fit to show a guest, not the police's shouting caps.
+
+    The record is stored the way UbyPort wants it, all upper case, so a hint
+    that read "Copied from JOHN PAUL SMITH" would look like the app was
+    shouting at the guest's own family.
+    """
+    parts = []
+    for raw in (first_name, surname):
+        part = (raw or "").strip()
+        if part:
+            parts.append(part.title())
+    return " ".join(parts)
+
+
+def _residence_prefill(request: Request, reservation) -> tuple:
+    """The address this device already gave for someone else on this stay.
+
+    Person 2 in a family types the same street, city and country as person 1,
+    and that run of typing is the longest one left in the form. The device
+    cookie already names the guests this browser filled in, so the address is
+    known - it was simply not being used. Only a completed guest is copied
+    from: a half-finished record is not something to repeat on someone else's
+    behalf.
+    """
+    owned = set(_owned_ids(request))
+    if not owned:
+        return {}, None
+    rows = db.query(
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+        "ORDER BY id DESC",
+        (reservation["id"],),
+    )
+    for row in rows:
+        if int(row["id"]) not in owned:
+            continue
+        if not reporting.guest_is_complete(row, reservation):
+            continue
+        street = (row["res_street"] or "").strip()
+        city = (row["res_city"] or "").strip()
+        country = (row["res_country"] or "").strip()
+        if not (street and city and country):
+            continue
+        name = _guest_display_name(row["first_name"], row["surname"])
+        return (
+            {"res_street": street, "res_city": city, "res_country": country},
+            name,
+        )
+    return {}, None
+
+
 def _claimed_claims(request: Request) -> Dict[int, int]:
     """The stays this device confirmed, mapped to the claim generation it used.
 
@@ -1159,6 +1210,7 @@ def _form_context(
     issues=None,
     values=None,
     back_url: Optional[str] = None,
+    residence_copied_from: Optional[str] = None,
 ) -> Dict[str, Any]:
     token = apartment["permalink_token"]
     progress = reporting.reservation_progress(reservation)
@@ -1192,6 +1244,9 @@ def _form_context(
             "expected_people": expected,
             "issues": issues or [],
             "values": values or {},
+            # The name the address was copied from, so the guest knows why the
+            # boxes are already full and that they may change them.
+            "residence_copied_from": residence_copied_from,
             # The re-render guard for [F33]: only a value the save paths would
             # accept may go back into the hidden signature field. A row written
             # before the validator existed (a junk data URL, or "imported") must
@@ -1246,6 +1301,7 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
             RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303),
             lang,
         )
+    prefill, copied_from = _residence_prefill(request, reservation)
     return _with_lang(
         render_guest(
             request,
@@ -1256,6 +1312,8 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
                 reservation,
                 None,
                 lang,
+                values=prefill,
+                residence_copied_from=copied_from,
                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
             ),
         ),
