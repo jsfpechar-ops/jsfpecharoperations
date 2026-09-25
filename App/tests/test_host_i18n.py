@@ -125,9 +125,13 @@ def test_the_page_default_follows_the_guests_own_phone():
             self.cookies = {GUEST_LANG_COOKIE: cookie} if cookie else {}
             self.headers = {"accept-language": accept} if accept else {}
 
-    # Nothing at all: the phone is the only signal left, and a silent phone
-    # means a client that never told us anything, so it gets English.
-    assert _language(_Guest()) == "en"
+    # Nothing at all: the phone is the only signal left, and a client that never
+    # told us anything is not a foreign guest, so the documented guest-link
+    # default stands. A real browser always sends this header.
+    assert _language(_Guest()) == "cs"
+    # A header that names no language is the same silent client.
+    assert _language(_Guest(accept="*")) == "cs"
+    assert _language(_Guest(accept=",,")) == "cs"
     # A Czech or Slovak phone gets Czech, whatever it lists second.
     assert _language(_Guest(accept="cs-CZ,cs;q=0.9,en;q=0.8")) == "cs"
     assert _language(_Guest(accept="sk-SK,sk;q=0.9,cs;q=0.8")) == "cs"

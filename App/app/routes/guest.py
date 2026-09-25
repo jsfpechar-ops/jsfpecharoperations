@@ -73,16 +73,19 @@ def _accept_language(request: Request) -> str:
     Read only when the guest has said nothing themselves. A browser always
     sends this header, so a German guest's first screen is English instead of
     Czech. The first tag wins, because browsers list their languages in order
-    of preference.
+    of preference. A request that asks for nothing in particular -- no header
+    at all, or a bare ``*`` -- is not a foreign guest, so the public default
+    stands rather than being quietly turned into English.
     """
     header = request.headers.get("accept-language") or ""
     for part in header.split(","):
         tag = part.split(";")[0].strip().lower().replace("_", "-")
+        if not tag or tag == "*":
+            continue
         if tag[:2] in ("cs", "sk"):
             return "cs"
-        if tag:
-            return "en"
-    return "en"
+        return "en"
+    return host_i18n.PUBLIC_DEFAULT_LANGUAGE
 
 
 def _language(request: Request) -> str:
