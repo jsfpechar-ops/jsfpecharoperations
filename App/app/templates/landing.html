@@ -84,7 +84,9 @@
                   data-pause="{{ t('landing.demo.pause') }}"
                   data-replay="{{ t('landing.demo.replay') }}"
                   aria-label="{{ t('landing.demo.pause') }}">
-            <span data-reel-icon aria-hidden="true">Ⅱ</span>
+            <svg class="reel-icon reel-icon-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <svg class="reel-icon reel-icon-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5l11 7-11 7z"/></svg>
+            <svg class="reel-icon reel-icon-replay" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5a7 7 0 1 1-6.9 8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 5v5h5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
           </button>
         </div>
         <div class="reel-screen">
@@ -133,9 +135,10 @@
               <div class="receipt-card">
                 <div class="receipt-mark">✓</div>
                 <small>UBYPORT · 2026-09-19</small>
+                <small class="receipt-example">{{ t('landing.demo.example') }}</small>
                 <strong>{{ t('landing.demo.receipt.accepted') }}</strong>
                 <p>{{ t('landing.demo.receipt.saved') }}</p>
-                <span class="receipt-code">CZ-UHP-849271</span>
+                <span class="receipt-code">DEMO-000000</span>
               </div>
               <div class="accepted-toast"><span>✓</span>{{ t('landing.demo.receipt.accepted') }}</div>
             </article>
