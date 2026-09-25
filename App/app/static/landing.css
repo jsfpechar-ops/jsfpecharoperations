@@ -146,8 +146,8 @@ a { color: inherit; }
   margin: 0;
   font-size: clamp(3.2rem, 6.4vw, 6rem);
   font-weight: 780;
-  letter-spacing: -0.065em;
-  line-height: 0.92;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
@@ -957,8 +957,8 @@ a { color: inherit; }
   max-width: 900px;
   font-size: clamp(3.1rem, 6.6vw, 5.8rem);
   font-weight: 800;
-  line-height: .94;
-  letter-spacing: -.058em;
+  line-height: 1.02;
+  letter-spacing: -.04em;
 }
 
 .landing-hero .landing-lede {
@@ -1254,6 +1254,12 @@ a { color: inherit; }
     min-height: 44px;
   }
   .landing-hero { padding-top: 64px; }
+  .landing-hero .landing-eyebrow {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
   .landing-hero h1 { font-size: clamp(2.7rem, 13vw, 3.9rem); }
   .landing-hero .landing-lede { font-size: 1.05rem; }
   .landing-hero-actions { width: 100%; }
