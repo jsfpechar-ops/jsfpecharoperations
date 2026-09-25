@@ -508,18 +508,18 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "It takes about two minutes per guest and works on a phone. If you're "
             "asked for a PIN, use the one from your host's message."
         ),
-        "mail_completion_subject": "Guest registration received",
-        "mail_completion_heading": "Registration received",
-        "mail_completion_intro": (
-            "Thank you. We have received the details for your stay at %(property)s "
-            "(%(dates)s)."
+        "mail_completion_subject": (
+            "You're registered for %(property)s — nothing else to do"
         ),
-        "mail_completion_action": "Open my stay",
-        "mail_completion_note_label": "Please note",
+        "mail_completion_heading": "You're all set",
+        "mail_completion_intro": (
+            "Everyone for %(property)s (%(dates)s) is registered. "
+            "There is nothing else you need to do."
+        ),
+        "mail_completion_action": "See your stay page",
         "mail_completion_note": (
-            "This receipt is not proof of police reporting. Depending on your host's "
-            "settings, complete foreign-guest records may be sent to UbyPort "
-            "automatically."
+            "Your host takes care of the official registration with the authorities. "
+            "This e-mail is your receipt, not an official confirmation."
         ),
         "mail_reminder_guest_subject": "Please finish your guest registration",
         "mail_reminder_guest_heading": "Your stay starts tomorrow",
@@ -1023,16 +1023,18 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu. "
             "Pokud se stránka zeptá na PIN, použijte ten ze zprávy od hostitele."
         ),
-        "mail_completion_subject": "Registrace hostů byla přijata",
-        "mail_completion_heading": "Registrace byla přijata",
-        "mail_completion_intro": (
-            "Děkujeme. Obdrželi jsme údaje k vašemu pobytu v %(property)s (%(dates)s)."
+        "mail_completion_subject": (
+            "Registrace hotová – %(property)s. Nic dalšího nemusíte dělat"
         ),
-        "mail_completion_action": "Otevřít můj pobyt",
-        "mail_completion_note_label": "Upozornění",
+        "mail_completion_heading": "Hotovo",
+        "mail_completion_intro": (
+            "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
+            "Nic dalšího dělat nemusíte."
+        ),
+        "mail_completion_action": "Zobrazit stránku pobytu",
         "mail_completion_note": (
-            "Toto potvrzení není důkazem hlášení policii. Podle nastavení ubytovatele "
-            "mohou být kompletní záznamy cizinců odeslány do UbyPortu automaticky."
+            "Úřední hlášení vyřizuje váš hostitel. Tento e-mail je potvrzení pro vás, "
+            "nikoli úřední doklad."
         ),
         "mail_reminder_guest_subject": "Dokončete prosím registraci hostů",
         "mail_reminder_guest_heading": "Váš pobyt začíná zítra",
