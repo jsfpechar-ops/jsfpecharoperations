@@ -2409,6 +2409,26 @@ details.raw pre {
   text-align: left;
 }
 
+.auth-not-you {
+  margin: 18px 0 0;
+  text-align: center;
+}
+
+.auth-not-you button {
+  border: 0;
+  background: none;
+  padding: 4px 6px;
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-not-you button:hover {
+  color: var(--ink);
+}
+
 .auth-form {
   display: grid;
   gap: 16px;
