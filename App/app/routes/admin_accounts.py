@@ -224,6 +224,8 @@ def two_factor_setup_form(request: Request):
         auth.stage_totp(account["id"], secret)
     uri = auth.totp_uri(secret, account["username"])
     context = {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri}
+    if request.query_params.get("moved") == "1":
+        context["moved"] = True
     context.update(_first_run_step(account, 2))
     return render(request, "two_factor_setup.html", context)
 
@@ -263,6 +265,35 @@ async def two_factor_setup_submit(request: Request):
     response = render(request, "two_factor_recovery.html", context)
     auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
     db.audit("two_factor_enabled", actor=account["username"], owner_user_id=account["id"])
+    return response
+
+
+@router.post("/account/2fa/move")
+async def two_factor_move(request: Request):
+    """Re-enrol the second factor on a new phone.
+
+    The old phone is gone or going, so both factors have to prove themselves one
+    last time: the password and a code the old device can still produce. Setup
+    then runs again and mints fresh recovery codes, because the old ones were
+    written down beside the old device.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    if not account["totp_enabled"]:
+        return _back("/account/2fa/setup")
+    form = await request.form()
+    if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
+        return _back("/settings", err=_flash(request, "auth.error.current_password_wrong"))
+    if not auth.verify_second_factor(account, _form_str(form, "code")):
+        return _back("/settings", err=_flash(request, "auth.error.code_invalid"))
+    auth.reset_totp(account["id"])
+    refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
+    db.audit("two_factor_moved", actor=account["username"], owner_user_id=account["id"])
+    response = RedirectResponse("/account/2fa/setup?moved=1", status_code=303)
+    # reset_totp bumps session_version, so the cookie that sent this POST is stale.
+    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
     return response
 
 
