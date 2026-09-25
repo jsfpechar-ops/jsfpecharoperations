@@ -13,6 +13,7 @@ LANDING_STRINGS = {
         "landing.nav.guides": "Guides",
         "landing.nav.faq": "UbyPort",
         "landing.nav.login": "Log in",
+        "landing.nav.menu": "Menu",
         "landing.eyebrow": "From Airbnb booking to UbyPort receipt",
         "landing.title": "Guests fill it in. UbyHost reports it.",
         "landing.lede": (
@@ -205,6 +206,7 @@ LANDING_STRINGS = {
         "landing.nav.guides": "Průvodce",
         "landing.nav.faq": "UbyPort",
         "landing.nav.login": "Přihlásit se",
+        "landing.nav.menu": "Menu",
         "landing.eyebrow": "Od rezervace z Airbnb až po doručenku z UbyPortu",
         "landing.title": "Hosté vyplní. UbyHost nahlásí.",
         "landing.lede": (
