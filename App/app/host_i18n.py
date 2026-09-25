@@ -2757,6 +2757,7 @@ _INTERFACE_STRINGS = {
         "auth.error.code_locked": (
             "Too many wrong codes. Wait 15 minutes, then log in again from the start."
         ),
+        "auth.error.code_locked_again": "Log in again",
         "auth.error.current_password_wrong": "Your current password isn't right.",
         "auth.error.locked": (
             "Too many unsuccessful attempts. Try again in 15 minutes — or, if you've "
@@ -3250,6 +3251,7 @@ _INTERFACE_STRINGS = {
         "auth.error.code_locked": (
             "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku."
         ),
+        "auth.error.code_locked_again": "Přihlásit se znovu",
         "auth.error.current_password_wrong": "Současné heslo nesedí.",
         "auth.error.locked": (
             "Příliš mnoho neúspěšných pokusů. Zkuste to znovu za 15 minut, nebo pokud jste "
