@@ -15,10 +15,11 @@ LANDING_STRINGS = {
         "landing.nav.login": "Log in",
         "landing.nav.menu": "Menu",
         "landing.eyebrow": "From Airbnb booking to UbyPort receipt",
-        "landing.title": "Guests fill it in. UbyHost reports it.",
+        "landing.title": "Guests fill in their details. UbyHost reports them to UbyPort.",
         "landing.lede": (
-            "The online guest book for Airbnb and Booking.com hosts — with guest forms "
-            "and direct foreign-guest reporting to UbyPort."
+            "For Airbnb and Booking.com hosts in Czechia: guests fill in and sign a "
+            "private online form, and UbyHost sends foreign-guest reports to UbyPort "
+            "and keeps the guest book."
         ),
         "landing.cta": "Try UbyHost",
         "landing.contact": "See how it works",
@@ -208,10 +209,11 @@ LANDING_STRINGS = {
         "landing.nav.login": "Přihlásit se",
         "landing.nav.menu": "Menu",
         "landing.eyebrow": "Od rezervace z Airbnb až po doručenku z UbyPortu",
-        "landing.title": "Hosté vyplní. UbyHost nahlásí.",
+        "landing.title": "Hosté vyplní údaje. UbyHost je nahlásí do UbyPortu.",
         "landing.lede": (
-            "Online ubytovací kniha pro hostitele z Airbnb a Booking.com — s formuláři "
-            "pro hosty a přímým hlášením cizinců do UbyPortu."
+            "Pro hostitele z Airbnb a Booking.com v Česku: hosté vyplní a podepíší "
+            "soukromý online formulář, UbyHost nahlásí cizince do UbyPortu a povede "
+            "ubytovací knihu."
         ),
         "landing.cta": "Vyzkoušet UbyHost",
         "landing.contact": "Jak to funguje",

@@ -84,20 +84,33 @@ def test_the_homepage_has_honest_machine_readable_product_information():
 
 def test_the_marketing_page_renders_translated_copy_not_raw_keys():
     """New landing strings must be wired into host_i18n or the hero shows keys."""
-    for lang, headline, scene_label, benefit in (
-        ("en", "Guests fill it in. UbyHost reports it.", "A reservation arrives", "Guest records start with bookings"),
-        ("cs", "Hosté vyplní. UbyHost nahlásí.", "Přijde rezervace", "Rezervace se objeví"),
+    for lang, scene_label, benefit in (
+        ("en", "A reservation arrives", "Guest records start with bookings"),
+        ("cs", "Přijde rezervace", "Rezervace se objeví"),
     ):
         page = _client().get(f"/?lang={lang}")
         assert page.status_code == 200
         html = page.text
-        assert headline in html
+        assert LANDING_STRINGS[lang]["landing.title"] in html
+        assert LANDING_STRINGS[lang]["landing.lede"] in html
         assert scene_label in html
         assert benefit in html
         assert 'data-product-reel' in html
         assert "/static/landing.js" in html
         leaked = re.findall(r">landing\.[a-z0-9_.]+<", html)
         assert leaked == [], f"untranslated landing keys for {lang}: {leaked}"
+
+
+def test_the_hero_says_what_ubyhost_does_and_where_it_sends_it():
+    """The old H1 used "it" twice without ever saying what "it" was."""
+    for lang in ("en", "cs"):
+        title = LANDING_STRINGS[lang]["landing.title"]
+        lede = LANDING_STRINGS[lang]["landing.lede"]
+        assert "UbyPort" in title, f"{lang}: the H1 never names the destination"
+        assert "UbyPort" in lede, f"{lang}: the lede never names the destination"
+        assert "Airbnb" in lede and "Booking.com" in lede, f"{lang}: no audience"
+        assert "form" in lede.lower(), f"{lang}: no mention of the guest form"
+        assert "guest book" in lede.lower() or "ubytovací knihu" in lede
 
 
 def test_product_details_preserve_ubyport_search_content_off_the_short_homepage():
