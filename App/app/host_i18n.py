@@ -294,8 +294,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.awaiting_verification": "Ready to report",
         "status.awaiting_verification_tip": "ID not checked (optional)",
         "stay.detail.note.immediate": "after guest forms are complete",
-        "legal.footer_short": "Legal",
-        "legal.footer_nav_label": "Legal",
         "terms.footer_short": "Terms",
         "privacy.footer_short": "Privacy",
         "dpa.footer_short": "DPA",
@@ -527,6 +525,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.back_to_toc": "Back to contents",
         "legal.toc": "Contents",
         "legal.footer_link": "Legal notice",
+        "legal.registry_link": "ARES (public register)",
         "legal.footer_short": "Legal",
         "legal.footer_nav_label": "Help and legal",
         "legal.use_acceptance": (
@@ -1529,8 +1528,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.awaiting_verification": "Připraveno k hlášení",
         "status.awaiting_verification_tip": "Doklad nezkontrolován (volitelné)",
         "stay.detail.note.immediate": "po dokončení formulářů hostů",
-        "legal.footer_short": "Právní",
-        "legal.footer_nav_label": "Právní informace",
         "terms.footer_short": "Podmínky",
         "privacy.footer_short": "Soukromí",
         "dpa.footer_short": "DPA",
@@ -1757,7 +1754,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.back_to_toc": "Zpět na obsah",
         "legal.toc": "Obsah",
         "legal.footer_link": "Právní informace",
-        "legal.footer_short": "Právní",
+        "legal.registry_link": "ARES (veřejný rejstřík)",
+        "legal.footer_short": "Právní informace",
         "legal.footer_nav_label": "Nápověda a právní informace",
         "legal.use_acceptance": (
             "Přihlášením nebo dalším používáním UbyHostu potvrzujete, že jste se seznámili "
