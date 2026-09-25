@@ -470,6 +470,7 @@ def test_a_flash_message_follows_the_hosts_language(monkeypatch):
         admin_helpers.host_i18n, "lang_from_request", lambda _request: "en"
     )
     assert admin_helpers.flash(FakeRequest(), "flash.entities.saved") == "Saved."
-    assert admin_helpers.flash(
-        FakeRequest(), "flash.apartments.pin_rotated", pin="4821"
-    ) == "New PIN generated: 4821"
+    assert admin_helpers.flash(FakeRequest(), "flash.apartments.pin_rotated") == (
+        "New PIN generated. Copy it from the guest link card and update your "
+        "portal messages."
+    )
