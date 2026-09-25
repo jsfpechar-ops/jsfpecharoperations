@@ -55,6 +55,9 @@
 
 <form method="post" action="{{ '/apartments/' ~ apartment.id if editing else '/apartments' }}">
   {% if editing %}<input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}">{% endif %}
+  {# The first submit button is the one Enter activates. Without this, Enter in
+     any field posted to the credentials test and dropped every edit. #}
+  <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
   <div class="panel" id="basics">
     <h2 style="margin-top:0">{{ t('apartment.form.basics.title') }}</h2>
     <div class="grid two">

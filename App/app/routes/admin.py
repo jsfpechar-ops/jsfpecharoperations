@@ -513,10 +513,24 @@ async def apartment_update(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/apartments", err="No such apartment.")
     form = await request.form()
+    rejected = _save_apartment_form(apartment_id, request, form)
+    if rejected:
+        return rejected
+    return _back(
+        _form_return_to(form, f"/apartments/{apartment_id}"),
+        msg=_flash(request, "flash.apartments.saved"),
+    )
+
+
+def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[Response]:
+    """Persist the property form, or return the redirect that rejects it.
+
+    Split out of ``apartment_update`` because the credentials test has to be
+    able to save the values the host just typed before it uses them.
+    """
+    if not access.apartment(request, apartment_id):
+        return _back("/apartments", err="No such apartment.")
     payload = _apartment_payload(form)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
         return _back(f"/apartments/{apartment_id}", err="No such legal entity.")
@@ -537,10 +551,9 @@ async def apartment_update(apartment_id: int, request: Request):
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err="PIN must be 6 digits.")
         payload["permalink_pin"] = pin
-    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     db.update("apartment", apartment_id, payload)
     db.audit("apartment_updated", f"id={apartment_id}")
-    return _back(return_to, msg=_flash(request, "flash.apartments.saved"))
+    return None
 
 
 @router.post("/apartments/{apartment_id}/regenerate-pin")
@@ -592,6 +605,15 @@ UBYPORT_TEXT_FIELDS = (
     "uby_contact",
     "uby_ws_user",
 )
+
+# The property form posts these; the bare test button posts none of them. That
+# is how the credentials test tells "test what I typed" from "test what is
+# saved" without a second route.
+UBYPORT_CREDENTIAL_FIELDS = UBYPORT_TEXT_FIELDS + ("uby_ws_password",)
+
+
+def _posted_credentials(form) -> bool:
+    return any(_form_str(form, field) for field in UBYPORT_CREDENTIAL_FIELDS)
 
 
 def _automation_payload(form) -> Dict[str, Any]:
@@ -770,6 +792,13 @@ async def test_connection(apartment_id: int, request: Request):
         return guard
     form = await request.form()
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
+    # A host pastes the credentials from the police letter and clicks the test.
+    # Testing the saved values while the typed ones sat in the form was a
+    # silent data loss, so the typed values are saved first and then tested.
+    if _posted_credentials(form):
+        rejected = _save_apartment_form(apartment_id, request, form)
+        if rejected:
+            return rejected
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err="No such apartment.")
