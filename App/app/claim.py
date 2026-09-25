@@ -283,16 +283,8 @@ def start_claim(
     # secret beside it, encrypted, so the queued message holds a link the guest
     # can use once sent and nothing usable while it waits. The marker sits in
     # both the text and the HTML part, and mail.py substitutes it in each.
-    payload = {
-        "text": content["text"],
-        "lang": lang,
-        mail.CLAIM_SECRET_KEY: db.encrypt_field(secret),
-    }
-    if content.get("html"):
-        payload["html"] = content["html"]
-    reply_to = _reply_to_for_apartment(apartment)
-    if reply_to:
-        payload["reply_to"] = reply_to
+    payload = mail_notify.guest_payload(apartment, content, lang)
+    payload[mail.CLAIM_SECRET_KEY] = db.encrypt_field(secret)
     mail.enqueue(
         kind=kind,
         idempotency_key=f"{kind}:{reservation['id']}:v{version}",
@@ -410,10 +402,6 @@ def _entity_contact_email(legal_entity_id) -> str:
         (legal_entity_id,),
     )
     return mail.normalise_email((entity["contact_email"] if entity else "") or "")
-
-
-def _reply_to_for_apartment(apartment) -> str:
-    return _entity_contact_email(apartment["legal_entity_id"] if apartment else None)
 
 
 def _claim_text(lang: str, apartment, reservation, link: str) -> str:
@@ -543,8 +531,6 @@ def maybe_notify_completion(reservation, apartment) -> None:
     if expected is None or progress["filled"] < expected:
         return
     lang = claim["lang"] or "en"
-    reply_to = _reply_to_for_apartment(apartment)
-    cc = reply_to
     name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
     stay_dates = validation.fmt_date_range(
         reservation["date_from"], reservation["date_to"]
@@ -567,16 +553,14 @@ def maybe_notify_completion(reservation, apartment) -> None:
         plain_text=text,
         stay_url=_stay_link(apartment, reservation),
     )
-    payload = {"text": content["text"], "lang": lang}
-    if content.get("html"):
-        payload["html"] = content["html"]
-    if reply_to:
-        payload["reply_to"] = reply_to
+    payload = mail_notify.guest_payload(apartment, content, lang)
     mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
         to_email=claim["email"],
-        cc_email=cc,
+        # The host is copied on the receipt as well as being the reply address,
+        # so the guest's own record of the stay reaches them either way.
+        cc_email=payload.get("reply_to", ""),
         subject=content["subject"],
         payload=payload,
         reservation_id=reservation["id"],
@@ -650,12 +634,7 @@ def sweep_reminders() -> Dict[str, int]:
                 plain_text=text,
                 stay_url=stay_url,
             )
-            guest_payload = {"text": content["text"], "lang": lang}
-            if content.get("html"):
-                guest_payload["html"] = content["html"]
-            reply_to = _entity_contact_email(reservation["legal_entity_id"])
-            if reply_to:
-                guest_payload["reply_to"] = reply_to
+            guest_payload = mail_notify.guest_payload(reservation, content, lang)
             if mail.enqueue(
                 kind="reminder_guest",
                 idempotency_key=(

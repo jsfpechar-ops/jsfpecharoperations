@@ -756,6 +756,28 @@ def _submission_problem(
 # substitute it at send time and the queued row never holds a usable link.
 
 
+def guest_payload(
+    apartment: Any, content: Dict[str, str], lang: str
+) -> Dict[str, Any]:
+    """The outbox payload for a message addressed to a guest.
+
+    Reply-To is part of the contract here rather than a line each builder
+    remembers to write. A guest who answers a registration mail is answering
+    about their own stay, so the reply has to reach the host who owns it and
+    never UbyHost support. Every kind in ``mail.GUEST_KINDS`` is built through
+    this function, and a kind that forgets it is logged by ``mail.enqueue``.
+    """
+    payload: Dict[str, Any] = {"text": content["text"], "lang": lang}
+    if content.get("html"):
+        payload["html"] = content["html"]
+    reply_to = _entity_contact_email(
+        apartment["legal_entity_id"] if apartment else None
+    )
+    if reply_to:
+        payload["reply_to"] = reply_to
+    return payload
+
+
 def property_label(apartment: Any, lang: str) -> str:
     name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
     if name:
