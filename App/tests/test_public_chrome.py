@@ -17,6 +17,7 @@ from app import db
 from app.main import app
 
 TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
+LANDING_CSS = Path(__file__).resolve().parents[1] / "app" / "static" / "landing.css"
 
 PUBLIC_URLS = (
     "/",
@@ -178,6 +179,21 @@ def test_log_in_is_never_hidden_by_a_media_query():
         encoding="utf-8"
     )
     assert re.search(r"\.landing-login\s*\{[^}]*display:\s*none", css) is None
+
+
+def test_log_in_is_a_quiet_text_link_not_a_second_primary():
+    css = LANDING_CSS.read_text(encoding="utf-8")
+    rule = re.search(r"^\.landing-login\s*\{([^}]*)\}", css, re.M)
+    assert rule, "no .landing-login rule in landing.css"
+    body = rule.group(1)
+    # The coral fill belongs to the page's one primary CTA, so the header link
+    # must not carry it back.
+    for declaration in ("brand-action", "brand-pressed", "on-brand", "border-radius"):
+        assert declaration not in body, declaration
+    # Quiet, but still a full-size tap target on a phone.
+    assert re.search(r"min-height:\s*44px", body)
+    # And no hover rule may re-fill it.
+    assert re.search(r"\.landing-login:hover\s*\{[^}]*background", css) is None
 
 
 def test_the_phone_menu_only_appears_where_the_nav_is_hidden():
