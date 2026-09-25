@@ -141,6 +141,11 @@ def country_groups(lang: str = "en") -> List[Dict[str, object]]:
 
 
 def purpose_options(lang: str = "en") -> List[Dict[str, str]]:
+    """Purpose choices for a select: a plain label, never "10 - TURISTIKA".
+
+    The bundled sentence-case list is the label source; the fetched police
+    ``text_cs``/``text_en`` is only a fallback for a code we do not bundle.
+    """
     by_code = {code: (cs, en) for code, cs, en in validation.PURPOSES}
     rows = cached(KIND_PURPOSES)
     if rows:
@@ -149,13 +154,13 @@ def purpose_options(lang: str = "en") -> List[Dict[str, str]]:
             code = row["extra"] or row["code"]
             cs, en = by_code.get(code, ("", ""))
             if lang == "cs":
-                label = row["text_cs"] or (f"{code} - {cs}" if cs else code)
+                label = cs or row["text_cs"] or row["text_en"] or code
             else:
-                label = f"{code} - {en}" if en else (row["text_en"] or row["text_cs"] or code)
+                label = en or row["text_en"] or row["text_cs"] or code
             options.append({"code": code, "label": label})
         return options
     return [
-        {"code": code, "label": f"{code} - {cs if lang == 'cs' else en}"}
+        {"code": code, "label": cs if lang == "cs" else en}
         for code, cs, en in validation.PURPOSES
     ]
 

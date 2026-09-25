@@ -596,7 +596,7 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
             or validation.format_birth_date(guest["birth_date"]),
             "doc_number": "" if doc == validation.INPASS else doc,
             "purpose": validation.purpose_label(guest["purpose"], lang),
-            "residence": validation.compose_residence(
+            "residence": validation.display_residence(
                 guest["res_street"] or "",
                 guest["res_city"] or "",
                 guest["res_country"] or "",
