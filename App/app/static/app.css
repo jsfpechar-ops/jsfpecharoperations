@@ -3131,6 +3131,32 @@ label { color: var(--ink-secondary); font-weight: 620; }
   word-break: break-word;
 }
 
+/* Recovery codes: one chip per code, two columns, with a newline-separated text
+   run inside the container so "Copy all" pastes a usable list. */
+.auth-codes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas-subtle);
+}
+.auth-codes code {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 14px;
+  letter-spacing: .04em;
+  text-align: center;
+  word-break: break-word;
+}
+.auth-codes-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+/* The one auth action that is a link rather than a submit button. */
+.auth-submit-link { display: block; text-align: center; text-decoration: none; }
+
 .auth-hero {
   position: relative;
   overflow: hidden;
@@ -3272,4 +3298,13 @@ label { color: var(--ink-secondary); font-weight: 620; }
   table { font-size: 8pt; }
   th, td { padding: 5pt; color: #111; background: #fff; }
   a { color: #111; text-decoration: none; }
+  /* The recovery-codes page prints as the card alone: the host needs the codes
+     on paper, not the chrome they already know. */
+  .auth-page { background: #fff; }
+  .auth-layout { display: block; min-height: 0; padding: 0; gap: 0; }
+  .auth-hero, .auth-brand, .auth-lang-switch, .env-banner, .skip-link,
+  .auth-foot-legal, .auth-codes-actions, .auth-submit { display: none !important; }
+  .auth-panel { border: 0; box-shadow: none; padding: 0; width: auto; max-width: none; }
+  .auth-codes { break-inside: avoid; background: #fff; border-color: #bbb; }
+  .auth-codes code { border-color: #bbb; background: #fff; color: #111; }
 }

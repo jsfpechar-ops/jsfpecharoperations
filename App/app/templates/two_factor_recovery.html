@@ -8,9 +8,16 @@
   <h1 class="auth-title">{{ t('account.2fa.recovery_title') }}</h1>
   <p class="auth-lede">{{ t('account.2fa.recovery_lede') }}</p>
   <p class="small"><strong>{{ t('account.2fa.recovery_once') }}</strong></p>
-  <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    {% for code in recovery_codes %}<code>{{ code }}</code>{% endfor %}
+  {# One <code> per code, separated by newlines so "Copy all" pastes one code
+     per line into a password manager. The whitespace-only text nodes between
+     them are not grid items. #}
+  <div class="auth-codes" id="recovery-codes">{% for code in recovery_codes %}<code>{{ code }}</code>{{ "\n" if not loop.last }}{% endfor %}</div>
+  <div class="auth-codes-actions">
+    <button class="btn small ghost" type="button" data-copy="recovery-codes"
+            data-copy-label="{{ t('account.2fa.recovery_copy_all') }}"
+            data-copied-label="{{ t('common.copied') }}">{{ t('account.2fa.recovery_copy_all') }}</button>
+    <button class="btn small ghost" type="button" data-print>{{ t('account.2fa.recovery_print') }}</button>
   </div>
-  <a class="auth-submit" href="/" style="display:block;text-align:center;text-decoration:none">{{ t('account.2fa.recovery_continue') }}</a>
+  <a class="auth-submit auth-submit-link" href="/">{{ t('account.2fa.recovery_continue') }}</a>
 </section>
 {% endblock %}
