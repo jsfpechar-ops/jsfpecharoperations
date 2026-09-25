@@ -55,7 +55,7 @@
                   <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.open_workspace') }}</button>
                   </form>
-                  <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form">
+                  <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form"{% if user.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=user.display_name or user.username) }}"{% endif %}>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.disable') if user.active else t('users.menu.enable') }}</button>
                   </form>
                   <button class="row-menu-item" type="button" role="menuitem"
