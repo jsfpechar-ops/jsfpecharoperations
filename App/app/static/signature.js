@@ -353,13 +353,27 @@
   function initGuestWizard() {
     var form = document.querySelector("[data-guest-wizard]");
     if (!form) return;
-    var steps = Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]"));
-    if (steps.length < 2) return;
+    var allSteps = Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]"));
+    if (allSteps.length < 2) return;
+    var nationality = form.querySelector('[name="nationality"]');
     var progress = form.querySelector("[data-wizard-progress]");
     var label = form.querySelector("[data-wizard-label]");
     var bar = form.querySelector("[data-wizard-bar]");
     var template = form.getAttribute("data-progress-label") || "";
     var titleTemplate = form.getAttribute("data-progress-title") || "";
+
+    // A step can say which nationality it does not apply to — a Czech guest
+    // never uploads a document. The list is what the progress bar counts and
+    // what Back and Next walk, so it is worked out on demand rather than baked
+    // in at load: pick Czech and the form really is four steps, not five.
+    function stepsFor() {
+      return allSteps.filter(function (step) {
+        var skip = step.getAttribute("data-guest-step-skip-when");
+        return !skip || !nationality || nationality.value !== skip;
+      });
+    }
+
+    var steps = stepsFor();
     var active = Math.max(0, steps.findIndex(function (step) { return step.querySelector(".bad, .err:not(:empty)"); }));
     // The entry the page loaded on is the starting point for the back gesture;
     // it replaces rather than pushes so the guest is not trapped in the wizard.
@@ -404,6 +418,7 @@
     }
 
     function show(index, focus) {
+      steps = stepsFor();
       active = Math.max(0, Math.min(index, steps.length - 1));
       // The OS back gesture used to leave the page and throw the whole form
       // away. Every step gets its own history entry, so back now steps back.
@@ -411,7 +426,10 @@
         pushed = active;
         history.pushState({ guestWizardStep: active }, "");
       }
-      steps.forEach(function (step, i) { step.hidden = i !== active; });
+      // Hide every step first, so a step that has just dropped out of the list
+      // cannot be left visible behind the one the guest is on.
+      allSteps.forEach(function (step) { step.hidden = true; });
+      if (steps[active]) steps[active].hidden = false;
       if (progress) progress.hidden = false;
       if (label) {
         var progressText = template
@@ -440,6 +458,7 @@
     form.addEventListener("guest-wizard:show", function (event) {
       var target = event.detail && event.detail.target;
       if (!target) return;
+      steps = stepsFor();
       for (var i = 0; i < steps.length; i += 1) {
         if (steps[i].contains(target)) { show(i, false); return; }
       }
@@ -452,7 +471,9 @@
       show(state.guestWizardStep, true);
     });
 
-    steps.forEach(function (step, index) {
+    // Back and Next work out where they are from the live list, so a step that
+    // has been skipped cannot make them jump to the wrong card.
+    allSteps.forEach(function (step, index) {
       var nav = document.createElement("div");
       nav.className = "g-wizard-nav";
       if (index > 0) {
@@ -460,21 +481,43 @@
         back.type = "button";
         back.className = "g-btn secondary slim";
         back.textContent = form.getAttribute("data-back-label") || "";
-        back.addEventListener("click", function () { show(index - 1, true); });
+        back.addEventListener("click", function () {
+          var at = stepsFor().indexOf(step);
+          if (at > 0) show(at - 1, true);
+        });
         nav.appendChild(back);
       }
-      if (index < steps.length - 1) {
+      if (index < allSteps.length - 1) {
         var next = document.createElement("button");
         next.type = "button";
         next.className = "g-btn slim";
         next.textContent = form.getAttribute("data-next-label") || "";
         next.addEventListener("click", function () {
-          if (stepIsValid(step)) show(index + 1, true);
+          if (!stepIsValid(step)) return;
+          var list = stepsFor();
+          var at = list.indexOf(step);
+          if (at !== -1 && at < list.length - 1) show(at + 1, true);
         });
         nav.appendChild(next);
       }
       if (nav.childNodes.length) step.appendChild(nav);
     });
+
+    // The nationality field lives on the first step, so a Czech guest is on it
+    // when the passport step drops out: re-count the bar under their feet.
+    if (nationality) {
+      nationality.addEventListener("change", function () {
+        var current = steps[active];
+        var list = stepsFor();
+        var at = current ? list.indexOf(current) : -1;
+        // If the guest was standing on a step that has just stopped applying,
+        // keep their place in the list rather than throwing them to the end.
+        show(at === -1 ? Math.min(active, list.length - 1) : at, false);
+        pushed = active;
+        history.replaceState({ guestWizardStep: active }, "");
+      });
+    }
+
     show(active, false);
   }
 

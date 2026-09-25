@@ -144,7 +144,10 @@ def test_the_step_titles_come_from_the_page_language():
 
 def test_every_step_carries_a_title():
     page = _form("en")
-    assert page.count("data-guest-step") == page.count("data-step-title")
+    # Count the attribute itself, not the prefix: data-guest-step-skip-when is
+    # a different attribute and must not be mistaken for a step marker.
+    steps = re.findall(r"data-guest-step(?![-\w])", page)
+    assert page.count("data-step-title") == len(steps)
 
 
 def test_the_bar_template_survives_translation_in_both_languages():
@@ -229,3 +232,63 @@ def test_the_retired_person_progress_selector_is_gone():
     css = Path("app/static/guest.css").read_text(encoding="utf-8")
     assert ".g-person-progress" not in css
     assert ".g-form-line" in css
+
+
+def test_the_passport_step_says_which_guest_it_does_not_apply_to():
+    """UX-53 (A-17): a Czech guest never uploads a document."""
+    page = _form("en")
+    assert 'data-guest-step-skip-when="CZE"' in page
+    # Only the passport step is conditional; every other step always applies.
+    assert page.count("data-guest-step-skip-when") == 1
+    assert len(re.findall(r"data-guest-step(?![-\w])", page)) > 1
+
+
+def test_the_passport_step_is_the_only_one_that_carries_the_skip_rule():
+    page = _form("en")
+    card, _, tail = page.partition("data-guest-step-skip-when")
+    assert 'id="passport-photo-card"' in card.rsplit("<div", 1)[1]
+    assert "data-guest-step-skip-when" not in tail
+
+
+def test_the_wizard_counts_only_the_steps_that_apply():
+    """There is no JS test harness here, so pin the behaviour in the source."""
+    source = Path("app/static/signature.js").read_text(encoding="utf-8")
+    assert "function stepsFor()" in source
+    assert 'step.getAttribute("data-guest-step-skip-when")' in source
+    # The list is what the bar counts and what Back and Next walk, so it is
+    # worked out on demand rather than captured once at load.
+    assert "var steps = stepsFor();" in source
+    assert "steps = stepsFor();" in source
+    assert 'var allSteps = Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]"));' in source
+
+
+def test_the_bar_re_counts_when_the_nationality_changes():
+    source = Path("app/static/signature.js").read_text(encoding="utf-8")
+    wizard = source.split("function initGuestWizard()", 1)[1]
+    assert 'form.querySelector(\'[name="nationality"]\')' in wizard
+    # The total the guest is told comes from the live list, not a constant.
+    assert '.replace("__TOTAL__", String(steps.length))' in wizard
+    assert 'bar.style.width = ((active + 1) / steps.length * 100) + "%";' in wizard
+    # Changing nationality re-renders the bar without adding a history entry,
+    # so the guest's next back gesture still steps back through the wizard.
+    change = wizard.split('nationality.addEventListener("change"', 1)[1].split("});", 1)[0]
+    assert "stepsFor()" in change
+    assert "history.replaceState" in change
+
+
+def test_back_and_next_work_out_their_target_from_the_live_list():
+    source = Path("app/static/signature.js").read_text(encoding="utf-8")
+    wizard = source.split("function initGuestWizard()", 1)[1]
+    # A load-time index would send a Czech guest's Back button to the step it
+    # is already on, because the skipped step still occupies a slot in the DOM.
+    assert "var at = stepsFor().indexOf(step);" in wizard
+    assert "var at = list.indexOf(step);" in wizard
+    assert "show(index - 1, true)" not in wizard
+    assert "show(index + 1, true)" not in wizard
+
+
+def test_a_step_that_drops_out_of_the_list_is_still_hidden():
+    source = Path("app/static/signature.js").read_text(encoding="utf-8")
+    wizard = source.split("function initGuestWizard()", 1)[1]
+    assert "allSteps.forEach(function (step) { step.hidden = true; });" in wizard
+    assert "if (steps[active]) steps[active].hidden = false;" in wizard
