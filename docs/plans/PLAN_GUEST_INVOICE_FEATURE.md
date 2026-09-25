@@ -268,7 +268,7 @@ Rate limit: `invoice_form` 20/h per client.
   {% elif name == 'invoice' %}
     <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 2.5h10v15l-2.5-1.5-2.5 1.5-2.5-1.5L5 17.5v-15Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 7h5M7.5 10h5M7.5 13h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
   ```
-- **Stay detail** (`templates/reservation_detail.html`): `<section class="panel" id="invoice">` placed directly after the stay-fee panel `#stay-fee`. If that panel is not rendered, it goes directly before `{% if submissions %}`.. It shows:
+- **Stay detail** (`templates/reservation_detail.html`): `<section class="panel" id="invoice">` placed directly after the stay-fee panel `#stay-fee`, both inside the `#money` group — the slot UX_AUDIT C-16 [UX-81] reserved between the guest cards and `{% if submissions %}`, with `<h2>` copy "Payments" / "Platby". It shows:
   - open requests (buyer name, submitted at, *Vystavit*, *Odmítnout*);
   - issued documents (number, date, total, state, *PDF*, *Storno/ODD*);
   - *Vystavit fakturu*;
@@ -718,11 +718,13 @@ Every handler starts with `guard = auth.require_login(request)` and scopes by ow
 
 **`mail.KINDS`** gains `"invoice_request_link"`, `"invoice_request_host"` and `"invoice_issued"`. The builders go in `mail_notify.py`, following `build_claim_link` / `build_completion` (`_shell`, `_block_*`):
 
+**Every new kind also lands in exactly one of `mail.GUEST_KINDS` / `mail.HOST_KINDS`** (UX-74). `invoice_request_link` and `invoice_issued` are guest mail, so their payloads are built with `mail_notify.guest_payload(apartment, content, lang)`, which sets Reply-To to the legal entity's contact address. A guest who answers the invoice mail is answering about their own stay, and must reach the host, never `support@`. `invoice_request_host` is host mail and takes no Reply-To. `tests/test_claim_mail.py` fails until `KINDS` is partitioned, so this cannot be forgotten; `mail.enqueue` also logs a warning when a guest kind goes out with no Reply-To at all.
+
 | Kind | To | When | Body (blocks) | Secret handling |
 |---|---|---|---|---|
 | `invoice_request_link` | the e-mail **on file** (path D), or `reservation.guest_email` (path B, host click) | §3.2 step 6, or a host click | heading `invoice_mail_link_title`; paragraph with property name + dates; button `invoice_mail_link_button` → `/invoice/r/{token}`; note "valid 7 days" (30 for host links); footer via `_guest_footer_lines` | The token **is** a secret. Reuse the existing mechanism in `mail.py`: put `CLAIM_SECRET_MARKER` (`{{claim_secret}}`) in the body where the token belongs, and store the token encrypted under `payload[CLAIM_SECRET_KEY]` (`claim_secret_enc`, via `db.encrypt_secret`). `delivery_body` / `delivery_html` substitute it at send time. The outbox and the console log never hold a working link. |
-| `invoice_request_host` | `legal_entity.contact_email` | a new request is saved | "Host X požádal o fakturu" + buyer name + stay + button to `/reservations/{rid}#invoice` | none |
-| `invoice_issued` | `request.delivery_email` (guest chose e-mail) **or** a host click on *Poslat* | after issue (only if `delivery=='email'`) or on click | number, total, and a button to `/invoice/d/{download_token}` (valid 30 days). **No attachment**: `mail.py` has no attachment support, and adding it is out of scope. | The download token goes through the same marker mechanism |
+| `invoice_request_host` | `legal_entity.contact_email` | a new request is saved | **English**, per the host-mail language decision (E-14 [UX-80]): "Host X asked for an invoice" + buyer name + stay + button to `/reservations/{rid}#invoice` | none |
+| `invoice_issued` | `request.delivery_email` (guest chose e-mail) **or** a host click on *Poslat* | after issue (only if `delivery=='email'`) or on click | the money slot: one `_block_panel` (UX-73) with the invoice number and the total as its label/value rows, and "Download invoice" as its **one** coral button → `/invoice/d/{download_token}` (valid 30 days). The status slot stays buttonless, so the message keeps a single primary. **No attachment**: `mail.py` has no attachment support, and adding it is out of scope. | The download token goes through the same marker mechanism |
 
 **Alerts:**
 - New kind `invoice_requested` (reservation-linked). Add it to `alerts._TRANSLATED_ALERT_KINDS` and to the tuple in `_present_translated` that uses `notification.reason.{kind}`.

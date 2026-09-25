@@ -23,7 +23,7 @@ from __future__ import annotations
 import html
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from . import config, db, deadlines, host_i18n, i18n, mail, validation
 
@@ -32,6 +32,13 @@ log = logging.getLogger("ubyhost.mail_notify")
 # The horizontal lockup, at the width docs/LOGO.md gives for e-mail.
 LOGO_PATH = "/static/ubyhost-logo.jpg"
 LOGO_WIDTH = 180
+
+# Host mail is English by product-owner decision (audit E-14 [UX-80]). No
+# stored per-host language preference exists yet, so the fallback is named here
+# once instead of being a literal at each call site; when a preference does
+# exist, this constant is the single place that reads it. Guest mail is
+# unaffected -- it follows the language stored on the claim.
+HOST_MAIL_LANGUAGE = "en"
 
 # Brand tokens copied from static/tokens.css. Mail clients do not load the
 # stylesheet, so the values have to be literal here and cannot be custom
@@ -42,12 +49,32 @@ INK_MUTED = "#73736e"
 CANVAS = "#f7f7f5"
 SURFACE = "#ffffff"
 LINE = "#e4e4e1"
-BRAND = "#c85a52"
+# The two members of the brand ramp the web app actually puts text and buttons
+# in: tokens.css ``--brand-action`` for anything a guest has to read or tap, and
+# ``--brand-ink`` for a small label on the tinted note. The identity colour
+# itself (``--brand``, #c85a52) is deliberately absent: white on it is 4.17:1,
+# which fails AA, and it fails on white too. ``BRAND_SOFT`` is a background
+# only, where it carries no text.
+BRAND_ACTION = "#ad4942"
+BRAND_INK = "#963e38"
 BRAND_SOFT = "#f9e9e7"
 
 _FONT = (
     "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',"
     "Arial,sans-serif"
+)
+
+# Mail clients fill the inbox snippet with whatever comes after the hidden
+# preheader, which is why the preview used to run on into the logo and the H1.
+# This is the spacer docs/plans/UX_AUDIT.md E-9 specifies: a figure space, a
+# zero-width no-break space and a combining grapheme joiner, repeated until the
+# snippet is full. All three render as nothing in every client.
+PREHEADER_SPACER = "\u2007\ufeff\u034f" * 40
+
+# For values a guest copies by hand off a phone screen: an IBAN, a VS, a
+# reference. Several families, because a mail client picks the first it has.
+_MONO_FONT = (
+    "ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace"
 )
 
 # A UbyPort reason is a server message, not something we control. It is shown in
@@ -190,6 +217,15 @@ def _reason_text(state: str, reason: str, transport: bool, lang: str) -> str:
 # styles, the horizontal logo on white, and a footer. The pieces below are the
 # vocabulary the composers use, so the two audiences cannot end up with two
 # different-looking products.
+#
+# Two rules hold for the guest mail:
+#
+# 1. Blocks come in a fixed order -- status (heading + intro), money (one
+#    `_block_panel`), secondary links (quiet), closing note, footer. A new
+#    payment or invoice drops into the money slot instead of inventing a place
+#    for itself.
+# 2. At most one coral button per message. If the money slot has one, the
+#    status slot must not, because two primaries means no primary.
 
 
 def _fmt_dates(date_from: Optional[str], date_to: Optional[str]) -> str:
@@ -198,17 +234,20 @@ def _fmt_dates(date_from: Optional[str], date_to: Optional[str]) -> str:
 
 def _block_heading(text: str) -> str:
     return (
-        f'<tr><td style="padding:20px 32px 0 32px;">'
+        f'<tr><td style="padding:20px 24px 0 24px;">'
         f'<h1 style="margin:0;font:600 22px/1.3 {_FONT};color:{INK};">'
         f"{_esc(text)}</h1></td></tr>"
     )
 
 
-def _block_paragraph(text: str, *, muted: bool = False) -> str:
+def _block_paragraph(
+    text: str, *, muted: bool = False, size: Optional[int] = None
+) -> str:
+    """A body paragraph. ``size`` overrides the 16px / muted-14px default."""
     colour = INK_MUTED if muted else INK_SECONDARY
-    size = 14 if muted else 16
+    size = size or (14 if muted else 16)
     return (
-        f'<tr><td style="padding:12px 32px 0 32px;">'
+        f'<tr><td style="padding:12px 24px 0 24px;">'
         f'<p style="margin:0;font:400 {size}px/1.6 {_FONT};color:{colour};">'
         f"{_esc(text)}</p></td></tr>"
     )
@@ -216,9 +255,9 @@ def _block_paragraph(text: str, *, muted: bool = False) -> str:
 
 def _block_section(label: str, body: str) -> str:
     return (
-        f'<tr><td style="padding:24px 32px 0 32px;">'
-        f'<div style="font:600 13px/1.4 {_FONT};color:{INK_MUTED};'
-        f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 8px 0;">'
+        f'<tr><td style="padding:24px 24px 0 24px;">'
+        f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
+        f'padding:0 0 8px 0;">'
         f"{_esc(label)}</div>"
         f'<p style="margin:0;font:400 15px/1.6 {_FONT};color:{INK_SECONDARY};">'
         f"{_esc(body)}</p></td></tr>"
@@ -227,10 +266,10 @@ def _block_section(label: str, body: str) -> str:
 
 def _block_note(label: str, body: str) -> str:
     return (
-        f'<tr><td style="padding:24px 32px 0 32px;">'
+        f'<tr><td style="padding:24px 24px 0 24px;">'
         f'<div style="background:{BRAND_SOFT};border-radius:10px;padding:16px 18px;">'
-        f'<div style="font:600 13px/1.4 {_FONT};color:{BRAND};'
-        f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 8px 0;">'
+        f'<div style="font:600 14px/1.4 {_FONT};color:{BRAND_INK};'
+        f'padding:0 0 8px 0;">'
         f"{_esc(label)}</div>"
         f'<div style="font:400 14px/1.6 {_FONT};color:{INK};'
         f'white-space:pre-wrap;word-break:break-word;">{_esc(body)}</div>'
@@ -240,9 +279,9 @@ def _block_note(label: str, body: str) -> str:
 
 def _block_fact(label: str, value: str) -> str:
     return (
-        f'<tr><td style="padding:20px 32px 0 32px;">'
-        f'<div style="font:600 13px/1.4 {_FONT};color:{INK_MUTED};'
-        f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 6px 0;">'
+        f'<tr><td style="padding:20px 24px 0 24px;">'
+        f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
+        f'padding:0 0 6px 0;">'
         f"{_esc(label)}</div>"
         f'<div style="font:400 15px/1.5 {_FONT};color:{INK};">{_esc(value)}</div>'
         f"</td></tr>"
@@ -250,7 +289,81 @@ def _block_fact(label: str, value: str) -> str:
 
 
 def _block_button(url: str, label: str) -> str:
-    return f'<tr><td style="padding:8px 32px 0 32px;">{_button(url, label)}</td></tr>'
+    return f'<tr><td style="padding:8px 24px 0 24px;">{_button(url, label)}</td></tr>'
+
+
+def _block_panel(
+    title: str,
+    rows: List[Tuple[str, ...]],
+    *,
+    action: Optional[Tuple[str, str]] = None,
+    note: Optional[str] = None,
+) -> str:
+    """One bordered sub-card: a title, label/value rows, at most one button.
+
+    This is the money slot of every guest message, so the stay fee and a later
+    invoice present the same way instead of scattering uppercase facts through
+    the card. A row given as ``(label, value, True)`` prints its value in a
+    monospace face, because an IBAN, a VS and a reference are meant to be copied
+    by hand. ``note`` is the muted line under the rows -- cash on arrival, for
+    the fee. The panel is on the canvas colour, which sets it slightly apart
+    from the white card without a second border weight.
+    """
+    rendered = []
+    for row in rows:
+        label, value = row[0], row[1]
+        mono = len(row) > 2 and bool(row[2])
+        value_style = (
+            f"font:400 14px/1.5 {_MONO_FONT};color:{INK};word-break:break-all;"
+            if mono
+            else f"font:600 15px/1.5 {_FONT};color:{INK};"
+        )
+        rendered.append(
+            "<tr>"
+            f'<td style="padding:0 12px 8px 0;font:400 13px/1.5 {_FONT};'
+            f'color:{INK_MUTED};vertical-align:top;white-space:nowrap;">'
+            f"{_esc(label)}</td>"
+            f'<td style="padding:0 0 8px 0;text-align:right;{value_style}'
+            f'vertical-align:top;">{_esc(value)}</td>'
+            "</tr>"
+        )
+    parts = [
+        f'<div style="font:600 15px/1.4 {_FONT};color:{INK};padding:0 0 10px 0;">'
+        f"{_esc(title)}</div>",
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'border="0" style="border-collapse:collapse;">'
+        + "".join(rendered)
+        + "</table>",
+    ]
+    if note:
+        parts.append(
+            f'<div style="font:400 13px/1.6 {_FONT};color:{INK_MUTED};'
+            f'padding:8px 0 0 0;">{_esc(note)}</div>'
+        )
+    if action:
+        parts.append(
+            f'<div style="padding:14px 0 0 0;">{_button(action[0], action[1])}</div>'
+        )
+    return (
+        '<tr><td style="padding:24px 24px 0 24px;">'
+        f'<div style="background:{CANVAS};border:1px solid {LINE};'
+        f'border-radius:12px;padding:18px 20px;">' + "".join(parts) + "</div></td></tr>"
+    )
+
+
+def _panel_text_lines(panel: Dict[str, Any]) -> List[str]:
+    """The plain-text mirror of a money panel, in the same order."""
+    lines = []
+    if panel.get("title"):
+        lines.append(str(panel["title"]))
+    for row in panel.get("rows") or []:
+        lines.append(f"{row[0]}: {row[1]}")
+    if panel.get("note"):
+        lines.append(str(panel["note"]))
+    action = panel.get("action")
+    if action:
+        lines.append(f"{action[1]}: {action[0]}")
+    return lines
 
 
 def _block_link(url: str, label: str) -> str:
@@ -260,13 +373,69 @@ def _block_link(url: str, label: str) -> str:
     substituted in both places by ``mail.delivery_html``.
     """
     return (
-        f'<tr><td style="padding:14px 32px 0 32px;">'
+        f'<tr><td style="padding:14px 24px 0 24px;">'
         f'<div style="font:400 13px/1.6 {_FONT};color:{INK_MUTED};">'
         f"{_esc(label)}</div>"
         f'<div style="font:400 13px/1.6 {_FONT};color:{INK_SECONDARY};'
         f'word-break:break-all;">'
-        f'<a href="{_esc(url)}" style="color:{BRAND};text-decoration:underline;">'
+        f'<a href="{_esc(url)}" style="color:{BRAND_ACTION};text-decoration:underline;">'
         f"{_esc(url)}</a></div></td></tr>"
+    )
+
+
+def _block_quiet_link(url: str, label: str) -> str:
+    """A labelled link with no button around it.
+
+    The receipt is the second destination in this mail and the job the host
+    actually has to do is the first, so the receipt drops to a plain underlined
+    link: the same action colour as every other link, but no 600 weight and no
+    coral block competing with the button above it.
+    """
+    return (
+        f'<tr><td style="padding:14px 24px 0 24px;">'
+        f'<div style="font:400 14px/1.5 {_FONT};color:{INK_SECONDARY};">'
+        f'<a href="{_esc(url)}" style="color:{BRAND_ACTION};text-decoration:underline;">'
+        f"{_esc(label)}</a></div></td></tr>"
+    )
+
+
+class _FooterLink:
+    """One tappable channel in a footer line.
+
+    A text part cannot carry a link, so the footer is built once and rendered
+    twice: ``_footer_text`` prints ``label``, the shell prints an anchor.
+    """
+
+    __slots__ = ("label", "href")
+
+    def __init__(self, label: str, href: str) -> None:
+        self.label = label
+        self.href = href
+
+
+# The same separator the guest pages use between two channels.
+_FOOTER_SEPARATOR = " \u00b7 "
+
+
+def _footer_text(lines: List[Any]) -> List[str]:
+    """The plain-text mirror of a footer, for the text part of a message."""
+    rendered = []
+    for line in lines:
+        if isinstance(line, list):
+            rendered.append(_FOOTER_SEPARATOR.join(link.label for link in line))
+        else:
+            rendered.append(line)
+    return rendered
+
+
+def _footer_line_html(line: Any) -> str:
+    """One footer line as HTML. A list of ``_FooterLink`` becomes anchors."""
+    if not isinstance(line, list):
+        return _esc(line)
+    return _FOOTER_SEPARATOR.join(
+        f'<a href="{_esc(link.href)}" style="color:{INK_SECONDARY};'
+        f'text-decoration:underline;">{_esc(link.label)}</a>'
+        for link in line
     )
 
 
@@ -276,7 +445,7 @@ def _shell(
     title: str,
     preheader: str,
     blocks: List[str],
-    footer_lines: List[str],
+    footer_lines: List[Any],
 ) -> str:
     """Wrap composed rows in the branded card.
 
@@ -284,13 +453,14 @@ def _shell(
     inbox list. It is hidden in the body with inline styles rather than a media
     query, because there is no ``@media`` rule anywhere in these messages: the
     product is light-mode only and a dark variant here would be the one place it
-    contradicted itself.
+    contradicted itself. It is followed by ``PREHEADER_SPACER`` so the client
+    does not read on into the logo and the heading.
     """
     logo_url = _public(LOGO_PATH)
     footer_html = "".join(
-        f'<div style="padding:4px 0 0 0;">{_esc(line)}</div>'
+        f'<div style="padding:4px 0 0 0;">{_footer_line_html(line)}</div>'
         if index
-        else f"<div>{_esc(line)}</div>"
+        else f"<div>{_footer_line_html(line)}</div>"
         for index, line in enumerate(footer_lines)
     )
     preheader_html = ""
@@ -298,7 +468,7 @@ def _shell(
         preheader_html = (
             '<div style="display:none;font-size:1px;line-height:1px;max-height:0;'
             "max-width:0;opacity:0;overflow:hidden;mso-hide:all;\">"
-            f"{_esc(preheader)}</div>"
+            f"{_esc(preheader)}{PREHEADER_SPACER}</div>"
         )
     return f"""<!doctype html>
 <html lang="{_esc(lang)}">
@@ -312,11 +482,11 @@ def _shell(
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{CANVAS};border-collapse:collapse;">
 <tr><td align="center" style="padding:28px 12px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:{SURFACE};border:1px solid {LINE};border-radius:14px;border-collapse:separate;">
-<tr><td style="padding:28px 32px 0 32px;">
+<tr><td style="padding:28px 24px 0 24px;">
 <img src="{_esc(logo_url)}" width="{LOGO_WIDTH}" alt="UbyHost" style="display:block;border:0;outline:none;text-decoration:none;width:{LOGO_WIDTH}px;max-width:100%;height:auto;">
 </td></tr>
 {"".join(blocks)}
-<tr><td style="padding:28px 32px 28px 32px;">
+<tr><td style="padding:28px 24px 28px 24px;">
 <div style="border-top:1px solid {LINE};padding:16px 0 0 0;font:400 13px/1.6 {_FONT};color:{INK_MUTED};">
 {footer_html}
 </div>
@@ -331,15 +501,16 @@ def _shell(
 
 def _guest_footer_lines(
     lang: str, property_name: str, host: Optional[Dict[str, str]]
-) -> List[str]:
+) -> List[Any]:
     """The closing lines of a guest message.
 
     A guest is told how to reach their host, never UbyHost support: the guest
     pages follow the same rule, and an address the guest cannot use reads as a
-    dead end.
+    dead end. The host's e-mail and phone are tappable in the HTML part (audit
+    E-17 [UX-131]) -- on a phone, a printed address means selecting it by hand.
     """
-    lines = [
-        "UbyHost",
+    lines: List[Any] = [
+        _guest_text(lang, "mail_guest_footer_about"),
         _guest_text(lang, "mail_guest_footer_why", property=property_name),
     ]
     host = host or {}
@@ -347,9 +518,11 @@ def _guest_footer_lines(
         lines.append(
             f"{_guest_text(lang, 'mail_guest_footer_host_label')}: {host['name']}"
         )
-    contact = " \u00b7 ".join(
-        part for part in (host.get("email"), host.get("phone")) if part
-    )
+    contact = []
+    if host.get("email"):
+        contact.append(_FooterLink(host["email"], f"mailto:{host['email']}"))
+    if host.get("phone"):
+        contact.append(_FooterLink(host["phone"], f"tel:{host['phone'].replace(' ', '')}"))
     if contact:
         lines.append(contact)
     if host.get("email"):
@@ -404,6 +577,12 @@ def build_submission_problem(
         else "mail.submission_problem.intro"
     )
     intro = _text(lang, intro_key, property=property_name)
+    preheader = _text(
+        lang,
+        "mail.submission_problem.preheader_transport"
+        if transport
+        else "mail.submission_problem.preheader",
+    )
     # A transport failure never reached UbyPort, so the mail must not say
     # UbyPort reported anything and must not send the host to fix guest data.
     reason_label_key = (
@@ -451,7 +630,9 @@ def build_submission_problem(
         ),
         "html": _build_html(
             property_name=property_name,
+            transport=transport,
             intro=intro,
+            preheader=preheader,
             reason_label=reason_label,
             reason_text=reason_text,
             next_label=next_label,
@@ -498,13 +679,18 @@ def _build_text(
 
 
 def _button(url: str, label: str) -> str:
+    # The padding sits on the cell, not the anchor, because Outlook drops
+    # padding on an inline element and would otherwise leave a text-sized
+    # click target inside a painted box. The anchor is a block filling the
+    # padded cell, so the whole 48px-tall button is clickable everywhere.
     return (
         f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
         f'style="border-collapse:separate;margin:0 0 8px 0;">'
-        f'<tr><td style="background:{BRAND};border-radius:8px;">'
-        f'<a href="{_esc(url)}" style="display:inline-block;padding:11px 20px;'
-        f"font:600 15px/1 {_FONT};color:{SURFACE};text-decoration:none;"
-        f'border-radius:8px;">{_esc(label)}</a>'
+        f'<tr><td style="background:{BRAND_ACTION};border-radius:8px;'
+        f'padding:14px 24px;">'
+        f'<a href="{_esc(url)}" style="display:block;padding:0;'
+        f"font:600 16px/20px {_FONT};color:{SURFACE};text-decoration:none;"
+        f'">{_esc(label)}</a>'
         f"</td></tr></table>"
     )
 
@@ -512,7 +698,9 @@ def _button(url: str, label: str) -> str:
 def _build_html(
     *,
     property_name: str,
+    transport: bool,
     intro: str,
+    preheader: str,
     reason_label: str,
     reason_text: str,
     next_label: str,
@@ -529,17 +717,31 @@ def _build_html(
     heading = _text(lang, "mail.submission_problem.heading")
     action_stay = _text(lang, "mail.submission_problem.action_stay")
 
+    # One stay means one job, so the coral button opens it and the receipt
+    # steps back to a quiet link. With several stays there is no single stay to
+    # promote, so each row keeps its own link and the receipt stays the button.
+    # A transport failure has no job to do yet, so it keeps the receipt button.
+    # Either way the row itself stays: it is what names the guest the mail is
+    # about.
+    one_stay = len(stay_urls) == 1 and not transport
     stay_rows = ""
     for stay, url in stay_urls:
+        stay_link = (
+            ""
+            if one_stay
+            else (
+                f'<div style="padding:6px 0 0 0;"><a href="{_esc(url)}" '
+                f"style=\"font:600 14px/1.4 {_FONT};color:{BRAND_ACTION};"
+                f'text-decoration:underline;">{_esc(action_stay)}</a></div>'
+            )
+        )
         stay_rows += (
             f'<tr><td style="padding:0 0 10px 0;border-bottom:1px solid {LINE};">'
             f'<div style="font:600 15px/1.4 {_FONT};color:{INK};">'
             f"{_esc(_stay_label(stay, lang))}</div>"
             f'<div style="font:400 14px/1.5 {_FONT};color:{INK_SECONDARY};">'
             f"{_esc(stay['property_name'])}</div>"
-            f'<div style="padding:6px 0 0 0;"><a href="{_esc(url)}" '
-            f"style=\"font:600 14px/1.4 {_FONT};color:{BRAND};text-decoration:underline;"
-            f'">{_esc(action_stay)}</a></div>'
+            f"{stay_link}"
             f"</td></tr>"
             f'<tr><td style="height:10px;line-height:10px;font-size:0;">&nbsp;</td></tr>'
         )
@@ -554,22 +756,26 @@ def _build_html(
 
     if stay_rows:
         blocks.append(
-            f'<tr><td style="padding:24px 32px 0 32px;">'
-            f'<div style="font:600 13px/1.4 {_FONT};color:{INK_MUTED};'
-            f'text-transform:uppercase;letter-spacing:0.04em;padding:0 0 10px 0;">'
+            f'<tr><td style="padding:24px 24px 0 24px;">'
+            f'<div style="font:600 14px/1.4 {_FONT};color:{INK};'
+            f'padding:0 0 10px 0;">'
             f"{_esc(stays_label)}</div>"
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
             f'border="0" style="border-collapse:collapse;">{stay_rows}</table>'
             f"</td></tr>"
         )
 
-    if submission_url:
+    if one_stay:
+        blocks.append(_block_button(stay_urls[0][1], action_stay))
+        if submission_url:
+            blocks.append(_block_quiet_link(submission_url, action_receipt))
+    elif submission_url:
         blocks.append(_block_button(submission_url, action_receipt))
 
     return _shell(
         lang=lang,
         title=property_name,
-        preheader=intro,
+        preheader=preheader,
         blocks=blocks,
         footer_lines=[footer, footer_support],
     )
@@ -625,6 +831,7 @@ def _submission_problem(
         # host is not left uninformed; there is simply no address to also mail.
         return None
 
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
     stays = stays_for_submission(submission_id)
     content = build_submission_problem(
         property_name=apartment["internal_name"] or "",
@@ -633,12 +840,12 @@ def _submission_problem(
         transport=transport,
         stays=stays,
         submission_id=submission_id,
-        lang=lang or host_i18n.DEFAULT_LANGUAGE,
+        lang=lang,
     )
     payload: Dict[str, Any] = {
         "text": content["text"],
         "html": content["html"],
-        "lang": host_i18n.normalise_language(lang),
+        "lang": lang,
     }
     # One message per property per local day. A batch that is retried by the
     # sweep and fails again the same afternoon updates the alert but must not
@@ -667,14 +874,37 @@ def _submission_problem(
 # substitute it at send time and the queued row never holds a usable link.
 
 
+def guest_payload(
+    apartment: Any, content: Dict[str, str], lang: str
+) -> Dict[str, Any]:
+    """The outbox payload for a message addressed to a guest.
+
+    Reply-To is part of the contract here rather than a line each builder
+    remembers to write. A guest who answers a registration mail is answering
+    about their own stay, so the reply has to reach the host who owns it and
+    never UbyHost support. Every kind in ``mail.GUEST_KINDS`` is built through
+    this function, and a kind that forgets it is logged by ``mail.enqueue``.
+    """
+    payload: Dict[str, Any] = {"text": content["text"], "lang": lang}
+    if content.get("html"):
+        payload["html"] = content["html"]
+    reply_to = _entity_contact_email(
+        apartment["legal_entity_id"] if apartment else None
+    )
+    if reply_to:
+        payload["reply_to"] = reply_to
+    return payload
+
+
 def property_label(apartment: Any, lang: str) -> str:
     name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
     if name:
         return name
     # Both names are optional on a property, and an empty one would leave the
     # sentence reading "your stay at ()". Fall back to a translated stand-in
-    # rather than an English literal, because this text is translated.
-    return _guest_text(lang, "mail_guest_footer_host_label")
+    # rather than an English literal, because this text is translated. It
+    # stands in for a property name, so it must never be the host label.
+    return _guest_text(lang, "mail_property_fallback")
 
 
 def build_claim_link(
@@ -684,6 +914,7 @@ def build_claim_link(
     dates: str,
     link: str,
     resend: bool = False,
+    stay_complete: bool = False,
     host: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """The magic-link mail: the guest's way into the registration form."""
@@ -698,8 +929,15 @@ def build_claim_link(
         lang, "mail_claim_expiry_resend" if resend else "mail_claim_expiry"
     )
     next_label = _guest_text(lang, "mail_claim_next_label")
-    next_body = _guest_text(lang, "mail_claim_next_body")
+    # A link resent for a stay whose forms are all in is not an invitation to
+    # fill anything in, so it must not promise a form.
+    next_body = _guest_text(
+        lang, "mail_claim_next_done" if stay_complete else "mail_claim_next_body"
+    )
     fallback = _guest_text(lang, "mail_link_fallback")
+    preheader = _guest_text(
+        lang, "mail_claim_resend_preheader" if resend else "mail_claim_preheader"
+    )
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
     blocks = _guest_blocks(
@@ -710,9 +948,12 @@ def build_claim_link(
         action_url=link,
         action_label=action,
         extra_blocks=[
+            # The expiry sits directly under the button: it is the one
+            # time-critical fact in the message, and it used to be the last
+            # muted line, after "what happens next".
+            _block_paragraph(expiry, size=15),
             _block_link(link, fallback),
             _block_section(next_label, next_body),
-            _block_paragraph(expiry, muted=True),
         ],
     )
     text = "\n".join(
@@ -721,12 +962,12 @@ def build_claim_link(
             "",
             f"{action}: {link}",
             "",
-            f"{next_label}: {next_body}",
-            "",
             expiry,
             "",
+            f"{next_label}: {next_body}",
+            "",
             "--",
-            *footer_lines,
+            *_footer_text(footer_lines),
         ]
     )
     return {
@@ -735,7 +976,7 @@ def build_claim_link(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=_guest_text(lang, "mail_claim_preheader"),
+            preheader=preheader,
             blocks=blocks,
             footer_lines=footer_lines,
         ),
@@ -749,6 +990,8 @@ def build_completion(
     dates: str,
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
+    money: Optional[Dict[str, Any]] = None,
+    secondary_note: Optional[str] = None,
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -756,31 +999,79 @@ def build_completion(
     have to be minted here; a receipt is the wrong place to rotate the guest's
     access. The stay address works on the device that confirmed, which is where
     the guest just finished filling the form in.
+
+    The blocks keep the guest order -- status, money, secondary links, closing
+    note, footer -- so a stay fee or an invoice can fill the money slot without
+    anything moving around it. ``money`` is that slot: ``title``, ``rows`` of
+    ``(label, value[, monospace])``, an optional ``action`` of ``(url, label)``
+    and an optional ``note``. Its ``amount`` is the bare number the fee-due
+    subject names, and its presence is what switches the subject over.
+    ``secondary_note`` is a muted line in the links slot, next to the stay link
+    -- the note about where the payment QR code lives, for the fee.
     """
-    subject = _guest_text(lang, "mail_completion_subject", property=property_name)
-    intro = _guest_text(
-        lang, "mail_completion_intro", property=property_name, dates=dates
-    )
+    amount = (money or {}).get("amount")
+    if amount:
+        subject = _guest_text(
+            lang,
+            "mail_completion_subject_fee",
+            property=property_name,
+            amount=amount,
+        )
+        # The second sentence stops promising there is nothing left to do.
+        intro = _guest_text(
+            lang,
+            "mail_completion_intro_fee",
+            property=property_name,
+            dates=dates,
+            amount=amount,
+        )
+    else:
+        subject = _guest_text(lang, "mail_completion_subject", property=property_name)
+        intro = _guest_text(
+            lang, "mail_completion_intro", property=property_name, dates=dates
+        )
     action = _guest_text(lang, "mail_completion_action")
     note = _guest_text(lang, "mail_completion_note")
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
+    # Slot 1: the status. Deliberately buttonless -- see the card rules above.
     blocks = [
         _block_heading(_guest_text(lang, "mail_completion_heading")),
         _block_paragraph(intro),
-        _block_link(stay_url, action),
-        _block_paragraph(note, muted=True),
     ]
-    text = "\n".join(
-        [intro, "", f"{action}: {stay_url}", "", note, "", "--", *footer_lines]
-    )
+    text_lines = [intro]
+
+    # Slot 2: the money, when there is any.
+    if money:
+        blocks.append(
+            _block_panel(
+                money.get("title", ""),
+                money.get("rows") or [],
+                action=money.get("action"),
+                note=money.get("note"),
+            )
+        )
+        text_lines.extend(["", *_panel_text_lines(money)])
+
+    # Slot 3: secondary links, quiet by design -- the primary is in the money.
+    blocks.append(_block_link(stay_url, action))
+    text_lines.extend(["", f"{action}: {stay_url}"])
+    if secondary_note:
+        blocks.append(_block_paragraph(secondary_note, muted=True))
+        text_lines.extend(["", secondary_note])
+
+    # Slot 4: the closing note.
+    blocks.append(_block_paragraph(note, muted=True))
+    text_lines.extend(["", note])
+
+    text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
     return {
         "subject": subject,
         "text": text,
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=_guest_text(lang, "mail_completion_preheader"),
             blocks=blocks,
             footer_lines=footer_lines,
         ),
@@ -791,26 +1082,48 @@ def build_reminder_guest(
     *,
     lang: str,
     property_name: str,
-    dates: str,
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
+    filled: int = 0,
+    expected: Optional[int] = None,
 ) -> Dict[str, str]:
     """The day-before reminder for a stay whose forms are still incomplete.
 
     The original magic link is not recoverable -- only its hash is stored -- so
     this points at the stay instead. That is reachable on the device that
-    claimed it, which is the device the reminder is written for.
+    claimed it, which is the device the reminder is written for, so the copy
+    says as much rather than letting the guest meet the PIN unannounced.
+
+    The count is the one fact that tells the guest whether this mail is about
+    them or about somebody else in their party; without a declared party size
+    there is no count to quote, so both the subject and the intro fall back to
+    their count-free twin.
     """
-    subject = _guest_text(lang, "mail_reminder_guest_subject")
-    intro = _guest_text(
-        lang, "mail_reminder_guest_intro", property=property_name, dates=dates
+    missing = max(0, expected - filled) if expected is not None else None
+    subject = _guest_text(
+        lang,
+        "mail_reminder_guest_subject"
+        if expected is not None
+        else "mail_reminder_guest_subject_no_count",
+        property=property_name,
+        filled=filled,
+        expected=expected,
+    )
+    intro = (
+        _guest_text(lang, "mail_reminder_guest_intro", missing=missing)
+        if missing is not None
+        else _guest_text(lang, "mail_reminder_guest_intro_no_count", property=property_name)
     )
     action = _guest_text(lang, "mail_reminder_guest_action")
     note_label = _guest_text(lang, "mail_reminder_guest_note_label")
     note = _guest_text(lang, "mail_reminder_guest_note")
-    help_text = _guest_text(lang, "mail_reminder_guest_help")
+    device = _guest_text(lang, "mail_reminder_guest_device")
     fallback = _guest_text(lang, "mail_link_fallback")
     footer_lines = _guest_footer_lines(lang, property_name, host)
+    # The sending policy is a footnote, not a heading: the count above is the
+    # reason this mail exists, so the one-reminder fact drops to muted body text
+    # instead of the tinted box that used to shout over it.
+    one_reminder = f"{note_label} \u2014 {note}"
 
     blocks = _guest_blocks(
         heading=_guest_text(lang, "mail_reminder_guest_heading"),
@@ -818,9 +1131,9 @@ def build_reminder_guest(
         action_url=stay_url,
         action_label=action,
         extra_blocks=[
+            _block_paragraph(device, muted=True),
             _block_link(stay_url, fallback),
-            _block_note(note_label, note),
-            _block_paragraph(help_text, muted=True),
+            _block_paragraph(one_reminder, muted=True),
         ],
     )
     text = "\n".join(
@@ -829,12 +1142,12 @@ def build_reminder_guest(
             "",
             f"{action}: {stay_url}",
             "",
-            note,
+            device,
             "",
-            help_text,
+            one_reminder,
             "",
             "--",
-            *footer_lines,
+            *_footer_text(footer_lines),
         ]
     )
     return {
@@ -843,7 +1156,7 @@ def build_reminder_guest(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=_guest_text(lang, "mail_reminder_guest_preheader"),
             blocks=blocks,
             footer_lines=footer_lines,
         ),
@@ -879,6 +1192,7 @@ def build_reminder_host(
     )
     heading = _text(lang, "mail.reminder_host.heading")
     intro = _text(lang, "mail.reminder_host.intro", property=property_name, date=date)
+    preheader = _text(lang, "mail.reminder_host.preheader")
     assigned_label = _text(lang, "mail.reminder_host.assigned_label")
     assigned_value = assigned or _text(lang, "mail.reminder_host.assigned_unknown")
     next_label = _text(lang, "mail.reminder_host.next_label")
@@ -924,7 +1238,7 @@ def build_reminder_host(
         "html": _shell(
             lang=lang,
             title=property_name,
-            preheader=intro,
+            preheader=preheader,
             blocks=blocks,
             footer_lines=["UbyHost", footer],
         ),

@@ -2,14 +2,14 @@
 {% set nav = 'apartments' %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity, sync_calendars_button with context %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity, sync_calendars_button, nav_icon with context %}
 {{ onboarding_banner(onboarding) }}
 {% set header_actions %}
   <div class="page-toolbar">
     <div class="page-toolbar-row">
       {{ sync_calendars_button(return_to='/apartments', last_sync=last_sync) }}
       <a class="btn" href="/entities">{{ t('apartments.entities_link') }}</a>
-      <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
+      {% if rows %}<a class="btn primary sync-btn" href="/apartments/new"><span class="sync-btn-icon" aria-hidden="true">{{ nav_icon('property') }}</span><span>{{ t('apartments.add') }}</span></a>{% endif %}
     </div>
   </div>
 {% endset %}
@@ -40,13 +40,13 @@
         <td class="mono" data-label="{{ t('apartments.table.idub') }}">{{ apartment.uby_idub or '—' }}</td>
         <td class="num" data-label="{{ t('apartments.table.calendars') }}">{{ apartment.feeds }}</td>
         <td class="num" data-label="{{ t('apartments.table.stays') }}">{{ apartment.reservations }}</td>
-        <td class="nowrap" data-label="{{ t('apartments.table.automation') }}">
-          {% if apartment.automation_mode == 'immediate' %}<span class="pill blue">{{ t('apartments.automation.immediate') }}</span>
-          {% elif apartment.automation_mode == 'scheduled' %}<span class="pill blue">{{ t('apartments.automation.scheduled', hours=apartment.submit_after_hours) }}</span>
-          {% else %}<span class="pill grey">{{ t('apartments.automation.manual') }}</span>{% endif %}
+        <td class="small muted" data-label="{{ t('apartments.table.automation') }}">
+          {% if apartment.automation_mode == 'immediate' %}{{ t('apartments.automation.immediate') }}
+          {% elif apartment.automation_mode == 'scheduled' %}{{ t('apartments.automation.scheduled', hours=apartment.submit_after_hours) }}
+          {% else %}{{ t('apartments.automation.manual') }}{% endif %}
         </td>
         <td data-label="{{ t('apartments.table.setup') }}">
-          {% if row.issues %}<span class="pill red">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
+          {% if row.issues %}<span class="pill amber">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
           {% elif not apartment.feeds %}<span class="pill amber">{{ t('apartments.setup.calendar') }}</span>
           {% else %}<span class="pill green">{{ t('apartments.setup.ready') }}</span>{% endif %}
         </td>
@@ -68,11 +68,17 @@
 </div>
 {% else %}
 <div class="panel empty">
-  <p>{{ t('apartments.empty.lede') }}</p>
-  <div class="actions" style="justify-content:center">
-    <a class="btn" href="/entities">{{ t('apartments.empty.entity') }}</a>
-    <a class="btn primary" href="/apartments/new">{{ t('apartments.empty.add') }}</a>
-  </div>
+  {% if has_operator %}
+    <p>{{ t('apartments.empty.lede_ready') }}</p>
+    <div class="actions" style="justify-content:center">
+      <a class="btn primary" href="/apartments/new">{{ t('apartments.empty.add') }}</a>
+    </div>
+  {% else %}
+    <p>{{ t('apartments.empty.lede') }}</p>
+    <div class="actions" style="justify-content:center">
+      <a class="btn primary" href="/entities">{{ t('apartments.empty.entity') }}</a>
+    </div>
+  {% endif %}
 </div>
 {% endif %}
 

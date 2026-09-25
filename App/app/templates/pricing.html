@@ -52,6 +52,7 @@
           <img src="/static/ubyhost-mark.png" alt="">
         </div>
         <strong class="pricing-price">{{ t('pricing.card.price') }}</strong>
+        <p class="pricing-note">{{ t('pricing.card.summary') }}</p>
         <p class="pricing-note">{{ t('pricing.card.note') }}</p>
         <div class="pricing-includes">
           <h2>{{ t('pricing.includes.title') }}</h2>
@@ -62,8 +63,8 @@
           </ul>
         </div>
         <a class="landing-button pricing-button"
-           href="mailto:support@ubyhost.com?subject=UbyHost%20pricing">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
-        <small>{{ t('pricing.card.reply') }}</small>
+           href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
+        <small>{{ t('landing.cta.note') }}</small>
       </article>
     </section>
 
@@ -72,17 +73,17 @@
         <p class="landing-eyebrow">{{ t('pricing.factors.eyebrow') }}</p>
         <h2 id="factors-title">{{ t('pricing.factors.title') }}</h2>
       </header>
-      <div class="pricing-factor-grid">
-        <article class="factor-blue"><span>01</span><h3>{{ t('pricing.factor.properties.title') }}</h3><p>{{ t('pricing.factor.properties.body') }}</p></article>
-        <article class="factor-yellow"><span>02</span><h3>{{ t('pricing.factor.volume.title') }}</h3><p>{{ t('pricing.factor.volume.body') }}</p></article>
-        <article class="factor-green"><span>03</span><h3>{{ t('pricing.factor.workflow.title') }}</h3><p>{{ t('pricing.factor.workflow.body') }}</p></article>
-      </div>
+      <ol class="pricing-factor-list">
+        {% for name in ('properties', 'volume', 'workflow') %}
+        <li><span>0{{ loop.index }}</span><div><h3>{{ t('pricing.factor.' ~ name ~ '.title') }}</h3><p>{{ t('pricing.factor.' ~ name ~ '.body') }}</p></div></li>
+        {% endfor %}
+      </ol>
     </section>
 
     <section class="landing-final pricing-final">
       <img src="/static/ubyhost-mark.png" alt="">
       <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
-      <a class="landing-button primary" href="mailto:support@ubyhost.com?subject=UbyHost%20pricing">{{ t('pricing.card.cta') }}</a>
+      <a class="landing-button primary" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
     </section>
   </main>
 

@@ -1,10 +1,16 @@
 """Setup wizard progress for new workspaces."""
 from __future__ import annotations
 
+import html
+import re
+
 from fastapi.testclient import TestClient
 
 from app import auth, db, onboarding
+from app.host_i18n import STRINGS as HOST_STRINGS
 from app.main import app
+
+STEPS_RE = re.compile(r'<div class="onboarding-steps"[^>]*>\n(.*?)\n    </div>', re.DOTALL)
 
 
 def setup_module():
@@ -82,10 +88,93 @@ def test_first_dashboard_is_a_guided_setup_journey():
     assert page.status_code == 200
     assert 'class="onboarding-welcome"' in page.text
     assert 'class="onboarding-now"' in page.text
-    assert "Set it once. Welcome every guest calmly." in page.text
-    assert "Have ready: legal name, IČO" in page.text
+    assert HOST_STRINGS["en"]["onboarding.welcome_title"] in page.text
+    assert "Have ready: name, IČO" in page.text
     assert 'href="/entities"' in page.text
     assert 'href="/guide#setup"' in page.text
+
+
+def test_the_welcome_copy_names_the_task_and_the_finish():
+    assert HOST_STRINGS["en"]["onboarding.welcome_title"] == "Set up UbyHost in five steps"
+    assert (
+        HOST_STRINGS["cs"]["onboarding.welcome_title"]
+        == "Nastavení UbyHostu v pěti krocích"
+    )
+    assert HOST_STRINGS["en"]["onboarding.finish_line"] == (
+        "Finish these five steps and you can send guests their registration link."
+    )
+    assert HOST_STRINGS["cs"]["onboarding.finish_line"] == (
+        "Dokončete těchto pět kroků a můžete hostům poslat odkaz k registraci."
+    )
+    assert HOST_STRINGS["cs"]["onboarding.property.why"] == (
+        "Přesné údaje zabrání tomu, aby UbyPort hlášení odmítl."
+    )
+    assert (
+        HOST_STRINGS["cs"]["onboarding.demo_title"]
+        == "Chcete si to nejdřív vyzkoušet nanečisto?"
+    )
+    assert HOST_STRINGS["en"]["onboarding.finish_passport_tip"] == (
+        "Passport or ID photo for this property:"
+    )
+    assert HOST_STRINGS["cs"]["onboarding.finish_passport_tip"] == (
+        "Fotka pasu nebo dokladu u tohoto ubytování:"
+    )
+
+
+def test_the_first_dashboard_list_is_one_line_per_step():
+    owner_id = auth.create_account(
+        "onboard-compact-list",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    page = client.get("/")
+    steps = STEPS_RE.search(page.text)
+
+    assert steps, "the five-step list is missing from the first dashboard"
+    assert "<details>" not in steps.group(1)
+    assert "<small>" not in steps.group(1)
+    assert "<p>" not in steps.group(1)
+    for step in onboarding.progress(owner_id)["steps"]:
+        assert HOST_STRINGS["en"][f"onboarding.{step['id']}.title"] in steps.group(1)
+
+    # "Do this now" keeps the detail and the "Have ready" line, exactly once each.
+    current = onboarding.progress(owner_id)["current"]["id"]
+    assert page.text.count(HOST_STRINGS["en"][f"onboarding.{current}.detail"]) == 1
+    assert page.text.count(HOST_STRINGS["en"][f"onboarding.{current}.prepare"]) == 1
+    assert '<a href="/onboarding">' in page.text
+
+
+def test_the_full_checklist_keeps_the_detail_and_the_why():
+    owner_id = auth.create_account(
+        "onboard-full-list",
+        "Secure-Password-123",
+        role="host",
+        must_change_password=False,
+    )
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(
+        auth.SESSION_COOKIE,
+        auth.issue_session(owner_id, account["session_version"]),
+    )
+
+    page = client.get("/onboarding")
+    steps = STEPS_RE.search(page.text)
+
+    assert steps, "the five-step list is missing from the setup page"
+    block = html.unescape(steps.group(1))
+    for step in onboarding.progress(owner_id)["steps"]:
+        assert HOST_STRINGS["en"][f"onboarding.{step['id']}.detail"] in block
+        assert HOST_STRINGS["en"][f"onboarding.{step['id']}.prepare"] in block
+    assert "<details>" in block
 
 
 def test_onboarding_can_be_reopened_as_a_full_page():

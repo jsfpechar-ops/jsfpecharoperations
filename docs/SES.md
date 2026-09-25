@@ -16,8 +16,9 @@ fetched resource other than the logo: no tracking pixel, no link rewriting, no
 `@media` rules and no dark-mode styling.
 
 Kinds that carry HTML today: `claim`, `claim_resend`, `completion`,
-`reminder_guest`, `reminder_host` and `submission_problem`. `dates_changed`
-stays plain text. The **host submission-problem** notice additionally names the
+`reminder_guest`, `reminder_host` and `submission_problem`. Every kind the app
+can send is in that list: there is no plain-text-only message. The
+**host submission-problem** notice additionally names the
 reason UbyPort gave and links to each affected stay and to the Doručenka; see
 [OPERATIONS.md](OPERATIONS.md) for when it is sent.
 

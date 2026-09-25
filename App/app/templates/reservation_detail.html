@@ -6,7 +6,7 @@
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {{ page_header(
   reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
-  t('stays.table.nights', count=nights(reservation.date_from, reservation.date_to)) ~ ' · ' ~ (reservation.summary or reservation.source),
+  tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' ~ source_label(reservation),
   return_to,
   t('stay.detail.back'),
   ''
@@ -28,13 +28,20 @@
 </div>
 {% endif %}
 
-<section class="panel stay-command-panel">
+{# The stay page has one ordered grammar. Every panel joins a group; nothing is
+   appended bare. The order is: Now -> Guests -> Payments -> Police reporting ->
+   Stay settings. See docs/plans/UX_AUDIT.md (C-16 [UX-81]). #}
+
+{# --- 1. Now ------------------------------------------------------------ #}
+<section class="panel stay-command-panel" id="now">
   <div class="stay-command-main">
     <div>
       <div class="eyebrow">{{ t('stay.detail.next_step') }}</div>
       <p class="stay-command-note">
-        {% if send_controls.send_enabled %}
-          {{ t('stay.detail.ready_count', count=send_controls.pending_count) }}
+        {% if progress.status == 'failed' %}
+          {{ t('hint.failed') }}
+        {% elif send_controls.send_enabled %}
+          {{ tp('stay.detail.ready_count', send_controls.pending_count) }}
         {% else %}
           {{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}
           {% if send_controls.send_hint_key == 'hint.missing_guests' %}
@@ -45,13 +52,27 @@
     </div>
     <div class="stay-command-actions">
       {% if send_controls.send_enabled %}
-        <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
-          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-          <button class="btn accent primary" type="submit" title="{{ t(send_controls.send_hint_key) }}">
-            {{ t('stay.detail.cta.send') }}
-          </button>
-        </form>
+        {% if progress.status == 'failed' %}
+          {# Fix-first: the coral leads to the refusal, and "Send again" only
+             takes it once a refused guest has been edited since the refusal,
+             so the page never invites an unchanged resend. #}
+          <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
+          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+            <button class="btn{% if send_controls.rejected_edited %} accent primary{% endif %}" type="submit">
+              {{ t('stay.detail.cta.send_again') }}
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+            <button class="btn accent primary" type="submit" title="{{ t(send_controls.send_hint_key) }}">
+              {{ t('stay.detail.cta.send') }}
+            </button>
+          </form>
+        {% endif %}
       {% elif progress.status == 'failed' %}
         <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
       {% elif progress.status == 'reported' and submissions %}
@@ -83,30 +104,58 @@
       {{ row_menu_end() }}
     </div>
   </div>
-  <details class="stay-quick-edit" id="stay-quick-edit">
-    <summary>{{ t('stay.detail.inline.title') }}</summary>
-    <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
-          data-inline-edit data-saved="{{ t('stay.detail.inline.saved') }}"
-          data-error="{{ t('stay.detail.inline.error') }}">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <label for="quick-summary">
-        <span>{{ t('stay.detail.inline.label') }}</span>
-        <input id="quick-summary" type="text" name="summary" value="{{ reservation.summary or '' }}" maxlength="160">
-      </label>
-      <label for="quick-guests">
-        <span>{{ t('stay.detail.inline.guests') }}</span>
-        <input id="quick-guests" type="number" name="expected_guests_override"
-               value="{{ reservation.expected_guests_override or '' }}" min="1" max="60">
-      </label>
-      <button class="btn small" type="submit">{{ t('common.save') }}</button>
-      <span class="inline-edit-status" role="status" aria-live="polite"></span>
-    </form>
-  </details>
+  <div class="stay-metrics detail-hero{% if stay_inactive %} inactive{% endif %}">
+    {% if not stay_inactive %}
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
+      <div class="metric-value deadline {{ urgency_level }}">
+        {{ describe_time_left(check_in) if check_in else '—' }}
+      </div>
+      {% if deadline %}
+        <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('stay.detail.metric.guests') }}</div>
+      <div class="metric-value">
+        {{ progress.filled }} / {{ progress.expected if progress.expected is not none else '—' }}
+      </div>
+      <div class="metric-note">
+        {{ t('stay.detail.metric.guests_note', sent=progress.sent | length, reportable=progress.reportable | length) }}
+        {% if progress.expected is none %}
+          <br><a href="#stay-quick-edit">{{ t('stay.detail.metric.set_expected') }}</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
+      <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
+      <div class="metric-note">
+        {% if progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'immediate' %}
+          {{ t('stay.detail.note.ready_immediate') }}
+        {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
+          {{ t('stay.detail.note.ready_manual') }}
+        {% elif progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'scheduled' %}
+          {{ t('stay.detail.note.ready_scheduled', hours=reservation.submit_after_hours) }}
+        {% else %}
+          {{ t('stay.detail.note.automation') }}
+          {% if reservation.automation_mode == 'immediate' %}{{ t('stay.detail.note.immediate') }}
+          {% elif reservation.automation_mode == 'scheduled' %}{{ t('stay.detail.note.scheduled', hours=reservation.submit_after_hours) }}
+          {% else %}{{ t('stay.detail.note.manual') }}{% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </section>
 
+{# --- 2. Guests --------------------------------------------------------- #}
+<section id="guests">
+<div class="section-heading"><h2>{{ t('stay.detail.guests.title') }}</h2></div>
+
 {% if stay_claim %}
-<section class="panel" id="stay-claim">
-  <div class="eyebrow">{{ t('stay.claim.title') }}</div>
+<div class="stay-claim-line">
+  <div class="stay-claim-label">{{ t('stay.claim.title') }}</div>
   <p>
     {% if stay_claim.guest_access_locked_at %}
       {{ t('stay.claim.locked') }}
@@ -133,55 +182,9 @@
       </form>
     {% endif %}
   </div>
-</section>
-{% endif %}
-
-<div class="panel tight detail-hero{% if stay_inactive %} inactive{% endif %}">
-  {% if not stay_inactive %}
-  <div class="detail-metric">
-    <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
-    <div class="metric-value deadline {{ urgency_level }}">
-      {{ describe_time_left(check_in) if check_in else '—' }}
-    </div>
-    {% if deadline %}
-      <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
-    {% endif %}
-  </div>
-  {% endif %}
-  <div class="detail-metric">
-    <div class="metric-label">{{ t('stay.detail.metric.guests') }}</div>
-    <div class="metric-value">
-      {{ progress.filled }} / {{ progress.expected if progress.expected is not none else '—' }}
-    </div>
-    <div class="metric-note">
-      {{ t('stay.detail.metric.guests_note', sent=progress.sent | length, reportable=progress.reportable | length) }}
-      {% if progress.expected is none %}
-        <br><a href="#stay-quick-edit">{{ t('stay.detail.metric.set_expected') }}</a>
-      {% endif %}
-    </div>
-  </div>
-  <div class="detail-metric">
-    <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
-    <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
-    <div class="metric-note">
-      {% if progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'immediate' %}
-        {{ t('stay.detail.note.ready_immediate') }}
-      {% elif progress.status == 'ready' and reservation.automation_mode == 'manual' %}
-        {{ t('stay.detail.note.ready_manual') }}
-      {% elif progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'scheduled' %}
-        {{ t('stay.detail.note.ready_scheduled', hours=reservation.submit_after_hours) }}
-      {% else %}
-        {{ t('stay.detail.note.automation') }}
-        {% if reservation.automation_mode == 'immediate' %}{{ t('stay.detail.note.immediate') }}
-        {% elif reservation.automation_mode == 'scheduled' %}{{ t('stay.detail.note.scheduled', hours=reservation.submit_after_hours) }}
-        {% else %}{{ t('stay.detail.note.manual') }}{% endif %}
-      {% endif %}
-    </div>
-  </div>
 </div>
-
-<h2 id="guests">{{ t('stay.detail.guests.title') }}</h2>
-{% if guest_rows %}
+{% endif %}
+{% if guest_rows or progress.not_registered %}
   <ul class="guest-cards">
   {% for row in guest_rows %}
     {% set guest = row.guest %}
@@ -194,7 +197,7 @@
         <div class="guest-card-state">
           {% if guest.submit_state == 'sent' %}
             <span class="pill green">{{ t('stay.detail.guests.reported') }}</span>
-            {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at[:16].replace('T', ' ') }}</span>{% endif %}
+            {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at | datetime_local }}</span>{% endif %}
           {% elif guest.submit_state == 'not_required' %}
             <span class="pill grey">{{ t('stay.detail.guests.exempt') }}</span>
           {% elif guest.submit_state == 'error' %}
@@ -259,7 +262,7 @@
         </div>
         <div>
           <dt>{{ t('stay.detail.guests.entered_by') }}</dt>
-          <dd>{{ guest.entered_by }}</dd>
+          <dd>{{ entered_by_label(guest.entered_by) }}</dd>
         </div>
       </dl>
 
@@ -283,6 +286,23 @@
       {% endif %}
     </li>
   {% endfor %}
+  {# A guest the host declared but nobody registered used to be invisible: only
+     the cards that exist rendered, so there was nothing to act on. These rows
+     count the same people as the stay-fee headcount warning [C-37]. #}
+  {% for n in range(progress.guests | length + 1, (progress.expected or 0) + 1) %}
+    <li class="guest-card placeholder">
+      <div class="guest-card-head">
+        <div class="guest-card-who">
+          <h3>{{ t('stay.detail.guests.placeholder', n=n) }}</h3>
+        </div>
+        <div class="guest-card-state">
+          <button class="btn small" type="button" data-copy="stay-link"
+                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('common.copy_link') }}</button>
+          <a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
+        </div>
+      </div>
+    </li>
+  {% endfor %}
   </ul>
 {% else %}
   <div class="panel empty">
@@ -291,24 +311,40 @@
     <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.cta.add_guest') }}</a>
   </div>
 {% endif %}
+</section>
 
+{# --- 3. Payments ------------------------------------------------------- #}
+{# Both feature plans insert their panel here, in this order: the stay-fee
+   panel (PLAN_POPLATEK_Z_POBYTU §11.2) and then the invoice panel
+   (PLAN_GUEST_INVOICE_FEATURE §3.5). The heading renders only when a panel
+   does, so no empty group ships today. #}
+{% set money_panels = [] %}
+{% if money_panels %}
+<section id="money">
+  <div class="section-heading"><h2>{{ t('stay.detail.money.title') }}</h2></div>
+  {% for money_panel in money_panels %}{{ money_panel }}{% endfor %}
+</section>
+{% endif %}
+
+{# --- 4. Police reporting ----------------------------------------------- #}
 {% if submissions %}
-  <h2 id="reports">{{ t('stay.detail.reports.title') }}</h2>
+<section id="reports">
+  <div class="section-heading"><h2>{{ t('stay.detail.reports.title') }}</h2></div>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead><tr><th>{{ t('stay.detail.reports.when') }}</th><th>{{ t('stay.detail.reports.outcome') }}</th><th>{{ t('stay.detail.reports.stamp') }}</th><th></th></tr></thead>
       <tbody>
       {% for submission in submissions %}
         <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link">
-          <td class="nowrap small" data-label="{{ t('stay.detail.reports.when') }}">{{ submission.created_at[:16].replace('T', ' ') }}</td>
+          <td class="nowrap small" data-label="{{ t('stay.detail.reports.when') }}">{{ submission.created_at | datetime_local }}</td>
           <td data-label="{{ t('stay.detail.reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
           <td class="mono small" data-label="{{ t('stay.detail.reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
           <td class="nowrap row-actions" data-label="">
-            {% if submission.has_receipt %}
-              <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">Doručenka</a>
-            {% endif %}
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('stay.detail.reports.open') }}</a>
+              {% if submission.has_receipt %}
+                <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
+              {% endif %}
             {{ row_menu_end() }}
           </td>
         </tr>
@@ -316,11 +352,33 @@
       </tbody>
     </table>
   </div>
+</section>
 {% endif %}
 
-<details class="panel" {% if reservation.status != 'active' %}open{% endif %}>
+{# --- 5. Stay settings -------------------------------------------------- #}
+{# One panel owns both the quick edit and the full settings form, so the
+   #stay-quick-edit anchor keeps working and the page ends on a single
+   collapsed group instead of two stacked ones. #}
+<details class="panel stay-settings" id="stay-quick-edit" {% if reservation.status != 'active' %}open{% endif %}>
   <summary><strong>{{ t('stay.detail.settings.title') }}</strong></summary>
   <p class="small muted">{{ t('stay.detail.settings.lede') }} <a href="/guest-links">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
+  <h3 class="inline-edit-title">{{ t('stay.detail.inline.title') }}</h3>
+  <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
+        data-inline-edit data-saved="{{ t('stay.detail.inline.saved') }}"
+        data-error="{{ t('stay.detail.inline.error') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label for="quick-summary">
+      <span>{{ t('stay.detail.inline.label') }}</span>
+      <input id="quick-summary" type="text" name="summary" value="{{ reservation.summary or '' }}" maxlength="160">
+    </label>
+    <label for="quick-guests">
+      <span>{{ t('stay.detail.inline.guests') }}</span>
+      <input id="quick-guests" type="number" name="expected_guests_override"
+             value="{{ reservation.expected_guests_override or '' }}" min="1" max="60">
+    </label>
+    <button class="btn small" type="submit">{{ t('common.save') }}</button>
+    <span class="inline-edit-status" role="status" aria-live="polite"></span>
+  </form>
   <form method="post" action="/reservations/{{ reservation.id }}" class="settings-grid">
     <div class="field">
       <label for="guest_email">{{ t('stay.detail.settings.email') }} <span class="opt">{{ t('stay.detail.settings.host_only') }}</span></label>

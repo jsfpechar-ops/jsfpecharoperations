@@ -3,12 +3,12 @@
 {% block auth_body %}
 <section class="auth-card">
   <h1 class="auth-title">{{ t('account.2fa.setup_title') }}</h1>
-  <p class="auth-lede">{{ t('account.2fa.setup_lede') }}</p>
+  <p class="auth-lede">{% if first_run_step %}{{ t('account.step_prefix', n=first_run_step) }}{% endif %}{{ t('account.2fa.setup_lede') }}</p>
+  {% if moved %}<p class="auth-notice" role="status">{{ t('account.2fa.moved_notice') }}</p>{% endif %}
   {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}</div>{% endif %}
   {% if qr_data %}
     <div class="auth-setup-media">
-      <img src="{{ qr_data }}" alt="{{ t('account.2fa.qr_alt') }}"
-           style="display:block;width:220px;max-width:100%;margin:18px auto;border-radius:12px">
+      <img class="auth-setup-qr" src="{{ qr_data }}" alt="{{ t('account.2fa.qr_alt') }}">
       {% if totp_uri %}
         <a class="btn auth-setup-open" href="{{ totp_uri }}">{{ t('account.2fa.setup_open_app') }}</a>
       {% endif %}

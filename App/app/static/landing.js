@@ -8,14 +8,25 @@
   const icon = reel.querySelector("[data-reel-icon]");
   const caption = reel.querySelector("[data-reel-caption]");
   const labels = reel.querySelector("[data-reel-labels]");
+  const announcer = reel.querySelector("[data-reel-announce]");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const stage = reel.closest(".demo-wrap");
-  const intervalMs = 3000;
-  let active = reducedMotion.matches ? scenes.length - 1 : 0;
+  const dwellMs = 3000;
+  const last = scenes.length - 1;
+  // One pass through the four scenes, then it rests on the last one. DESIGN.md
+  // forbids looping motion, and a reel that never stops competes with the CTA
+  // sitting right above it. Replay is the way back in.
+  let active = reducedMotion.matches ? last : 0;
+  let mode = reducedMotion.matches ? "done" : "playing";
   let timer = null;
-  let paused = reducedMotion.matches;
 
   const labelFor = (index) => labels?.dataset[`label${index}`] || "";
+
+  function controlLabel() {
+    if (mode === "playing") return toggle.dataset.pause;
+    if (mode === "done") return toggle.dataset.replay;
+    return toggle.dataset.play;
+  }
 
   function render() {
     scenes.forEach((scene, index) => {
@@ -26,53 +37,87 @@
       item.classList.toggle("is-active", index === active);
     });
     caption.textContent = labelFor(active);
-    reel.classList.toggle("is-paused", paused);
+    reel.classList.toggle("is-paused", mode !== "playing");
+    reel.classList.toggle("is-done", mode === "done");
     if (stage) stage.classList.toggle("is-reduced", reducedMotion.matches);
     toggle.disabled = reducedMotion.matches;
-    icon.textContent = paused ? "▶" : "Ⅱ";
-    toggle.setAttribute(
-      "aria-label",
-      paused ? toggle.dataset.play : toggle.dataset.pause
-    );
+    icon.textContent = mode === "playing" ? "Ⅱ" : "▶";
+    toggle.setAttribute("aria-label", controlLabel());
   }
 
   function stop() {
-    if (timer) window.clearInterval(timer);
+    if (timer) window.clearTimeout(timer);
     timer = null;
   }
 
-  function start() {
+  function schedule() {
     stop();
-    if (paused || reducedMotion.matches) return;
-    timer = window.setInterval(() => {
-      active = (active + 1) % scenes.length;
+    if (mode !== "playing" || reducedMotion.matches) return;
+    timer = window.setTimeout(tick, dwellMs);
+  }
+
+  function tick() {
+    timer = null;
+    if (mode !== "playing") return;
+    if (active >= last) {
+      mode = "done";
       render();
-    }, intervalMs);
+      return;
+    }
+    active += 1;
+    render();
+    schedule();
+  }
+
+  function announce(text) {
+    if (!announcer || !text) return;
+    // Setting identical text again is silent, so clear it first and refill on
+    // the next frame — a second Replay press must still be heard.
+    announcer.textContent = "";
+    window.requestAnimationFrame(() => {
+      announcer.textContent = text;
+    });
+  }
+
+  function replay() {
+    active = 0;
+    mode = "playing";
+    render();
+    schedule();
+    announce(caption.textContent);
   }
 
   function setMotionPreference() {
     stop();
     if (reducedMotion.matches) {
-      active = scenes.length - 1;
-      paused = true;
+      active = last;
+      mode = "done";
     }
     render();
-    start();
+    schedule();
   }
 
   toggle.addEventListener("click", () => {
     if (reducedMotion.matches) return;
-    paused = !paused;
-    render();
-    start();
+    if (mode === "done") {
+      replay();
+    } else if (mode === "playing") {
+      mode = "paused";
+      stop();
+      render();
+    } else {
+      mode = "playing";
+      render();
+      schedule();
+    }
   });
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stop();
-    else start();
+    else schedule();
   });
 
   reducedMotion.addEventListener?.("change", setMotionPreference);
   render();
-  start();
+  schedule();
 })();

@@ -12,17 +12,17 @@
 
   <form method="post" action="/login" class="auth-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <input type="hidden" name="next" value="{{ request.query_params.get('next', '') }}">
+    <input type="hidden" name="next" value="{{ next if next is defined else request.query_params.get('next', '') }}">
     <div class="auth-field">
       <label for="username">{{ t('login.username') }}</label>
-      <input type="text" id="username" name="username" required autofocus
+      <input type="text" id="username" name="username" required{% if not error %} autofocus{% endif %}
              value="{{ username | default('', true) }}"
              autocomplete="username" autocapitalize="none" spellcheck="false"
              placeholder="{{ t('login.username_ph') }}">
     </div>
     <div class="auth-field">
       <label for="password">{{ t('login.password') }}</label>
-      <input type="password" id="password" name="password" required
+      <input type="password" id="password" name="password" required{% if error %} autofocus{% endif %}
              autocomplete="current-password" placeholder="{{ t('login.password_ph') }}">
     </div>
     <details class="auth-help">
@@ -34,14 +34,12 @@
       <span>{{ t('login.remember') }}</span>
     </label>
     {% if turnstile_site_key %}
-      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="host_login"></div>
+      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
+           data-action="host_login" data-language="{{ lang }}"></div>
     {% endif %}
     <button class="auth-submit" type="submit">{{ t('login.submit') }}</button>
     <p class="auth-acceptance">
-      {{ t('login.acceptance_before') }}
-      <a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('terms.footer_link') }}</a>{{ t('login.acceptance_between_terms_privacy') }}
-      <a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('privacy.footer_link') }}</a>{{ t('login.acceptance_between_privacy_legal') }}
-      <a href="/legal" target="_blank" rel="noopener noreferrer">{{ t('legal.footer_link') }}</a>{{ t('login.acceptance_after') }}
+      {{ t('login.acceptance_before') }}<a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_terms') }}</a>{{ t('login.acceptance_between_terms_dpa') }}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_dpa') }}</a>{{ t('login.acceptance_between_dpa_privacy') }}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_privacy') }}</a>{{ t('login.acceptance_between_privacy_legal') }}<a href="/legal" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_legal') }}</a>{{ t('login.acceptance_after') }}
     </p>
   </form>
 

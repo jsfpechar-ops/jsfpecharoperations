@@ -334,7 +334,7 @@ def test_the_birth_date_field_reads_the_date_back_and_accepts_a_pasted_iso_date(
         complete_guest_claim(browser, token, wrong, party_size=1)
         page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert page.status_code == 200
-        assert "Day, month, year — e.g. 04/07/1990 for 4 July 1990." in page.text
+        assert "Day, month, year — e.g. 04.07.1990 for 4 July 1990." in page.text
         assert 'id="birth-date-readback"' in page.text
         assert 'aria-live="polite"' in page.text
         assert 'data-template="That is %(date)s."' in page.text
@@ -342,7 +342,7 @@ def test_the_birth_date_field_reads_the_date_back_and_accepts_a_pasted_iso_date(
 
         cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
         assert cs_page.status_code == 200
-        assert "Den, měsíc, rok — např. 04/07/1990 pro 4. července 1990." in cs_page.text
+        assert "Den, měsíc, rok — např. 04.07.1990 pro 4. července 1990." in cs_page.text
         assert 'data-template="Tedy %(date)s."' in cs_page.text
         assert 'data-locale="cs"' in cs_page.text
     finally:
@@ -352,7 +352,7 @@ def test_the_birth_date_field_reads_the_date_back_and_accepts_a_pasted_iso_date(
 def test_the_birth_date_script_localises_the_readback_and_reorders_an_iso_paste():
     """There is no JS test harness here, so pin the two behaviours in the source."""
     source = (Path("app/static/signature.js")).read_text(encoding="utf-8")
-    # "1990-07-04" read as eight digits becomes 19/90/0704 unless it is reordered.
+    # "1990-07-04" read as eight digits becomes 19.90.0704 unless it is reordered.
     assert "fromIso" in source
     assert r"/^\s*(\d{4})-(\d{2})-(\d{2})\s*$/" in source
     assert 'input.setAttribute("data-review-value", pretty)' in source

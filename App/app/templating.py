@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime
+import re
+from datetime import date, datetime, timezone
 from typing import Any, Dict, Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context
+from markupsafe import Markup, escape
 
 from . import (
     __version__,
@@ -46,13 +49,13 @@ def _nights(date_from: Optional[str], date_to: Optional[str]) -> int:
 
 
 def _nights_key(count: int) -> str:
-    """One/few/many already lives in ``alerts``; this only renames its suffix.
+    """One/few/many already lives in ``host_i18n``; this only renames its suffix.
 
     Czech picks its form from the count and English follows the same rule, so
     the decision is shared rather than written twice. A-13 fixes the guest key
     names, so ``nights.one`` becomes ``night_one``.
     """
-    suffix = alerts._plural_key("night", count).rpartition(".")[2]
+    suffix = host_i18n.plural_key("night", count).rpartition(".")[2]
     return {
         "one": "night_one",
         "few": "nights_few",
@@ -77,11 +80,46 @@ def _from_json(value: Optional[str]) -> Any:
         return []
 
 
+def _datetime_local(value: Optional[str], seconds: bool = False) -> str:
+    """A stored UTC timestamp, in the host's own time zone.
+
+    Every timestamp the app writes comes from ``db.utcnow()``, so a Prague host
+    was reading summer times two hours early: a batch that left at 19:37 showed
+    as "Sent at 17:37". The value is shown as stored if it cannot be parsed, so
+    an odd row stays visible instead of silently blanking out.
+    """
+    text = (value or "").strip()
+    if not text:
+        return ""
+    width = 19 if seconds else 16
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return text[:width].replace("T", " ")
+    if parsed.tzinfo is None:
+        # Every writer stores UTC, so a naive value is one of ours.
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    local = parsed.astimezone(ZoneInfo(config.TIMEZONE))
+    return local.strftime("%Y-%m-%d %H:%M:%S")[:width]
+
+
 @pass_context
 def _template_translate(context, key: str, **kwargs) -> str:
     request = context.get("request")
     lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
     return host_i18n.translate(lang, key, **kwargs)
+
+
+@pass_context
+def _template_plural(context, base: str, n: int, **kwargs) -> str:
+    """A counted string, in the one/few/many form its count needs.
+
+    "3 nocí" and "1 nights" are both wrong, and both come from printing one
+    form of a key whatever the number was. Templates call ``tp('key', n)``.
+    """
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    return host_i18n.translate_plural(lang, base, n, **kwargs)
 
 
 @pass_context
@@ -96,10 +134,8 @@ def _template_time_left(context, check_in) -> str:
     kind, amount = deadlines.time_left_parts(check_in)
     key = f"deadline.{kind}"
     if kind in ("arrives_days", "days_left", "overdue_days"):
-        if amount == 1:
-            key += ".one"
-        elif 2 <= amount <= 4:
-            key += ".few"
+        # Only these keys ship one/few forms; the hour countdowns are "5 h".
+        key = host_i18n.plural_key(key, amount)
     return host_i18n.translate(lang, key, n=amount)
 
 
@@ -116,9 +152,94 @@ def _template_validation_message(context, message: str) -> str:
     return validation_i18n.localize(message, lang)
 
 
+# Portal names are proper nouns the host already reads on the portal itself.
+# Only the values UbyHost writes need translating, and an unknown slug falls
+# back to the slug so a new portal degrades to something, not to a raw key.
+_PORTAL_LABELS = {
+    "airbnb": "Airbnb",
+    "booking": "Booking.com",
+    "agoda": "Agoda",
+    "vrbo": "Vrbo",
+    "expedia": "Expedia",
+    "tripadvisor": "Tripadvisor",
+    "trip": "Trip.com",
+    "google": "Google Calendar",
+    "apple": "Apple Calendar",
+}
+_SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical"}
+_ENTERED_BY_KEYS = {
+    "guest": "stay.detail.guests.entered_by.guest",
+    "host": "stay.detail.guests.entered_by.host",
+    "import": "stay.detail.guests.entered_by.import",
+}
+
+
+@pass_context
+def _source_label(context, reservation) -> str:
+    """Where a stay came from, in the host's language.
+
+    ``reservation.summary`` is the portal's own event title ("Reserved"), so it
+    cannot label the Source column: the stored ``source`` is the only value
+    that means the same thing in both languages.
+    """
+    source = (reservation["source"] or "").strip()
+    if source in _PORTAL_LABELS:
+        return _PORTAL_LABELS[source]
+    key = _SOURCE_KEYS.get(source)
+    if key:
+        return _template_translate(context, key)
+    return source.replace("_", " ").capitalize()
+
+
+@pass_context
+def _entered_by_label(context, value) -> str:
+    """Who typed a guest record, as a word rather than the stored slug."""
+    key = _ENTERED_BY_KEYS.get((value or "").strip())
+    return _template_translate(context, key) if key else (value or "")
+
+
+@pass_context
+def _report_mode_label(context, mode) -> str:
+    """How a transmission was triggered, translated rather than humanised."""
+    key = f"reports.mode.{(mode or '').strip()}"
+    text = _template_translate(context, key)
+    return text if text != key else (mode or "").replace("_", " ").capitalize()
+
+
+# The legal documents name each other by path — "the Data Processing Agreement
+# at /dpa", "contact details on /legal" — which leaves the reader to retype the
+# URL. Only these five sibling paths are linkified, so no other slash-word in a
+# legal sentence is ever turned into a link, and the anchor text stays exactly
+# the path the sentence already prints: the legal copy is untouched and the
+# visible label remains the accessible name.
+_LEGAL_PATHS = ("/dpa", "/legal", "/privacy", "/subprocessors", "/terms")
+
+_LEGAL_PATH_RE = re.compile(
+    r"(^|(?<=[\s(]))("
+    + "|".join(re.escape(path) for path in _LEGAL_PATHS)
+    + r")(?=$|[\s.,;:)])"
+)
+
+
+def _legal_link(match: "re.Match[str]") -> str:
+    prefix, path = match.group(1), match.group(2)
+    return f'{prefix}<a href="{path}">{path}</a>'
+
+
+def _legal_links(value: object) -> Markup:
+    """Make the raw legal cross-references in a body clickable.
+
+    The input is escaped first and the markup added second, so a body can never
+    inject HTML through this filter.
+    """
+    return Markup(_LEGAL_PATH_RE.sub(_legal_link, escape(str(value))))
+
+
 templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["weekday"] = _weekday
+templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
+templates.env.filters["legal_links"] = _legal_links
 templates.env.globals["t"] = _template_translate
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals.update(
@@ -140,6 +261,10 @@ templates.env.globals.update(
     compose_residence=validation.compose_residence,
     nights=_nights,
     nights_label=_nights_label,
+    source_label=_source_label,
+    entered_by_label=_entered_by_label,
+    report_mode_label=_report_mode_label,
+    tp=_template_plural,
     parse_iso_date=validation.parse_iso_date,
     today=lambda: date.today(),
     now=lambda: datetime.now(),

@@ -160,7 +160,7 @@ def test_the_country_error_names_the_home_address_label():
 def test_every_birth_date_sentence_says_it_is_about_the_birth_date():
     """The field is "Date of birth" / "Datum narození", so the sentence says so."""
     for message in (
-        "Enter the full date as DD/MM/YYYY.",
+        "Enter the full date as DD.MM.YYYY.",
         "Year must be 1900 or later.",
         "Month must be between 01 and 12.",
         "Day must be between 01 and 31.",

@@ -272,6 +272,19 @@ def workspace_user(request: Request):
     return account
 
 
+def session_remembers(request: Request) -> bool:
+    """Whether the session in this request was started with "Remember me".
+
+    Re-issuing a session — a password change or switching 2FA on — mints a
+    fresh cookie, so the flag has to be carried across by hand or the host
+    silently drops back to the short lifetime.
+    """
+    if current_user(request) is None:
+        return False
+    payload = getattr(request.state, "session_payload", None) or {}
+    return bool(payload.get("rm"))
+
+
 def require_login(request: Request) -> Optional[RedirectResponse]:
     """Return a redirect unless a valid account session identifies this host."""
     # Test/development databases may deliberately disable bootstrap and have no
@@ -290,7 +303,12 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     ):
         return RedirectResponse("/account/password", status_code=303)
     if config.DEPLOYMENT == "production" and not account["totp_enabled"] and request.url.path not in (
-        "/account/2fa/setup", "/logout"
+        # The first run is three screens in a row: choose a password, connect an
+        # authenticator app, write down the recovery codes. The password screen
+        # has to stay reachable while 2FA is still pending: the guard above sends
+        # a host with a temporary password there, so bouncing them onward makes
+        # step 1 unreachable and the numbering on the other screens start at 2.
+        "/account/password", "/account/2fa/setup", "/logout"
     ):
         return RedirectResponse("/account/2fa/setup", status_code=303)
     workspace = workspace_user(request)

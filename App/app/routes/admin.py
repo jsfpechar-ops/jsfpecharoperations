@@ -27,6 +27,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    host_i18n,
     housebook,
     icalsync,
     mail,
@@ -41,9 +42,12 @@ from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, onboarding
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
+from .admin_helpers import flash_plural as _flash_plural
 from .admin_helpers import form_str as _form_str
 from .admin_helpers import guest_form_payload as _guest_form_payload
+from .admin_helpers import host_text as _host_text
 from .admin_helpers import kept_signature as _kept_signature
+from .admin_helpers import plural_param as _plural_param
 from .admin_helpers import query_date as _query_date
 from .admin_helpers import query_int as _query_int
 
@@ -138,6 +142,20 @@ def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
         "report": report,
         "invite_ready": all(item["done"] for item in invite),
     }
+
+
+def _missing_report_labels(request: Request, issues) -> List[str]:
+    """The names of the reporting fields this property still lacks.
+
+    The save confirmation lists them by name, in the same order as the
+    readiness checklist, so the flash and the checklist on the page agree.
+    """
+    missing = {issue.field for issue in validation.errors_only(issues)}
+    return [
+        _host_text(request, f"apartment.form.readiness.item.{key}")
+        for key, field, _anchor in _READINESS_REPORT_FIELDS
+        if field in missing
+    ]
 
 
 def _form_return_to(form, default: str) -> str:
@@ -444,6 +462,9 @@ def apartments_list(request: Request):
         {
             "rows": enriched,
             "archived_rows": archived_rows,
+            # With no operator there is nothing the property form can attach to,
+            # so the empty state names the operator as the first step instead.
+            "has_operator": bool(access.entities(request)),
             "last_sync": db.get_setting("last_ical_sync"),
         },
     )
@@ -499,8 +520,10 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["data_controller_entity_id"] = _form_int(
         form, "data_controller_entity_id"
     )
-    mode = _form_str(form, "automation_mode", "scheduled")
-    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
+    # A brand-new property starts on Manual: a first-time host should see one
+    # send themselves before anything leaves for the police.
+    mode = _form_str(form, "automation_mode", "manual")
+    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "manual"
     payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
@@ -595,10 +618,17 @@ async def apartment_update(apartment_id: int, request: Request):
     rejected = _save_apartment_form(apartment_id, request, form)
     if rejected:
         return rejected
-    return _back(
-        _form_return_to(form, f"/apartments/{apartment_id}"),
-        msg=_flash(request, "flash.apartments.saved"),
-    )
+    # "Saved." said nothing about whether the property can actually report, so
+    # the confirmation names what is still missing, or says there is nothing.
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    missing = _missing_report_labels(request, _apartment_issues(apartment))
+    if missing:
+        msg = _flash(request, "flash.apartments.saved", fields=", ".join(missing))
+    else:
+        msg = _flash(request, "flash.apartments.saved_ready")
+    return _back(_form_return_to(form, f"/apartments/{apartment_id}"), msg=msg)
 
 
 def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[Response]:
@@ -646,9 +676,11 @@ async def regenerate_pin(apartment_id: int, request: Request):
     pin = auth.new_permalink_pin()
     db.update("apartment", apartment_id, {"permalink_pin": pin})
     db.audit("pin_rotated", f"apartment={apartment_id}")
+    # The PIN itself stays out of the flash: ?msg= lands in browser history and
+    # access logs, and the guest link card already shows the new PIN.
     return _back(
         _form_return_to(form, "/guest-links"),
-        msg=_flash(request, "flash.apartments.pin_rotated", pin=pin),
+        msg=_flash(request, "flash.apartments.pin_rotated"),
     )
 
 
@@ -879,7 +911,7 @@ async def add_feed(apartment_id: int, request: Request):
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.feed_added_unreadable"))
     return _back(
         f"/apartments/{apartment_id}",
-        msg=_flash(request, "flash.feeds.added", count=totals["created"]),
+        msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
     )
 
 
@@ -908,10 +940,10 @@ async def sync_now(request: Request):
     return _back(
         return_to,
         msg=(
-            _flash(
+            _flash_plural(
                 request,
                 "flash.feeds.synced",
-                feeds=totals["feeds"],
+                totals["feeds"],
                 created=totals["created"],
                 updated=totals["updated"],
                 cancelled=totals["cancelled"],
@@ -1104,6 +1136,16 @@ def reservations_list(request: Request):
                 "WHERE a.owner_user_id IS ? LIMIT 1",
                 (access.owner_id(request),),
             )),
+            # Without a feed there is nothing to sync, so an empty list offers
+            # "connect a calendar" rather than sending the host to the properties.
+            "feed_count": int(
+                db.query_one(
+                    "SELECT COUNT(*) AS n FROM ical_feed f "
+                    "JOIN apartment a ON a.id = f.apartment_id "
+                    "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
+                    (access.owner_id(request),),
+                )["n"]
+            ),
             "return_to": quote(
                 request.url.path + (f"?{request.url.query}" if request.url.query else ""),
                 safe="",
@@ -1140,7 +1182,7 @@ async def reservation_create(request: Request):
             "uid": f"manual-{secrets.token_hex(8)}",
             "date_from": date_from,
             "date_to": date_to,
-            "summary": _form_str(form, "summary") or "Manual entry",
+            "summary": _form_str(form, "summary") or None,
             "expected_guests_override": _form_int(form, "expected_guests"),
             "guest_email": _form_str(form, "guest_email"),
             "host_note": _form_str(form, "host_note"),
@@ -1204,7 +1246,13 @@ async def reservations_submit_ready(request: Request):
         )
     return _back(
         return_to,
-        msg=_flash(request, "flash.reservations.sent", guests=sent_guests, stays=sent_stays),
+        msg=_flash_plural(
+            request,
+            "flash.reservations.sent",
+            sent_guests,
+            guests=sent_guests,
+            stays=_plural_param(request, "flash.reservations.sent.stays", sent_stays),
+        ),
     )
 
 
@@ -1468,10 +1516,12 @@ async def reservation_submit(reservation_id: int, request: Request):
     if failed:
         return _back(
             return_to,
-            msg=_flash(request, "flash.reservations.accepted", count=sent),
-            err=_flash(request, "flash.error.rejected", count=failed),
+            msg=_flash_plural(request, "flash.reservations.accepted", sent),
+            err=_flash_plural(request, "flash.error.rejected", failed),
         )
-    return _back(return_to, msg=_flash(request, "flash.reservations.reported", count=sent))
+    return _back(
+        return_to, msg=_flash_plural(request, "flash.reservations.reported", sent)
+    )
 
 
 # --- guests --------------------------------------------------------------
@@ -1669,7 +1719,20 @@ async def guest_update(guest_id: int, request: Request):
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
         reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
-    return _back(f"/guests/{guest_id}", msg=_flash(request, "flash.guests.saved"))
+    # "Saved." left the host guessing how far the stay had got. The count is
+    # read back after the update, and a stay with no declared guest count has
+    # nothing to count against, so it gets the plain confirmation.
+    progress = reporting.reservation_progress(reservation) if reservation else None
+    if progress and progress["expected"]:
+        msg = _flash(
+            request,
+            "flash.guests.saved",
+            filled=progress["filled"],
+            expected=progress["expected"],
+        )
+    else:
+        msg = _flash(request, "flash.guests.saved_plain")
+    return _back(f"/guests/{guest_id}", msg=msg)
 
 
 @router.post("/guests/{guest_id}/verify-identity")
@@ -1903,8 +1966,9 @@ def submission_detail(submission_id: int, request: Request):
     codebook = codelists.error_codebook()
     from ..ubyport import errors as uby_errors
 
+    lang = host_i18n.lang_from_request(request)
     header_messages = [
-        f"{code}: {uby_errors.describe(code, codebook)}"
+        f"{code}: {uby_errors.describe(code, codebook, lang)}"
         for code in uby_errors.split_codes(submission["header_errors"])
     ]
     raw_record_errors = json.loads(submission["record_errors"] or "[]")
@@ -1915,7 +1979,9 @@ def submission_detail(submission_id: int, request: Request):
     rows = []
     for index, guest in enumerate(guests):
         error = raw_record_errors[index] if index < len(raw_record_errors) else ""
-        state, messages = uby_errors.classify(submission["header_errors"], error, codebook)
+        state, messages = uby_errors.classify(
+            submission["header_errors"], error, codebook, lang
+        )
         if state == "accepted":
             result = "accepted"
         elif "150" in uby_errors.split_codes(error) or any(
@@ -1925,6 +1991,9 @@ def submission_detail(submission_id: int, request: Request):
         else:
             result = "rejected_final" if state == "not_correctable" else "rejected"
         rows.append({**dict(guest), "result": result, "errors": " | ".join(messages)})
+    # A rejected report leads nowhere on its own: the guest data is fixed on the
+    # stay, and that is where the batch is sent again. The first guest names it.
+    fix_reservation_id = rows[0]["reservation_id"] if rows else None
     return render(
         request,
         "submission_detail.html",
@@ -1933,6 +2002,7 @@ def submission_detail(submission_id: int, request: Request):
             "guests": rows,
             "header_messages": header_messages,
             "record_errors": record_errors,
+            "fix_reservation_id": fix_reservation_id,
         },
     )
 

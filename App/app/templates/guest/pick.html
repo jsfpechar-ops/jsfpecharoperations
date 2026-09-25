@@ -2,7 +2,6 @@
 {% block content %}
 
 <section class="g-arrival-hero" aria-labelledby="arrival-welcome">
-  <p class="g-question-kicker">{{ t('arrival_kicker') }}</p>
   <h2 id="arrival-welcome">{{ property_name }}</h2>
   <p>{{ t('arrival_welcome', facility=property_name) }}</p>
   {% if apartment.city_en %}<p class="g-arrival-location">{{ apartment.city_en }}</p>{% endif %}
@@ -31,8 +30,10 @@
         <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
         {% if row.yours %}
           <span class="g-lane-status">{{ t('your_stay_badge') }}</span>
+        {% elif row.arriving_today %}
+          <span class="g-lane-status quiet">{{ t('stay_arriving_today') }}</span>
         {% elif row.ongoing %}
-          <span class="g-lane-status ongoing">{{ t('stay_ongoing') }}</span>
+          <span class="g-lane-status quiet">{{ t('stay_ongoing') }}</span>
         {% else %}
           <span class="g-lane-status quiet">{{ t('stay_not_started') }}</span>
         {% endif %}
