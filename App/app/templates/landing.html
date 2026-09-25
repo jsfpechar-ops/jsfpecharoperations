@@ -146,7 +146,11 @@
         <div class="reel-progress" aria-hidden="true">
           {% for i in range(4) %}<i class="{{ 'is-active' if i == 0 }}" data-progress="{{ i }}"><span></span></i>{% endfor %}
         </div>
-        <p class="reel-caption" id="demo-title" aria-live="polite" data-reel-caption>{{ t('landing.demo.scene.calendar') }}</p>
+        <p class="reel-caption" id="demo-title" data-reel-caption>{{ t('landing.demo.scene.calendar') }}</p>
+        {# The reel advances on its own, so the caption must not be a live
+           region: a new sentence every 3s would interrupt whatever the
+           screen-reader user is reading. Replay is the only thing announced. #}
+        <p class="sr-only" aria-live="polite" data-reel-announce></p>
         <div hidden data-reel-labels
              data-label-0="{{ t('landing.demo.scene.calendar') }}"
              data-label-1="{{ t('landing.demo.scene.form') }}"

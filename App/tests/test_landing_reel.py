@@ -101,3 +101,25 @@ def test_the_replay_label_comes_from_the_translation_table():
             assert f'data-{key.rsplit(".", 1)[1]}="{LANDING_STRINGS[lang][key]}"' in html
     assert LANDING_STRINGS["en"]["landing.demo.replay"] == "Replay demo"
     assert LANDING_STRINGS["cs"]["landing.demo.replay"] == "Přehrát znovu"
+
+
+def test_the_auto_advancing_caption_is_not_a_live_region():
+    for lang in ("en", "cs"):
+        html = _client().get(f"/?lang={lang}").text
+        caption = re.search(r"<p[^>]*data-reel-caption[^>]*>", html)
+        assert caption, "the reel has no caption"
+        assert "aria-live" not in caption.group(0), (
+            "a caption that rewrites itself every 3s must not be announced"
+        )
+        announcer = re.search(r"<p[^>]*data-reel-announce[^>]*>", html)
+        assert announcer, "nothing left to announce Replay through"
+        assert 'aria-live="polite"' in announcer.group(0)
+        assert "sr-only" in announcer.group(0), "an empty paragraph would push the layout"
+    assert ".sr-only {" in CSS, "landing.html does not load app.css"
+
+
+def test_only_replay_writes_to_the_live_region():
+    assert JS.count("announce(") == 2, "the announcer is written from somewhere else too"
+    replay = re.search(r"function replay\(\) \{(.*?)\n  \}", JS, re.S)
+    assert replay, "no replay() to hook the announcement onto"
+    assert "announce(" in replay.group(1)
