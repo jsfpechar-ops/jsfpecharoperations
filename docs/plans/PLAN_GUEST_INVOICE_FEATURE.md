@@ -718,6 +718,8 @@ Every handler starts with `guard = auth.require_login(request)` and scopes by ow
 
 **`mail.KINDS`** gains `"invoice_request_link"`, `"invoice_request_host"` and `"invoice_issued"`. The builders go in `mail_notify.py`, following `build_claim_link` / `build_completion` (`_shell`, `_block_*`):
 
+**Every new kind also lands in exactly one of `mail.GUEST_KINDS` / `mail.HOST_KINDS`** (UX-74). `invoice_request_link` and `invoice_issued` are guest mail, so their payloads are built with `mail_notify.guest_payload(apartment, content, lang)`, which sets Reply-To to the legal entity's contact address. A guest who answers the invoice mail is answering about their own stay, and must reach the host, never `support@`. `invoice_request_host` is host mail and takes no Reply-To. `tests/test_claim_mail.py` fails until `KINDS` is partitioned, so this cannot be forgotten; `mail.enqueue` also logs a warning when a guest kind goes out with no Reply-To at all.
+
 | Kind | To | When | Body (blocks) | Secret handling |
 |---|---|---|---|---|
 | `invoice_request_link` | the e-mail **on file** (path D), or `reservation.guest_email` (path B, host click) | §3.2 step 6, or a host click | heading `invoice_mail_link_title`; paragraph with property name + dates; button `invoice_mail_link_button` → `/invoice/r/{token}`; note "valid 7 days" (30 for host links); footer via `_guest_footer_lines` | The token **is** a secret. Reuse the existing mechanism in `mail.py`: put `CLAIM_SECRET_MARKER` (`{{claim_secret}}`) in the body where the token belongs, and store the token encrypted under `payload[CLAIM_SECRET_KEY]` (`claim_secret_enc`, via `db.encrypt_secret`). `delivery_body` / `delivery_html` substitute it at send time. The outbox and the console log never hold a working link. |

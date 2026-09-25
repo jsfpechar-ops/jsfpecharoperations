@@ -34,6 +34,25 @@ KINDS = (
     "submission_problem",
 )
 
+# The kinds addressed to a guest rather than to the host. A guest has no
+# account and no way back into the app, so the one route they have is answering
+# the mail — Reply-To has to reach the host who owns the stay, never UbyHost
+# support. Everything here goes through ``mail_notify.guest_payload``, which
+# sets it. A new kind added to ``KINDS`` has to be placed in exactly one of
+# these two groups; ``test_mail.py`` fails until it is, so the next kind cannot
+# quietly ship without Reply-To.
+GUEST_KINDS = (
+    "claim",
+    "claim_resend",
+    "reminder_guest",
+    "completion",
+)
+HOST_KINDS = (
+    "reminder_host",
+    "dates_changed",
+    "submission_problem",
+)
+
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 # A claim link's secret is the one thing a stored mail body must not contain.
@@ -145,6 +164,11 @@ def enqueue(
     to_email = normalise_email(to_email)
     if not to_email:
         return None
+    if kind in GUEST_KINDS and not normalise_email(str(payload.get("reply_to") or "")):
+        # Not fatal: an entity with no contact address still has a guest waiting
+        # for a link, and the mail is worth more than the rule. Loud enough that
+        # a kind which forgot to route its answer anywhere shows up in the log.
+        log.warning("guest mail has no reply_to kind=%s key=%s", kind, idempotency_key)
     now = db.utcnow()
     existing = db.query_one(
         "SELECT id, state FROM email_outbox WHERE idempotency_key = ?",

@@ -9,7 +9,7 @@ from datetime import datetime, time, timedelta, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from app import claim, config, db, mail, reporting
+from app import claim, config, db, mail, mail_notify, reporting
 from app.routes import guest
 from app.main import app
 from tests.conftest import complete_guest_claim
@@ -1550,3 +1550,158 @@ def test_ses_delivers_the_secret_but_never_stores_it(monkeypatch):
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
         _cleanup()
+
+
+# --- UX-74: a guest's answer always goes back to the host -------------------
+#
+# A guest has no account and no way back into the app. Answering the mail is
+# the one route they have, so Reply-To has to reach the host who owns the stay
+# and never UbyHost support. It used to be set by hand at three call sites;
+# now every guest kind is built through ``mail_notify.guest_payload``.
+
+
+def _guest_outbox_rows():
+    placeholders = ",".join("?" for _ in mail.GUEST_KINDS)
+    return db.query(
+        f"SELECT id, kind, payload FROM email_outbox "
+        f"WHERE kind IN ({placeholders}) ORDER BY id",
+        tuple(mail.GUEST_KINDS),
+    )
+
+
+def test_every_mail_kind_is_classified_as_guest_or_host():
+    """UX-74: a new kind has to say whose mail it is.
+
+    The invoice plan adds guest kinds whose table does not mention Reply-To.
+    Splitting ``KINDS`` means the next kind cannot be added without landing on
+    one side or the other.
+    """
+    assert set(mail.KINDS) == set(mail.GUEST_KINDS) | set(mail.HOST_KINDS)
+    assert not set(mail.GUEST_KINDS) & set(mail.HOST_KINDS)
+
+
+def test_every_guest_kind_sends_the_answer_back_to_the_host(monkeypatch):
+    """UX-74: all four guest kinds route a reply to the entity, not to support."""
+    current, _past, _far, apartment_id = _seed()
+    check_in = claim.prague_today()
+    try:
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+
+        # The link a guest is first sent, confirmed, then re-sent when it is lost.
+        complete_guest_claim(
+            browser, TOKEN, current, email="reply-to-all@claim.test", party_size=1
+        )
+        _age_claim(current, 600)
+        ok, err, _secret = claim.start_claim(
+            reservation,
+            apartment,
+            email="reply-to-all@claim.test",
+            party_size=1,
+            lang="en",
+            resend=True,
+        )
+        assert ok, err
+
+        # The reminder the sweep sends the day before check-in.
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (check_in + timedelta(days=1)).isoformat(),
+                "date_to": (check_in + timedelta(days=4)).isoformat(),
+            },
+        )
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now or datetime.combine(check_in, time(10, 0)),
+        )
+        assert claim.sweep_reminders()["guest"] == 1
+
+        # The receipt, once everyone on the stay is registered.
+        monkeypatch.setattr(
+            claim.reporting,
+            "reservation_progress",
+            lambda _reservation: {"expected": 1, "filled": 1, "incomplete": []},
+        )
+        claim.maybe_notify_completion(
+            db.query_one("SELECT * FROM reservation WHERE id = ?", (current,)),
+            apartment,
+        )
+
+        rows = _guest_outbox_rows()
+        assert {row["kind"] for row in rows} == set(mail.GUEST_KINDS)
+        for row in rows:
+            payload = json.loads(row["payload"])
+            assert payload.get("reply_to") == "host@claim.test", (row["kind"], payload)
+            assert "support@" not in payload["reply_to"]
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_a_guest_mail_with_no_answer_address_still_goes_out_and_is_logged(
+    monkeypatch, caplog
+):
+    """UX-74: a missing entity address costs the routing, not the guest's link.
+
+    The warning is the tripwire for a future kind that forgets Reply-To; the
+    message itself still has to be sent, because the guest is waiting on it.
+    """
+    _cleanup()
+    monkeypatch.setattr(mail, "backend_name", lambda: "console")
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    try:
+        with caplog.at_level("WARNING", logger="ubyhost.mail"):
+            outbox_id = mail.enqueue(
+                kind="claim",
+                idempotency_key="ux74-claim-without-reply-to",
+                to_email="guest@ux74.test",
+                subject="A link with nowhere to answer",
+                payload={"text": "body", "lang": "en"},
+            )
+        assert outbox_id is not None
+        row = db.query_one("SELECT * FROM email_outbox WHERE id = ?", (outbox_id,))
+        assert row and "reply_to" not in json.loads(row["payload"])
+        assert any(
+            "no reply_to" in record.getMessage() and record.levelname == "WARNING"
+            for record in caplog.records
+        ), [record.getMessage() for record in caplog.records]
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_a_guest_payload_leaves_out_a_reply_address_the_entity_does_not_have(
+    monkeypatch,
+):
+    """UX-74: no contact address means no Reply-To, and no empty-string header."""
+    current, _past, _far, apartment_id = _seed()
+    entity_id = None
+    try:
+        entity_id = db.insert(
+            "legal_entity",
+            {"name": "Reachable Nowhere", "contact_email": "", "created_at": db.utcnow()},
+        )
+        db.update("apartment", apartment_id, {"legal_entity_id": entity_id})
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+        payload = mail_notify.guest_payload(
+            apartment, {"text": "body", "html": "<p>body</p>"}, "en"
+        )
+        assert "reply_to" not in payload
+        assert payload["html"] == "<p>body</p>"
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+        if entity_id:
+            db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
