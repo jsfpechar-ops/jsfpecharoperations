@@ -495,6 +495,11 @@ def _claimable_reservation(apartment, reservation_id: int):
     return reservation
 
 
+# Reasons where the stay itself cannot be changed from the guest's side, so
+# sending them back to the picker would only land them here again.
+_NO_RESTART_REASONS = frozenset({"form_locked", "already_filed", "not_yours"})
+
+
 def _unavailable(
     request: Request,
     lang: str,
@@ -519,6 +524,14 @@ def _unavailable(
     }
     title_key, body_key = titles.get(reason, titles["bad_link"])
     apartment = _apartment_by_token(token) if token else None
+    # "Start again" only helps where starting again can change something. On a
+    # locked, already-reported or wrong-device form the picker leads straight
+    # back to this page.
+    restart_url = (
+        _guest_link(token) + _lang_q(lang)
+        if token and reason not in _NO_RESTART_REASONS
+        else None
+    )
     context = (
         _shared(request, token or "", lang, apartment)
         if token
@@ -533,7 +546,11 @@ def _unavailable(
         {
             "title_key": title_key,
             "body_key": body_key,
-            "restart_url": _guest_link(token) + _lang_q(lang) if token else None,
+            "restart_url": restart_url,
+            # The invoice link (PLAN_GUEST_INVOICE_FEATURE §3.1 D) belongs on the
+            # stay hub and here only, so it never competes on the PIN, claim or
+            # form screens. Wired off until that feature ships.
+            "show_invoice_link": False,
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
         }
     )
