@@ -2822,7 +2822,7 @@ _INTERFACE_STRINGS = {
         "account.password.choose": "Choose your password",
         "account.password.choose_lede": "Replace the temporary password with your own.",
         "account.password.change": "Change password",
-        "account.password.change_lede": "Changing it signs out your other sessions.",
+        "account.password.change_lede": "Changing it logs you out on your other devices.",
         "account.password.current": "Current password",
         "account.password.temporary": "Temporary password",
         "account.password.temporary_ph": "Temporary password…",
@@ -2884,7 +2884,7 @@ _INTERFACE_STRINGS = {
         "auth.password.too_short": "Use at least 12 characters.",
         "account.2fa.code_title": "Security code",
         "account.2fa.code_lede": "Enter the six-digit code from your authenticator app, or one recovery code.",
-        "account.2fa.code_label": "Authentication code",
+        "account.2fa.code_label": "Security code",
         "account.2fa.verify": "Verify and sign in",
         "account.2fa.lost_summary": "Lost your phone? Use a recovery code",
         "account.2fa.recovery_label": "Recovery code",
@@ -2892,7 +2892,7 @@ _INTERFACE_STRINGS = {
             "No recovery codes either? Email %(email)s with your username and we'll reset "
             "two-factor for you."
         ),
-        "account.2fa.start_over": "Start over",
+        "account.2fa.start_over": "Use a different account",
         "account.2fa.setup_title": "Set up two-factor authentication",
         "account.2fa.setup_lede": "UbyHost contains identity documents, so every host account requires an authenticator app.",
         "account.2fa.setup_scan": (
@@ -3335,7 +3335,7 @@ _INTERFACE_STRINGS = {
         "account.password.choose": "Zvolte si heslo",
         "account.password.choose_lede": "Nahraďte dočasné heslo vlastním.",
         "account.password.change": "Změnit heslo",
-        "account.password.change_lede": "Změna odhlásí ostatní relace.",
+        "account.password.change_lede": "Změnou hesla se odhlásíte na ostatních zařízeních.",
         "account.password.current": "Současné heslo",
         "account.password.temporary": "Dočasné heslo",
         "account.password.temporary_ph": "Dočasné heslo…",
@@ -3397,7 +3397,7 @@ _INTERFACE_STRINGS = {
         "auth.password.too_short": "Použijte alespoň 12 znaků.",
         "account.2fa.code_title": "Bezpečnostní kód",
         "account.2fa.code_lede": "Zadejte šestimístný kód z autentizační aplikace nebo jeden obnovovací kód.",
-        "account.2fa.code_label": "Ověřovací kód",
+        "account.2fa.code_label": "Bezpečnostní kód",
         "account.2fa.verify": "Ověřit a přihlásit",
         "account.2fa.lost_summary": "Ztratili jste telefon? Použijte obnovovací kód",
         "account.2fa.recovery_label": "Obnovovací kód",
@@ -3405,7 +3405,7 @@ _INTERFACE_STRINGS = {
             "Nemáte ani obnovovací kódy? Napište na %(email)s své uživatelské jméno a "
             "dvoufázové ověření vám resetujeme."
         ),
-        "account.2fa.start_over": "Začít znovu",
+        "account.2fa.start_over": "Přihlásit se jiným účtem",
         "account.2fa.setup_title": "Nastavit dvoufázové ověření",
         "account.2fa.setup_lede": "UbyHost obsahuje doklady totožnosti, proto každý účet hostitele vyžaduje autentizační aplikaci.",
         "account.2fa.setup_scan": (
