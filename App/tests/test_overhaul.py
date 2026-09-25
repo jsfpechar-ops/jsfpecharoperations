@@ -1,5 +1,6 @@
 """Regression tests for the UX/legal overhaul: stays sorting, one guest link, GDPR."""
 from datetime import date, timedelta
+from pathlib import Path
 import re
 
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ from app.main import app
 from app.routes import guest as guest_routes
 from tests.conftest import complete_guest_claim
 
+TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
 TOKEN = "overhaultoken"
 PASSWORD = "Overhaul-Test-Password-123"
 ADMIN_USERNAME = "overhaul-admin"
@@ -55,6 +57,7 @@ def _cleanup():
         "(SELECT id FROM reservation WHERE apartment_id = ?)",
         (apartment["id"],),
     )
+    db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))
     db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
     db.execute(
@@ -131,6 +134,41 @@ def _seed_stays():
         },
     )
     return apartment_id, stays, past
+
+
+def _seed_receipt_for(stay_id: int) -> int:
+    """A finished submission with a stored receipt, attached to a stay guest."""
+    now = db.utcnow()
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay_id,))
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": stay_id,
+            "surname": "Smith",
+            "first_name": "John",
+            "nationality": "GBR",
+            "purpose": "10",
+            "is_lead": 1,
+            "entered_by": "host",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": reservation["apartment_id"],
+            "created_at": now,
+            "finished_at": now,
+            "mode": "manual",
+            "state": "ok",
+            "guest_ids": "[]",
+            "pseudo_stamp": "20260101120000-abc",
+            "receipt_pdf": "JVBERi0xLjQ=",
+        },
+    )
+    db.update("guest", guest_id, {"submission_id": submission_id})
+    return submission_id
 
 
 def _stay_dates(html: str) -> list[str]:
@@ -342,7 +380,81 @@ def test_a_live_stay_keeps_its_deadline_and_copy_link():
         assert "Archived — hidden from your daily work." not in page.text
         assert COPY_LINK_PRIMARY in page.text
         assert "Reporting deadline" in page.text
-        assert 'class="panel tight detail-hero inactive"' not in page.text
+        assert 'class="stay-metrics detail-hero inactive"' not in page.text
+    finally:
+        _cleanup()
+
+
+def test_the_stay_page_reads_as_one_ordered_grammar():
+    """The panels join named groups instead of being appended bare.
+
+    UX_AUDIT C-16 [UX-81]: Now -> Guests -> Payments -> Police reporting ->
+    Stay settings.
+    """
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        page = _browser().get(f"/reservations/{stays[0]}")
+        assert page.status_code == 200
+        body = page.text
+        positions = [body.index(marker) for marker in ('id="now"', 'id="guests"', 'id="stay-quick-edit"')]
+        assert positions == sorted(positions)
+        # The facts strip lives inside Now, not in a second card below it.
+        assert 'class="panel stay-command-panel" id="now"' in body
+        assert 'class="stay-metrics detail-hero' in body
+        assert 'class="panel tight detail-hero' not in body
+        # The guest-assignment line moved into the Guests group.
+        assert 'id="stay-claim"' not in body
+        assert body.index('id="guests"') < body.index('class="stay-claim-line"')
+    finally:
+        _cleanup()
+
+
+def test_the_payments_group_ships_no_heading_until_a_panel_joins_it():
+    """#money is reserved for PLAN_POPLATEK and PLAN_GUEST_INVOICE.
+
+    Both plans insert their panel here, between the guest cards and the reports
+    table. Until one of them lands, the group renders nothing at all.
+    """
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        body = _browser().get(f"/reservations/{stays[0]}").text
+        assert 'id="money"' not in body
+        assert "Payments" not in body
+        # The heading is guarded, not merely absent: it arrives with the first
+        # child panel. (The group sits between Guests and Reports.)
+        source = (TEMPLATES / "reservation_detail.html").read_text(encoding="utf-8")
+        assert "{% if money_panels %}" in source
+        assert source.index('id="guests"') < source.index('id="money"')
+        assert source.index('id="money"') < source.index('id="reports"')
+    finally:
+        _cleanup()
+
+
+def test_stay_settings_and_the_quick_edit_share_one_panel():
+    """Editing the stay used to be split across the top and the bottom."""
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        body = _browser().get(f"/reservations/{stays[0]}").text
+        assert 'class="panel stay-settings" id="stay-quick-edit"' in body
+        panel = body.split('id="stay-quick-edit"', 1)[1].split("</details>", 1)[0]
+        assert "data-inline-edit" in panel
+        assert 'name="expected_guests_override"' in panel
+        assert 'name="guest_email"' in panel
+        assert 'name="host_note"' in panel
+    finally:
+        _cleanup()
+
+
+def test_the_receipt_download_moves_into_the_report_row_menu():
+    """One coral button per row was against DESIGN.md's row-action rule."""
+    _apartment_id, stays, _past = _seed_stays()
+    try:
+        submission_id = _seed_receipt_for(stays[0])
+        body = _browser().get(f"/reservations/{stays[0]}").text
+        assert '<section id="reports">' in body
+        assert f'class="row-menu-item" href="/submissions/{submission_id}/receipt.pdf"' in body
+        assert ">Receipt (Doručenka)</a>" in body
+        assert f'class="btn small primary" href="/submissions/{submission_id}/receipt.pdf"' not in body
     finally:
         _cleanup()
 

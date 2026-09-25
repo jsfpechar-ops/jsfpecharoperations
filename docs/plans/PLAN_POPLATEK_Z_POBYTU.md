@@ -897,7 +897,7 @@ Add to the `render(... "reservation_detail.html", {...})` dict (the variables `r
 
 ### 11.2 Template (`templates/reservation_detail.html`)
 
-Insert directly **before** `{% if submissions %}` (the line above `<h2 id="reports">`). Rows needing attention (the guest ticked something and the host hasn't decided) are highlighted and open. Every other row keeps its controls behind a small *Change* disclosure, so the panel stays calm.
+Insert **inside the `#money` group** — the slot UX_AUDIT C-16 [UX-81] reserved between the guest cards and `{% if submissions %}`, with `<h2>` copy "Payments" / "Platby". The group renders only when a child renders, so the heading arrives with this panel. Rows needing attention (the guest ticked something and the host hasn't decided) are highlighted and open. Every other row keeps its controls behind a small *Change* disclosure, so the panel stays calm.
 
 ```html
 {% if stay_fee %}

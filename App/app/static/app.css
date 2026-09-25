@@ -1545,22 +1545,30 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .stay-command-main .eyebrow { margin: 0 0 4px; }
 .stay-command-note { margin: 0; color: var(--ink-2); font-size: 14px; }
 .stay-command-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-.stay-quick-edit { border-top: 1px solid var(--line); }
-.stay-quick-edit > summary {
-  padding: 11px 20px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 650;
-  cursor: pointer;
+
+/* The facts strip is part of the Now group, not a second boxed card. */
+.stay-metrics { border-top: 1px solid var(--line); }
+.stay-metrics .detail-metric { background: var(--surface-2); }
+
+/* The guest-assignment line belongs to the Guests group, not to Now. */
+.stay-claim-line {
+  display: flex;
+  align-items: center;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
 }
-.stay-quick-edit > summary:hover { color: var(--ink); background: var(--surface-2); }
-.stay-quick-edit .inline-edit-bar {
-  margin: 0;
-  padding: 4px 20px 18px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
+.stay-claim-label { color: var(--muted); font-size: 13px; font-weight: 650; }
+.stay-claim-line p { flex: 1 1 260px; margin: 0; color: var(--ink-2); font-size: 14px; }
+.stay-claim-line .stay-command-actions { flex: 0 0 auto; }
+
+/* One collapsed group owns both editing forms. */
+.stay-settings .inline-edit-title { margin: 6px 0 10px; font-size: 14px; }
+.stay-settings .inline-edit-bar { margin: 0 0 18px; }
 
 /* --- guest cards -------------------------------------------------------- */
 
