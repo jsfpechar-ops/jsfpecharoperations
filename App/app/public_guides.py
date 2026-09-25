@@ -3,6 +3,7 @@
 GUIDES = {
     "hlaseni-cizincu-ubyport": {
         "title": "Hlášení cizinců přes UbyPort: postup pro ubytovatele",
+        "updated": "2026-09-19",
         "description": (
             "UbyPort pro hostitele z Airbnb a Booking.com: registrace zařízení, "
             "třídenní lhůta, webová služba, doručenky a kontrola chyb."
@@ -91,6 +92,7 @@ GUIDES = {
     },
     "online-ubytovaci-kniha": {
         "title": "Online ubytovací kniha: evidence hostů bez papírování",
+        "updated": "2026-09-19",
         "description": (
             "Jak funguje online ubytovací a domovní kniha, formulář před příjezdem, "
             "evidence hostů a návaznost na hlášení cizinců přes UbyPort."
@@ -176,6 +178,7 @@ GUIDES = {
 ENGLISH_GUIDES = {
     "hlaseni-cizincu-ubyport": {
         "title": "Reporting foreign guests through UbyPort: a host’s guide",
+        "updated": "2026-09-19",
         "description": (
             "UbyPort for Airbnb and Booking.com hosts in Czechia: property registration, "
             "the three-working-day deadline, web-service access, receipts, and errors."
@@ -264,6 +267,7 @@ ENGLISH_GUIDES = {
     },
     "online-ubytovaci-kniha": {
         "title": "Online guest book: accommodation records without paperwork",
+        "updated": "2026-09-19",
         "description": (
             "How an online guest and house book, pre-arrival form, accommodation records, "
             "and foreign-guest reporting through UbyPort work together."

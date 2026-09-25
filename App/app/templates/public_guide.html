@@ -29,8 +29,8 @@
     "headline": guide.title,
     "description": guide.description,
     "inLanguage": lang,
-    "datePublished": "2026-09-19",
-    "dateModified": "2026-09-19",
+    "datePublished": guide.updated,
+    "dateModified": guide.updated,
     "mainEntityOfPage": canonical_url,
     "author": {"@type": "Organization", "name": "UbyHost", "url": public_base_url ~ "/"},
     "publisher": {"@type": "Organization", "name": "UbyHost", "url": public_base_url ~ "/"}
@@ -44,13 +44,14 @@
 
   <main id="content" class="guide-shell">
     <nav class="guide-breadcrumbs" aria-label="{{ t('guide.breadcrumb_nav') }}">
-      <a href="/?lang={{ lang }}">UbyHost</a><span aria-hidden="true">/</span><span>{{ t('guide.breadcrumb') }}</span>
+      <a href="/?lang={{ lang }}">UbyHost</a><span aria-hidden="true">/</span><span aria-current="page">{{ guide.title }}</span>
     </nav>
     <article>
       <header class="guide-hero">
         <p class="landing-eyebrow">{{ guide.eyebrow }}</p>
         <h1>{{ guide.title }}</h1>
-        <p>{{ guide.lede }}</p>
+        <p class="guide-lede">{{ guide.lede }}</p>
+        <p class="guide-updated">{{ t('guide.updated', date=guide.updated) }}</p>
       </header>
 
       <div class="guide-layout">
