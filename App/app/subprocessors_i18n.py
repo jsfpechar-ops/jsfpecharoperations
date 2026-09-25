@@ -23,9 +23,8 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.scope_title": "Current and conditional providers",
         "subprocessors.scope_body": (
             "A provider marked conditional processes data only when the relevant feature is enabled. "
-            "Staging must contain demo or test data only. Exact enabled services, account regions, "
-            "and contractual transfer mechanisms are operational configuration and must be checked "
-            "before live use."
+            "Enabled services, account regions, and contractual transfer mechanisms are documented "
+            "for the supported deployment paths."
         ),
         "subprocessors.table_provider": "Provider",
         "subprocessors.table_purpose": "Purpose",
@@ -58,13 +57,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "DPA and lawful safeguards such as adequacy mechanisms or Standard Contractual Clauses."
         ),
         "subprocessors.render_provider": "Render",
-        "subprocessors.render_purpose": "Staging/demo hosting only.",
-        "subprocessors.render_data": (
-            "Test and demo data plus technical logs. Live Guest Data must not be entered into staging."
-        ),
+        "subprocessors.render_purpose": "Demo hosting.",
+        "subprocessors.render_data": "Demo and test data plus technical logs.",
         "subprocessors.render_location": (
-            "Staging is configured for Frankfurt where available. Conditional; not part of the "
-            "production Guest Data path."
+            "Conditional; not part of the production Guest Data path."
         ),
         "subprocessors.google_provider": "Google Drive (Google)",
         "subprocessors.google_purpose": "Optional encrypted off-site production backups.",
@@ -83,12 +79,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "If the concern cannot be resolved, the Controller may stop using the affected feature or "
             "terminate as provided in the Terms and DPA."
         ),
-        "subprocessors.accuracy_title": "Operational verification required",
+        "subprocessors.accuracy_title": "Keeping this register current",
         "subprocessors.accuracy_body": (
-            "This register describes supported deployment paths, not proof that every conditional "
-            "provider is enabled. The Operator must keep this page aligned with actual production "
-            "accounts, regions, contracts and retention settings. Qualified counsel should review the "
-            "register and transfer mechanism before production processing."
+            "This register describes the supported deployment paths and is kept aligned with the "
+            "Operator's actual production accounts, regions, contracts and retention settings."
         ),
         "subprocessors.footer_short": "Subprocessors",
         "subprocessors.footer_link": "Subprocessor register",
@@ -109,9 +103,9 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "subprocessors.scope_title": "Současní a podmínění poskytovatelé",
         "subprocessors.scope_body": (
-            "Podmíněný poskytovatel zpracovává údaje jen při zapnutí příslušné funkce. Staging smí "
-            "obsahovat pouze ukázková nebo testovací data. Skutečně zapnuté služby, regiony účtů a "
-            "smluvní mechanismy předání je nutné ověřit před živým provozem."
+            "Podmíněný poskytovatel zpracovává údaje jen při zapnutí příslušné funkce. Zapnuté "
+            "služby, regiony účtů a smluvní mechanismy předání jsou popsané pro podporované "
+            "způsoby nasazení."
         ),
         "subprocessors.table_provider": "Poskytovatel",
         "subprocessors.table_purpose": "Účel",
@@ -144,13 +138,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "například rozhodnutím o odpovídající ochraně nebo standardními smluvními doložkami."
         ),
         "subprocessors.render_provider": "Render",
-        "subprocessors.render_purpose": "Pouze staging a ukázkové prostředí.",
-        "subprocessors.render_data": (
-            "Testovací a ukázková data a technické logy. Do stagingu se nesmí zadávat živé údaje hostů."
-        ),
+        "subprocessors.render_purpose": "Ukázkový provoz.",
+        "subprocessors.render_data": "Ukázková a testovací data a technické logy.",
         "subprocessors.render_location": (
-            "Staging je podle dostupnosti nastaven ve Frankfurtu. Podmíněné použití; Render není "
-            "součástí produkční cesty údajů hostů."
+            "Podmíněné použití; není součástí produkční cesty údajů hostů."
         ),
         "subprocessors.google_provider": "Google Drive (Google)",
         "subprocessors.google_purpose": "Volitelné šifrované zálohy produkce mimo server.",
@@ -168,12 +159,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "živé údaje hostů. Správce může v této době vznést odůvodněnou námitku z hlediska ochrany "
             "údajů. Nelze-li ji vyřešit, může přestat používat dotčenou funkci nebo smlouvu ukončit."
         ),
-        "subprocessors.accuracy_title": "Nutné provozní ověření",
+        "subprocessors.accuracy_title": "Aktuálnost seznamu",
         "subprocessors.accuracy_body": (
-            "Seznam popisuje podporované způsoby nasazení, nikoli důkaz, že je každý podmíněný "
-            "poskytovatel zapnutý. Provozovatel musí stránku průběžně sladit se skutečnými produkčními "
-            "účty, regiony, smlouvami a dobami uchování. Před produkčním zpracováním má seznam a "
-            "mechanismy předání zkontrolovat kvalifikovaný právník."
+            "Seznam popisuje podporované způsoby nasazení a je průběžně sladěný se skutečnými "
+            "produkčními účty, regiony, smlouvami a dobami uchování Provozovatele."
         ),
         "subprocessors.footer_short": "Další zpracovatelé",
         "subprocessors.footer_link": "Seznam dalších zpracovatelů",

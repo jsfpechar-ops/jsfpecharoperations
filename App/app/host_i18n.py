@@ -1307,7 +1307,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.acceptance_between_privacy_legal": " a ",
         "login.acceptance_legal": "právními informacemi",
         "login.acceptance_after": ".",
-        "login.hero_title": "Hlášení hostů bez zbytečné práce.",
+        "login.hero_title": "Hlášení hostů vyřídíme za vás.",
         "login.hero_body": (
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
             "pro krátkodobé pronájmy v Česku."

@@ -22,7 +22,7 @@ LANDING_STRINGS = {
         "landing.cta": "Try UbyHost",
         "landing.cta.note": "Or write to support@ubyhost.com — we reply with next steps.",
         "landing.contact": "How it works",
-        "landing.trust": "Built for apartments, holiday rentals, and small accommodation providers in Czechia.",
+        "landing.independent": "UbyHost is an independent private service. It is not operated or endorsed by the Czech Police or UbyPort.",
         "landing.demo.label": "A quick tour of UbyHost",
         "landing.demo.play": "Play demo",
         "landing.demo.pause": "Pause demo",
@@ -57,7 +57,7 @@ LANDING_STRINGS = {
         "landing.steps.1": "Connect your calendar",
         "landing.steps.2": "Share the guest link",
         "landing.steps.3": "Keep the UbyPort receipt",
-        "landing.final.title": "Your guest paperwork, on autopilot.",
+        "landing.final.title": "Guest reporting, handled for you.",
         "landing.final.body": "See every stay, form, and UbyPort response in one place.",
         "landing.details.link": "How it works",
         "product.page_title": "UbyPort for Airbnb and Booking.com hosts · UbyHost",
@@ -99,7 +99,7 @@ LANDING_STRINGS = {
         "pricing.includes.title": "The complete guest-reporting workflow",
         "pricing.includes.1": "Airbnb and Booking.com calendar connections",
         "pricing.includes.2": "Private online forms for guests",
-        "pricing.includes.3": "Online guest and house book",
+        "pricing.includes.3": "Online guest book",
         "pricing.includes.4": "Direct UbyPort reporting and saved receipts",
         "pricing.factors.eyebrow": "What we agree on",
         "pricing.factors.title": "Three things shape the setup.",
@@ -132,7 +132,7 @@ LANDING_STRINGS = {
             "computer before arrival."
         ),
         "landing.feature.book.icon": "03 / Keep",
-        "landing.feature.book.title": "Online house book",
+        "landing.feature.book.title": "Online guest book",
         "landing.feature.book.body": (
             "Keep a chronological record of guests and export the records you need for "
             "your accommodation files."
@@ -206,7 +206,7 @@ LANDING_STRINGS = {
         "landing.cta": "Vyzkoušet UbyHost",
         "landing.cta.note": "Nebo napište na support@ubyhost.com — ozveme se s dalším postupem.",
         "landing.contact": "Jak to funguje",
-        "landing.trust": "Pro apartmány, krátkodobé pronájmy a menší ubytovací zařízení v Česku.",
+        "landing.independent": "UbyHost je nezávislá soukromá služba. Neprovozuje ji ani nedoporučuje Policie ČR ani UbyPort.",
         "landing.demo.label": "Rychlá ukázka UbyHostu",
         "landing.demo.play": "Spustit ukázku",
         "landing.demo.pause": "Pozastavit ukázku",
@@ -241,7 +241,7 @@ LANDING_STRINGS = {
         "landing.steps.1": "Propojte kalendář",
         "landing.steps.2": "Sdílejte odkaz pro hosty",
         "landing.steps.3": "Uložte doručenku z UbyPortu",
-        "landing.final.title": "Evidence hostů na autopilota.",
+        "landing.final.title": "Hlášení hostů vyřídíme za vás.",
         "landing.final.body": "Každý pobyt, formulář a odpověď UbyPortu na jednom místě.",
         "landing.details.link": "Jak to funguje",
         "product.page_title": "UbyPort pro hostitele z Airbnb a Booking.com · UbyHost",
@@ -283,7 +283,7 @@ LANDING_STRINGS = {
         "pricing.includes.title": "Kompletní postup evidence a hlášení hostů",
         "pricing.includes.1": "Napojení kalendářů Airbnb a Booking.com",
         "pricing.includes.2": "Soukromé online formuláře pro hosty",
-        "pricing.includes.3": "Online ubytovací a domovní kniha",
+        "pricing.includes.3": "Online ubytovací kniha",
         "pricing.includes.4": "Přímé hlášení do UbyPortu a uložené doručenky",
         "pricing.factors.eyebrow": "Na čem se domluvíme",
         "pricing.factors.title": "Nastavení určují tři věci.",
@@ -316,7 +316,7 @@ LANDING_STRINGS = {
             "počítači ještě před příjezdem."
         ),
         "landing.feature.book.icon": "03 / Evidence",
-        "landing.feature.book.title": "Online domovní kniha",
+        "landing.feature.book.title": "Online ubytovací kniha",
         "landing.feature.book.body": (
             "Veďte chronologickou evidenci ubytovaných hostů a exportujte záznamy potřebné "
             "pro dokumentaci ubytování."
