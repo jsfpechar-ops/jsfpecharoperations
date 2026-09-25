@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_welcome, next_action, property_identity, sync_calendars_button with context %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, property_identity, sync_calendars_button with context %}
 
 {% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
   {% if items %}
@@ -91,12 +91,9 @@
   {% endif %}
 {% else %}
 
+  {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
+  {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
-  {% if onboarding and onboarding.finished and not onboarding.dismissed %}
-    {{ onboarding_finish(onboarding) }}
-  {% else %}
-    {{ onboarding_banner(onboarding) }}
-  {% endif %}
 
   {% if focus %}
     {% set f_res = focus.reservation %}
@@ -143,6 +140,12 @@
       </div>
     </section>
   {% endif %}
+
+  {% if finish_card_showing and focus_is_urgent %}
+    {{ onboarding_finish_strip(onboarding) }}
+  {% endif %}
+
+  {{ onboarding_banner(onboarding) }}
 
   {% if setup_warnings and not banner_showing %}
   <div class="panel">
@@ -194,6 +197,11 @@
       <p class="small muted">{{ t('dashboard.reporting_modes_body') }}</p>
       {% if minutes_saved %}<p class="small muted">{{ t('dashboard.minutes_saved', minutes=minutes_saved) }}</p>{% endif %}
     </details>
+  {% endif %}
+
+  {# Nothing is overdue, so the finish card can have the room it deserves. #}
+  {% if finish_card_showing and not focus_is_urgent %}
+    {{ onboarding_finish(onboarding) }}
   {% endif %}
 {% endif %}
 {% endblock %}

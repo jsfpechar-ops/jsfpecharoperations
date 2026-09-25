@@ -1960,6 +1960,22 @@ details.raw pre {
   .onboarding-finish-share { grid-template-columns: 1fr; }
 }
 
+/* The finish card as one line, so an overdue stay can still come first. */
+.onboarding-finish-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--green) 28%, var(--line));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--green-bg) 45%, var(--surface));
+  font-size: 14px;
+}
+.onboarding-finish-strip a { font-weight: 650; }
+
 .onboarding-steps {
   display: grid;
   gap: 0;
