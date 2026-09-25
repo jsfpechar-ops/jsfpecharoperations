@@ -207,6 +207,11 @@
       if (parentWrap) parentWrap.style.display = toggle.checked ? "" : "none";
       var docInput = document.querySelector('[name="doc_number"]');
       if (docInput) docInput.required = !toggle.checked;
+      // The parent's number is what stands in for the child's own, so it is
+      // required exactly when the child has none. Without this the omission is
+      // only found on the server, by which time the form is locked.
+      var parentInput = document.getElementById("parent_doc_number");
+      if (parentInput) parentInput.required = toggle.checked;
     }
     toggle.addEventListener("change", apply);
     apply();

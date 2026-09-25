@@ -263,8 +263,38 @@ def _localize_message(message: str) -> str:
     return validation_i18n.localize(message)
 
 
+# The child-on-a-parent's-passport check is keyed "note" in validation.py, where
+# the column really is called that. The guest form has no "note" box: it has the
+# parent's document number. So for the guest the issue is renamed onto the field
+# they can see, and the sentence names that box. The rename lives here rather
+# than in validation.py because the host form does have a "note" column and must
+# keep reading its own wording.
+_GUEST_ISSUE_FIELDS = {"note": "parent_doc_number"}
+_GUEST_ISSUE_MESSAGES = {
+    "note": (
+        "Enter the parent's passport or ID number.",
+        "Zadejte číslo pasu nebo průkazu rodiče.",
+    ),
+}
+
+
+def _guest_issue(issue, lang: str):
+    # Keyed by the field validation.py used, not by its sentence: the sentence
+    # has already been through the translation table by the time it gets here,
+    # and the field is what stays stable.
+    override = _GUEST_ISSUE_MESSAGES.get(issue.field)
+    field = _GUEST_ISSUE_FIELDS.get(issue.field, issue.field)
+    if override is None:
+        return issue
+    message = override[0 if lang != "cs" else 1]
+    return validation.Issue(field, message, issue.severity)
+
+
 def _localize_issues(issues, lang: str):
-    return validation_i18n.guest_localize_issues(issues, lang)
+    return [
+        _guest_issue(issue, lang)
+        for issue in validation_i18n.guest_localize_issues(issues, lang)
+    ]
 
 
 def _apartment_by_token(token: str):
