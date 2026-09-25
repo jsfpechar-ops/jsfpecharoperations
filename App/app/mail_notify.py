@@ -815,8 +815,9 @@ def property_label(apartment: Any, lang: str) -> str:
         return name
     # Both names are optional on a property, and an empty one would leave the
     # sentence reading "your stay at ()". Fall back to a translated stand-in
-    # rather than an English literal, because this text is translated.
-    return _guest_text(lang, "mail_guest_footer_host_label")
+    # rather than an English literal, because this text is translated. It
+    # stands in for a property name, so it must never be the host label.
+    return _guest_text(lang, "mail_property_fallback")
 
 
 def build_claim_link(

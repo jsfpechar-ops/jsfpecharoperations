@@ -63,6 +63,7 @@ NEW_GUEST_KEYS = (
     "mail_reminder_guest_note_label",
     "mail_reminder_guest_note",
     "mail_reminder_guest_device",
+    "mail_property_fallback",
     "mail_guest_footer_why",
     "mail_guest_footer_host_label",
     "mail_guest_footer_help",
@@ -993,6 +994,72 @@ def test_the_one_reminder_fact_is_muted_and_the_help_line_is_gone():
         # The reminder is only sent while the stay is incomplete, so the line
         # that invited the guest to ignore it is deleted from both catalogues.
         assert "mail_reminder_guest_help" not in i18n.STRINGS[lang], lang
+
+
+# --- E-13 [UX-79]: Czech stops declining a name it cannot decline ------------
+
+
+def test_the_czech_claim_mail_names_the_stay_after_a_colon():
+    """E-13: "v Vinohrady Studio" declines a proper name that has no case.
+
+    A Czech sentence cannot say "v" before an undeclinable name without
+    sounding wrong, so the stay is named after a colon instead.
+    """
+    assert i18n.STRINGS["cs"]["mail_claim_intro"] % {
+        "property": "Vinohrady Studio",
+        "dates": "25.09.2026 – 28.09.2026",
+    } == (
+        "Potvrďte svůj pobyt: Vinohrady Studio, 25.09.2026 – 28.09.2026. "
+        "Stačí otevřít odkaz níže."
+    )
+    for key in (
+        "mail_claim_intro",
+        "mail_guest_footer_why",
+        "mail_reminder_guest_intro_no_count",
+    ):
+        assert " v %(property)s" not in i18n.STRINGS["cs"][key], key
+        assert " ve %(property)s" not in i18n.STRINGS["cs"][key], key
+
+
+def test_the_czech_footer_says_which_stay_the_mail_is_about():
+    """E-13: the same construction in the footer, and English stays as it was."""
+    assert i18n.STRINGS["cs"]["mail_guest_footer_why"] % {
+        "property": "Vinohrady Studio"
+    } == (
+        "Tento e-mail dostáváte, protože jste touto adresou potvrdili pobyt: "
+        "Vinohrady Studio."
+    )
+    assert i18n.STRINGS["en"]["mail_guest_footer_why"] % {
+        "property": "Vinohrady Studio"
+    } == (
+        "You received this e-mail because your stay at Vinohrady Studio is "
+        "registered with this address."
+    )
+
+
+def test_a_nameless_property_falls_back_to_accommodation_not_the_host():
+    """E-13: "Confirm your stay at Your host" named the wrong thing entirely."""
+    apartment, _reservation = _seed(uby_name="", internal_name="")
+    for lang in ("en", "cs"):
+        fallback = i18n.STRINGS[lang]["mail_property_fallback"]
+        assert fallback != i18n.STRINGS[lang]["mail_guest_footer_host_label"], lang
+        assert mail_notify.property_label(apartment, lang) == fallback, lang
+        content = mail_notify.build_claim_link(
+            lang=lang,
+            property_name=fallback,
+            dates="25.09.2026 – 28.09.2026",
+            link="https://example.test/l",
+            host=None,
+        )
+        assert fallback in content["text"], lang
+        assert "at Your host" not in content["text"], lang
+        assert "pobyt v Váš hostitel" not in html.unescape(content["html"]), lang
+
+
+def test_the_czech_button_keeps_the_word_the_subject_uses():
+    """E-13: the CS subject says "svůj pobyt" while the button dropped it."""
+    assert i18n.STRINGS["cs"]["mail_claim_action"] == "Potvrdit můj pobyt"
+    assert i18n.STRINGS["en"]["mail_claim_action"] == "Confirm my stay"
 
 
 def test_every_new_key_exists_in_both_languages():

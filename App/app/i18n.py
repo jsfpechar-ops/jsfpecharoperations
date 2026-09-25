@@ -575,6 +575,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "You received this e-mail because your stay at %(property)s is registered "
             "with this address."
         ),
+        # Stand-in for a property that has no name of its own. It takes the
+        # place of a property name, so it must never read as the host.
+        "mail_property_fallback": "your accommodation",
         "mail_guest_footer_host_label": "Your host",
         "mail_guest_footer_help": "Reply to this e-mail to reach your host.",
     },
@@ -1046,9 +1049,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_heading": "Potvrďte svůj pobyt",
         "mail_claim_resend_heading": "Tady je váš nový odkaz",
         "mail_claim_intro": (
-            "Potvrďte pobyt v %(property)s (%(dates)s) otevřením odkazu níže."
+            "Potvrďte svůj pobyt: %(property)s, %(dates)s. Stačí otevřít odkaz níže."
         ),
-        "mail_claim_action": "Potvrdit pobyt",
+        "mail_claim_action": "Potvrdit můj pobyt",
         "mail_link_fallback": (
             "Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:"
         ),
@@ -1103,7 +1106,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Před příjezdem ještě musí formulář vyplnit další hosté: %(missing)s."
         ),
         "mail_reminder_guest_intro_no_count": (
-            "Váš pobyt v %(property)s začíná zítra a registrace hostů zatím není "
+            "Váš pobyt začíná zítra – %(property)s. Registrace hostů zatím není "
             "dokončená."
         ),
         "mail_reminder_guest_action": "Dokončit registraci",
@@ -1118,9 +1121,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         # Patička. Hosté se obracejí na ubytovatele, nikdy na podporu UbyHostu:
         # stejné pravidlo jako na stránkách pro hosty.
         "mail_guest_footer_why": (
-            "Tento e-mail dostáváte, protože je s touto adresou veden váš pobyt "
-            "v %(property)s."
+            "Tento e-mail dostáváte, protože jste touto adresou potvrdili pobyt: "
+            "%(property)s."
         ),
+        "mail_property_fallback": "vaše ubytování",
         "mail_guest_footer_host_label": "Váš hostitel",
         "mail_guest_footer_help": "Odpovězte na tento e-mail a spojíte se s hostitelem.",
     },
