@@ -64,6 +64,7 @@ NEW_GUEST_KEYS = (
     "mail_reminder_guest_note",
     "mail_reminder_guest_device",
     "mail_property_fallback",
+    "mail_guest_footer_about",
     "mail_guest_footer_why",
     "mail_guest_footer_host_label",
     "mail_guest_footer_help",
@@ -1089,3 +1090,64 @@ def test_every_guest_mail_kind_is_registered():
 
 def test_the_from_line_is_not_a_bare_address():
     assert mail.display_from("noreply@ubyhost.com") == "UbyHost <noreply@ubyhost.com>"
+
+
+def test_the_footer_contact_is_tappable_in_the_html_part():
+    """E-17 [UX-131]: a printed address on a phone means selecting it by hand."""
+    for kind in GUEST_KINDS:
+        content = _all_content()[kind]
+        assert f'href="mailto:{HOST_EMAIL}"' in content["html"], kind
+        assert f'href="tel:{HOST_PHONE}"' in content["html"], kind
+        # The address stays readable: a client that strips links must not eat it.
+        assert f">{HOST_EMAIL}</a>" in content["html"], kind
+        assert f">{HOST_PHONE}</a>" in content["html"], kind
+
+
+def test_the_tel_href_carries_no_spaces():
+    """``tel:+420 999 888 777`` is not a dialable href."""
+    spaced = dict(_host(), phone="+420 999 888 777")
+    content = mail_notify.build_claim_link(
+        lang="en",
+        property_name="Guest Mail Flat",
+        dates="2026-01-05 \u2013 2026-01-08",
+        link=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1/claim",
+        host=spaced,
+    )
+    assert 'href="tel:+420999888777"' in content["html"]
+    # The visible label keeps the spaces: that is how a human reads a number.
+    assert ">+420 999 888 777</a>" in content["html"]
+
+
+def test_the_text_part_still_carries_the_plain_address():
+    """A text part cannot link, so the address has to be there verbatim."""
+    for kind in GUEST_KINDS:
+        content = _all_content()[kind]
+        assert f"{HOST_EMAIL} \u00b7 {HOST_PHONE}" in content["text"], kind
+        assert "mailto:" not in content["text"], kind
+        assert "<a " not in content["text"], kind
+
+
+def _content_for(kind: str, lang: str):
+    return {
+        "claim": lambda: _claim_content(lang),
+        "completion": lambda: _completion_content(lang),
+        "reminder_guest": lambda: _reminder_guest_content(lang, filled=1, expected=3),
+    }[kind]()
+
+
+def test_the_footer_explains_what_ubyhost_is():
+    """E-17 [UX-131]: the bare word "UbyHost" told a guest nothing."""
+    for lang in ("en", "cs"):
+        about = i18n.STRINGS[lang]["mail_guest_footer_about"]
+        for kind in GUEST_KINDS:
+            content = _content_for(kind, lang)
+            assert about in html.unescape(content["html"]), (kind, lang)
+            assert about in content["text"], (kind, lang)
+
+
+def test_no_guest_footer_is_just_the_brand_name():
+    """The old first line was "UbyHost" and nothing else."""
+    for lang in ("en", "cs"):
+        content = _claim_content(lang)
+        assert "\nUbyHost\n" not in content["text"], lang
+        assert "<div>UbyHost</div>" not in content["html"], lang
