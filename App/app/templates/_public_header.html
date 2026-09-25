@@ -26,10 +26,10 @@
       {%- endfor %}
     </nav>
     <div class="landing-actions">
-      <div class="landing-languages" aria-label="{{ t('lang.switch') }}">
-        <a href="{{ switch_path }}?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}">CZ</a>
-        <a href="{{ switch_path }}?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}">EN</a>
-      </div>
+      <nav class="landing-languages" aria-label="{{ t('lang.switch') }}">
+        <a href="{{ switch_path }}?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}"{% if lang == 'cs' %} aria-current="true"{% endif %}>CZ</a>
+        <a href="{{ switch_path }}?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
+      </nav>
       <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
     </div>
     {#- Below 900px the nav above is hidden; this is the only way through it. -#}

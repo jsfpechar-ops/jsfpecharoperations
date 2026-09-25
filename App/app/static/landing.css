@@ -1246,7 +1246,13 @@ a { color: inherit; }
   .demo-wrap { width: min(100% - 28px, 1180px); }
   .landing-brand img { width: 126px; }
   .landing-actions { gap: 9px; }
-  .landing-languages a { min-width: 32px; }
+  .landing-languages a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 44px;
+  }
   .landing-hero { padding-top: 64px; }
   .landing-hero h1 { font-size: clamp(2.7rem, 13vw, 3.9rem); }
   .landing-hero .landing-lede { font-size: 1.05rem; }
