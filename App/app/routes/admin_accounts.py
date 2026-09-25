@@ -9,13 +9,29 @@ import qrcode
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import auth, config, db, rate_limit, security, turnstile
+from .. import auth, config, db, host_i18n, rate_limit, security, turnstile
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import form_str as _form_str
 
 router = APIRouter()
+
+
+def _keep_login_language(request: Request, response) -> None:
+    """Carry the login page's language into the signed-in pages.
+
+    Signed-out pages fall back to Czech and signed-in pages to English, so
+    without this a host who never touched the switch reads Czech, logs in, and
+    lands in English. A POST never renders, so the language is resolved here
+    with the signed-out default the login page itself used.
+    """
+    chosen = host_i18n.supported_language(getattr(request.state, "lang", None))
+    lang = chosen or host_i18n.resolve_language(
+        request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    )
+    if request.cookies.get(host_i18n.LANG_COOKIE) != lang:
+        host_i18n.remember_language(response, lang)
 
 
 @router.get("/login")
@@ -82,6 +98,7 @@ async def login_submit(request: Request):
         auth.issue_session(account["id"], account["session_version"], remember=remember),
         remember=remember,
     )
+    _keep_login_language(request, response)
     db.audit(
         "login",
         detail=(
@@ -140,6 +157,7 @@ async def two_factor_login(request: Request):
         ),
         remember=bool(pending.get("rm")),
     )
+    _keep_login_language(request, response)
     db.audit("two_factor_login", actor=account["username"], owner_user_id=account["id"])
     return response
 

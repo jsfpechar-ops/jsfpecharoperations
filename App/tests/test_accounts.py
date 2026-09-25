@@ -14,9 +14,11 @@ NEW_PASSWORD = "Even-Better-Password-456"
 
 
 def _login(username: str, password: str = PASSWORD) -> TestClient:
+    """Sign in as an English host. These assertions read the English UI, and a
+    host who never chose a language keeps the Czech the login page showed."""
     client = TestClient(app)
     response = client.post(
-        "/login",
+        "/login?lang=en",
         data={"username": username, "password": password},
         follow_redirects=False,
     )

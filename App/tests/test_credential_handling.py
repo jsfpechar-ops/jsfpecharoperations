@@ -26,7 +26,7 @@ def admin():
     )
     with TestClient(app) as client:
         response = client.post(
-            "/login",
+            "/login?lang=en",
             data={"username": "cred-admin", "password": PASSWORD},
             follow_redirects=False,
         )

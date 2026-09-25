@@ -34,10 +34,11 @@ def _ensure_admin() -> int:
 
 
 def _browser() -> TestClient:
+    """Sign in as an English host; the assertions below read the English UI."""
     _ensure_admin()
     client = TestClient(app)
     response = client.post(
-        "/login",
+        "/login?lang=en",
         data={"username": ADMIN_USERNAME, "password": PASSWORD},
         follow_redirects=False,
     )
