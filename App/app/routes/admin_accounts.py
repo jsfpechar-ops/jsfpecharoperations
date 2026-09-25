@@ -45,13 +45,16 @@ def login_form(request: Request):
 async def login_submit(request: Request):
     form = await request.form()
     username = _form_str(form, "username")
+    # Read once, up front, so a failed attempt re-renders the form still holding
+    # the deep link the host arrived with instead of dropping them on the dashboard.
+    next_path = security.safe_local_path(_form_str(form, "next"), "/")
     ip_key = rate_limit.client_key(request)
     client_key = rate_limit.client_key(request, username.lower() or "unknown")
     if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
         return render(
             request,
             "login.html",
-            {"error": "auth.error.turnstile", "username": username},
+            {"error": "auth.error.turnstile", "username": username, "next": next_path},
             status_code=403,
         )
     if rate_limit.login_blocked(client_key, ip_key):
@@ -61,6 +64,7 @@ async def login_submit(request: Request):
             {
                 "error": "auth.error.locked",
                 "username": username,
+                "next": next_path,
             },
             status_code=429,
         )
@@ -74,11 +78,11 @@ async def login_submit(request: Request):
             {
                 "error": "auth.error.bad_credentials",
                 "username": username,
+                "next": next_path,
             },
             status_code=401,
         )
     target = "/account/password" if account["must_change_password"] else "/"
-    next_path = security.safe_local_path(_form_str(form, "next"), "/")
     if not account["must_change_password"]:
         target = next_path
     remember = _form_str(form, "remember") in ("1", "on", "true", "yes")

@@ -12,17 +12,17 @@
 
   <form method="post" action="/login" class="auth-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <input type="hidden" name="next" value="{{ request.query_params.get('next', '') }}">
+    <input type="hidden" name="next" value="{{ next if next is defined else request.query_params.get('next', '') }}">
     <div class="auth-field">
       <label for="username">{{ t('login.username') }}</label>
-      <input type="text" id="username" name="username" required autofocus
+      <input type="text" id="username" name="username" required{% if not error %} autofocus{% endif %}
              value="{{ username | default('', true) }}"
              autocomplete="username" autocapitalize="none" spellcheck="false"
              placeholder="{{ t('login.username_ph') }}">
     </div>
     <div class="auth-field">
       <label for="password">{{ t('login.password') }}</label>
-      <input type="password" id="password" name="password" required
+      <input type="password" id="password" name="password" required{% if error %} autofocus{% endif %}
              autocomplete="current-password" placeholder="{{ t('login.password_ph') }}">
     </div>
     <details class="auth-help">
