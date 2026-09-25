@@ -345,7 +345,10 @@ async def account_password_update(request: Request):
             (config.DATA_DIR / "initial_admin_credentials").unlink(missing_ok=True)
         except OSError:
             pass
-    response = _back("/", msg=_flash(request, "flash.accounts.password_changed"))
+    # The forced first-login branch carries on to 2FA setup; the in-app change
+    # came from Settings, so it goes back there.
+    target = "/" if account["must_change_password"] else "/settings#settings-account"
+    response = _back(target, msg=_flash(request, "flash.accounts.password_changed"))
     auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
     db.audit("password_changed", actor=account["username"], owner_user_id=account["id"])
     return response
