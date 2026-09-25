@@ -1003,16 +1003,22 @@ a { color: inherit; }
 .reel-dots i:nth-child(3) { background: #54bb73; }
 .reel-address { color: var(--ink-muted); font-family: var(--font-mono); font-size: var(--text-xs); }
 .reel-toggle {
+  display: grid;
   justify-self: end;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--border-strong);
   border-radius: 50%;
   color: var(--ink);
   background: var(--surface);
-  font-weight: 800;
   cursor: pointer;
+  place-items: center;
 }
+.reel-toggle .reel-icon { display: none; width: 18px; height: 18px; fill: currentColor; }
+.product-reel:not(.is-paused) .reel-icon-pause { display: block; }
+.product-reel.is-paused .reel-icon-play { display: block; }
+.product-reel.is-done .reel-icon-play { display: none; }
+.product-reel.is-done .reel-icon-replay { display: block; }
 .reel-toggle:hover { background: var(--surface-hover); }
 .reel-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 .reel-toggle:disabled { cursor: default; opacity: .5; }
@@ -1138,6 +1144,18 @@ a { color: inherit; }
 .receipt-mark { display: grid; width: 64px; height: 64px; margin: 0 auto 22px; border-radius: 50%; color: #fff; background: var(--green); font-size: 1.9rem; font-weight: 700; place-items: center; }
 .receipt-card small, .receipt-card strong, .receipt-card p, .receipt-code { display: block; }
 .receipt-card small { color: var(--ink-muted); font-family: var(--font-mono); }
+.receipt-card .receipt-example {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 2px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--ink-secondary);
+  font-family: inherit;
+  font-size: .7rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 .receipt-card strong { margin-top: 9px; font-size: clamp(1.4rem, 3vw, 2.2rem); }
 .receipt-card p { margin: 8px 0 18px; color: var(--ink-secondary); }
 .receipt-code { padding-top: 14px; border-top: 1px dashed var(--border-strong); font-family: var(--font-mono); }
