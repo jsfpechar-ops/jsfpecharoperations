@@ -179,7 +179,7 @@
   </div>
   {% else %}
     <section id="needs-action">
-      <div class="section-heading"><h2>{{ t('dashboard.section.needs_action') }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>
+      <div class="section-heading"><h2>{{ t('dashboard.section.needs_action', count=queue_groups.needs_action | length) }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>
       {{ queue_table(queue_groups.needs_action, 'dashboard.queue.empty.action') }}
     </section>
     <section id="waiting">
