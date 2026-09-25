@@ -670,19 +670,32 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Connection works — UbyPort accepted your web-service login."
         ),
         "flash.apartments.codelists_refreshed": "Code lists refreshed from UbyPort: %(countries)s countries, %(purposes)s purposes, %(errors)s error codes.",
-        "flash.feeds.added": "Calendar added. %(count)s stay(s) imported.",
+        "flash.feeds.added": "Calendar added. %(count)s stays imported.",
+        "flash.feeds.added.one": "Calendar added. %(count)s stay imported.",
+        "flash.feeds.added.few": "Calendar added. %(count)s stays imported.",
         "flash.feeds.removed": "Calendar removed. Existing stays were kept.",
-        "flash.feeds.synced": "Synced %(feeds)s calendar(s): %(created)s new, %(updated)s updated, %(cancelled)s cancelled.",
+        "flash.feeds.synced": "Synced %(count)s calendars: %(created)s new, %(updated)s updated, %(cancelled)s cancelled.",
+        "flash.feeds.synced.one": "Synced %(count)s calendar: %(created)s new, %(updated)s updated, %(cancelled)s cancelled.",
+        "flash.feeds.synced.few": "Synced %(count)s calendars: %(created)s new, %(updated)s updated, %(cancelled)s cancelled.",
         "flash.reservations.created": "Stay created.",
-        "flash.reservations.sent": "Sent %(guests)s guest record(s) across %(stays)s stay(s).",
+        "flash.reservations.sent": "Sent %(guests)s guest records across %(stays)s.",
+        "flash.reservations.sent.one": "Sent %(guests)s guest record across %(stays)s.",
+        "flash.reservations.sent.few": "Sent %(guests)s guest records across %(stays)s.",
+        "flash.reservations.sent.stays": "%(count)s stays",
+        "flash.reservations.sent.stays.one": "%(count)s stay",
+        "flash.reservations.sent.stays.few": "%(count)s stays",
         "flash.reservations.saved": "Saved.",
         "flash.reservations.restored": "Stay restored from archive.",
         "flash.reservations.access_reopened": "Guest access reopened.",
         "flash.reservations.claim_released": (
             "Assignment released — another e-mail can now claim this stay."
         ),
-        "flash.reservations.accepted": "%(count)s guest(s) accepted.",
-        "flash.reservations.reported": "%(count)s guest(s) reported to UbyPort.",
+        "flash.reservations.accepted": "%(count)s guests accepted.",
+        "flash.reservations.accepted.one": "%(count)s guest accepted.",
+        "flash.reservations.accepted.few": "%(count)s guests accepted.",
+        "flash.reservations.reported": "%(count)s guests reported to UbyPort.",
+        "flash.reservations.reported.one": "%(count)s guest reported to UbyPort.",
+        "flash.reservations.reported.few": "%(count)s guests reported to UbyPort.",
         "flash.guests.added": "Guest added.",
         "flash.guests.saved": "Saved.",
         "flash.guests.identity_verified": "Identity already verified.",
@@ -724,7 +737,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "This record can't be sent yet — fix the validation errors first."
         ),
         "flash.error.rejected": (
-            "UbyPort rejected %(count)s guest record(s) — open the stay to fix and resend."
+            "UbyPort rejected %(count)s guest records — open the stay to fix and resend."
+        ),
+        "flash.error.rejected.one": (
+            "UbyPort rejected %(count)s guest record — open the stay to fix and resend."
+        ),
+        "flash.error.rejected.few": (
+            "UbyPort rejected %(count)s guest records — open the stay to fix and resend."
         ),
         "flash.error.resent_rejected": (
             "Re-sent, but UbyPort rejected it again — see the Doručenka."
@@ -1016,6 +1035,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.table.reporting": "Reporting",
         "stays.table.deadline": "Deadline",
         "stays.table.nights": "%(count)s nights",
+        "stays.table.nights.one": "%(count)s night",
+        "stays.table.nights.few": "%(count)s nights",
         "stays.table.in_house": "In house",
         "stays.table.portal": "portal →",
         "stays.row.open": "Open stay",
@@ -1057,7 +1078,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.add_guest": "Add a guest",
         "stay.detail.next_step": "Next step",
         "stay.detail.change_guest_count": "Change guest count",
-        "stay.detail.ready_count": "%(count)s guest record(s) ready to report.",
+        "stay.detail.ready_count": "Ready to report: %(count)s guests.",
+        "stay.detail.ready_count.one": "Ready to report: %(count)s guest.",
+        "stay.detail.ready_count.few": "Ready to report: %(count)s guests.",
         "stay.detail.metric.deadline": "Reporting deadline",
         "stay.detail.metric.deadline_note": "The three working days from check-in end %(when)s.",
         "stay.detail.metric.guests": "Guest forms",
@@ -1857,10 +1880,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "flash.apartments.codelists_refreshed": "Číselníky byly obnoveny z UbyPortu: %(countries)s zemí, %(purposes)s účelů, %(errors)s chybových kódů.",
         "flash.feeds.added": "Kalendář byl přidán. Importováno %(count)s pobytů.",
+        "flash.feeds.added.one": "Kalendář byl přidán. Importován %(count)s pobyt.",
+        "flash.feeds.added.few": "Kalendář byl přidán. Importovány %(count)s pobyty.",
         "flash.feeds.removed": "Kalendář byl odebrán. Stávající pobyty zůstaly zachovány.",
-        "flash.feeds.synced": "Synchronizováno %(feeds)s kalendářů: %(created)s nových, %(updated)s změněných, %(cancelled)s zrušených.",
+        "flash.feeds.synced": "Synchronizováno %(count)s kalendářů: %(created)s nových, %(updated)s změněných, %(cancelled)s zrušených.",
+        "flash.feeds.synced.one": "Synchronizován %(count)s kalendář: %(created)s nových, %(updated)s změněných, %(cancelled)s zrušených.",
+        "flash.feeds.synced.few": "Synchronizovány %(count)s kalendáře: %(created)s nových, %(updated)s změněných, %(cancelled)s zrušených.",
         "flash.reservations.created": "Pobyt byl vytvořen.",
-        "flash.reservations.sent": "Odesláno %(guests)s záznamů hostů v %(stays)s pobytech.",
+        "flash.reservations.sent": "Odesláno %(guests)s záznamů hostů v %(stays)s.",
+        "flash.reservations.sent.one": "Odeslán %(guests)s záznam hosta v %(stays)s.",
+        "flash.reservations.sent.few": "Odeslány %(guests)s záznamy hostů v %(stays)s.",
+        "flash.reservations.sent.stays": "%(count)s pobytech",
+        "flash.reservations.sent.stays.one": "%(count)s pobytu",
+        "flash.reservations.sent.stays.few": "%(count)s pobytech",
         "flash.reservations.saved": "Uloženo.",
         "flash.reservations.restored": "Pobyt byl obnoven z archivu.",
         "flash.reservations.access_reopened": "Přístup hosta byl znovu otevřen.",
@@ -1868,7 +1900,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Přiřazení uvolněno — pobyt teď může převzít jiný e-mail."
         ),
         "flash.reservations.accepted": "Přijato %(count)s hostů.",
+        "flash.reservations.accepted.one": "Přijato %(count)s host.",
+        "flash.reservations.accepted.few": "Přijato %(count)s hosté.",
         "flash.reservations.reported": "Nahlášeno na UbyPort: %(count)s hostů.",
+        "flash.reservations.reported.one": "Nahlášeno na UbyPort: %(count)s host.",
+        "flash.reservations.reported.few": "Nahlášeno na UbyPort: %(count)s hosté.",
         "flash.guests.added": "Host byl přidán.",
         "flash.guests.saved": "Uloženo.",
         "flash.guests.identity_verified": "Identita je již ověřena.",
@@ -1910,6 +1946,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Tento záznam zatím nelze odeslat — nejprve opravte chyby ve formuláři."
         ),
         "flash.error.rejected": (
+            "UbyPort odmítl záznamy hostů (%(count)s) — otevřete pobyt, opravte je a "
+            "odešlete znovu."
+        ),
+        "flash.error.rejected.one": (
+            "UbyPort odmítl záznam hosta (%(count)s) — otevřete pobyt, opravte jej a "
+            "odešlete znovu."
+        ),
+        "flash.error.rejected.few": (
             "UbyPort odmítl záznamy hostů (%(count)s) — otevřete pobyt, opravte je a "
             "odešlete znovu."
         ),
@@ -2207,6 +2251,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.table.reporting": "Hlášení",
         "stays.table.deadline": "Termín",
         "stays.table.nights": "%(count)s nocí",
+        "stays.table.nights.one": "%(count)s noc",
+        "stays.table.nights.few": "%(count)s noci",
         "stays.table.in_house": "Ubytováni",
         "stays.table.portal": "portál →",
         "stays.row.open": "Otevřít pobyt",
@@ -2248,7 +2294,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.add_guest": "Přidat hosta",
         "stay.detail.next_step": "Další krok",
         "stay.detail.change_guest_count": "Změnit počet hostů",
-        "stay.detail.ready_count": "%(count)s záznam(ů) hostů připraveno k hlášení.",
+        "stay.detail.ready_count": "Připraveno k hlášení — hostů: %(count)s.",
+        "stay.detail.ready_count.one": "Připraven k hlášení — hostů: %(count)s.",
+        "stay.detail.ready_count.few": "Připraveno k hlášení — hostů: %(count)s.",
         "stay.detail.metric.deadline": "Termín hlášení",
         "stay.detail.metric.deadline_note": "Lhůta tří pracovních dnů od příjezdu končí %(when)s.",
         "stay.detail.metric.guests": "Formuláře hostů",
@@ -2891,7 +2939,9 @@ _INTERFACE_STRINGS = {
         "settings.retention.years": "%(count)s years after the stay ends",
         "settings.retention.cutoff": "Delete anything ending before",
         "settings.retention.expired": "Records past that date",
-        "settings.retention.delete": "Delete %(count)s expired record(s)",
+        "settings.retention.delete": "Delete %(count)s expired records",
+        "settings.retention.delete.one": "Delete %(count)s expired record",
+        "settings.retention.delete.few": "Delete %(count)s expired records",
         "settings.retention.delete_help": "Keeping passport numbers beyond the legal period is itself a breach. Review this annually.",
         "settings.privacy_incomplete": "The guest privacy notice is incomplete.",
         "settings.audit.help": "Important changes, archives, PIN rotations, and police submissions are recorded here. Only the retention purge permanently deletes guest records.",
@@ -3400,6 +3450,8 @@ _INTERFACE_STRINGS = {
         "settings.retention.cutoff": "Smazat záznamy končící před",
         "settings.retention.expired": "Záznamy po tomto datu",
         "settings.retention.delete": "Smazat %(count)s prošlých záznamů",
+        "settings.retention.delete.one": "Smazat %(count)s prošlý záznam",
+        "settings.retention.delete.few": "Smazat %(count)s prošlé záznamy",
         "settings.retention.delete_help": "Uchovávání čísel pasů nad zákonnou dobu je samo porušením. Kontrolujte jednou ročně.",
         "settings.privacy_incomplete": "Informace o zpracování údajů hosta není úplná.",
         "settings.audit.help": "Důležité změny, archivace, změny PIN a policejní hlášení se zapisují zde. Trvale maže pouze retence.",
@@ -3511,6 +3563,32 @@ def translate(lang: str, key: str, **kwargs) -> str:
         key,
         **kwargs,
     )
+
+
+def plural_key(base: str, n: int) -> str:
+    """The one/few/many form a count needs.
+
+    Czech has three forms where English has two, so a counted key ships as
+    ``base`` (the many form), ``base.one`` and ``base.few``. "3 nocí" is wrong
+    Czech and "1 nights" is wrong English; both come from printing one form of
+    the key whatever the number was.
+    """
+    if n == 1:
+        return f"{base}.one"
+    if 2 <= n <= 4:
+        return f"{base}.few"
+    return base
+
+
+def translate_plural(lang: str, base: str, n: int, **kwargs) -> str:
+    """A counted message in the host's language, in the form its count needs.
+
+    The count reaches the string as ``%(count)s`` (the name every counted key
+    already uses), and as ``%(n)s`` for the deadline keys.
+    """
+    kwargs.setdefault("count", n)
+    kwargs.setdefault("n", n)
+    return translate(lang, plural_key(base, n), **kwargs)
 
 
 def bilingual_message(key: str, languages: Optional[List[str]] = None, **kwargs) -> str:

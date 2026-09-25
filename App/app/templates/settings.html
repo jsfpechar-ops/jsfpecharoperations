@@ -124,7 +124,7 @@
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="btn {{ 'danger' if expired_records else '' }}" type="submit"
                 {% if not expired_records %}disabled{% endif %}>
-          {{ t('settings.retention.delete', count=expired_records) }}
+          {{ tp('settings.retention.delete', expired_records) }}
         </button>
         <span class="small muted">{{ t('settings.retention.delete_help') }}</span>
       </form>

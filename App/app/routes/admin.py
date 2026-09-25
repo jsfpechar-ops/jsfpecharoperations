@@ -41,9 +41,11 @@ from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, onboarding
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
+from .admin_helpers import flash_plural as _flash_plural
 from .admin_helpers import form_str as _form_str
 from .admin_helpers import guest_form_payload as _guest_form_payload
 from .admin_helpers import kept_signature as _kept_signature
+from .admin_helpers import plural_param as _plural_param
 from .admin_helpers import query_date as _query_date
 from .admin_helpers import query_int as _query_int
 
@@ -879,7 +881,7 @@ async def add_feed(apartment_id: int, request: Request):
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.feed_added_unreadable"))
     return _back(
         f"/apartments/{apartment_id}",
-        msg=_flash(request, "flash.feeds.added", count=totals["created"]),
+        msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
     )
 
 
@@ -908,10 +910,10 @@ async def sync_now(request: Request):
     return _back(
         return_to,
         msg=(
-            _flash(
+            _flash_plural(
                 request,
                 "flash.feeds.synced",
-                feeds=totals["feeds"],
+                totals["feeds"],
                 created=totals["created"],
                 updated=totals["updated"],
                 cancelled=totals["cancelled"],
@@ -1204,7 +1206,13 @@ async def reservations_submit_ready(request: Request):
         )
     return _back(
         return_to,
-        msg=_flash(request, "flash.reservations.sent", guests=sent_guests, stays=sent_stays),
+        msg=_flash_plural(
+            request,
+            "flash.reservations.sent",
+            sent_guests,
+            guests=sent_guests,
+            stays=_plural_param(request, "flash.reservations.sent.stays", sent_stays),
+        ),
     )
 
 
@@ -1468,10 +1476,12 @@ async def reservation_submit(reservation_id: int, request: Request):
     if failed:
         return _back(
             return_to,
-            msg=_flash(request, "flash.reservations.accepted", count=sent),
-            err=_flash(request, "flash.error.rejected", count=failed),
+            msg=_flash_plural(request, "flash.reservations.accepted", sent),
+            err=_flash_plural(request, "flash.error.rejected", failed),
         )
-    return _back(return_to, msg=_flash(request, "flash.reservations.reported", count=sent))
+    return _back(
+        return_to, msg=_flash_plural(request, "flash.reservations.reported", sent)
+    )
 
 
 # --- guests --------------------------------------------------------------
