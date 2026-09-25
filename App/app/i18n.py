@@ -110,8 +110,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_bot": "Please complete the security check and try again.",
         "assigned_title": "This reservation is already assigned",
         "assigned_body": (
-            "This reservation has already been assigned the e-mail %(email)s. "
-            "If that is you, we can send the private link again."
+            "This stay is already linked to the e-mail below. "
+            "If that's you, we can send the private link again."
         ),
         "assigned_resend_help": "Enter the same e-mail to receive the link again.",
         "assigned_resend": "Send me the link again",
@@ -671,8 +671,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_bot": "Dokončete prosím bezpečnostní kontrolu a zkuste to znovu.",
         "assigned_title": "Tato rezervace už je přiřazena",
         "assigned_body": (
-            "Tato rezervace už byla přiřazena e-mailu %(email)s. "
-            "Pokud jste to vy, můžeme soukromý odkaz poslat znovu."
+            "Tento pobyt je už propojený s e-mailem níže. "
+            "Pokud jste to vy, pošleme vám soukromý odkaz znovu."
         ),
         "assigned_resend_help": "Zadejte stejný e-mail a odkaz pošleme znovu.",
         "assigned_resend": "Pošlete mi odkaz znovu",
