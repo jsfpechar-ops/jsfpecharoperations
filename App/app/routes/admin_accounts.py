@@ -266,6 +266,22 @@ async def two_factor_setup_submit(request: Request):
     return response
 
 
+def _password_error(key: str) -> dict:
+    """A password error together with the field it belongs under.
+
+    The message used to sit in one alert above the form, with nothing tying it
+    to the input that caused it, so a screen reader read three identical-looking
+    fields and no clue which one to fix.
+    """
+    if key in ("auth.error.temp_password_wrong", "auth.error.current_password_wrong"):
+        field = "current_password"
+    elif key == "auth.error.passwords_mismatch":
+        field = "confirm_password"
+    else:
+        field = "new_password"
+    return {"error": key, "error_field": field}
+
+
 @router.post("/account/password")
 async def account_password_update(request: Request):
     guard = auth.require_login(request)
@@ -274,28 +290,24 @@ async def account_password_update(request: Request):
     account = auth.current_user(request)
     form = await request.form()
     if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
-        return render(
-            request,
-            "account_password.html",
-            {
-                "error": "auth.error.temp_password_wrong"
-                if account["must_change_password"]
-                else "auth.error.current_password_wrong"
-            },
-            status_code=400,
+        key = (
+            "auth.error.temp_password_wrong"
+            if account["must_change_password"]
+            else "auth.error.current_password_wrong"
         )
+        return render(request, "account_password.html", _password_error(key), status_code=400)
     new_password = _form_str(form, "new_password")
     if new_password != _form_str(form, "confirm_password"):
         return render(
             request,
             "account_password.html",
-            {"error": "auth.error.passwords_mismatch"},
+            _password_error("auth.error.passwords_mismatch"),
             status_code=400,
         )
     try:
         auth.set_account_password(account["id"], new_password)
     except ValueError as exc:
-        return render(request, "account_password.html", {"error": str(exc)}, status_code=400)
+        return render(request, "account_password.html", _password_error(str(exc)), status_code=400)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
     if account["must_change_password"]:
         try:

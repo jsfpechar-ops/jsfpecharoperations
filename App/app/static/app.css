@@ -2471,6 +2471,10 @@ details.raw pre {
   color: var(--muted);
 }
 
+/* An error under a field keeps the hint's spacing but not its grey: the two
+   classes have equal weight, so the pairing has to be spelled out. */
+.auth-hint.err-text { color: var(--bad); font-weight: 550; }
+
 /* Help that must stay reachable without competing with the main action. */
 .auth-help {
   margin-top: 14px;
