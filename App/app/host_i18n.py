@@ -2436,6 +2436,45 @@ _INTERFACE_STRINGS = {
         "account.password.repeat": "Repeat new password",
         "account.password.repeat_ph": "Repeat new password…",
         "account.password.save": "Save password",
+        "auth.error.admins_only": "Administrators only.",
+        "auth.error.bad_credentials": (
+            "That username and password don't match. Check for typos and Caps Lock."
+        ),
+        "auth.error.code_invalid": (
+            "That code didn't work. Codes change every 30 seconds — enter the one showing now."
+        ),
+        "auth.error.code_locked": (
+            "Too many wrong codes. Wait 15 minutes, then log in again from the start."
+        ),
+        "auth.error.current_password_wrong": "Your current password isn't right.",
+        "auth.error.locked": (
+            "Too many unsuccessful attempts. Try again in 15 minutes — or, if you've "
+            "forgotten your password, email %(email)s."
+        ),
+        "auth.error.own_disable": "You cannot disable your own administrator account.",
+        "auth.error.own_password": "Change your own password from your account page.",
+        "auth.error.passwords_mismatch": (
+            "The two new passwords are different. Type the same one in both fields."
+        ),
+        "auth.error.setup_code_invalid": (
+            "That code didn't match. Enter the newest six-digit code from the app. If it "
+            "keeps failing, make sure your phone sets its clock automatically."
+        ),
+        "auth.error.temp_password_wrong": (
+            "That temporary password isn't right. Use the one you were given."
+        ),
+        "auth.error.turnstile": (
+            "We couldn't finish the security check. Wait until the check above the button "
+            "shows a tick, then press Continue again."
+        ),
+        "auth.error.username": (
+            "Use 3–32 lowercase letters, numbers, dots, dashes, or underscores."
+        ),
+        "auth.error.username_taken": "That username is already in use.",
+        "auth.password.digit": "Add at least one number.",
+        "auth.password.mixed_case": "Use both upper- and lower-case letters.",
+        "auth.password.too_long": "Use no more than 256 characters.",
+        "auth.password.too_short": "Use at least 12 characters.",
         "account.2fa.code_title": "Security code",
         "account.2fa.code_lede": "Enter the six-digit code from your authenticator app, or one recovery code.",
         "account.2fa.code_label": "Authentication code",
@@ -2854,6 +2893,45 @@ _INTERFACE_STRINGS = {
         "account.password.repeat": "Zopakujte nové heslo",
         "account.password.repeat_ph": "Zopakujte nové heslo…",
         "account.password.save": "Uložit heslo",
+        "auth.error.admins_only": "Pouze pro administrátory.",
+        "auth.error.bad_credentials": (
+            "Uživatelské jméno a heslo nesedí. Zkontrolujte překlepy a Caps Lock."
+        ),
+        "auth.error.code_invalid": (
+            "Kód nefunguje. Kódy se mění každých 30 vteřin — zadejte ten, který vidíte teď."
+        ),
+        "auth.error.code_locked": (
+            "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku."
+        ),
+        "auth.error.current_password_wrong": "Současné heslo nesedí.",
+        "auth.error.locked": (
+            "Příliš mnoho neúspěšných pokusů. Zkuste to znovu za 15 minut, nebo pokud jste "
+            "heslo zapomněli, napište na %(email)s."
+        ),
+        "auth.error.own_disable": "Nemůžete vypnout vlastní administrátorský účet.",
+        "auth.error.own_password": "Vlastní heslo změňte na stránce svého účtu.",
+        "auth.error.passwords_mismatch": (
+            "Nová hesla se liší. Do obou polí napište stejné heslo."
+        ),
+        "auth.error.setup_code_invalid": (
+            "Kód nesouhlasí. Zadejte nejnovější šestimístný kód z aplikace. Pokud to stále "
+            "nejde, zkontrolujte, že má telefon automatické nastavení času."
+        ),
+        "auth.error.temp_password_wrong": (
+            "Dočasné heslo nesedí. Použijte to, které jste dostali."
+        ),
+        "auth.error.turnstile": (
+            "Bezpečnostní kontrolu se nepodařilo dokončit. Počkejte, až se u kontroly nad "
+            "tlačítkem objeví fajfka, a stiskněte Pokračovat znovu."
+        ),
+        "auth.error.username": (
+            "Použijte 3–32 malých písmen, číslic, teček, pomlček nebo podtržítek."
+        ),
+        "auth.error.username_taken": "Toto uživatelské jméno je již obsazené.",
+        "auth.password.digit": "Přidejte alespoň jednu číslici.",
+        "auth.password.mixed_case": "Použijte malá i velká písmena.",
+        "auth.password.too_long": "Použijte nejvýše 256 znaků.",
+        "auth.password.too_short": "Použijte alespoň 12 znaků.",
         "account.2fa.code_title": "Bezpečnostní kód",
         "account.2fa.code_lede": "Zadejte šestimístný kód z autentizační aplikace nebo jeden obnovovací kód.",
         "account.2fa.code_label": "Ověřovací kód",

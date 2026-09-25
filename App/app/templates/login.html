@@ -7,7 +7,7 @@
   <p class="auth-lede">{{ t('login.lede') }}</p>
 
   {% if error %}
-    <div class="auth-alert" role="alert">{{ error }}</div>
+    <div class="auth-alert" role="alert">{{ t(error, email=operator().email) }}</div>
   {% endif %}
 
   <form method="post" action="/login" class="auth-form">
