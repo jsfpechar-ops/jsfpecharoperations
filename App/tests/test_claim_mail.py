@@ -921,13 +921,67 @@ def test_the_emergency_reminder_body_keeps_the_count_and_the_device(monkeypatch)
             ("guest-fallback@claim.test",),
         )
         assert reminder
-        assert "0 of 1 guests are registered." in reminder["body_text"]
-        assert "Open it on the phone or computer where you started." in (
-            reminder["body_text"]
-        )
+        # The body has to carry the same two facts the branded mail leads with:
+        # how much of the party is registered, and that the link wants the
+        # device that started the stay. Read them out of the catalogue rather
+        # than repeating the copy, so a deliberate wording change cannot leave
+        # this asserting text the app no longer sends.
+        expected_intro = i18n.STRINGS["en"]["mail_reminder_guest_intro"] % {"missing": 1}
+        assert expected_intro in reminder["body_text"]
+        assert i18n.STRINGS["en"]["mail_reminder_guest_device"] in reminder["body_text"]
         assert not reminder["body_html"]
     finally:
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_the_emergency_claim_body_is_the_catalogued_copy(monkeypatch):
+    """E-19 [UX-135]: the fallback is composed, not hand-written in claim.py.
+
+    The body only ships when the branded composer throws, which is exactly when
+    nobody is looking at it. It used to be a hard-coded string outside
+    ``i18n.py``, so the Czech version said "your host" in English and the dates
+    were printed as raw ISO -- a stay printed two ways on the one surface where
+    the guest has no page to fall back on.
+    """
+    current, _past, _far, _apartment_id = _seed()
+    try:
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+
+        def _boom(**_kwargs):
+            raise RuntimeError("composer down")
+
+        monkeypatch.setattr(mail_notify, "build_claim_link", _boom)
+
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (current,))
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        ok, err, _secret = claim.start_claim(
+            reservation, apartment, email="guest-claim-fb@claim.test", party_size=1,
+            lang="cs",
+        )
+        assert ok, err
+        logged = db.query_one(
+            "SELECT l.* FROM console_mail_log l "
+            "JOIN email_outbox o ON o.id = l.outbox_id "
+            "WHERE o.kind = 'claim' ORDER BY l.id DESC"
+        )
+        assert logged
+        body = logged["body_text"]
+        t = i18n.translator("cs")
+        assert t("mail_claim_expiry") in body
+        assert t("mail_claim_action") in body
+        # No English leaked into the Czech body, and no raw ISO dates either.
+        assert "your host" not in body
+        assert "expires in 30 minutes" not in body
+        assert f"{reservation['date_from']}" not in body
+        assert f"{reservation['date_to']}" not in body
+        assert not logged["body_html"]
+    finally:
         db.execute("DELETE FROM console_mail_log")
         db.execute("DELETE FROM email_outbox")
         _cleanup()

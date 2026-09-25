@@ -739,7 +739,6 @@ def test_the_claim_mail_prints_dates_the_way_every_guest_page_does():
         },
         {"id": 1, "date_from": "2026-09-25", "date_to": "2026-09-28"},
         lang="en",
-        plain_text="fallback",
         link=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1/claim#c=x",
     )
     for part in ("text", "html"):
