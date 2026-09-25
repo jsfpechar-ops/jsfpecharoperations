@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 from datetime import datetime, time, timedelta, timezone
 
 import pytest
@@ -561,10 +562,12 @@ def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeyp
         assert not claim.ensure_row(current)["guest_access_locked_at"]
         assert claim.guest_access_open(reservation, claim.ensure_row(current))
         host_mail = db.query_one(
-            "SELECT * FROM console_mail_log WHERE subject LIKE 'Incomplete registration:%'"
+            "SELECT * FROM console_mail_log WHERE subject LIKE 'Check-in today,%'"
         )
         assert host_mail
-        assert "registration link" in host_mail["body_text"]
+        assert re.search(r"\d+/\d+ registered", host_mail["subject"]), host_mail["subject"]
+        assert "have registered" in host_mail["body_text"]
+        assert "fresh link" not in host_mail["body_text"]
         assert "24-hour grace period" not in host_mail["body_text"]
         # The host app prints the date as DD.MM.YYYY; the mail must not print
         # the raw ISO the reservation table stores.
@@ -582,6 +585,42 @@ def test_incomplete_guest_stays_open_after_check_in_and_host_is_notified(monkeyp
         assert not claim.guest_access_open(reservation, claim.ensure_row(current))
         claim.reopen_guest_access(current)
         assert claim.guest_access_open(reservation, claim.ensure_row(current))
+    finally:
+        db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
+def test_unclaimed_stay_reminds_the_host_to_send_the_link_again(monkeypatch):
+    """UX-27: no link was ever sent, so the mail must not say one was.
+
+    The old copy read "Registration link sent to: the guest has not claimed the
+    stay yet" and then told the host to watch the guest finish a form that was
+    never opened.
+    """
+    current, _past, _far, _apartment_id = _seed()
+    check_in = claim.prague_today()
+    try:
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        clock = [datetime.combine(check_in, time(10, 0))]
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now if now is not None else clock[0],
+        )
+        notified = claim.sweep_reminders()
+        assert notified["host"] == 1
+        host_mail = db.query_one(
+            "SELECT * FROM console_mail_log WHERE subject LIKE 'Incomplete registration:%'"
+        )
+        assert host_mail
+        assert "Nobody has opened the registration yet" in host_mail["body_text"]
+        assert "Registration link sent to" not in host_mail["body_text"]
+        assert "the guest has not claimed the stay yet" not in host_mail["body_text"]
+        assert "None" not in host_mail["body_text"]
+        assert "None" not in host_mail["subject"]
     finally:
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (current,))
         db.execute("DELETE FROM console_mail_log")

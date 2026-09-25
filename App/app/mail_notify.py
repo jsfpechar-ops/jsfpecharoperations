@@ -848,49 +848,67 @@ def build_reminder_host(
     assigned: str,
     stay_url: str,
     lang: Optional[str] = None,
+    claimed: bool = True,
+    filled: int = 0,
+    expected: Optional[int] = None,
 ) -> Dict[str, str]:
     """The check-in-day nudge for the host, in the host's language.
 
     Host copy is English today, like the submission notice; see FOLLOWUPS.md.
     """
     lang = host_i18n.normalise_language(lang)
-    subject = _text(lang, "mail.reminder_host.subject", property=property_name)
+    # The count is only known once the guest has claimed and declared a party;
+    # an unclaimed stay falls back to the count-free subject.
+    subject = _text(
+        lang,
+        "mail.reminder_host.subject"
+        if expected is not None
+        else "mail.reminder_host.subject_unclaimed",
+        property=property_name,
+        filled=filled,
+        expected=expected,
+    )
     heading = _text(lang, "mail.reminder_host.heading")
     intro = _text(lang, "mail.reminder_host.intro", property=property_name, date=date)
     assigned_label = _text(lang, "mail.reminder_host.assigned_label")
     assigned_value = assigned or _text(lang, "mail.reminder_host.assigned_unknown")
     next_label = _text(lang, "mail.reminder_host.next_label")
-    next_steps = _text(lang, "mail.reminder_host.next_steps")
+    next_steps = _text(
+        lang,
+        "mail.reminder_host.next_steps_claimed"
+        if claimed
+        else "mail.reminder_host.next_steps_unclaimed",
+        filled=filled,
+        expected=expected,
+    )
     action = _text(lang, "mail.reminder_host.action_stay")
     fallback = _guest_text(lang, "mail_link_fallback")
     footer = _text(lang, "mail.reminder_host.footer")
 
+    extra_blocks = [_block_link(stay_url, fallback)]
+    if claimed:
+        extra_blocks.append(_block_fact(assigned_label, assigned_value))
+    extra_blocks.append(_block_section(next_label, next_steps))
     blocks = _guest_blocks(
         heading=heading,
         intro=intro,
         action_url=stay_url,
         action_label=action,
-        extra_blocks=[
-            _block_link(stay_url, fallback),
-            _block_fact(assigned_label, assigned_value),
-            _block_section(next_label, next_steps),
-        ],
+        extra_blocks=extra_blocks,
     )
-    text = "\n".join(
-        [
-            intro,
-            "",
-            f"{assigned_label}: {assigned_value}",
-            "",
-            f"{next_label}: {next_steps}",
-            "",
-            f"{action}: {stay_url}",
-            "",
-            "--",
-            "UbyHost",
-            footer,
-        ]
-    )
+    text_lines = [intro, ""]
+    if claimed:
+        text_lines += [f"{assigned_label}: {assigned_value}", ""]
+    text_lines += [
+        f"{next_label}: {next_steps}",
+        "",
+        f"{action}: {stay_url}",
+        "",
+        "--",
+        "UbyHost",
+        footer,
+    ]
+    text = "\n".join(text_lines)
     return {
         "subject": subject,
         "text": text,
