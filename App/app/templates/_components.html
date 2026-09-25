@@ -293,6 +293,10 @@
         <a class="small" href="/onboarding">{{ t('onboarding.all_steps') }}</a>
         <a class="btn primary small" href="{{ onboarding.current.url }}">
           {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
+        {% if onboarding.current.manual_url %}
+          <a class="small" href="{{ onboarding.current.manual_url }}">
+            {{ t('onboarding.' ~ onboarding.current.id ~ '.manual') }}</a>
+        {% endif %}
         <form method="post" action="/onboarding/dismiss">
           <input type="hidden" name="return_to" value="{{ request.url.path }}">
           <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
@@ -346,6 +350,10 @@
         <div class="onboarding-now-actions">
           <a class="btn primary" href="{{ onboarding.current.url }}">
             {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
+          {% if onboarding.current.manual_url %}
+            <a class="small" href="{{ onboarding.current.manual_url }}">
+              {{ t('onboarding.' ~ onboarding.current.id ~ '.manual') }}</a>
+          {% endif %}
           <a class="small" href="{{ onboarding.current.learn_url }}">{{ t('onboarding.learn') }} →</a>
         </div>
       </div>

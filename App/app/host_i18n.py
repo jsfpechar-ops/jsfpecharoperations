@@ -138,11 +138,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.property.action": "Add property",
         "onboarding.calendars.title": "Calendar links",
         "onboarding.calendars.detail": (
-            "Connect Airbnb or Booking.com so stay dates arrive automatically."
+            "Connect Airbnb or Booking.com — or add a direct booking by hand."
         ),
         "onboarding.calendars.prepare": "Copy each listing's private iCal export URL—not its public booking page.",
         "onboarding.calendars.why": "iCal supplies dates only; guests provide names and documents securely.",
         "onboarding.calendars.action": "Connect calendars",
+        "onboarding.calendars.manual": "Add a stay by hand",
         "onboarding.automation.title": "Automation & UbyPort",
         "onboarding.automation.detail": (
             "Choose when complete foreign-guest records may be sent."
@@ -1308,11 +1309,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.property.action": "Přidat ubytování",
         "onboarding.calendars.title": "Odkazy na kalendáře",
         "onboarding.calendars.detail": (
-            "Připojte Airbnb nebo Booking.com, aby se termíny pobytů načítaly automaticky."
+            "Připojte Airbnb nebo Booking.com — nebo přidejte přímou rezervaci ručně."
         ),
         "onboarding.calendars.prepare": "Zkopírujte soukromou URL exportu iCal, ne veřejnou stránku nabídky.",
         "onboarding.calendars.why": "iCal přináší jen termíny; jména a doklady host doplní bezpečně.",
         "onboarding.calendars.action": "Připojit kalendáře",
+        "onboarding.calendars.manual": "Přidat pobyt ručně",
         "onboarding.automation.title": "Automatizace a UbyPort",
         "onboarding.automation.detail": (
             "Zvolte, kdy se mohou odeslat kompletní záznamy zahraničních hostů."
