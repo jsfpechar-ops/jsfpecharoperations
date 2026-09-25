@@ -45,13 +45,16 @@ def login_form(request: Request):
 async def login_submit(request: Request):
     form = await request.form()
     username = _form_str(form, "username")
+    # Read once, up front, so a failed attempt re-renders the form still holding
+    # the deep link the host arrived with instead of dropping them on the dashboard.
+    next_path = security.safe_local_path(_form_str(form, "next"), "/")
     ip_key = rate_limit.client_key(request)
     client_key = rate_limit.client_key(request, username.lower() or "unknown")
     if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
         return render(
             request,
             "login.html",
-            {"error": "auth.error.turnstile", "username": username},
+            {"error": "auth.error.turnstile", "username": username, "next": next_path},
             status_code=403,
         )
     if rate_limit.login_blocked(client_key, ip_key):
@@ -61,6 +64,7 @@ async def login_submit(request: Request):
             {
                 "error": "auth.error.locked",
                 "username": username,
+                "next": next_path,
             },
             status_code=429,
         )
@@ -74,11 +78,11 @@ async def login_submit(request: Request):
             {
                 "error": "auth.error.bad_credentials",
                 "username": username,
+                "next": next_path,
             },
             status_code=401,
         )
     target = "/account/password" if account["must_change_password"] else "/"
-    next_path = security.safe_local_path(_form_str(form, "next"), "/")
     if not account["must_change_password"]:
         target = next_path
     remember = _form_str(form, "remember") in ("1", "on", "true", "yes")
@@ -123,7 +127,10 @@ async def two_factor_login(request: Request):
     form = await request.form()
     pending = auth.read_two_factor_pending(_form_str(form, "pending"))
     if not pending:
-        return RedirectResponse("/login", status_code=303)
+        # The pending token lives 10 minutes, which is shorter than the 15-minute
+        # lockout the host was just told to wait out. Say so instead of dropping
+        # them on a bare login form with no explanation.
+        return RedirectResponse("/login?notice=2fa_expired", status_code=303)
     account = db.query_one(
         "SELECT * FROM user_account WHERE id = ? AND active = 1", (pending["uid"],)
     )
@@ -164,7 +171,7 @@ async def two_factor_login(request: Request):
 
 @router.post("/logout")
 def logout():
-    response = RedirectResponse("/login", status_code=303)
+    response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
     return response
 
@@ -174,7 +181,24 @@ def account_password_form(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return render(request, "account_password.html", {})
+    account = auth.current_user(request)
+    return render(request, "account_password.html", _first_run_step(account, 1))
+
+
+def _first_run_step(account: dict, step: int) -> dict:
+    """Context for the forced first-run sequence: password → 2FA → recovery codes.
+
+    In production 2FA is mandatory, so a host who has not switched it on yet is
+    walked through all three screens with no way to skip. Only there do the
+    screens number themselves; anywhere else the ledes read as plain sentences.
+    Step 3 is the screen right after 2FA is switched on, so ``totp_enabled`` is
+    already set by then.
+    """
+    if config.DEPLOYMENT != "production":
+        return {}
+    if step < 3 and account["totp_enabled"]:
+        return {}
+    return {"first_run_step": step}
 
 
 def _totp_qr_data(uri: str) -> str:
@@ -199,11 +223,11 @@ def two_factor_setup_form(request: Request):
         secret = auth.new_totp_secret()
         auth.stage_totp(account["id"], secret)
     uri = auth.totp_uri(secret, account["username"])
-    return render(
-        request,
-        "two_factor_setup.html",
-        {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri},
-    )
+    context = {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri}
+    if request.query_params.get("moved") == "1":
+        context["moved"] = True
+    context.update(_first_run_step(account, 2))
+    return render(request, "two_factor_setup.html", context)
 
 
 @router.post("/account/2fa/setup")
@@ -211,6 +235,11 @@ async def two_factor_setup_submit(request: Request):
     account = auth.current_user(request)
     if not account:
         return RedirectResponse("/login", status_code=303)
+    # A reload, or the browser's "resubmit form?", would otherwise mint a second
+    # set of recovery codes and silently kill the ones already written down.
+    if account["totp_enabled"]:
+        return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
+    remember = auth.session_remembers(request)
     form = await request.form()
     # Authenticator apps show the code as "123 456", so a pasted one arrives
     # with a space in it; the login route strips spaces the same way.
@@ -221,24 +250,72 @@ async def two_factor_setup_submit(request: Request):
         secret = ""
     if not secret or not pyotp.TOTP(secret).verify(code, valid_window=1):
         uri = auth.totp_uri(secret, account["username"]) if secret else ""
-        return render(
-            request,
-            "two_factor_setup.html",
-            {
-                "secret": secret,
-                "qr_data": _totp_qr_data(uri) if uri else "",
-                "totp_uri": uri,
-                "error": "auth.error.setup_code_invalid",
-            },
-            status_code=400,
-        )
+        context = {
+            "secret": secret,
+            "qr_data": _totp_qr_data(uri) if uri else "",
+            "totp_uri": uri,
+            "error": "auth.error.setup_code_invalid",
+        }
+        context.update(_first_run_step(account, 2))
+        return render(request, "two_factor_setup.html", context, status_code=400)
     recovery_codes = auth.new_recovery_codes()
     auth.enable_totp(account["id"], secret, recovery_codes)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
-    response = render(request, "two_factor_recovery.html", {"recovery_codes": recovery_codes})
-    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
+    context = {"recovery_codes": recovery_codes}
+    context.update(_first_run_step(refreshed, 3))
+    response = render(request, "two_factor_recovery.html", context)
+    auth.attach_session(
+        response,
+        auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+        remember=remember,
+    )
     db.audit("two_factor_enabled", actor=account["username"], owner_user_id=account["id"])
     return response
+
+
+@router.post("/account/2fa/move")
+async def two_factor_move(request: Request):
+    """Re-enrol the second factor on a new phone.
+
+    The old phone is gone or going, so both factors have to prove themselves one
+    last time: the password and a code the old device can still produce. Setup
+    then runs again and mints fresh recovery codes, because the old ones were
+    written down beside the old device.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    if not account["totp_enabled"]:
+        return _back("/account/2fa/setup")
+    form = await request.form()
+    if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
+        return _back("/settings", err=_flash(request, "auth.error.current_password_wrong"))
+    if not auth.verify_second_factor(account, _form_str(form, "code")):
+        return _back("/settings", err=_flash(request, "auth.error.code_invalid"))
+    auth.reset_totp(account["id"])
+    refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
+    db.audit("two_factor_moved", actor=account["username"], owner_user_id=account["id"])
+    response = RedirectResponse("/account/2fa/setup?moved=1", status_code=303)
+    # reset_totp bumps session_version, so the cookie that sent this POST is stale.
+    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
+    return response
+
+
+def _password_error(key: str) -> dict:
+    """A password error together with the field it belongs under.
+
+    The message used to sit in one alert above the form, with nothing tying it
+    to the input that caused it, so a screen reader read three identical-looking
+    fields and no clue which one to fix.
+    """
+    if key in ("auth.error.temp_password_wrong", "auth.error.current_password_wrong"):
+        field = "current_password"
+    elif key == "auth.error.passwords_mismatch":
+        field = "confirm_password"
+    else:
+        field = "new_password"
+    return {"error": key, "error_field": field}
 
 
 @router.post("/account/password")
@@ -249,36 +326,40 @@ async def account_password_update(request: Request):
     account = auth.current_user(request)
     form = await request.form()
     if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
-        return render(
-            request,
-            "account_password.html",
-            {
-                "error": "auth.error.temp_password_wrong"
-                if account["must_change_password"]
-                else "auth.error.current_password_wrong"
-            },
-            status_code=400,
+        key = (
+            "auth.error.temp_password_wrong"
+            if account["must_change_password"]
+            else "auth.error.current_password_wrong"
         )
+        return render(request, "account_password.html", _password_error(key), status_code=400)
     new_password = _form_str(form, "new_password")
     if new_password != _form_str(form, "confirm_password"):
         return render(
             request,
             "account_password.html",
-            {"error": "auth.error.passwords_mismatch"},
+            _password_error("auth.error.passwords_mismatch"),
             status_code=400,
         )
     try:
         auth.set_account_password(account["id"], new_password)
     except ValueError as exc:
-        return render(request, "account_password.html", {"error": str(exc)}, status_code=400)
+        return render(request, "account_password.html", _password_error(str(exc)), status_code=400)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
     if account["must_change_password"]:
         try:
             (config.DATA_DIR / "initial_admin_credentials").unlink(missing_ok=True)
         except OSError:
             pass
-    response = _back("/", msg=_flash(request, "flash.accounts.password_changed"))
-    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
+    # The forced first-login branch carries on to 2FA setup; the in-app change
+    # came from Settings, so it goes back there.
+    target = "/" if account["must_change_password"] else "/settings#settings-account"
+    remember = auth.session_remembers(request)
+    response = _back(target, msg=_flash(request, "flash.accounts.password_changed"))
+    auth.attach_session(
+        response,
+        auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+        remember=remember,
+    )
     db.audit("password_changed", actor=account["username"], owner_user_id=account["id"])
     return response
 

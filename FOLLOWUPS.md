@@ -639,24 +639,19 @@ message on a different trigger.
 
 ### The `dates_changed` mail kind is registered but nothing ever sends it
 
-`mail.KINDS` lists `dates_changed`, and `mail.enqueue` will accept it, but no
-call site enqueues it — `grep -rn 'dates_changed' App/app/` finds only the
-`KINDS` tuple itself (the `dates_changed_resign` hits are the *alert* kind in
-`alerts.py` and `icalsync.py`, which is a different mechanism). So the promise
-that "any e-mail from UbyHost looks nice" is not violated by it, because no
-such e-mail exists to look at.
+**Resolved by UX-134 (audit E-16).** `dates_changed` has been removed from
+`mail.KINDS` and `mail.HOST_KINDS`; the list now reflects what the app actually
+sends. `docs/SES.md` no longer promises a plain-text-only kind. Re-adding it
+needs a composer in `mail_notify.py`, EN/CS strings in `i18n.py`, and a test —
+and it belongs in exactly one of `GUEST_KINDS` / `HOST_KINDS`.
 
-The gap it implies is real, though: when the calendar moves a stay's dates after
-the guest signed, the host gets an alert (`dates_changed_resign`) and the guest
-gets nothing, even though the signed form names dates that are no longer true.
-Whether the guest should be told is a product decision — it is a change to a
-legal declaration, and telling the guest may be worse than telling only the
-host. Recorded rather than guessed at.
-
-Either decision needs the same treatment the other guest kinds just got: a
-composer in `mail_notify.py`, EN/CS strings in `i18n.py`, and a test. If the
-kind is not going to be used, it should be removed from `KINDS` so the list
-reflects what the app actually sends.
+The product gap the entry described is still open and unchanged: when the
+calendar moves a stay's dates after the guest signed, the host gets an alert
+(`dates_changed_resign`) and the guest gets nothing, even though the signed form
+names dates that are no longer true. Whether the guest should be told is a
+product decision — it is a change to a legal declaration, and telling the guest
+may be worse than telling only the host. The audit's own recommendation is to
+build it as a separate product item, because it adds a guest step.
 
 ### W4.2 — records already stored `blocked` by an earlier 112 are not swept
 
@@ -895,3 +890,34 @@ plan's own "what remains in `admin.py`" list never mentions submissions or the
 settings page, and the move would have split those pages across two modules.
 `guide_view` is likewise left in place because the plan does not ask for it. All
 six are recorded here so the choice is visible in review rather than implied.
+
+## From the UX audit — UX-80 (E-14): host mail is English by decision
+
+The audit flagged that host mail hard-coded `"lang": "en"` in one place and
+defaulted to `host_i18n.DEFAULT_LANGUAGE` in another, so nobody could tell
+whether English was a decision or an accident. **The product owner has decided:
+host mail stays English.** It is not to follow the host's UI language and not to
+use bilingual subjects. The reason is that there is no stored per-host language
+preference to read; guessing from the request would send a different language
+from the same host depending on which device happened to trigger the sweep.
+
+The choice is now named once: `mail_notify.HOST_MAIL_LANGUAGE = "en"`, used by
+`submission_problem()` and by the `reminder_host` payload that `claim.py`
+enqueues. It is a constant, not a literal, so the one place to change when a
+per-host preference eventually exists is obvious and greppable.
+
+**The Czech host-mail keys stay in `host_i18n.STRINGS["cs"]`.** The audit's
+"don't leave the CS keys dead" rule only applies to the CS-default scenario; with
+English chosen they are the copy a future per-host preference would select, and
+they keep the EN/CS parity test meaningful.
+
+**`PLAN_GUEST_INVOICE_FEATURE.md` was corrected in the same change.** Its
+`invoice_request_host` row specced the body in Czech ("Host X požádal o
+fakturu"), which contradicted the English decision; the row now specs English
+copy and cites E-14. Only the plan text changed — the invoice feature itself is
+still unbuilt.
+
+**Still open:** a stored per-host language preference would retire this interim
+rule and let the CS keys above go live. That is a schema change (a column on
+`user_account` or `legal_entity`) plus a Settings control, and it is not part of
+the audit.

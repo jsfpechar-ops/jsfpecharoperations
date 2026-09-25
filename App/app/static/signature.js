@@ -155,20 +155,20 @@ function initSignature() {
 
     function formatDigits(digits) {
       var out = digits.slice(0, 2);
-      if (digits.length > 2) out += "/" + digits.slice(2, 4);
-      if (digits.length > 4) out += "/" + digits.slice(4, 8);
+      if (digits.length > 2) out += "." + digits.slice(2, 4);
+      if (digits.length > 4) out += "." + digits.slice(4, 8);
       return out;
     }
 
     // "1990-07-04" is year-first. Reading it as eight digits would give
-    // 19/90/0704, so reorder it before anything else touches the value.
+    // 19.90.0704, so reorder it before anything else touches the value.
     function fromIso(value) {
       var match = /^\s*(\d{4})-(\d{2})-(\d{2})\s*$/.exec(String(value || ""));
       return match ? match[3] + match[2] + match[1] : "";
     }
 
     function toDate(formatted) {
-      var match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formatted);
+      var match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(formatted);
       if (!match) return null;
       var day = parseInt(match[1], 10);
       var month = parseInt(match[2], 10);
@@ -239,6 +239,33 @@ function initSignature() {
     nationality.addEventListener("change", function () {
       if (!resCountry.value && nationality.value) resCountry.value = nationality.value;
     });
+  }
+
+  /* A Schengen visa is something a guest needs in order to enter. A Czech or
+     EU/EEA/Swiss guest is entering on their own document, so the question can
+     only be answered one way — the majority of guests were being asked to
+     decide something they cannot have. The field is hidden and emptied rather
+     than removed, so a number typed before the nationality was picked cannot
+     be saved behind the guest's back. */
+  var VISA_FREE_COUNTRIES = [
+    "AUT", "BEL", "BGR", "CHE", "CYP", "CZE", "DEU", "DNK", "ESP", "EST",
+    "FIN", "FRA", "GRC", "HRV", "HUN", "IRL", "ISL", "ITA", "LIE", "LTU",
+    "LUX", "LVA", "MLT", "NLD", "NOR", "POL", "PRT", "ROU", "SVK", "SVN",
+    "SWE"
+  ];
+
+  function initVisaVisibility() {
+    var nationality = document.getElementById("nationality");
+    var visa = document.getElementById("visa_number");
+    if (!nationality || !visa) return;
+    var wrap = visa.closest(".g-field") || visa;
+    function apply() {
+      var free = VISA_FREE_COUNTRIES.indexOf(nationality.value) !== -1;
+      wrap.style.display = free ? "none" : "";
+      if (free) visa.value = "";
+    }
+    nationality.addEventListener("change", apply);
+    apply();
   }
 
   /* The last step saves and locks the record, so the guest gets one final look
@@ -570,6 +597,7 @@ function initSignature() {
     initBirthDate();
     initChildToggle();
     initResidenceCountry();
+    initVisaVisibility();
     initPinReturn();
     initGuestWizard();
     initErrorSummary();

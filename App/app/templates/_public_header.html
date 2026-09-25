@@ -7,13 +7,13 @@
 {%- set active = active | default('') -%}
 {%- set switch_path = switch_path | default('/') -%}
 {#- The desktop nav and the phone menu are rendered from one list so they can
-    never disagree about where a label goes. The third element is the page that
-    the item names, or none for the in-page anchor, which names no page. -#}
+    never disagree about where a label goes. Every label names the page it opens:
+    no in-page anchors, and nothing named after someone else's system. The third
+    element is that page's `active` name, for aria-current. -#}
 {%- set nav_items = [
-      ('#product' if active == 'home' else '/?lang=' ~ lang ~ '#product', 'landing.nav.features', none),
       ('/jak-to-funguje?lang=' ~ lang, 'landing.nav.how', 'how'),
       ('/cenik?lang=' ~ lang, 'landing.nav.pricing', 'pricing'),
-      ('/pruvodce/hlaseni-cizincu-ubyport?lang=' ~ lang, 'landing.nav.faq', 'ubyport'),
+      ('/pruvodce/hlaseni-cizincu-ubyport?lang=' ~ lang, 'landing.nav.guides', 'guides'),
     ] -%}
   <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
   <header class="landing-header">

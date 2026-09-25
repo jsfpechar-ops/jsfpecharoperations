@@ -9,8 +9,8 @@
 ]) }}
 {{ page_header(
   t('reports.detail.title', id=submission.id),
-  submission.internal_name ~ ' · ' ~ submission.created_at[:19].replace('T', ' ')
-    ~ ' · ' ~ t('reports.mode.' ~ submission.mode),
+  submission.internal_name ~ ' · ' ~ (submission.created_at | datetime_local(seconds=true))
+    ~ ' · ' ~ report_mode_label(submission.mode),
   '/submissions',
   t('reports.detail.back')
 ) }}
@@ -25,7 +25,7 @@
         </dd>
         <dt>{{ t('reports.detail.endpoint') }}</dt><dd class="mono small">{{ submission.endpoint }}</dd>
         <dt>{{ t('reports.stamp') }}</dt><dd class="mono small">{{ submission.pseudo_stamp or '—' }}</dd>
-        <dt>{{ t('reports.detail.finished') }}</dt><dd class="small">{{ (submission.finished_at or '')[:19].replace('T', ' ') or '—' }}</dd>
+        <dt>{{ t('reports.detail.finished') }}</dt><dd class="small">{{ (submission.finished_at | datetime_local(seconds=true)) or '—' }}</dd>
       </dl>
 
       {% if submission.error_text %}
@@ -39,10 +39,15 @@
         <ul class="small">
           {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
         </ul>
-        <p class="small muted">{{ t('reports.detail.header_help') }}</p>
+        <p class="small muted">{{ t('reports.detail.header_help') }}
+          <a href="/apartments/{{ submission.apartment_id }}#ubyport">{{ t('reports.detail.header_help_link') }}</a>
+        </p>
       {% endif %}
 
       <div class="actions">
+        {% if submission.state in ('error', 'failed') and fix_reservation_id %}
+          <a class="btn primary" href="/reservations/{{ fix_reservation_id }}#guests">{{ t('reports.detail.fix_stay') }}</a>
+        {% endif %}
         {% if submission.receipt_pdf %}
           <a class="btn primary" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
         {% endif %}

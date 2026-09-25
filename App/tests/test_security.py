@@ -54,7 +54,7 @@ def test_production_host_posts_require_cookie_bound_csrf_token(monkeypatch):
             follow_redirects=False,
         )
         assert denied.status_code == 303
-        assert denied.headers["location"].startswith("/login?err=")
+        assert denied.headers["location"].startswith("/login?notice=form_expired")
 
         logged_in = client.post(
             "/login",

@@ -18,7 +18,7 @@ from . import validation
 CS_MESSAGES: Dict[str, str] = {
     # Guest form: identity
     "Date of birth is required.": "Datum narození je povinné.",
-    "Enter the full date as DD/MM/YYYY.": "Zadejte celé datum ve formátu DD/MM/RRRR.",
+    "Enter the full date as DD.MM.YYYY.": "Zadejte celé datum ve formátu DD.MM.RRRR.",
     "Year must be 1900 or later.": "Rok musí být 1900 nebo pozdější.",
     "Month must be between 01 and 12.": "Měsíc musí být mezi 01 a 12.",
     "Day must be between 01 and 31.": "Den musí být mezi 01 a 31.",
@@ -146,8 +146,8 @@ CS_MESSAGES: Dict[str, str] = {
 GUEST_EN_MESSAGES: Dict[str, str] = {
     "Nationality is required.": "Choose your nationality.",
     "Country is required.": "Choose the country of your home address.",
-    "Enter the full date as DD/MM/YYYY.": (
-        "Date of birth: enter the full date as DD/MM/YYYY."
+    "Enter the full date as DD.MM.YYYY.": (
+        "Date of birth: enter the full date as DD.MM.YYYY."
     ),
     "Year must be 1900 or later.": "Date of birth: year must be 1900 or later.",
     "Month must be between 01 and 12.": "Date of birth: month must be between 01 and 12.",
@@ -160,8 +160,8 @@ GUEST_EN_MESSAGES: Dict[str, str] = {
 GUEST_CS_MESSAGES: Dict[str, str] = {
     "Nationality is required.": "Vyberte státní občanství.",
     "Country is required.": "Vyberte stát trvalého bydliště.",
-    "Enter the full date as DD/MM/YYYY.": (
-        "Datum narození: zadejte celé datum ve formátu DD/MM/RRRR."
+    "Enter the full date as DD.MM.YYYY.": (
+        "Datum narození: zadejte celé datum ve formátu DD.MM.RRRR."
     ),
     "Year must be 1900 or later.": "Datum narození: rok musí být 1900 nebo pozdější.",
     "Month must be between 01 and 12.": "Datum narození: měsíc musí být mezi 01 a 12.",

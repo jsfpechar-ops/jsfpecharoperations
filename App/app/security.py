@@ -168,10 +168,13 @@ def _csrf_recovery_location(request: Request) -> str:
     if referer:
         parsed = urlsplit(referer)
         if _browser_site_matches(request, parsed.hostname, parsed.scheme):
+            path = parsed.path or "/"
+            if path == "/login":
+                return "/login?notice=form_expired"
             query = dict(parse_qsl(parsed.query, keep_blank_values=True))
             query["err"] = "This form expired. Please try again."
-            return urlunsplit(("", "", parsed.path or "/", urlencode(query), ""))
-    return "/login?err=This+form+expired.+Please+sign+in+and+try+again."
+            return urlunsplit(("", "", path, urlencode(query), ""))
+    return "/login?notice=form_expired"
 
 
 async def _supplied_csrf_token(request: Request) -> str:

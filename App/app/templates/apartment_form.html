@@ -31,7 +31,7 @@
   <a href="#basics">{{ t('apartment.form.nav.basics') }}</a>
   <a href="#address">{{ t('apartment.form.nav.address') }}</a>
   {% if editing %}
-    <a href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.nav.automation_ubyport') }}</a>
+    <a href="#ubyport">{{ t('apartment.form.nav.police_reporting') }}</a>
     <a href="#communication">{{ t('apartment.form.nav.guest_link') }}</a>
     <a href="#calendars">{{ t('apartment.form.nav.calendars') }}</a>
   {% else %}
@@ -243,7 +243,7 @@
     <h2 style="margin-top:0">{{ t('nav.automation') }}</h2>
     <p class="small muted" style="margin-top:-4px">
       {{ t('apartment.form.automation.editing_lede_before') }}
-      <a href="/automation#apartment-{{ apartment.id }}">{{ t('automation.title') }}</a>{{ t('apartment.form.automation.editing_lede_after') }}
+      <a href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.automation.page_name') }}</a>{{ t('apartment.form.automation.editing_lede_after') }}
     </p>
     <dl class="kv">
       <dt>{{ t('automation.timing_label') }}</dt>
@@ -267,8 +267,8 @@
         <label for="automation_mode">{{ t('automation.timing_title') }}</label>
         <select id="automation_mode" name="automation_mode"
                 data-automation-mode data-hours-target="submit_after_hours">
-          <option value="manual">{{ t('automation.mode.manual') }}</option>
-          <option value="scheduled" selected>{{ t('apartment.form.automation.mode.scheduled') }}</option>
+          <option value="manual" selected>{{ t('automation.mode.manual') }}</option>
+          <option value="scheduled">{{ t('apartment.form.automation.mode.scheduled') }}</option>
           <option value="immediate">{{ t('automation.mode.immediate') }}</option>
         </select>
       </div>
@@ -422,7 +422,7 @@
               {% elif feed.last_status == 'suspect' %}<span class="pill amber">{{ t('apartment.form.feed.status.suspect') }}</span>
               {% elif feed.last_status == 'error' %}<span class="pill red">{{ t('apartment.form.feed.status.error') }}</span>
               {% else %}<span class="pill grey">{{ t('apartment.form.feed.status.never') }}</span>{% endif %}
-              {% if feed.last_sync_at %}<div class="small muted">{{ feed.last_sync_at[:16].replace('T', ' ') }}</div>{% endif %}
+              {% if feed.last_sync_at %}<div class="small muted">{{ feed.last_sync_at | datetime_local }}</div>{% endif %}
               {% if feed.last_error %}<div class="small err-text">{{ feed.last_error }}</div>{% endif %}
             </td>
             <td class="small mono truncate" data-label="{{ t('apartment.form.feed.url') }}">{{ feed.url }}</td>

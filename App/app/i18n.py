@@ -18,7 +18,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "title": "Guest registration",
         "language_label": "Language",
-        "date_placeholder": "DD/MM/YYYY",
+        "date_placeholder": "DD.MM.YYYY",
         "legal_intro": (
             "Czech law treats every rented apartment as an accommodation facility. Your host "
             "must write each guest into a house book and report every foreign guest to the "
@@ -62,12 +62,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "pick_stay": "Find your stay",
         "pick_stay_help": "Tap your arrival and departure dates to continue.",
-        "arrival_kicker": "Guest registration",
         "arrival_welcome": "Welcome — guest registration for %(facility)s.",
         "arrival_question": "Which stay is yours?",
         "arrival_help": "Choose your arrival and departure dates to continue.",
         "arrival_cta": "That’s my stay",
         "stay_ongoing": "Ongoing",
+        "stay_arriving_today": "Arriving today",
         "host_details": "Your host",
         "host_details_help": (
             "If there is any problem, feel free to contact your host. "
@@ -110,8 +110,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_bot": "Please complete the security check and try again.",
         "assigned_title": "This reservation is already assigned",
         "assigned_body": (
-            "This reservation has already been assigned the e-mail %(email)s. "
-            "If that is you, we can send the private link again."
+            "This stay is already linked to the e-mail below. "
+            "If that's you, we can send the private link again."
         ),
         "assigned_resend_help": "Enter the same e-mail to receive the link again.",
         "assigned_resend": "Send me the link again",
@@ -120,15 +120,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "assigned_last_sent": "Private link last sent %(date)s",
         "assigned_not_mine": "This is not my reservation",
         "claim_confirm_title": "Is this your reservation?",
-        "claim_confirm_help": (
-            "E-mail scanners open links automatically. Click the button to prove this is you."
-        ),
+        "claim_confirm_help": "One tap to confirm it’s really you.",
         "claim_confirm_button": "Yes, this is my stay",
         "claim_confirm_failed": "That confirmation link is invalid or has expired.",
         "back_to_stays": "Choose different dates",
         "wrong_dates": "Not your dates?",
         "your_stay_badge": "A form was submitted from this device",
-        "stay_not_started": "Select these dates",
+        "stay_not_started": "Not started yet",
         "error_no_stay": "Please select your stay dates.",
         "error_party_size": "Please enter how many people are staying (1–60).",
         "no_stays": "There's nothing to register yet",
@@ -236,7 +234,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "surname": "Surname",
         "first_name": "Given name(s)",
         "birth_date": "Date of birth",
-        "birth_date_help": "Day, month, year — e.g. 04/07/1990 for 4 July 1990. Slashes are added for you.",
+        "birth_date_help": "Day, month, year — e.g. 04.07.1990 for 4 July 1990. Dots are added for you.",
         "birth_date_readback": "That is %(date)s.",
         "residence_help": "Your permanent home address, as in your passport or ID card. Required by law.",
         "residence_copied": "Copied from %(name)s — change it if this person lives elsewhere.",
@@ -490,6 +488,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_preheader": (
             "Tap the button, then fill in each guest — about 2 minutes per person."
         ),
+        "mail_claim_resend_preheader": (
+            "Your previous link has stopped working. Here is a new one."
+        ),
         "mail_claim_heading": "Confirm your stay",
         "mail_claim_resend_heading": "Here is your new link",
         "mail_claim_intro": (
@@ -500,12 +501,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "If the button does not work, copy this address into your browser:"
         ),
         "mail_claim_expiry": (
-            "The link is valid for 30 minutes and stops working as soon as you "
-            "confirm the stay."
+            "The button works for 30 minutes. After you confirm, this phone or "
+            "computer remembers your stay — you won't need the link again on it."
         ),
         "mail_claim_expiry_resend": (
-            "This is a new link and the previous one has stopped working. It is "
-            "valid for 30 minutes and stops working as soon as you confirm the stay."
+            "This new link replaces the previous one and works for 30 minutes."
         ),
         "mail_claim_next_label": "What happens next",
         "mail_claim_next_body": (
@@ -513,22 +513,49 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "It takes about two minutes per guest and works on a phone. If you're "
             "asked for a PIN, use the one from your host's message."
         ),
+        "mail_claim_next_done": (
+            "Everyone is already registered — the link just opens your stay page."
+        ),
         "mail_completion_subject": (
             "You're registered for %(property)s — nothing else to do"
+        ),
+        "mail_completion_subject_fee": (
+            "Registered — stay fee %(amount)s Kč to pay for %(property)s"
+        ),
+        "mail_completion_preheader": (
+            "Everyone on this stay is registered — nothing else to do."
         ),
         "mail_completion_heading": "You're all set",
         "mail_completion_intro": (
             "Everyone for %(property)s (%(dates)s) is registered. "
             "There is nothing else you need to do."
         ),
+        "mail_completion_intro_fee": (
+            "Everyone for %(property)s (%(dates)s) is registered. Your host collects "
+            "the municipal stay fee: %(amount)s Kč for your group."
+        ),
         "mail_completion_action": "See your stay page",
         "mail_completion_note": (
             "Your host takes care of the official registration with the authorities. "
             "This e-mail is your receipt, not an official confirmation."
         ),
-        "mail_reminder_guest_subject": "Please finish your guest registration",
+        "mail_reminder_guest_subject": (
+            "Tomorrow at %(property)s: %(filled)s of %(expected)s guests registered"
+        ),
+        # Used when the stay has no declared party size yet, so there is no
+        # count to quote.
+        "mail_reminder_guest_subject_no_count": (
+            "Tomorrow at %(property)s: the guest registration is not finished"
+        ),
+        "mail_reminder_guest_preheader": (
+            "Your stay starts tomorrow and the registration is not complete."
+        ),
         "mail_reminder_guest_heading": "Your stay starts tomorrow",
         "mail_reminder_guest_intro": (
+            "%(missing)s more guest(s) still need to fill in the form before you "
+            "arrive."
+        ),
+        "mail_reminder_guest_intro_no_count": (
             "Your stay at %(property)s starts tomorrow and the guest registration is "
             "not complete yet."
         ),
@@ -537,22 +564,33 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_reminder_guest_note": (
             "This is the only incomplete-registration reminder we will send."
         ),
-        "mail_reminder_guest_help": (
-            "If you have already sent everything, you can ignore this message."
+        # The stay page only opens without friction on the device that claimed
+        # the stay; say so here instead of letting the guest meet the PIN.
+        "mail_reminder_guest_device": (
+            "Open it on the phone or computer where you started. On another device "
+            "you'll be asked for your host's PIN."
         ),
         # The footer. Guests are told to reach the host, never UbyHost support:
         # the same rule the guest pages follow.
+        # The first line said "UbyHost" and nothing else: a guest has never
+        # heard of the brand, so it said nothing (audit E-17 [UX-131]).
+        "mail_guest_footer_about": (
+            "UbyHost is the guest-registration service your host uses."
+        ),
         "mail_guest_footer_why": (
             "You received this e-mail because your stay at %(property)s is registered "
             "with this address."
         ),
+        # Stand-in for a property that has no name of its own. It takes the
+        # place of a property name, so it must never read as the host.
+        "mail_property_fallback": "your accommodation",
         "mail_guest_footer_host_label": "Your host",
         "mail_guest_footer_help": "Reply to this e-mail to reach your host.",
     },
     "cs": {
         "title": "Registrace ubytovaného",
         "language_label": "Jazyk",
-        "date_placeholder": "DD/MM/RRRR",
+        "date_placeholder": "DD.MM.RRRR",
         "legal_intro": (
             "Podle českého práva je pronajímaný apartmán ubytovacím zařízením. Ubytovatel musí "
             "každého hosta zapsat do domovní knihy a každého ubytovaného cizince oznámit "
@@ -592,12 +630,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "pick_stay": "Najděte svou rezervaci",
         "pick_stay_help": "Klepněte na termín svého pobytu a pokračujte.",
-        "arrival_kicker": "Registrace ubytovaného",
         "arrival_welcome": "Vítejte — registrace ubytovaného pro %(facility)s.",
         "arrival_question": "Který pobyt je váš?",
         "arrival_help": "Vyberte termín příjezdu a odjezdu a pokračujte.",
         "arrival_cta": "To je můj pobyt",
         "stay_ongoing": "Právě probíhá",
+        "stay_arriving_today": "Příjezd dnes",
         "host_details": "Váš hostitel",
         "host_details_help": (
             "Pokud máte jakýkoli problém, neváhejte kontaktovat svého hostitele. "
@@ -639,8 +677,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_bot": "Dokončete prosím bezpečnostní kontrolu a zkuste to znovu.",
         "assigned_title": "Tato rezervace už je přiřazena",
         "assigned_body": (
-            "Tato rezervace už byla přiřazena e-mailu %(email)s. "
-            "Pokud jste to vy, můžeme soukromý odkaz poslat znovu."
+            "Tento pobyt je už propojený s e-mailem níže. "
+            "Pokud jste to vy, pošleme vám soukromý odkaz znovu."
         ),
         "assigned_resend_help": "Zadejte stejný e-mail a odkaz pošleme znovu.",
         "assigned_resend": "Pošlete mi odkaz znovu",
@@ -649,15 +687,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "assigned_last_sent": "Soukromý odkaz naposledy odeslán %(date)s",
         "assigned_not_mine": "Toto není moje rezervace",
         "claim_confirm_title": "Je to vaše rezervace?",
-        "claim_confirm_help": (
-            "E-mailové skenery odkazy otevírají samy. Potvrďte tlačítkem, že jste to vy."
-        ),
+        "claim_confirm_help": "Jedním klepnutím potvrďte, že jste to opravdu vy.",
         "claim_confirm_button": "Ano, to je můj pobyt",
         "claim_confirm_failed": "Potvrzovací odkaz je neplatný nebo vypršel.",
         "back_to_stays": "Vybrat jiný termín",
         "wrong_dates": "Nesedí termín?",
         "your_stay_badge": "Z tohoto zařízení byl odeslán formulář",
-        "stay_not_started": "Vybrat tento termín",
+        "stay_not_started": "Zatím nezačato",
         "error_no_stay": "Vyberte prosím termín svého pobytu.",
         "error_party_size": "Zadejte počet osob (1–60).",
         "no_stays": "Zatím tu není co vyplnit",
@@ -761,7 +797,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "surname": "Příjmení",
         "first_name": "Jméno",
         "birth_date": "Datum narození",
-        "birth_date_help": "Den, měsíc, rok — např. 04/07/1990 pro 4. července 1990. Lomítka se doplní sama.",
+        "birth_date_help": "Den, měsíc, rok — např. 04.07.1990 pro 4. července 1990. Tečky se doplní samy.",
         "birth_date_readback": "Tedy %(date)s.",
         "residence_help": "Adresa trvalého bydliště podle pasu nebo občanského průkazu. Vyžaduje ji zákon.",
         "residence_copied": "Převzato od: %(name)s. Pokud tato osoba bydlí jinde, adresu změňte.",
@@ -1011,21 +1047,24 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_preheader": (
             "Klepněte na tlačítko a vyplňte údaje hostů – asi 2 minuty na osobu."
         ),
+        "mail_claim_resend_preheader": (
+            "Předchozí odkaz už nefunguje. Tady je nový."
+        ),
         "mail_claim_heading": "Potvrďte svůj pobyt",
         "mail_claim_resend_heading": "Tady je váš nový odkaz",
         "mail_claim_intro": (
-            "Potvrďte pobyt v %(property)s (%(dates)s) otevřením odkazu níže."
+            "Potvrďte svůj pobyt: %(property)s, %(dates)s. Stačí otevřít odkaz níže."
         ),
-        "mail_claim_action": "Potvrdit pobyt",
+        "mail_claim_action": "Potvrdit můj pobyt",
         "mail_link_fallback": (
             "Pokud tlačítko nefunguje, zkopírujte tuto adresu do prohlížeče:"
         ),
         "mail_claim_expiry": (
-            "Odkaz platí 30 minut a přestane fungovat ve chvíli, kdy pobyt potvrdíte."
+            "Tlačítko funguje 30 minut. Po potvrzení si váš pobyt zapamatuje tento "
+            "telefon nebo počítač – odkaz už na něm znovu potřebovat nebudete."
         ),
         "mail_claim_expiry_resend": (
-            "Toto je nový odkaz, předchozí už nefunguje. Platí 30 minut a přestane "
-            "fungovat ve chvíli, kdy pobyt potvrdíte."
+            "Tento nový odkaz nahrazuje předchozí a funguje 30 minut."
         ),
         "mail_claim_next_label": "Co bude následovat",
         "mail_claim_next_body": (
@@ -1033,23 +1072,48 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Zabere to přibližně dvě minuty na hosta a funguje to i na telefonu. "
             "Pokud se stránka zeptá na PIN, použijte ten ze zprávy od hostitele."
         ),
+        "mail_claim_next_done": (
+            "Všichni už jsou zaregistrovaní – odkaz jen otevře stránku vašeho pobytu."
+        ),
         "mail_completion_subject": (
             "Registrace hotová – %(property)s. Nic dalšího nemusíte dělat"
+        ),
+        "mail_completion_subject_fee": (
+            "Registrace hotová – zaplaťte poplatek z pobytu %(amount)s Kč (%(property)s)"
+        ),
+        "mail_completion_preheader": (
+            "Všichni na tomto pobytu jsou zaregistrovaní – nic dalšího není potřeba."
         ),
         "mail_completion_heading": "Hotovo",
         "mail_completion_intro": (
             "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
             "Nic dalšího dělat nemusíte."
         ),
+        "mail_completion_intro_fee": (
+            "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
+            "Váš hostitel vybírá poplatek z pobytu: %(amount)s Kč za vaši skupinu."
+        ),
         "mail_completion_action": "Zobrazit stránku pobytu",
         "mail_completion_note": (
             "Úřední hlášení vyřizuje váš hostitel. Tento e-mail je potvrzení pro vás, "
             "nikoli úřední doklad."
         ),
-        "mail_reminder_guest_subject": "Dokončete prosím registraci hostů",
+        "mail_reminder_guest_subject": (
+            "Zítra přijíždíte (%(property)s): zaregistrováno %(filled)s z %(expected)s "
+            "hostů"
+        ),
+        "mail_reminder_guest_subject_no_count": (
+            "Zítra přijíždíte (%(property)s): registrace hostů není dokončená"
+        ),
+        "mail_reminder_guest_preheader": (
+            "Pobyt začíná zítra a registrace není dokončená."
+        ),
         "mail_reminder_guest_heading": "Váš pobyt začíná zítra",
         "mail_reminder_guest_intro": (
-            "Váš pobyt v %(property)s začíná zítra a registrace hostů zatím není "
+            "Před příjezdem ještě musí formulář vyplnit další hosté: %(missing)s."
+        ),
+        "mail_reminder_guest_intro_no_count": (
+            "Váš pobyt začíná zítra – %(property)s. Registrace hostů zatím není "
             "dokončená."
         ),
         "mail_reminder_guest_action": "Dokončit registraci",
@@ -1057,15 +1121,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_reminder_guest_note": (
             "Toto je jediné upozornění na nedokončenou registraci, které vám pošleme."
         ),
-        "mail_reminder_guest_help": (
-            "Pokud jste už vše odeslali, můžete tuto zprávu ignorovat."
+        "mail_reminder_guest_device": (
+            "Otevřete ho na telefonu nebo počítači, kde jste začali. Na jiném "
+            "zařízení budete potřebovat PIN od hostitele."
         ),
         # Patička. Hosté se obracejí na ubytovatele, nikdy na podporu UbyHostu:
         # stejné pravidlo jako na stránkách pro hosty.
-        "mail_guest_footer_why": (
-            "Tento e-mail dostáváte, protože je s touto adresou veden váš pobyt "
-            "v %(property)s."
+        "mail_guest_footer_about": (
+            "UbyHost je služba pro registraci hostů, kterou váš hostitel používá."
         ),
+        "mail_guest_footer_why": (
+            "Tento e-mail dostáváte, protože jste touto adresou potvrdili pobyt: "
+            "%(property)s."
+        ),
+        "mail_property_fallback": "vaše ubytování",
         "mail_guest_footer_host_label": "Váš hostitel",
         "mail_guest_footer_help": "Odpovězte na tento e-mail a spojíte se s hostitelem.",
     },

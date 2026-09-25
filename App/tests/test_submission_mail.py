@@ -519,3 +519,200 @@ def test_the_new_strings_exist_in_both_languages():
 def test_the_submission_problem_kind_is_registered():
     """enqueue raises on an unknown kind, so the registration is load-bearing."""
     assert "submission_problem" in mail.KINDS
+
+
+def _problem(stays=None, *, transport=False, submission_id=None):
+    return mail_notify.build_submission_problem(
+        property_name="Riverside Loft",
+        state="error",
+        reason="112: critical transmission error",
+        transport=transport,
+        stays=stays or [],
+        submission_id=submission_id,
+        lang="en",
+    )
+
+
+def _stay_row(stay_id=7, summary="Novák family"):
+    return {
+        "id": stay_id,
+        "summary": summary,
+        "property_name": "Riverside Loft",
+        "date_from": "2026-01-05",
+        "date_to": "2026-01-08",
+    }
+
+
+def _coral_buttons(html):
+    """The hrefs of every coral block button, in document order."""
+    return re.findall(
+        rf'background:{mail_notify.BRAND_ACTION};[^>]*>.*?<a href="([^"]+)"',
+        html,
+        re.DOTALL,
+    )
+
+
+def test_the_single_stay_mail_makes_the_stay_the_only_coral_button():
+    """E-20: with one stay the job is the stay, so the receipt steps back."""
+    html = _problem([_stay_row()], submission_id=3)["html"]
+    stay_url = f"{config.PUBLIC_BASE_URL}/reservations/7"
+    receipt_url = f"{config.PUBLIC_BASE_URL}/submissions/3"
+    assert _coral_buttons(html) == [stay_url]
+    assert f'<a href="{receipt_url}"' in html, "the receipt is still reachable"
+    assert "Novák family" in html, "the row still names the guest"
+
+
+def test_the_multi_stay_mail_keeps_the_receipt_as_the_coral_button():
+    """No single stay to promote, so the receipt stays the one button."""
+    stays = [_stay_row(7), _stay_row(8, "Svoboda family")]
+    html = _problem(stays, submission_id=3)["html"]
+    assert _coral_buttons(html) == [f"{config.PUBLIC_BASE_URL}/submissions/3"]
+    for stay_id in (7, 8):
+        assert f'href="{config.PUBLIC_BASE_URL}/reservations/{stay_id}"' in html
+
+
+def test_the_transport_mail_keeps_the_receipt_as_the_coral_button():
+    """A transport failure has no job to do yet, so nothing gets promoted."""
+    html = _problem([_stay_row()], transport=True, submission_id=3)["html"]
+    assert _coral_buttons(html) == [f"{config.PUBLIC_BASE_URL}/submissions/3"]
+
+
+def test_the_receipt_button_is_coral_in_every_shape_that_has_one():
+    for stays, transport in (([_stay_row()], False), ([_stay_row()], True)):
+        html = _problem(stays, transport=transport, submission_id=3)["html"]
+        assert _coral_buttons(html), "the receipt must stay a real button"
+
+
+def test_the_footer_no_longer_claims_automatic_reporting_is_on():
+    """E-20: the mail also goes out for manual sends, so the reason was wrong."""
+    for lang in ("en", "cs"):
+        footer = host_i18n.translate(
+            lang, "mail.submission_problem.footer", property="Riverside Loft"
+        )
+        assert "automatic" not in footer.lower(), lang
+        assert "automatick" not in footer.lower(), lang
+        assert "Riverside Loft" in footer, lang
+
+
+def test_the_english_receipt_label_glosses_the_czech_word():
+    """E-20: "Doručenka" is jargon for an English-reading host."""
+    en = host_i18n.translate("en", "mail.submission_problem.action_dorucenka")
+    cs = host_i18n.translate("cs", "mail.submission_problem.action_dorucenka")
+    assert "receipt" in en.lower(), "the English label must say what it is"
+    assert "Doručenka" in en, "and keep the word the office knows"
+    assert "Doručenka" not in cs, "Czech needs no gloss"
+
+
+def test_the_submission_mail_uses_the_action_colour_and_not_the_identity_coral():
+    """E-9: the stay links and the note label were the identity coral."""
+    one = [
+        {
+            "id": 7,
+            "summary": "Novák family",
+            "property_name": "Riverside Loft",
+            "date_from": "2026-01-05",
+            "date_to": "2026-01-08",
+        }
+    ]
+    two = one + [
+        {
+            "id": 8,
+            "summary": "Svoboda family",
+            "property_name": "Riverside Loft",
+            "date_from": "2026-01-09",
+            "date_to": "2026-01-11",
+        }
+    ]
+    # The single-stay mail promotes the stay to the coral button, so the
+    # underlined link it used to carry is gone; the multi-stay mail still has
+    # one underlined link per stay.
+    for stays in (one, two):
+        html = _problem(stays)["html"]
+        assert f"color:{mail_notify.BRAND_INK};" in html
+        assert "#c85a52" not in html
+    assert (
+        f"color:{mail_notify.BRAND_ACTION};text-decoration:underline;"
+        in _problem(two)["html"]
+    )
+
+
+def _preheader(content):
+    """The hidden inbox-snippet line, with the invisible spacer stripped off."""
+    match = re.search(r"mso-hide:all;\">([^<]*)</div>", content["html"])
+    assert match, content["html"][:400]
+    captured = match.group(1)
+    assert captured.endswith(mail_notify.PREHEADER_SPACER), repr(captured[-60:])
+    return html.unescape(captured[: -len(mail_notify.PREHEADER_SPACER)])
+
+
+def test_the_submission_mail_has_its_own_preheader_not_the_intro():
+    """E-10: the snippet used to repeat the intro and then run into the logo."""
+    preheaders = {}
+    for transport in (False, True):
+        content = _problem(transport=transport)
+        key = (
+            "mail.submission_problem.preheader_transport"
+            if transport
+            else "mail.submission_problem.preheader"
+        )
+        preheader = _preheader(content)
+        assert preheader == host_i18n.STRINGS["en"][key], transport
+        # The bug this replaces: a preheader that repeats the first body line.
+        assert preheader not in content["text"], transport
+        preheaders[transport] = preheader
+    # A transport failure never reached UbyPort, so it must not blame the data.
+    assert preheaders[False] != preheaders[True]
+
+
+
+def test_host_mail_language_is_english_by_decision(monkeypatch):
+    """UX-80 (E-14): the host-mail language is a recorded decision.
+
+    The product owner chose English until a stored per-host preference exists,
+    so the fallback is a named constant rather than a literal at each call
+    site. Nothing here may start following the UI language by accident.
+    """
+    assert mail_notify.HOST_MAIL_LANGUAGE == "en"
+    apartment, _reservation, _guest_id = _seed("mailnotifylang")
+    result, _pairs = _submit(monkeypatch, apartment, client=_RejectingClient())
+    assert result["state"] == "error"
+    rows = _outbox()
+    assert rows, "a refused report still mails the host"
+    assert _payload(rows[0])["lang"] == "en"
+
+
+def test_the_host_mail_default_comes_from_the_named_constant(monkeypatch):
+    """The language is not read off the request or the host's UI language.
+
+    ``submission_problem`` is called by the sweep, where there is no request at
+    all; its default has to be the recorded decision. A caller that passes an
+    explicit language keeps it, which is the seam a stored per-host preference
+    would use later.
+    """
+    apartment, _reservation, _guest_id = _seed("mailnotifylangdefault")
+    sent = {}
+    real_enqueue = mail.enqueue
+
+    def _capture(**kwargs):
+        sent.update(kwargs)
+        return real_enqueue(**kwargs)
+
+    monkeypatch.setattr(mail, "enqueue", _capture)
+    mail_notify.submission_problem(apartment, None, state="error", reason="112")
+    assert sent["payload"]["lang"] == mail_notify.HOST_MAIL_LANGUAGE
+
+
+def test_no_host_mail_language_literal_is_left_hard_coded():
+    """The constant is the only place the host-mail language is written.
+
+    UX-80 was raised because ``claim.py`` carried ``"lang": "en"`` inline, so
+    English looked accidental. A new literal there would make the decision
+    invisible again.
+    """
+    from pathlib import Path
+
+    app_dir = Path(__file__).resolve().parent.parent / "app"
+    for name in ("claim.py", "mail_notify.py", "reporting.py"):
+        source = (app_dir / name).read_text(encoding="utf-8")
+        assert '"lang": "en"' not in source, name
+        assert '"lang": "cs"' not in source, name

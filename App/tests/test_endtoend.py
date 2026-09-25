@@ -18,6 +18,7 @@ import requests
 from fastapi.testclient import TestClient
 
 from app import auth, codelists, db, reporting
+from app.host_i18n import STRINGS as HOST_STRINGS
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -125,7 +126,7 @@ def test_01_the_app_opens_onto_the_authenticated_dashboard(host):
 
 def test_02_an_empty_install_offers_the_demo(host):
     page = host.get("/")
-    assert "Set it once. Welcome every guest calmly." in page.text
+    assert HOST_STRINGS["en"]["onboarding.welcome_title"] in page.text
     assert 'action="/demo"' in page.text
 
 

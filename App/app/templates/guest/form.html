@@ -129,7 +129,8 @@
     <div class="g-field" id="doc-wrap">
       <label for="doc_number">{{ t('doc_number') }}</label>
       <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
-             autocapitalize="characters" value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
+             autocapitalize="characters" spellcheck="false" autocorrect="off"
+             value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
       <div class="hint">{{ t('doc_number_help') }}</div>
       {{ err_for('doc_number') }}
     </div>
@@ -155,7 +156,7 @@
     <div class="g-field">
       <label for="visa_number">{{ t('visa_number') }} <span class="opt">({{ t('optional') }})</span></label>
       <input class="{{ bad('visa_number') }}" {{ invalid('visa_number') }} type="text" id="visa_number" name="visa_number" maxlength="15"
-             autocapitalize="characters" value="{{ val('visa_number') }}">
+             autocapitalize="characters" spellcheck="false" autocorrect="off" value="{{ val('visa_number') }}">
       <div class="hint">{{ t('visa_help') }}</div>
       {{ err_for('visa_number') }}
     </div>

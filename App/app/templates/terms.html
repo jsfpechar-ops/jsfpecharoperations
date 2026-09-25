@@ -30,7 +30,7 @@
 {% for sid in terms_sections %}
 <section class="legal-section" id="s{{ sid }}">
   <h2>{{ t('terms.s' ~ sid ~ '_title') }}</h2>
-  <div class="terms-section">{{ t('terms.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) }}</div>
+  <div class="terms-section">{{ t('terms.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) | legal_links }}</div>
   <p class="legal-back"><a href="#legal-contents">{{ t('legal.back_to_toc') }} <span aria-hidden="true">&uarr;</span></a></p>
 </section>
 {% endfor %}

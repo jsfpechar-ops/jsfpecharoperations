@@ -6,8 +6,7 @@
 {{ page_header(t('nav.settings'), t('settings.lede')) }}
 
 <nav class="section-nav settings-nav" aria-label="{{ t('nav.settings') }}">
-  <a href="#settings-overview">{{ t('settings.nav.overview') }}</a>
-  <a href="#settings-mail">{{ t('settings.nav.mail') }}</a>
+  <a href="#settings-technical">{{ t('settings.technical.title') }}</a>
   <a href="#settings-retention">{{ t('settings.nav.retention') }}</a>
   <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
   <a href="#settings-audit">{{ t('settings.nav.audit') }}</a>
@@ -19,8 +18,10 @@
 
 <div class="split wide">
   <div>
-    <div class="panel" id="settings-overview">
-      <h2 style="margin-top:0">{{ t('settings.destination.title') }}</h2>
+    <details class="panel technical" id="settings-technical">
+      <summary>{{ t('settings.technical.title') }}</summary>
+
+      <h2 id="settings-overview" style="margin-top:0">{{ t('settings.destination.title') }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
         <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
@@ -40,10 +41,8 @@
         </div>
       {% endif %}
       <p class="small muted">{{ t('settings.destination.help') }}</p>
-    </div>
 
-    <div class="panel" id="settings-mail">
-      <h2 style="margin-top:0">{{ t('settings.mail.title') }}</h2>
+      <h2 id="settings-mail">{{ t('settings.mail.title') }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
         <dd class="mono">{{ mail_backend }}</dd>
@@ -87,7 +86,15 @@
           </tbody>
         </table>
       {% endif %}
-    </div>
+
+      <h2 id="settings-codelists">{{ t('settings.codelists.title') }}</h2>
+      <dl class="kv">
+        <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ (codelists.countries | datetime_local(seconds=true)) if codelists.countries else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
+        <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
+      </dl>
+      <p class="small muted">{{ t('settings.codelists.help') }}</p>
+    </details>
 
     <div class="panel" id="settings-ubyport">
       <h2 style="margin-top:0">{{ t('settings.access.title') }}</h2>
@@ -96,14 +103,6 @@
         <dd>{{ t('settings.access.required') if guest_pin_required else t('settings.access.off') }}</dd>
       </dl>
       <p class="small muted">{{ t('settings.access.help') }}</p>
-
-      <h3 style="margin-top:20px">{{ t('settings.codelists.title') }}</h3>
-      <dl class="kv">
-        <dt>{{ t('settings.codelists.countries') }}</dt><dd>{{ codelists.countries[:19].replace('T', ' ') if codelists.countries else t('settings.codelists.bundled') }}</dd>
-        <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ codelists.purposes[:19].replace('T', ' ') if codelists.purposes else t('settings.codelists.bundled') }}</dd>
-        <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ codelists.errors[:19].replace('T', ' ') if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
-      </dl>
-      <p class="small muted">{{ t('settings.codelists.help') }}</p>
     </div>
 
     <div class="panel" id="settings-archive">
@@ -124,7 +123,7 @@
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
         <button class="btn {{ 'danger' if expired_records else '' }}" type="submit"
                 {% if not expired_records %}disabled{% endif %}>
-          {{ t('settings.retention.delete', count=expired_records) }}
+          {{ tp('settings.retention.delete', expired_records) }}
         </button>
         <span class="small muted">{{ t('settings.retention.delete_help') }}</span>
       </form>
@@ -160,7 +159,7 @@
           <tbody>
           {% for entry in audit %}
             <tr>
-              <td class="nowrap small" data-label="{{ t('settings.audit.when') }}">{{ entry.at[:19].replace('T', ' ') }}</td>
+              <td class="nowrap small" data-label="{{ t('settings.audit.when') }}">{{ entry.at | datetime_local(seconds=true) }}</td>
               <td class="small" data-label="{{ t('settings.audit.who') }}">{{ entry.actor }}</td>
               <td class="small" data-label="{{ t('settings.audit.action') }}">{{ entry.action }}</td>
               <td class="small muted" data-label="{{ t('settings.audit.detail') }}">{{ entry.detail }}</td>
@@ -200,6 +199,28 @@
             <a class="btn primary small" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
           {% endif %}
         </div>
+        {% if current_user.totp_enabled %}
+          <details class="settings-move">
+            <summary>
+              <strong>{{ t('settings.account.2fa_move') }}</strong>
+              <small>{{ t('settings.account.2fa_move_help') }}</small>
+            </summary>
+            <form method="post" action="/account/2fa/move" class="settings-move-form">
+              <div class="field">
+                <label for="move-current-password">{{ t('login.password') }}</label>
+                <input id="move-current-password" name="current_password" type="password"
+                       autocomplete="current-password" required>
+              </div>
+              <div class="field">
+                <label for="move-code">{{ t('settings.account.2fa_move_code') }}</label>
+                <input id="move-code" name="code" type="text" inputmode="numeric"
+                       autocomplete="one-time-code" aria-describedby="move-code-hint" required>
+                <p class="hint" id="move-code-hint">{{ t('settings.account.2fa_move_code_hint') }}</p>
+              </div>
+              <button class="btn small" type="submit">{{ t('settings.account.2fa_move_action') }}</button>
+            </form>
+          </details>
+        {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>

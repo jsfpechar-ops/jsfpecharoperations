@@ -160,7 +160,7 @@ def test_a_moved_post_route_still_demands_csrf_proof(path):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert response.headers["location"].startswith("/login?err=")
+    assert response.headers["location"].startswith("/login?notice=form_expired")
 
 
 @pytest.mark.parametrize("path", ["/onboarding", "/settings/archived"])
