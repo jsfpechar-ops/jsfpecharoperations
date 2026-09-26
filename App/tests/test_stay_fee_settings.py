@@ -91,3 +91,102 @@ def test_entity_invalid_bank_account_shows_the_error_and_saves_nothing(host):
     assert (
         db.query_one("SELECT * FROM legal_entity WHERE name = ?", ("Bad Operator",)) is None
     )
+
+
+def _owner_id() -> int:
+    return db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
+
+
+def _add_apartment(**over):
+    values = {
+        "internal_name": "Fee Flat",
+        "owner_user_id": _owner_id(),
+        "created_at": db.utcnow(),
+    }
+    values.update(over)
+    return db.insert("apartment", values)
+
+
+def _apartment(apt_id):
+    return db.query_one("SELECT * FROM apartment WHERE id = ?", (apt_id,))
+
+
+def test_new_apartment_defaults_to_policy_on_rate_zero_cash_on(host):
+    apt_id = _add_apartment()
+    row = _apartment(apt_id)
+    assert row["stay_fee_policy"] == "on"
+    assert row["stay_fee_rate_czk"] == 0
+    assert row["stay_fee_cash"] == 1
+
+
+def test_create_form_without_fee_fields_keeps_the_defaults(host):
+    response = host.post(
+        "/apartments?lang=en",
+        data={"internal_name": "No Fee Flat", "active": "on"},
+        follow_redirects=False,
+    )
+    assert response.status_code in (302, 303)
+    row = db.query_one(
+        "SELECT * FROM apartment WHERE internal_name = ?", ("No Fee Flat",)
+    )
+    assert row["stay_fee_policy"] == "on"
+    assert row["stay_fee_rate_czk"] == 0
+    assert row["stay_fee_cash"] == 1
+    assert row["stay_fee_payment_link"] is None
+
+
+def test_edit_form_caps_the_rate_at_50(host):
+    apt_id = _add_apartment()
+    host.post(
+        f"/apartments/{apt_id}?lang=en",
+        data={"internal_name": "Fee Flat", "stay_fee_rate_czk": "75", "stay_fee_policy": "on"},
+        follow_redirects=False,
+    )
+    row = _apartment(apt_id)
+    assert row["stay_fee_rate_czk"] == 50
+    # The cash checkbox was not posted, so it is off.
+    assert row["stay_fee_cash"] == 0
+
+
+def test_edit_form_non_numeric_rate_stores_zero(host):
+    apt_id = _add_apartment(stay_fee_rate_czk=30)
+    host.post(
+        f"/apartments/{apt_id}?lang=en",
+        data={"internal_name": "Fee Flat", "stay_fee_rate_czk": "abc", "stay_fee_policy": "on"},
+        follow_redirects=False,
+    )
+    assert _apartment(apt_id)["stay_fee_rate_czk"] == 0
+
+
+def test_edit_form_link_without_https_is_stored_as_none(host):
+    apt_id = _add_apartment()
+    host.post(
+        f"/apartments/{apt_id}?lang=en",
+        data={
+            "internal_name": "Fee Flat",
+            "stay_fee_rate_czk": "50",
+            "stay_fee_policy": "on",
+            "stay_fee_payment_link": "http://paypal.me/x",
+            "stay_fee_cash": "1",
+        },
+        follow_redirects=False,
+    )
+    row = _apartment(apt_id)
+    assert row["stay_fee_payment_link"] is None
+    assert row["stay_fee_cash"] == 1
+
+
+def test_edit_form_accepts_an_https_link(host):
+    apt_id = _add_apartment()
+    host.post(
+        f"/apartments/{apt_id}?lang=en",
+        data={
+            "internal_name": "Fee Flat",
+            "stay_fee_rate_czk": "50",
+            "stay_fee_policy": "on",
+            "stay_fee_payment_link": "https://paypal.me/fee",
+        },
+        follow_redirects=False,
+    )
+    assert _apartment(apt_id)["stay_fee_payment_link"] == "https://paypal.me/fee"
+
