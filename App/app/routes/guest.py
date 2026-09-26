@@ -877,6 +877,7 @@ def privacy_notice(token: str, request: Request):
         {
             "controller": _controller(apartment),
             "passport_photo_policy": apartment["passport_photo_policy"] or "off",
+            "stay_fee_active": stay_fee.is_active(apartment),
             "back_url": back_url,
         }
     )
