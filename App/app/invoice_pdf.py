@@ -218,6 +218,12 @@ def render(inv: dict, items: list, lang: str = "cs", preview: bool = False) -> b
         for ln in lines:
             _text(c, M, yy, ln, size=9)
             yy -= 4.2 * mm
+        if payer and it.get("vat_rate") is not None:
+            qty = max(it.get("quantity", 1), 1)
+            unit_net = (it.get("base_haler") or 0) // qty
+            detail = f"{qty} {it.get('unit', '')} × {money(unit_net)}".strip()
+            _text(c, M, yy, detail, size=8, color=MUTED)
+            yy -= 4.2 * mm
         if payer:
             if it.get("vat_rate") is None:
                 _text(c, W - M - 72 * mm, row_top, money(it["gross_haler"]), size=9, right=True)
