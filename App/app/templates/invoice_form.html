@@ -3,12 +3,7 @@
 {% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
-{{ page_header(
-  t('invoice.new'),
-  (reservation.internal_name or '') ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
-  '/reservations/' ~ reservation.id,
-  t('common.back')
-) }}
+{{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
 
 {% if errors %}
 <div class="panel">
@@ -17,31 +12,38 @@
 {% endif %}
 
 {% if entity %}
-<form method="post" action="/reservations/{{ reservation.id }}/invoice">
+<form method="post" action="/invoices">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+
+  <div class="panel">
+    <div class="field" style="max-width:360px">
+      <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
+      <select id="legal_entity_id" name="legal_entity_id">
+        {% for option in entities %}
+          <option value="{{ option.id }}" {% if entity and option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.customer') }}</h2>
     <div class="grid">
       <div class="field">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
-        <input type="text" id="buyer_name" name="buyer_name" required
-               value="{{ values.get('buyer_name', '') }}">
+        <input type="text" id="buyer_name" name="buyer_name" required value="{{ values.get('buyer_name', '') }}">
       </div>
       <div class="field">
         <label for="buyer_street">{{ t('invoice.buyer.street') }}</label>
-        <input type="text" id="buyer_street" name="buyer_street"
-               value="{{ values.get('buyer_street', '') }}">
+        <input type="text" id="buyer_street" name="buyer_street" value="{{ values.get('buyer_street', '') }}">
       </div>
       <div class="field">
         <label for="buyer_city">{{ t('invoice.buyer.city') }}</label>
-        <input type="text" id="buyer_city" name="buyer_city"
-               value="{{ values.get('buyer_city', '') }}">
+        <input type="text" id="buyer_city" name="buyer_city" value="{{ values.get('buyer_city', '') }}">
       </div>
       <div class="field">
         <label for="buyer_zip">{{ t('invoice.buyer.zip') }}</label>
-        <input type="text" id="buyer_zip" name="buyer_zip"
-               value="{{ values.get('buyer_zip', '') }}">
+        <input type="text" id="buyer_zip" name="buyer_zip" value="{{ values.get('buyer_zip', '') }}">
       </div>
       <div class="field">
         <label for="buyer_country">{{ t('invoice.buyer.country') }}</label>
@@ -52,88 +54,89 @@
         </select>
       </div>
       <div class="field">
-        <label for="buyer_email">{{ t('invoice.buyer.email') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="email" id="buyer_email" name="buyer_email"
-               value="{{ values.get('buyer_email', reservation.guest_email or '') }}">
-      </div>
-      <div class="field">
         <label for="buyer_ico">{{ t('invoice.buyer.ico') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8"
-               value="{{ values.get('buyer_ico', '') }}">
+        <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" value="{{ values.get('buyer_ico', '') }}">
       </div>
       <div class="field">
         <label for="buyer_dic">{{ t('invoice.buyer.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="text" id="buyer_dic" name="buyer_dic"
-               value="{{ values.get('buyer_dic', '') }}">
+        <input type="text" id="buyer_dic" name="buyer_dic" value="{{ values.get('buyer_dic', '') }}">
+      </div>
+      <div class="field">
+        <label for="buyer_email">{{ t('invoice.buyer.email') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="email" id="buyer_email" name="buyer_email" value="{{ values.get('buyer_email', '') }}">
       </div>
     </div>
   </div>
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.items') }}</h2>
-    <div class="field" style="max-width:260px">
-      <label for="price_czk">{{ t('invoice.item.accommodation') }}</label>
-      <input type="text" id="price_czk" name="price_czk" inputmode="decimal" autofocus
-             value="{{ values.get('price_czk', '') }}">
-    </div>
-    {% if stay_fee_total > 0 %}
-    <div class="checkline">
-      <input type="checkbox" id="include_stay_fee" name="include_stay_fee" value="1"
-             {% if stay_fee_paid or values.get('include_stay_fee') %}checked{% endif %}>
-      <label for="include_stay_fee">{{ t('invoice.item.stay_fee_include', amount=stay_fee_total) }}</label>
-    </div>
-    {% endif %}
-    <div class="grid">
-      <div class="field">
-        <label for="other_description">{{ t('invoice.item.other') }}</label>
-        <input type="text" id="other_description" name="other_description" maxlength="80"
-               value="{{ values.get('other_description', '') }}">
-      </div>
-      <div class="field">
-        <label for="other_price_czk">{{ t('invoice.price') }}</label>
-        <input type="text" id="other_price_czk" name="other_price_czk" inputmode="decimal"
-               value="{{ values.get('other_price_czk', '') }}">
-      </div>
-      <div class="field">
-        <label for="other_vat_rate">{{ t('invoice.vat_rate') }}</label>
-        <select id="other_vat_rate" name="other_vat_rate">
-          <option value="21">21 %</option>
-          <option value="12">12 %</option>
-        </select>
-      </div>
-    </div>
+    <p class="small muted" style="margin-top:-4px">{{ t('invoice.items_help') }}</p>
+    <table class="table-cards" id="item-rows">
+      <thead>
+        <tr>
+          <th class="col-name">{{ t('invoice.col.description') }}</th>
+          <th>{{ t('invoice.col.qty') }}</th>
+          <th>{{ t('invoice.col.unit') }}</th>
+          <th>{{ t('invoice.col.unit_price') }}</th>
+          <th>{{ t('invoice.col.vat') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody data-item-body>
+        <tr data-item-row>
+          <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required></td>
+          <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" style="max-width:90px"></td>
+          <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" style="max-width:120px"></td>
+          <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" style="max-width:130px"></td>
+          <td data-label="{{ t('invoice.col.vat') }}">
+            <select name="item_vat_rate" style="max-width:110px">
+              <option value="21">21 %</option>
+              <option value="12">12 %</option>
+              <option value="0">0 %</option>
+            </select>
+          </td>
+          <td class="row-actions"><button type="button" class="btn small" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="actions"><button type="button" class="btn small" data-add-item>{{ t('invoice.add_item') }}</button></div>
   </div>
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.payment') }}</h2>
     <div class="checkline">
-      <input type="checkbox" id="already_paid" name="already_paid" value="1"
-             {% if values.get('already_paid', '1') %}checked{% endif %}>
+      <input type="checkbox" id="already_paid" name="already_paid" value="1" {% if values.get('already_paid', '1') %}checked{% endif %}>
       <label for="already_paid">{{ t('invoice.already_paid') }}</label>
     </div>
-    <div class="field" style="max-width:260px">
-      <label for="paid_via">{{ t('invoice.paid_via') }}</label>
-      <select id="paid_via" name="paid_via">
-        <option value="airbnb">Airbnb</option>
-        <option value="booking">Booking.com</option>
-        <option value="direct_transfer">{{ t('invoice.paid_via.direct_transfer') }}</option>
-        <option value="cash">{{ t('invoice.paid_via.cash') }}</option>
-        <option value="other">{{ t('invoice.paid_via.other') }}</option>
-      </select>
+    <div class="grid">
+      <div class="field">
+        <label for="paid_via">{{ t('invoice.paid_via') }}</label>
+        <select id="paid_via" name="paid_via">
+          <option value="direct_transfer">{{ t('invoice.paid_via.direct_transfer') }}</option>
+          <option value="cash">{{ t('invoice.paid_via.cash') }}</option>
+          <option value="airbnb">Airbnb</option>
+          <option value="booking">Booking.com</option>
+          <option value="other">{{ t('invoice.paid_via.other') }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="due_date">{{ t('invoice.due') }}</label>
+        <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}">
+      </div>
+      <div class="field">
+        <label for="duzp">{{ t('invoice.duzp') }}</label>
+        <input type="date" id="duzp" name="duzp" value="{{ values.get('duzp', '') }}">
+      </div>
     </div>
-    <div class="field" style="max-width:220px">
-      <label for="due_date">{{ t('invoice.due') }}</label>
-      <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}">
-    </div>
-  </div>
-
-  <div class="panel">
-    <h2 style="margin-top:0">{{ t('invoice.section.language') }}</h2>
-    <div class="field" style="max-width:260px">
+    <div class="field" style="max-width:320px">
       <select id="lang" name="lang">
         <option value="cs">{{ t('invoice.lang.cs') }}</option>
         <option value="en">{{ t('invoice.lang.en') }}</option>
       </select>
+    </div>
+    <div class="field">
+      <label for="note">{{ t('invoice.note') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <input type="text" id="note" name="note" maxlength="300" value="{{ values.get('note', '') }}">
     </div>
     {% if not entity.iban %}
       <p class="warn-text small">{{ t('invoice.warn_no_iban') }}</p>
@@ -142,11 +145,31 @@
 
   <div class="actions">
     <span class="small muted">{{ t('invoice.next_number', number=next_number) }}</span>
-    <button class="btn" type="submit"
-            formaction="/reservations/{{ reservation.id }}/invoice/preview" formtarget="_blank">{{ t('invoice.preview') }}</button>
-    <button class="btn accent primary" type="submit"
-            data-confirm data-confirm-message="{{ t('invoice.issue_confirm') }}">{{ t('invoice.issue') }}</button>
+    <button class="btn" type="submit" formaction="/invoices/preview" formtarget="_blank">{{ t('invoice.preview') }}</button>
+    <button class="btn accent primary" type="submit" data-confirm data-confirm-message="{{ t('invoice.issue_confirm') }}">{{ t('invoice.issue') }}</button>
   </div>
 </form>
+
+<script>
+(function () {
+  var body = document.querySelector("[data-item-body]");
+  if (!body) return;
+  var template = body.querySelector("[data-item-row]").cloneNode(true);
+  document.querySelector("[data-add-item]").addEventListener("click", function () {
+    var row = template.cloneNode(true);
+    row.querySelectorAll("input, select").forEach(function (el) { el.value = el.name === "item_quantity" ? "1" : ""; });
+    var vat = row.querySelector('select[name="item_vat_rate"]');
+    if (vat) vat.value = "21";
+    body.appendChild(row);
+  });
+  body.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-remove-item]");
+    if (!button) return;
+    if (body.querySelectorAll("[data-item-row]").length > 1) {
+      button.closest("[data-item-row]").remove();
+    }
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}

@@ -522,7 +522,6 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         automation_mode="manual",
         passport_photo_policy="off",
         permalink_window_days=3,
-        stay_fee_rate_czk=50,
         guest_message=(
             "Welcome to Vinohrady Studio. Please finish registration before arrival. "
             "Demo PIN: 246810."

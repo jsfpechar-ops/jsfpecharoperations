@@ -18,6 +18,21 @@
   <p class="small muted">{{ t('invoice.kind.' ~ invoice.kind) }}
     · {{ invoice.issue_date | date_cz }}
     {% if invoice.marked_paid_at %} · {{ invoice.marked_paid_at[:10] | date_cz }}{% endif %}</p>
+  {% if items %}
+  <table class="table-cards">
+    <thead><tr><th class="col-name">{{ t('invoice.col.description') }}</th><th>{{ t('invoice.col.qty') }}</th><th>{{ t('invoice.col.unit_price') }}</th><th>{{ t('invoice.col.total') }}</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td data-label="{{ t('invoice.col.description') }}">{{ item.description }}</td>
+        <td data-label="{{ t('invoice.col.qty') }}">{{ item.quantity }}{% if item.unit %} {{ item.unit }}{% endif %}</td>
+        <td data-label="{{ t('invoice.col.unit_price') }}">{{ item.gross_haler // (item.quantity or 1) // 100 }} Kč</td>
+        <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler // 100 }} Kč</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
   <div class="actions">
     <a class="btn primary" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
     {% if not invoice.marked_paid_at %}

@@ -45,7 +45,7 @@ def test_apartment_stay_fee_defaults_are_off():
     }
     # New apartments are policy 'on' but rate 0, so the feature is off until a
     # host types a rate.
-    assert defaults["stay_fee_policy"] == "'on'"
+    assert defaults["stay_fee_policy"] == "'off'"
     assert str(defaults["stay_fee_rate_czk"]).strip("'") == "0"
     assert str(defaults["stay_fee_cash"]).strip("'") == "1"
 

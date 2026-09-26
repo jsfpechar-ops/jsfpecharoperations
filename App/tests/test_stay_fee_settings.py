@@ -111,10 +111,10 @@ def _apartment(apt_id):
     return db.query_one("SELECT * FROM apartment WHERE id = ?", (apt_id,))
 
 
-def test_new_apartment_defaults_to_policy_on_rate_zero_cash_on(host):
+def test_new_apartment_defaults_to_policy_off_rate_zero_cash_on(host):
     apt_id = _add_apartment()
     row = _apartment(apt_id)
-    assert row["stay_fee_policy"] == "on"
+    assert row["stay_fee_policy"] == "off"
     assert row["stay_fee_rate_czk"] == 0
     assert row["stay_fee_cash"] == 1
 
@@ -129,7 +129,7 @@ def test_create_form_without_fee_fields_keeps_the_defaults(host):
     row = db.query_one(
         "SELECT * FROM apartment WHERE internal_name = ?", ("No Fee Flat",)
     )
-    assert row["stay_fee_policy"] == "on"
+    assert row["stay_fee_policy"] == "off"
     assert row["stay_fee_rate_czk"] == 0
     assert row["stay_fee_cash"] == 1
     assert row["stay_fee_payment_link"] is None

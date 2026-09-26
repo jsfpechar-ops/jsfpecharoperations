@@ -419,18 +419,17 @@ def test_the_stay_page_reads_as_one_ordered_grammar():
         _cleanup()
 
 
-def test_the_payments_group_renders_with_a_panel_between_guests_and_reports():
-    """#money carries the stay-fee and invoice panels (PLAN_POPLATEK, PLAN_GUEST_INVOICE).
+def test_the_payments_group_ships_no_heading_until_a_panel_joins_it():
+    """#money is reserved for the stay-fee panel (PLAN_POPLATEK).
 
-    Both plans insert their panel here, between the guest cards and the reports
-    table. The heading is guarded, so it arrives with the first child panel.
+    The invoice tool is standalone now, so the group renders nothing until a
+    stay fee applies. The heading arrives with the first child panel.
     """
     _apartment_id, stays, _past = _seed_stays()
     try:
         body = _browser().get(f"/reservations/{stays[0]}").text
-        assert 'id="money"' in body
-        # The invoice panel always offers "Issue invoice", so the group ships.
-        assert 'id="invoice"' in body
+        assert 'id="money"' not in body
+        assert "Payments" not in body
         source = (TEMPLATES / "reservation_detail.html").read_text(encoding="utf-8")
         assert "{% if money_panels %}" in source
         assert source.index('id="guests"') < source.index('id="money"')
