@@ -13,6 +13,11 @@
     <p class="legal-passport-text">{{ t('legal_notice_passport_body') }}</p>
   {% endif %}
 
+  {% if apartment.stay_fee_rate_czk and apartment.stay_fee_rate_czk > 0 %}
+    <h3>{{ t('legal_notice_stay_fee_title') }}</h3>
+    <p>{{ t('legal_notice_stay_fee_body') }}</p>
+  {% endif %}
+
   <h3>{{ t('legal_notice_reporting_title') }}</h3>
   <p>{{ t('legal_notice_reporting_body') }}</p>
 

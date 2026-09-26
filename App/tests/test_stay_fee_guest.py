@@ -379,3 +379,24 @@ def test_completion_mail_has_no_fee_facts_when_the_rate_is_zero():
     finally:
         _cleanup()
 
+
+# --- legal notice and privacy ----------------------------------------------
+
+
+def test_legal_notice_and_privacy_show_the_fee_only_when_the_rate_is_positive():
+    try:
+        browser, res = _open_stay(expected=1, rate=50)
+        form = browser.get(f"/l/{TOKEN}/{res}/new", follow_redirects=True)
+        assert "Act No. 565/1990" in form.text
+        privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert "Stay-fee register" in privacy.text
+
+        _cleanup()
+        browser, res = _open_stay(expected=1, rate=0)
+        form = browser.get(f"/l/{TOKEN}/{res}/new", follow_redirects=True)
+        assert "Act No. 565/1990" not in form.text
+        privacy = browser.get(f"/l/{TOKEN}/privacy")
+        assert "Stay-fee register" not in privacy.text
+    finally:
+        _cleanup()
+
