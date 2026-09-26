@@ -333,11 +333,23 @@ ENTITY_FIELDS = (
     "contact_phone",
     "bank_account",
     "bic",
+    "registry_entry",
+    "invoice_prefix",
 )
 
+VAT_STATUSES = ("non_payer", "identified", "payer")
 
-def _entity_bank_payload(request: Request, payload: Dict[str, Any]):
-    """Normalise the bank account into IBAN. Returns an error response or None."""
+
+def _entity_bank_payload(request: Request, payload: Dict[str, Any], form):
+    """Normalise the bank account and invoice settings. Returns an error or None."""
+    ico = (payload.get("ico") or "").strip()
+    if ico and not validation.ico_ok(ico):
+        return _back(
+            "/entities",
+            err=host_i18n.translate(
+                host_i18n.lang_from_request(request), "entities.ico.invalid"
+            ),
+        )
     if payload.get("bank_account"):
         try:
             payload["bank_account"], payload["iban"] = payments.normalise_account(
@@ -353,6 +365,20 @@ def _entity_bank_payload(request: Request, payload: Dict[str, Any]):
     else:
         payload["iban"] = None
     payload["bic"] = (payload.get("bic") or "").replace(" ", "").upper() or None
+    vat = _form_str(form, "vat_status")
+    payload["vat_status"] = vat if vat in VAT_STATUSES else "non_payer"
+    prefix = "".join(ch for ch in _form_str(form, "invoice_prefix").upper() if ch.isalnum())[:6]
+    payload["invoice_prefix"] = prefix or None
+    next_no = _form_str(form, "invoice_next_number").strip()
+    if next_no.isdigit() and int(next_no) > 0:
+        payload["invoice_next_number"] = int(next_no)
+        payload["invoice_next_number_year"] = date.today().year
+    else:
+        payload["invoice_next_number"] = None
+        payload["invoice_next_number_year"] = None
+    due_raw = _form_str(form, "invoice_due_days")
+    due = int(due_raw) if due_raw.isdigit() else 14
+    payload["invoice_due_days"] = max(0, min(due, 365))
     return None
 
 
@@ -365,7 +391,7 @@ async def create_entity(request: Request):
     payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
     if not payload["name"]:
         return _back("/entities", err=_flash(request, "flash.error.name_required"))
-    bad_bank = _entity_bank_payload(request, payload)
+    bad_bank = _entity_bank_payload(request, payload, form)
     if bad_bank:
         return bad_bank
     payload["created_at"] = db.utcnow()
@@ -393,7 +419,7 @@ async def update_entity(entity_id: int, request: Request):
     payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
     if not payload["name"]:
         return _back("/entities", err=_flash(request, "flash.error.name_required"))
-    bad_bank = _entity_bank_payload(request, payload)
+    bad_bank = _entity_bank_payload(request, payload, form)
     if bad_bank:
         return bad_bank
     db.update("legal_entity", entity_id, payload)
@@ -459,6 +485,11 @@ def delete_entity(entity_id: int, request: Request):
     )
     if used and used["n"]:
         return _back("/entities", err=_flash(request, "flash.error.detach_properties_first"))
+    invoiced = db.query_one(
+        "SELECT COUNT(*) AS n FROM invoice WHERE legal_entity_id = ?", (entity_id,)
+    )
+    if invoiced and invoiced["n"]:
+        return _back("/entities", err=_flash(request, "flash.error.entity_has_invoices"))
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
     db.audit("entity_deleted", f"id={entity_id}")
     return _back("/entities", msg=_flash(request, "flash.entities.deleted"))

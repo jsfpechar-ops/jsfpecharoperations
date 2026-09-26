@@ -63,7 +63,7 @@ def test_entity_bank_account_stores_the_derived_iban(host):
         data={
             "name": "Fee Operator",
             "seat": "Praha 1",
-            "ico": "12345678",
+            "ico": "04656679",
             "contact_email": "fee@settings.test",
             "bank_account": "19-2000781379/0800",
         },
@@ -80,7 +80,7 @@ def test_entity_invalid_bank_account_shows_the_error_and_saves_nothing(host):
         data={
             "name": "Bad Operator",
             "seat": "Praha 1",
-            "ico": "12345678",
+            "ico": "04656679",
             "contact_email": "bad@settings.test",
             "bank_account": "19-2000781378/0800",
         },

@@ -131,7 +131,7 @@ def test_02_an_empty_install_offers_the_demo(host):
 
 
 def test_03_apartment_is_created_with_encrypted_credentials(host):
-    host.post("/entities", data={"name": "Josef Novák", "ico": "12345678", "seat": "Praha"})
+    host.post("/entities", data={"name": "Josef Novák", "ico": "04656679", "seat": "Praha"})
     entity = db.query_one("SELECT * FROM legal_entity")
     assert entity is not None
 
