@@ -130,3 +130,16 @@ def payment_details(reservation, apartment, summary) -> Dict[str, Any]:
         "payment_link": apartment["stay_fee_payment_link"] or "",
         "cash": bool(apartment["stay_fee_cash"]),
     }
+
+
+def mail_details(reservation, apartment) -> Optional[Dict[str, Any]]:
+    """The fee facts for the completion e-mail, or None when there is nothing to pay."""
+    if not shows_to_guest(apartment):
+        return None
+    summary = stay_summary(reservation, apartment)
+    if not summary or summary["total_czk"] <= 0 or summary["paid_at"]:
+        return None
+    return {
+        "total": format_czk(summary["total_czk"]),
+        **payment_details(reservation, apartment, summary),
+    }

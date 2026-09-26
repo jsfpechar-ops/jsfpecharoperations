@@ -329,3 +329,53 @@ def test_paid_shows_only_the_thank_you_line_and_no_qr():
     finally:
         _cleanup()
 
+
+# --- the completion e-mail -------------------------------------------------
+
+
+def _completion_mail(res, lang="en"):
+    from app import claim
+
+    apartment = db.query_one(
+        "SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,)
+    )
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (res,))
+    return claim._guest_mail_content(
+        "completion", apartment, reservation, lang=lang, stay_url="http://example.test/x"
+    )
+
+
+def test_completion_mail_carries_the_total_iban_and_vs():
+    try:
+        browser, res = _open_stay(expected=1)
+        _sign(browser, res, n=1)
+        mail = _completion_mail(res)
+        assert "200" in mail["text"]
+        assert "IBAN" in mail["text"]
+        assert "CZ91 0600 0000 0000 0000 0123" in mail["text"]
+        assert f"8{str(res).zfill(9)}" in mail["text"]
+    finally:
+        _cleanup()
+
+
+def test_completion_mail_has_no_fee_facts_when_the_policy_is_off():
+    try:
+        browser, res = _open_stay(expected=1, policy="off")
+        _sign(browser, res, n=1)
+        mail = _completion_mail(res)
+        assert IBAN not in mail["text"]
+        assert "Local stay fee" not in mail["text"]
+    finally:
+        _cleanup()
+
+
+def test_completion_mail_has_no_fee_facts_when_the_rate_is_zero():
+    try:
+        browser, res = _open_stay(expected=1, rate=0)
+        _sign(browser, res, n=1)
+        mail = _completion_mail(res)
+        assert IBAN not in mail["text"]
+        assert "Local stay fee" not in mail["text"]
+    finally:
+        _cleanup()
+
