@@ -2,16 +2,17 @@ name: Deploy production
 
 # Production = AWS Lightsail (ubyhost.com). Staging = Render ubyhost-staging (mock).
 # See docs/DEPLOYMENT.md
+#
+# MANUAL ONLY. This deploy no longer runs automatically on a push to main. Every
+# change reaches main through a reviewed pull request, and production is promoted
+# by a person running this workflow (Actions → Deploy production → Run workflow)
+# with force_confirm=DEPLOY. Staging is deployed separately (manual, in Render).
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       force_confirm:
-        description: "Type DEPLOY to deploy the current main revision without a workflow_run CI gate"
+        description: "Type DEPLOY to deploy the current main revision to production"
         required: true
         type: string
 
@@ -27,53 +28,29 @@ concurrency:
 
 jobs:
   lightsail:
-    if: >-
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY') ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy Lightsail (production)
         env:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
-          LIGHTSAIL_AUTO_DEPLOY: ${{ secrets.LIGHTSAIL_AUTO_DEPLOY }}
           GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          DEPLOY_SHA: ${{ github.sha }}
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_confirm }}" != "DEPLOY" ]; then
-            echo "Manual deploy requires force_confirm=DEPLOY."
-            exit 1
-          fi
           # A manual dispatch runs from whatever branch it was started on, and
           # github.sha would be that branch's HEAD — so a dispatch from a
-          # feature branch used to deploy it to production. Pin the run to main
+          # feature branch could deploy it to production. Pin the run to main
           # instead: the input says "the current main revision", and this is how
           # it is made true.
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            DEPLOY_SHA="$(git ls-remote \
-              "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git" \
-              refs/heads/main | cut -f1)"
-            echo "Manual deploy pinned to main: ${DEPLOY_SHA}"
-          fi
+          DEPLOY_SHA="$(git ls-remote \
+            "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git" \
+            refs/heads/main | cut -f1)"
+          echo "Manual deploy pinned to main: ${DEPLOY_SHA}"
           if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
             echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
             echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
             exit 0
-          fi
-          # Optional brake: set LIGHTSAIL_AUTO_DEPLOY=0 to skip CI-triggered deploys only.
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_run" ]; then
-            case "${LIGHTSAIL_AUTO_DEPLOY:-1}" in
-              0|false|no) ;;
-              *)
-                echo "CI auto-deploy enabled (set LIGHTSAIL_AUTO_DEPLOY=0 to pause)."
-                ;;
-            esac
-            case "${LIGHTSAIL_AUTO_DEPLOY:-1}" in
-              0|false|no)
-                echo "Skipping Lightsail deploy for this CI run (LIGHTSAIL_AUTO_DEPLOY=0)."
-                exit 0
-                ;;
-            esac
           fi
           # Validate the SHA before it is interpolated into the remote shell.
           if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
@@ -120,9 +97,7 @@ jobs:
           curl --fail --show-error --silent --retry 5 --retry-delay 5 https://ubyhost.com/healthz
 
   render-staging:
-    if: >-
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY') ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
     runs-on: ubuntu-latest
     steps:
       - name: Optional Render staging deploy hook
