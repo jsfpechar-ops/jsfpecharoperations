@@ -1718,6 +1718,7 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "reminder_host",
         "completion",
         "submission_problem",
+        "invoice_issued",
     }
 
 
@@ -1793,7 +1794,14 @@ def test_every_guest_kind_sends_the_answer_back_to_the_host(monkeypatch):
         )
 
         rows = _guest_outbox_rows()
-        assert {row["kind"] for row in rows} == set(mail.GUEST_KINDS)
+        # The claim flow sends these four; invoice_issued is a guest kind too but
+        # is triggered by the host, not here.
+        assert {row["kind"] for row in rows} == {
+            "claim",
+            "claim_resend",
+            "reminder_guest",
+            "completion",
+        }
         for row in rows:
             payload = json.loads(row["payload"])
             assert payload.get("reply_to") == "host@claim.test", (row["kind"], payload)

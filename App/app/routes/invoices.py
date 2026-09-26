@@ -8,7 +8,22 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 
-from .. import access, auth, claim, codelists, db, host_i18n, invoices, security, stay_fee
+from .. import (
+    access,
+    auth,
+    claim,
+    codelists,
+    config,
+    db,
+    host_i18n,
+    invoice_links,
+    invoices,
+    mail,
+    mail_notify,
+    rate_limit,
+    security,
+    stay_fee,
+)
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -250,6 +265,70 @@ async def invoice_mark_paid(invoice_id: int, request: Request):
     db.update("invoice", invoice_id, {"marked_paid_at": db.utcnow()})
     db.audit("invoice_marked_paid", f"id={invoice_id}", owner_user_id=access.owner_id(request))
     return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.marked_paid_flash"))
+
+
+@router.post("/invoices/{invoice_id}/send")
+async def invoice_send(invoice_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    invoice = _load_invoice(request, invoice_id)
+    if not invoice:
+        return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
+    if not invoice["buyer_email"]:
+        return _back(f"/invoices/{invoice_id}", err=_flash(request, "invoice.err.no_email"))
+    apartment = access.apartment(request, invoice["apartment_id"]) if invoice["apartment_id"] else None
+    token = invoice_links.download_token(invoice_id, invoice["pdf_sha256"] or "")
+    url = f"{config.PUBLIC_BASE_URL}/invoice/d/{mail.CLAIM_SECRET_MARKER}"
+    content = mail_notify.build_invoice_issued(
+        lang=invoice["lang"],
+        property_name=mail_notify.property_label(apartment, invoice["lang"]),
+        number=invoice["number"],
+        total=invoices.invoice_pdf.money(invoice["total_haler"]),
+        download_url=url,
+        host=mail_notify.host_details(invoice["legal_entity_id"]),
+    )
+    payload = mail_notify.guest_payload(apartment, content, invoice["lang"])
+    payload[mail.CLAIM_SECRET_KEY] = db.encrypt_field(token)
+    sent_before = db.query_one(
+        "SELECT COUNT(*) AS n FROM email_outbox WHERE idempotency_key LIKE ?",
+        (f"invoice_issued:{invoice_id}:%",),
+    )["n"]
+    mail.enqueue(
+        kind="invoice_issued",
+        idempotency_key=f"invoice_issued:{invoice_id}:{sent_before}",
+        to_email=invoice["buyer_email"],
+        subject=content["subject"],
+        payload=payload,
+        reservation_id=invoice["reservation_id"],
+        apartment_id=invoice["apartment_id"],
+        owner_user_id=access.owner_id(request),
+    )
+    db.update("invoice", invoice_id, {"emailed_at": db.utcnow()})
+    db.audit("invoice_sent", f"id={invoice_id}", owner_user_id=access.owner_id(request))
+    return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.sent_flash"))
+
+
+@router.get("/invoice/d/{token}")
+def invoice_download(token: str, request: Request):
+    """Public: the token in the e-mail is the only credential the guest has."""
+    key = rate_limit.client_key(request, "invoice_download")
+    if rate_limit.blocked("invoice_download", key, 30, 3600):
+        return Response("Too many requests", status_code=429)
+    rate_limit.record("invoice_download", key)
+    invoice_id = invoice_links.read_download_token(token)
+    if not invoice_id:
+        return Response("Not found", status_code=404)
+    pdf = invoices.download_pdf(invoice_id)
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment",
+            "Cache-Control": "no-store",
+            "X-Robots-Tag": "noindex",
+        },
+    )
 
 
 @router.post("/invoices/{invoice_id}/cancel")
