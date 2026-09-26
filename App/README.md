@@ -180,9 +180,10 @@ that failed to render.
 
 ## What it deliberately does not do
 
-Accommodation fees (`poplatek z pobytu`) are a separate obligation to your
-municipality and are not calculated or reported here. Planning notes for a
-future module: **[docs/POPLATEK_Z_POBYTU.md](../docs/POPLATEK_Z_POBYTU.md)**.
+Accommodation fees (`poplatek z pobytu`): the app **shows guests the local stay
+fee at a rate the host sets per property**; it does **not file or check
+payments**. The host marks a stay paid. See
+**[docs/plans/PLAN_POPLATEK_Z_POBYTU.md](../docs/plans/PLAN_POPLATEK_Z_POBYTU.md)**.
 
 ## UI and design
 
