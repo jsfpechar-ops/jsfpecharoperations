@@ -67,6 +67,18 @@ These items are marked **⚑** in the backlog. The auditor recommends an answer,
 8. **Plan conflicts (C-21 [UX-86], C-30 [UX-95]).** The status label "Exempt / Výjimka" (meaning "no report needed") collides with the stay fee's "Exempt / Osvobodit". **Recommendation:** rename it to "No report needed / Nehlásí se" *before* the stay fee ships. Separately, PLAN_POPLATEK §7.2 (own `#stay-fee-settings` panel) and PLAN_GUEST_INVOICE §3.5 (invoice toggle "after `stay_fee_cash` in `#communication`") disagree on where the invoice toggle lives. **Recommendation:** use one "Payments / Platby" panel holding both.
 9. **`color-scheme` meta in mail (E-23 [UX-139]).** DESIGN.md asks for `color-scheme: light` on documents, but two mail tests currently pin *no* color-scheme. Adding `<meta name="color-scheme" content="light only">` stops mail clients auto-inverting. It doesn't add a theme, but it needs your OK because it changes pinned tests.
 
+### Owner decisions recorded (2026-09-27, end of Phase 2)
+
+- **UX-9 (D-1): declined.** The landing keeps "Try UbyHost" → `/login` with the
+  current footnote copy. The "Request access" mailto rewrite is not wanted.
+- **UX-95 (C-30): deferred.** PLAN_POPLATEK §7.2 and PLAN_GUEST_INVOICE §3.5
+  stay as written for now. The conflict must be resolved in the plans before
+  stay-fee/invoice work starts; until then no host-form change is made.
+- All other ⚑ items were accepted and are implemented (see `ux: act on the
+  owner decisions for the flagged audit items`, `082b113`, and the per-item
+  `ux:` commits). UX-69 and UX-101 shipped inside the 2FA-setup and legal-page
+  work rather than as standalone commits; their fixes are verified present.
+
 ## Where the repo doesn't match the brief (§0 rule 10)
 
 None of these blocks the audit. Each is either absorbed into a backlog item or noted for you.
