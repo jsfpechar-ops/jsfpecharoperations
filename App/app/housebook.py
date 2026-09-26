@@ -18,7 +18,6 @@ import zipfile
 from datetime import date, datetime
 from typing import Any, Dict, Iterator, List, Optional
 
-import reportlab
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
@@ -40,14 +39,20 @@ def _register_fonts() -> None:
     """Use a font that can actually render Czech diacritics.
 
     The built-in Type 1 fonts only cover Latin-1, which mangles characters like
-    ř and ě. Bitstream Vera ships with reportlab and covers Latin Extended-A.
+    ř and ě. Bitstream Vera ships with reportlab but does NOT cover Latin
+    Extended-A (it drops ě, ř, ů, ň, ť), so the vendored DejaVu Sans is used
+    instead; Helvetica stays as the fallback.
     """
     global FONT_REGULAR, FONT_BOLD
-    fonts_dir = os.path.join(os.path.dirname(reportlab.__file__), "fonts")
+    fonts_dir = os.path.join(os.path.dirname(__file__), "static", "fonts")
     try:
-        pdfmetrics.registerFont(TTFont("Vera", os.path.join(fonts_dir, "Vera.ttf")))
-        pdfmetrics.registerFont(TTFont("Vera-Bold", os.path.join(fonts_dir, "VeraBd.ttf")))
-        FONT_REGULAR, FONT_BOLD = "Vera", "Vera-Bold"
+        pdfmetrics.registerFont(
+            TTFont("DejaVu", os.path.join(fonts_dir, "DejaVuSans.ttf"))
+        )
+        pdfmetrics.registerFont(
+            TTFont("DejaVu-Bold", os.path.join(fonts_dir, "DejaVuSans-Bold.ttf"))
+        )
+        FONT_REGULAR, FONT_BOLD = "DejaVu", "DejaVu-Bold"
     except Exception:
         pass  # fall back to Helvetica
 
