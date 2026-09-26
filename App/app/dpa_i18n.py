@@ -23,11 +23,11 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "Enterprise customers may request a countersigned copy for their records; the online "
             "version at /dpa remains the operative text unless a written amendment is executed."
         ),
-        "dpa.review_title": "Professional review",
+        "dpa.review_title": "About this DPA",
         "dpa.review_body": (
-            "This DPA follows common SaaS practice under GDPR and Czech law. It does not replace "
-            "your own privacy programme, records of processing, or guest notices. Seek qualified "
-            "counsel for high-risk processing or group-wide compliance programmes."
+            "This DPA follows common SaaS practice under the GDPR and Czech law and forms part of the "
+            "agreement between you and the Operator. It is a general document, not advice for your "
+            "specific situation."
         ),
         "legal.dpa_title": "Guest data processing (DPA)",
         "legal.dpa_body": (
@@ -150,7 +150,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s11_body": (
             "The Controller provides general written authorisation for the Processor to engage "
             "Subprocessors in the current register at /subprocessors (including, where enabled, "
-            "AWS Lightsail and SES, Cloudflare, Render staging, Google Drive and Amazon S3 backups). "
+            "AWS Lightsail and SES, Cloudflare, Render, Google Drive and Amazon S3 backups). "
             "The register identifies conditional use and transfer notes; the Privacy Policy at /privacy "
             "provides additional context. The Processor will impose data protection terms on Subprocessors substantially "
             "similar to this DPA. The Processor remains liable to the Controller for Subprocessor "
@@ -275,10 +275,11 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "Podnikoví zákazníci mohou požádat o opatřený stejnopis pro evidenci; online verze na "
             "/dpa zůstává účinná, pokud není uzavřena písemná změna."
         ),
-        "dpa.review_title": "Odborná kontrola",
+        "dpa.review_title": "K tomuto DPA",
         "dpa.review_body": (
-            "DPA odpovídá běžné praxi SaaS podle GDPR a českého práva. Nenahrazuje vaše záznamy o "
-            "činnostech zpracování ani informace pro hosty. U rizikového zpracování využijte advokáta."
+            "Toto DPA vychází z běžné praxe SaaS podle GDPR a českého práva a je součástí smlouvy "
+            "mezi vámi a provozovatelem. Jde o obecný dokument, nikoli o poradenství pro vaši "
+            "konkrétní situaci."
         ),
         "legal.dpa_title": "Zpracování údajů hostů (DPA)",
         "legal.dpa_body": (
@@ -371,7 +372,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s11_title": "11. Subzpracovatelé",
         "dpa.s11_body": (
             "Správce uděluje obecné povolení k dalším zpracovatelům v aktuálním seznamu na "
-            "/subprocessors (podle zapnutých funkcí zejména AWS Lightsail a SES, Cloudflare, staging "
+            "/subprocessors (podle zapnutých funkcí zejména AWS Lightsail a SES, Cloudflare, "
             "Render a zálohy Google Drive či Amazon S3). Seznam uvádí podmíněné použití a informace "
             "o předání; doplňují jej Zásady na /privacy. Zpracovatel ukládá obdobné povinnosti. "
             "Odpovídá za subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací "

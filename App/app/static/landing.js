@@ -5,7 +5,6 @@
   const scenes = [...reel.querySelectorAll("[data-scene]")];
   const progress = [...reel.querySelectorAll("[data-progress]")];
   const toggle = reel.querySelector("[data-reel-toggle]");
-  const icon = reel.querySelector("[data-reel-icon]");
   const caption = reel.querySelector("[data-reel-caption]");
   const labels = reel.querySelector("[data-reel-labels]");
   const announcer = reel.querySelector("[data-reel-announce]");
@@ -41,7 +40,9 @@
     reel.classList.toggle("is-done", mode === "done");
     if (stage) stage.classList.toggle("is-reduced", reducedMotion.matches);
     toggle.disabled = reducedMotion.matches;
-    icon.textContent = mode === "playing" ? "Ⅱ" : "▶";
+    // The button's three inline SVGs (pause / play / replay) are shown from the
+    // reel's is-paused / is-done classes in landing.css, so no glyph is swapped
+    // here and no Unicode symbol can render as an emoji on a phone.
     toggle.setAttribute("aria-label", controlLabel());
   }
 

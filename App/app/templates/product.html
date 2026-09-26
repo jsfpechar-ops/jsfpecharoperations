@@ -57,7 +57,6 @@
       <div class="product-feature-list">
         {% for name in ('calendar', 'form', 'book', 'ubyport') %}
         <article class="product-feature-row">
-          <span>0{{ loop.index }}</span>
           <div>
             <p>{{ t('landing.feature.' ~ name ~ '.icon') }}</p>
             <h3>{{ t('landing.feature.' ~ name ~ '.title') }}</h3>
@@ -93,14 +92,14 @@
       <h2 id="guides-title">{{ t('product.guides.title') }}</h2>
       <div class="landing-guide-grid">
         <a href="/pruvodce/hlaseni-cizincu-ubyport?lang={{ lang }}">
-          <span>UbyPort</span>
-          <strong>{{ 'Reporting foreign guests through UbyPort: a host’s guide' if lang == 'en' else 'Hlášení cizinců přes UbyPort: postup pro ubytovatele' }}</strong>
-          <small>{{ 'Registration, access, deadlines, and receipts' if lang == 'en' else 'Registrace, přístup, lhůta a doručenky' }} →</small>
+          <span>{{ t('landing.guide.ubyport.kicker') }}</span>
+          <strong>{{ t('landing.guide.ubyport.title') }}</strong>
+          <small>{{ t('landing.guide.ubyport.meta') }} →</small>
         </a>
         <a href="/pruvodce/online-ubytovaci-kniha?lang={{ lang }}">
-          <span>{{ 'Guest records' if lang == 'en' else 'Evidence hostů' }}</span>
-          <strong>{{ 'Online guest book without paperwork' if lang == 'en' else 'Online ubytovací kniha bez papírování' }}</strong>
-          <small>{{ 'Calendars, forms, and the house book' if lang == 'en' else 'Kalendáře, formuláře a domovní kniha' }} →</small>
+          <span>{{ t('landing.guide.book.kicker') }}</span>
+          <strong>{{ t('landing.guide.book.title') }}</strong>
+          <small>{{ t('landing.guide.book.meta') }} →</small>
         </a>
       </div>
     </section>

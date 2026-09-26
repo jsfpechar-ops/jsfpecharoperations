@@ -120,7 +120,7 @@
     <input type="date" id="to" name="to" value="{{ date_to }}">
   </div>
   <div class="field filter-actions filter-actions-end">
-    <button class="btn primary filter-apply" type="submit" name="range" value="custom">{{ t('common.apply') }}</button>
+    <button class="btn filter-apply" type="submit" name="range" value="custom">{{ t('common.apply') }}</button>
     <a class="btn ghost" href="/reservations?range=upcoming">{{ t('common.clear') }}</a>
     <button class="btn ghost" type="button" data-save-view
             data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
@@ -162,7 +162,7 @@
             <div><a class="small" href="{{ reservation.reservation_url }}" target="_blank" rel="noopener">{{ t('stays.table.portal') }}</a></div>
           {% endif %}
         </td>
-        <td class="num" data-label="{{ t('stays.table.guests') }}">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+        <td class="num" data-label="{{ t('stays.table.guests') }}">{% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% else %}<span title="{{ t('common.guests_unknown') }}">—</span>{% endif %}</td>
         <td data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}{% endif %}
