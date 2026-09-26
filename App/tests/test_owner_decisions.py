@@ -125,3 +125,13 @@ def test_the_staging_notes_are_not_public():
                     assert "staging" not in value.lower(), (key, lang)
     assert "staging" not in _get("/subprocessors").lower()
     assert "staging" not in _get("/subprocessors", "cs").lower()
+
+
+# --- C-21/UX-86: the no-report pill says what it is exempt from -------------
+
+
+def test_the_no_report_pill_is_clear_and_localized():
+    assert host_i18n.STRINGS["en"]["status.not_required"] == "Exempt from reporting"
+    assert host_i18n.STRINGS["cs"]["status.not_required"] == "Nehlásí se"
+    assert host_i18n.STRINGS["en"]["stay.detail.guests.exempt"] == "Exempt from reporting"
+    assert host_i18n.STRINGS["cs"]["stay.detail.guests.exempt"] == "Nehlásí se"
