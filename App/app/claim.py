@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
 from zoneinfo import ZoneInfo
 
-from . import config, db, deadlines, i18n, mail, mail_notify, reporting, stay_fee, validation
+from . import config, db, deadlines, i18n, mail, mail_notify, reporting, validation
 
 log = logging.getLogger("ubyhost.claim")
 
@@ -393,39 +393,12 @@ def _guest_mail_content(
                 host=host,
             )
         if kind == "completion":
-            t = i18n.translator(lang)
-            fee = stay_fee.mail_details(reservation, apartment)
-            money = None
-            qr_note = None
-            if fee:
-                rows = [(t("mail_fee_total"), fee["total"])]
-                if fee["iban_display"]:
-                    rows.append(("IBAN", fee["iban_display"], True))
-                    if fee.get("bic"):
-                        rows.append(("BIC / SWIFT", fee["bic"], True))
-                rows.append((t("fee_vs"), fee["vs"], True))
-                rows.append((t("fee_reference"), fee["reference"], True))
-                money = {
-                    "amount": fee["total"],
-                    "title": t("mail_fee_title"),
-                    "rows": rows,
-                    "action": (
-                        (fee["payment_link"], t("fee_pay_online", amount=fee["total"]))
-                        if fee.get("payment_link")
-                        else None
-                    ),
-                    "note": t("fee_cash") if fee.get("cash") else None,
-                }
-                if fee["iban_display"]:
-                    qr_note = t("mail_fee_qr_note")
             return mail_notify.build_completion(
                 lang=lang,
                 property_name=property_name,
                 dates=dates,
                 stay_url=stay_url or "",
                 host=host,
-                money=money,
-                secondary_note=qr_note,
             )
         if kind == "reminder_guest":
             return mail_notify.build_reminder_guest(

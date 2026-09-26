@@ -36,7 +36,6 @@ from .. import (
     reporting,
     claim,
     security,
-    stay_fee,
     validation,
 )
 from ..templating import render
@@ -601,30 +600,10 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["passport_photo_policy"] = (
         policy if policy in ("off", "required_foreign") else "off"
     )
-    # The create form does not render the stay-fee fields, so their presence
-    # gates the whole block: otherwise a missing checkbox would turn cash off.
-    if "stay_fee_rate_czk" in form:
-        fee_policy = _form_str(form, "stay_fee_policy", "on")
-        payload["stay_fee_policy"] = fee_policy if fee_policy in ("on", "off") else "on"
-        rate_raw = _form_str(form, "stay_fee_rate_czk", "0")
-        rate = int(rate_raw) if rate_raw.isdigit() else 0
-        payload["stay_fee_rate_czk"] = max(0, min(rate, stay_fee.MAX_RATE_CZK))
-        link = _form_str(form, "stay_fee_payment_link", "")
-        payload["stay_fee_payment_link"] = (
-            link if link.startswith("https://") and len(link) <= 300 else None
-        )
-        payload["stay_fee_cash"] = 1 if form.get("stay_fee_cash") else 0
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
     return payload
-
-
-def _entity_iban(entity_id) -> str:
-    if not entity_id:
-        return ""
-    row = db.query_one("SELECT iban FROM legal_entity WHERE id = ?", (entity_id,))
-    return (row["iban"] or "") if row else ""
 
 
 @router.post("/apartments")
@@ -692,7 +671,6 @@ def apartment_detail(apartment_id: int, request: Request):
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
             "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
-            "entity_iban": _entity_iban(apartment["legal_entity_id"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
         },
     )
@@ -1403,12 +1381,6 @@ def reservation_detail(reservation_id: int, request: Request):
                 f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
             ),
             "stay_claim": claim.ensure_row(reservation_id),
-            "stay_fee": stay_fee.stay_summary(reservation, apartment),
-            "stay_fee_names": {
-                g["id"]: f"{g['first_name'] or ''} {g['surname'] or ''}".strip()
-                for g in progress["guests"]
-            },
-            "stay_fee_expected": reporting.expected_guest_count(reservation),
         },
     )
 
@@ -1625,8 +1597,6 @@ def _guest_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = dict(_guest_form_payload(form))
     payload["stay_from"] = _form_str(form, "stay_from") or None
     payload["stay_to"] = _form_str(form, "stay_to") or None
-    doc_type = _form_str(form, "doc_type")
-    payload["doc_type"] = doc_type if doc_type in validation.DOC_TYPES else None
     return payload
 
 
@@ -1666,7 +1636,6 @@ def _render_host_guest_form(
             "signature_value": _signature_for_display(guest),
             "countries": codelists.nationality_options("en"),
             "purposes": codelists.purpose_options("en"),
-            "doc_types": validation.DOC_TYPES,
             "has_passport_photo": reporting.guest_has_passport_photo(guest) if guest else False,
             "passport_is_pdf": (
                 passport_photos.is_pdf_attachment(int(guest["id"]))
@@ -1744,7 +1713,6 @@ async def guest_create(reservation_id: int, request: Request):
     )
     guest_id = db.insert("guest", payload)
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
-    stay_fee.snapshot_rate(reservation_id)
     reporting.submit_stay_if_complete(reservation["apartment_id"], reservation_id)
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.guests.added"))
 
@@ -1815,7 +1783,6 @@ async def guest_update(guest_id: int, request: Request):
         payload["submit_attempts"] = 0
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
-    stay_fee.snapshot_rate(guest["reservation_id"])
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
         reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
@@ -1833,145 +1800,6 @@ async def guest_update(guest_id: int, request: Request):
     else:
         msg = _flash(request, "flash.guests.saved_plain")
     return _back(f"/guests/{guest_id}", msg=msg)
-
-
-@router.post("/guests/{guest_id}/stay-fee")
-async def guest_stay_fee_decision(guest_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    guest = access.guest(request, guest_id)
-    if not guest:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
-    form = await request.form()
-    decision = _form_str(form, "decision")
-    reason = _form_str(form, "reason")[:120]
-    if decision not in ("", "exempt", "charge"):
-        decision = ""
-    if decision == "exempt" and len(reason.strip()) < 3:
-        return _back(
-            f"/reservations/{guest['reservation_id']}#stay-fee",
-            err=host_i18n.translate(
-                host_i18n.lang_from_request(request), "stay.fee.reason_required"
-            ),
-        )
-    db.update(
-        "guest",
-        guest_id,
-        {
-            "fee_host_decision": decision or None,
-            "fee_host_reason": reason or None,
-            "updated_at": db.utcnow(),
-        },
-    )
-    db.audit(
-        "stay_fee_decision",
-        f"guest={guest_id} decision={decision or 'auto'} reason={reason}",
-    )
-    return _back(
-        f"/reservations/{guest['reservation_id']}#stay-fee",
-        msg=_flash(request, "flash.stay_fee.saved"),
-    )
-
-
-@router.post("/reservations/{reservation_id}/stay-fee/paid")
-async def reservation_stay_fee_paid(reservation_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    reservation = access.reservation(request, reservation_id)
-    if not reservation:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
-    apartment = access.apartment(request, reservation["apartment_id"])
-    form = await request.form()
-    action = _form_str(form, "action")
-    if action == "paid":
-        summary = stay_fee.stay_summary(reservation, apartment)
-        db.update(
-            "reservation",
-            reservation_id,
-            {
-                "stay_fee_paid_at": db.utcnow(),
-                "stay_fee_paid_amount_czk": summary["total_czk"] if summary else 0,
-            },
-        )
-    else:
-        db.update(
-            "reservation",
-            reservation_id,
-            {"stay_fee_paid_at": None, "stay_fee_paid_amount_czk": None},
-        )
-    db.audit(
-        "stay_fee_paid" if action == "paid" else "stay_fee_unpaid",
-        f"reservation={reservation_id}",
-    )
-    return _back(
-        f"/reservations/{reservation_id}#stay-fee",
-        msg=_flash(request, "flash.stay_fee.saved"),
-    )
-
-
-def _shift_month(month: str, delta: int) -> str:
-    year, mon = int(month[:4]), int(month[5:7])
-    index = year * 12 + (mon - 1) + delta
-    return f"{index // 12:04d}-{index % 12 + 1:02d}"
-
-
-def _month_param(request: Request) -> str:
-    today = claim.prague_today()
-    month = request.query_params.get("month") or today.strftime("%Y-%m")
-    try:
-        stay_fee.month_bounds(month)
-    except ValueError:
-        month = today.strftime("%Y-%m")
-    return month
-
-
-@router.get("/stay-fees")
-def stay_fees_view(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    month = _month_param(request)
-    rows = stay_fee.month_stays(access.owner_id(request), month)
-    totals = {
-        "charged_people": sum(r["charged_people"] for r in rows),
-        "free_people": sum(r["free_people"] for r in rows),
-        "charged_nights": sum(r["charged_nights"] for r in rows),
-        "free_nights": sum(r["free_nights"] for r in rows),
-        "total_czk": sum(r["summary"]["total_czk"] for r in rows),
-        "paid_czk": sum(
-            r["summary"]["total_czk"] for r in rows if r["summary"]["paid_at"]
-        ),
-    }
-    return render(
-        request,
-        "stay_fees.html",
-        {
-            "nav": "stay_fees",
-            "month": month,
-            "prev_month": _shift_month(month, -1),
-            "next_month": _shift_month(month, 1),
-            "rows": rows,
-            "totals": totals,
-        },
-    )
-
-
-@router.get("/stay-fees.csv")
-def stay_fees_csv(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    month = _month_param(request)
-    payload = stay_fee.export_csv(access.owner_id(request), month)
-    return Response(
-        payload,
-        media_type="text/csv; charset=utf-8",
-        headers={
-            "Content-Disposition": f'attachment; filename="poplatek-z-pobytu-{month}.csv"'
-        },
-    )
 
 
 @router.post("/guests/{guest_id}/verify-identity")
