@@ -27,15 +27,15 @@ TOKEN = "stayfeeguests"
 
 def _cleanup():
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
-    if not apartment:
-        return
-    db.execute(
-        "DELETE FROM guest WHERE reservation_id IN "
-        "(SELECT id FROM reservation WHERE apartment_id = ?)",
-        (apartment["id"],),
-    )
-    db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
-    db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
+    if apartment:
+        db.execute(
+            "DELETE FROM guest WHERE reservation_id IN "
+            "(SELECT id FROM reservation WHERE apartment_id = ?)",
+            (apartment["id"],),
+        )
+        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
+    db.execute("DELETE FROM legal_entity WHERE name = ?", ("Fee Entity",))
 
 
 def _make(rate: int = 50):
@@ -164,3 +164,168 @@ def test_child_in_parent_passport_stores_the_passport_type():
         assert row["doc_type"] == "pas"
     finally:
         _cleanup()
+
+
+# --- the stay page ---------------------------------------------------------
+
+IBAN = "CZ9106000000000000000123"
+LINK = "https://paypal.me/fee"
+
+
+def _make_full(*, rate=50, policy="on", expected=3, link="", cash=0, paid=False):
+    db.init_db()
+    _cleanup()
+    now = db.utcnow()
+    today = claim.prague_today()
+    entity_id = db.insert(
+        "legal_entity",
+        {"name": "Fee Entity", "bank_account": "123/0600", "iban": IBAN, "created_at": now},
+    )
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "internal_name": "Fee guest flat",
+            "permalink_token": TOKEN,
+            "permalink_window_days": 14,
+            "default_purpose": "10",
+            "automation_mode": "manual",
+            "stay_fee_rate_czk": rate,
+            "stay_fee_policy": policy,
+            "stay_fee_payment_link": link or None,
+            "stay_fee_cash": cash,
+            "addr_obec": "Praha",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    values = {
+        "apartment_id": apartment_id,
+        "source": "booking",
+        "uid": "fee-guest-stay",
+        "date_from": today.isoformat(),
+        "date_to": (today + timedelta(days=4)).isoformat(),
+        "status": "active",
+        "created_at": now,
+        "updated_at": now,
+    }
+    if expected is not None:
+        values["expected_guests_override"] = expected
+    if paid:
+        values["stay_fee_paid_at"] = now
+        values["stay_fee_paid_amount_czk"] = 600
+    reservation_id = db.insert("reservation", values)
+    return apartment_id, reservation_id
+
+
+def _sign(browser, res, *, nationality="GBR", fee_claim=None, n=1):
+    for i in range(n):
+        page = browser.get(f"/l/{TOKEN}/{res}/new", follow_redirects=True)
+        assert page.status_code == 200, page.text
+        data = _form(
+            surname=f"Guest{i + 1}",
+            first_name=f"Person{i + 1}",
+            doc_number=f"P100000{i}",
+            nationality=nationality,
+            doc_type="op" if nationality == "CZE" else "pas",
+        )
+        if fee_claim:
+            data["fee_claim"] = fee_claim
+        response = browser.post(
+            f"/l/{TOKEN}/{res}/save", data=data, follow_redirects=False
+        )
+        assert response.status_code == 303, response.text
+
+
+def _open_stay(*, expected=3, **kw):
+    _apt, res = _make_full(expected=expected, **kw)
+    browser = TestClient(app)
+    browser.cookies.set(guest.LANG_COOKIE, "en")
+    complete_guest_claim(browser, TOKEN, res, party_size=expected or 1)
+    return browser, res
+
+
+def test_partial_registration_shows_only_the_so_far_line():
+    try:
+        browser, res = _open_stay(expected=3)
+        _sign(browser, res, n=2)
+        page = browser.get(f"/l/{TOKEN}/{res}", follow_redirects=True)
+        assert 'class="g-fee-soon"' in page.text
+        assert "g-card g-fee" not in page.text
+        assert "g-fee-qr" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_full_registration_shows_one_card_one_qr_and_the_bank_details():
+    try:
+        browser, res = _open_stay(expected=3)
+        _sign(browser, res, n=3)
+        page = browser.get(f"/l/{TOKEN}/{res}", follow_redirects=True)
+        assert page.text.count('class="g-card g-fee"') == 1
+        assert page.text.count('class="g-fee-qr"') == 1
+        assert "data:image/png;base64" in page.text
+        assert "600" in page.text  # 3 people x 4 nights x 50 Kč
+        assert 'download="qr-platba-8' in page.text
+        # Copy inputs hold the raw IBAN (no spaces) and the VS.
+        assert f'value="{IBAN}"' in page.text
+        assert f'value="8{str(res).zfill(9)}"' in page.text
+    finally:
+        _cleanup()
+
+
+def test_cze_guest_sees_the_qr_before_the_online_button():
+    try:
+        browser, res = _open_stay(expected=1, link=LINK)
+        _sign(browser, res, nationality="CZE", n=1)
+        page = browser.get(f"/l/{TOKEN}/{res}", follow_redirects=True)
+        assert page.text.index("g-fee-qr") < page.text.index('target="_blank"')
+    finally:
+        _cleanup()
+
+
+def test_foreign_guest_sees_the_online_button_before_the_qr():
+    try:
+        browser, res = _open_stay(expected=1, link=LINK)
+        _sign(browser, res, nationality="GBR", n=1)
+        page = browser.get(f"/l/{TOKEN}/{res}", follow_redirects=True)
+        assert page.text.index('target="_blank"') < page.text.index("g-fee-qr")
+    finally:
+        _cleanup()
+
+
+def test_a_claim_does_not_change_the_total_and_never_shows_on_the_page():
+    try:
+        browser, res = _open_stay(expected=1)
+        _sign(browser, res, n=1, fee_claim="disability_card")
+        page = browser.get(f"/l/{TOKEN}/{res}", follow_redirects=True)
+        assert "200" in page.text  # 1 person x 4 nights x 50 Kč, unchanged
+        assert "exempt" not in page.text
+        assert "osvobozen" not in page.text
+        assert "ZTP/P" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_policy_off_shows_nothing():
+    try:
+        browser, res = _open_stay(expected=1, policy="off")
+        _sign(browser, res, n=1)
+        page = browser.get(f"/l/{TOKEN}/{res}", follow_redirects=True)
+        assert "g-card g-fee" not in page.text
+        assert "g-fee-soon" not in page.text
+        assert "Local stay fee" not in page.text
+    finally:
+        _cleanup()
+
+
+def test_paid_shows_only_the_thank_you_line_and_no_qr():
+    try:
+        browser, res = _open_stay(expected=1, paid=True)
+        _sign(browser, res, n=1)
+        page = browser.get(f"/l/{TOKEN}/{res}", follow_redirects=True)
+        assert "paid. Thank you" in page.text
+        assert "g-fee-qr" not in page.text
+    finally:
+        _cleanup()
+

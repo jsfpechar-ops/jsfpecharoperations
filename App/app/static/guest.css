@@ -987,6 +987,19 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-radio:first-of-type { border-top: 0; }
 .g-radio input { margin-top: 3px; }
 
+.g-fee h3 { font-size: 15px; margin: 18px 0 8px; color: var(--g-ink); }
+.g-fee-total { font-weight: 700; font-size: 17px; margin: 12px 0 6px; color: var(--g-ink); }
+.g-fee-option { padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--g-line); }
+.g-fee-qr { margin: 4px 0 10px; text-align: center; }
+.g-fee-qr img { border: 1px solid var(--g-line); border-radius: 8px; background: #fff; }
+.g-fee-qr figcaption { font-size: 13px; color: var(--g-muted); margin-top: 4px; }
+.g-fee-soon { margin: -4px 0 16px; color: var(--g-muted); font-size: 14px; }
+.g-copy { margin: 10px 0; }
+.g-copy label { display: block; font-size: 13px; color: var(--g-muted); margin-bottom: 4px; }
+.g-copy-row { display: flex; gap: 8px; }
+.g-copy-row input { flex: 1 1 auto; min-width: 0; font-variant-numeric: tabular-nums; }
+.g-copy-row .g-btn { flex: 0 0 auto; width: auto; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
