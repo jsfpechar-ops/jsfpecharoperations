@@ -39,6 +39,20 @@
              value="{{ entity.contact_phone or '' if entity else '' }}">
     </div>
   </div>
+  <div class="grid">
+    <div class="field">
+      <label for="{{ prefix }}bank_account">{{ t('entities.bank.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <input type="text" id="{{ prefix }}bank_account" name="bank_account"
+             value="{{ entity.bank_account or '' if entity else '' }}"
+             placeholder="123456789/0100">
+      <div class="hint">{{ t('entities.bank.hint') }}</div>
+    </div>
+    <div class="field">
+      <label for="{{ prefix }}bic">{{ t('entities.bic.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <input type="text" id="{{ prefix }}bic" name="bic"
+             value="{{ entity.bic or '' if entity else '' }}">
+    </div>
+  </div>
 {% endmacro %}
 
 {% block content %}
