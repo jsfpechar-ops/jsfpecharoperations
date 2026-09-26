@@ -10,17 +10,23 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 from . import config, db
 
-_DL = URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-invoice-download")
 DOWNLOAD_MAX_AGE = 30 * 86400
 
 
+def _serializer() -> URLSafeTimedSerializer:
+    # Built on first use, not at import: ``config.secret_key()`` may create the
+    # key file and needs the data directory to exist, which it does not yet when
+    # this module is imported during startup.
+    return URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-invoice-download")
+
+
 def download_token(invoice_id: int, pdf_sha256: str) -> str:
-    return _DL.dumps({"i": invoice_id, "h": (pdf_sha256 or "")[:16]})
+    return _serializer().dumps({"i": invoice_id, "h": (pdf_sha256 or "")[:16]})
 
 
 def read_download_token(token: str) -> int | None:
     try:
-        data = _DL.loads(token, max_age=DOWNLOAD_MAX_AGE)
+        data = _serializer().loads(token, max_age=DOWNLOAD_MAX_AGE)
     except BadSignature:
         return None
     if not isinstance(data, dict):
@@ -31,3 +37,4 @@ def read_download_token(token: str) -> int | None:
     if (row["pdf_sha256"] or "")[:16] != data.get("h"):
         return None
     return int(row["id"])
+

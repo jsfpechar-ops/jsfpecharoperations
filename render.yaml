@@ -63,7 +63,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: ./render_start.sh
     healthCheckPath: /healthz
-    autoDeploy: true
+    # Manual only: production is promoted by a person, never on a push.
+    autoDeploy: false
     disk:
       name: ubyhost-data
       mountPath: /opt/render/project/src/App/data
