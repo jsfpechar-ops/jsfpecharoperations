@@ -3393,13 +3393,3 @@ label { color: var(--ink-secondary); font-weight: 620; }
   .auth-codes { break-inside: avoid; background: #fff; border-color: #bbb; }
   .auth-codes code { border-color: #bbb; background: #fff; color: #111; }
 }
-
-.fee-rows { list-style: none; margin: 12px 0; padding: 0; }
-.fee-row { padding: 12px 0; border-top: 1px solid var(--line); }
-.fee-row:first-child { border-top: 0; }
-.fee-row.needs-review { background: var(--warn-soft); border-radius: 8px; padding: 12px; margin: 4px 0; border-top: 0; }
-.fee-row-main { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-.fee-amount { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
-.fee-row details summary { cursor: pointer; color: var(--muted); margin-top: 6px; }
-.fee-decision { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.fee-decision input[type="text"] { flex: 1 1 220px; }

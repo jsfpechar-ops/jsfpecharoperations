@@ -314,76 +314,9 @@
 </section>
 
 {# --- 3. Payments ------------------------------------------------------- #}
-{# Both feature plans insert their panel here, in this order: the stay-fee
-   panel (PLAN_POPLATEK_Z_POBYTU §11.2) and then the invoice panel
-   (PLAN_GUEST_INVOICE_FEATURE §3.5). The heading renders only when a panel
-   does, so no empty group ships today. #}
+{# Invoices are a standalone tool now, so no money panel ships on the stay
+   page. The heading renders only when a child panel joins the group. #}
 {% set money_panels = [] %}
-{% if stay_fee %}
-  {% set stay_fee_panel %}
-{% set fee_review = stay_fee.people | selectattr('claim') | rejectattr('host_decision') | list %}
-<section class="panel" id="stay-fee">
-  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
-    <h2 style="margin:0">{{ t('stay.fee.title') }}{% if fee_review %} <span class="small warn-text">· {{ tp('stay.fee.to_review', fee_review | length) }}</span>{% endif %}</h2>
-    <span class="small muted">{{ t('stay.fee.rate', rate=stay_fee.rate_czk) }}</span>
-  </div>
-  {% if stay_fee_expected and stay_fee.people | length < stay_fee_expected %}
-    <p class="warn-text small" style="margin:10px 0 0">{{ t('stay.fee.headcount', signed=stay_fee.people | length, expected=stay_fee_expected) }}</p>
-  {% endif %}
-  {% if stay_fee.people %}
-  <ul class="fee-rows">
-    {% for p in stay_fee.people %}
-    {% set review = p.claim and not p.host_decision %}
-    <li class="fee-row {{ 'needs-review' if review }}">
-      <div class="fee-row-main">
-        <strong>{{ stay_fee_names.get(p.guest_id) or '—' }}</strong>
-        <span class="small muted">{{ tp('stay.fee.nights', p.nights) }}</span>
-        <span class="fee-amount">{{ p.amount_czk }} Kč</span>
-      </div>
-      {% if p.reason %}
-        <div class="small muted">{{ t('stay.fee.reason.' ~ p.reason) }}{% if p.host_reason %} — {{ p.host_reason }}{% endif %}</div>
-      {% endif %}
-      {% if p.claim %}
-        <div class="small warn-text">{{ t('stay.fee.claim.' ~ p.claim) }}</div>
-      {% endif %}
-      <details {% if review %}open{% endif %}>
-        <summary class="small">{{ t('stay.fee.change') }}</summary>
-        <form method="post" action="/guests/{{ p.guest_id }}/stay-fee" class="fee-decision">
-          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-          <input type="text" name="reason" maxlength="120" value="{{ p.host_reason }}"
-                 placeholder="{{ t('stay.fee.reason_placeholder') }}" aria-label="{{ t('stay.fee.reason_placeholder') }}">
-          <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay.fee.decision.exempt') }}</button>
-          <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay.fee.decision.charge') }}</button>
-          {% if p.host_decision %}
-            <button class="btn small" type="submit" name="decision" value="">{{ t('stay.fee.decision.auto') }}</button>
-          {% endif %}
-        </form>
-      </details>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
-    <strong>{{ t('stay.fee.total', amount=stay_fee.total_czk) }}</strong>
-    <form method="post" action="/reservations/{{ reservation.id }}/stay-fee/paid" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      {% if stay_fee.paid_at %}
-        <span class="small">{{ t('stay.fee.paid_on', date=stay_fee.paid_at[:10] | date_cz, amount=stay_fee.paid_amount_czk) }}</span>
-        <input type="hidden" name="action" value="unpaid">
-        <button class="btn small" type="submit">{{ t('stay.fee.mark_unpaid') }}</button>
-      {% elif stay_fee.total_czk > 0 %}
-        <input type="hidden" name="action" value="paid">
-        <button class="btn accent primary" type="submit">{{ t('stay.fee.mark_paid') }}</button>
-      {% endif %}
-    </form>
-  </div>
-  {% if stay_fee.paid_at and stay_fee.paid_amount_czk != stay_fee.total_czk %}
-    <p class="warn-text small">{{ t('stay.fee.paid_changed', amount=stay_fee.total_czk) }}</p>
-  {% endif %}
-</section>
-  {% endset %}
-  {% set money_panels = money_panels + [stay_fee_panel] %}
-{% endif %}
 {% if money_panels %}
 <section id="money">
   <div class="section-heading"><h2>{{ t('stay.detail.money.title') }}</h2></div>
