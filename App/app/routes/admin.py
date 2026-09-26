@@ -1372,6 +1372,12 @@ def reservation_detail(reservation_id: int, request: Request):
                 f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
             ),
             "stay_claim": claim.ensure_row(reservation_id),
+            "stay_fee": stay_fee.stay_summary(reservation, apartment),
+            "stay_fee_names": {
+                g["id"]: f"{g['first_name'] or ''} {g['surname'] or ''}".strip()
+                for g in progress["guests"]
+            },
+            "stay_fee_expected": reporting.expected_guest_count(reservation),
         },
     )
 
@@ -1796,6 +1802,82 @@ async def guest_update(guest_id: int, request: Request):
     else:
         msg = _flash(request, "flash.guests.saved_plain")
     return _back(f"/guests/{guest_id}", msg=msg)
+
+
+@router.post("/guests/{guest_id}/stay-fee")
+async def guest_stay_fee_decision(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    form = await request.form()
+    decision = _form_str(form, "decision")
+    reason = _form_str(form, "reason")[:120]
+    if decision not in ("", "exempt", "charge"):
+        decision = ""
+    if decision == "exempt" and len(reason.strip()) < 3:
+        return _back(
+            f"/reservations/{guest['reservation_id']}#stay-fee",
+            err=host_i18n.translate(
+                host_i18n.lang_from_request(request), "stay.fee.reason_required"
+            ),
+        )
+    db.update(
+        "guest",
+        guest_id,
+        {
+            "fee_host_decision": decision or None,
+            "fee_host_reason": reason or None,
+            "updated_at": db.utcnow(),
+        },
+    )
+    db.audit(
+        "stay_fee_decision",
+        f"guest={guest_id} decision={decision or 'auto'} reason={reason}",
+    )
+    return _back(
+        f"/reservations/{guest['reservation_id']}#stay-fee",
+        msg=_flash(request, "flash.stay_fee.saved"),
+    )
+
+
+@router.post("/reservations/{reservation_id}/stay-fee/paid")
+async def reservation_stay_fee_paid(reservation_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    apartment = access.apartment(request, reservation["apartment_id"])
+    form = await request.form()
+    action = _form_str(form, "action")
+    if action == "paid":
+        summary = stay_fee.stay_summary(reservation, apartment)
+        db.update(
+            "reservation",
+            reservation_id,
+            {
+                "stay_fee_paid_at": db.utcnow(),
+                "stay_fee_paid_amount_czk": summary["total_czk"] if summary else 0,
+            },
+        )
+    else:
+        db.update(
+            "reservation",
+            reservation_id,
+            {"stay_fee_paid_at": None, "stay_fee_paid_amount_czk": None},
+        )
+    db.audit(
+        "stay_fee_paid" if action == "paid" else "stay_fee_unpaid",
+        f"reservation={reservation_id}",
+    )
+    return _back(
+        f"/reservations/{reservation_id}#stay-fee",
+        msg=_flash(request, "flash.stay_fee.saved"),
+    )
 
 
 @router.post("/guests/{guest_id}/verify-identity")
