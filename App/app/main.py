@@ -21,7 +21,7 @@ from . import (
     security,
     seo,
 )
-from .routes import admin, guest, legal
+from .routes import admin, guest, invoices, legal
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -162,6 +162,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), name="static")
 app.include_router(guest.router)
 app.include_router(admin.router)
+app.include_router(invoices.router)
 app.include_router(legal.router)
 
 
