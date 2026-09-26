@@ -1,9 +1,11 @@
 """Invoice immutability: an issued document never changes (invoice step 1)."""
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 
-from app import db
+from app import db, invoices
 
 
 @pytest.fixture(autouse=True)
@@ -68,6 +70,25 @@ def test_deleting_an_issued_invoice_is_refused_without_the_unlock():
     invoice_id = _invoice(_entity("Imm Delete"))
     with pytest.raises(Exception):
         db.execute("DELETE FROM invoice WHERE id = ?", (invoice_id,))
+
+
+def test_purge_deletes_only_invoices_older_than_ten_full_years():
+    entity_id = _entity("Imm Purge")
+    recent = _invoice(entity_id, n=1)  # issue_date 2026-09-26
+    now = db.utcnow()
+    old_id = db.insert(
+        "invoice",
+        {
+            "legal_entity_id": entity_id, "kind": "invoice", "seq_year": 2014, "seq_no": 1,
+            "number": "2014-0001", "vs": "20140001", "lang": "cs", "vat_status": "non_payer",
+            "issue_date": "2014-12-31", "seller_name": "E", "seller_seat": "Praha",
+            "buyer_name": "B", "total_haler": 100, "created_at": now, "issued_at": now,
+        },
+    )
+    deleted = invoices.purge_expired(date(2026, 9, 26))
+    assert deleted == 1
+    assert db.query_one("SELECT 1 AS x FROM invoice WHERE id = ?", (old_id,)) is None
+    assert db.query_one("SELECT 1 AS x FROM invoice WHERE id = ?", (recent,))
 
 
 def test_immediate_commits_and_rolls_back():

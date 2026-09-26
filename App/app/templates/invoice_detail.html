@@ -26,6 +26,12 @@
       <button class="btn" type="submit">{{ t('invoice.mark_paid') }}</button>
     </form>
     {% endif %}
+    {% if invoice.buyer_email %}
+    <form method="post" action="/invoices/{{ invoice.id }}/send" style="display:inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="btn" type="submit">{{ t('invoice.send') }}</button>
+    </form>
+    {% endif %}
   </div>
   {% if invoice.kind == 'invoice' and not invoice.corrects_invoice_id %}
   <details style="margin-top:12px">

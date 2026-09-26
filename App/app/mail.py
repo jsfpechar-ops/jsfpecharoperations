@@ -31,6 +31,7 @@ KINDS = (
     "reminder_host",
     "completion",
     "submission_problem",
+    "invoice_issued",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -45,6 +46,7 @@ GUEST_KINDS = (
     "claim_resend",
     "reminder_guest",
     "completion",
+    "invoice_issued",
 )
 HOST_KINDS = (
     "reminder_host",

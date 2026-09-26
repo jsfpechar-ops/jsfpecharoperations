@@ -1,6 +1,8 @@
 """Invoice host UI and routes (invoice step 6)."""
 from __future__ import annotations
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -31,6 +33,7 @@ def _cleanup():
     db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
+    db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
@@ -121,3 +124,35 @@ def test_mark_paid_and_the_stay_panel_lists_the_document(host):
     stayed = host.get(f"/reservations/{res}")
     assert 'id="invoice"' in stayed.text
     assert f"/invoices/{invoice_id}" in stayed.text
+
+
+def test_send_enqueues_a_mail_with_a_working_download_token(host, monkeypatch):
+    from app import invoice_links, mail
+
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    _apt, res = _stay()
+    response = host.post(
+        f"/reservations/{res}/invoice",
+        data={"buyer_name": "Buyer", "buyer_email": "buyer@example.test",
+              "price_czk": "4000", "already_paid": "1", "lang": "cs"},
+        follow_redirects=False,
+    )
+    clean = response.headers["location"].split("?")[0]
+    invoice_id = int(clean.rsplit("/", 1)[1])
+    host.post(f"/invoices/{invoice_id}/send", follow_redirects=False)
+
+    outbox = db.query_one(
+        "SELECT * FROM email_outbox WHERE kind = 'invoice_issued' ORDER BY id DESC"
+    )
+    assert outbox is not None
+    payload = json.loads(outbox["payload"])
+    assert mail.CLAIM_SECRET_MARKER in payload["text"]
+    assert mail.CLAIM_SECRET_KEY in payload
+
+    invoice = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
+    assert invoice["emailed_at"]
+    token = invoice_links.download_token(invoice_id, invoice["pdf_sha256"])
+    pdf = host.get(f"/invoice/d/{token}")
+    assert pdf.status_code == 200
+    assert pdf.content.startswith(b"%PDF")
+    assert host.get("/invoice/d/garbage").status_code == 404

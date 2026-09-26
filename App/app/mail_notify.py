@@ -1079,6 +1079,52 @@ def build_completion(
     }
 
 
+def build_invoice_issued(
+    *,
+    lang: str,
+    property_name: str,
+    number: str,
+    total: str,
+    download_url: str,
+    host: Optional[Dict[str, str]] = None,
+) -> Dict[str, str]:
+    """The host clicked "Send to customer": one money panel with a download button."""
+    subject = _guest_text(lang, "invoice_mail_issued_subject", number=number)
+    intro = _guest_text(lang, "invoice_mail_issued_intro", property=property_name)
+    footer_lines = _guest_footer_lines(lang, property_name, host)
+    blocks = [
+        _block_heading(_guest_text(lang, "mail_invoice_title")),
+        _block_paragraph(intro),
+        _block_panel(
+            _guest_text(lang, "mail_invoice_title"),
+            [
+                (_guest_text(lang, "mail_invoice_number"), number),
+                (_guest_text(lang, "mail_invoice_total"), total),
+            ],
+            action=(download_url, _guest_text(lang, "invoice_mail_issued_button")),
+        ),
+    ]
+    lines = [
+        intro,
+        "",
+        f"{_guest_text(lang, 'mail_invoice_number')}: {number}",
+        f"{_guest_text(lang, 'mail_invoice_total')}: {total}",
+        f"{_guest_text(lang, 'invoice_mail_issued_button')}: {download_url}",
+    ]
+    text = "\n".join([*lines, "", "--", *_footer_text(footer_lines)])
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=subject,
+            blocks=blocks,
+            footer_lines=footer_lines,
+        ),
+    }
+
+
 def build_reminder_guest(
     *,
     lang: str,

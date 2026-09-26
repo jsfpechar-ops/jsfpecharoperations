@@ -18,8 +18,10 @@ from fastapi.responses import Response, StreamingResponse
 from .. import (
     access,
     auth,
+    claim,
     db,
     housebook,
+    invoices,
     passport_photos,
     reporting,
     stays_export,
@@ -359,6 +361,10 @@ def purge_expired_records(request: Request):
         return guard
     owner_user_id = access.owner_id(request)
     deleted = housebook.purge_expired(owner_user_id=owner_user_id)
+    # Invoices are kept 10 years; the same button clears the ones past it.
+    purged_invoices = invoices.purge_expired(
+        claim.prague_today(), owner_user_id=owner_user_id
+    )
     # A passport image has no six-year basis, so the same button clears the
     # ones left over from stays that ended long ago.
     photos = passport_photos.purge_stale(owner_user_id=owner_user_id)
@@ -372,6 +378,8 @@ def purge_expired_records(request: Request):
         parts.append(f"{photos} passport image(s) no longer needed")
     if blanked:
         parts.append(f"{blanked} submission envelope(s) no longer needed")
+    if purged_invoices:
+        parts.append(f"{purged_invoices} invoice(s) past the retention period")
     if not parts:
         return _back("/settings", msg=_flash(request, "flash.settings.nothing_to_purge"))
     return _back(

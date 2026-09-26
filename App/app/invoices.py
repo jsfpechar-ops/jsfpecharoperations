@@ -459,6 +459,41 @@ def cancel(invoice_id: int, reason: str, correction_date: Optional[str], actor_u
 
 
 
+def purge_expired(today: date, owner_user_id: Optional[int] = None) -> int:
+    """Delete issued documents older than 10 full years, with the unlock flag."""
+    cutoff = date(today.year - 10, 1, 1).isoformat()
+    ids = [
+        r["id"]
+        for r in db.query(
+            "SELECT id FROM invoice WHERE issue_date < ? AND owner_user_id IS ?",
+            (cutoff, owner_user_id),
+        )
+    ]
+    if not ids:
+        return 0
+    db.execute(
+        "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '1') "
+        "ON CONFLICT(key) DO UPDATE SET value = '1'"
+    )
+    try:
+        for invoice_id in ids:
+            db.execute("DELETE FROM invoice_item WHERE invoice_id = ?", (invoice_id,))
+            db.execute("DELETE FROM invoice WHERE id = ?", (invoice_id,))
+    finally:
+        db.execute(
+            "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
+            "ON CONFLICT(key) DO UPDATE SET value = ''"
+        )
+    db.audit("invoice_retention_purge", f"deleted={len(ids)}")
+    return len(ids)
+
+
+def view_row(invoice_id: int) -> Dict[str, Any]:
+    """The stored invoice row plus the view fields, for detail/PDF/preview."""
+    with db.cursor() as cur:
+        return pdf_view_row(cur, invoice_id)
+
+
 def download_pdf(invoice_id: int) -> bytes:
     """Always the stored bytes; an issued document is never re-rendered."""
     row = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
