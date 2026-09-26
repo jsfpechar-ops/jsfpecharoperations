@@ -146,6 +146,7 @@ def _seed_apartment(
     passport_photo_policy: str,
     permalink_window_days: int,
     guest_message: str,
+    stay_fee_rate_czk: int = 0,
 ) -> int:
     return db.insert(
         "apartment",
@@ -174,6 +175,7 @@ def _seed_apartment(
             "default_purpose": "10",
             "guest_message": guest_message,
             "passport_photo_policy": passport_photo_policy,
+            "stay_fee_rate_czk": stay_fee_rate_czk,
             "permalink_token": auth.new_permalink_token(),
             "permalink_pin": DEMO_PINS[internal_name],
             "active": 1,
@@ -481,6 +483,8 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
             "seat": "Korunní 1234/12a, 120 00 Praha 2",
             "contact_email": "host@example.com",
             "contact_phone": "+420777100200",
+            "bank_account": "123/0600",
+            "iban": "CZ9106000000000000000123",
             "owner_user_id": owner_user_id,
             "created_at": db.utcnow(),
         },
@@ -518,6 +522,7 @@ def seed(owner_user_id: Optional[int] = None) -> Optional[int]:
         automation_mode="manual",
         passport_photo_policy="off",
         permalink_window_days=3,
+        stay_fee_rate_czk=50,
         guest_message=(
             "Welcome to Vinohrady Studio. Please finish registration before arrival. "
             "Demo PIN: 246810."

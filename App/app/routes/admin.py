@@ -36,6 +36,7 @@ from .. import (
     reporting,
     claim,
     security,
+    stay_fee,
     validation,
 )
 from ..templating import render
@@ -569,10 +570,30 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["passport_photo_policy"] = (
         policy if policy in ("off", "required_foreign") else "off"
     )
+    # The create form does not render the stay-fee fields, so their presence
+    # gates the whole block: otherwise a missing checkbox would turn cash off.
+    if "stay_fee_rate_czk" in form:
+        fee_policy = _form_str(form, "stay_fee_policy", "on")
+        payload["stay_fee_policy"] = fee_policy if fee_policy in ("on", "off") else "on"
+        rate_raw = _form_str(form, "stay_fee_rate_czk", "0")
+        rate = int(rate_raw) if rate_raw.isdigit() else 0
+        payload["stay_fee_rate_czk"] = max(0, min(rate, stay_fee.MAX_RATE_CZK))
+        link = _form_str(form, "stay_fee_payment_link", "")
+        payload["stay_fee_payment_link"] = (
+            link if link.startswith("https://") and len(link) <= 300 else None
+        )
+        payload["stay_fee_cash"] = 1 if form.get("stay_fee_cash") else 0
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
     return payload
+
+
+def _entity_iban(entity_id) -> str:
+    if not entity_id:
+        return ""
+    row = db.query_one("SELECT iban FROM legal_entity WHERE id = ?", (entity_id,))
+    return (row["iban"] or "") if row else ""
 
 
 @router.post("/apartments")
@@ -640,6 +661,7 @@ def apartment_detail(apartment_id: int, request: Request):
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
             "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
+            "entity_iban": _entity_iban(apartment["legal_entity_id"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
         },
     )
