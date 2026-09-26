@@ -1,9 +1,13 @@
 """Logo slots must match docs/LOGO.md (file per placement)."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
+ROOT = Path(__file__).resolve().parents[1]
+CSS = (ROOT / "app" / "static" / "landing.css").read_text(encoding="utf-8")
+LOGO = (ROOT.parent / "docs" / "LOGO.md").read_text(encoding="utf-8")
 
 
 def _read(name: str) -> str:
@@ -59,3 +63,40 @@ def test_favicons_point_at_png_not_retired_svg():
         assert 'href="/static/favicon.png"' in html
         assert "favicon.svg" not in html
         assert 'href="/static/apple-touch-icon.png"' in html
+
+
+# --- UX-152 / D-21: the public display sizes and their doc rows -------------
+
+
+def _blocks(selector: str) -> list[str]:
+    found = []
+    for match in re.finditer(r"([^{}]+)\{([^{}]*)\}", CSS):
+        if selector in [part.strip() for part in match.group(1).split(",")]:
+            found.append(match.group(2))
+    return found
+
+
+def test_the_reel_side_mark_is_28px():
+    blocks = _blocks(".reel-side img")
+    assert blocks, "no .reel-side img rule"
+    assert "width: 28px" in blocks[-1]
+
+
+def test_the_final_cta_mark_is_64px_not_56():
+    assert "width: 56px" not in CSS, "the old 56px override is back"
+    blocks = _blocks(".landing-final img")
+    assert blocks, "no .landing-final img rule"
+    assert "width: 64px" in blocks[-1]
+
+
+def test_the_pricing_card_mark_is_documented_at_its_css_size():
+    blocks = _blocks(".pricing-card-head img")
+    assert blocks, "no .pricing-card-head img rule"
+    assert "width: 44px" in blocks[-1]
+    assert ".pricing-card-head img" in LOGO
+
+
+def test_the_doc_no_longer_cites_the_dead_product_shell():
+    assert "product-shell" not in LOGO
+    assert ".reel-side img" in LOGO
+    assert "**64 × 64 px**" in LOGO

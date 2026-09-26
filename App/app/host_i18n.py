@@ -185,7 +185,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download": "Export spreadsheet (CSV)",
         "csv.download_pdfs": "Download PDF bundle (inspection)",
         "reports.download_receipts": "Download Doručenky (ZIP)",
-        "reports.download_receipts_hint": "One PDF per successful transmission, built on disk to stay lightweight.",
+        "reports.download_receipts_hint": "One PDF receipt per accepted report.",
         "reports.title": "Reports",
         "reports.lede": "Every UbyPort transmission and its Doručenka, retained as proof.",
         "reports.when": "When",
@@ -212,6 +212,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.download_receipt": "Download the Doručenka",
         "reports.detail.download_errors": "Download the error report",
         "reports.detail.guests": "Guests in this transmission",
+        "reports.detail.guests_empty": "Nothing reached UbyPort, so no guest was processed.",
         "reports.detail.guest": "Guest",
         "reports.detail.result": "Result",
         "reports.detail.receipt_elsewhere": "Already in the register — the Doručenka is on",
@@ -293,8 +294,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.awaiting_verification": "Ready to report",
         "status.awaiting_verification_tip": "ID not checked (optional)",
         "stay.detail.note.immediate": "after guest forms are complete",
-        "legal.footer_short": "Legal",
-        "legal.footer_nav_label": "Legal",
         "terms.footer_short": "Terms",
         "privacy.footer_short": "Privacy",
         "dpa.footer_short": "DPA",
@@ -526,6 +525,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.back_to_toc": "Back to contents",
         "legal.toc": "Contents",
         "legal.footer_link": "Legal notice",
+        "legal.registry_link": "ARES (public register)",
         "legal.footer_short": "Legal",
         "legal.footer_nav_label": "Help and legal",
         "legal.use_acceptance": (
@@ -857,6 +857,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "common.copied": "Copied",
         "common.copy_link": "Copy link",
         "common.copy_guest_link": "Copy the guest link for this stay",
+        "common.guests_unknown": "Number of guests not known yet",
         "common.more_actions": "More actions",
         "common.undo": "Undo",
         "submission.accepted": "Accepted",
@@ -913,7 +914,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "confirm.regenerate_pin": "Generate a new random PIN?",
         "confirm.disable_user": "Disable %(name)s? They can't sign in until you enable them again.",
         "action.failed": "Open the stay, fix the rejection, and send again.",
-        "action.ready_immediate": "Guest details are complete — they will send automatically when guests submit.",
+        "action.ready_immediate": "All forms complete — UbyHost sends them automatically.",
         "action.ready": "Guest details are complete. Open the stay and send when ready.",
         "action.incomplete": "Open the stay to finish missing guest details.",
         "action.awaiting_guest": "Share the guest link or add the details yourself.",
@@ -964,7 +965,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.reported": "Reported",
         "status.ready": "Ready to report",
         "status.incomplete": "Incomplete",
-        "status.not_required": "Exempt",
+        "status.not_required": "Exempt from reporting",
         "status.awaiting_guest_short": "Waiting for guest",
         "dashboard.title": "Overview",
         "dashboard.lede": "Your reporting work, ordered by legal urgency and the next action.",
@@ -973,7 +974,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "dashboard.focus.overdue": "Past the deadline",
         "dashboard.focus.urgent": "Due now",
         "dashboard.focus.next_up": "Next up",
-        "dashboard.focus.guest_forms": "%(filled)s / %(expected)s guest forms",
+        "dashboard.focus.guest_forms": "Guest forms: %(filled)s/%(expected)s",
         "dashboard.focus.open_stay": "Open the stay",
         "dashboard.focus.add_guest": "Add a guest by hand",
         "dashboard.focus.copy_link": "Copy guest link",
@@ -1112,7 +1113,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.guests.title": "Guests",
         "stay.detail.guests.lead": "main guest",
         "stay.detail.guests.reported": "Reported",
-        "stay.detail.guests.exempt": "Exempt",
+        "stay.detail.guests.exempt": "Exempt from reporting",
         "stay.detail.guests.rejected": "Rejected",
         "stay.detail.guests.rejected_final": "Rejected, final",
         "stay.detail.guests.incomplete": "Incomplete",
@@ -1306,7 +1307,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.acceptance_between_privacy_legal": " a ",
         "login.acceptance_legal": "právními informacemi",
         "login.acceptance_after": ".",
-        "login.hero_title": "Hlášení hostů bez zbytečné práce.",
+        "login.hero_title": "Hlášení hostů vyřídíme za vás.",
         "login.hero_body": (
             "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
             "pro krátkodobé pronájmy v Česku."
@@ -1417,7 +1418,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "csv.download": "Export tabulky (CSV)",
         "csv.download_pdfs": "Stáhnout balíček PDF (kontrola)",
         "reports.download_receipts": "Stáhnout doručenky (ZIP)",
-        "reports.download_receipts_hint": "Jedno PDF za každé úspěšné odeslání, sestavené na disku bez zbytečné paměti.",
+        "reports.download_receipts_hint": "Jedna PDF doručenka za každé přijaté hlášení.",
         "reports.title": "Hlášení",
         "reports.lede": "Každý přenos do UbyPortu a jeho Doručenka jako doklad.",
         "reports.when": "Kdy",
@@ -1444,6 +1445,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.download_receipt": "Stáhnout Doručenku",
         "reports.detail.download_errors": "Stáhnout chybový protokol",
         "reports.detail.guests": "Hosté v tomto přenosu",
+        "reports.detail.guests_empty": "Do UbyPortu nic nedorazilo, žádný host nebyl zpracován.",
         "reports.detail.guest": "Host",
         "reports.detail.result": "Výsledek",
         "reports.detail.receipt_elsewhere": "Již v evidenci — doručenka je u",
@@ -1526,8 +1528,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.awaiting_verification": "Připraveno k hlášení",
         "status.awaiting_verification_tip": "Doklad nezkontrolován (volitelné)",
         "stay.detail.note.immediate": "po dokončení formulářů hostů",
-        "legal.footer_short": "Právní",
-        "legal.footer_nav_label": "Právní informace",
         "terms.footer_short": "Podmínky",
         "privacy.footer_short": "Soukromí",
         "dpa.footer_short": "DPA",
@@ -1584,7 +1584,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "guide.setup.step1_title": "Provozovatel",
         "guide.setup.step1": "Firma nebo osoba registrovaná u policie.",
         "guide.setup.step2_title": "Ubytování",
-        "guide.setup.step2": "IDUB, značka a adresa musí přesně sedět s UbyPortem.",
+        "guide.setup.step2": "IDUB, zkratka a adresa musí přesně sedět s UbyPortem.",
         "guide.setup.step3_title": "Kalendáře",
         "guide.setup.step3": "Vložte exportní iCal odkazy z Airbnb nebo Booking.com.",
         "guide.setup.step4_title": "Přihlašovací údaje UbyPort",
@@ -1593,7 +1593,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Anotovaná ukázka přesně ukazuje pole; prázdné již uložené heslo se při uložení zachová."
         ),
         "guide.setup.step5_title": "Odkaz pro hosty",
-        "guide.setup.step5": "Permalink vložte do zprávy při příjezdu na všech portálech.",
+        "guide.setup.step5": "Odkaz pro hosty vložte do zprávy při příjezdu na všech portálech.",
         "guide.stays.body": (
             "Pobyty přicházejí z kalendářů nebo ručního zadání. Otevřete řádek pro hosty, odkaz nebo odeslání."
         ),
@@ -1602,7 +1602,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "v nabídce Export CSV a balíček PDF pro kontrolu. Export respektuje aktuální filtry."
         ),
         "guide.guests.body": (
-            "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, vedoucí host uvede "
+            "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, hlavní host uvede "
             "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář. "
             "Nedokončený převzatý formulář zůstává po příjezdu dostupný, dokud není dokončen nebo "
             "přístup výslovně nezamknete."
@@ -1754,7 +1754,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.back_to_toc": "Zpět na obsah",
         "legal.toc": "Obsah",
         "legal.footer_link": "Právní informace",
-        "legal.footer_short": "Právní",
+        "legal.registry_link": "ARES (veřejný rejstřík)",
+        "legal.footer_short": "Právní informace",
         "legal.footer_nav_label": "Nápověda a právní informace",
         "legal.use_acceptance": (
             "Přihlášením nebo dalším používáním UbyHostu potvrzujete, že jste se seznámili "
@@ -2089,6 +2090,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "common.copied": "Zkopírováno",
         "common.copy_link": "Kopírovat odkaz",
         "common.copy_guest_link": "Kopírovat odkaz pro hosty tohoto pobytu",
+        "common.guests_unknown": "Počet hostů zatím neznáme",
         "common.more_actions": "Další akce",
         "common.undo": "Vrátit zpět",
         "submission.accepted": "Přijato",
@@ -2145,7 +2147,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "confirm.regenerate_pin": "Vygenerovat nový náhodný PIN?",
         "confirm.disable_user": "Vypnout účet %(name)s? Nebude se moci přihlásit, dokud ho znovu nezapnete.",
         "action.failed": "Otevřete pobyt, opravte odmítnutí a odešlete znovu.",
-        "action.ready_immediate": "Údaje hostů jsou hotové — odešlou se automaticky po vyplnění.",
+        "action.ready_immediate": "Všechny formuláře jsou hotové — UbyHost je odešle automaticky.",
         "action.ready": "Údaje hostů jsou hotové. Otevřete pobyt a odešlete, až budete připraveni.",
         "action.incomplete": "Otevřete pobyt a doplňte chybějící údaje hostů.",
         "action.awaiting_guest": "Sdílejte odkaz pro hosty nebo údaje zadejte sami.",
@@ -2194,7 +2196,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "status.reported": "Nahlášeno",
         "status.ready": "Připraveno k hlášení",
         "status.incomplete": "Neúplné",
-        "status.not_required": "Výjimka",
+        "status.not_required": "Nehlásí se",
         "status.awaiting_guest_short": "Čeká na hosta",
         "dashboard.title": "Přehled",
         "dashboard.lede": "Vaše hlášení seřazená podle naléhavosti a dalšího kroku.",
@@ -2203,7 +2205,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "dashboard.focus.overdue": "Po termínu",
         "dashboard.focus.urgent": "Termín teď",
         "dashboard.focus.next_up": "Další na řadě",
-        "dashboard.focus.guest_forms": "%(filled)s / %(expected)s formulářů hostů",
+        "dashboard.focus.guest_forms": "Formuláře hostů: %(filled)s/%(expected)s",
         "dashboard.focus.open_stay": "Otevřít pobyt",
         "dashboard.focus.add_guest": "Přidat hosta ručně",
         "dashboard.focus.copy_link": "Kopírovat odkaz pro hosty",
@@ -2342,7 +2344,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.guests.title": "Hosté",
         "stay.detail.guests.lead": "hlavní host",
         "stay.detail.guests.reported": "Nahlášeno",
-        "stay.detail.guests.exempt": "Výjimka",
+        "stay.detail.guests.exempt": "Nehlásí se",
         "stay.detail.guests.rejected": "Odmítnuto",
         "stay.detail.guests.rejected_final": "Odmítnuto, finální",
         "stay.detail.guests.incomplete": "Neúplné",

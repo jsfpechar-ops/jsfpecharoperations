@@ -22,6 +22,10 @@ PASSWORD = "Secure-Password-123"
 USERNAME = "stays-empty-host"
 
 EMPTY_PANEL_RE = re.compile(r'<div class="panel empty">\n(.*?)\n\s*</div>', re.DOTALL)
+FILTER_FORM_RE = re.compile(
+    r'<form method="get" action="/reservations" class="filters panel".*?</form>',
+    re.DOTALL,
+)
 PRIMARY_LINK_RE = re.compile(r'<a class="btn primary" href="([^"]+)">([^<]+)</a>')
 STRINGS = host_i18n.STRINGS
 CONNECT_CALENDAR = {lang: STRINGS[lang]["dashboard.empty.connect_calendar"] for lang in ("en", "cs")}
@@ -232,6 +236,27 @@ def test_the_toolbar_and_filters_return_with_a_property(host_with_property):
     assert 'class="stays-toolbar"' in page.text
     assert 'class="filters panel"' in page.text
     assert 'action="/reservations/submit-ready"' in page.text
+
+
+# --- the filter's Apply is a neutral button, not the page primary (UX-145) --
+
+
+def test_the_filter_apply_is_neutral_not_coral(host_with_property):
+    page = host_with_property.get("/reservations")
+    match = FILTER_FORM_RE.search(page.text)
+
+    assert match, "no filter form on the page"
+    assert 'class="btn primary filter-apply"' not in match.group(0)
+    assert 'class="btn filter-apply"' in match.group(0)
+
+
+def test_the_filter_apply_is_neutral_in_czech(host_with_property):
+    page = host_with_property.get("/reservations?lang=cs")
+    match = FILTER_FORM_RE.search(page.text)
+
+    assert match, "no filter form on the Czech page"
+    assert 'class="btn primary filter-apply"' not in match.group(0)
+    assert f'>{STRINGS["cs"]["common.apply"]}</button>' in match.group(0)
 
 
 def test_the_empty_state_asks_for_a_calendar_in_czech(host_with_property):

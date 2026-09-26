@@ -5,8 +5,8 @@ The Czech side called citizenship "Národnost" (ethnicity), the lead guest
 note "2 podléhá povinnosti" (ungrammatical — 2 … podléhají). The e-mail hint was
 a calque of "Stored for your reference".
 
-The audit's copy is pinned here in both languages. The host guide still says
-"vedoucí host" in one sentence; that is UX-149's scope, not this one.
+The audit's copy is pinned here in both languages. The host guide's own CS
+nouns are aligned with the UI by UX-149 and pinned at the bottom of this file.
 """
 from __future__ import annotations
 
@@ -41,9 +41,9 @@ CS_ONLY = [
     ),
 ]
 
-# The one host key that legitimately still says "vedoucí": the guide sentence
-# UX-149 owns. terms.s24_body uses the word in an unrelated legal sense.
-ALLOWED_VEDOUCI = {"guide.guests.body", "terms.s24_body"}
+# terms.s24_body uses "vedoucí" in an unrelated legal sense; UX-149 has since
+# removed it from the guide sentence.
+ALLOWED_VEDOUCI = {"terms.s24_body"}
 
 
 @pytest.mark.parametrize("key,en,cs", AUDITED_COPY, ids=[c[0] for c in AUDITED_COPY])
@@ -99,3 +99,16 @@ def test_the_birth_date_is_never_a_gendered_verb():
         for key, text in host_i18n.STRINGS[lang].items():
             if isinstance(text, str):
                 assert text != "Narozen", key
+
+
+def test_the_guide_uses_the_same_czech_nouns_as_the_ui():
+    cs = host_i18n.STRINGS["cs"]
+    assert cs["guide.setup.step2"] == "IDUB, zkratka a adresa musí přesně sedět s UbyPortem."
+    assert "značka" not in cs["guide.setup.step2"]
+    assert (
+        cs["guide.setup.step5"]
+        == "Odkaz pro hosty vložte do zprávy při příjezdu na všech portálech."
+    )
+    assert "Permalink" not in cs["guide.setup.step5"]
+    assert "hlavní host uvede" in cs["guide.guests.body"]
+    assert "vedoucí" not in cs["guide.guests.body"]

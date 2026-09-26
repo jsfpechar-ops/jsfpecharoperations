@@ -225,7 +225,9 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies(monkeypatch):
         assert "Party size is used to determine whether every expected guest form is complete" in privacy.text
         assert "normally deleted after 14 days" in privacy.text
         assert "Release Operator s.r.o." in privacy.text
-        assert "release-privacy@ubyhost.test" in privacy.text
+        # A-30: the guest notice names the operator but no longer prints the
+        # UbyHost support address; guest questions go to the host/controller.
+        assert "release-privacy@ubyhost.test" not in privacy.text
         assert "Temporary passport photo or PDF" not in privacy.text
 
         db.update(

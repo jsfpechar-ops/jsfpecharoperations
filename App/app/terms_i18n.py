@@ -15,11 +15,10 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.footer_link": "Terms of Service",
         "terms.footer_short": "Terms",
         "terms.cross_legal": "Legal notice (operator identity)",
-        "terms.review_title": "Professional review",
+        "terms.review_title": "About these terms",
         "terms.review_body": (
-            "These terms are drafted for software protection under Czech law. They are not a substitute "
-            "for advice from your own lawyer. If you operate at scale, under a company structure, or "
-            "have unusual compliance needs, have qualified counsel review them before relying on them."
+            "These terms describe the agreement between you and the UbyHost Operator and follow Czech "
+            "law. They are general terms for the service, not advice for your specific situation."
         ),
         "legal.cross_terms": "Terms of Service",
         "terms.s01_title": "1. Introduction and acceptance",
@@ -305,7 +304,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
     "cs": {
         "terms.page_title": "Obchodní podmínky",
         "terms.page_lede": (
-            "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kterí službu "
+            "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kteří službu "
             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
         ),
         "terms.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
@@ -313,12 +312,10 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.footer_link": "Obchodní podmínky",
         "terms.footer_short": "Podmínky",
         "terms.cross_legal": "Právní informace (identita provozovatele)",
-        "terms.review_title": "Odborná kontrola",
+        "terms.review_title": "K těmto podmínkám",
         "terms.review_body": (
-            "Tyto podmínky jsou formulovány pro ochranu provozovatele software podle českého práva. "
-            "Nenahrazují poradenství vašeho právníka. Pokud provozujete větší provoz, pod právnickou "
-            "osobou nebo máte nestandardní compliance požadavky, nechte si je před spoléháním na ně "
-            "zkontrolovat kvalifikovaným poradcem."
+            "Tyto podmínky popisují smlouvu mezi vámi a provozovatelem UbyHostu a vycházejí z českého "
+            "práva. Jde o obecné podmínky služby, nikoli o poradenství pro vaši konkrétní situaci."
         ),
         "legal.cross_terms": "Obchodní podmínky",
         "terms.s01_title": "1. Úvod a přijetí podmínek",

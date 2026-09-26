@@ -326,7 +326,9 @@ def test_guest_mail_is_light_mode_only():
         html = content["html"]
         assert "prefers-color-scheme" not in html, kind
         assert "@media" not in html, kind
-        assert "color-scheme" not in html, kind
+        # The product is light-mode only, so the shell asks the client for the
+        # light scheme instead of leaving it to the OS. No dark variant exists.
+        assert '<meta name="color-scheme" content="light only">' in html, kind
         assert "background:#f7f7f5" in html, kind
 
 

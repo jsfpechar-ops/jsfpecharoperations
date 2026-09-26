@@ -25,11 +25,11 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "details so the notice is complete; the property manager remains the guest contact for "
             "questions about the stay."
         ),
-        "privacy.review_title": "Professional review",
+        "privacy.review_title": "About this policy",
         "privacy.review_body": (
-            "This policy is drafted for GDPR and Czech Act No. 110/2019 Coll. It is not legal advice. "
-            "Hosts remain responsible for their own compliance as accommodation providers and data "
-            "controllers for guest data. Have qualified counsel review if your operations are complex."
+            "This policy explains how UbyHost handles personal data under the GDPR and Czech Act "
+            "No. 110/2019 Coll. It is a general policy, not advice for your specific situation; hosts "
+            "remain responsible for their own compliance as controllers of guest data."
         ),
         "legal.cross_privacy": "Privacy Policy",
         "terms.cross_privacy": "Privacy Policy",
@@ -144,7 +144,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Personal data is accessed by authorised Operator personnel and contractors bound by "
             "confidentiality. We use infrastructure subprocessors to host the Service, including "
             "Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), "
-            "Render.com (staging/demo hosting; live Guest Data is prohibited there), DNS or "
+            "Render.com (demo hosting), DNS or "
             "CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential "
             "mitigation, client-side script monitoring, and HSTS when enabled for the production zone), "
             "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a "
@@ -172,7 +172,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "six-year house book rules); the Operator may retain encrypted database and key backups "
             "on the server and, when configured, encrypted off-site copies (for example weekly to "
             "Google Drive and monthly to Amazon S3) for disaster recovery for a limited period before "
-            "purging. Completed or terminal e-mail delivery rows and staging console copies are normally "
+            "purging. Completed or terminal e-mail delivery rows are normally "
             "purged after 14 days; claim e-mails remain linked to retained reservations unless the Host "
             "releases the claim. Security logs are kept for short rolling windows unless an incident requires "
             "longer storage. When retention ends, we delete or anonymise data unless statutory storage "
@@ -289,11 +289,11 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Ubytovatelé musí tomuto subjektu doplnit kontaktní údaje; správce objektu zůstává kontaktem "
             "hosta pro otázky k pobytu."
         ),
-        "privacy.review_title": "Odborná kontrola",
+        "privacy.review_title": "K těmto zásadám",
         "privacy.review_body": (
-            "Text je připraven pro GDPR a zákon č. 110/2019 Sb. Nejde o právní poradenství. "
-            "Ubytovatelé zůstávají odpovědní za vlastní soulad jako poskytovatelé ubytování a "
-            "správci údajů hostů. U složitých provozů doporučujeme revizi advokátem."
+            "Tyto zásady vysvětlují, jak UbyHost nakládá s osobními údaji podle GDPR a českého zákona "
+            "č. 110/2019 Sb. Jde o obecné zásady, nikoli o poradenství pro vaši konkrétní situaci; "
+            "odpovědnost za vlastní soulad jako správci údajů hostů nesou ubytovatelé."
         ),
         "legal.cross_privacy": "Zásady ochrany osobních údajů",
         "terms.cross_privacy": "Zásady ochrany osobních údajů",
@@ -385,7 +385,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "privacy.s09_body": (
             "Údaje vidí oprávnění pracovníci a smluvní partneři s mlčenlivostí. Hosting zajišťují "
             "subzpracovatelé včetně Amazon Web Services (Lightsail nebo obdobný hosting v EHP pro "
-            "produkci), Render.com (staging a další úrovně; často EU Frankfurt), DNS/CDN včetně "
+            "produkci), Render.com (ukázkový provoz), DNS/CDN včetně "
             "Cloudflare (včetně Turnstile, řízených výzev, kontroly uniklých přihlašovacích údajů, "
             "monitoringu skriptů na straně klienta a HSTS v produkční zóně), Google Drive a/nebo Amazon S3 při nastavených "
             "off-site zálohách, poskytovatel transakčních e-mailů (včetně Amazon SES po zapnutí) "
@@ -407,8 +407,8 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "a zákonu. Údaje hostů řídí nastavení a povinnosti ubytovatele (včetně typické šestileté "
             "domovní knihy); Provozovatel může uchovávat šifrované zálohy databáze a klíčů na serveru "
             "a při nastavení off-site kopie (např. týdně na Google Drive a měsíčně na Amazon S3) pro "
-            "obnovu po havárii po omezenou dobu. Dokončené či konečné záznamy doručení a konzolové "
-            "kopie ve stagingu se běžně mažou po 14 dnech; e-mail k převzetí zůstává spojen s uchovanou "
+            "obnovu po havárii po omezenou dobu. Dokončené či konečné záznamy doručení "
+            "se běžně mažou po 14 dnech; e-mail k převzetí zůstává spojen s uchovanou "
             "rezervací, pokud ubytovatel převzetí neuvolní. Bezpečnostní logy po krátkou dobu. Po uplynutí mažeme "
             "nebo anonymizujeme, pokud zákon nevyžaduje jinak."
         ),

@@ -286,3 +286,35 @@ def test_the_footer_still_names_support_once():
     footer = _footer(_render("/"))
     assert footer.count("mailto:support@ubyhost.com") == 1
     assert footer.count("support@ubyhost.com") == 2  # the href and its label
+
+
+# --- UX-153 / D-22: the language switch is a labelled nav with a current mark --
+
+
+def test_the_language_switch_is_a_labelled_nav():
+    for url in PUBLIC_URLS:
+        header = _header(_render(url))
+        assert (
+            re.search(r'<nav class="landing-languages" aria-label="[^"]+">', header)
+            is not None
+        ), url
+        assert "</nav>" in header
+
+
+def test_the_language_switch_announces_the_current_language():
+    english = _header(_render("/cenik", "en"))
+    czech = _header(_render("/cenik", "cs"))
+
+    assert re.search(r'hreflang="en"[^>]*aria-current="true"', english)
+    assert not re.search(r'hreflang="cs"[^>]*aria-current', english)
+    assert re.search(r'hreflang="cs"[^>]*aria-current="true"', czech)
+    assert not re.search(r'hreflang="en"[^>]*aria-current', czech)
+
+
+def test_the_language_switch_has_a_44px_tap_height_on_mobile():
+    css = LANDING_CSS.read_text(encoding="utf-8")
+    blocks = _media_blocks(css, 600)
+    assert any(
+        ".landing-languages a" in block and "min-height: 44px" in block
+        for block in blocks
+    ), "the phone language switch is under the 44px tap bar"

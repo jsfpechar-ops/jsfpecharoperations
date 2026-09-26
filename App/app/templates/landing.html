@@ -7,10 +7,10 @@
   <title>{{ t('landing.page_title') }}</title>
   <meta name="description" content="{{ t('landing.meta_description') }}">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="{{ public_base_url }}/">
-  <link rel="alternate" hreflang="cs" href="{{ public_base_url }}/?lang=cs">
-  <link rel="alternate" hreflang="en" href="{{ public_base_url }}/?lang=en">
-  <link rel="alternate" hreflang="x-default" href="{{ public_base_url }}/">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {% for code, href in alternate_urls %}
+  <link rel="alternate" hreflang="{{ code }}" href="{{ href }}">
+  {% endfor %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="UbyHost">
   <meta property="og:title" content="{{ t('landing.page_title') }}">
@@ -71,7 +71,7 @@
         <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
         <a class="landing-button secondary" href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.contact') }} <span aria-hidden="true">→</span></a>
       </div>
-      <p class="landing-trust">{{ t('landing.trust') }}</p>
+      <p class="landing-trust">{{ t('landing.independent') }}</p>
     </section>
 
     <section class="demo-wrap" id="product" aria-labelledby="demo-title">
@@ -84,7 +84,9 @@
                   data-pause="{{ t('landing.demo.pause') }}"
                   data-replay="{{ t('landing.demo.replay') }}"
                   aria-label="{{ t('landing.demo.pause') }}">
-            <span data-reel-icon aria-hidden="true">Ⅱ</span>
+            <svg class="reel-icon reel-icon-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <svg class="reel-icon reel-icon-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5l11 7-11 7z"/></svg>
+            <svg class="reel-icon reel-icon-replay" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5a7 7 0 1 1-6.9 8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 5v5h5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
           </button>
         </div>
         <div class="reel-screen">
@@ -98,7 +100,7 @@
               <div class="demo-calendar">
                 <header><strong>{{ t('landing.demo.calendar.month') }}</strong><span>‹ &nbsp; ›</span></header>
                 <div class="calendar-days" aria-hidden="true">
-                  {% for day in ('M','T','W','T','F','S','S') %}<b>{{ day }}</b>{% endfor %}
+                  {% for day in t('landing.demo.weekdays').split(',') %}<b>{{ day }}</b>{% endfor %}
                   {% for day in range(1, 22) %}<i>{{ day }}</i>{% endfor %}
                   <span class="calendar-booking">{{ t('landing.demo.calendar.booking') }}</span>
                 </div>
@@ -133,9 +135,10 @@
               <div class="receipt-card">
                 <div class="receipt-mark">✓</div>
                 <small>UBYPORT · 2026-09-19</small>
+                <small class="receipt-example">{{ t('landing.demo.example') }}</small>
                 <strong>{{ t('landing.demo.receipt.accepted') }}</strong>
                 <p>{{ t('landing.demo.receipt.saved') }}</p>
-                <span class="receipt-code">CZ-UHP-849271</span>
+                <span class="receipt-code">DEMO-000000</span>
               </div>
               <div class="accepted-toast"><span>✓</span>{{ t('landing.demo.receipt.accepted') }}</div>
             </article>

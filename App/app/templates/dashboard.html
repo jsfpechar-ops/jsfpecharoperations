@@ -25,7 +25,7 @@
             <span class="deadline {{ row.urgency }}">{{ describe_time_left(row.check_in) }}</span>
             {% if row.deadline and row.urgency != 'future' %}<div class="small muted">{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</div>{% endif %}
           </td>
-          <td class="nowrap" data-label="{{ t('dashboard.table.guests') }}">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '?' }}</td>
+          <td class="nowrap" data-label="{{ t('dashboard.table.guests') }}">{% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% else %}<span title="{{ t('common.guests_unknown') }}">—</span>{% endif %}</td>
           <td data-label="{{ t('dashboard.table.reporting') }}">{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}</td>
           <td class="nowrap row-actions" data-label="">
             {{ row_reporting_actions(reservation, row.controls, '/') }}
@@ -118,7 +118,7 @@
           <span>{{ f_res.date_from | date_cz }} &ndash; {{ f_res.date_to | date_cz }}</span>
           <span class="deadline {{ focus.urgency }}">{{ describe_time_left(focus.check_in) }}</span>
           {{ progress_pill(f_progress.status, f_res.automation_mode, is_demo='(demo)' in f_res.internal_name) }}
-          <span class="muted">{{ t('dashboard.focus.guest_forms', filled=f_progress.filled, expected=f_progress.expected if f_progress.expected is not none else '?') }}</span>
+          <span class="muted"{% if f_progress.expected is none %} title="{{ t('common.guests_unknown') }}"{% endif %}>{{ t('dashboard.focus.guest_forms', filled=f_progress.filled, expected=f_progress.expected if f_progress.expected is not none else '—') }}</span>
         </div>
       </div>
       <div class="focus-actions">

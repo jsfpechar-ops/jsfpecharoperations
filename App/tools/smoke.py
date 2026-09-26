@@ -31,6 +31,7 @@ import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app import claim, db, i18n, mail  # noqa: E402
+from app.landing_i18n import LANDING_STRINGS  # noqa: E402
 from app.routes import guest as guest_routes  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -278,13 +279,13 @@ def main(url=None):
     check(
         host,
         "/",
-        must_contain=["UbyHost", "Ubytovací kniha"],
+        must_contain=["UbyHost", LANDING_STRINGS["cs"]["landing.footer.guestbook"]],
         must_not_contain=["row-arrow"],
     )
     check(
         host,
         "/?lang=en",
-        must_contain=["UbyPort", "Guest records"],
+        must_contain=["UbyPort", LANDING_STRINGS["en"]["landing.benefit.calendar.title"]],
         must_not_contain=["row-arrow"],
     )
     check(host, "/housebook?lang=en", must_contain=["data-csv-export"])

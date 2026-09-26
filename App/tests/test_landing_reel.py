@@ -123,3 +123,31 @@ def test_only_replay_writes_to_the_live_region():
     replay = re.search(r"function replay\(\) \{(.*?)\n  \}", JS, re.S)
     assert replay, "no replay() to hook the announcement onto"
     assert "announce(" in replay.group(1)
+
+
+def test_the_reel_toggle_is_a_44px_svg_button():
+    rule = re.search(r"\n\.reel-toggle \{(.*?)\n\}", CSS, re.S)
+    assert rule, "no .reel-toggle rule"
+    assert "width: 44px;" in rule.group(1)
+    assert "height: 44px;" in rule.group(1)
+    for lang in ("en", "cs"):
+        html = _client().get(f"/?lang={lang}").text
+        for icon in ("reel-icon-pause", "reel-icon-play", "reel-icon-replay"):
+            assert f'class="reel-icon {icon}"' in html, icon
+
+
+def test_the_toggle_uses_no_unicode_glyphs():
+    html = _client().get("/").text
+    assert "Ⅱ" not in html, "the Roman-numeral pause can render as an emoji"
+    assert "▶" not in html, "the play glyph can render as a colour emoji"
+    assert "data-reel-icon" not in html
+    assert "icon.textContent" not in JS
+
+
+def test_the_mock_receipt_is_labelled_as_an_example():
+    for lang in ("en", "cs"):
+        html = _client().get(f"/?lang={lang}").text
+        example = LANDING_STRINGS[lang]["landing.demo.example"]
+        assert f'class="receipt-example">{example}</small>' in html
+    assert "DEMO-000000" in _client().get("/").text
+    assert "CZ-UHP-849271" not in _client().get("/").text
