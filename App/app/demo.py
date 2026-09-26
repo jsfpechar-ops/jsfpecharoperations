@@ -146,7 +146,6 @@ def _seed_apartment(
     passport_photo_policy: str,
     permalink_window_days: int,
     guest_message: str,
-    stay_fee_rate_czk: int = 0,
 ) -> int:
     return db.insert(
         "apartment",
@@ -175,7 +174,6 @@ def _seed_apartment(
             "default_purpose": "10",
             "guest_message": guest_message,
             "passport_photo_policy": passport_photo_policy,
-            "stay_fee_rate_czk": stay_fee_rate_czk,
             "permalink_token": auth.new_permalink_token(),
             "permalink_pin": DEMO_PINS[internal_name],
             "active": 1,

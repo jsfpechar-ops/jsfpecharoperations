@@ -61,11 +61,6 @@
   <p>{{ t('privacy_passport_photo_body') }}</p>
   {% endif %}
 
-  {% if stay_fee_active %}
-  <h3>{{ t('privacy_stay_fee_title') }}</h3>
-  <p>{{ t('privacy_stay_fee_body') }}</p>
-  {% endif %}
-
   <h3>{{ t('privacy_recipients') }}</h3>
   <p>{{ t('privacy_recipients_body') if mail_enabled else t('privacy_recipients_body_no_email') }}</p>
 
