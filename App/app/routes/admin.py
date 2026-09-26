@@ -32,6 +32,7 @@ from .. import (
     icalsync,
     mail,
     passport_photos,
+    payments,
     reporting,
     claim,
     security,
@@ -322,7 +323,36 @@ def entities(request: Request):
     )
 
 
-ENTITY_FIELDS = ("name", "seat", "ico", "dic", "contact_email", "contact_phone")
+ENTITY_FIELDS = (
+    "name",
+    "seat",
+    "ico",
+    "dic",
+    "contact_email",
+    "contact_phone",
+    "bank_account",
+    "bic",
+)
+
+
+def _entity_bank_payload(request: Request, payload: Dict[str, Any]):
+    """Normalise the bank account into IBAN. Returns an error response or None."""
+    if payload.get("bank_account"):
+        try:
+            payload["bank_account"], payload["iban"] = payments.normalise_account(
+                payload["bank_account"]
+            )
+        except ValueError:
+            return _back(
+                "/entities",
+                err=host_i18n.translate(
+                    host_i18n.lang_from_request(request), "entities.bank.invalid"
+                ),
+            )
+    else:
+        payload["iban"] = None
+    payload["bic"] = (payload.get("bic") or "").replace(" ", "").upper() or None
+    return None
 
 
 @router.post("/entities")
@@ -334,6 +364,9 @@ async def create_entity(request: Request):
     payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
     if not payload["name"]:
         return _back("/entities", err=_flash(request, "flash.error.name_required"))
+    bad_bank = _entity_bank_payload(request, payload)
+    if bad_bank:
+        return bad_bank
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
     entity_id = db.insert("legal_entity", payload)
@@ -359,6 +392,9 @@ async def update_entity(entity_id: int, request: Request):
     payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
     if not payload["name"]:
         return _back("/entities", err=_flash(request, "flash.error.name_required"))
+    bad_bank = _entity_bank_payload(request, payload)
+    if bad_bank:
+        return bad_bank
     db.update("legal_entity", entity_id, payload)
     return _back("/entities", msg=_flash(request, "flash.entities.saved"))
 
