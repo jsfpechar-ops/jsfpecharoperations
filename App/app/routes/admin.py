@@ -1409,6 +1409,11 @@ def reservation_detail(reservation_id: int, request: Request):
                 for g in progress["guests"]
             },
             "stay_fee_expected": reporting.expected_guest_count(reservation),
+            "stay_invoices": db.query(
+                "SELECT * FROM invoice WHERE reservation_id = ? AND owner_user_id IS ? "
+                "ORDER BY id DESC",
+                (reservation_id, access.owner_id(request)),
+            ),
         },
     )
 

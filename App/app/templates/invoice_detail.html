@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set nav = 'invoices' %}
+{% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{% if issued %}
+<div class="panel"><p class="small" style="margin:0">{{ t('invoice.issued_flash', number=invoice.number) }}</p></div>
+{% endif %}
+{{ page_header(
+  t('invoice.detail.title', number=invoice.number),
+  invoice.buyer_name,
+  '/invoices',
+  t('nav.invoices')
+) }}
+
+<div class="panel">
+  <p style="margin-top:0">{{ t('invoice.detail.total') }}: <strong>{{ invoice.total_haler // 100 }} Kč</strong></p>
+  <p class="small muted">{{ t('invoice.kind.' ~ invoice.kind) }}
+    · {{ invoice.issue_date | date_cz }}
+    {% if invoice.marked_paid_at %} · {{ invoice.marked_paid_at[:10] | date_cz }}{% endif %}</p>
+  <div class="actions">
+    <a class="btn primary" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
+    {% if not invoice.marked_paid_at %}
+    <form method="post" action="/invoices/{{ invoice.id }}/paid" style="display:inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="btn" type="submit">{{ t('invoice.mark_paid') }}</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if invoice.kind == 'invoice' and not invoice.corrects_invoice_id %}
+  <details style="margin-top:12px">
+    <summary class="small">{{ t('invoice.cancel') }}</summary>
+    <form method="post" action="/invoices/{{ invoice.id }}/cancel" style="margin-top:8px">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="reason">{{ t('invoice.cancel_reason') }}</label>
+        <input type="text" id="reason" name="reason" maxlength="200" required>
+      </div>
+      {% if invoice.vat_status == 'payer' %}
+      <div class="field" style="max-width:220px">
+        <label for="correction_date">{{ t('invoice.correction_date') }}</label>
+        <input type="date" id="correction_date" name="correction_date">
+      </div>
+      {% endif %}
+      <button class="btn" type="submit">{{ t('invoice.cancel') }}</button>
+    </form>
+  </details>
+  {% endif %}
+</div>
+{% endblock %}
