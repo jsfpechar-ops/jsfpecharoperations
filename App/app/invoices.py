@@ -5,11 +5,12 @@ An issued invoice is immutable; a correction is always a new document.
 """
 from __future__ import annotations
 
+import hashlib
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional
 
-from . import db, reporting, stay_fee, validation
+from . import db, invoice_pdf, reporting, stay_fee, validation
 
 VAT_ACCOMMODATION = 12
 VAT_OTHER = 21
@@ -217,3 +218,257 @@ def preview_number(entity) -> str:
     seq = last + 1
     width = max(4, len(str(seq)))
     return f"{entity['invoice_prefix'] or ''}{year}-{seq:0{width}d}"
+
+
+PAID_VIA_LABELS = {
+    "airbnb": "Airbnb",
+    "booking": "Booking.com",
+    "direct_transfer": "Převodem",
+    "cash": "Hotově",
+    "other": "Jinak",
+}
+
+
+def allocate_number(cur, entity, issue_year: int) -> tuple:
+    """(year, seq, number, vs). Caller holds the write lock (db.immediate)."""
+    row = cur.execute(
+        "SELECT last_no FROM invoice_sequence WHERE legal_entity_id = ? AND year = ?",
+        (entity["id"], issue_year),
+    ).fetchone()
+    last = row["last_no"] if row else 0
+    if entity["invoice_next_number"] and entity["invoice_next_number_year"] == issue_year:
+        last = max(last, entity["invoice_next_number"] - 1)
+        cur.execute(
+            "UPDATE legal_entity SET invoice_next_number = NULL, invoice_next_number_year = NULL "
+            "WHERE id = ?",
+            (entity["id"],),
+        )
+    seq = last + 1
+    cur.execute(
+        "INSERT INTO invoice_sequence (legal_entity_id, year, last_no) VALUES (?, ?, ?) "
+        "ON CONFLICT(legal_entity_id, year) DO UPDATE SET last_no = excluded.last_no",
+        (entity["id"], issue_year, seq),
+    )
+    width = max(4, len(str(seq)))
+    number = f"{entity['invoice_prefix'] or ''}{issue_year}-{seq:0{width}d}"
+    vs = f"{issue_year}{seq:0{width}d}"
+    return issue_year, seq, number, vs
+
+
+def _invoice_columns(draft: Dict[str, Any], number: str, vs: str, seq_year: int, seq_no: int) -> Dict[str, Any]:
+    seller = draft["seller"]
+    buyer = draft["buyer"]
+    return {
+        "legal_entity_id": draft["legal_entity_id"],
+        "apartment_id": draft.get("apartment_id"),
+        "reservation_id": draft.get("reservation_id"),
+        "kind": draft["kind"],
+        "corrects_invoice_id": draft.get("corrects_invoice_id"),
+        "correction_reason": draft.get("correction_reason"),
+        "correction_date": draft.get("correction_date"),
+        "seq_year": seq_year,
+        "seq_no": seq_no,
+        "number": number,
+        "vs": vs,
+        "lang": draft["lang"],
+        "currency": "CZK",
+        "vat_status": draft["vat_status"],
+        "issue_date": draft["issue_date"],
+        "duzp": draft.get("duzp"),
+        "due_date": draft.get("due_date"),
+        "paid_on": draft.get("paid_on"),
+        "paid_via": draft.get("paid_via"),
+        "seller_name": seller["name"],
+        "seller_seat": seller["seat"],
+        "seller_ico": seller["ico"] or None,
+        "seller_dic": seller["dic"] or None,
+        "seller_registry": seller["registry"] or None,
+        "seller_bank_account": seller["bank_account"] or None,
+        "seller_iban": seller["iban"] or None,
+        "seller_bic": seller["bic"] or None,
+        "seller_email": seller["email"] or None,
+        "seller_phone": seller["phone"] or None,
+        "buyer_name": buyer["name"],
+        "buyer_street": buyer["street"] or None,
+        "buyer_city": buyer["city"] or None,
+        "buyer_zip": buyer["zip"] or None,
+        "buyer_country": buyer["country"] or None,
+        "buyer_ico": buyer["ico"] or None,
+        "buyer_dic": buyer["dic"] or None,
+        "buyer_email": buyer["email"] or None,
+        "stay_from": draft.get("stay_from"),
+        "stay_to": draft.get("stay_to"),
+        "stay_label": draft.get("stay_label") or None,
+        "total_base_haler": draft.get("total_base_haler"),
+        "total_vat_haler": draft.get("total_vat_haler"),
+        "total_haler": draft["total_haler"],
+        "owner_user_id": draft.get("owner_user_id"),
+        "created_at": db.utcnow(),
+    }
+
+
+def pdf_view_row(cur, invoice_id: int) -> Dict[str, Any]:
+    """The invoice row plus the view-only fields invoice_pdf.render expects."""
+    raw = cur.execute("SELECT * FROM invoice WHERE id = ?", (invoice_id,)).fetchone()
+    row = dict(raw)
+    country = row.get("buyer_country") or ""
+    row["buyer_country_name"] = (
+        "" if not country or country == "CZE" else validation.country_name(country, "cs")
+    )
+    row["paid_via_label"] = PAID_VIA_LABELS.get(row.get("paid_via") or "", row.get("paid_via") or "")
+    row["corrects_number"] = None
+    if row.get("corrects_invoice_id"):
+        src = cur.execute(
+            "SELECT number FROM invoice WHERE id = ?", (row["corrects_invoice_id"],)
+        ).fetchone()
+        row["corrects_number"] = src["number"] if src else None
+    return row
+
+
+def issue(draft: Dict[str, Any], actor_user_id: Optional[int]) -> int:
+    """Allocate a number, write the invoice + items and its PDF, atomically."""
+    issues = validate_for_issue(draft)
+    if issues:
+        raise ValueError(issues[0].message)
+    invoice_id, _number = _write_issued(draft, actor_user_id)
+    db.audit(
+        "invoice_issued",
+        f"id={invoice_id} number={_number} entity={draft['legal_entity_id']} total={draft['total_haler']}",
+        owner_user_id=draft.get("owner_user_id"),
+    )
+    return invoice_id
+
+
+def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
+    """Write an issued document inside one write lock. Returns (id, number)."""
+    year = int(draft["issue_date"][:4])
+    with db.immediate() as cur:
+        entity = cur.execute(
+            "SELECT * FROM legal_entity WHERE id = ?", (draft["legal_entity_id"],)
+        ).fetchone()
+        seq_year, seq_no, number, vs = allocate_number(cur, entity, year)
+        columns = _invoice_columns(draft, number, vs, seq_year, seq_no)
+        cur.execute(
+            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)})",
+            list(columns.values()),
+        )
+        invoice_id = cur.lastrowid
+        for position, item in enumerate(draft["items"], start=1):
+            cur.execute(
+                "INSERT INTO invoice_item (invoice_id, position, kind, description, quantity, "
+                "unit, vat_rate, base_haler, vat_haler, gross_haler) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (
+                    invoice_id, position, item["kind"], item["description"], item["quantity"],
+                    item["unit"], item["vat_rate"], item["base_haler"], item["vat_haler"],
+                    item["gross_haler"],
+                ),
+            )
+        view = pdf_view_row(cur, invoice_id)
+        items = [
+            dict(r)
+            for r in cur.execute(
+                "SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY position", (invoice_id,)
+            ).fetchall()
+        ]
+        pdf = invoice_pdf.render(view, items, draft["lang"])
+        digest = hashlib.sha256(pdf).hexdigest()
+        cur.execute(
+            "UPDATE invoice SET pdf_blob = ?, pdf_sha256 = ?, issued_at = ?, issued_by = ? WHERE id = ?",
+            (pdf, digest, db.utcnow(), actor_user_id, invoice_id),
+        )
+    return invoice_id, number
+
+
+def _draft_from_original(original, items, kind, reason, correction_date, today: date) -> Dict[str, Any]:
+    neg = -1
+    new_items = [
+        {
+            "kind": item["kind"],
+            "description": item["description"],
+            "quantity": item["quantity"],
+            "unit": item["unit"],
+            "vat_rate": item["vat_rate"],
+            "base_haler": (item["base_haler"] * neg) if item["base_haler"] is not None else None,
+            "vat_haler": (item["vat_haler"] * neg) if item["vat_haler"] is not None else None,
+            "gross_haler": item["gross_haler"] * neg,
+        }
+        for item in items
+    ]
+    return {
+        "legal_entity_id": original["legal_entity_id"],
+        "apartment_id": original["apartment_id"],
+        "reservation_id": original["reservation_id"],
+        "kind": kind,
+        "corrects_invoice_id": original["id"],
+        "correction_reason": reason,
+        "correction_date": correction_date if kind == "corrective" else None,
+        "lang": original["lang"],
+        "vat_status": original["vat_status"],
+        "issue_date": today.isoformat(),
+        "duzp": None,
+        "due_date": None,
+        "paid_on": today.isoformat() if original["paid_on"] else None,
+        "paid_via": original["paid_via"],
+        "seller": {
+            "name": original["seller_name"], "seat": original["seller_seat"],
+            "ico": original["seller_ico"] or "", "dic": original["seller_dic"] or "",
+            "registry": original["seller_registry"] or "",
+            "bank_account": original["seller_bank_account"] or "",
+            "iban": original["seller_iban"] or "", "bic": original["seller_bic"] or "",
+            "email": original["seller_email"] or "", "phone": original["seller_phone"] or "",
+        },
+        "buyer": {
+            "name": original["buyer_name"], "street": original["buyer_street"] or "",
+            "city": original["buyer_city"] or "", "zip": original["buyer_zip"] or "",
+            "country": original["buyer_country"] or "CZE",
+            "ico": original["buyer_ico"] or "", "dic": original["buyer_dic"] or "",
+            "email": original["buyer_email"] or "",
+        },
+        "stay_from": original["stay_from"], "stay_to": original["stay_to"],
+        "stay_label": original["stay_label"] or "",
+        "items": new_items,
+        "total_base_haler": (original["total_base_haler"] * neg) if original["total_base_haler"] is not None else None,
+        "total_vat_haler": (original["total_vat_haler"] * neg) if original["total_vat_haler"] is not None else None,
+        "total_haler": original["total_haler"] * neg,
+        "owner_user_id": original["owner_user_id"],
+    }
+
+
+def cancel(invoice_id: int, reason: str, correction_date: Optional[str], actor_user_id: Optional[int], *, today: date) -> int:
+    """Issue a storno (non-payer) or ODD (payer) reversing an issued invoice."""
+    original = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
+    if not original or original["kind"] != "invoice":
+        raise ValueError("not_cancellable")
+    if not reason or len(reason.strip()) < 5:
+        raise ValueError("reason_required")
+    if db.query_one("SELECT id FROM invoice WHERE corrects_invoice_id = ?", (invoice_id,)):
+        raise ValueError("already_corrected")
+    items = db.query(
+        "SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY position", (invoice_id,)
+    )
+    kind = "corrective" if original["vat_status"] == "payer" else "storno"
+    date_text = correction_date or today.isoformat()
+    draft = _draft_from_original(original, items, kind, reason.strip(), date_text, today)
+    new_id, number = _write_issued(draft, actor_user_id)
+    db.audit(
+        "invoice_corrected",
+        f"orig={invoice_id} new={new_id} kind={kind} reason={reason.strip()}",
+        owner_user_id=original["owner_user_id"],
+    )
+    return new_id
+
+
+
+def download_pdf(invoice_id: int) -> bytes:
+    """Always the stored bytes; an issued document is never re-rendered."""
+    row = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
+    if not row or not row["pdf_blob"]:
+        raise ValueError("invoice_pdf_missing")
+    blob = row["pdf_blob"]
+    if isinstance(blob, str):
+        blob = blob.encode("latin-1")
+    digest = hashlib.sha256(blob).hexdigest()
+    if row["pdf_sha256"] and digest != row["pdf_sha256"]:
+        raise ValueError("invoice_pdf_mismatch")
+    return blob
+
