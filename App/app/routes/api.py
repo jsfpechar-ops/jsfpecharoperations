@@ -30,6 +30,7 @@ def command_palette(request: Request):
         {"label": t("nav.stays"), "group": t("command.group.pages"), "url": "/reservations", "keywords": "bookings calendar"},
         {"label": t("nav.reports"), "group": t("command.group.pages"), "url": "/submissions", "keywords": "ubyport dorucenka"},
         {"label": t("nav.housebook"), "group": t("command.group.pages"), "url": "/housebook", "keywords": "export csv"},
+        {"label": t("nav.stay_fees"), "group": t("command.group.pages"), "url": "/stay-fees", "keywords": "poplatek z pobytu city tax"},
         {"label": t("nav.settings"), "group": t("command.group.pages"), "url": "/settings", "keywords": "environment account"},
         {"label": t("dashboard.sync_calendars"), "group": t("command.group.actions"), "url": "/sync", "method": "post", "keywords": "ical refresh"},
         {"label": t("stays.add_stay"), "group": t("command.group.actions"), "url": "/reservations?new=1", "keywords": "booking reservation"},

@@ -7,6 +7,7 @@ never checks a payment — the host marks the stay paid.
 """
 from __future__ import annotations
 
+from calendar import monthrange
 from datetime import date
 from typing import Any, Dict, Optional
 
@@ -143,3 +144,143 @@ def mail_details(reservation, apartment) -> Optional[Dict[str, Any]]:
         "total": format_czk(summary["total_czk"]),
         **payment_details(reservation, apartment, summary),
     }
+
+
+def month_bounds(month: str) -> tuple:
+    """'2026-09' -> ('2026-09-01', '2026-09-30'). Raise ValueError on bad input."""
+    try:
+        year_s, month_s = str(month).split("-")
+        year, mon = int(year_s), int(month_s)
+        first = date(year, mon, 1)
+    except (ValueError, AttributeError):
+        raise ValueError("month")
+    last = date(year, mon, monthrange(year, mon)[1])
+    return first.isoformat(), last.isoformat()
+
+
+def month_stays(owner_user_id, month: str) -> list:
+    """Stays whose checkout (date_to) is in the month, where the fee applied."""
+    first, last = month_bounds(month)
+    rows = db.query(
+        "SELECT r.*, a.internal_name, a.stay_fee_rate_czk AS apt_rate, a.id AS apt_id "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE a.owner_user_id IS ? AND r.status = 'active' AND r.archived_at IS NULL "
+        "AND r.date_to >= ? AND r.date_to <= ? "
+        "AND (a.stay_fee_rate_czk > 0 OR r.stay_fee_rate_czk > 0) ORDER BY r.date_to, r.id",
+        (owner_user_id, first, last),
+    )
+    out = []
+    for row in rows:
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apt_id"],))
+        summary = stay_summary(row, apartment)
+        if not summary:
+            continue
+        people = summary["people"]
+        out.append(
+            {
+                "reservation": row,
+                "apartment": apartment,
+                "summary": summary,
+                "charged_people": sum(1 for p in people if p["amount_czk"] > 0),
+                "free_people": sum(1 for p in people if p["amount_czk"] == 0),
+                "charged_nights": sum(p["charged_nights"] for p in people),
+                "free_nights": sum(p["nights"] - p["charged_nights"] for p in people),
+            }
+        )
+    return out
+
+
+EXPORT_COLUMNS = (
+    ("property", "Zařízení"),
+    ("property_address", "Adresa zařízení"),
+    ("stay_from", "Den počátku pobytu"),
+    ("stay_to", "Den konce pobytu"),
+    ("surname", "Příjmení"),
+    ("first_name", "Jméno"),
+    ("home_address", "Adresa místa přihlášení / v zahraničí"),
+    ("birth_date", "Datum narození"),
+    ("doc_type", "Druh průkazu"),
+    ("doc_number", "Číslo průkazu"),
+    ("nights", "Počet nocí"),
+    ("charged_nights", "Nocí zpoplatněno"),
+    ("rate_czk", "Sazba (Kč)"),
+    ("amount_czk", "Poplatek (Kč)"),
+    ("not_charged_reason", "Důvod nezpoplatnění"),
+    ("paid", "Zaplaceno"),
+)
+
+
+def _property_address(apartment) -> str:
+    street = " ".join(
+        part for part in [apartment["addr_street"], apartment["addr_house_no"]] if part
+    )
+    if apartment["addr_orient_no"]:
+        street = f"{street}/{apartment['addr_orient_no']}"
+    place = " ".join(
+        part for part in [apartment["addr_zip"], apartment["addr_obec"]] if part
+    )
+    return ", ".join(part for part in [street, place] if part)
+
+
+def _not_charged_reason(person) -> str:
+    if person["reason"] == "under_18":
+        return "mladší 18 let"
+    if person["reason"] == "over_60_days":
+        return "pobyt delší než 60 dnů"
+    if person["reason"] == "host_exempt":
+        return person["host_reason"] or ""
+    return ""
+
+
+def export_csv(owner_user_id, month: str) -> bytes:
+    """One row per signed guest of month_stays(); ';' separator, UTF-8 BOM."""
+    import csv
+    import io
+
+    from . import host_i18n
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";", lineterminator="\r\n")
+    writer.writerow([label for _key, label in EXPORT_COLUMNS])
+    for entry in month_stays(owner_user_id, month):
+        apartment = entry["apartment"]
+        reservation = entry["reservation"]
+        summary = entry["summary"]
+        paid = "ano" if summary["paid_at"] else "ne"
+        guests = {
+            g["id"]: g
+            for g in db.query(
+                "SELECT * FROM guest WHERE reservation_id = ? ORDER BY id",
+                (reservation["id"],),
+            )
+        }
+        for person in summary["people"]:
+            guest = guests.get(person["guest_id"])
+            if not guest:
+                continue
+            doc_type = guest["doc_type"]
+            writer.writerow(
+                [
+                    apartment["internal_name"] or "",
+                    _property_address(apartment),
+                    reservation["date_from"],
+                    reservation["date_to"],
+                    guest["surname"] or "",
+                    guest["first_name"] or "",
+                    validation.compose_residence(
+                        guest["res_street"], guest["res_city"], guest["res_country"], "cs"
+                    ),
+                    validation.format_birth_date(guest["birth_date"]),
+                    host_i18n.translate("cs", "guest.doc_type." + doc_type)
+                    if doc_type in validation.DOC_TYPES
+                    else "",
+                    guest["doc_number"] or "",
+                    person["nights"],
+                    person["charged_nights"],
+                    summary["rate_czk"],
+                    person["amount_czk"],
+                    _not_charged_reason(person),
+                    paid,
+                ]
+            )
+    return ("\ufeff" + output.getvalue()).encode("utf-8")

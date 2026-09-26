@@ -1880,6 +1880,69 @@ async def reservation_stay_fee_paid(reservation_id: int, request: Request):
     )
 
 
+def _shift_month(month: str, delta: int) -> str:
+    year, mon = int(month[:4]), int(month[5:7])
+    index = year * 12 + (mon - 1) + delta
+    return f"{index // 12:04d}-{index % 12 + 1:02d}"
+
+
+def _month_param(request: Request) -> str:
+    today = claim.prague_today()
+    month = request.query_params.get("month") or today.strftime("%Y-%m")
+    try:
+        stay_fee.month_bounds(month)
+    except ValueError:
+        month = today.strftime("%Y-%m")
+    return month
+
+
+@router.get("/stay-fees")
+def stay_fees_view(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    month = _month_param(request)
+    rows = stay_fee.month_stays(access.owner_id(request), month)
+    totals = {
+        "charged_people": sum(r["charged_people"] for r in rows),
+        "free_people": sum(r["free_people"] for r in rows),
+        "charged_nights": sum(r["charged_nights"] for r in rows),
+        "free_nights": sum(r["free_nights"] for r in rows),
+        "total_czk": sum(r["summary"]["total_czk"] for r in rows),
+        "paid_czk": sum(
+            r["summary"]["total_czk"] for r in rows if r["summary"]["paid_at"]
+        ),
+    }
+    return render(
+        request,
+        "stay_fees.html",
+        {
+            "nav": "stay_fees",
+            "month": month,
+            "prev_month": _shift_month(month, -1),
+            "next_month": _shift_month(month, 1),
+            "rows": rows,
+            "totals": totals,
+        },
+    )
+
+
+@router.get("/stay-fees.csv")
+def stay_fees_csv(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    month = _month_param(request)
+    payload = stay_fee.export_csv(access.owner_id(request), month)
+    return Response(
+        payload,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="poplatek-z-pobytu-{month}.csv"'
+        },
+    )
+
+
 @router.post("/guests/{guest_id}/verify-identity")
 async def guest_verify_identity(guest_id: int, request: Request):
     guard = auth.require_login(request)
