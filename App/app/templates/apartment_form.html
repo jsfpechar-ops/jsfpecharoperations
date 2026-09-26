@@ -401,8 +401,8 @@
     <div class="field" style="max-width:320px">
       <label for="stay_fee_policy">{{ t('apartment.form.stay_fee_policy.label') }}</label>
       <select id="stay_fee_policy" name="stay_fee_policy">
-        <option value="on" {% if (apartment.stay_fee_policy if editing else 'on') != 'off' %}selected{% endif %}>{{ t('apartment.form.stay_fee_policy.on') }}</option>
-        <option value="off" {% if editing and apartment.stay_fee_policy == 'off' %}selected{% endif %}>{{ t('apartment.form.stay_fee_policy.off') }}</option>
+        <option value="off" {% if not editing or apartment.stay_fee_policy != 'on' %}selected{% endif %}>{{ t('apartment.form.stay_fee_policy.off') }}</option>
+        <option value="on" {% if editing and apartment.stay_fee_policy == 'on' %}selected{% endif %}>{{ t('apartment.form.stay_fee_policy.on') }}</option>
       </select>
       <div class="hint">{{ t('apartment.form.stay_fee_policy.hint') }}</div>
     </div>

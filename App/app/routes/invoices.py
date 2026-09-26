@@ -1,7 +1,6 @@
-"""Host-only invoice routes: list, issue, preview, detail, PDF, paid, cancel.
+"""Host-only invoice tool: a standalone, free-form invoice builder.
 
-A guest never reaches this module (see the SCOPE DECISION in
-docs/plans/PLAN_GUEST_INVOICE_FEATURE.md). Included in main.py after admin.router.
+An invoice is NOT tied to a stay. Included in main.py after admin.router.
 """
 from __future__ import annotations
 
@@ -22,7 +21,6 @@ from .. import (
     mail_notify,
     rate_limit,
     security,
-    stay_fee,
 )
 from ..templating import render
 from .admin_helpers import back as _back
@@ -43,140 +41,43 @@ def _load_invoice(request: Request, invoice_id: int):
     )
 
 
-def _reservation_with_apartment(request: Request, reservation_id: int):
-    reservation = access.reservation(
-        request,
-        reservation_id,
-        "r.*, a.internal_name, a.legal_entity_id, a.permalink_token",
+def _entities(request: Request):
+    return db.query(
+        "SELECT * FROM legal_entity WHERE archived_at IS NULL AND owner_user_id IS ? "
+        "ORDER BY name",
+        (access.owner_id(request),),
     )
-    if not reservation:
-        return None, None
-    apartment = access.apartment(request, reservation["apartment_id"])
-    return reservation, apartment
 
 
-def _form_context(request, reservation, apartment, entity, *, errors=None, values=None):
-    fee = stay_fee.stay_summary(reservation, apartment) if apartment else None
-    fee_total = fee["total_czk"] if fee else 0
+def _chosen_entity(request, entities, form=None):
+    if form is not None:
+        entity_id = _form_str(form, "legal_entity_id")
+        if entity_id.isdigit():
+            for entity in entities:
+                if str(entity["id"]) == entity_id:
+                    return entity
+    return entities[0] if entities else None
+
+
+def _form_context(request, entities, entity, *, errors=None, values=None):
     return {
         "nav": "invoices",
-        "reservation": reservation,
-        "apartment": apartment,
+        "entities": entities,
         "entity": entity,
         "next_number": invoices.preview_number(entity) if entity else "",
         "errors": errors or [],
         "values": values or {},
-        "countries": codelists.nationality_options("en"),
-        "stay_fee_total": fee_total,
-        "stay_fee_paid": bool(fee and fee["paid_at"]),
-        "invoices_for_stay": db.query(
-            "SELECT * FROM invoice WHERE reservation_id = ? AND owner_user_id IS ? "
-            "ORDER BY id DESC",
-            (reservation["id"], access.owner_id(request)),
-        ),
+        "countries": codelists.nationality_options(_lang(request)),
     }
 
 
-def _build_draft(request, reservation, apartment, entity, form):
-    today = claim.prague_today()
-    draft = invoices.build_draft(reservation, entity, form, _lang(request), today=today)
-    draft.update(
-        {
-            "legal_entity_id": entity["id"],
-            "apartment_id": apartment["id"],
-            "reservation_id": reservation["id"],
-            "owner_user_id": access.owner_id(request),
-        }
-    )
+def _draft(request, entity, form):
+    draft = invoices.build_draft(entity, form, _lang(request), today=claim.prague_today())
+    draft.update({"legal_entity_id": entity["id"], "owner_user_id": access.owner_id(request)})
     return draft
 
 
-@router.get("/invoices")
-def invoices_list(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    rows = db.query(
-        "SELECT * FROM invoice WHERE owner_user_id IS ? "
-        "ORDER BY issue_date DESC, id DESC",
-        (access.owner_id(request),),
-    )
-    return render(request, "invoices.html", {"nav": "invoices", "invoices": rows})
-
-
-@router.get("/reservations/{reservation_id}/invoice/new")
-def invoice_new(reservation_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    reservation, apartment = _reservation_with_apartment(request, reservation_id)
-    if not reservation:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
-    entity = access.entity(request, apartment["legal_entity_id"]) if apartment and apartment["legal_entity_id"] else None
-    context = _form_context(request, reservation, apartment, entity)
-    if not entity:
-        context["errors"] = [
-            host_i18n.translate(_lang(request), "invoice.err.no_entity")
-        ]
-    return render(request, "invoice_form.html", context)
-
-
-@router.post("/reservations/{reservation_id}/invoice/preview")
-async def invoice_preview(reservation_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    reservation, apartment = _reservation_with_apartment(request, reservation_id)
-    if not reservation:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
-    entity = access.entity(request, apartment["legal_entity_id"]) if apartment and apartment["legal_entity_id"] else None
-    if not entity:
-        return _back(f"/reservations/{reservation_id}", err=_flash(request, "flash.error.no_such_entity"))
-    form = await request.form()
-    draft = _build_draft(request, reservation, apartment, entity, form)
-    view = _preview_view(draft)
-    pdf = invoices.invoice_pdf.render(view, draft["items"], draft["lang"], preview=True)
-    return Response(
-        pdf,
-        media_type="application/pdf",
-        headers={"Content-Disposition": 'inline; filename="nahled-faktura.pdf"'},
-    )
-
-
-@router.post("/reservations/{reservation_id}/invoice")
-async def invoice_issue(reservation_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    reservation, apartment = _reservation_with_apartment(request, reservation_id)
-    if not reservation:
-        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
-    entity = access.entity(request, apartment["legal_entity_id"]) if apartment and apartment["legal_entity_id"] else None
-    if not entity:
-        return _back(f"/reservations/{reservation_id}", err=_flash(request, "flash.error.no_such_entity"))
-    form = await request.form()
-    draft = _build_draft(request, reservation, apartment, entity, form)
-    issues = invoices.validate_for_issue(draft)
-    if issues:
-        lang = _lang(request)
-        context = _form_context(
-            request,
-            reservation,
-            apartment,
-            entity,
-            errors=[host_i18n.translate(lang, issue.message) for issue in issues],
-        )
-        return render(request, "invoice_form.html", context, status_code=422)
-    invoice_id = invoices.issue(draft, access.owner_id(request))
-    number = db.query_one("SELECT number FROM invoice WHERE id = ?", (invoice_id,))["number"]
-    return _back(
-        f"/invoices/{invoice_id}",
-        msg=_flash(request, "invoice.issued_flash", number=number),
-    )
-
-
 def _preview_view(draft) -> dict:
-    """A stand-in invoice row for the preview render (no number allocated yet)."""
     seller = draft["seller"]
     buyer = draft["buyer"]
     return {
@@ -188,7 +89,7 @@ def _preview_view(draft) -> dict:
         "duzp": draft.get("duzp"),
         "due_date": draft.get("due_date"),
         "paid_on": draft.get("paid_on"),
-        "paid_via_label": None,
+        "paid_via_label": invoices.PAID_VIA_LABELS.get(draft.get("paid_via") or ""),
         "seller_name": seller["name"],
         "seller_seat": seller["seat"],
         "seller_ico": seller["ico"],
@@ -208,12 +109,84 @@ def _preview_view(draft) -> dict:
         "buyer_ico": buyer["ico"],
         "buyer_dic": buyer["dic"],
         "buyer_email": buyer["email"],
-        "stay_label": draft.get("stay_label"),
+        "stay_label": None,
         "total_haler": draft["total_haler"],
         "corrects_number": None,
         "correction_reason": None,
         "correction_date": None,
     }
+
+
+@router.get("/invoices")
+def invoices_list(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    rows = db.query(
+        "SELECT * FROM invoice WHERE owner_user_id IS ? ORDER BY issue_date DESC, id DESC",
+        (access.owner_id(request),),
+    )
+    return render(request, "invoices.html", {"nav": "invoices", "invoices": rows})
+
+
+@router.get("/invoices/new")
+def invoice_new(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entities = _entities(request)
+    entity = _chosen_entity(request, entities)
+    context = _form_context(request, entities, entity)
+    if not entity:
+        context["errors"] = [host_i18n.translate(_lang(request), "invoice.err.no_entity")]
+    return render(request, "invoice_form.html", context)
+
+
+@router.post("/invoices/preview")
+async def invoice_preview(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entities = _entities(request)
+    form = await request.form()
+    entity = _chosen_entity(request, entities, form)
+    if not entity:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    draft = _draft(request, entity, form)
+    pdf = invoices.invoice_pdf.render(
+        _preview_view(draft), draft["items"], draft["lang"], preview=True
+    )
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="nahled-faktura.pdf"'},
+    )
+
+
+@router.post("/invoices")
+async def invoice_issue(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entities = _entities(request)
+    form = await request.form()
+    entity = _chosen_entity(request, entities, form)
+    if not entity:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    draft = _draft(request, entity, form)
+    issues = invoices.validate_for_issue(draft)
+    if issues:
+        lang = _lang(request)
+        context = _form_context(
+            request,
+            entities,
+            entity,
+            errors=[host_i18n.translate(lang, issue.message) for issue in issues],
+        )
+        return render(request, "invoice_form.html", context, status_code=422)
+    invoice_id = invoices.issue(draft, access.owner_id(request))
+    number = db.query_one("SELECT number FROM invoice WHERE id = ?", (invoice_id,))["number"]
+    return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.issued_flash", number=number))
 
 
 @router.get("/invoices/{invoice_id}.pdf")
@@ -243,14 +216,13 @@ def invoice_detail(invoice_id: int, request: Request):
     invoice = _load_invoice(request, invoice_id)
     if not invoice:
         return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
+    items = db.query(
+        "SELECT * FROM invoice_item WHERE invoice_id = ? ORDER BY position", (invoice_id,)
+    )
     return render(
         request,
         "invoice_detail.html",
-        {
-            "nav": "invoices",
-            "invoice": invoice,
-            "issued": request.query_params.get("issued") == "1",
-        },
+        {"nav": "invoices", "invoice": invoice, "items": items},
     )
 
 
@@ -277,18 +249,20 @@ async def invoice_send(invoice_id: int, request: Request):
         return _back("/invoices", err=_flash(request, "flash.error.no_such_invoice"))
     if not invoice["buyer_email"]:
         return _back(f"/invoices/{invoice_id}", err=_flash(request, "invoice.err.no_email"))
-    apartment = access.apartment(request, invoice["apartment_id"]) if invoice["apartment_id"] else None
+    entity = access.entity(request, invoice["legal_entity_id"])
     token = invoice_links.download_token(invoice_id, invoice["pdf_sha256"] or "")
     url = f"{config.PUBLIC_BASE_URL}/invoice/d/{mail.CLAIM_SECRET_MARKER}"
     content = mail_notify.build_invoice_issued(
         lang=invoice["lang"],
-        property_name=mail_notify.property_label(apartment, invoice["lang"]),
+        property_name=entity["name"] if entity else "UbyHost",
         number=invoice["number"],
         total=invoices.invoice_pdf.money(invoice["total_haler"]),
         download_url=url,
         host=mail_notify.host_details(invoice["legal_entity_id"]),
     )
-    payload = mail_notify.guest_payload(apartment, content, invoice["lang"])
+    payload = mail_notify.guest_payload(
+        {"legal_entity_id": invoice["legal_entity_id"]}, content, invoice["lang"]
+    )
     payload[mail.CLAIM_SECRET_KEY] = db.encrypt_field(token)
     sent_before = db.query_one(
         "SELECT COUNT(*) AS n FROM email_outbox WHERE idempotency_key LIKE ?",
@@ -300,35 +274,11 @@ async def invoice_send(invoice_id: int, request: Request):
         to_email=invoice["buyer_email"],
         subject=content["subject"],
         payload=payload,
-        reservation_id=invoice["reservation_id"],
-        apartment_id=invoice["apartment_id"],
         owner_user_id=access.owner_id(request),
     )
     db.update("invoice", invoice_id, {"emailed_at": db.utcnow()})
     db.audit("invoice_sent", f"id={invoice_id}", owner_user_id=access.owner_id(request))
     return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.sent_flash"))
-
-
-@router.get("/invoice/d/{token}")
-def invoice_download(token: str, request: Request):
-    """Public: the token in the e-mail is the only credential the guest has."""
-    key = rate_limit.client_key(request, "invoice_download")
-    if rate_limit.blocked("invoice_download", key, 30, 3600):
-        return Response("Too many requests", status_code=429)
-    rate_limit.record("invoice_download", key)
-    invoice_id = invoice_links.read_download_token(token)
-    if not invoice_id:
-        return Response("Not found", status_code=404)
-    pdf = invoices.download_pdf(invoice_id)
-    return Response(
-        pdf,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": "attachment",
-            "Cache-Control": "no-store",
-            "X-Robots-Tag": "noindex",
-        },
-    )
 
 
 @router.post("/invoices/{invoice_id}/cancel")
@@ -355,3 +305,25 @@ async def invoice_cancel(invoice_id: int, request: Request):
         )
         return _back(f"/invoices/{invoice_id}", err=message)
     return _back(f"/invoices/{new_id}", msg=_flash(request, "invoice.cancelled_flash"))
+
+
+@router.get("/invoice/d/{token}")
+def invoice_download(token: str, request: Request):
+    """Public: the token in the e-mail is the only credential the recipient has."""
+    key = rate_limit.client_key(request, "invoice_download")
+    if rate_limit.blocked("invoice_download", key, 30, 3600):
+        return Response("Too many requests", status_code=429)
+    rate_limit.record("invoice_download", key)
+    invoice_id = invoice_links.read_download_token(token)
+    if not invoice_id:
+        return Response("Not found", status_code=404)
+    pdf = invoices.download_pdf(invoice_id)
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment",
+            "Cache-Control": "no-store",
+            "X-Robots-Tag": "noindex",
+        },
+    )

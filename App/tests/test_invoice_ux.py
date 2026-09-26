@@ -1,4 +1,4 @@
-"""Invoice host UI and routes (invoice step 6)."""
+"""Invoice host UI: the standalone free-form builder (routes)."""
 from __future__ import annotations
 
 import json
@@ -29,7 +29,6 @@ def _cleanup():
         "ON CONFLICT(key) DO UPDATE SET value = ''"
     )
     db.execute("DELETE FROM invoice_sequence WHERE legal_entity_id IN (SELECT id FROM legal_entity WHERE owner_user_id = ?)", (user_id,))
-    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
@@ -56,94 +55,95 @@ def host():
         _cleanup()
 
 
-def _stay():
-    now = db.utcnow()
-    owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
-    entity_id = db.insert(
-        "legal_entity",
-        {"name": "UI s.r.o.", "seat": "Praha 1", "ico": "04656679",
-         "registry_entry": "Fyzická osoba zapsaná v živnostenském rejstříku",
-         "vat_status": "non_payer", "invoice_due_days": 14,
-         "owner_user_id": owner, "created_at": now},
-    )
-    apartment_id = db.insert(
-        "apartment",
-        {"internal_name": "UI Flat", "owner_user_id": owner, "legal_entity_id": entity_id,
-         "permalink_token": "invoiceuitoken", "created_at": now},
-    )
-    reservation_id = db.insert(
-        "reservation",
-        {"apartment_id": apartment_id, "uid": "ui-1", "source": "booking",
-         "date_from": "2026-09-10", "date_to": "2026-09-14", "status": "active",
-         "created_at": now, "updated_at": now},
-    )
-    return apartment_id, reservation_id
+def _owner() -> int:
+    return db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
 
 
-def test_issue_form_is_two_clicks_with_defaults(host):
-    _apt, res = _stay()
-    page = host.get(f"/reservations/{res}/invoice/new")
+def _add_entity(**over):
+    values = {
+        "name": "UI s.r.o.", "seat": "Praha 1", "ico": "04656679",
+        "registry_entry": "Fyzická osoba zapsaná v živnostenském rejstříku",
+        "vat_status": "non_payer", "invoice_due_days": 14,
+        "owner_user_id": _owner(), "created_at": db.utcnow(),
+    }
+    values.update(over)
+    return db.insert("legal_entity", values)
+
+
+def _items(**over):
+    data = {
+        "item_description": ["Consulting"],
+        "item_quantity": ["2"],
+        "item_unit": ["h"],
+        "item_unit_price": ["1000"],
+        "item_vat_rate": ["21"],
+    }
+    data.update(over)
+    return data
+
+
+def test_the_builder_form_is_a_free_form_with_items(host):
+    _add_entity()
+    page = host.get("/invoices/new")
     assert page.status_code == 200
-    assert 'id="already_paid"' in page.text
-    assert "autofocus" in page.text
+    assert 'name="legal_entity_id"' in page.text
+    assert 'name="item_description"' in page.text
+    assert "data-add-item" in page.text
     assert 'formtarget="_blank"' in page.text
     assert "data-confirm" in page.text
-    # Works without JS: every input is in the HTML.
-    assert 'name="buyer_name"' in page.text
-    assert 'name="price_czk"' in page.text
 
 
-def test_issue_writes_a_pdf_and_redirects(host):
-    _apt, res = _stay()
+def test_issue_a_custom_invoice_and_download_the_pdf(host):
+    _add_entity()
     response = host.post(
-        f"/reservations/{res}/invoice",
-        data={"buyer_name": "Buyer", "price_czk": "4000", "already_paid": "1", "lang": "cs"},
+        "/invoices",
+        data={"buyer_name": "Buyer", "already_paid": "1", "lang": "cs", **_items()},
         follow_redirects=False,
     )
     assert response.status_code in (302, 303), response.text
-    location = response.headers["location"]
-    assert location.startswith("/invoices/")
-    clean = location.split("?")[0]
+    clean = response.headers["location"].split("?")[0]
+    assert clean.startswith("/invoices/")
     detail = host.get(clean)
     assert detail.status_code == 200
+    assert "Consulting" in detail.text
     pdf = host.get(f"{clean}.pdf")
     assert pdf.status_code == 200
     assert pdf.content.startswith(b"%PDF")
 
 
-def test_mark_paid_and_the_stay_panel_lists_the_document(host):
-    _apt, res = _stay()
+def test_no_operator_shows_an_error(host):
+    page = host.get("/invoices/new")
+    assert page.status_code == 200
+    assert "Assign an operator to this property first." in page.text
+
+
+def test_mark_paid(host):
+    _add_entity()
     response = host.post(
-        f"/reservations/{res}/invoice",
-        data={"buyer_name": "Buyer", "price_czk": "4000", "already_paid": "1", "lang": "cs"},
+        "/invoices",
+        data={"buyer_name": "Buyer", "already_paid": "1", "lang": "cs", **_items()},
         follow_redirects=False,
     )
-    invoice_id = int(response.headers["location"].rstrip("/").split("/")[-1].split("?")[0])
+    invoice_id = int(response.headers["location"].split("?")[0].rsplit("/", 1)[1])
     host.post(f"/invoices/{invoice_id}/paid", follow_redirects=False)
     assert db.query_one("SELECT marked_paid_at FROM invoice WHERE id = ?", (invoice_id,))["marked_paid_at"]
-    stayed = host.get(f"/reservations/{res}")
-    assert 'id="invoice"' in stayed.text
-    assert f"/invoices/{invoice_id}" in stayed.text
 
 
 def test_send_enqueues_a_mail_with_a_working_download_token(host, monkeypatch):
     from app import invoice_links, mail
 
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
-    _apt, res = _stay()
+    _add_entity()
     response = host.post(
-        f"/reservations/{res}/invoice",
+        "/invoices",
         data={"buyer_name": "Buyer", "buyer_email": "buyer@example.test",
-              "price_czk": "4000", "already_paid": "1", "lang": "cs"},
+              "already_paid": "1", "lang": "cs", **_items()},
         follow_redirects=False,
     )
-    clean = response.headers["location"].split("?")[0]
-    invoice_id = int(clean.rsplit("/", 1)[1])
+    invoice_id = int(response.headers["location"].split("?")[0].rsplit("/", 1)[1])
     host.post(f"/invoices/{invoice_id}/send", follow_redirects=False)
 
-    outbox = db.query_one(
-        "SELECT * FROM email_outbox WHERE kind = 'invoice_issued' ORDER BY id DESC"
-    )
+    outbox = db.query_one("SELECT * FROM email_outbox WHERE kind = 'invoice_issued' ORDER BY id DESC")
     assert outbox is not None
     payload = json.loads(outbox["payload"])
     assert mail.CLAIM_SECRET_MARKER in payload["text"]
@@ -153,6 +153,5 @@ def test_send_enqueues_a_mail_with_a_working_download_token(host, monkeypatch):
     assert invoice["emailed_at"]
     token = invoice_links.download_token(invoice_id, invoice["pdf_sha256"])
     pdf = host.get(f"/invoice/d/{token}")
-    assert pdf.status_code == 200
-    assert pdf.content.startswith(b"%PDF")
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
     assert host.get("/invoice/d/garbage").status_code == 404

@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS apartment (
     guest_message         TEXT,
     notes                 TEXT,
     passport_photo_policy TEXT NOT NULL DEFAULT 'off',
-    stay_fee_policy       TEXT NOT NULL DEFAULT 'on',
+    stay_fee_policy       TEXT NOT NULL DEFAULT 'off',
     stay_fee_rate_czk     INTEGER NOT NULL DEFAULT 0,
     stay_fee_payment_link TEXT,
     stay_fee_cash         INTEGER NOT NULL DEFAULT 1,
@@ -524,7 +524,7 @@ ADDED_COLUMNS = (
     # rebuilt in the host's language at render time instead of storing prose.
     ("alert", "params", "TEXT"),
     # Stay fee (poplatek z pobytu) — see docs/plans/PLAN_POPLATEK_Z_POBYTU.md
-    ("apartment", "stay_fee_policy", "TEXT NOT NULL DEFAULT 'on'"),
+    ("apartment", "stay_fee_policy", "TEXT NOT NULL DEFAULT 'off'"),
     ("apartment", "stay_fee_rate_czk", "INTEGER NOT NULL DEFAULT 0"),
     ("apartment", "stay_fee_payment_link", "TEXT"),
     ("apartment", "stay_fee_cash", "INTEGER NOT NULL DEFAULT 1"),

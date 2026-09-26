@@ -4,6 +4,9 @@
 {% block content %}
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('invoices.title'), t('invoices.lede')) }}
+<div class="panel tight">
+  <a class="btn accent primary" href="/invoices/new">{{ t('invoice.new') }}</a>
+</div>
 {% if invoices %}
 <div class="panel tight scroll-x">
   <table class="table-cards">

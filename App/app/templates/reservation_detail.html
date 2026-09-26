@@ -384,26 +384,6 @@
   {% endset %}
   {% set money_panels = money_panels + [stay_fee_panel] %}
 {% endif %}
-{% set invoice_panel %}
-<section class="panel" id="invoice">
-  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
-    <h2 style="margin:0">{{ t('nav.invoices') }}</h2>
-    <a class="btn small" href="/reservations/{{ reservation.id }}/invoice/new">{{ t('invoice.new') }}</a>
-  </div>
-  {% if stay_invoices %}
-  <ul class="fee-rows">
-    {% for inv in stay_invoices %}
-    <li class="fee-row"><div class="fee-row-main">
-      <a href="/invoices/{{ inv.id }}">{{ inv.number }}</a>
-      <span class="small muted">{{ t('invoice.kind.' ~ inv.kind) }}</span>
-      <span class="fee-amount">{{ inv.total_haler // 100 }} Kč</span>
-    </div></li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-</section>
-{% endset %}
-{% set money_panels = money_panels + [invoice_panel] %}
 {% if money_panels %}
 <section id="money">
   <div class="section-heading"><h2>{{ t('stay.detail.money.title') }}</h2></div>
