@@ -108,6 +108,18 @@ def country_codes() -> Dict[str, Dict[str, str]]:
     return {c["code"]: c for c in countries()}
 
 
+def ico_ok(ico: str) -> bool:
+    """Czech IČO: 8 digits, the last is the mod-11 check digit."""
+    text = (ico or "").strip()
+    if len(text) != 8 or not text.isdigit():
+        return False
+    weights = (8, 7, 6, 5, 4, 3, 2)
+    total = sum(int(digit) * weight for digit, weight in zip(text[:7], weights))
+    remainder = total % 11
+    check = 1 if remainder == 0 else 0 if remainder == 1 else 11 - remainder
+    return int(text[7]) == check
+
+
 def country_name(code: str, lang: str = "en") -> str:
     entry = country_codes().get((code or "").upper())
     if not entry:

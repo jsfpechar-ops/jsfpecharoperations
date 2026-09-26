@@ -53,6 +53,40 @@
              value="{{ entity.bic or '' if entity else '' }}">
     </div>
   </div>
+  <div class="grid">
+    <div class="field">
+      <label for="{{ prefix }}vat_status">{{ t('entities.vat_status.label') }}</label>
+      <select id="{{ prefix }}vat_status" name="vat_status">
+        <option value="non_payer" {% if (entity.vat_status if entity else 'non_payer') == 'non_payer' %}selected{% endif %}>{{ t('entities.vat_status.non_payer') }}</option>
+        <option value="identified" {% if entity and entity.vat_status == 'identified' %}selected{% endif %}>{{ t('entities.vat_status.identified') }}</option>
+        <option value="payer" {% if entity and entity.vat_status == 'payer' %}selected{% endif %}>{{ t('entities.vat_status.payer') }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="{{ prefix }}registry_entry">{{ t('entities.registry.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <input type="text" id="{{ prefix }}registry_entry" name="registry_entry"
+             value="{{ entity.registry_entry or '' if entity else '' }}"
+             placeholder="{{ t('entities.registry.trade') }}">
+    </div>
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label for="{{ prefix }}invoice_prefix">{{ t('entities.invoice_prefix.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <input type="text" id="{{ prefix }}invoice_prefix" name="invoice_prefix" maxlength="6"
+             value="{{ entity.invoice_prefix or '' if entity else '' }}">
+    </div>
+    <div class="field">
+      <label for="{{ prefix }}invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <input type="number" id="{{ prefix }}invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric">
+      <div class="hint">{{ t('entities.invoice_next.hint') }}</div>
+    </div>
+    <div class="field">
+      <label for="{{ prefix }}invoice_due_days">{{ t('entities.invoice_due.label') }}</label>
+      <input type="number" id="{{ prefix }}invoice_due_days" name="invoice_due_days" min="0" max="365" inputmode="numeric"
+             value="{{ entity.invoice_due_days if entity else 14 }}">
+    </div>
+  </div>
+  <p class="hint">{{ t('entities.invoice.snapshot_hint') }}</p>
 {% endmacro %}
 
 {% block content %}
