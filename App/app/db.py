@@ -48,6 +48,12 @@ CREATE TABLE IF NOT EXISTS legal_entity (
     bank_account  TEXT,
     iban          TEXT,
     bic           TEXT,
+    vat_status               TEXT NOT NULL DEFAULT 'non_payer',
+    registry_entry           TEXT,
+    invoice_prefix           TEXT,
+    invoice_next_number      INTEGER,
+    invoice_next_number_year INTEGER,
+    invoice_due_days         INTEGER NOT NULL DEFAULT 14,
     owner_user_id INTEGER REFERENCES user_account(id),
     created_at    TEXT NOT NULL
 );
@@ -318,6 +324,114 @@ CREATE TABLE IF NOT EXISTS console_mail_log (
     body_html  TEXT,
     created_at TEXT NOT NULL
 );
+
+-- --- invoices (docs/plans/PLAN_GUEST_INVOICE_FEATURE.md; host-only Phase 1) ---
+
+CREATE TABLE IF NOT EXISTS invoice_sequence (
+    legal_entity_id INTEGER NOT NULL REFERENCES legal_entity(id),
+    year            INTEGER NOT NULL,
+    last_no         INTEGER NOT NULL,
+    PRIMARY KEY (legal_entity_id, year)
+);
+
+CREATE TABLE IF NOT EXISTS invoice (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    legal_entity_id      INTEGER NOT NULL REFERENCES legal_entity(id),
+    apartment_id         INTEGER REFERENCES apartment(id),
+    reservation_id       INTEGER REFERENCES reservation(id) ON DELETE SET NULL,
+    kind                 TEXT NOT NULL CHECK (kind IN ('invoice','storno','corrective')),
+    corrects_invoice_id  INTEGER REFERENCES invoice(id),
+    correction_reason    TEXT,
+    correction_date      TEXT,
+    seq_year             INTEGER NOT NULL,
+    seq_no               INTEGER NOT NULL,
+    number               TEXT NOT NULL,
+    vs                   TEXT NOT NULL,
+    lang                 TEXT NOT NULL CHECK (lang IN ('cs','en')),
+    currency             TEXT NOT NULL DEFAULT 'CZK' CHECK (currency = 'CZK'),
+    vat_status           TEXT NOT NULL,
+    issue_date           TEXT NOT NULL,
+    duzp                 TEXT,
+    due_date             TEXT,
+    paid_on              TEXT,
+    paid_via             TEXT,
+    seller_name TEXT NOT NULL, seller_seat TEXT NOT NULL, seller_ico TEXT, seller_dic TEXT,
+    seller_registry TEXT, seller_bank_account TEXT, seller_iban TEXT, seller_bic TEXT,
+    seller_email TEXT, seller_phone TEXT,
+    buyer_name TEXT NOT NULL, buyer_street TEXT, buyer_city TEXT, buyer_zip TEXT,
+    buyer_country TEXT, buyer_ico TEXT, buyer_dic TEXT, buyer_email TEXT,
+    stay_from            TEXT, stay_to TEXT, stay_label TEXT,
+    total_base_haler     INTEGER,
+    total_vat_haler      INTEGER,
+    total_haler          INTEGER NOT NULL,
+    pdf_blob             BLOB,
+    pdf_sha256           TEXT,
+    issued_at            TEXT,
+    issued_by            INTEGER REFERENCES user_account(id),
+    marked_paid_at       TEXT,
+    emailed_at           TEXT,
+    owner_user_id        INTEGER REFERENCES user_account(id),
+    created_at           TEXT NOT NULL,
+    UNIQUE (legal_entity_id, number),
+    UNIQUE (legal_entity_id, seq_year, seq_no)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invoice_one_correction
+    ON invoice (corrects_invoice_id) WHERE corrects_invoice_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_invoice_reservation ON invoice (reservation_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_owner ON invoice (owner_user_id, issue_date);
+
+CREATE TABLE IF NOT EXISTS invoice_item (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id   INTEGER NOT NULL REFERENCES invoice(id),
+    position     INTEGER NOT NULL,
+    kind         TEXT NOT NULL CHECK (kind IN ('accommodation','stay_fee','other')),
+    description  TEXT NOT NULL,
+    quantity     INTEGER NOT NULL DEFAULT 1,
+    unit         TEXT NOT NULL DEFAULT '',
+    vat_rate     INTEGER,
+    base_haler   INTEGER,
+    vat_haler    INTEGER,
+    gross_haler  INTEGER NOT NULL,
+    UNIQUE (invoice_id, position)
+);
+
+CREATE TRIGGER IF NOT EXISTS invoice_issued_guard
+BEFORE UPDATE OF legal_entity_id, apartment_id, kind, corrects_invoice_id, correction_reason,
+    correction_date, seq_year, seq_no, number, vs, lang, currency, vat_status, issue_date, duzp,
+    due_date, paid_on, paid_via, seller_name, seller_seat, seller_ico, seller_dic, seller_registry,
+    seller_bank_account, seller_iban, seller_bic, seller_email, seller_phone, buyer_name,
+    buyer_street, buyer_city, buyer_zip, buyer_country, buyer_ico, buyer_dic, buyer_email,
+    stay_from, stay_to, stay_label, total_base_haler, total_vat_haler, total_haler,
+    pdf_blob, pdf_sha256, issued_at, issued_by
+ON invoice
+WHEN OLD.issued_at IS NOT NULL
+BEGIN
+    SELECT RAISE(ABORT, 'invoice is issued and immutable');
+END;
+
+CREATE TRIGGER IF NOT EXISTS invoice_delete_guard
+BEFORE DELETE ON invoice
+WHEN OLD.issued_at IS NOT NULL
+ AND COALESCE((SELECT value FROM settings WHERE key = 'invoice_purge_unlock'), '') <> '1'
+BEGIN
+    SELECT RAISE(ABORT, 'invoice is issued and immutable');
+END;
+
+CREATE TRIGGER IF NOT EXISTS invoice_item_insert_guard
+BEFORE INSERT ON invoice_item
+WHEN (SELECT issued_at FROM invoice WHERE id = NEW.invoice_id) IS NOT NULL
+BEGIN SELECT RAISE(ABORT, 'invoice is issued and immutable'); END;
+
+CREATE TRIGGER IF NOT EXISTS invoice_item_update_guard
+BEFORE UPDATE ON invoice_item
+WHEN (SELECT issued_at FROM invoice WHERE id = OLD.invoice_id) IS NOT NULL
+BEGIN SELECT RAISE(ABORT, 'invoice is issued and immutable'); END;
+
+CREATE TRIGGER IF NOT EXISTS invoice_item_delete_guard
+BEFORE DELETE ON invoice_item
+WHEN (SELECT issued_at FROM invoice WHERE id = OLD.invoice_id) IS NOT NULL
+ AND COALESCE((SELECT value FROM settings WHERE key = 'invoice_purge_unlock'), '') <> '1'
+BEGIN SELECT RAISE(ABORT, 'invoice is issued and immutable'); END;
 """
 
 
@@ -347,6 +461,23 @@ def cursor():
     try:
         cur = conn.cursor()
         cur.execute("BEGIN")
+        try:
+            yield cur
+            cur.execute("COMMIT")
+        except Exception:
+            cur.execute("ROLLBACK")
+            raise
+    finally:
+        conn.close()
+
+
+@contextmanager
+def immediate():
+    """Like cursor(), but takes the write lock before the first read."""
+    conn = connect()
+    try:
+        cur = conn.cursor()
+        cur.execute("BEGIN IMMEDIATE")
         try:
             yield cur
             cur.execute("COMMIT")
@@ -407,6 +538,13 @@ ADDED_COLUMNS = (
     ("guest", "fee_claim", "TEXT"),
     ("guest", "fee_host_decision", "TEXT"),
     ("guest", "fee_host_reason", "TEXT"),
+    # Invoices (docs/plans/PLAN_GUEST_INVOICE_FEATURE.md)
+    ("legal_entity", "vat_status", "TEXT NOT NULL DEFAULT 'non_payer'"),
+    ("legal_entity", "registry_entry", "TEXT"),
+    ("legal_entity", "invoice_prefix", "TEXT"),
+    ("legal_entity", "invoice_next_number", "INTEGER"),
+    ("legal_entity", "invoice_next_number_year", "INTEGER"),
+    ("legal_entity", "invoice_due_days", "INTEGER NOT NULL DEFAULT 14"),
 )
 
 
