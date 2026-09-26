@@ -85,6 +85,16 @@
         {{ err_for('nationality') }}
       </div>
       <div class="field">
+        <label for="doc_type">{{ t('guest.doc_type.label') }}</label>
+        <select class="{{ bad('doc_type') }}" id="doc_type" name="doc_type">
+          <option value=""></option>
+          {% for code in doc_types %}
+            <option value="{{ code }}" {% if field_val('doc_type') == code %}selected{% endif %}>{{ t('guest.doc_type.' ~ code) }}</option>
+          {% endfor %}
+        </select>
+        {{ err_for('doc_type') }}
+      </div>
+      <div class="field">
         <label for="doc_number">{{ t('guest.admin.document') }}</label>
         <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
                value="{{ field_val('doc_number') }}">

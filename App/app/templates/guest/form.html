@@ -127,6 +127,16 @@
     </div>
 
     <div class="g-field" id="doc-wrap">
+      {% if fee_active %}
+      <label for="doc_type">{{ t('doc_type') }}</label>
+      <select id="doc_type" name="doc_type" class="{{ bad('doc_type') }}" {{ invalid('doc_type') }}
+              data-doc-type style="margin-bottom:14px">
+        {% for code in doc_types %}
+          <option value="{{ code }}" {% if (val('doc_type') or ('op' if val('nationality') == 'CZE' else 'pas')) == code %}selected{% endif %}>{{ t('doc_type_' ~ code) }}</option>
+        {% endfor %}
+      </select>
+      {{ err_for('doc_type') }}
+      {% endif %}
       <label for="doc_number">{{ t('doc_number') }}</label>
       <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
              autocapitalize="characters" spellcheck="false" autocorrect="off"
@@ -171,6 +181,19 @@
         {% endfor %}
       </select>
     </div>
+
+  {% if fee_active %}
+  <details class="g-more" {% if val('fee_claim') %}open{% endif %}>
+    <summary>{{ t('extra_info_title') }}</summary>
+    <p class="g-intro">{{ t('extra_info_help') }}</p>
+    <label class="g-radio"><input type="radio" name="fee_claim" value="" {% if not val('fee_claim') %}checked{% endif %}> {{ t('extra_info_none') }}</label>
+    <label class="g-radio"><input type="radio" name="fee_claim" value="disability_card" {% if val('fee_claim') == 'disability_card' %}checked{% endif %}> {{ t('extra_info_disability_card') }}</label>
+    {% if municipality %}
+    <label class="g-radio"><input type="radio" name="fee_claim" value="local_resident" {% if val('fee_claim') == 'local_resident' %}checked{% endif %}> {{ t('extra_info_local_resident', municipality=municipality) }}</label>
+    {% endif %}
+    <label class="g-radio"><input type="radio" name="fee_claim" value="other" {% if val('fee_claim') == 'other' %}checked{% endif %}> {{ t('extra_info_other') }}</label>
+  </details>
+  {% endif %}
   </div>
 
   <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">

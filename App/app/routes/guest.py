@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, stay_fee, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -1294,6 +1294,9 @@ def _form_context(
                 (apartment["passport_photo_policy"] or "off").strip().lower()
                 == "required_foreign"
             ),
+            "fee_active": stay_fee.is_active(apartment),
+            "doc_types": validation.DOC_TYPES,
+            "municipality": apartment["addr_obec"] or "",
         }
     )
     return context
@@ -1425,6 +1428,11 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             return _unavailable(request, lang, "form_locked", 403, token)
 
     child_in_passport = bool(form.get("child_in_passport"))
+    # A child in a parent's passport has no document of its own: store the
+    # passport code so the stay-fee register still has a "druh průkazu".
+    fee_active = stay_fee.is_active(apartment)
+    doc_type = "pas" if child_in_passport else (form.get("doc_type") or "").strip()
+    fee_claim = (form.get("fee_claim") or "").strip()
     # One extractor for the host entry form and this one: the fields are the
     # same, and a field read in only one of them silently drops data from
     # whichever path was forgotten.
@@ -1484,6 +1492,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         issues.append(signature_issue)
     if not form.get("legal_ack"):
         issues.append(validation.Issue("legal_ack", translate("legal_ack_missing")))
+    if fee_active and doc_type not in validation.DOC_TYPES:
+        issues.append(validation.Issue("doc_type", translate("doc_type_missing")))
 
     passport_upload = form.get("passport_photo")
     passport_bytes = None
@@ -1541,6 +1551,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 "signature": signature if validation.is_valid_signature(signature) else "",
                 "party_size": party_raw,
                 "legal_ack": form.get("legal_ack") or "",
+                "doc_type": doc_type,
+                "fee_claim": fee_claim,
             }
         )
         return _with_lang(render_guest(request, "guest/form.html", context, status_code=422), lang)
@@ -1566,6 +1578,8 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 else reporting.PENDING
             ),
             "last_errors": None,
+            "doc_type": doc_type if doc_type in validation.DOC_TYPES else None,
+            "fee_claim": fee_claim if fee_claim in stay_fee.CLAIM_CODES else None,
         }
     )
     if reporting.guest_correction_resets_attempts(existing):
@@ -1613,6 +1627,10 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         actor="guest",
         owner_user_id=apartment["owner_user_id"],
     )
+    if fee_active:
+        # Freeze the rate before the completion mail is queued, so the e-mail
+        # shows the same amount the guest sees.
+        stay_fee.snapshot_rate(reservation_id)
     claim.maybe_notify_completion(
         db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
         apartment,

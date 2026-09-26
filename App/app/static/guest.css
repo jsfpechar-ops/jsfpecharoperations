@@ -980,6 +980,13 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
   }
 }
 
+.g-more { margin-top: 18px; border-top: 1px solid var(--g-line); padding-top: 14px; }
+.g-more summary { cursor: pointer; color: var(--g-muted); font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.g-more[open] summary { color: var(--g-ink); }
+.g-radio { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; padding: 10px 0; border-top: 1px solid var(--g-line); color: var(--g-ink); }
+.g-radio:first-of-type { border-top: 0; }
+.g-radio input { margin-top: 3px; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
