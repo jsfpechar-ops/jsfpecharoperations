@@ -12,6 +12,7 @@ from app.main import app
 
 PASSWORD = "Secure-Password-123"
 USERNAME = "stay-fee-host"
+OTHER_USERNAME = "stay-fee-other"
 TOKEN = "hostfeestay"
 IBAN = "CZ9106000000000000000123"
 
@@ -20,11 +21,7 @@ def _owner() -> int:
     return db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
 
 
-def _cleanup():
-    owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
-    if not owner:
-        return
-    user_id = owner["id"]
+def _delete_owner(user_id: int):
     db.execute(
         "DELETE FROM guest WHERE reservation_id IN "
         "(SELECT id FROM reservation WHERE apartment_id IN "
@@ -41,6 +38,13 @@ def _cleanup():
     db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
     db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
+
+
+def _cleanup():
+    for username in (USERNAME, OTHER_USERNAME):
+        row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+        if row:
+            _delete_owner(row["id"])
 
 
 @pytest.fixture
@@ -223,3 +227,92 @@ def test_headcount_warning_when_fewer_signed_than_expected(host):
     _add_guest(res_id)
     page = host.get(f"/reservations/{res_id}")
     assert "Only 1 of 3" in page.text
+
+
+def test_property_page_has_the_stay_fee_panel_and_keeps_the_values(host):
+    apt_id, res_id = _make_stay()
+    page = host.get(f"/apartments/{apt_id}")
+    assert 'id="stay-fee-settings"' in page.text
+    assert 'href="#stay-fee-settings"' in page.text
+    host.post(
+        f"/apartments/{apt_id}?lang=en",
+        data={"internal_name": "Host Fee Flat", "stay_fee_rate_czk": "30", "stay_fee_policy": "on"},
+        follow_redirects=False,
+    )
+    assert db.query_one("SELECT stay_fee_rate_czk FROM apartment WHERE id = ?", (apt_id,))[
+        "stay_fee_rate_czk"
+    ] == 30
+
+
+def _make_other_stay():
+    now = db.utcnow()
+    other = db.query_one("SELECT id FROM user_account WHERE username = ?", (OTHER_USERNAME,))
+    if not other:
+        auth.create_account(OTHER_USERNAME, PASSWORD, "Other Host", must_change_password=False)
+        other = db.query_one(
+            "SELECT id FROM user_account WHERE username = ?", (OTHER_USERNAME,)
+        )
+    other_id = other["id"]
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Other Fee Flat",
+            "owner_user_id": other_id,
+            "stay_fee_rate_czk": 50,
+            "permalink_token": "otherfeestay",
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "uid": "other-fee-1",
+            "source": "booking",
+            "date_from": "2026-09-10",
+            "date_to": "2026-09-14",
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    _add_guest(reservation_id)
+    return apartment_id
+
+
+def test_monthly_page_lists_this_months_stay(host):
+    apt_id, res_id = _make_stay(expected=1)
+    _add_guest(res_id)
+    page = host.get("/stay-fees?month=2026-09")
+    assert page.status_code == 200
+    assert "Host Fee Flat" in page.text
+    assert "200" in page.text
+
+
+def test_monthly_csv_has_a_bom_semicolons_and_one_row_per_signed_guest(host):
+    apt_id, res_id = _make_stay(expected=3)
+    _add_guest(res_id, claim="other")
+    _add_guest(res_id)
+    _add_guest(res_id, signed=False)  # unsigned: excluded
+    response = host.get("/stay-fees.csv?month=2026-09")
+    assert response.status_code == 200
+    assert response.content.startswith("\ufeff".encode("utf-8"))
+    text = response.content.decode("utf-8-sig")
+    lines = [line for line in text.splitlines() if line.strip()]
+    assert ";" in lines[0]
+    assert "Zařízení" in lines[0]
+    assert "Zaplaceno" in lines[0]
+    assert len(lines) == 3  # header + 2 signed guests
+
+
+def test_other_owners_stays_never_appear(host):
+    apt_id, res_id = _make_stay(expected=1)
+    _add_guest(res_id)
+    _make_other_stay()
+    page = host.get("/stay-fees?month=2026-09")
+    assert "Host Fee Flat" in page.text
+    assert "Other Fee Flat" not in page.text
+    csv_text = host.get("/stay-fees.csv?month=2026-09").content.decode("utf-8-sig")
+    assert "Host Fee Flat" in csv_text
+    assert "Other Fee Flat" not in csv_text
+
