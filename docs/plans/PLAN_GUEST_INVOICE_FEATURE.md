@@ -26,6 +26,28 @@ If this plan is built first, do **stay-fee steps 1, 2 and 4** (DB columns, `paym
 
 ---
 
+## SCOPE DECISION (2026-09-26) — READ FIRST
+
+**Invoices are host-only. Phase 2 (guest requests) is DROPPED.**
+
+- Build **only Phase 1 (steps 1–9)**. A guest never sees or opens an invoice; only the host generates documents for a completed stay.
+- **"Send to guest e-mail" is kept** as a host-initiated click only (step 8): the host types the buyer's e-mail and clicks *Send*; UbyHost sends one "invoice ready" e-mail with a download link. No automatic send, and guests cannot trigger anything.
+- **Drop these Phase 2 pieces (do not build):**
+  - `apartment.invoice_requests_policy` toggle (§3.5, §5, step 10)
+  - request tokens and the `invoice_request` table (§5); keep `invoice_links.py` **download-token part only**
+  - public `/invoice` page + Turnstile + rate limits (§3.2)
+  - guest request form `/invoice/r/{token}` (§3.4)
+  - buyer ARES lookup in the guest form (§4.2); keep seller ARES in the entity form (§3.5/§4.1)
+  - `invoice_request_link` and `invoice_request_host` mail kinds (§9); keep `invoice_issued`
+  - the `invoice_requested` alert (§9) and request expiry/cleanup (§9 scheduler)
+- **Kept**: entity invoice settings (VAT status, registry entry, numbering), immutability triggers, PDF, numbering safety, corrections (storno/ODD), retention purge.
+- **Code mismatch**: `config.SECRET_KEY` does not exist in the repo — use `config.secret_key()` (see `auth.py`). Applied in §3.3.
+- **Deploy to staging first** (`ubyhost-staging`), not production.
+
+**UX bar (owner, 2026-09-26)**: "a kid or an old man could use it" — one screen, two clicks, defaults pre-filled, no accounting jargon, no clutter. An unused feature renders nothing.
+
+---
+
 ## 0. Rules for the implementing agent (read first)
 
 You are implementing a finished design. Do not redesign it.
@@ -197,8 +219,8 @@ Paths C and D exist because completed stays are deliberately unreachable from th
 `App/app/invoice_links.py`:
 
 ```text
-_REQ = URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-invoice-request")
-_DL  = URLSafeTimedSerializer(config.SECRET_KEY, salt="ubyhost-invoice-download")
+_REQ = URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-invoice-request")  # unused: Phase 2 dropped
+_DL  = URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-invoice-download")
 REQUEST_MAX_AGE = 7 * 86400          # guest-requested (path C/D)
 HOST_LINK_MAX_AGE = 30 * 86400       # host-issued (path B)
 DOWNLOAD_MAX_AGE = 30 * 86400
@@ -889,7 +911,7 @@ Every handler starts with `guard = auth.require_login(request)` and scopes by ow
 
 ## 13. Build this in this order (one commit per step; tests green after each)
 
-### Phase 1 — host issues invoices (usable on its own)
+### Phase 1 — host issues invoices (usable on its own) — **THIS IS THE FULL SCOPE**
 
 | # | Step | Files | Done when |
 |---|---|---|---|
@@ -904,7 +926,7 @@ Every handler starts with `guard = auth.require_login(request)` and scopes by ow
 | 8 | *Send to customer* (host click only) | `mail.py` `KINDS` += `invoice_issued`, `mail_notify.py` builder, `invoice_links.py` (download token only), `GET /invoice/d/{token}` in `routes/invoice_public.py` | the mail contains a working download link; the outbox body contains the marker, not the token |
 | 9 | Retention purge wired into `/settings/purge-expired` | `invoices.py`, `routes/admin.py` | a test with a 2014 invoice deletes it; a 2016 one stays (when today = 2026) |
 
-### Phase 2 — guests request invoices
+### Phase 2 — guests request invoices — **NOT BUILT (dropped 2026-09-26; see SCOPE DECISION at the top)**
 
 | # | Step | Files | Done when |
 |---|---|---|---|
@@ -930,6 +952,21 @@ Every handler starts with `guard = auth.require_login(request)` and scopes by ow
 9. The amount invoiced for platform bookings: the guest's total paid to the platform, or the accommodation price net of the platform's guest fee.
 10. Whether a CS-labelled bilingual document is acceptable for EN-speaking foreign business buyers (DŘ allows the tax authority to request a translation).
 11. GDPR: the buyer snapshot is kept for 10 years under Art. 6(1)(c); the public request flow uses the stored e-mail only to send the link.
+
+### 14.1 Sign-off status (researched 2026-09-26 — official sources)
+
+**Confirmed (no further action):**
+- 12% DPH na ubytování, 21% doplňkové služby — §47 odst. 1 písm. i zákona o DPH.
+- 15-day rule — §28 odst. 8 (Finanční správa).
+- 12 povinných náležitostí daňového dokladu — §29 odst. 1.
+- Retention 10 let pro plátce — §35 odst. 2; ZoÚ §31 = 5 let (účetní jednotka).
+- Registry entry is required for non-payers — §435 OZ; "Nejsem plátce DPH" is **voluntary**.
+
+**Updated flags:**
+- **FLAG-8**: 10 years is conservative. Non-payer OSVČ (daňová evidence) = 3 roky (daňový řád); účetní jednotka = 5 let (ZoÚ §31); plátce DPH = 10 let (§35). Consider 5 years for non-payers.
+- **FLAG-1**: the one real open question — whether a **private (non-živnost) host** can issue an invoice at all. Needs a yes/no from an accountant.
+
+**Still open (payer-only, skip if all hosts are non-payers):** FLAG-2, FLAG-3, FLAG-5, FLAG-6, FLAG-7.
 
 ---
 

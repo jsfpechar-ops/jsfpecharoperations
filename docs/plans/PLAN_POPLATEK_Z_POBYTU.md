@@ -19,6 +19,15 @@ Research date for all sources: **2026-09-23** (§17).
 
 ---
 
+## SCOPE NOTE (2026-09-26) — READ FIRST
+
+- **Optional at property level** — confirmed. Rate `0`/empty = feature off; a host opts in per property by typing a rate. Nothing renders for a guest unless a rate is set.
+- **Code mismatch**: `validation.age_on()` referenced in §3 and §6 does **not** exist in the repo. Add it in **step 1** (see §16): a small helper returning age in whole years between a birth `date` and a `when` `date`. Until then §6's reference code is not runnable verbatim.
+- **Deploy to staging first** (`ubyhost-staging`), not production.
+- **UX bar (owner, 2026-09-26)**: "a kid or an old man could use it" — calm, one card for the guest, one panel for the host, nothing overwhelming. Unused = invisible (rate 0 shows nothing anywhere).
+
+---
+
 ## 0. Rules for the implementing agent (read first)
 
 You are implementing a finished design. Do not redesign it.
@@ -102,7 +111,7 @@ No new colored chips in the stays list (DESIGN.md: "do not crowd tables with man
 | Payload sanitising | `routes/admin.py::_apartment_payload` | add the new fields next to the passport lines |
 | Column migration | `db.py` `SCHEMA` + `ADDED_COLUMNS` + `_add_missing_columns` | new columns |
 | Signed-form check | `reporting.guest_has_signature(guest)` | who is counted |
-| Age maths | `validation.normalise_birth_date`, `validation.age_on(birth, when)` | the under-18 rule |
+| Age maths | `validation.normalise_birth_date` + `validation.age_on(birth, when)` — **`age_on` must be added in step 1** | the under-18 rule |
 | Date parsing | `validation.parse_iso_date` | nights |
 | QR PNG example | `routes/admin_accounts.py::_totp_qr_data` | the same idea in `payments.qr_data_uri` |
 | Stay hub | `routes/guest.py::stay_overview` → `templates/guest/stay.html` | fee card |
@@ -1258,13 +1267,22 @@ Values for `export_csv`:
 4. The neutral "Additional information" wording, including whether to also ask for evidence.
 5. Counting a stay in the month of checkout.
 
+### Confirmed against official sources (2026-09-26)
+
+- §3a(1): subject = pobyt **nejvýše 60 po sobě jdoucích kalendářních dnů** (MF ČR interpretation; e-Sbírka 565/1990 Sb.).
+- §3b: exempt = **mladší 18 let** + nevidomá / ZTP/P + průvodce.
+- §3c: base = **započaté dny, minus den počátku** ("platí se za každou noc" — municipal guidance).
+- §3d: **max 50 Kč**; §3f: provider collects from guest; §3g: evidenční kniha, trvalost zápisů, **6 let**.
+
+These confirm the plan's rate cap, under-18 rule, 60-day logic (`nights + 1 > 60`), and the CSV/`doc_type` register.
+
 ---
 
 ## 16. Build this in this order (one commit per step; tests green after each)
 
 | # | Step | Files | Done when |
 |---|---|---|---|
-| 1 | DB columns + `DOC_TYPES` | `db.py`, `validation.py` | §4 acceptance; all existing tests pass |
+| 1 | DB columns + `DOC_TYPES` + `validation.age_on()` | `db.py`, `validation.py` | §4 acceptance; `age_on` exists; all existing tests pass |
 | 2 | `payments.py` + tests | `payments.py`, `tests/test_payments.py` | every §5 row passes |
 | 3 | `stay_fee.py` core + tests | `stay_fee.py`, `tests/test_stay_fee.py` | E1–E11 pass |
 | 4 | Entity bank account | `routes/admin.py` (`ENTITY_FIELDS`, create/update), `templates/entities.html`, §13.2 entity keys | the entity rows of `test_stay_fee_settings.py` pass |
