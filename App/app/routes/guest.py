@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, stay_fee, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, payments, rate_limit, reporting, security, stay_fee, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -707,6 +707,41 @@ def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[s
     return row
 
 
+def _stay_fee_view(reservation, apartment, people, lang, *, complete: bool, czech_first: bool):
+    if not stay_fee.shows_to_guest(apartment):
+        return None
+    summary = stay_fee.stay_summary(reservation, apartment)
+    if not summary or not summary["people"]:
+        return None
+    t = i18n.translator(lang)
+    labels = {row["id"]: (row["name"] or f"{t('person')} {row['index']}") for row in people}
+    lines = [
+        {
+            "label": labels.get(p["guest_id"], t("person")),
+            "nights": p["nights"],
+            "amount": stay_fee.format_czk(p["amount_czk"]),
+        }
+        for p in summary["people"]
+    ]
+    pay = stay_fee.payment_details(reservation, apartment, summary)
+    qr = ""
+    if pay["iban"] and summary["total_czk"] > 0 and not summary["paid_at"]:
+        qr = payments.qr_data_uri(
+            payments.spayd(pay["iban"], summary["total_czk"], pay["vs"], pay["reference"], pay["bic"])
+        )
+    return {
+        "rate": summary["rate_czk"],
+        "lines": lines,
+        "total": stay_fee.format_czk(summary["total_czk"]),
+        "total_raw": summary["total_czk"],
+        "paid": bool(summary["paid_at"]),
+        "complete": complete,
+        "czech_first": czech_first,
+        "qr": qr,
+        **pay,
+    }
+
+
 def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editing: bool) -> Optional[str]:
     if editing or db.query_one("SELECT 1 AS x FROM guest WHERE reservation_id = ?", (reservation_id,)):
         return _guest_link(token, reservation_id) + _lang_q(lang)
@@ -958,6 +993,10 @@ def stay_overview(token: str, reservation_id: int, request: Request):
         )
 
     remaining = (expected - progress["filled"]) if expected is not None else None
+    czech_first = any(
+        g["id"] in owned and (g["nationality"] or "").upper() == validation.CZECH_CODE
+        for g in progress["guests"]
+    ) or (not owned and lang == "cs")
     context = _shared(request, token, lang, apartment)
     context.update(
         {
@@ -980,6 +1019,11 @@ def stay_overview(token: str, reservation_id: int, request: Request):
             "just_reported": (
                 request.query_params.get("saved") == "1"
                 and any(person["mine"] and person["sent"] for person in people)
+            ),
+            "stay_fee": _stay_fee_view(
+                reservation, apartment, people, lang,
+                complete=remaining is not None and remaining <= 0,
+                czech_first=czech_first,
             ),
         }
     )

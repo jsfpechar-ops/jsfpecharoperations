@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Dict, Optional
 
-from . import db, reporting, validation
+from . import db, payments, reporting, validation
 
 MAX_CALENDAR_DAYS = 60   # zákon 565/1990 §3a: stays longer than this are not subject
 ADULT_AGE = 18           # §3b(1)(b)
@@ -108,3 +108,25 @@ def stay_summary(reservation, apartment) -> Optional[Dict[str, Any]]:
 
 def format_czk(amount: int) -> str:
     return f"{amount:,}".replace(",", "\u00a0")      # 1 200 with a no-break space
+
+
+def payment_details(reservation, apartment, summary) -> Dict[str, Any]:
+    """The host's payment options for one stay, used by the guest card and mail."""
+    entity = (
+        db.query_one("SELECT * FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
+        if apartment["legal_entity_id"] else None
+    )
+    iban = (entity["iban"] or "") if entity else ""
+    vs = summary["vs"]
+    return {
+        "iban": iban,
+        "iban_display": payments.format_iban(iban) if iban else "",
+        "account": (entity["bank_account"] or "") if entity and "/" in (entity["bank_account"] or "") else "",
+        "bic": (entity["bic"] or "") if entity else "",
+        "beneficiary": (entity["name"] or "") if entity else "",
+        "vs": vs,
+        "reference": payments.ascii_upper(f"POPLATEK Z POBYTU {vs}", 60),
+        "amount_plain": str(summary["total_czk"]),
+        "payment_link": apartment["stay_fee_payment_link"] or "",
+        "cash": bool(apartment["stay_fee_cash"]),
+    }
