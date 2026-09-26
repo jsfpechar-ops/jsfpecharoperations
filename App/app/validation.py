@@ -84,6 +84,14 @@ DEFAULT_PURPOSE = "99"
 # covers foreigners only - but they still belong in the house book.
 CZECH_CODE = "CZE"
 
+# Document types for the registration form and the stay-fee register
+# ("druh průkazu", zákon 565/1990 §3g(2)). Order matches the legal list.
+DOC_TYPES = (
+    "op", "pas", "prechodny_pobyt", "pobytova_karta_eu", "povoleni_pobyt",
+    "povoleni_pobyt_cizinec", "trvaly_pobyt", "zadatel_mezinarodni_ochrana",
+    "zadatel_docasna_ochrana",
+)
+
 _COUNTRIES_CACHE: Optional[List[Dict[str, str]]] = None
 
 
@@ -260,6 +268,11 @@ def parse_birth_date(ddmmyyyy: str) -> Optional[date]:
         return date(year, month, day)
     except ValueError:
         return None
+
+
+def age_on(birth: date, when: date) -> int:
+    """Whole years between a birth date and a later date (e.g. arrival)."""
+    return when.year - birth.year - ((when.month, when.day) < (birth.month, birth.day))
 
 
 def format_birth_date(ddmmyyyy: Optional[str]) -> str:

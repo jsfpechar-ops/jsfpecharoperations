@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS legal_entity (
     dic           TEXT,
     contact_email TEXT,
     contact_phone TEXT,
+    bank_account  TEXT,
+    iban          TEXT,
+    bic           TEXT,
     owner_user_id INTEGER REFERENCES user_account(id),
     created_at    TEXT NOT NULL
 );
@@ -80,6 +83,10 @@ CREATE TABLE IF NOT EXISTS apartment (
     guest_message         TEXT,
     notes                 TEXT,
     passport_photo_policy TEXT NOT NULL DEFAULT 'off',
+    stay_fee_policy       TEXT NOT NULL DEFAULT 'on',
+    stay_fee_rate_czk     INTEGER NOT NULL DEFAULT 0,
+    stay_fee_payment_link TEXT,
+    stay_fee_cash         INTEGER NOT NULL DEFAULT 1,
     active                INTEGER NOT NULL DEFAULT 1,
     created_at            TEXT NOT NULL
 );
@@ -113,6 +120,9 @@ CREATE TABLE IF NOT EXISTS reservation (
     registration_completed_at TEXT,
     guest_email             TEXT,
     host_note               TEXT,
+    stay_fee_rate_czk       INTEGER,
+    stay_fee_paid_at        TEXT,
+    stay_fee_paid_amount_czk INTEGER,
     status                  TEXT NOT NULL DEFAULT 'active',
     created_at              TEXT NOT NULL,
     updated_at              TEXT NOT NULL,
@@ -126,6 +136,7 @@ CREATE TABLE IF NOT EXISTS guest (
     first_name     TEXT,
     birth_date     TEXT,
     nationality    TEXT,
+    doc_type       TEXT,
     doc_number     TEXT,
     visa_number    TEXT,
     doc_number_enc TEXT,
@@ -135,6 +146,9 @@ CREATE TABLE IF NOT EXISTS guest (
     res_country    TEXT,
     purpose        TEXT,
     note           TEXT,
+    fee_claim      TEXT,
+    fee_host_decision TEXT,
+    fee_host_reason TEXT,
     stay_from      TEXT,
     stay_to        TEXT,
     is_lead        INTEGER NOT NULL DEFAULT 0,
@@ -378,6 +392,21 @@ ADDED_COLUMNS = (
     # The values an alert's card interpolates, as JSON, so the card can be
     # rebuilt in the host's language at render time instead of storing prose.
     ("alert", "params", "TEXT"),
+    # Stay fee (poplatek z pobytu) — see docs/plans/PLAN_POPLATEK_Z_POBYTU.md
+    ("apartment", "stay_fee_policy", "TEXT NOT NULL DEFAULT 'on'"),
+    ("apartment", "stay_fee_rate_czk", "INTEGER NOT NULL DEFAULT 0"),
+    ("apartment", "stay_fee_payment_link", "TEXT"),
+    ("apartment", "stay_fee_cash", "INTEGER NOT NULL DEFAULT 1"),
+    ("legal_entity", "bank_account", "TEXT"),
+    ("legal_entity", "iban", "TEXT"),
+    ("legal_entity", "bic", "TEXT"),
+    ("reservation", "stay_fee_rate_czk", "INTEGER"),
+    ("reservation", "stay_fee_paid_at", "TEXT"),
+    ("reservation", "stay_fee_paid_amount_czk", "INTEGER"),
+    ("guest", "doc_type", "TEXT"),
+    ("guest", "fee_claim", "TEXT"),
+    ("guest", "fee_host_decision", "TEXT"),
+    ("guest", "fee_host_reason", "TEXT"),
 )
 
 
