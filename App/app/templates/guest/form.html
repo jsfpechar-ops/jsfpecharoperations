@@ -12,7 +12,24 @@
    and point at the message instead of leaving the guest to hunt for it. #}
 {% macro invalid(field) %}{% if issues | selectattr('is_error') | selectattr('field', 'equalto', field) | list %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}{% endmacro %}
 
+{% block wrap_class %}g-checkin-page{% endblock %}
+
 {% block content %}
+<aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
+  <div class="g-checkin-stay">
+    {% if facility %}<span class="g-property-mark property-tone-{{ facility_tone }}" aria-hidden="true">{{ facility[:1] }}</span>{% endif %}
+    <div class="g-checkin-stay-body">
+      <strong>{{ facility }}</strong>
+      <span>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</span>
+      <span>{{ nights_label(reservation.date_from, reservation.date_to) }}{% if person_number and expected_people %} &middot; {{ t('person_progress', current=person_number, total=expected_people) }}{% endif %}</span>
+    </div>
+  </div>
+  <h2 class="g-checkin-steps-title">{{ t('steps_label') }}</h2>
+  <ol class="g-checkin-steps" data-checkin-steps
+      data-done-label="{{ t('step_done') }}" data-edit-label="{{ t('review_edit') }}"></ol>
+</aside>
+
+<div class="g-checkin-main">
 {% if back_url %}
   <a class="g-back" href="{{ back_url }}">&larr; {{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
 {% elif can_pick_other %}
@@ -269,6 +286,7 @@
     <button class="g-btn" type="submit">{{ t('submit') }}</button>
   </div>
 </form>
+</div>
 {% if require_passport %}
 <script>
 (function () {
