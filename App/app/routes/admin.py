@@ -1588,6 +1588,8 @@ def _guest_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = dict(_guest_form_payload(form))
     payload["stay_from"] = _form_str(form, "stay_from") or None
     payload["stay_to"] = _form_str(form, "stay_to") or None
+    doc_type = _form_str(form, "doc_type")
+    payload["doc_type"] = doc_type if doc_type in validation.DOC_TYPES else None
     return payload
 
 
@@ -1627,6 +1629,7 @@ def _render_host_guest_form(
             "signature_value": _signature_for_display(guest),
             "countries": codelists.nationality_options("en"),
             "purposes": codelists.purpose_options("en"),
+            "doc_types": validation.DOC_TYPES,
             "has_passport_photo": reporting.guest_has_passport_photo(guest) if guest else False,
             "passport_is_pdf": (
                 passport_photos.is_pdf_attachment(int(guest["id"]))
@@ -1704,6 +1707,7 @@ async def guest_create(reservation_id: int, request: Request):
     )
     guest_id = db.insert("guest", payload)
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
+    stay_fee.snapshot_rate(reservation_id)
     reporting.submit_stay_if_complete(reservation["apartment_id"], reservation_id)
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.guests.added"))
 
@@ -1774,6 +1778,7 @@ async def guest_update(guest_id: int, request: Request):
         payload["submit_attempts"] = 0
     db.update("guest", guest_id, payload)
     db.audit("guest_updated", f"id={guest_id} by=host")
+    stay_fee.snapshot_rate(guest["reservation_id"])
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
         reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])

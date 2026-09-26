@@ -591,12 +591,25 @@ function initSignature() {
     show(active, false);
   }
 
+  function initDocType() {
+    var nationality = document.getElementById("nationality");
+    var docType = document.querySelector("[data-doc-type]");
+    if (!nationality || !docType) return;
+    var touched = false;
+    docType.addEventListener("change", function () { touched = true; });
+    nationality.addEventListener("change", function () {
+      if (touched) return;
+      docType.value = nationality.value === "CZE" ? "op" : "pas";
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initSignature();
     initCopy();
     initBirthDate();
     initChildToggle();
     initResidenceCountry();
+    initDocType();
     initVisaVisibility();
     initPinReturn();
     initGuestWizard();
