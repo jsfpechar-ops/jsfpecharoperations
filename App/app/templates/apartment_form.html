@@ -33,7 +33,6 @@
   {% if editing %}
     <a href="#ubyport">{{ t('apartment.form.nav.police_reporting') }}</a>
     <a href="#communication">{{ t('apartment.form.nav.guest_link') }}</a>
-    <a href="#stay-fee-settings">{{ t('apartment.form.nav.stay_fee') }}</a>
     <a href="#calendars">{{ t('apartment.form.nav.calendars') }}</a>
   {% else %}
     <a href="#ubyport">{{ t('apartment.form.nav.ubyport') }}</a>
@@ -387,42 +386,6 @@
       <p class="small muted">{{ t('apartment.form.guest_link.new_help') }}</p>
     {% endif %}
   </div>
-
-  {% if editing %}
-  <div class="panel" id="stay-fee-settings">
-    <h2 style="margin-top:0">{{ t('apartment.form.stay_fee.heading') }}</h2>
-    <p class="small muted" style="margin-top:-4px">{{ t('apartment.form.stay_fee.lede') }}</p>
-    <div class="field" style="max-width:220px">
-      <label for="stay_fee_rate_czk">{{ t('apartment.form.stay_fee.rate_label') }}</label>
-      <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" min="0" max="50" step="1"
-             inputmode="numeric" value="{{ apartment.stay_fee_rate_czk or 0 }}">
-      <div class="hint">{{ t('apartment.form.stay_fee.rate_hint') }}</div>
-    </div>
-    <div class="field" style="max-width:320px">
-      <label for="stay_fee_policy">{{ t('apartment.form.stay_fee_policy.label') }}</label>
-      <select id="stay_fee_policy" name="stay_fee_policy">
-        <option value="off" {% if not editing or apartment.stay_fee_policy != 'on' %}selected{% endif %}>{{ t('apartment.form.stay_fee_policy.off') }}</option>
-        <option value="on" {% if editing and apartment.stay_fee_policy == 'on' %}selected{% endif %}>{{ t('apartment.form.stay_fee_policy.on') }}</option>
-      </select>
-      <div class="hint">{{ t('apartment.form.stay_fee_policy.hint') }}</div>
-    </div>
-    <div class="field" style="max-width:420px">
-      <label for="stay_fee_payment_link">{{ t('apartment.form.stay_fee.link_label') }}</label>
-      <input type="url" id="stay_fee_payment_link" name="stay_fee_payment_link" maxlength="300"
-             placeholder="https://" value="{{ apartment.stay_fee_payment_link or '' }}">
-      <div class="hint">{{ t('apartment.form.stay_fee.link_hint') }}</div>
-    </div>
-    <div class="checkline" style="margin-top:6px">
-      <input type="checkbox" id="stay_fee_cash" name="stay_fee_cash" value="1"
-             {% if apartment.stay_fee_cash %}checked{% endif %}>
-      <label for="stay_fee_cash">{{ t('apartment.form.stay_fee.cash_label') }}</label>
-    </div>
-    {% if (apartment.stay_fee_rate_czk or 0) > 0 and not entity_iban %}
-      <p class="small warn-text" style="margin-top:12px">{{ t('apartment.form.stay_fee.no_iban') }}
-        <a href="/entities">{{ t('nav.entities') }} &rarr;</a></p>
-    {% endif %}
-  </div>
-  {% endif %}
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('apartment.form.notes.title') }}</h2>
