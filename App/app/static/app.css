@@ -590,6 +590,12 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 .banner .grow { flex: 1; min-width: 0; }
 .banner strong { display: block; color: inherit; }
 .banner small { display: block; opacity: 0.9; margin-top: 4px; }
+.banner .banner-list { margin: 6px 0 0; padding-left: 20px; }
+/* Compact inputs inside the invoice builder's item table. */
+.input-qty { max-width: 90px; }
+.input-unit { max-width: 120px; }
+.input-price { max-width: 130px; }
+.input-vat { max-width: 110px; }
 .banner.ok { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 25%, transparent); color: var(--ok); }
 .banner.err, .banner.critical { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 25%, transparent); color: var(--bad); }
 .banner.warning { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 25%, transparent); color: var(--warn); }
