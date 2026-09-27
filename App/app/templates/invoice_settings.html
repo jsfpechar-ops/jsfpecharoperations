@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set nav = 'invoices' %}
+{% block title %}{{ t('invoice.settings.title', name=entity.name) }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{{ page_header(t('invoice.settings.title', name=entity.name), t('invoice.settings.lede'), next, t('common.back')) }}
+
+<form method="post" action="/invoices/settings">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="legal_entity_id" value="{{ entity.id }}">
+  <input type="hidden" name="next" value="{{ next }}">
+
+  <div class="panel invoice-settings-form">
+    <div class="grid">
+      <div class="field">
+        <label for="bank_account">{{ t('entities.bank.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="text" id="bank_account" name="bank_account"
+               value="{{ entity.bank_account or '' }}"
+               placeholder="123456789/0100">
+        <div class="hint">{{ t('entities.bank.hint') }}</div>
+      </div>
+      <div class="field">
+        <label for="bic">{{ t('entities.bic.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="text" id="bic" name="bic" value="{{ entity.bic or '' }}">
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="vat_status">{{ t('entities.vat_status.label') }}</label>
+        <select id="vat_status" name="vat_status">
+          <option value="non_payer" {% if (entity.vat_status or 'non_payer') == 'non_payer' %}selected{% endif %}>{{ t('entities.vat_status.non_payer') }}</option>
+          <option value="identified" {% if entity.vat_status == 'identified' %}selected{% endif %}>{{ t('entities.vat_status.identified') }}</option>
+          <option value="payer" {% if entity.vat_status == 'payer' %}selected{% endif %}>{{ t('entities.vat_status.payer') }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="registry_entry">{{ t('entities.registry.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="text" id="registry_entry" name="registry_entry"
+               value="{{ entity.registry_entry or '' }}"
+               placeholder="{{ t('entities.registry.trade') }}">
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="invoice_prefix">{{ t('entities.invoice_prefix.label') }}</label>
+        <input type="text" id="invoice_prefix" name="invoice_prefix" maxlength="6"
+               value="{{ entity.invoice_prefix or '' }}">
+      </div>
+      <div class="field">
+        <label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="number" id="invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric"
+               value="{{ entity.invoice_next_number if entity.invoice_next_number else '' }}">
+        <div class="hint">{{ t('entities.invoice_next.hint') }}</div>
+      </div>
+      <div class="field">
+        <label for="invoice_due_days">{{ t('entities.invoice_due.label') }}</label>
+        <input type="number" id="invoice_due_days" name="invoice_due_days" min="0" max="365" inputmode="numeric"
+               value="{{ entity.invoice_due_days if entity.invoice_due_days is not none else 14 }}">
+      </div>
+    </div>
+    <p class="hint">{{ t('entities.invoice.snapshot_hint') }}</p>
+    <div class="actions">
+      <button class="btn primary" type="submit">{{ t('common.save') }}</button>
+    </div>
+  </div>
+</form>
+{% endblock %}

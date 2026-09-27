@@ -20,14 +20,26 @@
 <form method="post" action="/invoices">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 
-  <div class="panel">
-    <div class="field" style="max-width:360px">
-      <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
-      <select id="legal_entity_id" name="legal_entity_id">
-        {% for option in entities %}
-          <option value="{{ option.id }}" {% if entity and option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
-        {% endfor %}
-      </select>
+  <div class="panel invoice-supplier">
+    <div class="invoice-supplier-row">
+      <div class="field invoice-supplier-picker">
+        <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
+        <select id="legal_entity_id" name="legal_entity_id">
+          {% for option in entities %}
+            <option value="{{ option.id }}" {% if entity and option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="invoice-supplier-meta">
+        <span class="invoice-supplier-name">{{ entity.name }}</span>
+        <span class="small muted">
+          {% if entity.ico %}IČO {{ entity.ico }}{% endif %}
+          {% if entity.seat %}· {{ entity.seat }}{% endif %}
+        </span>
+      </div>
+      <a class="btn small ghost" href="/invoices/settings?entity={{ entity.id }}&amp;next={{ (('/invoices/new?entity=' ~ entity.id) | urlencode) }}">
+        {{ t('invoice.edit_details') }}
+      </a>
     </div>
   </div>
 
@@ -88,6 +100,25 @@
         </tr>
       </thead>
       <tbody data-item-body>
+        {% set rows = values.item_rows if values is defined and values is not none else [] %}
+        {% if rows %}
+          {% for row in rows %}
+          <tr data-item-row>
+            <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required value="{{ row.description }}"></td>
+            <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="{{ row.quantity }}" inputmode="numeric" class="input-qty"></td>
+            <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" value="{{ row.unit }}" class="input-unit"></td>
+            <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" value="{{ row.unit_price }}" class="input-price"></td>
+            <td data-label="{{ t('invoice.col.vat') }}">
+              <select name="item_vat_rate" class="input-vat">
+                {% for rate in (21, 12, 0) %}
+                  <option value="{{ rate }}" {% if row.vat_rate == rate|string %}selected{% endif %}>{{ rate }} %</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="row-actions"><button type="button" class="btn small" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
+          </tr>
+          {% endfor %}
+        {% else %}
         <tr data-item-row>
           <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required></td>
           <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" class="input-qty"></td>
@@ -102,6 +133,7 @@
           </td>
           <td class="row-actions"><button type="button" class="btn small" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
         </tr>
+        {% endif %}
       </tbody>
     </table>
     <div class="actions"><button type="button" class="btn small" data-add-item>{{ t('invoice.add_item') }}</button></div>
@@ -142,8 +174,8 @@
     <div class="field" style="max-width:320px">
       <label for="lang">{{ t('invoice.section.language') }}</label>
       <select id="lang" name="lang">
-        <option value="cs">{{ t('invoice.lang.cs') }}</option>
-        <option value="en">{{ t('invoice.lang.en') }}</option>
+        <option value="cs" {% if values.get('lang', 'cs') == 'cs' %}selected{% endif %}>{{ t('invoice.lang.cs') }}</option>
+        <option value="en" {% if values.get('lang') == 'en' %}selected{% endif %}>{{ t('invoice.lang.en') }}</option>
       </select>
     </div>
     <div class="field">
