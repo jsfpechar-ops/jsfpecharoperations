@@ -24,6 +24,7 @@ from starlette.testclient import TestClient
 from app import db, host_i18n
 from app.main import app
 from app.routes.legal import DPA_SECTION_IDS, PRIVACY_SECTION_IDS, TERMS_SECTION_IDS
+from app.subprocessors_i18n import SUBPROCESSOR_STRINGS
 
 APP_DIR = Path(__file__).resolve().parents[1]
 
@@ -192,3 +193,42 @@ def test_the_anchor_clears_the_sticky_public_header_without_doubling_up():
     # a scroll-margin would stack on top of scroll-padding-top
     assert "scroll-margin" not in _read("app/static/app.css")
     assert "scroll-margin" not in landing
+
+
+# ---- LD-4: the register must not claim backups are encrypted ----------------
+#
+# Until OPS-1 lands, `backup_data.sh` writes the database and the Fernet key
+# into the same snapshot, and `backup-gdrive.sh` / `backup-s3.sh` upload that
+# snapshot unchanged (`docs/OPERATIONS.md` "Backup and restore"). The register
+# used to call those copies "encrypted", which was false.
+#
+# When OPS-1 and OPS-2 ship, update the copy *and* this test together, citing
+# the vendor evidence file (`docs/vendors/README.md`, LD-9). The four keys
+# below are the backup rows: AWS' S3 purpose and Google's purpose and data.
+
+REGISTER_BACKUP_KEYS = (
+    "subprocessors.aws_purpose",
+    "subprocessors.google_purpose",
+    "subprocessors.google_data",
+)
+
+# The word that must not describe a backup that still carries its own key.
+ENCRYPTION_CLAIMS = ("encrypt", "šifrovan")
+
+
+def test_the_register_does_not_claim_unencrypted_backups_are_encrypted():
+    client = _client()
+    for lang in ("en", "cs"):
+        html = client.get(f"/subprocessors?lang={lang}").text
+        for key in REGISTER_BACKUP_KEYS:
+            value = SUBPROCESSOR_STRINGS[lang][key]
+            assert value in html, (lang, key, "row missing from the rendered page")
+            lowered = value.lower()
+            for claim in ENCRYPTION_CLAIMS:
+                assert claim not in lowered, (lang, key, value)
+
+
+def test_the_register_records_the_corrective_version():
+    client = _client()
+    for lang, effective in (("en", "Version 1.1"), ("cs", "Verze 1.1")):
+        assert effective in client.get(f"/subprocessors?lang={lang}").text, lang
