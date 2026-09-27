@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates sqlite3 \
+    && apt-get install -y --no-install-recommends ca-certificates sqlite3 age \
     && rm -rf /var/lib/apt/lists/*
 
 COPY App/requirements.txt .
