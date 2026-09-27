@@ -1,8 +1,8 @@
 """Czech bank-account helpers and QR Platba (SPAYD 1.0) payloads.
 
-Shared by the stay fee (docs/plans/PLAN_POPLATEK_Z_POBYTU.md) and the invoice
-feature. UbyHost never processes a payment: these helpers only format the host's
-own account into a QR a Czech banking app can read.
+Shared by the invoice builder and the invoice PDF. UbyHost never processes a
+payment: these helpers only format the host's own account into a QR a Czech
+banking app can read.
 """
 from __future__ import annotations
 
