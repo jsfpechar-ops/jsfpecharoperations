@@ -200,13 +200,14 @@ forwarding aliases:
 - **`noreply@ubyhost.com`** — not a mailbox. It is the SES sending address only
   (see [SES.md](SES.md)); replies go to the Reply-To on each mail.
 
-Consequences for the zone's DNS:
+Consequences for the zone's DNS (Zoho EU data centre, per the
+`zoho-verification` TXT record):
 
 | Record | Belongs to | Notes |
 |--------|-----------|-------|
-| Root **MX** | the mail provider | Set by the provider's setup (e.g. Google Workspace, Zoho). Cloudflare Email Routing is **disabled** — do not re-enable it, and do not add forwarding aliases |
-| Root **SPF** (`TXT` on `ubyhost.com`) | the mail provider | `include:` from the provider, so the mailboxes pass DMARC |
-| DKIM CNAMEs from the provider | the mail provider | Whatever the provider shows in its setup |
+| Root **MX** | **Zoho** | `mx.zoho.eu` (prio 10), `mx2.zoho.eu` (20), `mx3.zoho.eu` (50). Priority 10 outranks Email Routing's old `route1` (12), so the switch to Zoho is a soft cutover with no bounce window |
+| Root **SPF** (`TXT` on `ubyhost.com`) | **Zoho** | `v=spf1 include:zohomail.eu ~all` — the one SPF record on the root. Never add a second one; merge `include:`s instead |
+| DKIM records from Zoho's wizard | **Zoho** | The selector Zoho generates (e.g. `zmail._domainkey`) |
 | `mail.ubyhost.com` MX + SPF, root DKIM CNAMEs, `_dmarc` | **SES** (outgoing app mail) | Untouched by the above — SES only *sends*; it has no inbox |
 
 While Email Routing is being retired, its Settings page flags a **"Missing"
