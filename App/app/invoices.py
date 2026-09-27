@@ -199,7 +199,10 @@ def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
         total_vat = None
     total_haler = sum(i["gross_haler"] for i in items)
 
-    already_paid = bool(form.get("already_paid"))
+    # The payment row is a radio pair ("already paid" = "1", "payment
+    # requested" = "0"); older clients post a checkbox that appears only
+    # when ticked, so both spellings land on the same decision.
+    already_paid = _form_str(form, "already_paid") in ("1", "on")
     due_days = entity["invoice_due_days"] if entity and entity["invoice_due_days"] is not None else 14
     due_date = _form_str(form, "due_date")
     if not due_date and not already_paid:
