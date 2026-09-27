@@ -180,12 +180,34 @@ After changing bot / challenge rules, try:
 | Setting | Where | Why |
 |---------|-------|-----|
 | **Security Level** | Security → Settings | Medium is fine for a host tool |
-| **Email Routing** | Email → Routing | Forward `hello@domain` to Gmail (free) |
+| **Email Routing** | Email → Routing | **Retired.** Company mail moved to real mailboxes at a mail provider — see [Company mail](#company-mail) below. The zone's root MX now belongs to that provider, not to Cloudflare |
 | **Firewall: allow only Cloudflare** | VPS firewall | Blocks direct IP access — advanced; see [Cloudflare IP ranges](https://www.cloudflare.com/ips/) |
 | **AI Labyrinth** | Security | Optional; skip unless unwanted AI crawlers become a problem |
 | **security.txt** | Cloudflare Security.txt or origin `/.well-known/security.txt` | Vulnerability disclosure contact |
 | **Cloudflare account MFA** | My Profile → Authentication | Required for the zone admin (not the UbyHost app) |
 | **DMARC** | DNS TXT `_dmarc` | If the zone has MX; start with `p=none` |
+
+### Company mail
+
+The `ubyhost.com` mailboxes are **real boxes at a mail provider**, not Cloudflare
+forwarding aliases:
+
+- **`***REMOVED***`** — owner.
+- **`support@ubyhost.com`** — software support, shown in the host admin portal
+  per the contact split in [DESIGN.md](DESIGN.md). Never a guest contact.
+- **`noreply@ubyhost.com`** — not a mailbox. It is the SES sending address only
+  (see [SES.md](SES.md)); replies go to the Reply-To on each mail.
+
+Consequences for the zone's DNS:
+
+| Record | Belongs to | Notes |
+|--------|-----------|-------|
+| Root **MX** | the mail provider | Set by the provider's setup (e.g. Google Workspace, Zoho). Cloudflare Email Routing is **disabled** — do not re-enable it, and do not add forwarding aliases |
+| Root **SPF** (`TXT` on `ubyhost.com`) | the mail provider | `include:` from the provider, so the mailboxes pass DMARC |
+| DKIM CNAMEs from the provider | the mail provider | Whatever the provider shows in its setup |
+| `mail.ubyhost.com` MX + SPF, root DKIM CNAMEs, `_dmarc` | **SES** (outgoing app mail) | Untouched by the above — SES only *sends*; it has no inbox |
+
+Keep every mail record **DNS only (grey cloud)** — never proxy MX/TXT records.
 
 ---
 
