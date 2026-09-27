@@ -155,3 +155,39 @@ def test_send_enqueues_a_mail_with_a_working_download_token(host, monkeypatch):
     pdf = host.get(f"/invoice/d/{token}")
     assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
     assert host.get("/invoice/d/garbage").status_code == 404
+
+
+def test_a_payers_issued_invoice_shows_the_vat_breakdown(host):
+    payer_id = _add_entity(name="VAT Break s.r.o.", vat_status="payer", dic="CZ1",
+                           registry_entry="Stavební")
+    response = host.post(
+        "/invoices",
+        data={"legal_entity_id": str(payer_id), "buyer_name": "Buyer",
+              "already_paid": "0", "item_description": ["Stay"],
+              "item_quantity": ["2"], "item_unit_price": ["1000"],
+              "item_vat_rate": ["12"]},
+        follow_redirects=False,
+    )
+    invoice_id = int(response.headers["location"].split("?")[0].rsplit("/", 1)[1])
+    detail = host.get(f"/invoices/{invoice_id}?lang=en").text
+    # per item: 2 × 1000 = 2000 base, 12 % VAT = 240, gross 2240
+    assert "Unit price (excl. VAT)" in detail
+    assert "2240 Kč" in detail
+    assert "Base (excl. VAT)" in detail
+    assert "2000 Kč" in detail  # base total
+    assert "240 Kč" in detail   # VAT total
+
+
+def test_a_non_payers_issued_invoice_keeps_the_plain_table(host):
+    entity_id = _add_entity()
+    response = host.post(
+        "/invoices",
+        data={"legal_entity_id": str(entity_id), "buyer_name": "Buyer",
+              "already_paid": "1", "item_description": ["Stay"],
+              "item_quantity": ["1"], "item_unit_price": ["1000"]},
+        follow_redirects=False,
+    )
+    invoice_id = int(response.headers["location"].split("?")[0].rsplit("/", 1)[1])
+    detail = host.get(f"/invoices/{invoice_id}?lang=en").text
+    assert "Unit price (excl. VAT)" not in detail
+    assert "Base (excl. VAT)" not in detail

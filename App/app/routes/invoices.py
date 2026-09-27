@@ -353,7 +353,17 @@ def invoice_detail(invoice_id: int, request: Request):
     return render(
         request,
         "invoice_detail.html",
-        {"nav": "invoices", "invoice": invoice, "items": items},
+        {
+            "nav": "invoices",
+            "invoice": invoice,
+            "items": items,
+            "vat_totals": db.query_one(
+                "SELECT COALESCE(SUM(base_haler), 0) AS base, "
+                "COALESCE(SUM(vat_haler), 0) AS vat "
+                "FROM invoice_item WHERE invoice_id = ?",
+                (invoice_id,),
+            ),
+        },
     )
 
 
