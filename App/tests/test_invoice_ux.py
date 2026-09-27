@@ -191,3 +191,15 @@ def test_a_non_payers_issued_invoice_keeps_the_plain_table(host):
     detail = host.get(f"/invoices/{invoice_id}?lang=en").text
     assert "Unit price (excl. VAT)" not in detail
     assert "Base (excl. VAT)" not in detail
+
+
+def test_switching_operator_keeps_the_form_instead_of_a_reload(host):
+    """The switch patch swaps the operator chrome, so no confirm is needed
+    and nothing typed can be lost."""
+    _add_entity()
+    page = host.get("/invoices/new?lang=en").text
+    assert 'data-next-number' in page
+    assert "switch_operator_confirm" not in page
+    assert "window.confirm" not in page
+    # the fetch patch reads the same URL the select posts to
+    assert 'fetch("/invoices/new?entity=' in page
