@@ -956,3 +956,17 @@ documents LD-3 already owns:
 Left untouched on purpose: outside LD-4's stated file scope, and LD-3 already
 owns `privacy_policy_i18n.py` §11 and `dpa_i18n.py` §15. Until OPS-1/OPS-2 land,
 the honest wording is the non-encrypted one.
+
+### OPS-1 — CI does not install `age`, so the encryption tests skip there
+`App/tests/test_backup_data.py` skips its encryption cases when `age` /
+`age-keygen` are not on PATH, as the plan specifies. GitHub's `ubuntu-latest`
+runner does not ship `age`, so the production fail-closed check and the
+decrypt-round-trip only run locally. Add `age` to `.github/workflows/ci.yml`
+(W6.1) so those assertions actually gate CI.
+
+### OPS-2 — the Google Drive account type is still unconfirmed
+G-D2 keeps both Google Drive and S3, so OPS-2 encrypts and prunes the Drive copy
+too. The review's caveat remains: Google only offers processor terms (a DPA) to
+Workspace/Cloud accounts, not to a consumer account. Confirm the Drive account
+is Workspace with the Cloud Data Processing Addendum accepted, or retire the
+Drive path; this was not verifiable from the repo.

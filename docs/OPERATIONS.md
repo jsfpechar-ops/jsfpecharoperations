@@ -466,9 +466,31 @@ The scripts are documented in
 [deploy/lightsail/README.md](../deploy/lightsail/README.md). What they do not
 tell you:
 
+- **Backups are encrypted in production (OPS-1).** `App/scripts/backup_data.sh`
+  snapshots SQLite, tars `ubyhost.db` together with `secret_key` and
+  `initial_admin_credentials`, encrypts the tarball to the public recipient in
+  `UBYHOST_BACKUP_AGE_RECIPIENT`, then deletes the plaintext tar and files from
+  the snapshot. A production run with **no recipient fails closed** and writes
+  nothing. Outside production, or with no recipient, the plaintext layout is
+  kept so local development still works.
+- **Key custody.** Generate one `age` identity offline (`age-keygen -o
+  ubyhost-backup.agekey`). Put the public `age1...` recipient in `.env` and keep
+  the private identity in the owner's password manager plus one offline copy —
+  never on the server and never inside a snapshot. Whoever holds the identity
+  can read every backup; if it is lost, every encrypted backup is unreadable.
 - **Back up `data/secret_key` (or the `.env` holding `UBYHOST_SECRET_KEY`)
   together with the database.** A database restored without its key needs every
   UbyPort password re-entered and every TOTP secret re-enrolled — see above.
+- **Retention is by time, not count.** `UBYHOST_BACKUP_RETENTION_DAYS` (default
+  30) is the window; snapshots older than it are removed on each run, and the
+  newest snapshot is always kept even if it is older than the window. The
+  off-site copies must expire on the same window — OPS-2 adds that to the
+  Drive/S3 jobs.
+- **`restore.sh` reads encrypted snapshots with the host identity.** Pass
+  `AGE_IDENTITY_FILE=/path/on/host/to/ubyhost-backup.agekey` (never inside the
+  volume); the script pulls the `.age` file out of the container, decrypts on
+  the host, installs the database (and key) into the volume as uid 10001, and
+  removes the host-side plaintext. Legacy plaintext snapshots still restore.
 - **Passport images are not in the database.** They are files under the data
   directory and need to be in scope separately, or accepted as lost. Since they
   are short-lived by design, losing them is usually the right trade.
@@ -477,9 +499,8 @@ tell you:
 - **Verify a restore before trusting it.** `sqlite3 ubyhost.db 'PRAGMA
   integrity_check;'` then start the app against a copy and check that the
   submissions list renders and one Doručenka downloads. A truncated WAL
-  restore can look fine until a blob is read.
-- **Backups are not encrypted** by the supplied scripts. Guest passport
-  numbers are encrypted *inside* the database, but the key that decrypts them
-  travels in the same backup, so a copy of both is as readable as a copy of the
-  plaintext was. Encrypting them off-host is an operator action that nothing
-  here performs for you.
+  restore can look fine until a blob is read. Do a full restore test at least
+  **quarterly**: decrypt a recent snapshot with the offline identity, check the
+  integrity, start against it, and open one stay and one Doručenka.
+- **The last run is recorded** in `$BACKUP_ROOT/.last_success.json` (mode 0600):
+  `at`, `encrypted`, `bytes`, `retention_days`. Settings reads it (FE-3).

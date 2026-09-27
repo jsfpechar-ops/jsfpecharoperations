@@ -24,6 +24,29 @@ chmod +x scripts/*.sh
 Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/smoke-remote.sh`.
 
 
+## Encrypted backups (OPS-1)
+
+Production snapshots are encrypted with [age](https://age-encryption.org/).
+Before the first production backup:
+
+1. Generate one identity **offline**: `age-keygen -o ubyhost-backup.agekey`.
+   Keep the private key in the owner's password manager and one offline copy.
+   It never goes on the server and never into a snapshot.
+2. Put the printed public `age1...` recipient in `.env` as
+   `UBYHOST_BACKUP_AGE_RECIPIENT`. With `UBYHOST_DEPLOYMENT=production` the
+   backup **fails closed** without it, so no unencrypted copy is ever written.
+3. Optionally set `UBYHOST_BACKUP_RETENTION_DAYS` (default **30**). Snapshots
+   older than the window are removed on each run; the newest is always kept.
+
+The snapshot folder then holds a single `ubyhost-backup.tar.age`. Restore it
+with the private identity on the host:
+
+```bash
+AGE_IDENTITY_FILE=/root/ubyhost-backup.agekey ./scripts/restore.sh <stamp>
+```
+
+Legacy plaintext snapshots still restore without the identity.
+
 ## Weekly backup to Google Drive (bare minimum)
 
 **One-time (on the server, SSH):**
@@ -50,7 +73,8 @@ cd /opt/ubyhost/deploy/lightsail
 ./scripts/backup-gdrive.sh
 ```
 
-Check Google Drive for folder **`UbyHost-backups`** with a dated subfolder (`ubyhost.db`, `secret_key`).
+Check Google Drive for folder **`UbyHost-backups`** with a dated subfolder
+(`ubyhost-backup.tar.age` — an encrypted archive; the key is not in it).
 
 4. Weekly cron (Sundays 04:00 UTC):
 
@@ -68,7 +92,7 @@ key and `rclone config`; skip until you want a second off-site copy.
 <details>
 <summary>Enable S3 later (click to expand)</summary>
 
-Same data (`ubyhost.db` + `secret_key`); uses **rclone** with an **IAM access key** (no browser login).
+Same data (an encrypted `ubyhost-backup.tar.age`); uses **rclone** with an **IAM access key** (no browser login).
 
 **One-time in AWS:**
 
