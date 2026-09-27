@@ -31,7 +31,7 @@ summarises the threat model, controls, and known limitations.
 - **API surface**: FastAPI `/docs` and `/redoc` disabled.
 - **Health check**: production returns only status, version, and data-volume writability; deployment and UbyPort environment are shown only outside production.
 - **Calendar response limits**: iCal downloads stop at 5 MiB and at three redirects; every redirect target is revalidated.
-- **Secrets and backups**: generated key/initial-credential files and local backup directories are owner-only. Backups still require operator-managed encryption before off-server storage.
+- **Secrets and backups**: generated key/initial-credential files and local backup directories are owner-only. Production snapshots are encrypted with `age` (OPS-1) and the private identity is held offline, never on the server.
 - **Guest document numbers at rest**: `guest.doc_number` and `guest.visa_number` are stored Fernet-encrypted (`doc_number_enc`, `visa_number_enc`) and the plaintext columns are blanked on every write. Reads go through `db.decrypt_field`, which **raises** on a value it cannot decrypt rather than returning empty, so a lost key cannot turn into an empty `cDocN` in a police filing. A one-shot backfill (`App/scripts/migrate_encrypt_doc_fields.py`) moves pre-existing rows across; the plaintext column stays readable as a fallback until it has run.
 - **UbyPort transport**: production/test endpoints keep TLS verification enabled and SOAP/NTLM requests reject redirects.
 - **Filesystem permissions**: the data directory is owner-only, the SQLite database and deployment `.env` are mode `0600`, and deployment scripts repair those modes.
@@ -48,7 +48,7 @@ summarises the threat model, controls, and known limitations.
 | **Overlapping stay selection** | One apartment permalink/PIN can select any active stay inside its configured visibility window. Keep the window short and avoid overlapping links where booking-date disclosure is unacceptable. |
 | **Content Security Policy** | Existing inline scripts/styles require `'unsafe-inline'`; Jinja autoescape remains the primary XSS control. Remove inline code before tightening this directive. |
 | **Stateless logout** | Logout clears the browser cookie but does not revoke a copied token. Password changes, account disablement, and 2FA changes increment `session_version`; ordinary sessions expire after 12 hours (30 days with “remember me”). |
-| **Backups** | Local permissions do not encrypt the database, key, passport attachments, or receipts. Encrypt before copying off-host and protect access to both backup and key. |
+| **Backups** | Production snapshots are encrypted with `age` and the identity is held offline (OPS-1); the key never travels with the copy. Passport attachments are not in the database backup and are short-lived by design. |
 
 ## Reporting
 
