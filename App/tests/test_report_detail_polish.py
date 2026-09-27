@@ -26,6 +26,9 @@ FIRST_KV_RE = re.compile(r'<dl class="kv">(.*?)</dl>', re.DOTALL)
 TECHNICAL_RE = re.compile(
     r'<details class="panel technical">(.*?)</details>', re.DOTALL
 )
+# The page grammar puts everything before the Technical-details fold in front
+# of the host; the fold is the only place operator diagnostics may live.
+PRIMARY_RE = re.compile(r'(.*?)<details class="panel technical">', re.DOTALL)
 
 ENDPOINT_EN = host_i18n.STRINGS["en"]["reports.detail.endpoint"]
 ENDPOINT_CS = host_i18n.STRINGS["cs"]["reports.detail.endpoint"]
@@ -62,8 +65,9 @@ def _erase(apartment_id: int) -> None:
 
 
 def _first_kv(page: str) -> str:
-    match = FIRST_KV_RE.search(page)
-    assert match, "no key-value panel on the report detail page"
+    """Everything the host sees before the Technical-details fold."""
+    match = PRIMARY_RE.search(page)
+    assert match, "no primary surface before the technical details"
     return match.group(1)
 
 
