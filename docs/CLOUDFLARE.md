@@ -195,6 +195,8 @@ forwarding aliases:
 - **`***REMOVED***`** — owner.
 - **`support@ubyhost.com`** — software support, shown in the host admin portal
   per the contact split in [DESIGN.md](DESIGN.md). Never a guest contact.
+  It is a **Zoho group** (role address), not a personal mailbox: members
+  receive and may send as the group, so support survives personnel changes.
 - **`noreply@ubyhost.com`** — not a mailbox. It is the SES sending address only
   (see [SES.md](SES.md)); replies go to the Reply-To on each mail.
 
