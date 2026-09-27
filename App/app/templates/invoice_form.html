@@ -217,7 +217,7 @@
       <span class="invoice-total-label">{{ t('invoice.total_live') }}</span>
       <span class="invoice-total-value" data-total>0 Kč</span>
     </div>
-    <span class="small muted">{{ t('invoice.next_number', number=next_number) }}</span>
+    <span class="small muted" data-next-number>{{ t('invoice.next_number', number=next_number) }}</span>
     <button class="btn" type="submit" formaction="/invoices/preview" formtarget="_blank">{{ t('invoice.preview') }}</button>
     <button class="btn accent primary" type="submit" data-confirm data-confirm-message="{{ t('invoice.issue_confirm') }}">{{ t('invoice.issue') }}</button>
   </div>
@@ -337,24 +337,42 @@
     warn.hidden = !(noIban && needsBank);
   }
 
-  /* Switching operator may change the VAT columns; the page reload is the
-     honest way to re-render them. Only ask when what is typed would be lost
-     and the VAT realities actually differ. */
-  var dirty = false;
-  form.addEventListener("input", function () { dirty = true; }, true);
-  form.addEventListener("change", function (event) { if (event.target.id !== "legal_entity_id") dirty = true; });
-  var switchConfirm = {{ t('invoice.switch_operator_confirm') | tojson }};
+  /* Switching operator keeps everything typed. The fresh builder HTML is
+     fetched and only the operator-dependent chrome is swapped in (summary,
+     details link, next number, bank flag); the VAT columns re-derive from
+     the option flag already in the select. If the fetch fails, the honest
+     fallback is the reload. */
   if (entitySel) {
-    var currentEntity = entitySel.value;
     entitySel.addEventListener("change", function () {
-      var wanted = entitySel.selectedOptions[0].getAttribute("data-vat-payer") === "1";
-      if (!dirty || isPayer() === wanted || window.confirm(switchConfirm)) {
-        currentEntity = entitySel.value;
-        window.location.assign("/invoices/new?entity=" + encodeURIComponent(entitySel.value));
-        dirty = false;
-      } else {
-        entitySel.value = currentEntity;
-      }
+      var wanted = entitySel.value;
+      fetch("/invoices/new?entity=" + encodeURIComponent(wanted))
+        .then(function (res) { return res.ok ? res.text() : null; })
+        .then(function (html) {
+          if (!html) throw new Error("fetch failed");
+          var fresh = new DOMParser().parseFromString(html, "text/html");
+          var freshSel = fresh.getElementById("legal_entity_id");
+          if (!freshSel || freshSel.value !== wanted) throw new Error("stale page");
+          var meta = document.querySelector(".invoice-supplier-meta");
+          var freshMeta = fresh.querySelector(".invoice-supplier-meta");
+          if (meta && freshMeta) meta.innerHTML = freshMeta.innerHTML;
+          var link = document.querySelector(".invoice-supplier a");
+          var freshLink = fresh.querySelector(".invoice-supplier a");
+          if (link && freshLink) link.href = freshLink.getAttribute("href");
+          var next = document.querySelector("[data-next-number]");
+          var freshNext = fresh.querySelector("[data-next-number]");
+          if (next && freshNext) next.textContent = freshNext.textContent;
+          var warn = document.querySelector("[data-bank-warning]");
+          var freshWarn = fresh.querySelector("[data-bank-warning]");
+          if (warn && freshWarn) {
+            warn.setAttribute("data-has-iban", freshWarn.getAttribute("data-has-iban"));
+          }
+          syncVat();
+          syncTotal();
+          syncBank();
+        })
+        .catch(function () {
+          window.location.assign("/invoices/new?entity=" + encodeURIComponent(wanted));
+        });
     });
   }
 
