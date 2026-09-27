@@ -89,7 +89,7 @@ def _preview_view(draft) -> dict:
         "duzp": draft.get("duzp"),
         "due_date": draft.get("due_date"),
         "paid_on": draft.get("paid_on"),
-        "paid_via_label": invoices.PAID_VIA_LABELS.get(draft.get("paid_via") or ""),
+        "paid_via_label": invoices.custom_paid_via_label(draft.get("paid_via")),
         "seller_name": seller["name"],
         "seller_seat": seller["seat"],
         "seller_ico": seller["ico"],
