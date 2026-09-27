@@ -921,3 +921,38 @@ still unbuilt.
 rule and let the CS keys above go live. That is a schema change (a column on
 `user_account` or `legal_entity`) plus a Settings control, and it is not part of
 the audit.
+
+## From the GDPR plan
+
+### LD-4 — the register's DPA-version bump and the support-mailbox row are deferred
+The register correction shipped in `App/app/subprocessors_i18n.py`: the AWS S3
+row and the Google Drive rows no longer claim the backups are encrypted, and
+`subprocessors.effective` is now Version 1.1. Two parts of LD-4 remain open, and
+neither is an engineering call:
+
+- **`config.DPA_VERSION` was not bumped.** The register says it forms part of the
+  DPA, and LD-4 gates the bump on counsel ("if counsel treats the register as
+  part of the DPA"). It is also inert today: BE-1/FE-1, the mechanism that turns
+  a bump into re-acceptance, does not exist yet. Bump it together with BE-1 once
+  counsel confirms.
+- **The support mailbox provider is still unidentified**, so it has no row in the
+  register. LD-9 identifies it; add the row then, under the 30-day notice rule in
+  `subprocessors.change_body`.
+
+### LD-4 — other public copy also calls the backups encrypted, and one cadence is wrong
+LD-4 names only `subprocessors_i18n.py`, but the same false claim sits in the
+documents LD-3 already owns:
+
+- `privacy_policy_i18n.py` §11 (`:172` EN, `:408` CS) says the Operator may keep
+  "encrypted database and key backups" and "encrypted off-site copies" — false
+  until OPS-1.
+- `dpa_i18n.py` §15 (`:190` EN) says Guest Data may be "retained in encrypted
+  backups"; the CS body (`:404`) does not say encrypted, so the pair also
+  disagrees.
+- The same privacy §11 sentence says off-site copies go "weekly to Google Drive
+  and monthly to Amazon S3"; `backup-s3.sh` is documented as weekly, so that
+  cadence needs checking when LD-3 aligns the copy.
+
+Left untouched on purpose: outside LD-4's stated file scope, and LD-3 already
+owns `privacy_policy_i18n.py` §11 and `dpa_i18n.py` §15. Until OPS-1/OPS-2 land,
+the honest wording is the non-encrypted one.
