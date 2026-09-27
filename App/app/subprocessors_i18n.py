@@ -11,7 +11,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "The service providers that may process personal data for UbyHost, what they do, "
             "and when they are used. This register forms part of the Data Processing Agreement."
         ),
-        "subprocessors.effective": "Effective date: 19 September 2026. Version 1.0.",
+        "subprocessors.effective": "Effective date: 28 September 2026. Version 1.1.",
         "subprocessors.controller_note_title": "Who appoints these providers",
         "subprocessors.controller_note": (
             "For Guest Data, the accommodation provider or alternate controller configured for the "
@@ -33,7 +33,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.aws_provider": "Amazon Web Services (AWS)",
         "subprocessors.aws_purpose": (
             "Production hosting on Lightsail; transactional e-mail through SES when enabled; "
-            "optional encrypted S3 backups."
+            "optional S3 backups."
         ),
         "subprocessors.aws_data": (
             "Host accounts, property and stay data, Guest Data, encrypted integration credentials, "
@@ -63,9 +63,9 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Conditional; not part of the production Guest Data path."
         ),
         "subprocessors.google_provider": "Google Drive (Google)",
-        "subprocessors.google_purpose": "Optional encrypted off-site production backups.",
+        "subprocessors.google_purpose": "Optional off-site production backups.",
         "subprocessors.google_data": (
-            "Encrypted backup archives that may contain account, property, stay and Guest Data."
+            "Backup archives that may contain account, property, stay and Guest Data."
         ),
         "subprocessors.google_location": (
             "Conditional; used only when the Operator configures the documented backup job. "
@@ -93,7 +93,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Poskytovatelé, kteří mohou pro UbyHost zpracovávat osobní údaje, účel jejich zapojení "
             "a podmínky použití. Tento seznam je součástí zpracovatelské smlouvy."
         ),
-        "subprocessors.effective": "Účinnost od: 19. září 2026. Verze 1.0.",
+        "subprocessors.effective": "Účinnost od: 28. září 2026. Verze 1.1.",
         "subprocessors.controller_note_title": "Kdo tyto poskytovatele zapojuje",
         "subprocessors.controller_note": (
             "Správcem údajů hostů je ubytovatel nebo alternativní správce nastavený pro dané "
@@ -114,7 +114,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.aws_provider": "Amazon Web Services (AWS)",
         "subprocessors.aws_purpose": (
             "Produkční hosting Lightsail; transakční e-mail přes SES po zapnutí; volitelné "
-            "šifrované zálohy S3."
+            "zálohy S3."
         ),
         "subprocessors.aws_data": (
             "Účty ubytovatelů, údaje o ubytování a pobytech, údaje hostů, šifrované integrační "
@@ -144,9 +144,9 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Podmíněné použití; není součástí produkční cesty údajů hostů."
         ),
         "subprocessors.google_provider": "Google Drive (Google)",
-        "subprocessors.google_purpose": "Volitelné šifrované zálohy produkce mimo server.",
+        "subprocessors.google_purpose": "Volitelné zálohy produkce mimo server.",
         "subprocessors.google_data": (
-            "Šifrované záložní archivy, které mohou obsahovat účty, ubytování, pobyty a údaje hostů."
+            "Záložní archivy, které mohou obsahovat účty, ubytování, pobyty a údaje hostů."
         ),
         "subprocessors.google_location": (
             "Podmíněné použití pouze po nastavení dokumentované zálohovací úlohy Provozovatelem. "
