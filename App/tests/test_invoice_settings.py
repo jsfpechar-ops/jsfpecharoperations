@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, invoices
 from app.main import app
-from datetime import date
 
 PASSWORD = "Secure-Password-123"
 USERNAME = "invoice-details-host"
