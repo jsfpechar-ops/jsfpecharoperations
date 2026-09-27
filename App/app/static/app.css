@@ -985,6 +985,15 @@ a.notification-link:hover { background: var(--surface-2); }
 }
 .entity-edit-panel { margin-bottom: 16px; }
 
+/* The operator form is short on purpose (~700px): only the identity block,
+   with bank, VAT, registry and numbering kept in the invoice builder instead
+   of a tall form. `.wrap.with-sidebar > *` caps the content column at 1220px
+   later in this file, so match its specificity and stay narrower. */
+.wrap.with-sidebar .entity-form,
+.wrap.with-sidebar .entity-add {
+  max-width: 700px;
+}
+
 /* Invoice builder: one supplier row — operator picker, live summary of the
    details that will print, and the invoice-details edit link. */
 .invoice-supplier-row {
