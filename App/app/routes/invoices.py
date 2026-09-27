@@ -4,8 +4,11 @@ An invoice is NOT tied to a stay. Included in main.py after admin.router.
 """
 from __future__ import annotations
 
+from datetime import date
+from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 
 from .. import (
     access,
@@ -19,9 +22,12 @@ from .. import (
     invoices,
     mail,
     mail_notify,
+    payments,
     rate_limit,
     security,
 )
+
+VAT_STATUSES = ("non_payer", "identified", "payer")
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -50,13 +56,41 @@ def _entities(request: Request):
 
 
 def _chosen_entity(request, entities, form=None):
+    wanted = ""
     if form is not None:
-        entity_id = _form_str(form, "legal_entity_id")
-        if entity_id.isdigit():
-            for entity in entities:
-                if str(entity["id"]) == entity_id:
-                    return entity
+        wanted = _form_str(form, "legal_entity_id")
+    if not wanted:
+        wanted = (request.query_params.get("entity") or "").strip()
+    if wanted.isdigit():
+        for entity in entities:
+            if str(entity["id"]) == wanted:
+                return entity
     return entities[0] if entities else None
+
+
+def _settings_next(request, form, entity) -> str:
+    """Where ?next= on the settings page points; the builder keeps the operator."""
+    raw = _form_str(form, "next") if form is not None else ""
+    return security.safe_local_path(raw, f"/invoices/new?entity={entity['id']}")
+
+
+def _form_state(request, form, entity) -> Dict[str, Any]:
+    """Reshape a failed POST so the 422 render loses nothing the host typed."""
+    state = {key: _form_str(form, key) for key in (
+        "buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_country",
+        "buyer_ico", "buyer_dic", "buyer_email", "paid_via", "paid_via_custom",
+        "due_date", "duzp", "note",
+        "legal_entity_id",
+    )}
+    state["already_paid"] = "1" if form.get("already_paid") else "0"
+    state["lang"] = _form_str(form, "lang")
+    state["item_rows"] = [
+        {key: row[key] for key in (
+            "description", "quantity", "unit", "unit_price", "vat_rate"
+        )}
+        for row in invoices.form_item_rows(form)
+    ]
+    return state
 
 
 def _form_context(request, entities, entity, *, errors=None, values=None):
@@ -136,10 +170,106 @@ def invoice_new(request: Request):
         return guard
     entities = _entities(request)
     entity = _chosen_entity(request, entities)
+    if entity and not request.query_params.get("entity"):
+        # A plain builder URL pins the chosen operator once, so a save on the
+        # invoice-details page always reopens the same operator's builder.
+        return RedirectResponse(
+            f"/invoices/new?entity={entity['id']}", status_code=303
+        )
     context = _form_context(request, entities, entity)
     if not entity:
         context["errors"] = [host_i18n.translate(_lang(request), "invoice.err.no_entity")]
     return render(request, "invoice_form.html", context)
+
+
+@router.get("/invoices/settings")
+def invoice_settings(request: Request):
+    """Invoice details of one operator: the fields the printed document uses.
+
+    Registered before ``/invoices/{invoice_id}`` so "settings" is never read
+    as an invoice number.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entities = _entities(request)
+    entity = _chosen_entity(request, entities)
+    if not entity:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    return render(request, "invoice_settings.html", {
+        "nav": "invoices",
+        "entity": entity,
+        "entities": entities,
+        "next": security.safe_local_path(
+            request.query_params.get("next") or "",
+            f"/invoices/new?entity={entity['id']}",
+        ),
+    })
+
+
+@router.post("/invoices/settings")
+async def invoice_settings_save(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entities = _entities(request)
+    form = await request.form()
+    entity = _chosen_entity(request, entities, form)
+    if not entity:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    redirect = _settings_next(request, form, entity)
+    detail = _settings_detail_payload(form)
+    if "bank_account" in detail:
+        account = detail["bank_account"]
+        if account:
+            try:
+                detail["bank_account"], detail["iban"] = payments.normalise_account(
+                    account
+                )
+            except ValueError:
+                return _back(
+                    f"/invoices/settings?entity={entity['id']}",
+                    err=_flash(request, "entities.bank.invalid"),
+                )
+        else:
+            detail["bank_account"] = None
+            detail["iban"] = None
+    db.update("legal_entity", entity["id"], detail)
+    db.audit("entity_invoice_details_saved", f"id={entity['id']}",
+             owner_user_id=access.owner_id(request))
+    return _back(redirect, msg=_flash(request, "flash.entities.saved"))
+
+
+def _settings_detail_payload(form) -> Dict[str, Any]:
+    """Presence-checked invoice details: sent = update (blank clears), absent = keep."""
+    detail: Dict[str, Any] = {}
+    if "bank_account" in form:
+        detail["bank_account"] = _form_str(form, "bank_account")
+    if "bic" in form:
+        detail["bic"] = _form_str(form, "bic").replace(" ", "").upper() or None
+    if "vat_status" in form:
+        vat = _form_str(form, "vat_status")
+        detail["vat_status"] = vat if vat in VAT_STATUSES else "non_payer"
+    if "registry_entry" in form:
+        detail["registry_entry"] = _form_str(form, "registry_entry") or None
+    if "invoice_prefix" in form:
+        prefix = (
+            "".join(ch for ch in _form_str(form, "invoice_prefix").upper() if ch.isalnum())
+        )[:6]
+        detail["invoice_prefix"] = prefix or None
+    if "invoice_next_number" in form:
+        next_no = _form_str(form, "invoice_next_number").strip()
+        if next_no.isdigit() and int(next_no) > 0:
+            detail["invoice_next_number"] = int(next_no)
+            detail["invoice_next_number_year"] = date.today().year
+        else:
+            detail["invoice_next_number"] = None
+            detail["invoice_next_number_year"] = None
+    if "invoice_due_days" in form:
+        due_raw = _form_str(form, "invoice_due_days")
+        due = int(due_raw) if due_raw.isdigit() else 14
+        detail["invoice_due_days"] = max(0, min(due, 365))
+    return detail
 
 
 @router.post("/invoices/preview")
@@ -182,6 +312,7 @@ async def invoice_issue(request: Request):
             entities,
             entity,
             errors=[host_i18n.translate(lang, issue.message) for issue in issues],
+            values=_form_state(request, form, entity),
         )
         return render(request, "invoice_form.html", context, status_code=422)
     invoice_id = invoices.issue(draft, access.owner_id(request))

@@ -985,6 +985,29 @@ a.notification-link:hover { background: var(--surface-2); }
 }
 .entity-edit-panel { margin-bottom: 16px; }
 
+/* Invoice builder: one supplier row — operator picker, live summary of the
+   details that will print, and the invoice-details edit link. */
+.invoice-supplier-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.invoice-supplier-picker { flex: 0 1 320px; }
+.invoice-supplier-picker .field,
+.invoice-supplier-picker { min-width: 0; }
+.invoice-supplier-meta {
+  min-width: 0;
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 2px;
+}
+.invoice-supplier-name { font-weight: 620; color: var(--ink); }
+.invoice-supplier-meta .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invoice-supplier .btn { flex: 0 0 auto; }
+
 /* --- tables ------------------------------------------------------------ */
 
 table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
