@@ -221,9 +221,9 @@ def _reason_text(state: str, reason: str, transport: bool, lang: str) -> str:
 # Two rules hold for the guest mail:
 #
 # 1. Blocks come in a fixed order -- status (heading + intro), money (one
-#    `_block_panel`), secondary links (quiet), closing note, footer. A new
-#    payment or invoice drops into the money slot instead of inventing a place
-#    for itself.
+#    `_block_panel`, when a document carries an amount), links (quiet),
+#    closing note, footer. A new payment document drops into the money slot
+#    instead of inventing a place for itself.
 # 2. At most one coral button per message. If the money slot has one, the
 #    status slot must not, because two primaries means no primary.
 
@@ -301,13 +301,13 @@ def _block_panel(
 ) -> str:
     """One bordered sub-card: a title, label/value rows, at most one button.
 
-    This is the money slot of every guest message, so the stay fee and a later
-    invoice present the same way instead of scattering uppercase facts through
-    the card. A row given as ``(label, value, True)`` prints its value in a
-    monospace face, because an IBAN, a VS and a reference are meant to be copied
-    by hand. ``note`` is the muted line under the rows -- cash on arrival, for
-    the fee. The panel is on the canvas colour, which sets it slightly apart
-    from the white card without a second border weight.
+    This is the money slot of every guest message, so an invoice presents its
+    number and total the same way any later payment document would, instead of
+    scattering uppercase facts through the card. A row given as
+    ``(label, value, True)`` prints its value in a monospace face, because an
+    IBAN, a VS and a reference are meant to be copied by hand. ``note`` is the
+    muted line under the rows. The panel is on the canvas colour, which sets
+    it slightly apart from the white card without a second border weight.
     """
     rendered = []
     for row in rows:
@@ -991,46 +991,19 @@ def build_completion(
     dates: str,
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
-    money: Optional[Dict[str, Any]] = None,
-    secondary_note: Optional[str] = None,
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
     The claim secret is spent when the guest confirms, so a fresh link would
     have to be minted here; a receipt is the wrong place to rotate the guest's
     access. The stay address works on the device that confirmed, which is where
-    the guest just finished filling the form in.
-
-    The blocks keep the guest order -- status, money, secondary links, closing
-    note, footer -- so a stay fee or an invoice can fill the money slot without
-    anything moving around it. ``money`` is that slot: ``title``, ``rows`` of
-    ``(label, value[, monospace])``, an optional ``action`` of ``(url, label)``
-    and an optional ``note``. Its ``amount`` is the bare number the fee-due
-    subject names, and its presence is what switches the subject over.
-    ``secondary_note`` is a muted line in the links slot, next to the stay link
-    -- the note about where the payment QR code lives, for the fee.
+    the guest just finished filling the form in. An invoice is its own mail
+    (``build_invoice_issued``), so the receipt stays buttonless and closed.
     """
-    amount = (money or {}).get("amount")
-    if amount:
-        subject = _guest_text(
-            lang,
-            "mail_completion_subject_fee",
-            property=property_name,
-            amount=amount,
-        )
-        # The second sentence stops promising there is nothing left to do.
-        intro = _guest_text(
-            lang,
-            "mail_completion_intro_fee",
-            property=property_name,
-            dates=dates,
-            amount=amount,
-        )
-    else:
-        subject = _guest_text(lang, "mail_completion_subject", property=property_name)
-        intro = _guest_text(
-            lang, "mail_completion_intro", property=property_name, dates=dates
-        )
+    subject = _guest_text(lang, "mail_completion_subject", property=property_name)
+    intro = _guest_text(
+        lang, "mail_completion_intro", property=property_name, dates=dates
+    )
     action = _guest_text(lang, "mail_completion_action")
     note = _guest_text(lang, "mail_completion_note")
     footer_lines = _guest_footer_lines(lang, property_name, host)
@@ -1042,26 +1015,11 @@ def build_completion(
     ]
     text_lines = [intro]
 
-    # Slot 2: the money, when there is any.
-    if money:
-        blocks.append(
-            _block_panel(
-                money.get("title", ""),
-                money.get("rows") or [],
-                action=money.get("action"),
-                note=money.get("note"),
-            )
-        )
-        text_lines.extend(["", *_panel_text_lines(money)])
-
-    # Slot 3: secondary links, quiet by design -- the primary is in the money.
+    # Slot 2: the links, quiet by design -- nothing here is still owed.
     blocks.append(_block_link(stay_url, action))
     text_lines.extend(["", f"{action}: {stay_url}"])
-    if secondary_note:
-        blocks.append(_block_paragraph(secondary_note, muted=True))
-        text_lines.extend(["", secondary_note])
 
-    # Slot 4: the closing note.
+    # Slot 3: the closing note.
     blocks.append(_block_paragraph(note, muted=True))
     text_lines.extend(["", note])
 
