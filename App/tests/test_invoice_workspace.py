@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, invoices
+from app import auth, db
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
