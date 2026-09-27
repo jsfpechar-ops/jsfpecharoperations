@@ -126,6 +126,11 @@ def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
     due_date = _form_str(form, "due_date")
     if not due_date and not already_paid:
         due_date = (today + timedelta(days=due_days)).isoformat()
+    paid_via = _form_str(form, "paid_via") if already_paid else ""
+    if paid_via == "custom":
+        # "Paid via" offered a free-text field: the host's own wording is what
+        # the invoice should print, exactly as typed (minus the edges).
+        paid_via = _form_str(form, "paid_via_custom")[:60]
 
     return {
         "kind": "invoice",
@@ -135,7 +140,7 @@ def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
         "duzp": _form_str(form, "duzp") or None,
         "due_date": due_date or None,
         "paid_on": today.isoformat() if already_paid else None,
-        "paid_via": (_form_str(form, "paid_via") or None) if already_paid else None,
+        "paid_via": paid_via or None,
         "seller": {
             "name": entity["name"] if entity else "",
             "seat": entity["seat"] if entity else "",
@@ -164,6 +169,17 @@ def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
         "total_vat_haler": total_vat,
         "total_haler": total_haler,
     }
+
+
+def custom_paid_via_label(paid_via: Optional[str]) -> str:
+    """The printed payment-method label.
+
+    Listed options translate through ``PAID_VIA_LABELS``; anything else is the
+    host's own "Paid via" text captured verbatim on the form.
+    """
+    if not paid_via:
+        return ""
+    return PAID_VIA_LABELS.get(paid_via, paid_via)
 
 
 def validate_for_issue(draft: Dict[str, Any]) -> List[validation.Issue]:
@@ -286,7 +302,7 @@ def pdf_view_row(cur, invoice_id: int) -> Dict[str, Any]:
     row["buyer_country_name"] = (
         "" if not country or country == "CZE" else validation.country_name(country, "cs")
     )
-    row["paid_via_label"] = PAID_VIA_LABELS.get(row.get("paid_via") or "", row.get("paid_via") or "")
+    row["paid_via_label"] = custom_paid_via_label(row.get("paid_via"))
     row["corrects_number"] = None
     if row.get("corrects_invoice_id"):
         src = cur.execute(
