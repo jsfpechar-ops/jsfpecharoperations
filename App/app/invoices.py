@@ -11,7 +11,7 @@ from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional
 
-from . import db, invoice_pdf, validation
+from . import db, invoice_pdf, payments, validation
 
 VAT_RATES = (0, 12, 21)
 PAID_VIA_LABELS = {
@@ -109,6 +109,84 @@ def _items_from_form(form, vat_status: str) -> List[Dict[str, Any]]:
     return items
 
 
+def seller_snapshot(entity, form) -> Dict[str, Any]:
+    """The seller block for a draft: explicit presence checks, not defaults.
+
+    A field the form carries is used verbatim — including a deliberate blank,
+    which is not the same as a field the form never sent. Any posted bank
+    number goes through the shared payments helper so the format printed on
+    the document and used for the QR code is always the same. Fields the form
+    does not carry fall back to the operator's stored details.
+    """
+    def pick(key: str) -> str:
+        form_key = f"seller_{key}"
+        if form_key in form:
+            return _form_str(form, form_key)
+        entity_key = {
+            "registry": "registry_entry",
+            "email": "contact_email",
+            "phone": "contact_phone",
+        }.get(key, key)
+        if entity and entity_key in entity.keys():
+            return entity[entity_key] or ""
+        return ""
+
+    seller = {
+        "name": pick("name"),
+        "seat": pick("seat"),
+        "ico": pick("ico"),
+        "dic": pick("dic"),
+        "registry": pick("registry"),
+        "bank_account": pick("bank_account"),
+        "iban": pick("iban"),
+        "bic": pick("bic"),
+        "email": pick("email"),
+        "phone": pick("phone"),
+    }
+    if "seller_bank_account" in form:
+        form_bank = _form_str(form, "seller_bank_account")
+        if form_bank:
+            try:
+                seller["bank_account"], seller["iban"] = payments.normalise_account(
+                    form_bank
+                )
+            except ValueError:
+                # A bank number the helper rejects is never printed; the
+                # operator's stored account stays on the document.
+                seller["bank_account"] = entity["bank_account"] if entity else ""
+                seller["iban"] = entity["iban"] if entity else ""
+        else:
+            seller["bank_account"] = ""
+            seller["iban"] = ""
+    return seller
+
+
+def form_item_rows(form) -> List[Dict[str, str]]:
+    """Raw item rows the browser posted, aligned per column index.
+
+    Used only to rebuild the form for a 422 rerender, so trailing blank rows
+    (a cloned template row) are dropped but a part-typed row survives.
+    """
+    descs = _getlist(form, "item_description")
+    qtys = _getlist(form, "item_quantity")
+    units = _getlist(form, "item_unit")
+    prices = _getlist(form, "item_unit_price")
+    rates = _getlist(form, "item_vat_rate")
+    rows: List[Dict[str, str]] = []
+    for i in range(max(len(descs), len(qtys), len(units), len(prices), len(rates))):
+        row = {
+            "description": _at(descs, i),
+            "quantity": _at(qtys, i, "1"),
+            "unit": _at(units, i),
+            "unit_price": _at(prices, i),
+            "vat_rate": _at(rates, i, "21"),
+        }
+        if not (row["description"].strip() or row["unit_price"].strip()):
+            continue
+        rows.append(row)
+    return rows
+
+
 def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
     """Snapshot the free-form issue form into a draft. Pure except for reads."""
     vat_status = (entity["vat_status"] or "non_payer") if entity else "non_payer"
@@ -141,18 +219,7 @@ def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
         "due_date": due_date or None,
         "paid_on": today.isoformat() if already_paid else None,
         "paid_via": paid_via or None,
-        "seller": {
-            "name": entity["name"] if entity else "",
-            "seat": entity["seat"] if entity else "",
-            "ico": entity["ico"] if entity else "",
-            "dic": entity["dic"] if entity else "",
-            "registry": entity["registry_entry"] if entity else "",
-            "bank_account": entity["bank_account"] if entity else "",
-            "iban": entity["iban"] if entity else "",
-            "bic": entity["bic"] if entity else "",
-            "email": entity["contact_email"] if entity else "",
-            "phone": entity["contact_phone"] if entity else "",
-        },
+        "seller": seller_snapshot(entity, form),
         "buyer": {
             "name": _form_str(form, "buyer_name"),
             "street": _form_str(form, "buyer_street"),
