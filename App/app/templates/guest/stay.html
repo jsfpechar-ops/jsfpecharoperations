@@ -11,8 +11,8 @@
 </div>
 
 {# Fixed vertical order: (1) status, (2) the one next action, (3) money —
-   the stay fee, then the invoice link — (4) your records, (5) the host
-   footer. PLAN_POPLATEK §10.2 inserts the money block between (2) and (4). #}
+   the invoice link, when there is one — (4) your records, (5) the host
+   footer. #}
 {% if party_error %}
   <div class="g-err">{{ t('error_party_size') }}</div>
 {% endif %}

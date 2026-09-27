@@ -17,17 +17,35 @@
 {% endif %}
 
 {% if entity %}
-<form method="post" action="/invoices">
+{% set payer = (entity.vat_status or 'non_payer') == 'payer' %}
+<form method="post" action="/invoices" class="invoice-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 
-  <div class="panel">
-    <div class="field" style="max-width:360px">
-      <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
-      <select id="legal_entity_id" name="legal_entity_id">
-        {% for option in entities %}
-          <option value="{{ option.id }}" {% if entity and option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
-        {% endfor %}
-      </select>
+  <div class="invoice-workspace">
+  <div class="invoice-document">
+
+  <div class="panel invoice-supplier">
+    <div class="invoice-supplier-row">
+      <div class="field invoice-supplier-picker">
+        <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
+        <select id="legal_entity_id" name="legal_entity_id">
+          {% for option in entities %}
+            <option value="{{ option.id }}"
+                     data-vat-payer="{{ 1 if (option.vat_status or 'non_payer') == 'payer' else 0 }}"
+                     {% if entity and option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="invoice-supplier-meta">
+        <span class="invoice-supplier-name">{{ entity.name }}</span>
+        <span class="small muted">
+          {% if entity.ico %}IČO {{ entity.ico }}{% endif %}
+          {% if entity.seat %}· {{ entity.seat }}{% endif %}
+        </span>
+      </div>
+      <a class="btn small ghost" href="/invoices/settings?entity={{ entity.id }}&amp;next={{ (('/invoices/new?entity=' ~ entity.id) | urlencode) }}">
+        {{ t('invoice.edit_details') }}
+      </a>
     </div>
   </div>
 
@@ -83,18 +101,37 @@
           <th>{{ t('invoice.col.qty') }}</th>
           <th>{{ t('invoice.col.unit') }}</th>
           <th>{{ t('invoice.col.unit_price') }}</th>
-          <th>{{ t('invoice.col.vat') }}</th>
+          <th data-vat-col {% if not payer %}hidden{% endif %}>{{ t('invoice.col.vat') }}</th>
           <th></th>
         </tr>
       </thead>
       <tbody data-item-body>
+        {% set rows = values.item_rows if values is defined and values is not none else [] %}
+        {% if rows %}
+          {% for row in rows %}
+          <tr data-item-row>
+            <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required value="{{ row.description }}"></td>
+            <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="{{ row.quantity }}" inputmode="numeric" class="input-qty"></td>
+            <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" value="{{ row.unit }}" class="input-unit"></td>
+            <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" value="{{ row.unit_price }}" class="input-price"></td>
+            <td data-label="{{ t('invoice.col.vat') }}" data-vat-col {% if not payer %}hidden{% endif %}>
+              <select name="item_vat_rate" class="input-vat" {% if not payer %}disabled{% endif %}>
+                {% for rate in (21, 12, 0) %}
+                  <option value="{{ rate }}" {% if row.vat_rate == rate|string %}selected{% endif %}>{{ rate }} %</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="row-actions"><button type="button" class="btn small" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
+          </tr>
+          {% endfor %}
+        {% else %}
         <tr data-item-row>
           <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required></td>
           <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" class="input-qty"></td>
           <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" class="input-unit"></td>
           <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" class="input-price"></td>
-          <td data-label="{{ t('invoice.col.vat') }}">
-            <select name="item_vat_rate" class="input-vat">
+          <td data-label="{{ t('invoice.col.vat') }}" data-vat-col {% if not payer %}hidden{% endif %}>
+            <select name="item_vat_rate" class="input-vat" {% if not payer %}disabled{% endif %}>
               <option value="21">21 %</option>
               <option value="12">12 %</option>
               <option value="0">0 %</option>
@@ -102,6 +139,7 @@
           </td>
           <td class="row-actions"><button type="button" class="btn small" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
         </tr>
+        {% endif %}
       </tbody>
     </table>
     <div class="actions"><button type="button" class="btn small" data-add-item>{{ t('invoice.add_item') }}</button></div>
@@ -109,13 +147,20 @@
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.payment') }}</h2>
-    <label class="checkline" for="already_paid">
-      <input type="checkbox" id="already_paid" name="already_paid" value="1"
-             {% if values.get('already_paid', '1') %}checked{% endif %}>
-      <span>{{ t('invoice.already_paid') }}</span>
-    </label>
+    <div class="invoice-paid-choice" role="radiogroup" aria-label="{{ t('invoice.section.payment') }}">
+      <label class="checkline">
+        <input type="radio" id="already_paid" name="already_paid" value="1"
+               {% if values.get('already_paid', '1') == '1' %}checked{% endif %}>
+        <span>{{ t('invoice.already_paid') }}</span>
+      </label>
+      <label class="checkline">
+        <input type="radio" id="payment_requested" name="already_paid" value="0"
+               {% if values.get('already_paid') == '0' %}checked{% endif %}>
+        <span>{{ t('invoice.payment_requested') }}</span>
+      </label>
+    </div>
     <div class="grid invoice-paid-grid" id="paid-fields" data-paid-fields
-         {% if not values.get('already_paid', '1') %}hidden{% endif %}>
+         {% if values.get('already_paid') == '0' %}hidden{% endif %}>
       <div class="field">
         <label for="paid_via">{{ t('invoice.paid_via') }}</label>
         <select id="paid_via" name="paid_via" data-paid-via>
@@ -131,47 +176,118 @@
                {% if not values.get('paid_via_custom') %}hidden{% endif %}>
       </div>
       <div class="field">
-        <label for="due_date">{{ t('invoice.due') }}</label>
-        <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}">
-      </div>
-      <div class="field">
         <label for="duzp">{{ t('invoice.duzp') }}</label>
         <input type="date" id="duzp" name="duzp" value="{{ values.get('duzp', '') or today().isoformat() }}">
       </div>
     </div>
-    <div class="field" style="max-width:320px">
-      <label for="lang">{{ t('invoice.section.language') }}</label>
-      <select id="lang" name="lang">
-        <option value="cs">{{ t('invoice.lang.cs') }}</option>
-        <option value="en">{{ t('invoice.lang.en') }}</option>
-      </select>
+    <div class="grid" id="due-fields" data-due-fields
+         {% if values.get('already_paid', '1') != '0' %}hidden{% endif %}>
+      <div class="field">
+        <label for="due_date">{{ t('invoice.due') }}</label>
+        <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}">
+        <div class="hint">{{ t('invoice.due_help') }}</div>
+      </div>
+      <div class="field invoice-paid-duzp-clone" hidden></div>
     </div>
-    <div class="field">
-      <label for="note">{{ t('invoice.note') }} <span class="opt">{{ t('common.optional') }}</span></label>
-      <input type="text" id="note" name="note" maxlength="300" value="{{ values.get('note', '') }}">
-    </div>
-    {% if not entity.iban %}
-      <p class="warn-text small">{{ t('invoice.warn_no_iban') }}</p>
-    {% endif %}
+    <details class="invoice-more">
+      <summary>{{ t('invoice.more_options') }}</summary>
+      <div class="invoice-more-body">
+        <div class="field">
+          <label for="lang">{{ t('invoice.section.language') }}</label>
+          <select id="lang" name="lang">
+            <option value="cs" {% if values.get('lang', 'cs') == 'cs' %}selected{% endif %}>{{ t('invoice.lang.cs') }}</option>
+            <option value="en" {% if values.get('lang') == 'en' %}selected{% endif %}>{{ t('invoice.lang.en') }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="note">{{ t('invoice.note') }} <span class="opt">{{ t('common.optional') }}</span></label>
+          <input type="text" id="note" name="note" maxlength="300" value="{{ values.get('note', '') }}">
+        </div>
+      </div>
+    </details>
+    <p class="warn-text small" data-bank-warning data-has-iban="{{ 1 if entity.iban else 0 }}" hidden>
+      {{ t('invoice.warn_no_iban') }}
+    </p>
   </div>
 
-  <div class="actions">
+  </div>{# /invoice-document #}
+
+  <div class="invoice-actions" data-actions>
+    <div class="invoice-total">
+      <span class="invoice-total-label">{{ t('invoice.total_live') }}</span>
+      <span class="invoice-total-value" data-total>0 Kč</span>
+    </div>
     <span class="small muted">{{ t('invoice.next_number', number=next_number) }}</span>
     <button class="btn" type="submit" formaction="/invoices/preview" formtarget="_blank">{{ t('invoice.preview') }}</button>
     <button class="btn accent primary" type="submit" data-confirm data-confirm-message="{{ t('invoice.issue_confirm') }}">{{ t('invoice.issue') }}</button>
   </div>
+  </div>{# /invoice-workspace #}
 </form>
 
 <script>
 (function () {
+  var form = document.querySelector(".invoice-form");
+  if (!form) return;
+
   var body = document.querySelector("[data-item-body]");
+  var workspace = document.querySelector(".invoice-workspace");
+  var totalEl = document.querySelector("[data-total]");
+  var entitySel = document.getElementById("legal_entity_id");
+
+  /* The VAT column answers the seller's VAT status, so it appears and
+     disappears with the operator; disabled selects are also never posted. */
+  function isPayer() {
+    var option = entitySel.selectedOptions && entitySel.selectedOptions[0];
+    return option && option.getAttribute("data-vat-payer") === "1";
+  }
+  function syncVat() {
+    var payer = isPayer();
+    workspace.classList.toggle("is-payer", payer);
+    form.querySelectorAll("[data-vat-col]").forEach(function (cell) { cell.hidden = !payer; });
+    form.querySelectorAll(".input-vat").forEach(function (sel) { sel.disabled = !payer; });
+  }
+
+  var nf = new Intl.NumberFormat("cs-CZ", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  var parseMoney = function (text) {
+    var value = parseFloat((text || "").replace(/\s+/g, "").replace(",", "."));
+    return isNaN(value) ? 0 : value;
+  };
+  function total() {
+    var sum = 0;
+    form.querySelectorAll("[data-item-row]").forEach(function (row) {
+      var qty = parseInt(row.querySelector(".input-qty").value, 10) || 1;
+      var price = parseMoney(row.querySelector(".input-price").value);
+      var gross = price * qty;
+      if (isPayer()) {
+        var rateSel = row.querySelector(".input-vat");
+        var rate = rateSel && !rateSel.disabled ? parseFloat(rateSel.value) || 0 : 21;
+        gross = gross * (1 + rate / 100);
+      }
+      sum += gross;
+    });
+    return sum;
+  }
+  function syncTotal() {
+    totalEl.textContent = nf.format(total()) + " Kč";
+  }
+
+  /* Items: cloning keeps the rate of the last visible row instead of
+     resetting it; the template row itself simply has no rate yet. */
   if (body) {
     var template = body.querySelector("[data-item-row]").cloneNode(true);
     document.querySelector("[data-add-item]").addEventListener("click", function () {
+      var rowsList = body.querySelectorAll("[data-item-row]");
+      var previous = rowsList[rowsList.length - 1];
       var row = template.cloneNode(true);
-      row.querySelectorAll("input, select").forEach(function (el) { el.value = el.name === "item_quantity" ? "1" : ""; });
-      var vat = row.querySelector('select[name="item_vat_rate"]');
-      if (vat) vat.value = "21";
+      row.querySelectorAll("input, select").forEach(function (el) {
+        el.value = el.name === "item_quantity" ? "1" : "";
+      });
+      var vat = row.querySelector(".input-vat");
+      if (vat) {
+        var lastVat = previous.querySelector(".input-vat");
+        vat.value = lastVat && lastVat.value ? lastVat.value : "21";
+        vat.disabled = lastVat && lastVat.disabled;
+      }
       body.appendChild(row);
     });
     body.addEventListener("click", function (event) {
@@ -180,18 +296,23 @@
       if (body.querySelectorAll("[data-item-row]").length > 1) {
         button.closest("[data-item-row]").remove();
       }
+      syncTotal();
     });
+    body.addEventListener("input", syncTotal);
+    body.addEventListener("change", syncTotal);
   }
 
-  /* "Paid via" only answers a question while "Already paid" is ticked, so the
-     field waits like every other conditional field in the product. Choosing
-     the custom option reveals the free-text input for the host's own wording. */
-  var paid = document.getElementById("already_paid");
+  /* Payment: either the money is already here (and "paid via" says how), or
+     it is asked for with a due date. The two rows mirror each other. */
+  var paidRadio = document.getElementById("already_paid");
+  var dueRadio = document.getElementById("payment_requested");
   var paidFields = document.querySelector("[data-paid-fields]");
-  if (paid && paidFields) {
-    var sync = function () { paidFields.hidden = !paid.checked; };
-    paid.addEventListener("change", sync);
-    sync();
+  var dueFields = document.querySelector("[data-due-fields]");
+  function syncPayment() {
+    var paid = paidRadio.checked;
+    paidFields.hidden = !paid;
+    dueFields.hidden = paid;
+    syncBank();
   }
 
   var via = document.querySelector("[data-paid-via]");
@@ -200,10 +321,56 @@
     var syncCustom = function () {
       viaCustom.hidden = via.value !== "custom";
       if (via.value === "custom") viaCustom.focus();
+      syncBank();
     };
     via.addEventListener("change", syncCustom);
     syncCustom();
   }
+
+  /* The QR code only makes sense for a bank transfer, so the missing
+     account warning waits for that combination. */
+  var warn = document.querySelector("[data-bank-warning]");
+  function syncBank() {
+    if (!warn) return;
+    var noIban = warn.getAttribute("data-has-iban") !== "1";
+    var needsBank = dueRadio.checked || (paidRadio.checked && via && via.value === "direct_transfer");
+    warn.hidden = !(noIban && needsBank);
+  }
+
+  /* Switching operator may change the VAT columns; the page reload is the
+     honest way to re-render them. Only ask when what is typed would be lost
+     and the VAT realities actually differ. */
+  var dirty = false;
+  form.addEventListener("input", function () { dirty = true; }, true);
+  form.addEventListener("change", function (event) { if (event.target.id !== "legal_entity_id") dirty = true; });
+  var switchConfirm = {{ t('invoice.switch_operator_confirm') | tojson }};
+  if (entitySel) {
+    var currentEntity = entitySel.value;
+    entitySel.addEventListener("change", function () {
+      var wanted = entitySel.selectedOptions[0].getAttribute("data-vat-payer") === "1";
+      if (!dirty || isPayer() === wanted || window.confirm(switchConfirm)) {
+        currentEntity = entitySel.value;
+        window.location.assign("/invoices/new?entity=" + encodeURIComponent(entitySel.value));
+        dirty = false;
+      } else {
+        entitySel.value = currentEntity;
+      }
+    });
+  }
+
+  if (paidRadio && dueRadio) {
+    [paidRadio, dueRadio].forEach(function (radio) { radio.addEventListener("change", syncPayment); });
+    syncPayment();
+  }
+
+  form.addEventListener("submit", function () {
+    /* The authoritative total is summed in Python (Decimal); the live value
+       is only the display of it. */
+    totalEl.textContent = nf.format(total()) + " Kč";
+  });
+
+  syncVat();
+  syncTotal();
 })();
 </script>
 {% endif %}
