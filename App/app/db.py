@@ -374,6 +374,8 @@ CREATE TABLE IF NOT EXISTS invoice_item (
     invoice_id   INTEGER NOT NULL REFERENCES invoice(id),
     position     INTEGER NOT NULL,
     kind         TEXT NOT NULL CHECK (kind IN ('accommodation','stay_fee','other')),
+    -- 'stay_fee' stays in the CHECK only so the schema never needs a table
+    -- rebuild; the feature was reverted and nothing writes the value.
     description  TEXT NOT NULL,
     quantity     INTEGER NOT NULL DEFAULT 1,
     unit         TEXT NOT NULL DEFAULT '',
