@@ -518,9 +518,11 @@ function initSignature() {
         if (target) target.focus({ preventScroll: true });
         steps[active].scrollIntoView({ behavior: "smooth", block: "start" });
       }
-      // Anything that renders a summary of the answers (the review list) needs
-      // to rebuild it after the guest has been back and changed something.
-      form.dispatchEvent(new CustomEvent("guest-wizard:shown", { detail: { index: active } }));
+      // Anything that renders a summary of the answers (the review list) or
+      // the check-in rail needs to rebuild after the guest has been back and
+      // changed something. The filtered list travels with the event so the
+      // rail counts the same steps the bar does.
+      form.dispatchEvent(new CustomEvent("guest-wizard:shown", { detail: { index: active, steps: steps } }));
     }
 
     // Other scripts (the signature pad's submit guard) need to bring their own
@@ -591,6 +593,62 @@ function initSignature() {
     show(active, false);
   }
 
+  /* The wide check-in layout shows the stay summary and the step list beside
+     the active form. The list is built from the same data-step-title elements
+     the wizard walks, so it can never disagree with the bar, and each visited
+     step becomes a way back that keeps everything the guest already typed. */
+  function initCheckinRail() {
+    var list = document.querySelector("[data-checkin-steps]");
+    var form = document.querySelector("[data-guest-wizard]");
+    if (!list || !form) return;
+    var doneLabel = list.getAttribute("data-done-label") || "";
+    var editLabel = list.getAttribute("data-edit-label") || "";
+
+    function render(event) {
+      var detail = event && event.detail ? event.detail : {};
+      var steps = detail.steps
+        ? Array.prototype.slice.call(detail.steps)
+        : Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]"));
+      var active = typeof detail.index === "number"
+        ? detail.index
+        : Math.max(0, steps.indexOf(steps.find(function (step) { return !step.hidden; })));
+      list.textContent = "";
+      steps.forEach(function (step, index) {
+        var item = document.createElement("li");
+        item.className = "g-checkin-step" + (index < active ? " is-done" : "") +
+          (index === active ? " is-current" : "");
+        var state = document.createElement("i");
+        state.setAttribute("aria-hidden", "true");
+        state.textContent = index < active ? "\u2713" : String(index + 1);
+        item.appendChild(state);
+        var name = document.createElement("span");
+        name.textContent = step.getAttribute("data-step-title") || "";
+        item.appendChild(name);
+        if (index < active) {
+          var sr = document.createElement("span");
+          sr.className = "sr-only";
+          sr.textContent = doneLabel;
+          item.appendChild(sr);
+          var button = document.createElement("button");
+          button.type = "button";
+          button.className = "g-checkin-step-edit";
+          button.textContent = editLabel;
+          button.setAttribute("aria-label", editLabel + ": " + (step.getAttribute("data-step-title") || ""));
+          button.addEventListener("click", function () {
+            form.dispatchEvent(new CustomEvent("guest-wizard:show", { detail: { target: step } }));
+          });
+          item.appendChild(button);
+        } else if (index === active) {
+          item.setAttribute("aria-current", "step");
+        }
+        list.appendChild(item);
+      });
+    }
+
+    form.addEventListener("guest-wizard:shown", render);
+    render();
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initSignature();
     initCopy();
@@ -600,6 +658,7 @@ function initSignature() {
     initVisaVisibility();
     initPinReturn();
     initGuestWizard();
+    initCheckinRail();
     initErrorSummary();
     initGuestReview();
     focusFirstError();
