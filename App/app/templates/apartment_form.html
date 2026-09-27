@@ -296,7 +296,7 @@
     <div class="field">
       <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
       <textarea id="guest_message" name="guest_message" maxlength="1000"
-                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ apartment.guest_message or '' if editing else '' }}</textarea>
+                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ (apartment.guest_message or '') if editing else '' }}</textarea>
       <div class="hint">{{ t('apartment.form.guest_message.hint') }}</div>
     </div>
     {% if editing %}
@@ -391,7 +391,7 @@
     <h2 style="margin-top:0">{{ t('apartment.form.notes.title') }}</h2>
     <div class="field">
       <label for="notes">{{ t('apartment.form.notes.label') }}</label>
-      <textarea id="notes" name="notes">{{ apartment.notes or '' if editing else '' }}</textarea>
+      <textarea id="notes" name="notes">{{ (apartment.notes or '') if editing else '' }}</textarea>
       <div class="hint">{{ t('apartment.form.notes.hint') }}</div>
     </div>
   </div>
