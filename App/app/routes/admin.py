@@ -336,11 +336,38 @@ ENTITY_FIELDS = (
     "invoice_prefix",
 )
 
+# The identity block shown on the (short) operator form. Bank, VAT, registry
+# and numbering fields keep their saved values when a form posts only these.
+CORE_ENTITY_FIELDS = (
+    "name",
+    "seat",
+    "ico",
+    "contact_email",
+    "contact_phone",
+    "dic",
+)
+
 VAT_STATUSES = ("non_payer", "identified", "payer")
 
 
-def _entity_bank_payload(request: Request, payload: Dict[str, Any], form):
-    """Normalise the bank account and invoice settings. Returns an error or None."""
+def _entity_post_payload(form) -> Dict[str, Any]:
+    """Read the operator fields a POST actually carried.
+
+    The short form posts only the core identity fields; anything the form
+    omits stays out of the payload, so a partial ``db.update`` keeps the
+    stored bank, VAT, registry and numbering values untouched. A value the
+    browser posted empty still clears the field, as callers expect.
+    """
+    return {field: _form_str(form, field) for field in ENTITY_FIELDS if field in form}
+
+
+def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
+    """Normalise the detail fields a POST actually carried.
+
+    Every detail (bank, VAT, registry, numbering) is touched only when the
+    form sent it, so the short operator form can update the identity block
+    without wiping the stored details. Returns an error or None.
+    """
     ico = (payload.get("ico") or "").strip()
     if ico and not validation.ico_ok(ico):
         return _back(
@@ -349,35 +376,47 @@ def _entity_bank_payload(request: Request, payload: Dict[str, Any], form):
                 host_i18n.lang_from_request(request), "entities.ico.invalid"
             ),
         )
-    if payload.get("bank_account"):
-        try:
-            payload["bank_account"], payload["iban"] = payments.normalise_account(
-                payload["bank_account"]
-            )
-        except ValueError:
-            return _back(
-                "/entities",
-                err=host_i18n.translate(
-                    host_i18n.lang_from_request(request), "entities.bank.invalid"
-                ),
-            )
-    else:
-        payload["iban"] = None
-    payload["bic"] = (payload.get("bic") or "").replace(" ", "").upper() or None
-    vat = _form_str(form, "vat_status")
-    payload["vat_status"] = vat if vat in VAT_STATUSES else "non_payer"
-    prefix = "".join(ch for ch in _form_str(form, "invoice_prefix").upper() if ch.isalnum())[:6]
-    payload["invoice_prefix"] = prefix or None
-    next_no = _form_str(form, "invoice_next_number").strip()
-    if next_no.isdigit() and int(next_no) > 0:
-        payload["invoice_next_number"] = int(next_no)
-        payload["invoice_next_number_year"] = date.today().year
-    else:
-        payload["invoice_next_number"] = None
-        payload["invoice_next_number_year"] = None
-    due_raw = _form_str(form, "invoice_due_days")
-    due = int(due_raw) if due_raw.isdigit() else 14
-    payload["invoice_due_days"] = max(0, min(due, 365))
+    if "bank_account" in form:
+        account = _form_str(form, "bank_account")
+        if account:
+            try:
+                payload["bank_account"], payload["iban"] = payments.normalise_account(
+                    account
+                )
+            except ValueError:
+                return _back(
+                    "/entities",
+                    err=host_i18n.translate(
+                        host_i18n.lang_from_request(request), "entities.bank.invalid"
+                    ),
+                )
+        else:
+            payload["bank_account"] = None
+            payload["iban"] = None
+    if "bic" in form:
+        payload["bic"] = _form_str(form, "bic").replace(" ", "").upper() or None
+    if "registry_entry" in form:
+        payload["registry_entry"] = _form_str(form, "registry_entry") or None
+    if "vat_status" in form:
+        vat = _form_str(form, "vat_status")
+        payload["vat_status"] = vat if vat in VAT_STATUSES else "non_payer"
+    if "invoice_prefix" in form:
+        prefix = (
+            "".join(ch for ch in _form_str(form, "invoice_prefix").upper() if ch.isalnum())
+        )[:6]
+        payload["invoice_prefix"] = prefix or None
+    if "invoice_next_number" in form:
+        next_no = _form_str(form, "invoice_next_number").strip()
+        if next_no.isdigit() and int(next_no) > 0:
+            payload["invoice_next_number"] = int(next_no)
+            payload["invoice_next_number_year"] = date.today().year
+        else:
+            payload["invoice_next_number"] = None
+            payload["invoice_next_number_year"] = None
+    if "invoice_due_days" in form:
+        due_raw = _form_str(form, "invoice_due_days")
+        due = int(due_raw) if due_raw.isdigit() else 14
+        payload["invoice_due_days"] = max(0, min(due, 365))
     return None
 
 
@@ -387,12 +426,12 @@ async def create_entity(request: Request):
     if guard:
         return guard
     form = await request.form()
-    payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
-    if not payload["name"]:
+    payload = _entity_post_payload(form)
+    if not payload.get("name"):
         return _back("/entities", err=_flash(request, "flash.error.name_required"))
-    bad_bank = _entity_bank_payload(request, payload, form)
-    if bad_bank:
-        return bad_bank
+    bad_details = _entity_details_payload(request, payload, form)
+    if bad_details:
+        return bad_details
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
     entity_id = db.insert("legal_entity", payload)
@@ -415,12 +454,12 @@ async def update_entity(entity_id: int, request: Request):
     if not access.entity(request, entity_id):
         return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
     form = await request.form()
-    payload = {field: _form_str(form, field) for field in ENTITY_FIELDS}
-    if not payload["name"]:
+    payload = _entity_post_payload(form)
+    if not payload.get("name"):
         return _back("/entities", err=_flash(request, "flash.error.name_required"))
-    bad_bank = _entity_bank_payload(request, payload, form)
-    if bad_bank:
-        return bad_bank
+    bad_details = _entity_details_payload(request, payload, form)
+    if bad_details:
+        return bad_details
     db.update("legal_entity", entity_id, payload)
     return _back("/entities", msg=_flash(request, "flash.entities.saved"))
 
