@@ -143,3 +143,17 @@ def test_the_button_says_it_saves_first(host):
     assert "Test the connection" not in page.text
     # The old hint told the host to save first, which is now what the button does.
     assert "save first" not in page.text
+
+
+def test_the_edit_form_prefills_the_optional_texts(host):
+    """The ternaries that prefill the textareas read value-or-empty only while
+    editing; make the parenthesised intent stick."""
+    apartment_id = _apartment()["id"]
+    db.update(
+        "apartment",
+        apartment_id,
+        {"guest_message": "Welcome to Form Flat.", "notes": "Two sets of keys."},
+    )
+    page = host.get(f"/apartments/{apartment_id}").text
+    assert ">Welcome to Form Flat.</textarea>" in page
+    assert ">Two sets of keys.</textarea>" in page
