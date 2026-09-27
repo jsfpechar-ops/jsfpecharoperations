@@ -11,11 +11,11 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/guest.css?v=20260925a">
+  <link rel="stylesheet" href="/static/guest.css?v=20260928a">
 </head>
 <body>
 <a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
-<div class="g-wrap">
+<div class="g-wrap {% block wrap_class %}{% endblock %}">
   <div class="g-head">
     <div class="g-title g-property">
       {% if facility %}<span class="g-property-mark property-tone-{{ facility_tone }}" aria-hidden="true">{{ facility[:1] }}</span>{% endif %}
@@ -45,7 +45,7 @@
     {% if privacy_url %}<p><a href="{{ privacy_url }}">{{ t('privacy_link') }}</a></p>{% endif %}
   </div>
 </div>
-<script src="/static/signature.js?v=20260926a"></script>
+<script src="/static/signature.js?v=20260928a"></script>
 <script src="/static/csrf.js?v=20260915a"></script>
 </body>
 </html>

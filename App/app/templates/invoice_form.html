@@ -6,8 +6,13 @@
 {{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
 
 {% if errors %}
-<div class="panel">
-  <ul>{% for error in errors %}<li class="warn-text">{{ error }}</li>{% endfor %}</ul>
+<div class="banner err">
+  <div class="grow">
+    <strong>{{ t('invoice.err.fix') }}</strong>
+    <ul class="banner-list">
+      {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+  </div>
 </div>
 {% endif %}
 
@@ -85,11 +90,11 @@
       <tbody data-item-body>
         <tr data-item-row>
           <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required></td>
-          <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" style="max-width:90px"></td>
-          <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" style="max-width:120px"></td>
-          <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" style="max-width:130px"></td>
+          <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" class="input-qty"></td>
+          <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" class="input-unit"></td>
+          <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" class="input-price"></td>
           <td data-label="{{ t('invoice.col.vat') }}">
-            <select name="item_vat_rate" style="max-width:110px">
+            <select name="item_vat_rate" class="input-vat">
               <option value="21">21 %</option>
               <option value="12">12 %</option>
               <option value="0">0 %</option>
@@ -104,11 +109,13 @@
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.payment') }}</h2>
-    <div class="checkline">
-      <input type="checkbox" id="already_paid" name="already_paid" value="1" {% if values.get('already_paid', '1') %}checked{% endif %}>
-      <label for="already_paid">{{ t('invoice.already_paid') }}</label>
-    </div>
-    <div class="grid">
+    <label class="checkline" for="already_paid">
+      <input type="checkbox" id="already_paid" name="already_paid" value="1"
+             {% if values.get('already_paid', '1') %}checked{% endif %}>
+      <span>{{ t('invoice.already_paid') }}</span>
+    </label>
+    <div class="grid" id="paid-fields" data-paid-fields
+         {% if not values.get('already_paid', '1') %}hidden{% endif %}>
       <div class="field">
         <label for="paid_via">{{ t('invoice.paid_via') }}</label>
         <select id="paid_via" name="paid_via">
@@ -129,6 +136,7 @@
       </div>
     </div>
     <div class="field" style="max-width:320px">
+      <label for="lang">{{ t('invoice.section.language') }}</label>
       <select id="lang" name="lang">
         <option value="cs">{{ t('invoice.lang.cs') }}</option>
         <option value="en">{{ t('invoice.lang.en') }}</option>
@@ -153,22 +161,33 @@
 <script>
 (function () {
   var body = document.querySelector("[data-item-body]");
-  if (!body) return;
-  var template = body.querySelector("[data-item-row]").cloneNode(true);
-  document.querySelector("[data-add-item]").addEventListener("click", function () {
-    var row = template.cloneNode(true);
-    row.querySelectorAll("input, select").forEach(function (el) { el.value = el.name === "item_quantity" ? "1" : ""; });
-    var vat = row.querySelector('select[name="item_vat_rate"]');
-    if (vat) vat.value = "21";
-    body.appendChild(row);
-  });
-  body.addEventListener("click", function (event) {
-    var button = event.target.closest("[data-remove-item]");
-    if (!button) return;
-    if (body.querySelectorAll("[data-item-row]").length > 1) {
-      button.closest("[data-item-row]").remove();
-    }
-  });
+  if (body) {
+    var template = body.querySelector("[data-item-row]").cloneNode(true);
+    document.querySelector("[data-add-item]").addEventListener("click", function () {
+      var row = template.cloneNode(true);
+      row.querySelectorAll("input, select").forEach(function (el) { el.value = el.name === "item_quantity" ? "1" : ""; });
+      var vat = row.querySelector('select[name="item_vat_rate"]');
+      if (vat) vat.value = "21";
+      body.appendChild(row);
+    });
+    body.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-remove-item]");
+      if (!button) return;
+      if (body.querySelectorAll("[data-item-row]").length > 1) {
+        button.closest("[data-item-row]").remove();
+      }
+    });
+  }
+
+  /* "Paid via" only answers a question while "Already paid" is ticked, so the
+     field waits like every other conditional field in the product. */
+  var paid = document.getElementById("already_paid");
+  var paidFields = document.querySelector("[data-paid-fields]");
+  if (paid && paidFields) {
+    var sync = function () { paidFields.hidden = !paid.checked; };
+    paid.addEventListener("change", sync);
+    sync();
+  }
 })();
 </script>
 {% endif %}
