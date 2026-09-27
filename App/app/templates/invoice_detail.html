@@ -74,19 +74,57 @@
   <h2>{{ t('invoice.section.items') }}</h2>
   <div class="panel tight scroll-x">
     <table class="table-cards">
-      <thead><tr><th class="col-name">{{ t('invoice.col.description') }}</th><th>{{ t('invoice.col.qty') }}</th><th>{{ t('invoice.col.unit_price') }}</th><th>{{ t('invoice.col.total') }}</th></tr></thead>
+      <thead>
+        {% if invoice.vat_status == 'payer' %}
+        <tr>
+          <th class="col-name">{{ t('invoice.col.description') }}</th>
+          <th>{{ t('invoice.col.qty') }}</th>
+          <th>{{ t('invoice.detail.unit_excl_vat') }}</th>
+          <th>{{ t('invoice.col.vat') }}</th>
+          <th>{{ t('invoice.detail.vat_col') }}</th>
+          <th>{{ t('invoice.col.total') }}</th>
+        </tr>
+        {% else %}
+        <tr><th class="col-name">{{ t('invoice.col.description') }}</th><th>{{ t('invoice.col.qty') }}</th><th>{{ t('invoice.col.unit_price') }}</th><th>{{ t('invoice.col.total') }}</th></tr>
+        {% endif %}
+      </thead>
       <tbody>
         {% for item in items %}
+        {% if invoice.vat_status == 'payer' %}
+        <tr>
+          <td data-label="{{ t('invoice.col.description') }}">{{ item.description }}</td>
+          <td data-label="{{ t('invoice.col.qty') }}">{{ item.quantity }}{% if item.unit %} {{ item.unit }}{% endif %}</td>
+          <td data-label="{{ t('invoice.detail.unit_excl_vat') }}">{{ (item.base_haler or 0) // (item.quantity or 1) // 100 }} Kč</td>
+          <td data-label="{{ t('invoice.col.vat') }}">{{ item.vat_rate or 0 }} %</td>
+          <td data-label="{{ t('invoice.detail.vat_col') }}">{{ (item.vat_haler or 0) // 100 }} Kč</td>
+          <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler // 100 }} Kč</td>
+        </tr>
+        {% else %}
         <tr>
           <td data-label="{{ t('invoice.col.description') }}">{{ item.description }}</td>
           <td data-label="{{ t('invoice.col.qty') }}">{{ item.quantity }}{% if item.unit %} {{ item.unit }}{% endif %}</td>
           <td data-label="{{ t('invoice.col.unit_price') }}">{{ item.gross_haler // (item.quantity or 1) // 100 }} Kč</td>
           <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler // 100 }} Kč</td>
         </tr>
+        {% endif %}
         {% else %}
-        <tr><td colspan="4" class="small muted">{{ t('invoice.items_empty') }}</td></tr>
+        <tr><td colspan="6" class="small muted">{{ t('invoice.items_empty') }}</td></tr>
         {% endfor %}
       </tbody>
+      {% if invoice.vat_status == 'payer' and items %}
+      <tfoot>
+        <tr>
+          <th colspan="4">{{ t('invoice.detail.base_total') }}</th>
+          <td class="num">{{ (vat_totals.base or 0) // 100 }} Kč</td>
+          <td></td>
+        </tr>
+        <tr>
+          <th colspan="4">{{ t('invoice.detail.vat_total') }}</th>
+          <td class="num">{{ (vat_totals.vat or 0) // 100 }} Kč</td>
+          <td class="num">{{ invoice.total_haler // 100 }} Kč</td>
+        </tr>
+      </tfoot>
+      {% endif %}
     </table>
   </div>
   </div>{# /invoice-document #}
