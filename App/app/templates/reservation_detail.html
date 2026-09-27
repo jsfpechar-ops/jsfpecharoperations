@@ -288,7 +288,7 @@
   {% endfor %}
   {# A guest the host declared but nobody registered used to be invisible: only
      the cards that exist rendered, so there was nothing to act on. These rows
-     count the same people as the stay-fee headcount warning [C-37]. #}
+     count the same people as the expected-guest headcount. #}
   {% for n in range(progress.guests | length + 1, (progress.expected or 0) + 1) %}
     <li class="guest-card placeholder">
       <div class="guest-card-head">

@@ -528,9 +528,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_subject": (
             "You're registered for %(property)s — nothing else to do"
         ),
-        "mail_completion_subject_fee": (
-            "Registered — stay fee %(amount)s Kč to pay for %(property)s"
-        ),
         "mail_completion_preheader": (
             "Everyone on this stay is registered — nothing else to do."
         ),
@@ -538,10 +535,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_intro": (
             "Everyone for %(property)s (%(dates)s) is registered. "
             "There is nothing else you need to do."
-        ),
-        "mail_completion_intro_fee": (
-            "Everyone for %(property)s (%(dates)s) is registered. Your host collects "
-            "the municipal stay fee: %(amount)s Kč for your group."
         ),
         "mail_completion_action": "See your stay page",
         "mail_completion_note": (
@@ -1096,9 +1089,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_subject": (
             "Registrace hotová – %(property)s. Nic dalšího nemusíte dělat"
         ),
-        "mail_completion_subject_fee": (
-            "Registrace hotová – zaplaťte poplatek z pobytu %(amount)s Kč (%(property)s)"
-        ),
         "mail_completion_preheader": (
             "Všichni na tomto pobytu jsou zaregistrovaní – nic dalšího není potřeba."
         ),
@@ -1106,10 +1096,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_intro": (
             "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
             "Nic dalšího dělat nemusíte."
-        ),
-        "mail_completion_intro_fee": (
-            "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
-            "Váš hostitel vybírá poplatek z pobytu: %(amount)s Kč za vaši skupinu."
         ),
         "mail_completion_action": "Zobrazit stránku pobytu",
         "mail_completion_note": (

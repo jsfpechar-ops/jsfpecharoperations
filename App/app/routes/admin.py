@@ -91,8 +91,7 @@ def _apartment_issues(apartment) -> List[validation.Issue]:
 
 # The property form has two jobs, so the readiness checklist has two lists. The
 # reporting list is exactly the fields validate_apartment() calls errors: the
-# stay-fee and invoice fields the two planned features add are optional by
-# design and must never be counted here.
+# invoice fields are optional by design and must never be counted here.
 _READINESS_REPORT_FIELDS = (
     ("idub", "uby_idub", "ubyport"),
     ("mark", "uby_mark", "ubyport"),
