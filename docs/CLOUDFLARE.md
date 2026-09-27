@@ -209,6 +209,13 @@ Consequences for the zone's DNS:
 | DKIM CNAMEs from the provider | the mail provider | Whatever the provider shows in its setup |
 | `mail.ubyhost.com` MX + SPF, root DKIM CNAMEs, `_dmarc` | **SES** (outgoing app mail) | Untouched by the above — SES only *sends*; it has no inbox |
 
+While Email Routing is being retired, its Settings page flags a **"Missing"
+SPF record** (`include:_spf.mx.cloudflare.net`) behind an "Add missing
+records" button. Do not add it: that record authorises Cloudflare's
+forwarding servers to send as the domain, which is exactly the feature
+being switched off. Disable Email Routing instead and the flag — and the
+whole screen — goes away.
+
 Keep every mail record **DNS only (grey cloud)** — never proxy MX/TXT records.
 
 ---
