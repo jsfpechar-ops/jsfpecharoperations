@@ -1315,6 +1315,17 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   margin-top: 8px;
 }
 .technical-download { display: inline-flex; align-items: center; }
+/* The report detail's Now panel carries the header-problems block between the
+   command row and the metrics strip, like the stay page's inline banners. */
+.report-header-problems {
+  border-top: 1px solid var(--line);
+  padding: 14px 20px 16px;
+  background: var(--surface-2);
+}
+.report-header-problems h3 { margin: 0 0 6px; font-size: 14px; }
+.report-header-problems ul { margin: 0 0 8px; }
+.report-stamp { overflow-wrap: anywhere; }
+.report-stamp-copy { margin-left: 8px; vertical-align: middle; }
 .help-dot:focus-visible { outline: 3px solid var(--brand-ring); outline-offset: 2px; }
 .action-menu .row-menu-trigger { gap: 9px; }
 .action-menu .menu-caret {
@@ -1529,7 +1540,9 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 
 .detail-hero {
   display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  /* Four tiles fit a wide panel without a lonely wrapped fourth; three is the
+     stay page's usual count. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0;
   padding: 0;
   overflow: hidden;

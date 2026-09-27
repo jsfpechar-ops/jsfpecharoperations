@@ -2,47 +2,37 @@
 {% set nav = 'submissions' %}
 {% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, submission_pill, row_menu_begin, row_menu_end, property_identity with context %}
-{{ breadcrumb([
-  {'label': t('reports.title'), 'url': '/submissions'},
-  {'label': t('reports.detail.title', id=submission.id), 'url': ''}
-]) }}
+{% from "_components.html" import page_header, submission_pill, row_menu_begin, row_menu_end with context %}
+
+{% set outcome_notes = {
+  'ok': t('reports.detail.note_ok'),
+  'ok_duplicate': t('reports.detail.note_duplicate'),
+  'partial': t('reports.detail.note_partial'),
+  'error': t('reports.detail.note_rejected'),
+  'failed': t('reports.detail.note_rejected'),
+  'transport_error': t('reports.detail.note_failed'),
+  'running': t('reports.detail.note_running'),
+  'noop': t('reports.detail.note_noop'),
+  'not_configured': t('reports.detail.note_noop'),
+} %}
+
 {{ page_header(
   t('reports.detail.title', id=submission.id),
-  submission.internal_name ~ ' · ' ~ (submission.created_at | datetime_local(seconds=true))
-    ~ ' · ' ~ report_mode_label(submission.mode),
+  submission.internal_name ~ ' · ' ~ report_mode_label(submission.mode),
   '/submissions',
   t('reports.detail.back')
 ) }}
 
-<div class="split wide">
-  <div>
-    <div class="panel">
-      <dl class="kv">
-        <dt>{{ t('reports.outcome') }}</dt>
-        <dd>
-          {{ submission_pill(submission.state) }}
-        </dd>
-        <dt>{{ t('reports.stamp') }}</dt><dd class="mono small">{{ submission.pseudo_stamp or '—' }}</dd>
-        <dt>{{ t('reports.detail.finished') }}</dt><dd class="small">{{ (submission.finished_at | datetime_local(seconds=true)) or '—' }}</dd>
-      </dl>
-
-      {% if submission.error_text %}
-        <div class="banner err" style="margin-top:14px">
-          <div class="grow"><strong>{{ t('reports.detail.transport_error') }}</strong><small>{{ submission.error_text }}</small></div>
-        </div>
-      {% endif %}
-
-      {% if header_messages %}
-        <h3>{{ t('reports.detail.header_problems') }}</h3>
-        <ul class="small">
-          {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
-        </ul>
-        <p class="small muted">{{ t('reports.detail.header_help') }}
-          <a href="/apartments/{{ submission.apartment_id }}#ubyport">{{ t('reports.detail.header_help_link') }}</a>
-        </p>
-      {% endif %}
-
+{# The report detail follows the stay page's grammar (C-16 [UX-81]): the Now
+   panel answers outcome and next step, the guests follow, and the operator
+   diagnostics fold last. #}
+<section class="panel stay-command-panel" id="now">
+  <div class="stay-command-main">
+    <div>
+      <div class="eyebrow">{{ t('reports.outcome') }}</div>
+      <p class="stay-command-note">{{ outcome_notes.get(submission.state, '') }}</p>
+    </div>
+    <div class="stay-command-actions">
       <div class="actions">
         {% if submission.state in ('error', 'failed') and fix_reservation_id %}
           <a class="btn primary" href="/reservations/{{ fix_reservation_id }}#guests">{{ t('reports.detail.fix_stay') }}</a>
@@ -55,73 +45,116 @@
         {% endif %}
       </div>
     </div>
-
-    <h2>{{ t('reports.detail.guests') }}</h2>
-    <div class="panel tight scroll-x">
-      <table class="table-cards">
-        <thead><tr><th>#</th><th>{{ t('reports.detail.guest') }}</th><th>{{ t('reports.detail.result') }}</th><th></th></tr></thead>
-        <tbody>
-        {% for guest in guests %}
-          <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
-            <td class="num" data-label="#">{{ loop.index }}</td>
-            <td data-label="{{ t('reports.detail.guest') }}">
-              <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
-              <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest.doc_number }}</div>
-            </td>
-            <td data-label="{{ t('reports.detail.result') }}">
-              {% if guest.result == 'duplicate' %}
-                <span class="pill amber">{{ t('submission.duplicate') }}</span>
-                {% if guest.receipt_submission_id %}
-                  <div class="small muted">{{ t('reports.detail.receipt_elsewhere') }}
-                    <a href="/submissions/{{ guest.receipt_submission_id }}">{{ t('reports.detail.title', id=guest.receipt_submission_id) }}</a>
-                  </div>
-                {% else %}
-                  <div class="small muted">{{ t('reports.detail.receipt_none') }}</div>
-                {% endif %}
-              {% elif guest.result == 'accepted' %}<span class="pill green">{{ t('submission.accepted') }}</span>
-              {% elif guest.result == 'rejected_final' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
-              {% elif guest.result == 'rejected' %}<span class="pill red">{{ t('submission.rejected') }}</span>
-              {% else %}<span class="pill grey">{{ guest.result }}</span>{% endif %}
-              {% if guest.errors %}<div class="small err-text">{{ guest.errors }}</div>{% endif %}
-            </td>
-            <td class="nowrap row-actions" data-label="">
-              {{ row_menu_begin() }}
-                <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">{{ t('common.edit') }}</a>
-              {{ row_menu_end() }}
-            </td>
-          </tr>
-        {% else %}
-          <tr><td colspan="4" class="small muted">{{ t('reports.detail.guests_empty') }}</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div>
   </div>
 
-  <details class="panel technical">
-    <summary>{{ t('reports.detail.technical') }}</summary>
-    <p class="small muted">{{ t('reports.detail.technical_help') }}</p>
-    <dl class="kv">
-      <dt>{{ t('reports.detail.endpoint') }}</dt>
-      <dd class="mono small">{{ submission.endpoint or '—' }}</dd>
-    </dl>
-    <h3>{{ t('reports.detail.messages') }}</h3>
-    <div class="technical-downloads">
-      <span class="technical-download">
-        <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">{{ t('reports.detail.request') }}</a>
-        <span class="help-dot" tabindex="0" title="{{ t('reports.detail.request_help') }}" aria-label="{{ t('reports.detail.request_about') }}">?</span>
-      </span>
-      <span class="technical-download">
-        <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">{{ t('reports.detail.response') }}</a>
-        <span class="help-dot" tabindex="0" title="{{ t('reports.detail.response_help') }}" aria-label="{{ t('reports.detail.response_about') }}">?</span>
-      </span>
+  {% if submission.error_text %}
+    <div class="banner err" style="margin:0; border-radius:0; border-left:0; border-right:0">
+      <div class="grow"><strong>{{ t('reports.detail.transport_error') }}</strong><small>{{ submission.error_text }}</small></div>
     </div>
-    {% if record_errors %}
-      <h3>{{ t('reports.detail.error_codes') }}
-        <span class="help-dot" title="{{ t('reports.detail.error_codes_help') }}" aria-label="{{ t('reports.detail.error_codes_about') }}">?</span>
-      </h3>
-      <pre class="mono small code-block">{{ record_errors | join('\n') }}</pre>
-    {% endif %}
-  </details>
+  {% endif %}
+
+  {% if header_messages %}
+    <div class="report-header-problems">
+      <h3>{{ t('reports.detail.header_problems') }}</h3>
+      <ul class="small">
+        {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
+      </ul>
+      <p class="small muted">{{ t('reports.detail.header_help') }}
+        <a href="/apartments/{{ submission.apartment_id }}#ubyport">{{ t('reports.detail.header_help_link') }}</a>
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="stay-metrics detail-hero">
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('reports.outcome') }}</div>
+      <div class="metric-value small-value">{{ submission_pill(submission.state) }}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('reports.stamp') }}</div>
+      <div class="metric-value small-value">
+        {% if submission.pseudo_stamp %}
+          <span class="mono report-stamp" id="report-stamp">{{ submission.pseudo_stamp }}</span>
+          <button class="btn small report-stamp-copy" type="button" data-copy="report-stamp"
+                  data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
+        {% else %}&mdash;{% endif %}
+      </div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('reports.detail.finished') }}</div>
+      <div class="metric-value small-value">{{ (submission.finished_at | datetime_local(seconds=true)) or '—' }}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('reports.detail.guests') }}</div>
+      <div class="metric-value small-value">{{ guests | length }}</div>
+    </div>
+  </div>
+</section>
+
+<h2>{{ t('reports.detail.guests') }}</h2>
+<div class="panel tight scroll-x">
+  <table class="table-cards">
+    <thead><tr><th>#</th><th>{{ t('reports.detail.guest') }}</th><th>{{ t('reports.detail.result') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for guest in guests %}
+      <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
+        <td class="num" data-label="#">{{ loop.index }}</td>
+        <td data-label="{{ t('reports.detail.guest') }}">
+          <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
+          <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest.doc_number }}</div>
+        </td>
+        <td data-label="{{ t('reports.detail.result') }}">
+          {% if guest.result == 'duplicate' %}
+            <span class="pill amber">{{ t('submission.duplicate') }}</span>
+            {% if guest.receipt_submission_id %}
+              <div class="small muted">{{ t('reports.detail.receipt_elsewhere') }}
+                <a href="/submissions/{{ guest.receipt_submission_id }}">{{ t('reports.detail.title', id=guest.receipt_submission_id) }}</a>
+              </div>
+            {% else %}
+              <div class="small muted">{{ t('reports.detail.receipt_none') }}</div>
+            {% endif %}
+          {% elif guest.result == 'accepted' %}<span class="pill green">{{ t('submission.accepted') }}</span>
+          {% elif guest.result == 'rejected_final' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
+          {% elif guest.result == 'rejected' %}<span class="pill red">{{ t('submission.rejected') }}</span>
+          {% else %}<span class="pill grey">{{ guest.result }}</span>{% endif %}
+          {% if guest.errors %}<div class="small err-text">{{ guest.errors }}</div>{% endif %}
+        </td>
+        <td class="nowrap row-actions" data-label="">
+          {{ row_menu_begin() }}
+            <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">{{ t('common.edit') }}</a>
+          {{ row_menu_end() }}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" class="small muted">{{ t('reports.detail.guests_empty') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
+
+<details class="panel technical">
+  <summary>{{ t('reports.detail.technical') }}</summary>
+  <p class="small muted">{{ t('reports.detail.technical_help') }}</p>
+  <dl class="kv">
+    <dt>{{ t('reports.detail.endpoint') }}</dt>
+    <dd class="mono small">{{ submission.endpoint or '—' }}</dd>
+  </dl>
+  <h3>{{ t('reports.detail.messages') }}</h3>
+  <div class="technical-downloads">
+    <span class="technical-download">
+      <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">{{ t('reports.detail.request') }}</a>
+      <span class="help-dot" tabindex="0" title="{{ t('reports.detail.request_help') }}" aria-label="{{ t('reports.detail.request_about') }}">?</span>
+    </span>
+    <span class="technical-download">
+      <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">{{ t('reports.detail.response') }}</a>
+      <span class="help-dot" tabindex="0" title="{{ t('reports.detail.response_help') }}" aria-label="{{ t('reports.detail.response_about') }}">?</span>
+    </span>
+  </div>
+  {% if record_errors %}
+    <h3>{{ t('reports.detail.error_codes') }}
+      <span class="help-dot" title="{{ t('reports.detail.error_codes_help') }}" aria-label="{{ t('reports.detail.error_codes_about') }}">?</span>
+    </h3>
+    <pre class="mono small code-block">{{ record_errors | join('\n') }}</pre>
+  {% endif %}
+</details>
 {% endblock %}
