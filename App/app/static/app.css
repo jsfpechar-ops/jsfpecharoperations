@@ -596,6 +596,16 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
 .input-unit { max-width: 120px; }
 .input-price { max-width: 130px; }
 .input-vat { max-width: 110px; }
+
+/* Invoice builder grids: fixed columns so each row of fields lines up
+   regardless of label length — the buyer block is 3 columns per row and the
+   payment row keeps its trio aligned even when the custom hint input shows. */
+.invoice-buyer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.invoice-paid-grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+#paid_via_custom { margin-top: 8px; }
+@media (max-width: 720px) {
+  .invoice-buyer-grid, .invoice-paid-grid { grid-template-columns: 1fr; }
+}
 .banner.ok { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 25%, transparent); color: var(--ok); }
 .banner.err, .banner.critical { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 25%, transparent); color: var(--bad); }
 .banner.warning { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 25%, transparent); color: var(--warn); }

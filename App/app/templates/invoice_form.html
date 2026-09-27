@@ -33,7 +33,7 @@
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.customer') }}</h2>
-    <div class="grid">
+    <div class="grid invoice-buyer-grid">
       <div class="field">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
         <input type="text" id="buyer_name" name="buyer_name" required value="{{ values.get('buyer_name', '') }}">
@@ -114,17 +114,21 @@
              {% if values.get('already_paid', '1') %}checked{% endif %}>
       <span>{{ t('invoice.already_paid') }}</span>
     </label>
-    <div class="grid" id="paid-fields" data-paid-fields
+    <div class="grid invoice-paid-grid" id="paid-fields" data-paid-fields
          {% if not values.get('already_paid', '1') %}hidden{% endif %}>
       <div class="field">
         <label for="paid_via">{{ t('invoice.paid_via') }}</label>
-        <select id="paid_via" name="paid_via">
-          <option value="direct_transfer">{{ t('invoice.paid_via.direct_transfer') }}</option>
-          <option value="cash">{{ t('invoice.paid_via.cash') }}</option>
-          <option value="airbnb">Airbnb</option>
-          <option value="booking">Booking.com</option>
-          <option value="other">{{ t('invoice.paid_via.other') }}</option>
+        <select id="paid_via" name="paid_via" data-paid-via>
+          <option value="direct_transfer" {% if values.get('paid_via', 'direct_transfer') == 'direct_transfer' %}selected{% endif %}>{{ t('invoice.paid_via.direct_transfer') }}</option>
+          <option value="cash" {% if values.get('paid_via') == 'cash' %}selected{% endif %}>{{ t('invoice.paid_via.cash') }}</option>
+          <option value="airbnb" {% if values.get('paid_via') == 'airbnb' %}selected{% endif %}>Airbnb</option>
+          <option value="booking" {% if values.get('paid_via') == 'booking' %}selected{% endif %}>Booking.com</option>
+          <option value="custom" {% if values.get('paid_via_custom') %}selected{% endif %}>{{ t('invoice.paid_via.custom') }}</option>
         </select>
+        <input type="text" id="paid_via_custom" name="paid_via_custom" maxlength="60"
+               data-paid-via-custom value="{{ values.get('paid_via_custom', '') }}"
+               placeholder="{{ t('invoice.paid_via.custom_hint') }}"
+               {% if not values.get('paid_via_custom') %}hidden{% endif %}>
       </div>
       <div class="field">
         <label for="due_date">{{ t('invoice.due') }}</label>
@@ -132,7 +136,7 @@
       </div>
       <div class="field">
         <label for="duzp">{{ t('invoice.duzp') }}</label>
-        <input type="date" id="duzp" name="duzp" value="{{ values.get('duzp', '') }}">
+        <input type="date" id="duzp" name="duzp" value="{{ values.get('duzp', '') or today().isoformat() }}">
       </div>
     </div>
     <div class="field" style="max-width:320px">
@@ -180,13 +184,25 @@
   }
 
   /* "Paid via" only answers a question while "Already paid" is ticked, so the
-     field waits like every other conditional field in the product. */
+     field waits like every other conditional field in the product. Choosing
+     the custom option reveals the free-text input for the host's own wording. */
   var paid = document.getElementById("already_paid");
   var paidFields = document.querySelector("[data-paid-fields]");
   if (paid && paidFields) {
     var sync = function () { paidFields.hidden = !paid.checked; };
     paid.addEventListener("change", sync);
     sync();
+  }
+
+  var via = document.querySelector("[data-paid-via]");
+  var viaCustom = document.querySelector("[data-paid-via-custom]");
+  if (via && viaCustom) {
+    var syncCustom = function () {
+      viaCustom.hidden = via.value !== "custom";
+      if (via.value === "custom") viaCustom.focus();
+    };
+    via.addEventListener("change", syncCustom);
+    syncCustom();
   }
 })();
 </script>
