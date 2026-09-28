@@ -671,9 +671,13 @@ def test_subprocessor_register_is_public_and_cross_linked():
         assert 'href="/subprocessors"' in page.text
 
 
-def test_login_audit_includes_legal_versions():
+def test_the_login_audit_no_longer_carries_legal_versions_free_text():
+    """BE-1 moved acceptance into ``legal_acceptance`` and its own event.
+
+    The login row used to carry ``terms_v… privacy_v… dpa_v… accepted``; that is
+    gone, and evidence now comes from the acceptance record itself.
+    """
     db.init_db()
-    from app import config
 
     client = TestClient(app)
     # Use bootstrap admin if present
@@ -692,10 +696,10 @@ def test_login_audit_includes_legal_versions():
             ("login",),
         )
         if rows:
-            detail = rows[0]["detail"]
-            assert f"terms_v{config.TERMS_VERSION}" in detail
-            assert f"privacy_v{config.PRIVACY_VERSION}" in detail
-            assert f"dpa_v{config.DPA_VERSION}" in detail
+            detail = rows[0]["detail"] or ""
+            assert "terms_v" not in detail
+            assert "privacy_v" not in detail
+            assert "dpa_v" not in detail
 
 
 def test_submissions_receipts_zip_downloads_bulk_dorucenky():

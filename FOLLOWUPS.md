@@ -970,3 +970,18 @@ too. The review's caveat remains: Google only offers processor terms (a DPA) to
 Workspace/Cloud accounts, not to a consumer account. Confirm the Drive account
 is Workspace with the Cloud Data Processing Addendum accepted, or retire the
 Drive path; this was not verifiable from the repo.
+
+### BE-1/FE-1 — the acceptance screen shows the version, not an effective date
+FE-1 asks each pending document to show "its version and effective date". The
+version is read from `config` (authoritative for what is pending) and shown. The
+effective date has no structured value: it lives as a sentence in the public
+page copy (`terms.effective`, `privacy.effective`, `dpa.effective`), so the
+linked page shows it and the acceptance row records the version. If a structured
+date is wanted on the screen, add it next to the version constants in
+`config.py`.
+
+### BE-1 — the acceptance copy still needs counsel
+`account.accept.checkbox` is tagged `# LEGAL-REVIEW` in `host_i18n.py`. FE-1
+gives the wording in English and says "CS pair required", so the Czech value is
+a faithful translation of the given sentence; it still awaits counsel sign-off
+(item 8 of "does not automate"). Cite the review date when counsel approves.

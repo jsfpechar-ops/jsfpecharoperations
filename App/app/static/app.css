@@ -3304,6 +3304,29 @@ label { color: var(--ink-secondary); font-weight: 620; }
 }
 .auth-remember { min-height: 44px; width: max-content; font-weight: 650; }
 .auth-remember input { accent-color: var(--brand); }
+/* BE-1/FE-1: the acceptance screen's document list and checkbox. */
+.auth-accept-docs { display: grid; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; }
+.auth-accept-docs li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  min-height: 44px; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+}
+.auth-accept-docs a { font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+.auth-accept-version { color: var(--ink-secondary); font-size: var(--text-sm); white-space: nowrap; }
+.auth-accept-check {
+  display: flex; align-items: flex-start; gap: 10px;
+  min-height: 44px; padding: 6px 0;
+  font-weight: 600; line-height: 1.45; cursor: pointer;
+}
+.auth-accept-check input {
+  width: 20px; height: 20px; margin-top: 1px; flex: 0 0 auto; accent-color: var(--brand);
+}
+.auth-secondary { margin-top: 10px; text-align: center; }
+.auth-secondary button {
+  min-height: 44px; background: none; border: 0; color: var(--ink-secondary);
+  font: inherit; font-weight: 620; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.auth-secondary button:hover { color: var(--brand); }
 .auth-submit {
   min-height: 50px;
   font-size: 15.5px;
