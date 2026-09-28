@@ -1104,8 +1104,8 @@ async def test_connection(apartment_id: int, request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     client = reporting.client_for(apartment)
     try:
-        available = client.test_availability()
-        limit = client.max_batch_size()
+        available = await run_in_threadpool(client.test_availability)
+        limit = await run_in_threadpool(client.max_batch_size)
     except (UbyportTransportError, UbyportError) as exc:
         db.audit(
             "ubyport_connection_failed",
@@ -1133,7 +1133,8 @@ async def refresh_codelists(apartment_id: int, request: Request):
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     try:
-        written = codelists.refresh_all(reporting.client_for(apartment))
+        c = reporting.client_for(apartment)
+        written = await run_in_threadpool(codelists.refresh_all, c)
     except (UbyportTransportError, UbyportError):
         return _back(return_to, err=_flash(request, "flash.error.codelists_refresh"))
     return _back(
@@ -1355,7 +1356,8 @@ async def reservations_submit_ready(request: Request):
         guest_ids = [guest["id"] for guest in progress["reportable"] if guest["submit_state"] != reporting.SENT]
         if not guest_ids:
             continue
-        results = reporting.submit_for_apartment(
+        results = await run_in_threadpool(
+            reporting.submit_for_apartment,
             reservation["apartment_id"],
             only_guest_ids=guest_ids,
             mode="manual_bulk",
@@ -1474,8 +1476,10 @@ async def reservation_update(reservation_id: int, request: Request):
             "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
         )
         if current:
-            reporting.submit_stay_if_complete(
-                current["apartment_id"], reservation_id
+            await run_in_threadpool(
+                reporting.submit_stay_if_complete,
+                current["apartment_id"],
+                reservation_id,
             )
     return _back(
         f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.saved")
@@ -1500,8 +1504,10 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
     db.update("reservation", reservation_id, payload)
-    reporting.submit_stay_if_complete(
-        reservation["apartment_id"], reservation_id
+    await run_in_threadpool(
+        reporting.submit_stay_if_complete,
+        reservation["apartment_id"],
+        reservation_id,
     )
     if request.headers.get("X-Requested-With") == "fetch":
         return JSONResponse({"ok": True})
@@ -1611,7 +1617,8 @@ async def reservation_submit(reservation_id: int, request: Request):
         guest["id"]
         for guest in db.query("SELECT id FROM guest WHERE reservation_id = ?", (reservation_id,))
     ]
-    results = reporting.submit_for_apartment(
+    results = await run_in_threadpool(
+        reporting.submit_for_apartment,
         reservation["apartment_id"],
         only_guest_ids=guest_ids,
         mode="manual",
@@ -1780,7 +1787,11 @@ async def guest_create(reservation_id: int, request: Request):
     )
     guest_id = db.insert("guest", payload)
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
-    reporting.submit_stay_if_complete(reservation["apartment_id"], reservation_id)
+    await run_in_threadpool(
+        reporting.submit_stay_if_complete,
+        reservation["apartment_id"],
+        reservation_id,
+    )
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.guests.added"))
 
 
@@ -1870,7 +1881,11 @@ async def guest_update(guest_id: int, request: Request):
     db.audit("guest_updated", f"id={guest_id} by=host")
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
-        reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete,
+            reservation["apartment_id"],
+            reservation["id"],
+        )
     # "Saved." left the host guessing how far the stay had got. The count is
     # read back after the update, and a stay with no declared guest count has
     # nothing to count against, so it gets the plain confirmation.
@@ -2015,8 +2030,10 @@ async def guest_archive(guest_id: int, request: Request):
         (guest["reservation_id"],),
     )
     if reservation:
-        reporting.submit_stay_if_complete(
-            reservation["apartment_id"], guest["reservation_id"]
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete,
+            reservation["apartment_id"],
+            guest["reservation_id"],
         )
     return _back(return_to, msg=_flash(request, "flash.housebook.archived"))
 
@@ -2040,8 +2057,10 @@ async def guest_unarchive(guest_id: int, request: Request):
         (guest["reservation_id"],),
     )
     if reservation:
-        reporting.submit_stay_if_complete(
-            reservation["apartment_id"], guest["reservation_id"]
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete,
+            reservation["apartment_id"],
+            guest["reservation_id"],
         )
     return _back(return_to, msg=_flash(request, "flash.housebook.restored"))
 
@@ -2096,7 +2115,8 @@ async def guest_resend(guest_id: int, request: Request):
             err=_flash(request, "flash.error.already_reported_duplicate"),
         )
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
-    results = reporting.submit_for_apartment(
+    results = await run_in_threadpool(
+        reporting.submit_for_apartment,
         reservation["apartment_id"],
         only_guest_ids=[guest_id],
         mode="manual_resend",
