@@ -344,6 +344,9 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
         return RedirectResponse(
             f"/account/accept?next={quote(next_path)}", status_code=303
         )
+    db.set_current_actor(
+        account["id"], account["username"], impersonating=impersonating
+    )
     db.set_current_owner(workspace["id"] if workspace else None)
     return None
 

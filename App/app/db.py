@@ -14,6 +14,8 @@ from cryptography.fernet import Fernet, InvalidToken
 from . import config
 
 _current_owner_id: ContextVar[Optional[int]] = ContextVar("ubyhost_owner_id", default=None)
+# (user_id, username, impersonator_id) of whoever is acting in this request.
+_current_actor: ContextVar[Optional[tuple]] = ContextVar("ubyhost_actor", default=None)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -233,7 +235,9 @@ CREATE TABLE IF NOT EXISTS audit (
     actor  TEXT,
     action TEXT NOT NULL,
     detail TEXT,
-    owner_user_id INTEGER REFERENCES user_account(id)
+    owner_user_id INTEGER REFERENCES user_account(id),
+    actor_user_id INTEGER REFERENCES user_account(id) ON DELETE SET NULL,
+    impersonator_user_id INTEGER REFERENCES user_account(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_res_apartment_dates ON reservation (apartment_id, date_from);
@@ -548,6 +552,11 @@ ADDED_COLUMNS = (
     ("guest", "notice_version", "TEXT"),
     ("guest", "notice_lang", "TEXT"),
     ("guest", "notice_ack_at", "TEXT"),
+    # BE-6: who actually acted, and whether they were previewing a workspace.
+    # SET NULL keeps the audit row (and its actor name) if the account is ever
+    # deleted; the id is history, not a live reference.
+    ("audit", "actor_user_id", "INTEGER REFERENCES user_account(id) ON DELETE SET NULL"),
+    ("audit", "impersonator_user_id", "INTEGER REFERENCES user_account(id) ON DELETE SET NULL"),
 )
 
 
@@ -704,11 +713,36 @@ def set_current_owner(owner_user_id: Optional[int]) -> None:
     _current_owner_id.set(owner_user_id)
 
 
+def set_current_actor(
+    user_id: Optional[int], username: str = "host", impersonating: bool = False
+) -> None:
+    """Remember who is acting, for audit rows written later in the request.
+
+    ``impersonator_user_id`` is the acting user's own id only while they are
+    inside another workspace, so an ordinary action records ``NULL`` there.
+    """
+    if user_id is None:
+        _current_actor.set(None)
+        return
+    _current_actor.set(
+        (int(user_id), username, int(user_id) if impersonating else None)
+    )
+
+
 def audit(
     action: str, detail: str = "", actor: str = "host", owner_user_id: Optional[int] = None
 ) -> None:
     if owner_user_id is None:
         owner_user_id = _current_owner_id.get()
+    actor_user_id = None
+    impersonator_user_id = None
+    current = _current_actor.get()
+    if current:
+        actor_user_id, username, impersonator_user_id = current
+        # A caller that named no actor gets the signed-in username instead of
+        # the bare "host" placeholder.
+        if actor == "host":
+            actor = username
     insert(
         "audit",
         {
@@ -717,6 +751,8 @@ def audit(
             "action": action,
             "detail": detail,
             "owner_user_id": owner_user_id,
+            "actor_user_id": actor_user_id,
+            "impersonator_user_id": impersonator_user_id,
         },
     )
 

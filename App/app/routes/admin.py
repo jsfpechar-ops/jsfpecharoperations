@@ -1884,6 +1884,7 @@ def guest_passport_photo(guest_id: int, request: Request):
     if not payload:
         return Response("Not found.", status_code=404)
     content, media_type = payload
+    db.audit("passport_photo_viewed", f"guest_id={guest_id}")
     return Response(
         content,
         media_type=media_type,
@@ -2177,7 +2178,9 @@ def settings_view(request: Request):
                 "errors": codelists.last_fetched(codelists.KIND_ERRORS),
             },
             "audit": db.query(
-                "SELECT * FROM audit WHERE owner_user_id IS ? ORDER BY id DESC LIMIT 500",
+                "SELECT a.*, i.username AS impersonator_username FROM audit a "
+                "LEFT JOIN user_account i ON i.id = a.impersonator_user_id "
+                "WHERE a.owner_user_id IS ? ORDER BY a.id DESC LIMIT 500",
                 (access.owner_id(request),),
             ),
             "audit_count": db.query_one(
