@@ -69,10 +69,22 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
     echo "No backup stamp found after backup — refusing deployment." >&2
     exit 1
   fi
-  BACKUP_OK="$(docker compose exec -T ubyhost sqlite3 \
-    "/data/backups/${BACKUP_STAMP}/ubyhost.db" "PRAGMA integrity_check;")"
+  # The production snapshot is age-encrypted and cannot be opened here (the
+  # identity is kept off the server). Check that it exists and really is an
+  # age file (or, outside production, a non-empty plaintext copy), then
+  # integrity-check a fresh copy of the live database.
+  if ! docker compose exec -T ubyhost sh -c \
+    "f=/data/backups/${BACKUP_STAMP}/ubyhost-backup.tar.age; p=/data/backups/${BACKUP_STAMP}/ubyhost.db; if [ -s \"\$f\" ]; then head -c 21 \"\$f\" | grep -q 'age-encryption.org/v1'; else [ -s \"\$p\" ]; fi"; then
+    echo "Backup ${BACKUP_STAMP} is missing, empty or not an age file - refusing deployment." >&2
+    exit 1
+  fi
+  PREFLIGHT_DB="/data/.preflight-${BACKUP_STAMP}.db"
+  docker compose exec -T ubyhost sqlite3 /data/ubyhost.db ".backup '${PREFLIGHT_DB}'"
+  BACKUP_OK="$(docker compose exec -T ubyhost sh -c \
+    "[ -s '${PREFLIGHT_DB}' ] && sqlite3 '${PREFLIGHT_DB}' 'PRAGMA integrity_check;'")" || BACKUP_OK="missing"
   if [ "${BACKUP_OK}" != "ok" ]; then
-    echo "Backup integrity check failed: ${BACKUP_OK}" >&2
+    echo "Live database copy failed its integrity check: ${BACKUP_OK}" >&2
+    docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
     exit 1
   fi
   for table in "${TABLES[@]}"; do
@@ -86,15 +98,16 @@ echo "==> Building image"
 docker compose build --pull
 
 if [ -n "${BACKUP_STAMP}" ]; then
-  echo "==> Dry-running database migration against the backup copy"
-  docker compose exec -T ubyhost sh -c \
-    "cp '/data/backups/${BACKUP_STAMP}/ubyhost.db' '/data/backups/${BACKUP_STAMP}/preflight.db'"
-  docker compose run --rm --no-deps \
-    -e "UBYHOST_DB=/data/backups/${BACKUP_STAMP}/preflight.db" \
+  echo "==> Dry-running database migration against a copy of the live database"
+  if ! docker compose run --rm --no-deps \
+    -e "UBYHOST_DB=${PREFLIGHT_DB}" \
     --entrypoint python ubyhost -c \
-    "from app import db; db.init_db(); assert db.query_one('PRAGMA integrity_check')[0] == 'ok'; required={'guest_message','passport_photo_policy'}; apartment={r['name'] for r in db.query('PRAGMA table_info(apartment)')}; reservation={r['name'] for r in db.query('PRAGMA table_info(reservation)')}; claim={r['name'] for r in db.query('PRAGMA table_info(reservation_claim)')}; assert required <= apartment; assert 'registration_completed_at' in reservation; assert 'guest_access_reopened_at' in claim"
-  docker compose exec -T ubyhost rm -f \
-    "/data/backups/${BACKUP_STAMP}/preflight.db"
+    "from app import db; db.init_db(); assert db.query_one('PRAGMA integrity_check')[0] == 'ok'; required={'guest_message','passport_photo_policy'}; apartment={r['name'] for r in db.query('PRAGMA table_info(apartment)')}; reservation={r['name'] for r in db.query('PRAGMA table_info(reservation)')}; claim={r['name'] for r in db.query('PRAGMA table_info(reservation_claim)')}; assert required <= apartment; assert 'registration_completed_at' in reservation; assert 'guest_access_reopened_at' in claim"; then
+    docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
+    echo "Migration dry-run failed." >&2
+    exit 1
+  fi
+  docker compose exec -T ubyhost rm -f "${PREFLIGHT_DB}"
   echo "Migration dry-run passed."
 fi
 
