@@ -169,6 +169,7 @@ them; Render does.
 | `UBYHOST_SECRET_KEY` | unset | `App/scripts/backup_data.sh` — written into the snapshot when there is no `data/secret_key` file, so an off-site restore can be decrypted |
 | `UBYHOST_BACKUP_AGE_RECIPIENT` | unset | `App/scripts/backup_data.sh` — public `age1...` recipient the snapshot is encrypted to. **Required when `UBYHOST_DEPLOYMENT=production`**; the run fails closed without it |
 | `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept |
+| `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup; if unset, no one is told when backups stop |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
 | `UBYHOST_S3_BUCKET` | unset | `backup-s3.sh` |
 | `UBYHOST_S3_PREFIX` | unset | `backup-s3.sh` |
