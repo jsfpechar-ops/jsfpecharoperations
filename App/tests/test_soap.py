@@ -274,3 +274,20 @@ def test_split_codes():
     assert uby_errors.split_codes("5;6;7;") == ["5", "6", "7"]
     assert uby_errors.split_codes(";") == []
     assert uby_errors.split_codes(None) == []
+
+
+def test_words_that_merely_contain_a_marker_are_not_non_correctable():
+    """A substring of a harmless word must not abandon a record.
+
+    "později" (later), "related" and "calculated" all contain the old bare
+    markers but mean nothing about a filing being late or duplicate.
+    """
+    assert not uby_errors.is_non_correctable("Opakujte akci později")
+    assert not uby_errors.is_non_correctable("Value related to the stay")
+
+
+def test_whole_word_markers_are_non_correctable():
+    assert uby_errors.is_non_correctable("Hlášení podáno pozdě")
+    assert uby_errors.is_non_correctable("Pozdní hlášení")
+    assert uby_errors.is_non_correctable("Late report")
+    assert uby_errors.is_non_correctable("Duplicitní záznam")
