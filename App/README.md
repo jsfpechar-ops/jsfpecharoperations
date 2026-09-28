@@ -146,7 +146,7 @@ re-send needs a deliberate confirmation.
 - The **house book** (domovní kniha), including Czech nationals, who have no
   reporting duty but still belong in the book. Exportable as CSV; the six-year
   retention period is noted on every record.
-- An audit log of everything the app and you did.
+- An audit log of the events the app records: sign-ins, account and property changes, archives and PIN rotations, exports and passport views, retention runs, and police submissions.
 
 ## Configuration
 
