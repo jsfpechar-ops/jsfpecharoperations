@@ -678,6 +678,39 @@ def _controller(apartment) -> Dict[str, str]:
     return _entity_details(controller_id or apartment["legal_entity_id"])
 
 
+def controller_complete(apartment) -> bool:
+    """Whether the configured controller has the identity Art 13 requires.
+
+    LEGAL-GATED: counsel may add fields; keep the rule in this one function.
+    """
+    controller = _controller(apartment)
+    return bool(
+        controller.get("name")
+        and controller.get("email")
+        and (controller.get("ico") or controller.get("seat"))
+    )
+
+
+def _alert_controller_missing(apartment) -> None:
+    """Warn the host when the controller identity is incomplete.
+
+    G-D9: this never blocks the guest. The form keeps working; the host gets a
+    critical card naming the property.
+    """
+    if not apartment or controller_complete(apartment):
+        return
+    alerts.raise_alert(
+        "critical",
+        "controller_missing",
+        "The guest form cannot name who controls the guest's data.",
+        "Add the data controller's name, address or IČO and contact e-mail.",
+        dedupe_key=f"controller_missing:{apartment['id']}",
+        apartment_id=apartment["id"],
+        owner_user_id=apartment["owner_user_id"] if "owner_user_id" in apartment.keys() else None,
+        params={"property": apartment["internal_name"] or ""},
+    )
+
+
 def _person_row(index: int, guest, owned: set, reservation, lang: str) -> Dict[str, Any]:
     is_mine = guest["id"] in owned
     complete = reporting.guest_is_complete(guest, reservation)
@@ -857,6 +890,7 @@ def pick_stay(token: str, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    _alert_controller_missing(apartment)
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -993,6 +1027,7 @@ def claim_landing(token: str, reservation_id: int, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    _alert_controller_missing(apartment)
     if not mail.mail_enabled():
         return _with_lang(
             RedirectResponse(
@@ -1306,6 +1341,7 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
     apartment = _apartment_by_token(token)
     if not apartment:
         return _unavailable(request, lang)
+    _alert_controller_missing(apartment)
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
