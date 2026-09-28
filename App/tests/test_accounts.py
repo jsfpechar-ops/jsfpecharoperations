@@ -774,7 +774,7 @@ def test_every_id_route_is_ownership_scoped():
 
     # These act across workspaces on purpose and gate on the admin role
     # instead; see user_password_reset / user_impersonate / user_toggle.
-    cross_workspace = {"/admin/users/{user_id}"}
+    cross_workspace = {"/admin/users/{user_id}", "/admin/incidents/{incident_id}"}
 
     unscoped = []
     for block in blocks:
