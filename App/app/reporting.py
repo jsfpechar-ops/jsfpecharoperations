@@ -920,7 +920,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if config.RESTRICTED_BLOCKS_FILING and guest["restricted_at"]:
             continue
         if not validation.guest_is_reportable(guest["nationality"]):
-            if guest["submit_state"] != NOT_REQUIRED:
+            # A filed record stays filed: its state is the proof pointer.
+            if guest["submit_state"] not in (NOT_REQUIRED, SENT):
                 db.update("guest", guest["id"], {"submit_state": NOT_REQUIRED, "updated_at": db.utcnow()})
             continue
         if guest["submit_state"] == SENT and not allow_resend:
