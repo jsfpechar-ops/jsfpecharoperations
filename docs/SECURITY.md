@@ -50,6 +50,22 @@ summarises the threat model, controls, and known limitations.
 | **Stateless logout** | Logout clears the browser cookie but does not revoke a copied token. Password changes, account disablement, and 2FA changes increment `session_version`; ordinary sessions expire after 12 hours (30 days with “remember me”). |
 | **Backups** | Production snapshots are encrypted with `age` and the identity is held offline (OPS-1); the key never travels with the copy. Passport attachments are not in the database backup and are short-lived by design. |
 
+## Source-control hygiene
+
+This repository is public. Secrets that are committed — even once, even to a
+feature branch, even briefly before a revert — remain readable from the git
+history forever. A `secret_key` and a SQLite database containing guest PII were
+committed early in the project and only removed during a pre-publication audit,
+which required a full `git filter-repo` history rewrite and force-push.
+
+- Never commit `UBYHOST_SECRET_KEY`, `.env`, the SQLite database, backups, or
+  real guest PII. `App/data/*` is git-ignored by design (only `.gitkeep` is
+  tracked); runtime secrets belong on the server's persistent volume.
+- If a secret reaches git history, deleting the file is not enough — scrub it
+  from every ref with `git filter-repo`, force-push, and rotate the key.
+- Before publicising the repository, audit history with
+  `git log --all -S <secret>` and `git grep -I <secret> $(git rev-list --all)`.
+
 ## Reporting
 
 Report suspected vulnerabilities to the software operator (see `/legal`).

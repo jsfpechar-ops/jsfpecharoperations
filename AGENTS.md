@@ -6,6 +6,55 @@ Before changing UbyHost’s user interface, read **[docs/DESIGN.md](docs/DESIGN.
 `prefers-color-scheme` dark styling unless the product owner explicitly requests
 it in the current task. UbyHost is light-mode only by policy.
 
+## Secrets, keys, and personal data — non-negotiable
+
+This repository is **public**. Everything committed to any branch is
+world-readable immediately, **including the full git history** — deleting a file
+from `HEAD` does not remove it from history.
+
+This bit us once: a `secret_key` and a SQLite database containing guest PII were
+committed early in the project, then only caught during a pre-publication audit.
+Removing them required a full history rewrite (`git filter-repo`) and a force-push.
+Treat every commit as if it ships to production and the public at the same time.
+
+**Never commit, stage, or write into code/docs/commit messages:**
+
+- API keys, tokens, or credentials (AWS, Cloudflare, Turnstile
+  `TURNSTILE_SECRET`, GitHub tokens, `ghp_*`/`gho_*`, `sk-*`, `AKIA…`, etc.)
+- `UBYHOST_SECRET_KEY` or any `secret_key` file — it signs sessions and derives
+  the key that encrypts UbyPort passwords, guest document numbers, and
+  signatures at rest. It lives only in `$UBYHOST_DATA_DIR/secret_key` or in the
+  server-side deployment `.env`, never in the repo.
+- `.env` files — `.env.example` is the only allowed file, and it stays placeholder-only.
+- SQLite databases, WAL/SHM journals, backups, or dumps. `App/data/*` is ignored
+  for exactly this reason; the only tracked file under it is `App/data/.gitkeep`.
+- Private keys, `.pem` / `.key` / `.p12` files, certificates.
+- Guest personal data or any other real PII (names, document numbers,
+  signatures, addresses, phone numbers).
+- The operator's personal identity (name, IČO, DIČ, home address, personal
+  e-mail). Operator identity is config-driven via `UBYHOST_OPERATOR_*`; do not
+  hard-code it. Generic demo names such as "Josef Novák (demo)" are fine.
+
+**Before committing, always:**
+
+1. Run `git status` and `git diff --staged` — never `git add -A` blindly.
+2. Confirm `.gitignore` covers machine-generated/secret files (`.env`,
+   `App/data/*`, IDE dirs, caches, `*.pem`, `*.db`).
+3. Scan staged content for secrets:
+   `git diff --cached | grep -iE 'secret|token|api[_-]?key|password|AKIA|ghp_'`.
+
+**Before the repo is made public (or when asked), verify history:**
+
+- `git log --all -S '<suspected-secret>'`
+- `git grep -I '<secret>' $(git rev-list --all)`
+
+If a secret is found in history, do **not** just delete the file — rewrite
+history with `git filter-repo` (drop the file *and* scrub its content from all
+refs), force-push, and rotate the leaked key.
+
+Read **[docs/SECURITY.md](docs/SECURITY.md)** for the full threat model and
+encryption/secret handling.
+
 Application code lives under **`App/`**. Run tests from `App/` with:
 
 ```bash
