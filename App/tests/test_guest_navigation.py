@@ -952,3 +952,57 @@ def test_a_short_party_is_flagged_once_the_stay_has_started():
     finally:
         db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
         _cleanup()
+
+
+# --- AR-11: a save must not overwrite what the sweep just changed ----------
+
+
+def test_a_save_while_the_sweep_holds_the_guest_is_refused():
+    """AR-11: the request read a state the sweep may already be replacing.
+
+    A submission_claim row means the sweep has this guest in flight. The guest
+    edit must not overwrite the filing, and says so instead of silently losing
+    the submitted record.
+    """
+    token, stay, _right = _make_apartment_with_stays()
+    guest_id = None
+    try:
+        browser = TestClient(app)
+        # The shared TOKEN and a per-IP confirm bucket: this file already spends
+        # most of the allowance, so reset it for this test's claim.
+        db.execute("DELETE FROM rate_limit_event WHERE scope = 'claim_confirm'")
+        complete_guest_claim(browser, token, stay, party_size=2)
+        now = db.utcnow()
+        guest_id = db.insert(
+            "guest",
+            {
+                "reservation_id": stay,
+                "surname": "OLD",
+                "first_name": "Name",
+                "nationality": "GBR",
+                "submit_state": reporting.ERROR,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        browser.cookies.set(guest.OWNED_COOKIE, guest._serializer().dumps([guest_id]))
+        db.execute(
+            "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+            "VALUES (?, 'x', ?)",
+            (guest_id, 0.0),
+        )
+
+        response = browser.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(surname="NEW", guest_id=str(guest_id)),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 403, response.text
+        row = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert row["surname"] == "OLD"
+    finally:
+        if guest_id is not None:
+            db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+        _cleanup()
