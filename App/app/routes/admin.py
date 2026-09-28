@@ -2282,7 +2282,34 @@ def settings_view(request: Request):
                 (access.owner_id(request),),
             ),
             "guest_pin_required": config.GUEST_PIN_REQUIRED,
+            "retention_last_run": json.loads(
+                db.get_setting("retention_last_run") or "null"
+            ),
+            "retention_due": len(
+                housebook.due_guest_ids(
+                    within_days=config.RETENTION_NOTICE_DAYS,
+                    owner_user_id=access.owner_id(request),
+                )
+            ),
+            "open_dsr_count": db.query_one(
+                "SELECT COUNT(*) AS n FROM data_subject_request "
+                "WHERE owner_user_id IS ? AND status IN ('open','extended')",
+                (access.owner_id(request),),
+            )["n"],
+            "backup_status": _backup_status(request),
         },
     )
+
+
+def _backup_status(request: Request):
+    """The last backup marker, for platform admins only (FE-3)."""
+    account = auth.current_user(request)
+    if not account or account["role"] != "admin":
+        return None
+    marker = config.DATA_DIR / "backups" / ".last_success.json"
+    try:
+        return json.loads(marker.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
 
 
