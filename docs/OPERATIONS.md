@@ -23,7 +23,7 @@ you need when something has gone wrong and the answer is not in either.
 ## Scheduled jobs
 
 Registered by `App/app/scheduler.py:start()` on a single `BackgroundScheduler`
-running in the web process, in `Europe/Prague`. All five are skipped entirely
+running in the web process, in `Europe/Prague`. All of them are skipped entirely
 when `UBYHOST_ENABLE_SCHEDULER=0`.
 
 | Job id | Interval | What it does |
@@ -33,6 +33,7 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
 | `deadlines` | 30 min | Raises and clears `deadline` alerts for stays running out of statutory time. |
 | `mail` | 5 min | Expires 30-minute claim holds, drains the guest e-mail outbox, sends day-before reminders, purges mail rows older than 14 days. |
 | `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files, and blanks the request/response envelopes on submissions older than 90 days. |
+| `retention` | daily 03:30 | Computes the retention schedule (BE-2): counts the guest rows past the six-year cutoff and the invoices past ten years, audits the counts, and raises the "records reach the end of their retention period soon" notice. **Deletes nothing** unless `UBYHOST_RETENTION_AUTOPURGE=1`. |
 
 Behaviours to know:
 
@@ -444,11 +445,15 @@ Automatic:
 Manual only:
 
 - **Expired house-book records** — the six-year duty is displayed per record and
-  computed from the end of each stay, but expiry is **not** deleted on a
-  schedule. It is the "purge expired records" button in Settings. If nobody
-  presses it, expired guest rows stay indefinitely. The same button also clears
-  the passport images and blanks the submission envelopes described above, so a
-  host who never presses it is still covered by the sweeps.
+  computed from the end of each stay. The `retention` job runs daily (BE-2) and
+  **only counts and audits** what is due; it deletes nothing until
+  `UBYHOST_RETENTION_AUTOPURGE=1` is set after counsel confirms the anchor
+  (G-D4). It raises a "records reach the end of their retention period soon"
+  notice for records due within `UBYHOST_RETENTION_NOTICE_DAYS` (30). The
+  Settings "purge expired records" button is the same code path with deletion
+  forced for that owner, and it also clears the passport images and blanks the
+  submission envelopes described above, so a host who never presses it is still
+  covered by the sweeps.
 
 Deleted by either path:
 

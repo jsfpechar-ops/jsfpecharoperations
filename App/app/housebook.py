@@ -15,7 +15,7 @@ import io
 import os
 import re
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional
 
 from reportlab.lib.pagesizes import A4
@@ -417,15 +417,55 @@ def retention_cutoff(today: Optional[date] = None) -> date:
 def expired_guest_ids(
     today: Optional[date] = None, owner_user_id: Optional[int] = None
 ) -> List[int]:
-    """Guest records whose stay ended more than six years ago."""
+    """Guest records whose stay ended more than six years ago.
+
+    ``date()`` is applied to both sides of the ``COALESCE`` so a malformed
+    ``stay_to`` (SQLite ``date()`` returns NULL for it) falls back to the
+    reservation's end instead of sorting after every cutoff and living forever.
+    """
     rows = db.query(
         "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE COALESCE(g.stay_to, r.date_to) < ? "
+        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) < ? "
         "AND (? IS NULL OR a.owner_user_id = ?)",
         (retention_cutoff(today).isoformat(), owner_user_id, owner_user_id),
     )
     return [row["id"] for row in rows]
+
+
+def due_guest_ids(
+    today: Optional[date] = None,
+    within_days: int = 30,
+    owner_user_id: Optional[int] = None,
+) -> List[int]:
+    """Guest records that reach their retention cutoff within the next N days."""
+    start = retention_cutoff(today).isoformat()
+    end = retention_cutoff((today or date.today()) + timedelta(days=within_days)).isoformat()
+    rows = db.query(
+        "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) >= ? "
+        "AND COALESCE(date(g.stay_to), date(r.date_to)) < ? "
+        "AND (? IS NULL OR a.owner_user_id = ?)",
+        (start, end, owner_user_id, owner_user_id),
+    )
+    return [row["id"] for row in rows]
+
+
+def due_guest_counts(today: Optional[date] = None, within_days: int = 30) -> Dict[Optional[int], int]:
+    """How many records per owner reach their cutoff within the next N days."""
+    start = retention_cutoff(today).isoformat()
+    end = retention_cutoff((today or date.today()) + timedelta(days=within_days)).isoformat()
+    rows = db.query(
+        "SELECT a.owner_user_id AS owner, COUNT(*) AS n FROM guest g "
+        "JOIN reservation r ON r.id = g.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) >= ? "
+        "AND COALESCE(date(g.stay_to), date(r.date_to)) < ? "
+        "GROUP BY a.owner_user_id",
+        (start, end),
+    )
+    return {row["owner"]: row["n"] for row in rows}
 
 
 def purge_orphan_submissions(

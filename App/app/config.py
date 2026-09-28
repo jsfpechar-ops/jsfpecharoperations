@@ -129,6 +129,14 @@ ENABLE_SCHEDULER = os.environ.get("UBYHOST_ENABLE_SCHEDULER", "1") not in ("0", 
 # Dockerfile's --no-access-log; this flag is the app-level switch.
 ACCESS_LOG = os.environ.get("UBYHOST_ACCESS_LOG", "1") not in ("0", "false", "no")
 
+# BE-2: the retention job computes and audits its row set but deletes nothing
+# until this is set (Rule 7). The switch stays off until counsel signs off G-D4.
+RETENTION_AUTOPURGE = os.environ.get("UBYHOST_RETENTION_AUTOPURGE", "0") in (
+    "1", "true", "yes",
+)
+# How far ahead the "records reach the end of their retention period" notice looks.
+RETENTION_NOTICE_DAYS = int(os.environ.get("UBYHOST_RETENTION_NOTICE_DAYS", "30"))
+
 GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "false", "no")
 
 # A first administrator is created once on startup. Set both values in a
