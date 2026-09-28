@@ -38,6 +38,16 @@ fi
 
 mkdir -p "${DEST}"
 chmod 700 "${BACKUP_ROOT}" "${DEST}" 2>/dev/null || true
+# If anything below fails before encryption finishes, do not leave the
+# plaintext database or key behind in the snapshot directory.
+cleanup_on_error() {
+  rm -f "${DEST}/ubyhost.db" "${DEST}/secret_key" "${DEST}/initial_admin_credentials" \
+    "${DEST}/ubyhost-backup.tar" "${DEST}/ubyhost-backup.tar.age"
+  rmdir "${DEST}" 2>/dev/null || true
+}
+if [ -n "${RECIPIENT}" ]; then
+  trap cleanup_on_error ERR
+fi
 
 DB="${UBYHOST_DB:-${DATA_DIR}/ubyhost.db}"
 if [ ! -f "${DB}" ]; then
@@ -91,6 +101,7 @@ if [ -n "${RECIPIENT}" ]; then
   rm -f "${DEST}/ubyhost-backup.tar" "${DEST}/ubyhost.db" \
     "${DEST}/secret_key" "${DEST}/initial_admin_credentials"
   ENCRYPTED="true"
+  trap - ERR
 fi
 
 echo "Backup written to ${DEST} (encrypted: ${ENCRYPTED})"
