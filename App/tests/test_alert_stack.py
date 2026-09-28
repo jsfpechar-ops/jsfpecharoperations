@@ -216,3 +216,27 @@ def test_a_lost_raise_race_refreshes_the_alert_instead_of_raising(monkeypatch):
     assert len(rows) == 1
     assert rows[0]["message"] == "new message"
     db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+
+
+def test_a_turnstile_outage_is_shown_to_every_host(host):
+    """AR-48: ``turnstile_unavailable`` is installation-wide, like ``job_failed``.
+
+    It is raised with no owner when Cloudflare is unreachable, so a host only
+    sees it if ``open_alerts`` treats the kind as belonging to the installation.
+    """
+    owner_id = db.query_one(
+        "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+    )["id"]
+    key = "turnstile_unavailable:ar48"
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+    alerts.raise_alert(
+        "warning",
+        "turnstile_unavailable",
+        "Security check unavailable",
+        dedupe_key=key,
+    )
+    try:
+        shown = alerts.open_alerts(owner_user_id=owner_id)
+        assert any(row["kind"] == "turnstile_unavailable" for row in shown)
+    finally:
+        db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
