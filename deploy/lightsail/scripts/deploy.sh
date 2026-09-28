@@ -150,6 +150,20 @@ if ! docker compose exec -T ubyhost python scripts/backfill_legal_acceptance.py;
   echo "Legal acceptance backfill failed." >&2
   exit 1
 fi
+
+# BE-11: encrypt any travel-document numbers still sitting in the plaintext
+# columns. Idempotent; logs a count only. The --check before it is
+# informational, the one after it is the assertion the deploy must pass.
+echo "==> Document-number backfill (counts only)"
+docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check || true
+if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py; then
+  echo "Document-number backfill failed." >&2
+  exit 1
+fi
+if ! docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
+  echo "Plaintext document numbers remain after the backfill." >&2
+  exit 1
+fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
   echo "Post-deploy database integrity and row-count checks:"
