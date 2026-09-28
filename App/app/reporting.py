@@ -1177,31 +1177,33 @@ def submit_batch(
     # this attempt. Each one has stopped being offered to the sweep, which the
     # host has to be told or the stop is silent.
     exhausted: List[Any] = []
+    guest_writes: List[Tuple[int, Dict[str, Any]]] = []
 
     for index, (guest, _reservation) in enumerate(pairs):
         record_error = per_record[index] if index < len(per_record) else ""
         state, messages = uby_errors.classify(result.header_errors, record_error, codebook)
         if state == "accepted":
-            db.update(
-                "guest",
-                guest["id"],
-                {
-                    "submit_state": SENT,
-                    "submitted_at": now,
-                    # The current pointer, moved on every send - it is not the
-                    # batch record, which lives in submission.guest_ids.
-                    "submission_id": submission_id,
-                    # Keep pointing at the last submission that actually holds
-                    # a Dorucenka when this attempt returned none, so a resend
-                    # without a receipt request does not lose the link.
-                    "receipt_submission_id": (
-                        submission_id if result.receipt_pdf else guest["receipt_submission_id"]
-                    ),
-                    "last_errors": None,
-                    # The register took it, so the count of refusals restarts.
-                    "submit_attempts": 0,
-                    "updated_at": now,
-                },
+            guest_writes.append(
+                (
+                    guest["id"],
+                    {
+                        "submit_state": SENT,
+                        "submitted_at": now,
+                        # The current pointer, moved on every send - it is not the
+                        # batch record, which lives in submission.guest_ids.
+                        "submission_id": submission_id,
+                        # Keep pointing at the last submission that actually holds
+                        # a Dorucenka when this attempt returned none, so a resend
+                        # without a receipt request does not lose the link.
+                        "receipt_submission_id": (
+                            submission_id if result.receipt_pdf else guest["receipt_submission_id"]
+                        ),
+                        "last_errors": None,
+                        # The register took it, so the count of refusals restarts.
+                        "submit_attempts": 0,
+                        "updated_at": now,
+                    },
+                )
             )
             accepted_count += 1
             first_accepts += 1
@@ -1241,7 +1243,7 @@ def submit_batch(
                     guest["receipt_submission_id"]
                     or receipt_submission_id(guest["submission_id"])
                 )
-            db.update("guest", guest["id"], update_values)
+            guest_writes.append((guest["id"], update_values))
             if new_state == SENT:
                 # A duplicate for a guest we already had as sent means the
                 # register confirms it holds the record. Nothing was refused and
@@ -1255,6 +1257,43 @@ def submit_batch(
                 failed_count += 1
             else:
                 blocked_count += 1
+
+    if failed_count or blocked_count:
+        state = "partial" if accepted_count else "error"
+    elif first_accepts:
+        # Something was filed for the first time, so this is a plain success even
+        # if other records in the same batch came back as duplicates.
+        state = "ok"
+    elif duplicate_accepts:
+        # Nothing new was filed: the register already held every record, so no
+        # Dorucenka came back for this attempt. That is a success, but not the
+        # same thing as a first-time accept with a confirmation behind it.
+        state = "ok_duplicate"
+    else:
+        state = "ok"
+
+    # The answer and the Dorucenka are written together with every guest's
+    # new state, or not at all. Anything that can fail afterwards (alerts,
+    # mail) must not be able to lose the receipt or leave guests pending.
+    with db.immediate() as cur:
+        for write_id, write_values in guest_writes:
+            db.update_in(cur, "guest", write_id, write_values)
+        db.update_in(
+            cur,
+            "submission",
+            submission_id,
+            {
+                "state": state,
+                "finished_at": now,
+                "header_errors": result.header_errors,
+                "record_errors": json.dumps(result.record_errors),
+                "pseudo_stamp": result.pseudo_stamp,
+                "receipt_pdf": result.receipt_pdf or None,
+                "error_pdf": result.error_pdf or None,
+                "request_xml": result.request_xml,
+                "response_xml": result.response_xml,
+            },
+        )
 
     if exhausted:
         # The stop has to be visible. Without this the sweep simply stops
@@ -1283,36 +1322,6 @@ def submit_batch(
 
     for _reservation_id in {_reservation["id"] for _guest, _reservation in pairs}:
         clear_stuck_alert_if_recovered(_reservation_id)
-
-    if failed_count or blocked_count:
-        state = "partial" if accepted_count else "error"
-    elif first_accepts:
-        # Something was filed for the first time, so this is a plain success even
-        # if other records in the same batch came back as duplicates.
-        state = "ok"
-    elif duplicate_accepts:
-        # Nothing new was filed: the register already held every record, so no
-        # Dorucenka came back for this attempt. That is a success, but not the
-        # same thing as a first-time accept with a confirmation behind it.
-        state = "ok_duplicate"
-    else:
-        state = "ok"
-
-    db.update(
-        "submission",
-        submission_id,
-        {
-            "state": state,
-            "finished_at": now,
-            "header_errors": result.header_errors,
-            "record_errors": json.dumps(result.record_errors),
-            "pseudo_stamp": result.pseudo_stamp,
-            "receipt_pdf": result.receipt_pdf or None,
-            "error_pdf": result.error_pdf or None,
-            "request_xml": result.request_xml,
-            "response_xml": result.response_xml,
-        },
-    )
 
     if state in ("ok", "ok_duplicate"):
         alerts.resolve(f"submission_rejected:{apartment['id']}")
