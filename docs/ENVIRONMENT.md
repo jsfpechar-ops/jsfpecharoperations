@@ -49,6 +49,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_RESTRICTED_BLOCKS_FILING` | `0` | `1` withholds a restricted (Art 18) record from police filing. Off until counsel confirms the statutory duty permits it (BE-9). |
 | `UBYHOST_ICAL_POLL_MINUTES` | `60` | Calendar poll interval. |
 | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | Automatic submission sweep interval. |
+| `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
 
 The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 (12 h) intervals are not configurable. See
