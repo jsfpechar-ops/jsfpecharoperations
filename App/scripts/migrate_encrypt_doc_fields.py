@@ -44,6 +44,11 @@ SELECT_SQL = (
     "SELECT id, doc_number, visa_number, doc_number_enc, visa_number_enc FROM guest"
 )
 
+# This migration owns these two fields only. It must not iterate the shared
+# ENCRYPTED_GUEST_COLUMNS map: other fields are added to it by other releases
+# (the signature, BE-12), and this SELECT does not carry their columns.
+DOC_FIELDS = {"doc_number": "doc_number_enc", "visa_number": "visa_number_enc"}
+
 
 def require_the_app_key() -> None:
     """Stop before encrypting anything under a key the running app does not have.
@@ -105,7 +110,7 @@ def migrate(dry_run: bool = False) -> Dict[str, int]:
         counts["scanned"] = len(rows)
         for row in rows:
             updates: Dict[str, Any] = {}
-            for name, enc in db.ENCRYPTED_GUEST_COLUMNS.items():
+            for name, enc in DOC_FIELDS.items():
                 plain = row[name]
                 if not plain:
                     continue
@@ -148,7 +153,7 @@ def rollback(dry_run: bool = False) -> Dict[str, int]:
         counts["scanned"] = len(rows)
         for row in rows:
             updates: Dict[str, Any] = {}
-            for name, enc in db.ENCRYPTED_GUEST_COLUMNS.items():
+            for name, enc in DOC_FIELDS.items():
                 token = row[enc]
                 if not token:
                     continue
