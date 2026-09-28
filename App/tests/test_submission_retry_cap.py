@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import base64
 import inspect
+import sqlite3
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
@@ -579,3 +580,65 @@ def test_every_state_submit_batch_can_write_is_terminal():
         assert state in reporting.TERMINAL_SUBMISSION_STATES, (
             f"{state!r} is a terminal batch state the set does not list"
         )
+
+
+def test_the_receipt_survives_a_failure_after_the_answer(monkeypatch):
+    """The Dorucenka must not be lost if a later step blows up.
+
+    Once UbyPort has answered, the receipt and the guests' new states are one
+    fact. A failure in the alerts that follow must not be able to undo them.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-atomic-receipt", auto=True)
+
+    try:
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: AcceptingClient())
+        monkeypatch.setattr(
+            reporting,
+            "clear_stuck_alert_if_recovered",
+            lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        with pytest.raises(RuntimeError):
+            reporting.submit_batch(apartment, pairs, mode="manual")
+
+        submission = db.query_one(
+            "SELECT * FROM submission WHERE apartment_id = ? ORDER BY id DESC LIMIT 1",
+            (apartment["id"],),
+        )
+        assert submission["state"] == "ok", (
+            "the answer was already committed, so its receipt must be on file"
+        )
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.SENT
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_a_failed_outcome_write_leaves_nothing_half_done(monkeypatch):
+    """A write that fails while recording the answer rolls the whole thing back.
+
+    Otherwise the guest would be marked sent with no submission row behind it,
+    and the disappearance of the receipt would only be visible much later.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-atomic-rollback", auto=True)
+
+    real = db.update_in
+
+    def wrapper(cur, table, row_id, values):
+        if table == "submission":
+            raise sqlite3.OperationalError("locked")
+        return real(cur, table, row_id, values)
+
+    try:
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: AcceptingClient())
+        monkeypatch.setattr(db, "update_in", wrapper)
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        with pytest.raises(sqlite3.OperationalError):
+            reporting.submit_batch(apartment, pairs, mode="manual")
+
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.PENDING, (
+            "the guest write shares the submission's transaction and must roll back with it"
+        )
+    finally:
+        _cleanup(apartment["id"])
