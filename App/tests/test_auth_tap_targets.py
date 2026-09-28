@@ -57,3 +57,18 @@ def test_the_switch_labels_are_unchanged():
     html = AUTH_BASE.read_text(encoding="utf-8")
     assert 'class="lang-switch auth-lang-switch"' in html
     assert "flag" not in html.lower()
+
+
+def test_the_acceptance_checkbox_and_sign_out_clear_the_44px_bar():
+    checkbox = _declarations(".auth-accept-check")
+    assert "min-height: 44px" in checkbox
+    assert "align-items: flex-start" in checkbox
+    sign_out = _declarations(".auth-secondary button")
+    assert "min-height: 44px" in sign_out
+    for declaration in ("background: none", "cursor: pointer"):
+        assert declaration in sign_out, declaration
+
+
+def test_each_pending_document_row_is_a_tap_target():
+    rules = _declarations(".auth-accept-docs li")
+    assert "min-height: 44px" in rules

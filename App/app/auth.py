@@ -14,13 +14,14 @@ import re
 import secrets
 from pathlib import Path
 from typing import Any, Optional
+from urllib.parse import quote
 
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 import pyotp
 
-from . import config, db, host_i18n
+from . import acceptance, config, db, host_i18n
 
 SESSION_COOKIE = "ubyhost_session"
 SESSION_MAX_AGE = 60 * 60 * 12
@@ -285,6 +286,21 @@ def session_remembers(request: Request) -> bool:
     return bool(payload.get("rm"))
 
 
+# Pages reachable while an acceptance is pending: the acceptance screen itself,
+# the first-run/account screens, sign-out, and the documents it links to.
+_ACCEPTANCE_EXEMPT_PATHS = (
+    "/account/accept",
+    "/account/password",
+    "/account/2fa/setup",
+    "/logout",
+    "/terms",
+    "/privacy",
+    "/dpa",
+    "/legal",
+    "/subprocessors",
+)
+
+
 def require_login(request: Request) -> Optional[RedirectResponse]:
     """Return a redirect unless a valid account session identifies this host."""
     # Test/development databases may deliberately disable bootstrap and have no
@@ -312,6 +328,22 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     ):
         return RedirectResponse("/account/2fa/setup", status_code=303)
     workspace = workspace_user(request)
+    # Acceptance evidence belongs to the real account, never to the workspace an
+    # admin is previewing, so an impersonating admin is not sent to the screen.
+    impersonating = bool(workspace and workspace["id"] != account["id"])
+    if (
+        not impersonating
+        and request.url.path not in _ACCEPTANCE_EXEMPT_PATHS
+        and acceptance.pending(account["id"])
+    ):
+        # Local import: security imports auth at module load, so a top-level
+        # import here would be a cycle.
+        from . import security
+
+        next_path = security.safe_local_path(request.url.path, "/")
+        return RedirectResponse(
+            f"/account/accept?next={quote(next_path)}", status_code=303
+        )
     db.set_current_owner(workspace["id"] if workspace else None)
     return None
 

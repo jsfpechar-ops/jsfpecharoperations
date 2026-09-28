@@ -1,0 +1,36 @@
+{% extends "auth_base.html" %}
+{% block title %}{{ t('account.accept.title') }}{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">{{ t('account.accept.title') }}</h1>
+  <p class="auth-lede">{{ t('account.accept.lede') }}</p>
+
+  {% if error %}
+  <div class="auth-alert" role="alert">{{ t(error) }}</div>
+  {% endif %}
+
+  <ul class="auth-accept-docs">
+    {% for doc in pending_docs %}
+    <li>
+      <a href="{{ doc.href }}?lang={{ lang }}" target="_blank" rel="noopener noreferrer">{{ t('account.accept.doc.' ~ doc.key) }}</a>
+      <span class="auth-accept-version">{{ t('account.accept.version', version=doc.version) }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <form method="post" action="/account/accept" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label class="auth-accept-check">
+      <input type="checkbox" name="accept" value="1">
+      <span>{{ t('account.accept.checkbox') }}</span>
+    </label>
+    <button class="auth-submit" type="submit">{{ t('account.accept.continue') }}</button>
+  </form>
+
+  <form method="post" action="/logout" class="auth-secondary">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button type="submit">{{ t('account.accept.sign_out') }}</button>
+  </form>
+</section>
+{% endblock %}
