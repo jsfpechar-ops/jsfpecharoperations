@@ -1,7 +1,7 @@
 # UbyHost technical compliance audit
 
 **Review date:** 15 September 2026  
-**Re-verified:** 24 September 2026 (Phase 6 of the remediation plan; only rows the current code contradicts were changed)  
+**Re-verified:** 28 September 2026 (re-run against the GDPR remediation plan; the rows below the note in "GDPR plan reconciliation" are the ones this plan changed)  
 **Scope:** repository behavior and product copy, not production configuration  
 **Release boundary:** the mail rows describe the pre-1.1.0 state and predate the SES-live release of 21 September 2026  
 **Status:** attorney review required
@@ -235,3 +235,24 @@ or the authoritative legal effect of cited sources. Official UbyPort appendix 5
 describes the web-service interface; the repository's statement that § 10.5
 “requires first-save validation” is a paraphrase that should be checked against
 the full current operating rules by counsel and the integration owner.
+
+## GDPR plan reconciliation (28 September 2026)
+
+Re-run against the GDPR remediation plan. These previously flagged rows changed:
+
+| Row | Was | Now |
+|---|---|---|
+| Encrypted backups | INCONSISTENT (plaintext DB + key) | OPS-1: `age`-encrypted, key held offline, fail-closed production, 30-day retention |
+| Off-site backups | GAP (Drive/S3, no pruning) | OPS-2: `*.age` only, refuses plaintext, expiry |
+| Retention trigger | INCONSISTENT / manual only | BE-2/BE-3/BE-4: a scheduled job (dry-run until counsel signs off G-D4) |
+| Read auditing / actor | GAP | BE-6: exports and passport views audited with the real actor and impersonator |
+| Breach register | GAP | BE-13 + LD-5: `/admin/incidents` and the runbook |
+| Data-subject requests | GAP | BE-8/FE-5: `/privacy-requests` and `/guests/{id}/export.json` |
+| Restriction | GAP | BE-9: flag and read-only enforcement (filing gated on counsel) |
+| Server logs | GAP | OPS-3: route-template-only access line, rotation, uvicorn log off |
+| Backups claim in Settings | INCONSISTENT | FE-3 (pending): the guide copy is aligned when the panel lands |
+| Guest notice acknowledgement | GAP | BE-5/FE-2: version, language and time persisted |
+
+Copy rows that need counsel (retention wording, archive vs delete, the
+"encrypted backups" sentence in the privacy/DPA copy) are tracked in
+`FOLLOWUPS.md`; they were not rewritten without approved wording (Rule 6).
