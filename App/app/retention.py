@@ -1,19 +1,34 @@
 """Scheduled retention: everything the retention schedule says may no longer be held.
 
-BE-2 builds the job. It is **dry-run by default** (Rule 7): in dry-run it
-computes exactly the row set it would delete, audits the counts, and deletes
-nothing. Deletion starts only when ``UBYHOST_RETENTION_AUTOPURGE=1``, which the
-owner sets once counsel confirms the retention anchor (G-D4).
+BE-2 builds the job; BE-3 adds the reservation/claim/contact minimisation steps.
+It is **dry-run by default** (Rule 7): in dry-run it computes exactly the row
+set it would delete or null, audits the counts, and changes nothing. Deletion
+starts only when ``UBYHOST_RETENTION_AUTOPURGE=1``, which the owner sets once
+counsel confirms the retention anchor (G-D4).
 
 Never logs personal data (Rule 8): counts and ids only.
 """
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 
 from . import alerts, config, db, housebook, invoices
+
+# G-D5: null the claim e-mail / reservation e-mail / phone fragment this long
+# after the stay's end date.
+CLAIM_EMAIL_GRACE_DAYS = 30
+# G-D6: null the submitter IP this long after the guest's stay end (a disputes
+# evidence window), counsel to confirm.
+SUBMITTER_IP_GRACE_DAYS = 90
+
+_OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
+
+
+def _scalar(sql: str, params: tuple = ()) -> int:
+    row = db.query_one(sql, params)
+    return int(row["n"]) if row and row["n"] is not None else 0
 
 
 def _run_guest_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
@@ -26,6 +41,76 @@ def _run_invoice_step(today: date, dry_run: bool, owner_user_id: Optional[int]) 
     if dry_run:
         return len(invoices.expired_ids(today, owner_user_id=owner_user_id))
     return invoices.purge_expired(today, owner_user_id=owner_user_id)
+
+
+def _claim_email_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Null ``reservation_claim.email`` once the stay is past the grace window."""
+    cutoff = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()
+    inner = (
+        "SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        f"WHERE date(r.date_to) < ? AND {_OWNER_SCOPE}"
+    )
+    params = (cutoff, owner_user_id, owner_user_id)
+    where = f"email IS NOT NULL AND reservation_id IN ({inner})"
+    count = _scalar(f"SELECT COUNT(*) AS n FROM reservation_claim WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(
+            f"UPDATE reservation_claim SET email = NULL, updated_at = ? WHERE {where}",
+            (db.utcnow(), *params),
+        )
+    return count
+
+
+def _reservation_contact_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Null ``reservation.guest_email`` and ``phone_last4`` past the same window."""
+    cutoff = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()
+    inner = "SELECT id FROM apartment a WHERE (? IS NULL OR a.owner_user_id = ?)"
+    params = (cutoff, owner_user_id, owner_user_id)
+    where = (
+        "(guest_email IS NOT NULL OR phone_last4 IS NOT NULL) "
+        f"AND date(date_to) < ? AND apartment_id IN ({inner})"
+    )
+    count = _scalar(f"SELECT COUNT(*) AS n FROM reservation WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(
+            "UPDATE reservation SET guest_email = NULL, phone_last4 = NULL, updated_at = ? "
+            f"WHERE {where}",
+            (db.utcnow(), *params),
+        )
+    return count
+
+
+def _submitter_ip_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Null ``guest.filled_ip`` past the submitter-IP window (G-D6)."""
+    cutoff = (today - timedelta(days=SUBMITTER_IP_GRACE_DAYS)).isoformat()
+    inner = "SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id WHERE " + _OWNER_SCOPE
+    params = (cutoff, owner_user_id, owner_user_id)
+    where = (
+        "filled_ip IS NOT NULL AND "
+        "COALESCE(date(stay_to), (SELECT date(date_to) FROM reservation r2 "
+        "WHERE r2.id = guest.reservation_id)) < ? "
+        f"AND reservation_id IN ({inner})"
+    )
+    count = _scalar(f"SELECT COUNT(*) AS n FROM guest WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(f"UPDATE guest SET filled_ip = NULL WHERE {where}", params)
+    return count
+
+
+def _empty_reservation_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete reservations past the six-year cutoff that have no guest rows."""
+    cutoff = housebook.retention_cutoff(today).isoformat()
+    inner = "SELECT id FROM apartment a WHERE (? IS NULL OR a.owner_user_id = ?)"
+    params = (cutoff, owner_user_id, owner_user_id)
+    where = (
+        "date(date_to) < ? AND NOT EXISTS "
+        "(SELECT 1 FROM guest g WHERE g.reservation_id = reservation.id) "
+        f"AND apartment_id IN ({inner})"
+    )
+    count = _scalar(f"SELECT COUNT(*) AS n FROM reservation WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(f"DELETE FROM reservation WHERE {where}", params)
+    return count
 
 
 def _raise_due_notices(today: date) -> None:
@@ -48,6 +133,17 @@ def _raise_due_notices(today: date) -> None:
         )
 
 
+# Each step takes (today, dry_run, owner_user_id) and returns the affected count.
+STEPS: List[tuple] = [
+    ("guests", _run_guest_step),
+    ("invoices", _run_invoice_step),
+    ("claim_emails", _claim_email_step),
+    ("reservation_contacts", _reservation_contact_step),
+    ("submitter_ips", _submitter_ip_step),
+    ("empty_reservations", _empty_reservation_step),
+]
+
+
 def run(
     today: Optional[date] = None,
     *,
@@ -68,12 +164,7 @@ def run(
     counts: Dict[str, int] = {}
     failures: List[BaseException] = []
 
-    steps = (
-        ("guests", _run_guest_step),
-        ("invoices", _run_invoice_step),
-        # BE-3 and BE-4 append their steps here when those land.
-    )
-    for name, step in steps:
+    for name, step in STEPS:
         try:
             counts[name] = step(today, dry_run, owner_user_id)
         except Exception as exc:  # keep going; re-raised below
