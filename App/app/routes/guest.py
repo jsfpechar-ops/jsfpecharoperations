@@ -642,7 +642,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "host": _host_contact(apartment) if apartment else {},
         "mail_enabled": mail.mail_enabled(),
         "notice_version": config.GUEST_NOTICE_VERSION,
-        "cookie_inventory": cookie_inventory.for_surface("guest"),
+        "cookie_inventory": cookie_inventory.COOKIE_INVENTORY,
     }
 
 

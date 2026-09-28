@@ -10,7 +10,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from app import auth, cookie_inventory, host_i18n, security
+from starlette.testclient import TestClient
+
+from app import auth, cookie_inventory, db, host_i18n, security
+from app.main import app
 
 APP = Path(__file__).resolve().parents[1] / "app"
 
@@ -69,3 +72,12 @@ def test_the_inventory_is_fully_translated():
         for field in ("purpose", "lifetime"):
             assert row[field]["en"] and row[field]["cs"], (row["name"], field)
             assert row[field]["en"] != row[field]["cs"], (row["name"], field)
+
+
+def test_the_public_privacy_page_lists_every_inventory_name():
+    """The published table is the full inventory, not a surface subset."""
+    db.init_db()
+    html = TestClient(app).get("/privacy?lang=en").text
+    for name in cookie_inventory.names():
+        assert name in html, f"{name} is missing from the public cookie table"
+    assert "ubyhost_session" in html
