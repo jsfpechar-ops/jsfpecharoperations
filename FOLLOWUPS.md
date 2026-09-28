@@ -996,3 +996,11 @@ wording, so it was left as the previous approved text rather than inventing a
 new legal statement. Counsel should approve a §8 update that matches the OPS-3
 behaviour; until then the copy over-states, which is conservative. Fold the
 change into MK-3 / LD-3.
+
+### BE-11 — W2.2 item 1 (run the backfill) is now automated
+`deploy.sh` runs the document-number backfill after the health check and fails
+the deploy if any plaintext remains (`--check`). That completes W2.2 item 1.
+Item 2 — dropping the plaintext `doc_number` / `visa_number` columns — stays
+open: it needs a table rebuild this append-only schema mechanism does not
+support (see the Phase 2 W2.2 note and `docs/OPERATIONS.md` § Schema
+migrations).

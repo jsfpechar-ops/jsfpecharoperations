@@ -84,6 +84,18 @@ check "/login" 200
 check "/legal" 200
 check "/privacy" 200
 
+# BE-11: after the deploy backfill, no plaintext document numbers may remain.
+# Only runs where the container is reachable (i.e. on the server).
+if command -v docker >/dev/null 2>&1 \
+   && [ -n "$(docker compose ps -q ubyhost 2>/dev/null)" ]; then
+  if docker compose exec -T ubyhost python scripts/migrate_encrypt_doc_fields.py --check; then
+    echo "OK   document numbers encrypted (no plaintext remains)"
+  else
+    echo "FAIL plaintext document numbers remain after the backfill" >&2
+    fail=1
+  fi
+fi
+
 if [ "${fail}" -ne 0 ]; then
   echo "Public smoke failed." >&2
   exit 1
