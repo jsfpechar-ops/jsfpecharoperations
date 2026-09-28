@@ -639,3 +639,37 @@ def test_a_host_edit_does_not_flip_a_filed_guest_to_not_required():
         )["submit_state"] == reporting.SENT
     finally:
         _cleanup()
+
+
+def test_a_host_edit_is_refused_while_the_sweep_holds_the_guest():
+    """AR-11: a submission_claim row means the guest is in flight.
+
+    The edit must not overwrite the record the sweep is filing; the host is
+    told to reopen the guest and repeat the change.
+    """
+    owner_id, stay_id = _host_stay()
+    guest_id = None
+    try:
+        guest_id = _host_guest(stay_id, surname="OLD", submit_state=reporting.ERROR)
+        db.execute(
+            "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+            "VALUES (?, 'x', ?)",
+            (guest_id, 0.0),
+        )
+        client = _host_client(owner_id)
+
+        response = client.post(
+            f"/guests/{guest_id}",
+            data=_complete_guest(surname="NEW"),
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200, response.text
+        assert "was being sent to UbyPort at that moment" in response.text
+        assert db.query_one(
+            "SELECT surname FROM guest WHERE id = ?", (guest_id,)
+        )["surname"] == "OLD"
+    finally:
+        if guest_id is not None:
+            db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+        _cleanup()
