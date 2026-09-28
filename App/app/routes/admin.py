@@ -16,6 +16,7 @@ from urllib.parse import quote, urlencode, urlparse
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from starlette.concurrency import run_in_threadpool
 
 from .. import (
     access,
@@ -1032,7 +1033,7 @@ async def add_feed(apartment_id: int, request: Request):
             "created_at": db.utcnow(),
         },
     )
-    totals = icalsync.sync_all(apartment_id)
+    totals = await run_in_threadpool(icalsync.sync_all, apartment_id)
     if totals["errors"]:
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.feed_added_unreadable"))
     return _back(
@@ -1061,7 +1062,7 @@ async def sync_now(request: Request):
     form = await request.form()
     return_to = _form_return_to(form, "/")
     owner_user_id = access.owner_id(request)
-    totals = icalsync.sync_all(owner_user_id=owner_user_id)
+    totals = await run_in_threadpool(icalsync.sync_all, owner_user_id=owner_user_id)
     reporting.check_deadlines(owner_user_id=owner_user_id)
     return _back(
         return_to,
