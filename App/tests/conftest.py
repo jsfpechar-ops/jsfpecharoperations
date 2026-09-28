@@ -42,6 +42,13 @@ os.environ.setdefault("UBYHOST_ICAL_ALLOW_PRIVATE", "1")
 os.environ["MOCK_UBYPORT_STATE"] = str(_TMP / "mock_state.json")
 os.environ["MOCK_UBYPORT_PORT"] = str(MOCK_PORT)
 
+# Operator identity defaults are intentionally empty so the open-source build
+# ships no personal data. Tests that assert the legal pages render operator
+# details read these values back from app.config.
+os.environ.setdefault("UBYHOST_OPERATOR_NAME", "Demo Operator")
+os.environ.setdefault("UBYHOST_OPERATOR_ICO", "00000000")
+os.environ.setdefault("UBYHOST_OPERATOR_ADDRESS", "Demo Street 1, 100 00 Demo City")
+
 
 def complete_guest_claim(
     client,

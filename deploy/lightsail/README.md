@@ -58,7 +58,7 @@ sudo apt-get update && sudo apt-get install -y rclone
 rclone config
 ```
 
-Choose: **n** (new remote) → name **`gdrive`** → storage **Google Drive** → defaults → **auto config** (opens a link; sign in as *****REMOVED***** or the Google account that owns the Drive).
+Choose: **n** (new remote) → name **`gdrive`** → storage **Google Drive** → defaults → **auto config** (opens a link; sign in as the Google account that owns the Drive).
 
 2. Copy the backup script if your server was deployed from an older tarball (otherwise `git pull` in `/opt/ubyhost`):
 

@@ -6,7 +6,7 @@ UbyPort target outside production and on Render, but it cannot prove that a
 staging instance kept its configured `mock` value; verify
 `UBYHOST_DEPLOYMENT` and `UBYHOST_UBYPORT_ENV` together before every deployment.
 
-**Operator setup (***REMOVED***):**
+**Operator setup (UbyHost):**
 
 | Role | Where | Example URL |
 |------|--------|-------------|

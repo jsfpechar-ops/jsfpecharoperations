@@ -1,4 +1,4 @@
-# Production go-live checklist (***REMOVED*** / ***REMOVED***)
+# Production go-live checklist (example property)
 
 Use this when moving **production (AWS Lightsail, ubyhost.com)** from setup to live
 reporting. Staging stays on Render **`ubyhost-staging`** (`mock`) only.
@@ -11,9 +11,9 @@ Operational detail (restore, backups, deploy failure modes): **[LIGHTSAIL.md](LI
 
 | Field | Value |
 |-------|-------|
-| Five-letter mark | `***REMOVED***` |
-| IDUB | `***REMOVED***` |
-| Address | ***REMOVED*** |
+| Five-letter mark | `XXXXX` |
+| IDUB | `<your IDUB>` |
+| Address | `<registered address>` |
 
 These must match **exactly** in UbyHost → apartment settings and in the police register.
 
@@ -33,7 +33,7 @@ The app **refuses to start** if `UBYPORT_ENV=prod` without `DEPLOYMENT=productio
 - [ ] Request **UBY-WS web-service** credentials from the Foreign Police:
   - E-mail: `reguby@pcr.cz`
   - Data box: `ybndqw9`
-  - State: webová služba UBY-WS, your IČO, IDUB `***REMOVED***`, full address
+  - State: webová služba UBY-WS, your IČO, IDUB `<your IDUB>`, full address
 - [ ] Wait for `UBY-WS…` username and password (separate from the `ub…` portal login
   in your registration PDFs).
 - [ ] Store the web-service password only in UbyHost (encrypted at rest), never in git.
@@ -55,7 +55,7 @@ The app **refuses to start** if `UBYPORT_ENV=prod` without `DEPLOYMENT=productio
 ## Phase 3 — Configure the apartment
 
 - [ ] Create entity (host / company) for the legal operator.
-- [ ] Add apartment with mark `***REMOVED***`, IDUB `***REMOVED***`, address as registered.
+- [ ] Add apartment with mark `XXXXX`, IDUB `<your IDUB>`, address as registered.
 - [ ] Enter UBY-WS username and password; **Test connection** / refresh code lists.
 - [ ] Set submission mode (immediate / scheduled / manual) per your operating rules.
 - [ ] Paste Airbnb and Booking.com iCal export URLs.
@@ -165,7 +165,7 @@ XML for a submission is stored on the `submission` row (`request_xml` / `respons
 | `.env` `UBYHOST_DEPLOYMENT` | production |
 | `.env` `UBYHOST_UBYPORT_ENV` | **test** |
 | `status.sh` endpoint | _must contain `ws_uby_test`_ |
-| Apartment mark / IDUB | ***REMOVED*** / ***REMOVED*** |
+| Apartment mark / IDUB | XXXXX / `<your IDUB>` |
 | Stay id / label | TEST … |
 | Guest nationality (no full PII in git) | e.g. GBR |
 | Submission id | |

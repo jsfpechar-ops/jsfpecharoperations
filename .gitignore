@@ -10,6 +10,12 @@ __pycache__/
 .coverage.*
 htmlcov/
 
+# IDE / editor files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
 # Local/deployment secrets
 .env
 .env.*

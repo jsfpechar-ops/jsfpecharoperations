@@ -569,17 +569,17 @@ def test_csv_exports_stream_without_buffering_entire_file():
 def test_legal_page_shows_operator_identity():
     response = TestClient(app).get("/legal")
     assert response.status_code == 200
-    assert "***REMOVED***" in response.text
-    assert "***REMOVED***" in response.text
-    assert "***REMOVED***" in response.text
+    assert config.OPERATOR_NAME in response.text
+    assert config.OPERATOR_ICO in response.text
+    assert config.OPERATOR_ADDRESS.split(",")[0] in response.text
 
 
 def test_terms_page_shows_operator_identity():
     response = TestClient(app).get("/terms")
     assert response.status_code == 200
-    assert "***REMOVED***" in response.text
-    assert "***REMOVED***" in response.text
-    assert "***REMOVED***" in response.text
+    assert config.OPERATOR_NAME in response.text
+    assert config.OPERATOR_ICO in response.text
+    assert config.OPERATOR_ADDRESS.split(",")[0] in response.text
     assert "Terms of Service" in response.text or "Obchodní podmínky" in response.text
     assert (
         f"Version {config.TERMS_VERSION}" in response.text
@@ -604,8 +604,8 @@ def test_legal_page_links_to_terms():
 def test_privacy_page_shows_operator_identity():
     response = TestClient(app).get("/privacy")
     assert response.status_code == 200
-    assert "***REMOVED***" in response.text
-    assert "***REMOVED***" in response.text
+    assert config.OPERATOR_NAME in response.text
+    assert config.OPERATOR_ICO in response.text
     assert "Privacy Policy" in response.text or "Zásady ochrany osobních údajů" in response.text
     assert "ÚOOÚ" in response.text or "uoou.cz" in response.text
     assert (
@@ -633,8 +633,8 @@ def test_dpa_page_shows_operator_and_article_28():
     db.init_db()
     response = TestClient(app).get("/dpa")
     assert response.status_code == 200
-    assert "***REMOVED***" in response.text
-    assert "***REMOVED***" in response.text
+    assert config.OPERATOR_NAME in response.text
+    assert config.OPERATOR_ICO in response.text
     assert "Article 28" in response.text or "čl. 28" in response.text
     assert (
         f"Version {config.DPA_VERSION}" in response.text

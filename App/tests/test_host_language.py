@@ -59,7 +59,7 @@ def _host_with_a_stay_needing_action() -> TestClient:
             "permalink_token": "langtoken",
             "automation_mode": "manual",
             "default_purpose": "10",
-            "uby_mark": "***REMOVED***",
+            "uby_mark": "DEMO1",
             "active": 1,
             "created_at": now,
         },

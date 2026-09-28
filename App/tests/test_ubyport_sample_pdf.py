@@ -176,7 +176,6 @@ def test_sample_constants_are_fictional():
     assert SAMPLE_IDUB == "209988776655"
     assert SAMPLE_ZKRATKA == "DEMO1"
     assert SAMPLE_WS_USER == "UBY-WS_DEMO1"
-    assert SAMPLE_IDUB != "***REMOVED***"
 
 
 def test_sample_pdf_is_served():

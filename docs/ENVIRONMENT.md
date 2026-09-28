@@ -115,16 +115,16 @@ isolated to its source.
 
 | Variable | Default |
 | --- | --- |
-| `UBYHOST_OPERATOR_NAME` | `***REMOVED***` |
-| `UBYHOST_OPERATOR_ICO` | `***REMOVED***` |
-| `UBYHOST_OPERATOR_DIC` | `***REMOVED***` |
-| `UBYHOST_OPERATOR_ADDRESS` | `***REMOVED***` |
+| `UBYHOST_OPERATOR_NAME` | unset |
+| `UBYHOST_OPERATOR_ICO` | unset |
+| `UBYHOST_OPERATOR_DIC` | unset |
+| `UBYHOST_OPERATOR_ADDRESS` | unset |
 | `UBYHOST_OPERATOR_EMAIL` | `support@ubyhost.com` |
-| `UBYHOST_OPERATOR_REGISTRY_URL` | the operator's own ARES entry |
+| `UBYHOST_OPERATOR_REGISTRY_URL` | unset |
 
-All six default to this deployment's operator. Anyone running their own
-instance must set all of them, including `UBYHOST_OPERATOR_REGISTRY_URL`, or the
-legal pages will name and link the wrong company.
+All six must be set for your own deployment. Without them the legal pages
+will show empty operator details; set `UBYHOST_OPERATOR_REGISTRY_URL` to your
+own public-register entry, or the legal pages will name the wrong company.
 
 ## Legal document versions
 

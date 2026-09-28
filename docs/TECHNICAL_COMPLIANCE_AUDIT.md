@@ -39,8 +39,8 @@ The most important gaps for counsel are:
    notification workflow. DPA assistance and notification promises therefore
    depend on manual operator procedures not present in the repository.
 6. **Operator identity:** `/legal`, `/terms`, `/privacy`, and `/dpa` use
-   `UBYHOST_OPERATOR_*`, but guest notices and some host copy hard-code Josef
-   Pechar. Environment overrides can make notices inconsistent.
+   `UBYHOST_OPERATOR_*`, but guest notices and some host copy hard-code the
+   operator. Environment overrides can make notices inconsistent.
 
 The statutory cross-check used the consolidated public text of Act No. 326/1999
 Coll. and Police developer material available on the review date. It supports
@@ -122,7 +122,7 @@ Status means only consistency between copy and repository behavior:
 
 ## Operator obligations for a hosted third-party service
 
-If ***REMOVED*** operates the hosted instance for third-party hosts, the
+If the operator runs the hosted instance for third-party hosts, the
 following repository-backed facts must remain accurate operationally:
 
 1. `UBYHOST_OPERATOR_NAME`, `_ICO`, `_DIC`, `_ADDRESS`, `_EMAIL`, and

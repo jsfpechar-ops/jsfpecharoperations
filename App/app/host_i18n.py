@@ -284,8 +284,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "person. The record is marked verified on save."
         ),
         "housebook.legal_footnote": (
-            "You remain the data controller for guest data. ***REMOVED*** (UbyHost) is the technology "
-            "provider only — not your accommodation business, not legal advice, and not liable for "
+            "You remain the data controller for guest data. The software operator identified in the "
+            "Legal notice is the technology provider only — not your accommodation business, not legal "
+            "advice, and not liable for "
             "incorrect data you or guests enter or for how you use the software. Keep signed paper you "
             "already hold; a screen alone may not satisfy an inspection."
         ),
@@ -488,7 +489,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.legal.disclaimer_title": "About UbyHost (important)",
         "guide.legal.disclaimer_body": (
-            "UbyHost is software operated by ***REMOVED***, IČO ***REMOVED*** (see Legal notice). It is "
+            "UbyHost is software operated by the software operator identified in the Legal notice. It is "
             "provided as-is, does not provide legal advice, does not act as your data controller, and "
             "does not guarantee acceptance by the police or UbyPort. You remain responsible for correct "
             "data, timely reporting, signed forms, backups, and presenting records at inspection. "
@@ -504,8 +505,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.roles_title": "Two different roles",
         "legal.roles_body": (
             "You (or the operator set on each property) are the data controller for guest personal data "
-            "and the accommodation provider under Czech law. ***REMOVED***, IČO ***REMOVED***, operates the "
-            "UbyHost software only. When you use the hosted service, the operator processes guest data "
+            "and the accommodation provider under Czech law. The software operator identified in the "
+            "Legal notice operates the UbyHost software only. When you use the hosted service, the operator processes guest data "
             "on your instructions to run the application, store records, and transmit reports to UbyPort."
         ),
         "legal.software_title": "What UbyHost is",
@@ -1645,7 +1646,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "označí jako ověřený při uložení."
         ),
         "housebook.legal_footnote": (
-            "Zůstáváte správcem údajů hostů. ***REMOVED*** (UbyHost) je pouze poskytovatel technologie — "
+            "Zůstáváte správcem údajů hostů. Provozovatel software uvedený v Právních informacích je "
+            "pouze poskytovatel technologie — "
             "ne váš ubytovací podnik, ne právní poradenství a neodpovídá za chybné údaje, které zadáte "
             "vy nebo hosté, ani za způsob použití software. Uchovejte podepsané papíry; obrazovka sama "
             "o sobě nemusí při kontrole stačit."
@@ -1845,7 +1847,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "guide.legal.disclaimer_title": "O UbyHostu (důležité)",
         "guide.legal.disclaimer_body": (
-            "UbyHost provozuje ***REMOVED***, IČO ***REMOVED*** (viz Právní informace). Je to technický "
+            "UbyHost provozuje provozovatel software uvedený v Právních informacích. Je to technický "
             "nástroj poskytovaný tak, jak je. Neposkytuje právní poradenství, "
             "není správcem údajů a nezaručuje přijetí policií nebo UbyPortem. Odpovídáte za správnost "
             "dat, včasné hlášení, podepsané formuláře, zálohy a předložení evidence při kontrole. "
@@ -1861,8 +1863,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.roles_title": "Dvě různé role",
         "legal.roles_body": (
             "Vy (nebo provozovatel u každého ubytování) jste správcem osobních údajů hostů a "
-            "poskytovatelem ubytování podle českého práva. ***REMOVED***, IČO ***REMOVED***, provozuje "
-            "pouze software UbyHost. Při používání hostované služby zpracovává údaje hostů na váš pokyn "
+            "poskytovatelem ubytování podle českého práva. Provozovatel software uvedený v Právních "
+            "informacích provozuje pouze software UbyHost. Při používání hostované služby zpracovává údaje hostů na váš pokyn "
             "kvůli chodu aplikace, uložení záznamů a odeslání hlášení do UbyPortu."
         ),
         "legal.software_title": "Co je UbyHost",
@@ -2934,8 +2936,8 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.map.contact": 'E-mail or phone you gave on the original UbyPort accommodation registration — often not printed on the web-service PDF. Same value as in the UbyPort portal profile for this facility. UbyPort may reject reports if this is wrong; leave blank only if you never registered one.',
         "apartment.form.ubyport.map.contact_label": 'Contact (optional here)',
         "apartment.form.ubyport.map.idub": 'Line IDUB: on the web-service PDF.',
-        "apartment.form.ubyport.map.login": 'Line Přihlašovací jméno: (e.g. UBY-WS_***REMOVED***).',
-        "apartment.form.ubyport.map.mark": 'Five letters assigned when the facility was registered — not on the cover e-mail. Often the same five letters after UBY-WS_ in the web-service login (e.g. login UBY-WS_***REMOVED*** → zkratka ***REMOVED***). Confirm in the UbyPort portal under facility details or your original registration decision if unsure.',
+        "apartment.form.ubyport.map.login": 'Line Přihlašovací jméno: (e.g. UBY-WS_DEMO1).',
+        "apartment.form.ubyport.map.mark": 'Five letters assigned when the facility was registered — not on the cover e-mail. Often the same five letters after UBY-WS_ in the web-service login (e.g. login UBY-WS_DEMO1 → zkratka DEMO1). Confirm in the UbyPort portal under facility details or your original registration decision if unsure.',
         "apartment.form.ubyport.map.mark_label": 'Facility abbreviation (zkratka)',
         "apartment.form.ubyport.map.name": 'Line Ubytovací zařízení: on the web-service PDF — copy the first line only (before any bracket with Praha/address). Not your Airbnb title. Max 35 characters; the police register uses the short legal name.',
         "apartment.form.ubyport.map.password": 'Line Přístupové heslo: on the same PDF — enter once, then leave blank on later saves.',
@@ -3579,8 +3581,8 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.map.contact": 'E-mail nebo telefon z původní registrace ubytování — často není na PDF webové služby. Stejná hodnota jako v profilu zařízení v UbyPortu. Špatný kontakt může vést k odmítnutí; prázdné jen pokud jste ho nikdy neuváděli.',
         "apartment.form.ubyport.map.contact_label": 'Kontakt (volitelné zde)',
         "apartment.form.ubyport.map.idub": 'Řádek IDUB: na PDF webové služby.',
-        "apartment.form.ubyport.map.login": 'Řádek Přihlašovací jméno: (např. UBY-WS_***REMOVED***).',
-        "apartment.form.ubyport.map.mark": 'Pět písmen přidělených při registraci — ne v úvodním e-mailu. Často stejných pět písmen za UBY-WS_ v přihlášení (např. UBY-WS_***REMOVED*** → zkratka ***REMOVED***). Ověřte v portálu UbyPort nebo v rozhodnutí o registraci.',
+        "apartment.form.ubyport.map.login": 'Řádek Přihlašovací jméno: (např. UBY-WS_DEMO1).',
+        "apartment.form.ubyport.map.mark": 'Pět písmen přidělených při registraci — ne v úvodním e-mailu. Často stejných pět písmen za UBY-WS_ v přihlášení (např. UBY-WS_DEMO1 → zkratka DEMO1). Ověřte v portálu UbyPort nebo v rozhodnutí o registraci.',
         "apartment.form.ubyport.map.mark_label": 'Zkratka ubytovacího zařízení',
         "apartment.form.ubyport.map.name": 'Řádek Ubytovací zařízení: na PDF — kopírujte jen první řádek (před závorkou s Prahou/adresou). Ne název na Airbnb. Max. 35 znaků; v registru je krátký právní název.',
         "apartment.form.ubyport.map.password": 'Řádek Přístupové heslo: na stejném PDF — zadejte jednou, při dalších uloženích nechte prázdné.',

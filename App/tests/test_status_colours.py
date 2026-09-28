@@ -81,7 +81,7 @@ def _seed(*, rejected: bool = False) -> tuple[TestClient, int, int]:
             "permalink_token": TOKEN,
             "automation_mode": "manual",
             "default_purpose": "10",
-            "uby_mark": "***REMOVED***",
+            "uby_mark": "DEMO1",
             "active": 1,
             "created_at": now,
         },

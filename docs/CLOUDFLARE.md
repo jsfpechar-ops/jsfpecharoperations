@@ -192,7 +192,7 @@ After changing bot / challenge rules, try:
 The `ubyhost.com` mailboxes are **real boxes at a mail provider**, not Cloudflare
 forwarding aliases:
 
-- **`***REMOVED***`** — owner.
+- **`owner@ubyhost.com`** — owner.
 - **`support@ubyhost.com`** — software support, shown in the host admin portal
   per the contact split in [DESIGN.md](DESIGN.md). Never a guest contact.
   It is a **Zoho group** (role address), not a personal mailbox: members

@@ -161,18 +161,12 @@ TIMEZONE = "Europe/Prague"
 
 # Host-admin software support (sidebar + Settings). Guest stay questions go to
 # the host legal entity on the guest form, not this address.
-OPERATOR_NAME = os.environ.get("UBYHOST_OPERATOR_NAME", "***REMOVED***")
-OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "***REMOVED***")
-OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "***REMOVED***")
-OPERATOR_ADDRESS = os.environ.get(
-    "UBYHOST_OPERATOR_ADDRESS",
-    "***REMOVED***",
-)
+OPERATOR_NAME = os.environ.get("UBYHOST_OPERATOR_NAME", "").strip()
+OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "").strip()
+OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "").strip()
+OPERATOR_ADDRESS = os.environ.get("UBYHOST_OPERATOR_ADDRESS", "").strip()
 OPERATOR_EMAIL = os.environ.get("UBYHOST_OPERATOR_EMAIL", "").strip() or "support@ubyhost.com"
-OPERATOR_REGISTRY_URL = os.environ.get(
-    "UBYHOST_OPERATOR_REGISTRY_URL",
-    "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/***REMOVED***",
-)
+OPERATOR_REGISTRY_URL = os.environ.get("UBYHOST_OPERATOR_REGISTRY_URL", "").strip()
 
 # Cloudflare Turnstile. The site key is public; keep TURNSTILE_SECRET only in
 # the production environment. Verification is enabled only when both are set.
