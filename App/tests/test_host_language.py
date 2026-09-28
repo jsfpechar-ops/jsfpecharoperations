@@ -48,14 +48,14 @@ def _host_with_a_stay_needing_action() -> TestClient:
     _cleanup()
     entity_id = db.insert(
         "legal_entity",
-        {"name": "***REMOVED*** s.r.o.", "owner_user_id": uid, "created_at": now},
+        {"name": "Demo Host s.r.o.", "owner_user_id": uid, "created_at": now},
     )
     apartment_id = db.insert(
         "apartment",
         {
             "legal_entity_id": entity_id,
             "owner_user_id": uid,
-            "internal_name": "***REMOVED*** 12",
+            "internal_name": "Demo Street 12",
             "permalink_token": "langtoken",
             "automation_mode": "manual",
             "default_purpose": "10",
