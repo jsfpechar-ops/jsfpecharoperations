@@ -639,6 +639,10 @@ def maybe_notify_completion(reservation, apartment) -> None:
     expected = progress["expected"]
     if expected is None or progress["filled"] < expected:
         return
+    if not claim["email"]:
+        # BE-3: the address was minimised away after the retention window, so
+        # there is nobody to send the completion receipt to.
+        return
     lang = claim["lang"] or "en"
     content = _guest_mail_content(
         "completion",
