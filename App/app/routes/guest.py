@@ -1629,7 +1629,17 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         payload["submit_attempts"] = 0
 
     if existing:
-        db.update("guest", existing["id"], payload)
+        # Compare-and-set: the sweep may have filed this guest, or may be
+        # filing it right now (submission_claim), since `existing` was read.
+        if not db.update_if(
+            "guest",
+            existing["id"],
+            payload,
+            {"submit_state": existing["submit_state"]},
+            extra_where="NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = ?)",
+            extra_params=(existing["id"],),
+        ):
+            return _unavailable(request, lang, "already_filed", 403, token)
         saved_id = existing["id"]
     else:
         # Two phones can each open /new while one slot is free. /new checks
