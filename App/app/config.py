@@ -137,6 +137,11 @@ RETENTION_AUTOPURGE = os.environ.get("UBYHOST_RETENTION_AUTOPURGE", "0") in (
 # How far ahead the "records reach the end of their retention period" notice looks.
 RETENTION_NOTICE_DAYS = int(os.environ.get("UBYHOST_RETENTION_NOTICE_DAYS", "30"))
 
+# G-D7 windows for the log and evidence tables.
+AUDIT_RETENTION_DAYS = int(os.environ.get("UBYHOST_AUDIT_RETENTION_DAYS", "1095"))
+ALERT_RETENTION_DAYS = int(os.environ.get("UBYHOST_ALERT_RETENTION_DAYS", "365"))
+RATE_LIMIT_RETENTION_HOURS = int(os.environ.get("UBYHOST_RATE_LIMIT_RETENTION_HOURS", "24"))
+
 GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "false", "no")
 
 # A first administrator is created once on startup. Set both values in a
