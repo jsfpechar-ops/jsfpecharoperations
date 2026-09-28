@@ -19,7 +19,7 @@ from app.main import app
 
 TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
 APP_CSS = Path(__file__).resolve().parents[1] / "app" / "static" / "app.css"
-AUTH_TEMPLATES = ("two_factor_setup.html", "two_factor_recovery.html", "account_password.html")
+AUTH_TEMPLATES = ("two_factor_setup.html", "two_factor_recovery.html", "account_password.html", "account_accept.html")
 
 PASSWORD = "Secure-Password-123"
 USERNAME = "csrf-form-host"

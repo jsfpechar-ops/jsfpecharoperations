@@ -423,6 +423,23 @@ BEFORE DELETE ON invoice_item
 WHEN (SELECT issued_at FROM invoice WHERE id = OLD.invoice_id) IS NOT NULL
  AND COALESCE((SELECT value FROM settings WHERE key = 'invoice_purge_unlock'), '') <> '1'
 BEGIN SELECT RAISE(ABORT, 'invoice is issued and immutable'); END;
+
+-- Evidence that a host accepted the Terms of Service, DPA and Privacy Policy,
+-- per document version (BE-1). One row per account and document version; a
+-- version bump makes that document pending again without touching old rows.
+-- Append-only: rows are never updated or deleted while the account lives.
+CREATE TABLE IF NOT EXISTS legal_acceptance (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_account_id INTEGER NOT NULL REFERENCES user_account(id),
+    document        TEXT NOT NULL CHECK (document IN ('terms','privacy','dpa')),
+    version         TEXT NOT NULL,
+    accepted_at     TEXT NOT NULL,
+    method          TEXT NOT NULL CHECK (method IN ('clickwrap','login_notice','backfill')),
+    ip              TEXT,
+    user_agent      TEXT,
+    UNIQUE (user_account_id, document, version)
+);
+CREATE INDEX IF NOT EXISTS idx_acceptance_user ON legal_acceptance (user_account_id, document);
 """
 
 

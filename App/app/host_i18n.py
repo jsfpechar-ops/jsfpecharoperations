@@ -3111,6 +3111,20 @@ _INTERFACE_STRINGS = {
         "account.password.repeat_ph": "Repeat new password…",
         "account.password.save": "Save password",
         "account.step_prefix": "Step %(n)s of 3 · ",
+        "account.accept.title": "Review and accept",
+        "account.accept.lede": "Before you continue, review the documents below and accept them.",
+        "account.accept.doc.terms": "Terms of Service",
+        "account.accept.doc.privacy": "Privacy Policy",
+        "account.accept.doc.dpa": "Data Processing Agreement",
+        "account.accept.version": "Version %(version)s",
+        # LEGAL-REVIEW
+        "account.accept.checkbox": (
+            "I have read and agree to the Terms of Service, the Data Processing "
+            "Agreement and the Privacy Policy listed above."
+        ),
+        "account.accept.continue": "Continue",
+        "account.accept.sign_out": "Sign out",
+        "auth.error.accept_required": "Tick the box to accept the documents and continue.",
         "auth.error.admins_only": "Administrators only.",
         "auth.error.bad_credentials": (
             "That username and password don't match. Check for typos and Caps Lock."
@@ -3641,6 +3655,20 @@ _INTERFACE_STRINGS = {
         "account.password.repeat_ph": "Zopakujte nové heslo…",
         "account.password.save": "Uložit heslo",
         "account.step_prefix": "Krok %(n)s ze 3 · ",
+        "account.accept.title": "Zkontrolujte a přijměte",
+        "account.accept.lede": "Než budete pokračovat, projděte si níže uvedené dokumenty a přijměte je.",
+        "account.accept.doc.terms": "Obchodní podmínky",
+        "account.accept.doc.privacy": "Zásady ochrany osobních údajů",
+        "account.accept.doc.dpa": "Zpracovatelská smlouva",
+        "account.accept.version": "Verze %(version)s",
+        # LEGAL-REVIEW
+        "account.accept.checkbox": (
+            "Přečetl(a) jsem si a souhlasím s obchodními podmínkami, zpracovatelskou "
+            "smlouvou a zásadami ochrany osobních údajů uvedenými výše."
+        ),
+        "account.accept.continue": "Pokračovat",
+        "account.accept.sign_out": "Odhlásit se",
+        "auth.error.accept_required": "Pro pokračování zaškrtněte políčko pro přijetí dokumentů.",
         "auth.error.admins_only": "Pouze pro administrátory.",
         "auth.error.bad_credentials": (
             "Uživatelské jméno a heslo nesedí. Zkontrolujte překlepy a Caps Lock."

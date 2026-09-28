@@ -141,6 +141,15 @@ echo ""
 echo "Health (internal):"
 docker compose exec -T ubyhost python -c \
   "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/healthz').read().decode())"
+
+# BE-1: turn legacy login acceptance lines into legal_acceptance rows. The
+# script is idempotent and prints a count only. A failure aborts the deploy
+# loudly rather than leaving acceptance evidence half-migrated.
+echo "==> Backfilling legal acceptance evidence"
+if ! docker compose exec -T ubyhost python scripts/backfill_legal_acceptance.py; then
+  echo "Legal acceptance backfill failed." >&2
+  exit 1
+fi
 if [ -n "${BACKUP_STAMP}" ]; then
   echo ""
   echo "Post-deploy database integrity and row-count checks:"
