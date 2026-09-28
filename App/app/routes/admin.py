@@ -40,7 +40,7 @@ from .. import (
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
-from . import admin_accounts, api, exports, onboarding
+from . import admin_accounts, api, exports, guest, onboarding
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import flash_plural as _flash_plural
@@ -125,6 +125,11 @@ def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
             "key": "operator",
             "anchor": "basics",
             "done": bool(entity and (entity["contact_email"] or "").strip()),
+        },
+        {
+            "key": "controller",
+            "anchor": "basics",
+            "done": guest.controller_complete(apartment),
         },
         {"key": "stays", "anchor": "calendars", "done": has_stays},
     ]
@@ -419,6 +424,20 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     return None
 
 
+def _resolve_controller_alerts(entity_id: int) -> None:
+    """Clear the ``controller_missing`` card for any property that is now complete.
+
+    BE-7/G-D9: the guest form is never blocked; the warning is cleared by the
+    same save that fixes the identity.
+    """
+    for apartment in db.query(
+        "SELECT * FROM apartment WHERE legal_entity_id = ? OR data_controller_entity_id = ?",
+        (entity_id, entity_id),
+    ):
+        if guest.controller_complete(apartment):
+            alerts.resolve(f"controller_missing:{apartment['id']}")
+
+
 @router.post("/entities")
 async def create_entity(request: Request):
     guard = auth.require_login(request)
@@ -434,6 +453,7 @@ async def create_entity(request: Request):
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
     entity_id = db.insert("legal_entity", payload)
+    _resolve_controller_alerts(entity_id)
     apartments = access.apartments(request)
     if not apartments:
         return _back(
@@ -460,6 +480,7 @@ async def update_entity(entity_id: int, request: Request):
     if bad_details:
         return bad_details
     db.update("legal_entity", entity_id, payload)
+    _resolve_controller_alerts(entity_id)
     return _back("/entities", msg=_flash(request, "flash.entities.saved"))
 
 
