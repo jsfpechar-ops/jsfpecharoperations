@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.utils import parseaddr
 from typing import Any, Dict, List, Optional
 
@@ -19,6 +19,7 @@ from . import alerts, config, db, deadlines
 log = logging.getLogger("ubyhost.mail")
 
 QUEUED = "queued"
+SENDING = "sending"
 SENT = "sent"
 FAILED = "failed"
 BOUNCED = "bounced"
@@ -378,12 +379,21 @@ def drain(limit: int = 8) -> Dict[str, int]:
     if not mail_enabled():
         return summary
     now = db.utcnow()
+    stale = (datetime.now(timezone.utc) - timedelta(minutes=10)).replace(microsecond=0).isoformat()
+    db.execute(
+        "UPDATE email_outbox SET state = ? WHERE state = ? AND updated_at < ?",
+        (QUEUED, SENDING, stale),
+    )
     rows = db.query(
         "SELECT * FROM email_outbox WHERE state = ? AND next_attempt_at <= ? "
         "ORDER BY id LIMIT ?",
         (QUEUED, now, limit),
     )
     for row in rows:
+        if not db.update_if(
+            "email_outbox", row["id"], {"state": SENDING, "updated_at": db.utcnow()}, {"state": QUEUED}
+        ):
+            continue  # another drain took it
         try:
             provider_id = _send_console(row) if backend_name() == "console" else _send_ses(row)
             db.update(

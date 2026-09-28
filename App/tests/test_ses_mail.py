@@ -139,3 +139,56 @@ def test_validate_mail_env_requires_ses_credentials(monkeypatch):
 def test_validate_mail_env_refuses_ses_outside_production():
     with pytest.raises(mail.MailConfigError, match="only allowed on production"):
         mail.validate_mail_env(backend="ses", deployment="staging")
+
+
+def test_two_concurrent_drains_deliver_each_row_once(monkeypatch):
+    """AR-25: a row is claimed as ``sending`` before the provider is called.
+
+    The console sender re-enters ``drain`` on its first call, standing in for a
+    second worker that read the same ``queued`` rows at the same moment. The
+    compare-and-set claim must keep each row from going out twice.
+    """
+    db.init_db()
+    db.execute("DELETE FROM email_outbox")
+    monkeypatch.setattr(mail.config, "MAIL_BACKEND", "console")
+
+    now = db.utcnow()
+    ids = [
+        db.insert(
+            "email_outbox",
+            {
+                "idempotency_key": f"drain-claim:{next(_KEY_SEQ)}",
+                "kind": "claim",
+                "to_email": "guest@example.com",
+                "subject": "subject",
+                "payload": json.dumps({"text": "body"}),
+                "state": mail.QUEUED,
+                "attempts": 0,
+                "next_attempt_at": now,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        for _ in range(4)
+    ]
+
+    delivered = []
+    reentered = {"done": False}
+
+    def sender(row):
+        delivered.append(row["id"])
+        if not reentered["done"]:
+            reentered["done"] = True
+            mail.drain(limit=4)
+        return f"console-{row['id']}"
+
+    monkeypatch.setattr(mail, "_send_console", sender)
+
+    mail.drain(limit=4)
+
+    assert len(delivered) == len(set(delivered)) == len(ids)
+    states = {
+        row["id"]: row["state"]
+        for row in db.query("SELECT id, state FROM email_outbox")
+    }
+    assert set(states.values()) == {mail.SENT}

@@ -90,6 +90,8 @@ def test_the_send_loop_stores_the_code_and_renders_a_name(monkeypatch):
     monkeypatch.setattr(mail, "_send_console", _boom)
     monkeypatch.setattr(mail.db, "query", lambda *a, **k: [row])
     monkeypatch.setattr(mail.db, "update", lambda *a, **k: None)
+    # Stub the new optimistic claim so the synthetic row is processed.
+    monkeypatch.setattr(mail.db, "update_if", lambda *a, **k: True)
     monkeypatch.setattr(
         alerts, "raise_alert", lambda *a, **k: raised.update({"args": a, "kwargs": k})
     )
