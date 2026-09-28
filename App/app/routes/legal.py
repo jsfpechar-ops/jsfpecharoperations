@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import config, host_i18n, operator
+from .. import config, cookie_inventory, host_i18n, operator
 from ..public_guides import GUIDE_TRANSLATIONS
 from ..templating import render
 
@@ -101,6 +101,7 @@ def privacy_policy(request: Request):
             "operator": op,
             "wrap_class": "narrow",
             "privacy_sections": PRIVACY_SECTION_IDS,
+            "cookie_inventory": cookie_inventory.for_surface("public"),
         },
         status_code=200,
     )

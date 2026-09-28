@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -642,6 +642,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "host": _host_contact(apartment) if apartment else {},
         "mail_enabled": mail.mail_enabled(),
         "notice_version": config.GUEST_NOTICE_VERSION,
+        "cookie_inventory": cookie_inventory.for_surface("guest"),
     }
 
 
