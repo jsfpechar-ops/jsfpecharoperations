@@ -21,9 +21,9 @@ from .. import (
     claim,
     db,
     housebook,
-    invoices,
     passport_photos,
     reporting,
+    retention,
     stays_export,
 )
 from ..templating import render
@@ -360,11 +360,13 @@ def purge_expired_records(request: Request):
     if guard:
         return guard
     owner_user_id = access.owner_id(request)
-    deleted = housebook.purge_expired(owner_user_id=owner_user_id)
-    # Invoices are kept 10 years; the same button clears the ones past it.
-    purged_invoices = invoices.purge_expired(
-        claim.prague_today(), owner_user_id=owner_user_id
+    # One code path with the scheduled job (BE-2): the button only forces
+    # ``dry_run=False`` for this owner.
+    summary = retention.run(
+        claim.prague_today(), dry_run=False, owner_user_id=owner_user_id
     )
+    deleted = summary["counts"].get("guests", 0)
+    purged_invoices = summary["counts"].get("invoices", 0)
     # A passport image has no six-year basis, so the same button clears the
     # ones left over from stays that ended long ago.
     photos = passport_photos.purge_stale(owner_user_id=owner_user_id)
