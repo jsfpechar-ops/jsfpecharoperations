@@ -1004,3 +1004,12 @@ Item 2 — dropping the plaintext `doc_number` / `visa_number` columns — stays
 open: it needs a table rebuild this append-only schema mechanism does not
 support (see the Phase 2 W2.2 note and `docs/OPERATIONS.md` § Schema
 migrations).
+
+### BE-4 — `legal_acceptance` deletion needs a disabled-at timestamp
+G-D7 keeps acceptance evidence for the life of the account plus three years, but
+`user_account` has no `disabled_at`: `active = 0` does not say *when* the account
+was disabled. BE-4 therefore reads "inactive for three years" conservatively as
+a disabled account whose `last_login_at` is also older than the window, and
+leaves a never-used account alone. A `disabled_at` column would make the rule
+exact; add it when workspace termination (BE-10/G-D11) lands, which already
+plans a `deletion_due_at` column.

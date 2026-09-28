@@ -477,6 +477,16 @@ Minimised by the retention job (BE-3, and only once `UBYHOST_RETENTION_AUTOPURGE
 With the flag off (the default until counsel signs off G-D4), the job counts
 and audits these row sets and changes nothing.
 
+Also by the retention job (BE-4, same flag):
+
+- **Audit rows** older than `UBYHOST_AUDIT_RETENTION_DAYS` (3 years), except
+  `legal_accepted` — that is acceptance evidence, kept for the life of the
+  account plus three years.
+- **Resolved alerts** older than `UBYHOST_ALERT_RETENTION_DAYS` (12 months).
+  Unresolved alerts are never deleted by time.
+- **`rate_limit_event`** rows older than `UBYHOST_RATE_LIMIT_RETENTION_HOURS`
+  (24 h), on a global run only (the table has no owner).
+
 ## Backup and restore
 
 The scripts are documented in

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import base64
 import json
-from datetime import date, timedelta
+import time
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -384,3 +385,122 @@ def test_a_reminder_sweep_survives_a_nulled_address(monkeypatch):
         "SELECT id FROM email_outbox WHERE reservation_id = ? AND kind = 'reminder_guest'",
         (reservation_id,),
     ) == []
+
+
+# --- BE-4: audit, alert, rate-limit and acceptance retention -----------------
+
+
+def _days_ago_iso(days: int) -> str:
+    return (datetime.now(timezone.utc) - timedelta(days=days)).replace(microsecond=0).isoformat()
+
+
+def test_log_and_acceptance_retention(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "logs.sqlite3")
+    monkeypatch.setattr(config, "RETENTION_AUTOPURGE", False)
+    db.init_db()
+
+    owner = db.insert(
+        "user_account",
+        {
+            "username": "retjob-logs",
+            "display_name": "l",
+            "password_hash": "x",
+            "role": "host",
+            "created_at": db.utcnow(),
+        },
+    )
+    # Disabled long ago, so its acceptance evidence is past "life + 3 years".
+    disabled = db.insert(
+        "user_account",
+        {
+            "username": "retjob-off",
+            "display_name": "o",
+            "password_hash": "x",
+            "role": "host",
+            "active": 0,
+            "created_at": db.utcnow(),
+            "last_login_at": "2019-01-01T00:00:00+00:00",
+        },
+    )
+    old = _days_ago_iso(config.AUDIT_RETENTION_DAYS + 10)
+    fresh = _days_ago_iso(1)
+
+    for action, at, who in (
+        ("login", old, owner),
+        ("login", old, disabled),
+        ("login", fresh, owner),
+        ("legal_accepted", old, owner),
+    ):
+        db.execute(
+            "INSERT INTO audit (at, actor, action, detail, owner_user_id) VALUES (?,?,?,?,?)",
+            (at, "x", action, "", who),
+        )
+
+    db.execute(
+        "INSERT INTO alert (level, kind, message, created_at, resolved_at, owner_user_id) "
+        "VALUES ('warning','x','m',?,?,?)",
+        (old, old, owner),
+    )
+    db.execute(
+        "INSERT INTO alert (level, kind, message, created_at, resolved_at, owner_user_id) "
+        "VALUES ('warning','x','m',?,?,?)",
+        (fresh, fresh, owner),
+    )
+    db.execute(
+        "INSERT INTO alert (level, kind, message, created_at, owner_user_id) "
+        "VALUES ('warning','x','m',?,?)",
+        (old, owner),
+    )
+
+    db.execute(
+        "INSERT INTO rate_limit_event (scope, key, at) VALUES ('s','old',?)",
+        (time.time() - 48 * 3600,),
+    )
+    db.execute(
+        "INSERT INTO rate_limit_event (scope, key, at) VALUES ('s','new',?)",
+        (time.time(),),
+    )
+
+    for who in (owner, disabled):
+        db.execute(
+            "INSERT INTO legal_acceptance "
+            "(user_account_id, document, version, accepted_at, method) VALUES (?,?,?,?,?)",
+            (who, "terms", "1.0", old, "backfill"),
+        )
+
+    dry = retention.run(dry_run=True)
+    counts = dry["counts"]
+    assert counts["audit_rows"] >= 2  # the two old login rows
+    assert counts["alerts"] >= 1
+    assert counts["rate_limit_events"] >= 1
+    assert counts["legal_acceptance"] >= 1
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM audit WHERE at = ? AND action = 'login'", (old,)
+    )["n"] == 2, "a dry run must delete nothing"
+
+    retention.run(dry_run=False)
+
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM audit WHERE at = ? AND action = 'login'", (old,)
+    )["n"] == 0
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM audit WHERE action = 'legal_accepted'"
+    )["n"] == 1, "acceptance evidence is not an ordinary audit row"
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM audit WHERE at = ?", (fresh,)
+    )["n"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM alert WHERE resolved_at IS NOT NULL"
+    )["n"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM alert WHERE resolved_at IS NULL"
+    )["n"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM rate_limit_event"
+    )["n"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM legal_acceptance WHERE user_account_id = ?", (disabled,)
+    )["n"] == 0
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM legal_acceptance WHERE user_account_id = ?", (owner,)
+    )["n"] == 1
