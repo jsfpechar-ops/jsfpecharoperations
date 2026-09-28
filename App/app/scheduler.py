@@ -9,6 +9,7 @@ from . import (
     alerts,
     claim,
     config,
+    dsr,
     host_i18n,
     icalsync,
     mail,
@@ -78,8 +79,13 @@ def _job_submit() -> None:
 def _job_deadlines() -> None:
     try:
         raised = reporting.check_deadlines()
-        if raised:
-            log.info("deadline watch raised %s alert(s)", raised)
+        due_requests = dsr.raise_due_alerts()
+        if raised or due_requests:
+            log.info(
+                "deadline watch raised %s alert(s), %s data-subject request(s) due",
+                raised,
+                due_requests,
+            )
     except Exception:
         log.exception("deadline watch failed")
         _job_failed("deadlines")
