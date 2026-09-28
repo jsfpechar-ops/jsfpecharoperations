@@ -9,7 +9,7 @@ import qrcode
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import auth, config, db, host_i18n, rate_limit, security, turnstile
+from .. import acceptance, auth, config, db, host_i18n, rate_limit, security, turnstile
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -103,16 +103,9 @@ async def login_submit(request: Request):
         remember=remember,
     )
     _keep_login_language(request, response)
-    db.audit(
-        "login",
-        detail=(
-            f"terms_v{config.TERMS_VERSION} "
-            f"privacy_v{config.PRIVACY_VERSION} "
-            f"dpa_v{config.DPA_VERSION} accepted"
-        ),
-        actor=account["username"],
-        owner_user_id=account["id"],
-    )
+    # Acceptance is now its own audited event (BE-1); the login row no longer
+    # carries the versions as free text.
+    db.audit("login", actor=account["username"], owner_user_id=account["id"])
     return response
 
 
@@ -174,6 +167,57 @@ def logout():
     response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
     return response
+
+
+def _pending_doc_rows(docs) -> list:
+    versions = acceptance.current_versions()
+    return [
+        {"key": doc, "version": versions[doc], "href": f"/{doc}"}
+        for doc in docs
+    ]
+
+
+@router.get("/account/accept")
+def account_accept_form(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    docs = acceptance.pending(account["id"])
+    next_path = security.safe_local_path(request.query_params.get("next"), "/")
+    if not docs:
+        return RedirectResponse(next_path, status_code=303)
+    return render(
+        request,
+        "account_accept.html",
+        {"pending_docs": _pending_doc_rows(docs), "next": next_path},
+    )
+
+
+@router.post("/account/accept")
+async def account_accept_submit(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    form = await request.form()
+    next_path = security.safe_local_path(_form_str(form, "next"), "/")
+    docs = acceptance.pending(account["id"])
+    if not docs:
+        return RedirectResponse(next_path, status_code=303)
+    if _form_str(form, "accept") != "1":
+        return render(
+            request,
+            "account_accept.html",
+            {
+                "pending_docs": _pending_doc_rows(docs),
+                "next": next_path,
+                "error": "auth.error.accept_required",
+            },
+            status_code=422,
+        )
+    acceptance.record(account["id"], docs, "clickwrap", request)
+    return RedirectResponse(next_path, status_code=303)
 
 
 @router.get("/account/password")

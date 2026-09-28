@@ -111,6 +111,10 @@ def complete_guest_claim(
 # ``csrf-token`` meta tag in ``guest/base.html``.
 CSRF_PRIMER_PATH = "/l/does-not-exist"
 
+# The real ``acceptance.pending``, saved by the session fixture below before it
+# stubs the gate for the rest of the suite.
+_ORIGINAL_ACCEPTANCE_PENDING = None
+
 _META_TOKEN_RE = re.compile(r'<meta name="csrf-token" content="([^"]*)"')
 
 
@@ -170,6 +174,35 @@ def csrf_proof_on_form_posts():
         yield
     finally:
         patcher.undo()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def keep_test_accounts_past_the_acceptance_screen():
+    """Stub BE-1's acceptance gate so fixture hosts land on their destination.
+
+    ``auth.require_login`` sends any host with a pending document to
+    ``/account/accept``. Fixtures create hosts and then expect a specific page,
+    so the gate is stubbed to "nothing pending" for the suite. The acceptance
+    tests request ``real_acceptance_pending`` to exercise the real gate.
+    """
+    from app import acceptance
+
+    global _ORIGINAL_ACCEPTANCE_PENDING
+    _ORIGINAL_ACCEPTANCE_PENDING = acceptance.pending
+    acceptance.pending = lambda user_id: []
+    try:
+        yield
+    finally:
+        acceptance.pending = _ORIGINAL_ACCEPTANCE_PENDING
+
+
+@pytest.fixture
+def real_acceptance_pending(monkeypatch):
+    """Use the real ``acceptance.pending`` for one test."""
+    from app import acceptance
+
+    monkeypatch.setattr(acceptance, "pending", _ORIGINAL_ACCEPTANCE_PENDING)
+    return _ORIGINAL_ACCEPTANCE_PENDING
 
 
 @pytest.fixture(scope="session")
