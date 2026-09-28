@@ -780,3 +780,25 @@ def test_the_refusal_copy_ships_in_both_languages():
     )
     assert host_i18n.STRINGS["en"]["stay.detail.cta.send_again"] == "Send again"
     assert host_i18n.STRINGS["cs"]["stay.detail.cta.send_again"] == "Odeslat znovu"
+
+
+def test_a_filed_czech_guest_is_not_flipped_to_not_required_by_the_sweep():
+    """AR-19: a filed record keeps its state, which is the proof pointer.
+
+    A guest's nationality can be corrected to CZE after the record has already
+    reached the register. The sweep looked only at the nationality and
+    overwrote ``sent`` with ``not_required``, losing both the fact and the
+    proof pointer that the record had been filed.
+    """
+    apartment, _reservation, guest_id = _seed("manual", "tok-czech-filed")
+    db.update(
+        "guest",
+        guest_id,
+        {"nationality": "CZE", "submit_state": reporting.SENT},
+    )
+
+    reporting.collect_sendable(apartment["id"])
+
+    assert db.query_one(
+        "SELECT submit_state FROM guest WHERE id = ?", (guest_id,)
+    )["submit_state"] == reporting.SENT
