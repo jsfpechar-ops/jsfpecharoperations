@@ -84,20 +84,28 @@ Check Google Drive for folder **`UbyHost-backups`** with a dated subfolder
 
 Local `./scripts/backup.sh` still runs daily at 03:00 if you added that cron earlier; this uploads the **newest** snapshot to Drive once a week.
 
-## S3 backup (optional — deferred)
+## S3 backup (encrypted archive, EU region)
 
-Not required if **Google Drive** weekly backups are working. S3 needs an IAM access
-key and `rclone config`; skip until you want a second off-site copy.
+S3 is the EU-region off-site target (`eu-central-1`) and runs alongside the
+Google Drive copy when you use both. `backup-s3.sh` uploads **only** the
+encrypted `ubyhost-backup.tar.age` and refuses a plaintext snapshot.
 
 <details>
-<summary>Enable S3 later (click to expand)</summary>
+<summary>Enable S3 (click to expand)</summary>
 
-Same data (an encrypted `ubyhost-backup.tar.age`); uses **rclone** with an **IAM access key** (no browser login).
+Uses **rclone** with an **IAM access key** (no browser login).
 
 **One-time in AWS:**
 
-1. **S3** → Create bucket (e.g. `ubyhost-backups-yourname`) in **eu-central-1** (Frankfurt). Block public access: **on**. Versioning: optional but nice.
-2. **IAM** → User → programmatic access → attach policy limited to that bucket (`s3:PutObject`, `s3:GetObject`, `s3:ListBucket`, `s3:DeleteObject` on `arn:aws:s3:::bucket-name/*`).
+1. **S3** → Create bucket (e.g. `ubyhost-backups-yourname`) in **eu-central-1**
+   (Frankfurt). Block public access: **on**. Default encryption: **SSE-S3**.
+   Add a **lifecycle rule** that expires objects after
+   `UBYHOST_BACKUP_RETENTION_DAYS` days (default 30) — the bucket, not the
+   script, bounds off-site retention.
+2. **IAM** → User → programmatic access → attach a policy limited to that
+   bucket: `s3:PutObject`, `s3:ListBucket`, `s3:GetObject` on
+   `arn:aws:s3:::bucket-name` and `arn:aws:s3:::bucket-name/*`
+   (`DeleteObject` is not needed; the lifecycle rule expires objects).
 3. Save **Access key ID** + **Secret access key** (shown once).
 
 **On the server:**

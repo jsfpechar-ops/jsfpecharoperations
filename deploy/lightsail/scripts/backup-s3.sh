@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# Weekly: snapshot DB on the server, copy newest folder to S3 (rclone).
+# Copy the newest encrypted snapshot to S3 (rclone). Encrypted archives only.
+#
+# One-time setup (AWS) is documented in deploy/lightsail/README.md: a bucket in
+# eu-central-1 with Block Public Access on, SSE-S3 default encryption, a
+# lifecycle rule expiring objects after UBYHOST_BACKUP_RETENTION_DAYS, and an
+# IAM user limited to this bucket.
+#
 # One-time: rclone config → Amazon S3 → remote name "s3" (or set RCLONE_REMOTE).
 # Env: UBYHOST_S3_BUCKET (required), UBYHOST_S3_PREFIX (default UbyHost-backups).
 set -euo pipefail
@@ -34,12 +40,19 @@ if [ -z "${LATEST}" ]; then
   exit 1
 fi
 
+# Refuse to upload anything but an encrypted archive. A plaintext snapshot here
+# means OPS-1 is not configured; uploading it would recreate the exposure.
+if ! docker compose exec -T ubyhost sh -c "ls -1 /data/backups/${LATEST}/*.age >/dev/null 2>&1"; then
+  echo "Newest snapshot ${LATEST} has no .age archive — refusing to upload plaintext." >&2
+  exit 1
+fi
+
 rm -rf "${TMP}"
 mkdir -p "${TMP}"
 docker cp "${CONTAINER}:/data/backups/${LATEST}" "${TMP}/${LATEST}"
 
 DEST="${REMOTE}:${BUCKET}/${PREFIX}/${LATEST}"
-rclone copy "${TMP}/${LATEST}" "${DEST}" --stats-one-line
+rclone copy "${TMP}/${LATEST}" "${DEST}" --include "*.age" --stats-one-line
 rm -rf "${TMP}"
 
 echo "Uploaded to ${DEST}"
