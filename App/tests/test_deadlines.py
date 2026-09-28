@@ -400,3 +400,25 @@ def test_the_deadline_alert_runs_from_the_guest_arrival(monkeypatch, tmp_path):
     assert len(alert) == 1
     assert alert[0]["level"] == "critical"
     assert "Po termínu o 2 dny" in alerts.present(alert[0], "cs")["display_detail"]
+
+
+def test_scheduled_send_is_pulled_forward_to_the_deadline_margin():
+    from app import db, reporting
+
+    db.init_db()
+    apartment = {"automation_mode": "scheduled", "submit_after_hours": 48}
+    reservation = {
+        "id": -1,
+        "date_from": "2026-10-05",
+        "registration_completed_at": "2026-10-07T08:00:00+00:00",
+    }
+
+    # The deadline is Wed 7 Oct 23:59:59 Prague (CEST); 6 hours earlier is
+    # 17:59:59 CEST, which is 15:59:59 UTC. Completion plus 48 h is later, so
+    # the deadline margin is the earlier of the two.
+    assert reporting.due_for_automatic_send(
+        apartment, reservation, now=datetime(2026, 10, 7, 16, 0, tzinfo=timezone.utc)
+    ) is True
+    assert reporting.due_for_automatic_send(
+        apartment, reservation, now=datetime(2026, 10, 7, 15, 0, tzinfo=timezone.utc)
+    ) is False
