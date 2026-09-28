@@ -15,7 +15,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from . import alerts, config, db, housebook, invoices
+from . import alerts, config, db, housebook, invoices, passport_photos
 
 # G-D5: null the claim e-mail / reservation e-mail / phone fragment this long
 # after the stay's end date.
@@ -188,6 +188,80 @@ def _acceptance_retention_step(today: date, dry_run: bool, owner_user_id: Option
     return count
 
 
+def _workspace_deletion_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete workspaces whose termination date has passed (BE-10, G-D11).
+
+    Global only: a workspace cannot delete itself from the owner-scoped button.
+    """
+    if owner_user_id is not None:
+        return 0
+    rows = db.query(
+        "SELECT id FROM user_account WHERE deletion_due_at IS NOT NULL AND deletion_due_at <= ?",
+        (db.utcnow(),),
+    )
+    if dry_run or not rows:
+        return len(rows)
+    for row in rows:
+        _delete_workspace(row["id"])
+    return len(rows)
+
+
+def _delete_workspace(owner_id: int) -> None:
+    """Remove every row that belongs to one workspace, in dependency order."""
+    for guest in db.query(
+        "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id IS ?",
+        (owner_id,),
+    ):
+        passport_photos.delete_photo(guest["id"])
+    db.execute(
+        "DELETE FROM guest WHERE reservation_id IN "
+        "(SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE a.owner_user_id IS ?)",
+        (owner_id,),
+    )
+    db.execute(
+        "DELETE FROM submission WHERE apartment_id IN "
+        "(SELECT id FROM apartment WHERE owner_user_id IS ?)",
+        (owner_id,),
+    )
+    db.execute(
+        "DELETE FROM reservation WHERE apartment_id IN "
+        "(SELECT id FROM apartment WHERE owner_user_id IS ?)",
+        (owner_id,),
+    )
+    db.execute("DELETE FROM apartment WHERE owner_user_id IS ?", (owner_id,))
+
+    invoice_ids = [
+        row["id"]
+        for row in db.query("SELECT id FROM invoice WHERE owner_user_id IS ?", (owner_id,))
+    ]
+    if invoice_ids:
+        db.execute(
+            "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '1') "
+            "ON CONFLICT(key) DO UPDATE SET value = '1'"
+        )
+        try:
+            for invoice_id in invoice_ids:
+                db.execute("DELETE FROM invoice_item WHERE invoice_id = ?", (invoice_id,))
+                db.execute("DELETE FROM invoice WHERE id = ?", (invoice_id,))
+        finally:
+            db.execute(
+                "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
+                "ON CONFLICT(key) DO UPDATE SET value = ''"
+            )
+
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id IS ?", (owner_id,))
+
+    db.execute("DELETE FROM data_subject_request WHERE owner_user_id IS ?", (owner_id,))
+    db.execute("DELETE FROM alert WHERE owner_user_id IS ?", (owner_id,))
+    # legal_acceptance has a NOT NULL account reference, so it cannot outlive the
+    # account; see FOLLOWUPS.md for the tension with G-D7.
+    db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
+    db.execute("DELETE FROM audit WHERE owner_user_id IS ?", (owner_id,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+
+
 def _raise_due_notices(today: date) -> None:
     """Warn each owner whose records reach the end of their retention window.
 
@@ -220,6 +294,7 @@ STEPS: List[tuple] = [
     ("alerts", _alert_retention_step),
     ("rate_limit_events", _rate_limit_retention_step),
     ("legal_acceptance", _acceptance_retention_step),
+    ("workspaces", _workspace_deletion_step),
 ]
 
 
