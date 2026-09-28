@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import requests
+import urllib3
 
 from . import soap
 
@@ -36,6 +37,28 @@ class UbyportTransportError(UbyportError):
     Appendix 5 section 10.2(c) requires the host application to escalate this
     rather than swallow it, and 10.2(e) requires that no data is lost.
     """
+
+
+class UbyportOutcomeUnknownError(UbyportTransportError):
+    """The request may have reached UbyPort, so whether it was filed is unknown.
+
+    A timeout after sending, a 5xx, an unreadable answer or a record-count
+    mismatch. Resending automatically risks a duplicate the police count
+    against the host, so callers must not retry this on their own.
+    ``request_xml`` carries the envelope that was sent, when known.
+    """
+
+    request_xml: str = ""
+
+
+def _definitely_not_sent(exc: requests.RequestException) -> bool:
+    """True only when the request cannot have reached the server."""
+    if isinstance(exc, (requests.ConnectTimeout, requests.exceptions.SSLError)):
+        return True
+    if isinstance(exc, requests.ConnectionError) and exc.args:
+        reason = getattr(exc.args[0], "reason", None)
+        return isinstance(reason, urllib3.exceptions.NewConnectionError)
+    return False
 
 
 @dataclass
@@ -102,7 +125,13 @@ class UbyportClient:
                 allow_redirects=False,
             )
         except requests.RequestException as exc:
-            raise UbyportTransportError(f"Could not reach UbyPort at {self.endpoint}: {exc}") from exc
+            if _definitely_not_sent(exc):
+                raise UbyportTransportError(
+                    f"Could not reach UbyPort at {self.endpoint}: {exc}"
+                ) from exc
+            raise UbyportOutcomeUnknownError(
+                f"UbyPort did not answer after the request was sent (outcome unknown): {exc}"
+            ) from exc
 
         text = response.text or ""
         if response.status_code == 401:
@@ -117,6 +146,10 @@ class UbyportClient:
         fault = soap.parse_fault(text)
         if fault:
             raise UbyportTransportError(f"UbyPort returned a SOAP fault: {fault}")
+        if response.status_code >= 500:
+            raise UbyportOutcomeUnknownError(
+                f"UbyPort returned HTTP {response.status_code} (outcome unknown): {text[:400]}"
+            )
         if response.status_code >= 400:
             raise UbyportTransportError(
                 f"UbyPort returned HTTP {response.status_code}: {text[:400]}"
@@ -157,18 +190,26 @@ class UbyportClient:
         envelope = soap.build_zapis_ubytovane(
             header, guests, self.auth_code, include_wsa_header()
         )
-        text = self._post("ZapisUbytovane", envelope)
+        try:
+            text = self._post("ZapisUbytovane", envelope)
+        except UbyportOutcomeUnknownError as exc:
+            exc.request_xml = envelope
+            raise
         try:
             parsed = soap.parse_zapis_response(text)
         except ET.ParseError as exc:
-            raise UbyportTransportError(
+            err = UbyportOutcomeUnknownError(
                 "UbyPort returned an unreadable XML response."
-            ) from exc
+            )
+            err.request_xml = envelope
+            raise err from exc
         if len(parsed["record_errors"]) != len(guests):
-            raise UbyportTransportError(
+            err = UbyportOutcomeUnknownError(
                 "UbyPort returned an incomplete result: "
                 f"{len(parsed['record_errors'])} outcomes for {len(guests)} guest records."
             )
+            err.request_xml = envelope
+            raise err
         return SubmissionResult(
             endpoint=self.endpoint,
             request_xml=envelope,
