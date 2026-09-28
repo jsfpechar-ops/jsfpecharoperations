@@ -8,6 +8,7 @@
 <nav class="section-nav settings-nav" aria-label="{{ t('nav.settings') }}">
   <a href="#settings-technical">{{ t('settings.technical.title') }}</a>
   <a href="#settings-retention">{{ t('settings.nav.retention') }}</a>
+  <a href="#settings-data">{{ t('settings.data.title') }}</a>
   <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
   <a href="#settings-audit">{{ t('settings.nav.audit') }}</a>
   <a href="#settings-ubyport">{{ t('settings.nav.ubyport') }}</a>
@@ -127,6 +128,36 @@
         </button>
         <span class="small muted">{{ t('settings.retention.delete_help') }}</span>
       </form>
+
+      <div class="panel" id="settings-data" style="margin-top:14px">
+        <h2 style="margin-top:0">{{ t('settings.data.title') }}</h2>
+        <dl class="kv">
+          <dt>{{ t('settings.data.retention_last') }}</dt>
+          <dd>
+            {% if retention_last_run %}
+              {{ retention_last_run.at }} —
+              {{ t('settings.data.dry_run') if retention_last_run.dry_run else t('settings.data.live') }}
+              {% if retention_last_run.counts %}
+                <span class="small muted">
+                  {% for key, value in retention_last_run.counts.items() %}{{ key }}={{ value }}{{ " " if not loop.last }}{% endfor %}
+                </span>
+              {% endif %}
+            {% else %}{{ t('settings.data.never') }}{% endif %}
+          </dd>
+          <dt>{{ t('settings.data.due') }}</dt>
+          <dd><a href="/housebook">{{ t('settings.data.due_count', count=retention_due) }}</a></dd>
+          <dt>{{ t('settings.data.dsr') }}</dt>
+          <dd><a href="/privacy-requests">{{ t('settings.data.dsr_count', count=open_dsr_count) }}</a></dd>
+          {% if backup_status %}
+            <dt>{{ t('settings.data.backup') }}</dt>
+            <dd>
+              {{ backup_status.at }} —
+              {{ t('settings.data.encrypted') if backup_status.encrypted else t('settings.data.not_encrypted') }}
+              <span class="small muted">{{ t('settings.data.retention_days', days=backup_status.retention_days) }}</span>
+            </dd>
+          {% endif %}
+        </dl>
+      </div>
 
       {% if apartments_without_entity or entities_without_contact %}
         <div class="banner warning" style="margin-top:14px">

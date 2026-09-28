@@ -449,8 +449,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "as a backstop. It is never sent to UbyPort."
         ),
         "guide.security.backups": (
-            "Settings shows backup status. Production creates encrypted database backups; keep an independent "
-            "export before closing the service or making major changes."
+            "The Settings \u201cData protection\u201d panel (platform administrators only) shows when "
+            "the last backup ran, whether it was encrypted, and the retention window. Keep an "
+            "independent export before closing the service or making major changes."
         ),
         "guide.nav.legal": "Your legal duties",
         "guide.legal.lede": (
@@ -1806,8 +1807,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "automatické mazání starých souborů. Do UbyPortu se nikdy neposílá."
         ),
         "guide.security.backups": (
-            "Nastavení ukazuje stav záloh. Produkce vytváří šifrované zálohy databáze; před ukončením "
-            "služby nebo zásadní změnou si ponechte také vlastní export."
+            "Panel Nastavení \u201eOchrana údajů\u201c (pouze pro administrátory platformy) ukazuje, kdy "
+            "proběhla poslední záloha, zda byla šifrovaná, a dobu uchování. Před ukončením služby "
+            "nebo zásadní změnou si ponechte také vlastní export."
         ),
         "guide.nav.legal": "Vaše právní povinnosti",
         "guide.legal.lede": (
@@ -3343,6 +3345,19 @@ _INTERFACE_STRINGS = {
         "settings.retention.delete.one": "Delete %(count)s expired record",
         "settings.retention.delete.few": "Delete %(count)s expired records",
         "settings.retention.delete_help": "Keeping passport numbers beyond the legal period is itself a breach. Review this annually.",
+        "settings.data.title": "Data protection",
+        "settings.data.retention_last": "Last retention run",
+        "settings.data.dry_run": "dry run (nothing deleted)",
+        "settings.data.live": "live",
+        "settings.data.never": "Never run",
+        "settings.data.due": "Records due within 30 days",
+        "settings.data.due_count": "%(count)s record(s) — open house book",
+        "settings.data.dsr": "Open data requests",
+        "settings.data.dsr_count": "%(count)s open — manage",
+        "settings.data.backup": "Last backup",
+        "settings.data.encrypted": "encrypted",
+        "settings.data.not_encrypted": "NOT encrypted",
+        "settings.data.retention_days": "kept %(days)s days",
         "settings.privacy_incomplete": "The guest privacy notice is incomplete.",
         "settings.audit.help": "Important changes, archives, PIN rotations, and police submissions are recorded here. Only the retention purge permanently deletes guest records.",
         "settings.audit.recent": "Recent activity (%(count)s events)",
@@ -3969,6 +3984,19 @@ _INTERFACE_STRINGS = {
         "settings.retention.delete.one": "Smazat %(count)s prošlý záznam",
         "settings.retention.delete.few": "Smazat %(count)s prošlé záznamy",
         "settings.retention.delete_help": "Uchovávání čísel pasů nad zákonnou dobu je samo porušením. Kontrolujte jednou ročně.",
+        "settings.data.title": "Ochrana údajů",
+        "settings.data.retention_last": "Poslední běh retence",
+        "settings.data.dry_run": "zkušební běh (nic se nemaže)",
+        "settings.data.live": "ostrý běh",
+        "settings.data.never": "Zatím neproběhlo",
+        "settings.data.due": "Záznamy s termínem do 30 dnů",
+        "settings.data.due_count": "%(count)s záznamů — otevřít domovní knihu",
+        "settings.data.dsr": "Otevřené žádosti o údaje",
+        "settings.data.dsr_count": "%(count)s otevřených — spravovat",
+        "settings.data.backup": "Poslední záloha",
+        "settings.data.encrypted": "šifrovaná",
+        "settings.data.not_encrypted": "NEšifrovaná",
+        "settings.data.retention_days": "uchovává se %(days)s dní",
         "settings.privacy_incomplete": "Informace o zpracování údajů hosta není úplná.",
         "settings.audit.help": "Důležité změny, archivace, změny PIN a policejní hlášení se zapisují zde. Trvale maže pouze retence.",
         "settings.audit.recent": "Nedávná aktivita (%(count)s událostí)",
