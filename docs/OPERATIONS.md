@@ -33,7 +33,7 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
 | `deadlines` | 30 min | Raises and clears `deadline` alerts for stays running out of statutory time. |
 | `mail` | 5 min | Expires 30-minute claim holds, drains the guest e-mail outbox, sends day-before reminders, purges mail rows older than 14 days. |
 | `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files, and blanks the request/response envelopes on submissions older than 90 days. |
-| `retention` | daily 03:30 | Computes the retention schedule (BE-2): counts the guest rows past the six-year cutoff and the invoices past ten years, audits the counts, and raises the "records reach the end of their retention period soon" notice. **Deletes nothing** unless `UBYHOST_RETENTION_AUTOPURGE=1`. |
+| `retention` | daily 03:30 | Computes the retention schedule (BE-2/BE-3): counts the guest rows past the six-year cutoff, the invoices past ten years, and the claim e-mail / reservation contact / submitter-IP minimisation sets; audits the counts; and raises the "records reach the end of their retention period soon" notice. **Changes nothing** unless `UBYHOST_RETENTION_AUTOPURGE=1`. |
 
 Behaviours to know:
 
@@ -464,9 +464,18 @@ Deleted by either path:
   applied here so that deleting a guest by hand cannot take a recent Doručenka
   with it.
 
-Never deleted by any code path today:
+Minimised by the retention job (BE-3, and only once `UBYHOST_RETENTION_AUTOPURGE=1`):
 
-- **`guest.filled_ip`**, retained for the life of the house-book record.
+- **`guest.filled_ip`** — nulled 90 days after the guest's stay end (G-D6).
+- **`reservation_claim.email`**, **`reservation.guest_email`** and
+  **`reservation.phone_last4`** — nulled 30 days after the stay end (G-D5).
+  `email_masked` is display-only and is kept. Code that could send to these
+  fields treats a NULL as "no address on file" and sends nothing.
+- **Empty reservations** past the six-year cutoff, with no `guest` rows, are
+  deleted; their `reservation_claim` row cascades.
+
+With the flag off (the default until counsel signs off G-D4), the job counts
+and audits these row sets and changes nothing.
 
 ## Backup and restore
 
