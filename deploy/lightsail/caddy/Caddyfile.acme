@@ -1,5 +1,7 @@
 # Direct TLS via Let's Encrypt (DNS grey-cloud or no Cloudflare proxy).
 # Selected automatically when CLOUDFLARE_PROXY is not set in .env.
+# Access logging is intentionally off (OPS-3): a request line would carry guest
+# permalink tokens. Container logs are bounded by docker-compose `logging:`.
 {
 	email {$ACME_EMAIL}
 }

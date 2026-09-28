@@ -31,4 +31,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# --no-access-log: uvicorn's own access log writes the raw request line, which
+# includes guest permalink tokens and query strings. The app logs one PII-free
+# line per request instead (see app/main.py, OPS-3).
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--no-access-log"]

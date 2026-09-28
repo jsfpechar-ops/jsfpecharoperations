@@ -18,6 +18,7 @@ you need when something has gone wrong and the answer is not in either.
 - [If the secret key is lost or rotated](#if-the-secret-key-is-lost-or-rotated)
 - [Retention and what is actually deleted](#retention-and-what-is-actually-deleted)
 - [Backup and restore](#backup-and-restore)
+- [Logs](#logs)
 
 ## Scheduled jobs
 
@@ -519,3 +520,27 @@ record the date in [docs/vendors/README.md](vendors/README.md):
 - [ ] **Operator machines** — delete any downloaded `ubyhost.db` or `secret_key`
   from laptops and external disks.
 - [ ] Record the result in the vendor evidence file.
+
+## Logs
+
+The app writes **one PII-free access line per request** (OPS-3), from the
+`ubyhost.access` logger:
+
+    method=GET route=/l/{token} status=200 ms=42
+
+- **`route` is the matched route template**, e.g. `/l/{token}` or
+  `/<unmatched>`. The raw path, query string, client IP, user agent and headers
+  are never logged, so a guest permalink token or an e-mail address cannot end
+  up in a log line.
+- `/static/*` and `/healthz` are skipped.
+- uvicorn's own access log is disabled in the production image
+  (`--no-access-log` in the `Dockerfile`), because it would print the raw
+  request line. `UBYHOST_ACCESS_LOG=0` switches the app line off as well.
+- Caddy access logging is intentionally **off** (see
+  `deploy/lightsail/caddy/Caddyfile.cloudflare`).
+- **Rotation** is configured on both Compose services: the Docker `json-file`
+  driver keeps 5 files of 10 MB each (≈50 MB per service). Rotated lines are
+  gone for good — if an incident needs them, capture logs before they age out
+  with `./scripts/logs.sh` and store them with the incident record (LD-5).
+- Cloudflare's edge logs are separate and are not controlled here; see
+  `docs/CLOUDFLARE.md`.
