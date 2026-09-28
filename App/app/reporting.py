@@ -39,7 +39,7 @@ from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
-from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
+from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportOutcomeUnknownError, UbyportTransportError
 
 log = logging.getLogger("ubyhost.reporting")
 
@@ -1062,6 +1062,41 @@ def submit_batch(
     client = client_for(apartment, env)
     try:
         result: SubmissionResult = client.submit(header, guests)
+    except UbyportOutcomeUnknownError as exc:
+        # The register may already hold this batch. Resending it on a timer
+        # is how duplicates pile up against the host, so it waits for a
+        # person (owner decision OD-1). The envelope is kept as evidence.
+        log.error(
+            "ubyport_submission_outcome_unknown apartment_id=%s submission_id=%s guest_ids=%s",
+            apartment["id"], submission_id, guest_ids, exc_info=True,
+        )
+        finished = db.utcnow()
+        db.update(
+            "submission",
+            submission_id,
+            {
+                "state": "outcome_unknown",
+                "finished_at": finished,
+                "error_text": str(exc),
+                "request_xml": getattr(exc, "request_xml", "") or None,
+            },
+        )
+        for in_doubt_id in guest_ids:
+            db.update("guest", in_doubt_id, {"submission_id": submission_id})
+        alerts.raise_alert(
+            "critical",
+            "submission_outcome_unknown",
+            f"{apartment['internal_name']}: UbyPort may or may not have received the report.",
+            str(exc),
+            dedupe_key=f"submission_outcome_unknown:{apartment['id']}",
+            apartment_id=apartment["id"],
+            params={"property": apartment["internal_name"], "error": str(exc)},
+        )
+        mail_notify.submission_problem(
+            apartment, submission_id, state="transport_error", reason=str(exc), transport=True,
+        )
+        return {"submitted": 0, "submission_id": submission_id, "state": "outcome_unknown",
+                "error": str(exc)}
     except (UbyportTransportError, UbyportError) as exc:
         log.error(
             "ubyport_submission_failed apartment_id=%s owner_user_id=%s "
@@ -1269,6 +1304,7 @@ def submit_batch(
 
     if state in ("ok", "ok_duplicate"):
         alerts.resolve(f"submission_rejected:{apartment['id']}")
+        alerts.resolve(f"submission_outcome_unknown:{apartment['id']}")
     else:
         log.error(
             "ubyport_submission_rejected apartment_id=%s owner_user_id=%s "
@@ -1652,7 +1688,7 @@ def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
 # Every state a submission row can settle in. A row is only 'running' while
 # the submit call is in flight, and the envelope is stored at the moment the
 # row moves to one of these, so a 'running' row has no envelope to purge.
-TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transport_error")
+TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transport_error", "outcome_unknown")
 
 # The envelope is the only thing in the row that carries guest data, and the
 # row outlives the six-year purge of the guests it describes, so it goes far
