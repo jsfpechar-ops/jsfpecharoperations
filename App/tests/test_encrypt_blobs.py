@@ -24,6 +24,38 @@ def _migration():
     spec.loader.exec_module(module)
     return module
 
+
+def _purge():
+    """Leave the shared test database as it was found.
+
+    The suite shares one database, and ``test_endtoend`` reads
+    ``SELECT * FROM apartment``: a leaked property of ours would shadow its own.
+    """
+    db.init_db()
+    for row in db.query("SELECT id FROM apartment WHERE internal_name = 'Blob flat'"):
+        apartment_id = row["id"]
+        for reservation in db.query(
+            "SELECT id FROM reservation WHERE apartment_id = ?", (apartment_id,)
+        ):
+            for guest in db.query(
+                "SELECT id FROM guest WHERE reservation_id = ?", (reservation["id"],)
+            ):
+                passport_photos.delete_photo(guest["id"])
+            db.execute("DELETE FROM guest WHERE reservation_id = ?", (reservation["id"],))
+        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+    db.execute(
+        "DELETE FROM legal_entity WHERE name = 'Blob entity' AND id NOT IN "
+        "(SELECT legal_entity_id FROM apartment WHERE legal_entity_id IS NOT NULL)"
+    )
+
+
+@pytest.fixture(autouse=True)
+def _database():
+    _purge()
+    yield
+    _purge()
+
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
     "DQottAAAAABJRU5ErkJggg=="
