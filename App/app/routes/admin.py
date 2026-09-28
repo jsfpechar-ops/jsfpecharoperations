@@ -1838,7 +1838,11 @@ async def guest_update(guest_id: int, request: Request):
     if validation.guest_is_reportable(payload["nationality"]):
         payload["identity_verified_at"] = db.utcnow()
         payload["identity_verified_by"] = access.owner_id(request)
-    if not validation.guest_is_reportable(payload["nationality"]):
+    if guest["submit_state"] == reporting.SENT:
+        # Already filed: the record in the register is what it is. The host's
+        # edit is saved, but the state (and so the proof pointer) is kept.
+        pass
+    elif not validation.guest_is_reportable(payload["nationality"]):
         payload["submit_state"] = reporting.NOT_REQUIRED
     elif guest["submit_state"] in (reporting.ERROR, reporting.BLOCKED, reporting.NOT_REQUIRED):
         # Rule 10.4(5): correcting a rejected record must make it sendable again.
