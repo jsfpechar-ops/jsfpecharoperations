@@ -46,6 +46,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_AUDIT_RETENTION_DAYS` | `1095` | Audit rows older than this go; `legal_accepted` evidence has its own rule (BE-4, G-D7). |
 | `UBYHOST_ALERT_RETENTION_DAYS` | `365` | Resolved alerts older than this go (BE-4, G-D7). |
 | `UBYHOST_RATE_LIMIT_RETENTION_HOURS` | `24` | Stale `rate_limit_event` rows older than this go (BE-4, G-D7). |
+| `UBYHOST_RESTRICTED_BLOCKS_FILING` | `0` | `1` withholds a restricted (Art 18) record from police filing. Off until counsel confirms the statutory duty permits it (BE-9). |
 | `UBYHOST_ICAL_POLL_MINUTES` | `60` | Calendar poll interval. |
 | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | Automatic submission sweep interval. |
 
