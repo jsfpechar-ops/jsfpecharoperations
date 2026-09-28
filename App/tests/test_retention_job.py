@@ -12,7 +12,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from app import config, db, housebook, passport_photos, scheduler, retention
+from app import claim, config, db, housebook, passport_photos, scheduler, retention
 
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
@@ -201,3 +201,186 @@ def test_the_scheduler_registers_the_retention_job(monkeypatch, tmp_path):
         assert scheduler._scheduler.get_job("retention") is not None
     finally:
         scheduler.shutdown()
+
+
+# --- BE-3: reservation / claim / contact minimisation ------------------------
+
+
+def _contact_case(
+    owner_user_id: int,
+    *,
+    token: str,
+    date_to: date,
+    claim_email: str | None = "claim@example.test",
+    guest_email: str | None = "guest@example.test",
+    phone_last4: str | None = "1234",
+    filled_ip: str | None = "203.0.113.9",
+    guest: bool = True,
+):
+    db.init_db()
+    now = db.utcnow()
+    entity_id = db.insert(
+        "legal_entity",
+        {"name": "RetJob", "created_at": now, "owner_user_id": owner_user_id},
+    )
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "owner_user_id": owner_user_id,
+            "internal_name": "Flat",
+            "permalink_token": token,
+            "automation_mode": "manual",
+            "default_purpose": "10",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "uid": f"stay-{token}",
+            "date_from": (date_to - timedelta(days=2)).isoformat(),
+            "date_to": date_to.isoformat(),
+            "status": "active",
+            "guest_email": guest_email,
+            "phone_last4": phone_last4,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.insert(
+        "reservation_claim",
+        {
+            "reservation_id": reservation_id,
+            "state": "claimed",
+            "email": claim_email,
+            "email_masked": "c***@example.test",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    guest_id = None
+    if guest:
+        guest_id = db.insert(
+            "guest",
+            {
+                "reservation_id": reservation_id,
+                "surname": "S",
+                "first_name": "J",
+                "stay_from": (date_to - timedelta(days=2)).isoformat(),
+                "stay_to": date_to.isoformat(),
+                "nationality": "GBR",
+                "purpose": "10",
+                "entered_by": "guest",
+                "filled_ip": filled_ip,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+    return reservation_id, guest_id
+
+
+def _old_end() -> date:
+    return date.today() - timedelta(days=100)
+
+
+def _empty_old_end() -> date:
+    return housebook.retention_cutoff(date.today()) - timedelta(days=1)
+
+
+def test_contact_minimisation_dry_run_changes_nothing(monkeypatch):
+    monkeypatch.setattr(config, "RETENTION_AUTOPURGE", False)
+    owner = _owner("retjob-c1")
+    reservation_id, guest_id = _contact_case(owner, token="retjob-c1", date_to=_old_end())
+    empty_id, _ = _contact_case(
+        owner, token="retjob-c1e", date_to=_empty_old_end(), guest=False,
+        claim_email=None, guest_email=None, phone_last4=None,
+    )
+
+    summary = retention.run(dry_run=True, owner_user_id=owner)
+    counts = summary["counts"]
+    assert counts["claim_emails"] >= 1
+    assert counts["reservation_contacts"] >= 1
+    assert counts["submitter_ips"] >= 1
+    assert counts["empty_reservations"] >= 1
+
+    assert db.query_one(
+        "SELECT email FROM reservation_claim WHERE reservation_id = ?", (reservation_id,)
+    )["email"] == "claim@example.test"
+    row = db.query_one(
+        "SELECT guest_email, phone_last4 FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert row["guest_email"] and row["phone_last4"]
+    assert db.query_one("SELECT filled_ip FROM guest WHERE id = ?", (guest_id,))["filled_ip"]
+    assert db.query_one("SELECT id FROM reservation WHERE id = ?", (empty_id,))
+
+
+def test_contact_minimisation_live_nulls_and_deletes(monkeypatch):
+    monkeypatch.setattr(config, "RETENTION_AUTOPURGE", True)
+    owner = _owner("retjob-c2")
+    reservation_id, guest_id = _contact_case(owner, token="retjob-c2", date_to=_old_end())
+    empty_id, _ = _contact_case(
+        owner, token="retjob-c2e", date_to=_empty_old_end(), guest=False,
+        claim_email=None, guest_email=None, phone_last4=None,
+    )
+    recent_id, recent_guest = _contact_case(
+        owner, token="retjob-c2r", date_to=date.today() - timedelta(days=5)
+    )
+
+    summary = retention.run(dry_run=False, owner_user_id=owner)
+    assert summary["counts"]["claim_emails"] >= 1
+
+    assert db.query_one(
+        "SELECT email FROM reservation_claim WHERE reservation_id = ?", (reservation_id,)
+    )["email"] is None
+    row = db.query_one(
+        "SELECT guest_email, phone_last4 FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert row["guest_email"] is None and row["phone_last4"] is None
+    assert db.query_one("SELECT filled_ip FROM guest WHERE id = ?", (guest_id,))["filled_ip"] is None
+    assert db.query_one("SELECT id FROM reservation WHERE id = ?", (empty_id,)) is None
+
+    # A stay still inside the grace window is untouched.
+    assert db.query_one(
+        "SELECT email FROM reservation_claim WHERE reservation_id = ?", (recent_id,)
+    )["email"] == "claim@example.test"
+    assert db.query_one("SELECT filled_ip FROM guest WHERE id = ?", (recent_guest,))["filled_ip"]
+
+
+def test_a_completion_receipt_is_not_queued_without_an_address(monkeypatch):
+    owner = _owner("retjob-noaddr")
+    reservation_id, _ = _contact_case(
+        owner, token="retjob-noaddr", date_to=date.today(), claim_email=None
+    )
+    reservation = db.query_one(
+        "SELECT r.*, a.permalink_token, a.internal_name, a.owner_user_id, a.legal_entity_id "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (reservation_id,),
+    )
+    apartment = db.query_one(
+        "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+    )
+    monkeypatch.setattr(
+        claim.reporting,
+        "reservation_progress",
+        lambda _r: {"expected": 1, "filled": 1, "incomplete": False, "status": "complete"},
+    )
+    claim.maybe_notify_completion(reservation, apartment)
+    assert db.query(
+        "SELECT id FROM email_outbox WHERE reservation_id = ?", (reservation_id,)
+    ) == []
+
+
+def test_a_reminder_sweep_survives_a_nulled_address(monkeypatch):
+    monkeypatch.setattr(config, "RETENTION_AUTOPURGE", True)
+    owner = _owner("retjob-c3")
+    reservation_id, _ = _contact_case(owner, token="retjob-c3", date_to=_old_end())
+    retention.run(dry_run=False, owner_user_id=owner)
+    # Must not raise, and must queue nothing for this stay.
+    claim.sweep_reminders()
+    assert db.query(
+        "SELECT id FROM email_outbox WHERE reservation_id = ? AND kind = 'reminder_guest'",
+        (reservation_id,),
+    ) == []
