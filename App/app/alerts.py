@@ -17,6 +17,7 @@ itself returns.
 from __future__ import annotations
 
 import json
+import sqlite3
 from typing import Any, Dict, List, Optional
 
 from . import db, deadlines, host_i18n, validation
@@ -335,21 +336,40 @@ def raise_alert(
             },
         )
         return
-    db.insert(
-        "alert",
-        {
-            "level": level,
-            "kind": kind,
-            "apartment_id": apartment_id,
-            "reservation_id": reservation_id,
-            "owner_user_id": owner_user_id,
-            "dedupe_key": key,
-            "message": message,
-            "detail": detail,
-            "params": stored,
-            "created_at": db.utcnow(),
-        },
-    )
+    try:
+        db.insert(
+            "alert",
+            {
+                "level": level,
+                "kind": kind,
+                "apartment_id": apartment_id,
+                "reservation_id": reservation_id,
+                "owner_user_id": owner_user_id,
+                "dedupe_key": key,
+                "message": message,
+                "detail": detail,
+                "params": stored,
+                "created_at": db.utcnow(),
+            },
+        )
+    except sqlite3.IntegrityError:
+        # Another thread raised the same open alert between our SELECT and
+        # INSERT (unique index idx_alert_dedupe). Refresh that one instead.
+        again = db.query_one(
+            "SELECT id FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
+        )
+        if again:
+            db.update(
+                "alert",
+                again["id"],
+                {
+                    "level": level,
+                    "message": message,
+                    "detail": detail,
+                    "params": stored,
+                    "created_at": db.utcnow(),
+                },
+            )
 
 
 def open_alert(dedupe_key: str) -> Optional[Any]:
