@@ -24,7 +24,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, db, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -844,6 +844,9 @@ async def verify_pin(token: str, request: Request):
                 dedupe_key=f"guest_pin_abuse:{apartment['id']}",
                 apartment_id=apartment["id"],
             )
+            # BE-13: a burst across links is a possible-incident signal for the
+            # platform admins; it never creates an incident by itself.
+            incidents.suggest_review_if_frequent()
             db.audit(
                 "guest_pin_rate_limited",
                 detail=f"apartment={apartment['id']}",
