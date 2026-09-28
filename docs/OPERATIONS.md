@@ -504,3 +504,18 @@ tell you:
   integrity, start against it, and open one stay and one Doručenka.
 - **The last run is recorded** in `$BACKUP_ROOT/.last_success.json` (mode 0600):
   `at`, `encrypted`, `bytes`, `retention_days`. Settings reads it (FE-3).
+
+### Purging pre-OPS-1 plaintext backups (operator, one-time)
+
+Before OPS-1, every snapshot carried the database **and** the key in the clear.
+Encrypting new backups does not remove the old ones. Work through this once and
+record the date in [docs/vendors/README.md](vendors/README.md):
+
+- [ ] **Server volume** — confirm no pre-OPS-1 folder under `/data/backups`
+  survives (the new retention window deletes old folders, but check by hand).
+- [ ] **Google Drive** — in `UbyHost-backups`, delete every folder that holds a
+  `ubyhost.db` or `secret_key` rather than a `ubyhost-backup.tar.age`.
+- [ ] **S3** — delete every object in the bucket that is not a `*.age`.
+- [ ] **Operator machines** — delete any downloaded `ubyhost.db` or `secret_key`
+  from laptops and external disks.
+- [ ] Record the result in the vendor evidence file.
