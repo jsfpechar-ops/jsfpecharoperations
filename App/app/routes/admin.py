@@ -650,7 +650,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     # send themselves before anything leaves for the police.
     mode = _form_str(form, "automation_mode", "manual")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "manual"
-    payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
+    payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
         _form_int(form, "permalink_reachback_days")
@@ -857,7 +857,7 @@ def _automation_payload(form) -> Dict[str, Any]:
     payload["uby_mark"] = payload["uby_mark"].upper()
     mode = _form_str(form, "automation_mode", "scheduled")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
-    payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
+    payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     return payload
