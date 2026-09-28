@@ -9,6 +9,7 @@ unchanged.
 from __future__ import annotations
 
 import base64
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -20,6 +21,7 @@ from .. import (
     auth,
     claim,
     db,
+    dsr,
     housebook,
     passport_photos,
     reporting,
@@ -79,6 +81,25 @@ def guest_form_pdf(guest_id: int, request: Request):
         pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="registration-form-{guest_id}.pdf"'},
+    )
+
+
+@router.get("/guests/{guest_id}/export.json")
+def guest_export_json(guest_id: int, request: Request):
+    """The Art 15/20 bundle for one guest: decrypted fields, ids, no image copy."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if not access.guest(request, guest_id):
+        return Response("Not found.", status_code=404, media_type="text/plain")
+    bundle = dsr.guest_export(guest_id)
+    if bundle is None:
+        return Response("Not found.", status_code=404, media_type="text/plain")
+    db.audit("export_guest_dsr", f"guest_id={guest_id}")
+    return Response(
+        json.dumps(bundle, ensure_ascii=False, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="guest-{guest_id}.json"'},
     )
 
 
