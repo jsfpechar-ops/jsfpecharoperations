@@ -197,6 +197,7 @@ def enqueue(
             },
         )
     except Exception:
+        log.exception("mail enqueue failed kind=%s key=%s", kind, idempotency_key)
         row = db.query_one(
             "SELECT id FROM email_outbox WHERE idempotency_key = ?",
             (idempotency_key,),
