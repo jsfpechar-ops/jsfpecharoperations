@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS user_account (
     session_version      INTEGER NOT NULL DEFAULT 1,
     created_at           TEXT NOT NULL,
     last_login_at        TEXT,
+    deletion_due_at      TEXT,
     totp_secret_enc      TEXT,
     totp_enabled         INTEGER NOT NULL DEFAULT 0,
     recovery_codes_hash  TEXT
@@ -611,6 +612,8 @@ ADDED_COLUMNS = (
     # BE-9: processing restriction (Art 18).
     ("guest", "restricted_at", "TEXT"),
     ("guest", "restricted_reason", "TEXT"),
+    # BE-10: workspace termination.
+    ("user_account", "deletion_due_at", "TEXT"),
 )
 
 

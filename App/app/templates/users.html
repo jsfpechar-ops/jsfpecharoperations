@@ -61,6 +61,14 @@
                   <button class="row-menu-item" type="button" role="menuitem"
                           data-reset-password data-user-id="{{ user.id }}"
                           data-user-label="{{ user.display_name or user.username }}">{{ t('users.menu.reset_password') }}</button>
+                  <form method="post" action="/admin/users/{{ user.id }}/export" class="row-menu-form">
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.export') }}</button>
+                  </form>
+                  <form method="post" action="/admin/users/{{ user.id }}/schedule-deletion" class="row-menu-form">
+                    <label class="small muted">{{ t('users.menu.schedule_deletion_confirm', username=user.username) }}</label>
+                    <input type="text" name="confirm" class="mono" required>
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.schedule_deletion') }}</button>
+                  </form>
                 {{ row_menu_end() }}
               {% endif %}
             </td>

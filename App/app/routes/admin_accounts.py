@@ -3,13 +3,27 @@ from __future__ import annotations
 
 import base64
 import io
+import os
+from datetime import datetime, timedelta, timezone
 
 import pyotp
 import qrcode
 from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
+from starlette.background import BackgroundTask
 
-from .. import acceptance, auth, config, db, host_i18n, incidents, rate_limit, security, turnstile
+from .. import (
+    acceptance,
+    auth,
+    config,
+    db,
+    host_i18n,
+    incidents,
+    rate_limit,
+    security,
+    turnstile,
+    workspace_export,
+)
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -621,3 +635,60 @@ async def incident_update(incident_id: int, request: Request):
         incidents.update(incident_id, values)
     db.audit("incident_updated", f"incident={incident_id}", actor=account["username"])
     return _back("/admin/incidents", msg=_flash(request, "flash.incidents.saved"))
+
+
+# G-D11: return a ZIP on request and delete 30 days after termination, once the
+# host confirms they hold their six-year copy. Counsel must confirm the timing.
+WORKSPACE_DELETION_DAYS = 30
+
+
+@router.post("/admin/users/{user_id}/export")
+def user_workspace_export(user_id: int, request: Request):
+    """Stream a ZIP of the workspace, then delete the temp file (BE-10)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not target:
+        return _back("/admin/users", err=_flash(request, "flash.error.no_such_user"))
+    path = workspace_export.build_workspace_zip(user_id)
+    db.audit(
+        "workspace_exported",
+        f"user={user_id}",
+        actor=account["username"],
+        owner_user_id=user_id,
+    )
+    return FileResponse(
+        path,
+        media_type="application/zip",
+        filename=f"workspace-{user_id}.zip",
+        background=BackgroundTask(os.unlink, path),
+    )
+
+
+@router.post("/admin/users/{user_id}/schedule-deletion")
+async def user_schedule_deletion(user_id: int, request: Request):
+    """Disable the account and set the deletion date (BE-10, G-D11)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not target:
+        return _back("/admin/users", err=_flash(request, "flash.error.no_such_user"))
+    form = await request.form()
+    if _form_str(form, "confirm") != target["username"]:
+        return _back("/admin/users", err=_flash(request, "flash.error.confirm_username"))
+    due = (
+        datetime.now(timezone.utc) + timedelta(days=WORKSPACE_DELETION_DAYS)
+    ).replace(microsecond=0).isoformat()
+    db.update("user_account", user_id, {"deletion_due_at": due, "active": 0})
+    db.audit(
+        "workspace_deletion_scheduled",
+        f"user={user_id} due={due}",
+        actor=account["username"],
+        owner_user_id=user_id,
+    )
+    return _back(
+        "/admin/users",
+        msg=_flash(request, "flash.users.deletion_scheduled", date=due),
+    )
