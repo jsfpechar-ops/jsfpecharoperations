@@ -94,6 +94,7 @@ def _housebook_sql(
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status != 'ignored' AND g.archived_at IS NULL "
+        "AND g.restricted_at IS NULL "
         "AND (? IS NULL OR a.owner_user_id = ?)"
     )
     params: List[Any] = [owner_user_id, owner_user_id]

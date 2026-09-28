@@ -902,6 +902,10 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         reservation = reservations.get(guest["reservation_id"])
         if not reservation:
             continue
+        # BE-9: a restricted record may be withheld from filing, but only once
+        # counsel confirms the statutory duty permits it. Off by default.
+        if config.RESTRICTED_BLOCKS_FILING and guest["restricted_at"]:
+            continue
         if not validation.guest_is_reportable(guest["nationality"]):
             if guest["submit_state"] != NOT_REQUIRED:
                 db.update("guest", guest["id"], {"submit_state": NOT_REQUIRED, "updated_at": db.utcnow()})
