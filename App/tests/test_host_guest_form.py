@@ -613,3 +613,29 @@ def test_a_stale_signature_is_not_filed_until_the_guest_re_signs():
         assert outside not in offered
     finally:
         _cleanup()
+
+
+def test_a_host_edit_does_not_flip_a_filed_guest_to_not_required():
+    """AR-19: the host may correct a filed guest's nationality to CZE.
+
+    ``sent`` is the proof pointer to the record already in the register. The
+    save must persist the host's edit without overwriting that state with
+    ``not_required``, which would lose the fact that the record was filed.
+    """
+    owner_id, stay_id = _host_stay()
+    try:
+        guest_id = _host_guest(stay_id, submit_state=reporting.SENT)
+        client = _host_client(owner_id)
+
+        response = client.post(
+            f"/guests/{guest_id}",
+            data=_complete_guest(nationality="CZE"),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        assert db.query_one(
+            "SELECT submit_state FROM guest WHERE id = ?", (guest_id,)
+        )["submit_state"] == reporting.SENT
+    finally:
+        _cleanup()
