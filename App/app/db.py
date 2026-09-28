@@ -469,6 +469,31 @@ CREATE TABLE IF NOT EXISTS security_incident (
     created_at              TEXT NOT NULL,
     updated_at              TEXT NOT NULL
 );
+
+-- Data-subject request register (BE-8): one row per access/erasure/etc. request
+-- a host records, with the one-month deadline Art 12(3) sets.
+CREATE TABLE IF NOT EXISTS data_subject_request (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_user_id       INTEGER REFERENCES user_account(id),
+    received_at         TEXT NOT NULL,
+    due_at              TEXT NOT NULL,
+    channel             TEXT NOT NULL CHECK (channel IN ('email','post','in_person','support','other')),
+    request_type        TEXT NOT NULL CHECK (request_type IN
+                          ('access','rectification','erasure','restriction','portability','objection','other')),
+    subject_kind        TEXT NOT NULL CHECK (subject_kind IN ('guest','host_user','other')),
+    guest_id            INTEGER REFERENCES guest(id) ON DELETE SET NULL,
+    reservation_id      INTEGER REFERENCES reservation(id) ON DELETE SET NULL,
+    identity_checked_at TEXT,
+    status              TEXT NOT NULL DEFAULT 'open'
+                          CHECK (status IN ('open','extended','fulfilled','refused','withdrawn')),
+    extended_until      TEXT,
+    closed_at           TEXT,
+    outcome_note        TEXT,
+    handled_by          INTEGER REFERENCES user_account(id),
+    created_at          TEXT NOT NULL,
+    updated_at          TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_dsr_owner_status ON data_subject_request (owner_user_id, status, due_at);
 """
 
 

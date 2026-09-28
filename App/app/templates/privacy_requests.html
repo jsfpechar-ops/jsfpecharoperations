@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set nav = 'privacy_requests' %}
+{% block title %}{{ t('privacy_requests.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{{ page_header(t('privacy_requests.title'), t('privacy_requests.lede')) }}
+
+<details class="panel" {% if not requests %}open{% endif %}>
+  <summary>{{ t('privacy_requests.create_title') }}</summary>
+  <form method="post" action="/privacy-requests">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div class="grid">
+      <div class="field"><label for="received_at">{{ t('privacy_requests.received') }}</label>
+        <input id="received_at" name="received_at" placeholder="2026-01-01T00:00:00+00:00"></div>
+      <div class="field"><label for="channel">{{ t('privacy_requests.channel') }}</label>
+        <select id="channel" name="channel">
+          {% for value in channels %}<option value="{{ value }}">{{ t('privacy_requests.channel.' ~ value) }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="request_type">{{ t('privacy_requests.type') }}</label>
+        <select id="request_type" name="request_type">
+          {% for value in request_types %}<option value="{{ value }}">{{ t('privacy_requests.type.' ~ value) }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="subject_kind">{{ t('privacy_requests.subject') }}</label>
+        <select id="subject_kind" name="subject_kind">
+          {% for value in subject_kinds %}<option value="{{ value }}">{{ t('privacy_requests.subject.' ~ value) }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="guest_id">{{ t('privacy_requests.guest_id') }}</label>
+        <input id="guest_id" name="guest_id" inputmode="numeric"></div>
+    </div>
+    <div class="actions"><button class="btn primary" type="submit">{{ t('privacy_requests.create') }}</button></div>
+  </form>
+</details>
+
+{% for row in requests %}
+<div class="panel">
+  <h2 style="margin-top:0">
+    {{ t('privacy_requests.type.' ~ row.request_type) }} &middot; {{ t('privacy_requests.status.' ~ row.status) }}
+  </h2>
+  <p class="small muted">
+    {{ t('privacy_requests.received') }}: {{ row.received_at }}
+    &middot; {{ t('privacy_requests.due') }}: {{ row.due_at }}
+    {% if row.guest_id %}&middot; {{ t('privacy_requests.guest_id') }}: {{ row.guest_id }}{% endif %}
+  </p>
+  <form method="post" action="/privacy-requests/{{ row.id }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div class="grid">
+      <div class="field"><label for="status-{{ row.id }}">{{ t('privacy_requests.status_label') }}</label>
+        <select id="status-{{ row.id }}" name="status">
+          {% for value in statuses %}<option value="{{ value }}" {% if value == row.status %}selected{% endif %}>{{ t('privacy_requests.status.' ~ value) }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="outcome-{{ row.id }}">{{ t('privacy_requests.outcome') }}</label>
+        <input id="outcome-{{ row.id }}" name="outcome_note" value="{{ row.outcome_note or '' }}"></div>
+      {% if not row.identity_checked_at %}
+      <div class="field"><label class="checkline"><input type="checkbox" name="identity_checked"> {{ t('privacy_requests.identity_checked') }}</label></div>
+      {% endif %}
+    </div>
+    <div class="actions"><button class="btn" type="submit">{{ t('privacy_requests.save') }}</button></div>
+  </form>
+</div>
+{% else %}
+<p class="muted">{{ t('privacy_requests.empty') }}</p>
+{% endfor %}
+{% endblock %}
