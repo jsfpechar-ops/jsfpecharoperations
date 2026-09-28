@@ -40,7 +40,7 @@ from .. import (
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
-from . import admin_accounts, api, exports, guest, onboarding
+from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import flash_plural as _flash_plural
@@ -1325,6 +1325,7 @@ async def reservation_create(request: Request):
 # int-typed /reservations/{id} and /submissions/{id} routes, so the export
 # router has to be included before those are declared.
 router.include_router(exports.router)
+router.include_router(privacy_requests.router)
 
 
 @router.post("/reservations/submit-ready")
