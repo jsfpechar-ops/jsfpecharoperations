@@ -20,6 +20,7 @@ from urllib.parse import quote, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
@@ -1151,7 +1152,7 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
                 ),
                 lang,
             )
-        _set_declared_guests(reservation, count)
+        await run_in_threadpool(_set_declared_guests, reservation, count)
         return _with_lang(
             RedirectResponse(
                 _guest_link(token, reservation_id) + _lang_q(lang),
@@ -1188,16 +1189,18 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
                 lang,
             )
         rate_limit.record("claim_start", key)
-        ok, err, _secret = claim.start_claim(
-            reservation,
-            apartment,
-            email=email,
-            party_size=count,
-            # The page is Czech by default; the e-mail is not, unless the guest
-            # chose Czech. This value is stored on the claim, so the reminder
-            # sent the day before the stay follows the same choice.
-            lang=_mail_language(request),
-            resend=resend or claim.is_claimed(claim_row),
+        ok, err, _secret = await run_in_threadpool(
+            lambda: claim.start_claim(
+                reservation,
+                apartment,
+                email=email,
+                party_size=count,
+                # The page is Czech by default; the e-mail is not, unless the guest
+                # chose Czech. This value is stored on the claim, so the reminder
+                # sent the day before the stay follows the same choice.
+                lang=_mail_language(request),
+                resend=resend or claim.is_claimed(claim_row),
+            )
         )
         if ok:
             extra = "&claim_sent=1"
@@ -1224,7 +1227,7 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
-    _set_declared_guests(reservation, count)
+    await run_in_threadpool(_set_declared_guests, reservation, count)
     return _with_lang(
         RedirectResponse(_guest_link(token, reservation_id) + _lang_q(lang), status_code=303), lang
     )
@@ -1678,9 +1681,11 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         actor="guest",
         owner_user_id=apartment["owner_user_id"],
     )
-    claim.maybe_notify_completion(
-        db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
-        apartment,
+    await run_in_threadpool(
+        lambda: claim.maybe_notify_completion(
+            db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
+            apartment,
+        )
     )
     # The form just signed shows the stay's current dates, so this save clears
     # the warning - but only once *nobody* on the stay is still holding an
@@ -1694,7 +1699,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         if not any(reporting.signature_dates_stale(g, filing) for g in still_stale):
             alerts.resolve(f"dates_changed_resign:{reservation_id}")
-    reporting.submit_stay_if_complete(apartment["id"], reservation_id)
+    await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303
