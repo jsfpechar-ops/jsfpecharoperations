@@ -12,6 +12,7 @@ from app import (
     icalsync,
     passport_photos,
     reporting,
+    retention,
     scheduler,
 )
 
@@ -101,6 +102,12 @@ _JOBS = [
         "id": "photo_sweep",
         "run": scheduler._job_photo_sweep,
         "target": (passport_photos, "purge_stale"),
+        "level": "warning",
+    },
+    {
+        "id": "retention",
+        "run": scheduler._job_retention,
+        "target": (retention, "run"),
         "level": "warning",
     },
 ]

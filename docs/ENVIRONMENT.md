@@ -41,6 +41,8 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | --- | --- | --- |
 | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
 | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
+| `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
+| `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
 | `UBYHOST_ICAL_POLL_MINUTES` | `60` | Calendar poll interval. |
 | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | Automatic submission sweep interval. |
 
