@@ -7,7 +7,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import (
@@ -229,16 +229,23 @@ async def set_language(request: Request):
 @app.get("/healthz", include_in_schema=False)
 def healthz():
     data_writable = os.access(config.DATA_DIR, os.W_OK)
+    try:
+        database_ok = bool(db.query_one("SELECT 1 AS ok"))
+    except Exception:
+        log.exception("healthz database check failed")
+        database_ok = False
+    healthy = data_writable and database_ok
     payload = {
-        "status": "ok" if data_writable else "degraded",
+        "status": "ok" if healthy else "degraded",
         "version": __import__("app").__version__,
         "data_dir_writable": data_writable,
+        "database_ok": database_ok,
     }
     if config.DEPLOYMENT != "production":
         payload.update(
             {"deployment": config.DEPLOYMENT, "ubyport_env": config.UBYPORT_ENV}
         )
-    return payload
+    return JSONResponse(payload, status_code=200 if healthy else 503)
 
 
 @app.get("/favicon.ico", include_in_schema=False)
