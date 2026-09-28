@@ -1021,3 +1021,11 @@ verbatim wording, so that statement was **not** added; the FE-4 table and a
 neutral pointer sentence were. Counsel must approve the no-banner wording and
 the § 89(3) ZEK exemption reasoning before it is published. Also confirm the
 Cloudflare cookie names/lifetimes (MK-2) against a real browser session.
+
+### BE-10 — workspace termination destroys acceptance evidence
+`legal_acceptance.user_account_id` is NOT NULL, so deleting a workspace (BE-10)
+must delete its acceptance rows. That conflicts with G-D7's "life of the account
+plus three years". Counsel must confirm whether acceptance evidence may be
+destroyed at termination, or whether a retained, de-identified copy is needed.
+The G-D11 timing (30 days) is also counsel-gated; the step is dry-run until
+`UBYHOST_RETENTION_AUTOPURGE=1`.
