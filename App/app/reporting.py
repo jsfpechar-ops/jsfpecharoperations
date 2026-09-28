@@ -910,6 +910,16 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         )
     }
 
+    # Batches whose outcome is unknown (the register may hold them). Their
+    # guests wait for a person; see UbyportOutcomeUnknownError.
+    in_doubt_submissions = {
+        row["id"]
+        for row in db.query(
+            "SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown'",
+            (apartment_id,),
+        )
+    }
+
     out: List[Tuple[Any, Any]] = []
     for guest in db.query(sql, params):
         reservation = reservations.get(guest["reservation_id"])
@@ -939,6 +949,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         # ever. This bounds only the sweep: a host-initiated send is how the
         # host takes the record back after fixing it, so it is never bound.
         if not ignore_automation and auto_attempts(guest) >= SUBMISSION_MAX_AUTO_ATTEMPTS:
+            continue
+        if not ignore_automation and guest["submission_id"] in in_doubt_submissions:
             continue
         if not guest_is_complete(guest, reservation):
             continue

@@ -561,6 +561,8 @@ def test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep(monkeypatch
         assert submission["state"] == "outcome_unknown"
         assert submission["request_xml"] == "<request/>"
         assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}")
+        assert guest_id not in [g["id"] for g, _ in reporting.collect_sendable(apartment["id"])]
+        assert guest_id in [g["id"] for g, _ in reporting.collect_sendable(apartment["id"], ignore_automation=True)]
     finally:
         _cleanup(apartment["id"])
 
