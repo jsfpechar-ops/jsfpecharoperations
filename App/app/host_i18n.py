@@ -657,6 +657,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.apartment_setup.title": "%(property)s: UbyPort settings are incomplete, nothing can be reported.",
         "notification.guest_record_unreadable.title": "%(property)s: a guest record cannot be read, so nothing is being reported for this property.",
         "notification.guest_record_unreadable.detail": "A stored guest document field could not be decrypted. Restore the encryption key, or have the guest's document entered again.",
+        "notification.sweep_failed.title": "%(property)s: automatic reporting stopped because of an internal error.",
+        "notification.sweep_failed.detail": "Nothing was sent for this property on the last run. It is retried every few minutes; if this stays, send the stay by hand and contact support@ubyhost.com.",
         "notification.mail_failed.title": "E-mail could not be sent (%(kind)s).",
         "notification.mail_failed.detail": "To %(to)s: %(error)s",
         # One name per outbox kind, so a host never reads ``reminder_host``.
@@ -2014,6 +2016,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.apartment_setup.title": "%(property)s: nastavení UbyPortu není úplné, nelze nic nahlásit.",
         "notification.guest_record_unreadable.title": "%(property)s: záznam hosta nelze přečíst, proto se za tento objekt nic nenahlašuje.",
         "notification.guest_record_unreadable.detail": "Uložené pole s dokladem hosta se nepodařilo dešifrovat. Obnovte šifrovací klíč nebo nechte doklad hosta zadat znovu.",
+        "notification.sweep_failed.title": "%(property)s: automatické hlášení se zastavilo kvůli interní chybě.",
+        "notification.sweep_failed.detail": "Při posledním běhu se za tuto nemovitost nic neodeslalo. Zkouší se to znovu každých pár minut; pokud to přetrvá, odešlete pobyt ručně a kontaktujte support@ubyhost.com.",
         "notification.mail_failed.title": "E-mail se nepodařilo odeslat (%(kind)s).",
         "notification.mail_failed.detail": "Na adresu %(to)s: %(error)s",
         "notification.mail_kind.claim": "odkaz k registraci",
