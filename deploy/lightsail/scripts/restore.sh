@@ -108,6 +108,8 @@ if [ "${LAYOUT}" = "encrypted" ]; then
   docker compose run --rm --user 0 --no-deps -v "${TMP}:/restore:ro" \
     --entrypoint bash ubyhost -lc "
       set -euo pipefail
+      if [ -f /data/ubyhost.db ]; then cp -a /data/ubyhost.db /data/ubyhost.db.before-restore-\$(date -u +%Y%m%dT%H%M%SZ); fi
+      rm -f /data/ubyhost.db-wal /data/ubyhost.db-shm
       cp -a /restore/ubyhost.db /data/ubyhost.db
       if [ -f /restore/secret_key ]; then
         cp -a /restore/secret_key /data/secret_key
@@ -115,6 +117,7 @@ if [ "${LAYOUT}" = "encrypted" ]; then
       fi
       chown 10001:10001 /data/ubyhost.db
       chmod 600 /data/ubyhost.db /data/secret_key 2>/dev/null || true
+      test \"\$(sqlite3 /data/ubyhost.db 'PRAGMA integrity_check;')\" = \"ok\" || { echo \"Restored database failed integrity_check\" >&2; exit 1; }
       echo Restored from encrypted ${STAMP}
     "
 else
@@ -127,6 +130,8 @@ else
       ls -la /data/backups >&2 || true
       exit 1
     fi
+    if [ -f /data/ubyhost.db ]; then cp -a /data/ubyhost.db /data/ubyhost.db.before-restore-\$(date -u +%Y%m%dT%H%M%SZ); fi
+    rm -f /data/ubyhost.db-wal /data/ubyhost.db-shm
     cp -a \"\${SRC}/ubyhost.db\" /data/ubyhost.db
     if [ -f \"\${SRC}/secret_key\" ]; then
       cp -a \"\${SRC}/secret_key\" /data/secret_key
@@ -134,6 +139,7 @@ else
     fi
     chown 10001:10001 /data/ubyhost.db
     chmod 600 /data/ubyhost.db /data/secret_key 2>/dev/null || true
+    test \"\$(sqlite3 /data/ubyhost.db 'PRAGMA integrity_check;')\" = \"ok\" || { echo \"Restored database failed integrity_check\" >&2; exit 1; }
     echo Restored from \${SRC}
   "
 fi
