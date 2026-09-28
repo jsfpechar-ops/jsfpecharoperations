@@ -1440,6 +1440,7 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
             ):
                 refresh_registration_completed_at(pending["id"])
             results = submit_for_apartment(apartment["id"], mode="auto")
+            alerts.resolve(f"sweep_failed:{apartment['id']}")
         except db.DecryptionError:
             # One guest row that will not decrypt used to abort the whole sweep,
             # so no host anywhere was filed or alerted. Contain it to the one
@@ -1454,6 +1455,22 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
                 "A stored guest document field could not be decrypted. Restore the "
                 "encryption key, or have the guest's document entered again.",
                 dedupe_key=f"guest_record_unreadable:{apartment['id']}",
+                apartment_id=apartment["id"],
+                params={"property": apartment["internal_name"]},
+            )
+            continue
+        except Exception:
+            # Any other failure is contained to this property too: one bad
+            # row or a locked database must not leave every later property
+            # unfiled on every sweep.
+            log.exception("sweep failed for apartment_id=%s", apartment["id"])
+            summary["failed"] += 1
+            alerts.raise_alert(
+                "critical",
+                "sweep_failed",
+                f"{apartment['internal_name']}: automatic reporting stopped because of an internal error.",
+                "Nothing was sent for this property on the last run.",
+                dedupe_key=f"sweep_failed:{apartment['id']}",
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"]},
             )
