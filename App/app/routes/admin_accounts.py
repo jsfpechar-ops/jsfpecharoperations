@@ -9,7 +9,7 @@ import qrcode
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import acceptance, auth, config, db, host_i18n, rate_limit, security, turnstile
+from .. import acceptance, auth, config, db, host_i18n, incidents, rate_limit, security, turnstile
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -550,3 +550,74 @@ def stop_impersonating(request: Request):
     auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
     db.audit("impersonation_stopped", actor=account["username"], owner_user_id=account["id"])
     return response
+
+
+@router.get("/admin/incidents")
+def incidents_admin(request: Request):
+    """The platform-admin security incident register (BE-13)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    rows = [
+        {"incident": incident, "draft": incidents.controller_notification_draft(incident)}
+        for incident in incidents.list_all()
+    ]
+    return render(
+        request,
+        "admin_incidents.html",
+        {
+            "rows": rows,
+            "review_alerts": incidents.open_review_alerts(),
+            "owners": db.query(
+                "SELECT id, username FROM user_account ORDER BY username"
+            ),
+        },
+    )
+
+
+@router.post("/admin/incidents")
+async def incident_create(request: Request):
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    form = await request.form()
+    summary = _form_str(form, "summary").strip()
+    if not summary:
+        return _back("/admin/incidents", err=_flash(request, "flash.error.incident_summary"))
+    approx = _form_str(form, "approx_subjects").strip()
+    incident_id = incidents.create(
+        detected_at=_form_str(form, "detected_at") or db.utcnow(),
+        summary=summary,
+        reported_by=_form_str(form, "reported_by"),
+        data_categories=_form_str(form, "data_categories"),
+        owner_ids=[int(value) for value in form.getlist("owner_ids") if str(value).isdigit()],
+        approx_subjects=int(approx) if approx.isdigit() else None,
+        risk_level=_form_str(form, "risk_level"),
+        notes=_form_str(form, "notes"),
+    )
+    db.audit("incident_created", f"incident={incident_id}", actor=account["username"])
+    return _back("/admin/incidents", msg=_flash(request, "flash.incidents.created"))
+
+
+@router.post("/admin/incidents/{incident_id}")
+async def incident_update(incident_id: int, request: Request):
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    if not incidents.get(incident_id):
+        return _back("/admin/incidents", err=_flash(request, "flash.error.no_such_incident"))
+    form = await request.form()
+    action = _form_str(form, "action")
+    if action in incidents.TIMESTAMP_FIELDS:
+        incidents.mark_timestamp(incident_id, action)
+    values = {}
+    for field in ("summary", "data_categories", "risk_level", "notes"):
+        if field in form:
+            values[field] = _form_str(form, field)
+    if "approx_subjects" in form:
+        raw = _form_str(form, "approx_subjects").strip()
+        values["approx_subjects"] = int(raw) if raw.isdigit() else None
+    if values:
+        incidents.update(incident_id, values)
+    db.audit("incident_updated", f"incident={incident_id}", actor=account["username"])
+    return _back("/admin/incidents", msg=_flash(request, "flash.incidents.saved"))

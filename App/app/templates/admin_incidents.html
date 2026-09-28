@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% set nav = 'incidents' %}
+{% block title %}{{ t('incidents.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{{ page_header(t('incidents.title'), t('incidents.lede')) }}
+
+{% if review_alerts %}
+<div class="panel">
+  <h2 style="margin-top:0">{{ t('incidents.review_title') }}</h2>
+  <p class="small muted">{{ t('incidents.review_help') }}</p>
+  <ul>
+    {% for alert in review_alerts %}
+    <li>{{ alert.message }} <span class="muted small">{{ alert.detail }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<details class="panel" {% if not rows %}open{% endif %}>
+  <summary>{{ t('incidents.create_title') }}</summary>
+  <form method="post" action="/admin/incidents">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div class="grid">
+      <div class="field"><label for="summary">{{ t('incidents.summary') }}</label>
+        <input id="summary" name="summary" required></div>
+      <div class="field"><label for="detected_at">{{ t('incidents.detected_at') }}</label>
+        <input id="detected_at" name="detected_at" placeholder="2026-01-01T00:00:00+00:00"></div>
+      <div class="field"><label for="reported_by">{{ t('incidents.reported_by') }}</label>
+        <input id="reported_by" name="reported_by"></div>
+      <div class="field"><label for="data_categories">{{ t('incidents.data_categories') }}</label>
+        <input id="data_categories" name="data_categories"></div>
+      <div class="field"><label for="approx_subjects">{{ t('incidents.approx_subjects') }}</label>
+        <input id="approx_subjects" name="approx_subjects" inputmode="numeric"></div>
+      <div class="field"><label for="risk_level">{{ t('incidents.risk') }}</label>
+        <select id="risk_level" name="risk_level">
+          <option value="none">{{ t('incidents.risk.none') }}</option>
+          <option value="low">{{ t('incidents.risk.low') }}</option>
+          <option value="high">{{ t('incidents.risk.high') }}</option>
+        </select>
+      </div>
+      <div class="field"><label for="notes">{{ t('incidents.notes') }}</label>
+        <input id="notes" name="notes"></div>
+    </div>
+    <div class="field">
+      <label>{{ t('incidents.affected') }}</label>
+      {% for owner in owners %}
+      <label class="checkline"><input type="checkbox" name="owner_ids" value="{{ owner.id }}"> {{ owner.username }}</label>
+      {% endfor %}
+    </div>
+    <div class="actions"><button class="btn primary" type="submit">{{ t('incidents.create') }}</button></div>
+  </form>
+</details>
+
+{% for row in rows %}
+<div class="panel">
+  <h2 style="margin-top:0">{{ row.incident.summary }}</h2>
+  <p class="small muted">
+    {{ t('incidents.detected_at') }}: {{ row.incident.detected_at }}
+    &middot; {{ t('incidents.risk') }}: {{ t('incidents.risk.' ~ (row.incident.risk_level or 'none')) }}
+  </p>
+  <form method="post" action="/admin/incidents/{{ row.incident.id }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div class="grid">
+      {% for field, label in [
+        ('contained_at', 'incidents.contained'),
+        ('controllers_notified_at', 'incidents.controllers_notified'),
+        ('authority_notified_at', 'incidents.authority_notified'),
+        ('subjects_notified_at', 'incidents.subjects_notified'),
+        ('closed_at', 'incidents.closed'),
+      ] %}
+      <div class="field">
+        <label>{{ t(label) }}</label>
+        <button class="btn ghost" type="submit" name="action" value="{{ field }}" {% if row.incident[field] %}disabled{% endif %}>
+          {% if row.incident[field] %}{{ row.incident[field] }}{% else %}{{ t('incidents.mark') }}{% endif %}
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="actions"><button class="btn" type="submit">{{ t('incidents.save') }}</button></div>
+  </form>
+  <details>
+    <summary>{{ t('incidents.draft_title') }}</summary>
+    <p class="small muted">{{ t('incidents.draft_help') }}</p>
+    <pre class="small">{{ row.draft }}</pre>
+  </details>
+</div>
+{% else %}
+<p class="muted">{{ t('incidents.empty') }}</p>
+{% endfor %}
+{% endblock %}
