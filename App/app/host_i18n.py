@@ -217,6 +217,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.note_partial": "UbyPort accepted some guests and refused the rest. Fix the refused guests on the stay, then send the report again.",
         "reports.detail.note_rejected": "UbyPort refused this report. Fix the guest details on the stay, then send it again.",
         "reports.detail.note_failed": "The report did not reach UbyPort — the connection failed. Nothing was reported yet; send it again.",
+        "reports.detail.note_outcome_unknown": "UbyPort may have received this report, but its answer never arrived. Check the guests in the UbyPort web application before sending again: a second copy counts as a duplicate.",
         "reports.detail.note_running": "The report is being sent to UbyPort right now.",
         "reports.detail.note_noop": "There was nothing to send in this batch.",
         "reports.detail.guests": "Guests in this transmission",
@@ -644,6 +645,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.submission_immediate.detail": "The error was: %(error)s",
         "notification.submission_transport.title": "%(property)s: could not deliver data to UbyPort.",
         "notification.submission_transport.detail": "The error was: %(error)s",
+        "notification.submission_outcome_unknown.title": "%(property)s: UbyPort may or may not have received the report.",
+        "notification.submission_outcome_unknown.detail": "The answer never arrived (%(error)s). It will not be sent again automatically. Check UbyPort, then send by hand if the guests are missing there.",
         "notification.submission_rejected.title": "%(property)s: UbyPort did not accept %(count)s guest record(s).",
         "notification.submission_rejected.detail": "%(failed)s record(s) to fix, %(blocked)s that resending will not fix.",
         "notification.submission_rejected.header": "Report header rejected: %(header)s",
@@ -813,6 +816,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.ubyport_unreachable": (
             "UbyPort couldn't be reached — try again in a few minutes."
         ),
+        "flash.error.ubyport_outcome_unknown": (
+            "UbyPort's answer did not arrive, so it is not known whether the report "
+            "was filed. Check UbyPort before sending again."
+        ),
         "flash.error.connection_failed": (
             "The connection test failed — check the web-service login and try again."
         ),
@@ -888,6 +895,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "submission.rejected": "Rejected",
         "submission.duplicate": "Already registered",
         "submission.not_delivered": "Not delivered",
+        "submission.outcome_unknown": "Outcome unknown",
         "submission.setup_incomplete": "Setup incomplete",
         "submission.in_progress": "In progress",
         "submission.nothing_to_send": "Nothing to send",
@@ -1581,6 +1589,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.note_partial": "UbyPort přijal část hostů a ostatní odmítl. Opravte odmítnuté hosty na pobytu a hlášení odešlete znovu.",
         "reports.detail.note_rejected": "UbyPort toto hlášení odmítl. Opravte údaje hostů na pobytu a odešlete jej znovu.",
         "reports.detail.note_failed": "Hlášení se k UbyPortu nedostalo — přenos selhal. Zatím nebylo nic nahlášeno; odešlete jej znovu.",
+        "reports.detail.note_outcome_unknown": "UbyPort hlášení možná přijal, ale jeho odpověď nedorazila. Než ho odešlete znovu, ověřte hosty ve webové aplikaci UbyPort: druhé odeslání se počítá jako duplicita.",
         "reports.detail.note_running": "Hlášení se právě odesílá na UbyPort.",
         "reports.detail.note_noop": "V této dávce nebylo co odesílat.",
         "reports.detail.guests": "Hosté v tomto přenosu",
@@ -2004,6 +2013,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.submission_immediate.detail": "Chyba: %(error)s",
         "notification.submission_transport.title": "%(property)s: data se nepodařilo doručit do UbyPortu.",
         "notification.submission_transport.detail": "Chyba: %(error)s",
+        "notification.submission_outcome_unknown.title": "%(property)s: není jisté, zda UbyPort hlášení přijal.",
+        "notification.submission_outcome_unknown.detail": "Odpověď nedorazila (%(error)s). Automaticky se znovu neodešle. Ověřte stav v UbyPortu, a pokud tam hosté chybí, odešlete je ručně.",
         "notification.submission_rejected.title": "%(property)s: UbyPort nepřijal %(count)s záznamů hostů.",
         "notification.submission_rejected.detail": "%(failed)s záznamů k opravě, %(blocked)s jich opětovné odeslání nevyřeší.",
         "notification.submission_rejected.header": "Hlavička hlášení byla odmítnuta: %(header)s",
@@ -2172,6 +2183,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.ubyport_unreachable": (
             "UbyPort se nepodařilo kontaktovat — zkuste to za pár minut."
         ),
+        "flash.error.ubyport_outcome_unknown": (
+            "Odpověď UbyPortu nedorazila, takže není jisté, zda bylo hlášení podáno. "
+            "Než odešlete znovu, ověřte to v UbyPortu."
+        ),
         "flash.error.connection_failed": (
             "Test spojení se nezdařil — zkontrolujte přihlašovací údaje k webové službě "
             "a zkuste to znovu."
@@ -2252,6 +2267,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "submission.rejected": "Odmítnuto",
         "submission.duplicate": "Již evidováno",
         "submission.not_delivered": "Nedoručeno",
+        "submission.outcome_unknown": "Výsledek neznámý",
         "submission.setup_incomplete": "Nedokončené nastavení",
         "submission.in_progress": "Probíhá",
         "submission.nothing_to_send": "Nic k odeslání",
