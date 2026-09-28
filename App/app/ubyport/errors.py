@@ -22,6 +22,8 @@ CORRECTABLE_CODES below.
 """
 from __future__ import annotations
 
+import re
+
 from typing import Dict, List, Optional, Tuple
 
 # Documented explicitly in appendix 5, section 5.3.2. The full book is fetched
@@ -51,6 +53,10 @@ KNOWN_CODES: Dict[str, str] = {
 # matches the code book's Czech or English prose, and the markers are short
 # enough to appear inside unrelated words.
 NON_CORRECTABLE_MARKERS = ("duplic", "pozd", "late")
+
+# Whole-word forms of the markers above. A bare substring match made
+# "později" (later) and "related"/"calculated" look like "late".
+_NON_CORRECTABLE_RE = re.compile(r"duplic|\bpozdě\b|\bpozdn\w*|\blate\b", re.IGNORECASE)
 
 # Codes whose classification the owner settled in writing and which therefore
 # win over the code book prose.
@@ -105,7 +111,7 @@ def is_non_correctable(text: str) -> bool:
     why that is fragile and CORRECTABLE_CODES for the codes that bypass it.
     """
     lowered = (text or "").lower()
-    return any(marker in lowered for marker in NON_CORRECTABLE_MARKERS)
+    return bool(_NON_CORRECTABLE_RE.search(lowered))
 
 
 def is_duplicate(text: str) -> bool:
