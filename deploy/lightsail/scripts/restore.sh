@@ -28,7 +28,7 @@ CONFIRM="${RESTORE_CONFIRM:-}"
 IDENTITY="${AGE_IDENTITY_FILE:-}"
 
 list_stamps() {
-  docker compose exec -T ubyhost sh -c 'ls -1 /data/backups 2>/dev/null | sort -r' || true
+  docker compose run --rm --no-deps -T --entrypoint sh ubyhost -c 'ls -1 /data/backups 2>/dev/null | sort -r' || true
 }
 
 if [ -z "${STAMP}" ]; then
@@ -49,7 +49,7 @@ if ! printf '%s' "${STAMP}" | grep -Eq '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$'; then
 fi
 
 # What is in this stamp? Encrypted (age), legacy plaintext, or nothing.
-LAYOUT="$(docker compose exec -T ubyhost sh -c "
+LAYOUT="$(docker compose run --rm --no-deps -T --entrypoint sh ubyhost -c "
   if [ -f /data/backups/${STAMP}/ubyhost-backup.tar.age ]; then echo encrypted;
   elif [ -f /data/backups/${STAMP}/ubyhost.db ]; then echo plaintext;
   else echo missing; fi
