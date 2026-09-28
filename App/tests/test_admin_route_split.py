@@ -38,6 +38,7 @@ MOVED_PATHS = {
     exports: {
         ("GET", "/reservations.csv"),
         ("GET", "/guests/{guest_id}/form.pdf"),
+        ("GET", "/guests/{guest_id}/export.json"),
         ("GET", "/submissions/receipts.zip"),
         ("GET", "/submissions/{submission_id}/receipt.pdf"),
         ("GET", "/submissions/{submission_id}/errors.pdf"),
