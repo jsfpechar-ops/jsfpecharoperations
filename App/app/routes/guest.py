@@ -1213,6 +1213,9 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
             ),
             lang,
         )
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return _with_lang(claim_guard, lang)
     if count < 1 or count > 60:
         return _with_lang(
             RedirectResponse(
