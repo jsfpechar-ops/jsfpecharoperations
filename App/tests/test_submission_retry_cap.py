@@ -18,13 +18,14 @@ ways the count restarts.
 from __future__ import annotations
 
 import base64
+import inspect
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app import alerts, auth, db, reporting
-from app.ubyport.client import SubmissionResult, UbyportTransportError
+from app.ubyport.client import SubmissionResult, UbyportOutcomeUnknownError, UbyportTransportError
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -526,3 +527,53 @@ def test_correcting_the_guest_restarts_the_count(host, monkeypatch):
         )
     finally:
         _cleanup(apartment["id"])
+
+
+def test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep(monkeypatch):
+    """A request whose answer never arrived may already be filed.
+
+    Resending it automatically is how the same guests are declared twice, and a
+    duplicate is counted against the host. The batch is parked as
+    ``outcome_unknown`` with the envelope kept as evidence, and a person decides
+    whether to send it again (owner decision OD-1).
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-unknown", auto=True)
+
+    class UnknownOutcomeClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            exc = UbyportOutcomeUnknownError("read timed out")
+            exc.request_xml = "<request/>"
+            raise exc
+
+    try:
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: UnknownOutcomeClient()
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert guest_id in [guest["id"] for guest, _ in pairs]
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "outcome_unknown"
+
+        submission = db.query_one(
+            "SELECT * FROM submission WHERE apartment_id = ?", (apartment["id"],)
+        )
+        assert submission["state"] == "outcome_unknown"
+        assert submission["request_xml"] == "<request/>"
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}")
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_every_state_submit_batch_can_write_is_terminal():
+    """The retention sweep and the submission detail page both treat the terminal
+    states as the set of finished batches. A state the batch path can write but
+    that set omits would be swept away as if still running, so the two must not
+    drift apart."""
+    source = inspect.getsource(reporting.submit_batch)
+    for state in ("ok", "ok_duplicate", "partial", "error", "transport_error",
+                  "outcome_unknown"):
+        assert state in source, f"submit_batch never writes {state!r}"
+        assert state in reporting.TERMINAL_SUBMISSION_STATES, (
+            f"{state!r} is a terminal batch state the set does not list"
+        )
