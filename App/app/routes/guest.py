@@ -641,6 +641,7 @@ def _shared(request: Request, token: str, lang: str, apartment=None) -> Dict[str
         "controller": _controller(apartment) if apartment else {},
         "host": _host_contact(apartment) if apartment else {},
         "mail_enabled": mail.mail_enabled(),
+        "notice_version": config.GUEST_NOTICE_VERSION,
     }
 
 
@@ -1556,6 +1557,9 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             "stay_to": stay_to,
             "signature_png": signature,
             "signed_at": now,
+            "notice_version": config.GUEST_NOTICE_VERSION,
+            "notice_lang": lang,
+            "notice_ack_at": now,
             "filled_at": now,
             "filled_ip": request.client.host if request.client else None,
             "entered_by": "guest",

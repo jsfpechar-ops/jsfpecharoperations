@@ -149,6 +149,9 @@ CREATE TABLE IF NOT EXISTS guest (
     is_lead        INTEGER NOT NULL DEFAULT 0,
     signature_png  TEXT,
     signed_at      TEXT,
+    notice_version TEXT,
+    notice_lang    TEXT,
+    notice_ack_at  TEXT,
     filled_at      TEXT,
     filled_ip      TEXT,
     entered_by     TEXT NOT NULL DEFAULT 'guest',
@@ -541,6 +544,10 @@ ADDED_COLUMNS = (
     ("legal_entity", "invoice_next_number", "INTEGER"),
     ("legal_entity", "invoice_next_number_year", "INTEGER"),
     ("legal_entity", "invoice_due_days", "INTEGER NOT NULL DEFAULT 14"),
+    # BE-5: proof that the guest saw and acknowledged the privacy notice.
+    ("guest", "notice_version", "TEXT"),
+    ("guest", "notice_lang", "TEXT"),
+    ("guest", "notice_ack_at", "TEXT"),
 )
 
 
