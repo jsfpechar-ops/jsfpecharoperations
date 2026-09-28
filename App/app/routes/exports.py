@@ -54,8 +54,10 @@ def reservations_export(request: Request):
         apartment_id=_query_int(request, "apartment"),
         owner_user_id=access.owner_id(request),
     )
+    rows = db.query(sql, params)
+    db.audit("export_reservations_csv", f"rows={len(rows)}")
     return StreamingResponse(
-        stays_export.iter_export_csv_rows(db.query(sql, params)),
+        stays_export.iter_export_csv_rows(rows),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="stays-{stamp}.csv"'},
     )
@@ -72,6 +74,7 @@ def guest_form_pdf(guest_id: int, request: Request):
         pdf = housebook.registration_form_pdf(guest_id)
     except ValueError:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    db.audit("export_registration_pdf", f"guest_id={guest_id}")
     return Response(
         pdf,
         media_type="application/pdf",
@@ -154,6 +157,7 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
     )
     if response is None:
         return _back("/submissions", err=_flash(request, "flash.error.no_receipts"))
+    db.audit("export_receipts_zip", f"rows={len(rows)}")
     return response
 
 
@@ -180,6 +184,8 @@ def submission_receipt(submission_id: int, request: Request):
         return guard
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
+    if owned:
+        db.audit("export_submission_pdf", f"submission_id={submission_id} which=receipt")
     return _pdf_response(row["receipt_pdf"] if row else None, f"dorucenka-{submission_id}.pdf")
 
 
@@ -190,6 +196,8 @@ def submission_errors(submission_id: int, request: Request):
         return guard
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
+    if owned:
+        db.audit("export_submission_pdf", f"submission_id={submission_id} which=errors")
     return _pdf_response(row["error_pdf"] if row else None, f"dorucenka-chyby-{submission_id}.pdf")
 
 
@@ -206,6 +214,7 @@ def submission_xml(submission_id: int, which: str, request: Request):
     row = db.query_one(
         f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,)
     )
+    db.audit("export_submission_xml", f"submission_id={submission_id} which={which}")
     return Response((row["body"] if row else "") or "", media_type="application/xml")
 
 
@@ -221,6 +230,7 @@ def housebook_download(request: Request):
         _query_date(request, "to") or None,
         owner_user_id=access.owner_id(request),
     )
+    db.audit("export_housebook_csv", f"rows={len(rows)}")
     return StreamingResponse(
         housebook.iter_housebook_csv_rows(rows),
         media_type="text/csv; charset=utf-8",
@@ -259,6 +269,7 @@ def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks)
     )
     if response is None:
         return _back("/housebook", err=_flash(request, "flash.error.no_housebook_matches"))
+    db.audit("export_housebook_pdfs", f"rows={len(rows)}")
     return response
 
 
