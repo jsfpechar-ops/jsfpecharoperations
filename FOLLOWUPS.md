@@ -985,3 +985,14 @@ date is wanted on the screen, add it next to the version constants in
 gives the wording in English and says "CS pair required", so the Czech value is
 a faithful translation of the given sentence; it still awaits counsel sign-off
 (item 8 of "does not automate"). Cite the review date when counsel approves.
+
+### OPS-3 — the privacy policy's log section still describes the pre-OPS-3 logging
+`privacy_policy_i18n.py` §8 ("Server logs and security monitoring", `:132` EN /
+`:376` CS) says the infrastructure logs "request paths, user agents" and IP
+addresses. After OPS-3 the app logs a route template only; IP addresses,
+request paths and user agents can still appear at Cloudflare's edge and in
+error traces. OPS-3 lists §8 as LEGAL-GATED COPY but gives no replacement
+wording, so it was left as the previous approved text rather than inventing a
+new legal statement. Counsel should approve a §8 update that matches the OPS-3
+behaviour; until then the copy over-states, which is conservative. Fold the
+change into MK-3 / LD-3.

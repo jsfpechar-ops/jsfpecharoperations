@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request, Response
@@ -29,6 +30,8 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
 )
 log = logging.getLogger("ubyhost")
+# OPS-3: one PII-free line per request, carrying the route template only.
+log_access = logging.getLogger("ubyhost.access")
 
 
 def rotate_weak_permalinks() -> int:
@@ -137,6 +140,7 @@ async def guest_form_expired_handler(request: Request, exc: security.GuestFormEx
 async def cloudflare_connecting_ip(request: Request, call_next):
     """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""
     client_ip.apply_visitor_client(request.scope, request.headers)
+    started = time.perf_counter()
     response = await call_next(request)
     security.attach_csrf_cookie(request, response)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
@@ -156,7 +160,33 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     # pages must not sit in history, the back/forward cache, or a proxy.
     if not request.url.path.startswith("/static/"):
         response.headers.setdefault("Cache-Control", "no-store, private")
+    if config.ACCESS_LOG:
+        _log_access(request, response.status_code, started)
     return response
+
+
+def _access_route(request: Request) -> str:
+    """The matched route template, or a constant when nothing matched.
+
+    The template (e.g. ``/l/{token}/{reservation_id}``) is used instead of
+    ``request.url.path`` on purpose: a guest permalink token, a query string or
+    a user agent must never reach a log line (OPS-3).
+    """
+    route = request.scope.get("route")
+    return getattr(route, "path", None) or "<unmatched>"
+
+
+def _log_access(request: Request, status_code: int, started: float) -> None:
+    path = request.url.path
+    if path.startswith("/static/") or path == "/healthz":
+        return
+    log_access.info(
+        "method=%s route=%s status=%s ms=%d",
+        request.method,
+        _access_route(request),
+        status_code,
+        int((time.perf_counter() - started) * 1000),
+    )
 
 
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), name="static")
