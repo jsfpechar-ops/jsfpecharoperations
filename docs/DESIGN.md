@@ -168,3 +168,27 @@ coral primary with an icon — not competitor pink/purple gradients. Keep row
 actions in the overflow menu; do not crowd tables with many colored chips.
 Czech labels should use everyday verbs (e.g. **Aktualizovat kalendáře**) rather
 than jargon when hosts will recognize the Airbo-equivalent action.
+
+## Consent banner (not in use)
+
+UbyHost ships **no** consent banner, and must not gain one unless a
+non-essential tag is added. This section is the specification MK-5 requires so
+that adding one is a deliberate, compliant change.
+
+- **Prefer no tracking.** If measurement is needed, prefer server-side aggregate
+  counts from the OPS-3 access log (route templates only) — no device access, no
+  banner.
+- **If any client-side tag is added:** use a self-hosted, open-source CMP bundled
+  under `/static` (to satisfy the CSP `'self'`), loaded before any tag, and
+  inject tags **only after** consent, per category.
+- **First layer:** "Accept all" and "Reject all" as buttons of equal size, colour
+  and contrast, plus "Settings"; no pre-ticked categories; the banner does not
+  block reading; Czech first.
+- **Second layer:** per-category toggles and the per-cookie table from FE-4.
+- **Withdrawal:** a persistent "Cookie settings" link in `_public_footer.html`.
+- **Consent record:** a `cookie_consent` table `(id, consent_id TEXT, choices
+  JSON, banner_version, policy_version, at, ip_hash)`, hashing the IP with a
+  rotating salt; retain 13 months (counsel).
+- **Re-prompt** after 6–13 months or on a material change (counsel).
+- **MK-1 must be updated in the same PR**: its cookie allow-list and exact-CSP
+  assertion are the guardrail that a new tag cannot slip in unreviewed.

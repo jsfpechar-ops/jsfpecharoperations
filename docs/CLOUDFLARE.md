@@ -433,3 +433,21 @@ Encrypt certificate automatically. You lose DDoS shielding and origin IP hiding.
 | Origin certificate | $0 |
 
 No Route 53 hosted-zone fee, no registrar markup on renewal.
+
+## Privacy-relevant settings (MK-2)
+
+Record the observed value and the date for each item below from the Cloudflare
+dashboard for `ubyhost.com`. This is an operator task; the repository cannot
+verify edge behaviour. Feed the exact cookie names into `cookie_inventory.py`
+(FE-4).
+
+| Setting | Required state | Observed | Checked |
+| --- | --- | --- | --- |
+| Web Analytics / RUM (automatic beacon injection) | **Off** | TODO | |
+| Zaraz | **Off** | TODO | |
+| Email Address Obfuscation | On (same-origin script, no cookie; acceptable) | TODO | |
+| Bot Fight Mode | Off (so Google can fetch `/sitemap.xml`) | TODO | |
+| Managed Challenge rules | On for `/login` and private paths | TODO | |
+| Leaked-credential mitigation | On | TODO | |
+| Client-side security / Page Shield | Record mode (report-only vs script) | TODO | |
+| Challenge cookies observed | `__cf_bm`, `cf_clearance` — record lifetimes from DevTools | TODO | |
