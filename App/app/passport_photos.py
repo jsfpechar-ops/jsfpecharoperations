@@ -29,6 +29,9 @@ ALLOWED_IMAGE_TYPES = {
 ALLOWED_PDF_TYPE = "application/pdf"
 ALLOWED_TYPES = {**ALLOWED_IMAGE_TYPES, ALLOWED_PDF_TYPE: ".pdf"}
 ALL_EXTENSIONS = tuple(sorted({ext for ext in ALLOWED_TYPES.values()}))
+# BE-12: stored files are Fernet-encrypted and carry this suffix. A plaintext
+# file is a legacy one the migration has not reached yet; reads accept both.
+ENC_SUFFIX = ".enc"
 
 
 def _ensure_dir() -> None:
@@ -36,7 +39,20 @@ def _ensure_dir() -> None:
 
 
 def _paths_for(guest_id: int) -> list[Path]:
-    return [PHOTOS_DIR / f"{guest_id}{ext}" for ext in ALL_EXTENSIONS]
+    paths: list[Path] = []
+    for ext in ALL_EXTENSIONS:
+        paths.append(PHOTOS_DIR / f"{guest_id}{ext}{ENC_SUFFIX}")
+        paths.append(PHOTOS_DIR / f"{guest_id}{ext}")
+    return paths
+
+
+def _ctype_for(ext: str) -> str:
+    return {
+        ".jpg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".pdf": ALLOWED_PDF_TYPE,
+    }.get(ext.lower(), "application/octet-stream")
 
 
 def has_photo(guest_id: int) -> bool:
@@ -44,7 +60,10 @@ def has_photo(guest_id: int) -> bool:
 
 
 def is_pdf_attachment(guest_id: int) -> bool:
-    return (PHOTOS_DIR / f"{guest_id}.pdf").is_file()
+    return any(
+        (PHOTOS_DIR / f"{guest_id}.pdf{suffix}").is_file()
+        for suffix in ("", ENC_SUFFIX)
+    )
 
 
 def _looks_like_image(content: bytes, content_type: str) -> bool:
@@ -90,12 +109,12 @@ async def read_upload_limited(upload) -> bytes:
 
 
 def save_photo(guest_id: int, content: bytes, content_type: str) -> None:
-    """Replace any existing attachment for this guest."""
+    """Replace any existing attachment for this guest, encrypted at rest (BE-12)."""
     ctype = validate_upload(content, content_type)
     _ensure_dir()
     delete_photo(guest_id)
-    target = PHOTOS_DIR / f"{guest_id}{ALLOWED_TYPES[ctype]}"
-    target.write_bytes(content)
+    target = PHOTOS_DIR / f"{guest_id}{ALLOWED_TYPES[ctype]}{ENC_SUFFIX}"
+    target.write_bytes(db.encrypt_blob(content))
     try:
         target.chmod(0o600)
     except OSError:
@@ -131,10 +150,15 @@ def _orphan_ids() -> list[int]:
         return []
     found = set()
     for path in PHOTOS_DIR.iterdir():
-        if not path.is_file() or path.suffix.lower() not in ALL_EXTENSIONS:
+        if not path.is_file():
+            continue
+        name = path.name
+        if name.endswith(ENC_SUFFIX):
+            name = name[: -len(ENC_SUFFIX)]
+        if Path(name).suffix.lower() not in ALL_EXTENSIONS:
             continue
         try:
-            found.add(int(path.stem))
+            found.add(int(Path(name).stem))
         except ValueError:
             continue
     if not found:
@@ -189,14 +213,12 @@ def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = Non
 
 
 def read_photo(guest_id: int) -> Optional[Tuple[bytes, str]]:
-    for path in _paths_for(guest_id):
-        if path.is_file():
-            ext = path.suffix.lower()
-            ctype = {
-                ".jpg": "image/jpeg",
-                ".png": "image/png",
-                ".webp": "image/webp",
-                ".pdf": ALLOWED_PDF_TYPE,
-            }.get(ext, "application/octet-stream")
-            return path.read_bytes(), ctype
+    """The decrypted attachment, preferring an encrypted file over a legacy one."""
+    for ext in ALL_EXTENSIONS:
+        encrypted = PHOTOS_DIR / f"{guest_id}{ext}{ENC_SUFFIX}"
+        if encrypted.is_file():
+            return db.decrypt_blob(encrypted.read_bytes()), _ctype_for(ext)
+        legacy = PHOTOS_DIR / f"{guest_id}{ext}"
+        if legacy.is_file():
+            return legacy.read_bytes(), _ctype_for(ext)
     return None
