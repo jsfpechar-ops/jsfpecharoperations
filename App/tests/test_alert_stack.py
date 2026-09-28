@@ -183,3 +183,36 @@ def test_the_stack_rides_under_the_app_bar_on_a_phone():
     )
 
     assert ".notification-stack {\n    top: 59px;" in css
+
+
+def test_a_lost_raise_race_refreshes_the_alert_instead_of_raising(monkeypatch):
+    """AR-23: the dedupe SELECT misses and the INSERT collides with the row.
+
+    Two threads raising the same open alert must end with one row carrying the
+    later message, not an IntegrityError escaping to the caller.
+    """
+    key = "ar23-race-key"
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+    alerts.raise_alert("warning", "job_failed", "old message", dedupe_key=key)
+
+    real_query_one = alerts.db.query_one
+    calls = {"n": 0}
+
+    def racy_query_one(sql, params=()):
+        calls["n"] += 1
+        # The first call is the dedupe check; pretend the row was not there yet
+        # so the INSERT below meets the open alert a sibling thread wrote.
+        if calls["n"] == 1:
+            return None
+        return real_query_one(sql, params)
+
+    monkeypatch.setattr(alerts.db, "query_one", racy_query_one)
+    alerts.raise_alert("warning", "job_failed", "new message", dedupe_key=key)
+    monkeypatch.setattr(alerts.db, "query_one", real_query_one)
+
+    rows = db.query(
+        "SELECT * FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
+    )
+    assert len(rows) == 1
+    assert rows[0]["message"] == "new message"
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
