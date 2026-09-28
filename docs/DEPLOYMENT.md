@@ -235,3 +235,11 @@ Full table: [LIGHTSAIL.md](LIGHTSAIL.md#environment-variables-what-breaks-if-wro
 - Do not enable **Load demo data** in production (blocked by the app when not on mock).
 - Do not commit `App/data/*`, PDFs, or police credentials to git.
 - Do not skip the **test** endpoint before `prod` — rejections on prod count against you.
+
+## Staging data policy (LD-10)
+
+Staging (Render `ubyhost-staging`) uses **demo/synthetic data only**. Never
+restore a production backup to staging, and never point staging at production
+data. `env_guard.py` keeps the real UbyPort environment off staging, and
+`render_start.sh` seeds demo content — treat both as guards, not as permission
+to copy real guest data in by hand.
