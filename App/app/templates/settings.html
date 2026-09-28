@@ -160,7 +160,7 @@
           {% for entry in audit %}
             <tr>
               <td class="nowrap small" data-label="{{ t('settings.audit.when') }}">{{ entry.at | datetime_local(seconds=true) }}</td>
-              <td class="small" data-label="{{ t('settings.audit.who') }}">{{ entry.actor }}</td>
+              <td class="small" data-label="{{ t('settings.audit.who') }}">{{ entry.actor }}{% if entry.impersonator_username %} <span class="muted">({{ t('settings.audit.as_admin', name=entry.impersonator_username) }})</span>{% endif %}</td>
               <td class="small" data-label="{{ t('settings.audit.action') }}">{{ entry.action }}</td>
               <td class="small muted" data-label="{{ t('settings.audit.detail') }}">{{ entry.detail }}</td>
             </tr>
