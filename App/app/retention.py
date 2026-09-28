@@ -11,7 +11,8 @@ Never logs personal data (Rule 8): counts and ids only.
 from __future__ import annotations
 
 import json
-from datetime import date, timedelta
+import time
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from . import alerts, config, db, housebook, invoices
@@ -113,6 +114,80 @@ def _empty_reservation_step(today: date, dry_run: bool, owner_user_id: Optional[
     return count
 
 
+def _days_ago_iso(days: int) -> str:
+    return (
+        (datetime.now(timezone.utc) - timedelta(days=days))
+        .replace(microsecond=0)
+        .isoformat()
+    )
+
+
+def _audit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete audit rows past the window, but never the acceptance evidence.
+
+    ``legal_accepted`` rows are the BE-1 evidence and have their own rule
+    (``_acceptance_retention_step``); the free-text ``login`` rows that used to
+    carry the versions are ordinary audit rows and expire here.
+    """
+    cutoff = _days_ago_iso(config.AUDIT_RETENTION_DAYS)
+    where = (
+        "at < ? AND action NOT IN ('legal_accepted') "
+        "AND (? IS NULL OR owner_user_id = ?)"
+    )
+    params = (cutoff, owner_user_id, owner_user_id)
+    count = _scalar(f"SELECT COUNT(*) AS n FROM audit WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(f"DELETE FROM audit WHERE {where}", params)
+    return count
+
+
+def _alert_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete alerts that were resolved longer ago than the window."""
+    cutoff = _days_ago_iso(config.ALERT_RETENTION_DAYS)
+    where = (
+        "resolved_at IS NOT NULL AND resolved_at < ? "
+        "AND (? IS NULL OR owner_user_id = ?)"
+    )
+    params = (cutoff, owner_user_id, owner_user_id)
+    count = _scalar(f"SELECT COUNT(*) AS n FROM alert WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(f"DELETE FROM alert WHERE {where}", params)
+    return count
+
+
+def _rate_limit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete stale rate-limit events. Global only: the table has no owner."""
+    if owner_user_id is not None:
+        return 0
+    cutoff = time.time() - config.RATE_LIMIT_RETENTION_HOURS * 3600
+    count = _scalar(
+        "SELECT COUNT(*) AS n FROM rate_limit_event WHERE at < ?", (cutoff,)
+    )
+    if not dry_run and count:
+        db.execute("DELETE FROM rate_limit_event WHERE at < ?", (cutoff,))
+    return count
+
+
+def _acceptance_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete acceptance evidence only for long-inactive accounts (G-D7).
+
+    There is no ``disabled_at`` column, so "inactive for three years" is read
+    conservatively as a disabled account whose last login is also older than
+    the window; a never-used account is left alone. Recorded in FOLLOWUPS.md.
+    """
+    cutoff = _days_ago_iso(config.AUDIT_RETENTION_DAYS)
+    inner = (
+        "SELECT id FROM user_account WHERE active = 0 "
+        "AND last_login_at IS NOT NULL AND last_login_at < ?"
+    )
+    where = f"user_account_id IN ({inner}) AND (? IS NULL OR user_account_id = ?)"
+    params = (cutoff, owner_user_id, owner_user_id)
+    count = _scalar(f"SELECT COUNT(*) AS n FROM legal_acceptance WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(f"DELETE FROM legal_acceptance WHERE {where}", params)
+    return count
+
+
 def _raise_due_notices(today: date) -> None:
     """Warn each owner whose records reach the end of their retention window.
 
@@ -141,6 +216,10 @@ STEPS: List[tuple] = [
     ("reservation_contacts", _reservation_contact_step),
     ("submitter_ips", _submitter_ip_step),
     ("empty_reservations", _empty_reservation_step),
+    ("audit_rows", _audit_retention_step),
+    ("alerts", _alert_retention_step),
+    ("rate_limit_events", _rate_limit_retention_step),
+    ("legal_acceptance", _acceptance_retention_step),
 ]
 
 
