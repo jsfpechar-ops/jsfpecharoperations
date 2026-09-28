@@ -198,6 +198,10 @@ PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.5")
 # Bumped when the Data Processing Agreement changes materially.
 DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.5")
 
+# BE-5: bumped whenever a legal_notice_* / privacy_* string in i18n.py changes
+# materially, so a guest's acknowledgement records which notice they saw.
+GUEST_NOTICE_VERSION = os.environ.get("UBYHOST_GUEST_NOTICE_VERSION", "1.0")
+
 # Never enable in production — allows iCal fetch to private/loopback hosts (tests only).
 ICAL_ALLOW_PRIVATE = os.environ.get("UBYHOST_ICAL_ALLOW_PRIVATE", "0").lower() in (
     "1",

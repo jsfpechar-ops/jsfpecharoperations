@@ -60,6 +60,7 @@ The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 | `UBYHOST_PUBLIC_BASE_URL` | `http://127.0.0.1:8080` | Used to build guest permalinks, to match `Origin`/`Referer` on host POSTs, and to decide whether guest cookies get the `Secure` flag. If this is wrong, guest links point at the wrong host and the ownership/claim cookies may be issued without `Secure`. |
 | `UBYHOST_DOMAIN` | unset | Expected public hostname. Only used by the startup guard, which warns when it disagrees with `PUBLIC_BASE_URL`. |
 | `UBYHOST_GUEST_PIN` | `1` | `0` removes the PIN gate from every guest route, leaving the permalink token as the only barrier. A production deployment with this off gets a startup warning. |
+| `UBYHOST_GUEST_NOTICE_VERSION` | `1.0` | Version stamped on a guest's notice acknowledgement (BE-5). Bump whenever a `legal_notice_*` / `privacy_*` string in `i18n.py` changes materially. |
 | `TURNSTILE_SITE_KEY` | a public test key | Cloudflare Turnstile site key. |
 | `TURNSTILE_SECRET` | unset | Turnstile secret. |
 | `TURNSTILE_HOSTNAMES` | unset | Comma-separated hostnames accepted in the Turnstile response. |

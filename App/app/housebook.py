@@ -380,6 +380,16 @@ def registration_form_pdf(guest_id: int) -> bytes:
         pdf.setFillGray(0.4)
         pdf.drawRightString(width - 20 * mm, y - 12 * mm, f"at {guest['submitted_at']}")
 
+    if guest["notice_version"]:
+        pdf.setFont(FONT_REGULAR, 7)
+        pdf.setFillGray(0.45)
+        pdf.drawString(
+            left,
+            19 * mm,
+            f"Privacy notice v{guest['notice_version']} acknowledged "
+            f"{guest['notice_ack_at'] or ''} ({guest['notice_lang'] or ''})",
+        )
+
     pdf.setFont(FONT_REGULAR, 7)
     pdf.setFillGray(0.45)
     pdf.drawString(

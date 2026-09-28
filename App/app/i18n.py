@@ -365,6 +365,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "What happens to the details you enter, as required by Articles 13 and 14 of the "
             "GDPR."
         ),
+        "notice_version": "Privacy notice version %(version)s",
         "privacy_controller": "Your data controller",
         "privacy_controller_body": (
             "This legal entity determines why and how your guest data is used and is responsible "
@@ -927,6 +928,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_intro": (
             "Co se děje s údaji, které vyplníte — podle článků 13 a 14 GDPR."
         ),
+        "notice_version": "Verze oznámení o ochraně osobních údajů %(version)s",
         "privacy_controller": "Správce vašich osobních údajů",
         "privacy_controller_body": (
             "Tento právní subjekt určuje, proč a jak se údaje hostů používají, a odpovídá za vaše "
