@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from . import (
@@ -74,6 +75,17 @@ def _job_submit() -> None:
         _job_failed("submit")
         return
     _job_ok("submit")
+    _heartbeat()
+
+
+def _heartbeat() -> None:
+    """Tell an external dead-man switch the submission sweep is alive."""
+    if not config.HEARTBEAT_URL:
+        return
+    try:
+        requests.get(config.HEARTBEAT_URL, timeout=5)
+    except Exception:
+        log.warning("heartbeat ping failed", exc_info=True)
 
 
 def _job_deadlines() -> None:

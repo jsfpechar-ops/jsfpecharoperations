@@ -157,3 +157,36 @@ def test_a_second_failure_refreshes_one_card(monkeypatch, tmp_path):
         "SELECT id FROM alert WHERE dedupe_key = ?", ("job_failed:deadlines",)
     )
     assert len(rows) == 1
+
+
+def test_a_successful_submission_sweep_pings_the_heartbeat(monkeypatch, tmp_path):
+    _private_db(monkeypatch, tmp_path)
+    monkeypatch.setattr(config, "HEARTBEAT_URL", "https://heartbeat.example/ping")
+    calls = []
+    monkeypatch.setattr(
+        scheduler.requests, "get", lambda *args, **kwargs: calls.append((args, kwargs))
+    )
+    monkeypatch.setattr(reporting, "sweep", lambda: {"submitted": 0, "failed": 0})
+
+    scheduler._job_submit()
+
+    assert len(calls) == 1
+    assert calls[0][0][0] == "https://heartbeat.example/ping"
+
+
+def test_a_failed_submission_sweep_does_not_ping_the_heartbeat(monkeypatch, tmp_path):
+    _private_db(monkeypatch, tmp_path)
+    monkeypatch.setattr(config, "HEARTBEAT_URL", "https://heartbeat.example/ping")
+    calls = []
+    monkeypatch.setattr(
+        scheduler.requests, "get", lambda *args, **kwargs: calls.append((args, kwargs))
+    )
+
+    def boom():
+        raise RuntimeError("sweep blew up")
+
+    monkeypatch.setattr(reporting, "sweep", boom)
+
+    scheduler._job_submit()
+
+    assert calls == []
