@@ -1,0 +1,24 @@
+{# FE-4: the cookie and storage inventory, rendered from cookie_inventory.py. #}
+<p class="small muted">{{ t('privacy.cookies.table_intro') }}</p>
+<div class="scroll-x">
+  <table class="table-cards">
+    <thead>
+      <tr>
+        <th>{{ t('cookies.table.name') }}</th>
+        <th>{{ t('cookies.table.party') }}</th>
+        <th>{{ t('cookies.table.purpose') }}</th>
+        <th>{{ t('cookies.table.lifetime') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in cookie_inventory %}
+      <tr>
+        <td data-label="{{ t('cookies.table.name') }}"><code>{{ row.name }}</code></td>
+        <td data-label="{{ t('cookies.table.party') }}">{{ t('cookies.party.first') if row.party == 'first' else row.party }}</td>
+        <td data-label="{{ t('cookies.table.purpose') }}">{{ row.purpose[lang] }}</td>
+        <td data-label="{{ t('cookies.table.lifetime') }}">{{ row.lifetime[lang] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>

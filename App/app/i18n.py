@@ -416,6 +416,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "where enabled; public guest screens display only a masked address. It is not used for marketing."
         ),
         "privacy_cookies_title": "Necessary cookies",
+        "privacy.cookies.table_intro": "The table below lists every cookie and item of local storage the service sets.",
+        "cookies.table.name": "Name",
+        "cookies.table.party": "Set by",
+        "cookies.table.purpose": "Purpose",
+        "cookies.table.lifetime": "Lifetime",
+        "cookies.party.first": "UbyHost",
         "privacy_cookies_body": (
             "UbyHost uses only necessary guest cookies: PIN access for up to 7 days, and language "
             "and forms submitted on this device for up to 60 days. When e-mail claims are enabled, "
@@ -978,6 +984,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "veřejné obrazovky pro hosty zobrazují jen zastřenou adresu. K marketingu se nepoužívá."
         ),
         "privacy_cookies_title": "Nezbytné cookies",
+        "privacy.cookies.table_intro": "Tabulka níže uvádí všechny soubory cookie a položky místního úložiště, které služba nastavuje.",
+        "cookies.table.name": "Název",
+        "cookies.table.party": "Nastavuje",
+        "cookies.table.purpose": "Účel",
+        "cookies.table.lifetime": "Doba platnosti",
+        "cookies.party.first": "UbyHost",
         "privacy_cookies_body": (
             "UbyHost používá jen nezbytné cookies pro hosty: přístup přes PIN nejvýše 7 dní a "
             "jazyk a formuláře odeslané z tohoto zařízení nejvýše 60 dní. Při zapnutém převzetí "

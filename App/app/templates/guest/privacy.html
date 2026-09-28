@@ -56,6 +56,7 @@
 
   <h3>{{ t('privacy_cookies_title') }}</h3>
   <p>{{ t('privacy_cookies_body') }}</p>
+  {% include "_cookie_table.html" %}
 
   {% if passport_photo_policy == 'required_foreign' %}
   <h3>{{ t('privacy_passport_photo_title') }}</h3>
