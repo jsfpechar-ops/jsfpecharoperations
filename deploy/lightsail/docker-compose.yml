@@ -34,6 +34,13 @@ services:
       retries: 3
       start_period: 25s
     mem_limit: 768m
+    # OPS-3: bound container logs so they cannot grow without limit. Rotated
+    # lines are gone for good; capture anything needed during an incident.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     networks:
       - web
 
@@ -52,6 +59,13 @@ services:
       - ./caddy/certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
+    # OPS-3: bound Caddy's container logs too. Caddy access logging itself stays
+    # off (see caddy/Caddyfile.cloudflare), so this only bounds lifecycle noise.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     depends_on:
       ubyhost:
         condition: service_healthy
