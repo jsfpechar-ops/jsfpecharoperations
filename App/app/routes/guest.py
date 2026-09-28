@@ -1461,6 +1461,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         if existing and existing["submit_state"] == reporting.SENT:
             return _unavailable(request, lang, "already_filed", 403, token)
+        if existing and existing["restricted_at"]:
+            # BE-9: a restricted record is read-only until the host lifts it.
+            return _with_lang(
+                RedirectResponse(
+                    _guest_link(token, reservation_id) + _lang_q(lang), status_code=303
+                ),
+                lang,
+            )
         if existing and reporting.guest_form_locked(existing, reservation):
             return _unavailable(request, lang, "form_locked", 403, token)
 

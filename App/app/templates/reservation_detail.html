@@ -195,6 +195,9 @@
           {% if guest.is_lead %}<span class="pill grey no-dot">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
         </div>
         <div class="guest-card-state">
+          {% if guest.restricted_at %}
+            <span class="pill amber">{{ t('guest.restricted_badge') }}</span>
+          {% endif %}
           {% if guest.submit_state == 'sent' %}
             <span class="pill green">{{ t('stay.detail.guests.reported') }}</span>
             {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at | datetime_local }}</span>{% endif %}

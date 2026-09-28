@@ -151,6 +151,8 @@ CREATE TABLE IF NOT EXISTS guest (
     is_lead        INTEGER NOT NULL DEFAULT 0,
     signature_png  TEXT,
     signature_png_enc TEXT,
+    restricted_at  TEXT,
+    restricted_reason TEXT,
     signed_at      TEXT,
     notice_version TEXT,
     notice_lang    TEXT,
@@ -606,6 +608,9 @@ ADDED_COLUMNS = (
     ("audit", "impersonator_user_id", "INTEGER REFERENCES user_account(id) ON DELETE SET NULL"),
     # BE-12: drawn signatures encrypted at rest, like the document numbers.
     ("guest", "signature_png_enc", "TEXT"),
+    # BE-9: processing restriction (Art 18).
+    ("guest", "restricted_at", "TEXT"),
+    ("guest", "restricted_reason", "TEXT"),
 )
 
 
