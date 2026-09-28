@@ -281,6 +281,7 @@ def test_the_reporting_list_is_exactly_eight_items(host):
 
     page = client.get(f"/apartments/{apartment_id}?lang=en")
 
-    # Three for the guest, eight for the police: the stay-fee and invoice fields
-    # the two planned features add are optional and must never be counted here.
-    assert page.text.count('<li class="readiness-item') == 11
+    # Four for the guest (name, operator, controller, stays) and eight for the
+    # police: the stay-fee and invoice fields the two planned features add are
+    # optional and must never be counted here.
+    assert page.text.count('<li class="readiness-item') == 12
