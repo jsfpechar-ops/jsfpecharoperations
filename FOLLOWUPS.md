@@ -1013,3 +1013,11 @@ a disabled account whose `last_login_at` is also older than the window, and
 leaves a never-used account alone. A `disabled_at` column would make the rule
 exact; add it when workspace termination (BE-10/G-D11) lands, which already
 plans a `deletion_due_at` column.
+
+### MK-3 — the "no consent banner" statement still needs counsel
+MK-3 asks the privacy §7 copy to state that no consent banner is shown because
+only strictly necessary storage is used (LEGAL-GATED COPY). The plan gives no
+verbatim wording, so that statement was **not** added; the FE-4 table and a
+neutral pointer sentence were. Counsel must approve the no-banner wording and
+the § 89(3) ZEK exemption reasoning before it is published. Also confirm the
+Cloudflare cookie names/lifetimes (MK-2) against a real browser session.

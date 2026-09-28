@@ -13,7 +13,7 @@ from .subprocessors_i18n import SUBPROCESSOR_STRINGS
 from .terms_i18n import TERMS_STRINGS
 
 LANG_COOKIE = "ubyhost_lang"
-LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
 LANGUAGES = ("en", "cs")
 DEFAULT_LANGUAGE = "en"
 # Signed-out pages are what visitors and search engines see first, and UbyHost
