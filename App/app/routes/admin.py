@@ -1632,6 +1632,12 @@ async def reservation_submit(reservation_id: int, request: Request):
         # The list of missing fields is on the property page, already in the
         # host's language; repeating it here in English would undo UX-35.
         return _back(return_to, err=_flash(request, "flash.error.ubyport_not_configured"))
+    if first.get("state") == "outcome_unknown":
+        db.audit(
+            "ubyport_send_outcome_unknown",
+            f"apartment={reservation['apartment_id']} error={first.get('error')}",
+        )
+        return _back(return_to, err=_flash(request, "flash.error.ubyport_outcome_unknown"))
     if first.get("state") == "transport_error":
         db.audit(
             "ubyport_send_failed",
@@ -2092,6 +2098,8 @@ async def guest_resend(guest_id: int, request: Request):
         return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.record_not_sendable"))
     db.audit("guest_resent", f"id={guest_id}")
     result = results[0]
+    if result.get("state") == "outcome_unknown":
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_outcome_unknown"))
     if result.get("state") == "transport_error":
         return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_unreachable"))
     if result.get("submitted"):
