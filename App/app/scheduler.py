@@ -14,6 +14,7 @@ from . import (
     mail,
     passport_photos,
     reporting,
+    retention,
 )
 
 log = logging.getLogger("ubyhost.scheduler")
@@ -27,6 +28,7 @@ _JOB_LEVELS = {
     "deadlines": "critical",
     "mail": "warning",
     "photo_sweep": "warning",
+    "retention": "warning",
 }
 
 
@@ -125,6 +127,23 @@ def _job_photo_sweep() -> None:
     _job_ok("photo_sweep")
 
 
+def _job_retention() -> None:
+    """Compute (and, once enabled, apply) the retention schedule.
+
+    Dry-run by default: it audits the exact row set and deletes nothing until
+    ``UBYHOST_RETENTION_AUTOPURGE=1`` (see ``retention.run``).
+    """
+    try:
+        summary = retention.run()
+        if any(summary["counts"].values()):
+            log.info("retention run: %s", summary)
+    except Exception:
+        log.exception("retention run failed")
+        _job_failed("retention")
+        return
+    _job_ok("retention")
+
+
 def start() -> None:
     global _scheduler
     if _scheduler or not config.ENABLE_SCHEDULER:
@@ -147,6 +166,10 @@ def start() -> None:
     _scheduler.add_job(
         _job_photo_sweep, "interval", hours=12, id="photo_sweep",
         max_instances=1, coalesce=True, next_run_time=_soon(),
+    )
+    _scheduler.add_job(
+        _job_retention, "cron", hour=3, minute=30, id="retention",
+        max_instances=1, coalesce=True,
     )
     _scheduler.start()
     log.info(

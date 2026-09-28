@@ -521,16 +521,21 @@ def cancel(invoice_id: int, reason: str, correction_date: Optional[str], actor_u
     return new_id
 
 
-def purge_expired(today: date, owner_user_id: Optional[int] = None) -> int:
-    """Delete issued documents older than 10 full years, with the unlock flag."""
+def expired_ids(today: date, owner_user_id: Optional[int] = None) -> List[int]:
+    """Issued documents older than 10 full years (the 10-year rule)."""
     cutoff = date(today.year - 10, 1, 1).isoformat()
-    ids = [
+    return [
         r["id"]
         for r in db.query(
             "SELECT id FROM invoice WHERE issue_date < ? AND owner_user_id IS ?",
             (cutoff, owner_user_id),
         )
     ]
+
+
+def purge_expired(today: date, owner_user_id: Optional[int] = None) -> int:
+    """Delete issued documents older than 10 full years, with the unlock flag."""
+    ids = expired_ids(today, owner_user_id)
     if not ids:
         return 0
     db.execute(
