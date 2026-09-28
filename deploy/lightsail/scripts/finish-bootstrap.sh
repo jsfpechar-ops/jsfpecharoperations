@@ -66,7 +66,7 @@ chmod +x scripts/*.sh
 echo "==> Public health check"
 curl -sS -m 20 "https://${DOMAIN}/healthz" || curl -sS -m 10 "http://127.0.0.1/healthz" || true
 
-CRON_LINE="0 3 * * * cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup.sh >> /var/log/ubyhost-backup.log 2>&1"
+CRON_LINE="0 3 * * * cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup.sh >> ${HOME}/ubyhost-backup.log 2>&1"
 if ! crontab -l 2>/dev/null | grep -q ubyhost-backup; then
   (crontab -l 2>/dev/null; echo "${CRON_LINE}") | crontab -
   echo "==> Backup cron installed"
