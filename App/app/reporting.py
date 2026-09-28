@@ -35,6 +35,7 @@ import time
 import zipfile
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
@@ -51,6 +52,10 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
+
+# Scheduled mode waits for the host's review window, but never past this
+# many hours before the statutory deadline (owner decision OD-2).
+AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS = 6
 
 # A record filed by hand from a paper house book carries no signature to
 # collect. The host vouches for it instead of forging one, so the marker stands
@@ -722,7 +727,15 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
     delay = timedelta(
         hours=0 if mode == "immediate" else (apartment["submit_after_hours"] or 24)
     )
-    return current.astimezone(timezone.utc) >= completed.astimezone(timezone.utc) + delay
+    send_at = completed.astimezone(timezone.utc) + delay
+    anchor = reservation_deadline_anchor(reservation)
+    if anchor is not None:
+        deadline_local = deadlines.reporting_deadline(anchor) - timedelta(
+            hours=AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS
+        )
+        latest = deadline_local.replace(tzinfo=ZoneInfo(config.TIMEZONE)).astimezone(timezone.utc)
+        send_at = min(send_at, latest)
+    return current.astimezone(timezone.utc) >= send_at
 
 
 # --- client construction -------------------------------------------------
