@@ -115,6 +115,7 @@
       <a href="/settings" class="{{ 'active' if nav == 'settings' }}">{{ nav_icon('settings') }}{{ t('nav.settings') }}</a>
       {% if current_user and current_user.role == 'admin' %}
         <a href="/admin/users" class="{{ 'active' if nav == 'users' }}">{{ nav_icon('users') }}{{ t('nav.users') }}</a>
+        <a href="/admin/incidents" class="{{ 'active' if nav == 'incidents' }}">{{ nav_icon('users') }}{{ t('users.incidents_link') }}</a>
       {% endif %}
     </div>
   </nav>

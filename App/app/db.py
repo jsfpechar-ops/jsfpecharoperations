@@ -447,6 +447,27 @@ CREATE TABLE IF NOT EXISTS legal_acceptance (
     UNIQUE (user_account_id, document, version)
 );
 CREATE INDEX IF NOT EXISTS idx_acceptance_user ON legal_acceptance (user_account_id, document);
+
+-- Security incident register (BE-13 / LD-5). Platform-admin only; the row is the
+-- evidence Art 33(5) asks for. `affected_owner_ids` is a JSON array of ids.
+CREATE TABLE IF NOT EXISTS security_incident (
+    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+    detected_at             TEXT NOT NULL,
+    reported_by             TEXT,
+    summary                 TEXT NOT NULL,
+    data_categories         TEXT,
+    affected_owner_ids      TEXT,
+    approx_subjects         INTEGER,
+    risk_level              TEXT CHECK (risk_level IN ('none','low','high')),
+    contained_at            TEXT,
+    controllers_notified_at TEXT,
+    authority_notified_at   TEXT,
+    subjects_notified_at    TEXT,
+    closed_at               TEXT,
+    notes                   TEXT,
+    created_at              TEXT NOT NULL,
+    updated_at              TEXT NOT NULL
+);
 """
 
 
