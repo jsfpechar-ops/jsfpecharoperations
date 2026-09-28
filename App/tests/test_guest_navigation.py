@@ -1006,3 +1006,35 @@ def test_a_save_while_the_sweep_holds_the_guest_is_refused():
         if guest_id is not None:
             db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
         _cleanup()
+
+
+def test_only_the_claimants_device_may_change_the_headcount():
+    """AR-20: a stranger with the link must not change a claimed stay's party.
+
+    Once a device has claimed the stay, only that device may move the declared
+    headcount; anyone else with the link is sent back.
+    """
+    token, stay, _right = _make_apartment_with_stays()
+    try:
+        claimant = TestClient(app)
+        complete_guest_claim(claimant, token, stay, party_size=2)
+        before = db.query_one(
+            "SELECT declared_guests FROM reservation WHERE id = ?", (stay,)
+        )["declared_guests"]
+        assert before == 2
+
+        stranger = TestClient(app)
+        stranger.cookies.set(guest.LANG_COOKIE, "en")
+        response = stranger.post(
+            f"/l/{token}/{stay}/party",
+            data={"party_size": "1"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303, response.text
+        after = db.query_one(
+            "SELECT declared_guests FROM reservation WHERE id = ?", (stay,)
+        )["declared_guests"]
+        assert after == before
+    finally:
+        _cleanup()
