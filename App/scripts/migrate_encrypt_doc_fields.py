@@ -170,12 +170,38 @@ def rollback(dry_run: bool = False) -> Dict[str, int]:
     return counts
 
 
+def remaining_plaintext() -> int:
+    """How many guest rows still carry a plaintext document or visa number.
+
+    Read-only, so it does not need the app key — it is the deploy/smoke check
+    that the backfill actually finished.
+    """
+    conn = open_database()
+    try:
+        rows = conn.execute(SELECT_SQL).fetchall()
+    finally:
+        conn.close()
+    return sum(
+        1
+        for row in rows
+        if (row["doc_number"] or "").strip() or (row["visa_number"] or "").strip()
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="report what would change without writing anything",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help=(
+            "print how many rows still hold a plaintext document number; exit "
+            "non-zero when any do"
+        ),
     )
     parser.add_argument(
         "--rollback",
@@ -186,6 +212,11 @@ def main() -> int:
         ),
     )
     args = parser.parse_args()
+
+    if args.check:
+        remaining = remaining_plaintext()
+        print(f"plaintext document fields remaining: {remaining}")
+        return 1 if remaining else 0
 
     if args.rollback:
         counts = rollback(dry_run=args.dry_run)
