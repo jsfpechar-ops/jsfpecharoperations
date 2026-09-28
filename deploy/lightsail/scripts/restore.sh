@@ -43,6 +43,11 @@ if [ -z "${STAMP}" ]; then
   exit 1
 fi
 
+if ! printf '%s' "${STAMP}" | grep -Eq '^[0-9]{8}T[0-9]{6}Z(-[0-9]+)?$'; then
+  echo "Stamp '${STAMP}' is not a backup name like 20260915T030000Z." >&2
+  exit 1
+fi
+
 # What is in this stamp? Encrypted (age), legacy plaintext, or nothing.
 LAYOUT="$(docker compose exec -T ubyhost sh -c "
   if [ -f /data/backups/${STAMP}/ubyhost-backup.tar.age ]; then echo encrypted;
