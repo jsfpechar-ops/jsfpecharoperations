@@ -1161,9 +1161,10 @@ def submit_batch(
             new_state = BLOCKED if state == "not_correctable" else ERROR
             # A duplicate response proves the register already has this guest.
             # This also covers an earlier accept whose HTTP response was lost.
-            duplicate = "150" in uby_errors.split_codes(record_error) or any(
-                uby_errors.is_duplicate(message) for message in messages
-            )
+            # Only this record's own code 150 proves the register holds it.
+            # Prose and header-level messages must not: a false "sent" is a
+            # guest who was never filed.
+            duplicate = "150" in uby_errors.split_codes(record_error)
             if duplicate:
                 new_state = SENT
                 duplicate_accepts += 1

@@ -715,3 +715,44 @@ def test_a_batch_that_files_one_record_and_confirms_another_is_a_plain_success(
     assert result["blocked"] == 0
     assert _open_alert(apartment_id, "submission_rejected") is None
     assert _open_alert(apartment_id, "receipt_missing") is None
+
+
+def test_a_header_message_mentioning_duplicates_does_not_mark_a_record_sent(
+    monkeypatch,
+):
+    """A header-level "duplicate" note is not proof this record is on file.
+
+    Only this record's own code 150 means the register holds it. A header or a
+    prose message that merely mentions duplicates must not flip the guest to
+    ``sent``: a false "sent" is a guest who was never filed.
+    """
+    apartment_id, guest_id = _seed(reporting.PENDING, None, "duptok17")
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    pairs = reporting.collect_sendable(
+        apartment_id, only_guest_ids=[guest_id], ignore_automation=True
+    )
+    assert _ids(pairs) == [guest_id]
+
+    class Client:
+        def submit(self, _header, _guests):
+            return SubmissionResult(
+                endpoint="test",
+                request_xml="<r/>",
+                response_xml="<r/>",
+                header_errors=";106;",
+                record_errors=[";106;"],
+            )
+
+    monkeypatch.setattr(reporting, "client_for", lambda *_args, **_kwargs: Client())
+    monkeypatch.setattr(
+        uby_errors,
+        "describe",
+        lambda code, codebook=None, lang="en": "Duplicitní záznam v dávce",
+    )
+
+    reporting.submit_batch(apartment, pairs)
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+
+    assert guest["submit_state"] != reporting.SENT, (
+        "a header message mentioning duplicates is not proof this record is filed"
+    )
