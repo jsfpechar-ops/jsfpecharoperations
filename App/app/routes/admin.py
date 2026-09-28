@@ -1857,7 +1857,15 @@ async def guest_update(guest_id: int, request: Request):
         # The retry budget restarts too, or a record the sweep had given up on
         # would stay given up on even after the host fixed what was wrong.
         payload["submit_attempts"] = 0
-    db.update("guest", guest_id, payload)
+    if not db.update_if(
+        "guest",
+        guest_id,
+        payload,
+        {"submit_state": guest["submit_state"]},
+        extra_where="NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = ?)",
+        extra_params=(guest_id,),
+    ):
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.guest_changed_retry"))
     db.audit("guest_updated", f"id={guest_id} by=host")
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
