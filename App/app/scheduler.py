@@ -106,22 +106,24 @@ def _job_deadlines() -> None:
 
 
 def _job_mail() -> None:
-    try:
-        claim.expire_holds()
-        summary = mail.drain()
-        if summary["sent"] or summary["failed"]:
-            log.info("mail drain: %s", summary)
-        reminders = claim.sweep_reminders()
-        if any(reminders.values()):
-            log.info("mail reminders: %s", reminders)
-        purged = mail.purge_old()
-        if purged:
-            log.info("mail purge deleted %s row(s)", purged)
-    except Exception:
-        log.exception("mail drain failed")
+    failed = False
+    for name, step in (
+        ("expire_holds", claim.expire_holds),
+        ("drain", mail.drain),
+        ("reminders", claim.sweep_reminders),
+        ("purge", mail.purge_old),
+    ):
+        try:
+            result = step()
+            if result:
+                log.info("mail job %s: %s", name, result)
+        except Exception:
+            log.exception("mail job step %s failed", name)
+            failed = True
+    if failed:
         _job_failed("mail")
-        return
-    _job_ok("mail")
+    else:
+        _job_ok("mail")
 
 
 def _job_photo_sweep() -> None:
