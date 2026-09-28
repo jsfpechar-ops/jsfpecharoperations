@@ -434,7 +434,7 @@ def test_a_stored_junk_signature_cannot_be_carried_forward():
         )
         assert validation.SIGNATURE_INVALID_MESSAGE not in response.text
         assert db.query_one(
-            "SELECT signature_png FROM guest WHERE id = ?", (guest_id,)
+            "SELECT signature_png, signature_png_enc FROM guest WHERE id = ?", (guest_id,)
         )["signature_png"] == SVG_SIGNATURE
     finally:
         _cleanup()
@@ -456,7 +456,7 @@ def test_the_host_entry_form_refuses_a_bogus_signature():
         assert validation.SIGNATURE_INVALID_MESSAGE in response.text
         # Refused, not stored, and not handed back for the next submit.
         assert not db.query_one(
-            "SELECT signature_png FROM guest WHERE id = ?", (unsigned_id,)
+            "SELECT signature_png, signature_png_enc FROM guest WHERE id = ?", (unsigned_id,)
         )["signature_png"]
         assert _hidden_signature(response.text) == ""
 
@@ -470,7 +470,7 @@ def test_the_host_entry_form_refuses_a_bogus_signature():
         )
         assert response.status_code == 303
         assert db.query_one(
-            "SELECT signature_png FROM guest WHERE id = ?", (signed_id,)
+            "SELECT signature_png, signature_png_enc FROM guest WHERE id = ?", (signed_id,)
         )["signature_png"] == SIGNATURE
     finally:
         _cleanup()

@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS guest (
     stay_to        TEXT,
     is_lead        INTEGER NOT NULL DEFAULT 0,
     signature_png  TEXT,
+    signature_png_enc TEXT,
     signed_at      TEXT,
     notice_version TEXT,
     notice_lang    TEXT,
@@ -578,6 +579,8 @@ ADDED_COLUMNS = (
     # deleted; the id is history, not a live reference.
     ("audit", "actor_user_id", "INTEGER REFERENCES user_account(id) ON DELETE SET NULL"),
     ("audit", "impersonator_user_id", "INTEGER REFERENCES user_account(id) ON DELETE SET NULL"),
+    # BE-12: drawn signatures encrypted at rest, like the document numbers.
+    ("guest", "signature_png_enc", "TEXT"),
 )
 
 
@@ -812,7 +815,22 @@ def decrypt_secret(token: Optional[str]) -> str:
 ENCRYPTED_GUEST_COLUMNS = {
     "doc_number": "doc_number_enc",
     "visa_number": "visa_number_enc",
+    # BE-12: the drawn signature is as sensitive as the document number.
+    "signature_png": "signature_png_enc",
 }
+
+
+def encrypt_blob(data: bytes) -> bytes:
+    """Encrypt a file body (used for passport images/PDFs)."""
+    return _fernet().encrypt(data)
+
+
+def decrypt_blob(token: bytes) -> bytes:
+    """Decrypt a file body. Raises like ``decrypt_field`` when the key is wrong."""
+    try:
+        return _fernet().decrypt(token)
+    except (InvalidToken, ValueError) as exc:
+        raise DecryptionError("stored attachment could not be decrypted") from exc
 
 
 class DecryptionError(RuntimeError):
