@@ -331,11 +331,13 @@ One change could not be made by adding a column alone. `guest.doc_number` and
 `guest.visa_number` are now stored encrypted in `doc_number_enc` and
 `visa_number_enc`, and an added column arrives empty — it does not carry the
 existing rows across. The release that introduced the pair also ships
-`App/scripts/migrate_encrypt_doc_fields.py`, which has to be run once as a
-deploy step:
+`App/scripts/migrate_encrypt_doc_fields.py`, which `deploy.sh` now runs on every
+deploy (BE-11; it is idempotent). To run it by hand, or to check whether any
+plaintext numbers remain:
 
     .venv/bin/python scripts/migrate_encrypt_doc_fields.py --dry-run
     .venv/bin/python scripts/migrate_encrypt_doc_fields.py
+    .venv/bin/python scripts/migrate_encrypt_doc_fields.py --check
 
 It is idempotent and safe to re-run, and it blanks the plaintext column as it
 goes. Until it has run, the numbers are still in the clear in that database;
