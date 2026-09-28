@@ -1807,6 +1807,12 @@ async def guest_update(guest_id: int, request: Request):
     guest = access.guest(request, guest_id)
     if not guest:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    if guest["restricted_at"]:
+        # BE-9: a restricted record is read-only until the restriction is lifted.
+        return _back(
+            f"/reservations/{guest['reservation_id']}",
+            err=_flash(request, "flash.error.guest_restricted"),
+        )
     reservation = db.query_one(
         "SELECT r.*, a.default_purpose, a.internal_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
@@ -1860,6 +1866,51 @@ async def guest_update(guest_id: int, request: Request):
     else:
         msg = _flash(request, "flash.guests.saved_plain")
     return _back(f"/guests/{guest_id}", msg=msg)
+
+
+@router.post("/guests/{guest_id}/restrict")
+async def guest_restrict(guest_id: int, request: Request):
+    """Art 18 restriction: freeze processing until the host lifts it (BE-9)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    form = await request.form()
+    now = db.utcnow()
+    db.update(
+        "guest",
+        guest_id,
+        {
+            "restricted_at": now,
+            "restricted_reason": _form_str(form, "reason"),
+            "updated_at": now,
+        },
+    )
+    db.audit("guest_restricted", f"id={guest_id}")
+    return _back(
+        f"/reservations/{guest['reservation_id']}", msg=_flash(request, "flash.guest.restricted")
+    )
+
+
+@router.post("/guests/{guest_id}/unrestrict")
+async def guest_unrestrict(guest_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    db.update(
+        "guest",
+        guest_id,
+        {"restricted_at": None, "restricted_reason": None, "updated_at": db.utcnow()},
+    )
+    db.audit("guest_unrestricted", f"id={guest_id}")
+    return _back(
+        f"/reservations/{guest['reservation_id']}", msg=_flash(request, "flash.guest.unrestricted")
+    )
 
 
 @router.post("/guests/{guest_id}/verify-identity")

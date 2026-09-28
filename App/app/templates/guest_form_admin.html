@@ -215,8 +215,14 @@
     <a class="btn" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
     {% if editing and guest.id %}
       <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
+      <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
       <a class="btn" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
       <a class="btn" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>
+      {% if guest.restricted_at %}
+        <button class="btn" type="submit" formaction="/guests/{{ guest.id }}/unrestrict">{{ t('guest.admin.unrestrict') }}</button>
+      {% else %}
+        <button class="btn" type="submit" formaction="/guests/{{ guest.id }}/restrict">{{ t('guest.admin.restrict') }}</button>
+      {% endif %}
     {% endif %}
   </div>
 </form>

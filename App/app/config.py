@@ -142,6 +142,12 @@ AUDIT_RETENTION_DAYS = int(os.environ.get("UBYHOST_AUDIT_RETENTION_DAYS", "1095"
 ALERT_RETENTION_DAYS = int(os.environ.get("UBYHOST_ALERT_RETENTION_DAYS", "365"))
 RATE_LIMIT_RETENTION_HOURS = int(os.environ.get("UBYHOST_RATE_LIMIT_RETENTION_HOURS", "24"))
 
+# BE-9: whether a restricted record is withheld from police filing. Off until
+# counsel decides whether the statutory duty still requires it (Rule: LEGAL-GATED).
+RESTRICTED_BLOCKS_FILING = os.environ.get("UBYHOST_RESTRICTED_BLOCKS_FILING", "0") in (
+    "1", "true", "yes",
+)
+
 GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "false", "no")
 
 # A first administrator is created once on startup. Set both values in a
