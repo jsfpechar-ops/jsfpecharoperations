@@ -10,6 +10,7 @@ from app import (
     config,
     db,
     icalsync,
+    mail,
     passport_photos,
     reporting,
     retention,
@@ -190,3 +191,26 @@ def test_a_failed_submission_sweep_does_not_ping_the_heartbeat(monkeypatch, tmp_
     scheduler._job_submit()
 
     assert calls == []
+
+
+def test_a_failed_mail_step_does_not_skip_the_others(monkeypatch, tmp_path):
+    """AR-25: ``expire_holds`` blowing up must not stop the purge step."""
+    _private_db(monkeypatch, tmp_path)
+    purged = []
+
+    def boom():
+        raise RuntimeError("hold expiry blew up")
+
+    monkeypatch.setattr(claim, "expire_holds", boom)
+    monkeypatch.setattr(mail, "drain", lambda: {"sent": 0, "failed": 0})
+    monkeypatch.setattr(claim, "sweep_reminders", lambda: {})
+    monkeypatch.setattr(mail, "purge_old", lambda: purged.append(True) or 3)
+
+    scheduler._job_mail()
+
+    assert purged, "purge did not run after an earlier step failed"
+    alert = db.query_one(
+        "SELECT * FROM alert WHERE dedupe_key = ?", ("job_failed:mail",)
+    )
+    assert alert is not None
+    assert alert["resolved_at"] is None
