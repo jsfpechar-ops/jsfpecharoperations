@@ -26,7 +26,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import alerts, auth, db, reporting
-from app.ubyport.client import SubmissionResult, UbyportOutcomeUnknownError, UbyportTransportError
+from app.ubyport.client import SubmissionResult, UbyportAuthError, UbyportOutcomeUnknownError, UbyportTransportError
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -445,6 +445,32 @@ def test_a_transport_failure_does_not_spend_the_budget(monkeypatch):
             guest["id"]
             for guest, _ in reporting.collect_sendable(apartment["id"])
         ]
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_a_refused_login_raises_the_credentials_card(monkeypatch):
+    """AR-18: a 401 is not a transport blip, so it needs its own card.
+
+    The transport card is still raised for the same event, but this one names
+    the fix: the credentials. The pause that stops the sweep from retrying a
+    refused login every ten minutes keys on this card.
+    """
+    apartment, _reservation, _guest_id = _seed("tok-cap-auth", auto=True)
+
+    class RefusedLoginClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            raise UbyportAuthError("401")
+
+    try:
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: RefusedLoginClient()
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "transport_error"
+        assert alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}")
     finally:
         _cleanup(apartment["id"])
 
