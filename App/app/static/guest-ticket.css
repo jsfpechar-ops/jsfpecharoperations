@@ -1076,6 +1076,35 @@
   font-weight: 800;
 }
 
+/* 27. Signature pad v2 --------------------------------------------------- */
+.tw .g-sign {
+  position: relative;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+.tw .g-sign canvas { height: 200px; }
+.tw .g-sign::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 150px;
+  border-bottom: 1.5px solid var(--border);
+  pointer-events: none;
+}
+.tw .g-sign::after {
+  content: attr(data-tw-sign);
+  position: absolute;
+  left: 8%;
+  top: 158px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  pointer-events: none;
+}
+.tw .g-sign.is-signed { border-style: solid; border-color: var(--ink-muted); }
+.tw .g-sign.is-signed::after { content: "\2713  " attr(data-tw-signed); color: var(--green); font-weight: 650; }
+.tw .g-sign .bar { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }

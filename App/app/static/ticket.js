@@ -419,6 +419,21 @@
     paint(false);
   }
 
+  // 10. Signature pad: mirror "has a signature" onto the pad for styling.
+  function initSignState() {
+    var pad = document.querySelector(".tw .g-sign");
+    var hidden = document.getElementById("signature");
+    var canvas = document.getElementById("sig-canvas");
+    if (!pad || !hidden || !canvas) return;
+    function sync() { pad.classList.toggle("is-signed", !!hidden.value); }
+    ["mouseup", "touchend", "pointerup", "keyup"].forEach(function (name) {
+      canvas.addEventListener(name, function () { setTimeout(sync, 30); });
+    });
+    var clear = document.getElementById("sig-clear");
+    if (clear) clear.addEventListener("click", function () { setTimeout(sync, 30); });
+    sync();
+  }
+
   // A page restored from the back/forward cache must not keep spinning.
   window.addEventListener("pageshow", function () {
     Array.prototype.forEach.call(document.querySelectorAll("form.is-sending"), function (f) {
@@ -436,6 +451,7 @@
     initDobCells();
     initCountryCombos();
     initPurposeChips();
+    initSignState();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
