@@ -13,7 +13,7 @@ import re
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db
+from app import alerts, auth, db
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
@@ -157,3 +157,65 @@ def test_the_edit_form_prefills_the_optional_texts(host):
     page = host.get(f"/apartments/{apartment_id}").text
     assert ">Welcome to Form Flat.</textarea>" in page
     assert ">Two sets of keys.</textarea>" in page
+
+
+def _raise_auth_pause(apartment) -> None:
+    alerts.raise_alert(
+        "critical",
+        "ubyport_auth_failed",
+        "UbyPort refused the web-service login.",
+        "HTTP 401",
+        dedupe_key=f"ubyport_auth_failed:{apartment['id']}",
+        apartment_id=apartment["id"],
+    )
+
+
+def test_an_unrelated_property_save_does_not_lift_the_auth_pause(host):
+    """AR-18: the pause must not be lifted by a rename or an address edit.
+
+    The pause exists so a refused police login is not retried every ten
+    minutes; an unrelated save used to resume that retry storm.
+    """
+    apartment = _apartment()
+    _raise_auth_pause(apartment)
+
+    response = host.post(
+        f"/apartments/{apartment['id']}",
+        data=_payload(internal_name="Renamed Flat"),
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+    assert alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}") is not None, (
+        "a property-details save is not new credentials"
+    )
+
+
+def test_a_new_password_lifts_the_auth_pause(host):
+    apartment = _apartment()
+    _raise_auth_pause(apartment)
+
+    response = host.post(
+        f"/apartments/{apartment['id']}",
+        data=_payload(uby_ws_password="fresh-police-secret"),
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+    assert alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}") is None, (
+        "replacing the password is the fix the pause waits for"
+    )
+
+
+def test_a_new_login_lifts_the_auth_pause(host):
+    apartment = _apartment()
+    _raise_auth_pause(apartment)
+
+    response = host.post(
+        f"/apartments/{apartment['id']}",
+        data=_payload(uby_ws_user="UBY-WSreplacement"),
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+    assert alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}") is None
