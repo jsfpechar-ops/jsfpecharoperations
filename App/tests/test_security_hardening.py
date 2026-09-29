@@ -31,6 +31,37 @@ def test_totp_and_recovery_codes_are_single_use():
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
+def test_a_non_ascii_code_is_a_failure_not_a_crash():
+    """A pasted full-width digit or NBSP must count against the lockout.
+
+    ``hmac.compare_digest`` raises ``TypeError`` on non-ASCII input, which the
+    2FA routes did not catch: the host got an HTTP 500 and the failed attempt
+    was never recorded.
+    """
+    db.init_db()
+    username = "two-factor-non-ascii"
+    db.execute("DELETE FROM user_account WHERE username = ?", (username,))
+    user_id = auth.create_account(
+        username, "Secure-Password-123", "Non ASCII", must_change_password=False
+    )
+    try:
+        secret = auth.new_totp_secret()
+        auth.enable_totp(user_id, secret, auth.new_recovery_codes())
+        account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+
+        code = pyotp.TOTP(secret).now()
+        padded = code[:3] + "\u00a0" + code[3:]
+        assert auth.verify_second_factor(account, padded) is True, (
+            "an NBSP is whitespace and must be stripped like a space"
+        )
+
+        account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+        assert auth.verify_second_factor(account, "１２３４５６") is False
+        assert auth.verify_second_factor(account, "éééééé") is False
+    finally:
+        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
+
+
 def test_turnstile_requires_success_action_and_hostname(monkeypatch):
     monkeypatch.setattr(config, "DEPLOYMENT", "production")
     monkeypatch.setattr(config, "TURNSTILE_ENABLED", True)
