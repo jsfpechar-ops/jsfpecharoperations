@@ -56,8 +56,14 @@ class UbyportAuthError(UbyportTransportError):
 
 
 def _definitely_not_sent(exc: requests.RequestException) -> bool:
-    """True only when the request cannot have reached the server."""
-    if isinstance(exc, (requests.ConnectTimeout, requests.exceptions.SSLError)):
+    """True only when the request cannot have reached the server.
+
+    ``SSLError`` is deliberately not in the fast path: urllib3 raises it for a
+    TLS read/EOF failure *after* the envelope was transmitted, and a batch that
+    may already sit in the register must not be auto-refiled (OD-1). Only a
+    failed connect - before any request bytes left - is definitely not sent.
+    """
+    if isinstance(exc, requests.ConnectTimeout):
         return True
     if isinstance(exc, requests.ConnectionError) and exc.args:
         reason = getattr(exc.args[0], "reason", None)
