@@ -64,13 +64,13 @@ The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 | `UBYHOST_DOMAIN` | unset | Expected public hostname. Only used by the startup guard, which warns when it disagrees with `PUBLIC_BASE_URL`. |
 | `UBYHOST_GUEST_PIN` | `1` | `0` removes the PIN gate from every guest route, leaving the permalink token as the only barrier. A production deployment with this off gets a startup warning. |
 | `UBYHOST_GUEST_NOTICE_VERSION` | `1.0` | Version stamped on a guest's notice acknowledgement (BE-5). Bump whenever a `legal_notice_*` / `privacy_*` string in `i18n.py` changes materially. |
-| `TURNSTILE_SITE_KEY` | a public test key | Cloudflare Turnstile site key. |
+| `TURNSTILE_SITE_KEY` | the production widget key in `config.py` | Cloudflare Turnstile site key. |
 | `TURNSTILE_SECRET` | unset | Turnstile secret. |
 | `TURNSTILE_HOSTNAMES` | unset | Comma-separated hostnames accepted in the Turnstile response. |
 
 Turnstile is **inert unless all three of the `TURNSTILE_*` values are set**.
-When it is active, verification fails closed: if Cloudflare is unreachable the
-guest cannot get past the PIN gate or start a claim, and no alert is raised.
+When it is active, an unreachable Cloudflare fails open a bounded number of
+times per address and raises `turnstile_unavailable`.
 
 ## Reverse proxy and client IP
 
@@ -164,17 +164,19 @@ them; Render does.
 | Variable | Default | Used by |
 | --- | --- | --- |
 | `ACME_EMAIL` | unset | `docker-compose.yml` (Caddy/ACME registration) |
-| `UBYHOST_CONTAINER` | `ubyhost` | `deploy/lightsail/scripts/backup*.sh` |
+| `UBYHOST_CONTAINER` | unset; the scripts fall back to `docker compose ps` (`lib-docker.sh`) | `deploy/lightsail/scripts/backup*.sh` |
 | `UBYHOST_INSTALL_DIR` | `/opt/ubyhost` | `setup-server.sh` |
 | `UBYHOST_DEPLOY_USER` | `ubuntu` | `setup-server.sh` |
-| `UBYHOST_BACKUP_DIR` | `./backups` | `App/scripts/backup_data.sh` |
+| `UBYHOST_BACKUP_DIR` | `$UBYHOST_DATA_DIR/backups` | `App/scripts/backup_data.sh` |
 | `UBYHOST_SECRET_KEY` | unset | `App/scripts/backup_data.sh` — written into the snapshot when there is no `data/secret_key` file, so an off-site restore can be decrypted |
 | `UBYHOST_BACKUP_AGE_RECIPIENT` | unset | `App/scripts/backup_data.sh` — public `age1...` recipient the snapshot is encrypted to. **Required when `UBYHOST_DEPLOYMENT=production`**; the run fails closed without it |
 | `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept |
 | `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup; if unset, no one is told when backups stop |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
+| `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |
 | `UBYHOST_S3_BUCKET` | unset | `backup-s3.sh` |
-| `UBYHOST_S3_PREFIX` | unset | `backup-s3.sh` |
+| `UBYHOST_S3_PREFIX` | `UbyHost-backups` | `backup-s3.sh` |
+| `RENDER_STAGING_DEPLOY_HOOK` | unset (GitHub secret) | `deploy-production.yml` — triggers the Render staging deploy |
 | `RCLONE_REMOTE` | `gdrive` | `backup-gdrive.sh` |
 | `RCLONE_BACKUP_FOLDER` | `UbyHost-backups` | `backup-gdrive.sh` |
 | `SKIP_PUBLIC_SMOKE` | unset | `deploy.sh` — skips the post-deploy public smoke check |
