@@ -1179,6 +1179,21 @@
   --tw-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E");
 }
 
+@media (min-width: 1020px) {
+  .tw {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 70%),
+      repeating-linear-gradient(180deg, transparent 0 14px, color-mix(in srgb, var(--ink) 7%, transparent) 14px 22px) left 32px top 0 / 2px 100% no-repeat,
+      repeating-linear-gradient(180deg, transparent 0 14px, color-mix(in srgb, var(--ink) 7%, transparent) 14px 22px) right 32px top 0 / 2px 100% no-repeat,
+      var(--tw-page);
+  }
+  .tw .g-wrap,
+  .tw .g-checkin-page { max-width: 680px; }
+  .tw .tw-ticket,
+  .tw [data-guest-step] { box-shadow: 0 40px 80px -48px rgba(20, 20, 18, 0.45); }
+}
+
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
