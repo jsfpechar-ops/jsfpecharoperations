@@ -1082,7 +1082,10 @@ async def sync_now(request: Request):
     return_to = _form_return_to(form, "/")
     owner_user_id = access.owner_id(request)
     totals = await run_in_threadpool(icalsync.sync_all, owner_user_id=owner_user_id)
-    reporting.check_deadlines(owner_user_id=owner_user_id)
+    # The deadline watch scans every active stay and decodes signatures, so it
+    # belongs off the event loop with the sync above: on the single uvicorn
+    # worker a synchronous scan stalls /healthz and every guest save.
+    await run_in_threadpool(reporting.check_deadlines, owner_user_id=owner_user_id)
     return _back(
         return_to,
         msg=(
