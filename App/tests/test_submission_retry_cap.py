@@ -18,13 +18,15 @@ ways the count restarts.
 from __future__ import annotations
 
 import base64
+import inspect
+import sqlite3
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app import alerts, auth, db, reporting
-from app.ubyport.client import SubmissionResult, UbyportTransportError
+from app.ubyport.client import SubmissionResult, UbyportAuthError, UbyportOutcomeUnknownError, UbyportTransportError
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -447,6 +449,32 @@ def test_a_transport_failure_does_not_spend_the_budget(monkeypatch):
         _cleanup(apartment["id"])
 
 
+def test_a_refused_login_raises_the_credentials_card(monkeypatch):
+    """AR-18: a 401 is not a transport blip, so it needs its own card.
+
+    The transport card is still raised for the same event, but this one names
+    the fix: the credentials. The pause that stops the sweep from retrying a
+    refused login every ten minutes keys on this card.
+    """
+    apartment, _reservation, _guest_id = _seed("tok-cap-auth", auto=True)
+
+    class RefusedLoginClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            raise UbyportAuthError("401")
+
+    try:
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: RefusedLoginClient()
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "transport_error"
+        assert alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}")
+    finally:
+        _cleanup(apartment["id"])
+
+
 def test_a_legacy_row_without_the_column_reads_as_no_attempts():
     """A hand-built or pre-migration row must not raise in the send gate."""
     assert reporting.auto_attempts({}) == 0
@@ -524,5 +552,234 @@ def test_correcting_the_guest_restarts_the_count(host, monkeypatch):
         assert reporting.collect_sendable(apartment["id"]), (
             "the sweep must pick the corrected record back up"
         )
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep(monkeypatch):
+    """A request whose answer never arrived may already be filed.
+
+    Resending it automatically is how the same guests are declared twice, and a
+    duplicate is counted against the host. The batch is parked as
+    ``outcome_unknown`` with the envelope kept as evidence, and a person decides
+    whether to send it again (owner decision OD-1).
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-unknown", auto=True)
+
+    class UnknownOutcomeClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            exc = UbyportOutcomeUnknownError("read timed out")
+            exc.request_xml = "<request/>"
+            raise exc
+
+    try:
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: UnknownOutcomeClient()
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert guest_id in [guest["id"] for guest, _ in pairs]
+        result = reporting.submit_batch(apartment, pairs, mode="manual")
+
+        assert result["state"] == "outcome_unknown"
+
+        submission = db.query_one(
+            "SELECT * FROM submission WHERE apartment_id = ?", (apartment["id"],)
+        )
+        assert submission["state"] == "outcome_unknown"
+        assert submission["request_xml"] == "<request/>"
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}")
+        assert guest_id not in [g["id"] for g, _ in reporting.collect_sendable(apartment["id"])]
+        assert guest_id in [g["id"] for g, _ in reporting.collect_sendable(apartment["id"], ignore_automation=True)]
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_an_ok_batch_keeps_the_in_doubt_card_while_another_guest_waits(monkeypatch):
+    """One good resend must not wipe the warning for the rest of the party.
+
+    The card is apartment-wide but the in-doubt state is per guest pointer. If
+    a second guest still points at the unknown batch, resolving the card hides
+    that the sweep is silently excluding them.
+    """
+    apartment, reservation, guest_id = _seed("tok-cap-unknown-scope", auto=True)
+
+    class UnknownOutcomeClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            raise UbyportOutcomeUnknownError("read timed out")
+
+    try:
+        other_id = db.insert(
+            "guest",
+            {
+                "reservation_id": reservation["id"],
+                "surname": "Second",
+                "first_name": "Jane",
+                "birth_date": "02021991",
+                "nationality": "GBR",
+                "doc_number": "P7654321",
+                "res_street": "Street 2",
+                "res_city": "London",
+                "res_country": "GBR",
+                "purpose": "10",
+                "is_lead": 0,
+                "entered_by": "host",
+                "signature_png": SIGNATURE,
+                "signed_at": db.utcnow(),
+                "identity_verified_at": db.utcnow(),
+                "submit_state": reporting.PENDING,
+                "created_at": db.utcnow(),
+                "updated_at": db.utcnow(),
+            },
+        )
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: UnknownOutcomeClient()
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert {guest_id, other_id} == {g["id"] for g, _ in pairs}
+        reporting.submit_batch(apartment, pairs, mode="manual")
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}")
+
+        # One guest is filed by hand; the other still points at the unknown batch.
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: AcceptingClient())
+        resend = reporting.collect_sendable(
+            apartment["id"], only_guest_ids=[guest_id], ignore_automation=True
+        )
+        assert [g["id"] for g, _ in resend] == [guest_id]
+        assert reporting.submit_batch(apartment, resend, mode="manual")["state"] == "ok"
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}") is not None, (
+            "a guest still waiting on the unknown batch keeps the warning up"
+        )
+
+        # Filing the second guest is what finally clears it.
+        rest = reporting.collect_sendable(
+            apartment["id"], only_guest_ids=[other_id], ignore_automation=True
+        )
+        assert reporting.submit_batch(apartment, rest, mode="manual")["state"] == "ok"
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}") is None
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_every_state_submit_batch_can_write_is_terminal():
+    """The retention sweep and the submission detail page both treat the terminal
+    states as the set of finished batches. A state the batch path can write but
+    that set omits would be swept away as if still running, so the two must not
+    drift apart."""
+    source = inspect.getsource(reporting.submit_batch)
+    for state in ("ok", "ok_duplicate", "partial", "error", "transport_error",
+                  "outcome_unknown"):
+        assert state in source, f"submit_batch never writes {state!r}"
+        assert state in reporting.TERMINAL_SUBMISSION_STATES, (
+            f"{state!r} is a terminal batch state the set does not list"
+        )
+
+
+def test_the_receipt_survives_a_failure_after_the_answer(monkeypatch):
+    """The Dorucenka must not be lost if a later step blows up.
+
+    Once UbyPort has answered, the receipt and the guests' new states are one
+    fact. A failure in the alerts that follow must not be able to undo them.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-atomic-receipt", auto=True)
+
+    try:
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: AcceptingClient())
+        monkeypatch.setattr(
+            reporting,
+            "clear_stuck_alert_if_recovered",
+            lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        with pytest.raises(RuntimeError):
+            reporting.submit_batch(apartment, pairs, mode="manual")
+
+        submission = db.query_one(
+            "SELECT * FROM submission WHERE apartment_id = ? ORDER BY id DESC LIMIT 1",
+            (apartment["id"],),
+        )
+        assert submission["state"] == "ok", (
+            "the answer was already committed, so its receipt must be on file"
+        )
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.SENT
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_a_failed_outcome_write_leaves_nothing_half_done(monkeypatch):
+    """A write that fails while recording the answer rolls the whole thing back.
+
+    Otherwise the guest would be marked sent with no submission row behind it,
+    and the disappearance of the receipt would only be visible much later.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-atomic-rollback", auto=True)
+
+    real = db.update_in
+
+    def wrapper(cur, table, row_id, values):
+        if table == "submission":
+            raise sqlite3.OperationalError("locked")
+        return real(cur, table, row_id, values)
+
+    try:
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: AcceptingClient())
+        monkeypatch.setattr(db, "update_in", wrapper)
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        with pytest.raises(sqlite3.OperationalError):
+            reporting.submit_batch(apartment, pairs, mode="manual")
+
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submit_state"] == reporting.PENDING, (
+            "the guest write shares the submission's transaction and must roll back with it"
+        )
+    finally:
+        _cleanup(apartment["id"])
+
+
+def test_a_failed_pointer_write_does_not_half_record_the_unknown_outcome(monkeypatch):
+    """The in-doubt mark has to land whole, or the sweep re-sends the batch.
+
+    The submission row and the guests' pointers to it are one fact. If a
+    pointer write fails after the row was already marked ``outcome_unknown``,
+    those guests look sendable again (the sweep reads ``guest.submission_id``)
+    and it refiles a batch the register may already hold. The write is therefore
+    one transaction: on failure the batch says ``running`` and the guests keep
+    their old pointers, so nothing claims a possibly-filed batch and the sweep
+    can retry it safely.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-unknown-atomic", auto=True)
+
+    class UnknownOutcomeClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            raise UbyportOutcomeUnknownError("read timed out")
+
+    real = db.update_in
+
+    def wrapper(cur, table, row_id, values):
+        if table == "guest":
+            raise sqlite3.OperationalError("locked")
+        return real(cur, table, row_id, values)
+
+    try:
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: UnknownOutcomeClient()
+        )
+        monkeypatch.setattr(db, "update_in", wrapper)
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        with pytest.raises(sqlite3.OperationalError):
+            reporting.submit_batch(apartment, pairs, mode="manual")
+
+        submission = db.query_one(
+            "SELECT * FROM submission WHERE apartment_id = ? ORDER BY id DESC LIMIT 1",
+            (apartment["id"],),
+        )
+        assert submission["state"] == "running", (
+            "the in-doubt mark rolled back with the pointers, so nothing claims an unknown outcome"
+        )
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submission_id"] is None, "the pointer write rolled back too"
+        assert guest_id in [
+            g["id"] for g, _ in reporting.collect_sendable(apartment["id"])
+        ], "no in-doubt batch is on file, so the sweep must still offer the guest"
     finally:
         _cleanup(apartment["id"])

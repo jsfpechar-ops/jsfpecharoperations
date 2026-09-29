@@ -1089,3 +1089,44 @@ def test_two_unlabelled_bookings_with_the_same_words_stay_two_stays(
     assert sorted(stay["date_from"] for stay in stays) == ["2099-05-01", "2099-05-10"]
     assert len({stay["uid"] for stay in stays}) == 2
     assert _alert(f"feed_duplicate_uid:{feed_id}") is None
+
+
+def test_a_stay_that_vanishes_loses_its_guest_link(monkeypatch, tmp_path):
+    """AR-27: a stay removed from the calendar must not keep a live guest link."""
+    vanished_event = _vevent("vanish-1", "2099-05-01", "2099-05-03")
+    kept_event = _vevent("keep-1", "2099-05-10", "2099-05-12")
+    apartment_id, feed_id = _feed_db(
+        tmp_path, monkeypatch, "vanishlink", _calendar([vanished_event, kept_event])
+    )
+    _sync_now(feed_id)
+    vanished = db.query_one(
+        "SELECT * FROM reservation WHERE apartment_id = ? AND uid = ?",
+        (apartment_id, "vanish-1"),
+    )
+    now = db.utcnow()
+    db.insert(
+        "reservation_claim",
+        {
+            "reservation_id": vanished["id"],
+            "state": "claimed",
+            "token_hash": "claimed-token-hash",
+            "claimed_at": now,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+
+    # One of two stored stays comes back, which clears the completeness bar, so
+    # the disappearance sweep really runs and treats the missing stay as
+    # cancelled upstream.
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: _calendar([kept_event]))
+    stats = _sync_now(feed_id)
+
+    assert stats["cancelled"] == 1
+    assert db.query_one(
+        "SELECT status FROM reservation WHERE id = ?", (vanished["id"],)
+    )["status"] == "cancelled"
+    assert db.query_one(
+        "SELECT token_hash FROM reservation_claim WHERE reservation_id = ?",
+        (vanished["id"],),
+    )["token_hash"] is None

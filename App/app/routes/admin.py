@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import json
 import secrets
+import time
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from starlette.concurrency import run_in_threadpool
 
 from .. import (
     access,
@@ -650,7 +652,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     # send themselves before anything leaves for the police.
     mode = _form_str(form, "automation_mode", "manual")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "manual"
-    payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
+    payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
         _form_int(form, "permalink_reachback_days")
@@ -763,7 +765,8 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     Split out of ``apartment_update`` because the credentials test has to be
     able to save the values the host just typed before it uses them.
     """
-    if not access.apartment(request, apartment_id):
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     payload = _apartment_payload(form)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
@@ -785,7 +788,15 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
         payload["permalink_pin"] = pin
+    # AR-18: the refused-login pause exists so the police account is not
+    # hammered every ten minutes. Only replacing the credentials may lift it;
+    # renaming the property or moving the PIN must not resume the retries.
+    credentials_changed = bool(password) or (
+        (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
+    )
     db.update("apartment", apartment_id, payload)
+    if credentials_changed:
+        alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("apartment_updated", f"id={apartment_id}")
     return None
 
@@ -857,7 +868,7 @@ def _automation_payload(form) -> Dict[str, Any]:
     payload["uby_mark"] = payload["uby_mark"].upper()
     mode = _form_str(form, "automation_mode", "scheduled")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
-    payload["submit_after_hours"] = _form_int(form, "submit_after_hours") or 24
+    payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     return payload
@@ -919,7 +930,16 @@ def _save_automation_form(apartment_id: int, form) -> None:
     password = _form_str(form, "uby_ws_password")
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
+    current = db.query_one(
+        "SELECT uby_ws_user FROM apartment WHERE id = ?", (apartment_id,)
+    )
+    current_user = (current["uby_ws_user"] if current else "") or ""
     db.update("apartment", apartment_id, payload)
+    # AR-18: saving the card (mode, review hours) is not new credentials, so it
+    # must not lift the pause that stops the retry storm against the police
+    # account. A new password or a changed login is the fix the pause waits for.
+    if password or (payload.get("uby_ws_user") or "") != current_user:
+        alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
 
 
@@ -1032,7 +1052,7 @@ async def add_feed(apartment_id: int, request: Request):
             "created_at": db.utcnow(),
         },
     )
-    totals = icalsync.sync_all(apartment_id)
+    totals = await run_in_threadpool(icalsync.sync_all, apartment_id)
     if totals["errors"]:
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.feed_added_unreadable"))
     return _back(
@@ -1061,8 +1081,11 @@ async def sync_now(request: Request):
     form = await request.form()
     return_to = _form_return_to(form, "/")
     owner_user_id = access.owner_id(request)
-    totals = icalsync.sync_all(owner_user_id=owner_user_id)
-    reporting.check_deadlines(owner_user_id=owner_user_id)
+    totals = await run_in_threadpool(icalsync.sync_all, owner_user_id=owner_user_id)
+    # The deadline watch scans every active stay and decodes signatures, so it
+    # belongs off the event loop with the sync above: on the single uvicorn
+    # worker a synchronous scan stalls /healthz and every guest save.
+    await run_in_threadpool(reporting.check_deadlines, owner_user_id=owner_user_id)
     return _back(
         return_to,
         msg=(
@@ -1103,8 +1126,8 @@ async def test_connection(apartment_id: int, request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     client = reporting.client_for(apartment)
     try:
-        available = client.test_availability()
-        limit = client.max_batch_size()
+        available = await run_in_threadpool(client.test_availability)
+        limit = await run_in_threadpool(client.max_batch_size)
     except (UbyportTransportError, UbyportError) as exc:
         db.audit(
             "ubyport_connection_failed",
@@ -1118,6 +1141,7 @@ async def test_connection(apartment_id: int, request: Request):
         f"apartment={apartment_id} endpoint={client.endpoint} "
         f"available={available} max_batch={limit}",
     )
+    alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
@@ -1132,7 +1156,8 @@ async def refresh_codelists(apartment_id: int, request: Request):
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     try:
-        written = codelists.refresh_all(reporting.client_for(apartment))
+        c = reporting.client_for(apartment)
+        written = await run_in_threadpool(codelists.refresh_all, c)
     except (UbyportTransportError, UbyportError):
         return _back(return_to, err=_flash(request, "flash.error.codelists_refresh"))
     return _back(
@@ -1354,7 +1379,8 @@ async def reservations_submit_ready(request: Request):
         guest_ids = [guest["id"] for guest in progress["reportable"] if guest["submit_state"] != reporting.SENT]
         if not guest_ids:
             continue
-        results = reporting.submit_for_apartment(
+        results = await run_in_threadpool(
+            reporting.submit_for_apartment,
             reservation["apartment_id"],
             only_guest_ids=guest_ids,
             mode="manual_bulk",
@@ -1473,8 +1499,10 @@ async def reservation_update(reservation_id: int, request: Request):
             "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
         )
         if current:
-            reporting.submit_stay_if_complete(
-                current["apartment_id"], reservation_id
+            await run_in_threadpool(
+                reporting.submit_stay_if_complete,
+                current["apartment_id"],
+                reservation_id,
             )
     return _back(
         f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.saved")
@@ -1499,8 +1527,10 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
             return JSONResponse({"ok": False}, status_code=422)
         payload["expected_guests_override"] = expected
     db.update("reservation", reservation_id, payload)
-    reporting.submit_stay_if_complete(
-        reservation["apartment_id"], reservation_id
+    await run_in_threadpool(
+        reporting.submit_stay_if_complete,
+        reservation["apartment_id"],
+        reservation_id,
     )
     if request.headers.get("X-Requested-With") == "fetch":
         return JSONResponse({"ok": True})
@@ -1610,7 +1640,8 @@ async def reservation_submit(reservation_id: int, request: Request):
         guest["id"]
         for guest in db.query("SELECT id FROM guest WHERE reservation_id = ?", (reservation_id,))
     ]
-    results = reporting.submit_for_apartment(
+    results = await run_in_threadpool(
+        reporting.submit_for_apartment,
         reservation["apartment_id"],
         only_guest_ids=guest_ids,
         mode="manual",
@@ -1632,6 +1663,12 @@ async def reservation_submit(reservation_id: int, request: Request):
         # The list of missing fields is on the property page, already in the
         # host's language; repeating it here in English would undo UX-35.
         return _back(return_to, err=_flash(request, "flash.error.ubyport_not_configured"))
+    if first.get("state") == "outcome_unknown":
+        db.audit(
+            "ubyport_send_outcome_unknown",
+            f"apartment={reservation['apartment_id']} error={first.get('error')}",
+        )
+        return _back(return_to, err=_flash(request, "flash.error.ubyport_outcome_unknown"))
     if first.get("state") == "transport_error":
         db.audit(
             "ubyport_send_failed",
@@ -1773,7 +1810,11 @@ async def guest_create(reservation_id: int, request: Request):
     )
     guest_id = db.insert("guest", payload)
     db.audit("guest_created", f"id={guest_id} reservation={reservation_id} by=host")
-    reporting.submit_stay_if_complete(reservation["apartment_id"], reservation_id)
+    await run_in_threadpool(
+        reporting.submit_stay_if_complete,
+        reservation["apartment_id"],
+        reservation_id,
+    )
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.guests.added"))
 
 
@@ -1838,7 +1879,11 @@ async def guest_update(guest_id: int, request: Request):
     if validation.guest_is_reportable(payload["nationality"]):
         payload["identity_verified_at"] = db.utcnow()
         payload["identity_verified_by"] = access.owner_id(request)
-    if not validation.guest_is_reportable(payload["nationality"]):
+    if guest["submit_state"] == reporting.SENT:
+        # Already filed: the record in the register is what it is. The host's
+        # edit is saved, but the state (and so the proof pointer) is kept.
+        pass
+    elif not validation.guest_is_reportable(payload["nationality"]):
         payload["submit_state"] = reporting.NOT_REQUIRED
     elif guest["submit_state"] in (reporting.ERROR, reporting.BLOCKED, reporting.NOT_REQUIRED):
         # Rule 10.4(5): correcting a rejected record must make it sendable again.
@@ -1847,11 +1892,26 @@ async def guest_update(guest_id: int, request: Request):
         # The retry budget restarts too, or a record the sweep had given up on
         # would stay given up on even after the host fixed what was wrong.
         payload["submit_attempts"] = 0
-    db.update("guest", guest_id, payload)
+    if not db.update_if(
+        "guest",
+        guest_id,
+        payload,
+        {"submit_state": guest["submit_state"]},
+        extra_where=(
+            "NOT EXISTS (SELECT 1 FROM submission_claim "
+            "WHERE guest_id = ? AND claimed_at >= ?)"
+        ),
+        extra_params=(guest_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
+    ):
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.guest_changed_retry"))
     db.audit("guest_updated", f"id={guest_id} by=host")
     if reservation:
         reporting.clear_stuck_alert_if_recovered(reservation["id"])
-        reporting.submit_stay_if_complete(reservation["apartment_id"], reservation["id"])
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete,
+            reservation["apartment_id"],
+            reservation["id"],
+        )
     # "Saved." left the host guessing how far the stay had got. The count is
     # read back after the update, and a stay with no declared guest count has
     # nothing to count against, so it gets the plain confirmation.
@@ -1996,8 +2056,10 @@ async def guest_archive(guest_id: int, request: Request):
         (guest["reservation_id"],),
     )
     if reservation:
-        reporting.submit_stay_if_complete(
-            reservation["apartment_id"], guest["reservation_id"]
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete,
+            reservation["apartment_id"],
+            guest["reservation_id"],
         )
     return _back(return_to, msg=_flash(request, "flash.housebook.archived"))
 
@@ -2021,8 +2083,10 @@ async def guest_unarchive(guest_id: int, request: Request):
         (guest["reservation_id"],),
     )
     if reservation:
-        reporting.submit_stay_if_complete(
-            reservation["apartment_id"], guest["reservation_id"]
+        await run_in_threadpool(
+            reporting.submit_stay_if_complete,
+            reservation["apartment_id"],
+            guest["reservation_id"],
         )
     return _back(return_to, msg=_flash(request, "flash.housebook.restored"))
 
@@ -2077,7 +2141,8 @@ async def guest_resend(guest_id: int, request: Request):
             err=_flash(request, "flash.error.already_reported_duplicate"),
         )
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (guest["reservation_id"],))
-    results = reporting.submit_for_apartment(
+    results = await run_in_threadpool(
+        reporting.submit_for_apartment,
         reservation["apartment_id"],
         only_guest_ids=[guest_id],
         mode="manual_resend",
@@ -2088,6 +2153,8 @@ async def guest_resend(guest_id: int, request: Request):
         return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.record_not_sendable"))
     db.audit("guest_resent", f"id={guest_id}")
     result = results[0]
+    if result.get("state") == "outcome_unknown":
+        return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_outcome_unknown"))
     if result.get("state") == "transport_error":
         return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.ubyport_unreachable"))
     if result.get("submitted"):
@@ -2227,8 +2294,16 @@ def dismiss_alert(alert_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.alert(request, alert_id):
+    row = access.alert(request, alert_id)
+    if not row:
         return Response("No such alert.", status_code=404)
+    if row["kind"] == "dates_changed_resign":
+        # This card is the filing gate (collect_sendable); dismissing it
+        # would let the old dates reach the register.
+        if request.headers.get("x-requested-with") == "fetch":
+            return Response(status_code=409)
+        return _back(_redirect_path_from_referer(request),
+                     err=_flash(request, "flash.error.resign_card_locked"))
     alerts.resolve_by_id(alert_id, user_dismissed=True)
     if request.headers.get("x-requested-with") == "fetch":
         return Response(status_code=204)

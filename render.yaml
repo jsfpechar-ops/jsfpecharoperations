@@ -21,11 +21,11 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: ./render_start.sh
     healthCheckPath: /healthz
-    # Staging is manual/off by default — ship to production (ubyhost) from main.
+    # Staging only. Production runs on AWS Lightsail (see docs/DEPLOYMENT.md).
     autoDeploy: false
     envVars:
       - key: PYTHON_VERSION
-        value: "3.12.0"
+        value: "3.12.14"
       - key: UBYHOST_DEPLOYMENT
         value: staging
       - key: UBYHOST_UBYPORT_ENV
@@ -48,48 +48,4 @@ services:
         fromService:
           type: web
           name: ubyhost-staging
-          envVarKey: RENDER_EXTERNAL_URL
-
-  # ---------------------------------------------------------------------------
-  # Production — real Foreign Police reporting.
-  # Set UBYHOST_UBYPORT_ENV to "test" first, then "prod" after a clean run.
-  # ---------------------------------------------------------------------------
-  - type: web
-    name: ubyhost
-    runtime: python
-    region: frankfurt
-    plan: starter
-    rootDir: App
-    buildCommand: pip install -r requirements.txt
-    startCommand: ./render_start.sh
-    healthCheckPath: /healthz
-    # Manual only: production is promoted by a person, never on a push.
-    autoDeploy: false
-    disk:
-      name: ubyhost-data
-      mountPath: /opt/render/project/src/App/data
-      sizeGB: 1
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.0"
-      - key: UBYHOST_DEPLOYMENT
-        value: production
-      - key: UBYHOST_UBYPORT_ENV
-        value: test
-      - key: UBYHOST_ENABLE_SCHEDULER
-        value: "1"
-      - key: UBYHOST_GUEST_PIN
-        value: "1"
-      - key: UBYHOST_SECRET_KEY
-        generateValue: true
-      - key: UBYHOST_ADMIN_USERNAME
-        sync: false
-      - key: UBYHOST_ADMIN_PASSWORD
-        sync: false
-      - key: UBYHOST_MAIL_BACKEND
-        value: disabled
-      - key: UBYHOST_PUBLIC_BASE_URL
-        fromService:
-          type: web
-          name: ubyhost
           envVarKey: RENDER_EXTERNAL_URL

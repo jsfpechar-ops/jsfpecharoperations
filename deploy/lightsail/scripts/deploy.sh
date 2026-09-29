@@ -41,7 +41,13 @@ else
   cp caddy/Caddyfile.acme caddy/Caddyfile.active
 fi
 
-if [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
+if [ -z "${UBYHOST_SECRET_KEY:-}" ] && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
+     -c 'test -s /data/secret_key' >/dev/null 2>&1; then
+  # The volume already holds the key the data was encrypted with, and the app
+  # reads it when the variable is empty. Minting a new one here would make
+  # every encrypted field (TOTP, UbyPort passwords, document numbers) unreadable.
+  echo "==> Using the existing /data/secret_key (UBYHOST_SECRET_KEY is empty in .env)."
+elif [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
   echo "Generating UBYHOST_SECRET_KEY in .env"
   KEY="$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")"
   if grep -q '^UBYHOST_SECRET_KEY=' .env; then
@@ -94,6 +100,11 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
 
+if docker image inspect ubyhost:local >/dev/null 2>&1; then
+  docker tag ubyhost:local ubyhost:previous
+  echo "Kept the running image as ubyhost:previous for rollback."
+fi
+
 echo "==> Building image"
 docker compose build --pull
 
@@ -112,6 +123,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
 fi
 
 echo "==> Starting stack"
+docker compose pull caddy
 docker compose up -d --remove-orphans
 
 # Reload Caddy unconditionally, every deploy.
@@ -139,14 +151,25 @@ if ! docker compose exec -T caddy caddy reload \
 fi
 
 echo "==> Waiting for health check"
+HEALTHY=0
 for _ in $(seq 1 30); do
   if docker compose exec -T ubyhost python -c \
     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
     >/dev/null 2>&1; then
+    HEALTHY=1
     break
   fi
   sleep 2
 done
+if [ "${HEALTHY}" != "1" ]; then
+  echo "New release never became healthy." >&2
+  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
+    echo "==> Rolling back to ubyhost:previous" >&2
+    docker tag ubyhost:previous ubyhost:local
+    docker compose up -d --no-build ubyhost
+  fi
+  exit 1
+fi
 
 echo ""
 docker compose ps

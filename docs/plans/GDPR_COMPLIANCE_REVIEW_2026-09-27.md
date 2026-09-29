@@ -1,3 +1,5 @@
+> **Historical snapshot.** Parts of this document describe code that has since changed. For current status see UbyHost_Audit_and_Cursor_Plan_2026-09-28 (Phase 1 §1.1). Do not treat statements here as instructions.
+
 # UbyHost: GDPR / ePrivacy compliance review
 
 **Date:** 27 September 2026

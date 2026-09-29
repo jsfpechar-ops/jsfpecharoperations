@@ -141,6 +141,42 @@ def test_a_wrong_code_does_not_offer_the_start_over_link():
         _finish()
 
 
+def test_a_non_ascii_code_is_a_failed_attempt_not_a_crash():
+    """A pasted full-width digit must reach the wrong-code path, and count.
+
+    ``hmac.compare_digest`` raises ``TypeError`` on non-ASCII input, so the
+    route used to answer HTTP 500 and never recorded the failed attempt.
+    """
+    client, token, _ = _on_the_second_factor()
+    try:
+        response = client.post(
+            "/login/2fa",
+            data={"pending": token, "code": "１２３４５６"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 401, response.text
+        assert host_i18n.translate("en", "auth.error.code_invalid") in _page(response)
+        account = db.query_one(
+            "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+        )
+        assert db.query_one(
+            "SELECT 1 AS x FROM rate_limit_event "
+            "WHERE scope = '2fa_fail_account' AND key = ?",
+            (str(account["id"]),),
+        ), "a non-ASCII code has to feed the per-account lockout"
+    finally:
+        account = db.query_one(
+            "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+        )
+        if account:
+            db.execute(
+                "DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account' AND key = ?",
+                (str(account["id"]),),
+            )
+        _finish()
+
+
 # --- the lockout message -------------------------------------------------
 
 
@@ -291,3 +327,59 @@ def test_a_live_code_still_signs_the_host_in():
         assert response.status_code == 303
     finally:
         _finish()
+
+
+# --- the per-account second-factor budget --------------------------------
+
+
+def test_ten_failed_codes_lock_one_account_only():
+    db.init_db()
+    db.execute("DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account'")
+    try:
+        for _ in range(10):
+            rate_limit.record_account_2fa_failure(99)
+
+        assert rate_limit.account_2fa_blocked(99) is True
+        assert rate_limit.account_2fa_blocked(98) is False
+    finally:
+        db.execute("DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account'")
+
+
+# --- replay: a code or recovery code is spent when it is used --------------
+
+
+def test_the_same_totp_code_is_refused_the_second_time():
+    db.init_db()
+    _cleanup()
+    try:
+        user_id = auth.create_account(
+            USERNAME, PASSWORD, "Lockout Host", must_change_password=False
+        )
+        secret = auth.new_totp_secret()
+        auth.enable_totp(user_id, secret, auth.new_recovery_codes())
+        account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+        code = pyotp.TOTP(secret).now()
+
+        assert auth.verify_second_factor(account, code) is True
+        account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+        assert auth.verify_second_factor(account, code) is False
+    finally:
+        _cleanup()
+
+
+def test_a_recovery_code_can_only_be_spent_once():
+    db.init_db()
+    _cleanup()
+    try:
+        user_id = auth.create_account(
+            USERNAME, PASSWORD, "Lockout Host", must_change_password=False
+        )
+        codes = auth.new_recovery_codes()
+        auth.enable_totp(user_id, auth.new_totp_secret(), codes)
+        stale = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+
+        assert auth.verify_second_factor(stale, codes[0]) is True
+        # The second request still holds the row it read before the first spend.
+        assert auth.verify_second_factor(stale, codes[0]) is False
+    finally:
+        _cleanup()

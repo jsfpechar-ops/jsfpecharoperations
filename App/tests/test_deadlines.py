@@ -400,3 +400,136 @@ def test_the_deadline_alert_runs_from_the_guest_arrival(monkeypatch, tmp_path):
     assert len(alert) == 1
     assert alert[0]["level"] == "critical"
     assert "Po termínu o 2 dny" in alerts.present(alert[0], "cs")["display_detail"]
+
+
+def test_scheduled_send_is_pulled_forward_to_the_deadline_margin():
+    from app import db, reporting
+
+    db.init_db()
+    apartment = {"automation_mode": "scheduled", "submit_after_hours": 48}
+    reservation = {
+        "id": -1,
+        "date_from": "2026-10-05",
+        "registration_completed_at": "2026-10-07T08:00:00+00:00",
+    }
+
+    # The deadline is Wed 7 Oct 23:59:59 Prague (CEST); 6 hours earlier is
+    # 17:59:59 CEST, which is 15:59:59 UTC. Completion plus 48 h is later, so
+    # the deadline margin is the earlier of the two.
+    assert reporting.due_for_automatic_send(
+        apartment, reservation, now=datetime(2026, 10, 7, 16, 0, tzinfo=timezone.utc)
+    ) is True
+    assert reporting.due_for_automatic_send(
+        apartment, reservation, now=datetime(2026, 10, 7, 15, 0, tzinfo=timezone.utc)
+    ) is False
+
+
+def test_a_cancelled_stay_clears_its_open_deadline_card(monkeypatch, tmp_path):
+    """AR-37: a cancelled stay must not leave a deadline card to chase."""
+    from app import alerts, db, reporting
+
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "stale-deadline.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[("2026-09-09", "2026-09-14", None)],
+    )
+    alerts.raise_alert(
+        "critical",
+        "deadline",
+        "Anchor test · 09.09.2026 – 14.09.2026",
+        "Overdue · 0/1",
+        dedupe_key=f"deadline:{reservation['id']}",
+        apartment_id=reservation["apartment_id"],
+        reservation_id=reservation["id"],
+    )
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled' WHERE id = ?",
+        (reservation["id"],),
+    )
+
+    reporting.check_deadlines(datetime(2026, 9, 12, 12, 0))
+
+    row = db.query_one(
+        "SELECT resolved_at FROM alert WHERE dedupe_key = ?",
+        (f"deadline:{reservation['id']}",),
+    )
+    assert row["resolved_at"] is not None
+
+
+def test_a_scoped_sync_does_not_clear_another_owners_stale_cards(monkeypatch, tmp_path):
+    """AR-37: a host's own Sync now must not resolve other tenants' cards.
+
+    The stale-card cleanup inside ``check_deadlines`` was apartment-wide even
+    when the caller passed ``owner_user_id``. The scheduled run still clears
+    everything; a scoped request clears only its workspace.
+    """
+    from app import alerts, config, db, reporting
+
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "stale-owner-scope.sqlite3")
+    db.init_db()
+    now = db.utcnow()
+
+    def owner(username: str) -> int:
+        return db.insert(
+            "user_account",
+            {
+                "username": username,
+                "password_hash": "x",
+                "role": "host",
+                "created_at": now,
+            },
+        )
+
+    def stale_card(owner_id: int, name: str) -> tuple[int, int]:
+        apartment_id = db.insert(
+            "apartment",
+            {
+                "owner_user_id": owner_id,
+                "internal_name": name,
+                "automation_mode": "manual",
+                "active": 1,
+                "created_at": now,
+            },
+        )
+        reservation_id = db.insert(
+            "reservation",
+            {
+                "apartment_id": apartment_id,
+                "uid": f"stale-{name}",
+                "date_from": "2026-09-09",
+                "date_to": "2026-09-14",
+                "status": "cancelled",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        alerts.raise_alert(
+            "critical",
+            "deadline",
+            f"{name} · 09.09.2026 – 14.09.2026",
+            "Overdue · 0/1",
+            dedupe_key=f"deadline:{reservation_id}",
+            apartment_id=apartment_id,
+            reservation_id=reservation_id,
+        )
+        return apartment_id, reservation_id
+
+    owner_a = owner("deadline-scope-a")
+    owner_b = owner("deadline-scope-b")
+    _a_apartment, a_reservation = stale_card(owner_a, "Scope A")
+    _b_apartment, b_reservation = stale_card(owner_b, "Scope B")
+
+    reporting.check_deadlines(datetime(2026, 9, 12, 12, 0), owner_user_id=owner_a)
+
+    assert db.query_one(
+        "SELECT resolved_at FROM alert WHERE dedupe_key = ?",
+        (f"deadline:{a_reservation}",),
+    )["resolved_at"] is not None, "the caller's own stale card must clear"
+    assert db.query_one(
+        "SELECT resolved_at FROM alert WHERE dedupe_key = ?",
+        (f"deadline:{b_reservation}",),
+    )["resolved_at"] is None, "another workspace's card must survive a scoped sync"
+

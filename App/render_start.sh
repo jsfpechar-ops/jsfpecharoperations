@@ -45,4 +45,4 @@ else
 fi
 
 echo "UbyHost listening on 0.0.0.0:${PORT} (deployment=${UBYHOST_DEPLOYMENT:-unset})"
-exec "$PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+exec "$PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --workers 1 --no-access-log

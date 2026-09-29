@@ -1,5 +1,9 @@
 import base64
+import io
 from datetime import date
+
+import pytest
+from PIL import Image
 
 from app import validation as v
 
@@ -72,6 +76,11 @@ def test_forbidden_characters_never_survive():
     assert "|" not in v.normalise_name(dirty)
     assert "\r" not in v.normalise_note(dirty)
     assert "\n" not in v.normalise_note(dirty)
+
+
+def test_xml_illegal_control_characters_are_stripped():
+    """AR-21: one control character makes the whole SOAP batch unparseable."""
+    assert v.strip_forbidden("A\x01B") == "A B"
 
 
 def test_document_number_normalisation():
@@ -203,9 +212,9 @@ def test_a_drawn_signature_must_be_a_png_or_jpeg_data_url():
     assert v.is_valid_signature(SIGNATURE)
     assert v.parse_signature_data_url(SIGNATURE).startswith(b"\x89PNG\r\n\x1a\n")
     # JPEG is allowed, and its magic bytes are checked the same way.
-    jpeg = "data:image/jpeg;base64," + base64.b64encode(
-        b"\xff\xd8\xff\xe0" + b"\x00" * 32
-    ).decode()
+    buf = io.BytesIO()
+    Image.new("RGB", (10, 10), "white").save(buf, "JPEG")
+    jpeg = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
     assert v.is_valid_signature(jpeg)
 
     # An SVG is an image type, and a script container. Nothing here renders one.
@@ -229,9 +238,11 @@ def test_a_drawn_signature_must_be_a_png_or_jpeg_data_url():
 def test_an_oversized_signature_is_refused():
     """A hand-built request must not put a blob in the database file."""
     def png_of(size: int) -> str:
-        return "data:image/png;base64," + base64.b64encode(
-            b"\x89PNG\r\n\x1a\n" + b"\x00" * (size - 8)
-        ).decode()
+        buf = io.BytesIO()
+        Image.new("RGB", (10, 10), "white").save(buf, "PNG")
+        data = buf.getvalue()
+        data = data + b"\x00" * (size - len(data))
+        return "data:image/png;base64," + base64.b64encode(data).decode()
 
     assert v.is_valid_signature(png_of(v.MAX_SIGNATURE_BYTES))
     assert not v.is_valid_signature(png_of(v.MAX_SIGNATURE_BYTES + 1))
@@ -239,6 +250,21 @@ def test_an_oversized_signature_is_refused():
     assert not v.is_valid_signature(
         "data:image/png;base64," + "A" * (v._MAX_SIGNATURE_PAYLOAD_CHARS + 4)
     )
+
+
+def test_a_signature_with_oversized_dimensions_is_refused():
+    """A small compressed file can open to an unrenderable canvas."""
+    big = io.BytesIO()
+    Image.new("1", (12000, 12000)).save(big, "PNG")
+    oversized = "data:image/png;base64," + base64.b64encode(big.getvalue()).decode()
+
+    with pytest.raises(ValueError):
+        v.parse_signature_data_url(oversized)
+
+    small = io.BytesIO()
+    Image.new("RGB", (600, 200), "white").save(small, "PNG")
+    accepted = "data:image/png;base64," + base64.b64encode(small.getvalue()).decode()
+    assert v.parse_signature_data_url(accepted).startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_signature_issue_names_the_field_and_says_what_to_do():

@@ -55,6 +55,10 @@ rclone copy "${TMP}/${LATEST}" "${REMOTE}:${DRIVE_DIR}/${LATEST}" \
 rm -rf "${TMP}"
 
 # Bound Drive retention to the same window as the local snapshots.
-rclone delete --min-age "${RETENTION_DAYS}d" "${REMOTE}:${DRIVE_DIR}" --stats-one-line || true
+if ! rclone delete --min-age "${RETENTION_DAYS}d" "${REMOTE}:${DRIVE_DIR}" --stats-one-line; then
+  echo "ERROR: pruning old Drive backups failed; the ${RETENTION_DAYS}-day retention is not being kept." >&2
+  exit 1
+fi
+rclone rmdirs --leave-root "${REMOTE}:${DRIVE_DIR}" || true
 
 echo "Uploaded to ${REMOTE}:${DRIVE_DIR}/${LATEST}"

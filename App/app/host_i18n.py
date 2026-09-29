@@ -217,6 +217,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.note_partial": "UbyPort accepted some guests and refused the rest. Fix the refused guests on the stay, then send the report again.",
         "reports.detail.note_rejected": "UbyPort refused this report. Fix the guest details on the stay, then send it again.",
         "reports.detail.note_failed": "The report did not reach UbyPort — the connection failed. Nothing was reported yet; send it again.",
+        "reports.detail.note_outcome_unknown": "UbyPort may have received this report, but its answer never arrived. Check the guests in the UbyPort web application before sending again: a second copy counts as a duplicate.",
         "reports.detail.note_running": "The report is being sent to UbyPort right now.",
         "reports.detail.note_noop": "There was nothing to send in this batch.",
         "reports.detail.guests": "Guests in this transmission",
@@ -574,6 +575,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "a11y.notifications": "Notifications",
         "a11y.dismiss_notification": "Dismiss notification",
         "a11y.dismiss": "Dismiss",
+        "a11y.loading": "Loading…",
         "env.where_reports_go": "Where reports are sent",
         "env.prod": "Production",
         "env.mock": "MOCK · Nothing sent",
@@ -644,6 +646,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.submission_immediate.detail": "The error was: %(error)s",
         "notification.submission_transport.title": "%(property)s: could not deliver data to UbyPort.",
         "notification.submission_transport.detail": "The error was: %(error)s",
+        "notification.ubyport_auth_failed.title": "%(property)s: UbyPort refused the web-service login.",
+        "notification.ubyport_auth_failed.detail": "Automatic reporting for this property is paused so the account is not locked. Re-enter the UBY-WS password on the property's automation card, then test the connection.",
+        "notification.submission_outcome_unknown.title": "%(property)s: UbyPort may or may not have received the report.",
+        "notification.submission_outcome_unknown.detail": "The answer never arrived (%(error)s). It will not be sent again automatically. Check UbyPort, then send by hand if the guests are missing there.",
         "notification.submission_rejected.title": "%(property)s: UbyPort did not accept %(count)s guest record(s).",
         "notification.submission_rejected.detail": "%(failed)s record(s) to fix, %(blocked)s that resending will not fix.",
         "notification.submission_rejected.header": "Report header rejected: %(header)s",
@@ -658,6 +664,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.apartment_setup.title": "%(property)s: UbyPort settings are incomplete, nothing can be reported.",
         "notification.guest_record_unreadable.title": "%(property)s: a guest record cannot be read, so nothing is being reported for this property.",
         "notification.guest_record_unreadable.detail": "A stored guest document field could not be decrypted. Restore the encryption key, or have the guest's document entered again.",
+        "notification.sweep_failed.title": "%(property)s: automatic reporting stopped because of an internal error.",
+        "notification.sweep_failed.detail": "Nothing was sent for this property on the last run. It is retried every few minutes; if this stays, send the stay by hand and contact support@ubyhost.com.",
         "notification.mail_failed.title": "E-mail could not be sent (%(kind)s).",
         "notification.mail_failed.detail": "To %(to)s: %(error)s",
         # One name per outbox kind, so a host never reads ``reminder_host``.
@@ -744,6 +752,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.no_such_apartment": "This property no longer exists.",
         "flash.error.no_such_stay": "This stay no longer exists.",
         "flash.error.no_such_guest": "This guest no longer exists.",
+        "flash.error.resign_card_locked": "This card clears by itself when the guests sign again, or when you send the stay by hand.",
+        "flash.error.guest_changed_retry": "This guest was being sent to UbyPort at that moment. Open the guest again and repeat your change.",
         "flash.error.no_such_housebook_guest": "That house-book entry no longer exists.",
         "flash.error.no_such_entity": "This operator no longer exists.",
         "flash.error.no_such_controller": "That data controller no longer exists.",
@@ -810,6 +820,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "flash.error.ubyport_unreachable": (
             "UbyPort couldn't be reached — try again in a few minutes."
+        ),
+        "flash.error.ubyport_outcome_unknown": (
+            "UbyPort's answer did not arrive, so it is not known whether the report "
+            "was filed. Check UbyPort before sending again."
         ),
         "flash.error.connection_failed": (
             "The connection test failed — check the web-service login and try again."
@@ -886,6 +900,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "submission.rejected": "Rejected",
         "submission.duplicate": "Already registered",
         "submission.not_delivered": "Not delivered",
+        "submission.outcome_unknown": "Outcome unknown",
         "submission.setup_incomplete": "Setup incomplete",
         "submission.in_progress": "In progress",
         "submission.nothing_to_send": "Nothing to send",
@@ -1579,6 +1594,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "reports.detail.note_partial": "UbyPort přijal část hostů a ostatní odmítl. Opravte odmítnuté hosty na pobytu a hlášení odešlete znovu.",
         "reports.detail.note_rejected": "UbyPort toto hlášení odmítl. Opravte údaje hostů na pobytu a odešlete jej znovu.",
         "reports.detail.note_failed": "Hlášení se k UbyPortu nedostalo — přenos selhal. Zatím nebylo nic nahlášeno; odešlete jej znovu.",
+        "reports.detail.note_outcome_unknown": "UbyPort hlášení možná přijal, ale jeho odpověď nedorazila. Než ho odešlete znovu, ověřte hosty ve webové aplikaci UbyPort: druhé odeslání se počítá jako duplicita.",
         "reports.detail.note_running": "Hlášení se právě odesílá na UbyPort.",
         "reports.detail.note_noop": "V této dávce nebylo co odesílat.",
         "reports.detail.guests": "Hosté v tomto přenosu",
@@ -1932,6 +1948,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "a11y.notifications": "Oznámení",
         "a11y.dismiss_notification": "Skrýt oznámení",
         "a11y.dismiss": "Skrýt",
+        "a11y.loading": "Načítá se…",
         "env.where_reports_go": "Kam se hlášení odesílají",
         "env.prod": "Produkce",
         "env.mock": "UKÁZKA · Nic se neodesílá",
@@ -2002,6 +2019,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.submission_immediate.detail": "Chyba: %(error)s",
         "notification.submission_transport.title": "%(property)s: data se nepodařilo doručit do UbyPortu.",
         "notification.submission_transport.detail": "Chyba: %(error)s",
+        "notification.ubyport_auth_failed.title": "%(property)s: UbyPort odmítl přihlášení k webové službě.",
+        "notification.ubyport_auth_failed.detail": "Automatické hlášení za tuto nemovitost je pozastaveno, aby se účet nezablokoval. Zadejte znovu heslo UBY-WS na kartě automatizace nemovitosti a otestujte spojení.",
+        "notification.submission_outcome_unknown.title": "%(property)s: není jisté, zda UbyPort hlášení přijal.",
+        "notification.submission_outcome_unknown.detail": "Odpověď nedorazila (%(error)s). Automaticky se znovu neodešle. Ověřte stav v UbyPortu, a pokud tam hosté chybí, odešlete je ručně.",
         "notification.submission_rejected.title": "%(property)s: UbyPort nepřijal %(count)s záznamů hostů.",
         "notification.submission_rejected.detail": "%(failed)s záznamů k opravě, %(blocked)s jich opětovné odeslání nevyřeší.",
         "notification.submission_rejected.header": "Hlavička hlášení byla odmítnuta: %(header)s",
@@ -2016,6 +2037,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.apartment_setup.title": "%(property)s: nastavení UbyPortu není úplné, nelze nic nahlásit.",
         "notification.guest_record_unreadable.title": "%(property)s: záznam hosta nelze přečíst, proto se za tento objekt nic nenahlašuje.",
         "notification.guest_record_unreadable.detail": "Uložené pole s dokladem hosta se nepodařilo dešifrovat. Obnovte šifrovací klíč nebo nechte doklad hosta zadat znovu.",
+        "notification.sweep_failed.title": "%(property)s: automatické hlášení se zastavilo kvůli interní chybě.",
+        "notification.sweep_failed.detail": "Při posledním běhu se za tuto nemovitost nic neodeslalo. Zkouší se to znovu každých pár minut; pokud to přetrvá, odešlete pobyt ručně a kontaktujte support@ubyhost.com.",
         "notification.mail_failed.title": "E-mail se nepodařilo odeslat (%(kind)s).",
         "notification.mail_failed.detail": "Na adresu %(to)s: %(error)s",
         "notification.mail_kind.claim": "odkaz k registraci",
@@ -2097,6 +2120,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.no_such_apartment": "Toto ubytování už neexistuje.",
         "flash.error.no_such_stay": "Tento pobyt už neexistuje.",
         "flash.error.no_such_guest": "Tento host už neexistuje.",
+        "flash.error.resign_card_locked": "Tato karta zmizí sama, až hosté znovu podepíší, nebo až pobyt odešlete ručně.",
+        "flash.error.guest_changed_retry": "Tento host se právě odesílal do UbyPortu. Otevřete ho znovu a změnu zopakujte.",
         "flash.error.no_such_housebook_guest": "Tento záznam v domovní knize už neexistuje.",
         "flash.error.no_such_entity": "Tento provozovatel už neexistuje.",
         "flash.error.no_such_controller": "Tento správce údajů už neexistuje.",
@@ -2167,6 +2192,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "flash.error.ubyport_unreachable": (
             "UbyPort se nepodařilo kontaktovat — zkuste to za pár minut."
+        ),
+        "flash.error.ubyport_outcome_unknown": (
+            "Odpověď UbyPortu nedorazila, takže není jisté, zda bylo hlášení podáno. "
+            "Než odešlete znovu, ověřte to v UbyPortu."
         ),
         "flash.error.connection_failed": (
             "Test spojení se nezdařil — zkontrolujte přihlašovací údaje k webové službě "
@@ -2248,6 +2277,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "submission.rejected": "Odmítnuto",
         "submission.duplicate": "Již evidováno",
         "submission.not_delivered": "Nedoručeno",
+        "submission.outcome_unknown": "Výsledek neznámý",
         "submission.setup_incomplete": "Nedokončené nastavení",
         "submission.in_progress": "Probíhá",
         "submission.nothing_to_send": "Nic k odeslání",

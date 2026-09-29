@@ -255,6 +255,9 @@ CREATE INDEX IF NOT EXISTS idx_entity_owner        ON legal_entity (owner_user_i
 CREATE INDEX IF NOT EXISTS idx_alert_owner         ON alert (owner_user_id, resolved_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_dedupe ON alert (dedupe_key) WHERE resolved_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_submission_apartment ON submission (apartment_id);
+CREATE INDEX IF NOT EXISTS idx_guest_submission         ON guest (submission_id);
+CREATE INDEX IF NOT EXISTS idx_guest_receipt_submission ON guest (receipt_submission_id);
+CREATE INDEX IF NOT EXISTS idx_reservation_feed         ON reservation (ical_feed_id);
 CREATE INDEX IF NOT EXISTS idx_audit_owner         ON audit (owner_user_id, id);
 
 CREATE TABLE IF NOT EXISTS rate_limit_event (
@@ -559,6 +562,7 @@ ADDED_COLUMNS = (
     ("user_account", "totp_secret_enc", "TEXT"),
     ("user_account", "totp_enabled", "INTEGER NOT NULL DEFAULT 0"),
     ("user_account", "recovery_codes_hash", "TEXT"),
+    ("user_account", "totp_last_step", "INTEGER"),
     ("legal_entity", "contact_email", "TEXT"),
     ("legal_entity", "contact_phone", "TEXT"),
     ("legal_entity", "owner_user_id", "INTEGER REFERENCES user_account(id)"),
@@ -751,6 +755,48 @@ def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
         values = _guest_write_values(values)
     sets = ", ".join(f"{k} = ?" for k in values)
     execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
+
+
+def update_if(
+    table: str,
+    row_id: int,
+    values: Dict[str, Any],
+    expected: Dict[str, Any],
+    extra_where: str = "",
+    extra_params: Iterable[Any] = (),
+) -> bool:
+    """UPDATE the row only if it still holds ``expected``; True when it did.
+
+    Compare-and-set for rows a background job may change between a request's
+    read and its write. ``expected`` values compare with IS, so None matches
+    NULL. ``extra_where`` is a trusted SQL fragment (never user input).
+    Guest values are encrypted exactly as in update().
+    """
+    if not values:
+        return False
+    if table == "guest":
+        values = _guest_write_values(values)
+    sets = ", ".join(f"{k} = ?" for k in values)
+    clauses = ["id = ?"] + [f"{k} IS ?" for k in expected]
+    if extra_where:
+        clauses.append(extra_where)
+    sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)
+    params = list(values.values()) + [row_id] + list(expected.values()) + list(extra_params)
+    conn = connect()
+    try:
+        return conn.execute(sql, params).rowcount == 1
+    finally:
+        conn.close()
+
+
+def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:
+    """update(), but on a cursor from cursor()/immediate(), inside its transaction."""
+    if not values:
+        return
+    if table == "guest":
+        values = _guest_write_values(values)
+    sets = ", ".join(f"{k} = ?" for k in values)
+    cur.execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
 
 
 def get_setting(key: str, default: Optional[str] = None) -> Optional[str]:

@@ -35,10 +35,11 @@ import time
 import zipfile
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
-from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportTransportError
+from .ubyport.client import SubmissionResult, UbyportAuthError, UbyportClient, UbyportError, UbyportOutcomeUnknownError, UbyportTransportError
 
 log = logging.getLogger("ubyhost.reporting")
 
@@ -51,6 +52,10 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
+
+# Scheduled mode waits for the host's review window, but never past this
+# many hours before the statutory deadline (owner decision OD-2).
+AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS = 6
 
 # A record filed by hand from a paper house book carries no signature to
 # collect. The host vouches for it instead of forging one, so the marker stands
@@ -531,7 +536,11 @@ def dashboard_rows(
     out: List[Dict[str, Any]] = []
     for reservation in rows:
         check_in = reservation_deadline_anchor(reservation)
-        progress = reservation_progress(reservation)
+        try:
+            progress = reservation_progress(reservation)
+        except db.DecryptionError:
+            log.exception("dashboard skipped reservation_id=%s", reservation["id"])
+            continue
         level = deadlines.urgency(check_in) if check_in else "future"
         # A finished stay with nothing outstanding is noise on a dashboard.
         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
@@ -701,8 +710,23 @@ def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
         )
 
 
-def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
-    """Whether completion-based automation says to send this stay now."""
+# A sentinel for callers that already know the stay's deadline anchor: the
+# anchor itself may legitimately be None, so None cannot mean "not supplied".
+_ANCHOR_UNSET = object()
+
+
+def due_for_automatic_send(
+    apartment,
+    reservation,
+    now: Optional[datetime] = None,
+    anchor: Any = _ANCHOR_UNSET,
+) -> bool:
+    """Whether completion-based automation says to send this stay now.
+
+    ``anchor`` lets a caller that already read the stay's deadline anchor (the
+    sweep, once per stay instead of once per guest) pass it in; every other
+    caller leaves it unset and the anchor is looked up here as before.
+    """
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
@@ -722,7 +746,16 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
     delay = timedelta(
         hours=0 if mode == "immediate" else (apartment["submit_after_hours"] or 24)
     )
-    return current.astimezone(timezone.utc) >= completed.astimezone(timezone.utc) + delay
+    send_at = completed.astimezone(timezone.utc) + delay
+    if anchor is _ANCHOR_UNSET:
+        anchor = reservation_deadline_anchor(reservation)
+    if anchor is not None:
+        deadline_local = deadlines.reporting_deadline(anchor) - timedelta(
+            hours=AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS
+        )
+        latest = deadline_local.replace(tzinfo=ZoneInfo(config.TIMEZONE)).astimezone(timezone.utc)
+        send_at = min(send_at, latest)
+    return current.astimezone(timezone.utc) >= send_at
 
 
 # --- client construction -------------------------------------------------
@@ -897,7 +930,20 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         )
     }
 
+    # Batches whose outcome is unknown (the register may hold them). Their
+    # guests wait for a person; see UbyportOutcomeUnknownError.
+    in_doubt_submissions = {
+        row["id"]
+        for row in db.query(
+            "SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown'",
+            (apartment_id,),
+        )
+    }
+
     out: List[Tuple[Any, Any]] = []
+    # The deadline anchor depends only on the stay (the earliest guest
+    # arrival), so the sweep reads it once per stay instead of once per guest.
+    anchors: Dict[int, Optional[date]] = {}
     for guest in db.query(sql, params):
         reservation = reservations.get(guest["reservation_id"])
         if not reservation:
@@ -907,7 +953,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if config.RESTRICTED_BLOCKS_FILING and guest["restricted_at"]:
             continue
         if not validation.guest_is_reportable(guest["nationality"]):
-            if guest["submit_state"] != NOT_REQUIRED:
+            # A filed record stays filed: its state is the proof pointer.
+            if guest["submit_state"] not in (NOT_REQUIRED, SENT):
                 db.update("guest", guest["id"], {"submit_state": NOT_REQUIRED, "updated_at": db.utcnow()})
             continue
         if guest["submit_state"] == SENT and not allow_resend:
@@ -925,6 +972,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         # ever. This bounds only the sweep: a host-initiated send is how the
         # host takes the record back after fixing it, so it is never bound.
         if not ignore_automation and auto_attempts(guest) >= SUBMISSION_MAX_AUTO_ATTEMPTS:
+            continue
+        if not ignore_automation and guest["submission_id"] in in_doubt_submissions:
             continue
         if not guest_is_complete(guest, reservation):
             continue
@@ -956,7 +1005,11 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
             )
             continue
         if not ignore_schedule:
-            if not due_for_automatic_send(apartment, reservation):
+            if reservation["id"] not in anchors:
+                anchors[reservation["id"]] = reservation_deadline_anchor(reservation)
+            if not due_for_automatic_send(
+                apartment, reservation, anchor=anchors[reservation["id"]]
+            ):
                 continue
         out.append((guest, reservation))
     return out
@@ -1010,6 +1063,25 @@ def release_sendable_claim(token: str) -> None:
     db.execute("DELETE FROM submission_claim WHERE claim_token = ?", (token,))
 
 
+def apartment_in_doubt(apartment_id: int) -> bool:
+    """Whether any live guest still points at a batch whose outcome is unknown.
+
+    An ``ok`` batch may resolve the apartment-level card for its own guests, but
+    not for guests that still point at an earlier in-doubt batch: those stay
+    excluded from the sweep, and resolving the card would hide it.
+    """
+    return bool(
+        db.query_one(
+            "SELECT 1 FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+            "WHERE r.apartment_id = ? AND r.status = 'active' AND r.archived_at IS NULL "
+            "AND g.archived_at IS NULL AND g.submission_id IN "
+            "(SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown') "
+            "LIMIT 1",
+            (apartment_id, apartment_id),
+        )
+    )
+
+
 def submit_batch(
     apartment,
     pairs: List[Tuple[Any, Any]],
@@ -1048,6 +1120,48 @@ def submit_batch(
     client = client_for(apartment, env)
     try:
         result: SubmissionResult = client.submit(header, guests)
+    except UbyportOutcomeUnknownError as exc:
+        # The register may already hold this batch. Resending it on a timer
+        # is how duplicates pile up against the host, so it waits for a
+        # person (owner decision OD-1). The envelope is kept as evidence.
+        log.error(
+            "ubyport_submission_outcome_unknown apartment_id=%s submission_id=%s guest_ids=%s",
+            apartment["id"], submission_id, guest_ids, exc_info=True,
+        )
+        finished = db.utcnow()
+        # The batch record and every guest pointer are one fact: if a pointer
+        # write fails or the process dies, the unmarked guests look sendable
+        # again and the sweep refiles a batch the register may already hold.
+        # The in-doubt filter reads guest.submission_id, so both have to land
+        # together or neither may.
+        with db.immediate() as cur:
+            db.update_in(
+                cur,
+                "submission",
+                submission_id,
+                {
+                    "state": "outcome_unknown",
+                    "finished_at": finished,
+                    "error_text": str(exc),
+                    "request_xml": getattr(exc, "request_xml", "") or None,
+                },
+            )
+            for in_doubt_id in guest_ids:
+                db.update_in(cur, "guest", in_doubt_id, {"submission_id": submission_id})
+        alerts.raise_alert(
+            "critical",
+            "submission_outcome_unknown",
+            f"{apartment['internal_name']}: UbyPort may or may not have received the report.",
+            str(exc),
+            dedupe_key=f"submission_outcome_unknown:{apartment['id']}",
+            apartment_id=apartment["id"],
+            params={"property": apartment["internal_name"], "error": str(exc)},
+        )
+        mail_notify.submission_problem(
+            apartment, submission_id, state="transport_error", reason=str(exc), transport=True,
+        )
+        return {"submitted": 0, "submission_id": submission_id, "state": "outcome_unknown",
+                "error": str(exc)}
     except (UbyportTransportError, UbyportError) as exc:
         log.error(
             "ubyport_submission_failed apartment_id=%s owner_user_id=%s "
@@ -1079,6 +1193,16 @@ def submit_batch(
             apartment_id=apartment["id"],
             params={"property": apartment["internal_name"], "error": str(exc)},
         )
+        if isinstance(exc, UbyportAuthError):
+            alerts.raise_alert(
+                "critical",
+                "ubyport_auth_failed",
+                f"{apartment['internal_name']}: UbyPort refused the web-service login.",
+                str(exc),
+                dedupe_key=f"ubyport_auth_failed:{apartment['id']}",
+                apartment_id=apartment["id"],
+                params={"property": apartment["internal_name"]},
+            )
         # The host is not watching the screen when this fires -- the whole point
         # of the automatic send is that nobody is. Mail the same event to the
         # address on the legal entity so a batch that never left is not only
@@ -1116,31 +1240,33 @@ def submit_batch(
     # this attempt. Each one has stopped being offered to the sweep, which the
     # host has to be told or the stop is silent.
     exhausted: List[Any] = []
+    guest_writes: List[Tuple[int, Dict[str, Any]]] = []
 
     for index, (guest, _reservation) in enumerate(pairs):
         record_error = per_record[index] if index < len(per_record) else ""
         state, messages = uby_errors.classify(result.header_errors, record_error, codebook)
         if state == "accepted":
-            db.update(
-                "guest",
-                guest["id"],
-                {
-                    "submit_state": SENT,
-                    "submitted_at": now,
-                    # The current pointer, moved on every send - it is not the
-                    # batch record, which lives in submission.guest_ids.
-                    "submission_id": submission_id,
-                    # Keep pointing at the last submission that actually holds
-                    # a Dorucenka when this attempt returned none, so a resend
-                    # without a receipt request does not lose the link.
-                    "receipt_submission_id": (
-                        submission_id if result.receipt_pdf else guest["receipt_submission_id"]
-                    ),
-                    "last_errors": None,
-                    # The register took it, so the count of refusals restarts.
-                    "submit_attempts": 0,
-                    "updated_at": now,
-                },
+            guest_writes.append(
+                (
+                    guest["id"],
+                    {
+                        "submit_state": SENT,
+                        "submitted_at": now,
+                        # The current pointer, moved on every send - it is not the
+                        # batch record, which lives in submission.guest_ids.
+                        "submission_id": submission_id,
+                        # Keep pointing at the last submission that actually holds
+                        # a Dorucenka when this attempt returned none, so a resend
+                        # without a receipt request does not lose the link.
+                        "receipt_submission_id": (
+                            submission_id if result.receipt_pdf else guest["receipt_submission_id"]
+                        ),
+                        "last_errors": None,
+                        # The register took it, so the count of refusals restarts.
+                        "submit_attempts": 0,
+                        "updated_at": now,
+                    },
+                )
             )
             accepted_count += 1
             first_accepts += 1
@@ -1148,9 +1274,10 @@ def submit_batch(
             new_state = BLOCKED if state == "not_correctable" else ERROR
             # A duplicate response proves the register already has this guest.
             # This also covers an earlier accept whose HTTP response was lost.
-            duplicate = "150" in uby_errors.split_codes(record_error) or any(
-                uby_errors.is_duplicate(message) for message in messages
-            )
+            # Only this record's own code 150 proves the register holds it.
+            # Prose and header-level messages must not: a false "sent" is a
+            # guest who was never filed.
+            duplicate = "150" in uby_errors.split_codes(record_error)
             if duplicate:
                 new_state = SENT
                 duplicate_accepts += 1
@@ -1179,7 +1306,7 @@ def submit_batch(
                     guest["receipt_submission_id"]
                     or receipt_submission_id(guest["submission_id"])
                 )
-            db.update("guest", guest["id"], update_values)
+            guest_writes.append((guest["id"], update_values))
             if new_state == SENT:
                 # A duplicate for a guest we already had as sent means the
                 # register confirms it holds the record. Nothing was refused and
@@ -1193,6 +1320,43 @@ def submit_batch(
                 failed_count += 1
             else:
                 blocked_count += 1
+
+    if failed_count or blocked_count:
+        state = "partial" if accepted_count else "error"
+    elif first_accepts:
+        # Something was filed for the first time, so this is a plain success even
+        # if other records in the same batch came back as duplicates.
+        state = "ok"
+    elif duplicate_accepts:
+        # Nothing new was filed: the register already held every record, so no
+        # Dorucenka came back for this attempt. That is a success, but not the
+        # same thing as a first-time accept with a confirmation behind it.
+        state = "ok_duplicate"
+    else:
+        state = "ok"
+
+    # The answer and the Dorucenka are written together with every guest's
+    # new state, or not at all. Anything that can fail afterwards (alerts,
+    # mail) must not be able to lose the receipt or leave guests pending.
+    with db.immediate() as cur:
+        for write_id, write_values in guest_writes:
+            db.update_in(cur, "guest", write_id, write_values)
+        db.update_in(
+            cur,
+            "submission",
+            submission_id,
+            {
+                "state": state,
+                "finished_at": now,
+                "header_errors": result.header_errors,
+                "record_errors": json.dumps(result.record_errors),
+                "pseudo_stamp": result.pseudo_stamp,
+                "receipt_pdf": result.receipt_pdf or None,
+                "error_pdf": result.error_pdf or None,
+                "request_xml": result.request_xml,
+                "response_xml": result.response_xml,
+            },
+        )
 
     if exhausted:
         # The stop has to be visible. Without this the sweep simply stops
@@ -1222,38 +1386,14 @@ def submit_batch(
     for _reservation_id in {_reservation["id"] for _guest, _reservation in pairs}:
         clear_stuck_alert_if_recovered(_reservation_id)
 
-    if failed_count or blocked_count:
-        state = "partial" if accepted_count else "error"
-    elif first_accepts:
-        # Something was filed for the first time, so this is a plain success even
-        # if other records in the same batch came back as duplicates.
-        state = "ok"
-    elif duplicate_accepts:
-        # Nothing new was filed: the register already held every record, so no
-        # Dorucenka came back for this attempt. That is a success, but not the
-        # same thing as a first-time accept with a confirmation behind it.
-        state = "ok_duplicate"
-    else:
-        state = "ok"
-
-    db.update(
-        "submission",
-        submission_id,
-        {
-            "state": state,
-            "finished_at": now,
-            "header_errors": result.header_errors,
-            "record_errors": json.dumps(result.record_errors),
-            "pseudo_stamp": result.pseudo_stamp,
-            "receipt_pdf": result.receipt_pdf or None,
-            "error_pdf": result.error_pdf or None,
-            "request_xml": result.request_xml,
-            "response_xml": result.response_xml,
-        },
-    )
-
     if state in ("ok", "ok_duplicate"):
         alerts.resolve(f"submission_rejected:{apartment['id']}")
+        # The in-doubt card is apartment-wide. This batch only answered for its
+        # own guests; if another guest still points at an unknown batch, the
+        # card has to stay up or the warning disappears while the sweep keeps
+        # silently excluding them.
+        if not apartment_in_doubt(apartment["id"]):
+            alerts.resolve(f"submission_outcome_unknown:{apartment['id']}")
     else:
         log.error(
             "ubyport_submission_rejected apartment_id=%s owner_user_id=%s "
@@ -1426,6 +1566,10 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
         "AND (? IS NULL OR owner_user_id = ?)",
         (owner_user_id, owner_user_id),
     ):
+        if alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}"):
+            # Retrying a refused login every ten minutes risks locking the
+            # police account. Wait until the host saves new credentials.
+            continue
         summary["apartments"] += 1
         try:
             # The quiet-window completion is the one decision nobody makes: the
@@ -1440,6 +1584,7 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
             ):
                 refresh_registration_completed_at(pending["id"])
             results = submit_for_apartment(apartment["id"], mode="auto")
+            alerts.resolve(f"sweep_failed:{apartment['id']}")
         except db.DecryptionError:
             # One guest row that will not decrypt used to abort the whole sweep,
             # so no host anywhere was filed or alerted. Contain it to the one
@@ -1454,6 +1599,22 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
                 "A stored guest document field could not be decrypted. Restore the "
                 "encryption key, or have the guest's document entered again.",
                 dedupe_key=f"guest_record_unreadable:{apartment['id']}",
+                apartment_id=apartment["id"],
+                params={"property": apartment["internal_name"]},
+            )
+            continue
+        except Exception:
+            # Any other failure is contained to this property too: one bad
+            # row or a locked database must not leave every later property
+            # unfiled on every sweep.
+            log.exception("sweep failed for apartment_id=%s", apartment["id"])
+            summary["failed"] += 1
+            alerts.raise_alert(
+                "critical",
+                "sweep_failed",
+                f"{apartment['internal_name']}: automatic reporting stopped because of an internal error.",
+                "Nothing was sent for this property on the last run.",
+                dedupe_key=f"sweep_failed:{apartment['id']}",
                 apartment_id=apartment["id"],
                 params={"property": apartment["internal_name"]},
             )
@@ -1496,6 +1657,22 @@ def check_deadlines(
     """
     now = deadlines.local_now(now)
     raised = 0
+    # A cancelled, ignored or archived stay has nothing left to chase. One
+    # statement, not one connection per card. When the caller is a single
+    # host's request (/sync_now carries the owner) only that workspace's cards
+    # may be cleared; the scheduled run passes no owner and clears them all.
+    db.execute(
+        "UPDATE alert SET resolved_at = ?, user_dismissed = 0 WHERE id IN ("
+        "SELECT al.id FROM alert al "
+        "JOIN reservation r ON r.id = al.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id "
+        "WHERE al.resolved_at IS NULL "
+        "AND al.kind IN ('deadline', 'headcount_mismatch', 'guest_incomplete_checkin') "
+        "AND (r.status != 'active' OR r.archived_at IS NOT NULL) "
+        "AND (? IS NULL OR a.owner_user_id = ?)"
+        ")",
+        (db.utcnow(), owner_user_id, owner_user_id),
+    )
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
@@ -1620,7 +1797,7 @@ def build_receipts_zip(rows: List[Any], dest_path: str) -> int:
 # Every state a submission row can settle in. A row is only 'running' while
 # the submit call is in flight, and the envelope is stored at the moment the
 # row moves to one of these, so a 'running' row has no envelope to purge.
-TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transport_error")
+TERMINAL_SUBMISSION_STATES = ("ok", "ok_duplicate", "partial", "error", "transport_error", "outcome_unknown")
 
 # The envelope is the only thing in the row that carries guest data, and the
 # row outlives the six-year purge of the guests it describes, so it goes far
