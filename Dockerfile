@@ -1,7 +1,8 @@
 # Production image for AWS Lightsail, Fly.io, Railway, or any Docker host.
 # Build from repo root: docker build -t ubyhost .
 # Data lives on a mounted volume at UBYHOST_DATA_DIR (default /data).
-FROM python:3.12-slim
+# Pinned by digest; Dependabot (docker) proposes updates.
+FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
 
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -34,4 +35,5 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 # --no-access-log: uvicorn's own access log writes the raw request line, which
 # includes guest permalink tokens and query strings. The app logs one PII-free
 # line per request instead (see app/main.py, OPS-3).
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--no-access-log"]
+# One worker: the scheduler runs in-process and SQLite has one writer.
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]
