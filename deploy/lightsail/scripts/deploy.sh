@@ -41,7 +41,13 @@ else
   cp caddy/Caddyfile.acme caddy/Caddyfile.active
 fi
 
-if [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
+if [ -z "${UBYHOST_SECRET_KEY:-}" ] && docker compose run --rm --no-deps -T --entrypoint sh ubyhost \
+     -c 'test -s /data/secret_key' >/dev/null 2>&1; then
+  # The volume already holds the key the data was encrypted with, and the app
+  # reads it when the variable is empty. Minting a new one here would make
+  # every encrypted field (TOTP, UbyPort passwords, document numbers) unreadable.
+  echo "==> Using the existing /data/secret_key (UBYHOST_SECRET_KEY is empty in .env)."
+elif [ -z "${UBYHOST_SECRET_KEY:-}" ]; then
   echo "Generating UBYHOST_SECRET_KEY in .env"
   KEY="$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")"
   if grep -q '^UBYHOST_SECRET_KEY=' .env; then
