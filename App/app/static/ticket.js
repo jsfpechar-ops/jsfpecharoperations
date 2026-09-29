@@ -123,18 +123,14 @@
     var form = document.querySelector("[data-guest-wizard]");
     var list = document.querySelector("[data-checkin-steps]");
     if (!form || !list) return;
-    var nationality = form.querySelector('[name="nationality"]');
-    function liveSteps() {
-      // The same filter signature.js uses: a step can opt out for one nationality.
-      return Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]")).filter(function (s) {
-        var skip = s.getAttribute("data-guest-step-skip-when");
-        return !skip || !nationality || nationality.value !== skip;
-      });
-    }
     function relabel(event) {
+      // signature.js passes the wizard's filtered step list with the event and
+      // rebuilds the rail from it. Its first paint happens before this listener
+      // exists and uses every step, so mirror that rather than filtering here:
+      // one filter, owned by signature.js, keeps the rail and its labels aligned.
       var steps = event && event.detail && event.detail.steps
         ? Array.prototype.slice.call(event.detail.steps)
-        : liveSteps();
+        : Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]"));
       var items = list.querySelectorAll(".g-checkin-step");
       Array.prototype.forEach.call(items, function (item, index) {
         var step = steps[index];
@@ -225,12 +221,23 @@
       });
       box.addEventListener("paste", function (e) {
         var text = ((e.clipboardData || window.clipboardData).getData("text") || "").trim();
-        if (/\d{1,4}\D\d{1,2}\D\d{1,4}|\d{8}/.test(text)) {
-          e.preventDefault();
-          real.value = text;
-          real.dispatchEvent(new Event("input", { bubbles: true }));
-          split();
+        // Read the parts in the order they were written, then pad each one.
+        // Passing the raw text through would let signature.js regroup the
+        // digits, so an unpadded "14.3.1988" would become 14.31.988.
+        var groups = text.split(/\D+/).filter(Boolean);
+        var parts = null;
+        if (groups.length === 3) {
+          parts = groups[0].length === 4
+            ? [groups[2], groups[1], groups[0]]
+            : [groups[0], groups[1], groups[2]];
+        } else if (groups.length === 1 && groups[0].length === 8) {
+          parts = [groups[0].slice(0, 2), groups[0].slice(2, 4), groups[0].slice(4, 8)];
         }
+        if (!parts || parts[2].length !== 4 || parts[0].length > 2 || parts[1].length > 2) return;
+        e.preventDefault();
+        real.value = parts[0].padStart(2, "0") + parts[1].padStart(2, "0") + parts[2];
+        real.dispatchEvent(new Event("input", { bubbles: true }));
+        split();
       });
     });
     // The wizard focuses the real field when it is invalid; send the guest
@@ -259,7 +266,10 @@
         options.push({ code: o.value, label: o.textContent.trim() });
       });
       function norm(s) {
-        return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+        // Fold accents and drop punctuation, so "guinea bissau" matches
+        // "Guinea-Bissau" and a curly apostrophe matches a straight one.
+        return String(s || "").toLowerCase().normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
       }
       var wrap = document.createElement("div");
       wrap.className = "tw-combo";
@@ -289,7 +299,13 @@
       select.setAttribute("tabindex", "-1");
       select.setAttribute("aria-hidden", "true");
       var label = document.querySelector('label[for="' + id + '"]');
-      if (label) label.setAttribute("for", input.id);
+      // Keep the label pointing at the real <select>: signature.js builds the
+      // review rows by looking it up as label[for="<control id>"]. Clicking the
+      // label focuses the select, which forwards focus to the search input.
+      if (label) {
+        if (!label.id) label.id = id + "_label";
+        input.setAttribute("aria-labelledby", label.id);
+      }
 
       var active = -1;
       var shown = [];
@@ -333,7 +349,7 @@
       function highlight(k) {
         var items = list.querySelectorAll('[role="option"]');
         if (!items.length) return;
-        active = (k + items.length) % items.length;
+        active = k < 0 ? items.length - 1 : k % items.length;
         Array.prototype.forEach.call(items, function (li, i) { li.classList.toggle("is-active", i === active); });
         input.setAttribute("aria-activedescendant", items[active].id);
         items[active].scrollIntoView({ block: "nearest" });
@@ -426,7 +442,7 @@
     var canvas = document.getElementById("sig-canvas");
     if (!pad || !hidden || !canvas) return;
     function sync() { pad.classList.toggle("is-signed", !!hidden.value); }
-    ["mouseup", "touchend", "pointerup", "keyup"].forEach(function (name) {
+    ["mouseup", "mouseleave", "touchend", "touchcancel", "pointerup", "keyup"].forEach(function (name) {
       canvas.addEventListener(name, function () { setTimeout(sync, 30); });
     });
     var clear = document.getElementById("sig-clear");
