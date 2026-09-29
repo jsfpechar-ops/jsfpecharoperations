@@ -17,7 +17,7 @@ import pytest
 from cryptography.fernet import Fernet
 from starlette.testclient import TestClient
 
-from app import config, db, reporting
+from app import claim, config, db, reporting
 from app.main import app
 from tests.conftest import complete_guest_claim
 
@@ -356,3 +356,18 @@ def test_an_unfilled_document_number_still_reads_back_as_none():
 
     assert row["doc_number"] is None
     assert row["visa_number"] is None
+
+
+def test_an_unreadable_guest_row_does_not_stop_the_sweep_or_the_dashboard():
+    """AR-24: one undecryptable row skips its own stay, not the whole job/page."""
+    _, reservation = _seed_stay("m")
+    guest_id = _raw_insert_guest(reservation["id"])
+    db.execute(
+        "UPDATE guest SET doc_number = NULL, doc_number_enc = ? WHERE id = ?",
+        ("gAAAA-not-valid", guest_id),
+    )
+
+    # Both paths compute progress for the corrupted stay's reservation; neither
+    # may let the decryption error escape to the caller.
+    claim.sweep_reminders()
+    reporting.dashboard_rows()
