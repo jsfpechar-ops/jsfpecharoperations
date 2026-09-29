@@ -201,7 +201,7 @@
     <h2>{{ t('residence_title') }}</h2>
     <p class="g-intro">{{ t('residence_help') }}</p>
     {% if residence_copied_from %}
-      <p class="hint tw-copied" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
+      <p class="hint" role="status" data-tw-copied>{{ t('residence_copied', name=residence_copied_from) }}</p>
     {% endif %}
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>

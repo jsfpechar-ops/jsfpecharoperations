@@ -312,7 +312,7 @@
 }
 .tw .g-err { border-radius: var(--radius-md); }
 /* A copied address is a gift, so it looks like one. */
-.tw .tw-copied {
+.tw [data-tw-copied] {
   display: flex;
   gap: var(--space-3);
   align-items: center;
@@ -542,8 +542,8 @@
   width: 6px;
   background: var(--border-strong);
 }
-.tw details.g-summary.is-complete::before,
-.tw .g-person.is-complete::before { background: var(--green); }
+.tw details.g-summary:has(> .tw-complete-mark)::before,
+.tw .g-person[data-complete]::before { background: var(--green); }
 .tw details.g-summary > summary.g-summary-fold { padding-left: 26px; font: 600 19px/1.3 var(--tw-serif); }
 .tw .g-person { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) 22px; }
 

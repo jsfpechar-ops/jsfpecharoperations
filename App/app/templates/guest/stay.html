@@ -89,8 +89,9 @@
 {% endif %}
 
 {% for person in people if person.mine %}
-  <details class="g-card g-summary {{ 'is-complete' if person.complete }}">
+  <details class="g-card g-summary">
     <summary class="g-summary-fold">{% if person.name %}{{ person.name }}{% else %}{{ t('person') }} {{ person.index }}{% endif %} &middot; {{ t('summary_fold_saved') if person.complete else t('not_filled') }}</summary>
+    {% if person.complete %}<span class="tw-complete-mark" hidden></span>{% endif %}
     <div class="g-summary-body">
       <h2>{{ t('summary_title') }}</h2>
       {% if person.summary %}
@@ -122,7 +123,7 @@
 {% if people | selectattr('mine') | list | length < people | length %}
   <div class="g-card">
     {% for person in people if not person.mine %}
-      <div class="g-person {{ 'is-complete' if person.complete }}">
+      <div class="g-person"{% if person.complete %} data-complete{% endif %}>
         <span class="g-tick {{ 'done' if person.complete else 'todo' }}">{{ '✓' if person.complete else person.index }}</span>
         <div class="who">
           {{ t('person') }} {{ person.index }}
