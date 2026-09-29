@@ -255,6 +255,9 @@ CREATE INDEX IF NOT EXISTS idx_entity_owner        ON legal_entity (owner_user_i
 CREATE INDEX IF NOT EXISTS idx_alert_owner         ON alert (owner_user_id, resolved_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_dedupe ON alert (dedupe_key) WHERE resolved_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_submission_apartment ON submission (apartment_id);
+CREATE INDEX IF NOT EXISTS idx_guest_submission         ON guest (submission_id);
+CREATE INDEX IF NOT EXISTS idx_guest_receipt_submission ON guest (receipt_submission_id);
+CREATE INDEX IF NOT EXISTS idx_reservation_feed         ON reservation (ical_feed_id);
 CREATE INDEX IF NOT EXISTS idx_audit_owner         ON audit (owner_user_id, id);
 
 CREATE TABLE IF NOT EXISTS rate_limit_event (
