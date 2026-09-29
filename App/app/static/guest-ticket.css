@@ -44,7 +44,6 @@
 /* The form page used to become two columns at 1020px. The ticket is the
    layout now, so the form stays one ticket wide and the rail steps aside. */
 .tw .g-checkin-page { max-width: 640px; }
-.tw .g-checkin-rail { display: none !important; }
 @media (min-width: 1020px) {
   .tw .g-checkin-page main { display: block; }
 }
@@ -855,6 +854,62 @@
 /* On the claim page the date card and why-fold used to sit above the ticket;
    the app bar already shows the dates, so the slim pass is enough. */
 .tw .g-stay-summary + .tw-ticket { margin-top: 0; }
+
+/* 22. Form tracker v2 (the old check-in rail, shown on every width) ------ */
+.tw .g-checkin-rail,
+.tw .g-checkin-page main > .g-checkin-rail {
+  display: block;
+  position: static;
+  margin: 0 0 var(--space-4);
+}
+.tw .g-checkin-stay { display: block; padding: 0 4px; border: 0; background: none; }
+.tw .g-checkin-stay .g-property-mark,
+.tw .g-checkin-stay-body strong,
+.tw .g-checkin-stay-body span:first-of-type { display: none; }
+.tw .g-checkin-stay-body span { font-size: 13.5px; font-weight: 650; color: var(--ink-muted); }
+.tw .g-checkin-steps-title {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.tw .g-checkin-steps { display: flex; gap: 4px; margin: var(--space-2) 0 0; padding: 0; border: 0; }
+.tw .g-checkin-step {
+  position: relative;
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 0 12px;
+  border: 0;
+  border-top: 4px solid var(--border);
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tw .g-checkin-step i { display: none; }
+.tw .g-checkin-step.is-done { border-top-color: var(--brand); color: var(--ink-muted); }
+.tw .g-checkin-step.is-current { border-top-color: var(--brand); color: var(--brand-ink); }
+/* The rail's Change button covers the whole finished segment. */
+.tw .g-checkin-step-edit {
+  position: absolute;
+  inset: -8px 0 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.tw .g-checkin-step:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+/* Help folds go under the ticket on the form. */
+.tw .g-checkin-main { display: flex; flex-direction: column; }
+.tw .g-checkin-main > * { order: 1; }
+.tw .g-checkin-main > .g-back,
+.tw .g-checkin-main > .g-err { order: 0; }
+.tw .g-checkin-main > details { order: 2; }
 
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,

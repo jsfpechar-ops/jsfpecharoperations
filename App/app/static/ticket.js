@@ -117,6 +117,39 @@
     paint();
   }
 
+  // 6. The check-in rail (built by signature.js) becomes the top tracker.
+  //    Its labels are the long step titles; show the short ones instead.
+  function initTrackerLabels() {
+    var form = document.querySelector("[data-guest-wizard]");
+    var list = document.querySelector("[data-checkin-steps]");
+    if (!form || !list) return;
+    var nationality = form.querySelector('[name="nationality"]');
+    function liveSteps() {
+      // The same filter signature.js uses: a step can opt out for one nationality.
+      return Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]")).filter(function (s) {
+        var skip = s.getAttribute("data-guest-step-skip-when");
+        return !skip || !nationality || nationality.value !== skip;
+      });
+    }
+    function relabel(event) {
+      var steps = event && event.detail && event.detail.steps
+        ? Array.prototype.slice.call(event.detail.steps)
+        : liveSteps();
+      var items = list.querySelectorAll(".g-checkin-step");
+      Array.prototype.forEach.call(items, function (item, index) {
+        var step = steps[index];
+        var short = step && step.getAttribute("data-tw-short");
+        var name = item.querySelector("span:not(.sr-only)");
+        if (short && name) {
+          name.textContent = short;
+          item.setAttribute("title", step.getAttribute("data-step-title") || short);
+        }
+      });
+    }
+    form.addEventListener("guest-wizard:shown", relabel);
+    relabel();
+  }
+
   // A page restored from the back/forward cache must not keep spinning.
   window.addEventListener("pageshow", function () {
     Array.prototype.forEach.call(document.querySelectorAll("form.is-sending"), function (f) {
@@ -130,6 +163,7 @@
     initSending();
     initSubmitStub();
     initPinCells();
+    initTrackerLabels();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
