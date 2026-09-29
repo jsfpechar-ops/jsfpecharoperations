@@ -13,8 +13,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates sqlite3 age \
     && rm -rf /var/lib/apt/lists/*
 
-COPY App/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY App/requirements.lock .
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 
 COPY App/ .
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
