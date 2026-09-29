@@ -1105,6 +1105,44 @@
 .tw .g-sign.is-signed::after { content: "\2713  " attr(data-tw-signed); color: var(--green); font-weight: 650; }
 .tw .g-sign .bar { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
 
+/* 28. Check step: review rows, compact legal, visible ack ---------------- */
+.tw .g-review-list { display: block; margin: 0 0 var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.tw .g-review-list dt {
+  padding: var(--space-3) var(--space-4) 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tw .g-review-list dd {
+  margin: 0;
+  padding: 2px var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font-weight: 600;
+}
+.tw .g-review-list dd:last-of-type { border-bottom: 0; }
+.tw .g-legal-notice {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4) !important;
+  border-radius: var(--radius-lg);
+  background: var(--canvas-subtle) !important;
+}
+.tw .g-legal-notice h2 { font: 650 17px/1.3 var(--font-sans) !important; }
+.tw .g-legal-notice h3 { font-size: 13.5px; }
+.tw .g-legal-notice p { font-size: 13.5px; }
+.tw .g-legal-notice .legal-ack {
+  margin: var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+  padding: var(--space-4);
+  border-top: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 35%, transparent);
+}
+.tw .g-legal-notice .legal-ack .checkline span { color: var(--ink); font-weight: 650; }
+.tw .g-legal-notice .legal-ack input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--brand-action); }
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
