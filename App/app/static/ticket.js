@@ -150,6 +150,101 @@
     relabel();
   }
 
+  // 7. Date of birth: Day / Month / Year boxes that write "DD.MM.YYYY" into
+  //    the real #birth_date, so signature.js keeps formatting, the read-back
+  //    and validation exactly as before.
+  function initDobCells() {
+    var real = document.getElementById("birth_date");
+    if (!real || real.getAttribute("data-tw-cells")) return;
+    real.setAttribute("data-tw-cells", "1");
+    var names = [
+      [real.getAttribute("data-tw-day") || "Day", 2, "DD", "bday-day"],
+      [real.getAttribute("data-tw-month") || "Month", 2, "MM", "bday-month"],
+      [real.getAttribute("data-tw-year") || "Year", 4, "YYYY", "bday-year"]
+    ];
+    var group = document.createElement("div");
+    group.className = "tw-dob";
+    group.setAttribute("role", "group");
+    var label = document.querySelector('label[for="birth_date"]');
+    if (label) {
+      if (!label.id) label.id = "birth_date_label";
+      group.setAttribute("aria-labelledby", label.id);
+    }
+    var boxes = names.map(function (n, k) {
+      var wrap = document.createElement("label");
+      wrap.className = "tw-dob-part";
+      var small = document.createElement("small");
+      small.textContent = n[0];
+      var box = document.createElement("input");
+      box.type = "text";
+      box.inputMode = "numeric";
+      box.maxLength = n[1];
+      box.placeholder = n[2];
+      box.autocomplete = n[3];
+      box.id = "birth_date_" + ["d", "m", "y"][k];
+      if (real.getAttribute("aria-invalid")) {
+        box.setAttribute("aria-invalid", "true");
+        box.setAttribute("aria-describedby", real.getAttribute("aria-describedby") || "");
+        box.className = "bad";
+      }
+      wrap.appendChild(small);
+      wrap.appendChild(box);
+      group.appendChild(wrap);
+      return box;
+    });
+    real.parentNode.insertBefore(group, real);
+    real.classList.add("tw-vh");
+    real.setAttribute("tabindex", "-1");
+    real.setAttribute("aria-hidden", "true");
+
+    function split() {
+      var m = /^(\d{0,2})\.?(\d{0,2})\.?(\d{0,4})$/.exec(real.value || "");
+      boxes[0].value = m ? m[1] : "";
+      boxes[1].value = m ? m[2] : "";
+      boxes[2].value = m ? m[3] : "";
+    }
+    function join() {
+      var d = boxes[0].value, mo = boxes[1].value, y = boxes[2].value;
+      var digits = d + (d.length === 2 ? mo : "") + (d.length === 2 && mo.length === 2 ? y : "");
+      real.value = digits;
+      real.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function pad(box) {
+      if (box.value.length === 1 && box !== boxes[2]) box.value = "0" + box.value;
+    }
+    boxes.forEach(function (box, k) {
+      box.addEventListener("input", function () {
+        box.value = box.value.replace(/\D/g, "").slice(0, box.maxLength);
+        box.classList.remove("bad");
+        join();
+        if (box.value.length === box.maxLength && boxes[k + 1]) boxes[k + 1].focus();
+      });
+      box.addEventListener("blur", function () { pad(box); join(); });
+      box.addEventListener("keydown", function (e) {
+        if (e.key === "Backspace" && !box.value && boxes[k - 1]) boxes[k - 1].focus();
+      });
+      box.addEventListener("paste", function (e) {
+        var text = ((e.clipboardData || window.clipboardData).getData("text") || "").trim();
+        if (/\d{1,4}\D\d{1,2}\D\d{1,4}|\d{8}/.test(text)) {
+          e.preventDefault();
+          real.value = text;
+          real.dispatchEvent(new Event("input", { bubbles: true }));
+          split();
+        }
+      });
+    });
+    // The wizard focuses the real field when it is invalid; send the guest
+    // to the first box that still needs digits instead.
+    real.addEventListener("focus", function () {
+      var target = boxes.filter(function (b) { return b.value.length < b.maxLength; })[0] || boxes[0];
+      target.focus();
+    });
+    real.addEventListener("invalid", function () {
+      boxes.forEach(function (b) { if (b.value.length < b.maxLength) b.classList.add("bad"); });
+    });
+    split();
+  }
+
   // A page restored from the back/forward cache must not keep spinning.
   window.addEventListener("pageshow", function () {
     Array.prototype.forEach.call(document.querySelectorAll("form.is-sending"), function (f) {
@@ -164,6 +259,7 @@
     initSubmitStub();
     initPinCells();
     initTrackerLabels();
+    initDobCells();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();

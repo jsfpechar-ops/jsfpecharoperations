@@ -911,6 +911,24 @@
 .tw .g-checkin-main > .g-err { order: 0; }
 .tw .g-checkin-main > details { order: 2; }
 
+/* 23. Date of birth boxes (ticket.js initDobCells) ------------------------ */
+.tw .tw-dob { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: var(--space-2); }
+.tw .tw-dob-part { display: block; }
+.tw .tw-dob-part small { display: block; margin-bottom: 4px; color: var(--ink-muted); font-size: 12px; font-weight: 650; }
+.tw .tw-dob-part input { width: 100%; text-align: center; font-variant-numeric: tabular-nums; }
+.tw #birth-date-readback:not(:empty) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-2);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--green-bg);
+  color: var(--green);
+  font-weight: 650;
+}
+.tw #birth-date-readback:not(:empty)::before { content: "\2713"; font-weight: 800; }
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }

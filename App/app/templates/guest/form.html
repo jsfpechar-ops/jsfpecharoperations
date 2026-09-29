@@ -119,7 +119,7 @@
     <div class="g-row">
       <div class="g-field">
         <label for="birth_date">{{ t('birth_date') }}</label>
-        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date"
+        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date" data-tw-day="{{ t('tw_dob_day') }}" data-tw-month="{{ t('tw_dob_month') }}" data-tw-year="{{ t('tw_dob_year') }}"
                inputmode="numeric" placeholder="{{ t('date_placeholder') }}" maxlength="10" required
                autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
         <div class="hint">{{ t('birth_date_help') }}</div>
