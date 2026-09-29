@@ -83,6 +83,8 @@ async def lifespan(_app: FastAPI):
     # broken release went live.
     config.secret_key()
     db.init_db()
+    from PIL import Image
+    Image.MAX_IMAGE_PIXELS = 12_000_000  # every image we render is a signature or a QR code
     bootstrap_password = auth.ensure_bootstrap_admin()
     admin_username = auth.normalise_username(config.ADMIN_USERNAME) or "admin"
     if bootstrap_password:

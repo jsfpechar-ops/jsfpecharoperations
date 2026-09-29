@@ -10,6 +10,7 @@ submission, rather than discovering it after the legal deadline has passed.
 from __future__ import annotations
 
 import base64
+import io
 import json
 import re
 import unicodedata
@@ -17,6 +18,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+from PIL import Image
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
@@ -639,6 +642,8 @@ SIGNATURE_MIME_MAGIC = {
 # is generous enough for a dense signature on a large screen, and small enough
 # that a hand-built request cannot put a blob in the database.
 MAX_SIGNATURE_BYTES = 256 * 1024
+MAX_SIGNATURE_SIDE = 6000
+MAX_SIGNATURE_PIXELS = 12_000_000
 
 SIGNATURE_INVALID_MESSAGE = (
     "That signature could not be saved. Sign again on the signature pad."
@@ -682,6 +687,17 @@ def parse_signature_data_url(value: Optional[str]) -> bytes:
     if not content or len(content) > MAX_SIGNATURE_BYTES:
         raise ValueError(SIGNATURE_INVALID_MESSAGE)
     if not content.startswith(magic):
+        raise ValueError(SIGNATURE_INVALID_MESSAGE)
+    try:
+        with Image.open(io.BytesIO(content)) as image:  # reads the header only
+            width, height = image.size
+    except Exception:
+        raise ValueError(SIGNATURE_INVALID_MESSAGE) from None
+    if (
+        width > MAX_SIGNATURE_SIDE
+        or height > MAX_SIGNATURE_SIDE
+        or width * height > MAX_SIGNATURE_PIXELS
+    ):
         raise ValueError(SIGNATURE_INVALID_MESSAGE)
     return content
 
