@@ -929,6 +929,61 @@
 }
 .tw #birth-date-readback:not(:empty)::before { content: "\2713"; font-weight: 800; }
 
+/* 24. Country search (ticket.js initCountryCombos) ------------------------ */
+.tw .tw-combo { position: relative; }
+.tw .tw-combo input { padding-right: 44px; }
+.tw .tw-combo::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: 22px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--ink-muted);
+  border-bottom: 2px solid var(--ink-muted);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.tw .tw-combo-list {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  max-height: 280px;
+  margin: 0;
+  padding: var(--space-1);
+  overflow: auto;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popover);
+}
+.tw .tw-combo-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  cursor: pointer;
+}
+.tw .tw-combo-list li b { width: 36px; color: var(--ink-muted); font-size: 12px; }
+.tw .tw-combo-list li:hover,
+.tw .tw-combo-list li.is-active { background: var(--surface-hover); }
+.tw .tw-combo-list li[aria-selected="true"] { color: var(--brand-ink); font-weight: 650; }
+.tw .tw-combo-list .tw-combo-none { color: var(--ink-muted); cursor: default; }
+.tw .tw-vh {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
