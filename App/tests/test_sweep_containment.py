@@ -8,7 +8,7 @@ that makes the stop visible.
 """
 from __future__ import annotations
 
-from app import db, reporting
+from app import alerts, db, reporting
 
 
 def test_one_failing_property_does_not_stop_the_sweep(monkeypatch):
@@ -66,3 +66,61 @@ def test_one_failing_property_does_not_stop_the_sweep(monkeypatch):
             db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
         for entity_id in entity_ids:
             db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
+
+
+def test_a_property_with_a_refused_login_is_skipped_until_credentials_change(monkeypatch):
+    """AR-18: a refused login must not be retried on every ten-minute sweep.
+
+    The police lock an account after repeated failed logins, so the sweep waits
+    for the host to save new credentials instead of hammering the login. Saving
+    them (or a successful connection test) resolves the card and the property
+    rejoins the sweep.
+    """
+    db.init_db()
+    now = db.utcnow()
+    entity_id = db.insert(
+        "legal_entity", {"name": "Sweep auth pause", "created_at": now}
+    )
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity_id,
+            "internal_name": "Paused Flat",
+            "permalink_token": "tok-sweep-auth-pause",
+            "automation_mode": "auto",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+
+    calls = []
+
+    def fake_submit_for_apartment(apartment_id, mode="auto"):  # noqa: ARG001
+        calls.append(apartment_id)
+        return []
+
+    monkeypatch.setattr(reporting, "submit_for_apartment", fake_submit_for_apartment)
+
+    try:
+        alerts.raise_alert(
+            "critical",
+            "ubyport_auth_failed",
+            "UbyPort refused the web-service login.",
+            dedupe_key=f"ubyport_auth_failed:{apartment_id}",
+            apartment_id=apartment_id,
+        )
+
+        reporting.sweep()
+        assert apartment_id not in calls, (
+            "a property whose login was refused must be paused, not retried"
+        )
+
+        alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
+        reporting.sweep()
+        assert apartment_id in calls, (
+            "once the credentials are replaced the sweep must resume"
+        )
+    finally:
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+        db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
