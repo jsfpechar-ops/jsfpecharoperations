@@ -50,6 +50,7 @@
         <div class="tw-bps">
           {% for person in passes %}{{ tw.boarding_pass(person.name or (t('person') ~ ' ' ~ person.index), loop.index, reservation, property_name) }}{% endfor %}
         </div>
+        <p class="g-intro tw-keep">{{ t('tw_done_keep') }}</p>
       {% endif %}
     </div>
     {% if can_raise_party %}
