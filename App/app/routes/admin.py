@@ -787,6 +787,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
         payload["permalink_pin"] = pin
     db.update("apartment", apartment_id, payload)
+    alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("apartment_updated", f"id={apartment_id}")
     return None
 
@@ -921,6 +922,7 @@ def _save_automation_form(apartment_id: int, form) -> None:
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
     db.update("apartment", apartment_id, payload)
+    alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
 
 
@@ -1119,6 +1121,7 @@ async def test_connection(apartment_id: int, request: Request):
         f"apartment={apartment_id} endpoint={client.endpoint} "
         f"available={available} max_batch={limit}",
     )
+    alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 

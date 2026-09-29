@@ -1512,6 +1512,10 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
         "AND (? IS NULL OR owner_user_id = ?)",
         (owner_user_id, owner_user_id),
     ):
+        if alerts.open_alert(f"ubyport_auth_failed:{apartment['id']}"):
+            # Retrying a refused login every ten minutes risks locking the
+            # police account. Wait until the host saves new credentials.
+            continue
         summary["apartments"] += 1
         try:
             # The quiet-window completion is the one decision nobody makes: the
