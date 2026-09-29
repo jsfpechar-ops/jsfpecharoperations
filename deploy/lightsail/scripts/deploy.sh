@@ -94,6 +94,11 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost;
   echo "Backup ${BACKUP_STAMP} is valid; live row counts recorded."
 fi
 
+if docker image inspect ubyhost:local >/dev/null 2>&1; then
+  docker tag ubyhost:local ubyhost:previous
+  echo "Kept the running image as ubyhost:previous for rollback."
+fi
+
 echo "==> Building image"
 docker compose build --pull
 
@@ -140,14 +145,25 @@ if ! docker compose exec -T caddy caddy reload \
 fi
 
 echo "==> Waiting for health check"
+HEALTHY=0
 for _ in $(seq 1 30); do
   if docker compose exec -T ubyhost python -c \
     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
     >/dev/null 2>&1; then
+    HEALTHY=1
     break
   fi
   sleep 2
 done
+if [ "${HEALTHY}" != "1" ]; then
+  echo "New release never became healthy." >&2
+  if docker image inspect ubyhost:previous >/dev/null 2>&1; then
+    echo "==> Rolling back to ubyhost:previous" >&2
+    docker tag ubyhost:previous ubyhost:local
+    docker compose up -d --no-build ubyhost
+  fi
+  exit 1
+fi
 
 echo ""
 docker compose ps
