@@ -329,3 +329,26 @@ def test_every_new_key_exists_in_both_languages():
     ):
         for lang in ("en", "cs"):
             assert host_i18n.STRINGS[lang][key].strip(), f"{key} is empty in {lang}"
+
+
+# --- the per-account second-factor budget --------------------------------
+
+
+def test_ten_failed_codes_lock_the_move_even_with_the_right_code(phone):
+    client, secret, _codes = phone
+    account_id = _account()["id"]
+    try:
+        for _ in range(10):
+            _move(client, code="000000")
+
+        response = _move(client, code=pyotp.TOTP(secret).now())
+
+        assert response.status_code == 303
+        assert _text("auth.error.code_locked") in unquote(response.headers["location"])
+        assert _account()["totp_enabled"] == 1, "the second factor was wiped anyway"
+        assert db.decrypt_secret(_account()["totp_secret_enc"]) == secret
+    finally:
+        db.execute(
+            "DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account' AND key = ?",
+            (str(account_id),),
+        )
