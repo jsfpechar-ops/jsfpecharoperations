@@ -785,6 +785,48 @@
 }
 @keyframes tw-blink { 50% { opacity: 0; } }
 
+/* 20. Stay picker v2 ----------------------------------------------------- */
+.tw .tw-pass-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.tw .tw-pass-foot > span:first-child { min-width: 0; }
+.tw .tw-pass-foot > span:first-child b { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* guest.css caps .g-lane-action at 78px on phones for the old lane layout;
+   on a pass the pill must stay on one line. */
+.tw .tw-pass-head > span:first-child { flex: 0 0 auto; white-space: nowrap; }
+.tw .tw-pass-head .g-lane-status { text-align: right; }
+.tw .tw-pass .g-lane-action {
+  flex: 0 0 auto;
+  max-width: none;
+  padding-top: 0;
+  white-space: nowrap;
+  text-align: center;
+}
+.tw .g-arrival-message {
+  margin-top: var(--space-4);
+  padding: 0 var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.tw .g-arrival-message summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  list-style: none;
+}
+.tw .g-arrival-message summary::-webkit-details-marker { display: none; }
+.tw .g-arrival-message summary::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--brand-action);
+  border-bottom: 2px solid var(--brand-action);
+  transform: rotate(-45deg);
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+.tw .g-arrival-message[open] summary::before { transform: rotate(45deg); }
+.tw .g-arrival-message p { margin: 0 0 var(--space-4); font: italic 17px/1.5 var(--tw-serif); color: var(--ink); }
+
 /* 21. Quiet "more" disclosure (claim e-mail, anywhere small) ------------- */
 .tw details.tw-more { margin-top: var(--space-2); }
 .tw details.tw-more > summary {
