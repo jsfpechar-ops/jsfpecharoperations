@@ -1634,14 +1634,22 @@ def check_deadlines(
     """
     now = deadlines.local_now(now)
     raised = 0
-    # A cancelled, ignored or archived stay has nothing left to chase.
-    for stale in db.query(
-        "SELECT al.id FROM alert al JOIN reservation r ON r.id = al.reservation_id "
+    # A cancelled, ignored or archived stay has nothing left to chase. One
+    # statement, not one connection per card. When the caller is a single
+    # host's request (/sync_now carries the owner) only that workspace's cards
+    # may be cleared; the scheduled run passes no owner and clears them all.
+    db.execute(
+        "UPDATE alert SET resolved_at = ?, user_dismissed = 0 WHERE id IN ("
+        "SELECT al.id FROM alert al "
+        "JOIN reservation r ON r.id = al.reservation_id "
+        "JOIN apartment a ON a.id = r.apartment_id "
         "WHERE al.resolved_at IS NULL "
         "AND al.kind IN ('deadline', 'headcount_mismatch', 'guest_incomplete_checkin') "
-        "AND (r.status != 'active' OR r.archived_at IS NOT NULL)"
-    ):
-        alerts.resolve_by_id(stale["id"])
+        "AND (r.status != 'active' OR r.archived_at IS NOT NULL) "
+        "AND (? IS NULL OR a.owner_user_id = ?)"
+        ")",
+        (db.utcnow(), owner_user_id, owner_user_id),
+    )
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
