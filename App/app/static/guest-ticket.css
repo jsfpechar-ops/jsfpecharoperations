@@ -1,0 +1,705 @@
+/* UbyHost guest "Ticket Wallet" skin
+   -------------------------------------------------------------------------
+   Loaded after tokens.css and guest.css, only by guest/base.html, and only
+   active under <body class="tw">. It restyles the existing guest markup; it
+   does not rename or remove any class the tests or signature.js rely on.
+
+   The idea: every guest screen is a ticket. A coloured strip names the step,
+   the body does the work, the tear-off stub holds the buttons. A dark app bar
+   keeps the property, the dates and a progress line on screen the whole way.
+
+   Sections
+     1. Skin tokens            7. Buttons              13. Hub (your group)
+     2. Page + column          8. Fields               14. Stamp + boarding pass
+     3. App bar                9. PIN cells            15. Host contact + footer
+     4. Ticket                 10. Party stepper       16. Mail illustration
+     5. Stub                   11. Stay passes         17. Motion
+     6. Type                   12. Quiet folds
+*/
+
+/* 1. Skin tokens -------------------------------------------------------- */
+.tw {
+  --tw-page: var(--canvas-subtle);
+  --tw-paper: var(--surface);
+  --tw-ink: var(--ink);
+  --tw-bar: var(--ink);
+  --tw-bar-ink: var(--canvas);
+  --tw-bar-muted: #b9b9b3;
+  --tw-bar-line: #3a3a37;
+  --tw-strip: linear-gradient(120deg, var(--brand-action), var(--brand));
+  --tw-strip-ink: var(--on-brand);
+  --tw-radius: 22px;
+  --tw-notch: 22px;
+  --tw-perf: 2px dashed var(--border);
+  --tw-shadow: 0 30px 60px -40px rgba(20, 20, 18, 0.35);
+  --tw-lift: 0 14px 32px rgba(150, 62, 56, 0.14);
+  --tw-serif: "New York", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --tw-pad: 24px;
+  background: var(--tw-page);
+}
+@media (max-width: 480px) { .tw { --tw-pad: 20px; } }
+
+/* 2. Page + column ------------------------------------------------------ */
+.tw .g-wrap { max-width: 640px; padding-top: 0; }
+/* The form page used to become two columns at 1020px. The ticket is the
+   layout now, so the form stays one ticket wide and the rail steps aside. */
+.tw .g-checkin-page { max-width: 640px; }
+.tw .g-checkin-rail { display: none !important; }
+@media (min-width: 1020px) {
+  .tw .g-checkin-page main { display: block; }
+}
+.tw .g-form-line { display: none; }
+.tw .g-wizard-progress { display: none !important; }
+
+/* 3. App bar ------------------------------------------------------------ */
+/* Full-bleed dark band without leaving the 640px column: the shadow paints
+   the band sideways and the clip keeps it from bleeding up or down. */
+.tw .g-head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0 0 var(--space-6);
+  padding: 12px 0 0;
+  background: var(--tw-bar);
+  color: var(--tw-bar-ink);
+  box-shadow: 0 0 0 100vmax var(--tw-bar);
+  clip-path: inset(0 -100vmax);
+}
+.tw .g-head .g-property-mark { width: 34px; height: 34px; border-radius: 10px; }
+.tw .g-head h1 {
+  order: 2;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e8a7a1;
+}
+.tw .g-head .g-title > div { display: flex; flex-direction: column-reverse; }
+.tw .g-head .g-facility {
+  margin: 0;
+  font: 600 19px/1.15 var(--tw-serif);
+  color: var(--tw-bar-ink);
+}
+.tw .g-head .g-lang { background: #2f2f2c; border-color: var(--tw-bar-line); }
+.tw .g-head .g-lang a { color: var(--tw-bar-muted); min-height: 40px; padding: 0 12px; }
+.tw .g-head .g-lang a.on { background: var(--canvas); color: var(--ink); }
+.tw-route {
+  flex: 1 0 100%;
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tw-bar-muted);
+}
+.tw-route b { color: var(--tw-bar-ink); font-weight: 700; }
+.tw-progress {
+  flex: 1 0 100%;
+  height: 3px;
+  margin-top: 10px;
+  background: var(--tw-bar-line);
+}
+.tw-progress i {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transition: width 0.5s var(--ease-standard);
+}
+
+/* 4. Ticket ------------------------------------------------------------- */
+.tw .tw-ticket,
+.tw [data-guest-step] {
+  position: relative;
+  margin: 0 0 var(--space-6);
+  padding: 0 var(--tw-pad);
+  overflow: visible;
+  background: var(--tw-paper);
+  border: 1px solid var(--border);
+  border-radius: var(--tw-radius);
+  box-shadow: var(--tw-shadow);
+}
+/* The strip reads its words from the markup: data-tw-label on a ticket,
+   data-step-title on a form step. */
+.tw .tw-ticket::before,
+.tw [data-guest-step]::before {
+  content: attr(data-tw-label);
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  margin: 0 calc(-1 * var(--tw-pad)) var(--space-6);
+  padding: 0 var(--tw-pad);
+  border-radius: var(--tw-radius) var(--tw-radius) 0 0;
+  background: var(--tw-strip);
+  color: var(--tw-strip-ink);
+  font-size: 11.5px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tw [data-guest-step]::before { content: attr(data-step-title); }
+.tw .tw-ticket.is-quiet::before { background: var(--ink); }
+.tw .tw-ticket.is-ok::before { background: var(--green); }
+/* A last step without a stub still needs air under its content. */
+.tw .tw-ticket > :last-child:not(.tw-stub),
+.tw [data-guest-step] > :last-child:not(.g-wizard-nav):not(.tw-stub) { margin-bottom: var(--tw-pad); }
+/* Cards that used to sit inside a step lose their own frame. */
+.tw [data-guest-step] .g-card,
+.tw .tw-ticket .g-card {
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.tw [data-guest-step][hidden] { display: none !important; }
+
+/* 5. Stub --------------------------------------------------------------- */
+.tw .tw-ticket .tw-stub,
+.tw [data-guest-step] > .g-wizard-nav {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-6) calc(-1 * var(--tw-pad)) 0;
+  padding: var(--space-5) var(--tw-pad);
+  border-top: var(--tw-perf);
+  border-radius: 0 0 var(--tw-radius) var(--tw-radius);
+  background: var(--canvas);
+}
+.tw .tw-ticket .tw-stub::before,
+.tw .tw-ticket .tw-stub::after,
+.tw [data-guest-step] > .g-wizard-nav::before,
+.tw [data-guest-step] > .g-wizard-nav::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--tw-notch) / -2);
+  width: var(--tw-notch);
+  height: var(--tw-notch);
+  border-radius: 50%;
+  background: var(--tw-page);
+  border: 1px solid var(--border);
+}
+.tw .tw-ticket .tw-stub::before,
+.tw [data-guest-step] > .g-wizard-nav::before { left: calc(var(--tw-notch) / -2); clip-path: inset(0 0 0 50%); }
+.tw .tw-ticket .tw-stub::after,
+.tw [data-guest-step] > .g-wizard-nav::after { right: calc(var(--tw-notch) / -2); clip-path: inset(0 50% 0 0); }
+.tw .tw-stub > *,
+.tw [data-guest-step] > .g-wizard-nav > * { flex: 1 1 160px; margin: 0; }
+.tw .tw-stub > .tw-stub-note { flex-basis: 100%; margin: 0; font-size: 14px; color: var(--ink-muted); text-align: center; }
+/* On a phone the step's buttons ride along at the bottom of the screen. */
+@media (max-width: 560px) {
+  .tw [data-guest-step] > .g-wizard-nav { position: sticky; bottom: 0; z-index: 5; }
+}
+
+/* Outside a ticket (a folded retry form) the stub is just a button row. */
+.tw .tw-stub { margin-top: var(--space-4); }
+
+/* A stay summary above a ticket reads as a slim pass. */
+.tw .g-stay-summary {
+  position: relative;
+  margin-bottom: var(--space-4);
+  padding: var(--space-4) var(--space-5) var(--space-4) 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: none;
+}
+.tw .g-stay-summary::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--brand);
+}
+.tw .g-stay-summary strong { font: 600 19px/1.2 var(--tw-serif); }
+
+/* 6. Type --------------------------------------------------------------- */
+.tw .tw-ticket h2,
+.tw [data-guest-step] h2,
+.tw .g-arrival-choice .g-section {
+  margin: 0 0 var(--space-2);
+  font: 600 clamp(26px, 7vw, 34px)/1.1 var(--tw-serif);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.tw .tw-ticket .g-intro,
+.tw [data-guest-step] .g-intro { font-size: 15.5px; color: var(--ink-muted); margin-bottom: var(--space-5); }
+.tw-vh {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* 7. Buttons ------------------------------------------------------------ */
+.tw .g-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 56px;
+  border-radius: var(--radius-pill);
+  font-size: 16.5px;
+  font-weight: 700;
+  box-shadow: 0 10px 24px -8px rgba(173, 73, 66, 0.55);
+  transition: background var(--motion-base) var(--ease-standard), transform var(--motion-fast) var(--ease-standard);
+}
+.tw .g-btn:active { transform: translateY(1px) scale(0.995); }
+.tw .g-btn.secondary,
+.tw .g-btn.ghost {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1.5px solid var(--border-strong);
+  box-shadow: none;
+}
+.tw .g-btn.secondary:hover,
+.tw .g-btn.ghost:hover { background: var(--surface-hover); }
+.tw .g-btn.slim { min-height: 52px; }
+.tw form.is-sending .g-btn[type="submit"] { color: transparent; pointer-events: none; position: relative; }
+.tw form.is-sending .g-btn[type="submit"]::after {
+  content: "";
+  position: absolute;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: tw-spin 0.8s linear infinite;
+}
+
+/* 8. Fields ------------------------------------------------------------- */
+.tw .g-field label,
+.tw .g-field .g-label { font-size: 14.5px; font-weight: 650; color: var(--ink); }
+.tw .g-field input[type="text"],
+.tw .g-field input[type="email"],
+.tw .g-field input[type="number"],
+.tw .g-field select {
+  min-height: 56px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  font-size: 17px;
+  color: var(--ink);
+}
+.tw .g-field input:focus,
+.tw .g-field select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+.tw .g-field select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 44px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%),
+    linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
+  background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+.tw .g-field .bad { border-color: var(--red); }
+.tw .checkline {
+  padding: var(--space-4);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.tw .g-err { border-radius: var(--radius-md); }
+/* A copied address is a gift, so it looks like one. */
+.tw .tw-copied {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--brand-soft);
+  border: 1.5px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 9. PIN cells ---------------------------------------------------------- */
+/* One real input, drawn as six cells. Monospace keeps every digit on its
+   cell; the underline segments are the same width as a digit plus its gap. */
+.tw .g-pin-input {
+  --cell: 1.7ch;
+  width: calc(6 * var(--cell) + 0.3ch);
+  max-width: 100%;
+  min-height: 68px;
+  padding: 0 0 0 0.4ch;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font: 700 30px/1 var(--font-mono);
+  letter-spacing: 0.7ch;
+  background:
+    linear-gradient(90deg, var(--border-strong) 0 1ch, transparent 1ch) left 0.4ch bottom 14px / var(--cell) 2px repeat-x,
+    var(--surface);
+}
+.tw .g-pin-input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px var(--focus-ring); outline: none; }
+
+/* 10. Party stepper (built by ticket.js around the number input) -------- */
+.tw .tw-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.tw .tw-stepper input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  border: 0 !important;
+  box-shadow: none !important;
+  text-align: center;
+  font: 700 34px/1 var(--font-sans);
+  -moz-appearance: textfield;
+}
+.tw .tw-stepper input::-webkit-outer-spin-button,
+.tw .tw-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.tw .tw-step-btn {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font: 700 26px/1 var(--font-sans);
+  cursor: pointer;
+}
+.tw .tw-step-btn:hover { background: color-mix(in srgb, var(--brand) 22%, var(--surface)); }
+
+/* 11. Stay passes (the V1 airline pass) -------------------------------- */
+.tw .g-arrival-hero {
+  margin: 0 0 var(--space-5);
+  padding: 0 4px;
+  border: 0;
+  background: none;
+}
+.tw .g-arrival-hero::after { display: none; }
+.tw .g-arrival-hero h2 { font: 600 clamp(30px, 8vw, 40px)/1.05 var(--tw-serif); letter-spacing: -0.02em; }
+.tw .g-arrival-message { border-top: 0; }
+.tw .g-arrival-lanes { display: grid; gap: var(--space-4); border: 0; overflow: visible; }
+.tw .g-stay.tw-pass {
+  display: block;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  animation: lane-enter 320ms var(--ease-standard) both;
+  animation-delay: calc(var(--lane-index, 0) * 70ms);
+  transition: transform var(--motion-base) var(--ease-standard), box-shadow var(--motion-base), border-color var(--motion-base);
+}
+.tw .g-stay.tw-pass:hover,
+.tw .g-stay.tw-pass:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
+  box-shadow: var(--tw-lift);
+  background: var(--surface);
+}
+.tw .g-stay.tw-pass:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.tw .g-stay.tw-pass.yours { border-color: color-mix(in srgb, var(--green) 45%, var(--border)); }
+.tw-pass-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--ink);
+  color: #d6d6d0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tw .tw-pass-head .g-lane-status { margin: 0; color: #bfe8cf !important; font-weight: 700; }
+.tw .tw-pass-head .g-lane-status.quiet { color: #b9b9b3 !important; font-weight: 700; }
+.tw .tw-pass-head .g-lane-status::before { content: none; }
+.tw-pass-route {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+}
+.tw-pass-end small,
+.tw-pass-foot small {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.tw-pass-end b {
+  display: block;
+  font: 700 30px/1 var(--tw-serif);
+  color: var(--ink);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tw-pass-end > span { display: block; margin-top: 4px; font-size: 13px; font-weight: 650; color: var(--ink-muted); }
+.tw-pass-end.r { text-align: right; }
+.tw-pass-mid {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 52px;
+  padding-bottom: 12px;
+  color: var(--brand-action);
+}
+.tw-pass-mid svg { width: 16px; height: 16px; }
+.tw-pass-mid i { width: 100%; height: 2px; background: repeating-linear-gradient(90deg, var(--border-strong) 0 5px, transparent 5px 9px); }
+.tw-pass-mid > span { font-style: normal; font-size: 11px; font-weight: 700; color: var(--ink-muted); white-space: nowrap; }
+.tw-pass-foot {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-top: var(--tw-perf);
+}
+.tw-pass-foot::before,
+.tw-pass-foot::after {
+  content: "";
+  position: absolute;
+  top: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--tw-paper);
+  border: 1px solid var(--border);
+}
+.tw-pass-foot::before { left: -11px; }
+.tw-pass-foot::after { right: -11px; }
+.tw-pass-foot b { font-size: 14px; color: var(--ink); }
+.tw .tw-pass .g-lane-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: 14px;
+  font-weight: 700;
+  transition: background var(--motion-base), color var(--motion-base);
+}
+.tw .tw-pass:hover .g-lane-action,
+.tw .tw-pass:focus-visible .g-lane-action { background: var(--brand-action); color: var(--on-brand); }
+@media (max-width: 400px) {
+  .tw-pass-end b { font-size: 26px; }
+  .tw-pass-route, .tw-pass-head, .tw-pass-foot { padding-left: var(--space-4); padding-right: var(--space-4); }
+}
+
+/* 12. Quiet folds (why, host message) ----------------------------------- */
+.tw details.g-why,
+.tw .g-host-message.g-fold {
+  margin-bottom: var(--space-4);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: none;
+}
+.tw .g-host-message.g-fold { padding: 0 var(--space-5); }
+.tw .g-host-message.g-fold > summary { min-height: 52px; color: var(--ink); }
+
+/* 13. Hub (your group) -------------------------------------------------- */
+.tw .g-progress { font-weight: 650; color: var(--ink); }
+.tw .g-progress .g-bar { height: 8px; }
+.tw .g-progress .g-bar i { background: var(--green); }
+.tw details.g-summary,
+.tw .g-person {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: none;
+}
+.tw details.g-summary::before,
+.tw .g-person::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--border-strong);
+}
+.tw details.g-summary.is-complete::before,
+.tw .g-person.is-complete::before { background: var(--green); }
+.tw details.g-summary > summary.g-summary-fold { padding-left: 26px; font: 600 19px/1.3 var(--tw-serif); }
+.tw .g-person { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) 22px; }
+
+/* 14. Stamp + boarding pass -------------------------------------------- */
+.tw-stamp {
+  display: inline-block;
+  margin: var(--space-2) 0 var(--space-4);
+  padding: 8px 16px;
+  border: 3px solid var(--green);
+  border-radius: 8px;
+  color: var(--green);
+  font: 800 18px/1 var(--font-sans);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
+  animation: tw-stamp 0.5s 0.2s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.tw-center { text-align: center; }
+.tw-bps { display: grid; gap: var(--space-4); margin: var(--space-6) 0 0; text-align: left; }
+.tw-bp {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  animation: lane-enter 420ms var(--ease-standard) both;
+  animation-delay: calc(0.2s + var(--bp-index, 0) * 0.15s);
+}
+.tw-bp-head {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  background: var(--ink);
+  color: #d6d6d0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tw-bp-head b { color: #bfe8cf; }
+.tw-bp small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.tw-bp-name { display: flex; justify-content: space-between; padding: var(--space-4) var(--space-5) 0; }
+.tw-bp-name b { font-size: 17px; color: var(--ink); }
+.tw-bp-name div:last-child { text-align: right; }
+.tw-bp-route { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; padding: var(--space-3) var(--space-5) var(--space-4); }
+.tw-bp-route b { font: 700 26px/1 var(--tw-serif); color: var(--ink); text-transform: uppercase; }
+.tw-bp-route .r { text-align: right; }
+.tw-bp-route svg { width: 16px; height: 16px; margin: 0 var(--space-3) 6px; color: var(--brand-action); }
+.tw-bp-foot {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-top: var(--tw-perf);
+}
+.tw-bp-foot::before,
+.tw-bp-foot::after {
+  content: "";
+  position: absolute;
+  top: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--tw-paper);
+  border: 1px solid var(--border);
+}
+.tw-bp-foot::before { left: -11px; }
+.tw-bp-foot::after { right: -11px; }
+.tw-bp-foot b { font-size: 14px; color: var(--ink); }
+/* Decoration only: a fixed stripe pattern, never a scannable code. */
+.tw-barcode {
+  width: 45%;
+  height: 34px;
+  background: repeating-linear-gradient(90deg,
+    var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px,
+    var(--ink) 8px 11px, transparent 11px 12px, var(--ink) 12px 13px, transparent 13px 16px);
+}
+
+/* 15. Host contact + footer --------------------------------------------- */
+.tw #host-contact {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-3);
+  align-items: center;
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: none;
+}
+.tw #host-contact h2 { grid-column: 1 / -1; margin: 0; font: 600 20px/1.2 var(--tw-serif); }
+.tw #host-contact .g-intro { grid-column: 1 / -1; margin: 0 0 var(--space-2); font-size: 14px; }
+.tw #host-contact p { grid-column: 1 / -1; margin: 0; }
+.tw #host-contact a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  margin-top: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--canvas-subtle);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 650;
+}
+.tw #host-contact a:hover { background: var(--surface-hover); }
+.tw .g-foot { margin-top: var(--space-6); }
+
+/* 16. Mail illustration ------------------------------------------------- */
+.tw-mail { display: grid; place-items: center; margin: var(--space-6) 0 var(--space-6); }
+.tw-mail span {
+  position: relative;
+  width: 120px;
+  height: 84px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+}
+.tw-mail span::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 52px;
+  background:
+    linear-gradient(to bottom right, transparent 49%, var(--border-strong) 49.5%, transparent 50.5%) left / 50% 100% no-repeat,
+    linear-gradient(to bottom left, transparent 49%, var(--border-strong) 49.5%, transparent 50.5%) right / 50% 100% no-repeat;
+}
+.tw-mail span::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: -30px;
+  z-index: -1;
+  height: 60px;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  border: 1.5px solid color-mix(in srgb, var(--brand) 40%, transparent);
+  animation: tw-rise 1.6s var(--ease-standard) infinite alternate;
+}
+
+/* 17. Motion ------------------------------------------------------------ */
+.tw .tw-ticket,
+.tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
+@keyframes tw-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes tw-stamp { from { opacity: 0; transform: rotate(-8deg) scale(1.8); } to { opacity: 1; transform: rotate(-8deg) scale(1); } }
+@keyframes tw-rise { from { transform: translateY(12px); } to { transform: none; } }
+@keyframes tw-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .tw *, .tw *::before, .tw *::after { animation: none !important; transition: none !important; }
+}

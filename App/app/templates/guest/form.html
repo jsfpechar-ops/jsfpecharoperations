@@ -13,6 +13,9 @@
 {% macro invalid(field) %}{% if issues | selectattr('is_error') | selectattr('field', 'equalto', field) | list %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}{% endmacro %}
 
 {% block wrap_class %}g-checkin-page{% endblock %}
+{% import "guest/_ticket.html" as tw with context %}
+{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
+{% block tw_progress %}50{% endblock %}
 
 {% block content %}
 <aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
@@ -88,7 +91,7 @@
     </h2>
 
     {% if ask_party_size %}
-      <div class="g-field">
+      <div class="g-field" data-tw-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
         <label for="party_size">{{ t('party_question') }}</label>
         <input type="number" id="party_size" name="party_size" min="1" max="60" required
                inputmode="numeric" autocomplete="off"
@@ -143,6 +146,10 @@
       </div>
     </div>
 
+  </div>
+
+  <div class="g-card" data-guest-step data-step-title="{{ t('tw_document_title') }}">
+    <h2>{{ t('tw_document_title') }}</h2>
     <div class="g-field" id="doc-wrap">
       <label for="doc_number">{{ t('doc_number') }}</label>
       <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
@@ -188,12 +195,13 @@
         {% endfor %}
       </select>
     </div>
+  </div>
 
   <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">
     <h2>{{ t('residence_title') }}</h2>
     <p class="g-intro">{{ t('residence_help') }}</p>
     {% if residence_copied_from %}
-      <p class="hint" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
+      <p class="hint tw-copied" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
     {% endif %}
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>
