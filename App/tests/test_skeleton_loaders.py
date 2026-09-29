@@ -34,3 +34,16 @@ def test_skeleton_script_is_served():
         response = client.get("/static/skeleton.js")
     assert response.status_code == 200
     assert "window.ubyhostSkeleton" in response.text
+
+
+def test_guest_base_has_hidden_page_skeleton():
+    html = (APP_DIR / "templates" / "guest" / "base.html").read_text(encoding="utf-8")
+    assert "data-page-skeleton" in html
+    assert html.index("/static/skeleton.js") < html.index("/static/signature.js")
+
+
+def test_guest_loading_copy_in_both_languages():
+    from app import i18n
+
+    assert i18n.translator("en")("loading") == "Loading…"
+    assert i18n.translator("cs")("loading") == "Načítá se…"
