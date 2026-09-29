@@ -1143,6 +1143,12 @@
 .tw .g-legal-notice .legal-ack .checkline span { color: var(--ink); font-weight: 650; }
 .tw .g-legal-notice .legal-ack input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--brand-action); }
 
+/* 29. Hub v2 ------------------------------------------------------------- */
+.tw .g-still-missing { font-weight: 650; color: var(--brand-ink); }
+.tw details.g-summary > summary.g-summary-fold::after { color: var(--ink-faint); }
+.tw .g-saved .tw-stamp { margin-bottom: var(--space-4); }
+.tw .g-saved h2 { color: var(--ink) !important; }
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
