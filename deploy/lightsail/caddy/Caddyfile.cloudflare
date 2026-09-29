@@ -22,6 +22,7 @@
 		max_size 20MB
 	}
 	encode gzip
+	header Strict-Transport-Security "max-age=31536000"
 	reverse_proxy ubyhost:8080 {
 		# Always overwrite: a client-sent CF-Connecting-IP must never reach the app.
 		header_up CF-Connecting-IP {client_ip}
