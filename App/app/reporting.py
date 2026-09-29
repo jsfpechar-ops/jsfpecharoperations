@@ -1087,18 +1087,25 @@ def submit_batch(
             apartment["id"], submission_id, guest_ids, exc_info=True,
         )
         finished = db.utcnow()
-        db.update(
-            "submission",
-            submission_id,
-            {
-                "state": "outcome_unknown",
-                "finished_at": finished,
-                "error_text": str(exc),
-                "request_xml": getattr(exc, "request_xml", "") or None,
-            },
-        )
-        for in_doubt_id in guest_ids:
-            db.update("guest", in_doubt_id, {"submission_id": submission_id})
+        # The batch record and every guest pointer are one fact: if a pointer
+        # write fails or the process dies, the unmarked guests look sendable
+        # again and the sweep refiles a batch the register may already hold.
+        # The in-doubt filter reads guest.submission_id, so both have to land
+        # together or neither may.
+        with db.immediate() as cur:
+            db.update_in(
+                cur,
+                "submission",
+                submission_id,
+                {
+                    "state": "outcome_unknown",
+                    "finished_at": finished,
+                    "error_text": str(exc),
+                    "request_xml": getattr(exc, "request_xml", "") or None,
+                },
+            )
+            for in_doubt_id in guest_ids:
+                db.update_in(cur, "guest", in_doubt_id, {"submission_id": submission_id})
         alerts.raise_alert(
             "critical",
             "submission_outcome_unknown",

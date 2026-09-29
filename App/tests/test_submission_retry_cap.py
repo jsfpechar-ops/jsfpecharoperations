@@ -668,3 +668,52 @@ def test_a_failed_outcome_write_leaves_nothing_half_done(monkeypatch):
         )
     finally:
         _cleanup(apartment["id"])
+
+
+def test_a_failed_pointer_write_does_not_half_record_the_unknown_outcome(monkeypatch):
+    """The in-doubt mark has to land whole, or the sweep re-sends the batch.
+
+    The submission row and the guests' pointers to it are one fact. If a
+    pointer write fails after the row was already marked ``outcome_unknown``,
+    those guests look sendable again (the sweep reads ``guest.submission_id``)
+    and it refiles a batch the register may already hold. The write is therefore
+    one transaction: on failure the batch says ``running`` and the guests keep
+    their old pointers, so nothing claims a possibly-filed batch and the sweep
+    can retry it safely.
+    """
+    apartment, _reservation, guest_id = _seed("tok-cap-unknown-atomic", auto=True)
+
+    class UnknownOutcomeClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            raise UbyportOutcomeUnknownError("read timed out")
+
+    real = db.update_in
+
+    def wrapper(cur, table, row_id, values):
+        if table == "guest":
+            raise sqlite3.OperationalError("locked")
+        return real(cur, table, row_id, values)
+
+    try:
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: UnknownOutcomeClient()
+        )
+        monkeypatch.setattr(db, "update_in", wrapper)
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        with pytest.raises(sqlite3.OperationalError):
+            reporting.submit_batch(apartment, pairs, mode="manual")
+
+        submission = db.query_one(
+            "SELECT * FROM submission WHERE apartment_id = ? ORDER BY id DESC LIMIT 1",
+            (apartment["id"],),
+        )
+        assert submission["state"] == "running", (
+            "the in-doubt mark rolled back with the pointers, so nothing claims an unknown outcome"
+        )
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert guest["submission_id"] is None, "the pointer write rolled back too"
+        assert guest_id in [
+            g["id"] for g, _ in reporting.collect_sendable(apartment["id"])
+        ], "no in-doubt batch is on file, so the sweep must still offer the guest"
+    finally:
+        _cleanup(apartment["id"])
