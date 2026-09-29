@@ -5,6 +5,8 @@ import csv
 import io
 from typing import Any, Iterator, List, Optional
 
+from .csv_safety import csv_safe
+
 STAY_COLUMNS = [
     ("apartment", "Apartment"),
     ("date_from", "Arrival"),
@@ -53,12 +55,12 @@ def iter_export_csv_rows(rows: List[Any]) -> Iterator[bytes]:
         guests = row["expected_guests_override"] or row["declared_guests"]
         writer.writerow(
             [
-                row["apartment_name"],
-                row["date_from"],
-                row["date_to"],
-                str(guests) if guests else "",
-                row["summary"] or "",
-                row["guest_email"] or "",
+                csv_safe(row["apartment_name"]),
+                csv_safe(row["date_from"]),
+                csv_safe(row["date_to"]),
+                csv_safe(str(guests) if guests else ""),
+                csv_safe(row["summary"] or ""),
+                csv_safe(row["guest_email"] or ""),
             ]
         )
         yield buffer.getvalue().encode("utf-8")
