@@ -113,7 +113,7 @@ UBYPORT_ENDPOINTS = {
 # NTLM domain the police authenticate web-service accounts against.
 UBYPORT_DOMAIN = os.environ.get("UBYHOST_UBYPORT_DOMAIN", "EXRESORTMV")
 
-# Hard ceiling from the spec; refreshed at runtime via MaximalniDelkaSeznamu.
+# Read once at start-up. The "test connection" button reports the service's own limit but does not change this value.
 UBYPORT_MAX_BATCH = int(os.environ.get("UBYHOST_MAX_BATCH", "32"))
 
 UBYPORT_TIMEOUT = int(os.environ.get("UBYHOST_UBYPORT_TIMEOUT", "60"))
