@@ -697,7 +697,11 @@ def sweep_reminders() -> Dict[str, int]:
         start = validation.parse_iso_date(reservation["date_from"])
         if not start:
             continue
-        progress = reporting.reservation_progress(reservation)
+        try:
+            progress = reporting.reservation_progress(reservation)
+        except db.DecryptionError:
+            log.exception("reminder sweep skipped reservation_id=%s", reservation["id"])
+            continue
         complete = (
             progress["expected"] is not None
             and progress["filled"] >= progress["expected"]
