@@ -291,3 +291,19 @@ def test_a_live_code_still_signs_the_host_in():
         assert response.status_code == 303
     finally:
         _finish()
+
+
+# --- the per-account second-factor budget --------------------------------
+
+
+def test_ten_failed_codes_lock_one_account_only():
+    db.init_db()
+    db.execute("DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account'")
+    try:
+        for _ in range(10):
+            rate_limit.record_account_2fa_failure(99)
+
+        assert rate_limit.account_2fa_blocked(99) is True
+        assert rate_limit.account_2fa_blocked(98) is False
+    finally:
+        db.execute("DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account'")

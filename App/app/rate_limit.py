@@ -8,6 +8,7 @@ from . import db
 _WINDOW_SECONDS = 15 * 60
 _LOGIN_MAX_FAILURES = 12
 _LOGIN_IP_MAX_FAILURES = 30
+_ACCOUNT_2FA_MAX_FAILURES = 10
 _PIN_MAX_FAILURES = 10
 # A per-IP window can be sidestepped by rotating source addresses, so the same
 # failures are also counted against the token alone; three windows' worth locks
@@ -73,6 +74,15 @@ def record_login_failure(client_key: str, ip_key: str = "") -> None:
     record("login_fail", client_key)
     if ip_key:
         record("login_fail_ip", ip_key)
+
+
+def account_2fa_blocked(user_id: int) -> bool:
+    """Second-factor guesses per account, from every address together."""
+    return blocked("2fa_fail_account", str(int(user_id)), _ACCOUNT_2FA_MAX_FAILURES)
+
+
+def record_account_2fa_failure(user_id: int) -> None:
+    record("2fa_fail_account", str(int(user_id)))
 
 
 def pin_blocked(client_key: str) -> bool:
