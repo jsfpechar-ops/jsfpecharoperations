@@ -26,6 +26,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
 from . import db, passport_photos, reporting, validation
+from .csv_safety import csv_safe
 
 RETENTION_YEARS = 6
 # Police-inspection ZIPs are built one PDF at a time on disk — not held in RAM.
@@ -203,7 +204,7 @@ def iter_housebook_csv_rows(rows: List[Dict[str, Any]]) -> Iterator[bytes]:
     buffer.seek(0)
     buffer.truncate(0)
     for export_row in rows:
-        writer.writerow([export_row.get(key, "") for key, _label in HOUSEBOOK_COLUMNS])
+        writer.writerow([csv_safe(export_row.get(key, "")) for key, _label in HOUSEBOOK_COLUMNS])
         yield buffer.getvalue().encode("utf-8")
         buffer.seek(0)
         buffer.truncate(0)
@@ -214,7 +215,7 @@ def housebook_csv(rows: List[Dict[str, Any]]) -> bytes:
     writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
     writer.writerow([label for _key, label in HOUSEBOOK_COLUMNS])
     for row in rows:
-        writer.writerow([row.get(key, "") for key, _label in HOUSEBOOK_COLUMNS])
+        writer.writerow([csv_safe(row.get(key, "")) for key, _label in HOUSEBOOK_COLUMNS])
     # Excel in a Czech locale opens semicolon-separated UTF-8 with BOM cleanly.
     return b"\xef\xbb\xbf" + buffer.getvalue().encode("utf-8")
 
