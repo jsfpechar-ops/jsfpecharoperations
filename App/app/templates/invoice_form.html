@@ -345,6 +345,12 @@
   if (entitySel) {
     entitySel.addEventListener("change", function () {
       var wanted = entitySel.value;
+      var pendingMeta = document.querySelector(".invoice-supplier-meta");
+      if (pendingMeta) {
+        pendingMeta.setAttribute("aria-busy", "true");
+        pendingMeta.innerHTML = '<span class="skeleton skeleton-line medium" aria-hidden="true"></span>' +
+          '<span class="skeleton skeleton-line short" aria-hidden="true"></span>';
+      }
       fetch("/invoices/new?entity=" + encodeURIComponent(wanted))
         .then(function (res) { return res.ok ? res.text() : null; })
         .then(function (html) {
@@ -355,6 +361,7 @@
           var meta = document.querySelector(".invoice-supplier-meta");
           var freshMeta = fresh.querySelector(".invoice-supplier-meta");
           if (meta && freshMeta) meta.innerHTML = freshMeta.innerHTML;
+          if (meta) meta.removeAttribute("aria-busy");
           var link = document.querySelector(".invoice-supplier a");
           var freshLink = fresh.querySelector(".invoice-supplier a");
           if (link && freshLink) link.href = freshLink.getAttribute("href");
