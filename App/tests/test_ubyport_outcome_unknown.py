@@ -13,6 +13,7 @@ import requests
 import urllib3
 
 from app.ubyport.client import (
+    UbyportAuthError,
     UbyportClient,
     UbyportOutcomeUnknownError,
     UbyportTransportError,
@@ -82,3 +83,17 @@ def test_a_5xx_is_outcome_unknown(monkeypatch):
         _client().submit({}, [{}])
 
     assert caught.value.request_xml
+
+
+def test_a_401_is_an_auth_error_and_still_a_transport_error(monkeypatch):
+    """AR-18: a refused login gets its own class so the caller can pause, not retry."""
+    monkeypatch.setattr(
+        "app.ubyport.client.requests.post",
+        lambda *_args, **_kwargs: _FakeResponse(401),
+    )
+
+    with pytest.raises(UbyportAuthError) as caught:
+        _client().submit({}, [{}])
+
+    assert isinstance(caught.value, UbyportTransportError)
+    assert not isinstance(caught.value, UbyportOutcomeUnknownError)

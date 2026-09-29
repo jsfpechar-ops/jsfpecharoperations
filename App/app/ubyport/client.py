@@ -51,6 +51,10 @@ class UbyportOutcomeUnknownError(UbyportTransportError):
     request_xml: str = ""
 
 
+class UbyportAuthError(UbyportTransportError):
+    """UbyPort refused the web-service login (HTTP 401). Retrying cannot help."""
+
+
 def _definitely_not_sent(exc: requests.RequestException) -> bool:
     """True only when the request cannot have reached the server."""
     if isinstance(exc, (requests.ConnectTimeout, requests.exceptions.SSLError)):
@@ -135,7 +139,7 @@ class UbyportClient:
 
         text = response.text or ""
         if response.status_code == 401:
-            raise UbyportTransportError(
+            raise UbyportAuthError(
                 "UbyPort rejected the credentials (HTTP 401). Check that this is a web-service "
                 "login (UBY-WS...) and that it is registered for this IDUB."
             )
