@@ -12,6 +12,7 @@ if the server is down, or answers on a different database, this exits non-zero.
 from __future__ import annotations
 
 import base64
+import io
 import os
 import re
 import sys
@@ -29,6 +30,7 @@ os.environ["UBYHOST_GUEST_PIN"] = "0"
 
 import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from PIL import Image  # noqa: E402
 
 from app import claim, db, i18n, mail  # noqa: E402
 from app.landing_i18n import LANDING_STRINGS  # noqa: E402
@@ -380,7 +382,11 @@ def main(url=None):
     claim_stay(guest, token, stay_b, "other@example.test")
     check(guest, f"/l/{token}/{stay_b}", must_contain=['name="surname"'])
 
-    signature = "data:image/png;base64,iVBORw0KGgo="
+    signature_buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), "white").save(signature_buffer, "PNG")
+    signature = "data:image/png;base64," + base64.b64encode(
+        signature_buffer.getvalue()
+    ).decode()
     saved = guest.post(
         f"/l/{token}/{stay_a}/save",
         data={
