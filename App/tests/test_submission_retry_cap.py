@@ -594,6 +594,72 @@ def test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep(monkeypatch
         _cleanup(apartment["id"])
 
 
+def test_an_ok_batch_keeps_the_in_doubt_card_while_another_guest_waits(monkeypatch):
+    """One good resend must not wipe the warning for the rest of the party.
+
+    The card is apartment-wide but the in-doubt state is per guest pointer. If
+    a second guest still points at the unknown batch, resolving the card hides
+    that the sweep is silently excluding them.
+    """
+    apartment, reservation, guest_id = _seed("tok-cap-unknown-scope", auto=True)
+
+    class UnknownOutcomeClient:
+        def submit(self, _header, _guests):  # noqa: ARG002
+            raise UbyportOutcomeUnknownError("read timed out")
+
+    try:
+        other_id = db.insert(
+            "guest",
+            {
+                "reservation_id": reservation["id"],
+                "surname": "Second",
+                "first_name": "Jane",
+                "birth_date": "02021991",
+                "nationality": "GBR",
+                "doc_number": "P7654321",
+                "res_street": "Street 2",
+                "res_city": "London",
+                "res_country": "GBR",
+                "purpose": "10",
+                "is_lead": 0,
+                "entered_by": "host",
+                "signature_png": SIGNATURE,
+                "signed_at": db.utcnow(),
+                "identity_verified_at": db.utcnow(),
+                "submit_state": reporting.PENDING,
+                "created_at": db.utcnow(),
+                "updated_at": db.utcnow(),
+            },
+        )
+        monkeypatch.setattr(
+            reporting, "client_for", lambda *_a, **_k: UnknownOutcomeClient()
+        )
+        pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
+        assert {guest_id, other_id} == {g["id"] for g, _ in pairs}
+        reporting.submit_batch(apartment, pairs, mode="manual")
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}")
+
+        # One guest is filed by hand; the other still points at the unknown batch.
+        monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: AcceptingClient())
+        resend = reporting.collect_sendable(
+            apartment["id"], only_guest_ids=[guest_id], ignore_automation=True
+        )
+        assert [g["id"] for g, _ in resend] == [guest_id]
+        assert reporting.submit_batch(apartment, resend, mode="manual")["state"] == "ok"
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}") is not None, (
+            "a guest still waiting on the unknown batch keeps the warning up"
+        )
+
+        # Filing the second guest is what finally clears it.
+        rest = reporting.collect_sendable(
+            apartment["id"], only_guest_ids=[other_id], ignore_automation=True
+        )
+        assert reporting.submit_batch(apartment, rest, mode="manual")["state"] == "ok"
+        assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}") is None
+    finally:
+        _cleanup(apartment["id"])
+
+
 def test_every_state_submit_batch_can_write_is_terminal():
     """The retention sweep and the submission detail page both treat the terminal
     states as the set of finished batches. A state the batch path can write but
