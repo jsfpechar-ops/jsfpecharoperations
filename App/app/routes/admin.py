@@ -764,7 +764,8 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     Split out of ``apartment_update`` because the credentials test has to be
     able to save the values the host just typed before it uses them.
     """
-    if not access.apartment(request, apartment_id):
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     payload = _apartment_payload(form)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
@@ -786,8 +787,15 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
         payload["permalink_pin"] = pin
+    # AR-18: the refused-login pause exists so the police account is not
+    # hammered every ten minutes. Only replacing the credentials may lift it;
+    # renaming the property or moving the PIN must not resume the retries.
+    credentials_changed = bool(password) or (
+        (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
+    )
     db.update("apartment", apartment_id, payload)
-    alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
+    if credentials_changed:
+        alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("apartment_updated", f"id={apartment_id}")
     return None
 
@@ -921,8 +929,16 @@ def _save_automation_form(apartment_id: int, form) -> None:
     password = _form_str(form, "uby_ws_password")
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
+    current = db.query_one(
+        "SELECT uby_ws_user FROM apartment WHERE id = ?", (apartment_id,)
+    )
+    current_user = (current["uby_ws_user"] if current else "") or ""
     db.update("apartment", apartment_id, payload)
-    alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
+    # AR-18: saving the card (mode, review hours) is not new credentials, so it
+    # must not lift the pause that stops the retry storm against the police
+    # account. A new password or a changed login is the fix the pause waits for.
+    if password or (payload.get("uby_ws_user") or "") != current_user:
+        alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
 
 
