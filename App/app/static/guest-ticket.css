@@ -693,6 +693,35 @@
   animation: tw-rise 1.6s var(--ease-standard) infinite alternate;
 }
 
+/* 21. Quiet "more" disclosure (claim e-mail, anywhere small) ------------- */
+.tw details.tw-more { margin-top: var(--space-2); }
+.tw details.tw-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--brand-action);
+  font-size: 14px;
+  font-weight: 650;
+}
+.tw details.tw-more > summary::-webkit-details-marker { display: none; }
+.tw details.tw-more > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+.tw details.tw-more[open] > summary::after { transform: rotate(45deg); }
+.tw details.tw-more .hint { margin-top: var(--space-2); }
+/* On the claim page the date card and why-fold used to sit above the ticket;
+   the app bar already shows the dates, so the slim pass is enough. */
+.tw .g-stay-summary + .tw-ticket { margin-top: 0; }
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }

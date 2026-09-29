@@ -44,10 +44,14 @@
       <label for="guest_email">{{ t('claim_email') }}</label>
       <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
              maxlength="254">
-      <div class="hint">{{ t('claim_email_help') }}</div>
-      <div class="hint">{{ t('claim_cookie_help') }}
-        {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
-      </div>
+      <div class="hint">{{ t('tw_email_short') }}</div>
+      <details class="tw-more">
+        <summary>{{ t('tw_email_more') }}</summary>
+        <div class="hint">{{ t('claim_email_help') }}</div>
+        <div class="hint">{{ t('claim_cookie_help') }}
+          {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
+        </div>
+      </details>
     </div>
     {% if require_turnstile and turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_claim"></div>
