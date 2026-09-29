@@ -156,6 +156,9 @@
              autocapitalize="characters" spellcheck="false" autocorrect="off"
              value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
       <div class="hint">{{ t('doc_number_help') }}</div>
+      <div class="tw-doc-tip" aria-hidden="true">
+        <span class="tw-doc-page"><i class="tw-doc-photo"></i><i class="tw-doc-no"></i><i class="tw-doc-lines"></i></span>
+      </div>
       {{ err_for('doc_number') }}
     </div>
 

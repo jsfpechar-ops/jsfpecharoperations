@@ -1008,6 +1008,74 @@
 }
 .tw .tw-chip[aria-pressed="true"]:not(.is-other)::before { content: "\2713"; font-weight: 800; }
 
+/* 26. Document tip + copied address ------------------------------------- */
+.tw .tw-doc-tip { margin-top: var(--space-3); }
+.tw .tw-doc-page {
+  position: relative;
+  display: block;
+  width: 168px;
+  height: 108px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--canvas) 0 100%);
+}
+.tw .tw-doc-photo {
+  position: absolute;
+  left: 12px;
+  top: 18px;
+  width: 38px;
+  height: 48px;
+  border-radius: 4px;
+  background: var(--border);
+}
+.tw .tw-doc-no {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 58px;
+  height: 14px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--brand) 25%, transparent);
+  outline: 2px solid var(--brand);
+  animation: tw-pulse 1.8s var(--ease-standard) infinite;
+}
+.tw .tw-doc-lines {
+  position: absolute;
+  left: 60px;
+  right: 12px;
+  top: 36px;
+  height: 30px;
+  background: repeating-linear-gradient(180deg, var(--border) 0 4px, transparent 4px 10px);
+}
+.tw .tw-doc-page::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  height: 14px;
+  background: repeating-linear-gradient(90deg, var(--border-strong) 0 6px, transparent 6px 9px);
+  opacity: 0.6;
+}
+@keyframes tw-pulse { 50% { outline-color: color-mix(in srgb, var(--brand) 30%, transparent); } }
+.tw [data-tw-copied] {
+  background: var(--green-bg);
+  border-color: color-mix(in srgb, var(--green) 35%, transparent);
+  color: var(--green);
+}
+.tw [data-tw-copied]::before {
+  content: "\2713";
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--on-brand);
+  font-weight: 800;
+}
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
