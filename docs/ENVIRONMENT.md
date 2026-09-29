@@ -29,6 +29,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `UBYHOST_UBYPORT_ENV` | `mock` | `mock`, `test` or `prod`. Any other value is a fatal startup error. `prod` additionally requires `UBYHOST_DEPLOYMENT=production` and refuses to run on Render. |
+| `UBYHOST_ALLOW_PROD_MOCK` | unset | `1` allows a production deployment to start while `UBYHOST_UBYPORT_ENV=mock` (which reports nothing to the police). Unset makes that combination a fatal startup error. |
 | `UBYHOST_MOCK_URL` | `http://127.0.0.1:8081/ws_uby/ws_uby.svc` | Endpoint used when `UBYPORT_ENV=mock`. |
 | `UBYHOST_UBYPORT_DOMAIN` | `EXRESORTMV` | NTLM domain the police authenticate web-service accounts against. Only change this if the Foreign Police say so. |
 | `UBYHOST_UBYPORT_TIMEOUT` | `60` | Per-socket timeout in seconds for each SOAP call. |

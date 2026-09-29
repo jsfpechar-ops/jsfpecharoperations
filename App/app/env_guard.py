@@ -103,6 +103,12 @@ def validate_runtime_env(
         )
 
     if deploy == "production" and env == "mock":
+        if (os_env.get("UBYHOST_ALLOW_PROD_MOCK") or "") != "1":
+            raise EnvGuardError(
+                "UBYHOST_DEPLOYMENT=production with UBYHOST_UBYPORT_ENV=mock reports "
+                "nothing to the police. Set UBYHOST_UBYPORT_ENV=test or prod, or set "
+                "UBYHOST_ALLOW_PROD_MOCK=1 to start anyway."
+            )
         warnings.append(
             "production deployment with UBYHOST_UBYPORT_ENV=mock — "
             "nothing is reported to the police"
