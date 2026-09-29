@@ -221,4 +221,7 @@ TRUSTED_PROXY_CIDRS = os.environ.get("UBYHOST_TRUSTED_PROXY_CIDRS", "").strip()
 
 
 def endpoint_for(env: str = None) -> str:
-    return UBYPORT_ENDPOINTS.get((env or UBYPORT_ENV), UBYPORT_ENDPOINTS["mock"])
+    name = (env or UBYPORT_ENV)
+    if name not in UBYPORT_ENDPOINTS:
+        raise ValueError(f"Unknown UbyPort environment {name!r} (use mock, test or prod).")
+    return UBYPORT_ENDPOINTS[name]
