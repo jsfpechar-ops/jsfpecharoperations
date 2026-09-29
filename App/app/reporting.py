@@ -710,8 +710,23 @@ def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
         )
 
 
-def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = None) -> bool:
-    """Whether completion-based automation says to send this stay now."""
+# A sentinel for callers that already know the stay's deadline anchor: the
+# anchor itself may legitimately be None, so None cannot mean "not supplied".
+_ANCHOR_UNSET = object()
+
+
+def due_for_automatic_send(
+    apartment,
+    reservation,
+    now: Optional[datetime] = None,
+    anchor: Any = _ANCHOR_UNSET,
+) -> bool:
+    """Whether completion-based automation says to send this stay now.
+
+    ``anchor`` lets a caller that already read the stay's deadline anchor (the
+    sweep, once per stay instead of once per guest) pass it in; every other
+    caller leaves it unset and the anchor is looked up here as before.
+    """
     mode = apartment["automation_mode"]
     if mode == "manual":
         return False
@@ -732,7 +747,8 @@ def due_for_automatic_send(apartment, reservation, now: Optional[datetime] = Non
         hours=0 if mode == "immediate" else (apartment["submit_after_hours"] or 24)
     )
     send_at = completed.astimezone(timezone.utc) + delay
-    anchor = reservation_deadline_anchor(reservation)
+    if anchor is _ANCHOR_UNSET:
+        anchor = reservation_deadline_anchor(reservation)
     if anchor is not None:
         deadline_local = deadlines.reporting_deadline(anchor) - timedelta(
             hours=AUTOMATIC_SEND_DEADLINE_MARGIN_HOURS
@@ -925,6 +941,9 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     }
 
     out: List[Tuple[Any, Any]] = []
+    # The deadline anchor depends only on the stay (the earliest guest
+    # arrival), so the sweep reads it once per stay instead of once per guest.
+    anchors: Dict[int, Optional[date]] = {}
     for guest in db.query(sql, params):
         reservation = reservations.get(guest["reservation_id"])
         if not reservation:
@@ -986,7 +1005,11 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
             )
             continue
         if not ignore_schedule:
-            if not due_for_automatic_send(apartment, reservation):
+            if reservation["id"] not in anchors:
+                anchors[reservation["id"]] = reservation_deadline_anchor(reservation)
+            if not due_for_automatic_send(
+                apartment, reservation, anchor=anchors[reservation["id"]]
+            ):
                 continue
         out.append((guest, reservation))
     return out
