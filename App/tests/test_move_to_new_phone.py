@@ -256,6 +256,48 @@ def test_setup_issues_a_fresh_secret_and_fresh_codes(phone):
     assert _account()["totp_enabled"] == 1
 
 
+def test_the_first_login_on_a_new_phone_is_not_refused_as_a_replay(monkeypatch):
+    """A step spent before the move must not lock the new device out.
+
+    ``totp_last_step`` is a replay watermark. It used to survive both the move
+    (``reset_totp``) and re-enrolment (``enable_totp``), so a first login in the
+    same 30-second step as the code that started the move was refused by the CAS.
+    """
+    db.init_db()
+    _cleanup()
+    fixed = 1_700_000_000.0
+    monkeypatch.setattr(auth.time, "time", lambda: fixed)
+    try:
+        user_id = auth.create_account(
+            USERNAME, PASSWORD, "Move Phone", must_change_password=False
+        )
+        old_secret = auth.new_totp_secret()
+        auth.enable_totp(user_id, old_secret, auth.new_recovery_codes())
+        assert _account()["totp_last_step"] is None, (
+            "enabling a factor starts with no spent step"
+        )
+
+        # Proving the old device for the move spends the current step.
+        assert auth.verify_second_factor(_account(), pyotp.TOTP(old_secret).at(fixed)) is True
+        assert _account()["totp_last_step"] == int(fixed // 30)
+
+        auth.reset_totp(user_id)
+        assert _account()["totp_last_step"] is None, (
+            "the replay watermark must not survive the move"
+        )
+
+        new_secret = auth.new_totp_secret()
+        auth.enable_totp(user_id, new_secret, auth.new_recovery_codes())
+        assert _account()["totp_last_step"] is None
+
+        # The new phone's first code can land in the same step that was spent.
+        assert auth.verify_second_factor(
+            _account(), pyotp.TOTP(new_secret).at(fixed)
+        ) is True
+    finally:
+        _cleanup()
+
+
 def test_a_move_without_a_second_factor_goes_to_setup(host):
     response = _move(host, code="123456")
 

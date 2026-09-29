@@ -77,7 +77,8 @@ def new_recovery_codes(count: int = 8) -> list[str]:
 def enable_totp(user_id: int, secret: str, recovery_codes: list[str]) -> None:
     db.execute(
         "UPDATE user_account SET totp_secret_enc = ?, totp_enabled = 1, "
-        "recovery_codes_hash = ?, session_version = session_version + 1 WHERE id = ?",
+        "recovery_codes_hash = ?, totp_last_step = NULL, "
+        "session_version = session_version + 1 WHERE id = ?",
         (
             db.encrypt_secret(secret),
             json.dumps([recovery_code_hash(code) for code in recovery_codes]),
@@ -87,8 +88,12 @@ def enable_totp(user_id: int, secret: str, recovery_codes: list[str]) -> None:
 
 
 def stage_totp(user_id: int, secret: str) -> None:
+    # A new secret invalidates the old device, so the old replay watermark goes
+    # with it: otherwise the first code from the new phone could be refused as
+    # a step the (now useless) old secret already spent.
     db.execute(
-        "UPDATE user_account SET totp_secret_enc = ?, totp_enabled = 0 WHERE id = ?",
+        "UPDATE user_account SET totp_secret_enc = ?, totp_enabled = 0, "
+        "totp_last_step = NULL WHERE id = ?",
         (db.encrypt_secret(secret), user_id),
     )
 
@@ -96,7 +101,8 @@ def stage_totp(user_id: int, secret: str) -> None:
 def reset_totp(user_id: int) -> None:
     db.execute(
         "UPDATE user_account SET totp_secret_enc = NULL, totp_enabled = 0, "
-        "recovery_codes_hash = NULL, session_version = session_version + 1 WHERE id = ?",
+        "recovery_codes_hash = NULL, totp_last_step = NULL, "
+        "session_version = session_version + 1 WHERE id = ?",
         (user_id,),
     )
 
