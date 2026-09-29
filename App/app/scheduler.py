@@ -1,6 +1,7 @@
 """Background jobs: calendar polling, automatic submission, deadline watch."""
 from __future__ import annotations
 
+import fcntl
 import logging
 
 import requests
@@ -21,6 +22,7 @@ from . import (
 
 log = logging.getLogger("ubyhost.scheduler")
 _scheduler = None
+_lock_handle = None
 
 # Losing the deadline watch or the submission sweep loses compliance
 # monitoring, so those two failures are critical; the rest are warnings.
@@ -164,9 +166,29 @@ def _job_retention() -> None:
     _job_ok("retention")
 
 
+def _acquire_single_instance_lock() -> bool:
+    """Hold an exclusive lock on DATA_DIR/scheduler.lock for this process's life.
+
+    A second worker or a second container on the same volume would otherwise
+    run its own sweep and file the same guests at the same time.
+    """
+    global _lock_handle
+    handle = open(config.DATA_DIR / "scheduler.lock", "a+")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        handle.close()
+        return False
+    _lock_handle = handle
+    return True
+
+
 def start() -> None:
     global _scheduler
     if _scheduler or not config.ENABLE_SCHEDULER:
+        return
+    if not _acquire_single_instance_lock():
+        log.warning("another process holds the scheduler lock; not starting a scheduler here")
         return
     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
     _scheduler.add_job(
@@ -207,7 +229,10 @@ def _soon():
 
 
 def shutdown() -> None:
-    global _scheduler
+    global _scheduler, _lock_handle
     if _scheduler:
         _scheduler.shutdown(wait=False)
         _scheduler = None
+    if _lock_handle:
+        _lock_handle.close()
+        _lock_handle = None

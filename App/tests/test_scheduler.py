@@ -214,3 +214,24 @@ def test_a_failed_mail_step_does_not_skip_the_others(monkeypatch, tmp_path):
     )
     assert alert is not None
     assert alert["resolved_at"] is None
+
+
+def test_only_one_process_can_hold_the_scheduler_lock(monkeypatch, tmp_path):
+    """AR-28: a second worker on the same volume must not start a scheduler."""
+    import fcntl
+
+    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
+    scheduler._lock_handle = None
+
+    held = open(tmp_path / "scheduler.lock", "a+")
+    try:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        assert scheduler._acquire_single_instance_lock() is False
+        assert scheduler._lock_handle is None
+    finally:
+        fcntl.flock(held, fcntl.LOCK_UN)
+        held.close()
+
+    assert scheduler._acquire_single_instance_lock() is True
+    scheduler._lock_handle.close()
+    scheduler._lock_handle = None
