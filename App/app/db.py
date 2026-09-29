@@ -562,6 +562,7 @@ ADDED_COLUMNS = (
     ("user_account", "totp_secret_enc", "TEXT"),
     ("user_account", "totp_enabled", "INTEGER NOT NULL DEFAULT 0"),
     ("user_account", "recovery_codes_hash", "TEXT"),
+    ("user_account", "totp_last_step", "INTEGER"),
     ("legal_entity", "contact_email", "TEXT"),
     ("legal_entity", "contact_phone", "TEXT"),
     ("legal_entity", "owner_user_id", "INTEGER REFERENCES user_account(id)"),

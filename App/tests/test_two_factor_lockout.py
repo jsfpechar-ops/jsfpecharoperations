@@ -307,3 +307,43 @@ def test_ten_failed_codes_lock_one_account_only():
         assert rate_limit.account_2fa_blocked(98) is False
     finally:
         db.execute("DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account'")
+
+
+# --- replay: a code or recovery code is spent when it is used --------------
+
+
+def test_the_same_totp_code_is_refused_the_second_time():
+    db.init_db()
+    _cleanup()
+    try:
+        user_id = auth.create_account(
+            USERNAME, PASSWORD, "Lockout Host", must_change_password=False
+        )
+        secret = auth.new_totp_secret()
+        auth.enable_totp(user_id, secret, auth.new_recovery_codes())
+        account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+        code = pyotp.TOTP(secret).now()
+
+        assert auth.verify_second_factor(account, code) is True
+        account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+        assert auth.verify_second_factor(account, code) is False
+    finally:
+        _cleanup()
+
+
+def test_a_recovery_code_can_only_be_spent_once():
+    db.init_db()
+    _cleanup()
+    try:
+        user_id = auth.create_account(
+            USERNAME, PASSWORD, "Lockout Host", must_change_password=False
+        )
+        codes = auth.new_recovery_codes()
+        auth.enable_totp(user_id, auth.new_totp_secret(), codes)
+        stale = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+
+        assert auth.verify_second_factor(stale, codes[0]) is True
+        # The second request still holds the row it read before the first spend.
+        assert auth.verify_second_factor(stale, codes[0]) is False
+    finally:
+        _cleanup()

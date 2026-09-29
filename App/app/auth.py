@@ -12,6 +12,7 @@ import json
 import os
 import re
 import secrets
+import time
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import quote
@@ -106,8 +107,21 @@ def verify_second_factor(account, code: str) -> bool:
         secret = db.decrypt_secret(account["totp_secret_enc"])
     except Exception:
         return False
-    if secret and pyotp.TOTP(secret).verify(normalized, valid_window=1):
-        return True
+    if secret and normalized:
+        totp = pyotp.TOTP(secret)
+        current = int(time.time() // totp.interval)
+        for step in (current - 1, current, current + 1):
+            if hmac.compare_digest(totp.at(step * totp.interval), normalized):
+                # Accept each time step once: a code seen over someone's
+                # shoulder cannot be replayed within its 90-second window.
+                return db.update_if(
+                    "user_account",
+                    account["id"],
+                    {"totp_last_step": step},
+                    {},
+                    extra_where="(totp_last_step IS NULL OR totp_last_step < ?)",
+                    extra_params=(step,),
+                )
     candidate = recovery_code_hash(normalized)
     try:
         hashes = json.loads(account["recovery_codes_hash"] or "[]")
@@ -116,11 +130,13 @@ def verify_second_factor(account, code: str) -> bool:
     for stored in hashes:
         if hmac.compare_digest(candidate, stored):
             hashes.remove(stored)
-            db.execute(
-                "UPDATE user_account SET recovery_codes_hash = ? WHERE id = ?",
-                (json.dumps(hashes), account["id"]),
+            # Only the request that still sees the old list may spend it.
+            return db.update_if(
+                "user_account",
+                account["id"],
+                {"recovery_codes_hash": json.dumps(hashes)},
+                {"recovery_codes_hash": account["recovery_codes_hash"]},
             )
-            return True
     return False
 
 
