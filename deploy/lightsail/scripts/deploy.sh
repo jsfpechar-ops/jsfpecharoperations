@@ -112,6 +112,7 @@ if [ -n "${BACKUP_STAMP}" ]; then
 fi
 
 echo "==> Starting stack"
+docker compose pull caddy
 docker compose up -d --remove-orphans
 
 # Reload Caddy unconditionally, every deploy.
