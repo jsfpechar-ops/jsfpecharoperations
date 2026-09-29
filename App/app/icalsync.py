@@ -46,7 +46,7 @@ from zoneinfo import ZoneInfo
 
 from icalendar import Calendar
 
-from . import alerts, config, db, deadlines, host_i18n
+from . import alerts, config, db, deadlines, host_i18n, reporting
 from .feed_fetch import CalendarFetchError, fetch_calendar_text
 from .feed_url import FeedUrlError
 
@@ -310,8 +310,8 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
     if existing["date_from"] < deadlines.local_now().date().isoformat():
         return
     reported = db.query_one(
-        "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
-        (existing["id"],),
+        "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = ?",
+        (existing["id"], reporting.SENT),
     )
     if reported and reported["n"]:
         alerts.raise_alert(
@@ -581,7 +581,7 @@ def sync_feed(
                 with db.cursor() as cur:
                     cur.execute(
                         "UPDATE guest SET stay_from = ?, stay_to = ?, updated_at = ? "
-                        "WHERE reservation_id = ? AND submit_state != 'sent' "
+                        "WHERE reservation_id = ? AND submit_state != ? "
                         "AND stay_from IS NOT NULL AND stay_to IS NOT NULL "
                         "AND ((stay_from = ? AND stay_to = ?) OR stay_from > ?)",
                         (
@@ -589,6 +589,7 @@ def sync_feed(
                             event["date_to"],
                             now,
                             existing["id"],
+                            reporting.SENT,
                             existing["date_from"],
                             existing["date_to"],
                             event["date_to"],
@@ -631,8 +632,8 @@ def sync_feed(
                     )
                 reported = db.query_one(
                     "SELECT COUNT(*) AS n FROM guest "
-                    "WHERE reservation_id = ? AND submit_state = 'sent'",
-                    (existing["id"],),
+                    "WHERE reservation_id = ? AND submit_state = ?",
+                    (existing["id"], reporting.SENT),
                 )
                 if reported and reported["n"]:
                     # [F5] A sent guest keeps the dates that were filed - that
@@ -731,8 +732,8 @@ def sync_feed(
         if row["uid"] in seen_uids:
             continue
         reported = db.query_one(
-            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = 'sent'",
-            (row["id"],),
+            "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND submit_state = ?",
+            (row["id"], reporting.SENT),
         )
         if reported and reported["n"]:
             alerts.raise_alert(
