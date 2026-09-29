@@ -73,6 +73,42 @@ def test_a_refused_connection_is_definitely_not_sent(monkeypatch):
     assert not isinstance(caught.value, UbyportOutcomeUnknownError)
 
 
+def test_an_ssl_eof_is_outcome_unknown(monkeypatch):
+    """An SSL EOF on the read phase can follow a request that reached UbyPort.
+
+    ``urllib3`` raises its ``SSLError`` when the connection dies mid-read, which
+    is exactly the ambiguous case: the envelope may already be with the
+    register, so the batch must wait for a person rather than be refiled. Older
+    urllib3/requests releases surfaced this as ``SSLEOFError``; the pinned ones
+    fold it into ``SSLError`` with the EOF message, so that is what is raised
+    here.
+    """
+    ssl_eof = getattr(requests.exceptions, "SSLEOFError", requests.exceptions.SSLError)
+    monkeypatch.setattr(
+        "app.ubyport.client.requests.post",
+        _raising_post(
+            ssl_eof(urllib3.exceptions.SSLError("EOF occurred in violation of protocol"))
+        ),
+    )
+
+    with pytest.raises(UbyportOutcomeUnknownError) as caught:
+        _client().submit({}, [{}])
+
+    assert caught.value.request_xml
+
+
+def test_a_generic_ssl_error_is_outcome_unknown(monkeypatch):
+    monkeypatch.setattr(
+        "app.ubyport.client.requests.post",
+        _raising_post(requests.exceptions.SSLError("TLS handshake failed")),
+    )
+
+    with pytest.raises(UbyportOutcomeUnknownError) as caught:
+        _client().submit({}, [{}])
+
+    assert caught.value.request_xml
+
+
 def test_a_5xx_is_outcome_unknown(monkeypatch):
     monkeypatch.setattr(
         "app.ubyport.client.requests.post",
