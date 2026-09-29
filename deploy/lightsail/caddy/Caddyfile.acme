@@ -15,6 +15,7 @@
 		max_size 20MB
 	}
 	encode gzip
+	header Strict-Transport-Security "max-age=31536000"
 	reverse_proxy ubyhost:8080 {
 		# No Cloudflare in front: the TCP peer is the client.
 		header_up CF-Connecting-IP {remote_host}
