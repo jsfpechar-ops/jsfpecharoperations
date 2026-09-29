@@ -1040,6 +1040,25 @@ def release_sendable_claim(token: str) -> None:
     db.execute("DELETE FROM submission_claim WHERE claim_token = ?", (token,))
 
 
+def apartment_in_doubt(apartment_id: int) -> bool:
+    """Whether any live guest still points at a batch whose outcome is unknown.
+
+    An ``ok`` batch may resolve the apartment-level card for its own guests, but
+    not for guests that still point at an earlier in-doubt batch: those stay
+    excluded from the sweep, and resolving the card would hide it.
+    """
+    return bool(
+        db.query_one(
+            "SELECT 1 FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+            "WHERE r.apartment_id = ? AND r.status = 'active' AND r.archived_at IS NULL "
+            "AND g.archived_at IS NULL AND g.submission_id IN "
+            "(SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown') "
+            "LIMIT 1",
+            (apartment_id, apartment_id),
+        )
+    )
+
+
 def submit_batch(
     apartment,
     pairs: List[Tuple[Any, Any]],
@@ -1346,7 +1365,12 @@ def submit_batch(
 
     if state in ("ok", "ok_duplicate"):
         alerts.resolve(f"submission_rejected:{apartment['id']}")
-        alerts.resolve(f"submission_outcome_unknown:{apartment['id']}")
+        # The in-doubt card is apartment-wide. This batch only answered for its
+        # own guests; if another guest still points at an unknown batch, the
+        # card has to stay up or the warning disappears while the sweep keeps
+        # silently excluding them.
+        if not apartment_in_doubt(apartment["id"]):
+            alerts.resolve(f"submission_outcome_unknown:{apartment['id']}")
     else:
         log.error(
             "ubyport_submission_rejected apartment_id=%s owner_user_id=%s "
