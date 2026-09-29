@@ -187,7 +187,7 @@
 
     <div class="g-field">
       <label for="purpose">{{ t('purpose') }}</label>
-      <select id="purpose" name="purpose">
+      <select id="purpose" name="purpose" data-tw-common="10,01,03,11" data-tw-other="{{ t('tw_purpose_other') }}">
         {% for purpose in purposes %}
           <option value="{{ purpose.code }}"
             {% if (val('purpose') or default_purpose) == purpose.code %}selected{% endif %}>

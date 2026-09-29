@@ -366,6 +366,59 @@
     });
   }
 
+  // 9. Purpose: the four common codes as chips over the real <select>.
+  function initPurposeChips() {
+    var select = document.getElementById("purpose");
+    if (!select || select.getAttribute("data-tw-chips")) return;
+    select.setAttribute("data-tw-chips", "1");
+    var common = (select.getAttribute("data-tw-common") || "10,01,03,11").split(",");
+    var group = document.createElement("div");
+    group.className = "tw-chips";
+    group.setAttribute("role", "group");
+    var label = document.querySelector('label[for="purpose"]');
+    if (label) {
+      if (!label.id) label.id = "purpose_label";
+      group.setAttribute("aria-labelledby", label.id);
+    }
+    var buttons = [];
+    common.forEach(function (code) {
+      var o = select.querySelector('option[value="' + code + '"]');
+      if (!o) return;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "tw-chip";
+      b.textContent = o.textContent.trim();
+      b.setAttribute("data-code", code);
+      b.addEventListener("click", function () {
+        select.value = code;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        paint(false);
+      });
+      group.appendChild(b);
+      buttons.push(b);
+    });
+    var other = document.createElement("button");
+    other.type = "button";
+    other.className = "tw-chip is-other";
+    other.textContent = select.getAttribute("data-tw-other") || "Other…";
+    other.addEventListener("click", function () { paint(true); select.focus(); });
+    group.appendChild(other);
+    select.parentNode.insertBefore(group, select);
+
+    function paint(showSelect) {
+      var inCommon = common.indexOf(select.value) !== -1;
+      var openSelect = showSelect || !inCommon;
+      buttons.forEach(function (b) {
+        b.setAttribute("aria-pressed", !openSelect && b.getAttribute("data-code") === select.value ? "true" : "false");
+      });
+      other.setAttribute("aria-pressed", openSelect ? "true" : "false");
+      select.classList.toggle("tw-vh", !openSelect);
+      if (openSelect) select.removeAttribute("tabindex"); else select.setAttribute("tabindex", "-1");
+    }
+    select.addEventListener("change", function () { paint(common.indexOf(select.value) === -1); });
+    paint(false);
+  }
+
   // A page restored from the back/forward cache must not keep spinning.
   window.addEventListener("pageshow", function () {
     Array.prototype.forEach.call(document.querySelectorAll("form.is-sending"), function (f) {
@@ -382,6 +435,7 @@
     initTrackerLabels();
     initDobCells();
     initCountryCombos();
+    initPurposeChips();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();

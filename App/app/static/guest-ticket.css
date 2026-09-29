@@ -984,6 +984,30 @@
   white-space: nowrap;
 }
 
+/* 25. Purpose chips (ticket.js initPurposeChips) -------------------------- */
+.tw .tw-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+.tw .tw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tw .tw-chip[aria-pressed="true"] {
+  border-color: var(--brand-action);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+.tw .tw-chip[aria-pressed="true"]:not(.is-other)::before { content: "\2713"; font-weight: 800; }
+
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
 .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
