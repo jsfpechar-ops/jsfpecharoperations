@@ -77,6 +77,46 @@
     if (submit && nav) nav.appendChild(submit);
   }
 
+  // 5. PIN: paint the one real #pin input as six cells. The input sits on
+  //    top of the cells, invisible, so focus, typing, paste and one-time-code
+  //    autofill all still go to the real field.
+  function initPinCells() {
+    var input = document.querySelector(".tw .g-pin-input");
+    if (!input || input.getAttribute("data-tw-cells")) return;
+    input.setAttribute("data-tw-cells", "1");
+    var size = parseInt(input.getAttribute("maxlength") || "6", 10);
+    var box = document.createElement("div");
+    box.className = "tw-pin";
+    var cells = [];
+    for (var i = 0; i < size; i += 1) {
+      var cell = document.createElement("span");
+      cell.className = "tw-pin-cell";
+      cell.setAttribute("aria-hidden", "true");
+      box.appendChild(cell);
+      cells.push(cell);
+    }
+    input.parentNode.insertBefore(box, input);
+    box.appendChild(input);
+    if (input.getAttribute("aria-invalid") === "true") box.classList.add("is-bad");
+
+    function paint() {
+      var digits = input.value.replace(/\D/g, "").slice(0, size);
+      if (digits !== input.value) input.value = digits;
+      var focused = document.activeElement === input;
+      cells.forEach(function (c, k) {
+        c.textContent = digits.charAt(k);
+        c.classList.toggle("is-filled", k < digits.length);
+        c.classList.toggle("is-caret", focused && k === Math.min(digits.length, size - 1));
+      });
+      box.classList.toggle("is-complete", digits.length === size);
+      if (digits.length) box.classList.remove("is-bad");
+    }
+    ["input", "focus", "blur", "keyup", "change"].forEach(function (name) {
+      input.addEventListener(name, paint);
+    });
+    paint();
+  }
+
   // A page restored from the back/forward cache must not keep spinning.
   window.addEventListener("pageshow", function () {
     Array.prototype.forEach.call(document.querySelectorAll("form.is-sending"), function (f) {
@@ -89,6 +129,7 @@
     initProgressMirror();
     initSending();
     initSubmitStub();
+    initPinCells();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();

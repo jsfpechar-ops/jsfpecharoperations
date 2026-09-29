@@ -736,6 +736,55 @@
 .tw .tw-route { margin-top: 0; }
 .tw .tw-progress { margin-top: 8px; }
 
+/* 19. PIN cells v2 (built by ticket.js initPinCells) --------------------- */
+.tw .tw-pin {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-2);
+  max-width: 400px;
+}
+.tw .tw-pin-cell {
+  display: grid;
+  place-items: center;
+  height: 64px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: 700 26px/1 var(--font-sans);
+  transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
+}
+.tw .tw-pin-cell.is-caret { border-color: var(--brand); box-shadow: 0 0 0 4px var(--focus-ring); }
+.tw .tw-pin-cell.is-caret:empty::after {
+  content: "";
+  width: 2px;
+  height: 28px;
+  background: var(--brand);
+  animation: tw-blink 1s steps(1) infinite;
+}
+.tw .tw-pin.is-complete .tw-pin-cell { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+.tw .tw-pin.is-bad .tw-pin-cell { border-color: var(--red); }
+/* The real input covers the row, invisible. 16px stops iOS zooming in. */
+.tw .tw-pin .g-pin-input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  letter-spacing: 0;
+  opacity: 0.01;
+  box-shadow: none;
+}
+@keyframes tw-blink { 50% { opacity: 0; } }
+
 /* 21. Quiet "more" disclosure (claim e-mail, anywhere small) ------------- */
 .tw details.tw-more { margin-top: var(--space-2); }
 .tw details.tw-more > summary {
