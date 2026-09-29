@@ -12,7 +12,7 @@ on a small Frankfurt VM.
 |------------|------|--------------|-----|
 | **~10 properties, busy weeks** | **Micro** | **$7/mo** | 1 GB |
 | Growing toward 25+ properties | Small | $12/mo | 2 GB |
-| Absolute minimum (tight) | Nano | $5/mo | 512 MB |
+| **Not supported** | Nano | $5/mo | 512 MB — the app container has `mem_limit: 768m` |
 
 Use **Frankfurt (`eu-central-1`)** or your nearest EU region. Enable the **static
 IP** (included). Do **not** buy Lightsail managed MySQL — UbyHost uses SQLite on
@@ -136,7 +136,7 @@ Mounted at `/data` inside `ubyhost` (uid **10001**):
 | `/data/secret_key` | Fallback signing/encryption key if env `UBYHOST_SECRET_KEY` is empty |
 | `/data/initial_admin_credentials` | One-time bootstrap password if env password was empty |
 | `/data/passport_photos/` | Temporary ID uploads (not included in `backup_data.sh`; they expire after verification / sweep) |
-| `/data/backups/<stamp>/` | Last **10** snapshots: `ubyhost.db`, `secret_key`, `initial_admin_credentials` |
+| `/data/backups/<stamp>/` | Snapshots are age-encrypted (`ubyhost-backup.tar.age`) with time-based retention; see `deploy/lightsail/README.md` |
 
 Volume is **not** replaced on `./scripts/deploy.sh`. Code updates only.
 
@@ -161,7 +161,7 @@ Caddy :443 → ubyhost:8080
 | No git at `/opt/ubyhost` | CI bootstraps if the lightsail layout exists; otherwise aborts | Clone as in setup, or let CI bootstrap |
 | Wrong branch / stale tree | `git reset --hard origin/main` **discards local edits** | Keep `.env` and `caddy/certs/` outside git (already gitignored) |
 | Stale image | Compose builds `ubyhost:local` each deploy with `--pull` of base images | If a layer looks cached wrongly: `docker compose build --no-cache` |
-| Auto-deploy after every green CI | Disabled unless secret `LIGHTSAIL_AUTO_DEPLOY=1` | Prefer **workflow_dispatch** or SSH until go-live is routine |
+| Automatic deploy after every green CI | Not offered — deploys never run on their own | Production deploys are manual: Actions → Deploy production → Run workflow, type DEPLOY |
 | App starts but public HTTPS fails | Internal healthz OK; `smoke-remote.sh` warns | Cloudflare Full (strict), origin certs, Lightsail :443 |
 
 Rollback **code** (data stays):
@@ -187,7 +187,7 @@ All from `deploy/lightsail/`:
 | `./scripts/smoke-remote.sh` | Curl `/healthz`, `/login`, `/legal`, `/privacy` |
 | `./scripts/logs.sh` | Tail all logs |
 | `./scripts/logs.sh ubyhost` | App logs only |
-| `./scripts/backup.sh` | SQLite snapshot (keeps last 10 on the volume) |
+| `./scripts/backup.sh` | Age-encrypted snapshot with time-based retention |
 | `./scripts/restore.sh <stamp>` | Stop app, replace DB from a volume snapshot, start, wait for health |
 | `./scripts/backup-gdrive.sh` | Snapshot + rclone copy newest folder to Google Drive |
 
@@ -209,17 +209,18 @@ Weekly off-site (Sunday 04:00 UTC) after `rclone config` remote **`gdrive`**:
 
 `backup.sh` runs `sqlite3 … '.backup'` **inside the running container**, so a concurrent write is snapshotted consistently (SQLite hot backup). A raw `cp ubyhost.db` while the app is up can capture a torn file — do not do that.
 
-**Retention:** only the 10 newest folders under `/data/backups` remain. Older points exist only if you copied them off-site (Drive/S3) **before** they aged out. Drive uploads do not prune; recover an older Drive folder with `rclone copy` then `restore.sh` is not enough — copy that `ubyhost.db` into a new stamp on the volume (see restore to a new instance).
+**Retention:** snapshots are age-encrypted (`ubyhost-backup.tar.age`) with time-based retention; see `deploy/lightsail/README.md`. Older points exist only if you copied them off-site (Drive/S3) **before** they aged out. Drive uploads do not prune.
 
 Passport photos are **not** in the DB backup. After restore, unverified uploads may be missing; hosts re-check IDs if needed.
 
 ## Restore runbook (same instance)
 
-1. List stamps: `docker compose exec ubyhost ls -1 /data/backups | sort -r`
-2. `cd /opt/ubyhost/deploy/lightsail && ./scripts/restore.sh 20260915T030000Z`
-3. Type `yes`. The script stops `ubyhost`, copies `ubyhost.db` (+ `secret_key` if present), `chown 10001:10001`, starts the service, waits for `/healthz`.
-4. Sign in. Open **one stay** and **Reports** — confirm guests and a known Doručenka still exist.
-5. If login fails after restore, `UBYHOST_SECRET_KEY` in `.env` does not match the restored `secret_key` / Fernet key. Set `.env` to the key that was in force when the backup was taken, then `./scripts/deploy.sh`.
+1. `AGE_IDENTITY_FILE=/path/on/host ./scripts/restore.sh <stamp>` — the age identity must be on the host, never on the volume.
+2. List stamps: `docker compose exec ubyhost ls -1 /data/backups | sort -r`
+3. `cd /opt/ubyhost/deploy/lightsail && ./scripts/restore.sh 20260915T030000Z`
+4. Type `yes`. The script stops `ubyhost`, copies `ubyhost.db` (+ `secret_key` if present), `chown 10001:10001`, starts the service, waits for `/healthz`.
+5. Sign in. Open **one stay** and **Reports** — confirm guests and a known Doručenka still exist.
+6. If login fails after restore, `UBYHOST_SECRET_KEY` in `.env` does not match the restored `secret_key` / Fernet key. Set `.env` to the key that was in force when the backup was taken, then `./scripts/deploy.sh`.
 
 ### Restore onto a **new** Lightsail instance
 
@@ -237,7 +238,7 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
          chmod 600 /data/ubyhost.db /data/secret_key'
 ```
 
-6. Confirm `.env` `UBYHOST_SECRET_KEY` matches the restored key (or leave empty to use `/data/secret_key`).
+6. If `UBYHOST_SECRET_KEY` is empty and `/data/secret_key` exists, deploy.sh uses the file. Never replace the key on a server that already has data.
 7. `./scripts/deploy.sh` then `./scripts/status.sh` and a login test.
 8. Point Cloudflare A record at the **new** static IP. Keep Full (strict).
 
@@ -250,6 +251,7 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 | iCal sync | `UBYHOST_ICAL_POLL_MINUTES` (60) |
 | UbyPort submit sweep | `UBYHOST_SUBMIT_SWEEP_MINUTES` (10) |
 | Deadline alerts | 30 min |
+| Guest e-mail (`mail`) | 5 min |
 | Stale passport photo purge | 12 h |
 
 If you deploy with the scheduler **off**, calendars and automatic sends freeze until you set `1` and redeploy. Manual **Submit** still works. CI/smoke sets the scheduler off on purpose.
@@ -264,7 +266,7 @@ docker system df
 docker compose exec ubyhost du -sh /data /data/passport_photos /data/backups
 ```
 
-Photos grow until hosts verify IDs or the 30-day stale sweep runs. Backup folders cap at 10. Docker logs: `docker compose logs --since 24h ubyhost`. Install `/etc/logrotate.d/ubyhost` as printed by `setup-server.sh` for `/var/log/ubyhost-*.log`.
+Photos grow until hosts verify IDs or the 30-day stale sweep runs. Snapshots are age-encrypted with time-based retention; see `deploy/lightsail/README.md`. Docker logs: `docker compose logs --since 24h ubyhost`. Install `/etc/logrotate.d/ubyhost` as printed by `setup-server.sh` for `/var/log/ubyhost-*.log`.
 
 Lightsail **snapshots** of the whole instance are a useful extra (not a substitute for `backup.sh` + Drive).
 
@@ -279,17 +281,18 @@ cd deploy/lightsail
 
 The database volume is **not** replaced on deploy — only application code updates.
 
-### Deploy from GitHub Actions (optional)
+### Deploy from GitHub Actions
 
-Workflow **Deploy production** can SSH and run `git reset --hard origin/main` + `./scripts/deploy.sh`.
+Production deploys are manual: Actions → Deploy production → Run workflow, type DEPLOY.
+
+Workflow **Deploy production** pins the run to the current `main` revision, verifies CI is green for it, then SSHs and runs `git reset --hard` + `./scripts/deploy.sh`.
 
 | Secret | Purpose |
 |--------|---------|
 | `LIGHTSAIL_HOST` | Static IP |
 | `LIGHTSAIL_SSH_PRIVATE_KEY` | Ubuntu user key |
-| `LIGHTSAIL_AUTO_DEPLOY` | Set to `1` **only** if you want every green CI on `main` to ship to Lightsail |
 
-Without the host/key secrets, the job skips. Without `LIGHTSAIL_AUTO_DEPLOY`, **workflow_run** (CI success) skips; **Run workflow** (`workflow_dispatch`) still deploys. That is the safer go-live default.
+Without the host/key secrets, the job skips.
 
 ## Migrating from Render
 
