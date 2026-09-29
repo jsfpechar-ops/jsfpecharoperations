@@ -36,6 +36,10 @@ DOC_ALLOWED = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
 # Never allowed in any field (appendix 3, section 2.1).
 FORBIDDEN_ANYWHERE = ("\r", "\n", "|")
 
+# XML 1.0 cannot carry these at all; one of them in any field makes the
+# whole UbyPort batch unparseable for every guest in it.
+_XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
 # Field length limits, appendix 3 section 3.3 (record type U).
 MAX_SURNAME = 50
 MAX_FIRST_NAME = 24
@@ -144,6 +148,7 @@ def strip_forbidden(value: Optional[str]) -> str:
     text = (value or "")
     for ch in FORBIDDEN_ANYWHERE:
         text = text.replace(ch, " ")
+    text = _XML_ILLEGAL.sub(" ", text)
     return text
 
 

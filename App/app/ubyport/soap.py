@@ -8,6 +8,7 @@ order below is fixed and deliberate.
 """
 from __future__ import annotations
 
+import re
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 from xml.sax.saxutils import escape
@@ -19,6 +20,10 @@ NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 NS_WSA_NONE = "http://schemas.microsoft.com/ws/2005/05/addressing/none"
 
 ACTION_PREFIX = "http://UBY.pcr.cz/WS_UBY/IWS_UBY/"
+
+# XML 1.0 cannot carry these at all; one of them in any field makes the
+# whole UbyPort batch unparseable for every guest in it.
+_XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 # Alphabetical, exactly as the service serialises SeznamUbytovanych.
 HEADER_FIELDS = (
@@ -60,7 +65,7 @@ def _node(prefix: str, name: str, value: Any) -> str:
     if isinstance(value, bool):
         text = "true" if value else "false"
     else:
-        text = escape(str(value))
+        text = escape(_XML_ILLEGAL.sub(" ", str(value)))
     return f"<{prefix}:{name}>{text}</{prefix}:{name}>"
 
 
