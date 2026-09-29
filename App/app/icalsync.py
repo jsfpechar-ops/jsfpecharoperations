@@ -748,6 +748,9 @@ def sync_feed(
             )
             continue
         db.update("reservation", row["id"], {"status": "cancelled", "updated_at": now})
+        from . import claim as stay_claim
+
+        stay_claim.expire_on_cancel(row)
         stats["cancelled"] += 1
 
     db.update(
