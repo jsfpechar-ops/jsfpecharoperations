@@ -231,7 +231,8 @@ def _soon():
 def shutdown() -> None:
     global _scheduler, _lock_handle
     if _scheduler:
-        _scheduler.shutdown(wait=False)
+        # wait=True: a batch already on the wire must record its answer (compose stop_grace_period is 90 s).
+        _scheduler.shutdown(wait=True)
         _scheduler = None
     if _lock_handle:
         _lock_handle.close()
