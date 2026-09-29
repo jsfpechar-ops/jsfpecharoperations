@@ -39,7 +39,7 @@ from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
 from .ubyport import errors as uby_errors
-from .ubyport.client import SubmissionResult, UbyportClient, UbyportError, UbyportOutcomeUnknownError, UbyportTransportError
+from .ubyport.client import SubmissionResult, UbyportAuthError, UbyportClient, UbyportError, UbyportOutcomeUnknownError, UbyportTransportError
 
 log = logging.getLogger("ubyhost.reporting")
 
@@ -1144,6 +1144,16 @@ def submit_batch(
             apartment_id=apartment["id"],
             params={"property": apartment["internal_name"], "error": str(exc)},
         )
+        if isinstance(exc, UbyportAuthError):
+            alerts.raise_alert(
+                "critical",
+                "ubyport_auth_failed",
+                f"{apartment['internal_name']}: UbyPort refused the web-service login.",
+                str(exc),
+                dedupe_key=f"ubyport_auth_failed:{apartment['id']}",
+                apartment_id=apartment["id"],
+                params={"property": apartment["internal_name"]},
+            )
         # The host is not watching the screen when this fires -- the whole point
         # of the automatic send is that nobody is. Mail the same event to the
         # address on the legal entity so a batch that never left is not only
