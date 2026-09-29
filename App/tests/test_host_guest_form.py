@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import re
+import time
 from datetime import timedelta
 
 import pytest
@@ -642,10 +643,11 @@ def test_a_host_edit_does_not_flip_a_filed_guest_to_not_required():
 
 
 def test_a_host_edit_is_refused_while_the_sweep_holds_the_guest():
-    """AR-11: a submission_claim row means the guest is in flight.
+    """AR-11: a live submission_claim row means the guest is in flight.
 
     The edit must not overwrite the record the sweep is filing; the host is
-    told to reopen the guest and repeat the change.
+    told to reopen the guest and repeat the change. The claim is only honoured
+    while it is fresh (see the expired-claim test below).
     """
     owner_id, stay_id = _host_stay()
     guest_id = None
@@ -654,7 +656,7 @@ def test_a_host_edit_is_refused_while_the_sweep_holds_the_guest():
         db.execute(
             "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
             "VALUES (?, 'x', ?)",
-            (guest_id, 0.0),
+            (guest_id, time.time()),
         )
         client = _host_client(owner_id)
 
@@ -669,6 +671,40 @@ def test_a_host_edit_is_refused_while_the_sweep_holds_the_guest():
         assert db.query_one(
             "SELECT surname FROM guest WHERE id = ?", (guest_id,)
         )["surname"] == "OLD"
+    finally:
+        if guest_id is not None:
+            db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+        _cleanup()
+
+
+def test_an_expired_claim_does_not_block_a_host_edit():
+    """A claim left by a crashed worker must not block edits for ever.
+
+    cleanup of expired claims lives in the send path, and a ``manual`` property
+    never runs it, so the guard itself has to treat a claim older than
+    ``SUBMISSION_CLAIM_TTL_SECONDS`` as void.
+    """
+    owner_id, stay_id = _host_stay()
+    guest_id = None
+    try:
+        guest_id = _host_guest(stay_id, surname="OLD", submit_state=reporting.ERROR)
+        db.execute(
+            "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+            "VALUES (?, 'x', ?)",
+            (guest_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS - 1),
+        )
+        client = _host_client(owner_id)
+
+        response = client.post(
+            f"/guests/{guest_id}",
+            data=_complete_guest(surname="NEW"),
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200, response.text
+        assert db.query_one(
+            "SELECT surname FROM guest WHERE id = ?", (guest_id,)
+        )["surname"] == "NEW", "a stale claim must not block the host's edit"
     finally:
         if guest_id is not None:
             db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))

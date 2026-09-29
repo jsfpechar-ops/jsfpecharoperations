@@ -14,6 +14,7 @@ guest's personal data.
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
@@ -1642,8 +1643,11 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             existing["id"],
             payload,
             {"submit_state": existing["submit_state"]},
-            extra_where="NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = ?)",
-            extra_params=(existing["id"],),
+            extra_where=(
+                "NOT EXISTS (SELECT 1 FROM submission_claim "
+                "WHERE guest_id = ? AND claimed_at >= ?)"
+            ),
+            extra_params=(existing["id"], time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
         ):
             return _unavailable(request, lang, "already_filed", 403, token)
         saved_id = existing["id"]

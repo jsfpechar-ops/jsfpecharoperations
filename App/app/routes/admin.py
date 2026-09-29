@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import time
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlencode, urlparse
@@ -1893,8 +1894,11 @@ async def guest_update(guest_id: int, request: Request):
         guest_id,
         payload,
         {"submit_state": guest["submit_state"]},
-        extra_where="NOT EXISTS (SELECT 1 FROM submission_claim WHERE guest_id = ?)",
-        extra_params=(guest_id,),
+        extra_where=(
+            "NOT EXISTS (SELECT 1 FROM submission_claim "
+            "WHERE guest_id = ? AND claimed_at >= ?)"
+        ),
+        extra_params=(guest_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
     ):
         return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.guest_changed_retry"))
     db.audit("guest_updated", f"id={guest_id} by=host")
