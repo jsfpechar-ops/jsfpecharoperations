@@ -141,6 +141,42 @@ def test_a_wrong_code_does_not_offer_the_start_over_link():
         _finish()
 
 
+def test_a_non_ascii_code_is_a_failed_attempt_not_a_crash():
+    """A pasted full-width digit must reach the wrong-code path, and count.
+
+    ``hmac.compare_digest`` raises ``TypeError`` on non-ASCII input, so the
+    route used to answer HTTP 500 and never recorded the failed attempt.
+    """
+    client, token, _ = _on_the_second_factor()
+    try:
+        response = client.post(
+            "/login/2fa",
+            data={"pending": token, "code": "１２３４５６"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 401, response.text
+        assert host_i18n.translate("en", "auth.error.code_invalid") in _page(response)
+        account = db.query_one(
+            "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+        )
+        assert db.query_one(
+            "SELECT 1 AS x FROM rate_limit_event "
+            "WHERE scope = '2fa_fail_account' AND key = ?",
+            (str(account["id"]),),
+        ), "a non-ASCII code has to feed the per-account lockout"
+    finally:
+        account = db.query_one(
+            "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+        )
+        if account:
+            db.execute(
+                "DELETE FROM rate_limit_event WHERE scope = '2fa_fail_account' AND key = ?",
+                (str(account["id"]),),
+            )
+        _finish()
+
+
 # --- the lockout message -------------------------------------------------
 
 

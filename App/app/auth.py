@@ -102,7 +102,14 @@ def reset_totp(user_id: int) -> None:
 
 
 def verify_second_factor(account, code: str) -> bool:
-    normalized = (code or "").replace(" ", "")
+    # Strip every kind of whitespace, including the NBSP a phone's keyboard or
+    # an e-mail client inserts, the same way spaces are stripped. What is left
+    # must be ASCII: ``hmac.compare_digest`` raises TypeError on non-ASCII
+    # input, and a pasted full-width digit must count as a failed attempt (and
+    # feed the per-account lockout) rather than surface as an HTTP 500.
+    normalized = re.sub(r"\s+", "", code or "")
+    if not normalized.isascii():
+        return False
     try:
         secret = db.decrypt_secret(account["totp_secret_enc"])
     except Exception:
