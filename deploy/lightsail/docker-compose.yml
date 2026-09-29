@@ -13,6 +13,7 @@ services:
       dockerfile: Dockerfile
     image: ubyhost:local
     restart: unless-stopped
+    stop_grace_period: 90s
     env_file: .env
     environment:
       UBYHOST_DATA_DIR: /data
@@ -45,7 +46,7 @@ services:
       - web
 
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
     restart: unless-stopped
     ports:
       - "80:80"
