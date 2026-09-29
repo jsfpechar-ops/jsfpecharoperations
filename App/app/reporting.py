@@ -536,7 +536,11 @@ def dashboard_rows(
     out: List[Dict[str, Any]] = []
     for reservation in rows:
         check_in = reservation_deadline_anchor(reservation)
-        progress = reservation_progress(reservation)
+        try:
+            progress = reservation_progress(reservation)
+        except db.DecryptionError:
+            log.exception("dashboard skipped reservation_id=%s", reservation["id"])
+            continue
         level = deadlines.urgency(check_in) if check_in else "future"
         # A finished stay with nothing outstanding is noise on a dashboard.
         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
