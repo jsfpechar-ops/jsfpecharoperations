@@ -20,7 +20,7 @@ jobs:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
@@ -73,7 +73,7 @@ jobs:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
@@ -113,7 +113,7 @@ jobs:
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: shellcheck deploy and backup scripts (errors only)
         run: shellcheck -S error deploy/lightsail/scripts/*.sh App/scripts/*.sh docker-entrypoint.sh App/run.sh App/render_start.sh render_start.sh
 
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build image
         run: docker build -t ubyhost:ci .
       - name: Start container and wait for healthz
@@ -139,7 +139,7 @@ jobs:
   secrets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { fetch-depth: 50 }
       - name: gitleaks (last 50 commits)
         run: >-
