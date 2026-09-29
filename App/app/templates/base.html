@@ -196,9 +196,11 @@
             {% elif alert.apartment_id %}<small class="notification-action">{{ t('notification.open_property') }}</small>{% endif %}
           </span>
       {% if alert.reservation_id or alert.apartment_id %}</a>{% else %}</div>{% endif %}
+      {% if alert.kind != 'dates_changed_resign' %}
       <form method="post" action="/alerts/{{ alert.id }}/dismiss" data-notification-dismiss>
         <button type="submit" aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
       </form>
+      {% endif %}
     </article>
   {% endfor %}
   {% if alert_extra %}
