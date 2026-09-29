@@ -1,5 +1,6 @@
 """Guest navigation: picking the wrong stay, then the right one, must never dead-end."""
 import base64
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -962,7 +963,8 @@ def test_a_save_while_the_sweep_holds_the_guest_is_refused():
 
     A submission_claim row means the sweep has this guest in flight. The guest
     edit must not overwrite the filing, and says so instead of silently losing
-    the submitted record.
+    the submitted record. The claim is only honoured while it is fresh (see the
+    expired-claim test below).
     """
     token, stay, _right = _make_apartment_with_stays()
     guest_id = None
@@ -989,7 +991,7 @@ def test_a_save_while_the_sweep_holds_the_guest_is_refused():
         db.execute(
             "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
             "VALUES (?, 'x', ?)",
-            (guest_id, 0.0),
+            (guest_id, time.time()),
         )
 
         response = browser.post(
@@ -1002,6 +1004,54 @@ def test_a_save_while_the_sweep_holds_the_guest_is_refused():
         assert response.status_code == 403, response.text
         row = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
         assert row["surname"] == "OLD"
+    finally:
+        if guest_id is not None:
+            db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+        _cleanup()
+
+
+def test_an_expired_claim_does_not_block_the_guest_save():
+    """A claim left by a crashed worker must not strand the guest's own edit.
+
+    Only the send path prunes claims, so a manual property would reject the
+    guest for ever. A claim older than ``SUBMISSION_CLAIM_TTL_SECONDS`` is void.
+    """
+    token, stay, _right = _make_apartment_with_stays()
+    guest_id = None
+    try:
+        browser = TestClient(app)
+        db.execute("DELETE FROM rate_limit_event WHERE scope = 'claim_confirm'")
+        complete_guest_claim(browser, token, stay, party_size=2)
+        now = db.utcnow()
+        guest_id = db.insert(
+            "guest",
+            {
+                "reservation_id": stay,
+                "surname": "OLD",
+                "first_name": "Name",
+                "nationality": "GBR",
+                "submit_state": reporting.ERROR,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        browser.cookies.set(guest.OWNED_COOKIE, guest._serializer().dumps([guest_id]))
+        db.execute(
+            "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+            "VALUES (?, 'x', ?)",
+            (guest_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS - 1),
+        )
+
+        response = browser.post(
+            f"/l/{token}/{stay}/save",
+            data=_form(surname="NEW", guest_id=str(guest_id)),
+            files=_passport_files(),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303, response.text
+        row = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        assert row["surname"] == "NEW", "a stale claim must not block the guest's edit"
     finally:
         if guest_id is not None:
             db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
