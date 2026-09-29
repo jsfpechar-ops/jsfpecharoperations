@@ -693,6 +693,49 @@
   animation: tw-rise 1.6s var(--ease-standard) infinite alternate;
 }
 
+/* =======================================================================
+   Ticket Wallet v2 — see docs/plans/PLAN_TICKET_WALLET_V2.md.
+   Sections 18+ are v2. Section 17 (Motion) stays last on purpose so its
+   reduced-motion rule also covers everything added here.
+   ======================================================================= */
+
+/* 18. App bar v2 --------------------------------------------------------- */
+.tw .g-head { gap: 2px 12px; padding-top: 10px; }
+.tw .g-head .g-title { flex: 1 1 auto; min-width: 0; }
+.tw .g-head .g-title > div { min-width: 0; }
+/* The words "Guest registration" stay in the page for screen readers and
+   tests; the bar itself shows the property, which is what the guest reads. */
+.tw .g-head h1 {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.tw .g-head .g-facility {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* "English" / "Čeština" become EN / CS on screen; the full word is still
+   the link's accessible name because the text node is only shrunk. */
+.tw .g-head .g-lang a {
+  justify-content: center;
+  min-width: 44px;
+  padding: 0 10px;
+  font-size: 0;
+}
+.tw .g-head .g-lang a::before {
+  content: attr(hreflang);
+  font-size: 12.5px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tw .tw-route { margin-top: 0; }
+.tw .tw-progress { margin-top: 8px; }
+
 /* 21. Quiet "more" disclosure (claim e-mail, anywhere small) ------------- */
 .tw details.tw-more { margin-top: var(--space-2); }
 .tw details.tw-more > summary {
