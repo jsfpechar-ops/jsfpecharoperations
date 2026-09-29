@@ -66,6 +66,13 @@ def test_the_signature_state_listens_to_every_event_signature_js_ends_on():
     assert ended <= listened, f"missing {sorted(ended - listened)}"
 
 
+def test_an_invalid_country_marks_the_visible_control():
+    """The real select is clipped and aria-hidden, so the visible search input
+    must carry the invalid state itself, not just a red border."""
+    assert 'input.setAttribute("aria-invalid", "true")' in JS
+    assert 'input.removeAttribute("aria-invalid")' in JS
+
+
 def test_the_asset_version_is_past_the_version_these_fixes_shipped_in():
     assert "ticket.js?v=20260929a" not in BASE
     assert "ticket.js?v=20260929b" not in BASE

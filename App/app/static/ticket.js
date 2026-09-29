@@ -363,7 +363,10 @@
         open(false);
       }
       input.addEventListener("focus", function () { input.select(); render(""); });
-      input.addEventListener("input", function () { render(input.value); });
+      input.addEventListener("input", function () {
+        input.removeAttribute("aria-invalid");
+        render(input.value);
+      });
       input.addEventListener("keydown", function (e) {
         if (e.key === "ArrowDown") { e.preventDefault(); if (list.hidden) render(input.value); highlight(active + 1); }
         else if (e.key === "ArrowUp") { e.preventDefault(); highlight(active - 1); }
@@ -375,7 +378,12 @@
       input.addEventListener("blur", function () { setTimeout(function () { open(false); input.value = currentLabel(); }, 120); });
       // Wizard validation focuses the hidden select; hand focus to the search.
       select.addEventListener("focus", function () { input.focus(); });
-      select.addEventListener("invalid", function () { input.classList.add("bad"); });
+      select.addEventListener("invalid", function () {
+        input.classList.add("bad");
+        // Mark the visible control as well: the real select is clipped and
+        // aria-hidden, so a red border alone is only a colour signal.
+        input.setAttribute("aria-invalid", "true");
+      });
       // Other scripts change the select directly (residence copies nationality).
       document.addEventListener("change", function () { setTimeout(sync, 0); });
       sync();
