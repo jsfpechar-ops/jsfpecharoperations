@@ -852,7 +852,7 @@ def _submission_problem(
     # sweep and fails again the same afternoon updates the alert but must not
     # send a second identical e-mail; a genuinely new failure tomorrow does.
     key = (
-        f"submission_problem:{apartment['id']}:"
+        f"submission_problem:{apartment['id']}:{state}:"
         f"{deadlines.local_now().date().isoformat()}"
     )
     return mail.enqueue(

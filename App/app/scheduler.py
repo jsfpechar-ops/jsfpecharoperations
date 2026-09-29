@@ -1,8 +1,10 @@
 """Background jobs: calendar polling, automatic submission, deadline watch."""
 from __future__ import annotations
 
+import fcntl
 import logging
 
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from . import (
@@ -20,6 +22,7 @@ from . import (
 
 log = logging.getLogger("ubyhost.scheduler")
 _scheduler = None
+_lock_handle = None
 
 # Losing the deadline watch or the submission sweep loses compliance
 # monitoring, so those two failures are critical; the rest are warnings.
@@ -74,6 +77,17 @@ def _job_submit() -> None:
         _job_failed("submit")
         return
     _job_ok("submit")
+    _heartbeat()
+
+
+def _heartbeat() -> None:
+    """Tell an external dead-man switch the submission sweep is alive."""
+    if not config.HEARTBEAT_URL:
+        return
+    try:
+        requests.get(config.HEARTBEAT_URL, timeout=5)
+    except Exception:
+        log.warning("heartbeat ping failed", exc_info=True)
 
 
 def _job_deadlines() -> None:
@@ -94,22 +108,24 @@ def _job_deadlines() -> None:
 
 
 def _job_mail() -> None:
-    try:
-        claim.expire_holds()
-        summary = mail.drain()
-        if summary["sent"] or summary["failed"]:
-            log.info("mail drain: %s", summary)
-        reminders = claim.sweep_reminders()
-        if any(reminders.values()):
-            log.info("mail reminders: %s", reminders)
-        purged = mail.purge_old()
-        if purged:
-            log.info("mail purge deleted %s row(s)", purged)
-    except Exception:
-        log.exception("mail drain failed")
+    failed = False
+    for name, step in (
+        ("expire_holds", claim.expire_holds),
+        ("drain", mail.drain),
+        ("reminders", claim.sweep_reminders),
+        ("purge", mail.purge_old),
+    ):
+        try:
+            result = step()
+            if result:
+                log.info("mail job %s: %s", name, result)
+        except Exception:
+            log.exception("mail job step %s failed", name)
+            failed = True
+    if failed:
         _job_failed("mail")
-        return
-    _job_ok("mail")
+    else:
+        _job_ok("mail")
 
 
 def _job_photo_sweep() -> None:
@@ -150,9 +166,29 @@ def _job_retention() -> None:
     _job_ok("retention")
 
 
+def _acquire_single_instance_lock() -> bool:
+    """Hold an exclusive lock on DATA_DIR/scheduler.lock for this process's life.
+
+    A second worker or a second container on the same volume would otherwise
+    run its own sweep and file the same guests at the same time.
+    """
+    global _lock_handle
+    handle = open(config.DATA_DIR / "scheduler.lock", "a+")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        handle.close()
+        return False
+    _lock_handle = handle
+    return True
+
+
 def start() -> None:
     global _scheduler
     if _scheduler or not config.ENABLE_SCHEDULER:
+        return
+    if not _acquire_single_instance_lock():
+        log.warning("another process holds the scheduler lock; not starting a scheduler here")
         return
     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
     _scheduler.add_job(
@@ -193,7 +229,11 @@ def _soon():
 
 
 def shutdown() -> None:
-    global _scheduler
+    global _scheduler, _lock_handle
     if _scheduler:
-        _scheduler.shutdown(wait=False)
+        # wait=True: a batch already on the wire must record its answer (compose stop_grace_period is 90 s).
+        _scheduler.shutdown(wait=True)
         _scheduler = None
+    if _lock_handle:
+        _lock_handle.close()
+        _lock_handle = None

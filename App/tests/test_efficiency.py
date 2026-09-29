@@ -11,7 +11,7 @@ import os
 import sqlite3
 import subprocess
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -219,6 +219,39 @@ def test_collect_sendable_hands_back_the_stay_not_the_guest():
         assert stay["apartment_id"] == apartment["id"]
         assert guest["reservation_id"] == reservation["id"]
         assert guest["surname"].startswith("Guest"), "guest fields stopped hydrating"
+
+
+def test_collect_sendable_reads_the_deadline_anchor_once_per_stay(monkeypatch):
+    """The anchor depends on the stay, not on the guest, so the sweep caches it.
+
+    ``due_for_automatic_send`` used to re-query ``reservation_deadline_anchor``
+    for every guest of a stay: a ten-guest party ran the same SELECT ten times
+    per sweep, every ten minutes.
+    """
+    apartment, reservation = _seed_stay_with_guests(3, "tok-eff-anchor")
+    db.update(
+        "apartment",
+        apartment["id"],
+        {"automation_mode": "scheduled", "submit_after_hours": 1},
+    )
+    completed = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    db.update("reservation", reservation["id"], {"registration_completed_at": completed})
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment["id"],))
+
+    calls = []
+    original = reporting.reservation_deadline_anchor
+
+    def spy(stay):
+        calls.append(stay["id"])
+        return original(stay)
+
+    monkeypatch.setattr(reporting, "reservation_deadline_anchor", spy)
+    pairs = reporting.collect_sendable(apartment["id"])
+
+    assert len(pairs) == 3, "the stay is due, so the sweep must offer its guests"
+    assert calls == [reservation["id"]], (
+        "the deadline anchor is per stay and must not be re-queried per guest"
+    )
 
 
 # --- item 5: the ready count is derived, not recomputed -------------------

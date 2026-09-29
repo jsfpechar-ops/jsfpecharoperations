@@ -272,6 +272,7 @@
   function initClickableRows() {
     document.querySelectorAll("tr[data-href]").forEach(function (row) {
       function openRow() {
+        if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(row.getAttribute("data-href"));
       }
 
@@ -628,6 +629,7 @@
         form.appendChild(input);
       }
       document.body.appendChild(form);
+      if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
       form.submit();
     }
 
@@ -643,6 +645,7 @@
       } else if (item.method === "post") {
         submitPost(item.url);
       } else if (item.url) {
+        if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(item.url);
       }
     }
@@ -686,6 +689,7 @@
       }).slice(0, 14).map(function (entry) { return entry.item; });
       selected = 0;
       results.textContent = "";
+      results.removeAttribute("aria-busy");
       if (!visible.length) {
         var empty = document.createElement("p");
         empty.className = "command-empty";
@@ -739,6 +743,16 @@
       if (items) {
         render("");
       } else {
+        if (results) {
+          results.textContent = "";
+          results.setAttribute("aria-busy", "true");
+          for (var s = 0; s < 4; s += 1) {
+            var placeholder = document.createElement("span");
+            placeholder.className = "skeleton skeleton-line command-skeleton";
+            placeholder.setAttribute("aria-hidden", "true");
+            results.appendChild(placeholder);
+          }
+        }
         fetch("/api/command-palette", { credentials: "same-origin" })
           .then(function (response) { return response.ok ? response.json() : { items: [] }; })
           .then(function (data) { items = data.items || []; render(input.value); })

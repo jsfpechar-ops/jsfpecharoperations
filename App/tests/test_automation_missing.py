@@ -14,7 +14,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db
+from app import alerts, auth, db
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
@@ -224,3 +224,45 @@ def test_the_button_says_it_saves_first(host):
     assert "Save and test connection" in page.text
     assert "Test connection" not in page.text
     assert "Save first if you changed them" in page.text
+
+
+def _raise_auth_pause(apartment_id: int) -> None:
+    alerts.raise_alert(
+        "critical",
+        "ubyport_auth_failed",
+        "UbyPort refused the web-service login.",
+        "HTTP 401",
+        dedupe_key=f"ubyport_auth_failed:{apartment_id}",
+        apartment_id=apartment_id,
+    )
+
+
+def test_saving_the_automation_card_does_not_lift_the_auth_pause(host):
+    """AR-18: switching mode or review hours is not new credentials."""
+    client, apartment_id = host
+    _raise_auth_pause(apartment_id)
+
+    response = client.post(
+        f"/automation/{apartment_id}",
+        data=_payload(automation_mode="scheduled"),
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+    assert alerts.open_alert(f"ubyport_auth_failed:{apartment_id}") is not None, (
+        "an unrelated automation save must not resume the refused-login retries"
+    )
+
+
+def test_new_automation_credentials_lift_the_auth_pause(host):
+    client, apartment_id = host
+    _raise_auth_pause(apartment_id)
+
+    response = client.post(
+        f"/automation/{apartment_id}",
+        data=_payload(uby_ws_password="fresh-police-secret"),
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303, response.text
+    assert alerts.open_alert(f"ubyport_auth_failed:{apartment_id}") is None

@@ -183,3 +183,84 @@ def test_the_stack_rides_under_the_app_bar_on_a_phone():
     )
 
     assert ".notification-stack {\n    top: 59px;" in css
+
+
+def test_a_lost_raise_race_refreshes_the_alert_instead_of_raising(monkeypatch):
+    """AR-23: the dedupe SELECT misses and the INSERT collides with the row.
+
+    Two threads raising the same open alert must end with one row carrying the
+    later message, not an IntegrityError escaping to the caller.
+    """
+    key = "ar23-race-key"
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+    alerts.raise_alert("warning", "job_failed", "old message", dedupe_key=key)
+
+    real_query_one = alerts.db.query_one
+    calls = {"n": 0}
+
+    def racy_query_one(sql, params=()):
+        calls["n"] += 1
+        # The first call is the dedupe check; pretend the row was not there yet
+        # so the INSERT below meets the open alert a sibling thread wrote.
+        if calls["n"] == 1:
+            return None
+        return real_query_one(sql, params)
+
+    monkeypatch.setattr(alerts.db, "query_one", racy_query_one)
+    alerts.raise_alert("warning", "job_failed", "new message", dedupe_key=key)
+    monkeypatch.setattr(alerts.db, "query_one", real_query_one)
+
+    rows = db.query(
+        "SELECT * FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
+    )
+    assert len(rows) == 1
+    assert rows[0]["message"] == "new message"
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+
+
+def test_a_turnstile_outage_is_shown_to_every_host(host):
+    """AR-48: ``turnstile_unavailable`` is installation-wide, like ``job_failed``.
+
+    It is raised with no owner when Cloudflare is unreachable, so a host only
+    sees it if ``open_alerts`` treats the kind as belonging to the installation.
+    """
+    owner_id = db.query_one(
+        "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+    )["id"]
+    key = "turnstile_unavailable:ar48"
+    db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+    alerts.raise_alert(
+        "warning",
+        "turnstile_unavailable",
+        "Security check unavailable",
+        dedupe_key=key,
+    )
+    try:
+        shown = alerts.open_alerts(owner_user_id=owner_id)
+        assert any(row["kind"] == "turnstile_unavailable" for row in shown)
+    finally:
+        db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+
+
+def test_the_resign_card_cannot_be_dismissed(host):
+    """AR-39/OD-6: this card is the filing gate, so dismiss must not clear it."""
+    _alert("dates_changed_resign", "critical", 9501, "the dates moved")
+    alert = db.query_one(
+        "SELECT id FROM alert WHERE kind = 'dates_changed_resign' AND reservation_id = 9501"
+    )
+
+    fetched = host.post(
+        f"/alerts/{alert['id']}/dismiss",
+        headers={"X-Requested-With": "fetch"},
+        follow_redirects=False,
+    )
+    assert fetched.status_code == 409
+    assert db.query_one(
+        "SELECT resolved_at FROM alert WHERE id = ?", (alert["id"],)
+    )["resolved_at"] is None
+
+    plain = host.post(f"/alerts/{alert['id']}/dismiss", follow_redirects=False)
+    assert plain.status_code == 303
+    assert db.query_one(
+        "SELECT resolved_at FROM alert WHERE id = ?", (alert["id"],)
+    )["resolved_at"] is None

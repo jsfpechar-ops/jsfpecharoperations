@@ -145,7 +145,7 @@ async def two_factor_login(request: Request):
         return RedirectResponse("/login", status_code=303)
     client_key = rate_limit.client_key(request, f"{account['username']}:2fa")
     ip_key = rate_limit.client_key(request)
-    if rate_limit.login_blocked(client_key, ip_key):
+    if rate_limit.login_blocked(client_key, ip_key) or rate_limit.account_2fa_blocked(account["id"]):
         return render(
             request,
             "two_factor_login.html",
@@ -154,6 +154,7 @@ async def two_factor_login(request: Request):
         )
     if not auth.verify_second_factor(account, _form_str(form, "code")):
         rate_limit.record_login_failure(client_key, ip_key)
+        rate_limit.record_account_2fa_failure(account["id"])
         db.audit("two_factor_failed", actor=account["username"], owner_user_id=account["id"])
         return render(
             request,
@@ -347,9 +348,15 @@ async def two_factor_move(request: Request):
     if not account["totp_enabled"]:
         return _back("/account/2fa/setup")
     form = await request.form()
+    if rate_limit.account_2fa_blocked(account["id"]):
+        return _back("/settings", err=_flash(request, "auth.error.code_locked"))
     if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
+        rate_limit.record_account_2fa_failure(account["id"])
+        db.audit("two_factor_move_failed", actor=account["username"], owner_user_id=account["id"])
         return _back("/settings", err=_flash(request, "auth.error.current_password_wrong"))
     if not auth.verify_second_factor(account, _form_str(form, "code")):
+        rate_limit.record_account_2fa_failure(account["id"])
+        db.audit("two_factor_move_failed", actor=account["username"], owner_user_id=account["id"])
         return _back("/settings", err=_flash(request, "auth.error.code_invalid"))
     auth.reset_totp(account["id"])
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))

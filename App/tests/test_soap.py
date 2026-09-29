@@ -118,6 +118,14 @@ def test_diacritics_survive_the_round_trip():
     assert surname.text == "DVOŘÁK"
 
 
+def test_control_characters_are_stripped_from_a_node():
+    """AR-21: an XML-illegal character would make the whole envelope unparseable."""
+    xml = f'<root xmlns:x="urn:test">{soap._node("x", "Note", "bad\x01char")}</root>'
+    root = ET.fromstring(xml)
+    note = next(el for el in root.iter() if el.tag.endswith("Note"))
+    assert note.text == "bad char"
+
+
 RESPONSE_WITH_ERRORS = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 <s:Header /><s:Body>
 <ZapisUbytovaneResponse xmlns="http://UBY.pcr.cz/WS_UBY">
@@ -274,3 +282,20 @@ def test_split_codes():
     assert uby_errors.split_codes("5;6;7;") == ["5", "6", "7"]
     assert uby_errors.split_codes(";") == []
     assert uby_errors.split_codes(None) == []
+
+
+def test_words_that_merely_contain_a_marker_are_not_non_correctable():
+    """A substring of a harmless word must not abandon a record.
+
+    "později" (later), "related" and "calculated" all contain the old bare
+    markers but mean nothing about a filing being late or duplicate.
+    """
+    assert not uby_errors.is_non_correctable("Opakujte akci později")
+    assert not uby_errors.is_non_correctable("Value related to the stay")
+
+
+def test_whole_word_markers_are_non_correctable():
+    assert uby_errors.is_non_correctable("Hlášení podáno pozdě")
+    assert uby_errors.is_non_correctable("Pozdní hlášení")
+    assert uby_errors.is_non_correctable("Late report")
+    assert uby_errors.is_non_correctable("Duplicitní záznam")

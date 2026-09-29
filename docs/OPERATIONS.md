@@ -37,11 +37,8 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
 
 Behaviours to know:
 
-- **The `ical` job is registered paused.** It is un-paused on boot only if at
-  least one active feed already exists. A host who starts the app and *then*
-  adds their first calendar gets the one inline sync that the "add feed" action
-  performs, and no further automatic polling until the process restarts.
-  Restart after adding the first feed.
+- **The `ical` job starts about 20 seconds after boot** and then runs every
+  `UBYHOST_ICAL_POLL_MINUTES`.
 - **A calendar is imported one stay per booking, first occurrence only.** A
   booking ID repeated in one document is imported once (`feed_duplicate_uid`);
   a booking that repeats itself with `RRULE`, `RDATE` or `EXDATE` is imported as
@@ -50,10 +47,11 @@ Behaviours to know:
   matching that wording is kept and left `active` rather than cancelled.
   Recurrences are never expanded, because inventing stays would invent reporting
   deadlines the calendar never confirmed.
-- **A job that raises is logged and forgotten.** Each job body catches
-  `Exception`, writes `log.exception`, and returns. No alert is raised, so a
-  repeatedly failing job is invisible in the UI. If ingestion or sending looks
-  stalled, read the container log before looking anywhere else.
+- **A job that raises is logged and raises a `job_failed` alert.** Each job body
+  catches `Exception`, writes `log.exception`, and raises a `job_failed` alert —
+  critical for `submit` and `deadlines`, warning otherwise. The alert is shown
+  to every host and is cleared on the next successful run of that job
+  (`App/app/scheduler.py`).
 
 The dashboard's "last updated" timestamp is a single global setting, not
 per-host, and there is no staleness threshold or alert behind it. It is the only
@@ -530,7 +528,8 @@ tell you:
   **quarterly**: decrypt a recent snapshot with the offline identity, check the
   integrity, start against it, and open one stay and one Doručenka.
 - **The last run is recorded** in `$BACKUP_ROOT/.last_success.json` (mode 0600):
-  `at`, `encrypted`, `bytes`, `retention_days`. Settings reads it (FE-3).
+  `at`, `encrypted`, `bytes`, `retention_days`. Nothing in the app reads it yet
+  (GDPR plan FE-3); monitor backups with `UBYHOST_BACKUP_PING_URL`.
 
 ### Purging pre-OPS-1 plaintext backups (operator, one-time)
 

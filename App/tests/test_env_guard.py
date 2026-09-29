@@ -118,3 +118,21 @@ def test_console_mail_is_allowed_on_staging():
         environ={"UBYHOST_MAIL_BACKEND": "console"},
     )
     assert not any("MAIL_BACKEND" in item for item in warnings)
+
+
+def test_refuse_production_on_mock_by_default():
+    with pytest.raises(env_guard.EnvGuardError, match="nothing to the police"):
+        env_guard.validate_runtime_env(
+            ubyport_env="mock",
+            deployment="production",
+            environ={},
+        )
+
+
+def test_production_mock_allowed_with_explicit_opt_in():
+    warnings = env_guard.validate_runtime_env(
+        ubyport_env="mock",
+        deployment="production",
+        environ={"UBYHOST_ALLOW_PROD_MOCK": "1"},
+    )
+    assert any("nothing is reported" in item for item in warnings)
