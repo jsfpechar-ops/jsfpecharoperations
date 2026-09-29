@@ -2271,8 +2271,16 @@ def dismiss_alert(alert_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.alert(request, alert_id):
+    row = access.alert(request, alert_id)
+    if not row:
         return Response("No such alert.", status_code=404)
+    if row["kind"] == "dates_changed_resign":
+        # This card is the filing gate (collect_sendable); dismissing it
+        # would let the old dates reach the register.
+        if request.headers.get("x-requested-with") == "fetch":
+            return Response(status_code=409)
+        return _back(_redirect_path_from_referer(request),
+                     err=_flash(request, "flash.error.resign_card_locked"))
     alerts.resolve_by_id(alert_id, user_dismissed=True)
     if request.headers.get("x-requested-with") == "fetch":
         return Response(status_code=204)

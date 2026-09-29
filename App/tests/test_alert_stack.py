@@ -240,3 +240,27 @@ def test_a_turnstile_outage_is_shown_to_every_host(host):
         assert any(row["kind"] == "turnstile_unavailable" for row in shown)
     finally:
         db.execute("DELETE FROM alert WHERE dedupe_key = ?", (key,))
+
+
+def test_the_resign_card_cannot_be_dismissed(host):
+    """AR-39/OD-6: this card is the filing gate, so dismiss must not clear it."""
+    _alert("dates_changed_resign", "critical", 9501, "the dates moved")
+    alert = db.query_one(
+        "SELECT id FROM alert WHERE kind = 'dates_changed_resign' AND reservation_id = 9501"
+    )
+
+    fetched = host.post(
+        f"/alerts/{alert['id']}/dismiss",
+        headers={"X-Requested-With": "fetch"},
+        follow_redirects=False,
+    )
+    assert fetched.status_code == 409
+    assert db.query_one(
+        "SELECT resolved_at FROM alert WHERE id = ?", (alert["id"],)
+    )["resolved_at"] is None
+
+    plain = host.post(f"/alerts/{alert['id']}/dismiss", follow_redirects=False)
+    assert plain.status_code == 303
+    assert db.query_one(
+        "SELECT resolved_at FROM alert WHERE id = ?", (alert["id"],)
+    )["resolved_at"] is None
