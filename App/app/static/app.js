@@ -272,6 +272,7 @@
   function initClickableRows() {
     document.querySelectorAll("tr[data-href]").forEach(function (row) {
       function openRow() {
+        if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(row.getAttribute("data-href"));
       }
 
@@ -628,6 +629,7 @@
         form.appendChild(input);
       }
       document.body.appendChild(form);
+      if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
       form.submit();
     }
 
@@ -643,6 +645,7 @@
       } else if (item.method === "post") {
         submitPost(item.url);
       } else if (item.url) {
+        if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(item.url);
       }
     }
