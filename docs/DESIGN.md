@@ -95,6 +95,8 @@ Treat the first viewport as **one composition**: you are at the right place → 
 
 No decorative parallax, no looping animations, no confetti.
 
+Loading states: pages are server-rendered, so there is no skeleton on first paint. A navigation slower than 400 ms swaps the main content for static placeholder blocks (App/app/static/skeleton.js). Content fetched in the browser shows the same blocks where it will appear. Placeholders never shimmer or loop. Downloads and links or forms marked data-no-skeleton never show them.
+
 ### Mobile and desktop
 
 - **Mobile-first** (primary): one column inside existing `.g-wrap` (~580px). Large tap targets (≥44px row height), thumb-friendly spacing, sticky language chrome unchanged.
