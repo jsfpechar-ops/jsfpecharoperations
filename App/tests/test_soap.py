@@ -118,6 +118,14 @@ def test_diacritics_survive_the_round_trip():
     assert surname.text == "DVOŘÁK"
 
 
+def test_control_characters_are_stripped_from_a_node():
+    """AR-21: an XML-illegal character would make the whole envelope unparseable."""
+    xml = f'<root xmlns:x="urn:test">{soap._node("x", "Note", "bad\x01char")}</root>'
+    root = ET.fromstring(xml)
+    note = next(el for el in root.iter() if el.tag.endswith("Note"))
+    assert note.text == "bad char"
+
+
 RESPONSE_WITH_ERRORS = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 <s:Header /><s:Body>
 <ZapisUbytovaneResponse xmlns="http://UBY.pcr.cz/WS_UBY">

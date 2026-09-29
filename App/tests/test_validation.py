@@ -74,6 +74,11 @@ def test_forbidden_characters_never_survive():
     assert "\n" not in v.normalise_note(dirty)
 
 
+def test_xml_illegal_control_characters_are_stripped():
+    """AR-21: one control character makes the whole SOAP batch unparseable."""
+    assert v.strip_forbidden("A\x01B") == "A B"
+
+
 def test_document_number_normalisation():
     assert v.normalise_document(" ab 12-34 ") == "AB1234"
     assert v.normalise_document("p123456789") == "P123456789"
