@@ -1,0 +1,2424 @@
+diff --git a/App/app/i18n.py b/App/app/i18n.py
+index 2efd975..151d350 100644
+--- a/App/app/i18n.py
++++ b/App/app/i18n.py
+@@ -66,6 +66,39 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "arrival_question": "Which stay is yours?",
+         "arrival_help": "Choose your arrival and departure dates to continue.",
+         "arrival_cta": "That’s my stay",
++        # Ticket Wallet skin (guest-ticket.css)
++        "tw_label_access": "Private access",
++        "tw_label_stay": "Step 1 · Your stay",
++        "tw_label_email": "Step 1 · Your e-mail",
++        "tw_label_confirm": "Step 1 · Confirm",
++        "tw_label_group": "Step 2 · Your group",
++        "tw_label_saved": "Saved",
++        "tw_label_done": "All set",
++        "tw_label_notice": "Notice",
++        "tw_stay_n": "Stay %(n)s of %(total)s",
++        "tw_property": "Property",
++        "tw_registered": "Registered",
++        "tw_guest": "Guest",
++        "tw_fewer": "One person fewer",
++        "tw_more": "One person more",
++        "tw_document_title": "Travel document",
++        "tw_email_short": "We send your private link here. No marketing.",
++        "tw_email_more": "What we use your e-mail for",
++        "tw_step_details": "Details",
++        "tw_step_document": "Document",
++        "tw_step_home": "Home",
++        "tw_step_photo": "Photo",
++        "tw_step_sign": "Sign",
++        "tw_step_check": "Check",
++        "tw_dob_day": "Day",
++        "tw_dob_month": "Month",
++        "tw_dob_year": "Year",
++        "tw_country_search": "Start typing a country",
++        "tw_country_none": "No country matches",
++        "tw_purpose_other": "Other…",
++        "tw_sign_here": "Sign here with your finger",
++        "tw_signed": "Signed",
++        "tw_done_keep": "Keep this page — it is your confirmation.",
+         "stay_ongoing": "Ongoing",
+         "stay_arriving_today": "Arriving today",
+         "host_details": "Your host",
+@@ -643,6 +676,39 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "arrival_question": "Který pobyt je váš?",
+         "arrival_help": "Vyberte termín příjezdu a odjezdu a pokračujte.",
+         "arrival_cta": "To je můj pobyt",
++        # Ticket Wallet skin (guest-ticket.css)
++        "tw_label_access": "Soukromý přístup",
++        "tw_label_stay": "Krok 1 · Váš pobyt",
++        "tw_label_email": "Krok 1 · Váš e-mail",
++        "tw_label_confirm": "Krok 1 · Potvrzení",
++        "tw_label_group": "Krok 2 · Vaše skupina",
++        "tw_label_saved": "Uloženo",
++        "tw_label_done": "Hotovo",
++        "tw_label_notice": "Upozornění",
++        "tw_stay_n": "Pobyt %(n)s z %(total)s",
++        "tw_property": "Ubytování",
++        "tw_registered": "Zaregistrováno",
++        "tw_guest": "Host",
++        "tw_fewer": "O jednu osobu méně",
++        "tw_more": "O jednu osobu více",
++        "tw_document_title": "Cestovní doklad",
++        "tw_email_short": "Pošleme sem váš soukromý odkaz. Žádný marketing.",
++        "tw_email_more": "K čemu váš e-mail použijeme",
++        "tw_step_details": "Údaje",
++        "tw_step_document": "Doklad",
++        "tw_step_home": "Bydliště",
++        "tw_step_photo": "Foto",
++        "tw_step_sign": "Podpis",
++        "tw_step_check": "Kontrola",
++        "tw_dob_day": "Den",
++        "tw_dob_month": "Měsíc",
++        "tw_dob_year": "Rok",
++        "tw_country_search": "Začněte psát zemi",
++        "tw_country_none": "Žádná země neodpovídá",
++        "tw_purpose_other": "Jiný…",
++        "tw_sign_here": "Podepište se zde prstem",
++        "tw_signed": "Podepsáno",
++        "tw_done_keep": "Tuto stránku si nechte — je to vaše potvrzení.",
+         "stay_ongoing": "Právě probíhá",
+         "stay_arriving_today": "Příjezd dnes",
+         "host_details": "Váš hostitel",
+diff --git a/App/app/static/guest-ticket.css b/App/app/static/guest-ticket.css
+new file mode 100644
+index 0000000..03add64
+--- /dev/null
++++ b/App/app/static/guest-ticket.css
+@@ -0,0 +1,1206 @@
++/* UbyHost guest "Ticket Wallet" skin
++   -------------------------------------------------------------------------
++   Loaded after tokens.css and guest.css, only by guest/base.html, and only
++   active under <body class="tw">. It restyles the existing guest markup; it
++   does not rename or remove any class the tests or signature.js rely on.
++
++   The idea: every guest screen is a ticket. A coloured strip names the step,
++   the body does the work, the tear-off stub holds the buttons. A dark app bar
++   keeps the property, the dates and a progress line on screen the whole way.
++
++   Sections
++     1. Skin tokens            7. Buttons              13. Hub (your group)
++     2. Page + column          8. Fields               14. Stamp + boarding pass
++     3. App bar                9. PIN cells            15. Host contact + footer
++     4. Ticket                 10. Party stepper       16. Mail illustration
++     5. Stub                   11. Stay passes         17. Motion
++     6. Type                   12. Quiet folds
++*/
++
++/* 1. Skin tokens -------------------------------------------------------- */
++.tw {
++  --tw-page: var(--canvas-subtle);
++  --tw-paper: var(--surface);
++  --tw-ink: var(--ink);
++  --tw-bar: var(--ink);
++  --tw-bar-ink: var(--canvas);
++  --tw-bar-muted: #b9b9b3;
++  --tw-bar-line: #3a3a37;
++  --tw-strip: linear-gradient(120deg, var(--brand-action), var(--brand));
++  --tw-strip-ink: var(--on-brand);
++  --tw-radius: 22px;
++  --tw-notch: 22px;
++  --tw-perf: 2px dashed var(--border);
++  --tw-shadow: 0 30px 60px -40px rgba(20, 20, 18, 0.35);
++  --tw-lift: 0 14px 32px rgba(150, 62, 56, 0.14);
++  --tw-serif: "New York", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
++  --tw-pad: 24px;
++  background: var(--tw-page);
++}
++@media (max-width: 480px) { .tw { --tw-pad: 20px; } }
++
++/* 2. Page + column ------------------------------------------------------ */
++.tw .g-wrap { max-width: 640px; padding-top: 0; }
++/* The form page used to become two columns at 1020px. The ticket is the
++   layout now, so the form stays one ticket wide and the rail steps aside. */
++.tw .g-checkin-page { max-width: 640px; }
++@media (min-width: 1020px) {
++  .tw .g-checkin-page main { display: block; }
++}
++.tw .g-form-line { display: none; }
++.tw .g-wizard-progress { display: none !important; }
++
++/* 3. App bar ------------------------------------------------------------ */
++/* Full-bleed dark band without leaving the 640px column: the shadow paints
++   the band sideways and the clip keeps it from bleeding up or down. */
++.tw .g-head {
++  position: sticky;
++  top: 0;
++  z-index: var(--z-sticky);
++  flex-wrap: wrap;
++  align-items: center;
++  gap: 4px 12px;
++  margin: 0 0 var(--space-6);
++  padding: 12px 0 0;
++  background: var(--tw-bar);
++  color: var(--tw-bar-ink);
++  box-shadow: 0 0 0 100vmax var(--tw-bar);
++  clip-path: inset(0 -100vmax);
++}
++.tw .g-head .g-property-mark { width: 34px; height: 34px; border-radius: 10px; }
++.tw .g-head h1 {
++  order: 2;
++  margin: 0;
++  font-size: 11px;
++  font-weight: 750;
++  letter-spacing: 0.12em;
++  text-transform: uppercase;
++  color: #e8a7a1;
++}
++.tw .g-head .g-title > div { display: flex; flex-direction: column-reverse; }
++.tw .g-head .g-facility {
++  margin: 0;
++  font: 600 19px/1.15 var(--tw-serif);
++  color: var(--tw-bar-ink);
++}
++.tw .g-head .g-lang { background: #2f2f2c; border-color: var(--tw-bar-line); }
++.tw .g-head .g-lang a { color: var(--tw-bar-muted); min-height: 40px; padding: 0 12px; }
++.tw .g-head .g-lang a.on { background: var(--canvas); color: var(--ink); }
++.tw-route {
++  flex: 1 0 100%;
++  margin: 2px 0 0;
++  font-size: 12px;
++  font-weight: 650;
++  letter-spacing: 0.06em;
++  text-transform: uppercase;
++  color: var(--tw-bar-muted);
++}
++.tw-route b { color: var(--tw-bar-ink); font-weight: 700; }
++.tw-progress {
++  flex: 1 0 100%;
++  height: 3px;
++  margin-top: 10px;
++  background: var(--tw-bar-line);
++}
++.tw-progress i {
++  display: block;
++  height: 100%;
++  background: var(--brand);
++  transition: width 0.5s var(--ease-standard);
++}
++
++/* 4. Ticket ------------------------------------------------------------- */
++.tw .tw-ticket,
++.tw [data-guest-step] {
++  position: relative;
++  margin: 0 0 var(--space-6);
++  padding: 0 var(--tw-pad);
++  overflow: visible;
++  background: var(--tw-paper);
++  border: 1px solid var(--border);
++  border-radius: var(--tw-radius);
++  box-shadow: var(--tw-shadow);
++}
++/* The strip reads its words from the markup: data-tw-label on a ticket,
++   data-step-title on a form step. */
++.tw .tw-ticket::before,
++.tw [data-guest-step]::before {
++  content: attr(data-tw-label);
++  display: flex;
++  align-items: center;
++  min-height: 42px;
++  margin: 0 calc(-1 * var(--tw-pad)) var(--space-6);
++  padding: 0 var(--tw-pad);
++  border-radius: var(--tw-radius) var(--tw-radius) 0 0;
++  background: var(--tw-strip);
++  color: var(--tw-strip-ink);
++  font-size: 11.5px;
++  font-weight: 750;
++  letter-spacing: 0.12em;
++  text-transform: uppercase;
++}
++.tw [data-guest-step]::before { content: attr(data-step-title); }
++.tw .tw-ticket.is-quiet::before { background: var(--ink); }
++.tw .tw-ticket.is-ok::before { background: var(--green); }
++/* A last step without a stub still needs air under its content. */
++.tw .tw-ticket > :last-child:not(.tw-stub),
++.tw [data-guest-step] > :last-child:not(.g-wizard-nav):not(.tw-stub) { margin-bottom: var(--tw-pad); }
++/* Cards that used to sit inside a step lose their own frame. */
++.tw [data-guest-step] .g-card,
++.tw .tw-ticket .g-card {
++  margin: 0 0 var(--space-5);
++  padding: 0;
++  border: 0;
++  background: none;
++  box-shadow: none;
++}
++.tw [data-guest-step][hidden] { display: none !important; }
++
++/* 5. Stub --------------------------------------------------------------- */
++.tw .tw-ticket .tw-stub,
++.tw [data-guest-step] > .g-wizard-nav {
++  position: relative;
++  display: flex;
++  flex-wrap: wrap;
++  gap: var(--space-3);
++  margin: var(--space-6) calc(-1 * var(--tw-pad)) 0;
++  padding: var(--space-5) var(--tw-pad);
++  border-top: var(--tw-perf);
++  border-radius: 0 0 var(--tw-radius) var(--tw-radius);
++  background: var(--canvas);
++}
++.tw .tw-ticket .tw-stub::before,
++.tw .tw-ticket .tw-stub::after,
++.tw [data-guest-step] > .g-wizard-nav::before,
++.tw [data-guest-step] > .g-wizard-nav::after {
++  content: "";
++  position: absolute;
++  top: calc(var(--tw-notch) / -2);
++  width: var(--tw-notch);
++  height: var(--tw-notch);
++  border-radius: 50%;
++  background: var(--tw-page);
++  border: 1px solid var(--border);
++}
++.tw .tw-ticket .tw-stub::before,
++.tw [data-guest-step] > .g-wizard-nav::before { left: calc(var(--tw-notch) / -2); clip-path: inset(0 0 0 50%); }
++.tw .tw-ticket .tw-stub::after,
++.tw [data-guest-step] > .g-wizard-nav::after { right: calc(var(--tw-notch) / -2); clip-path: inset(0 50% 0 0); }
++.tw .tw-stub > *,
++.tw [data-guest-step] > .g-wizard-nav > * { flex: 1 1 160px; margin: 0; }
++.tw .tw-stub > .tw-stub-note { flex-basis: 100%; margin: 0; font-size: 14px; color: var(--ink-muted); text-align: center; }
++/* On a phone the step's buttons ride along at the bottom of the screen. */
++@media (max-width: 560px) {
++  .tw [data-guest-step] > .g-wizard-nav { position: sticky; bottom: 0; z-index: 5; }
++}
++
++/* Outside a ticket (a folded retry form) the stub is just a button row. */
++.tw .tw-stub { margin-top: var(--space-4); }
++
++/* A stay summary above a ticket reads as a slim pass. */
++.tw .g-stay-summary {
++  position: relative;
++  margin-bottom: var(--space-4);
++  padding: var(--space-4) var(--space-5) var(--space-4) 26px;
++  border: 1px solid var(--border);
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++  box-shadow: none;
++}
++.tw .g-stay-summary::before {
++  content: "";
++  position: absolute;
++  inset: 0 auto 0 0;
++  width: 6px;
++  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
++  background: var(--brand);
++}
++.tw .g-stay-summary strong { font: 600 19px/1.2 var(--tw-serif); }
++
++/* 6. Type --------------------------------------------------------------- */
++.tw .tw-ticket h2,
++.tw [data-guest-step] h2,
++.tw .g-arrival-choice .g-section {
++  margin: 0 0 var(--space-2);
++  font: 600 clamp(26px, 7vw, 34px)/1.1 var(--tw-serif);
++  letter-spacing: -0.02em;
++  color: var(--ink);
++}
++.tw .tw-ticket .g-intro,
++.tw [data-guest-step] .g-intro { font-size: 15.5px; color: var(--ink-muted); margin-bottom: var(--space-5); }
++.tw-vh {
++  position: absolute !important;
++  width: 1px; height: 1px;
++  overflow: hidden;
++  clip: rect(0 0 0 0);
++  white-space: nowrap;
++}
++
++/* 7. Buttons ------------------------------------------------------------ */
++.tw .g-btn {
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  gap: var(--space-2);
++  min-height: 56px;
++  border-radius: var(--radius-pill);
++  font-size: 16.5px;
++  font-weight: 700;
++  box-shadow: 0 10px 24px -8px rgba(173, 73, 66, 0.55);
++  transition: background var(--motion-base) var(--ease-standard), transform var(--motion-fast) var(--ease-standard);
++}
++.tw .g-btn:active { transform: translateY(1px) scale(0.995); }
++.tw .g-btn.secondary,
++.tw .g-btn.ghost {
++  background: var(--surface);
++  color: var(--ink);
++  border: 1.5px solid var(--border-strong);
++  box-shadow: none;
++}
++.tw .g-btn.secondary:hover,
++.tw .g-btn.ghost:hover { background: var(--surface-hover); }
++.tw .g-btn.slim { min-height: 52px; }
++.tw form.is-sending .g-btn[type="submit"] { color: transparent; pointer-events: none; position: relative; }
++.tw form.is-sending .g-btn[type="submit"]::after {
++  content: "";
++  position: absolute;
++  width: 22px; height: 22px;
++  border-radius: 50%;
++  border: 3px solid rgba(255, 255, 255, 0.4);
++  border-top-color: #fff;
++  animation: tw-spin 0.8s linear infinite;
++}
++
++/* 8. Fields ------------------------------------------------------------- */
++.tw .g-field label,
++.tw .g-field .g-label { font-size: 14.5px; font-weight: 650; color: var(--ink); }
++.tw .g-field input[type="text"],
++.tw .g-field input[type="email"],
++.tw .g-field input[type="number"],
++.tw .g-field select {
++  min-height: 56px;
++  border: 1.5px solid var(--border-strong);
++  border-radius: var(--radius-md);
++  background-color: var(--surface);
++  font-size: 17px;
++  color: var(--ink);
++}
++.tw .g-field input:focus,
++.tw .g-field select:focus {
++  outline: none;
++  border-color: var(--brand);
++  box-shadow: 0 0 0 4px var(--focus-ring);
++}
++.tw .g-field select {
++  -webkit-appearance: none;
++  appearance: none;
++  padding-right: 44px;
++  background-image:
++    linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%),
++    linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
++  background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%;
++  background-size: 6px 6px, 6px 6px;
++  background-repeat: no-repeat;
++}
++.tw .g-field .bad { border-color: var(--red); }
++.tw .checkline {
++  padding: var(--space-4);
++  border: 1.5px solid var(--border-strong);
++  border-radius: var(--radius-md);
++  background: var(--surface);
++}
++.tw .g-err { border-radius: var(--radius-md); }
++/* A copied address is a gift, so it looks like one. */
++.tw [data-tw-copied] {
++  display: flex;
++  gap: var(--space-3);
++  align-items: center;
++  padding: var(--space-4);
++  margin-bottom: var(--space-5);
++  border-radius: var(--radius-lg);
++  background: var(--brand-soft);
++  border: 1.5px solid color-mix(in srgb, var(--brand) 30%, transparent);
++  color: var(--ink);
++  font-weight: 600;
++}
++
++/* 9. PIN cells ---------------------------------------------------------- */
++/* One real input, drawn as six cells. Monospace keeps every digit on its
++   cell; the underline segments are the same width as a digit plus its gap. */
++.tw .g-pin-input {
++  --cell: 1.7ch;
++  width: calc(6 * var(--cell) + 0.3ch);
++  max-width: 100%;
++  min-height: 68px;
++  padding: 0 0 0 0.4ch;
++  border: 1.5px solid var(--border-strong);
++  border-radius: var(--radius-md);
++  font: 700 30px/1 var(--font-mono);
++  letter-spacing: 0.7ch;
++  background:
++    linear-gradient(90deg, var(--border-strong) 0 1ch, transparent 1ch) left 0.4ch bottom 14px / var(--cell) 2px repeat-x,
++    var(--surface);
++}
++.tw .g-pin-input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px var(--focus-ring); outline: none; }
++
++/* 10. Party stepper (built by ticket.js around the number input) -------- */
++.tw .tw-stepper {
++  display: flex;
++  align-items: center;
++  gap: var(--space-3);
++  padding: var(--space-2);
++  border: 1.5px solid var(--border-strong);
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++}
++.tw .tw-stepper input[type="number"] {
++  flex: 1;
++  min-width: 0;
++  border: 0 !important;
++  box-shadow: none !important;
++  text-align: center;
++  font: 700 34px/1 var(--font-sans);
++  -moz-appearance: textfield;
++}
++.tw .tw-stepper input::-webkit-outer-spin-button,
++.tw .tw-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
++.tw .tw-step-btn {
++  flex: 0 0 auto;
++  display: grid;
++  place-items: center;
++  width: 52px;
++  height: 52px;
++  border: 0;
++  border-radius: 50%;
++  background: var(--brand-soft);
++  color: var(--brand-ink);
++  font: 700 26px/1 var(--font-sans);
++  cursor: pointer;
++}
++.tw .tw-step-btn:hover { background: color-mix(in srgb, var(--brand) 22%, var(--surface)); }
++
++/* 11. Stay passes (the V1 airline pass) -------------------------------- */
++.tw .g-arrival-hero {
++  margin: 0 0 var(--space-5);
++  padding: 0 4px;
++  border: 0;
++  background: none;
++}
++.tw .g-arrival-hero::after { display: none; }
++.tw .g-arrival-hero h2 { font: 600 clamp(30px, 8vw, 40px)/1.05 var(--tw-serif); letter-spacing: -0.02em; }
++.tw .g-arrival-message { border-top: 0; }
++.tw .g-arrival-lanes { display: grid; gap: var(--space-4); border: 0; overflow: visible; }
++.tw .g-stay.tw-pass {
++  display: block;
++  min-height: 0;
++  margin: 0;
++  padding: 0;
++  overflow: hidden;
++  border: 1.5px solid var(--border);
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++  animation: lane-enter 320ms var(--ease-standard) both;
++  animation-delay: calc(var(--lane-index, 0) * 70ms);
++  transition: transform var(--motion-base) var(--ease-standard), box-shadow var(--motion-base), border-color var(--motion-base);
++}
++.tw .g-stay.tw-pass:hover,
++.tw .g-stay.tw-pass:focus-visible {
++  transform: translateY(-3px);
++  border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
++  box-shadow: var(--tw-lift);
++  background: var(--surface);
++}
++.tw .g-stay.tw-pass:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
++.tw .g-stay.tw-pass.yours { border-color: color-mix(in srgb, var(--green) 45%, var(--border)); }
++.tw-pass-head {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: var(--space-3);
++  padding: var(--space-3) var(--space-5);
++  background: var(--ink);
++  color: #d6d6d0;
++  font-size: 11.5px;
++  font-weight: 700;
++  letter-spacing: 0.1em;
++  text-transform: uppercase;
++}
++.tw .tw-pass-head .g-lane-status { margin: 0; color: #bfe8cf !important; font-weight: 700; }
++.tw .tw-pass-head .g-lane-status.quiet { color: #b9b9b3 !important; font-weight: 700; }
++.tw .tw-pass-head .g-lane-status::before { content: none; }
++.tw-pass-route {
++  display: grid;
++  grid-template-columns: 1fr auto 1fr;
++  align-items: end;
++  gap: var(--space-2);
++  padding: var(--space-5) var(--space-5) var(--space-4);
++}
++.tw-pass-end small,
++.tw-pass-foot small {
++  display: block;
++  font-size: 11px;
++  font-weight: 700;
++  letter-spacing: 0.1em;
++  text-transform: uppercase;
++  color: var(--ink-faint);
++}
++.tw-pass-end b {
++  display: block;
++  font: 700 30px/1 var(--tw-serif);
++  color: var(--ink);
++  text-transform: uppercase;
++  white-space: nowrap;
++}
++.tw-pass-end > span { display: block; margin-top: 4px; font-size: 13px; font-weight: 650; color: var(--ink-muted); }
++.tw-pass-end.r { text-align: right; }
++.tw-pass-mid {
++  display: grid;
++  justify-items: center;
++  gap: 4px;
++  min-width: 52px;
++  padding-bottom: 12px;
++  color: var(--brand-action);
++}
++.tw-pass-mid svg { width: 16px; height: 16px; }
++.tw-pass-mid i { width: 100%; height: 2px; background: repeating-linear-gradient(90deg, var(--border-strong) 0 5px, transparent 5px 9px); }
++.tw-pass-mid > span { font-style: normal; font-size: 11px; font-weight: 700; color: var(--ink-muted); white-space: nowrap; }
++.tw-pass-foot {
++  position: relative;
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: var(--space-3);
++  padding: var(--space-3) var(--space-5);
++  border-top: var(--tw-perf);
++}
++.tw-pass-foot::before,
++.tw-pass-foot::after {
++  content: "";
++  position: absolute;
++  top: -11px;
++  width: 20px;
++  height: 20px;
++  border-radius: 50%;
++  background: var(--tw-paper);
++  border: 1px solid var(--border);
++}
++.tw-pass-foot::before { left: -11px; }
++.tw-pass-foot::after { right: -11px; }
++.tw-pass-foot b { font-size: 14px; color: var(--ink); }
++.tw .tw-pass .g-lane-action {
++  display: inline-flex;
++  align-items: center;
++  gap: 4px;
++  min-height: 44px;
++  padding: 0 var(--space-4);
++  border-radius: var(--radius-pill);
++  background: var(--brand-soft);
++  color: var(--brand-ink);
++  font-size: 14px;
++  font-weight: 700;
++  transition: background var(--motion-base), color var(--motion-base);
++}
++.tw .tw-pass:hover .g-lane-action,
++.tw .tw-pass:focus-visible .g-lane-action { background: var(--brand-action); color: var(--on-brand); }
++@media (max-width: 400px) {
++  .tw-pass-end b { font-size: 26px; }
++  .tw-pass-route, .tw-pass-head, .tw-pass-foot { padding-left: var(--space-4); padding-right: var(--space-4); }
++}
++
++/* 12. Quiet folds (why, host message) ----------------------------------- */
++.tw details.g-why,
++.tw .g-host-message.g-fold {
++  margin-bottom: var(--space-4);
++  border: 0;
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++  box-shadow: none;
++}
++.tw .g-host-message.g-fold { padding: 0 var(--space-5); }
++.tw .g-host-message.g-fold > summary { min-height: 52px; color: var(--ink); }
++
++/* 13. Hub (your group) -------------------------------------------------- */
++.tw .g-progress { font-weight: 650; color: var(--ink); }
++.tw .g-progress .g-bar { height: 8px; }
++.tw .g-progress .g-bar i { background: var(--green); }
++.tw details.g-summary,
++.tw .g-person {
++  position: relative;
++  overflow: hidden;
++  margin-bottom: var(--space-3);
++  border: 1.5px solid var(--border);
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++  box-shadow: none;
++}
++.tw details.g-summary::before,
++.tw .g-person::before {
++  content: "";
++  position: absolute;
++  inset: 0 auto 0 0;
++  width: 6px;
++  background: var(--border-strong);
++}
++.tw details.g-summary:has(> .tw-complete-mark)::before,
++.tw .g-person[data-complete]::before { background: var(--green); }
++.tw details.g-summary > summary.g-summary-fold { padding-left: 26px; font: 600 19px/1.3 var(--tw-serif); }
++.tw .g-person { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-4) 22px; }
++
++/* 14. Stamp + boarding pass -------------------------------------------- */
++.tw-stamp {
++  display: inline-block;
++  margin: var(--space-2) 0 var(--space-4);
++  padding: 8px 16px;
++  border: 3px solid var(--green);
++  border-radius: 8px;
++  color: var(--green);
++  font: 800 18px/1 var(--font-sans);
++  letter-spacing: 0.16em;
++  text-transform: uppercase;
++  transform: rotate(-8deg);
++  animation: tw-stamp 0.5s 0.2s cubic-bezier(0.3, 1.6, 0.5, 1) both;
++}
++.tw-center { text-align: center; }
++.tw-bps { display: grid; gap: var(--space-4); margin: var(--space-6) 0 0; text-align: left; }
++.tw-bp {
++  overflow: hidden;
++  border: 1px solid var(--border);
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++  animation: lane-enter 420ms var(--ease-standard) both;
++  animation-delay: calc(0.2s + var(--bp-index, 0) * 0.15s);
++}
++.tw-bp-head {
++  display: flex;
++  justify-content: space-between;
++  padding: var(--space-3) var(--space-5);
++  background: var(--ink);
++  color: #d6d6d0;
++  font-size: 11px;
++  font-weight: 700;
++  letter-spacing: 0.1em;
++  text-transform: uppercase;
++}
++.tw-bp-head b { color: #bfe8cf; }
++.tw-bp small {
++  display: block;
++  font-size: 10.5px;
++  font-weight: 700;
++  letter-spacing: 0.1em;
++  text-transform: uppercase;
++  color: var(--ink-faint);
++}
++.tw-bp-name { display: flex; justify-content: space-between; padding: var(--space-4) var(--space-5) 0; }
++.tw-bp-name b { font-size: 17px; color: var(--ink); }
++.tw-bp-name div:last-child { text-align: right; }
++.tw-bp-route { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; padding: var(--space-3) var(--space-5) var(--space-4); }
++.tw-bp-route b { font: 700 26px/1 var(--tw-serif); color: var(--ink); text-transform: uppercase; }
++.tw-bp-route .r { text-align: right; }
++.tw-bp-route svg { width: 16px; height: 16px; margin: 0 var(--space-3) 6px; color: var(--brand-action); }
++.tw-bp-foot {
++  position: relative;
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: var(--space-3);
++  padding: var(--space-3) var(--space-5);
++  border-top: var(--tw-perf);
++}
++.tw-bp-foot::before,
++.tw-bp-foot::after {
++  content: "";
++  position: absolute;
++  top: -11px;
++  width: 20px;
++  height: 20px;
++  border-radius: 50%;
++  background: var(--tw-paper);
++  border: 1px solid var(--border);
++}
++.tw-bp-foot::before { left: -11px; }
++.tw-bp-foot::after { right: -11px; }
++.tw-bp-foot b { font-size: 14px; color: var(--ink); }
++/* Decoration only: a fixed stripe pattern, never a scannable code. */
++.tw-barcode {
++  width: 45%;
++  height: 34px;
++  background: repeating-linear-gradient(90deg,
++    var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px,
++    var(--ink) 8px 11px, transparent 11px 12px, var(--ink) 12px 13px, transparent 13px 16px);
++}
++
++/* 15. Host contact + footer --------------------------------------------- */
++.tw #host-contact {
++  display: grid;
++  grid-template-columns: 1fr auto;
++  gap: 2px var(--space-3);
++  align-items: center;
++  padding: var(--space-5);
++  border: 1px solid var(--border);
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++  box-shadow: none;
++}
++.tw #host-contact h2 { grid-column: 1 / -1; margin: 0; font: 600 20px/1.2 var(--tw-serif); }
++.tw #host-contact .g-intro { grid-column: 1 / -1; margin: 0 0 var(--space-2); font-size: 14px; }
++.tw #host-contact p { grid-column: 1 / -1; margin: 0; }
++.tw #host-contact a {
++  display: inline-flex;
++  align-items: center;
++  min-height: 44px;
++  padding: 0 var(--space-4);
++  margin-top: var(--space-1);
++  border-radius: var(--radius-pill);
++  background: var(--canvas-subtle);
++  color: var(--ink);
++  text-decoration: none;
++  font-weight: 650;
++}
++.tw #host-contact a:hover { background: var(--surface-hover); }
++.tw .g-foot { margin-top: var(--space-6); }
++
++/* 16. Mail illustration ------------------------------------------------- */
++.tw-mail { display: grid; place-items: center; margin: var(--space-6) 0 var(--space-6); }
++.tw-mail span {
++  position: relative;
++  width: 120px;
++  height: 84px;
++  border-radius: 12px;
++  background: var(--surface);
++  border: 1.5px solid var(--border-strong);
++}
++.tw-mail span::before {
++  content: "";
++  position: absolute;
++  inset: 0 0 auto;
++  height: 52px;
++  background:
++    linear-gradient(to bottom right, transparent 49%, var(--border-strong) 49.5%, transparent 50.5%) left / 50% 100% no-repeat,
++    linear-gradient(to bottom left, transparent 49%, var(--border-strong) 49.5%, transparent 50.5%) right / 50% 100% no-repeat;
++}
++.tw-mail span::after {
++  content: "";
++  position: absolute;
++  left: 16px;
++  right: 16px;
++  top: -30px;
++  z-index: -1;
++  height: 60px;
++  border-radius: 8px;
++  background: var(--brand-soft);
++  border: 1.5px solid color-mix(in srgb, var(--brand) 40%, transparent);
++  animation: tw-rise 1.6s var(--ease-standard) infinite alternate;
++}
++
++/* =======================================================================
++   Ticket Wallet v2 — see docs/plans/PLAN_TICKET_WALLET_V2.md.
++   Sections 18+ are v2. Section 17 (Motion) stays last on purpose so its
++   reduced-motion rule also covers everything added here.
++   ======================================================================= */
++
++/* 18. App bar v2 --------------------------------------------------------- */
++.tw .g-head { gap: 2px 12px; padding-top: 10px; }
++.tw .g-head .g-title { flex: 1 1 auto; min-width: 0; }
++.tw .g-head .g-title > div { min-width: 0; }
++/* The words "Guest registration" stay in the page for screen readers and
++   tests; the bar itself shows the property, which is what the guest reads. */
++.tw .g-head h1 {
++  position: absolute !important;
++  width: 1px;
++  height: 1px;
++  overflow: hidden;
++  clip: rect(0 0 0 0);
++  white-space: nowrap;
++}
++.tw .g-head .g-facility {
++  overflow: hidden;
++  white-space: nowrap;
++  text-overflow: ellipsis;
++}
++/* "English" / "Čeština" become EN / CS on screen; the full word is still
++   the link's accessible name because the text node is only shrunk. */
++.tw .g-head .g-lang a {
++  justify-content: center;
++  min-width: 44px;
++  padding: 0 10px;
++  font-size: 0;
++}
++.tw .g-head .g-lang a::before {
++  content: attr(hreflang);
++  font-size: 12.5px;
++  font-weight: 750;
++  letter-spacing: 0.06em;
++  text-transform: uppercase;
++}
++.tw .tw-route { margin-top: 0; }
++.tw .tw-progress { margin-top: 8px; }
++
++/* 19. PIN cells v2 (built by ticket.js initPinCells) --------------------- */
++.tw .tw-pin {
++  position: relative;
++  display: grid;
++  grid-template-columns: repeat(6, 1fr);
++  gap: var(--space-2);
++  max-width: 400px;
++}
++.tw .tw-pin-cell {
++  display: grid;
++  place-items: center;
++  height: 64px;
++  border: 1.5px solid var(--border-strong);
++  border-radius: var(--radius-md);
++  background: var(--surface);
++  color: var(--ink);
++  font: 700 26px/1 var(--font-sans);
++  transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast);
++}
++.tw .tw-pin-cell.is-caret { border-color: var(--brand); box-shadow: 0 0 0 4px var(--focus-ring); }
++.tw .tw-pin-cell.is-caret:empty::after {
++  content: "";
++  width: 2px;
++  height: 28px;
++  background: var(--brand);
++  animation: tw-blink 1s steps(1) infinite;
++}
++.tw .tw-pin.is-complete .tw-pin-cell { border-color: var(--green); background: var(--green-bg); color: var(--green); }
++.tw .tw-pin.is-bad .tw-pin-cell { border-color: var(--red); }
++/* The real input covers the row, invisible. 16px stops iOS zooming in. */
++.tw .tw-pin .g-pin-input {
++  position: absolute;
++  inset: 0;
++  z-index: 1;
++  width: 100%;
++  height: 100%;
++  margin: 0;
++  padding: 0;
++  border: 0;
++  background: transparent;
++  color: transparent;
++  caret-color: transparent;
++  font-size: 16px;
++  letter-spacing: 0;
++  opacity: 0.01;
++  box-shadow: none;
++}
++@keyframes tw-blink { 50% { opacity: 0; } }
++
++/* 20. Stay picker v2 ----------------------------------------------------- */
++.tw .tw-pass-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
++.tw .tw-pass-foot > span:first-child { min-width: 0; }
++.tw .tw-pass-foot > span:first-child b { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
++/* guest.css caps .g-lane-action at 78px on phones for the old lane layout;
++   on a pass the pill must stay on one line. */
++.tw .tw-pass-head > span:first-child { flex: 0 0 auto; white-space: nowrap; }
++.tw .tw-pass-head .g-lane-status { text-align: right; }
++.tw .tw-pass .g-lane-action {
++  flex: 0 0 auto;
++  max-width: none;
++  padding-top: 0;
++  white-space: nowrap;
++  text-align: center;
++}
++.tw .g-arrival-message {
++  margin-top: var(--space-4);
++  padding: 0 var(--space-4);
++  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--border));
++  border-radius: var(--radius-lg);
++  background: var(--surface);
++}
++.tw .g-arrival-message summary {
++  display: flex;
++  align-items: center;
++  gap: var(--space-3);
++  list-style: none;
++}
++.tw .g-arrival-message summary::-webkit-details-marker { display: none; }
++.tw .g-arrival-message summary::before {
++  content: "";
++  flex: 0 0 auto;
++  width: 7px;
++  height: 7px;
++  border-right: 2px solid var(--brand-action);
++  border-bottom: 2px solid var(--brand-action);
++  transform: rotate(-45deg);
++  transition: transform var(--motion-base) var(--ease-standard);
++}
++.tw .g-arrival-message[open] summary::before { transform: rotate(45deg); }
++.tw .g-arrival-message p { margin: 0 0 var(--space-4); font: italic 17px/1.5 var(--tw-serif); color: var(--ink); }
++
++/* 21. Quiet "more" disclosure (claim e-mail, anywhere small) ------------- */
++.tw details.tw-more { margin-top: var(--space-2); }
++.tw details.tw-more > summary {
++  display: inline-flex;
++  align-items: center;
++  gap: var(--space-2);
++  min-height: 44px;
++  list-style: none;
++  cursor: pointer;
++  color: var(--brand-action);
++  font-size: 14px;
++  font-weight: 650;
++}
++.tw details.tw-more > summary::-webkit-details-marker { display: none; }
++.tw details.tw-more > summary::after {
++  content: "";
++  width: 6px;
++  height: 6px;
++  border-right: 2px solid currentColor;
++  border-bottom: 2px solid currentColor;
++  transform: rotate(-45deg);
++  transition: transform var(--motion-base) var(--ease-standard);
++}
++.tw details.tw-more[open] > summary::after { transform: rotate(45deg); }
++.tw details.tw-more .hint { margin-top: var(--space-2); }
++/* On the claim page the date card and why-fold used to sit above the ticket;
++   the app bar already shows the dates, so the slim pass is enough. */
++.tw .g-stay-summary + .tw-ticket { margin-top: 0; }
++
++/* 22. Form tracker v2 (the old check-in rail, shown on every width) ------ */
++.tw .g-checkin-rail,
++.tw .g-checkin-page main > .g-checkin-rail {
++  display: block;
++  position: static;
++  margin: 0 0 var(--space-4);
++}
++.tw .g-checkin-stay { display: block; padding: 0 4px; border: 0; background: none; }
++.tw .g-checkin-stay .g-property-mark,
++.tw .g-checkin-stay-body strong,
++.tw .g-checkin-stay-body span:first-of-type { display: none; }
++.tw .g-checkin-stay-body span { font-size: 13.5px; font-weight: 650; color: var(--ink-muted); }
++.tw .g-checkin-steps-title {
++  position: absolute !important;
++  width: 1px;
++  height: 1px;
++  overflow: hidden;
++  clip: rect(0 0 0 0);
++}
++.tw .g-checkin-steps { display: flex; gap: 4px; margin: var(--space-2) 0 0; padding: 0; border: 0; }
++.tw .g-checkin-step {
++  position: relative;
++  display: block;
++  flex: 1 1 0;
++  min-width: 0;
++  padding: 10px 0 12px;
++  border: 0;
++  border-top: 4px solid var(--border);
++  color: var(--ink-faint);
++  font-size: 11px;
++  font-weight: 700;
++  overflow: hidden;
++  white-space: nowrap;
++  text-overflow: ellipsis;
++}
++.tw .g-checkin-step i { display: none; }
++.tw .g-checkin-step.is-done { border-top-color: var(--brand); color: var(--ink-muted); }
++.tw .g-checkin-step.is-current { border-top-color: var(--brand); color: var(--brand-ink); }
++/* The rail's Change button covers the whole finished segment. */
++.tw .g-checkin-step-edit {
++  position: absolute;
++  inset: -8px 0 0;
++  width: 100%;
++  margin: 0;
++  padding: 0;
++  opacity: 0;
++  cursor: pointer;
++}
++.tw .g-checkin-step:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
++/* Help folds go under the ticket on the form. */
++.tw .g-checkin-main { display: flex; flex-direction: column; }
++.tw .g-checkin-main > * { order: 1; }
++.tw .g-checkin-main > .g-back,
++.tw .g-checkin-main > .g-err { order: 0; }
++.tw .g-checkin-main > details { order: 2; }
++
++/* 23. Date of birth boxes (ticket.js initDobCells) ------------------------ */
++.tw .tw-dob { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: var(--space-2); }
++.tw .tw-dob-part { display: block; }
++.tw .tw-dob-part small { display: block; margin-bottom: 4px; color: var(--ink-muted); font-size: 12px; font-weight: 650; }
++.tw .tw-dob-part input { width: 100%; text-align: center; font-variant-numeric: tabular-nums; }
++.tw #birth-date-readback:not(:empty) {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  margin-top: var(--space-2);
++  padding: 4px 12px;
++  border-radius: var(--radius-pill);
++  background: var(--green-bg);
++  color: var(--green);
++  font-weight: 650;
++}
++.tw #birth-date-readback:not(:empty)::before { content: "\2713"; font-weight: 800; }
++
++/* 24. Country search (ticket.js initCountryCombos) ------------------------ */
++.tw .tw-combo { position: relative; }
++.tw .tw-combo input { padding-right: 44px; }
++.tw .tw-combo::after {
++  content: "";
++  position: absolute;
++  right: 18px;
++  top: 22px;
++  width: 8px;
++  height: 8px;
++  border-right: 2px solid var(--ink-muted);
++  border-bottom: 2px solid var(--ink-muted);
++  transform: rotate(45deg);
++  pointer-events: none;
++}
++.tw .tw-combo-list {
++  position: absolute;
++  z-index: 30;
++  left: 0;
++  right: 0;
++  top: calc(100% + 6px);
++  max-height: 280px;
++  margin: 0;
++  padding: var(--space-1);
++  overflow: auto;
++  list-style: none;
++  background: var(--surface);
++  border: 1px solid var(--border);
++  border-radius: var(--radius-md);
++  box-shadow: var(--shadow-popover);
++}
++.tw .tw-combo-list li {
++  display: flex;
++  align-items: center;
++  gap: var(--space-3);
++  min-height: 48px;
++  padding: 0 var(--space-3);
++  border-radius: var(--radius-sm);
++  color: var(--ink);
++  cursor: pointer;
++}
++.tw .tw-combo-list li b { width: 36px; color: var(--ink-muted); font-size: 12px; }
++.tw .tw-combo-list li:hover,
++.tw .tw-combo-list li.is-active { background: var(--surface-hover); }
++.tw .tw-combo-list li[aria-selected="true"] { color: var(--brand-ink); font-weight: 650; }
++.tw .tw-combo-list .tw-combo-none { color: var(--ink-muted); cursor: default; }
++.tw .tw-vh {
++  position: absolute !important;
++  width: 1px;
++  height: 1px;
++  overflow: hidden;
++  clip: rect(0 0 0 0);
++  white-space: nowrap;
++}
++
++/* 25. Purpose chips (ticket.js initPurposeChips) -------------------------- */
++.tw .tw-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
++.tw .tw-chip {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  min-height: 48px;
++  padding: 0 var(--space-4);
++  border: 1.5px solid var(--border-strong);
++  border-radius: var(--radius-pill);
++  background: var(--surface);
++  color: var(--ink);
++  font: inherit;
++  font-size: 15px;
++  font-weight: 600;
++  cursor: pointer;
++}
++.tw .tw-chip[aria-pressed="true"] {
++  border-color: var(--brand-action);
++  background: var(--brand-soft);
++  color: var(--brand-ink);
++}
++.tw .tw-chip[aria-pressed="true"]:not(.is-other)::before { content: "\2713"; font-weight: 800; }
++
++/* 26. Document tip + copied address ------------------------------------- */
++.tw .tw-doc-tip { margin-top: var(--space-3); }
++.tw .tw-doc-page {
++  position: relative;
++  display: block;
++  width: 168px;
++  height: 108px;
++  border: 1.5px solid var(--border-strong);
++  border-radius: 10px;
++  background: linear-gradient(180deg, var(--canvas) 0 100%);
++}
++.tw .tw-doc-photo {
++  position: absolute;
++  left: 12px;
++  top: 18px;
++  width: 38px;
++  height: 48px;
++  border-radius: 4px;
++  background: var(--border);
++}
++.tw .tw-doc-no {
++  position: absolute;
++  right: 12px;
++  top: 12px;
++  width: 58px;
++  height: 14px;
++  border-radius: 3px;
++  background: color-mix(in srgb, var(--brand) 25%, transparent);
++  outline: 2px solid var(--brand);
++  animation: tw-pulse 1.8s var(--ease-standard) infinite;
++}
++.tw .tw-doc-lines {
++  position: absolute;
++  left: 60px;
++  right: 12px;
++  top: 36px;
++  height: 30px;
++  background: repeating-linear-gradient(180deg, var(--border) 0 4px, transparent 4px 10px);
++}
++.tw .tw-doc-page::after {
++  content: "";
++  position: absolute;
++  left: 12px;
++  right: 12px;
++  bottom: 12px;
++  height: 14px;
++  background: repeating-linear-gradient(90deg, var(--border-strong) 0 6px, transparent 6px 9px);
++  opacity: 0.6;
++}
++@keyframes tw-pulse { 50% { outline-color: color-mix(in srgb, var(--brand) 30%, transparent); } }
++.tw [data-tw-copied] {
++  background: var(--green-bg);
++  border-color: color-mix(in srgb, var(--green) 35%, transparent);
++  color: var(--green);
++}
++.tw [data-tw-copied]::before {
++  content: "\2713";
++  display: grid;
++  place-items: center;
++  flex: 0 0 auto;
++  width: 28px;
++  height: 28px;
++  border-radius: 50%;
++  background: var(--green);
++  color: var(--on-brand);
++  font-weight: 800;
++}
++
++/* 27. Signature pad v2 --------------------------------------------------- */
++.tw .g-sign {
++  position: relative;
++  border: 1.5px dashed var(--border-strong);
++  border-radius: var(--radius-lg);
++}
++.tw .g-sign canvas { height: 200px; }
++.tw .g-sign::before {
++  content: "";
++  position: absolute;
++  left: 8%;
++  right: 8%;
++  top: 150px;
++  border-bottom: 1.5px solid var(--border);
++  pointer-events: none;
++}
++.tw .g-sign::after {
++  content: attr(data-tw-sign);
++  position: absolute;
++  left: 8%;
++  top: 158px;
++  color: var(--ink-faint);
++  font-size: 13px;
++  pointer-events: none;
++}
++.tw .g-sign.is-signed { border-style: solid; border-color: var(--ink-muted); }
++.tw .g-sign.is-signed::after { content: "\2713  " attr(data-tw-signed); color: var(--green); font-weight: 650; }
++.tw .g-sign .bar { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
++
++/* 28. Check step: review rows, compact legal, visible ack ---------------- */
++.tw .g-review-list { display: block; margin: 0 0 var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
++.tw .g-review-list dt {
++  padding: var(--space-3) var(--space-4) 0;
++  color: var(--ink-muted);
++  font-size: 12px;
++  font-weight: 700;
++  letter-spacing: 0.06em;
++  text-transform: uppercase;
++}
++.tw .g-review-list dd {
++  margin: 0;
++  padding: 2px var(--space-4) var(--space-3);
++  border-bottom: 1px solid var(--border);
++  color: var(--ink);
++  font-weight: 600;
++}
++.tw .g-review-list dd:last-of-type { border-bottom: 0; }
++.tw .g-legal-notice {
++  margin: 0 0 var(--space-4);
++  padding: var(--space-4) !important;
++  border-radius: var(--radius-lg);
++  background: var(--canvas-subtle) !important;
++}
++.tw .g-legal-notice h2 { font: 650 17px/1.3 var(--font-sans) !important; }
++.tw .g-legal-notice h3 { font-size: 13.5px; }
++.tw .g-legal-notice p { font-size: 13.5px; }
++.tw .g-legal-notice .legal-ack {
++  margin: var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
++  padding: var(--space-4);
++  border-top: 0;
++  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
++  background: var(--brand-soft);
++  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 35%, transparent);
++}
++.tw .g-legal-notice .legal-ack .checkline span { color: var(--ink); font-weight: 650; }
++.tw .g-legal-notice .legal-ack input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--brand-action); }
++
++/* 29. Hub v2 ------------------------------------------------------------- */
++.tw .g-still-missing { font-weight: 650; color: var(--brand-ink); }
++.tw details.g-summary > summary.g-summary-fold::after { color: var(--ink-faint); }
++.tw .g-saved .tw-stamp { margin-bottom: var(--space-4); }
++.tw .g-saved h2 { color: var(--ink) !important; }
++
++/* 30. Done v2 ------------------------------------------------------------ */
++.tw .tw-keep { margin: var(--space-4) 0 0; font-size: 14px; text-align: center; }
++.tw .tw-bp { box-shadow: 0 18px 36px -28px rgba(20, 20, 18, 0.45); }
++
++/* 31. Host contact v2 ---------------------------------------------------- */
++.tw #host-contact { grid-template-columns: 1fr; padding: var(--space-4) var(--space-5); }
++.tw #host-contact h2 {
++  font: 700 11.5px/1.2 var(--font-sans) !important;
++  letter-spacing: 0.12em;
++  text-transform: uppercase;
++  color: var(--ink-muted);
++}
++.tw #host-contact .g-intro { font-size: 13px; }
++.tw #host-contact p:not(.g-intro):not(.hint) { display: inline-flex; margin-right: var(--space-2); }
++.tw #host-contact a::before {
++  content: "";
++  width: 16px;
++  height: 16px;
++  margin-right: 8px;
++  background: var(--brand-action);
++  -webkit-mask: var(--tw-ico) center / contain no-repeat;
++  mask: var(--tw-ico) center / contain no-repeat;
++}
++.tw #host-contact a[href^="tel:"] {
++  --tw-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z'/%3E%3C/svg%3E");
++}
++.tw #host-contact a[href^="mailto:"] {
++  --tw-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E");
++}
++
++@media (min-width: 1020px) {
++  .tw {
++    background:
++      radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 70%),
++      repeating-linear-gradient(180deg, transparent 0 14px, color-mix(in srgb, var(--ink) 7%, transparent) 14px 22px) left 32px top 0 / 2px 100% no-repeat,
++      repeating-linear-gradient(180deg, transparent 0 14px, color-mix(in srgb, var(--ink) 7%, transparent) 14px 22px) right 32px top 0 / 2px 100% no-repeat,
++      var(--tw-page);
++  }
++  .tw .g-wrap,
++  .tw .g-checkin-page { max-width: 680px; }
++  .tw .tw-ticket,
++  .tw [data-guest-step] { box-shadow: 0 40px 80px -48px rgba(20, 20, 18, 0.45); }
++}
++
++
++/* 17. Motion ------------------------------------------------------------ */
++.tw .tw-ticket,
++.tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
++@keyframes tw-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
++@keyframes tw-stamp { from { opacity: 0; transform: rotate(-8deg) scale(1.8); } to { opacity: 1; transform: rotate(-8deg) scale(1); } }
++@keyframes tw-rise { from { transform: translateY(12px); } to { transform: none; } }
++@keyframes tw-spin { to { transform: rotate(360deg); } }
++@media (prefers-reduced-motion: reduce) {
++  .tw *, .tw *::before, .tw *::after { animation: none !important; transition: none !important; }
++}
+diff --git a/App/app/static/ticket.js b/App/app/static/ticket.js
+new file mode 100644
+index 0000000..5aa2990
+--- /dev/null
++++ b/App/app/static/ticket.js
+@@ -0,0 +1,458 @@
++// Ticket Wallet helpers for the guest pages. Progressive enhancement only:
++// every form works exactly the same with this file missing.
++(function () {
++  "use strict";
++
++  // 1. Party size: wrap the number input in a - / + stepper. The input keeps
++  //    its name, min, max and required, so the server sees nothing new.
++  function initSteppers() {
++    var wraps = document.querySelectorAll("[data-tw-stepper]");
++    Array.prototype.forEach.call(wraps, function (wrap) {
++      var input = wrap.querySelector('input[type="number"]');
++      if (!input || wrap.querySelector(".tw-stepper")) return;
++      var min = parseInt(input.getAttribute("min") || "1", 10);
++      var max = parseInt(input.getAttribute("max") || "60", 10);
++      var box = document.createElement("div");
++      box.className = "tw-stepper";
++
++      function button(label, delta, text) {
++        var b = document.createElement("button");
++        b.type = "button";
++        b.className = "tw-step-btn";
++        b.setAttribute("aria-label", label);
++        b.textContent = text;
++        b.addEventListener("click", function () {
++          var now = parseInt(input.value, 10);
++          if (isNaN(now)) now = delta > 0 ? min - 1 : min + 1;
++          var next = Math.min(max, Math.max(min, now + delta));
++          input.value = String(next);
++          input.dispatchEvent(new Event("input", { bubbles: true }));
++          input.dispatchEvent(new Event("change", { bubbles: true }));
++        });
++        return b;
++      }
++
++      input.parentNode.insertBefore(box, input);
++      box.appendChild(button(wrap.getAttribute("data-less-label") || "-", -1, "−"));
++      box.appendChild(input);
++      box.appendChild(button(wrap.getAttribute("data-more-label") || "+", 1, "+"));
++    });
++  }
++
++  // 2. The form wizard already moves its own bar (data-wizard-bar). Mirror
++  //    it into the app bar so the top line keeps growing through the form.
++  function initProgressMirror() {
++    var top = document.querySelector("[data-tw-progress]");
++    var bar = document.querySelector("[data-wizard-bar]");
++    if (!top || !bar || !window.MutationObserver) return;
++    var base = parseFloat(top.getAttribute("data-tw-base") || "50");
++    var span = parseFloat(top.getAttribute("data-tw-span") || "42");
++    function sync() {
++      var pct = parseFloat(bar.style.width) || 0;
++      top.style.width = Math.min(100, base + (span * pct) / 100) + "%";
++    }
++    new MutationObserver(sync).observe(bar, { attributes: true, attributeFilter: ["style"] });
++    sync();
++  }
++
++  // 3. Show a spinner on the button that was pressed while the page posts.
++  function initSending() {
++    var forms = document.querySelectorAll(".tw form");
++    Array.prototype.forEach.call(forms, function (form) {
++      form.addEventListener("submit", function (ev) {
++        if (ev.defaultPrevented) return;
++        form.classList.add("is-sending");
++      });
++    });
++  }
++
++  // 4. The last form step ends in the Submit button plus the wizard's own
++  //    Back button. Put both in one stub so the step has one tear-off line.
++  function initSubmitStub() {
++    var steps = document.querySelectorAll("[data-guest-step]");
++    if (!steps.length) return;
++    var last = steps[steps.length - 1];
++    var submit = last.querySelector(':scope > .g-btn[type="submit"]');
++    var nav = last.querySelector(":scope > .g-wizard-nav");
++    if (submit && nav) nav.appendChild(submit);
++  }
++
++  // 5. PIN: paint the one real #pin input as six cells. The input sits on
++  //    top of the cells, invisible, so focus, typing, paste and one-time-code
++  //    autofill all still go to the real field.
++  function initPinCells() {
++    var input = document.querySelector(".tw .g-pin-input");
++    if (!input || input.getAttribute("data-tw-cells")) return;
++    input.setAttribute("data-tw-cells", "1");
++    var size = parseInt(input.getAttribute("maxlength") || "6", 10);
++    var box = document.createElement("div");
++    box.className = "tw-pin";
++    var cells = [];
++    for (var i = 0; i < size; i += 1) {
++      var cell = document.createElement("span");
++      cell.className = "tw-pin-cell";
++      cell.setAttribute("aria-hidden", "true");
++      box.appendChild(cell);
++      cells.push(cell);
++    }
++    input.parentNode.insertBefore(box, input);
++    box.appendChild(input);
++    if (input.getAttribute("aria-invalid") === "true") box.classList.add("is-bad");
++
++    function paint() {
++      var digits = input.value.replace(/\D/g, "").slice(0, size);
++      if (digits !== input.value) input.value = digits;
++      var focused = document.activeElement === input;
++      cells.forEach(function (c, k) {
++        c.textContent = digits.charAt(k);
++        c.classList.toggle("is-filled", k < digits.length);
++        c.classList.toggle("is-caret", focused && k === Math.min(digits.length, size - 1));
++      });
++      box.classList.toggle("is-complete", digits.length === size);
++      if (digits.length) box.classList.remove("is-bad");
++    }
++    ["input", "focus", "blur", "keyup", "change"].forEach(function (name) {
++      input.addEventListener(name, paint);
++    });
++    paint();
++  }
++
++  // 6. The check-in rail (built by signature.js) becomes the top tracker.
++  //    Its labels are the long step titles; show the short ones instead.
++  function initTrackerLabels() {
++    var form = document.querySelector("[data-guest-wizard]");
++    var list = document.querySelector("[data-checkin-steps]");
++    if (!form || !list) return;
++    var nationality = form.querySelector('[name="nationality"]');
++    function liveSteps() {
++      // The same filter signature.js uses: a step can opt out for one nationality.
++      return Array.prototype.slice.call(form.querySelectorAll("[data-guest-step]")).filter(function (s) {
++        var skip = s.getAttribute("data-guest-step-skip-when");
++        return !skip || !nationality || nationality.value !== skip;
++      });
++    }
++    function relabel(event) {
++      var steps = event && event.detail && event.detail.steps
++        ? Array.prototype.slice.call(event.detail.steps)
++        : liveSteps();
++      var items = list.querySelectorAll(".g-checkin-step");
++      Array.prototype.forEach.call(items, function (item, index) {
++        var step = steps[index];
++        var short = step && step.getAttribute("data-tw-short");
++        var name = item.querySelector("span:not(.sr-only)");
++        if (short && name) {
++          name.textContent = short;
++          item.setAttribute("title", step.getAttribute("data-step-title") || short);
++        }
++      });
++    }
++    form.addEventListener("guest-wizard:shown", relabel);
++    relabel();
++  }
++
++  // 7. Date of birth: Day / Month / Year boxes that write "DD.MM.YYYY" into
++  //    the real #birth_date, so signature.js keeps formatting, the read-back
++  //    and validation exactly as before.
++  function initDobCells() {
++    var real = document.getElementById("birth_date");
++    if (!real || real.getAttribute("data-tw-cells")) return;
++    real.setAttribute("data-tw-cells", "1");
++    var names = [
++      [real.getAttribute("data-tw-day") || "Day", 2, "DD", "bday-day"],
++      [real.getAttribute("data-tw-month") || "Month", 2, "MM", "bday-month"],
++      [real.getAttribute("data-tw-year") || "Year", 4, "YYYY", "bday-year"]
++    ];
++    var group = document.createElement("div");
++    group.className = "tw-dob";
++    group.setAttribute("role", "group");
++    var label = document.querySelector('label[for="birth_date"]');
++    if (label) {
++      if (!label.id) label.id = "birth_date_label";
++      group.setAttribute("aria-labelledby", label.id);
++    }
++    var boxes = names.map(function (n, k) {
++      var wrap = document.createElement("label");
++      wrap.className = "tw-dob-part";
++      var small = document.createElement("small");
++      small.textContent = n[0];
++      var box = document.createElement("input");
++      box.type = "text";
++      box.inputMode = "numeric";
++      box.maxLength = n[1];
++      box.placeholder = n[2];
++      box.autocomplete = n[3];
++      box.id = "birth_date_" + ["d", "m", "y"][k];
++      if (real.getAttribute("aria-invalid")) {
++        box.setAttribute("aria-invalid", "true");
++        box.setAttribute("aria-describedby", real.getAttribute("aria-describedby") || "");
++        box.className = "bad";
++      }
++      wrap.appendChild(small);
++      wrap.appendChild(box);
++      group.appendChild(wrap);
++      return box;
++    });
++    real.parentNode.insertBefore(group, real);
++    real.classList.add("tw-vh");
++    real.setAttribute("tabindex", "-1");
++    real.setAttribute("aria-hidden", "true");
++
++    function split() {
++      var m = /^(\d{0,2})\.?(\d{0,2})\.?(\d{0,4})$/.exec(real.value || "");
++      boxes[0].value = m ? m[1] : "";
++      boxes[1].value = m ? m[2] : "";
++      boxes[2].value = m ? m[3] : "";
++    }
++    function join() {
++      var d = boxes[0].value, mo = boxes[1].value, y = boxes[2].value;
++      var digits = d + (d.length === 2 ? mo : "") + (d.length === 2 && mo.length === 2 ? y : "");
++      real.value = digits;
++      real.dispatchEvent(new Event("input", { bubbles: true }));
++    }
++    function pad(box) {
++      if (box.value.length === 1 && box !== boxes[2]) box.value = "0" + box.value;
++    }
++    boxes.forEach(function (box, k) {
++      box.addEventListener("input", function () {
++        box.value = box.value.replace(/\D/g, "").slice(0, box.maxLength);
++        box.classList.remove("bad");
++        join();
++        if (box.value.length === box.maxLength && boxes[k + 1]) boxes[k + 1].focus();
++      });
++      box.addEventListener("blur", function () { pad(box); join(); });
++      box.addEventListener("keydown", function (e) {
++        if (e.key === "Backspace" && !box.value && boxes[k - 1]) boxes[k - 1].focus();
++      });
++      box.addEventListener("paste", function (e) {
++        var text = ((e.clipboardData || window.clipboardData).getData("text") || "").trim();
++        if (/\d{1,4}\D\d{1,2}\D\d{1,4}|\d{8}/.test(text)) {
++          e.preventDefault();
++          real.value = text;
++          real.dispatchEvent(new Event("input", { bubbles: true }));
++          split();
++        }
++      });
++    });
++    // The wizard focuses the real field when it is invalid; send the guest
++    // to the first box that still needs digits instead.
++    real.addEventListener("focus", function () {
++      var target = boxes.filter(function (b) { return b.value.length < b.maxLength; })[0] || boxes[0];
++      target.focus();
++    });
++    real.addEventListener("invalid", function () {
++      boxes.forEach(function (b) { if (b.value.length < b.maxLength) b.classList.add("bad"); });
++    });
++    split();
++  }
++
++  // 8. Country search over the real <select> (nationality, residence country).
++  function initCountryCombos() {
++    ["nationality", "res_country"].forEach(function (id) {
++      var select = document.getElementById(id);
++      if (!select || select.getAttribute("data-tw-combo")) return;
++      select.setAttribute("data-tw-combo", "1");
++      var seen = {};
++      var options = [];
++      Array.prototype.forEach.call(select.options, function (o) {
++        if (!o.value || seen[o.value]) return;
++        seen[o.value] = true;
++        options.push({ code: o.value, label: o.textContent.trim() });
++      });
++      function norm(s) {
++        return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
++      }
++      var wrap = document.createElement("div");
++      wrap.className = "tw-combo";
++      var input = document.createElement("input");
++      input.type = "text";
++      input.id = id + "_search";
++      input.className = select.className;
++      input.autocomplete = "off";
++      input.setAttribute("role", "combobox");
++      input.setAttribute("aria-autocomplete", "list");
++      input.setAttribute("aria-expanded", "false");
++      input.setAttribute("aria-controls", id + "_list");
++      input.placeholder = select.getAttribute("data-tw-placeholder") || "";
++      if (select.getAttribute("aria-invalid")) {
++        input.setAttribute("aria-invalid", "true");
++        input.setAttribute("aria-describedby", select.getAttribute("aria-describedby") || "");
++      }
++      var list = document.createElement("ul");
++      list.id = id + "_list";
++      list.className = "tw-combo-list";
++      list.setAttribute("role", "listbox");
++      list.hidden = true;
++      wrap.appendChild(input);
++      wrap.appendChild(list);
++      select.parentNode.insertBefore(wrap, select);
++      select.classList.add("tw-vh");
++      select.setAttribute("tabindex", "-1");
++      select.setAttribute("aria-hidden", "true");
++      var label = document.querySelector('label[for="' + id + '"]');
++      if (label) label.setAttribute("for", input.id);
++
++      var active = -1;
++      var shown = [];
++      function currentLabel() {
++        var o = select.options[select.selectedIndex];
++        return o && o.value ? o.textContent.trim() : "";
++      }
++      function sync() { if (document.activeElement !== input) input.value = currentLabel(); }
++      function render(query) {
++        var q = norm(query);
++        shown = options.filter(function (o) {
++          return !q || norm(o.label).indexOf(q) !== -1 || norm(o.code).indexOf(q) === 0;
++        }).slice(0, 60);
++        list.textContent = "";
++        if (!shown.length) {
++          var none = document.createElement("li");
++          none.className = "tw-combo-none";
++          none.textContent = select.getAttribute("data-tw-none") || "—";
++          list.appendChild(none);
++        }
++        shown.forEach(function (o, k) {
++          var li = document.createElement("li");
++          li.id = id + "_opt_" + k;
++          li.setAttribute("role", "option");
++          li.setAttribute("aria-selected", o.code === select.value ? "true" : "false");
++          var code = document.createElement("b");
++          code.textContent = o.code;
++          li.appendChild(code);
++          li.appendChild(document.createTextNode(o.label));
++          li.addEventListener("mousedown", function (e) { e.preventDefault(); pick(o); });
++          list.appendChild(li);
++        });
++        active = -1;
++        open(true);
++      }
++      function open(yes) {
++        list.hidden = !yes;
++        input.setAttribute("aria-expanded", yes ? "true" : "false");
++        if (!yes) input.removeAttribute("aria-activedescendant");
++      }
++      function highlight(k) {
++        var items = list.querySelectorAll('[role="option"]');
++        if (!items.length) return;
++        active = (k + items.length) % items.length;
++        Array.prototype.forEach.call(items, function (li, i) { li.classList.toggle("is-active", i === active); });
++        input.setAttribute("aria-activedescendant", items[active].id);
++        items[active].scrollIntoView({ block: "nearest" });
++      }
++      function pick(o) {
++        select.value = o.code;
++        select.dispatchEvent(new Event("change", { bubbles: true }));
++        input.value = o.label;
++        input.classList.remove("bad");
++        input.removeAttribute("aria-invalid");
++        open(false);
++      }
++      input.addEventListener("focus", function () { input.select(); render(""); });
++      input.addEventListener("input", function () { render(input.value); });
++      input.addEventListener("keydown", function (e) {
++        if (e.key === "ArrowDown") { e.preventDefault(); if (list.hidden) render(input.value); highlight(active + 1); }
++        else if (e.key === "ArrowUp") { e.preventDefault(); highlight(active - 1); }
++        else if (e.key === "Enter" && !list.hidden) {
++          e.preventDefault();
++          if (shown[active]) pick(shown[active]); else if (shown.length === 1) pick(shown[0]);
++        } else if (e.key === "Escape") { open(false); input.value = currentLabel(); }
++      });
++      input.addEventListener("blur", function () { setTimeout(function () { open(false); input.value = currentLabel(); }, 120); });
++      // Wizard validation focuses the hidden select; hand focus to the search.
++      select.addEventListener("focus", function () { input.focus(); });
++      select.addEventListener("invalid", function () { input.classList.add("bad"); });
++      // Other scripts change the select directly (residence copies nationality).
++      document.addEventListener("change", function () { setTimeout(sync, 0); });
++      sync();
++    });
++  }
++
++  // 9. Purpose: the four common codes as chips over the real <select>.
++  function initPurposeChips() {
++    var select = document.getElementById("purpose");
++    if (!select || select.getAttribute("data-tw-chips")) return;
++    select.setAttribute("data-tw-chips", "1");
++    var common = (select.getAttribute("data-tw-common") || "10,01,03,11").split(",");
++    var group = document.createElement("div");
++    group.className = "tw-chips";
++    group.setAttribute("role", "group");
++    var label = document.querySelector('label[for="purpose"]');
++    if (label) {
++      if (!label.id) label.id = "purpose_label";
++      group.setAttribute("aria-labelledby", label.id);
++    }
++    var buttons = [];
++    common.forEach(function (code) {
++      var o = select.querySelector('option[value="' + code + '"]');
++      if (!o) return;
++      var b = document.createElement("button");
++      b.type = "button";
++      b.className = "tw-chip";
++      b.textContent = o.textContent.trim();
++      b.setAttribute("data-code", code);
++      b.addEventListener("click", function () {
++        select.value = code;
++        select.dispatchEvent(new Event("change", { bubbles: true }));
++        paint(false);
++      });
++      group.appendChild(b);
++      buttons.push(b);
++    });
++    var other = document.createElement("button");
++    other.type = "button";
++    other.className = "tw-chip is-other";
++    other.textContent = select.getAttribute("data-tw-other") || "Other…";
++    other.addEventListener("click", function () { paint(true); select.focus(); });
++    group.appendChild(other);
++    select.parentNode.insertBefore(group, select);
++
++    function paint(showSelect) {
++      var inCommon = common.indexOf(select.value) !== -1;
++      var openSelect = showSelect || !inCommon;
++      buttons.forEach(function (b) {
++        b.setAttribute("aria-pressed", !openSelect && b.getAttribute("data-code") === select.value ? "true" : "false");
++      });
++      other.setAttribute("aria-pressed", openSelect ? "true" : "false");
++      select.classList.toggle("tw-vh", !openSelect);
++      if (openSelect) select.removeAttribute("tabindex"); else select.setAttribute("tabindex", "-1");
++    }
++    select.addEventListener("change", function () { paint(common.indexOf(select.value) === -1); });
++    paint(false);
++  }
++
++  // 10. Signature pad: mirror "has a signature" onto the pad for styling.
++  function initSignState() {
++    var pad = document.querySelector(".tw .g-sign");
++    var hidden = document.getElementById("signature");
++    var canvas = document.getElementById("sig-canvas");
++    if (!pad || !hidden || !canvas) return;
++    function sync() { pad.classList.toggle("is-signed", !!hidden.value); }
++    ["mouseup", "touchend", "pointerup", "keyup"].forEach(function (name) {
++      canvas.addEventListener(name, function () { setTimeout(sync, 30); });
++    });
++    var clear = document.getElementById("sig-clear");
++    if (clear) clear.addEventListener("click", function () { setTimeout(sync, 30); });
++    sync();
++  }
++
++  // A page restored from the back/forward cache must not keep spinning.
++  window.addEventListener("pageshow", function () {
++    Array.prototype.forEach.call(document.querySelectorAll("form.is-sending"), function (f) {
++      f.classList.remove("is-sending");
++    });
++  });
++
++  function start() {
++    initSteppers();
++    initProgressMirror();
++    initSending();
++    initSubmitStub();
++    initPinCells();
++    initTrackerLabels();
++    initDobCells();
++    initCountryCombos();
++    initPurposeChips();
++    initSignState();
++  }
++  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
++  else start();
++})();
+diff --git a/App/app/templates/guest/_ticket.html b/App/app/templates/guest/_ticket.html
+new file mode 100644
+index 0000000..a944459
+--- /dev/null
++++ b/App/app/templates/guest/_ticket.html
+@@ -0,0 +1,32 @@
++{# Ticket Wallet building blocks. Import with context so t(), lang and the
++   date helpers are available:
++     {% import "guest/_ticket.html" as tw with context %}                 #}
++
++{% macro moon() -%}
++<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
++{%- endmacro %}
++
++{# The line under the property name in the dark app bar. #}
++{% macro route(reservation) -%}
++<p class="tw-route"><b>{{ pass_date(reservation.date_from) }}</b> &rarr; <b>{{ pass_date(reservation.date_to) }}</b> &middot; {{ nights_label(reservation.date_from, reservation.date_to) }}</p>
++{%- endmacro %}
++
++{# One boarding pass for a registered guest (done screen). #}
++{% macro boarding_pass(name, seat, reservation, property_name) -%}
++<div class="tw-bp" style="--bp-index: {{ seat - 1 }}">
++  <div class="tw-bp-head"><span>{{ t('title') }}</span><b>{{ t('tw_registered') }}</b></div>
++  <div class="tw-bp-name">
++    <div><small>{{ t('tw_guest') }}</small><b>{{ name }}</b></div>
++    <div><small>#</small><b>{{ seat }}</b></div>
++  </div>
++  <div class="tw-bp-route">
++    <div><small>{{ t('check_in') }}</small><b>{{ pass_date(reservation.date_from) }}</b></div>
++    {{ moon() }}
++    <div class="r"><small>{{ t('check_out') }}</small><b>{{ pass_date(reservation.date_to) }}</b></div>
++  </div>
++  <div class="tw-bp-foot">
++    <div><small>{{ t('tw_property') }}</small><b>{{ property_name }}</b></div>
++    <span class="tw-barcode" aria-hidden="true"></span>
++  </div>
++</div>
++{%- endmacro %}
+diff --git a/App/app/templates/guest/assigned.html b/App/app/templates/guest/assigned.html
+index c86db74..f81f740 100644
+--- a/App/app/templates/guest/assigned.html
++++ b/App/app/templates/guest/assigned.html
+@@ -1,4 +1,7 @@
+ {% extends "guest/base.html" %}
++{% import "guest/_ticket.html" as tw with context %}
++{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
++{% block tw_progress %}30{% endblock %}
+ {% block content %}
+ {% if can_pick_other %}
+ <a class="g-back" href="/l/{{ token }}?lang={{ lang }}">&larr; {{ t('back_to_stays') }}</a>
+@@ -18,7 +21,7 @@
+   <div class="g-err">{{ t('claim_error_' + claim_error) if claim_error in ['bad_email','bad_party','held','already_claimed','rate','cooldown','recipient_rate','bot'] else t('error_party_size') }}</div>
+ {% endif %}
+ 
+-<div class="g-card">
++<div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_email') }}">
+   <h2>{{ t('assigned_title') }}</h2>
+   <p class="g-intro">{{ t('assigned_body') }}</p>
+   <div class="g-private-link-note">
+@@ -44,7 +47,7 @@
+     {% if require_turnstile and turnstile_site_key %}
+       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_claim"></div>
+     {% endif %}
+-    <button class="g-btn" type="submit">{{ t('assigned_resend') }}</button>
++    <div class="tw-stub"><button class="g-btn" type="submit">{{ t('assigned_resend') }}</button></div>
+   </form>
+ </div>
+ {% if can_pick_other %}
+diff --git a/App/app/templates/guest/base.html b/App/app/templates/guest/base.html
+index 7ae6c52..2cc23c8 100644
+--- a/App/app/templates/guest/base.html
++++ b/App/app/templates/guest/base.html
+@@ -12,8 +12,9 @@
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+   <link rel="stylesheet" href="/static/guest.css?v=20260928a">
++  <link rel="stylesheet" href="/static/guest-ticket.css?v=20260929b">
+ </head>
+-<body>
++<body class="tw">
+ <a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
+ <div class="g-wrap {% block wrap_class %}{% endblock %}">
+   <div class="g-head">
+@@ -30,6 +31,8 @@
+       <a href="{{ lang_urls.cs }}" class="{{ 'on' if lang == 'cs' }}" hreflang="cs" lang="cs">Čeština</a>
+     </div>
+     {% endif %}
++    {% block tw_route %}{% endblock %}
++    <div class="tw-progress" aria-hidden="true"><i data-tw-progress data-tw-base="50" data-tw-span="42" style="width: {% block tw_progress %}0{% endblock %}%"></i></div>
+   </div>
+ 
+   {% if flash %}<div class="g-ok">{{ flash }}</div>{% endif %}
+@@ -46,6 +49,7 @@
+   </div>
+ </div>
+ <script src="/static/signature.js?v=20260928a"></script>
++<script src="/static/ticket.js?v=20260929b"></script>
+ <script src="/static/csrf.js?v=20260915a"></script>
+ </body>
+ </html>
+diff --git a/App/app/templates/guest/claim.html b/App/app/templates/guest/claim.html
+index 04044aa..f659831 100644
+--- a/App/app/templates/guest/claim.html
++++ b/App/app/templates/guest/claim.html
+@@ -1,4 +1,7 @@
+ {% extends "guest/base.html" %}
++{% import "guest/_ticket.html" as tw with context %}
++{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
++{% block tw_progress %}{{ 30 if claim_sent else 24 }}{% endblock %}
+ {% block content %}
+ 
+ {% if can_pick_other %}
+@@ -13,7 +16,8 @@
+ </div>
+ 
+ {% if claim_sent %}
+-  <div class="g-card g-saved">
++  <div class="g-card g-saved tw-ticket is-ok tw-center" data-tw-label="{{ t('tw_label_email') }}">
++    <div class="tw-mail" aria-hidden="true"><span></span></div>
+     <h2>{{ t('claim_sent_title') }}</h2>
+     <p class="g-intro">{{ t('claim_sent_body', email=claim.email_masked or '') }}</p>
+   </div>
+@@ -22,14 +26,14 @@
+   <div class="g-err">{{ t('claim_error_' + claim_error) if claim_error in ['bad_email','bad_party','held','already_claimed','rate','cooldown','recipient_rate','bot'] else t('error_party_size') }}</div>
+ {% endif %}
+ 
+-{% if claim_sent %}<details class="g-card g-fold"><summary>{{ t('claim_sent_retry') }}</summary>{% else %}<div class="g-card g-question-card">{% endif %}
++{% if claim_sent %}<details class="g-card g-fold"><summary>{{ t('claim_sent_retry') }}</summary>{% else %}<div class="g-card g-question-card tw-ticket" data-tw-label="{{ t('tw_label_email') }}">{% endif %}
+   {% if not claim_sent %}
+     <h2>{{ t('claim_title') }}</h2>
+     <p class="g-intro">{{ t('claim_help') }}</p>
+   {% endif %}
+   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+-    <div class="g-field">
++    <div class="g-field" data-tw-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
+       <label for="party_size">{{ t('party_question') }}</label>
+       <input type="number" id="party_size" name="party_size" min="1" max="60"
+              required inputmode="numeric" autocomplete="off"
+@@ -40,15 +44,19 @@
+       <label for="guest_email">{{ t('claim_email') }}</label>
+       <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
+              maxlength="254">
+-      <div class="hint">{{ t('claim_email_help') }}</div>
+-      <div class="hint">{{ t('claim_cookie_help') }}
+-        {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
+-      </div>
++      <div class="hint">{{ t('tw_email_short') }}</div>
++      <details class="tw-more">
++        <summary>{{ t('tw_email_more') }}</summary>
++        <div class="hint">{{ t('claim_email_help') }}</div>
++        <div class="hint">{{ t('claim_cookie_help') }}
++          {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}
++        </div>
++      </details>
+     </div>
+     {% if require_turnstile and turnstile_site_key %}
+       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_claim"></div>
+     {% endif %}
+-    <button class="g-btn" type="submit">{{ t('claim_submit') }}</button>
++    <div class="tw-stub"><button class="g-btn" type="submit">{{ t('claim_submit') }}</button></div>
+   </form>
+ {% if claim_sent %}</details>{% else %}</div>{% endif %}
+ {% if require_turnstile and turnstile_site_key %}
+diff --git a/App/app/templates/guest/confirm.html b/App/app/templates/guest/confirm.html
+index 32ab291..07a67c9 100644
+--- a/App/app/templates/guest/confirm.html
++++ b/App/app/templates/guest/confirm.html
+@@ -1,4 +1,7 @@
+ {% extends "guest/base.html" %}
++{% import "guest/_ticket.html" as tw with context %}
++{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
++{% block tw_progress %}36{% endblock %}
+ {% block content %}
+ <div class="g-card g-stay-summary">
+   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
+@@ -7,13 +10,13 @@
+ {% if claim_error %}
+   <div class="g-err">{{ t('claim_confirm_failed') }}</div>
+ {% endif %}
+-<div class="g-card">
++<div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_confirm') }}">
+   <h2>{{ t('claim_confirm_title') }}</h2>
+   <p class="g-intro">{{ t('claim_confirm_help') }}</p>
+   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/claim/confirm?lang={{ lang }}" id="claim-confirm-form">
+     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+     <input type="hidden" name="secret" id="claim-secret" value="">
+-    <button class="g-btn" type="submit">{{ t('claim_confirm_button') }}</button>
++    <div class="tw-stub"><button class="g-btn" type="submit">{{ t('claim_confirm_button') }}</button></div>
+   </form>
+ </div>
+ <script src="/static/claim.js?v=20260918a"></script>
+diff --git a/App/app/templates/guest/form.html b/App/app/templates/guest/form.html
+index 339655e..4acea14 100644
+--- a/App/app/templates/guest/form.html
++++ b/App/app/templates/guest/form.html
+@@ -13,6 +13,9 @@
+ {% macro invalid(field) %}{% if issues | selectattr('is_error') | selectattr('field', 'equalto', field) | list %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}{% endmacro %}
+ 
+ {% block wrap_class %}g-checkin-page{% endblock %}
++{% import "guest/_ticket.html" as tw with context %}
++{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
++{% block tw_progress %}50{% endblock %}
+ 
+ {% block content %}
+ <aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
+@@ -79,7 +82,7 @@
+     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
+   </div>
+ 
+-  <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}">
++  <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}" data-tw-short="{{ t('tw_step_details') }}">
+     <h2>
+       {{ t('your_details') }}
+       {% if person_number and person_number > 1 %}
+@@ -88,7 +91,7 @@
+     </h2>
+ 
+     {% if ask_party_size %}
+-      <div class="g-field">
++      <div class="g-field" data-tw-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
+         <label for="party_size">{{ t('party_question') }}</label>
+         <input type="number" id="party_size" name="party_size" min="1" max="60" required
+                inputmode="numeric" autocomplete="off"
+@@ -116,7 +119,7 @@
+     <div class="g-row">
+       <div class="g-field">
+         <label for="birth_date">{{ t('birth_date') }}</label>
+-        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date"
++        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date" data-tw-day="{{ t('tw_dob_day') }}" data-tw-month="{{ t('tw_dob_month') }}" data-tw-year="{{ t('tw_dob_year') }}"
+                inputmode="numeric" placeholder="{{ t('date_placeholder') }}" maxlength="10" required
+                autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
+         <div class="hint">{{ t('birth_date_help') }}</div>
+@@ -128,7 +131,7 @@
+       </div>
+       <div class="g-field">
+         <label for="nationality">{{ t('nationality') }}</label>
+-        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" required>
++        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" required>
+           <option value="">—</option>
+           {% for group in country_groups %}
+             <optgroup label="{{ t(group.key) }}">
+@@ -143,12 +146,19 @@
+       </div>
+     </div>
+ 
++  </div>
++
++  <div class="g-card" data-guest-step data-step-title="{{ t('tw_document_title') }}" data-tw-short="{{ t('tw_step_document') }}">
++    <h2>{{ t('tw_document_title') }}</h2>
+     <div class="g-field" id="doc-wrap">
+       <label for="doc_number">{{ t('doc_number') }}</label>
+       <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
+              autocapitalize="characters" spellcheck="false" autocorrect="off"
+              value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
+       <div class="hint">{{ t('doc_number_help') }}</div>
++      <div class="tw-doc-tip" aria-hidden="true">
++        <span class="tw-doc-page"><i class="tw-doc-photo"></i><i class="tw-doc-no"></i><i class="tw-doc-lines"></i></span>
++      </div>
+       {{ err_for('doc_number') }}
+     </div>
+ 
+@@ -180,7 +190,7 @@
+ 
+     <div class="g-field">
+       <label for="purpose">{{ t('purpose') }}</label>
+-      <select id="purpose" name="purpose">
++      <select id="purpose" name="purpose" data-tw-common="10,01,03,11" data-tw-other="{{ t('tw_purpose_other') }}">
+         {% for purpose in purposes %}
+           <option value="{{ purpose.code }}"
+             {% if (val('purpose') or default_purpose) == purpose.code %}selected{% endif %}>
+@@ -188,12 +198,13 @@
+         {% endfor %}
+       </select>
+     </div>
++  </div>
+ 
+-  <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">
++  <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}" data-tw-short="{{ t('tw_step_home') }}">
+     <h2>{{ t('residence_title') }}</h2>
+     <p class="g-intro">{{ t('residence_help') }}</p>
+     {% if residence_copied_from %}
+-      <p class="hint" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
++      <p class="hint" role="status" data-tw-copied>{{ t('residence_copied', name=residence_copied_from) }}</p>
+     {% endif %}
+     <div class="g-field">
+       <label for="res_street">{{ t('res_street') }}</label>
+@@ -210,7 +221,7 @@
+       </div>
+       <div class="g-field">
+         <label for="res_country">{{ t('res_country') }}</label>
+-        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" autocomplete="country" required>
++        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" autocomplete="country" required>
+           <option value="">—</option>
+           {% for group in country_groups %}
+             <optgroup label="{{ t(group.key) }}">
+@@ -227,7 +238,7 @@
+   </div>
+ 
+   {% if require_passport %}
+-  <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}"
++  <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}" data-tw-short="{{ t('tw_step_photo') }}"
+        data-guest-step-skip-when="CZE"
+        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
+     <h2>{{ t('passport_photo_title') }}</h2>
+@@ -255,10 +266,10 @@
+   </div>
+   {% endif %}
+ 
+-  <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}">
++  <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}" data-tw-short="{{ t('tw_step_sign') }}">
+     <h2>{{ t('signature') }}</h2>
+     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
+-    <div class="g-sign">
++    <div class="g-sign" data-tw-sign="{{ t('tw_sign_here') }}" data-tw-signed="{{ t('tw_signed') }}">
+       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('signature') }}"
+               aria-describedby="sig-help sig-status"></canvas>
+       <div class="bar">
+@@ -273,7 +284,7 @@
+     {{ err_for('signature') }}
+   </div>
+ 
+-  <div data-guest-step data-step-title="{{ t('legal_notice_title') }}">
++  <div data-guest-step data-step-title="{{ t('legal_notice_title') }}" data-tw-short="{{ t('tw_step_check') }}">
+     <div class="g-card g-review" data-wizard-review
+          data-edit-label="{{ t('review_edit') }}" hidden>
+       <h2>{{ t('review_title') }}</h2>
+diff --git a/App/app/templates/guest/pick.html b/App/app/templates/guest/pick.html
+index e6c275a..0d92162 100644
+--- a/App/app/templates/guest/pick.html
++++ b/App/app/templates/guest/pick.html
+@@ -1,4 +1,7 @@
+ {% extends "guest/base.html" %}
++{% import "guest/_ticket.html" as tw with context %}
++{% block tw_route %}{% if apartment.city_en %}<p class="tw-route">{{ apartment.city_en }}</p>{% endif %}{% endblock %}
++{% block tw_progress %}14{% endblock %}
+ {% block content %}
+ 
+ <section class="g-arrival-hero" aria-labelledby="arrival-welcome">
+@@ -13,21 +16,17 @@
+   {% endif %}
+ </section>
+ 
+-{% include "guest/_why.html" %}
+-
+-<section class="g-arrival-choice" aria-labelledby="arrival-question">
++<section class="g-arrival-choice tw-ticket" data-tw-label="{{ t('tw_label_stay') }}" aria-labelledby="arrival-question">
+   <h2 class="g-section" id="arrival-question">{{ t('arrival_question') }}</h2>
+   <p class="g-intro">{{ t('arrival_help') }}</p>
+ 
+   <div class="g-arrival-lanes">
+   {% for row in rows %}
+     {% set reservation = row.reservation %}
+-    <a class="g-stay g-arrival-lane {{ 'yours' if row.yours }}" style="--lane-index: {{ loop.index0 }}"
++    <a class="g-stay g-arrival-lane tw-pass {{ 'yours' if row.yours }}" style="--lane-index: {{ loop.index0 }}"
+        href="/l/{{ token }}/{{ reservation.id }}?lang={{ lang }}">
+-      <span class="g-range-cue" aria-hidden="true"><i></i></span>
+-      <span class="dates">
+-        <strong>{{ reservation.date_from | date_cz }} <span aria-hidden="true">&rarr;</span> {{ reservation.date_to | date_cz }}</strong>
+-        <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
++      <span class="tw-pass-head">
++        <span>{{ t('tw_stay_n', n=loop.index, total=rows | length) }}</span>
+         {% if row.yours %}
+           <span class="g-lane-status">{{ t('your_stay_badge') }}</span>
+         {% elif row.arriving_today %}
+@@ -38,9 +37,28 @@
+           <span class="g-lane-status quiet">{{ t('stay_not_started') }}</span>
+         {% endif %}
+       </span>
+-      <span class="g-lane-action">{{ t('arrival_cta') }} <span aria-hidden="true">&rarr;</span></span>
++      <span class="tw-vh">{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</span>
++      <span class="tw-pass-route">
++        <span class="tw-pass-end" aria-hidden="true">
++          <small>{{ t('check_in') }}</small>
++          <b>{{ pass_date(reservation.date_from) }}</b>
++          <span>{{ pass_date(reservation.date_from, 'wd') }}</span>
++        </span>
++        <span class="tw-pass-mid">{{ tw.moon() }}<i aria-hidden="true"></i><span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span></span>
++        <span class="tw-pass-end r" aria-hidden="true">
++          <small>{{ t('check_out') }}</small>
++          <b>{{ pass_date(reservation.date_to) }}</b>
++          <span>{{ pass_date(reservation.date_to, 'wd') }}</span>
++        </span>
++      </span>
++      <span class="tw-pass-foot">
++        <span><small>{{ t('tw_property') }}</small><b>{{ property_name }}</b></span>
++        <span class="g-lane-action">{{ t('arrival_cta') }} <span aria-hidden="true">&rarr;</span></span>
++      </span>
+     </a>
+   {% endfor %}
+   </div>
+ </section>
++
++{% include "guest/_why.html" %}
+ {% endblock %}
+diff --git a/App/app/templates/guest/pin.html b/App/app/templates/guest/pin.html
+index ff1f149..aae5be9 100644
+--- a/App/app/templates/guest/pin.html
++++ b/App/app/templates/guest/pin.html
+@@ -1,6 +1,7 @@
+ {% extends "guest/base.html" %}
++{% block tw_progress %}6{% endblock %}
+ {% block content %}
+-<div class="g-card">
++<div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_access') }}">
+   <h2>{{ t('pin_title') }}</h2>
+   <p class="g-intro">{{ t('pin_help') }}</p>
+   {% if error %}<div class="g-err" id="pin-error">{{ error }}</div>{% endif %}
+@@ -16,8 +17,10 @@
+     {% if require_turnstile and turnstile_site_key %}
+       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_pin"></div>
+     {% endif %}
+-    <button class="g-btn" type="submit">{{ t('pin_submit') }}</button>
+-    <p class="g-pin-recovery">{{ t('pin_recovery') }}</p>
++    <div class="tw-stub">
++      <button class="g-btn" type="submit">{{ t('pin_submit') }}</button>
++      <p class="g-pin-recovery tw-stub-note">{{ t('pin_recovery') }}</p>
++    </div>
+   </form>
+ </div>
+ {% if require_turnstile and turnstile_site_key %}
+diff --git a/App/app/templates/guest/stay.html b/App/app/templates/guest/stay.html
+index a0008b3..6d93a62 100644
+--- a/App/app/templates/guest/stay.html
++++ b/App/app/templates/guest/stay.html
+@@ -1,4 +1,7 @@
+ {% extends "guest/base.html" %}
++{% import "guest/_ticket.html" as tw with context %}
++{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
++{% block tw_progress %}{{ 100 if (remaining is not none and remaining <= 0) else 44 }}{% endblock %}
+ {% block content %}
+ 
+ {% if can_pick_other %}
+@@ -18,29 +21,37 @@
+ {% endif %}
+ 
+ {% if expected is none %}
+-  <div class="g-card g-question-card">
++  <div class="g-card g-question-card tw-ticket" data-tw-label="{{ t('tw_label_group') }}">
+     <p class="g-question-kicker">{{ t('stay_dates') }}</p>
+     <h2>{{ t('party_question') }}</h2>
+     <p class="g-intro">{{ t('party_help') }}</p>
+     <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
+       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+-      <div class="g-field">
++      <div class="g-field" data-tw-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
+         <label for="party_size">{{ t('party_question') }}</label>
+         <input type="number" id="party_size" name="party_size" min="1" max="60"
+                required inputmode="numeric" autocomplete="off">
+       </div>
+-      <button class="g-btn" type="submit">{{ t('party_confirm') }}</button>
++      <div class="tw-stub"><button class="g-btn" type="submit">{{ t('party_confirm') }}</button></div>
+     </form>
+   </div>
+ {% elif remaining is not none and remaining <= 0 %}
+-  <div class="g-card">
++  <div class="g-card tw-ticket is-ok" data-tw-label="{{ t('tw_label_done') }}">
+     <div class="g-big-ok">
++      <span class="tw-stamp" aria-hidden="true">{{ t('tw_registered') }}</span>
+       <div class="mark">&check;</div>
+       <h2>{{ t('all_done_title') }}</h2>
+       <p class="g-intro">{{ t('all_done_body') }}</p>
+       {% if mail_enabled and claim_email_masked %}
+         <p class="g-intro">{{ t('all_done_receipt', email=claim_email_masked) }}</p>
+       {% endif %}
++      {% set passes = people | selectattr('mine') | selectattr('complete') | list %}
++      {% if passes %}
++        <div class="tw-bps">
++          {% for person in passes %}{{ tw.boarding_pass(person.name or (t('person') ~ ' ' ~ person.index), loop.index, reservation, property_name) }}{% endfor %}
++        </div>
++        <p class="g-intro tw-keep">{{ t('tw_done_keep') }}</p>
++      {% endif %}
+     </div>
+     {% if can_raise_party %}
+       <form method="post" action="/l/{{ token }}/{{ reservation.id }}/another?lang={{ lang }}">
+@@ -54,13 +65,14 @@
+   </div>
+ {% else %}
+   {% if just_saved %}
+-    <div class="g-card g-saved">
++    <div class="g-card g-saved tw-ticket is-ok tw-center" data-tw-label="{{ t('tw_label_saved') }}">
++      <span class="tw-stamp" aria-hidden="true">{{ t('tw_registered') }}</span>
+       <h2>{{ t('reported_title') if just_reported else t('saved_title') }}</h2>
+       <p class="g-intro" style="margin-bottom:0">{{ t('reported_body') if just_reported else t('saved_body') }}</p>
+     </div>
+   {% endif %}
+   {% if expected %}
+-    <div class="g-card">
++    <div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_group') }}">
+       <div class="g-progress" style="margin-bottom:0">
+         <span>{{ t('people_progress', done=progress.filled, total=expected) }}</span>
+         <span class="g-bar"><i style="width:{{ (100 * progress.filled / expected) | round }}%"></i></span>
+@@ -68,9 +80,11 @@
+       {% if remaining and remaining > 0 %}
+         <p class="g-still-missing">{{ t('still_missing', n=remaining) }}</p>
+       {% endif %}
++      {% if remaining and remaining > 0 %}
++        <div class="tw-stub"><a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a></div>
++      {% endif %}
+     </div>
+-  {% endif %}
+-  {% if remaining and remaining > 0 %}
++  {% elif remaining and remaining > 0 %}
+     <a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a>
+   {% endif %}
+ {% endif %}
+@@ -78,6 +92,7 @@
+ {% for person in people if person.mine %}
+   <details class="g-card g-summary">
+     <summary class="g-summary-fold">{% if person.name %}{{ person.name }}{% else %}{{ t('person') }} {{ person.index }}{% endif %} &middot; {{ t('summary_fold_saved') if person.complete else t('not_filled') }}</summary>
++    {% if person.complete %}<span class="tw-complete-mark" hidden></span>{% endif %}
+     <div class="g-summary-body">
+       <h2>{{ t('summary_title') }}</h2>
+       {% if person.summary %}
+@@ -109,7 +124,7 @@
+ {% if people | selectattr('mine') | list | length < people | length %}
+   <div class="g-card">
+     {% for person in people if not person.mine %}
+-      <div class="g-person">
++      <div class="g-person"{% if person.complete %} data-complete{% endif %}>
+         <span class="g-tick {{ 'done' if person.complete else 'todo' }}">{{ '✓' if person.complete else person.index }}</span>
+         <div class="who">
+           {{ t('person') }} {{ person.index }}
+diff --git a/App/app/templates/guest/unavailable.html b/App/app/templates/guest/unavailable.html
+index af79865..0d43d43 100644
+--- a/App/app/templates/guest/unavailable.html
++++ b/App/app/templates/guest/unavailable.html
+@@ -1,6 +1,6 @@
+ {% extends "guest/base.html" %}
+ {% block content %}
+-<div class="g-card">
++<div class="g-card tw-ticket is-quiet" data-tw-label="{{ t('tw_label_notice') }}">
+   <div class="g-big-ok">
+     <div class="mark neutral">?</div>
+     <h2>{{ t(title_key) }}</h2>
+diff --git a/App/app/templating.py b/App/app/templating.py
+index 64eb528..415eb41 100644
+--- a/App/app/templating.py
++++ b/App/app/templating.py
+@@ -198,6 +198,39 @@ def _entered_by_label(context, value) -> str:
+     return _template_translate(context, key) if key else (value or "")
+ 
+ 
++# Ticket Wallet dates: "28 SEP", "Mon", "Mon 28 Sep" in the guest's language.
++# Kept here rather than in i18n.py because they are formats, not sentences.
++_PASS_MONTHS = {
++    "en": ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
++    "cs": ("led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"),
++}
++_PASS_WEEKDAYS = {
++    "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
++    "cs": ("po", "út", "st", "čt", "pá", "so", "ne"),
++}
++
++
++@pass_context
++def _pass_date(context, value: Optional[str], part: str = "dm") -> str:
++    """One piece of a stay date for the ticket layout.
++
++    ``dm`` -> "28 Sep" (CSS upper-cases it), ``wd`` -> "Mon",
++    ``long`` -> "Mon 28 Sep". An unparseable value returns "" so a broken
++    reservation never crashes a guest page.
++    """
++    parsed = validation.parse_iso_date(value)
++    if not parsed:
++        return ""
++    lang = context.get("lang") if context.get("lang") in _PASS_MONTHS else "en"
++    day_month = f"{parsed.day} {_PASS_MONTHS[lang][parsed.month - 1]}"
++    weekday = _PASS_WEEKDAYS[lang][parsed.weekday()]
++    if part == "wd":
++        return weekday
++    if part == "long":
++        return f"{weekday} {day_month}"
++    return day_month
++
++
+ @pass_context
+ def _report_mode_label(context, mode) -> str:
+     """How a transmission was triggered, translated rather than humanised."""
+@@ -261,6 +294,7 @@ templates.env.globals.update(
+     compose_residence=validation.compose_residence,
+     nights=_nights,
+     nights_label=_nights_label,
++    pass_date=_pass_date,
+     source_label=_source_label,
+     entered_by_label=_entered_by_label,
+     report_mode_label=_report_mode_label,
+diff --git a/App/tests/test_ticket_wallet_v2.py b/App/tests/test_ticket_wallet_v2.py
+new file mode 100644
+index 0000000..96bce5c
+--- /dev/null
++++ b/App/tests/test_ticket_wallet_v2.py
+@@ -0,0 +1,71 @@
++"""Ticket Wallet v2 (docs/plans/PLAN_TICKET_WALLET_V2.md): the skin's
++contract with the templates, the enhancement script and the dictionary."""
++import re
++from pathlib import Path
++
++from app import i18n
++
++APP = Path(__file__).resolve().parents[1] / "app"
++CSS = (APP / "static" / "guest-ticket.css").read_text(encoding="utf-8")
++JS = (APP / "static" / "ticket.js").read_text(encoding="utf-8")
++FORM = (APP / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
++CLAIM = (APP / "templates" / "guest" / "claim.html").read_text(encoding="utf-8")
++BASE = (APP / "templates" / "guest" / "base.html").read_text(encoding="utf-8")
++
++NEW_KEYS = [
++    "tw_email_short", "tw_email_more", "tw_step_details", "tw_step_document",
++    "tw_step_home", "tw_step_photo", "tw_step_sign", "tw_step_check",
++    "tw_dob_day", "tw_dob_month", "tw_dob_year", "tw_country_search",
++    "tw_country_none", "tw_purpose_other", "tw_sign_here", "tw_signed",
++    "tw_done_keep",
++]
++
++
++def test_every_new_key_exists_in_both_languages():
++    for key in NEW_KEYS:
++        assert i18n.STRINGS["en"].get(key), f"en.{key}"
++        assert i18n.STRINGS["cs"].get(key), f"cs.{key}"
++
++
++def test_every_enhancement_is_registered_in_start():
++    start = JS[JS.index("function start()"):]
++    for name in ("initPinCells", "initDobCells", "initCountryCombos",
++                 "initPurposeChips", "initTrackerLabels", "initSignState"):
++        assert f"function {name}(" in JS, name
++        assert f"{name}();" in start, f"{name} is defined but never called"
++
++
++def test_the_rail_is_no_longer_hidden():
++    assert ".tw .g-checkin-rail { display: none !important; }" not in CSS
++
++
++def test_v2_sections_come_before_the_motion_section():
++    """Section 17's reduced-motion rule must be last so it covers v2."""
++    assert CSS.index("/* 18. App bar v2") < CSS.index("/* 17. Motion")
++
++
++def test_every_form_step_has_a_short_label():
++    # "data-guest-step-skip-when" must not count as a step of its own.
++    steps = re.findall(r"data-guest-step(?=[\s>])", FORM)
++    assert steps and len(steps) == FORM.count("data-tw-short=")
++
++
++def test_the_real_controls_keep_their_names():
++    for name in ('name="birth_date"', 'name="nationality"', 'name="res_country"',
++                 'name="purpose"', 'name="signature"', 'id="sig-canvas"'):
++        assert name in FORM, name
++
++
++def test_the_full_email_text_is_still_on_the_claim_page():
++    assert "t('claim_email_help')" in CLAIM
++    assert "t('claim_cookie_help')" in CLAIM
++    assert 'class="tw-more"' in CLAIM
++
++
++def test_assets_are_cache_busted_past_v1():
++    assert "guest-ticket.css?v=20260929a" not in BASE
++    assert "ticket.js?v=20260929a" not in BASE
++
++
++def test_no_dark_mode_sneaks_in():
++    assert "prefers-color-scheme" not in CSS
