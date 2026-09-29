@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  checks: read
 
 # One production deploy at a time: two overlapping runs would race the same
 # checkout on the server. The running one is never cancelled — a half-applied
@@ -29,12 +30,14 @@ concurrency:
 jobs:
   lightsail:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
+    environment: production
     runs-on: ubuntu-latest
     steps:
       - name: Deploy Lightsail (production)
         env:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
           GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_SHA: ${{ github.sha }}
         run: |
@@ -47,10 +50,18 @@ jobs:
             "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git" \
             refs/heads/main | cut -f1)"
           echo "Manual deploy pinned to main: ${DEPLOY_SHA}"
+          FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GH_DEPLOY_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/jsfpechar-ops/jsfpecharoperations/commits/${DEPLOY_SHA}/check-runs?per_page=100" \
+            | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke"]; bad=[n for n in need if n not in runs or runs[n]["conclusion"]!="success"]; print(" ".join(bad))')"
+          if [ -n "${FAILED_OR_MISSING}" ]; then
+            echo "CI has not passed for ${DEPLOY_SHA} (not green: ${FAILED_OR_MISSING}). Refusing to deploy." >&2
+            exit 1
+          fi
           if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
             echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
             echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
-            exit 0
+            exit 1
           fi
           # Validate the SHA before it is interpolated into the remote shell.
           if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
@@ -60,9 +71,12 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
           chmod 600 ~/.ssh/lightsail_deploy.pem
+          if [ -z "${LIGHTSAIL_KNOWN_HOSTS}" ]; then echo "LIGHTSAIL_KNOWN_HOSTS secret is missing." >&2; exit 1; fi
+          printf '%s\n' "${LIGHTSAIL_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
           LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
           LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
           DEPLOY_SHA="${DEPLOY_SHA}"
           set -euo pipefail
           INSTALL=/opt/ubyhost
