@@ -2,7 +2,7 @@
 # Build from repo root: docker build -t ubyhost .
 # Data lives on a mounted volume at UBYHOST_DATA_DIR (default /data).
 # Pinned by digest; Dependabot (docker) proposes updates.
-FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
+FROM python:3.14-slim@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d
 
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
