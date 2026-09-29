@@ -1,6 +1,7 @@
 """Skeleton loaders (FR-1): the placeholder markup, script and copy exist."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -34,6 +35,25 @@ def test_skeleton_script_is_served():
         response = client.get("/static/skeleton.js")
     assert response.status_code == 200
     assert "window.ubyhostSkeleton" in response.text
+
+
+def test_the_dsr_json_export_is_treated_as_a_download():
+    """The Art 15/20 bundle is an attachment, so it must not blank the page.
+
+    ``/guests/{id}/export.json`` answers with ``Content-Disposition:
+    attachment``; the browser cancels the navigation, so a suffix missing from
+    ``DOWNLOAD_RE`` would leave the skeleton up until the 15-second timer.
+    ``isDownload`` is a bare regex test on the pathname, so the regex itself is
+    the unit under test.
+    """
+    script = (APP_DIR / "static" / "skeleton.js").read_text(encoding="utf-8")
+    match = re.search(r"DOWNLOAD_RE\s*=\s*/(.+?)/([a-z]*);", script)
+    assert match, "skeleton.js no longer defines DOWNLOAD_RE"
+    flags = re.IGNORECASE if "i" in match.group(2) else 0
+    pattern = re.compile(match.group(1), flags)
+
+    assert pattern.search("/guests/7/export.json"), "the DSR export still blanks the page"
+    assert not pattern.search("/guests/7"), "a normal page must keep the skeleton"
 
 
 def test_guest_base_has_hidden_page_skeleton():

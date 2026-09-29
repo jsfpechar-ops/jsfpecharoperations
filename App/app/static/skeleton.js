@@ -9,7 +9,7 @@
   "use strict";
   var DELAY_MS = 400;
   var SAFETY_MS = 15000;
-  var DOWNLOAD_RE = /\.(pdf|zip|csv|ics|txt)$/i;
+  var DOWNLOAD_RE = /\.(pdf|zip|csv|ics|txt|json)$/i;
   var timer = null;
   var safety = null;
 
