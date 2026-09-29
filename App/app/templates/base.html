@@ -173,6 +173,17 @@
     </aside>
   {% endif %}
   {% block content %}{% endblock %}
+  <div class="page-skeleton" data-page-skeleton role="status" hidden>
+    <span class="sr-only">{{ t('a11y.loading') }}</span>
+    <div aria-hidden="true">
+      <span class="skeleton skeleton-line medium"></span>
+      <span class="skeleton skeleton-line short"></span>
+      <span class="skeleton skeleton-block"></span>
+      <span class="skeleton skeleton-line"></span>
+      <span class="skeleton skeleton-line medium"></span>
+      <span class="skeleton skeleton-block"></span>
+    </div>
+  </div>
 </main>
 
 {% if open_alerts %}
@@ -317,6 +328,7 @@
 </dialog>
 
 <script src="/static/csrf.js?v=20260915a"></script>
+<script src="/static/skeleton.js?v=20260929a"></script>
 <script src="/static/app.js?v=20260921a"></script>
 </body>
 </html>
