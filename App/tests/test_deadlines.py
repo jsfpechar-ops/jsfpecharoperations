@@ -422,3 +422,38 @@ def test_scheduled_send_is_pulled_forward_to_the_deadline_margin():
     assert reporting.due_for_automatic_send(
         apartment, reservation, now=datetime(2026, 10, 7, 15, 0, tzinfo=timezone.utc)
     ) is False
+
+
+def test_a_cancelled_stay_clears_its_open_deadline_card(monkeypatch, tmp_path):
+    """AR-37: a cancelled stay must not leave a deadline card to chase."""
+    from app import alerts, db, reporting
+
+    reservation = _stay_with_guests(
+        monkeypatch,
+        tmp_path,
+        "stale-deadline.sqlite3",
+        date_from="2026-09-09",
+        date_to="2026-09-14",
+        guests=[("2026-09-09", "2026-09-14", None)],
+    )
+    alerts.raise_alert(
+        "critical",
+        "deadline",
+        "Anchor test · 09.09.2026 – 14.09.2026",
+        "Overdue · 0/1",
+        dedupe_key=f"deadline:{reservation['id']}",
+        apartment_id=reservation["apartment_id"],
+        reservation_id=reservation["id"],
+    )
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled' WHERE id = ?",
+        (reservation["id"],),
+    )
+
+    reporting.check_deadlines(datetime(2026, 9, 12, 12, 0))
+
+    row = db.query_one(
+        "SELECT resolved_at FROM alert WHERE dedupe_key = ?",
+        (f"deadline:{reservation['id']}",),
+    )
+    assert row["resolved_at"] is not None
