@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r", "\n", "\xa0")
 
 
 def csv_safe(value: Any) -> Any:
