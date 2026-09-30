@@ -27,6 +27,12 @@ ENTITY_NAME = "Operator Naming s.r.o."
 # The noun the host app must no longer use, in either language.
 OLD_NOUNS = ("legal entity", "legal entities", "právnick")
 
+# The stay-fee surfaces report to the municipal office and are filed by the
+# legal entity that runs the accommodation. "Legal entity" is the term of art
+# the report itself uses, pinned by the stay-fee plan (§12.2), so those keys are
+# exempt from the operator rename — same reasoning as _legal_document_keys().
+STAY_FEE_KEY_PREFIXES = ("stay_fees.", "apartment.form.stay_fee.")
+
 
 def _legal_document_keys() -> set[str]:
     """Keys owned by the legal-document modules merged into the host table.
@@ -170,7 +176,7 @@ def test_no_host_string_still_calls_it_a_legal_entity():
     offenders = []
     for lang, table in host_i18n.STRINGS.items():
         for key, value in table.items():
-            if key in legal:
+            if key in legal or key.startswith(STAY_FEE_KEY_PREFIXES):
                 continue
             lowered = value.lower()
             if any(noun in lowered for noun in OLD_NOUNS):

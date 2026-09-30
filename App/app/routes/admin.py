@@ -708,6 +708,29 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["passport_photo_policy"] = (
         policy if policy in ("off", "required_foreign") else "off"
     )
+    if "stay_fee_rate_czk" in form:
+        payload["stay_fee_rate_czk"] = stay_fee.clamp_rate(
+            _form_str(form, "stay_fee_rate_czk", "0")
+        )
+        cadence = _form_str(form, "stay_fee_cadence", "monthly")
+        payload["stay_fee_cadence"] = (
+            cadence if cadence in stay_fee.CADENCES else "monthly"
+        )
+        payload["stay_fee_vs"] = (
+            "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10]
+            or None
+        )
+        for key, limit in (
+            ("stay_fee_authority_name", 200),
+            ("stay_fee_authority_address", 200),
+            ("stay_fee_authority_contact", 200),
+            ("stay_fee_payee", 60),
+            ("stay_fee_instruction", 500),
+        ):
+            payload[key] = _form_str(form, key)[:limit].strip() or None
+        payload["_stay_fee_account_raw"] = _form_str(
+            form, "stay_fee_council_account"
+        )
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
@@ -721,6 +744,7 @@ async def apartment_create(request: Request):
         return guard
     form = await request.form()
     payload = _apartment_payload(form)
+    payload.pop("_stay_fee_account_raw", None)
     if not payload["internal_name"]:
         return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
     payload["permalink_token"] = auth.new_permalink_token()
@@ -780,6 +804,12 @@ def apartment_detail(apartment_id: int, request: Request):
             "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
+            "fee_template_peers": [
+                peer
+                for peer in access.apartments(request)
+                if peer["id"] != apartment["id"]
+                and int(peer["stay_fee_rate_czk"] or 0) > 0
+            ],
         },
     )
 
@@ -835,6 +865,22 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
         payload["permalink_pin"] = pin
+    raw_account = payload.pop("_stay_fee_account_raw", None)
+    if raw_account is not None:
+        if raw_account.strip():
+            try:
+                (
+                    payload["stay_fee_council_account"],
+                    payload["stay_fee_council_iban"],
+                ) = payments.normalise_account(raw_account)
+            except ValueError:
+                return _back(
+                    f"/apartments/{apartment_id}#stay-fee-settings",
+                    err=_flash(request, "flash.stay_fees.account_invalid"),
+                )
+        else:
+            payload["stay_fee_council_account"] = None
+            payload["stay_fee_council_iban"] = None
     # AR-18: the refused-login pause exists so the police account is not
     # hammered every ten minutes. Only replacing the credentials may lift it;
     # renaming the property or moving the PIN must not resume the retries.
