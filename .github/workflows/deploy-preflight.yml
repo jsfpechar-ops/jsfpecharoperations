@@ -1,0 +1,69 @@
+name: Deploy preflight
+
+# Read-only readiness check for the production server. Manual only. It prints
+# the connection result and whether the required .env keys exist. It never
+# prints a secret value.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the production server (read-only)
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LIGHTSAIL_HOST}" ] || [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_KNOWN_HOSTS}" ]; then
+            echo "Missing one of LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY / LIGHTSAIL_KNOWN_HOSTS." >&2
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
+          chmod 600 ~/.ssh/lightsail_deploy.pem
+          printf '%s\n' "${LIGHTSAIL_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
+          HOST="${HOST#ubuntu@}"
+          ssh -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=15 \
+            -i ~/.ssh/lightsail_deploy.pem "ubuntu@${HOST}" bash -s <<'REMOTE'
+          set -u
+          echo "connected: yes"
+          echo "host: $(uname -srm)"
+          echo "install_dir: $(test -d /opt/ubyhost && echo present || echo MISSING)"
+          echo "git_repo: $(test -d /opt/ubyhost/.git && echo yes || echo no)"
+          echo "env_file: $(test -f /opt/ubyhost/deploy/lightsail/.env && echo present || echo MISSING)"
+          echo "docker: $(command -v docker >/dev/null 2>&1 && docker --version || echo MISSING)"
+          echo "age: $(command -v age >/dev/null 2>&1 && age --version || echo MISSING)"
+          echo "sqlite3: $(command -v sqlite3 >/dev/null 2>&1 && sqlite3 --version || echo MISSING)"
+          ENVF=/opt/ubyhost/deploy/lightsail/.env
+          if [ -f "$ENVF" ]; then
+            value() { grep -E "^$1=" "$ENVF" | head -1 | cut -d= -f2-; }
+            present() { grep -qE "^$1=.+" "$ENVF" && echo SET || echo MISSING; }
+            echo "UBYHOST_DOMAIN=$(value UBYHOST_DOMAIN)"
+            echo "UBYHOST_PUBLIC_BASE_URL=$(value UBYHOST_PUBLIC_BASE_URL)"
+            echo "ACME_EMAIL=$(present ACME_EMAIL)"
+            echo "UBYHOST_DEPLOYMENT=$(value UBYHOST_DEPLOYMENT)"
+            echo "UBYHOST_UBYPORT_ENV=$(value UBYHOST_UBYPORT_ENV)"
+            echo "UBYHOST_ALLOW_PROD_MOCK=$(value UBYHOST_ALLOW_PROD_MOCK)"
+            echo "UBYHOST_ADMIN_PASSWORD=$(present UBYHOST_ADMIN_PASSWORD)"
+            echo "UBYHOST_SECRET_KEY=$(present UBYHOST_SECRET_KEY)"
+            echo "UBYHOST_BACKUP_AGE_RECIPIENT=$(present UBYHOST_BACKUP_AGE_RECIPIENT)"
+            echo "scripts: $(ls -1 /opt/ubyhost/deploy/lightsail/scripts/*.sh 2>/dev/null | wc -l)"
+            echo "containers:"
+            (cd /opt/ubyhost/deploy/lightsail && docker compose ps 2>/dev/null | head -10) || true
+          fi
+          REMOTE
+          rm -f ~/.ssh/lightsail_deploy.pem
