@@ -60,7 +60,16 @@ jobs:
             echo "UBYHOST_ALLOW_PROD_MOCK=$(value UBYHOST_ALLOW_PROD_MOCK)"
             echo "UBYHOST_ADMIN_PASSWORD=$(present UBYHOST_ADMIN_PASSWORD)"
             echo "UBYHOST_SECRET_KEY=$(present UBYHOST_SECRET_KEY)"
-            echo "UBYHOST_BACKUP_AGE_RECIPIENT=$(present UBYHOST_BACKUP_AGE_RECIPIENT)"
+            REC="$(value UBYHOST_BACKUP_AGE_RECIPIENT)"
+            if [ -z "$REC" ]; then
+              echo "UBYHOST_BACKUP_AGE_RECIPIENT=MISSING"
+            elif printf '%s' "$REC" | grep -q '^age1'; then
+              echo "UBYHOST_BACKUP_AGE_RECIPIENT=SET (public age1 recipient, correct)"
+            else
+              echo "UBYHOST_BACKUP_AGE_RECIPIENT=SET but not an age1 recipient; it must be the PUBLIC key, not AGE-SECRET-KEY"
+            fi
+            echo "disk_root:"
+            df -h / 2>/dev/null | sed -n '1,2p'
             echo "scripts: $(ls -1 /opt/ubyhost/deploy/lightsail/scripts/*.sh 2>/dev/null | wc -l)"
             echo "containers:"
             (cd /opt/ubyhost/deploy/lightsail && docker compose ps 2>/dev/null | head -10) || true
