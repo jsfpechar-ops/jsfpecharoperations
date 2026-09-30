@@ -198,39 +198,6 @@ def _entered_by_label(context, value) -> str:
     return _template_translate(context, key) if key else (value or "")
 
 
-# Ticket Wallet dates: "28 SEP", "Mon", "Mon 28 Sep" in the guest's language.
-# Kept here rather than in i18n.py because they are formats, not sentences.
-_PASS_MONTHS = {
-    "en": ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
-    "cs": ("led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"),
-}
-_PASS_WEEKDAYS = {
-    "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
-    "cs": ("po", "út", "st", "čt", "pá", "so", "ne"),
-}
-
-
-@pass_context
-def _pass_date(context, value: Optional[str], part: str = "dm") -> str:
-    """One piece of a stay date for the ticket layout.
-
-    ``dm`` -> "28 Sep" (CSS upper-cases it), ``wd`` -> "Mon",
-    ``long`` -> "Mon 28 Sep". An unparseable value returns "" so a broken
-    reservation never crashes a guest page.
-    """
-    parsed = validation.parse_iso_date(value)
-    if not parsed:
-        return ""
-    lang = context.get("lang") if context.get("lang") in _PASS_MONTHS else "en"
-    day_month = f"{parsed.day} {_PASS_MONTHS[lang][parsed.month - 1]}"
-    weekday = _PASS_WEEKDAYS[lang][parsed.weekday()]
-    if part == "wd":
-        return weekday
-    if part == "long":
-        return f"{weekday} {day_month}"
-    return day_month
-
-
 @pass_context
 def _report_mode_label(context, mode) -> str:
     """How a transmission was triggered, translated rather than humanised."""
@@ -294,7 +261,6 @@ templates.env.globals.update(
     compose_residence=validation.compose_residence,
     nights=_nights,
     nights_label=_nights_label,
-    pass_date=_pass_date,
     source_label=_source_label,
     entered_by_label=_entered_by_label,
     report_mode_label=_report_mode_label,

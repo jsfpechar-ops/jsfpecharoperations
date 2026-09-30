@@ -35,8 +35,8 @@ and update this section in the same change.
 ## Technical stack (unchanged)
 
 - Server-rendered Jinja2 templates
-- Plain CSS (`tokens.css`, `app.css`, `components.css`, `guest.css` + the `guest-ticket.css` skin, `landing.css`)
-- Vanilla JavaScript (`app.js`, `signature.js`, `ticket.js`, `claim.js`, `landing.js`) — no SPA framework or bundler
+- Plain CSS (`tokens.css`, `app.css`, `guest.css`, `components.css`)
+- Vanilla JavaScript (`app.js`, `signature.js`, `claim.js`) — no SPA framework or bundler
 - No CDN-hosted fonts; system font stacks only
 
 ## Brand and logo
@@ -65,228 +65,82 @@ The older generation brief is **[LOGO_PROMPT.md](LOGO_PROMPT.md)** (historical).
 
 Do not clone third-party branding; keep UbyHost layout tokens from this design system.
 
-## The three surfaces
+## Guest stay picker (next mail production release)
 
-UbyHost has three audiences, and each one has its own design direction. They all share the brand core below.
+After PIN, guests always land on **Find your stay** — even when only one reservation is visible. Competitor “which reservation?” screens are a useful structural reference (welcome → booked place → date rows → continue → host contact). UbyHost must go further: calmer, more modern, brand-first, and clearly ours. Implement in `guest/pick.html`, `guest.css`, and EN/CS strings; do not ship a lookalike of Airbo or any other PMS guest UI.
 
-| Surface | Templates | Direction | Status |
-|---|---|---|---|
-| **Guest registration** | `templates/guest/*` | **Ticket Wallet**: every screen is a ticket, and the guest ends up holding a boarding pass | Chosen 29 Sep 2026. Being implemented from [plans/PLAN_TICKET_WALLET_V2.md](plans/PLAN_TICKET_WALLET_V2.md) |
-| **Host app** (signed in) | `templates/*.html` extending `base.html` | **Effortless**: the most intuitive host tool on the market, with the fewest clicks and no way to get lost | The standard for all host UI work from now on |
-| **Public marketing site** | `landing.html`, `product.html`, `pricing.html`, guides, `_public_header.html`, `_public_footer.html`, `landing.css`, `landing.js` | **As it is now**: short, catchy and punchy, in the style of Notion | **Locked.** Do not redesign it |
+### Information architecture (top → bottom)
 
-### Brand core (all three surfaces)
+1. **Chrome** — Existing guest header: product title, language switch, skip link. Keep light-only tokens (`tokens.css` / `guest.css`).
+2. **Welcome + booked accommodation** — One quiet welcome band (not a dashboard card stack). Hero signal is the **facility / property name** (with the existing property-tone mark). Supporting line: short welcome that this is guest registration for that place. Optional city/location when available. Optional host welcome message stays secondary (collapsed or below the band), never on top of a hero image.
+3. **Legal “why”** — Keep today’s collapsible why-block as secondary disclosure; it must not compete with the welcome or the date choice.
+4. **Stay choice (the job of the page)** — One short question + one help sentence, then a chronological **arrival lane** of stays. Each row is the whole hit target (dates, nights, status). Always show at least one row when stays exist; never auto-skip to the form.
+5. **PM / host contact footer** — Same persistent block as other guest pages (`guest/_host.html`): problem → contact your host, with **property manager / legal-entity** name, phone, and e-mail. Never `support@ubyhost.com`.
 
-1. **Light mode only.** See the section above. Dark *components* are allowed (the guest app bar, the host sidebar). A dark *theme* is not.
-2. **One coral means "act here".** `--brand-action` marks the single primary action on a screen. Nothing decorative is coral.
-3. **Green means done**, and nothing else: registered, reported, accepted, ready.
-4. **Ink, never pure black**: `--ink`, `--ink-secondary`, `--ink-muted`.
-5. **System fonts only.**
-   - Sans: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif`.
-   - Guest display serif: `"New York", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif`. This is a system stack too.
-6. **EN and CS in the same commit**, always.
-7. **Tokens** live in `static/tokens.css`. A surface's own extra tokens live in that surface's stylesheet (`guest-ticket.css`, `app.css`, `landing.css`), never in `tokens.css`.
+### Visual concept: “Arrival lane” (one direction)
 
-## Guest registration: Ticket Wallet
+Treat the first viewport as **one composition**: you are at the right place → pick your arrival window → host help is always one scroll away.
 
-**Files that own it:**
+- **Atmosphere:** Soft canvas gradient or a very light property-tone wash behind the welcome band (existing `--canvas` / tone tints). No flat single-slab white page; no purple gradients; no cream+terracotta newspaper look; no emoji; no glow.
+- **Typography:** Stay on the product system stacks (no CDN fonts). Welcome facility name is the largest type; the pick question is clearly secondary to that brand/property signal.
+- **Date rows:** Full-width interactive **lanes**, not marketing cards. Prefer hairline separators or a single shared surface over stacked bordered boxes with shadows. Each row shows a compact check-in → check-out **range cue** (thin accent bar or dual-date block), night count, and a quiet status line. Trailing affordance is a text CTA or chevron — the row itself is the button.
+- **Status:** “Started on this device” uses the existing calm green treatment; unstarted stays stay muted. Do not add floating badges, promo chips, or stickers over the welcome band.
+- **Single-stay case:** Same layout. One clear lane still confirms dates before the form; that is intentional so PM contact was already on screen.
 
-- `static/guest-ticket.css` (the skin, active only under `<body class="tw">`);
-- `static/ticket.js` (progressive enhancements);
-- `templates/guest/_ticket.html` (macros);
-- the `pass_date` Jinja global in `templating.py`.
+### Interaction and motion (ship 2–3; respect `prefers-reduced-motion`)
 
-`guest.css` and `signature.js` stay as they are underneath. The skin restyles them, and the tests read them line by line.
+1. **Lane entrance** — On load, date rows stagger in with a short fade + slight upward settle (~180–240ms, `--ease-standard`). Reduced motion: show final state immediately.
+2. **Range accent** — On hover/focus, the row’s range cue or leading edge fills or shifts to brand coral; border/ink strengthens without a multi-layer shadow.
+3. **Press** — On pointer-down, a soft 1px settle (or opacity dip) before navigation so the tap feels intentional on phone.
 
-### The idea
+No decorative parallax, no looping animations, no confetti.
 
-The guest is boarding a stay. Every screen is a ticket: a coloured **strip** says where they are, the **body** asks one small thing, and the tear-off **stub** holds the button. At the end they hold a **boarding pass** for each person in their group.
+Loading states: pages are server-rendered, so there is no skeleton on first paint. A navigation slower than 400 ms swaps the main content for static placeholder blocks (App/app/static/skeleton.js). Content fetched in the browser shows the same blocks where it will appear. Placeholders never shimmer or loop. Downloads and links or forms marked data-no-skeleton never show them.
 
-- The metaphor works in any language.
-- It turns a legal chore into the start of a trip.
-- The stub gives the primary action one predictable home.
-- The "Registered" stamp tells the guest, beyond doubt, that they are done.
+### Mobile and desktop
 
-### Anatomy
+- **Mobile-first** (primary): one column inside existing `.g-wrap` (~580px). Large tap targets (≥44px row height), thumb-friendly spacing, sticky language chrome unchanged.
+- **Desktop:** Same single centered column — wider type and more vertical rhythm only. Do not add side panels, dual columns of stays, or inset media.
 
-```
-┌──────────────── app bar (ink, sticky, ≤96px on a phone) ─────┐
-│ [O] Old Town Loft                                    EN | CS │
-│ 28 SEP → 1 OCT · 3 NIGHTS                                    │
-│ ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬░░░░░░░░░░░░   3px coral progress       │
-└──────────────────────────────────────────────────────────────┘
-  ┌─────────────── ticket (white, radius 22) ────────────────┐
-  │ STEP 2 · GUEST FORM                     ← strip (coral)  │
-  │  Home address                  ← serif heading           │
-  │  As written in your passport.  ← muted intro             │
-  │  [ field ]  [ field ]                                    │
-  ◖ - - - - - - - - - - - - - - - - - - - - - - - - - - - - -◗  ← perforation + notches
-  │  [ Back ]            [ Next ▸ ]  ← stub; sticky on phones │
-  └──────────────────────────────────────────────────────────┘
-  help folds · host contact row · privacy line
-```
+### EN / CS copy outlines (implement in `i18n.py`)
 
-### Components
+Tone: direct, calm, no hype.
 
-- **App bar:** property mark, property name (one line), `EN | CS`, route line, progress line.
-- **Ticket:** `.tw-ticket` or `[data-guest-step]`. The strip text comes from `data-tw-label` or `data-step-title`. Variants: `.is-ok` (green), `.is-quiet` (ink), `.is-alert` (red).
-- **Stub:** `.tw-stub` or `.g-wizard-nav`. It holds the screen's only coral button, with Back as a ghost button beside it.
-- **Stay pass (the "V1 Airline Pass"):** a dark head ("Stay 1 of 3 · Arriving today"), `29 SEP → 2 OCT` with a moon icon and the number of nights, a perforated foot with the property name, and a "That's my stay" pill. The whole pass is one link.
-- **Form controls:**
-  - PIN: six cells.
-  - Party size: − / + stepper.
-  - Date of birth: Day / Month / Year boxes, with the green read-back chip "That is 14 March 1988".
-  - Country: type-to-search (it matches "germ" and "DEU").
-  - Purpose: chips (Tourism · Business · Visiting family · Study · Other…).
-  - Document number: a drawn passport page showing where the number is.
-  - Address for guest 2 onwards: a green "copied from …" card.
-  - Signature: "Sign here", then "✓ Signed".
-- **Guest tracker:** Details · Document · Home · (Photo) · Sign · Check. A finished segment is tappable to go back to it.
-- **Check step:** review rows, each with "Change". The legal information is in a grey box, and the acknowledgement sits in a coral-edged box directly above Submit.
-- **Saved / done:**
-  - the green "REGISTERED" stamp;
-  - one boarding pass per guest, with a decorative, `aria-hidden` barcode;
-  - the line "Keep this page — it is your confirmation."
-- **Host contact row:** the legal entity's name, with Call and E-mail pills. It is never UbyHost support (see the contact split above).
+| Role | EN (outline) | CS (outline) |
+|------|----------------|--------------|
+| Welcome | Welcome — guest registration for {facility} | Vítejte — registrace ubytovaného pro {facility} |
+| Question | Which stay is yours? | Který pobyt je váš? |
+| Help | Choose your arrival and departure dates to continue. | Vyberte termín příjezdu a odjezdu a pokračujte. |
+| Row CTA / affordance | That’s my stay | To je můj pobyt |
+| Device status | Started on this device | Zahájeno na tomto zařízení |
+| Quiet status | Not started yet | Zatím nezačato |
+| Host footer title | Your host | Váš hostitel |
+| Host footer help | If there is any problem, feel free to contact your host. | Pokud máte jakýkoli problém, neváhejte kontaktovat svého hostitele. |
 
-### Rules
+Keep nights / date formatting via existing filters. Refine exact strings at implementation time; do not invent marketing slogans.
 
-- One 640px column (680px from 1020px wide, on an ambient background). It never splits into two columns.
-- Exactly **one coral button per screen**, and it lives in the stub.
-- Every enhancement is progressive:
-  - The real `<input>`/`<select>` keeps its `id` and `name`, and is what gets submitted.
-  - The enhancement writes into it and fires `input`/`change`.
-  - With JS off, the page still works.
-- Never rename or remove an `id`, `name`, `class` or `t()` call that already exists in a guest template.
-- Copy: say "your host". Name the next thing on the button. Write dates as "Mon 28 Sep" and "28 SEP", never an ambiguous 09/10.
-- Motion:
-  - tickets fade and rise over 320ms;
-  - stay passes stagger by 70ms and lift 3px on hover;
-  - the stamp springs over 500ms;
-  - boarding passes stagger by 150ms;
-  - under `prefers-reduced-motion`, nothing moves.
+### How the PM contact footer fits
 
-## Host app: Effortless
+- Include `_host.html` on the picker (already via `guest/base.html`).
+- Copy frames the **operating legal entity / property manager** as the guest PoC (aligned with PM-as-controller work).
+- Phone and e-mail are tappable (`tel:` / `mailto:`). Missing contact shows the existing missing-host hint — never fall back to UbyHost support.
+- Visually: same footer rhythm as claim / assigned / form pages so the guest learns one place to get help.
 
-**Goal:** a host who has never seen UbyHost can register a stay's guests and report them to UbyPort without reading a guide. A host who uses it daily gets through their day in a handful of clicks. Competitors exist; UbyHost wins by being **the most obvious one to use**.
+### What not to copy from Airbo (or similar)
 
-### Principles, in priority order
+- Their exact headline / button labels / layout proportions as a clone
+- Stacked white “product cards” with heavy borders/shadows as the hero
+- Detached “My Reservation” buttons inside cards (row = control)
+- Floating labels, stickers, or promo chips on a hero image
+- Competitor colors, logos, illustration style, or emoji
+- Multi-section first viewport (stats, schedules, address blocks, secondary promos)
 
-1. **The next action comes first.** Every page opens with what needs the host now, and the one button that does it: "Send 3 ready reports", "Remind 2 guests". Information comes after action.
-2. **One screen, one job, one primary button.**
-   - Each page has a single coral primary in the header.
-   - Each table row has at most one visible action. Anything else goes in the row's ⋯ menu.
-3. **Fewest clicks.** Every frequent task has a click budget (below). Meeting the budget is a requirement, not a wish. If a change adds a click to a budgeted task, it must remove one somewhere else in the same task.
-4. **No dead ends.**
-   - Every empty state, error and success message says what to do next and has the button for it.
-   - Empty state: "No stays yet. Connect a calendar and arrivals appear here automatically." with the button **Connect a calendar**.
-   - Error: "UbyPort rejected 1 guest: document number missing." with the button **Fix Anna's form**.
-5. **Dumbproof by default.**
-   - Pre-fill everything the system already knows: property, dates from the calendar, country, the last-used values.
-   - Prevent mistakes instead of explaining them: disable impossible dates, and hide the visa field for EU guests.
-   - Use an **undo toast** instead of "Are you sure?" for anything reversible.
-   - Use a confirm dialog **only** for things that cannot be undone: sending to the police, deleting data. That dialog says exactly what will happen.
-6. **Stay in context.**
-   - Add or edit in a side panel or inline, never on a separate page that loses the list.
-   - Saving returns the host to exactly where they were, with the changed row highlighted for 2 seconds.
-7. **Speak the host's language.**
-   - Use everyday verbs: *Send*, *Remind*, *Copy link*, *Aktualizovat kalendáře*.
-   - Never use internal words (claim, submission, payload), and never UbyPort error codes without a plain sentence.
-   - Status words are fixed across the app: **Ready to report · N forms missing · Link not opened · Opens on 30 Sep · Reported 09:14 · Rejected — fix it**.
-8. **Fast and keyboard-friendly.**
-   - `Ctrl K` / `⌘K` opens the existing command palette: search stays, guests and properties, or run an action.
-   - `N` adds a stay. `/` focuses search. `Esc` closes panels.
-   - Every page responds within 200ms, or shows a skeleton.
+### Implementation status
 
-### Click budgets (from the dashboard, signed in)
-
-| Task | Budget |
-|---|---|
-| Send every stay that is ready to UbyPort | **1** click, plus the police-send confirmation |
-| Send or resend the guest link for today's arrival | **1** (row action) |
-| Copy a property's guest link | **1** |
-| See why a stay is not ready | **1** (the row opens the stay, and missing items are listed first) |
-| Add a stay by hand | **1** to open the panel, then **3** fields (property, dates, guests), then **1** to save |
-| Connect a booking calendar | paste the URL and press **1** button; the property is pre-selected |
-| Find any stay or guest | `Ctrl K`, then type |
-| Download the house book | **2** |
-| Fix a rejected report | **1** to open the guest, fix the field, then **1** to resend |
-
-### Layout
-
-- **Sidebar**, 232px, collapsible:
-  - Today (with a count badge) · Stays · Reports · House book · Properties · Settings;
-  - the workspace name at the bottom;
-  - **UbyHost support** (`support@ubyhost.com`) in the sidebar and in Settings, and nowhere guests can see it.
-- **Page header:**
-  - h1: the page's subject. On the dashboard it is the date, e.g. "Monday, 28 September".
-  - A one-line summary: "3 arrivals today · 1 ready to report".
-  - The coral primary on the right.
-- **Dashboard order:**
-  - (1) the next-action card, if there is one;
-  - (2) **Needs you** (rows with a problem);
-  - (3) **Coming up** (the next 7 days);
-  - (4) **Done** (collapsed).
-  - A stay appears in one section only.
-- **Rows:**
-  - date · property (with its colour mark) · guest progress (●●○ 2/3) · one status pill · one action;
-  - the whole row is clickable, opening the stay;
-  - below 720px, tables become cards (the existing `table-cards` pattern).
-- **Density:**
-  - body text 14–15px;
-  - rows at least 52px tall;
-  - hairline dividers, no zebra stripes;
-  - shadows only on popovers, panels and toasts.
-
-### Components
-
-| Component | Rule |
-|---|---|
-| Next-action card | One sentence, one coral button, and an optional "Why?" link. There is at most one on a page. |
-| Status pill | A dot plus the fixed status word, in semantic colours (green ready/done, amber waiting, coral needs you, red rejected). One per row. |
-| Side panel | Opens from the right on desktop and as a full sheet on a phone. It has a title, the form, and a sticky footer with the primary button and Cancel. `Esc` closes it. Unsaved changes ask before closing. |
-| Toast | Bottom-left, 6 seconds, "Saved — Undo". It never carries an error that needs action; those stay on the page. |
-| Empty state | An icon, one sentence and one button. It never shows a blank table. |
-| Onboarding | The existing first-run steps, shown as a checklist card on the dashboard: Add property · Connect calendar · Share guest link · Connect UbyPort. Each step is one button, and the card disappears when all are done. |
-| Forms | Labels on top, one column, smart defaults, inline validation on blur, and an error summary at the top on submit. The primary sits at the bottom right, or in the sticky footer inside panels. |
-| Command palette | The existing `data-command-open`. It lists actions ("Send ready reports", "Add stay") as well as records. |
-
-### Accessibility (WCAG 2.2 AA, a hard requirement)
-
-- Text contrast is at least 4.5:1. UI boundaries are at least 3:1.
-- Targets are at least 24×24px, and 44px on touch and for every primary action.
-- Everything works with the keyboard alone:
-  - focus is always visible (`--focus-ring`);
-  - panels trap focus and return it on close;
-  - the skip link comes first.
-- Every control has a real label. Errors use `aria-invalid` and `aria-describedby`, and a live region announces toasts.
-- Colour is never the only signal. Every pill has a word, and every icon has a label.
-- Motion respects `prefers-reduced-motion`.
-
-### Don't
-
-- Don't add a second coral button to a page.
-- Don't put several coloured chips in one row.
-- Don't use icon-only buttons without a visible or `aria-label` name.
-- Don't open a modal from a modal.
-- Don't use pagination for fewer than 200 rows. Use search and filters instead.
-- Don't copy a competitor's colours, gradients or layout.
-- Don't add dark mode.
-
-## Public marketing site: locked
-
-The current public site is **approved as it is**: short, catchy and punchy, in the style of Notion. That covers `landing.html`, `product.html`, `pricing.html`, the guides, the public header and footer, `landing.css` and `landing.js`.
-
-- **Do not redesign, restyle or restructure it.** Leave the layout, sections, visuals, demo reel, tokens and tone alone.
-- Allowed changes:
-  - copy corrections that keep the same length and tone;
-  - legal or factual accuracy fixes (prices, the "not operated or endorsed by the Czech Police or UbyPort" line);
-  - broken-link, accessibility and performance fixes;
-  - SEO metadata.
-- If a new page or section is needed, it must reuse the existing `landing.css` classes and match the current voice: one short headline, one line of support, one button.
-- Any other change needs Joe's written go-ahead in the task.
-
-## Product rules that affect the guest screens
+- Implemented in PR #88: `pick.html` always renders when ≥1 stay (`pick_stay` no longer redirects on `len == 1`).
+- The welcome band and lane rows reuse product tokens and keep page surfaces shadow-free.
+- Claim/navigation tests cover the single-stay confirmation step.
+- The same PR includes assigned-screen enrichment, PM/controller separation, and the passport policy.
 
 **Host message:** each property may have one optional plain-text message shown on its guest registration form. Hosts edit it under the property’s Guest link settings. It is intended for a welcome note or property-specific guidance, not access codes or secrets.
 
@@ -298,15 +152,24 @@ The current public site is **approved as it is**: short, catchy and punchy, in t
 
 **Automatic UbyPort timing:** timing starts when all declared guest forms for a reservation become complete, not at check-in. “Immediate” sends then without host verification. “Delayed” sends automatically after the configured number of hours from completion (default 24), giving the host a review window but requiring no approval. Verification remains an explicit optional action and must never be fabricated merely because a report was sent.
 
-
 ## Agents and automation
+
+**Next mail production release plan:** see **[NEXT_MAIL_RELEASE.md](NEXT_MAIL_RELEASE.md)** (full backlog: SES flip, claim caps, Arrival-lane picker, assigned screen, PM controller, passport toggle).
 
 Cursor Cloud Agents and other automated contributors **must read this file**
 before proposing or shipping UI changes. When a task mentions “modern UI,”
 “Notion/Linear-style,” or “respect system theme,” **do not** interpret that as
 permission to add dark mode unless the user’s message in that task explicitly
-requests it. The guest flow follows the Ticket Wallet section, the host app the
-Effortless section, and the public site is locked.
+requests it.
+
+## Host admin hierarchy (competitive notes)
+
+When polishing the signed-in host UI, prefer clear page-header CTAs over quiet
+secondary buttons for frequent actions (calendar update, add property). Use the
+coral primary with an icon — not competitor pink/purple gradients. Keep row
+actions in the overflow menu; do not crowd tables with many colored chips.
+Czech labels should use everyday verbs (e.g. **Aktualizovat kalendáře**) rather
+than jargon when hosts will recognize the Airbo-equivalent action.
 
 ## Consent banner (not in use)
 
