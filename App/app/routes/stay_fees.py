@@ -5,9 +5,18 @@ import unicodedata
 from datetime import date
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
-from .. import access, auth, claim, db, security, stay_fee, validation
+from .. import (
+    access,
+    auth,
+    claim,
+    db,
+    security,
+    stay_fee,
+    stay_fee_remittance_pdf,
+    validation,
+)
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -150,6 +159,90 @@ def _guest_lines(apartment, period):
             "review": bool(line["auto_minor"] or local_hint),
         })
     return lines
+
+
+@router.get("/stay-fees/{apartment_id}/pdf")
+def stay_fee_pdf_download(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+
+    today = claim.prague_today()
+    default_month = _default_month(today)
+    selected_month = stay_fee.parse_month(request.query_params.get("month"))
+    if selected_month is None:
+        selected_month = default_month
+    elif selected_month > today.replace(day=1):
+        return RedirectResponse(
+            f"/stay-fees/{apartment_id}/pdf?month={stay_fee.month_key(default_month)}",
+            status_code=303,
+        )
+
+    apartment = access.apartment(request, apartment_id)
+    if not stay_fee.is_active(apartment):
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+
+    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(selected_month)}"
+    group = stay_fee.report_group(apartment, selected_month)
+    if stay_fee.report_issues(group, today):
+        return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
+    try:
+        pdf = stay_fee_remittance_pdf.render(stay_fee.hlaseni(group, today))
+    except ValueError:
+        return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
+
+    key = _period_key(group["cadence"], selected_month)
+    db.audit(
+        "stay_fee_pdf",
+        f"apartment_id={apartment['id']} period={key} total={group['total_czk']}",
+    )
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="hlaseni-poplatek-z-pobytu-{key}-{group["vs"]}.pdf"'
+            ),
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.get("/stay-fees/{apartment_id}/csv")
+def stay_fee_csv_download(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+
+    today = claim.prague_today()
+    default_month = _default_month(today)
+    selected_month = stay_fee.parse_month(request.query_params.get("month"))
+    if selected_month is None:
+        selected_month = default_month
+    elif selected_month > today.replace(day=1):
+        return RedirectResponse(
+            f"/stay-fees/{apartment_id}/csv?month={stay_fee.month_key(default_month)}",
+            status_code=303,
+        )
+
+    apartment = access.apartment(request, apartment_id)
+    if not stay_fee.is_active(apartment):
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+
+    period = stay_fee.property_period(apartment, selected_month)
+    rows = stay_fee.register_rows(period)
+    key = _period_key(period["cadence"], selected_month)
+    db.audit("stay_fee_csv", f"apartment_id={apartment['id']} period={key} rows={len(rows)}")
+    return Response(
+        stay_fee.register_csv(rows),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="evidencni-kniha-{key}-{apartment_id}.csv"'
+            ),
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.post("/stay-fees/guest-decision")
