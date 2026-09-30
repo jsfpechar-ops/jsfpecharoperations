@@ -167,11 +167,14 @@
       group.setAttribute("aria-labelledby", label.id);
     }
     var boxes = names.map(function (n, k) {
-      var wrap = document.createElement("label");
+      // No second row of labels above the boxes: "Day / Month / Year" pushed
+      // the boxes below every other field, so a date of birth beside the
+      // nationality sat a line lower. The placeholder shows the format and
+      // the accessible name says which part it is.
+      var wrap = document.createElement("span");
       wrap.className = "tw-dob-part";
-      var small = document.createElement("small");
-      small.textContent = n[0];
       var box = document.createElement("input");
+      box.setAttribute("aria-label", n[0]);
       box.type = "text";
       box.inputMode = "numeric";
       box.maxLength = n[1];
@@ -183,7 +186,6 @@
         box.setAttribute("aria-describedby", real.getAttribute("aria-describedby") || "");
         box.className = "bad";
       }
-      wrap.appendChild(small);
       wrap.appendChild(box);
       group.appendChild(wrap);
       return box;
@@ -466,7 +468,7 @@
     var hidden = document.getElementById("signature");
     var canvas = document.getElementById("sig-canvas");
     if (!pad || !hidden || !canvas) return;
-    function sync() { pad.classList.toggle("is-signed", !!hidden.value); }
+    function sync() { pad.classList.toggle("is-signed", hidden.value.indexOf("data:image/") === 0); }
     ["mouseup", "mouseleave", "touchend", "touchcancel", "pointerup", "keyup"].forEach(function (name) {
       canvas.addEventListener(name, function () { setTimeout(sync, 30); });
     });
