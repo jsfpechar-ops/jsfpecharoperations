@@ -1,5 +1,7 @@
 # PLAN — Poplatek z pobytu (local stay fee) for UbyHost · v2 (simple)
 
+> Superseded for the host side by `stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md`; the guest side stays on hold.
+
 > **What this is.** UbyHost will show each stay's guests **one total** of the local stay fee (*poplatek z pobytu*), with **one QR code** and a few international payment options.
 > - The **host declares the rate per property** (e.g. 50 Kč per person per night). UbyHost multiplies it by nights and people.
 > - People under 18 are excluded automatically. Other exemptions are declared discreetly on the form and decided by the host.

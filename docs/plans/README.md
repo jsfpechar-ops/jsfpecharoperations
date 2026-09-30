@@ -1,11 +1,11 @@
 # Implementation plans (stay fee + invoices)
 
-These plans describe features. The **guest-facing** stay fee is **on hold**; the invoice builder is **built**; a separate **host-only** stay-fee remittance tool is **planned**.
+These plans describe features. The **guest-facing** stay fee is **on hold**; the invoice builder and the separate **host-only** stay-fee remittance tool are **built**.
 
 | File | What |
 |---|---|
-| `stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md` | **Host-only remittance tool** (planned 29 Sep 2026): **optional opt-in, not onboarding**. Per-property rate + council details + úřad template, one-time fill, monthly "Měsíční hlášení" PDF (on-demand) + §3g evidence CSV + QR Platba for the council. No guest input. |
-| `stay-fee-remittance/*.html`, `*.jpg`, `*.png` | The remittance folder's design material: the monthly report document (Praha 3 + Brno variants) and the host's fee list and detail screens. **Plans only — nothing shipped to the app.** |
+| `stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md` | **Built. Host-only remittance tool**: **optional opt-in, not onboarding**. Per-property rate + council details + úřad template, one-time fill, on-demand report PDF + §3g evidence CSV + QR Platba for the council. No guest input. |
+| `stay-fee-remittance/*.html`, `*.jpg`, `*.png` | Design references for the remittance tool: report document (Praha 3 + Brno variants) and host fee list and detail screens. |
 | `PLAN_POPLATEK_Z_POBYTU.md` | The **guest-facing** stay fee (show a total + QR to guests, host marks paid). **ON HOLD — pulled back, not in the code.** Distinct from the host remittance plan above. |
 | `PLAN_GUEST_INVOICE_FEATURE.md` | **Standalone, host-only invoice builder** (free-form, unlimited line items, VAT 0/12/21 %). Not connected to a stay; no guest access. The filename is historical. **Built.** |
 | `invoice-design/invoice_pdf_reference.py` | The invoice PDF renderer (copied to `App/app/invoice_pdf.py`) |
@@ -13,7 +13,7 @@ These plans describe features. The **guest-facing** stay fee is **on hold**; the
 
 ## Session decisions (2026-09-26)
 
-- **Stay fee** — the owner pulled the feature back; it is not in the app. When it returns it must default **off** (`stay_fee_policy` `off`, rate `0`).
+- **Stay fee** — the guest-facing feature remains on hold. The host-only remittance tool is built and remains optional per property (rate `0` by default).
 - **Invoices** — **standalone and host-only.** The host builds a custom invoice at **Invoices → New invoice**: any number of line items (description, quantity, unit, unit price, VAT 0/12/21 %), full customer/supplier data. **Not tied to a stay.** No guest access; the host may e-mail a signed download link.
 - **Process** — **every change goes through a pull request the owner reviews and merges.** Production deploy is **manual only** (`Actions → Deploy production → Run workflow`, `force_confirm=DEPLOY`); a push or merge to `main` does **not** deploy.
 - **Code notes** — `validation.ico_ok()` exists; tokens use `config.secret_key()` and build serializers lazily.
