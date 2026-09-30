@@ -91,6 +91,23 @@ DEFAULT_PURPOSE = "99"
 # covers foreigners only - but they still belong in the house book.
 CZECH_CODE = "CZE"
 
+# Identity-document kinds the stay-fee register (evidenční kniha, zákon
+# 565/1990 Sb. § 3g(2)(d)) must name. The guest never picks one: stay_fee
+# derives it from nationality and the host may correct it.
+DOC_TYPES = (
+    "op", "pas", "prechodny_pobyt", "pobytova_karta_eu", "povoleni_pobyt",
+    "povoleni_pobyt_cizinec", "trvaly_pobyt", "zadatel_mezinarodni_ochrana",
+    "zadatel_docasna_ochrana",
+)
+
+
+def age_on(birth: date, when: date) -> int:
+    """Whole years between ``birth`` and ``when``."""
+    years = when.year - birth.year
+    if (when.month, when.day) < (birth.month, birth.day):
+        years -= 1
+    return years
+
 _COUNTRIES_CACHE: Optional[List[Dict[str, str]]] = None
 
 

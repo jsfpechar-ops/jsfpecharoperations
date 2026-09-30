@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS legal_entity (
     bank_account  TEXT,
     iban          TEXT,
     bic           TEXT,
+    signature_png_enc TEXT,
+    signature_name TEXT,
     vat_status               TEXT NOT NULL DEFAULT 'non_payer',
     registry_entry           TEXT,
     invoice_prefix           TEXT,
@@ -92,6 +94,16 @@ CREATE TABLE IF NOT EXISTS apartment (
     guest_message         TEXT,
     notes                 TEXT,
     passport_photo_policy TEXT NOT NULL DEFAULT 'off',
+    stay_fee_rate_czk     INTEGER NOT NULL DEFAULT 0,
+    stay_fee_cadence      TEXT NOT NULL DEFAULT 'monthly',
+    stay_fee_council_account TEXT,
+    stay_fee_council_iban TEXT,
+    stay_fee_vs           TEXT,
+    stay_fee_authority_name TEXT,
+    stay_fee_authority_address TEXT,
+    stay_fee_authority_contact TEXT,
+    stay_fee_payee        TEXT,
+    stay_fee_instruction  TEXT,
     active                INTEGER NOT NULL DEFAULT 1,
     created_at            TEXT NOT NULL
 );
@@ -154,6 +166,9 @@ CREATE TABLE IF NOT EXISTS guest (
     signature_png_enc TEXT,
     restricted_at  TEXT,
     restricted_reason TEXT,
+    doc_type       TEXT,
+    fee_host_decision TEXT,
+    fee_host_reason TEXT,
     signed_at      TEXT,
     notice_version TEXT,
     notice_lang    TEXT,
@@ -618,7 +633,53 @@ ADDED_COLUMNS = (
     ("guest", "restricted_reason", "TEXT"),
     # BE-10: workspace termination.
     ("user_account", "deletion_due_at", "TEXT"),
+    # Stay-fee remittance, host only
+    # (docs/plans/stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md).
+    ("apartment", "stay_fee_rate_czk", "INTEGER NOT NULL DEFAULT 0"),
+    ("apartment", "stay_fee_cadence", "TEXT NOT NULL DEFAULT 'monthly'"),
+    ("apartment", "stay_fee_council_account", "TEXT"),
+    ("apartment", "stay_fee_council_iban", "TEXT"),
+    ("apartment", "stay_fee_vs", "TEXT"),
+    ("apartment", "stay_fee_authority_name", "TEXT"),
+    ("apartment", "stay_fee_authority_address", "TEXT"),
+    ("apartment", "stay_fee_authority_contact", "TEXT"),
+    ("apartment", "stay_fee_payee", "TEXT"),
+    ("apartment", "stay_fee_instruction", "TEXT"),
+    ("legal_entity", "signature_png_enc", "TEXT"),
+    ("legal_entity", "signature_name", "TEXT"),
+    ("guest", "doc_type", "TEXT"),
+    ("guest", "fee_host_decision", "TEXT"),
+    ("guest", "fee_host_reason", "TEXT"),
 )
+
+# The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
+# names. A database that ran it may still hold guest-typed claims (possibly
+# disability data) and a non-zero rate that would switch the calculator on.
+# Everything is cleared once, the first time this release starts.
+_REVERTED_STAY_FEE_COLUMNS = (
+    ("guest", "fee_claim"),
+    ("reservation", "stay_fee_rate_czk"),
+    ("reservation", "stay_fee_paid_at"),
+    ("reservation", "stay_fee_paid_amount_czk"),
+    ("apartment", "stay_fee_payment_link"),
+)
+_STAY_FEE_RESET_KEY = "stay_fee_remittance_reset_done"
+
+
+def _reset_reverted_stay_fee(conn: sqlite3.Connection) -> None:
+    if conn.execute(
+        "SELECT 1 FROM settings WHERE key = ?", (_STAY_FEE_RESET_KEY,)
+    ).fetchone():
+        return
+    conn.execute("UPDATE apartment SET stay_fee_rate_czk = 0")
+    conn.execute(
+        "UPDATE guest SET doc_type = NULL, fee_host_decision = NULL, fee_host_reason = NULL"
+    )
+    for table, column in _REVERTED_STAY_FEE_COLUMNS:
+        present = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column in present:
+            conn.execute(f"UPDATE {table} SET {column} = NULL")
+    conn.execute("INSERT INTO settings (key, value) VALUES (?, '1')", (_STAY_FEE_RESET_KEY,))
 
 
 def _add_missing_columns(conn: sqlite3.Connection) -> None:
@@ -652,6 +713,7 @@ def init_db() -> None:
         _add_missing_columns(conn)
         conn.executescript(SCHEMA)
         _add_missing_columns(conn)
+        _reset_reverted_stay_fee(conn)
     finally:
         conn.close()
 
