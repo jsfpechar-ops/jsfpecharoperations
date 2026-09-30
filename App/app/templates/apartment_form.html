@@ -33,6 +33,7 @@
   {% if editing %}
     <a href="#ubyport">{{ t('apartment.form.nav.police_reporting') }}</a>
     <a href="#communication">{{ t('apartment.form.nav.guest_link') }}</a>
+    <a href="#stay-fee-settings">{{ t('apartment.form.nav.stay_fee') }}</a>
     <a href="#calendars">{{ t('apartment.form.nav.calendars') }}</a>
   {% else %}
     <a href="#ubyport">{{ t('apartment.form.nav.ubyport') }}</a>
@@ -386,6 +387,104 @@
       <p class="small muted">{{ t('apartment.form.guest_link.new_help') }}</p>
     {% endif %}
   </div>
+
+  {% if editing %}
+  <div class="panel" id="stay-fee-settings">
+    <h2 style="margin-top:0">{{ t('apartment.form.stay_fee.heading') }}</h2>
+    <p class="small muted" style="margin-top:-4px">
+      {{ t('apartment.form.stay_fee.lede') }}
+    </p>
+    {% if fee_template_peers %}
+    <div class="field">
+      <label for="fee-copy-source">{{ t('apartment.form.stay_fee.copy_label') }}</label>
+      <div class="copyrow">
+        <select id="fee-copy-source">
+          {% for peer in fee_template_peers %}
+          <option value="{{ peer.id }}"
+                  data-rate="{{ peer.stay_fee_rate_czk or 0 }}"
+                  data-cadence="{{ peer.stay_fee_cadence or 'monthly' }}"
+                  data-vs="{{ peer.stay_fee_vs or '' }}"
+                  data-account="{{ peer.stay_fee_council_account or '' }}"
+                  data-authority-name="{{ peer.stay_fee_authority_name or '' }}"
+                  data-authority-address="{{ peer.stay_fee_authority_address or '' }}"
+                  data-authority-contact="{{ peer.stay_fee_authority_contact or '' }}"
+                  data-payee="{{ peer.stay_fee_payee or '' }}"
+                  data-instruction="{{ peer.stay_fee_instruction or '' }}">{{ peer.internal_name }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn small" type="button" id="fee-copy-apply">
+          {{ t('apartment.form.stay_fee.copy_button') }}
+        </button>
+      </div>
+      <div class="hint">{{ t('apartment.form.stay_fee.copy_hint') }}</div>
+    </div>
+    {% endif %}
+    <div class="grid two">
+      <div class="field">
+        <label for="stay_fee_rate_czk">{{ t('apartment.form.stay_fee.rate_label') }}</label>
+        <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" min="0" max="50" step="1"
+               value="{{ apartment.stay_fee_rate_czk or 0 }}">
+        <div class="hint">{{ t('apartment.form.stay_fee.rate_hint') }}</div>
+      </div>
+      <div class="field">
+        <label for="stay_fee_cadence">{{ t('apartment.form.stay_fee.cadence_label') }}</label>
+        <select id="stay_fee_cadence" name="stay_fee_cadence">
+          <option value="monthly" {% if apartment.stay_fee_cadence != 'quarterly' %}selected{% endif %}>
+            {{ t('apartment.form.stay_fee.cadence.monthly') }}
+          </option>
+          <option value="quarterly" {% if apartment.stay_fee_cadence == 'quarterly' %}selected{% endif %}>
+            {{ t('apartment.form.stay_fee.cadence.quarterly') }}
+          </option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="stay_fee_vs">{{ t('apartment.form.stay_fee.vs_label') }}</label>
+        <input type="text" id="stay_fee_vs" name="stay_fee_vs" inputmode="numeric" maxlength="10"
+               value="{{ apartment.stay_fee_vs or '' }}">
+        <div class="hint">{{ t('apartment.form.stay_fee.vs_hint') }}</div>
+      </div>
+      <div class="field">
+        <label for="stay_fee_council_account">{{ t('apartment.form.stay_fee.account_label') }}</label>
+        <input type="text" id="stay_fee_council_account" name="stay_fee_council_account" maxlength="40"
+               value="{{ apartment.stay_fee_council_account or '' }}">
+        <div class="hint">{{ t('apartment.form.stay_fee.account_hint') }}</div>
+      </div>
+      <div class="field">
+        <label for="stay_fee_authority_name">{{ t('apartment.form.stay_fee.authority_name_label') }}</label>
+        <textarea id="stay_fee_authority_name" name="stay_fee_authority_name" rows="2" maxlength="200">{{ apartment.stay_fee_authority_name or '' }}</textarea>
+      </div>
+      <div class="field">
+        <label for="stay_fee_authority_address">{{ t('apartment.form.stay_fee.authority_address_label') }}</label>
+        <textarea id="stay_fee_authority_address" name="stay_fee_authority_address" rows="2" maxlength="200">{{ apartment.stay_fee_authority_address or '' }}</textarea>
+      </div>
+      <div class="field">
+        <label for="stay_fee_authority_contact">{{ t('apartment.form.stay_fee.authority_contact_label') }}</label>
+        <textarea id="stay_fee_authority_contact" name="stay_fee_authority_contact" rows="2" maxlength="200">{{ apartment.stay_fee_authority_contact or '' }}</textarea>
+      </div>
+      <div class="field">
+        <label for="stay_fee_payee">{{ t('apartment.form.stay_fee.payee_label') }}</label>
+        <input type="text" id="stay_fee_payee" name="stay_fee_payee" maxlength="60"
+               value="{{ apartment.stay_fee_payee or '' }}">
+        <div class="hint">{{ t('apartment.form.stay_fee.payee_hint') }}</div>
+      </div>
+      <div class="field">
+        <label for="stay_fee_instruction">{{ t('apartment.form.stay_fee.instruction_label') }}</label>
+        <textarea id="stay_fee_instruction" name="stay_fee_instruction" rows="3" maxlength="500">{{ apartment.stay_fee_instruction or '' }}</textarea>
+        <div class="hint">{{ t('apartment.form.stay_fee.instruction_hint') }}</div>
+      </div>
+    </div>
+    {% if apartment.stay_fee_rate_czk > 0 %}
+      {% if not (apartment.stay_fee_vs or '').strip()
+            or not (apartment.stay_fee_council_account or '').strip()
+            or not (apartment.stay_fee_authority_name or '').strip() %}
+      <p class="small warn-text">{{ t('apartment.form.stay_fee.missing_warn') }}</p>
+      {% endif %}
+      <p class="small">
+        <a href="/stay-fees/{{ apartment.id }}">{{ t('apartment.form.stay_fee.open_overview') }} &rarr;</a>
+      </p>
+    {% endif %}
+  </div>
+  {% endif %}
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('apartment.form.notes.title') }}</h2>

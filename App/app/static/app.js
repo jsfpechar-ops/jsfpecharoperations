@@ -209,6 +209,31 @@
     });
   }
 
+  function initFeeTemplateCopy() {
+    var source = document.getElementById("fee-copy-source");
+    var button = document.getElementById("fee-copy-apply");
+    if (!source || !button) return;
+    button.addEventListener("click", function () {
+      var option = source.options[source.selectedIndex];
+      if (!option || !option.value) return;
+      var values = {
+        stay_fee_rate_czk: option.getAttribute("data-rate"),
+        stay_fee_cadence: option.getAttribute("data-cadence"),
+        stay_fee_vs: option.getAttribute("data-vs"),
+        stay_fee_council_account: option.getAttribute("data-account"),
+        stay_fee_authority_name: option.getAttribute("data-authority-name"),
+        stay_fee_authority_address: option.getAttribute("data-authority-address"),
+        stay_fee_authority_contact: option.getAttribute("data-authority-contact"),
+        stay_fee_payee: option.getAttribute("data-payee"),
+        stay_fee_instruction: option.getAttribute("data-instruction")
+      };
+      Object.keys(values).forEach(function (id) {
+        var field = document.getElementById(id);
+        if (field) field.value = values[id] || "";
+      });
+    });
+  }
+
   function initHousebookPdfExport() {
     var dialog = document.getElementById("housebook-pdf-dialog");
     if (!dialog) return;
@@ -954,6 +979,7 @@
     initDetailsLinks();
     initAutomationFields();
     initControllerFields();
+    initFeeTemplateCopy();
     initCsvExport();
     initHousebookPdfExport();
     initToasts();
