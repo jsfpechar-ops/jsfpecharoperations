@@ -1,0 +1,32 @@
+{# Ticket Wallet building blocks. Import with context so t(), lang and the
+   date helpers are available:
+     {% import "guest/_ticket.html" as tw with context %}                 #}
+
+{% macro moon() -%}
+<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+{%- endmacro %}
+
+{# The line under the property name in the dark app bar. #}
+{% macro route(reservation) -%}
+<p class="tw-route"><b>{{ pass_date(reservation.date_from) }}</b> &rarr; <b>{{ pass_date(reservation.date_to) }}</b> &middot; {{ nights_label(reservation.date_from, reservation.date_to) }}</p>
+{%- endmacro %}
+
+{# One boarding pass for a registered guest (done screen). #}
+{% macro boarding_pass(name, seat, reservation, property_name) -%}
+<div class="tw-bp" style="--bp-index: {{ seat - 1 }}">
+  <div class="tw-bp-head"><span>{{ t('title') }}</span><b>{{ t('tw_registered') }}</b></div>
+  <div class="tw-bp-name">
+    <div><small>{{ t('tw_guest') }}</small><b>{{ name }}</b></div>
+    <div><small>#</small><b>{{ seat }}</b></div>
+  </div>
+  <div class="tw-bp-route">
+    <div><small>{{ t('check_in') }}</small><b>{{ pass_date(reservation.date_from) }}</b></div>
+    {{ moon() }}
+    <div class="r"><small>{{ t('check_out') }}</small><b>{{ pass_date(reservation.date_to) }}</b></div>
+  </div>
+  <div class="tw-bp-foot">
+    <div><small>{{ t('tw_property') }}</small><b>{{ property_name }}</b></div>
+    <span class="tw-barcode" aria-hidden="true"></span>
+  </div>
+</div>
+{%- endmacro %}

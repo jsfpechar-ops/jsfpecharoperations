@@ -10,6 +10,7 @@ These plans describe features. The **guest-facing** stay fee is **on hold**; the
 | `PLAN_GUEST_INVOICE_FEATURE.md` | **Standalone, host-only invoice builder** (free-form, unlimited line items, VAT 0/12/21 %). Not connected to a stay; no guest access. The filename is historical. **Built.** |
 | `invoice-design/invoice_pdf_reference.py` | The invoice PDF renderer (copied to `App/app/invoice_pdf.py`) |
 | `invoice-design/sample-*.pdf`, `*.png` | What the invoices look like |
+| `PLAN_TICKET_WALLET_V2.md` | **Guest registration, Ticket Wallet** (chosen 29 Sep 2026): every screen is a ticket with one coral button in the tear-off stub, a step tracker on the form, and a boarding pass per guest at the end. The handoff (foundation patch, full reference patch, real-app screenshots) is in `ticket-wallet/`. **Built.** |
 
 ## Session decisions (2026-09-26)
 

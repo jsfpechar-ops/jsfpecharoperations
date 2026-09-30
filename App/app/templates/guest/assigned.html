@@ -1,4 +1,7 @@
 {% extends "guest/base.html" %}
+{% import "guest/_ticket.html" as tw with context %}
+{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
+{% block tw_progress %}30{% endblock %}
 {% block content %}
 {% if can_pick_other %}
 <a class="g-back" href="/l/{{ token }}?lang={{ lang }}">&larr; {{ t('back_to_stays') }}</a>
@@ -18,7 +21,7 @@
   <div class="g-err">{{ t('claim_error_' + claim_error) if claim_error in ['bad_email','bad_party','held','already_claimed','rate','cooldown','recipient_rate','bot'] else t('error_party_size') }}</div>
 {% endif %}
 
-<div class="g-card">
+<div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_email') }}">
   <h2>{{ t('assigned_title') }}</h2>
   <p class="g-intro">{{ t('assigned_body') }}</p>
   <div class="g-private-link-note">
@@ -44,7 +47,7 @@
     {% if require_turnstile and turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_claim"></div>
     {% endif %}
-    <button class="g-btn" type="submit">{{ t('assigned_resend') }}</button>
+    <div class="tw-stub"><button class="g-btn" type="submit">{{ t('assigned_resend') }}</button></div>
   </form>
 </div>
 {% if can_pick_other %}
