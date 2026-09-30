@@ -96,7 +96,7 @@ UbyHost has three audiences, and each one has its own design direction. They all
 - `templates/guest/_ticket.html` (macros);
 - the `pass_date` Jinja global in `templating.py`.
 
-`guest.css` and `signature.js` stay as they are underneath. The skin restyles them, and the tests read them line by line.
+`guest.css` stays as it is underneath: the skin restyles it, and the tests read it line by line. `signature.js` is edited only to fix behaviour (v3 made the signature pad size itself when its step is shown), never to restyle.
 
 ### The idea
 
@@ -116,12 +116,12 @@ The guest is boarding a stay. Every screen is a ticket: a coloured **strip** say
 │ ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬░░░░░░░░░░░░   3px coral progress       │
 └──────────────────────────────────────────────────────────────┘
   ┌─────────────── ticket (white, radius 22) ────────────────┐
-  │ STEP 2 · GUEST FORM                     ← strip (coral)  │
+  │ GUEST 2 OF 3                            ← strip (coral)  │
   │  Home address                  ← serif heading           │
   │  As written in your passport.  ← muted intro             │
   │  [ field ]  [ field ]                                    │
   ◖ - - - - - - - - - - - - - - - - - - - - - - - - - - - - -◗  ← perforation + notches
-  │  [ Back ]            [ Next ▸ ]  ← stub; sticky on phones │
+  │  [ Back ] [      Continue      ]  ← stub; one line, sticky │
   └──────────────────────────────────────────────────────────┘
   help folds · host contact row · privacy line
 ```
@@ -129,29 +129,35 @@ The guest is boarding a stay. Every screen is a ticket: a coloured **strip** say
 ### Components
 
 - **App bar:** property mark, property name (one line), `EN | CS`, route line, progress line.
-- **Ticket:** `.tw-ticket` or `[data-guest-step]`. The strip text comes from `data-tw-label` or `data-step-title`. Variants: `.is-ok` (green), `.is-quiet` (ink), `.is-alert` (red).
-- **Stub:** `.tw-stub` or `.g-wizard-nav`. It holds the screen's only coral button, with Back as a ghost button beside it.
+- **Ticket:** `.tw-ticket` or `[data-guest-step]`. The strip text comes from `data-tw-label` on a ticket and from `data-tw-strip` on a form step. On the form the strip says **whose form this is** ("Guest 2 of 3", or the guest's name when editing); the heading under it names the step. Never repeat the heading in the strip. Variants: `.is-ok` (green), `.is-quiet` (ink), `.is-alert` (red).
+- **Stub:** `.tw-stub` or `.g-wizard-nav`. It holds the screen's only coral button, with Back as a compact ghost button **on the same line** (never two stacked full-width buttons: on a phone the stub is sticky and would cover the field being typed in).
 - **Stay pass (the "V1 Airline Pass"):** a dark head ("Stay 1 of 3 · Arriving today"), `29 SEP → 2 OCT` with a moon icon and the number of nights, a perforated foot with the property name, and a "That's my stay" pill. The whole pass is one link.
 - **Form controls:**
   - PIN: six cells.
-  - Party size: − / + stepper.
-  - Date of birth: Day / Month / Year boxes, with the green read-back chip "That is 14 March 1988".
+  - Party size: − / + stepper. It **never opens empty**: it starts at the number already declared, else the host's override, else 1.
+  - Date of birth: three boxes on one line (DD · MM · YYYY placeholders, `aria-label` Day/Month/Year), the same height as every other box and level with the field beside it. No second row of mini-labels above them. The green read-back chip "That is 14 March 1988" sits underneath.
   - Country: type-to-search (it matches "germ" and "DEU").
   - Purpose: chips (Tourism · Business · Visiting family · Study · Other…).
   - Document number: a drawn passport page showing where the number is.
   - Address for guest 2 onwards: a green "copied from …" card.
-  - Signature: "Sign here", then "✓ Signed".
+  - Signature: "Sign here", then "✓ Signed" — shown only when a real image was captured, never for an empty canvas.
 - **Guest tracker:** Details · Document · Home · (Photo) · Sign · Check. A finished segment is tappable to go back to it.
 - **Check step:** review rows, each with "Change". The legal information is in a grey box, and the acknowledgement sits in a coral-edged box directly above Submit.
 - **Saved / done:**
   - the green "REGISTERED" stamp;
+  - while people are still missing, the saved ticket itself carries the one button forward, and it names the person: "Register guest 2 of 3". There is no second card with its own button;
   - one boarding pass per guest, with a decorative, `aria-hidden` barcode;
   - the line "Keep this page — it is your confirmation."
 - **Host contact row:** the legal entity's name, with Call and E-mail pills. It is never UbyHost support (see the contact split above).
 
 ### Rules
 
-- One 640px column (680px from 1020px wide, on an ambient background). It never splits into two columns.
+- One 640px column (680px from 1020px wide, on a plain ambient background: no decorative lines). It never splits into two columns.
+- The app bar is the only place for the property, the dates and the nights. No second date card under it.
+- Field rhythm: 20px between every pair of fields, in a row or stacked. Labels sit 8px above their box.
+- A new step scrolls so its strip sits just under the app bar, never under it (`scroll-margin-top`).
+- Nothing may make the page scroll sideways, at any width from 320px.
+- Czech pages carry no English: the passes say "Příjezd / Odjezd".
 - Exactly **one coral button per screen**, and it lives in the stub.
 - Every enhancement is progressive:
   - The real `<input>`/`<select>` keeps its `id` and `name`, and is what gets submitted.
@@ -162,9 +168,26 @@ The guest is boarding a stay. Every screen is a ticket: a coloured **strip** say
 - Motion:
   - tickets fade and rise over 320ms;
   - stay passes stagger by 70ms and lift 3px on hover;
-  - the stamp springs over 500ms;
+  - the stamp springs from 1.3× over 500ms (a bigger start pushed a 320px page sideways);
   - boarding passes stagger by 150ms;
   - under `prefers-reduced-motion`, nothing moves.
+
+### Definition of done for any guest-page change
+
+A guest change is not finished until **all** of these pass. Reading HTML is not
+enough: the v2 release passed every markup test and still shipped a blank group
+size, a signature pad that saved nothing and a date of birth a line too low.
+
+1. `python -m pytest tests -q` (the whole suite).
+2. `python -m pytest tests/test_guest_browser_e2e.py -q -rs` with Playwright and
+   Chromium installed, and **0 skipped**. It registers a group of three in real
+   Chromium at 320, 375 and 1280px and in Czech, and measures every screen:
+   no sideways scroll, no clipped text, equal box heights, side-by-side fields
+   level, even field spacing, 44px tap targets, no visible screen-reader text.
+   CI runs it in the `guest-browser` job.
+3. Bump the `?v=` cache key in `guest/base.html` for every CSS or JS file you
+   changed, or phones keep the old file.
+4. Click through it yourself on a phone once: group of 2+, sign, save, next guest.
 
 ## Host app: Effortless
 
