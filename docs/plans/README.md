@@ -1,10 +1,12 @@
 # Implementation plans (stay fee + invoices)
 
-These plans describe features. The stay fee is **on hold**; the invoice builder is **built**.
+These plans describe features. The **guest-facing** stay fee is **on hold**; the invoice builder is **built**; a separate **host-only** stay-fee remittance tool is **planned**.
 
 | File | What |
 |---|---|
-| `PLAN_POPLATEK_Z_POBYTU.md` | Local stay fee: host rate per property, one total + QR per stay, host marks paid. **ON HOLD — pulled back, not in the code.** |
+| `stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md` | **Host-only remittance tool** (planned 29 Sep 2026): **optional opt-in, not onboarding**. Per-property rate + council details + úřad template, one-time fill, monthly "Měsíční hlášení" PDF (on-demand) + §3g evidence CSV + QR Platba for the council. No guest input. |
+| `stay-fee-remittance/*.html`, `*.jpg`, `*.png` | The remittance folder's design material: the monthly report document (Praha 3 + Brno variants) and the host's fee list and detail screens. **Plans only — nothing shipped to the app.** |
+| `PLAN_POPLATEK_Z_POBYTU.md` | The **guest-facing** stay fee (show a total + QR to guests, host marks paid). **ON HOLD — pulled back, not in the code.** Distinct from the host remittance plan above. |
 | `PLAN_GUEST_INVOICE_FEATURE.md` | **Standalone, host-only invoice builder** (free-form, unlimited line items, VAT 0/12/21 %). Not connected to a stay; no guest access. The filename is historical. **Built.** |
 | `invoice-design/invoice_pdf_reference.py` | The invoice PDF renderer (copied to `App/app/invoice_pdf.py`) |
 | `invoice-design/sample-*.pdf`, `*.png` | What the invoices look like |

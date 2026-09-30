@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Poplatek z pobytu – UbyHost</title>
+<style>
+  :root {
+    --canvas:#f7f7f5; --surface:#fff; --surface-2:#f1f1ef; --surface-3:#f3f3f1;
+    --ink:#20201e; --ink-2:#50504c; --muted:#73736e; --faint:#92928c;
+    --line:#deded9; --line-2:#c9c9c2;
+    --brand:#c85a52; --brand-action:#ad4942; --brand-soft:#f9e9e7; --brand-ink:#963e38;
+    --ok:#167044; --ok-soft:#e6f5ec; --warn:#8a5200; --warn-soft:#fff4d6;
+    --bad:#b42318; --bad-soft:#fcebea; --blue:#245cb5; --blue-bg:#e9f0fc;
+    --purple:#7840a2; --purple-bg:#f3eafa; --teal:#08736b; --teal-bg:#e1f5f2;
+    --radius:10px; --radius-sm:6px; --radius-pill:999px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 15.5px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         color: var(--ink-2); background: var(--canvas); -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); text-underline-offset: 2px; }
+  h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.035em; font-weight: 700; color: var(--ink); }
+  p.lede { color: var(--muted); font-size: 15.5px; }
+  .eyebrow { color: var(--faint); font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
+  .back-link { display: inline-flex; align-items: center; gap: 5px; font-size: 13.5px; font-weight: 600; margin-bottom: 12px; text-decoration: none; color: var(--muted); }
+  .back-link:hover { color: var(--brand); }
+
+  .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;
+                 padding: 20px 24px 16px; border-bottom: 1px solid var(--line); margin-bottom: 24px;
+                 background: color-mix(in srgb, var(--canvas) 94%, transparent); }
+  .page-header .lede { margin-bottom: 0; max-width: 660px; }
+  .page-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+           padding: 20px; margin-bottom: 18px; }
+  .panel.tight { padding: 0; overflow: hidden; }
+  .empty { text-align: center; padding: 48px 22px; color: var(--muted); }
+  .empty h2 { margin-top: 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th { text-align: left; font-size: 12.5px; color: var(--muted); padding: 12px 14px;
+       border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; font-weight: 600; }
+  td { padding: 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr { transition: background .12s ease; }
+  tbody tr:hover { background: var(--surface-2); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .clickable-row { cursor: pointer; }
+  .clickable-row:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; background: var(--brand-soft); }
+  .row-primary-link { color: var(--ink); font-weight: 650; text-decoration: none; }
+  .clickable-row:hover .row-primary-link { color: var(--brand); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .nowrap { white-space: nowrap; }
+  .small { font-size: 13px; }
+  .muted { color: var(--muted); }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+          padding: 4px 10px; border-radius: var(--radius-pill); white-space: nowrap; line-height: 1.35; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-pill); background: currentColor; opacity: .75; }
+  .pill.grey { background: #eceeec; color: #5f625f; }
+  .pill.green { background: var(--ok-soft); color: var(--ok); }
+  .pill.blue { background: var(--blue-bg); color: var(--blue); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 17px;
+         border-radius: var(--radius-sm); border: 1px solid var(--line-2); background: var(--surface);
+         color: var(--ink); font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer;
+         text-decoration: none; white-space: nowrap; transition: background .14s ease, border-color .14s ease; }
+  .btn:hover { background: var(--surface-2); border-color: var(--line-2); }
+  .btn.primary { background: var(--brand-action); border-color: var(--brand-action); color: #fff; }
+  .btn.primary:hover { background: var(--brand-hover, #963e38); border-color: var(--brand-hover, #963e38); }
+  .btn.small { padding: 7px 13px; font-size: 13.5px; }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  .btn.ghost:hover { background: var(--surface-3); color: var(--ink); }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chip { border: 1px solid var(--line-2); background: var(--surface); border-radius: var(--radius-pill);
+          padding: 7px 15px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: var(--ink-2); }
+  .chip.on { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+
+  .detail-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 0; padding: 0; overflow: hidden; }
+  .detail-metric { padding: 18px 20px; background: var(--surface); }
+  .detail-metric + .detail-metric { border-left: 1px solid var(--line); }
+  .metric-label { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+  .metric-value { font-size: 21px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink); margin-top: 6px; }
+  .metric-value.small-value { font-size: 15px; font-weight: 600; }
+
+  .copyrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .copyrow input { flex: 1 1 220px; min-width: 0; font-family: ui-monospace, Menlo, monospace; font-size: 13.5px;
+                   padding: 11px 13px; border: 1px solid var(--line-2); border-radius: var(--radius-sm);
+                   background: var(--surface); color: var(--ink); }
+  .field { margin-bottom: 16px; }
+  .field .hint { font-size: 13px; color: var(--muted); margin-top: 5px; }
+  .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 30px 0 12px; }
+  .section-heading h2 { margin: 0; font-size: 19px; font-weight: 660; color: var(--ink); }
+
+  .qr-wrap { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .qr-wrap img { width: 150px; height: 150px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  .qr-wrap .qr-meta { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div style="max-width:1120px;margin:0 auto;padding:32px 24px 96px;">
+
+    <div class="page-header">
+      <div>
+        <div class="eyebrow">Records</div>
+        <h1>Poplatek z pobytu</h1>
+        <p class="lede">Monthly municipal stay-fee totals for your properties. Click a property to see the payment details and QR.</p>
+      </div>
+      <div class="page-actions">
+        <div class="chips" style="margin:0">
+          <a class="chip" href="#">Červenec 2026</a>
+          <a class="chip on" href="#">Srpen 2026</a>
+          <a class="chip" href="#">Září 2026</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel tight">
+      <table>
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Období</th>
+            <th style="text-align:right">Lůžkodny podléhající</th>
+            <th style="text-align:right">Osvobozené</th>
+            <th style="text-align:right">Celkem</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="clickable-row" data-href="stay-fees-detail.html" tabindex="0" role="link">
+            <td><span class="row-primary-link">Apartmán Vinohrady</span><div class="small muted">Praha 3 · sazba 50 Kč</div></td>
+            <td class="nowrap">Srpen 2026</td>
+            <td class="num">83</td>
+            <td class="num">30</td>
+            <td class="num" style="font-weight:700">4 150 Kč</td>
+            <td class="nowrap"><span class="pill blue">Zobrazit</span></td>
+          </tr>
+          <tr class="clickable-row" data-href="stay-fees-detail.html" tabindex="0" role="link">
+            <td><span class="row-primary-link">Chata u lesa</span><div class="small muted">Brno · sazba 21 Kč</div></td>
+            <td class="nowrap">Q3 2026</td>
+            <td class="num">40</td>
+            <td class="num">12</td>
+            <td class="num" style="font-weight:700">840 Kč</td>
+            <td class="nowrap"><span class="pill blue">Zobrazit</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="small muted">Only properties with a rate set appear here. Set a rate on a property to enable the stay fee — it is optional and never part of onboarding.</p>
+
+  </div>
+</body>
+</html>

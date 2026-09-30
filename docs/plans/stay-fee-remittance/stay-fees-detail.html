@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Poplatek z pobytu – Srpen 2026 – UbyHost</title>
+<style>
+  :root {
+    --canvas:#f7f7f5; --surface:#fff; --surface-2:#f1f1ef; --surface-3:#f3f3f1;
+    --ink:#20201e; --ink-2:#50504c; --muted:#73736e; --faint:#92928c;
+    --line:#deded9; --line-2:#c9c9c2;
+    --brand:#c85a52; --brand-action:#ad4942; --brand-soft:#f9e9e7; --brand-ink:#963e38;
+    --ok:#167044; --ok-soft:#e6f5ec; --warn:#8a5200; --warn-soft:#fff4d6;
+    --bad:#b42318; --bad-soft:#fcebea; --blue:#245cb5; --blue-bg:#e9f0fc;
+    --radius:10px; --radius-sm:6px; --radius-pill:999px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 15.5px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         color: var(--ink-2); background: var(--canvas); -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); text-underline-offset: 2px; }
+  h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.035em; font-weight: 700; color: var(--ink); }
+  p.lede { color: var(--muted); font-size: 15.5px; }
+  .eyebrow { color: var(--faint); font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
+  .back-link { display: inline-flex; align-items: center; gap: 5px; font-size: 13.5px; font-weight: 600; margin-bottom: 12px; text-decoration: none; color: var(--muted); }
+  .back-link:hover { color: var(--brand); }
+
+  .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;
+                 padding: 20px 24px 16px; border-bottom: 1px solid var(--line); margin-bottom: 24px;
+                 background: color-mix(in srgb, var(--canvas) 94%, transparent); }
+  .page-header .lede { margin-bottom: 0; max-width: 660px; }
+  .page-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+           padding: 20px; margin-bottom: 18px; }
+  .panel.tight { padding: 0; overflow: hidden; }
+
+  .detail-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 0; padding: 0; overflow: hidden; }
+  .detail-metric { padding: 18px 20px; background: var(--surface); }
+  .detail-metric + .detail-metric { border-left: 1px solid var(--line); }
+  .metric-label { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+  .metric-value { font-size: 21px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink); margin-top: 6px; }
+  .metric-value.small-value { font-size: 15px; font-weight: 600; }
+
+  .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 30px 0 12px; }
+  .section-heading h2 { margin: 0; font-size: 19px; font-weight: 660; color: var(--ink); }
+
+  .copyrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .copyrow input { flex: 1 1 220px; min-width: 0; font-family: ui-monospace, Menlo, monospace; font-size: 13.5px;
+                   padding: 11px 13px; border: 1px solid var(--line-2); border-radius: var(--radius-sm);
+                   background: var(--surface); color: var(--ink); }
+  .field { margin-bottom: 16px; }
+  .field .hint { font-size: 13px; color: var(--muted); margin-top: 5px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 17px;
+         border-radius: var(--radius-sm); border: 1px solid var(--line-2); background: var(--surface);
+         color: var(--ink); font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer;
+         text-decoration: none; white-space: nowrap; transition: background .14s ease, border-color .14s ease; }
+  .btn:hover { background: var(--surface-2); border-color: var(--line-2); }
+  .btn.primary { background: var(--brand-action); border-color: var(--brand-action); color: #fff; }
+  .btn.primary:hover { background: #963e38; border-color: #963e38; }
+  .btn.small { padding: 7px 13px; font-size: 13.5px; }
+
+  .qr-wrap { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .qr-wrap img { width: 150px; height: 150px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  .qr-wrap .qr-meta { font-size: 13px; color: var(--muted); max-width: 320px; }
+  .qr-wrap .qr-meta code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+          padding: 4px 10px; border-radius: var(--radius-pill); white-space: nowrap; line-height: 1.35; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-pill); background: currentColor; opacity: .75; }
+  .pill.green { background: var(--ok-soft); color: var(--ok); }
+  .pill.blue { background: var(--blue-bg); color: var(--blue); }
+</style>
+</head>
+<body>
+  <div style="max-width:1120px;margin:0 auto;padding:32px 24px 96px;">
+
+    <a class="back-link" href="stay-fees-list.html">← Zpět na přehled</a>
+    <div class="page-header">
+      <div>
+        <div class="eyebrow">Poplatek z pobytu</div>
+        <h1>Apartmán Vinohrady — Srpen 2026</h1>
+        <p class="lede">Měsíční hlášení k místnímu poplatku z pobytu. Stáhněte PDF pro úřad, nebo zaplaťte přímo přes QR.</p>
+      </div>
+      <div class="page-actions">
+        <a class="btn" href="#">Stáhnout CSV</a>
+        <a class="btn primary" href="#">Stáhnout PDF</a>
+      </div>
+    </div>
+
+    <div class="panel tight">
+      <div class="detail-hero">
+        <div class="detail-metric">
+          <div class="metric-label">Lůžkodny podléhající poplatku</div>
+          <div class="metric-value">83</div>
+        </div>
+        <div class="detail-metric">
+          <div class="metric-label">Osvobozené lůžkodny</div>
+          <div class="metric-value">30</div>
+        </div>
+        <div class="detail-metric">
+          <div class="metric-label">Celková částka</div>
+          <div class="metric-value">4 150 Kč</div>
+        </div>
+        <div class="detail-metric">
+          <div class="metric-label">Variabilní symbol</div>
+          <div class="metric-value small-value">1234567890</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-heading">
+      <h2>Platba úřadu</h2>
+      <span class="pill green">Připraveno k zaplacení</span>
+    </div>
+
+    <div class="panel">
+      <div class="field">
+        <label>Číslo účtu úřadu</label>
+        <div class="copyrow">
+          <input type="text" readonly value="19-2000781379/0800">
+          <button class="btn small" type="button" data-copy>Kopírovat</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>IBAN</label>
+        <div class="copyrow">
+          <input type="text" readonly value="CZ30 0800 0000 1920 0078 1379">
+          <button class="btn small" type="button" data-copy>Kopírovat</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Variabilní symbol</label>
+        <div class="copyrow">
+          <input type="text" readonly value="1234567890">
+          <button class="btn small" type="button" data-copy>Kopírovat</button>
+        </div>
+        <div class="hint">Tento symbol vám přidělil úřad. Uveďte ho v platbě.</div>
+      </div>
+
+      <div class="qr-wrap" style="margin-top:8px">
+        <img src="qr-platba.png" alt="QR Platba pro úhradu poplatku">
+        <div class="qr-meta">
+          <strong>QR Platba</strong>
+          <p style="margin-top:6px">Naskenujte v bankovní aplikaci a zaplaťte 4 150 Kč na účet úřadu. QR kód obsahuje částku, účet i variabilní symbol.</p>
+          <code>SPD*1.0*ACC:CZ3008000000192000781379*AM:4150.00*CC:CZK*X-VS:1234567890*MSG:POPLATEK Z POBYTU 1234567890</code>
+        </div>
+      </div>
+    </div>
+
+    <p class="small muted" style="margin-top:18px">Tyto platební údaje zadává hostitel sám (účet úřadu + variabilní symbol). Nejsou součástí hlášení pro úřad — slouží jen k zaplacení.</p>
+
+  </div>
+</body>
+</html>
