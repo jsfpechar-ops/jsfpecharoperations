@@ -22,7 +22,7 @@ from . import (
     security,
     seo,
 )
-from .routes import admin, guest, invoices, legal
+from .routes import admin, guest, invoices, legal, stay_fees
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -195,6 +195,7 @@ app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), nam
 app.include_router(guest.router)
 app.include_router(admin.router)
 app.include_router(invoices.router)
+app.include_router(stay_fees.router)
 app.include_router(legal.router)
 
 
