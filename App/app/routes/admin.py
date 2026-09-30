@@ -38,6 +38,7 @@ from .. import (
     reporting,
     claim,
     security,
+    stay_fee,
     validation,
 )
 from ..templating import render
@@ -1694,6 +1695,8 @@ def _guest_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = dict(_guest_form_payload(form))
     payload["stay_from"] = _form_str(form, "stay_from") or None
     payload["stay_to"] = _form_str(form, "stay_to") or None
+    doc_type = _form_str(form, "doc_type")
+    payload["doc_type"] = doc_type if doc_type in validation.DOC_TYPES else None
     return payload
 
 
@@ -1731,6 +1734,12 @@ def _render_host_guest_form(
             "issues": issues,
             "editing": editing,
             "signature_value": _signature_for_display(guest),
+            "doc_types": validation.DOC_TYPES,
+            "selected_doc_type": (
+                stay_fee.doc_type_of(guest)
+                if guest
+                else stay_fee.default_doc_type(None)
+            ),
             "countries": codelists.nationality_options("en"),
             "purposes": codelists.purpose_options("en"),
             "has_passport_photo": reporting.guest_has_passport_photo(guest) if guest else False,
@@ -2386,5 +2395,4 @@ def _backup_status(request: Request):
         return json.loads(marker.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-
 
