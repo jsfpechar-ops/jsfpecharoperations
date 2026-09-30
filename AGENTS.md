@@ -66,6 +66,25 @@ on a case-insensitive filesystem (macOS) is the same directory as `App/app` —
 so `app/operator.py` shadows the standard library `operator` module and pytest
 fails during collection.
 
+## Changing a guest page (anything in `App/app/templates/guest/`, `guest*.css`, `ticket.js`, `signature.js`)
+
+Markup tests are not enough here: Ticket Wallet v2 passed all of them and
+still shipped a blank group size, a signature pad that saved nothing and a
+misaligned date of birth. Before you call a guest change done:
+
+```bash
+.venv/bin/python -m pytest tests -q
+.venv/bin/python -m pytest tests/test_guest_browser_e2e.py -q -rs   # must say 0 skipped
+```
+
+The second command drives the real pages in Chromium (group of three, EN and
+CS, 320/375/1280px) and measures every screen. `.cursor/install.sh` installs
+Playwright and Chromium; elsewhere run
+`pip install playwright==1.63.0 && python -m playwright install chromium`.
+Also bump the `?v=` cache key in `guest/base.html` for each CSS/JS file you
+touched. The full checklist is in `docs/DESIGN.md` ("Definition of done for
+any guest-page change").
+
 ## Merging a pull request
 
 Branch protection is not available on this private plan, so GitHub does not
