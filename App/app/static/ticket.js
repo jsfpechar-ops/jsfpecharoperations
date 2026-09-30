@@ -273,6 +273,7 @@
       }
       var wrap = document.createElement("div");
       wrap.className = "tw-combo";
+      var required = select.getAttribute("data-tw-required") || "";
       var input = document.createElement("input");
       input.type = "text";
       input.id = id + "_search";
@@ -294,6 +295,14 @@
       list.hidden = true;
       wrap.appendChild(input);
       wrap.appendChild(list);
+      // The real select is clipped and aria-hidden, so its native message has
+      // nowhere to show. Give the visible control a message of its own.
+      var error = document.createElement("p");
+      error.className = "hint tw-combo-error";
+      error.id = id + "_error";
+      error.setAttribute("role", "alert");
+      error.hidden = true;
+      wrap.appendChild(error);
       select.parentNode.insertBefore(wrap, select);
       select.classList.add("tw-vh");
       select.setAttribute("tabindex", "-1");
@@ -360,11 +369,14 @@
         input.value = o.label;
         input.classList.remove("bad");
         input.removeAttribute("aria-invalid");
+        error.hidden = true;
         open(false);
       }
       input.addEventListener("focus", function () { input.select(); render(""); });
       input.addEventListener("input", function () {
         input.removeAttribute("aria-invalid");
+        error.hidden = true;
+        if (input.getAttribute("aria-describedby") === error.id) input.removeAttribute("aria-describedby");
         render(input.value);
       });
       input.addEventListener("keydown", function (e) {
@@ -383,6 +395,11 @@
         // Mark the visible control as well: the real select is clipped and
         // aria-hidden, so a red border alone is only a colour signal.
         input.setAttribute("aria-invalid", "true");
+        if (required) {
+          error.textContent = required;
+          error.hidden = false;
+          input.setAttribute("aria-describedby", error.id);
+        }
       });
       // Other scripts change the select directly (residence copies nationality).
       document.addEventListener("change", function () { setTimeout(sync, 0); });

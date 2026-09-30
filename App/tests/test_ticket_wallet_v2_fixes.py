@@ -12,6 +12,7 @@ APP = Path(__file__).resolve().parents[1] / "app"
 JS = (APP / "static" / "ticket.js").read_text(encoding="utf-8")
 SIGNATURE = (APP / "static" / "signature.js").read_text(encoding="utf-8")
 BASE = (APP / "templates" / "guest" / "base.html").read_text(encoding="utf-8")
+FORM = (APP / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
 
 
 def test_the_search_input_is_labelled_without_moving_the_original_label():
@@ -66,11 +67,18 @@ def test_the_signature_state_listens_to_every_event_signature_js_ends_on():
     assert ended <= listened, f"missing {sorted(ended - listened)}"
 
 
-def test_an_invalid_country_marks_the_visible_control():
+def test_an_invalid_country_marks_the_visible_control_and_says_why():
     """The real select is clipped and aria-hidden, so the visible search input
-    must carry the invalid state itself, not just a red border."""
+    must carry the invalid state itself, and a text message with it."""
+    from app import i18n
+
+    assert i18n.STRINGS["en"].get("tw_country_required"), "en.tw_country_required"
+    assert i18n.STRINGS["cs"].get("tw_country_required"), "cs.tw_country_required"
+    assert FORM.count("data-tw-required=") == 2, "both country selects need the message"
     assert 'input.setAttribute("aria-invalid", "true")' in JS
     assert 'input.removeAttribute("aria-invalid")' in JS
+    assert 'error.setAttribute("role", "alert")' in JS
+    assert 'input.setAttribute("aria-describedby", error.id)' in JS
 
 
 def test_the_asset_version_is_past_the_version_these_fixes_shipped_in():

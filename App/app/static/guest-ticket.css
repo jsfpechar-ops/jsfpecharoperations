@@ -975,6 +975,7 @@
 .tw .tw-combo-list li.is-active { background: var(--surface-hover); }
 .tw .tw-combo-list li[aria-selected="true"] { color: var(--brand-ink); font-weight: 650; }
 .tw .tw-combo-list .tw-combo-none { color: var(--ink-muted); cursor: default; }
+.tw .tw-combo-error { color: var(--red); }
 .tw .tw-vh {
   position: absolute !important;
   width: 1px;
@@ -1178,6 +1179,11 @@
 .tw #host-contact a[href^="mailto:"] {
   --tw-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E");
 }
+/* The pills stack, so they need a rhythm of their own to read as two chips
+   rather than one broken block. */
+.tw #host-contact p:not(.g-intro):not(.hint) + p:not(.g-intro):not(.hint) { margin-top: var(--space-2); }
+/* A long address must wrap inside its pill instead of widening the card. */
+.tw #host-contact a { max-width: 100%; overflow-wrap: anywhere; }
 
 @media (min-width: 1020px) {
   .tw {

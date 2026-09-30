@@ -131,7 +131,7 @@
       </div>
       <div class="g-field">
         <label for="nationality">{{ t('nationality') }}</label>
-        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" required>
+        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" data-tw-required="{{ t('tw_country_required') }}" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
@@ -221,7 +221,7 @@
       </div>
       <div class="g-field">
         <label for="res_country">{{ t('res_country') }}</label>
-        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" autocomplete="country" required>
+        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" data-tw-required="{{ t('tw_country_required') }}" autocomplete="country" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
