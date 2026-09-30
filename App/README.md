@@ -180,9 +180,7 @@ that failed to render.
 
 ## What it deliberately does not do
 
-Accommodation fees (`poplatek z pobytu`) are a separate obligation to your
-municipality and are not calculated or reported here. Planning notes for a
-future module: **[docs/POPLATEK_Z_POBYTU.md](../docs/POPLATEK_Z_POBYTU.md)**.
+Calculates the local stay fee (poplatek z pobytu) per property and prepares the council report PDF, register CSV and a payment QR for the host. It does not collect the fee from guests, file the report or make the payment.
 
 ## UI and design
 

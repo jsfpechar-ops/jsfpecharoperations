@@ -13,6 +13,7 @@ you need when something has gone wrong and the answer is not in either.
 - [UbyPort error codes, and what 112 and 150 really do](#ubyport-error-codes-and-what-112-and-150-really-do)
 - [The host notification e-mail](#the-host-notification-e-mail)
 - [Guest e-mail](#guest-e-mail)
+- [Stay fee](#stay-fee)
 - [Alert kinds](#alert-kinds)
 - [Schema migrations](#schema-migrations)
 - [If the secret key is lost or rotated](#if-the-secret-key-is-lost-or-rotated)
@@ -56,6 +57,15 @@ Behaviours to know:
 The dashboard's "last updated" timestamp is a single global setting, not
 per-host, and there is no staleness threshold or alert behind it. It is the only
 in-app signal that polling has stopped.
+
+## Stay fee
+
+The host-only stay-fee remittance tool is optional per property; a zero rate
+keeps it off. From **Stay fees**, review the period, then download the council
+report PDF and register CSV. The payment QR is prepared for the host to pay the
+council; UbyHost does not collect guest payments, file reports or make that
+payment. Downloads reflect the current property settings and fee decisions, so
+keep the copies that were filed if those settings later change.
 
 ## The `submit_state` state machine
 
