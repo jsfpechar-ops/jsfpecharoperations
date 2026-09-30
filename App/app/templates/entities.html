@@ -41,6 +41,27 @@
   </div>
 {% endmacro %}
 
+{% macro signature_fields(prefix, entity, preview='') %}
+  <div class="field">
+    <label for="{{ prefix }}signature_file">{{ t('entity.signature_label') }}</label>
+    <input type="file" id="{{ prefix }}signature_file" name="signature_file" accept="image/png,image/jpeg">
+    {% if preview %}
+    <div class="hint">
+      <img src="{{ preview }}" alt="{{ t('entity.signature_label') }}" style="max-height:48px">
+    </div>
+    <label class="check">
+      <input type="checkbox" name="signature_remove" value="1">
+      {{ t('entity.signature_remove') }}
+    </label>
+    {% endif %}
+  </div>
+  <div class="field">
+    <label for="{{ prefix }}signature_name">{{ t('entity.signature_name_label') }}</label>
+    <input type="text" id="{{ prefix }}signature_name" name="signature_name" maxlength="80"
+           value="{{ (entity.signature_name or '') if entity else '' }}">
+  </div>
+{% endmacro %}
+
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end with context %}
 {{ breadcrumb([
@@ -57,8 +78,9 @@
     <h2>{{ t('entities.edit', name=edit_entity.name) }}</h2>
     <a class="btn small ghost" href="/entities">{{ t('common.close') }}</a>
   </div>
-  <form method="post" action="/entities/{{ edit_entity.id }}">
+  <form method="post" action="/entities/{{ edit_entity.id }}" enctype="multipart/form-data">
     {{ operator_fields('edit_', edit_entity) }}
+    {{ signature_fields('edit_', edit_entity, signature_preview) }}
     <div class="actions"><button class="btn primary" type="submit">{{ t('entities.save') }}</button></div>
   </form>
 </div>
@@ -140,8 +162,9 @@
 
 <div class="panel entity-add" id="entity-add">
   <h2 style="margin-top:0">{{ t('entities.add') }}</h2>
-  <form method="post" action="/entities">
+  <form method="post" action="/entities" enctype="multipart/form-data">
     {{ operator_fields('new_', none) }}
+    {{ signature_fields('new_', none) }}
     <div class="actions"><button class="btn primary" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>
 </div>

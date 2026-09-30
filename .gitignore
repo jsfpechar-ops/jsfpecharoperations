@@ -20,6 +20,13 @@ htmlcov/
 .env
 .env.*
 !.env.example
+secret_key
+*.pem
+*.key
+*.p12
+*.db
+*.db-wal
+*.db-shm
 
 # Screenshot output from tools/walkthrough.py
 .screenshots/

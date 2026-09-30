@@ -8,6 +8,7 @@ protection and the registered paths are exactly what they were.
 
 from __future__ import annotations
 
+import base64
 import json
 import secrets
 import time
@@ -18,6 +19,7 @@ from urllib.parse import quote, urlencode, urlparse
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.concurrency import run_in_threadpool
+from starlette.datastructures import UploadFile
 
 from .. import (
     access,
@@ -323,10 +325,20 @@ def entities(request: Request):
     edit_id = request.query_params.get("edit")
     if edit_id and edit_id.isdigit():
         edit_entity = access.entity(request, int(edit_id))
+    signature_preview = (
+        db.decrypt_field(edit_entity["signature_png_enc"])
+        if edit_entity and edit_entity["signature_png_enc"]
+        else ""
+    )
     return render(
         request,
         "entities.html",
-        {"entities": rows, "archived_entities": archived, "edit_entity": edit_entity},
+        {
+            "entities": rows,
+            "archived_entities": archived,
+            "edit_entity": edit_entity,
+            "signature_preview": signature_preview,
+        },
     )
 
 
@@ -355,6 +367,7 @@ CORE_ENTITY_FIELDS = (
 )
 
 VAT_STATUSES = ("non_payer", "identified", "payer")
+ENTITY_SIGNATURE_MAX_BYTES = 300 * 1024
 
 
 def _entity_post_payload(form) -> Dict[str, Any]:
@@ -427,6 +440,31 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     return None
 
 
+async def _signature_payload(form) -> Optional[Dict[str, Any]]:
+    """Validate and encrypt the optional entity signature fields."""
+    payload: Dict[str, Any] = {}
+    upload = form.get("signature_file")
+    if isinstance(upload, UploadFile) and upload.filename:
+        content = await upload.read(ENTITY_SIGNATURE_MAX_BYTES + 1)
+        if len(content) > ENTITY_SIGNATURE_MAX_BYTES:
+            return None
+        if content.startswith(b"\x89PNG"):
+            image_type = "png"
+        elif content.startswith(b"\xff\xd8\xff"):
+            image_type = "jpeg"
+        else:
+            return None
+        encoded = base64.b64encode(content).decode("ascii")
+        payload["signature_png_enc"] = db.encrypt_field(
+            f"data:image/{image_type};base64,{encoded}"
+        )
+    if form.get("signature_remove"):
+        payload["signature_png_enc"] = None
+    if "signature_name" in form:
+        payload["signature_name"] = _form_str(form, "signature_name")[:80].strip() or None
+    return payload
+
+
 def _resolve_controller_alerts(entity_id: int) -> None:
     """Clear the ``controller_missing`` card for any property that is now complete.
 
@@ -453,6 +491,10 @@ async def create_entity(request: Request):
     bad_details = _entity_details_payload(request, payload, form)
     if bad_details:
         return bad_details
+    signature = await _signature_payload(form)
+    if signature is None:
+        return _back("/entities", err=_flash(request, "flash.entities.signature_invalid"))
+    payload.update(signature)
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
     entity_id = db.insert("legal_entity", payload)
@@ -482,6 +524,10 @@ async def update_entity(entity_id: int, request: Request):
     bad_details = _entity_details_payload(request, payload, form)
     if bad_details:
         return bad_details
+    signature = await _signature_payload(form)
+    if signature is None:
+        return _back("/entities", err=_flash(request, "flash.entities.signature_invalid"))
+    payload.update(signature)
     db.update("legal_entity", entity_id, payload)
     _resolve_controller_alerts(entity_id)
     return _back("/entities", msg=_flash(request, "flash.entities.saved"))
@@ -2395,4 +2441,3 @@ def _backup_status(request: Request):
         return json.loads(marker.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-
