@@ -3538,3 +3538,15 @@ label { color: var(--ink-secondary); font-weight: 620; }
   .auth-codes { break-inside: avoid; background: #fff; border-color: #bbb; }
   .auth-codes code { border-color: #bbb; background: #fff; color: #111; }
 }
+
+.fee-lines { list-style: none; margin: 8px 0 0; padding: 0; }
+.fee-line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--line); }
+.fee-line:first-child { border-top: 0; }
+.fee-line .fee-amount { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fee-decision { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.fee-decision input[type="text"] { flex: 1 1 220px; }
+.fee-qr { display: flex; gap: 16px; align-items: flex-start; margin-top: 14px; }
+.fee-qr img { border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.fee-line .fee-hint,
+.fee-line .fee-decision,
+.fee-line details { flex: 1 1 100%; }
