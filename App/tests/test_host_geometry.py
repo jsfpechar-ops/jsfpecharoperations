@@ -129,10 +129,11 @@ def test_dashboard_actions_share_height_and_gap(base):
 
 
 def test_the_month_filter_shares_its_page_edges(base):
-    """The filter row must sit in the same lane as the table below it.
+    """The filter row must share the page lane and read as one control group.
 
     The wrap auto-centres its children; a filter that resets margin to 0
-    hangs west of the content, which a host spotted on Stay fee.
+    hangs west of the content. An auto margin on the stepper creates the
+    opposite problem by stranding Previous/Next at the east edge.
     """
     username = f"geomfilter{secrets.token_hex(4)}"
     owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
@@ -150,18 +151,70 @@ def test_the_month_filter_shares_its_page_edges(base):
             [{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}]
         )
         page = context.new_page()
-        page.goto(base + "/stay-fees?lang=en")
-        page.wait_for_selector(".host-month-filter", timeout=30000)
-        aligned = page.evaluate(
-            """() => {
-              const rect = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; };
-              return {
-                filter: rect(document.querySelector('.host-month-filter')),
-                table: rect(document.querySelector('.panel, table')),
-                title: rect(document.querySelector('.page-header, h1')),
-              };
-            }"""
-        )
+        measured = {}
+        for route in ("/stay-fees?lang=en", "/invoices?lang=en"):
+            page.goto(base + route)
+            page.wait_for_selector(".host-month-filter", timeout=30000)
+            measured[route] = page.evaluate(
+                """() => {
+                  const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+                  const edges = (selector) => {
+                    const rect = box(selector);
+                    return [Math.round(rect.left), Math.round(rect.right)];
+                  };
+                  const filter = box('.host-month-filter');
+                  const control = box('.month-control');
+                  const stepper = box('.month-stepper');
+                  return {
+                    filter: edges('.host-month-filter'),
+                    table: edges('.panel, table'),
+                    title: edges('.page-header, h1'),
+                    controlGap: Math.round(stepper.left - control.right),
+                    rightSlack: Math.round(filter.right - stepper.right),
+                  };
+                }"""
+            )
+        responsive = {}
+        for width in (1280, 1024, 390, 360):
+            page.set_viewport_size({"width": width, "height": 900})
+            for lang in ("en", "cs"):
+                for path in ("/stay-fees", "/invoices"):
+                    route = f"{path}?lang={lang}"
+                    page.goto(base + route)
+                    page.wait_for_selector(".host-month-filter", timeout=30000)
+                    responsive[(width, route)] = page.evaluate(
+                        """() => {
+                          const root = document.documentElement;
+                          const filter = document.querySelector('.host-month-filter');
+                          const bounds = filter.getBoundingClientRect();
+                          const children = [...filter.children].filter(
+                            (element) => getComputedStyle(element).display !== 'none'
+                          );
+                          const buttons = [...filter.querySelectorAll('.month-stepper .btn')];
+                          return {
+                            overflow: root.scrollWidth > root.clientWidth + 1,
+                            childOutside: children.some((element) => {
+                              const box = element.getBoundingClientRect();
+                              return box.left < bounds.left - 1 || box.right > bounds.right + 1;
+                            }),
+                            clippedText: children.concat(buttons).some(
+                              (element) => element.scrollWidth > element.clientWidth + 1
+                            ),
+                            buttonHeights: buttons.map(
+                              (button) => Math.round(button.getBoundingClientRect().height)
+                            ),
+                          };
+                        }"""
+                    )
         browser.close()
-    assert aligned["filter"] == aligned["table"], "the month filter must align with the table below it"
-    assert aligned["filter"][0] == aligned["title"][0], "the month filter must align with the page title"
+    for route, geometry in measured.items():
+        assert geometry["filter"] == geometry["table"], f"{route}: filter must align with the table below"
+        assert geometry["filter"][0] == geometry["title"][0], f"{route}: filter must align with the title"
+        assert 8 <= geometry["controlGap"] <= 24, f"{route}: period controls must remain one compact group"
+        assert geometry["rightSlack"] > 40, f"{route}: stepper must not be stranded at the far edge"
+    for (width, route), geometry in responsive.items():
+        assert not geometry["overflow"], f"{width}px {route}: page must not scroll sideways"
+        assert not geometry["childOutside"], f"{width}px {route}: filter controls must stay in their lane"
+        assert not geometry["clippedText"], f"{width}px {route}: translated controls must not clip"
+        expected_height = 44 if width <= 600 else 42
+        assert geometry["buttonHeights"] == [expected_height, expected_height]
