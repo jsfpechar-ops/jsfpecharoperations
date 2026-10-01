@@ -135,14 +135,25 @@ def stay_fee_detail(apartment_id: int, request: Request):
         )
 
     apartment = access.apartment(request, apartment_id)
-    if not stay_fee.is_active(apartment):
+    if not apartment or (
+        not stay_fee.is_active(apartment)
+        and not stay_fee_filing.covering(apartment["id"], selected_month)
+    ):
         return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
 
     correcting = request.query_params.get("correct") == "1"
-    live = correcting
-    period = stay_fee.property_period(apartment, selected_month, live_only=live)
+    sealed = stay_fee_filing.covering(apartment["id"], selected_month) if correcting else None
+    if correcting and sealed:
+        period = stay_fee.property_period(
+            apartment,
+            stay_fee_filing.period_anchor(sealed),
+            live_only=True,
+            cadence=sealed["cadence"],
+        )
+    else:
+        period = stay_fee.property_period(apartment, selected_month, live_only=correcting)
     group = stay_fee.report_group(
-        apartment, selected_month, live_only=live, period=period
+        apartment, selected_month, live_only=correcting, period=period
     )
     frozen = bool(period and period.get("frozen") and not correcting)
     issues: list[str] = []
@@ -230,26 +241,24 @@ def stay_fee_pdf_download(apartment_id: int, request: Request):
         )
 
     apartment = access.apartment(request, apartment_id)
-    if not stay_fee.is_active(apartment):
-        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
-
     back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(selected_month)}"
-    key = _period_key(stay_fee.cadence_of(apartment), selected_month)
-    row = stay_fee_filing.latest(apartment["id"], key)
+    row = stay_fee_filing.covering(apartment["id"], selected_month) if apartment else None
+    if not apartment or (not row and not stay_fee.is_active(apartment)):
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
     if not row:
         return _back(back_path, err=_flash(request, "flash.stay_fees.not_saved"))
     pdf = stay_fee_filing.pdf_bytes(row)
-    group = stay_fee.report_group(apartment, selected_month)
     db.audit(
         "stay_fee_pdf",
-        f"apartment_id={apartment['id']} period={key} total={group['total_czk']}",
+        f"apartment_id={apartment['id']} period={row['period_key']} total={row['total_due_czk']}",
     )
     return Response(
         pdf,
         media_type="application/pdf",
         headers={
             "Content-Disposition": (
-                f'attachment; filename="hlaseni-poplatek-z-pobytu-{key}-{group["vs"]}.pdf"'
+                f'attachment; filename="hlaseni-poplatek-z-pobytu-{row["period_key"]}-'
+                f'{stay_fee.vs_of(apartment)}.pdf"'
             ),
             "Cache-Control": "no-store",
         },
@@ -274,22 +283,20 @@ def stay_fee_csv_download(apartment_id: int, request: Request):
         )
 
     apartment = access.apartment(request, apartment_id)
-    if not stay_fee.is_active(apartment):
-        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
-
     back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(selected_month)}"
-    key = _period_key(stay_fee.cadence_of(apartment), selected_month)
-    row = stay_fee_filing.latest(apartment["id"], key)
+    row = stay_fee_filing.covering(apartment["id"], selected_month) if apartment else None
+    if not apartment or (not row and not stay_fee.is_active(apartment)):
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
     if not row:
         return _back(back_path, err=_flash(request, "flash.stay_fees.not_saved"))
     data = stay_fee_filing.csv_bytes(row)
-    db.audit("stay_fee_csv", f"apartment_id={apartment['id']} period={key} sealed=1")
+    db.audit("stay_fee_csv", f"apartment_id={apartment['id']} period={row['period_key']} sealed=1")
     return Response(
         data,
         media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": (
-                f'attachment; filename="evidencni-kniha-{key}-{apartment_id}.csv"'
+                f'attachment; filename="evidencni-kniha-{row["period_key"]}-{apartment_id}.csv"'
             ),
             "Cache-Control": "no-store",
         },
@@ -382,14 +389,27 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(today)
     back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
     correcting = _form_str(form, "correct") == "1"
-    period = stay_fee.property_period(apartment, month, live_only=True)
-    group = stay_fee.report_group(apartment, month, live_only=True, period=period)
+    sealed = stay_fee_filing.covering(apartment["id"], month)
+    if correcting:
+        if not sealed:
+            return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
+        cadence = sealed["cadence"]
+        calc_month = stay_fee_filing.period_anchor(sealed)
+    else:
+        cadence = stay_fee.cadence_of(apartment)
+        calc_month = month
+    period = stay_fee.property_period(
+        apartment, calc_month, live_only=True, cadence=cadence
+    )
+    group = stay_fee.report_group(
+        apartment, calc_month, live_only=True, period=period, cadence=cadence
+    )
     issues = stay_fee.report_issues(group, today)
     if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"]):
         issues.append("stay_fees.issue.unsigned")
     if issues:
         return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
-    key = stay_fee_filing.period_key(group["cadence"], month)
+    key = stay_fee_filing.period_key(group["cadence"], group["first"])
     if stay_fee_filing.latest(apartment["id"], key) and not correcting:
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
     rate = stay_fee.clamp_rate(_form_str(form, "rate_czk") or apartment["stay_fee_rate_czk"])
@@ -404,16 +424,19 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
             collected[line["guest_id"]] = parsed if parsed is not None else line["amount_czk"]
         if period["lines"] and _form_str(form, "confirm_collected") != "1":
             return _back(back_path, err=_flash(request, "flash.stay_fees.confirm_collected"))
-    if correcting:
-        stay_fee_filing.start_correction(apartment["id"], key)
-    version = stay_fee_filing.latest_version(apartment["id"], key) + 1
     try:
         stay_fee_filing.save(
-            apartment, month, rate_czk=rate, collected=collected, issued_on=today, version=version,
+            apartment,
+            group["first"],
+            rate_czk=rate,
+            collected=collected,
+            issued_on=today,
+            cadence=group["cadence"],
+            replacing_id=sealed["id"] if correcting else None,
         )
     except ValueError:
         return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
     except sqlite3.IntegrityError:
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
-    db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key} v={version}")
+    db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.period_saved"))

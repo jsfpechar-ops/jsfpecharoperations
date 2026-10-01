@@ -14,20 +14,58 @@ def period_key(cadence: str, month: date) -> str:
     return stay_fee.month_key(month)
 
 
+def overlap_keys(cadence: str, month: date) -> list:
+    """Period keys whose dates intersect the period of ``cadence`` containing month."""
+    if cadence == "quarterly":
+        first, _last = stay_fee.period_bounds("quarterly", month)
+        keys = [period_key("quarterly", first)]
+        keys.extend(
+            stay_fee.month_key(stay_fee.shift_month(first, offset)) for offset in range(3)
+        )
+        return keys
+    return [period_key("monthly", month), period_key("quarterly", month)]
+
+
+def period_anchor(row: Dict[str, Any]) -> date:
+    """First day of the period a filing row was sealed for."""
+    key = row["period_key"]
+    if "-Q" in key:
+        year_s, quarter_s = key.split("-Q")
+        return date(int(year_s), (int(quarter_s) - 1) * 3 + 1, 1)
+    parsed = stay_fee.parse_month(key)
+    if parsed is None:
+        raise ValueError(f"bad period key {key}")
+    return parsed
+
+
+def _active(apartment_id: int, keys: list) -> Optional[Dict[str, Any]]:
+    if not keys:
+        return None
+    placeholders = ", ".join("?" for _ in keys)
+    return db.query_one(
+        "SELECT * FROM stay_fee_filing WHERE apartment_id = ? AND superseded_at IS NULL "
+        f"AND period_key IN ({placeholders}) ORDER BY created_at DESC, id DESC LIMIT 1",
+        (apartment_id, *keys),
+    )
+
+
+def covering(apartment_id: int, month: date) -> Optional[Dict[str, Any]]:
+    """Newest sealed filing whose period contains ``month``, either cadence."""
+    return _active(apartment_id, overlap_keys("monthly", month))
+
+
+def foreign_overlap(apartment_id: int, cadence: str, month: date) -> Optional[Dict[str, Any]]:
+    """A sealed filing that intersects this period but is not this period itself."""
+    own = period_key(cadence, month)
+    return _active(apartment_id, [key for key in overlap_keys(cadence, month) if key != own])
+
+
 def latest(apartment_id: int, key: str) -> Optional[Dict[str, Any]]:
     return db.query_one(
         "SELECT * FROM stay_fee_filing WHERE apartment_id = ? AND period_key = ? "
         "AND superseded_at IS NULL ORDER BY version DESC LIMIT 1",
         (apartment_id, key),
     )
-
-
-def latest_version(apartment_id: int, key: str) -> int:
-    row = db.query_one(
-        "SELECT MAX(version) AS v FROM stay_fee_filing WHERE apartment_id = ? AND period_key = ?",
-        (apartment_id, key),
-    )
-    return int(row["v"] or 0)
 
 
 def pdf_bytes(row: Dict[str, Any]) -> bytes:
@@ -56,14 +94,20 @@ def save(
     rate_czk: int,
     collected: Dict[int, int],
     issued_on: date,
-    version: int,
+    cadence: Optional[str] = None,
+    replacing_id: Optional[int] = None,
 ) -> int:
-    """Seal a period; returns the new filing row id."""
-    period = stay_fee.property_period(apartment, month, live_only=True)
+    """Seal a period; returns the new filing row id.
+
+    The previous version is marked superseded in the same transaction as the
+    insert. A failure leaves the earlier file downloadable.
+    """
+    chosen = cadence if cadence in stay_fee.CADENCES else stay_fee.cadence_of(apartment)
+    period = stay_fee.property_period(apartment, month, live_only=True, cadence=chosen)
     if period is None:
         raise ValueError("inactive property")
-    group = stay_fee.report_group(apartment, month, live_only=True, period=period)
-    key = period_key(group["cadence"], month)
+    group = stay_fee.report_group(apartment, month, live_only=True, period=period, cadence=chosen)
+    key = period_key(group["cadence"], group["first"])
     pdf = stay_fee_remittance_pdf.render(stay_fee.hlaseni(group, issued_on))
     csv = stay_fee.register_csv(stay_fee.register_rows(period))
     due = group["total_czk"]
@@ -74,38 +118,57 @@ def save(
         "lines": period["lines"],
     }
     now = db.utcnow()
-    return db.insert("stay_fee_filing", {
-        "apartment_id": apartment["id"],
-        "period_key": key,
-        "version": version,
-        "cadence": group["cadence"],
-        "rate_czk": rate_czk,
-        "liable_days": group["liable_nights"],
-        "exempt_days": group["exempt_nights"],
-        "total_due_czk": due,
-        "total_collected_czk": collected_total,
-        "pdf_enc": db.encrypt_blob(pdf),
-        "csv_enc": db.encrypt_blob(csv),
-        "payload_enc": db.encrypt_field(json.dumps(payload_obj, sort_keys=True)),
-        "created_at": now,
-        "superseded_at": None,
-    })
-
-
-def start_correction(apartment_id: int, key: str) -> None:
-    row = latest(apartment_id, key)
-    if row:
-        db.update("stay_fee_filing", row["id"], {"superseded_at": db.utcnow()})
+    payload_enc = db.encrypt_field(json.dumps(payload_obj, sort_keys=True))
+    with db.immediate() as cur:
+        if replacing_id is not None:
+            cur.execute(
+                "UPDATE stay_fee_filing SET superseded_at = ? "
+                "WHERE id = ? AND apartment_id = ? AND superseded_at IS NULL",
+                (now, replacing_id, apartment["id"]),
+            )
+            if cur.rowcount != 1:
+                raise ValueError("filing changed")
+        else:
+            keys = overlap_keys(group["cadence"], group["first"])
+            placeholders = ", ".join("?" for _ in keys)
+            cur.execute(
+                "SELECT id FROM stay_fee_filing WHERE apartment_id = ? "
+                f"AND superseded_at IS NULL AND period_key IN ({placeholders}) LIMIT 1",
+                (apartment["id"], *keys),
+            )
+            if cur.fetchone():
+                raise ValueError("overlaps saved period")
+        cur.execute(
+            "SELECT COALESCE(MAX(version), 0) AS v FROM stay_fee_filing "
+            "WHERE apartment_id = ? AND period_key = ?",
+            (apartment["id"], key),
+        )
+        version = int(cur.fetchone()["v"]) + 1
+        cur.execute(
+            "INSERT INTO stay_fee_filing ("
+            "apartment_id, period_key, version, cadence, rate_czk, liable_days, exempt_days, "
+            "total_due_czk, total_collected_czk, pdf_enc, csv_enc, payload_enc, created_at, "
+            "superseded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
+            (
+                apartment["id"], key, version, group["cadence"], rate_czk,
+                group["liable_nights"], group["exempt_nights"], due, collected_total,
+                db.encrypt_blob(pdf), db.encrypt_blob(csv), payload_enc, now,
+            ),
+        )
+        return int(cur.lastrowid)
 
 
 def frozen_summary(row: Dict[str, Any], apartment) -> Dict[str, Any]:
     """Shape compatible with property_period for a sealed row."""
+    anchor = period_anchor(row)
+    first, last = stay_fee.period_bounds(row["cadence"], anchor)
     return {
         "apartment": apartment,
         "cadence": row["cadence"],
-        "first": None,
-        "last": None,
-        "label": row["period_key"],
+        "first": first,
+        "last": last,
+        "label": stay_fee.period_label_cs(row["cadence"], anchor),
+        "period_key": row["period_key"],
         "rate_czk": row["rate_czk"],
         "lines": payload(row).get("lines", []),
         "liable_nights": row["liable_days"],

@@ -11,8 +11,10 @@ The rules, in one place (zákon č. 565/1990 Sb.):
 * A night belongs to the period its date falls in (the night of 31 Aug counts
   in August, the night of 1 Sep in September). Praha 1: "na konci měsíce je
   nutné spočítat dny a přiřadit je do správného měsíce".
-* Out of scope (§3a): a stay longer than 60 consecutive calendar days, i.e.
-  nights + 1 > 60. Such a stay is neither liable nor exempt; it is not counted.
+* Out of scope (§3a): more than 60 nights. A stay of exactly 60 nights (61
+  calendar days) follows the facility's recorded council ruling:
+  ``calendar_days`` excludes it, ``nights`` counts it. With no ruling the stay
+  is still calculated and finalization is blocked.
 * Exempt: under 18 on the arrival day (§3b(1)(b)), or the host chose
   ``exempt`` (with a reason). ``charge`` forces liable - the correction for a
   wrong birth date, never a way to charge a real minor.
@@ -256,19 +258,43 @@ _GUESTS_SQL = (
 )
 
 
-def property_period(apartment, month: date, *, live_only: bool = False) -> Optional[Dict[str, Any]]:
+def _scope_rule(apartment) -> str:
+    try:
+        return (apartment["stay_fee_scope_rule"] or "").strip()
+    except (KeyError, IndexError):
+        return ""
+
+
+def _apply_scope_boundary(share: Dict[str, Any], apartment) -> None:
+    """Apply a recorded 60-night ruling. Exactly 60 nights is 61 calendar days."""
+    if not share.get("threshold_nights"):
+        return
+    if _scope_rule(apartment) != "calendar_days":
+        return
+    share["status"] = "not_subject"
+    share["liable_nights"] = 0
+    share["exempt_nights"] = 0
+    share["auto_minor"] = False
+
+
+def property_period(
+    apartment,
+    month: date,
+    *,
+    live_only: bool = False,
+    cadence: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
     """Figures for one property and the period (of its cadence) containing month."""
-    cadence = cadence_of(apartment)
+    chosen = cadence if cadence in CADENCES else cadence_of(apartment)
     if not live_only:
         from . import stay_fee_filing
 
-        key = stay_fee_filing.period_key(cadence, month)
-        row = stay_fee_filing.latest(apartment["id"], key)
+        row = stay_fee_filing.covering(apartment["id"], month)
         if row:
             return stay_fee_filing.frozen_summary(row, apartment)
     if not is_active(apartment):
         return None
-    first, last = period_bounds(cadence, month)
+    first, last = period_bounds(chosen, month)
     rate = int(apartment["stay_fee_rate_czk"])
     lines: List[Dict[str, Any]] = []
     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
@@ -278,6 +304,7 @@ def property_period(apartment, month: date, *, live_only: bool = False) -> Optio
                              first, last)
         if share is None:
             continue
+        _apply_scope_boundary(share, apartment)
         share.update({
             "reservation_id": row["res_id"],
             "name": f"{row['first_name'] or ''} {row['surname'] or ''}".strip(),
@@ -290,10 +317,10 @@ def property_period(apartment, month: date, *, live_only: bool = False) -> Optio
     liable = sum(line["liable_nights"] for line in lines)
     return {
         "apartment": apartment,
-        "cadence": cadence,
+        "cadence": chosen,
         "first": first,
         "last": last,
-        "label": period_label_cs(cadence, month),
+        "label": period_label_cs(chosen, first),
         "rate_czk": rate,
         "lines": lines,
         "liable_nights": liable,
@@ -303,13 +330,20 @@ def property_period(apartment, month: date, *, live_only: bool = False) -> Optio
 
 
 def owner_periods(owner_user_id, month: date) -> List[Dict[str, Any]]:
-    """The list page: every non-archived property with a rate > 0."""
+    """The list page: active properties, plus disabled ones that still have a sealed period."""
     rows = db.query(
         "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
-        "AND stay_fee_rate_czk > 0 ORDER BY internal_name, id",
+        "AND (stay_fee_rate_czk > 0 OR id IN ("
+        "SELECT apartment_id FROM stay_fee_filing WHERE superseded_at IS NULL)) "
+        "ORDER BY internal_name, id",
         (owner_user_id,),
     )
-    return [property_period(row, month) for row in rows]
+    periods = []
+    for row in rows:
+        period = property_period(row, month)
+        if period is not None:
+            periods.append(period)
+    return periods
 
 
 # --- the report (one hlášení = one payer + one VS) --------------------------
@@ -324,21 +358,28 @@ def report_group(
     *,
     live_only: bool = False,
     period: Optional[Dict[str, Any]] = None,
+    cadence: Optional[str] = None,
 ) -> Dict[str, Any]:
     """One hlášení and register per facility (§3g), even when VS is shared."""
     vs = vs_of(apartment)
     if period is None:
-        period = property_period(apartment, month, live_only=live_only)
+        period = property_period(apartment, month, live_only=live_only, cadence=cadence)
     periods = [period] if period else []
-    cadence = cadence_of(apartment)
-    first, last = period_bounds(cadence, month)
+    if period is not None and period.get("first") and period.get("last"):
+        cadence = period["cadence"]
+        first, last = period["first"], period["last"]
+        label = period.get("label") or period_label_cs(cadence, first)
+    else:
+        cadence = cadence if cadence in CADENCES else cadence_of(apartment)
+        first, last = period_bounds(cadence, month)
+        label = period_label_cs(cadence, month)
     return {
         "anchor": apartment,
         "vs": vs,
         "cadence": cadence,
         "first": first,
         "last": last,
-        "label": period_label_cs(cadence, month),
+        "label": label,
         "periods": periods,
         "liable_nights": sum(p["liable_nights"] for p in periods),
         "exempt_nights": sum(p["exempt_nights"] for p in periods),
@@ -362,6 +403,11 @@ def report_issues(group, today: date) -> List[str]:
         issues.append("stay_fees.issue.no_payer")
     for period in group["periods"]:
         issues.extend(_period_line_issues(anchor, period))
+    if group.get("first"):
+        from . import stay_fee_filing
+
+        if stay_fee_filing.foreign_overlap(anchor["id"], group["cadence"], group["first"]):
+            issues.append("stay_fees.issue.overlaps_saved")
     return list(dict.fromkeys(issues))
 
 
