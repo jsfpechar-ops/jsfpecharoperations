@@ -343,7 +343,7 @@ def test_the_birth_date_field_reads_the_date_back_and_accepts_a_pasted_iso_date(
 
         cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
         assert cs_page.status_code == 200
-        assert "Den, měsíc, rok — např. 04.07.1990 pro 4. července 1990." in cs_page.text
+        assert 'placeholder="DD.MM.RRRR"' in cs_page.text
         assert 'data-template="Tedy %(date)s."' in cs_page.text
         assert 'data-locale="cs"' in cs_page.text
     finally:
