@@ -4,8 +4,7 @@
 {% block content %}
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('stay_fees.title'), t('stay_fees.lede'), '', '', t('nav.records'), '') }}
-{% set form_action = '/stay-fees' %}
-{% include "_stay_fee_period_filter.html" %}
+{% include "_host_month_filter.html" %}
 {% if periods %}
 <div class="panel tight scroll-x">
   <table class="table-cards">

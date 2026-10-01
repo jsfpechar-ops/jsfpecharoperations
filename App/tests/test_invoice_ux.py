@@ -82,6 +82,49 @@ def _items(**over):
     return data
 
 
+def test_invoice_list_month_filter_matches_issue_date(host, monkeypatch):
+    from datetime import date
+
+    from app import claim
+
+    monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
+    entity_id = _add_entity()
+    owner = _owner()
+    now = db.utcnow()
+    for issue_date, number in (("2026-08-05", "2026-0008"), ("2026-09-10", "2026-0009")):
+        db.execute(
+            "INSERT INTO invoice (legal_entity_id, kind, seq_year, seq_no, number, vs, lang,"
+            " vat_status, issue_date, seller_name, seller_seat, buyer_name, total_haler,"
+            " created_at, issued_at, owner_user_id)"
+            " VALUES (?, 'invoice', 2026, ?, ?, ?, 'cs', 'non_payer',"
+            " ?, 'UI s.r.o.', 'Praha 1', 'Buyer', 1000, ?, ?, ?)",
+            (
+                entity_id,
+                int(number.split("-")[1]),
+                number,
+                number.replace("-", ""),
+                issue_date,
+                now,
+                now,
+                owner,
+            ),
+        )
+
+    all_page = host.get("/invoices")
+    assert all_page.status_code == 200
+    assert "2026-0008" in all_page.text
+    assert "2026-0009" in all_page.text
+    assert 'type="month"' in all_page.text
+    assert "host-month-filter" in all_page.text
+
+    august = host.get("/invoices?month=2026-08")
+    assert august.status_code == 200
+    assert "2026-0008" in august.text
+    assert "2026-0009" not in august.text
+    assert 'value="2026-08"' in august.text
+    assert 'href="/invoices"' in august.text  # All dates when filtered
+
+
 def test_the_builder_form_is_a_free_form_with_items(host):
     _add_entity()
     page = host.get("/invoices/new")

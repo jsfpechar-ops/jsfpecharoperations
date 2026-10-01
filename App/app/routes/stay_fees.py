@@ -12,6 +12,7 @@ from .. import (
     auth,
     claim,
     db,
+    list_month_filter,
     security,
     stay_fee,
     stay_fee_filing,
@@ -43,16 +44,20 @@ def _default_month(today: date) -> date:
     return stay_fee.previous_month(today)
 
 
-def _period_filter_context(selected_month: date, today: date) -> dict:
-    """Month picker bounds and prev/next links (no open-ended chip rail)."""
-    max_month = today.replace(day=1)
-    next_month = stay_fee.shift_month(selected_month, 1)
+def _month_filter_template(
+    selected_month: date,
+    today: date,
+    *,
+    form_action: str = "/stay-fees",
+    filter_id: str = "stay-fee-period",
+) -> dict:
     return {
-        "month_key": stay_fee.month_key(selected_month),
-        "max_month_key": stay_fee.month_key(max_month),
-        "prev_month_key": stay_fee.month_key(stay_fee.shift_month(selected_month, -1)),
-        "next_month_key": (
-            stay_fee.month_key(next_month) if next_month <= max_month else None
+        "filter_id": filter_id,
+        "form_action": form_action,
+        "period_label_key": "stay_fees.filter.period",
+        "hint_label_key": "stay_fees.filter.hint",
+        **list_month_filter.month_filter_nav(
+            selected_month, today, month_required=True
         ),
     }
 
@@ -89,7 +94,7 @@ def stay_fees_list(request: Request):
         "nav": "stay_fees",
         "periods": rows,
         "selected_month": selected_month,
-        **_period_filter_context(selected_month, today),
+        **_month_filter_template(selected_month, today),
     })
 
 
@@ -129,7 +134,12 @@ def stay_fee_detail(apartment_id: int, request: Request):
     return render(request, "stay_fee_detail.html", {
         "nav": "stay_fees",
         "apartment": apartment,
-        **_period_filter_context(selected_month, today),
+        **_month_filter_template(
+            selected_month,
+            today,
+            form_action=f"/stay-fees/{apartment_id}",
+            filter_id="stay-fee-detail-period",
+        ),
         "period": period,
         "group": group,
         "issues": issues,

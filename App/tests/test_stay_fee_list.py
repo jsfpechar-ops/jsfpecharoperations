@@ -205,6 +205,7 @@ def test_period_filter_uses_month_picker_not_chip_rail(host):
     assert 'href="/stay-fees?month=2026-07"' in response.text
     assert 'href="/stay-fees?month=2026-09"' in response.text
     assert 'class="chip' not in response.text
+    assert "host-month-filter" in response.text
 
 
 def test_period_filter_reaches_old_months(host):

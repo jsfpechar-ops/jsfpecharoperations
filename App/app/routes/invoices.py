@@ -20,6 +20,7 @@ from .. import (
     host_i18n,
     invoice_links,
     invoices,
+    list_month_filter,
     mail,
     mail_notify,
     payments,
@@ -156,11 +157,38 @@ def invoices_list(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    rows = db.query(
-        "SELECT * FROM invoice WHERE owner_user_id IS ? ORDER BY issue_date DESC, id DESC",
-        (access.owner_id(request),),
+    today = claim.prague_today()
+    selected_month = list_month_filter.parse_month_param(request.query_params.get("month"))
+    if selected_month and selected_month > today.replace(day=1):
+        return RedirectResponse("/invoices", status_code=303)
+    owner_id = access.owner_id(request)
+    if selected_month:
+        first, last = list_month_filter.month_bounds(selected_month)
+        rows = db.query(
+            "SELECT * FROM invoice WHERE owner_user_id IS ? AND issue_date >= ? "
+            "AND issue_date <= ? ORDER BY issue_date DESC, id DESC",
+            (owner_id, first.isoformat(), last.isoformat()),
+        )
+    else:
+        rows = db.query(
+            "SELECT * FROM invoice WHERE owner_user_id IS ? ORDER BY issue_date DESC, id DESC",
+            (owner_id,),
+        )
+    return render(
+        request,
+        "invoices.html",
+        {
+            "nav": "invoices",
+            "invoices": rows,
+            "filter_id": "invoice-list",
+            "form_action": "/invoices",
+            "period_label_key": "invoices.filter.period",
+            "hint_label_key": "invoices.filter.hint",
+            **list_month_filter.month_filter_nav(
+                selected_month, today, month_required=False
+            ),
+        },
     )
-    return render(request, "invoices.html", {"nav": "invoices", "invoices": rows})
 
 
 @router.get("/invoices/new")
