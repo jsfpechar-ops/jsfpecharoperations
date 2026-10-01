@@ -117,7 +117,7 @@
 .host-workspace .section-nav { background: transparent; padding: 0; box-shadow: none; }
 .host-workspace .section-nav a { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: 12px; }
 .host-workspace .saved-views:empty { display: none; }
-.host-workspace .saved-views { margin: 0 0 15px; }
+.host-workspace .saved-views { margin: 0 auto 15px; }
 .host-workspace .focus-card { background: white; border: 1px solid var(--line); box-shadow: none; border-left: 4px solid var(--brand); }
 .host-workspace .focus-title { font-size: 19px; }
 .host-workspace .focus-meta { font-size: 12px; }
@@ -285,7 +285,7 @@ body.host-workspace .pill.red { color: var(--red); background: var(--red-bg); bo
 .host-workspace .dashboard-stats .stat-overdue { background: #f9d7d3; border-color: #efb9b2; }
 .host-workspace .dashboard-stats .stat-overdue strong,
 .host-workspace .dashboard-stats .stat-overdue span { color: #ab2015; }
-.host-workspace .host-month-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; padding: 0; border: 0; background: none; }
+.host-workspace .host-month-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 auto 18px; padding: 0; border: 0; background: none; }
 .host-workspace .host-month-filter label { font-size: 13px; font-weight: 700; color: var(--ink-secondary); }
 .host-workspace .host-month-filter input[type=month] { width: 12rem; height: var(--action-height); margin: 0; background: white; border: 1px solid var(--border-strong); border-radius: 9px; padding: 8px 12px; font-weight: 650; }
 .host-workspace .month-control { position: relative; display: flex; align-items: center; flex: 0 1 auto; }

@@ -126,3 +126,42 @@ def test_dashboard_actions_share_height_and_gap(base):
         separated = left["right"] <= right["left"] + 1 or right["right"] <= left["left"] + 1
         stacked = left["bottom"] <= right["top"] + 1 or right["bottom"] <= left["top"] + 1
         assert separated or stacked
+
+
+def test_the_month_filter_shares_its_page_edges(base):
+    """The filter row must sit in the same lane as the table below it.
+
+    The wrap auto-centres its children; a filter that resets margin to 0
+    hangs west of the content, which a host spotted on Stay fee.
+    """
+    username = f"geomfilter{secrets.token_hex(4)}"
+    owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
+    entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
+    db.insert("apartment", {
+        "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
+        "permalink_token": f"gf{secrets.token_hex(4)}",
+        "active": 1, "created_at": db.utcnow(),
+    })
+    session = _browser_session_cookie(username)
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        context = browser.new_context(viewport={"width": 1440, "height": 900})
+        context.add_cookies(
+            [{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}]
+        )
+        page = context.new_page()
+        page.goto(base + "/stay-fees?lang=en")
+        page.wait_for_selector(".host-month-filter", timeout=30000)
+        aligned = page.evaluate(
+            """() => {
+              const rect = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; };
+              return {
+                filter: rect(document.querySelector('.host-month-filter')),
+                table: rect(document.querySelector('.panel, table')),
+                title: rect(document.querySelector('.page-header, h1')),
+              };
+            }"""
+        )
+        browser.close()
+    assert aligned["filter"] == aligned["table"], "the month filter must align with the table below it"
+    assert aligned["filter"][0] == aligned["title"][0], "the month filter must align with the page title"
