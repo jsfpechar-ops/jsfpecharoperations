@@ -59,10 +59,10 @@ def save(
     version: int,
 ) -> int:
     """Seal a period; returns the new filing row id."""
-    group = stay_fee.report_group(apartment, month)
-    period = stay_fee.property_period(apartment, month)
+    period = stay_fee.property_period(apartment, month, live_only=True)
     if period is None:
         raise ValueError("inactive property")
+    group = stay_fee.report_group(apartment, month, live_only=True, period=period)
     key = period_key(group["cadence"], month)
     pdf = stay_fee_remittance_pdf.render(stay_fee.hlaseni(group, issued_on))
     csv = stay_fee.register_csv(stay_fee.register_rows(period))

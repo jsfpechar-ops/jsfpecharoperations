@@ -1,6 +1,7 @@
 """Host-only stay-fee overview and per-property detail."""
 from __future__ import annotations
 
+import sqlite3
 import unicodedata
 from datetime import date
 
@@ -82,11 +83,16 @@ def stay_fees_list(request: Request):
     rows = []
     for period in periods:
         apartment = period["apartment"]
-        group = stay_fee.report_group(apartment, selected_month)
+        group = stay_fee.report_group(apartment, selected_month, period=period)
+        issues = stay_fee.report_issues(group, today)
+        if not period.get("frozen") and period.get("first") and stay_fee.unsigned_stays(
+            apartment["id"], period["first"], period["last"]
+        ):
+            issues.append("stay_fees.issue.unsigned")
         rows.append({
             **period,
             "total_display": stay_fee.format_czk(period["total_czk"]),
-            "issues": stay_fee.report_issues(group, today),
+            "issues": issues,
         })
 
     return render(request, "stay_fees.html", {
@@ -121,7 +127,9 @@ def stay_fee_detail(apartment_id: int, request: Request):
     correcting = request.query_params.get("correct") == "1"
     live = correcting
     period = stay_fee.property_period(apartment, selected_month, live_only=live)
-    group = stay_fee.report_group(apartment, selected_month, live_only=live)
+    group = stay_fee.report_group(
+        apartment, selected_month, live_only=live, period=period
+    )
     frozen = bool(period and period.get("frozen") and not correcting)
     issues: list[str] = []
     if not frozen:
@@ -158,7 +166,10 @@ def _guest_lines(apartment, period):
     """The property's own guest rows, with the status and the local-resident hint."""
     lines = []
     for line in period["lines"]:
-        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (line["guest_id"],))
+        if "res_country" in line:
+            guest = line
+        else:
+            guest = db.query_one("SELECT * FROM guest WHERE id = ?", (line["guest_id"],))
         local_hint = bool(
             guest
             and (guest["res_country"] or "").upper() == validation.CZECH_CODE
@@ -312,9 +323,6 @@ async def stay_fee_guest_decision(request: Request):
     db.update("guest", guest["id"], {
         "fee_host_decision": decision or None,
         "fee_host_reason": (reason if decision == "exempt" else None),
-        "fee_host_reason_enc": (
-            db.encrypt_field(reason) if decision == "exempt" else None
-        ),
         "fee_host_reason_reference": (reference if decision == "exempt" else None),
         "updated_at": db.utcnow(),
     })
@@ -360,7 +368,7 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
     correcting = _form_str(form, "correct") == "1"
     period = stay_fee.property_period(apartment, month, live_only=True)
-    group = stay_fee.report_group(apartment, month, live_only=True)
+    group = stay_fee.report_group(apartment, month, live_only=True, period=period)
     issues = stay_fee.report_issues(group, today)
     if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"]):
         issues.append("stay_fees.issue.unsigned")
@@ -375,14 +383,22 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         for line in period["lines"]:
             field = f"collected_{line['guest_id']}"
             raw = _form_str(form, field)
-            collected[line["guest_id"]] = int(raw) if raw.isdigit() else line["amount_czk"]
+            parsed = stay_fee.parse_czk_int(raw) if raw else None
+            if raw and parsed is None:
+                return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
+            collected[line["guest_id"]] = parsed if parsed is not None else line["amount_czk"]
         if period["lines"] and _form_str(form, "confirm_collected") != "1":
             return _back(back_path, err=_flash(request, "flash.stay_fees.confirm_collected"))
     if correcting:
         stay_fee_filing.start_correction(apartment["id"], key)
     version = stay_fee_filing.latest_version(apartment["id"], key) + 1
-    stay_fee_filing.save(
-        apartment, month, rate_czk=rate, collected=collected, issued_on=today, version=version,
-    )
+    try:
+        stay_fee_filing.save(
+            apartment, month, rate_czk=rate, collected=collected, issued_on=today, version=version,
+        )
+    except ValueError:
+        return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
+    except sqlite3.IntegrityError:
+        return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
     db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key} v={version}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.period_saved"))

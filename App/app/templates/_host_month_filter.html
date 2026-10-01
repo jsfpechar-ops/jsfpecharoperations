@@ -4,7 +4,7 @@
     <input type="month" id="{{ filter_id }}-month" name="month"
            value="{{ month_key }}" max="{{ max_month_key }}"
            aria-describedby="{{ filter_id }}-hint"
-           {% if not month_required and not month_key %}data-empty-means-all="1"{% endif %}>
+           {% if not month_required and not month_key %}{% endif %}>
     <p id="{{ filter_id }}-hint" class="small muted">{{ t(hint_label_key) }}</p>
   </div>
   <div class="field filter-actions filter-actions-end">

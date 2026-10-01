@@ -169,6 +169,22 @@ def test_property_period_counts(owner):
     assert stay_fee.property_period(_apt(aid), date(2026, 9, 1))["liable_nights"] == 3
 
 
+def test_departure_on_the_first_is_counted_in_that_month(owner):
+    """(arrival, departure] includes the departure day even when it is the 1st."""
+    ent = _entity(owner)
+    aid = _apartment(owner, ent, "Boundary")
+    _stay(aid, "2026-07-31", "2026-08-01", [{}])
+    august = stay_fee.property_period(_apt(aid), AUG)
+    july = stay_fee.property_period(_apt(aid), date(2026, 7, 1))
+    assert august["liable_nights"] == 1
+    assert july is None or july["liable_nights"] == 0
+
+
+def test_clamp_rate_rejects_unicode_digits():
+    assert stay_fee.clamp_rate("²") == 0
+    assert stay_fee.parse_czk_int("²") is None
+
+
 def test_quarterly_period(owner):
     ent = _entity(owner)
     aid = _apartment(owner, ent, "Chata u lesa", rate=21, cadence="quarterly", vs="555")

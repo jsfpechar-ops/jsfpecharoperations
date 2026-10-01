@@ -950,9 +950,19 @@ def audit(
 
 # --- secret handling -----------------------------------------------------
 
+_fernet_cache: Dict[str, Fernet] = {}
+
+
 def _fernet() -> Fernet:
-    digest = hashlib.sha256(config.secret_key().encode("utf-8")).digest()
-    return Fernet(base64.urlsafe_b64encode(digest))
+    secret = config.secret_key()
+    cached = _fernet_cache.get(secret)
+    if cached is not None:
+        return cached
+    digest = hashlib.sha256(secret.encode("utf-8")).digest()
+    cached = Fernet(base64.urlsafe_b64encode(digest))
+    _fernet_cache.clear()
+    _fernet_cache[secret] = cached
+    return cached
 
 
 def encrypt_secret(plain: str) -> str:
@@ -984,6 +994,8 @@ ENCRYPTED_GUEST_COLUMNS = {
     "visa_number": "visa_number_enc",
     # BE-12: the drawn signature is as sensitive as the document number.
     "signature_png": "signature_png_enc",
+    # Stay-fee exemption category (may be disability). Plaintext is a read fallback only.
+    "fee_host_reason": "fee_host_reason_enc",
 }
 
 

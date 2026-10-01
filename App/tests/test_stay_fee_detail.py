@@ -315,8 +315,13 @@ def test_exempt_with_a_reason_lowers_the_total_and_keeps_the_reason_out_of_the_l
     assert "0\u00a0Kč" in response.text
     stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
     assert stored["fee_host_decision"] == "exempt"
-    assert stored["fee_host_reason"] == "disability"
-    assert stored["fee_host_reason_enc"]
+    hydrated = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
+    assert hydrated["fee_host_reason"] == "disability"
+    assert hydrated["fee_host_reason_enc"]
+    stored_plain = db.query_one(
+        "SELECT fee_host_reason FROM guest WHERE id = ?", (guest_ids[0],)
+    )
+    assert stored_plain["fee_host_reason"] is None
     entry = db.query_one(
         "SELECT * FROM audit WHERE action = 'stay_fee_decision' ORDER BY id DESC LIMIT 1"
     )
