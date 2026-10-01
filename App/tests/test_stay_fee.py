@@ -18,11 +18,11 @@ AUG = date(2026, 8, 1)
 # --- pure --------------------------------------------------------------------
 
 def test_nights_split_by_month_without_double_counting():
-    start, end = date(2026, 8, 30), date(2026, 9, 3)          # 4 nights
+    start, end = date(2026, 8, 30), date(2026, 9, 3)          # 4 counted days
     aug = stay_fee.period_bounds("monthly", AUG)
     sep = stay_fee.period_bounds("monthly", date(2026, 9, 1))
-    assert stay_fee.nights_in(start, end, *aug) == 2           # 30, 31 Aug
-    assert stay_fee.nights_in(start, end, *sep) == 2           # 1, 2 Sep
+    assert stay_fee.nights_in(start, end, *aug) == 1           # 31 Aug
+    assert stay_fee.nights_in(start, end, *sep) == 3           # 1–3 Sep
     assert stay_fee.nights_in(date(2026, 9, 10), date(2026, 9, 14), *sep) == 4
 
 
@@ -66,18 +66,17 @@ RES = {"date_from": "2026-09-10", "date_to": "2026-09-14"}
 
 @pytest.mark.parametrize("guest,res,period,liable,exempt,status", [
     (_g(), RES, SEP, 4, 0, "liable"),                                             # E1
-    (_g(birth_date="12092008"), RES, SEP, 0, 4, "exempt"),                        # E2 17 on arrival
+    (_g(birth_date="12092008"), RES, SEP, 3, 1, "liable"),                         # E2 birthday split
     (_g(birth_date="10092008"), RES, SEP, 4, 0, "liable"),                        # 18 on arrival
     (_g(birth_date="00002015"), RES, SEP, 0, 4, "exempt"),                        # 01.01.2015
     (_g(birth_date="00000000"), RES, SEP, 4, 0, "liable"),                        # unknown = adult
     (_g(fee_host_decision="exempt", fee_host_reason="ZTP/P"), RES, SEP, 0, 4, "exempt"),  # E5
-    (_g(birth_date="12092008", fee_host_decision="charge"), RES, SEP, 4, 0, "liable"),     # E6
+    (_g(birth_date="12092008", fee_host_decision="charge"), RES, SEP, 3, 1, "liable"),     # E6 no minor days
     (_g(fee_host_decision="bogus"), RES, SEP, 4, 0, "liable"),
-    # 59 nights = 60 calendar days: in scope. 60 nights = 61 calendar days: not subject.
-    (_g(), {"date_from": "2026-08-01", "date_to": "2026-09-29"}, SEP, 28, 0, "liable"),
-    (_g(), {"date_from": "2026-08-01", "date_to": "2026-09-30"}, SEP, 0, 0, "not_subject"),
-    (_g(fee_host_decision="charge"), {"date_from": "2026-08-01", "date_to": "2026-09-30"},
-     SEP, 0, 0, "not_subject"),
+    # 59 nights in scope; 60 nights still calculated (finalize needs scope ruling).
+    (_g(), {"date_from": "2026-08-01", "date_to": "2026-09-29"}, SEP, 29, 0, "liable"),
+    (_g(), {"date_from": "2026-08-01", "date_to": "2026-09-30"}, SEP, 30, 0, "liable"),
+    (_g(), {"date_from": "2026-08-01", "date_to": "2026-10-01"}, SEP, 0, 0, "not_subject"),
 ])
 def test_guest_rules(guest, res, period, liable, exempt, status):
     share = stay_fee.guest_period(guest, res, *period)
@@ -166,8 +165,8 @@ def test_property_period_counts(owner):
     _stay(aid, "2026-08-20", "2026-08-25", [{}], status="cancelled")
     _stay(aid, "2026-08-20", "2026-08-25", [{"archived_at": db.utcnow()}])  # archived guest
     period = stay_fee.property_period(_apt(aid), AUG)
-    assert (period["liable_nights"], period["exempt_nights"], period["total_czk"]) == (10, 4, 500)
-    assert stay_fee.property_period(_apt(aid), date(2026, 9, 1))["liable_nights"] == 2
+    assert (period["liable_nights"], period["exempt_nights"], period["total_czk"]) == (9, 4, 450)
+    assert stay_fee.property_period(_apt(aid), date(2026, 9, 1))["liable_nights"] == 3
 
 
 def test_quarterly_period(owner):
@@ -177,10 +176,10 @@ def test_quarterly_period(owner):
     _stay(aid, "2026-09-28", "2026-10-02", [{}])
     period = stay_fee.property_period(_apt(aid), AUG)
     assert period["label"] == "3. čtvrtletí 2026"
-    assert (period["liable_nights"], period["total_czk"]) == (5, 105)
+    assert (period["liable_nights"], period["total_czk"]) == (4, 84)
 
 
-def test_same_vs_is_one_report_and_other_vs_is_not(owner):
+def test_each_facility_has_its_own_report_even_with_shared_vs(owner):
     ent = _entity(owner)
     a = _apartment(owner, ent, "A")
     b = _apartment(owner, ent, "B")
@@ -188,8 +187,9 @@ def test_same_vs_is_one_report_and_other_vs_is_not(owner):
     for aid in (a, b, c):
         _stay(aid, "2026-08-10", "2026-08-12", [{}])
     group = stay_fee.report_group(_apt(a), AUG)
-    assert [p["apartment"]["internal_name"] for p in group["periods"]] == ["A", "B"]
-    assert group["total_czk"] == 200
+    assert [p["apartment"]["internal_name"] for p in group["periods"]] == ["A"]
+    assert group["total_czk"] == 100
+    assert stay_fee.report_group(_apt(b), AUG)["total_czk"] == 100
     assert stay_fee.report_group(_apt(c), AUG)["total_czk"] == 100
     assert stay_fee.report_issues(group, date(2026, 9, 1)) == []
 
@@ -222,7 +222,7 @@ def test_register_csv(owner):
     rows = stay_fee.register_rows(stay_fee.property_period(_apt(aid), AUG))
     assert rows[0]["doc_type"] == "Občanský průkaz" and rows[1]["doc_type"] == "Cestovní pas"
     assert rows[1]["exempt_reason"] == "mladší 18 let"
-    assert rows[2]["surname"] == stay_fee.RESTRICTED_NOTE and rows[2]["birth_date"] == ""
+    assert rows[2]["surname"] == "Test" and stay_fee.RESTRICTED_NOTE in rows[2]["exempt_reason"]
     data = stay_fee.register_csv(rows)
     assert data.startswith("﻿".encode()) and b";" in data
     assert data.decode("utf-8-sig").splitlines()[0].split(";") == [l for _, l in stay_fee.REGISTER_COLUMNS]
@@ -253,14 +253,13 @@ def test_quarterly_pdf_title(owner):
     assert "ČTVRTLETNÍ HLÁŠENÍ" in text and "za 3. čtvrtletí 2026" in text and "42 Kč" in text
 
 
-def test_group_pdf_lists_every_property(owner):
+def test_pdf_lists_one_property_per_report(owner):
     ent = _entity(owner)
-    for name in ("A", "B"):
-        _stay(_apartment(owner, ent, name), "2026-08-10", "2026-08-12", [{}])
-    data = stay_fee.hlaseni(stay_fee.report_group(_apt(_apartment(owner, ent, "C")), AUG),
-                            date(2026, 9, 1))
-    assert [r["property_name"] for r in data["rows"]] == ["A", "B", "C"]
-    assert data["total_czk"] == 200
+    c = _apartment(owner, ent, "C")
+    _stay(c, "2026-08-10", "2026-08-12", [{}])
+    data = stay_fee.hlaseni(stay_fee.report_group(_apt(c), AUG), date(2026, 9, 1))
+    assert [r["property_name"] for r in data["rows"]] == ["C"]
+    assert data["total_czk"] == 100
 
 
 def test_zero_period_renders(owner):

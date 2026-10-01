@@ -5,11 +5,25 @@
 {% from "_components.html" import page_header, copy_button with context %}
 <a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
 {% set actions %}
-  <a class="btn" href="/stay-fees/{{ apartment.id }}/csv?month={{ month_key }}">{{ t('stay_fees.download_csv') }}</a>
-  {% if issues %}
-    <button class="btn" type="button" disabled>{{ t('stay_fees.download_pdf') }}</button>
-  {% else %}
+  {% if frozen %}
+    <span class="pill green">{{ t('stay_fees.saved_version', version=filing_version) }}</span>
+    <a class="btn" href="/stay-fees/{{ apartment.id }}/csv?month={{ month_key }}">{{ t('stay_fees.download_csv') }}</a>
     <a class="btn accent primary" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}">{{ t('stay_fees.download_pdf') }}</a>
+    <a class="btn" href="/stay-fees/{{ apartment.id }}?month={{ month_key }}&correct=1">{{ t('stay_fees.correct') }}</a>
+  {% elif not issues %}
+    <form method="post" action="/stay-fees/{{ apartment.id }}/finalize" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_key }}">
+      <input type="hidden" name="rate_czk" value="{{ period.rate_czk }}">
+      {% if lines %}<input type="hidden" name="confirm_collected" value="1">{% endif %}
+      {% for line in lines %}
+        <input type="hidden" name="collected_{{ line.guest_id }}" value="{{ line.amount_czk }}">
+      {% endfor %}
+      {% if correcting %}<input type="hidden" name="correct" value="1">{% endif %}
+      <button class="btn accent primary" type="submit">{{ t('stay_fees.save_period') }}</button>
+    </form>
+  {% else %}
+    <button class="btn" type="button" disabled>{{ t('stay_fees.save_period') }}</button>
   {% endif %}
 {% endset %}
 {{ page_header(apartment.internal_name ~ ' — ' ~ group.label, t('stay_fees.detail_lede'), '', '', t('nav.stay_fees'), actions) }}
@@ -24,10 +38,6 @@
     {% endif %}
   </p>
 {% endfor %}
-
-{% if others %}
-  <p class="small muted">{{ t('stay_fees.group_note', names=others | join(', ')) }}</p>
-{% endif %}
 
 <div class="panel tight">
   <div class="stay-metrics detail-hero">

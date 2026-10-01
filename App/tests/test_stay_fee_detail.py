@@ -24,6 +24,11 @@ def _cleanup():
     ):
         owner_id = user["id"]
         db.execute(
+            "DELETE FROM stay_fee_filing WHERE apartment_id IN "
+            "(SELECT id FROM apartment WHERE owner_user_id = ?)",
+            (owner_id,),
+        )
+        db.execute(
             "DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation "
             "WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?))",
             (owner_id,),
@@ -200,12 +205,12 @@ def test_metrics_show_the_group_totals(host):
     response = client.get(f"/stay-fees/{first}?month=2026-08")
 
     assert response.status_code == 200
-    assert "350\u00a0Kč" in response.text
-    assert '<div class="metric-value">7</div>' in response.text
+    assert "200\u00a0Kč" in response.text
+    assert '<div class="metric-value">4</div>' in response.text
     assert '<div class="metric-value">0</div>' in response.text  # exempt bed-days
 
 
-def test_the_group_note_lists_the_sibling_properties(host):
+def test_each_property_report_is_facility_scoped(host):
     client, owner_id, entity_id = host
     first = _property(owner_id, entity_id, "Detail Demo")
     _property(owner_id, entity_id, "Detail Sibling Demo")
@@ -213,9 +218,7 @@ def test_the_group_note_lists_the_sibling_properties(host):
     response = client.get(f"/stay-fees/{first}?month=2026-08")
 
     assert response.status_code == 200
-    assert "Detail Sibling Demo" in response.text
-    assert "same legal entity and variable symbol" in response.text
-    assert "The guest list below is this property only." in response.text
+    assert "same legal entity and variable symbol" not in response.text
 
 
 def test_the_guest_list_is_this_property_only(host):
@@ -232,10 +235,27 @@ def test_the_guest_list_is_this_property_only(host):
     assert "Theirs Demo" not in response.text
 
 
+def _finalize_period(client, apartment_id, guest_id, month="2026-08"):
+    page = client.get(f"/stay-fees/{apartment_id}?month={month}")
+    token = page.text.split('name="csrf-token" content="')[1].split('"')[0]
+    return client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": token,
+            "month": month,
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    )
+
+
 def test_qr_is_present_with_an_account_and_variable_symbol(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Detail Demo")
-    _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+    _, guest_ids = _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+    assert _finalize_period(client, apartment_id, guest_ids[0]).status_code == 303
 
     response = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
 
@@ -304,7 +324,7 @@ def test_exempt_with_a_reason_lowers_the_total_and_keeps_the_reason_out_of_the_l
     assert "reason" not in entry["detail"]
 
 
-def test_charging_a_minor_raises_the_total(host):
+def test_charge_cannot_bill_known_minor_days(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Detail Demo")
     _, guest_ids = _stay(
@@ -318,7 +338,7 @@ def test_charging_a_minor_raises_the_total(host):
     response = _decide(client, apartment_id, guest_ids[0], "charge")
 
     assert response.status_code == 200
-    assert "200\u00a0Kč" in response.text
+    assert "0\u00a0Kč" in response.text
     stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
     assert stored["fee_host_decision"] == "charge"
 
@@ -331,7 +351,7 @@ def test_automatic_puts_the_guest_back_on_the_default_rule(host):
     )
     _decide(client, apartment_id, guest_ids[0], "charge")
     charged = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
-    assert "200\u00a0Kč" in charged.text
+    assert "0\u00a0Kč" in charged.text
 
     response = _decide(client, apartment_id, guest_ids[0], "")
 
@@ -389,8 +409,8 @@ def test_exactly_one_primary_button_when_the_report_is_ready(host):
 
     assert response.status_code == 200
     assert response.text.count("btn accent primary") == 1
-    assert 'class="btn accent primary" href="/stay-fees/' in response.text
-    assert "Download PDF" in response.text
+    assert 'type="submit"' in response.text
+    assert "Save period" in response.text
 
 
 def test_a_blocked_report_has_no_primary_button(host):
