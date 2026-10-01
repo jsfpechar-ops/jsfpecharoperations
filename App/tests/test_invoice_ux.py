@@ -116,12 +116,15 @@ def test_invoice_list_month_filter_matches_issue_date(host, monkeypatch):
     assert "2026-0009" in all_page.text
     assert 'type="month"' in all_page.text
     assert "host-month-filter" in all_page.text
+    assert "month-control is-empty" in all_page.text
+    assert "All dates" in all_page.text
 
     august = host.get("/invoices?month=2026-08")
     assert august.status_code == 200
     assert "2026-0008" in august.text
     assert "2026-0009" not in august.text
     assert 'value="2026-08"' in august.text
+    assert "month-control is-empty" not in august.text
     assert 'href="/invoices"' in august.text  # All dates when filtered
 
 

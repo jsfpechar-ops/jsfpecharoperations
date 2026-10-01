@@ -1,10 +1,6 @@
 {% if open_alerts %}
-{% set alert_cards = open_alerts %}
-{% set alert_extra = open_alerts|length - alert_cards|length %}
-<details class="host-alerts" data-host-alerts {% if (open_alerts | selectattr('level', 'equalto', 'error') | list) or (open_alerts | selectattr('level', 'equalto', 'critical') | list) %}open{% endif %}>
-<summary>{{ t('a11y.notifications') }} <span data-host-alert-count>{{ open_alerts | length }}</span></summary>
-<aside class="notification-stack" aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
-  {% for alert in alert_cards %}
+<aside class="notification-stack" data-host-alerts aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
+  {% for alert in open_alerts %}
     <article class="notification-bubble {{ alert.level }}" data-notification>
       {% if alert.reservation_id %}
         <a class="notification-link" href="/reservations/{{ alert.reservation_id }}">
@@ -28,8 +24,5 @@
       {% endif %}
     </article>
   {% endfor %}
-  {% if alert_extra %}
-    <a class="notification-more" href="/#needs-action">{{ t('notification.more', n=alert_extra) }}</a>
-  {% endif %}
-</aside></details>
+</aside>
 {% endif %}

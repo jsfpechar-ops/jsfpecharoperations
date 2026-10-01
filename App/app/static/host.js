@@ -32,10 +32,7 @@
   var alerts = document.querySelector('[data-host-alerts]');
   if (alerts) {
     new MutationObserver(function () {
-      var count = alerts.querySelectorAll('[data-notification]').length;
-      var label = alerts.querySelector('[data-host-alert-count]');
-      if (label && label.textContent !== String(count)) label.textContent = String(count);
-      alerts.hidden = count === 0;
+      alerts.hidden = alerts.querySelectorAll('[data-notification]').length === 0;
     }).observe(alerts, {childList: true, subtree: true});
   }
   // Invalid controls inside closed sections must be visible before the browser
