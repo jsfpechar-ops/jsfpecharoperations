@@ -29,6 +29,25 @@
 {% endset %}
 {{ page_header(apartment.internal_name ~ ' — ' ~ group.label, t('stay_fees.detail_lede'), '', '', t('nav.stay_fees'), actions) }}
 
+{% if 'stay_fees.issue.scope_ruling' in issues %}
+<form method="post" action="/stay-fees/{{ apartment.id }}/scope-ruling" class="filters panel">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="month" value="{{ month_key }}">
+  <div class="field">
+    <label for="scope-rule">{{ t('stay_fees.scope.rule') }}</label>
+    <select id="scope-rule" name="rule" required>
+      <option value="calendar_days">{{ t('stay_fees.scope.calendar_days') }}</option>
+      <option value="nights">{{ t('stay_fees.scope.nights') }}</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="scope-reference">{{ t('stay_fees.scope.reference') }}</label>
+    <input type="text" id="scope-reference" name="reference" maxlength="200" required
+           placeholder="{{ t('stay_fees.scope.reference_placeholder') }}">
+  </div>
+  <button class="btn accent primary" type="submit">{{ t('stay_fees.scope.save') }}</button>
+</form>
+{% endif %}
 {% for issue in issues %}
   <p class="warn-text small">
     {{ t(issue) }}
@@ -134,9 +153,15 @@
                 <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
                 <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
                 <input type="hidden" name="month" value="{{ month_key }}">
-                <input type="text" name="reason" maxlength="120" value="{{ line.reason }}"
-                       placeholder="{{ t('stay_fees.decision.reason_placeholder') }}"
-                       aria-label="{{ t('stay_fees.decision.reason_label') }}">
+                <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}" required>
+                  <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
+                  {% for code in exempt_categories %}
+                  <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="reason_reference" maxlength="200"
+                       placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
+                       aria-label="{{ t('stay_fees.decision.reference_label') }}">
                 <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
                 <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
                 {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}
@@ -149,9 +174,15 @@
                   <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
                   <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
                   <input type="hidden" name="month" value="{{ month_key }}">
-                  <input type="text" name="reason" maxlength="120" value="{{ line.reason }}"
-                         placeholder="{{ t('stay_fees.decision.reason_placeholder') }}"
-                         aria-label="{{ t('stay_fees.decision.reason_label') }}">
+                  <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}">
+                    <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
+                    {% for code in exempt_categories %}
+                    <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
+                    {% endfor %}
+                  </select>
+                  <input type="text" name="reason_reference" maxlength="200"
+                         placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
+                         aria-label="{{ t('stay_fees.decision.reference_label') }}">
                   <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
                   <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
                   {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}

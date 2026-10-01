@@ -306,7 +306,7 @@ def test_exempt_with_a_reason_lowers_the_total_and_keeps_the_reason_out_of_the_l
     assert "200\u00a0Kč" in before.text
 
     response = _decide(
-        client, apartment_id, guest_ids[0], "exempt", reason="ZTP/P card checked"
+        client, apartment_id, guest_ids[0], "exempt", reason="disability"
     )
 
     assert response.status_code == 200
@@ -315,7 +315,8 @@ def test_exempt_with_a_reason_lowers_the_total_and_keeps_the_reason_out_of_the_l
     assert "0\u00a0Kč" in response.text
     stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
     assert stored["fee_host_decision"] == "exempt"
-    assert stored["fee_host_reason"] == "ZTP/P card checked"
+    assert stored["fee_host_reason"] == "disability"
+    assert stored["fee_host_reason_enc"]
     entry = db.query_one(
         "SELECT * FROM audit WHERE action = 'stay_fee_decision' ORDER BY id DESC LIMIT 1"
     )

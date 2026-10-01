@@ -151,6 +151,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
         "frozen": frozen,
         "correcting": correcting,
         "filing_version": period.get("version") if period else None,
+        "exempt_categories": stay_fee.EXEMPT_CATEGORIES,
     })
 
 
@@ -299,12 +300,23 @@ async def stay_fee_guest_decision(request: Request):
     if decision not in ("",) + stay_fee.DECISIONS:
         decision = ""
     reason = _form_str(form, "reason")[:stay_fee.REASON_MAX].strip()
-    if decision == "exempt" and len(reason) < 3:
-        return _back(back_path, err=_flash(request, "flash.stay_fees.reason_required"))
+    reference = _form_str(form, "reason_reference")[:200].strip()
+    if decision == "exempt":
+        if reason not in stay_fee.EXEMPT_CATEGORIES:
+            return _back(back_path, err=_flash(request, "flash.stay_fees.reason_required"))
+        if reason == "local_rule" and len(reference) < 3:
+            return _back(back_path, err=_flash(request, "flash.stay_fees.reason_required"))
+    else:
+        reason = ""
+        reference = ""
 
     db.update("guest", guest["id"], {
         "fee_host_decision": decision or None,
         "fee_host_reason": (reason if decision == "exempt" else None),
+        "fee_host_reason_enc": (
+            db.encrypt_field(reason) if decision == "exempt" else None
+        ),
+        "fee_host_reason_reference": (reference if decision == "exempt" else None),
         "updated_at": db.utcnow(),
     })
     # The reason stays out of the audit row: the register keeps it, the log does not.
