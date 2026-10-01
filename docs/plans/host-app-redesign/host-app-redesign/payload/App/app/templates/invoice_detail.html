@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% set nav = 'invoices' %}
+{% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
+
+{# The invoice detail follows the stay/report page grammar (C-16 [UX-81]):
+   a command panel that says the state and the next step, the facts strip,
+   the line items, and the destructive fold last. #}
+{% if invoice.kind in ('storno', 'corrective') %}
+  {% set state_pill = '<span class="pill amber">' ~ t('invoice.kind.' ~ invoice.kind) ~ '</span>' %}
+  {% set state_note = t('invoice.detail.note_' ~ invoice.kind) %}
+{% elif invoice.marked_paid_at or invoice.paid_on %}
+  {% set state_pill = '<span class="pill green">' ~ t('invoice.state.paid') ~ '</span>' %}
+  {% set state_note = t('invoice.detail.note_paid') %}
+{% else %}
+  {% set state_pill = '<span class="pill grey">' ~ t('invoice.state.unpaid') ~ '</span>' %}
+  {% set state_note = t('invoice.detail.note_unpaid') %}
+{% endif %}
+
+{{ page_header(
+  t('invoice.detail.title', number=invoice.number),
+  invoice.buyer_name,
+  '/invoices',
+  t('nav.invoices')
+) }}
+
+<div class="invoice-workspace">
+  <div class="invoice-document">
+  <section class="panel stay-command-panel" id="now">
+    <div class="stay-command-main">
+      <div>
+        <div class="eyebrow">{{ t('invoice.detail.status') }}</div>
+        <p class="stay-command-note">{{ state_note }}</p>
+      </div>
+      <div class="stay-command-actions">
+        <div class="actions">
+          <a class="btn primary" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
+          {% if invoice.kind == 'invoice' and not invoice.marked_paid_at and not invoice.paid_on %}
+          <form method="post" action="/invoices/{{ invoice.id }}/paid" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="btn" type="submit">{{ t('invoice.mark_paid') }}</button>
+          </form>
+          {% endif %}
+          {% if invoice.buyer_email and invoice.kind == 'invoice' %}
+          <form method="post" action="/invoices/{{ invoice.id }}/send" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="btn" type="submit" data-confirm data-confirm-message="{{ t('invoice.send_confirm', email=invoice.buyer_email) }}">{{ t('invoice.send') }}</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="stay-metrics detail-hero">
+      <div class="detail-metric">
+        <div class="metric-label">{{ t('invoice.detail.total') }}</div>
+        <div class="metric-value">{{ invoice.total_haler | money_czk }}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="metric-label">{{ t('invoice.detail.status') }}</div>
+        <div class="metric-value small-value">{{ state_pill | safe }}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="metric-label">{{ t('invoices.col.date') }}</div>
+        <div class="metric-value small-value">{{ invoice.issue_date | date_cz }}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="metric-label">{{ t('invoices.col.kind') }}</div>
+        <div class="metric-value small-value">{{ t('invoice.kind.' ~ invoice.kind) }}</div>
+      </div>
+    </div>
+  </section>
+
+  <h2>{{ t('invoice.section.items') }}</h2>
+  <div class="panel tight scroll-x">
+    <table class="table-cards">
+      <thead>
+        {% if invoice.vat_status == 'payer' %}
+        <tr>
+          <th class="col-name">{{ t('invoice.col.description') }}</th>
+          <th>{{ t('invoice.col.qty') }}</th>
+          <th>{{ t('invoice.detail.unit_excl_vat') }}</th>
+          <th>{{ t('invoice.col.vat') }}</th>
+          <th>{{ t('invoice.detail.vat_col') }}</th>
+          <th>{{ t('invoice.col.total') }}</th>
+        </tr>
+        {% else %}
+        <tr><th class="col-name">{{ t('invoice.col.description') }}</th><th>{{ t('invoice.col.qty') }}</th><th>{{ t('invoice.col.unit_price') }}</th><th>{{ t('invoice.col.total') }}</th></tr>
+        {% endif %}
+      </thead>
+      <tbody>
+        {% for item in items %}
+        {% if invoice.vat_status == 'payer' %}
+        <tr>
+          <td data-label="{{ t('invoice.col.description') }}">{{ item.description }}</td>
+          <td data-label="{{ t('invoice.col.qty') }}">{{ item.quantity }}{% if item.unit %} {{ item.unit }}{% endif %}</td>
+          <td data-label="{{ t('invoice.detail.unit_excl_vat') }}">{{ (item.base_haler or 0) | money_czk(item.quantity) }}</td>
+          <td data-label="{{ t('invoice.col.vat') }}">{{ item.vat_rate or 0 }} %</td>
+          <td data-label="{{ t('invoice.detail.vat_col') }}">{{ (item.vat_haler or 0) | money_czk }}</td>
+          <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler | money_czk }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td data-label="{{ t('invoice.col.description') }}">{{ item.description }}</td>
+          <td data-label="{{ t('invoice.col.qty') }}">{{ item.quantity }}{% if item.unit %} {{ item.unit }}{% endif %}</td>
+          <td data-label="{{ t('invoice.col.unit_price') }}">{{ item.gross_haler | money_czk(item.quantity) }}</td>
+          <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler | money_czk }}</td>
+        </tr>
+        {% endif %}
+        {% else %}
+        <tr><td colspan="6" class="small muted">{{ t('invoice.items_empty') }}</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if invoice.vat_status == 'payer' and items %}
+      <tfoot>
+        <tr>
+          <th colspan="4">{{ t('invoice.detail.base_total') }}</th>
+          <td class="num">{{ (vat_totals.base or 0) | money_czk }}</td>
+          <td></td>
+        </tr>
+        <tr>
+          <th colspan="4">{{ t('invoice.detail.vat_total') }}</th>
+          <td class="num">{{ (vat_totals.vat or 0) | money_czk }}</td>
+          <td class="num">{{ invoice.total_haler | money_czk }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+  </div>{# /invoice-document #}
+
+  {% if invoice.kind == 'invoice' and not invoice.corrects_invoice_id %}
+  <details class="panel danger-zone" id="cancel">
+    <summary>{{ t('invoice.cancel') }}</summary>
+    <p class="small muted">{{ t('invoice.cancel_help') }}</p>
+    <form method="post" action="/invoices/{{ invoice.id }}/cancel">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="reason">{{ t('invoice.cancel_reason') }}</label>
+        <input type="text" id="reason" name="reason" maxlength="200" required>
+      </div>
+      {% if invoice.vat_status == 'payer' %}
+      <div class="field" style="max-width:220px">
+        <label for="correction_date">{{ t('invoice.correction_date') }}</label>
+        <input type="date" id="correction_date" name="correction_date">
+      </div>
+      {% endif %}
+      <button class="btn" type="submit">{{ t('invoice.cancel') }}</button>
+    </form>
+  </details>
+  {% endif %}
+</div>
+{% endblock %}
