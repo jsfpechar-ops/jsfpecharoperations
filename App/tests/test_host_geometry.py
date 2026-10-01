@@ -5,6 +5,7 @@ installs Chromium and sets UBYHOST_REQUIRE_BROWSER, so this runs on every pull
 request and is skipped in environments without Playwright.
 """
 import os
+import secrets
 import socket
 import threading
 
