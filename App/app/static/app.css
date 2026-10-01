@@ -1501,7 +1501,7 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   color: var(--ink-2);
 }
 .housebook-legal-dialog .legal-list { margin-top: 8px; }
-.filters input[type=date], .filters input[type=text], .filters select { height: 44px; }
+.filters input[type=date], .filters input[type=month], .filters input[type=text], .filters select { height: 44px; }
 
 .reporting-modes-panel {
   padding: 14px 16px;

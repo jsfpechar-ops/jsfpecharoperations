@@ -491,7 +491,7 @@
      a click the app can take on itself. */
   function initAutoFilters() {
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
-      form.querySelectorAll("select, input[type=date]").forEach(function (input) {
+      form.querySelectorAll("select, input[type=date], input[type=month]").forEach(function (input) {
         input.addEventListener("change", function () {
           if (input.type === "date") {
             var range = form.querySelector('input[name="range"]');

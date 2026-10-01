@@ -43,6 +43,20 @@ def _default_month(today: date) -> date:
     return stay_fee.previous_month(today)
 
 
+def _period_filter_context(selected_month: date, today: date) -> dict:
+    """Month picker bounds and prev/next links (no open-ended chip rail)."""
+    max_month = today.replace(day=1)
+    next_month = stay_fee.shift_month(selected_month, 1)
+    return {
+        "month_key": stay_fee.month_key(selected_month),
+        "max_month_key": stay_fee.month_key(max_month),
+        "prev_month_key": stay_fee.month_key(stay_fee.shift_month(selected_month, -1)),
+        "next_month_key": (
+            stay_fee.month_key(next_month) if next_month <= max_month else None
+        ),
+    }
+
+
 @router.get("/stay-fees")
 def stay_fees_list(request: Request):
     guard = auth.require_login(request)
@@ -71,20 +85,11 @@ def stay_fees_list(request: Request):
             "issues": stay_fee.report_issues(group, today),
         })
 
-    current_month = today.replace(day=1)
-    chip_end = (
-        current_month
-        if selected_month >= stay_fee.shift_month(current_month, -2)
-        else selected_month
-    )
     return render(request, "stay_fees.html", {
         "nav": "stay_fees",
         "periods": rows,
         "selected_month": selected_month,
-        "month_chips": [
-            stay_fee.shift_month(chip_end, offset)
-            for offset in (-3, -2, -1, 0)
-        ],
+        **_period_filter_context(selected_month, today),
     })
 
 
@@ -124,7 +129,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
     return render(request, "stay_fee_detail.html", {
         "nav": "stay_fees",
         "apartment": apartment,
-        "month_key": stay_fee.month_key(selected_month),
+        **_period_filter_context(selected_month, today),
         "period": period,
         "group": group,
         "issues": issues,
