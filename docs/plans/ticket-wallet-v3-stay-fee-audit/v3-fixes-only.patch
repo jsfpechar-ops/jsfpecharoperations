@@ -1,0 +1,1486 @@
+diff --git a/.cursor/install.sh b/.cursor/install.sh
+index c45e6e1..fd7146f 100755
+--- a/.cursor/install.sh
++++ b/.cursor/install.sh
+@@ -19,4 +19,12 @@ fi
+ .venv/bin/python -m pip install --quiet --upgrade pip
+ .venv/bin/python -m pip install --quiet -r requirements.txt -r requirements-dev.txt
+ 
++# The guest pages have a browser test (tests/test_guest_browser_e2e.py) that
++# must run, not skip, before a guest change is done. Best effort: a sandbox
++# without network still gets the rest of the setup.
++.venv/bin/python -m pip install --quiet playwright==1.63.0 \
++  && (.venv/bin/python -m playwright install --with-deps chromium \
++      || .venv/bin/python -m playwright install chromium) \
++  || echo "Playwright/Chromium not installed: the guest browser test will skip"
++
+ echo "UbyHost dependencies installed into App/.venv"
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 237abef..f3db9d9 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -110,6 +110,44 @@ jobs:
+           done
+           python tools/smoke.py http://127.0.0.1:18080
+ 
++  guest-browser:
++    # The guest pages driven in real Chromium, the way a guest on a phone uses
++    # them: group size, claim e-mail, one signed form per person, layout
++    # measured on every screen. Markup tests alone let a blank group size, a
++    # 0 x 0 signature pad and a misaligned date of birth reach guests.
++    runs-on: ubuntu-latest
++    needs: test
++    defaults:
++      run:
++        working-directory: App
++
++    steps:
++      - uses: actions/checkout@v7
++
++      - uses: actions/setup-python@v7
++        with:
++          python-version: "3.12"
++          cache: pip
++          cache-dependency-path: |
++            App/requirements.txt
++            App/requirements.lock
++            App/requirements-dev.txt
++
++      - name: Install dependencies and Chromium
++        run: |
++          pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
++          pip install playwright==1.63.0
++          python -m playwright install --with-deps chromium
++
++      - name: Walk the guest flow in a browser
++        env:
++          UBYHOST_UBYPORT_ENV: mock
++          UBYHOST_DEPLOYMENT: staging
++          UBYHOST_ENABLE_SCHEDULER: "0"
++          UBYHOST_REQUIRE_BROWSER: "1"
++        # REQUIRE_BROWSER turns "Chromium is missing" from a skip into a failure.
++        run: python -m pytest tests/test_guest_browser_e2e.py -q -rs
++
+   shellcheck:
+     runs-on: ubuntu-latest
+     steps:
+diff --git a/AGENTS.md b/AGENTS.md
+index 92810f5..373e969 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -66,6 +66,25 @@ on a case-insensitive filesystem (macOS) is the same directory as `App/app` —
+ so `app/operator.py` shadows the standard library `operator` module and pytest
+ fails during collection.
+ 
++## Changing a guest page (anything in `App/app/templates/guest/`, `guest*.css`, `ticket.js`, `signature.js`)
++
++Markup tests are not enough here: Ticket Wallet v2 passed all of them and
++still shipped a blank group size, a signature pad that saved nothing and a
++misaligned date of birth. Before you call a guest change done:
++
++```bash
++.venv/bin/python -m pytest tests -q
++.venv/bin/python -m pytest tests/test_guest_browser_e2e.py -q -rs   # must say 0 skipped
++```
++
++The second command drives the real pages in Chromium (group of three, EN and
++CS, 320/375/1280px) and measures every screen. `.cursor/install.sh` installs
++Playwright and Chromium; elsewhere run
++`pip install playwright==1.63.0 && python -m playwright install chromium`.
++Also bump the `?v=` cache key in `guest/base.html` for each CSS/JS file you
++touched. The full checklist is in `docs/DESIGN.md` ("Definition of done for
++any guest-page change").
++
+ ## Merging a pull request
+ 
+ Branch protection is not available on this private plan, so GitHub does not
+diff --git a/App/app/i18n.py b/App/app/i18n.py
+index 1179a32..cedce0d 100644
+--- a/App/app/i18n.py
++++ b/App/app/i18n.py
+@@ -68,10 +68,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "arrival_cta": "That’s my stay",
+         # Ticket Wallet skin (guest-ticket.css)
+         "tw_label_access": "Private access",
+-        "tw_label_stay": "Step 1 · Your stay",
+-        "tw_label_email": "Step 1 · Your e-mail",
+-        "tw_label_confirm": "Step 1 · Confirm",
+-        "tw_label_group": "Step 2 · Your group",
++        "tw_label_stay": "Your stay",
++        "tw_label_email": "Your group and e-mail",
++        "tw_label_confirm": "Confirm your stay",
++        "tw_label_group": "Your group",
+         "tw_label_saved": "Saved",
+         "tw_label_done": "All set",
+         "tw_label_notice": "Notice",
+@@ -100,6 +100,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "tw_sign_here": "Sign here with your finger",
+         "tw_signed": "Signed",
+         "tw_done_keep": "Keep this page — it is your confirmation.",
++        "tw_guest_n_of": "Guest %(current)s of %(total)s",
++        "tw_guest_n": "Guest %(current)s",
++        "tw_next_guest": "Register guest %(current)s of %(total)s",
+         "stay_ongoing": "Ongoing",
+         "stay_arriving_today": "Arriving today",
+         "host_details": "Your host",
+@@ -680,10 +683,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "arrival_cta": "To je můj pobyt",
+         # Ticket Wallet skin (guest-ticket.css)
+         "tw_label_access": "Soukromý přístup",
+-        "tw_label_stay": "Krok 1 · Váš pobyt",
+-        "tw_label_email": "Krok 1 · Váš e-mail",
+-        "tw_label_confirm": "Krok 1 · Potvrzení",
+-        "tw_label_group": "Krok 2 · Vaše skupina",
++        "tw_label_stay": "Váš pobyt",
++        "tw_label_email": "Vaše skupina a e-mail",
++        "tw_label_confirm": "Potvrzení pobytu",
++        "tw_label_group": "Vaše skupina",
+         "tw_label_saved": "Uloženo",
+         "tw_label_done": "Hotovo",
+         "tw_label_notice": "Upozornění",
+@@ -712,6 +715,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "tw_sign_here": "Podepište se zde prstem",
+         "tw_signed": "Podepsáno",
+         "tw_done_keep": "Tuto stránku si nechte — je to vaše potvrzení.",
++        "tw_guest_n_of": "Host %(current)s z %(total)s",
++        "tw_guest_n": "Host %(current)s",
++        "tw_next_guest": "Registrovat hosta %(current)s z %(total)s",
+         "stay_ongoing": "Právě probíhá",
+         "stay_arriving_today": "Příjezd dnes",
+         "host_details": "Váš hostitel",
+@@ -991,8 +997,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "submit": "Odeslat údaje",
+         "optional": "nepovinné",
+         "required": "povinné",
+-        "check_in": "Check-in",
+-        "check_out": "Check-out",
++        "check_in": "Příjezd",
++        "check_out": "Odjezd",
+         "privacy": (
+             "Údaje slouží výhradně ke splnění zákonné oznamovací povinnosti ubytovatele vůči "
+             "Policii České republiky a uchovávají se zákonných 6 let."
+diff --git a/App/app/static/guest-ticket.css b/App/app/static/guest-ticket.css
+index 0e657de..50e513f 100644
+--- a/App/app/static/guest-ticket.css
++++ b/App/app/static/guest-ticket.css
+@@ -1200,11 +1200,135 @@
+ }
+ 
+ 
++/* =======================================================================
++   Ticket Wallet v3 fixes (30 Sep 2026). Each rule answers a defect found
++   by driving the real flow in a browser; tests/e2e/test_guest_browser.py
++   repeats that walk so none of them can come back unnoticed.
++   ======================================================================= */
++
++/* 32. Things that must never show ---------------------------------------- */
++/* signature.js labels finished tracker steps with a class="sr-only" span.
++   guest.css only defines .g-sr-only, so the word "Done" was painted next to
++   every finished step ("DetailsDone") and cut the labels off. */
++.tw .sr-only {
++  position: absolute !important;
++  width: 1px;
++  height: 1px;
++  overflow: hidden;
++  clip: rect(0 0 0 0);
++  white-space: nowrap;
++}
++/* The app bar already carries the dates and the nights. A second date card
++   under it, and the "3 nights · Person 1 of 3" line above the tracker, said
++   the same thing again and pushed the question below the fold. */
++.tw .g-stay-summary,
++.tw .g-checkin-stay { display: none; }
++/* The strip says "Guest 2 of 3" now, so the chip beside the heading goes. */
++.tw [data-guest-step] h2 .g-chip { display: none; }
++/* guest.css caps question headings at 15ch for the old card; on a ticket
++   that broke "How many people, and your e-mail" into four ragged lines. */
++.tw .g-question-card h2 { max-width: none; }
++
++/* 33. Whose form this is -------------------------------------------------- */
++.tw [data-guest-step][data-tw-strip]::before { content: attr(data-tw-strip); }
++
++/* 34. Scrolling under the sticky bars ------------------------------------- */
++/* A new step used to scroll its own strip and heading under the app bar,
++   and a focused field could hide behind the sticky Continue bar. */
++.tw { scroll-padding-top: 112px; }
++.tw [data-guest-step],
++.tw .tw-ticket { scroll-margin-top: 104px; }
++@media (max-width: 560px) {
++  .tw { scroll-padding-bottom: 96px; }
++}
++
++/* 34b. The app bar stays one line on the smallest phones ------------------ */
++/* At 320px the title claimed its full text width, so the EN | CS switch
++   wrapped to a second line and the bar grew to 128px, taller than the room
++   the steps leave for it. Let the name shrink and ellipsize instead. */
++.tw .g-head .g-title { flex: 1 1 0; }
++.tw .g-head .g-lang { flex: 0 0 auto; }
++@media (max-width: 360px) {
++  .tw .g-head .g-facility { font-size: 17px; }
++  .tw .g-head .g-lang a { min-width: 40px; padding: 0 8px; }
++}
++
++/* 34c. Nothing may push the page sideways ------------------------------- */
++/* The stamp springs in from 1.8x its size, and on a 320px phone that made
++   the page scroll sideways for a moment on every "saved" screen. */
++body.tw { overflow-x: clip; }
++
++/* 35. One rhythm for every field ------------------------------------------ */
++/* .g-field:last-child dropped the margin on the second field of a row, so
++   Surname sat flush against Date of birth while every other pair had air. */
++.tw .g-field { margin-bottom: 20px; }
++.tw .g-field:last-child { margin-bottom: 0; }
++.tw .g-row { gap: 20px; margin-bottom: 20px; }
++.tw .g-row:last-child { margin-bottom: 0; }
++.tw .g-row > .g-field { margin-bottom: 0; }
++.tw .g-field > label:not(.checkline) { display: block; margin-bottom: 8px; }
++
++/* 36. Date of birth: level with every other field ------------------------ */
++.tw .tw-dob { align-items: start; }
++.tw .tw-dob-part { display: block; }
++.tw .tw-dob-part input { margin: 0; }
++.tw .tw-dob-part input::placeholder { color: var(--ink-faint); letter-spacing: 0.08em; }
++
++/* 37. Stub: Back and Continue on one line --------------------------------- */
++/* Two full-width buttons stacked took a fifth of a phone screen and, being
++   sticky, covered the field the guest was typing in. Back is the quiet
++   choice, so it takes only the room it needs. */
++.tw .tw-stub,
++.tw [data-guest-step] > .g-wizard-nav { flex-wrap: nowrap; align-items: stretch; }
++.tw [data-guest-step] > .g-wizard-nav > .g-btn.secondary {
++  flex: 0 0 auto;
++  min-width: 96px;
++  padding: 0 var(--space-5);
++}
++.tw [data-guest-step] > .g-wizard-nav > .g-btn:not(.secondary) { flex: 1 1 auto; }
++.tw .tw-stub > .tw-stub-note { flex-basis: 100%; }
++.tw .tw-stub:has(> .tw-stub-note) { flex-wrap: wrap; }
++@media (max-width: 560px) {
++  .tw [data-guest-step] > .g-wizard-nav { padding-top: var(--space-4); padding-bottom: var(--space-4); }
++}
++/* A form that ends in the stub must not leave a white band under it. */
++.tw .tw-ticket > form:last-child:has(> .tw-stub:last-child) { margin-bottom: 0; }
++
++/* 38. Small targets ------------------------------------------------------- */
++.tw .g-review-change {
++  display: inline-flex;
++  align-items: center;
++  min-height: 44px;
++  padding: 0 var(--space-2);
++}
++
++/* 39. Saved + next guest in one ticket ------------------------------------ */
++.tw .g-saved .tw-group-progress { margin: var(--space-4) 0 var(--space-2); text-align: left; }
++.tw .g-saved .g-still-missing { text-align: left; margin: 0; }
++.tw .g-saved .tw-stub .g-btn { flex: 1 1 auto; }
++
++/* 39b. Passport photo buttons ------------------------------------------- */
++/* Side by side, "Retake or choose another" wrapped to three lines inside a
++   pill and the two buttons read as circles. One per line, full width. */
++.tw .passport-upload-actions { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
++.tw .passport-upload-actions .g-btn { width: 100%; margin: 0; }
++.tw .passport-file-name { margin: var(--space-3) 0 0; font-weight: 650; color: var(--ink); }
++
++/* 40. Desktop page: no stray lines ---------------------------------------- */
++/* The two dashed rules down the page edges read as a rendering fault. */
++@media (min-width: 1020px) {
++  .tw {
++    background:
++      radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 70%),
++      var(--tw-page);
++  }
++}
++
+ /* 17. Motion ------------------------------------------------------------ */
+ .tw .tw-ticket,
+ .tw [data-guest-step]:not([hidden]) { animation: tw-enter 320ms var(--ease-standard) both; }
+ @keyframes tw-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+-@keyframes tw-stamp { from { opacity: 0; transform: rotate(-8deg) scale(1.8); } to { opacity: 1; transform: rotate(-8deg) scale(1); } }
++@keyframes tw-stamp { from { opacity: 0; transform: rotate(-8deg) scale(1.3); } to { opacity: 1; transform: rotate(-8deg) scale(1); } }
+ @keyframes tw-rise { from { transform: translateY(12px); } to { transform: none; } }
+ @keyframes tw-spin { to { transform: rotate(360deg); } }
+ @media (prefers-reduced-motion: reduce) {
+diff --git a/App/app/static/signature.js b/App/app/static/signature.js
+index 0f6f767..482de22 100644
+--- a/App/app/static/signature.js
++++ b/App/app/static/signature.js
+@@ -27,11 +27,22 @@ function initSignature() {
+     var ratio = window.devicePixelRatio || 1;
+ 
+     function resize() {
+-      // Keep any existing drawing when the viewport changes.
+-      var snapshot = dirty ? canvas.toDataURL("image/png") : null;
+       var rect = canvas.getBoundingClientRect();
+-      canvas.width = Math.round(rect.width * ratio);
+-      canvas.height = Math.round(rect.height * ratio);
++      // A pad on a wizard step that is not showing measures 0 x 0. Sizing the
++      // canvas then leaves it with no pixels at all: the guest's strokes draw
++      // nothing and the saved value is an empty "data:," that the server
++      // refuses. Phones fire resize all the time (the keyboard opening, the
++      // address bar hiding), so wait until the pad is visible instead.
++      if (!rect.width || !rect.height) return;
++      var width = Math.round(rect.width * ratio);
++      var height = Math.round(rect.height * ratio);
++      // Nothing to do when the pad itself did not change size; re-creating the
++      // bitmap would only risk the drawing.
++      if (canvas.width === width && canvas.height === height) return;
++      // Keep any existing drawing when the viewport changes.
++      var snapshot = dirty && canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
++      canvas.width = width;
++      canvas.height = height;
+       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+       ctx.lineWidth = 2.2;
+       ctx.lineCap = "round";
+@@ -52,6 +63,7 @@ function initSignature() {
+ 
+     function start(event) {
+       event.preventDefault();
++      if (!canvas.width || !canvas.height) resize();
+       drawing = true;
+       ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#20201e";
+       var p = pos(event);
+@@ -71,7 +83,7 @@ function initSignature() {
+     function end() {
+       if (!drawing) return;
+       drawing = false;
+-      if (dirty) {
++      if (dirty && canvas.width && canvas.height) {
+         hidden.value = canvas.toDataURL("image/png");
+         setSignatureStatus("");
+       }
+@@ -79,6 +91,11 @@ function initSignature() {
+ 
+     resize();
+     window.addEventListener("resize", resize);
++    // The wizard shows one step at a time, so the pad is often hidden when the
++    // page loads. Size it again whenever its step is shown.
++    var ownForm = canvas.closest("form");
++    if (ownForm) ownForm.addEventListener("guest-wizard:shown", function () { setTimeout(resize, 0); });
++    if (window.ResizeObserver) new ResizeObserver(function () { resize(); }).observe(canvas);
+     ["mousedown", "touchstart"].forEach(function (e) { canvas.addEventListener(e, start, { passive: false }); });
+     ["mousemove", "touchmove"].forEach(function (e) { canvas.addEventListener(e, move, { passive: false }); });
+     ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach(function (e) { canvas.addEventListener(e, end); });
+diff --git a/App/app/static/ticket.js b/App/app/static/ticket.js
+index 19a9d09..6f7b426 100644
+--- a/App/app/static/ticket.js
++++ b/App/app/static/ticket.js
+@@ -167,11 +167,14 @@
+       group.setAttribute("aria-labelledby", label.id);
+     }
+     var boxes = names.map(function (n, k) {
+-      var wrap = document.createElement("label");
++      // No second row of labels above the boxes: "Day / Month / Year" pushed
++      // the boxes below every other field, so a date of birth beside the
++      // nationality sat a line lower. The placeholder shows the format and
++      // the accessible name says which part it is.
++      var wrap = document.createElement("span");
+       wrap.className = "tw-dob-part";
+-      var small = document.createElement("small");
+-      small.textContent = n[0];
+       var box = document.createElement("input");
++      box.setAttribute("aria-label", n[0]);
+       box.type = "text";
+       box.inputMode = "numeric";
+       box.maxLength = n[1];
+@@ -183,7 +186,6 @@
+         box.setAttribute("aria-describedby", real.getAttribute("aria-describedby") || "");
+         box.className = "bad";
+       }
+-      wrap.appendChild(small);
+       wrap.appendChild(box);
+       group.appendChild(wrap);
+       return box;
+@@ -466,7 +468,7 @@
+     var hidden = document.getElementById("signature");
+     var canvas = document.getElementById("sig-canvas");
+     if (!pad || !hidden || !canvas) return;
+-    function sync() { pad.classList.toggle("is-signed", !!hidden.value); }
++    function sync() { pad.classList.toggle("is-signed", hidden.value.indexOf("data:image/") === 0); }
+     ["mouseup", "mouseleave", "touchend", "touchcancel", "pointerup", "keyup"].forEach(function (name) {
+       canvas.addEventListener(name, function () { setTimeout(sync, 30); });
+     });
+diff --git a/App/app/templates/guest/base.html b/App/app/templates/guest/base.html
+index 91b6f38..902b794 100644
+--- a/App/app/templates/guest/base.html
++++ b/App/app/templates/guest/base.html
+@@ -12,7 +12,7 @@
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+   <link rel="stylesheet" href="/static/guest.css?v=20260929a">
+-  <link rel="stylesheet" href="/static/guest-ticket.css?v=20260929c">
++  <link rel="stylesheet" href="/static/guest-ticket.css?v=20260930a">
+ </head>
+ <body class="tw">
+ <a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
+@@ -59,8 +59,8 @@
+   </div>
+ </div>
+ <script src="/static/skeleton.js?v=20260929a"></script>
+-<script src="/static/signature.js?v=20260928a"></script>
+-<script src="/static/ticket.js?v=20260929e"></script>
++<script src="/static/signature.js?v=20260930a"></script>
++<script src="/static/ticket.js?v=20260930a"></script>
+ <script src="/static/csrf.js?v=20260915a"></script>
+ </body>
+ </html>
+diff --git a/App/app/templates/guest/claim.html b/App/app/templates/guest/claim.html
+index f659831..a59b5dc 100644
+--- a/App/app/templates/guest/claim.html
++++ b/App/app/templates/guest/claim.html
+@@ -37,7 +37,7 @@
+       <label for="party_size">{{ t('party_question') }}</label>
+       <input type="number" id="party_size" name="party_size" min="1" max="60"
+              required inputmode="numeric" autocomplete="off"
+-             value="{{ claim.declared_guests or '' }}">
++             value="{{ claim.declared_guests or reservation.expected_guests_override or 1 }}">
+       <div class="hint">{{ t('party_help') }}</div>
+     </div>
+     <div class="g-field">
+diff --git a/App/app/templates/guest/form.html b/App/app/templates/guest/form.html
+index a01f923..6ad0f77 100644
+--- a/App/app/templates/guest/form.html
++++ b/App/app/templates/guest/form.html
+@@ -59,6 +59,18 @@
+ </details>
+ {% endif %}
+ 
++{# The coloured strip on every step says whose form this is. It used to repeat
++   the step title that the heading right under it already shows, and nothing
++   on the form said "guest 2 of 3", so a group could not tell where it was. #}
++{% if guest and guest.first_name %}
++  {% set tw_strip = (guest.first_name ~ ' ' ~ (guest.surname or '')) | trim %}
++{% elif person_number and expected_people %}
++  {% set tw_strip = t('tw_guest_n_of', current=person_number, total=expected_people) %}
++{% elif person_number %}
++  {% set tw_strip = t('tw_guest_n', current=person_number) %}
++{% else %}
++  {% set tw_strip = t('title') %}
++{% endif %}
+ <form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
+       enctype="multipart/form-data" data-guest-wizard
+       data-next-label="{{ t('next_step') }}" data-back-label="{{ t('previous_step') }}"
+@@ -82,7 +94,7 @@
+     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
+   </div>
+ 
+-  <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}" data-tw-short="{{ t('tw_step_details') }}">
++  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('your_details') }}" data-tw-short="{{ t('tw_step_details') }}">
+     <h2>
+       {{ t('your_details') }}
+       {% if person_number and person_number > 1 %}
+@@ -95,7 +107,7 @@
+         <label for="party_size">{{ t('party_question') }}</label>
+         <input type="number" id="party_size" name="party_size" min="1" max="60" required
+                inputmode="numeric" autocomplete="off"
+-               value="{{ values.get('party_size', '') }}">
++               value="{{ values.get('party_size') or 1 }}">
+         <div class="hint">{{ t('party_help') }}</div>
+         {{ err_for('party_size') }}
+       </div>
+@@ -148,7 +160,7 @@
+ 
+   </div>
+ 
+-  <div class="g-card" data-guest-step data-step-title="{{ t('tw_document_title') }}" data-tw-short="{{ t('tw_step_document') }}">
++  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('tw_document_title') }}" data-tw-short="{{ t('tw_step_document') }}">
+     <h2>{{ t('tw_document_title') }}</h2>
+     <div class="g-field" id="doc-wrap">
+       <label for="doc_number">{{ t('doc_number') }}</label>
+@@ -200,7 +212,7 @@
+     </div>
+   </div>
+ 
+-  <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}" data-tw-short="{{ t('tw_step_home') }}">
++  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('residence_title') }}" data-tw-short="{{ t('tw_step_home') }}">
+     <h2>{{ t('residence_title') }}</h2>
+     <p class="g-intro">{{ t('residence_help') }}</p>
+     {% if residence_copied_from %}
+@@ -238,7 +250,7 @@
+   </div>
+ 
+   {% if require_passport %}
+-  <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}" data-tw-short="{{ t('tw_step_photo') }}"
++  <div class="g-card" id="passport-photo-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('passport_photo_title') }}" data-tw-short="{{ t('tw_step_photo') }}"
+        data-guest-step-skip-when="CZE"
+        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
+     <h2>{{ t('passport_photo_title') }}</h2>
+@@ -266,7 +278,7 @@
+   </div>
+   {% endif %}
+ 
+-  <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}" data-tw-short="{{ t('tw_step_sign') }}">
++  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('signature') }}" data-tw-short="{{ t('tw_step_sign') }}">
+     <h2>{{ t('signature') }}</h2>
+     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
+     <div class="g-sign" data-tw-sign="{{ t('tw_sign_here') }}" data-tw-signed="{{ t('tw_signed') }}">
+@@ -284,7 +296,7 @@
+     {{ err_for('signature') }}
+   </div>
+ 
+-  <div data-guest-step data-step-title="{{ t('legal_notice_title') }}" data-tw-short="{{ t('tw_step_check') }}">
++  <div data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('legal_notice_title') }}" data-tw-short="{{ t('tw_step_check') }}">
+     <div class="g-card g-review" data-wizard-review
+          data-edit-label="{{ t('review_edit') }}" hidden>
+       <h2>{{ t('review_title') }}</h2>
+diff --git a/App/app/templates/guest/stay.html b/App/app/templates/guest/stay.html
+index 6d93a62..ccdb369 100644
+--- a/App/app/templates/guest/stay.html
++++ b/App/app/templates/guest/stay.html
+@@ -30,7 +30,7 @@
+       <div class="g-field" data-tw-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
+         <label for="party_size">{{ t('party_question') }}</label>
+         <input type="number" id="party_size" name="party_size" min="1" max="60"
+-               required inputmode="numeric" autocomplete="off">
++               required inputmode="numeric" autocomplete="off" value="1">
+       </div>
+       <div class="tw-stub"><button class="g-btn" type="submit">{{ t('party_confirm') }}</button></div>
+     </form>
+@@ -64,14 +64,29 @@
+     {% endif %}
+   </div>
+ {% else %}
++  {% set next_number = (progress.filled + 1) if expected else none %}
++  {% set next_url = "/l/" ~ token ~ "/" ~ reservation.id ~ "/new?lang=" ~ lang %}
+   {% if just_saved %}
++    {# One ticket says both things the guest needs right now: this person is
++       saved, and who is next. A separate "your group" card with its own button
++       further down was easy to miss, and the guest thought they were done. #}
+     <div class="g-card g-saved tw-ticket is-ok tw-center" data-tw-label="{{ t('tw_label_saved') }}">
+       <span class="tw-stamp" aria-hidden="true">{{ t('tw_registered') }}</span>
+       <h2>{{ t('reported_title') if just_reported else t('saved_title') }}</h2>
+-      <p class="g-intro" style="margin-bottom:0">{{ t('reported_body') if just_reported else t('saved_body') }}</p>
++      {% if next_number and remaining and remaining > 0 %}
++        <p class="g-intro">{{ t('reported_body') if just_reported else t('saved_body') }}</p>
++        <div class="g-progress tw-group-progress">
++          <span>{{ t('people_progress', done=progress.filled, total=expected) }}</span>
++          <span class="g-bar"><i style="width:{{ (100 * progress.filled / expected) | round }}%"></i></span>
++        </div>
++        <p class="g-still-missing">{{ t('still_missing', n=remaining) }}</p>
++        <div class="tw-stub"><a class="g-btn" href="{{ next_url }}" data-tw-next-guest>{{ t('tw_next_guest', current=next_number, total=expected) }}</a></div>
++      {% else %}
++        <p class="g-intro" style="margin-bottom:0">{{ t('reported_body') if just_reported else t('saved_body') }}</p>
++      {% endif %}
+     </div>
+   {% endif %}
+-  {% if expected %}
++  {% if expected and not (just_saved and remaining and remaining > 0) %}
+     <div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_group') }}">
+       <div class="g-progress" style="margin-bottom:0">
+         <span>{{ t('people_progress', done=progress.filled, total=expected) }}</span>
+@@ -79,13 +94,11 @@
+       </div>
+       {% if remaining and remaining > 0 %}
+         <p class="g-still-missing">{{ t('still_missing', n=remaining) }}</p>
+-      {% endif %}
+-      {% if remaining and remaining > 0 %}
+-        <div class="tw-stub"><a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a></div>
++        <div class="tw-stub"><a class="g-btn" href="{{ next_url }}" data-tw-next-guest>{{ t('tw_next_guest', current=next_number, total=expected) }}</a></div>
+       {% endif %}
+     </div>
+-  {% elif remaining and remaining > 0 %}
+-    <a class="g-btn" href="/l/{{ token }}/{{ reservation.id }}/new?lang={{ lang }}">{{ t('add_person') }}</a>
++  {% elif not expected and remaining and remaining > 0 %}
++    <a class="g-btn" href="{{ next_url }}">{{ t('add_person') }}</a>
+   {% endif %}
+ {% endif %}
+ 
+diff --git a/App/app/templates/guest_form_admin.html b/App/app/templates/guest_form_admin.html
+index 9f64d24..bf29df0 100644
+--- a/App/app/templates/guest_form_admin.html
++++ b/App/app/templates/guest_form_admin.html
+@@ -273,5 +273,5 @@
+ {% endif %}
+ </details>
+ {% endif %}
+-<script src="/static/signature.js?v=20260914e"></script>
++<script src="/static/signature.js?v=20260930a"></script>
+ {% endblock %}
+diff --git a/App/tests/test_guest_browser_e2e.py b/App/tests/test_guest_browser_e2e.py
+new file mode 100644
+index 0000000..3fe0fec
+--- /dev/null
++++ b/App/tests/test_guest_browser_e2e.py
+@@ -0,0 +1,389 @@
++"""The guest flow, driven in a real browser the way a guest on a phone does it.
++
++Every other guest test reads HTML. That is how three defects reached a guest on
++30 Sep 2026 without one red test:
++
++* the party-size box opened empty, so a family of three tapped "+" once and
++  registered one person;
++* the signature pad was sized while its wizard step was hidden. A phone fires
++  a resize whenever the keyboard opens, so the canvas ended up 0 x 0: the pad
++  said "Signed", saved nothing, and the form was refused;
++* the date-of-birth boxes sat a line lower than the nationality beside them.
++
++None of that is visible in markup. This file clicks through the real pages in
++Chromium - pick the stay, set the group size with the stepper, claim by
++e-mail, then fill, sign and submit one form per person - and measures the
++layout on every screen. It is skipped when Playwright or Chromium is missing;
++the ``guest-browser`` CI job installs both, so it always runs on a pull request.
++
++Run it locally:
++    pip install playwright==1.63.0 && python -m playwright install chromium
++    python -m pytest tests/test_guest_browser_e2e.py -q
++"""
++import os
++import re
++import socket
++import threading
++import time
++from datetime import timedelta
++
++import pytest
++
++# In CI the browser job sets UBYHOST_REQUIRE_BROWSER, so a missing Playwright
++# or Chromium fails the job instead of skipping these tests without a word.
++REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
++if REQUIRE_BROWSER:
++    import playwright.sync_api as sync_api
++else:
++    sync_api = pytest.importorskip("playwright.sync_api")
++
++from app import claim, db, mail  # noqa: E402
++
++
++# Layout rules every guest screen must meet. Each returns a sentence per
++# breach, so a failure reads like a QA note rather than a stack of numbers.
++LAYOUT_JS = r"""
++() => {
++  const out = [];
++  const R = el => el.getBoundingClientRect();
++  const vis = el => {
++    const r = R(el);
++    if (!r.width || !r.height) return false;
++    for (let e = el; e; e = e.parentElement) {
++      const cs = getComputedStyle(e);
++      if (e.hidden || cs.display === 'none' || cs.visibility === 'hidden') return false;
++    }
++    return true;
++  };
++  const clipped = el => {
++    const cs = getComputedStyle(el);
++    return (cs.clip && cs.clip !== 'auto') || (cs.clipPath && cs.clipPath !== 'none') || R(el).width <= 2;
++  };
++  const name = el => el.id ? '#' + el.id : el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : '');
++
++  if (document.documentElement.scrollWidth > window.innerWidth + 1) {
++    const wide = [...document.querySelectorAll('body *')].filter(e => R(e).right > window.innerWidth + 1 && R(e).width > 0 && getComputedStyle(e).position !== 'fixed');
++    const culprit = wide.length ? name(wide[wide.length - 1]) : 'unknown';
++    out.push(`the page scrolls sideways (${document.documentElement.scrollWidth}px on a ${window.innerWidth}px screen, widest: ${culprit})`);
++  }
++
++  document.querySelectorAll('label, button, a.g-btn, .tw-chip, h2, summary, .g-checkin-step').forEach(el => {
++    if (!vis(el) || clipped(el)) return;
++    if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflow !== 'visible')
++      out.push(`text is cut off: ${name(el)} "${el.textContent.trim().slice(0, 40)}"`);
++  });
++
++  // Words meant only for screen readers must never be painted.
++  document.querySelectorAll('.sr-only, .g-sr-only').forEach(el => {
++    if (el.textContent.trim() && R(el).width > 2 && !clipped(el))
++      out.push(`screen-reader text is visible: "${el.textContent.trim()}"`);
++  });
++
++  const scope = document.querySelector('[data-guest-step]:not([hidden])') || document.querySelector('main');
++  const controls = [...scope.querySelectorAll('input[type=text], input[type=email], input:not([type]), select, .tw-combo input')]
++    .filter(el => vis(el) && !el.closest('.tw-pin') && !el.closest('.tw-stepper') && !el.classList.contains('tw-vh'));
++  const heights = [...new Set(controls.map(el => Math.round(R(el).height)))];
++  if (heights.length > 1)
++    out.push(`text boxes differ in height: ${controls.map(el => name(el) + '=' + Math.round(R(el).height)).join(', ')}`);
++
++  scope.querySelectorAll('.g-row').forEach(row => {
++    const fields = [...row.children].filter(vis);
++    if (fields.length < 2) return;
++    const tops = fields.map(f => R(f).top);
++    if (Math.max(...tops) - Math.min(...tops) > 2) return;  // stacked on a phone
++    const first = f => [...f.querySelectorAll('input:not([type=hidden]), select')].filter(el => vis(el) && !el.classList.contains('tw-vh'))[0];
++    const boxes = fields.map(first).filter(Boolean);
++    const boxTops = boxes.map(el => Math.round(R(el).top));
++    if (Math.max(...boxTops) - Math.min(...boxTops) > 2)
++      out.push(`fields side by side are not level: ${boxes.map((el, i) => name(el) + ' at ' + boxTops[i]).join(' vs ')}`);
++  });
++
++  const fields = [...scope.querySelectorAll('.g-field')].filter(vis).filter(f => !f.parentElement.closest('.g-field'));
++  const gaps = [];
++  for (let i = 1; i < fields.length; i++) {
++    const a = R(fields[i - 1]), b = R(fields[i]);
++    if (Math.abs(a.top - b.top) < 2) continue;
++    gaps.push(Math.round(b.top - a.bottom));
++  }
++  if (gaps.length > 1 && Math.max(...gaps) - Math.min(...gaps) > 6)
++    out.push(`the space between fields is uneven: ${gaps.join(', ')}px`);
++
++  scope.querySelectorAll('button, a.g-btn, .tw-chip').forEach(el => {
++    if (!vis(el) || el.closest('.g-checkin-step')) return;
++    const r = R(el);
++    if (r.height < 44) out.push(`tap target under 44px: ${name(el)} "${el.textContent.trim().slice(0, 30)}" (${Math.round(r.height)}px)`);
++  });
++  return out;
++}
++"""
++
++PEOPLE = [
++    ("Anna", "Müller", "14031988", "C01X00T47"),
++    ("Jonas", "Müller", "02111990", "C22Y11K08"),
++    ("Lena", "Müller", "30062015", "C33Z22M19"),
++]
++
++
++def _free_port() -> int:
++    with socket.socket() as sock:
++        sock.bind(("127.0.0.1", 0))
++        return sock.getsockname()[1]
++
++
++@pytest.fixture(scope="module")
++def live_server():
++    import uvicorn
++
++    from app.main import app
++
++    db.init_db()
++    port = _free_port()
++    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
++    thread = threading.Thread(target=server.run, daemon=True)
++    thread.start()
++    deadline = time.time() + 15
++    while not server.started and time.time() < deadline:
++        time.sleep(0.05)
++    if not server.started:
++        pytest.fail("the test server did not start")
++    yield f"http://127.0.0.1:{port}"
++    server.should_exit = True
++    thread.join(timeout=5)
++
++
++@pytest.fixture(scope="module")
++def browser():
++    with sync_api.sync_playwright() as playwright:
++        try:
++            chromium = playwright.chromium.launch()
++        except Exception as exc:  # the browser binary is not installed
++            if REQUIRE_BROWSER:
++                raise
++            pytest.skip(f"Chromium is not available: {exc}")
++        yield chromium
++        chromium.close()
++
++
++def _seed(token: str):
++    """One property with a stay that starts today, like a guest's link."""
++    now = db.utcnow()
++    today = claim.prague_today()
++    entity = db.insert(
++        "legal_entity",
++        {
++            "name": "Browser Test s.r.o.",
++            "contact_email": "host@example.test",
++            "contact_phone": "+420 777 000 000",
++            "created_at": now,
++        },
++    )
++    apartment = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity,
++            "internal_name": "Browser Loft",
++            "permalink_token": token,
++            "permalink_window_days": 14,
++            "default_purpose": "10",
++            "automation_mode": "manual",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    return db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment,
++            "source": "airbnb",
++            "uid": f"{token}-stay",
++            "date_from": today.isoformat(),
++            "date_to": (today + timedelta(days=3)).isoformat(),
++            "status": "active",
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++
++
++def _claim_link(base: str, reservation_id: int) -> str:
++    mail.drain(50)
++    for message in mail.recent_console_messages(None, limit=50):
++        found = re.search(r"(https?://\S+/%d/claim\S*#c=[\w\-]+)" % reservation_id, message["body_text"])
++        if found:
++            # The link carries the configured public host; the test server
++            # listens on its own port.
++            return base + found.group(1).split("/l/", 1)[1].join(["/l/", ""])
++    raise AssertionError("no claim e-mail was sent")
++
++
++class Guest:
++    def __init__(self, page, width):
++        self.page = page
++        self.width = width
++        self.problems = []
++
++    def check_layout(self, where: str):
++        for problem in self.page.evaluate(LAYOUT_JS):
++            self.problems.append(f"{where}: {problem}")
++
++    def step(self) -> str:
++        return self.page.evaluate(
++            "() => { const s = document.querySelector('[data-guest-step]:not([hidden])');"
++            " return s ? s.getAttribute('data-step-title') : '' }"
++        )
++
++    def pick_country(self, field: str, code: str):
++        self.page.click(f"#{field}_search")
++        self.page.keyboard.type(code)
++        self.page.locator(f"#{field}_list [role=option]").first.click()
++
++    def next(self):
++        before = self.step()
++        self.page.locator(
++            "[data-guest-step]:not([hidden]) .g-wizard-nav button.g-btn[type=button]:not(.secondary)"
++        ).first.click()
++        self.page.wait_for_timeout(900)  # the step scrolls into view smoothly
++        assert self.step() != before, f"Continue did not leave the step {before!r}"
++        # The new step's strip must be in view, not under the sticky app bar.
++        top, bar = self.page.evaluate(
++            "() => [document.querySelector('[data-guest-step]:not([hidden])').getBoundingClientRect().top,"
++            " document.querySelector('.g-head').getBoundingClientRect().bottom]"
++        )
++        assert top >= bar - 2, f"step {self.step()!r} opened under the app bar"
++
++    def sign(self):
++        pad = self.page.locator("#sig-canvas").bounding_box()
++        self.page.mouse.move(pad["x"] + 30, pad["y"] + 80)
++        self.page.mouse.down()
++        for k in range(24):
++            self.page.mouse.move(pad["x"] + 30 + k * 8, pad["y"] + 80 + (-1) ** k * 20)
++        self.page.mouse.up()
++        signature = self.page.eval_on_selector("#signature", "e => e.value")
++        assert signature.startswith("data:image/png;base64,") and len(signature) > 500, (
++            "drawing on the pad did not produce a signature"
++        )
++
++    def fill_form(self, number: int, total: int, person):
++        first, surname, birth, document = person
++        page = self.page
++        strip = page.evaluate(
++            "() => document.querySelector('[data-guest-step]:not([hidden])').getAttribute('data-tw-strip')"
++        )
++        assert strip == f"Guest {number} of {total}", strip
++        self.check_layout(f"guest {number}, details (empty)")
++        page.fill("#first_name", first)
++        # A phone keyboard opening shrinks the viewport and fires resize while
++        # the signature step is still hidden. That is what left the pad 0 x 0.
++        page.set_viewport_size({"width": self.width, "height": 480})
++        page.set_viewport_size({"width": self.width, "height": 812})
++        page.fill("#surname", surname)
++        page.click("#birth_date_d")
++        page.keyboard.type(birth)
++        self.pick_country("nationality", "DEU")
++        assert page.eval_on_selector("#birth_date", "e => e.value") == f"{birth[:2]}.{birth[2:4]}.{birth[4:]}"
++        assert page.eval_on_selector("#nationality", "e => e.value") == "DEU"
++        self.check_layout(f"guest {number}, details")
++        self.next()
++        page.fill("#doc_number", document)
++        self.check_layout(f"guest {number}, document")
++        self.next()
++        if not page.input_value("#res_street"):
++            page.fill("#res_street", "Hauptstraße 12")
++            page.fill("#res_city", "Berlin")
++            self.pick_country("res_country", "DEU")
++        self.check_layout(f"guest {number}, home")
++        self.next()
++        self.sign()
++        self.check_layout(f"guest {number}, signature")
++        self.next()
++        self.check_layout(f"guest {number}, check")
++        for box in page.locator("[data-guest-step]:not([hidden]) input[type=checkbox][required]").all():
++            box.check()
++        page.locator("[data-guest-step]:not([hidden]) button[type=submit]").last.click()
++        page.wait_for_load_state()
++        assert "/save" not in page.url, page.inner_text(".g-err") if page.locator(".g-err").count() else page.url
++
++
++@pytest.mark.parametrize("width", [320, 375, 1280])
++def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, width):
++    token = f"browser-e2e-{width}"
++    db.execute("DELETE FROM rate_limit_event")
++    stay = _seed(token)
++    context = browser.new_context(viewport={"width": width, "height": 812}, locale="en-GB")
++    page = context.new_page()
++    script_errors = []
++    page.on("pageerror", lambda error: script_errors.append(str(error)))
++    guest = Guest(page, width)
++    try:
++        page.goto(f"{live_server}/l/{token}?lang=en")
++        page.locator(f"a[href*='/l/{token}/{stay}']").first.click()
++        page.wait_for_load_state()
++        guest.check_layout("claim")
++
++        # The group size never starts empty, and the stepper counts from it.
++        assert page.input_value("#party_size") == "1"
++        page.locator(".tw-step-btn").last.click()
++        page.locator(".tw-step-btn").last.click()
++        assert page.input_value("#party_size") == "3"
++        page.fill("#guest_email", "family@example.test")
++        page.locator("form button[type=submit]").first.click()
++        page.wait_for_load_state()
++
++        page.goto(_claim_link(live_server, stay))
++        page.locator("form button[type=submit]").first.click()
++        page.wait_for_load_state()
++
++        for number, person in enumerate(PEOPLE, start=1):
++            if number > 1:
++                # The saved ticket names the next person, so nobody stops at one.
++                button = page.locator("[data-tw-next-guest]")
++                assert button.count() == 1
++                assert button.inner_text().strip() == f"Register guest {number} of 3"
++                guest.check_layout(f"saved, before guest {number}")
++                button.click()
++                page.wait_for_load_state()
++            guest.fill_form(number, 3, person)
++
++        stored = db.query("SELECT * FROM guest WHERE reservation_id = ?", (stay,))
++        assert sorted(row["first_name"].upper() for row in stored) == ["ANNA", "JONAS", "LENA"]
++        assert all(row["signature_png"].startswith("data:image/png;base64,") for row in stored)
++        assert page.locator(".tw-bp").count() == 3
++        guest.check_layout("done")
++        assert not script_errors, script_errors
++        assert not guest.problems, "\n".join(guest.problems)
++    finally:
++        context.close()
++        db.execute(
++            "DELETE FROM guest WHERE reservation_id IN (SELECT r.id FROM reservation r "
++            "JOIN apartment a ON a.id = r.apartment_id WHERE a.permalink_token = ?)",
++            (token,),
++        )
++
++
++def test_the_czech_pages_have_no_english_left(live_server, browser):
++    token = "browser-e2e-cs"
++    db.execute("DELETE FROM rate_limit_event")
++    stay = _seed(token)
++    context = browser.new_context(viewport={"width": 375, "height": 812}, locale="cs-CZ")
++    page = context.new_page()
++    try:
++        page.goto(f"{live_server}/l/{token}?lang=cs")
++        text = page.inner_text("body")
++        assert "Check-in" not in text and "Check-out" not in text
++        page.locator(f"a[href*='/l/{token}/{stay}']").first.click()
++        page.wait_for_load_state()
++        assert page.input_value("#party_size") == "1"
++        page.fill("#guest_email", "rodina@example.test")
++        page.locator("form button[type=submit]").first.click()
++        page.wait_for_load_state()
++        page.goto(_claim_link(live_server, stay))
++        page.locator("form button[type=submit]").first.click()
++        page.wait_for_load_state()
++        text = page.inner_text("body")
++        for english in ("Continue", "Guest 1", "Day", "Month", "Year", "Sign here", "Start typing"):
++            assert english not in text, f"{english!r} on a Czech page"
++        assert "Host 1 z 1" in page.evaluate(
++            "() => document.querySelector('[data-guest-step]:not([hidden])').getAttribute('data-tw-strip')"
++        )
++    finally:
++        context.close()
+diff --git a/App/tests/test_stay_hub.py b/App/tests/test_stay_hub.py
+index 68d0ffc..52794c0 100644
+--- a/App/tests/test_stay_hub.py
++++ b/App/tests/test_stay_hub.py
+@@ -39,9 +39,11 @@ def test_the_next_action_sits_above_the_records():
+         page = _hub()
+     finally:
+         _cleanup()
+-    assert "Add a person" in page
+-    assert page.index("Add a person") < page.index('class="g-card g-summary"')
+-    assert page.index("Add a person") < page.index("Your submission")
++    # The button names who is next. "Add a person" read as optional, and a
++    # guest who had just saved their own form thought the group was done.
++    assert "Register guest 2 of 3" in page
++    assert page.index("Register guest 2 of 3") < page.index('class="g-card g-summary"')
++    assert page.index("Register guest 2 of 3") < page.index("Your submission")
+ 
+ 
+ def test_the_status_line_says_how_many_are_still_to_register():
+diff --git a/App/tests/test_ticket_wallet_v3.py b/App/tests/test_ticket_wallet_v3.py
+new file mode 100644
+index 0000000..a1a6971
+--- /dev/null
++++ b/App/tests/test_ticket_wallet_v3.py
+@@ -0,0 +1,174 @@
++"""Ticket Wallet v3: the defects found by driving the guest flow on a phone.
++
++These are the fast, markup-level halves of the checks. The browser halves -
++the ones that prove the behaviour, not just the code - are in
++test_guest_browser_e2e.py.
++"""
++from pathlib import Path
++
++from fastapi.testclient import TestClient
++
++from app import i18n
++from app.main import app
++from app.routes import guest
++from tests.conftest import complete_guest_claim
++from tests.test_guest_navigation import (
++    _cleanup,
++    _form,
++    _make_apartment_with_stays,
++    _passport_files,
++)
++
++APP = Path(__file__).resolve().parent.parent / "app"
++SIGNATURE_JS = (APP / "static" / "signature.js").read_text(encoding="utf-8")
++TICKET_JS = (APP / "static" / "ticket.js").read_text(encoding="utf-8")
++CSS = (APP / "static" / "guest-ticket.css").read_text(encoding="utf-8")
++BASE = (APP / "templates" / "guest" / "base.html").read_text(encoding="utf-8")
++CLAIM = (APP / "templates" / "guest" / "claim.html").read_text(encoding="utf-8")
++STAY = (APP / "templates" / "guest" / "stay.html").read_text(encoding="utf-8")
++FORM = (APP / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
++
++
++# 1. The group size never opens empty --------------------------------------
++
++def test_the_claim_page_opens_the_group_size_at_one():
++    """An empty box plus "+" gave 1, so a family registered one person."""
++    token, stay, _other = _make_apartment_with_stays()
++    try:
++        page = TestClient(app).get(f"/l/{token}/{stay}?lang=en").text
++    finally:
++        _cleanup()
++    field = page[page.index('id="party_size"'):]
++    field = field[: field.index(">")]
++    assert 'value="1"' in field
++
++
++def test_every_party_size_box_has_a_starting_number():
++    assert "claim.declared_guests or reservation.expected_guests_override or 1" in CLAIM
++    assert 'autocomplete="off" value="1">' in STAY
++    assert "values.get('party_size') or 1" in FORM
++
++
++# 2. The signature pad is never sized while hidden -------------------------
++
++def test_the_pad_waits_until_it_is_visible_before_sizing_itself():
++    resize = SIGNATURE_JS[SIGNATURE_JS.index("function resize()"):]
++    resize = resize[: resize.index("function pos(")]
++    assert "if (!rect.width || !rect.height) return;" in resize
++    # Same size, nothing to do: a phone's address bar must not wipe a drawing.
++    assert "canvas.width === width && canvas.height === height" in resize
++
++
++def test_the_pad_is_sized_again_when_its_step_is_shown():
++    assert 'ownForm.addEventListener("guest-wizard:shown"' in SIGNATURE_JS
++    assert "new ResizeObserver" in SIGNATURE_JS
++
++
++def test_an_empty_canvas_never_counts_as_a_signature():
++    assert "if (dirty && canvas.width && canvas.height) {" in SIGNATURE_JS
++    # "Signed" is only shown for a real image, never for the empty "data:,".
++    assert 'hidden.value.indexOf("data:image/") === 0' in TICKET_JS
++
++
++# 3. After one person, the next one is named --------------------------------
++
++def _hub_after_first_of_three(lang="en"):
++    token, stay, _other = _make_apartment_with_stays()
++    browser = TestClient(app)
++    browser.cookies.set(guest.LANG_COOKIE, lang)
++    complete_guest_claim(browser, token, stay, party_size=3)
++    saved = browser.post(
++        f"/l/{token}/{stay}/save",
++        data=_form(party_size="3"),
++        files=_passport_files(),
++        follow_redirects=False,
++    )
++    assert saved.status_code == 303
++    return browser.get(saved.headers["location"]).text
++
++
++def test_the_saved_ticket_carries_the_button_for_the_next_guest():
++    try:
++        page = _hub_after_first_of_three()
++    finally:
++        _cleanup()
++    saved = page[page.index("g-saved tw-ticket"):page.index('class="g-card g-summary"')]
++    assert "Register guest 2 of 3" in saved
++    # Exactly one way forward: no second "your group" card with its own button.
++    assert page.count("data-tw-next-guest") == 1
++    assert "Add a person" not in page
++
++
++def test_the_next_guest_button_is_czech_on_a_czech_page():
++    try:
++        page = _hub_after_first_of_three("cs")
++    finally:
++        _cleanup()
++    assert "Registrovat hosta 2 z 3" in page
++
++
++def test_every_form_step_says_whose_form_it_is():
++    token, stay, _other = _make_apartment_with_stays()
++    browser = TestClient(app)
++    try:
++        complete_guest_claim(browser, token, stay, party_size=3)
++        page = browser.get(f"/l/{token}/{stay}/new?lang=en").text
++    finally:
++        _cleanup()
++    assert page.count('data-tw-strip="Guest 1 of 3"') == page.count("data-guest-step data-tw-strip")
++    assert page.count('data-tw-strip="Guest 1 of 3"') >= 5
++    assert ".tw [data-guest-step][data-tw-strip]::before { content: attr(data-tw-strip); }" in CSS
++
++
++# 4. Layout ------------------------------------------------------------------
++
++def test_the_birth_date_boxes_have_no_second_row_of_labels():
++    """The Day/Month/Year row pushed the boxes below the field beside them."""
++    dob = TICKET_JS[TICKET_JS.index("function initDobCells()"):]
++    dob = dob[: dob.index("function initCountryCombos()")]
++    assert 'createElement("small")' not in dob
++    assert 'box.setAttribute("aria-label", n[0]);' in dob
++
++
++def test_fields_in_a_row_share_one_rhythm():
++    assert ".tw .g-row > .g-field { margin-bottom: 0; }" in CSS
++    assert ".tw .g-row { gap: 20px; margin-bottom: 20px; }" in CSS
++
++
++def test_screen_reader_words_are_never_painted():
++    """signature.js marks finished tracker steps with class="sr-only"."""
++    assert 'sr.className = "sr-only";' in SIGNATURE_JS
++    rule = CSS[CSS.index(".tw .sr-only {"):]
++    assert "clip: rect(0 0 0 0);" in rule[: rule.index("}")]
++
++
++def test_back_and_continue_share_one_line():
++    assert ".tw [data-guest-step] > .g-wizard-nav { flex-wrap: nowrap; align-items: stretch; }" in CSS
++
++
++def test_a_new_step_does_not_open_under_the_app_bar():
++    assert "scroll-margin-top: 104px;" in CSS
++
++
++# 5. Shipping ----------------------------------------------------------------
++
++def test_the_changed_files_get_new_cache_keys():
++    """A phone that cached the broken files must fetch the fixed ones."""
++    assert "guest-ticket.css?v=20260930a" in BASE
++    assert "signature.js?v=20260930a" in BASE
++    assert "ticket.js?v=20260930a" in BASE
++
++
++def test_the_czech_pass_says_arrival_and_departure():
++    assert i18n.STRINGS["cs"]["check_in"] == "Příjezd"
++    assert i18n.STRINGS["cs"]["check_out"] == "Odjezd"
++
++
++def test_the_new_strings_exist_in_both_languages():
++    for key in ("tw_guest_n_of", "tw_guest_n", "tw_next_guest"):
++        assert key in i18n.STRINGS["en"] and key in i18n.STRINGS["cs"]
++
++
++def test_the_app_bar_title_shrinks_instead_of_pushing_the_language_switch_down():
++    assert ".tw .g-head .g-title { flex: 1 1 0; }" in CSS
++    assert ".tw .g-head .g-lang { flex: 0 0 auto; }" in CSS
+diff --git a/docs/DESIGN.md b/docs/DESIGN.md
+index e98a64d..581d194 100644
+--- a/docs/DESIGN.md
++++ b/docs/DESIGN.md
+@@ -96,7 +96,7 @@ UbyHost has three audiences, and each one has its own design direction. They all
+ - `templates/guest/_ticket.html` (macros);
+ - the `pass_date` Jinja global in `templating.py`.
+ 
+-`guest.css` and `signature.js` stay as they are underneath. The skin restyles them, and the tests read them line by line.
++`guest.css` stays as it is underneath: the skin restyles it, and the tests read it line by line. `signature.js` is edited only to fix behaviour (v3 made the signature pad size itself when its step is shown), never to restyle.
+ 
+ ### The idea
+ 
+@@ -116,12 +116,12 @@ The guest is boarding a stay. Every screen is a ticket: a coloured **strip** say
+ │ ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬░░░░░░░░░░░░   3px coral progress       │
+ └──────────────────────────────────────────────────────────────┘
+   ┌─────────────── ticket (white, radius 22) ────────────────┐
+-  │ STEP 2 · GUEST FORM                     ← strip (coral)  │
++  │ GUEST 2 OF 3                            ← strip (coral)  │
+   │  Home address                  ← serif heading           │
+   │  As written in your passport.  ← muted intro             │
+   │  [ field ]  [ field ]                                    │
+   ◖ - - - - - - - - - - - - - - - - - - - - - - - - - - - - -◗  ← perforation + notches
+-  │  [ Back ]            [ Next ▸ ]  ← stub; sticky on phones │
++  │  [ Back ] [      Continue      ]  ← stub; one line, sticky │
+   └──────────────────────────────────────────────────────────┘
+   help folds · host contact row · privacy line
+ ```
+@@ -129,29 +129,35 @@ The guest is boarding a stay. Every screen is a ticket: a coloured **strip** say
+ ### Components
+ 
+ - **App bar:** property mark, property name (one line), `EN | CS`, route line, progress line.
+-- **Ticket:** `.tw-ticket` or `[data-guest-step]`. The strip text comes from `data-tw-label` or `data-step-title`. Variants: `.is-ok` (green), `.is-quiet` (ink), `.is-alert` (red).
+-- **Stub:** `.tw-stub` or `.g-wizard-nav`. It holds the screen's only coral button, with Back as a ghost button beside it.
++- **Ticket:** `.tw-ticket` or `[data-guest-step]`. The strip text comes from `data-tw-label` on a ticket and from `data-tw-strip` on a form step. On the form the strip says **whose form this is** ("Guest 2 of 3", or the guest's name when editing); the heading under it names the step. Never repeat the heading in the strip. Variants: `.is-ok` (green), `.is-quiet` (ink), `.is-alert` (red).
++- **Stub:** `.tw-stub` or `.g-wizard-nav`. It holds the screen's only coral button, with Back as a compact ghost button **on the same line** (never two stacked full-width buttons: on a phone the stub is sticky and would cover the field being typed in).
+ - **Stay pass (the "V1 Airline Pass"):** a dark head ("Stay 1 of 3 · Arriving today"), `29 SEP → 2 OCT` with a moon icon and the number of nights, a perforated foot with the property name, and a "That's my stay" pill. The whole pass is one link.
+ - **Form controls:**
+   - PIN: six cells.
+-  - Party size: − / + stepper.
+-  - Date of birth: Day / Month / Year boxes, with the green read-back chip "That is 14 March 1988".
++  - Party size: − / + stepper. It **never opens empty**: it starts at the number already declared, else the host's override, else 1.
++  - Date of birth: three boxes on one line (DD · MM · YYYY placeholders, `aria-label` Day/Month/Year), the same height as every other box and level with the field beside it. No second row of mini-labels above them. The green read-back chip "That is 14 March 1988" sits underneath.
+   - Country: type-to-search (it matches "germ" and "DEU").
+   - Purpose: chips (Tourism · Business · Visiting family · Study · Other…).
+   - Document number: a drawn passport page showing where the number is.
+   - Address for guest 2 onwards: a green "copied from …" card.
+-  - Signature: "Sign here", then "✓ Signed".
++  - Signature: "Sign here", then "✓ Signed" — shown only when a real image was captured, never for an empty canvas.
+ - **Guest tracker:** Details · Document · Home · (Photo) · Sign · Check. A finished segment is tappable to go back to it.
+ - **Check step:** review rows, each with "Change". The legal information is in a grey box, and the acknowledgement sits in a coral-edged box directly above Submit.
+ - **Saved / done:**
+   - the green "REGISTERED" stamp;
++  - while people are still missing, the saved ticket itself carries the one button forward, and it names the person: "Register guest 2 of 3". There is no second card with its own button;
+   - one boarding pass per guest, with a decorative, `aria-hidden` barcode;
+   - the line "Keep this page — it is your confirmation."
+ - **Host contact row:** the legal entity's name, with Call and E-mail pills. It is never UbyHost support (see the contact split above).
+ 
+ ### Rules
+ 
+-- One 640px column (680px from 1020px wide, on an ambient background). It never splits into two columns.
++- One 640px column (680px from 1020px wide, on a plain ambient background: no decorative lines). It never splits into two columns.
++- The app bar is the only place for the property, the dates and the nights. No second date card under it.
++- Field rhythm: 20px between every pair of fields, in a row or stacked. Labels sit 8px above their box.
++- A new step scrolls so its strip sits just under the app bar, never under it (`scroll-margin-top`).
++- Nothing may make the page scroll sideways, at any width from 320px.
++- Czech pages carry no English: the passes say "Příjezd / Odjezd".
+ - Exactly **one coral button per screen**, and it lives in the stub.
+ - Every enhancement is progressive:
+   - The real `<input>`/`<select>` keeps its `id` and `name`, and is what gets submitted.
+@@ -162,10 +168,27 @@ The guest is boarding a stay. Every screen is a ticket: a coloured **strip** say
+ - Motion:
+   - tickets fade and rise over 320ms;
+   - stay passes stagger by 70ms and lift 3px on hover;
+-  - the stamp springs over 500ms;
++  - the stamp springs from 1.3× over 500ms (a bigger start pushed a 320px page sideways);
+   - boarding passes stagger by 150ms;
+   - under `prefers-reduced-motion`, nothing moves.
+ 
++### Definition of done for any guest-page change
++
++A guest change is not finished until **all** of these pass. Reading HTML is not
++enough: the v2 release passed every markup test and still shipped a blank group
++size, a signature pad that saved nothing and a date of birth a line too low.
++
++1. `python -m pytest tests -q` (the whole suite).
++2. `python -m pytest tests/test_guest_browser_e2e.py -q -rs` with Playwright and
++   Chromium installed, and **0 skipped**. It registers a group of three in real
++   Chromium at 320, 375 and 1280px and in Czech, and measures every screen:
++   no sideways scroll, no clipped text, equal box heights, side-by-side fields
++   level, even field spacing, 44px tap targets, no visible screen-reader text.
++   CI runs it in the `guest-browser` job.
++3. Bump the `?v=` cache key in `guest/base.html` for every CSS or JS file you
++   changed, or phones keep the old file.
++4. Click through it yourself on a phone once: group of 2+, sign, save, next guest.
++
+ ## Host app: Effortless
+ 
+ **Goal:** a host who has never seen UbyHost can register a stay's guests and report them to UbyPort without reading a guide. A host who uses it daily gets through their day in a handful of clicks. Competitors exist; UbyHost wins by being **the most obvious one to use**.
+diff --git a/docs/plans/README.md b/docs/plans/README.md
+index 87c6dd0..0504352 100644
+--- a/docs/plans/README.md
++++ b/docs/plans/README.md
+@@ -10,7 +10,7 @@ These plans describe features. The **guest-facing** stay fee is **on hold**; the
+ | `PLAN_GUEST_INVOICE_FEATURE.md` | **Standalone, host-only invoice builder** (free-form, unlimited line items, VAT 0/12/21 %). Not connected to a stay; no guest access. The filename is historical. **Built.** |
+ | `invoice-design/invoice_pdf_reference.py` | The invoice PDF renderer (copied to `App/app/invoice_pdf.py`) |
+ | `invoice-design/sample-*.pdf`, `*.png` | What the invoices look like |
+-| `PLAN_TICKET_WALLET_V2.md` | **Guest registration, Ticket Wallet** (chosen 29 Sep 2026): every screen is a ticket with one coral button in the tear-off stub, a step tracker on the form, and a boarding pass per guest at the end. The handoff (foundation patch, full reference patch, real-app screenshots) is in `ticket-wallet/`. **Built.** |
++| `PLAN_TICKET_WALLET_V2.md` | **Guest registration, Ticket Wallet** (chosen 29 Sep 2026): every screen is a ticket with one coral button in the tear-off stub, a step tracker on the form, and a boarding pass per guest at the end. The handoff (foundation patch, full reference patch, real-app screenshots) is in `ticket-wallet/`. **Built; v3 fixes in `ticket-wallet/V3_FIXES.md`, guarded by a browser test.** |
+ 
+ ## Session decisions (2026-09-26)
+ 
+diff --git a/docs/plans/ticket-wallet/V3_FIXES.md b/docs/plans/ticket-wallet/V3_FIXES.md
+new file mode 100644
+index 0000000..28fd0dd
+--- /dev/null
++++ b/docs/plans/ticket-wallet/V3_FIXES.md
+@@ -0,0 +1,29 @@
++# Ticket Wallet v3: what broke in v2 and how it is fixed
++
++v2 was merged in #199 and reverted from `main` on 30 Sep 2026 after a real
++walkthrough. This branch puts it back with the fixes below. Every item was
++found by driving the guest flow in Chromium, and every one is now checked by
++`App/tests/test_guest_browser_e2e.py` (browser) and
++`App/tests/test_ticket_wallet_v3.py` (markup). The browser test fails on the
++v2 code for each of the first three.
++
++| # | What the guest saw | Root cause | Fix |
++|---|---|---|---|
++| 1 | "How many people are staying?" opened **empty**; tapping + once gave 1, so a family registered one person and was told they were done. | `value="{{ claim.declared_guests or '' }}"`, and the stepper treats an empty box as "below the minimum". | The box always starts with a number: declared, else the host's override, else 1 (claim page, stay page and first form). |
++| 2 | The pad said "✓ Signed" but **Submit failed**: "That signature could not be saved". | `signature.js` sized the canvas on every window `resize`. Phones fire one when the keyboard opens, while the signature step is still hidden, so the canvas became 0 × 0. Drawing on it produced `data:,`. | The pad ignores a resize while it is hidden, sizes itself when its step is shown (and via `ResizeObserver`), never saves an empty canvas, and "Signed" only shows for a real image. |
++| 3 | After the first person, only a small "Add a person" in a second card. It was easy to miss, so it looked finished. | Two tickets; the button did not say who was next. | The saved ticket carries one button that names the person: **"Register guest 2 of 3"**. The form strip says "Guest 2 of 3" on every step. |
++| 4 | Date of birth sat a line **lower** than Nationality beside it, and flush against Surname on a phone. | A second row of "Day / Month / Year" labels above the boxes; `.g-field:last-child` dropped the margin inside a row. | Boxes on one line with DD/MM/YYYY placeholders and `aria-label`s; one 20px rhythm between all fields. |
++| 5 | Tracker read "DetailsDone", "Document…". | `signature.js` marks finished steps with `class="sr-only"`, which the guest CSS never defined. | `.tw .sr-only` is visually hidden. |
++| 6 | Back and Continue stacked as two full-width buttons in the sticky bar, covering the field being typed in. | `flex: 1 1 160px` wrapped at phone width. | One line: compact Back, wide Continue. |
++| 7 | A new step opened with its strip and heading under the app bar. | `scrollIntoView` ignores sticky bars. | `scroll-margin-top` / `scroll-padding` on the page. |
++| 8 | Dates shown twice (app bar and a card), "3 nights · Person 1 of 3" floating above the tracker. | Leftovers from the pre-ticket layout. | Hidden under `.tw`; the app bar is the one place for dates. |
++| 9 | Photo step: "Take photo" and "Retake or choose another" squashed into circles. | Two pill buttons side by side, text wrapping to three lines. | Stacked, full width. |
++| 10 | At 320px the language switch wrapped and the app bar grew to 128px; the stamp animation pushed the page sideways. | Title took its full text width; stamp started at 1.8×. | Title shrinks with an ellipsis; stamp starts at 1.3×; `body.tw { overflow-x: clip }`. |
++| 11 | Czech passes said "CHECK-IN / CHECK-OUT". | CS dictionary kept the English words. | "Příjezd / Odjezd". |
++| 12 | Desktop: two dashed lines down the page edges. | Decorative background. | Removed. |
++
++Cache keys for `guest-ticket.css`, `ticket.js` and `signature.js` are bumped to
++`20260930a`, so phones that cached v2 fetch the fixed files.
++
++QA screenshots of the fixed flow (group of three, EN and CS, 375px, plus
++desktop) are in `qa/`.
+diff --git a/docs/plans/ticket-wallet/qa/1280-cs-01-pick.png b/docs/plans/ticket-wallet/qa/1280-cs-01-pick.png
+deleted file mode 100644
+index 4b44ffc..0000000
+Binary files a/docs/plans/ticket-wallet/qa/1280-cs-01-pick.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/1280-en-01-pick.png b/docs/plans/ticket-wallet/qa/1280-en-01-pick.png
+deleted file mode 100644
+index e32a764..0000000
+Binary files a/docs/plans/ticket-wallet/qa/1280-en-01-pick.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/1280-en-guest1-details.png b/docs/plans/ticket-wallet/qa/1280-en-guest1-details.png
+new file mode 100644
+index 0000000..af989e9
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/1280-en-guest1-details.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-01-claim.png b/docs/plans/ticket-wallet/qa/375-cs-01-claim.png
+deleted file mode 100644
+index 74a9582..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-cs-01-claim.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-01-pick.png b/docs/plans/ticket-wallet/qa/375-cs-01-pick.png
+new file mode 100644
+index 0000000..bc20a2e
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-01-pick.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-02-claim-group-size.png b/docs/plans/ticket-wallet/qa/375-cs-02-claim-group-size.png
+new file mode 100644
+index 0000000..ef19b23
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-02-claim-group-size.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-02-step1-details.png b/docs/plans/ticket-wallet/qa/375-cs-02-step1-details.png
+deleted file mode 100644
+index 952c387..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-cs-02-step1-details.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-03-guest1-details.png b/docs/plans/ticket-wallet/qa/375-cs-03-guest1-details.png
+new file mode 100644
+index 0000000..4c21898
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-03-guest1-details.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-03-step2-document.png b/docs/plans/ticket-wallet/qa/375-cs-03-step2-document.png
+deleted file mode 100644
+index 388b8df..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-cs-03-step2-document.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-04-guest1-home.png b/docs/plans/ticket-wallet/qa/375-cs-04-guest1-home.png
+new file mode 100644
+index 0000000..406dfb9
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-04-guest1-home.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-04-step3-home.png b/docs/plans/ticket-wallet/qa/375-cs-04-step3-home.png
+deleted file mode 100644
+index e7f3a6a..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-cs-04-step3-home.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-05-guest1-sign.png b/docs/plans/ticket-wallet/qa/375-cs-05-guest1-sign.png
+new file mode 100644
+index 0000000..dd82706
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-05-guest1-sign.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-05-step4-sign.png b/docs/plans/ticket-wallet/qa/375-cs-05-step4-sign.png
+deleted file mode 100644
+index 07fa115..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-cs-05-step4-sign.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-06-guest1-check.png b/docs/plans/ticket-wallet/qa/375-cs-06-guest1-check.png
+new file mode 100644
+index 0000000..7b5984d
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-06-guest1-check.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-06-step5-check.png b/docs/plans/ticket-wallet/qa/375-cs-06-step5-check.png
+deleted file mode 100644
+index e60bc98..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-cs-06-step5-check.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-07-hub-done.png b/docs/plans/ticket-wallet/qa/375-cs-07-hub-done.png
+deleted file mode 100644
+index f6020a0..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-cs-07-hub-done.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-07-saved-next-guest.png b/docs/plans/ticket-wallet/qa/375-cs-07-saved-next-guest.png
+new file mode 100644
+index 0000000..b80e45f
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-07-saved-next-guest.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-08-guest2-home-copied.png b/docs/plans/ticket-wallet/qa/375-cs-08-guest2-home-copied.png
+new file mode 100644
+index 0000000..9384304
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-08-guest2-home-copied.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-cs-09-everyone-registered.png b/docs/plans/ticket-wallet/qa/375-cs-09-everyone-registered.png
+new file mode 100644
+index 0000000..ebef7c8
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-cs-09-everyone-registered.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-01-pick.png b/docs/plans/ticket-wallet/qa/375-en-01-pick.png
+new file mode 100644
+index 0000000..e6f4e63
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-01-pick.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-01-pin.png b/docs/plans/ticket-wallet/qa/375-en-01-pin.png
+deleted file mode 100644
+index 046544f..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-01-pin.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-02-claim-group-size.png b/docs/plans/ticket-wallet/qa/375-en-02-claim-group-size.png
+new file mode 100644
+index 0000000..b4ce0d2
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-02-claim-group-size.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-02-pick.png b/docs/plans/ticket-wallet/qa/375-en-02-pick.png
+deleted file mode 100644
+index 911237b..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-02-pick.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-03-claim.png b/docs/plans/ticket-wallet/qa/375-en-03-claim.png
+deleted file mode 100644
+index 9c93bc5..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-03-claim.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-03-guest1-details.png b/docs/plans/ticket-wallet/qa/375-en-03-guest1-details.png
+new file mode 100644
+index 0000000..65c745f
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-03-guest1-details.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-04-guest1-home.png b/docs/plans/ticket-wallet/qa/375-en-04-guest1-home.png
+new file mode 100644
+index 0000000..ef50de1
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-04-guest1-home.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-04-step1-details.png b/docs/plans/ticket-wallet/qa/375-en-04-step1-details.png
+deleted file mode 100644
+index 1d5c777..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-04-step1-details.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-05-guest1-sign.png b/docs/plans/ticket-wallet/qa/375-en-05-guest1-sign.png
+new file mode 100644
+index 0000000..8fe9cd6
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-05-guest1-sign.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-05-step2-document.png b/docs/plans/ticket-wallet/qa/375-en-05-step2-document.png
+deleted file mode 100644
+index c25100d..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-05-step2-document.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-06-guest1-check.png b/docs/plans/ticket-wallet/qa/375-en-06-guest1-check.png
+new file mode 100644
+index 0000000..fc585f7
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-06-guest1-check.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-06-step3-home.png b/docs/plans/ticket-wallet/qa/375-en-06-step3-home.png
+deleted file mode 100644
+index 42a03ba..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-06-step3-home.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-07-saved-next-guest.png b/docs/plans/ticket-wallet/qa/375-en-07-saved-next-guest.png
+new file mode 100644
+index 0000000..f5ca166
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-07-saved-next-guest.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-07-step4-sign.png b/docs/plans/ticket-wallet/qa/375-en-07-step4-sign.png
+deleted file mode 100644
+index 926fe82..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-07-step4-sign.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-08-guest2-home-copied.png b/docs/plans/ticket-wallet/qa/375-en-08-guest2-home-copied.png
+new file mode 100644
+index 0000000..c9d92a8
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-08-guest2-home-copied.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-08-step5-check.png b/docs/plans/ticket-wallet/qa/375-en-08-step5-check.png
+deleted file mode 100644
+index 70d647b..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-08-step5-check.png and /dev/null differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-09-everyone-registered.png b/docs/plans/ticket-wallet/qa/375-en-09-everyone-registered.png
+new file mode 100644
+index 0000000..7d44fca
+Binary files /dev/null and b/docs/plans/ticket-wallet/qa/375-en-09-everyone-registered.png differ
+diff --git a/docs/plans/ticket-wallet/qa/375-en-09-hub-done.png b/docs/plans/ticket-wallet/qa/375-en-09-hub-done.png
+deleted file mode 100644
+index b806c28..0000000
+Binary files a/docs/plans/ticket-wallet/qa/375-en-09-hub-done.png and /dev/null differ
