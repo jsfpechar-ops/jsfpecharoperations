@@ -453,6 +453,28 @@ WHEN (SELECT issued_at FROM invoice WHERE id = OLD.invoice_id) IS NOT NULL
  AND COALESCE((SELECT value FROM settings WHERE key = 'invoice_purge_unlock'), '') <> '1'
 BEGIN SELECT RAISE(ABORT, 'invoice is issued and immutable'); END;
 
+-- Sealed stay-fee period: encrypted PDF/CSV snapshots after host finalization.
+CREATE TABLE IF NOT EXISTS stay_fee_filing (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    apartment_id         INTEGER NOT NULL REFERENCES apartment(id),
+    period_key           TEXT NOT NULL,
+    version              INTEGER NOT NULL DEFAULT 1,
+    cadence              TEXT NOT NULL,
+    rate_czk             INTEGER NOT NULL,
+    liable_days          INTEGER NOT NULL,
+    exempt_days          INTEGER NOT NULL,
+    total_due_czk        INTEGER NOT NULL,
+    total_collected_czk  INTEGER NOT NULL,
+    pdf_enc              BLOB,
+    csv_enc              BLOB,
+    payload_enc          TEXT,
+    created_at           TEXT NOT NULL,
+    superseded_at        TEXT,
+    UNIQUE (apartment_id, period_key, version)
+);
+CREATE INDEX IF NOT EXISTS idx_stay_fee_filing_lookup
+    ON stay_fee_filing (apartment_id, period_key);
+
 -- Evidence that a host accepted the Terms of Service, DPA and Privacy Policy,
 -- per document version (BE-1). One row per account and document version; a
 -- version bump makes that document pending again without touching old rows.
@@ -650,6 +672,10 @@ ADDED_COLUMNS = (
     ("guest", "doc_type", "TEXT"),
     ("guest", "fee_host_decision", "TEXT"),
     ("guest", "fee_host_reason", "TEXT"),
+    ("apartment", "stay_fee_scope_rule", "TEXT"),
+    ("apartment", "stay_fee_scope_reference", "TEXT"),
+    ("guest", "fee_host_reason_enc", "TEXT"),
+    ("guest", "fee_host_reason_reference", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
@@ -924,9 +950,19 @@ def audit(
 
 # --- secret handling -----------------------------------------------------
 
+_fernet_cache: Dict[str, Fernet] = {}
+
+
 def _fernet() -> Fernet:
-    digest = hashlib.sha256(config.secret_key().encode("utf-8")).digest()
-    return Fernet(base64.urlsafe_b64encode(digest))
+    secret = config.secret_key()
+    cached = _fernet_cache.get(secret)
+    if cached is not None:
+        return cached
+    digest = hashlib.sha256(secret.encode("utf-8")).digest()
+    cached = Fernet(base64.urlsafe_b64encode(digest))
+    _fernet_cache.clear()
+    _fernet_cache[secret] = cached
+    return cached
 
 
 def encrypt_secret(plain: str) -> str:
@@ -958,6 +994,8 @@ ENCRYPTED_GUEST_COLUMNS = {
     "visa_number": "visa_number_enc",
     # BE-12: the drawn signature is as sensitive as the document number.
     "signature_png": "signature_png_enc",
+    # Stay-fee exemption category (may be disability). Plaintext is a read fallback only.
+    "fee_host_reason": "fee_host_reason_enc",
 }
 
 

@@ -3,20 +3,8 @@
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
-{% set chips %}
-  <nav class="chips" aria-label="{{ t('stay_fees.title') }}">
-    {% set older_month = month_chips[0] %}
-    <a class="chip" href="?month={{ older_month.strftime('%Y-%m') }}"
-       aria-label="{{ t('month.' ~ older_month.month) }} {{ older_month.year }}">&larr;</a>
-    {% for month in month_chips[1:] %}
-      <a class="chip{{ ' on' if month == selected_month else '' }}"
-         href="?month={{ month.strftime('%Y-%m') }}"{% if month == selected_month %} aria-current="page"{% endif %}>
-        {{ t('month.' ~ month.month) }} {{ month.year }}
-      </a>
-    {% endfor %}
-  </nav>
-{% endset %}
-{{ page_header(t('stay_fees.title'), t('stay_fees.lede'), '', '', t('nav.records'), chips) }}
+{{ page_header(t('stay_fees.title'), t('stay_fees.lede'), '', '', t('nav.records'), '') }}
+{% include "_host_month_filter.html" %}
 {% if periods %}
 <div class="panel tight scroll-x">
   <table class="table-cards">

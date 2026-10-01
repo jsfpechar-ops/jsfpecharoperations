@@ -7,8 +7,7 @@ stored except the host's per-guest decision and the template fields.
 
 The rules, in one place (zákon č. 565/1990 Sb.):
 
-* Base = nights ("Lůžkoden = osoba × počet nocí", the councils' own form note;
-  = "započaté dny s výjimkou dne počátku", §3c).
+* Base = commenced days after arrival through departure (§3c), i.e. (arrival, departure].
 * A night belongs to the period its date falls in (the night of 31 Aug counts
   in August, the night of 1 Sep in September). Praha 1: "na konci měsíce je
   nutné spočítat dny a přiřadit je do správného měsíce".
@@ -34,6 +33,14 @@ ADULT_AGE = 18           # §3b(1)(b)
 CADENCES = ("monthly", "quarterly")
 DECISIONS = ("exempt", "charge")
 REASON_MAX = 120
+EXEMPT_CATEGORIES = (
+    "disability",
+    "diplomat",
+    "local_rule",
+    "other_statutory",
+)
+SCOPE_RULES = ("calendar_days", "nights")
+THRESHOLD_NIGHTS = 60
 
 MONTHS_CS = ("Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec",
              "Srpen", "Září", "Říjen", "Listopad", "Prosinec")
@@ -56,9 +63,22 @@ def is_active(apartment) -> bool:
     return bool(apartment) and int(apartment["stay_fee_rate_czk"] or 0) > 0
 
 
-def clamp_rate(raw) -> int:
+def parse_czk_int(raw) -> Optional[int]:
+    """Non-negative integer from ASCII digits only.
+
+    ``str.isdigit()`` is true for characters such as ``²``, which ``int()`` rejects.
+    """
     text = str(raw or "").strip()
-    return max(0, min(int(text), MAX_RATE_CZK)) if text.isdigit() else 0
+    if not text.isascii() or not text.isdigit():
+        return None
+    return int(text)
+
+
+def clamp_rate(raw) -> int:
+    value = parse_czk_int(raw)
+    if value is None:
+        return 0
+    return max(0, min(value, MAX_RATE_CZK))
 
 
 def cadence_of(apartment) -> str:
@@ -136,11 +156,30 @@ def period_complete(cadence: str, month: date, today: date) -> bool:
     return period_bounds(cadence, month)[1] < today
 
 
-def nights_in(start: date, end: date, first: date, last: date) -> int:
-    """Nights of a start..end stay (night n: arrival <= n < departure) inside first..last."""
-    lo = max(start, first)
-    hi = min(end - timedelta(days=1), last)
+def counted_days_in(start: date, end: date, first: date, last: date) -> int:
+    """Days in (arrival, departure] that fall inside first..last inclusive."""
+    first_day = start + timedelta(days=1)
+    if end < first_day:
+        return 0
+    lo = max(first_day, first)
+    hi = min(end, last)
     return max((hi - lo).days + 1, 0)
+
+
+def nights_in(start: date, end: date, first: date, last: date) -> int:
+    """Alias kept for tests and PDF copy that still say lůžkodny."""
+    return counted_days_in(start, end, first, last)
+
+
+def _day_liability(guest, decision: Optional[str], day: date, birth: Optional[date] = None) -> str:
+    if decision == "exempt":
+        return "exempt"
+    if birth is None and decision != "exempt":
+        birth = conservative_birth(guest["birth_date"])
+    minor = bool(birth and validation.age_on(birth, day) < ADULT_AGE)
+    if decision == "charge":
+        return "exempt" if minor else "liable"
+    return "exempt" if minor else "liable"
 
 
 def format_czk(amount: int) -> str:
@@ -150,37 +189,59 @@ def format_czk(amount: int) -> str:
 # --- per guest --------------------------------------------------------------
 
 def guest_period(guest, reservation, first: date, last: date) -> Optional[Dict[str, Any]]:
-    """One guest's share of one period, or None when no night falls in it."""
+    """One guest's share of one period, or None when no counted day falls in it."""
     start = validation.parse_iso_date(guest["stay_from"] or reservation["date_from"])
     end = validation.parse_iso_date(guest["stay_to"] or reservation["date_to"])
     if not start or not end or end <= start:
         return None
-    nights = nights_in(start, end, first, last)
-    if nights <= 0:
-        return None
-    total_nights = (end - start).days
+    stay_nights = (end - start).days
     decision = guest["fee_host_decision"] if guest["fee_host_decision"] in DECISIONS else None
-    if total_nights + 1 > MAX_CALENDAR_DAYS:
-        status = "not_subject"                    # §3a scope limit, not an exemption
-    elif decision == "exempt":
-        status = "exempt"
-    elif decision == "charge":
-        status = "liable"
+    if stay_nights > THRESHOLD_NIGHTS:
+        status = "not_subject"
     else:
-        birth = conservative_birth(guest["birth_date"])
-        minor = bool(birth and validation.age_on(birth, start) < ADULT_AGE)
-        status = "exempt" if minor else "liable"
+        status = "liable"
+    liable = exempt = 0
+    auto_minor = False
+    birth = conservative_birth(guest["birth_date"]) if decision is None else None
+    d = max(start + timedelta(days=1), first)
+    end_in_period = min(end, last)
+    while d <= end_in_period:
+        if status == "not_subject":
+            pass
+        else:
+            day_status = _day_liability(guest, decision, d, birth)
+            if day_status == "liable":
+                liable += 1
+            else:
+                exempt += 1
+                if decision is None and birth and validation.age_on(birth, d) < ADULT_AGE:
+                    auto_minor = True
+        d += timedelta(days=1)
+    days = liable + exempt
+    if days <= 0 and status != "not_subject":
+        return None
+    if status == "not_subject":
+        days = counted_days_in(start, end, first, last)
+        liable = exempt = 0
+    elif exempt and not liable:
+        status = "exempt"
+    elif liable:
+        status = "liable"
+    reason = guest["fee_host_reason"] or ""
+    if guest.get("fee_host_reason_enc"):
+        reason = db.decrypt_field(guest["fee_host_reason_enc"]) or reason
     return {
         "guest_id": guest["id"],
         "stay_from": start.isoformat(),
         "stay_to": end.isoformat(),
-        "nights": nights,
-        "liable_nights": nights if status == "liable" else 0,
-        "exempt_nights": nights if status == "exempt" else 0,
+        "nights": days,
+        "liable_nights": liable,
+        "exempt_nights": exempt,
         "status": status,
-        "auto_minor": status == "exempt" and decision is None,
+        "auto_minor": auto_minor and status == "exempt",
         "decision": decision,
-        "reason": guest["fee_host_reason"] or "",
+        "reason": reason,
+        "threshold_nights": stay_nights == THRESHOLD_NIGHTS,
     }
 
 
@@ -190,16 +251,23 @@ _GUESTS_SQL = (
     "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id "
     "FROM guest g JOIN reservation r ON r.id = g.reservation_id "
     "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
-    "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) > ? "
+    "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) >= ? "
     "ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
 )
 
 
-def property_period(apartment, month: date) -> Optional[Dict[str, Any]]:
+def property_period(apartment, month: date, *, live_only: bool = False) -> Optional[Dict[str, Any]]:
     """Figures for one property and the period (of its cadence) containing month."""
+    cadence = cadence_of(apartment)
+    if not live_only:
+        from . import stay_fee_filing
+
+        key = stay_fee_filing.period_key(cadence, month)
+        row = stay_fee_filing.latest(apartment["id"], key)
+        if row:
+            return stay_fee_filing.frozen_summary(row, apartment)
     if not is_active(apartment):
         return None
-    cadence = cadence_of(apartment)
     first, last = period_bounds(cadence, month)
     rate = int(apartment["stay_fee_rate_czk"])
     lines: List[Dict[str, Any]] = []
@@ -215,6 +283,8 @@ def property_period(apartment, month: date) -> Optional[Dict[str, Any]]:
             "name": f"{row['first_name'] or ''} {row['surname'] or ''}".strip(),
             "restricted": bool(row["restricted_at"]),
             "amount_czk": share["liable_nights"] * rate,
+            "res_country": row["res_country"] or "",
+            "res_city": row["res_city"] or "",
         })
         lines.append(share)
     liable = sum(line["liable_nights"] for line in lines)
@@ -248,26 +318,18 @@ def vs_of(apartment) -> str:
     return "".join(ch for ch in (apartment["stay_fee_vs"] or "") if ch.isdigit())
 
 
-def report_group(apartment, month: date) -> Dict[str, Any]:
-    """The hlášení the property belongs to.
-
-    A payer files one hlášení per variabilní symbol, so every active property
-    of the same legal entity with the same VS and cadence is summed into it.
-    Without a VS the property stands alone (and the report is blocked).
-    """
+def report_group(
+    apartment,
+    month: date,
+    *,
+    live_only: bool = False,
+    period: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """One hlášení and register per facility (§3g), even when VS is shared."""
     vs = vs_of(apartment)
-    members = [apartment]
-    if vs and apartment["legal_entity_id"]:
-        members = [
-            row for row in db.query(
-                "SELECT * FROM apartment WHERE owner_user_id IS ? AND legal_entity_id = ? "
-                "AND archived_at IS NULL AND stay_fee_rate_czk > 0 ORDER BY internal_name, id",
-                (apartment["owner_user_id"], apartment["legal_entity_id"]),
-            )
-            if vs_of(row) == vs and cadence_of(row) == cadence_of(apartment)
-        ] or [apartment]
-    periods = [property_period(row, month) for row in members]
-    periods = [p for p in periods if p]
+    if period is None:
+        period = property_period(apartment, month, live_only=live_only)
+    periods = [period] if period else []
     cadence = cadence_of(apartment)
     first, last = period_bounds(cadence, month)
     return {
@@ -285,7 +347,7 @@ def report_group(apartment, month: date) -> Dict[str, Any]:
 
 
 def report_issues(group, today: date) -> List[str]:
-    """Host-UI keys that block the PDF (empty list = ready)."""
+    """Host-UI keys that block finalization (empty list = ready to save)."""
     anchor = group["anchor"]
     issues = []
     if not period_complete(group["cadence"], group["first"], today):
@@ -298,7 +360,30 @@ def report_issues(group, today: date) -> List[str]:
               if anchor["legal_entity_id"] else None)
     if not entity or not (entity["name"] or "").strip():
         issues.append("stay_fees.issue.no_payer")
+    for period in group["periods"]:
+        issues.extend(_period_line_issues(anchor, period))
+    return list(dict.fromkeys(issues))
+
+
+def _period_line_issues(apartment, period) -> List[str]:
+    issues: List[str] = []
+    for line in period.get("lines") or []:
+        if line.get("threshold_nights"):
+            rule = (apartment["stay_fee_scope_rule"] or "").strip()
+            ref = (apartment["stay_fee_scope_reference"] or "").strip()
+            if rule not in SCOPE_RULES or len(ref) < 3:
+                issues.append("stay_fees.issue.scope_ruling")
     return issues
+
+
+def unsigned_stays(apartment_id: int, first: date, last: date) -> int:
+    rows = db.query(
+        "SELECT g.* FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
+        "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) >= ?",
+        (apartment_id, last.isoformat(), first.isoformat()),
+    )
+    return sum(1 for row in rows if not reporting.guest_has_signature(row))
 
 
 def payment_details(group) -> Optional[Dict[str, Any]]:
@@ -429,9 +514,7 @@ def register_rows(period) -> List[Dict[str, Any]]:
             "council_account": apartment["stay_fee_council_account"] or "",
         }
         if line["restricted"]:
-            for key in ("first_name", "home_address", "birth_date", "doc_number"):
-                row[key] = ""
-            row["surname"] = RESTRICTED_NOTE
+            row["exempt_reason"] = (row["exempt_reason"] + f"; {RESTRICTED_NOTE}").strip("; ")
         rows.append(row)
     return rows
 

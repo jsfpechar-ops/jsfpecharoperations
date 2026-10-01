@@ -192,17 +192,32 @@ def test_another_owners_properties_never_appear(host):
     assert "Private Other Demo" not in response.text
 
 
-def test_chips_mark_the_selected_month(host):
+def test_period_filter_uses_month_picker_not_chip_rail(host):
     client, _owner_id, _entity_id = host
 
     response = client.get("/stay-fees?month=2026-08&lang=cs")
 
     assert response.status_code == 200
-    assert '<a class="chip on"' in response.text
-    assert 'href="?month=2026-08" aria-current="page"' in response.text
-    assert "Červenec 2026" in response.text
-    assert "Srpen 2026" in response.text
-    assert "Září 2026" in response.text
+    assert 'type="month"' in response.text
+    assert 'name="month"' in response.text
+    assert 'value="2026-08"' in response.text
+    assert 'max="2026-09"' in response.text
+    assert 'href="/stay-fees?month=2026-07"' in response.text
+    assert 'href="/stay-fees?month=2026-09"' in response.text
+    assert 'class="chip' not in response.text
+    assert "host-month-filter" in response.text
+
+
+def test_period_filter_reaches_old_months(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Historic Demo")
+    _stay(apartment_id, "2024-01-10", "2024-01-12", [{}])
+
+    response = client.get("/stay-fees?month=2024-01")
+
+    assert response.status_code == 200
+    assert 'value="2024-01"' in response.text
+    assert f"/stay-fees/{apartment_id}?month=2024-01" in response.text
 
 
 def test_future_month_redirects_to_default(host):

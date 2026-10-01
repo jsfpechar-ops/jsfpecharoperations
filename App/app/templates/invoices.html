@@ -5,6 +5,7 @@
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('invoices.title'), t('invoices.lede'), '', '', '',
     '<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
+{% include "_host_month_filter.html" %}
 {% if invoices %}
 <div class="panel tight scroll-x">
   <table class="table-cards">

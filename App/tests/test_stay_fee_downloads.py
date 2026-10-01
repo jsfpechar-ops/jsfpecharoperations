@@ -25,6 +25,11 @@ def _cleanup():
     ):
         owner_id = user["id"]
         db.execute(
+            "DELETE FROM stay_fee_filing WHERE apartment_id IN "
+            "(SELECT id FROM apartment WHERE owner_user_id = ?)",
+            (owner_id,),
+        )
+        db.execute(
             "DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation "
             "WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?))",
             (owner_id,),
@@ -117,6 +122,28 @@ def _stay(apartment_id, date_from, date_to, guests):
     return reservation_id, guest_ids
 
 
+def _csrf(client, apartment_id, month="2026-08") -> str:
+    page = client.get(f"/stay-fees/{apartment_id}?month={month}")
+    return page.text.split('name="csrf-token" content="')[1].split('"')[0]
+
+
+def _finalize(client, apartment_id, month="2026-08", *, rate="50", guests=()):
+    data = {
+        "_csrf": _csrf(client, apartment_id, month),
+        "month": month,
+        "rate_czk": rate,
+    }
+    if guests:
+        data["confirm_collected"] = "1"
+        for guest_id, amount in guests:
+            data[f"collected_{guest_id}"] = str(amount)
+    return client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data=data,
+        follow_redirects=False,
+    )
+
+
 def _pdf_text(content: bytes) -> str:
     reader = PdfReader(io.BytesIO(content))
     return "\n".join(page.extract_text() or "" for page in reader.pages)
@@ -146,6 +173,8 @@ def test_the_pdf_is_the_council_report(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Downloads Demo")
     _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    assert _finalize(client, apartment_id, guests=[(guest_id, 200)]).status_code == 303
 
     response = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
 
@@ -175,12 +204,13 @@ def test_a_running_period_is_blocked(host):
     assert response.status_code == 303
     location = unquote(response.headers["location"])
     assert location.startswith(f"/stay-fees/{apartment_id}?month=2026-09")
-    assert "The report can't be created yet." in location
+    assert "Save the period first" in location
 
 
 def test_a_zero_period_still_renders(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Downloads Demo")
+    assert _finalize(client, apartment_id).status_code == 303
 
     response = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
 
@@ -197,7 +227,11 @@ def test_a_quarterly_pdf_says_quarterly(host, monkeypatch):
     apartment_id = _property(
         owner_id, entity_id, "Downloads Demo", rate=21, cadence="quarterly"
     )
+    guest_id = None
     _stay(apartment_id, "2026-07-10", "2026-07-12", [{}])
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    saved = _finalize(client, apartment_id, rate="21", guests=[(guest_id, 42)])
+    assert saved.status_code == 303
 
     response = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
 
@@ -212,6 +246,8 @@ def test_the_csv_is_the_register_with_a_bom(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Downloads Demo")
     _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    assert _finalize(client, apartment_id, guests=[(guest_id, 200)]).status_code == 303
 
     response = client.get(f"/stay-fees/{apartment_id}/csv?month=2026-08")
 
@@ -235,14 +271,20 @@ def test_a_restricted_guest_is_blanked_in_the_csv(host):
         {"first_name": "Visible"},
         {"first_name": "Secret", "surname": "Hidden", "restricted_at": db.utcnow()},
     ])
+    guests = db.query("SELECT id FROM guest ORDER BY id")
+    assert _finalize(
+        client,
+        apartment_id,
+        guests=[(row["id"], 200) for row in guests],
+    ).status_code == 303
 
     response = client.get(f"/stay-fees/{apartment_id}/csv?month=2026-08")
 
     assert response.status_code == 200
     text = response.content.decode("utf-8-sig")
     assert stay_fee.RESTRICTED_NOTE in text
-    assert "Secret" not in text
-    assert "Hidden" not in text
+    assert "Secret" in text
+    assert "Hidden" in text
     assert "Visible" in text
 
 
