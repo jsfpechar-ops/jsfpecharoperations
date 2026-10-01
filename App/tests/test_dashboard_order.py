@@ -122,7 +122,7 @@ def test_an_overdue_stay_comes_before_the_finish_card(host):
     page = host.get("/?lang=en")
 
     assert page.status_code == 200
-    focus = page.text.index('class="focus-card')
+    focus = page.text.index('id="needs-action"')
     strip = page.text.index("Setup is done — your guest link and PIN are ready.")
     assert focus < strip, "the finish card is still outranking an overdue stay"
 

@@ -109,8 +109,8 @@ echo "Backup written to ${DEST} (encrypted: ${ENCRYPTED})"
 # Retention is by time, not by count: a snapshot older than the window is
 # removed, but the newest one is always kept even if it is older than the
 # window (so a host that stopped backing up does not lose their last copy).
-newest="$(find "${BACKUP_ROOT}" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort | tail -n 1)"
-cutoff="$(date -u -d "-${RETENTION_DAYS} days" +%Y%m%dT%H%M%SZ)"
+newest="$(find "${BACKUP_ROOT}" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort | tail -n 1)"
+cutoff="$(date -u -d "-${RETENTION_DAYS} days" +%Y%m%dT%H%M%SZ 2>/dev/null || date -u -v-"${RETENTION_DAYS}"d +%Y%m%dT%H%M%SZ)"
 for dir in "${BACKUP_ROOT}"/*/; do
   [ -d "${dir}" ] || continue
   base="$(basename "${dir}")"
@@ -127,9 +127,9 @@ done
 echo "Kept snapshots from the last ${RETENTION_DAYS} days under ${BACKUP_ROOT} (newest kept)"
 
 if [ "${ENCRYPTED}" = "true" ]; then
-  BYTES="$(stat -c%s "${DEST}/ubyhost-backup.tar.age" 2>/dev/null || echo 0)"
+  BYTES="$(stat -c%s "${DEST}/ubyhost-backup.tar.age" 2>/dev/null || stat -f%z "${DEST}/ubyhost-backup.tar.age" 2>/dev/null || echo 0)"
 else
-  BYTES="$(stat -c%s "${DEST}/ubyhost.db" 2>/dev/null || echo 0)"
+  BYTES="$(stat -c%s "${DEST}/ubyhost.db" 2>/dev/null || stat -f%z "${DEST}/ubyhost.db" 2>/dev/null || echo 0)"
 fi
 printf '{"at": "%s", "encrypted": %s, "bytes": %s, "retention_days": %s}\n' \
   "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${ENCRYPTED}" "${BYTES}" "${RETENTION_DAYS}" \

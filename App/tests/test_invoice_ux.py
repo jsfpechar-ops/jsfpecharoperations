@@ -172,10 +172,10 @@ def test_a_payers_issued_invoice_shows_the_vat_breakdown(host):
     detail = host.get(f"/invoices/{invoice_id}?lang=en").text
     # per item: 2 × 1000 = 2000 base, 12 % VAT = 240, gross 2240
     assert "Unit price (excl. VAT)" in detail
-    assert "2240 Kč" in detail
+    assert "2\u00a0240,00 Kč" in detail
     assert "Base (excl. VAT)" in detail
-    assert "2000 Kč" in detail  # base total
-    assert "240 Kč" in detail   # VAT total
+    assert "2\u00a0000,00 Kč" in detail  # base total
+    assert "240,00 Kč" in detail   # VAT total
 
 
 def test_a_non_payers_issued_invoice_keeps_the_plain_table(host):

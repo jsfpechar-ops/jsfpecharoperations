@@ -82,13 +82,15 @@ def test_no_shell_template_hardcodes_a_demo_date():
     assert not offenders, f"hardcoded demo dates left in: {offenders}"
 
 
-def test_the_property_shortcut_is_on_every_host_page(host):
+def test_properties_and_search_are_on_every_host_page(host):
     """It is part of the sidebar, so no page may depend on a route passing it."""
     for path in ("/", "/reservations", "/housebook", "/guest-links", "/automation"):
         page = host.get(path)
 
         assert page.status_code == 200, path
-        assert 'class="property-switcher"' in page.text, f"no property shortcut on {path}"
+        assert 'href="/apartments"' in page.text
+        assert 'data-command-open' in page.text
+        assert 'class="property-switcher"' not in page.text
 
 
 def test_the_copy_button_keeps_its_icon_when_it_confirms(host):

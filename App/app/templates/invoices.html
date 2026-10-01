@@ -15,26 +15,18 @@
         <th class="col-name">{{ t('invoices.col.customer') }}</th>
         <th>{{ t('invoices.col.kind') }}</th>
         <th>{{ t('invoices.col.total') }}</th>
-        <th>{{ t('invoices.col.paid') }}</th>
+        <th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr>
     </thead>
     <tbody>
     {% for inv in invoices %}
       <tr class="clickable-row" data-href="/invoices/{{ inv.id }}" tabindex="0" role="link">
-        <td class="mono small" data-label="{{ t('invoices.col.number') }}">{{ inv.number }}</td>
+        <td class="mono small" data-label="{{ t('invoices.col.number') }}"><a href="/invoices/{{ inv.id }}">{{ inv.number }}</a></td>
         <td class="nowrap small" data-label="{{ t('invoices.col.date') }}">{{ inv.issue_date | date_cz }}</td>
         <td class="col-name" data-label="{{ t('invoices.col.customer') }}">{{ inv.buyer_name }}</td>
         <td class="small" data-label="{{ t('invoices.col.kind') }}">{{ t('invoice.kind.' ~ inv.kind) }}</td>
-        <td class="num" data-label="{{ t('invoices.col.total') }}">{{ inv.total_haler // 100 }} Kč</td>
-        <td class="small nowrap" data-label="{{ t('invoices.col.paid') }}">
-          {% if inv.kind in ('storno', 'corrective') %}
-            <span class="pill amber">{{ t('invoice.kind.' ~ inv.kind) }}</span>
-          {% elif inv.marked_paid_at or inv.paid_on %}
-            <span class="pill green">{{ t('invoice.state.paid') }}</span>
-          {% else %}
-            <span class="pill grey">{{ t('invoice.state.unpaid') }}</span>
-          {% endif %}
-        </td>
+        <td class="num" data-label="{{ t('invoices.col.total') }}">{{ inv.total_haler | money_czk }}</td>
+        <td class="row-actions" data-label=""><a class="btn small" href="/invoices/{{ inv.id }}.pdf">{{ t('host.invoice_pdf') }}</a></td>
       </tr>
     {% endfor %}
     </tbody>

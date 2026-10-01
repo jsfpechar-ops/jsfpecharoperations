@@ -199,13 +199,13 @@ def test_the_navigation_links_to_operators(host):
     page = host.get("/apartments?lang=en")
     assert page.status_code == 200, page.text
     assert 'href="/entities"' in page.text
-    assert ">Operators<" in page.text
+    assert ">Business details<" in page.text
     assert "Legal entities" not in page.text
 
 
 def test_the_navigation_says_it_in_czech(host):
     page = host.get("/apartments?lang=cs")
-    assert ">Provozovatelé<" in page.text
+    assert ">Firemní údaje<" in page.text
     assert "Právnické osoby" not in page.text
 
 

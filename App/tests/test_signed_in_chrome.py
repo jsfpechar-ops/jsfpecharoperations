@@ -103,7 +103,7 @@ def host_with_property():
 
 
 def _sidebar(page: str) -> str:
-    match = re.search(r'<div class="sidebar-footer">.*?</div>\s*</aside>', page, re.S)
+    match = re.search(r'<div class="host-rail-bottom">.*?</aside>', page, re.S)
     assert match, "the sidebar footer is missing"
     return match.group(0)
 
@@ -135,14 +135,10 @@ def test_the_support_line_names_the_configured_operator_address(host_with_proper
 
 def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
     footer = _sidebar(host_with_property.get("/?lang=en").text)
-    links_row = re.search(
-        r'<nav class="sidebar-footer-links".*?</nav>', footer, re.S
-    ).group(0)
-
-    assert "mailto:" not in links_row
-    assert 'class="sidebar-footer-support"' in footer
-    # Its own row, above the language switch and log out.
-    assert footer.index("sidebar-footer-support") < footer.index("sidebar-footer-row")
+    # Support lives in the account disclosure, keeping the default rail short.
+    account = re.search(r'<details class="host-account".*?</details>', footer, re.S).group(0)
+    assert 'mailto:' in account
+    assert 'href="/settings"' in account
 
 
 def test_the_support_line_translates(host_with_property):

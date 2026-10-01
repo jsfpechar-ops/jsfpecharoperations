@@ -1602,6 +1602,44 @@ async def reservation_update(reservation_id: int, request: Request):
     )
 
 
+@router.post("/reservations/{reservation_id}/remove-empty-slot")
+async def reservation_remove_empty_slot(reservation_id: int, request: Request):
+    """Correct a mistaken headcount, never delete a guest record.
+
+    The atomic predicate also rejects a stale tab or a guest who registered
+    between rendering the page and pressing Remove. Double clicks are safe.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return JSONResponse({"ok": False}, status_code=404)
+    form = await request.form()
+    expected = _form_int(form, "expected")
+    back = f"/reservations/{reservation_id}#guests"
+    if expected is None or not 2 <= expected <= 60:
+        return _back(back, err=_flash(request, "host.count_changed"))
+    conn = db.connect()
+    try:
+        changed = conn.execute(
+            "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
+            "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
+            "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+            "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
+            "AND archived_at IS NULL) < ? "
+            "AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS ?)",
+            (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
+        ).rowcount
+    finally:
+        conn.close()
+    if not changed:
+        return _back(back, err=_flash(request, "host.count_changed"))
+    db.audit("reservation_headcount_corrected", f"id={reservation_id} expected={expected - 1}")
+    await run_in_threadpool(reporting.submit_stay_if_complete, reservation["apartment_id"], reservation_id)
+    return _back(back, msg=_flash(request, "flash.reservations.saved"))
+
+
 @router.post("/reservations/{reservation_id}/quick-edit")
 async def reservation_quick_edit(reservation_id: int, request: Request):
     guard = auth.require_login(request)

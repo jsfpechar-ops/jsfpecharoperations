@@ -353,7 +353,7 @@ def test_a_cancelled_stay_says_so_at_the_top_and_stops_asking_for_the_link():
         assert COPY_LINK_PRIMARY not in page.text
         assert "Reporting deadline" not in page.text
         # The rest of the page is still there to work with.
-        assert "Guest forms" in page.text
+        assert 'id="guests"' in page.text
     finally:
         _cleanup()
 
@@ -408,13 +408,14 @@ def test_the_stay_page_reads_as_one_ordered_grammar():
         body = page.text
         positions = [body.index(marker) for marker in ('id="now"', 'id="guests"', 'id="stay-quick-edit"')]
         assert positions == sorted(positions)
-        # The facts strip lives inside Now, not in a second card below it.
+        # Reporting facts now live after Guests, in the Police report section.
         assert 'class="panel stay-command-panel" id="now"' in body
         assert 'class="stay-metrics detail-hero' in body
+        assert body.index('id="guests"') < body.index('id="reports"') < body.index('class="stay-metrics detail-hero')
         assert 'class="panel tight detail-hero' not in body
         # The guest-assignment line moved into the Guests group.
         assert 'id="stay-claim"' not in body
-        assert body.index('id="guests"') < body.index('class="stay-claim-line"')
+        assert 'class="stay-claim-line"' not in body  # No empty assignment explanation.
     finally:
         _cleanup()
 
@@ -513,11 +514,12 @@ def test_host_shell_is_workflow_grouped():
     try:
         page = _browser().get("/")
         assert page.status_code == 200
-        assert "Operations" in page.text
-        assert "Records" in page.text
-        assert "Setup" in page.text
-        assert 'id="app-sidebar"' in page.text
-        assert "Overview" in page.text
+        rail = page.text.split('id="app-sidebar"', 1)[1].split('</aside>', 1)[0]
+        assert 'class="nav-label"' not in rail
+        for destination in ('/reservations', '/apartments', '/invoices'):
+            assert f'href="{destination}"' in rail
+        assert "Today" in rail
+        assert 'data-command-open' in rail
     finally:
         _cleanup()
 

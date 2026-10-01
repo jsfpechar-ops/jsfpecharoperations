@@ -54,7 +54,7 @@
     <div class="stay-metrics detail-hero">
       <div class="detail-metric">
         <div class="metric-label">{{ t('invoice.detail.total') }}</div>
-        <div class="metric-value">{{ invoice.total_haler // 100 }} Kč</div>
+        <div class="metric-value">{{ invoice.total_haler | money_czk }}</div>
       </div>
       <div class="detail-metric">
         <div class="metric-label">{{ t('invoice.detail.status') }}</div>
@@ -94,17 +94,17 @@
         <tr>
           <td data-label="{{ t('invoice.col.description') }}">{{ item.description }}</td>
           <td data-label="{{ t('invoice.col.qty') }}">{{ item.quantity }}{% if item.unit %} {{ item.unit }}{% endif %}</td>
-          <td data-label="{{ t('invoice.detail.unit_excl_vat') }}">{{ (item.base_haler or 0) // (item.quantity or 1) // 100 }} Kč</td>
+          <td data-label="{{ t('invoice.detail.unit_excl_vat') }}">{{ (item.base_haler or 0) | money_czk(item.quantity) }}</td>
           <td data-label="{{ t('invoice.col.vat') }}">{{ item.vat_rate or 0 }} %</td>
-          <td data-label="{{ t('invoice.detail.vat_col') }}">{{ (item.vat_haler or 0) // 100 }} Kč</td>
-          <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler // 100 }} Kč</td>
+          <td data-label="{{ t('invoice.detail.vat_col') }}">{{ (item.vat_haler or 0) | money_czk }}</td>
+          <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler | money_czk }}</td>
         </tr>
         {% else %}
         <tr>
           <td data-label="{{ t('invoice.col.description') }}">{{ item.description }}</td>
           <td data-label="{{ t('invoice.col.qty') }}">{{ item.quantity }}{% if item.unit %} {{ item.unit }}{% endif %}</td>
-          <td data-label="{{ t('invoice.col.unit_price') }}">{{ item.gross_haler // (item.quantity or 1) // 100 }} Kč</td>
-          <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler // 100 }} Kč</td>
+          <td data-label="{{ t('invoice.col.unit_price') }}">{{ item.gross_haler | money_czk(item.quantity) }}</td>
+          <td data-label="{{ t('invoice.col.total') }}">{{ item.gross_haler | money_czk }}</td>
         </tr>
         {% endif %}
         {% else %}
@@ -115,13 +115,13 @@
       <tfoot>
         <tr>
           <th colspan="4">{{ t('invoice.detail.base_total') }}</th>
-          <td class="num">{{ (vat_totals.base or 0) // 100 }} Kč</td>
+          <td class="num">{{ (vat_totals.base or 0) | money_czk }}</td>
           <td></td>
         </tr>
         <tr>
           <th colspan="4">{{ t('invoice.detail.vat_total') }}</th>
-          <td class="num">{{ (vat_totals.vat or 0) // 100 }} Kč</td>
-          <td class="num">{{ invoice.total_haler // 100 }} Kč</td>
+          <td class="num">{{ (vat_totals.vat or 0) | money_czk }}</td>
+          <td class="num">{{ invoice.total_haler | money_czk }}</td>
         </tr>
       </tfoot>
       {% endif %}

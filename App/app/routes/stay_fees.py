@@ -266,7 +266,8 @@ async def stay_fee_guest_decision(request: Request):
 
     guest_id = _form_str(form, "guest_id")
     guest = access.guest(request, int(guest_id)) if guest_id.isdigit() else None
-    if not guest:
+    reservation = access.reservation(request, guest["reservation_id"]) if guest else None
+    if not apartment or not guest or not reservation or reservation["apartment_id"] != apartment["id"]:
         return _back(back_path, err=_flash(request, "flash.error.no_such_guest"))
 
     decision = _form_str(form, "decision")

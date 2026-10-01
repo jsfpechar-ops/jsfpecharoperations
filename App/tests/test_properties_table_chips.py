@@ -131,32 +131,24 @@ def _cell(page: str, lang: str, column_key: str) -> str:
 # --- the automation column -------------------------------------------------------------
 
 
-def test_the_automation_cell_is_plain_text(host):
+def test_technical_automation_column_is_not_on_property_landing(host):
     page = host.get("/apartments?lang=en").text
-    cell = _cell(page, "en", "apartments.table.automation")
-
-    assert 'class="small muted"' in cell
-    assert "pill" not in cell
+    assert '<th>Automation</th>' not in page
+    assert 'href="/automation"' in page  # Property tools still reaches overview.
 
 
 @pytest.mark.parametrize("mode,key,hours", MODES)
-def test_every_automation_mode_renders_without_a_pill(host, mode, key, hours):
-    page = host.get("/apartments?lang=en").text
-    text = host_i18n.STRINGS["en"][key]
-    if hours is not None:
-        text = text % {"hours": hours}
-
-    assert text in page
-    assert f'<span class="pill blue">{text}</span>' not in page
-    assert f'<span class="pill grey">{text}</span>' not in page
+def test_every_automation_mode_remains_accessible_in_context(host, mode, key, hours):
+    apartment = db.query_one("SELECT id FROM apartment WHERE internal_name = ?", (f"Flat {mode}",))
+    page = host.get(f"/apartments/{apartment['id']}?lang=en").text
+    assert 'id="automation"' in page
+    assert f"/automation#apartment-{apartment['id']}" in page
 
 
-def test_the_automation_cell_translates(host):
+def test_property_tools_translates(host):
     page = host.get("/apartments?lang=cs").text
-    cell = _cell(page, "cs", "apartments.table.automation")
-
-    assert host_i18n.STRINGS["cs"]["apartments.automation.immediate"] in cell
-    assert "pill" not in cell
+    assert host_i18n.translate('cs', 'host.property_tools') in page
+    assert 'href="/automation"' in page
 
 
 def test_the_setup_pill_survives(host):

@@ -181,13 +181,10 @@ def _page(lang: str) -> str:
 def _next_action_for(page_text: str, stay_id: int) -> str:
     """The next-action line of one queue row, keyed by its own detail link."""
     row = re.search(
-        rf'<tr class="clickable-row" data-href="/reservations/{stay_id}\?return_to=/"'
-        r"(.*?)</tr>",
-        page_text,
-        re.S,
+        rf'<article data-stay-id="{stay_id}"[^>]*>(.*?)</article>', page_text, re.S,
     )
     assert row, f"stay {stay_id} has no row on the work queue"
-    action = re.search(r'<div class="next-action">(.*?)</div>', row.group(1), re.S)
+    action = re.search(r'<div class="host-task-state next-action">(.*?)</div>', row.group(1), re.S)
     assert action, f"stay {stay_id} has no next-action line"
     return " ".join(action.group(1).split())
 
@@ -301,7 +298,7 @@ def test_a_czech_host_reads_the_new_next_actions_in_czech(seeded):
 
 def test_the_action_heading_counts_the_rows_beneath_it(seeded):
     page = _page("en")
-    rows = len(re.findall(r'class="clickable-row"', _needs_action_section(page)))
+    rows = len(re.findall(r'<article data-stay-id=', _needs_action_section(page)))
     assert rows >= 1, "the seeded ready stay should need action"
     assert _needs_action_heading(page) == f"Needs action now ({rows})"
 
@@ -319,13 +316,14 @@ def test_the_completed_section_is_labelled_done_nothing_to_do(seeded):
     assert "Recently completed" not in page
 
 
-def test_the_when_column_replaces_the_deadline_column(seeded):
-    labels = _queue_table_labels(_page("en"))
-    assert "When" in labels
-    assert "Deadline" not in labels
+def test_task_cards_keep_dates_and_deadline_context(seeded):
+    page = _page("en")
+    assert 'class="host-task-context"' in page
+    assert 'class="deadline ' in page
+    assert 'data-stay-id=' in page
 
 
-def test_the_when_column_is_kdy_for_a_czech_host(seeded):
-    labels = _queue_table_labels(_page("cs"))
-    assert "Kdy" in labels
-    assert "Termín" not in labels
+def test_task_cards_translate_time_context(seeded):
+    page = _page("cs")
+    assert 'class="host-task-context"' in page
+    assert 'arrives in' not in page

@@ -221,9 +221,9 @@ def test_the_missing_guests_hint_offers_the_guest_count_it_talks_about():
 
     page = client.get(f"/reservations/{reservation['id']}")
     assert page.status_code == 200
-    assert "Guest forms: 1/3." in page.text
+    assert "2 guests missing" in page.text
     assert 'href="#stay-quick-edit" data-open-details' in page.text
-    assert "Change guest count" in page.text
+    assert "Edit count" in page.text
 
 
 def _bulk_send_button(html: str) -> str:

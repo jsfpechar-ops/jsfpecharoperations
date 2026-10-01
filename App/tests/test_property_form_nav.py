@@ -21,8 +21,11 @@ from tests.test_property_readiness import host as host  # noqa: F401
 
 def _nav(text: str) -> str:
     """Just the section nav, so the page body cannot be mistaken for it."""
+    if 'class="host-property-grid"' in text:
+        start = text.index('<div class="host-property-grid"')
+        return text[start:text.index('<details class="panel host-checklist"', start)]
     start = text.index('<nav class="section-nav"')
-    return text[start : text.index("</nav>", start)]
+    return text[start:text.index('</nav>', start)]
 
 
 def _rendered_text(text: str) -> str:
@@ -31,8 +34,8 @@ def _rendered_text(text: str) -> str:
 
 
 def _automation_panel(text: str) -> str:
-    start = text.index('<div class="panel" id="automation">')
-    return text[start : text.index("</div>", start)]
+    start = text.index('<details class="panel property-section" id="automation"')
+    return text[start:text.index('</details>', start)]
 
 
 def test_the_third_nav_link_is_the_police_panel(host):
@@ -40,7 +43,8 @@ def test_the_third_nav_link_is_the_police_panel(host):
 
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
 
-    assert '<a href="#ubyport">3. Police reporting</a>' in nav
+    assert 'href="#ubyport"' in nav
+    assert '<strong>Police reporting</strong>' in nav
 
 
 def test_the_nav_no_longer_sends_you_off_the_form(host):
@@ -56,16 +60,16 @@ def test_the_czech_nav_says_hlasi_se_policii(host):
 
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=cs").text)
 
-    assert '<a href="#ubyport">3. Hlášení policii</a>' in nav
+    assert 'href="#ubyport"' in nav
+    assert '<strong>Hlášení policii</strong>' in nav
 
 
 def test_the_nav_numbers_run_one_to_five_without_a_gap(host):
     client, apartment_id = host
 
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
-    numbers = [int(n) for n in re.findall(r">(\d)\. ", nav)]
-
-    assert numbers == [1, 2, 3, 4, 5]
+    targets = re.findall(r'href="#([^"]+)"', nav)
+    assert targets == ['calendars', 'communication', 'ubyport', 'basics', 'stay-fee-settings', 'address']
 
 
 def test_the_automation_summary_names_the_page_it_sends_you_to(host):

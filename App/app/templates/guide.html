@@ -5,6 +5,11 @@
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('guide.title'), t('guide.lede')) }}
 
+<nav class="host-property-grid" aria-label="{{ t('host.section_navigation') }}">
+  {% for href, key, hint in [('/reservations', 'nav.stays', 'host.help_stays'), ('/apartments', 'nav.properties', 'host.help_properties'), ('/invoices', 'nav.invoices', 'host.help_invoices'), ('/settings', 'nav.settings', 'host.help_settings')] %}
+    <a class="host-property-card" href="{{ href }}"><div><strong>{{ t(key) }}</strong><small>{{ t(hint) }}</small></div><span aria-hidden="true">→</span></a>
+  {% endfor %}
+</nav>
 <div class="guide-layout">
   <nav class="guide-nav panel" aria-label="{{ t('guide.title') }}">
     <a href="#overview" class="guide-nav-link">{{ t('guide.nav.overview') }}</a>
@@ -23,10 +28,7 @@
     <section class="guide-section panel" id="overview">
       <h2>{{ t('guide.nav.overview') }}</h2>
       <p>{{ t('guide.overview.body') }}</p>
-      <figure class="guide-figure">
-        <img src="/static/guide/overview-next-up.png" alt="Overview with next-up stay card and send action" loading="lazy">
-        <figcaption>{{ t('guide.overview.caption') }}</figcaption>
-      </figure>
+
     </section>
 
     <section class="guide-section panel" id="productivity">
