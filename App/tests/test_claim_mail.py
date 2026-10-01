@@ -331,6 +331,16 @@ def _age_claim(current, seconds):
     )
 
 
+def _age_claimed_at(reservation_id: int, hours: int) -> None:
+    stamp = (
+        datetime.now(timezone.utc) - timedelta(hours=hours)
+    ).replace(microsecond=0).isoformat()
+    db.execute(
+        "UPDATE reservation_claim SET claimed_at = ? WHERE reservation_id = ?",
+        (stamp, reservation_id),
+    )
+
+
 def test_claim_secret_is_spent_by_the_confirmation():
     """The e-mailed secret confirms once; the cookie is the access after that."""
     current, _past, _far, _apartment_id = _seed()
@@ -816,6 +826,36 @@ def test_completed_past_stay_is_not_exposed_on_bare_stay_link():
         _cleanup()
 
 
+def test_a_fresh_claim_does_not_get_the_day_before_reminder_immediately(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    today = claim.prague_today()
+    try:
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (today + timedelta(days=1)).isoformat(),
+                "date_to": (today + timedelta(days=4)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        complete_guest_claim(
+            browser, TOKEN, current, email="guest-fresh@claim.test", party_size=5
+        )
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now or datetime.combine(today, time(10, 0)),
+        )
+        assert claim.sweep_reminders()["guest"] == 0
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
 def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
     today = claim.prague_today()
@@ -833,6 +873,7 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
         complete_guest_claim(
             browser, TOKEN, current, email="guest-reminder@claim.test", party_size=1
         )
+        _age_claimed_at(current, claim.REMINDER_GUEST_MIN_HOURS_AFTER_CLAIM + 1)
         monkeypatch.setattr(mail, "backend_name", lambda: "console")
         monkeypatch.setattr(mail, "mail_enabled", lambda: True)
         monkeypatch.setattr(
@@ -902,6 +943,7 @@ def test_the_emergency_reminder_body_keeps_the_count_and_the_device(monkeypatch)
         complete_guest_claim(
             browser, TOKEN, current, email="guest-fallback@claim.test", party_size=1
         )
+        _age_claimed_at(current, claim.REMINDER_GUEST_MIN_HOURS_AFTER_CLAIM + 1)
         monkeypatch.setattr(mail, "backend_name", lambda: "console")
         monkeypatch.setattr(mail, "mail_enabled", lambda: True)
         monkeypatch.setattr(
@@ -1780,6 +1822,7 @@ def test_every_guest_kind_sends_the_answer_back_to_the_host(monkeypatch):
             "local_now",
             lambda now=None: now or datetime.combine(check_in, time(10, 0)),
         )
+        _age_claimed_at(current, claim.REMINDER_GUEST_MIN_HOURS_AFTER_CLAIM + 1)
         assert claim.sweep_reminders()["guest"] == 1
 
         # The receipt, once everyone on the stay is registered.
