@@ -72,7 +72,9 @@ def test_dashboard_actions_share_height_and_gap(base):
         page.fill('input[name="username"]', username)
         page.fill('input[name="password"]', PASSWORD)
         page.click('button[type="submit"]')
-        page.wait_for_selector(".action-group")
+        page.wait_for_url(lambda url: "/login" not in url, timeout=15000)
+        page.goto(f"{base}/?lang=en")
+        page.wait_for_selector(".dashboard-actions .action-group", timeout=60000)
         measured = page.locator(".action-group").first.evaluate(
             """(group) => {
               const buttons = [...group.querySelectorAll('.btn')];
