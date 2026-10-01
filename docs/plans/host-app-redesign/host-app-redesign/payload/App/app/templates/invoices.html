@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% set nav = 'invoices' %}
+{% block title %}{{ t('invoices.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{{ page_header(t('invoices.title'), t('invoices.lede'), '', '', '',
+    '<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
+{% if invoices %}
+<div class="panel tight scroll-x">
+  <table class="table-cards">
+    <thead>
+      <tr>
+        <th>{{ t('invoices.col.number') }}</th>
+        <th>{{ t('invoices.col.date') }}</th>
+        <th class="col-name">{{ t('invoices.col.customer') }}</th>
+        <th>{{ t('invoices.col.kind') }}</th>
+        <th>{{ t('invoices.col.total') }}</th>
+        <th><span class="sr-only">{{ t('common.actions') }}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for inv in invoices %}
+      <tr class="clickable-row" data-href="/invoices/{{ inv.id }}" tabindex="0" role="link">
+        <td class="mono small" data-label="{{ t('invoices.col.number') }}"><a href="/invoices/{{ inv.id }}">{{ inv.number }}</a></td>
+        <td class="nowrap small" data-label="{{ t('invoices.col.date') }}">{{ inv.issue_date | date_cz }}</td>
+        <td class="col-name" data-label="{{ t('invoices.col.customer') }}">{{ inv.buyer_name }}</td>
+        <td class="small" data-label="{{ t('invoices.col.kind') }}">{{ t('invoice.kind.' ~ inv.kind) }}</td>
+        <td class="num" data-label="{{ t('invoices.col.total') }}">{{ inv.total_haler | money_czk }}</td>
+        <td class="row-actions" data-label=""><a class="btn small" href="/invoices/{{ inv.id }}.pdf">{{ t('host.invoice_pdf') }}</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="panel empty">
+  <h2>{{ t('invoices.empty_title') }}</h2>
+  <p class="lede">{{ t('invoices.empty') }}</p>
+</div>
+{% endif %}
+{% endblock %}
