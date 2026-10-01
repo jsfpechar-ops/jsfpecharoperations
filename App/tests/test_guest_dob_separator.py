@@ -18,16 +18,17 @@ def test_the_guest_form_placeholder_matches_the_displayed_dates():
     assert i18n.STRINGS["cs"]["date_placeholder"] == "DD.MM.RRRR"
 
 
-def test_the_birth_date_help_shows_a_dotted_example():
-    assert i18n.STRINGS["en"]["birth_date_help"] == (
-        "Day, month, year — e.g. 04.07.1990 for 4 July 1990. Dots are added for you."
-    )
-    assert i18n.STRINGS["cs"]["birth_date_help"] == (
-        "Den, měsíc, rok — např. 04.07.1990 pro 4. července 1990. Tečky se doplní samy."
-    )
-    # The old wording told the guest to expect slashes.
-    for lang in ("en", "cs"):
-        assert "/" not in i18n.STRINGS[lang]["birth_date_help"]
+def test_the_guest_form_does_not_repeat_birth_date_format_hints():
+    form = Path(__file__).resolve().parents[1] / "app" / "templates" / "guest" / "form.html"
+    text = form.read_text(encoding="utf-8")
+    assert "birth_date_help" not in text
+    assert "Dots are added for you" not in text
+
+
+def test_dob_cells_clamp_month_and_day():
+    source = (STATIC / "ticket.js").read_text(encoding="utf-8")
+    assert 'box.value !== "00" && m > 12' in source
+    assert 'box.value !== "00" && d > 31' in source
 
 
 def test_the_stored_date_is_displayed_with_dots():
