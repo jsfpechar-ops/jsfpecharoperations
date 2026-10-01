@@ -220,7 +220,6 @@
         stay_fee_rate_czk: option.getAttribute("data-rate"),
         stay_fee_cadence: option.getAttribute("data-cadence"),
         stay_fee_vs: option.getAttribute("data-vs"),
-        stay_fee_council_account: option.getAttribute("data-account"),
         stay_fee_authority_name: option.getAttribute("data-authority-name"),
         stay_fee_authority_address: option.getAttribute("data-authority-address"),
         stay_fee_authority_contact: option.getAttribute("data-authority-contact"),
@@ -231,6 +230,16 @@
         var field = document.getElementById(id);
         if (field) field.value = values[id] || "";
       });
+      var account = (option.getAttribute("data-account") || "").replace(/\s/g, "");
+      var parsed = /^(?:(\d{1,6})-)?(\d{2,10})\/(\d{4})$/.exec(account);
+      var prefixField = document.getElementById("account_prefix");
+      var numberField = document.getElementById("account_number");
+      var bankField = document.getElementById("account_bank");
+      if (prefixField && numberField && bankField) {
+        prefixField.value = parsed && parsed[1] ? parsed[1] : "";
+        numberField.value = parsed ? parsed[2] : "";
+        bankField.value = parsed ? parsed[3] : "";
+      }
     });
   }
 

@@ -31,6 +31,43 @@ def _iban_ok(iban: str) -> bool:
     return int("".join(str(int(ch, 36)) for ch in moved)) % 97 == 1
 
 
+def czech_account_parts(raw: str) -> dict:
+    """Split a stored Czech account for the three-field editor.
+
+    An IBAN-only value is returned separately so the editor does not pretend
+    it is a domestic account. An unrecognised value stays out of the fields.
+    """
+    text = re.sub(r"\s+", "", raw or "").upper()
+    match = _ACCOUNT_RE.match(text)
+    if match:
+        return {
+            "prefix": match.group(1) or "",
+            "number": match.group(2),
+            "bank": match.group(3),
+            "iban": "",
+        }
+    if _IBAN_RE.match(text):
+        return {"prefix": "", "number": "", "bank": "", "iban": text}
+    return {"prefix": "", "number": "", "bank": "", "iban": ""}
+
+
+def compose_czech_account(prefix: str, number: str, bank: str) -> str:
+    """Join the three domestic fields. Empty input stays empty."""
+    prefix = re.sub(r"\D", "", prefix or "")
+    number = re.sub(r"\D", "", number or "")
+    bank = re.sub(r"\D", "", bank or "")
+    if not prefix and not number and not bank:
+        return ""
+    return f"{prefix}-{number}/{bank}" if prefix else f"{number}/{bank}"
+
+
+def preserve_iban_only_account(existing: str, prefix: str, number: str, bank: str) -> bool:
+    """True when an all-empty domestic form should not wipe a stored IBAN-only account."""
+    if compose_czech_account(prefix, number, bank):
+        return False
+    return bool(czech_account_parts(existing or "").get("iban"))
+
+
 def normalise_account(raw: str) -> tuple:
     """Return (display_account, iban). Raise ValueError on bad input."""
     text = re.sub(r"\s+", "", raw or "").upper()

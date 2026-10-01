@@ -5,20 +5,40 @@
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('invoice.settings.title', name=entity.name), t('invoice.settings.lede'), next, t('common.back')) }}
 
+{% if entities | length > 1 %}
+<form method="get" action="/invoices/settings" class="panel invoice-supplier">
+  <input type="hidden" name="next" value="{{ next }}">
+  <div class="invoice-supplier-row">
+    <div class="field invoice-supplier-picker">
+      <label for="settings-entity">{{ t('invoice.entity.label') }}</label>
+      <select id="settings-entity" name="entity" onchange="this.form.requestSubmit()">
+        {% for option in entities %}
+        <option value="{{ option.id }}" {% if option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="invoice-supplier-meta">
+      <span class="invoice-supplier-name">{{ entity.name }}</span>
+      <span class="small muted">{% if entity.ico %}IČO {{ entity.ico }}{% endif %}{% if entity.seat %} · {{ entity.seat }}{% endif %}</span>
+    </div>
+  </div>
+</form>
+{% endif %}
+
 <form method="post" action="/invoices/settings">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="legal_entity_id" value="{{ entity.id }}">
   <input type="hidden" name="next" value="{{ next }}">
+  <input type="hidden" name="_invoice_account_existing" value="{{ entity.bank_account or entity.iban or '' }}">
 
   <div class="panel invoice-settings-form">
+    <div class="field">
+      <span class="label">{{ t('entities.bank.label') }}</span>
+      {% set account = bank_parts %}
+      {% set prefix = 'invoice_' %}
+      {% include "_account_parts.html" %}
+    </div>
     <div class="grid">
-      <div class="field">
-        <label for="bank_account">{{ t('entities.bank.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="text" id="bank_account" name="bank_account"
-               value="{{ entity.bank_account or '' }}"
-               placeholder="123456789/0100">
-        <div class="hint">{{ t('entities.bank.hint') }}</div>
-      </div>
       <div class="field">
         <label for="bic">{{ t('entities.bic.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input type="text" id="bic" name="bic" value="{{ entity.bic or '' }}">

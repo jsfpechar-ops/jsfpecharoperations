@@ -1,24 +1,17 @@
-<form method="get" action="{{ form_action }}" class="filters panel host-month-filter" data-auto-submit>
-  <div class="field">
-    <label for="{{ filter_id }}-month">{{ t(period_label_key) }}</label>
-    <input type="month" id="{{ filter_id }}-month" name="month"
-           value="{{ month_key }}" max="{{ max_month_key }}"
-           aria-describedby="{{ filter_id }}-hint"
-           {% if not month_required and not month_key %}{% endif %}>
-    <p id="{{ filter_id }}-hint" class="small muted">{{ t(hint_label_key) }}</p>
-  </div>
-  <div class="field filter-actions filter-actions-end">
-    {% if not month_required and filter_active %}
-    <a class="btn ghost" href="{{ form_action }}">{{ t('host.filter.all_dates') }}</a>
-    {% endif %}
-    <a class="btn ghost" href="{{ form_action }}?month={{ prev_month_key }}"
-       aria-label="{{ t('host.filter.prev_month') }}">{{ t('host.filter.prev_month') }}</a>
+<form method="get" action="{{ form_action }}" class="host-month-filter" data-auto-submit>
+  <label for="{{ filter_id }}-month">{{ t(period_label_key) }}</label>
+  <input type="month" id="{{ filter_id }}-month" name="month"
+         value="{{ month_key }}" max="{{ max_month_key }}">
+  <div class="action-group month-stepper">
+    <a class="btn" href="{{ form_action }}?month={{ prev_month_key }}">{{ t('host.filter.prev_month') }}</a>
     {% if next_month_key %}
-    <a class="btn ghost" href="{{ form_action }}?month={{ next_month_key }}"
-       aria-label="{{ t('host.filter.next_month') }}">{{ t('host.filter.next_month') }}</a>
+    <a class="btn" href="{{ form_action }}?month={{ next_month_key }}">{{ t('host.filter.next_month') }}</a>
     {% else %}
-    <button class="btn ghost" type="button" disabled>{{ t('host.filter.next_month') }}</button>
+    <button class="btn" type="button" disabled>{{ t('host.filter.next_month') }}</button>
     {% endif %}
-    <button class="btn filter-apply" type="submit">{{ t('common.apply') }}</button>
+    {% if not month_required and filter_active %}
+    <a class="btn" href="{{ form_action }}">{{ t('host.filter.all_dates') }}</a>
+    {% endif %}
   </div>
+  <button class="btn filter-apply" type="submit">{{ t('common.apply') }}</button>
 </form>

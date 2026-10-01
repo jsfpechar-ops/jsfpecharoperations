@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% set nav = 'stay_fees' %}
+{% block title %}{{ t('stay_fees.setup.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+<a class="back-link" href="/stay-fees"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.title') }}</a>
+{{ page_header(apartment.internal_name, '', '', '', t('stay_fees.setup.title'), '') }}
+<form method="post" action="/stay-fees/{{ apartment.id }}/setup" class="panel fee-setup">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% include "_stay_fee_fields.html" %}
+  <div class="action-group"><button class="btn primary" type="submit">{{ t('common.save') }}</button></div>
+</form>
+{% endblock %}

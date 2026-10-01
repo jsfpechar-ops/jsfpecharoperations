@@ -162,24 +162,34 @@ def invoices_list(request: Request):
     if selected_month and selected_month > today.replace(day=1):
         return RedirectResponse("/invoices", status_code=303)
     owner_id = access.owner_id(request)
+    page_size = 50
+    try:
+        page_no = max(int(request.query_params.get("page") or "1"), 1)
+    except ValueError:
+        page_no = 1
+    offset = (page_no - 1) * page_size
     if selected_month:
         first, last = list_month_filter.month_bounds(selected_month)
-        rows = db.query(
-            "SELECT * FROM invoice WHERE owner_user_id IS ? AND issue_date >= ? "
-            "AND issue_date <= ? ORDER BY issue_date DESC, id DESC",
+        where, params = (
+            "owner_user_id IS ? AND issue_date >= ? AND issue_date <= ?",
             (owner_id, first.isoformat(), last.isoformat()),
         )
     else:
-        rows = db.query(
-            "SELECT * FROM invoice WHERE owner_user_id IS ? ORDER BY issue_date DESC, id DESC",
-            (owner_id,),
-        )
+        where, params = "owner_user_id IS ?", (owner_id,)
+    total = int(db.query_one(f"SELECT COUNT(*) AS n FROM invoice WHERE {where}", params)["n"])
+    rows = db.query(
+        f"SELECT * FROM invoice WHERE {where} ORDER BY issue_date DESC, id DESC LIMIT ? OFFSET ?",
+        (*params, page_size, offset),
+    )
+    pages = max((total + page_size - 1) // page_size, 1)
     return render(
         request,
         "invoices.html",
         {
             "nav": "invoices",
             "invoices": rows,
+            "invoice_page": page_no,
+            "invoice_pages": pages,
             "filter_id": "invoice-list",
             "form_action": "/invoices",
             "period_label_key": "invoices.filter.period",
@@ -228,6 +238,7 @@ def invoice_settings(request: Request):
         "nav": "invoices",
         "entity": entity,
         "entities": entities,
+        "bank_parts": payments.czech_account_parts(entity["bank_account"] or ""),
         "next": security.safe_local_path(
             request.query_params.get("next") or "",
             f"/invoices/new?entity={entity['id']}",
@@ -247,6 +258,13 @@ async def invoice_settings_save(request: Request):
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
     redirect = _settings_next(request, form, entity)
     detail = _settings_detail_payload(form)
+    if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
+        prefix = _form_str(form, "account_prefix")
+        number = _form_str(form, "account_number")
+        bank = _form_str(form, "account_bank")
+        existing = entity["bank_account"] or entity.get("iban") or ""
+        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
+            detail["bank_account"] = payments.compose_czech_account(prefix, number, bank)
     if "bank_account" in detail:
         account = detail["bank_account"]
         if account:

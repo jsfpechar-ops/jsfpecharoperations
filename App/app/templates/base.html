@@ -11,8 +11,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
   <link rel="stylesheet" href="/static/app.css?v=20260929a">
-  <link rel="stylesheet" href="/static/components.css?v=20260929a">
-  {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20260930b">{% endif %}
+  <link rel="stylesheet" href="/static/components.css?v=20261001c">
+  {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261001c">{% endif %}
 </head>
 <body class="layout-host {{ 'host-workspace' if show_nav | default(true) }} {{ 'no-nav' if not (show_nav | default(true)) }}">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
@@ -62,9 +62,7 @@
         {{ nav_icon(icon) }}<span>{{ t(label) }}</span>
       </a>
     {% endfor %}
-    {% if host_has_stay_fees %}
-      <a href="/stay-fees" title="{{ t('nav.stay_fees') }}" aria-label="{{ t('nav.stay_fees') }}" class="{{ 'active' if nav == 'stay_fees' }}" {% if nav == 'stay_fees' %}aria-current="page"{% endif %}>{{ nav_icon('coins') }}<span>{{ t('nav.stay_fees') }}</span></a>
-    {% endif %}
+    <a href="/stay-fees" title="{{ t('nav.stay_fees') }}" aria-label="{{ t('nav.stay_fees') }}" class="{{ 'active' if nav == 'stay_fees' }}" {% if nav == 'stay_fees' %}aria-current="page"{% endif %}>{{ nav_icon('coins') }}<span>{{ t('nav.stay_fees') }}</span></a>
   </nav>
   {% if current_user %}
   <div class="host-rail-bottom">
@@ -77,13 +75,17 @@
       </summary>
       <div class="host-account-menu">
         <a href="/settings">{{ t('nav.settings') }}</a>
-        {% if operator().email %}<a href="mailto:{{ operator().email }}">{{ t('nav.support_help', email=operator().email) }}</a>{% endif %}
+        {% if operator().email %}
+        <a class="host-menu-support" href="mailto:{{ operator().email }}">{{ t('nav.support') }}<small>{{ operator().email }}</small></a>
+        {% endif %}
+        <div class="host-menu-rule"></div>
         <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
         <a href="/privacy-requests">{{ t('nav.privacy_requests') }}</a>
         {% if current_user.role == 'admin' %}
         <a href="/admin/users">{{ t('nav.users') }}</a>
         <a href="/admin/incidents">{{ t('users.incidents_link') }}</a>
         {% endif %}
+        <div class="host-menu-rule"></div>
         <form method="post" action="/language" class="lang-switch compact">
           <input type="hidden" name="next" value="{{ request.url.path }}">
           <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
@@ -241,7 +243,7 @@
 
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20260929a"></script>
-<script src="/static/app.js?v=20261001a"></script>
-{% if show_nav | default(true) %}<script src="/static/host.js?v=20260930b" defer></script>{% endif %}
+<script src="/static/app.js?v=20261001b"></script>
+{% if show_nav | default(true) %}<script src="/static/host.js?v=20261001b" defer></script>{% endif %}
 </body>
 </html>

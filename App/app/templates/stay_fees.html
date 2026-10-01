@@ -3,7 +3,7 @@
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
-{{ page_header(t('stay_fees.title'), t('stay_fees.lede'), '', '', t('nav.records'), '') }}
+{{ page_header(t('stay_fees.title'), '', '', '', '', '') }}
 {% include "_host_month_filter.html" %}
 {% if periods %}
 <div class="panel tight scroll-x">
@@ -21,6 +21,16 @@
     <tbody>
     {% for period in periods %}
       {% set apartment = period.apartment %}
+      {% if period.unset %}
+      <tr>
+        <td data-label="{{ t('stay_fees.col.property') }}">
+          <span class="row-primary-link">{{ apartment.internal_name }}</span>
+          <div class="small muted">{{ apartment.addr_obec or '' }}</div>
+        </td>
+        <td colspan="4" data-label="{{ t('stay_fees.col.period') }}">{{ t('stay_fees.status.not_setup') }}</td>
+        <td class="nowrap"><a class="btn small primary" href="/stay-fees/{{ apartment.id }}/setup">{{ t('stay_fees.setup.action') }}</a></td>
+      </tr>
+      {% else %}
       <tr class="clickable-row" data-href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" tabindex="0" role="link">
         <td data-label="{{ t('stay_fees.col.property') }}">
           <span class="row-primary-link">{{ apartment.internal_name }}</span>
@@ -35,25 +45,24 @@
         </td>
         <td class="num" data-label="{{ t('stay_fees.col.liable') }}">{{ period.liable_nights }}</td>
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">{{ period.exempt_nights }}</td>
-        <td class="num" data-label="{{ t('stay_fees.col.total') }}" style="font-weight:700">{{ period.total_display }}</td>
+        <td class="num" data-label="{{ t('stay_fees.col.total') }}">{{ period.total_display }}</td>
         <td class="nowrap">
           {% if period.issues and period.issues != ['stay_fees.issue.period_running'] %}
             <span class="pill amber">{{ t('stay_fees.needs_setup') }}</span>
           {% else %}
-            <span class="pill blue">{{ t('stay_fees.open') }}</span>
+            <span class="pill blue">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}
         </td>
       </tr>
+      {% endif %}
     {% endfor %}
     </tbody>
   </table>
 </div>
-<p class="small muted">{{ t('stay_fees.footnote') }}</p>
 {% else %}
 <div class="panel empty">
   <h2>{{ t('stay_fees.empty_title') }}</h2>
-  <p class="lede">{{ t('stay_fees.empty') }}</p>
-  <a class="btn" href="/apartments">{{ t('stay_fees.empty_action') }}</a>
+  <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
 </div>
 {% endif %}
 {% endblock %}

@@ -59,10 +59,31 @@
 {% set show_welcome = not apartments and not onboarding.dismissed %}
 {% if not show_welcome %}
 <header class="page-header host-today-head">
-  <div><div class="host-today-date">{{ today().isoformat() | date_cz }}</div><h1>{{ t('nav.overview') }}</h1>
-  <p>{% if queue_groups.needs_action %}{{ t('host.action_count', count=queue_groups.needs_action | length) }}{% else %}{{ t('host.all_clear') }}{% endif %}</p></div>
-  <div class="host-today-actions"><a class="btn primary" href="/reservations?new=1">+ {{ t('stays.add_stay') }}</a>{{ header_actions }}</div>
+  <div>
+    <div class="host-today-date">{{ today().isoformat() | date_cz }}</div>
+    <h1>{{ t('dashboard.title') }}</h1>
+  </div>
+  <div class="dashboard-actions">
+    <div class="action-group action-group-equal action-group-stack">
+      <a class="btn primary" href="/reservations?new=1">+ {{ t('stays.add_stay') }}</a>
+      {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}
+      {% if demo_loaded %}
+      <form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">
+        <button class="btn" type="submit">{{ t('demo.clear') }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% if last_sync %}<p class="small muted">{{ t('dashboard.last_synced', when=last_sync | datetime_local) }}</p>{% endif %}
+  </div>
 </header>
+{% if apartments %}
+<nav class="dashboard-stats" aria-label="{{ t('nav.overview') }}">
+  <a href="#needs-action"><strong>{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
+  <a href="#waiting"><strong>{{ counts.awaiting }}</strong><span>{{ t('dashboard.stat.waiting') }}</span></a>
+  <a href="/reservations"><strong>{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
+  <a href="#needs-action"><strong>{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
+</nav>
+{% endif %}
 {% endif %}
 
 {% if not apartments %}
@@ -137,11 +158,6 @@
     {% if queue_groups.completed %}
       <section><div class="section-heading"><h2>{{ t('dashboard.section.completed') }}</h2><a href="/submissions">{{ t('dashboard.section.view_reports') }}</a></div>{{ queue_table(queue_groups.completed) }}</section>
     {% endif %}
-    <details class="panel quiet reporting-modes-panel">
-      <summary>{{ t('dashboard.reporting_modes') }}</summary>
-      <p class="small muted">{{ t('dashboard.reporting_modes_body') }}</p>
-      {% if minutes_saved %}<p class="small muted">{{ t('dashboard.minutes_saved', minutes=minutes_saved) }}</p>{% endif %}
-    </details>
   {% endif %}
 
   {# Nothing is overdue, so the finish card can have the room it deserves. #}

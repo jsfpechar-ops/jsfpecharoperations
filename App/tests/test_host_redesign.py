@@ -67,14 +67,9 @@ def test_all_host_destinations_render_with_valid_structure(fee_host, lang):
 
 def test_fee_navigation_uses_active_owned_properties(fee_host):
     client, owner, entity = fee_host
-    apartment = _property(owner, entity, 'Fee nav', rate=0)
-    assert 'href="/stay-fees"' not in rail(client.get('/invoices').text)
-    db.update('apartment', apartment, {'stay_fee_rate_czk': 50})
+    _property(owner, entity, 'Fee nav', rate=0)
     assert 'href="/stay-fees"' in rail(client.get('/invoices').text)
-    db.update('apartment', apartment, {'active': 0})
-    assert 'href="/stay-fees"' not in rail(client.get('/invoices').text)
-    db.update('apartment', apartment, {'active': 1, 'archived_at': db.utcnow()})
-    assert 'href="/stay-fees"' not in rail(client.get('/invoices').text)
+    assert 'href="/stay-fees"' in rail(client.get('/').text)
 
 
 def test_context_navigation_and_command_palette_preserve_destinations(fee_host):

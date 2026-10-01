@@ -84,7 +84,7 @@ def test_the_settings_route_is_not_eaten_by_the_dynamic_invoice_route(host):
     entity_id = _add_entity()
     page = host.get(f"/invoices/settings?entity={entity_id}")
     assert page.status_code == 200
-    assert 'name="bank_account"' in page.text
+    assert 'name="account_number"' in page.text
 
 
 def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):
@@ -103,6 +103,29 @@ def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):
     # absent fields untouched
     assert row["registry_entry"] is None
     assert row["bic"] is None
+
+
+def test_saving_other_fields_does_not_wipe_an_iban_only_account(host):
+    entity_id = _add_entity(bank_account="CZ9106000000000000000123", iban="CZ9106000000000000000123")
+    page = host.get(f"/invoices/settings?entity={entity_id}")
+    token = page.text.split('name="csrf-token" content="', 1)[1].split('"', 1)[0]
+    host.post(
+        "/invoices/settings",
+        data={
+            "_csrf": token,
+            "legal_entity_id": str(entity_id),
+            "account_prefix": "",
+            "account_number": "",
+            "account_bank": "",
+            "bic": "GIBACZPX",
+            "next": f"/invoices/new?entity={entity_id}",
+        },
+        follow_redirects=False,
+    )
+    row = db.query_one("SELECT bank_account, iban, bic FROM legal_entity WHERE id = ?", (entity_id,))
+    assert row["bank_account"] == "CZ9106000000000000000123"
+    assert row["iban"] == "CZ9106000000000000000123"
+    assert row["bic"] == "GIBACZPX"
 
 
 def test_a_sent_blank_clears_the_field(host):

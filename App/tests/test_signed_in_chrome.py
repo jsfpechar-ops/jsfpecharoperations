@@ -111,18 +111,16 @@ def _sidebar(page: str) -> str:
 # --- the support line -----------------------------------------------------------------
 
 
-def test_the_support_sentence_exists_in_both_languages_with_the_same_placeholder():
-    assert host_i18n.STRINGS["en"]["nav.support_help"] == "Need help with UbyHost? %(email)s"
-    assert (
-        host_i18n.STRINGS["cs"]["nav.support_help"]
-        == "Potřebujete pomoc s UbyHostem? %(email)s"
-    )
+def test_help_and_support_is_a_labelled_action_in_both_languages():
+    assert host_i18n.STRINGS["en"]["nav.support"] == "Help & support"
+    assert host_i18n.STRINGS["cs"]["nav.support"] == "Nápověda a podpora"
 
 
-def test_the_old_bare_support_label_is_gone():
-    """Its only consumer moved to the full sentence, so the key went with it."""
-    assert "nav.support" not in host_i18n.STRINGS["en"]
-    assert "nav.support" not in host_i18n.STRINGS["cs"]
+def test_the_old_support_sentence_is_not_the_account_action(host_with_property):
+    """The account menu is a Help & support action, not a sentence about needing help."""
+    page = host_with_property.get("/?lang=en").text
+    assert "Need help with UbyHost?" not in page
+    assert "Help &amp; support" in page
 
 
 def test_the_support_line_names_the_configured_operator_address(host_with_property):
@@ -130,7 +128,7 @@ def test_the_support_line_names_the_configured_operator_address(host_with_proper
 
     assert config.OPERATOR_EMAIL in page
     assert f'href="mailto:{config.OPERATOR_EMAIL}"' in page
-    assert "Need help with UbyHost?" in page
+    assert "Help &amp; support" in page
 
 
 def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
@@ -144,7 +142,8 @@ def test_the_support_line_is_not_part_of_the_legal_link_row(host_with_property):
 def test_the_support_line_translates(host_with_property):
     page = host_with_property.get("/?lang=cs").text
 
-    assert "Potřebujete pomoc s UbyHostem?" in page
+    assert "Nápověda a podpora" in page
+    assert "Potřebujete pomoc s UbyHostem?" not in page
 
 
 # --- the language label ---------------------------------------------------------------
