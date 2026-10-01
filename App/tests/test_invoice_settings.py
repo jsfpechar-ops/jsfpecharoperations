@@ -80,6 +80,28 @@ def test_the_builder_shows_a_supplier_summary_with_the_details_link(host):
     assert "Edit invoice details" in page.text
 
 
+def test_bare_inputs_inherit_the_standard_field_styling(host):
+    """Account parts are bare inputs; the stylesheet must size them like the rest.
+
+    The prefix, account number and bank code inputs carry no ``type`` attribute,
+    so the ``input[type=text] …`` selector skipped them and they rendered as
+    browser-default boxes with dead space around them.
+    """
+    from pathlib import Path
+
+    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "app.css").read_text()
+    assert "input:not([type])" in css
+
+    entity_id = _add_entity()
+    settings_page = host.get(f"/invoices/settings?entity={entity_id}")
+    assert settings_page.status_code == 200
+    for field in ("account_prefix", "account_number", "account_bank"):
+        marker = f'name="{field}"'
+        assert marker in settings_page.text
+        tag = settings_page.text.split(marker, 1)[0].rsplit("<input", 1)[1]
+        assert "type=" not in tag, f"{field} unexpectedly has a type attribute"
+
+
 def test_the_settings_route_is_not_eaten_by_the_dynamic_invoice_route(host):
     entity_id = _add_entity()
     page = host.get(f"/invoices/settings?entity={entity_id}")

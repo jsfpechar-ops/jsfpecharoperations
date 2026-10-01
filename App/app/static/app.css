@@ -1177,8 +1177,8 @@ form.inline { display: inline; }
 label { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
 label .opt { font-weight: 400; color: var(--faint); text-transform: none; }
 
-input[type=text], input[type=password], input[type=date], input[type=number], input[type=email],
-input[type=url], input[type=file], select, textarea {
+input:not([type]), input[type=text], input[type=password], input[type=date], input[type=number],
+input[type=email], input[type=url], input[type=file], select, textarea {
   width: 100%;
   padding: 11px 13px;
   border: 1px solid var(--line-2);
