@@ -49,18 +49,13 @@ def base():
 
 def test_dashboard_actions_share_height_and_gap(base):
     db.init_db()
-    username = "geometry-host"
-    owner_row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
-    if owner_row:
-        owner = owner_row["id"]
-    else:
-        owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
-    if not db.query_one("SELECT id FROM apartment WHERE owner_user_id = ?", (owner,)):
-        entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
-        db.insert("apartment", {
-            "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
-            "active": 1, "created_at": db.utcnow(),
-        })
+    username = f"geometry-{secrets.token_hex(4)}"
+    owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
+    entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
+    db.insert("apartment", {
+        "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
+        "active": 1, "created_at": db.utcnow(),
+    })
     with sync_api.sync_playwright() as playwright:
         try:
             browser = playwright.chromium.launch()
@@ -73,8 +68,6 @@ def test_dashboard_actions_share_height_and_gap(base):
         page.fill('input[name="username"]', username)
         page.fill('input[name="password"]', PASSWORD)
         page.click('button[type="submit"]')
-        page.wait_for_url(lambda url: "/login" not in url, timeout=15000)
-        page.goto(f"{base}/?lang=en")
         page.wait_for_selector(".dashboard-actions .action-group", timeout=60000)
         measured = page.locator(".action-group").first.evaluate(
             """(group) => {
