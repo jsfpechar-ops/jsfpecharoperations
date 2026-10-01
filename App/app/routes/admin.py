@@ -441,14 +441,23 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
 
 
 def _drawn_signature(value: str) -> Optional[str]:
-    if not value.startswith("data:image/png;base64,"):
+    if value.startswith("data:image/png;base64,"):
+        image_type = "png"
+    elif value.startswith("data:image/jpeg;base64,"):
+        image_type = "jpeg"
+    else:
         return None
     encoded = value.split(",", 1)[1]
     try:
         content = base64.b64decode(encoded, validate=True)
     except Exception:
         return None
-    if not content.startswith(b"\x89PNG") or len(content) > ENTITY_SIGNATURE_MAX_BYTES:
+    if image_type == "png":
+        if not content.startswith(b"\x89PNG"):
+            return None
+    elif not content.startswith(b"\xff\xd8\xff"):
+        return None
+    if len(content) > ENTITY_SIGNATURE_MAX_BYTES:
         return None
     return value
 
