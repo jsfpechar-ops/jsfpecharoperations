@@ -174,9 +174,47 @@ def test_the_month_filter_shares_its_page_edges(base):
                   };
                 }"""
             )
+        responsive = {}
+        for width in (1280, 1024, 390, 360):
+            page.set_viewport_size({"width": width, "height": 900})
+            for lang in ("en", "cs"):
+                for path in ("/stay-fees", "/invoices"):
+                    route = f"{path}?lang={lang}"
+                    page.goto(base + route)
+                    page.wait_for_selector(".host-month-filter", timeout=30000)
+                    responsive[(width, route)] = page.evaluate(
+                        """() => {
+                          const root = document.documentElement;
+                          const filter = document.querySelector('.host-month-filter');
+                          const bounds = filter.getBoundingClientRect();
+                          const children = [...filter.children].filter(
+                            (element) => getComputedStyle(element).display !== 'none'
+                          );
+                          const buttons = [...filter.querySelectorAll('.month-stepper .btn')];
+                          return {
+                            overflow: root.scrollWidth > root.clientWidth + 1,
+                            childOutside: children.some((element) => {
+                              const box = element.getBoundingClientRect();
+                              return box.left < bounds.left - 1 || box.right > bounds.right + 1;
+                            }),
+                            clippedText: children.concat(buttons).some(
+                              (element) => element.scrollWidth > element.clientWidth + 1
+                            ),
+                            buttonHeights: buttons.map(
+                              (button) => Math.round(button.getBoundingClientRect().height)
+                            ),
+                          };
+                        }"""
+                    )
         browser.close()
     for route, geometry in measured.items():
         assert geometry["filter"] == geometry["table"], f"{route}: filter must align with the table below"
         assert geometry["filter"][0] == geometry["title"][0], f"{route}: filter must align with the title"
         assert 8 <= geometry["controlGap"] <= 24, f"{route}: period controls must remain one compact group"
         assert geometry["rightSlack"] > 40, f"{route}: stepper must not be stranded at the far edge"
+    for (width, route), geometry in responsive.items():
+        assert not geometry["overflow"], f"{width}px {route}: page must not scroll sideways"
+        assert not geometry["childOutside"], f"{width}px {route}: filter controls must stay in their lane"
+        assert not geometry["clippedText"], f"{width}px {route}: translated controls must not clip"
+        expected_height = 44 if width <= 600 else 42
+        assert geometry["buttonHeights"] == [expected_height, expected_height]
