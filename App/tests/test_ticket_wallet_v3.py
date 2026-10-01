@@ -156,7 +156,7 @@ def test_the_changed_files_get_new_cache_keys():
     """A phone that cached the broken files must fetch the fixed ones."""
     assert "guest-ticket.css?v=20260930a" in BASE
     assert "signature.js?v=20260930a" in BASE
-    assert "ticket.js?v=20260930a" in BASE
+    assert "ticket.js?v=20261001a" in BASE
 
 
 def test_the_czech_pass_says_arrival_and_departure():

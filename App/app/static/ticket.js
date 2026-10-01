@@ -210,14 +210,33 @@
     function pad(box) {
       if (box.value.length === 1 && box !== boxes[2]) box.value = "0" + box.value;
     }
+    function clampPart(box, part) {
+      if (!box.value || box.value.length < 2) return;
+      var n = parseInt(box.value, 10);
+      if (part === "month" && box.value !== "00" && n > 12) box.value = "12";
+      if (part === "day" && box.value !== "00" && n > 31) box.value = "31";
+    }
     boxes.forEach(function (box, k) {
+      var part = k === 0 ? "day" : k === 1 ? "month" : "year";
       box.addEventListener("input", function () {
         box.value = box.value.replace(/\D/g, "").slice(0, box.maxLength);
+        if (part === "month" && box.value.length === 2) {
+          var m = parseInt(box.value, 10);
+          if (box.value !== "00" && m > 12) box.value = "12";
+        }
+        if (part === "day" && box.value.length === 2) {
+          var d = parseInt(box.value, 10);
+          if (box.value !== "00" && d > 31) box.value = "31";
+        }
         box.classList.remove("bad");
         join();
         if (box.value.length === box.maxLength && boxes[k + 1]) boxes[k + 1].focus();
       });
-      box.addEventListener("blur", function () { pad(box); join(); });
+      box.addEventListener("blur", function () {
+        pad(box);
+        clampPart(box, part);
+        join();
+      });
       box.addEventListener("keydown", function (e) {
         if (e.key === "Backspace" && !box.value && boxes[k - 1]) boxes[k - 1].focus();
       });
@@ -236,6 +255,10 @@
           parts = [groups[0].slice(0, 2), groups[0].slice(2, 4), groups[0].slice(4, 8)];
         }
         if (!parts || parts[2].length !== 4 || parts[0].length > 2 || parts[1].length > 2) return;
+        var moNum = parseInt(parts[1], 10);
+        if (parts[1] !== "00" && moNum > 12) parts[1] = "12";
+        var dayNum = parseInt(parts[0], 10);
+        if (parts[0] !== "00" && dayNum > 31) parts[0] = "31";
         e.preventDefault();
         real.value = parts[0].padStart(2, "0") + parts[1].padStart(2, "0") + parts[2];
         real.dispatchEvent(new Event("input", { bubbles: true }));
