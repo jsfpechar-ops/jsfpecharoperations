@@ -277,6 +277,7 @@ def test_disabling_the_fee_leaves_the_sealed_period_downloadable(host):
     july = client.get("/stay-fees?month=2026-07")
     pdf = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
     assert "Finalize Flat" in august.text
-    assert "Finalize Flat" not in july.text
+    assert "Set up stay fee" in july.text
+    assert f"/stay-fees/{apartment_id}/pdf?month=2026-07" not in july.text
     assert pdf.status_code == 200
     assert pdf.content.startswith(b"%PDF")
