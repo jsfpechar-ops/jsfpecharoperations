@@ -17,6 +17,8 @@ USERNAME = "stay-fee-signature-host"
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/h48AAAAASUVORK5CYII="
 )
+JPEG_BYTES = b"\xff\xd8\xff" + (b"\x00" * 60)
+JPEG_DATA_URL = "data:image/jpeg;base64," + base64.b64encode(JPEG_BYTES).decode("ascii")
 
 
 def _cleanup():
@@ -55,6 +57,26 @@ def _entity_form(name):
         "ico": "04656679",
         "contact_email": "entity@example.test",
     }
+
+
+def test_jpeg_drawn_signature_is_accepted_on_entity_edit(host):
+    host.post("/entities?lang=en", data=_entity_form("JPEG Drawn s.r.o."))
+    entity = db.query_one(
+        "SELECT id FROM legal_entity WHERE name = ?",
+        ("JPEG Drawn s.r.o.",),
+    )
+    assert entity is not None
+    response = host.post(
+        f"/entities/{entity['id']}?lang=en",
+        data={**_entity_form("JPEG Drawn s.r.o."), "signature_drawn": JPEG_DATA_URL},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    saved = db.query_one(
+        "SELECT signature_png_enc FROM legal_entity WHERE id = ?",
+        (entity["id"],),
+    )
+    assert db.decrypt_field(saved["signature_png_enc"]).startswith("data:image/jpeg;base64,")
 
 
 def test_png_signature_is_encrypted_at_rest(host):

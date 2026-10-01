@@ -921,6 +921,42 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
         _cleanup()
 
 
+def test_day_before_guest_reminder_waits_six_hours_after_claim(monkeypatch):
+    """A tomorrow stay must not get the incomplete reminder right after claiming."""
+    current, _past, _far, _apartment_id = _seed()
+    today = claim.prague_today()
+    try:
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (today + timedelta(days=1)).isoformat(),
+                "date_to": (today + timedelta(days=4)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        browser.cookies.set(guest.LANG_COOKIE, "en")
+        complete_guest_claim(
+            browser, TOKEN, current, email="fresh-claim@claim.test", party_size=1
+        )
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now or datetime.combine(today, time(10, 0)),
+        )
+
+        assert claim.sweep_reminders()["guest"] == 0
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM email_outbox WHERE kind = 'reminder_guest'"
+        )["n"] == 0
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
 def test_the_emergency_reminder_body_keeps_the_count_and_the_device(monkeypatch):
     """E-12 [UX-78]: the branded composer is an enhancement, not the contract.
 
