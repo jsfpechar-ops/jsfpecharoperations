@@ -49,8 +49,12 @@ def base():
 def test_dashboard_actions_share_height_and_gap(base):
     db.init_db()
     username = "geometry-host"
-    if not db.query_one("SELECT id FROM user_account WHERE username = ?", (username,)):
+    owner_row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
+    if owner_row:
+        owner = owner_row["id"]
+    else:
         owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
+    if not db.query_one("SELECT id FROM apartment WHERE owner_user_id = ?", (owner,)):
         entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
         db.insert("apartment", {
             "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
