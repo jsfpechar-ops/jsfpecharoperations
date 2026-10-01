@@ -305,6 +305,7 @@ body.host-workspace .pill.red { color: var(--red); background: var(--red-bg); bo
 .host-workspace .host-menu-support small { color: var(--muted); font-size: 11px; }
 .host-workspace .host-menu-rule { height: 1px; margin: 6px 8px; background: var(--line); }
 @media (max-width: 760px) {
+  .host-workspace { --action-height: 44px; }
   .host-workspace .action-group-stack { flex-direction: column; align-items: stretch; }
   .host-workspace .action-group-stack > .btn,
   .host-workspace .action-group-stack > form,
