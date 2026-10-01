@@ -113,10 +113,10 @@ def _host_with_a_stay_needing_action() -> TestClient:
 def test_the_next_action_on_a_czech_queue_row_is_czech():
     page = _host_with_a_stay_needing_action().get("/")
     assert page.status_code == 200
-    actions = re.findall(r'<div class="next-action">(.*?)</div>', page.text, re.S)
+    actions = re.findall(r'<div class="host-task-state next-action">(.*?)</div>', page.text, re.S)
     assert actions, "no next-action line on the queue at all"
-    english = host_i18n.translate("en", "action.awaiting_verification")
-    czech = host_i18n.translate("cs", "action.awaiting_verification")
+    english = host_i18n.translate("en", "status.awaiting_verification")
+    czech = host_i18n.translate("cs", "status.awaiting_verification")
     assert czech != english, "fixture is pointless if the two languages match"
     joined = " ".join(" ".join(a.split()) for a in actions)
     assert english not in joined, (

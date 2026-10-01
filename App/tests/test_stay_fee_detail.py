@@ -243,9 +243,9 @@ def test_qr_is_present_with_an_account_and_variable_symbol(host):
     assert 'class="fee-qr"' in response.text
     assert '<img src="data:image/png' in response.text
     assert "QR Platba" in response.text
-    assert "Scan it in your banking app" in response.text
+    assert "Scan in your banking app" in response.text
     assert "SPD*1.0*ACC:" in response.text
-    assert "Ready to pay" in response.text
+    assert "Payment details ready" in response.text
 
 
 def test_qr_is_absent_without_a_council_account(host):

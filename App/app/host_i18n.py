@@ -4306,6 +4306,12 @@ for _lang, _subprocessors in SUBPROCESSOR_STRINGS.items():
     STRINGS.setdefault(_lang, {}).update(_subprocessors)
 
 
+# The selected host design owns these concise labels in both languages.
+from .host_design_i18n import STRINGS as HOST_DESIGN_STRINGS
+for _lang, _strings in HOST_DESIGN_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

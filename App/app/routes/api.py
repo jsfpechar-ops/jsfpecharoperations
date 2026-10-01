@@ -36,6 +36,23 @@ def command_palette(request: Request):
         {"label": t("dashboard.sync_calendars"), "group": t("command.group.actions"), "url": "/sync", "method": "post", "keywords": "ical refresh"},
         {"label": t("stays.add_stay"), "group": t("command.group.actions"), "url": "/reservations?new=1", "keywords": "booking reservation"},
     ]
+    destinations = [
+        ("nav.properties", "/apartments", "property apartment ubytovani"),
+        ("host.business", "/entities", "business operator company billing firma"),
+        ("nav.guest_links", "/guest-links", "invitation guest link pin"),
+        ("nav.automation", "/automation", "automatic reporting timing"),
+        ("host.invoice_settings", "/invoices/settings", "invoice settings faktura"),
+        ("settings.nav.archive", "/settings/archived", "restore archived records"),
+        ("nav.privacy_requests", "/privacy-requests", "privacy gdpr"),
+        ("nav.guide", "/guide", "help guide support"),
+    ]
+    if auth.current_user(request)["role"] == "admin":
+        destinations.extend([
+            ("nav.users", "/admin/users", "team accounts roles"),
+            ("users.incidents_link", "/admin/incidents", "incidents"),
+        ])
+    items.extend({"label": t(key), "group": t("command.group.pages"), "url": url,
+                  "keywords": keywords} for key, url, keywords in destinations)
     apartments = access.apartments(request)
     for apartment in apartments:
         items.append({

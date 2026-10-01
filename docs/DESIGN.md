@@ -3,6 +3,10 @@
 This document records product-owner decisions for anyone changing the interface
 (host app, guest forms, auth screens, e-mail HTML, or design tooling).
 
+## Signed-in host app: selected redesign
+
+**[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.
+
 ## Color mode: light only (no dark mode)
 
 **Do not implement dark mode unless the product owner explicitly asks for it.**

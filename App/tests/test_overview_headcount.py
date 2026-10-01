@@ -60,9 +60,9 @@ def test_the_focus_note_drops_the_question_mark(host):
         czech = host.get("/?lang=cs").text
 
         assert "Guest forms: 0/?" not in english
-        assert "Guest forms: 0/—" in english
+        assert UNKNOWN_EN in english
         assert "Formuláře hostů: 0/?" not in czech
-        assert "Formuláře hostů: 0/—" in czech
+        assert UNKNOWN_CS in czech
     finally:
         _cleanup(apartment["id"])
 

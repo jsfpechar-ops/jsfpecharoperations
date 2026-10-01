@@ -1,6 +1,8 @@
-# Implementation plans (stay fee + invoices)
+# Implementation plans
 
 These plans describe features. The **guest-facing** stay fee is **on hold**; the invoice builder and the separate **host-only** stay-fee remittance tool are **built**.
+
+**Host-app redesign:** [Implementation and Cursor handoff](host-app-redesign/README.md). Actual source changes, selected design, route coverage and verified tests.
 
 | File | What |
 |---|---|

@@ -110,8 +110,9 @@ def test_edit_page_has_stay_fee_panel_and_create_page_does_not(host):
     create = client.get("/apartments/new?lang=en")
 
     assert edit.status_code == 200
-    assert '<div class="panel" id="stay-fee-settings">' in edit.text
-    assert '<a href="#stay-fee-settings">Stay fee</a>' in edit.text
+    assert '<details class="panel property-section" id="stay-fee-settings"' in edit.text
+    assert 'href="#stay-fee-settings"' in edit.text
+    assert 'Optional stay fee' in edit.text
     assert create.status_code == 200
     assert 'id="stay-fee-settings"' not in create.text
     assert 'href="#stay-fee-settings"' not in create.text

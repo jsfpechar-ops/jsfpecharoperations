@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app import alerts, auth, db
+from app import host_i18n, alerts, auth, db
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
@@ -118,14 +118,14 @@ def test_alerts_that_belong_to_no_stay_are_left_alone():
     assert [card["id"] for card in cards] == [1, 2]
 
 
-def test_the_stack_stops_at_two_and_counts_the_rest(host):
+def test_notification_panel_keeps_every_action_reachable(host):
     for index, reservation_id in enumerate((9001, 9002, 9003, 9004)):
         _alert("cancelled_after_report", "warning", reservation_id, f"stay {index}")
 
     page = host.get("/?lang=en")
 
-    assert _bubbles(page) == 2
-    assert "2 more alerts — see Overview" in page.text
+    assert _bubbles(page) == 4
+    assert 'data-host-alert-count>4</span>' in page.text
 
 
 def test_the_stack_shows_no_summary_when_everything_fits(host):
@@ -155,7 +155,8 @@ def test_the_summary_opens_the_overview_queue(host):
 
     page = host.get("/?lang=en")
 
-    assert 'class="notification-more" href="/#needs-action"' in page.text
+    assert 'data-host-alert-count>3</span>' in page.text
+    assert _bubbles(page) == 3
 
 
 def test_the_summary_is_in_czech(host):
@@ -164,25 +165,22 @@ def test_the_summary_is_in_czech(host):
 
     page = host.get("/?lang=cs")
 
-    assert "Další upozornění: 1 — zobrazit v Přehledu" in page.text
+    assert host_i18n.translate('cs', 'a11y.notifications') in page.text
+    assert 'data-host-alert-count>3</span>' in page.text
 
 
-def test_the_stack_keeps_clear_of_the_page_header():
-    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "app.css").read_text(
-        encoding="utf-8"
-    )
-    stack = css.split(".notification-stack {", 1)[1].split("}", 1)[0]
-
-    assert "bottom: 20px" in stack
-    assert "top:" not in stack, "the stack is back in the header zone"
+def test_notification_panel_stays_in_document_flow():
+    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "host.css").read_text()
+    stack = css.split('.host-workspace .host-alerts .notification-stack {', 1)[1].split('}', 1)[0]
+    assert 'position: static' in stack
+    assert 'max-height: 360px' in stack
 
 
-def test_the_stack_rides_under_the_app_bar_on_a_phone():
-    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "app.css").read_text(
-        encoding="utf-8"
-    )
-
-    assert ".notification-stack {\n    top: 59px;" in css
+def test_critical_notifications_open_without_an_extra_click(host):
+    _alert('dates_changed_resign', 'critical', 9501, 'Dates changed')
+    page = host.get('/?lang=en')
+    assert 'data-host-alerts open' in page.text
+    assert 'data-notification' in page.text
 
 
 def test_a_lost_raise_race_refreshes_the_alert_instead_of_raising(monkeypatch):

@@ -323,8 +323,17 @@
     var toggles = document.querySelectorAll("[data-nav-toggle]");
     var closers = document.querySelectorAll("[data-nav-close]");
 
+    var sidebar = document.getElementById("app-sidebar");
+    var main = document.getElementById("main-content");
     function setDrawer(open) {
+      var wasOpen = document.body.classList.contains("nav-open");
       document.body.classList.toggle("nav-open", open);
+      if (sidebar) sidebar.inert = isCompact() && !open;
+      if (main) main.inert = isCompact() && open;
+      if (open && sidebar) {
+        var first = sidebar.querySelector("a, button");
+        if (first) first.focus();
+      } else if (wasOpen && toggles.length) toggles[0].focus();
       toggles.forEach(function (button) {
         button.setAttribute("aria-expanded", open ? "true" : "false");
       });
@@ -367,9 +376,18 @@
         setDrawer(false);
       }
     });
-    window.addEventListener("resize", function () {
-      if (!isCompact()) setDrawer(false);
+    document.addEventListener("keydown", function (event) {
+      if (event.key !== "Tab" || !sidebar || !document.body.classList.contains("nav-open")) return;
+      var focusable = Array.from(sidebar.querySelectorAll("a, button, summary, input, select")).filter(function (el) {
+        return !el.disabled && el.getClientRects().length > 0;
+      });
+      var first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
+    document.addEventListener("host:close-navigation", function () { setDrawer(false); });
+    window.addEventListener("resize", function () { setDrawer(false); });
+    setDrawer(false);
   }
 
   function initTogglePanels() {
@@ -758,7 +776,7 @@
 
     function openCommand() {
       if (!command || !input) return;
-      document.body.classList.remove("nav-open");
+      document.dispatchEvent(new Event("host:close-navigation"));
       if (!command.open) {
         if (typeof command.showModal === "function") command.showModal();
         else command.setAttribute("open", "");
@@ -804,6 +822,7 @@
     }
     document.querySelectorAll("[data-shortcuts-open]").forEach(function (button) {
       button.addEventListener("click", function () {
+        document.dispatchEvent(new Event("host:close-navigation"));
         if (shortcuts && typeof shortcuts.showModal === "function") shortcuts.showModal();
       });
     });
@@ -834,6 +853,7 @@
       if (typingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === "?" && shortcuts) {
         event.preventDefault();
+        document.dispatchEvent(new Event("host:close-navigation"));
         shortcuts.showModal();
         return;
       }

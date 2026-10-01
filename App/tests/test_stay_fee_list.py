@@ -214,14 +214,14 @@ def test_future_month_redirects_to_default(host):
     assert response.headers["location"] == "/stay-fees?month=2026-08"
 
 
-def test_sidebar_link_exists(host):
+def test_sidebar_link_waits_for_opt_in(host):
     client, _owner_id, _entity_id = host
 
     response = client.get("/stay-fees")
 
     assert response.status_code == 200
-    assert 'href="/stay-fees"' in response.text
-    assert "Stay fee" in response.text
+    assert 'href="/stay-fees"' not in response.text.split('id="app-sidebar"', 1)[1].split('</aside>', 1)[0]
+    assert 'href="/apartments"' in response.text
 
 
 def test_command_palette_lists_stay_fee_page(host):

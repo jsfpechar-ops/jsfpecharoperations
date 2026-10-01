@@ -18,7 +18,7 @@
   <p class="warn-text small">
     {{ t(issue) }}
     {% if issue == 'stay_fees.issue.no_vs' or issue == 'stay_fees.issue.no_authority' %}
-      <a href="/apartments/{{ apartment.id }}#stay-fee-settings">{{ t('apartment.form.stay_fee.open_overview') }}</a>
+      <a href="/apartments/{{ apartment.id }}#stay-fee-settings">{{ t('host.fix_details') }}</a>
     {% elif issue == 'stay_fees.issue.no_payer' %}
       <a href="/entities">{{ t('nav.entities') }}</a>
     {% endif %}

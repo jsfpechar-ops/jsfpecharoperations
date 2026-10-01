@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import date, datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, Optional
 from zoneinfo import ZoneInfo
 
@@ -36,6 +37,14 @@ templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 # One date format for the whole app: a page, an alert and an e-mail must never
 # print the same stay differently.
 _fmt_date = validation.fmt_date
+
+
+def _money_czk(haler, quantity=1) -> str:
+    """Display stored haler without truncating cents or fractional quantities."""
+    amount = (Decimal(str(haler or 0)) / Decimal(str(quantity or 1)) / 100).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    return f"{amount:,.2f}".replace(",", "\u00a0").replace(".", ",") + " Kč"
 
 
 def _weekday(value: Optional[str]) -> str:
@@ -236,6 +245,7 @@ def _legal_links(value: object) -> Markup:
 
 
 templates.env.filters["date_cz"] = _fmt_date
+templates.env.filters["money_czk"] = _money_czk
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
@@ -296,11 +306,15 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
             )
         )
         data["open_alerts"] = alerts.present_many(raw_alerts, data["lang"])
-    # The property switcher lives in the sidebar on every host page, so it must not
-    # depend on which route remembered to pass its own list. Routes that need the
-    # full rows (the dashboard) or the same list for a filter keep passing their own.
-    if workspace and workspace["id"] and data.get("show_nav", True) and "apartments" not in data:
-        data["apartments"] = access.apartments(request, "id, internal_name")
+    # Navigation must use the workspace's complete, owner-scoped property set,
+    # never a filtered route list (which may omit the enabled property).
+    data["host_has_stay_fees"] = False
+    if workspace and workspace["id"] and data.get("show_nav", True):
+        nav_properties = access.apartments(request, "id, internal_name, active, stay_fee_rate_czk")
+        data.setdefault("apartments", nav_properties)
+        data["host_has_stay_fees"] = any(
+            p["active"] and (p["stay_fee_rate_czk"] or 0) > 0 for p in nav_properties
+        )
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
     data.setdefault("celebration_milestone", None)

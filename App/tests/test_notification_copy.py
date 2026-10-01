@@ -136,6 +136,8 @@ def test_present_checkin_omits_email(monkeypatch):
 def test_base_template_keeps_compact_notification_structure():
     base = Path(__file__).resolve().parents[1] / "app" / "templates" / "base.html"
     text = base.read_text(encoding="utf-8")
+    assert 'include "_host_alerts.html"' in text
+    text = base.with_name("_host_alerts.html").read_text(encoding="utf-8")
     assert "display_title" in text
     assert "display_detail" in text
     assert "notification-action" in text
