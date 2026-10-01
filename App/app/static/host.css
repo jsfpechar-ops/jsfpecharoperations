@@ -141,6 +141,7 @@
   .host-workspace .sidebar-collapse { min-width: 32px; min-height: 32px; }
 }
 @media (max-width: 600px) {
+  .host-workspace { --action-height: 44px; }
   .host-workspace .wrap.with-sidebar { padding: 20px 14px 40px; }
   .host-workspace h1 { font-size: 28px; }
   .host-workspace .page-header { align-items: stretch; gap: 12px; }
@@ -240,5 +241,14 @@ body.host-workspace .pill.red { color: var(--red); background: var(--red-bg); bo
   .host-workspace .action-group-stack .btn { width: 100%; }
   .host-workspace .dashboard-actions { justify-items: stretch; }
   .host-workspace .dashboard-stats { grid-template-columns: 1fr 1fr; }
-  .host-workspace .host-month-filter, .host-workspace .account-parts, .host-workspace .fee-adjust-grid { display: grid; grid-template-columns: 1fr; }
+  .host-workspace .account-parts, .host-workspace .fee-adjust-grid { display: grid; grid-template-columns: 1fr; }
+  .host-workspace .host-month-filter {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "label month month" "step step apply";
+  }
+  .host-workspace .host-month-filter label { grid-area: label; }
+  .host-workspace .host-month-filter input[type=month] { grid-area: month; width: auto; }
+  .host-workspace .host-month-filter .month-stepper { grid-area: step; }
+  .host-workspace .host-month-filter .filter-apply { grid-area: apply; }
 }

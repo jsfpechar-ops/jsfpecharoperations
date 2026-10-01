@@ -147,21 +147,25 @@ def _fee_values(form) -> dict:
         "stay_fee_payee": _form_str(form, "stay_fee_payee")[:60].strip() or None,
         "stay_fee_instruction": _form_str(form, "stay_fee_instruction")[:500].strip() or None,
     }
+    raw = None
     if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
-        raw = payments.compose_czech_account(
-            _form_str(form, "account_prefix"),
-            _form_str(form, "account_number"),
-            _form_str(form, "account_bank"),
-        )
+        prefix = _form_str(form, "account_prefix")
+        number = _form_str(form, "account_number")
+        bank = _form_str(form, "account_bank")
+        existing = _form_str(form, "_stay_fee_account_existing")
+        if payments.preserve_iban_only_account(existing, prefix, number, bank):
+            return values
+        raw = payments.compose_czech_account(prefix, number, bank)
     else:
         raw = _form_str(form, "stay_fee_council_account")
-    if raw.strip():
-        account, iban = payments.normalise_account(raw)
-        values["stay_fee_council_account"] = account
-        values["stay_fee_council_iban"] = iban
-    else:
-        values["stay_fee_council_account"] = None
-        values["stay_fee_council_iban"] = None
+    if raw is not None:
+        if raw.strip():
+            account, iban = payments.normalise_account(raw)
+            values["stay_fee_council_account"] = account
+            values["stay_fee_council_iban"] = iban
+        else:
+            values["stay_fee_council_account"] = None
+            values["stay_fee_council_iban"] = None
     return values
 
 
@@ -421,29 +425,29 @@ async def stay_fee_adjustment_add(apartment_id: int, request: Request):
     correcting = _form_str(form, "correct") == "1"
     period = stay_fee.property_period(apartment, month, live_only=correcting)
     if period and period.get("frozen") and not correcting:
-        return _back(back, err=_flash(request, "flash.stay_fees.saved"))
+        return _back(back, err=_flash(request, "flash.stay_fees.adjust_frozen"))
     direction = _form_str(form, "direction")
     mode = _form_str(form, "mode")
     reason = _form_str(form, "reason").strip()
     if direction not in ("add", "remove") or mode not in ("people", "bed_days") or len(reason) < 3:
-        return _back(back, err=_flash(request, "flash.stay_fees.reason_required"))
+        return _back(back, err=_flash(request, "flash.stay_fees.adjust_invalid"))
     try:
         days = _adjustment_bed_days(form)
     except ValueError:
-        return _back(back, err=_flash(request, "flash.stay_fees.reason_required"))
+        return _back(back, err=_flash(request, "flash.stay_fees.adjust_invalid"))
     key = _period_key(stay_fee.cadence_of(apartment), month)
     current = stay_fee_adjustment.net_bed_days(apartment_id, key)
     guest_nights = int((period or {}).get("guest_liable_nights") or 0)
     delta = days if direction == "add" else -days
     if guest_nights + current + delta < 0:
-        return _back(back, err=_flash(request, "flash.stay_fees.reason_required"))
+        return _back(back, err=_flash(request, "flash.stay_fees.adjust_negative"))
     stay_fee_adjustment.add(
         apartment_id=apartment_id,
         period_key=key,
         direction=direction,
         mode=mode,
-        people_count=int(_form_str(form, "people") or "0"),
-        nights=int(_form_str(form, "nights") or "0"),
+        people_count=int(_form_str(form, "people") or "0") if mode == "people" else 0,
+        nights=int(_form_str(form, "nights") or "0") if mode == "people" else 0,
         bed_days=days,
         reason=reason[:200],
         created_by=access.owner_id(request),
@@ -469,13 +473,14 @@ async def stay_fee_adjustment_undo(apartment_id: int, adjustment_id: int, reques
         "SELECT * FROM stay_fee_adjustment WHERE id = ? AND apartment_id = ?",
         (adjustment_id, apartment_id),
     )
+    back = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    if row and row["filing_id"]:
+        return _back(back, err=_flash(request, "flash.stay_fees.adjust_sealed"))
     if row and not row["reversed_at"]:
         stay_fee_adjustment.reverse(adjustment_id, access.owner_id(request))
         db.audit("stay_fee_adjustment_undo", f"id={adjustment_id}")
-    return _back(
-        f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}",
-        msg=_flash(request, "flash.stay_fees.saved"),
-    )
+        return _back(back, msg=_flash(request, "flash.stay_fees.saved"))
+    return _back(back)
 
 
 @router.post("/stay-fees/guest-decision")

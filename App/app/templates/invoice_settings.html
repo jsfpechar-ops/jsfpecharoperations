@@ -29,6 +29,7 @@
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="legal_entity_id" value="{{ entity.id }}">
   <input type="hidden" name="next" value="{{ next }}">
+  <input type="hidden" name="_invoice_account_existing" value="{{ entity.bank_account or entity.iban or '' }}">
 
   <div class="panel invoice-settings-form">
     <div class="field">

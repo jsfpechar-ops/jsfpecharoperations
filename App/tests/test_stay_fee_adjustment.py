@@ -58,6 +58,7 @@ def test_a_correction_cannot_make_the_total_negative(monkeypatch):
         "bed_days": "2", "reason": "Too many",
     }, follow_redirects=True)
     assert refused.status_code == 200
+    assert "záporný" in refused.text or "fee total negative" in refused.text
     assert db.query_one(
         "SELECT COUNT(*) AS n FROM stay_fee_adjustment WHERE apartment_id = ?",
         (apartment,),

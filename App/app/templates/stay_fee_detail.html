@@ -75,12 +75,14 @@
   <ul class="fee-adjust-list">
     {% for row in period.adjustments %}
     <li>
-      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}</span>
+      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}{% if row.reason %} — {{ row.reason }}{% endif %}</span>
+      {% if not row.filing_id %}
       <form method="post" action="/stay-fees/{{ apartment.id }}/adjustment/{{ row.id }}/undo">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <input type="hidden" name="month" value="{{ month_key }}">
         <button class="btn small" type="submit">{{ t('stay_fees.adjust.undo') }}</button>
       </form>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>

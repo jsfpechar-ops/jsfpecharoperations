@@ -748,11 +748,14 @@ def _apartment_payload(form) -> Dict[str, Any]:
         ):
             payload[key] = _form_str(form, key)[:limit].strip() or None
         if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
-            payload["_stay_fee_account_raw"] = payments.compose_czech_account(
-                _form_str(form, "account_prefix"),
-                _form_str(form, "account_number"),
-                _form_str(form, "account_bank"),
-            )
+            prefix = _form_str(form, "account_prefix")
+            number = _form_str(form, "account_number")
+            bank = _form_str(form, "account_bank")
+            existing = _form_str(form, "_stay_fee_account_existing")
+            if not payments.preserve_iban_only_account(existing, prefix, number, bank):
+                payload["_stay_fee_account_raw"] = payments.compose_czech_account(
+                    prefix, number, bank
+                )
         else:
             payload["_stay_fee_account_raw"] = _form_str(form, "stay_fee_council_account")
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)

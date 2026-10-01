@@ -61,6 +61,13 @@ def compose_czech_account(prefix: str, number: str, bank: str) -> str:
     return f"{prefix}-{number}/{bank}" if prefix else f"{number}/{bank}"
 
 
+def preserve_iban_only_account(existing: str, prefix: str, number: str, bank: str) -> bool:
+    """True when an all-empty domestic form should not wipe a stored IBAN-only account."""
+    if compose_czech_account(prefix, number, bank):
+        return False
+    return bool(czech_account_parts(existing or "").get("iban"))
+
+
 def normalise_account(raw: str) -> tuple:
     """Return (display_account, iban). Raise ValueError on bad input."""
     text = re.sub(r"\s+", "", raw or "").upper()

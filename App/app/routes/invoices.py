@@ -259,11 +259,12 @@ async def invoice_settings_save(request: Request):
     redirect = _settings_next(request, form, entity)
     detail = _settings_detail_payload(form)
     if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
-        detail["bank_account"] = payments.compose_czech_account(
-            _form_str(form, "account_prefix"),
-            _form_str(form, "account_number"),
-            _form_str(form, "account_bank"),
-        )
+        prefix = _form_str(form, "account_prefix")
+        number = _form_str(form, "account_number")
+        bank = _form_str(form, "account_bank")
+        existing = entity["bank_account"] or entity.get("iban") or ""
+        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
+            detail["bank_account"] = payments.compose_czech_account(prefix, number, bank)
     if "bank_account" in detail:
         account = detail["bank_account"]
         if account:
