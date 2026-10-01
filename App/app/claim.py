@@ -21,10 +21,23 @@ HOLD_MINUTES = 30
 # mistyped their address is not stuck for the whole hold.
 HOLD_TAKEOVER_SECONDS = 60
 TOKEN_BYTES = 24
+# Day-before reminder only after the guest has had time to finish in one sitting.
+REMINDER_GUEST_MIN_HOURS_AFTER_CLAIM = 6
 
 
 def prague_today():
     return deadlines.local_now().date()
+
+
+def _reminder_guest_claim_mature(claimed_at: Optional[str]) -> bool:
+    """True when enough time passed since the e-mail claim to nudge by reminder."""
+    if not claimed_at:
+        return False
+    parsed = datetime.fromisoformat(claimed_at.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    age = datetime.now(timezone.utc) - parsed.astimezone(timezone.utc)
+    return age >= timedelta(hours=REMINDER_GUEST_MIN_HOURS_AFTER_CLAIM)
 
 
 def token_hash(secret: str) -> str:
@@ -685,6 +698,7 @@ def sweep_reminders() -> Dict[str, int]:
         "c.lang AS claim_lang, c.email_masked AS email_masked, "
         "c.guest_access_locked_at AS guest_access_locked_at, "
         "c.guest_access_reopened_at AS guest_access_reopened_at, "
+        "c.claimed_at AS claimed_at, "
         "c.token_version AS token_version "
         "FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
@@ -712,6 +726,7 @@ def sweep_reminders() -> Dict[str, int]:
             and now_local.hour >= 9
             and reservation["claim_state"] == CLAIMED
             and reservation["claim_email"]
+            and _reminder_guest_claim_mature(reservation["claimed_at"])
             and not complete
         ):
             lang = reservation["claim_lang"] or "en"

@@ -816,6 +816,36 @@ def test_completed_past_stay_is_not_exposed_on_bare_stay_link():
         _cleanup()
 
 
+def test_a_fresh_claim_does_not_get_the_day_before_reminder_immediately(monkeypatch):
+    current, _past, _far, _apartment_id = _seed()
+    today = claim.prague_today()
+    try:
+        db.update(
+            "reservation",
+            current,
+            {
+                "date_from": (today + timedelta(days=1)).isoformat(),
+                "date_to": (today + timedelta(days=4)).isoformat(),
+            },
+        )
+        browser = TestClient(app)
+        complete_guest_claim(
+            browser, TOKEN, current, email="guest-fresh@claim.test", party_size=5
+        )
+        monkeypatch.setattr(mail, "backend_name", lambda: "console")
+        monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+        monkeypatch.setattr(
+            claim.deadlines,
+            "local_now",
+            lambda now=None: now or datetime.combine(today, time(10, 0)),
+        )
+        assert claim.sweep_reminders()["guest"] == 0
+    finally:
+        db.execute("DELETE FROM console_mail_log")
+        db.execute("DELETE FROM email_outbox")
+        _cleanup()
+
+
 def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
     current, _past, _far, _apartment_id = _seed()
     today = claim.prague_today()
@@ -832,6 +862,13 @@ def test_incomplete_claimed_guest_receives_one_day_before_reminder(monkeypatch):
         browser.cookies.set(guest.LANG_COOKIE, "en")
         complete_guest_claim(
             browser, TOKEN, current, email="guest-reminder@claim.test", party_size=1
+        )
+        claimed_old = (
+            datetime.now(timezone.utc) - timedelta(hours=claim.REMINDER_GUEST_MIN_HOURS_AFTER_CLAIM + 1)
+        ).replace(microsecond=0).isoformat()
+        db.execute(
+            "UPDATE reservation_claim SET claimed_at = ? WHERE reservation_id = ?",
+            (claimed_old, current),
         )
         monkeypatch.setattr(mail, "backend_name", lambda: "console")
         monkeypatch.setattr(mail, "mail_enabled", lambda: True)
