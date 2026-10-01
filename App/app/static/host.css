@@ -268,7 +268,7 @@ body.host-workspace .pill.red { color: var(--red); background: var(--red-bg); bo
 .host-workspace .dashboard-actions .sync-cta,
 .host-workspace .dashboard-actions .sync-cta-form,
 .host-workspace .dashboard-actions .sync-cta .btn { flex: 0 0 auto; width: auto; min-width: max-content; white-space: nowrap; }
-.host-workspace .dashboard-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 22px; }
+.host-workspace .dashboard-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 auto 22px; }
 .host-workspace .dashboard-stats a { display: grid; gap: 2px; min-height: 72px; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; text-decoration: none; color: inherit; }
 .host-workspace .dashboard-stats strong { font-size: 24px; letter-spacing: -.04em; }
 .host-workspace .dashboard-stats span { font-size: 13px; font-weight: 650; }

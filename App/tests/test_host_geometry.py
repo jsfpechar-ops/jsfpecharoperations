@@ -91,6 +91,18 @@ def test_dashboard_actions_share_height_and_gap(base):
         page = context.new_page()
         page.goto(base + "/?lang=en")
         page.wait_for_selector(".dashboard-actions .action-group", timeout=30000)
+        aligned = page.evaluate(
+            """() => {
+              const rect = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; };
+              return {
+                stats: rect(document.querySelector('.dashboard-stats')),
+                head: rect(document.querySelector('.host-today-head')),
+                first: rect(document.querySelector('section, .panel.empty')),
+              };
+            }"""
+        )
+        assert aligned["stats"] == aligned["head"], "the stat tiles must span the header card exactly"
+        assert aligned["stats"] == aligned["first"], "the stat tiles must align with the content below"
         measured = page.locator(".dashboard-actions .action-group").evaluate(
             """(group) => {
               const buttons = [...group.querySelectorAll('.btn')];
