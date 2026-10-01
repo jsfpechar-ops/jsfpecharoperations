@@ -1,7 +1,8 @@
-"""The notification stack is capped, merged and out of the header's way.
+"""The notification stack is merged and sits in the corner as floating cards.
 
-An uncapped fixed stack covered every page's top-right primary action, and two
-alerts about the same stay made the host read and dismiss that stay twice.
+Two alerts about the same stay must not make the host read and dismiss that
+stay twice. The cards float in the bottom-right corner instead of a panel
+that pushes the page down.
 """
 from __future__ import annotations
 
@@ -125,7 +126,8 @@ def test_notification_panel_keeps_every_action_reachable(host):
     page = host.get("/?lang=en")
 
     assert _bubbles(page) == 4
-    assert 'data-host-alert-count>4</span>' in page.text
+    assert 'class="notification-stack"' in page.text
+    assert '<details class="host-alerts"' not in page.text
 
 
 def test_the_stack_shows_no_summary_when_everything_fits(host):
@@ -155,7 +157,7 @@ def test_the_summary_opens_the_overview_queue(host):
 
     page = host.get("/?lang=en")
 
-    assert 'data-host-alert-count>3</span>' in page.text
+    assert 'class="notification-stack"' in page.text
     assert _bubbles(page) == 3
 
 
@@ -166,21 +168,24 @@ def test_the_summary_is_in_czech(host):
     page = host.get("/?lang=cs")
 
     assert host_i18n.translate('cs', 'a11y.notifications') in page.text
-    assert 'data-host-alert-count>3</span>' in page.text
+    assert 'class="notification-stack"' in page.text
 
 
-def test_notification_panel_stays_in_document_flow():
+def test_notifications_float_in_the_corner():
     css = (Path(__file__).resolve().parents[1] / "app" / "static" / "host.css").read_text()
-    stack = css.split('.host-workspace .host-alerts .notification-stack {', 1)[1].split('}', 1)[0]
-    assert 'position: static' in stack
-    assert 'max-height: 360px' in stack
+    stack = css.split('.host-workspace .notification-stack {', 1)[1].split('}', 1)[0]
+    assert 'position: fixed' in stack
+    assert 'bottom: 16px' in stack
+    assert 'right: 16px' in stack
+    assert 'position: static' not in stack
 
 
-def test_critical_notifications_open_without_an_extra_click(host):
+def test_critical_notifications_are_visible_without_an_extra_click(host):
     _alert('dates_changed_resign', 'critical', 9501, 'Dates changed')
     page = host.get('/?lang=en')
-    assert 'data-host-alerts open' in page.text
+    assert 'data-host-alerts' in page.text
     assert 'data-notification' in page.text
+    assert '<details class="host-alerts"' not in page.text
 
 
 def test_a_lost_raise_race_refreshes_the_alert_instead_of_raising(monkeypatch):

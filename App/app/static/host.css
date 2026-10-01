@@ -190,12 +190,57 @@ body.host-workspace {
   body.host-workspace.sidebar-collapsed .host-account-menu { right: auto; width: 220px; }
   body.host-workspace.sidebar-collapsed .host-help { overflow: hidden; font-size: 0; justify-content: center; }
 }
-.host-alerts { margin-bottom: 18px; border: 1px solid var(--line); border-radius: 10px; background: white; padding: 10px 14px; }
-.host-alerts > summary { cursor: pointer; font-size: 13px; font-weight: 650; min-height: 24px; }
-.host-alerts > summary > span { display: inline-block; margin-left: 6px; border-radius: 99px; padding: 0 7px; background: var(--amber-bg); color: var(--amber); }
-.host-workspace .host-alerts .notification-stack { position: static; display: grid; width: auto; max-width: none; max-height: 360px; overflow: auto; margin: 12px 0 0; padding: 0; pointer-events: auto; }
-.host-workspace .host-alerts .notification-bubble { position: relative; background: white; opacity: 1; box-shadow: none; border: 1px solid var(--line); border-radius: 9px; animation: none; }
-.host-workspace .host-alerts .notification-bubble button { min-width: 44px; min-height: 44px; }
+.host-workspace .notification-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  top: auto;
+  z-index: calc(var(--z-toast) + 10);
+  display: grid;
+  align-content: end;
+  gap: 10px;
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(70vh, 520px);
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  pointer-events: auto;
+}
+.host-workspace .notification-bubble {
+  border: 0;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(32, 32, 30, 0.14), 0 2px 8px rgba(32, 32, 30, 0.06);
+}
+.host-workspace .notification-bubble.warning { background: #fffaf0; }
+.host-workspace .notification-bubble.error,
+.host-workspace .notification-bubble.critical { background: #fff6f5; }
+.host-workspace .notification-bubble.info { background: #f4f8ff; }
+.host-workspace .notification-link { padding: 12px 48px 12px 12px; align-items: flex-start; }
+.host-workspace .notification-icon { width: 28px; height: 28px; border-radius: 50%; }
+.host-workspace .notification-bubble small:not(.notification-action) {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.host-workspace .notification-bubble form button { min-width: 44px; min-height: 44px; }
+@media (max-width: 720px) {
+  .host-workspace .notification-stack {
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    width: min(300px, calc(100vw - 24px));
+    max-height: 200px;
+    gap: 8px;
+  }
+  .host-workspace .notification-bubble,
+  .host-workspace .notification-more {
+    border-radius: 22px;
+    border: 0;
+    box-shadow: 0 14px 36px rgba(32, 32, 30, 0.14), 0 2px 8px rgba(32, 32, 30, 0.06);
+  }
+}
 .host-property-save { position: sticky; bottom: 12px; z-index: 19; width: fit-content; background: white; border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: var(--shadow-popover); }
 body.host-workspace .pill.blue { color: var(--blue); background: var(--blue-bg); border-color: transparent; }
 body.host-workspace .pill.teal { color: var(--teal); background: var(--teal-bg); border-color: transparent; }
