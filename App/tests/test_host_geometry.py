@@ -67,9 +67,13 @@ def test_dashboard_actions_share_height_and_gap(base):
     username = f"geometry{secrets.token_hex(4)}"
     owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
-    db.insert("apartment", {
+    apartment = db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
         "permalink_token": f"geom{secrets.token_hex(4)}",
+        "active": 1, "created_at": db.utcnow(),
+    })
+    db.insert("ical_feed", {
+        "apartment_id": apartment, "url": "https://calendar.example/geometry.ics",
         "active": 1, "created_at": db.utcnow(),
     })
     session = _browser_session_cookie(username)
@@ -87,17 +91,26 @@ def test_dashboard_actions_share_height_and_gap(base):
         page = context.new_page()
         page.goto(base + "/?lang=en")
         page.wait_for_selector(".dashboard-actions .action-group", timeout=30000)
-        measured = page.locator(".action-group").first.evaluate(
+        measured = page.locator(".dashboard-actions .action-group").evaluate(
             """(group) => {
               const buttons = [...group.querySelectorAll('.btn')];
-              return {
-                gap: getComputedStyle(group).gap,
-                heights: buttons.map((button) => Math.round(button.getBoundingClientRect().height)),
-              };
+              const boxes = buttons.map((button) => {
+                const box = button.getBoundingClientRect();
+                return { top: box.top, right: box.right, bottom: box.bottom, left: box.left,
+                         height: Math.round(box.height),
+                         clipped: button.scrollWidth > button.clientWidth + 1 };
+              });
+              return { gap: getComputedStyle(group).gap, boxes };
             }"""
         )
         browser.close()
+    boxes = measured["boxes"]
     assert measured["gap"] == "8px"
-    assert measured["heights"]
-    assert len(set(measured["heights"])) == 1
-    assert measured["heights"][0] == 42
+    assert boxes
+    assert len({box["height"] for box in boxes}) == 1
+    assert boxes[0]["height"] == 42
+    assert not any(box["clipped"] for box in boxes)
+    for left, right in zip(boxes, boxes[1:]):
+        separated = left["right"] <= right["left"] + 1 or right["right"] <= left["left"] + 1
+        stacked = left["bottom"] <= right["top"] + 1 or right["bottom"] <= left["top"] + 1
+        assert separated or stacked

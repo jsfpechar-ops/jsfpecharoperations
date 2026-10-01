@@ -208,6 +208,17 @@ def test_a_workspace_with_a_property_keeps_the_page_header(host_with_property):
     assert f"<h1>{host_i18n.STRINGS['en']['dashboard.title']}</h1>" in page
 
 
+def test_dashboard_status_counts_use_distinct_colours(host_with_property):
+    page = host_with_property.get("/?lang=en").text
+
+    assert 'class="stat-action"' in page
+    assert 'class="stat-waiting"' in page
+    assert 'class="stat-ready"' in page
+    assert 'class="stat-overdue"' in page
+    assert "Needs action" in page
+    assert "Waiting for guests" in page
+
+
 def test_the_skipped_onboarding_still_gets_the_page_header(empty_host):
     """With the guidance dismissed there is no welcome card, so Overview needs its own h1."""
     empty_host.post("/onboarding/dismiss", data={"return_to": "/"}, follow_redirects=False)

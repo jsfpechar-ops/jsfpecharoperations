@@ -1,7 +1,11 @@
 <form method="get" action="{{ form_action }}" class="host-month-filter" data-auto-submit>
   <label for="{{ filter_id }}-month">{{ t(period_label_key) }}</label>
-  <input type="month" id="{{ filter_id }}-month" name="month"
-         value="{{ month_key }}" max="{{ max_month_key }}">
+  <div class="month-control{% if not month_key %} is-empty{% endif %}">
+    {% if not month_key %}<span class="month-control-face">{{ t('host.filter.all_dates') }}</span>{% endif %}
+    <input type="month" id="{{ filter_id }}-month" name="month"
+           value="{{ month_key }}" max="{{ max_month_key }}"
+           {% if not month_key %}aria-label="{{ t('host.filter.all_dates') }}"{% endif %}>
+  </div>
   <div class="action-group month-stepper">
     <a class="btn" href="{{ form_action }}?month={{ prev_month_key }}">{{ t('host.filter.prev_month') }}</a>
     {% if next_month_key %}

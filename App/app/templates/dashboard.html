@@ -64,7 +64,7 @@
     <h1>{{ t('dashboard.title') }}</h1>
   </div>
   <div class="dashboard-actions">
-    <div class="action-group action-group-equal action-group-stack">
+    <div class="action-group action-group-stack">
       <a class="btn primary" href="/reservations?new=1">+ {{ t('stays.add_stay') }}</a>
       {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}
       {% if demo_loaded %}
@@ -78,10 +78,10 @@
 </header>
 {% if apartments %}
 <nav class="dashboard-stats" aria-label="{{ t('nav.overview') }}">
-  <a href="#needs-action"><strong>{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
-  <a href="#waiting"><strong>{{ counts.awaiting }}</strong><span>{{ t('dashboard.stat.waiting') }}</span></a>
-  <a href="/reservations"><strong>{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
-  <a href="#needs-action"><strong>{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
+  <a class="stat-action" href="#needs-action"><strong>{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
+  <a class="stat-waiting" href="#waiting"><strong>{{ counts.awaiting }}</strong><span>{{ t('dashboard.stat.waiting') }}</span></a>
+  <a class="stat-ready" href="/reservations"><strong>{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
+  <a class="stat-overdue" href="#needs-action"><strong>{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
 </nav>
 {% endif %}
 {% endif %}
