@@ -13,6 +13,7 @@ from .. import (
     auth,
     claim,
     db,
+    host_i18n,
     list_month_filter,
     security,
     stay_fee,
@@ -42,6 +43,19 @@ def _fold_place(value) -> str:
 
 def _default_month(today: date) -> date:
     return stay_fee.previous_month(today)
+
+
+def _ui_period_label(request: Request, cadence: str, month: date) -> str:
+    """Host-language period name. The filed PDF keeps the Czech label."""
+    lang = host_i18n.resolve_language(request)
+    if cadence == "quarterly":
+        return host_i18n.translate(
+            lang,
+            "stay_fees.quarter",
+            n=(month.month - 1) // 3 + 1,
+            year=month.year,
+        )
+    return f"{host_i18n.translate(lang, f'month.{month.month}')} {month.year}"
 
 
 def _month_filter_template(
@@ -149,6 +163,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
         ),
         "period": period,
         "group": group,
+        "ui_period": _ui_period_label(request, group["cadence"], selected_month),
         "issues": issues,
         "pay": pay,
         "others": [],

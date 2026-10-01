@@ -74,3 +74,19 @@ See `package-verification.json` in the downloadable handoff for measured counts/
 - No dependency changes were made. A new dependency-advisory audit was not run here; retain the repository's dependency/security CI checks on integration.
 
 This evidence supports a reviewable integration. It is not a claim of perfect software or certification of a future merge.
+
+## Integration check — 1 October 2026
+
+Checked on `cursor/stay-fee-legal-audit-a4fb` after the host payload apply and the stay-fee legal alignment. Disposable SQLite under `/tmp`, UbyPort mock, scheduler off, console mail, loopback only. Headless Chrome at 1280, 1024, 390 and 360.
+
+| Check | Result |
+|---|---|
+| Full pytest | **2,074 passed, 2 skipped; 89.51% coverage** (gate 86%) |
+| Runtime lint | `ruff check app tests tools --select E9,F63,F7,F82,F401,F841` passed on the touched stay-fee route and detail test |
+| JavaScript syntax | `node --check` for `app.js` and `host.js` passed |
+| Whitespace | `git diff --check` passed |
+| Horizontal overflow | None on Today, Stays, a stay, Properties, a property, Invoices, invoice detail, invoice form, stay fees, fee detail, business, guest links, automation, in English and on the Czech Today/Invoices/Stay-fee pages |
+| Console | No application errors or warnings captured during those loads, Search open, or the mobile drawer |
+| Shell | Matches the handoff screenshots: 216px rail, Search, Today queue, property hub cards, invoice detail with **Download PDF** and **Payment recorded**, local section tabs, mobile drawer |
+
+The stay-fee list and detail use the month picker requested after the handoff, not the older month chips. The filed PDF period name stays Czech. The on-screen heading now follows the host language (English “September 2026”, Czech “Září 2026”), same as the list. Invoice settings stay on the local tab beside Invoices, which is what `evidence/invoice-desktop.png` and the applied payload show. The list action is **Generate invoice**.

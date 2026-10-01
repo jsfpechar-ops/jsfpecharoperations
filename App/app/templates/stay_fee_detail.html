@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set nav = 'stay_fees' %}
-{% block title %}{{ apartment.internal_name }} — {{ group.label }}{% endblock %}
+{% block title %}{{ apartment.internal_name }} — {{ ui_period }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, copy_button with context %}
 <a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
@@ -27,7 +27,7 @@
     <button class="btn" type="button" disabled>{{ t('stay_fees.save_period') }}</button>
   {% endif %}
 {% endset %}
-{{ page_header(apartment.internal_name ~ ' — ' ~ group.label, t('stay_fees.detail_lede'), '', '', t('nav.stay_fees'), actions) }}
+{{ page_header(apartment.internal_name ~ ' — ' ~ ui_period, t('stay_fees.detail_lede'), '', '', t('nav.stay_fees'), actions) }}
 
 {% if 'stay_fees.issue.scope_ruling' in issues %}
 <form method="post" action="/stay-fees/{{ apartment.id }}/scope-ruling" class="filters panel">

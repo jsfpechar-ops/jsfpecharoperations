@@ -443,3 +443,17 @@ def test_the_page_renders_no_placeholder_or_raw_key(host):
     assert "undefined" not in response.text
     assert "stay_fees." not in response.text
     assert "{{" not in response.text
+
+
+def test_detail_heading_uses_the_host_language(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Language Demo")
+
+    english = client.get(f"/stay-fees/{apartment_id}?month=2026-08&lang=en")
+    czech = client.get(f"/stay-fees/{apartment_id}?month=2026-08&lang=cs")
+
+    assert english.status_code == 200
+    assert "Language Demo — August 2026" in english.text
+    assert "Srpen 2026" not in english.text
+    assert czech.status_code == 200
+    assert "Language Demo — Srpen 2026" in czech.text
