@@ -18,6 +18,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 import uvicorn
+from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
@@ -33,6 +34,7 @@ def _free_port():
 
 @pytest.fixture(scope="module")
 def base():
+    db.init_db()
     port = _free_port()
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
     thread = threading.Thread(target=server.run, daemon=True)
@@ -47,15 +49,30 @@ def base():
     thread.join(timeout=5)
 
 
+def _browser_session_cookie(username: str) -> str:
+    """Log in through the ASGI app so CSRF and acceptance gates match other tests."""
+    client = TestClient(app)
+    response = client.post(
+        "/login?lang=en",
+        data={"username": username, "password": PASSWORD},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303, response.text
+    token = client.cookies.get(auth.SESSION_COOKIE)
+    assert token
+    return token
+
+
 def test_dashboard_actions_share_height_and_gap(base):
-    db.init_db()
-    username = f"geometry-{secrets.token_hex(4)}"
+    username = f"geometry{secrets.token_hex(4)}"
     owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
+        "permalink_token": f"geom{secrets.token_hex(4)}",
         "active": 1, "created_at": db.utcnow(),
     })
+    session = _browser_session_cookie(username)
     with sync_api.sync_playwright() as playwright:
         try:
             browser = playwright.chromium.launch()
@@ -63,12 +80,13 @@ def test_dashboard_actions_share_height_and_gap(base):
             if REQUIRE_BROWSER:
                 raise
             pytest.skip(f"Chromium is not available: {exc}")
-        page = browser.new_page(viewport={"width": 1280, "height": 900})
-        page.goto(base + "/login?lang=en")
-        page.fill('input[name="username"]', username)
-        page.fill('input[name="password"]', PASSWORD)
-        page.click('button[type="submit"]')
-        page.wait_for_selector(".dashboard-actions .action-group", timeout=60000)
+        context = browser.new_context(viewport={"width": 1280, "height": 900})
+        context.add_cookies(
+            [{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}]
+        )
+        page = context.new_page()
+        page.goto(base + "/?lang=en")
+        page.wait_for_selector(".dashboard-actions .action-group", timeout=30000)
         measured = page.locator(".action-group").first.evaluate(
             """(group) => {
               const buttons = [...group.querySelectorAll('.btn')];
