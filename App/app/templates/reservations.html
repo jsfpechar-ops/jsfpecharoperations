@@ -5,7 +5,6 @@
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
 {% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity with context %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
-{% set stay_view = request.query_params.get('view', 'list') %}
 {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
 {% if apartments %}
 {% set header_actions %}
@@ -80,12 +79,6 @@
          href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
     {% endfor %}
   </div>
-  <nav class="view-switch" aria-label="{{ t('stays.view.label') }}">
-    <a class="{{ 'on' if stay_view == 'list' }}" href="/reservations?{{ view_query }}&view=list"
-       aria-current="{{ 'page' if stay_view == 'list' else 'false' }}">{{ t('stays.view.list') }}</a>
-    <a class="{{ 'on' if stay_view == 'timeline' }}" href="/reservations?{{ view_query }}&view=timeline"
-       aria-current="{{ 'page' if stay_view == 'timeline' else 'false' }}">{{ t('stays.view.timeline') }}</a>
-  </nav>
 </div>
 
 {% if show_archive %}
@@ -131,7 +124,7 @@
 {% endif %}
 
 {% if rows %}
-<div class="panel tight scroll-x stays-view stays-view-{{ stay_view }}">
+<div class="panel tight scroll-x stays-view">
   <table class="table-cards">
     <thead>
       <tr><th>{{ t('stays.table.stay') }}</th><th>{{ t('stays.table.apartment') }}</th><th>{{ t('stays.table.source') }}</th><th>{{ t('stays.table.guests') }}</th><th>{{ t('stays.table.reporting') }}</th><th>{{ t('stays.table.deadline') }}</th><th><span class="sr-only">{{ t('common.open') }}</span></th></tr>

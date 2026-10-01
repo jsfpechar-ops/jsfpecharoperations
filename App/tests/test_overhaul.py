@@ -518,7 +518,7 @@ def test_host_shell_is_workflow_grouped():
         assert 'class="nav-label"' not in rail
         for destination in ('/reservations', '/apartments', '/invoices'):
             assert f'href="{destination}"' in rail
-        assert "Today" in rail
+        assert "Dashboard" in rail
         assert 'data-command-open' in rail
     finally:
         _cleanup()

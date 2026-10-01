@@ -146,7 +146,7 @@ jobs:
           UBYHOST_ENABLE_SCHEDULER: "0"
           UBYHOST_REQUIRE_BROWSER: "1"
         # REQUIRE_BROWSER turns "Chromium is missing" from a skip into a failure.
-        run: python -m pytest tests/test_guest_browser_e2e.py -q -rs
+        run: python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py -q -rs
 
   shellcheck:
     runs-on: ubuntu-latest

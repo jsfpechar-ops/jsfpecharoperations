@@ -116,6 +116,10 @@ def save(
     payload_obj = {
         "collected": {str(gid): int(collected.get(gid, 0)) for gid in collected},
         "lines": period["lines"],
+        "adjustments": [
+            {"id": row["id"], "delta": row["delta"], "mode": row["mode"], "reason": row["reason"]}
+            for row in period.get("adjustments") or []
+        ],
     }
     now = db.utcnow()
     payload_enc = db.encrypt_field(json.dumps(payload_obj, sort_keys=True))
@@ -155,7 +159,14 @@ def save(
                 db.encrypt_blob(pdf), db.encrypt_blob(csv), payload_enc, now,
             ),
         )
-        return int(cur.lastrowid)
+        filing_id = int(cur.lastrowid)
+        cur.execute(
+            "UPDATE stay_fee_adjustment SET filing_id = ? "
+            "WHERE apartment_id = ? AND period_key = ? AND reversed_at IS NULL "
+            "AND filing_id IS NULL",
+            (filing_id, apartment["id"], key),
+        )
+        return filing_id
 
 
 def frozen_summary(row: Dict[str, Any], apartment) -> Dict[str, Any]:

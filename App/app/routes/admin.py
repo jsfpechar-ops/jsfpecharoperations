@@ -217,8 +217,8 @@ def dashboard(request: Request):
     rows = reporting.dashboard_rows(owner_user_id=owner_user_id)
     queue = reporting.queue_groups(rows)
     counts = reporting.queue_counts(rows, queue)
-    needs_action, waiting = queue["needs_action"], queue["waiting"]
-    upcoming, completed = queue["upcoming"], queue["completed"][:8]
+    needs_action, waiting = queue["needs_action"][:20], queue["waiting"][:20]
+    upcoming, completed = queue["upcoming"][:12], queue["completed"][:8]
     setup_warnings = []
     for apartment in apartments:
         issues = validation.errors_only(_apartment_issues(apartment))
@@ -440,10 +440,31 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
     return None
 
 
+def _drawn_signature(value: str) -> Optional[str]:
+    if not value.startswith("data:image/png;base64,"):
+        return None
+    encoded = value.split(",", 1)[1]
+    try:
+        content = base64.b64decode(encoded, validate=True)
+    except Exception:
+        return None
+    if not content.startswith(b"\x89PNG") or len(content) > ENTITY_SIGNATURE_MAX_BYTES:
+        return None
+    return value
+
+
 async def _signature_payload(form) -> Optional[Dict[str, Any]]:
     """Validate and encrypt the optional entity signature fields."""
     payload: Dict[str, Any] = {}
     upload = form.get("signature_file")
+    drawn_raw = _form_str(form, "signature_drawn")
+    drawn = _drawn_signature(drawn_raw)
+    if drawn_raw and drawn is None and not form.get("signature_remove"):
+        return None
+    if form.get("signature_remove") and not (isinstance(upload, UploadFile) and upload.filename):
+        payload["signature_png_enc"] = None
+    elif drawn:
+        payload["signature_png_enc"] = db.encrypt_field(drawn)
     if isinstance(upload, UploadFile) and upload.filename:
         content = await upload.read(ENTITY_SIGNATURE_MAX_BYTES + 1)
         if len(content) > ENTITY_SIGNATURE_MAX_BYTES:
@@ -458,8 +479,6 @@ async def _signature_payload(form) -> Optional[Dict[str, Any]]:
         payload["signature_png_enc"] = db.encrypt_field(
             f"data:image/{image_type};base64,{encoded}"
         )
-    if form.get("signature_remove"):
-        payload["signature_png_enc"] = None
     if "signature_name" in form:
         payload["signature_name"] = _form_str(form, "signature_name")[:80].strip() or None
     return payload
@@ -728,9 +747,14 @@ def _apartment_payload(form) -> Dict[str, Any]:
             ("stay_fee_instruction", 500),
         ):
             payload[key] = _form_str(form, key)[:limit].strip() or None
-        payload["_stay_fee_account_raw"] = _form_str(
-            form, "stay_fee_council_account"
-        )
+        if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
+            payload["_stay_fee_account_raw"] = payments.compose_czech_account(
+                _form_str(form, "account_prefix"),
+                _form_str(form, "account_number"),
+                _form_str(form, "account_bank"),
+            )
+        else:
+            payload["_stay_fee_account_raw"] = _form_str(form, "stay_fee_council_account")
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     payload["active"] = 1 if form.get("active") else 0
@@ -804,6 +828,7 @@ def apartment_detail(apartment_id: int, request: Request):
             "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
+            "account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
             "fee_template_peers": [
                 peer
                 for peer in access.apartments(request)

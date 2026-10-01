@@ -33,6 +33,16 @@
     </tbody>
   </table>
 </div>
+{% if invoice_pages > 1 %}
+<nav class="action-group" aria-label="{{ t('invoices.title') }}">
+  {% if invoice_page > 1 %}
+  <a class="btn" href="/invoices?page={{ invoice_page - 1 }}{% if month_key %}&month={{ month_key }}{% endif %}" aria-label="{{ invoice_page - 1 }}">‹</a>
+  {% endif %}
+  {% if invoice_page < invoice_pages %}
+  <a class="btn" href="/invoices?page={{ invoice_page + 1 }}{% if month_key %}&month={{ month_key }}{% endif %}" aria-label="{{ invoice_page + 1 }}">›</a>
+  {% endif %}
+</nav>
+{% endif %}
 {% else %}
 <div class="panel empty">
   <h2>{{ t('invoices.empty_title') }}</h2>

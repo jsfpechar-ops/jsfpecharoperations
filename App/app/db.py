@@ -475,6 +475,27 @@ CREATE TABLE IF NOT EXISTS stay_fee_filing (
 CREATE INDEX IF NOT EXISTS idx_stay_fee_filing_lookup
     ON stay_fee_filing (apartment_id, period_key);
 
+-- Aggregate calculation corrections. These are not guests and never enter
+-- the statutory register as people. reason_enc holds the host's explanation.
+CREATE TABLE IF NOT EXISTS stay_fee_adjustment (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    apartment_id  INTEGER NOT NULL REFERENCES apartment(id),
+    period_key    TEXT NOT NULL,
+    direction     TEXT NOT NULL CHECK (direction IN ('add', 'remove')),
+    mode          TEXT NOT NULL CHECK (mode IN ('people', 'bed_days')),
+    people_count  INTEGER,
+    nights        INTEGER,
+    bed_days      INTEGER NOT NULL,
+    reason_enc    TEXT NOT NULL,
+    created_by    INTEGER REFERENCES user_account(id),
+    created_at    TEXT NOT NULL,
+    reversed_at   TEXT,
+    reversed_by   INTEGER REFERENCES user_account(id),
+    filing_id     INTEGER REFERENCES stay_fee_filing(id)
+);
+CREATE INDEX IF NOT EXISTS idx_stay_fee_adjustment_period
+    ON stay_fee_adjustment (apartment_id, period_key);
+
 -- Evidence that a host accepted the Terms of Service, DPA and Privacy Policy,
 -- per document version (BE-1). One row per account and document version; a
 -- version bump makes that document pending again without touching old rows.

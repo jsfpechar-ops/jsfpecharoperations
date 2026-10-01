@@ -315,7 +315,7 @@ def property_period(
         })
         lines.append(share)
     liable = sum(line["liable_nights"] for line in lines)
-    return {
+    period = {
         "apartment": apartment,
         "cadence": chosen,
         "first": first,
@@ -323,10 +323,32 @@ def property_period(
         "label": period_label_cs(chosen, first),
         "rate_czk": rate,
         "lines": lines,
+        "guest_liable_nights": liable,
         "liable_nights": liable,
         "exempt_nights": sum(line["exempt_nights"] for line in lines),
         "total_czk": liable * rate,
+        "adjustment_bed_days": 0,
+        "adjustments": [],
     }
+    return _apply_adjustments(period, month)
+
+
+def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:
+    """Fold open aggregate corrections into the live liable total."""
+    from . import stay_fee_adjustment, stay_fee_filing
+
+    key = stay_fee_filing.period_key(period["cadence"], month)
+    delta, rows = stay_fee_adjustment.active(period["apartment"]["id"], key)
+    guest_nights = period["guest_liable_nights"]
+    # A stored correction that would go below zero is clamped for display.
+    # The write path refuses to create that correction in the first place.
+    liable = max(guest_nights + delta, 0)
+    period["adjustment_bed_days"] = liable - guest_nights
+    period["adjustments"] = rows
+    period["liable_nights"] = liable
+    period["total_czk"] = liable * period["rate_czk"]
+    period["period_key"] = key
+    return period
 
 
 def owner_periods(owner_user_id, month: date) -> List[Dict[str, Any]]:
@@ -470,13 +492,22 @@ def hlaseni(group, issued_on: date) -> Dict[str, Any]:
     signature_png = db.decrypt_field(entity["signature_png_enc"]) if entity["signature_png_enc"] else ""
     rows, minors, hosts = [], {"count": 0, "nights": 0}, {"count": 0, "nights": 0}
     for period in group["periods"]:
+        guest_nights = period.get("guest_liable_nights", period["liable_nights"])
         rows.append({
             "property_name": period["apartment"]["internal_name"],
             "property_address": property_address(period["apartment"]),
-            "liable_nights": period["liable_nights"],
+            "liable_nights": guest_nights,
             "rate_czk": period["rate_czk"],
-            "amount_czk": period["total_czk"],
+            "amount_czk": guest_nights * period["rate_czk"],
         })
+        if period.get("adjustment_bed_days"):
+            rows.append({
+                "property_name": "Úprava výpočtu",
+                "property_address": "Souhrnná oprava, bez údajů hostů",
+                "liable_nights": period["adjustment_bed_days"],
+                "rate_czk": period["rate_czk"],
+                "amount_czk": period["adjustment_bed_days"] * period["rate_czk"],
+            })
         for line in period["lines"]:
             if line["status"] == "exempt":
                 bucket = minors if line["auto_minor"] else hosts
@@ -562,6 +593,26 @@ def register_rows(period) -> List[Dict[str, Any]]:
         if line["restricted"]:
             row["exempt_reason"] = (row["exempt_reason"] + f"; {RESTRICTED_NOTE}").strip("; ")
         rows.append(row)
+    delta = int(period.get("adjustment_bed_days") or 0)
+    if delta:
+        rows.append({
+            "property": apartment["internal_name"],
+            "period": period["label"],
+            "stay_from": "",
+            "stay_to": "",
+            "surname": "",
+            "first_name": "",
+            "home_address": "",
+            "birth_date": "",
+            "doc_type": "",
+            "doc_number": "",
+            "nights": delta,
+            "rate_czk": period["rate_czk"],
+            "amount_czk": delta * period["rate_czk"],
+            "exempt_reason": "úprava výpočtu (není host)",
+            "vs": vs_of(apartment),
+            "council_account": apartment["stay_fee_council_account"] or "",
+        })
     return rows
 
 

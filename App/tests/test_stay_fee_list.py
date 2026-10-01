@@ -145,8 +145,9 @@ def test_no_active_property_shows_empty_state_without_primary_button(host):
     response = client.get("/stay-fees?month=2026-08")
 
     assert response.status_code == 200
-    assert "No property has a stay fee yet" in response.text
-    assert 'href="/apartments"' in response.text
+    assert "Disabled Demo" in response.text
+    assert "Not set up" in response.text
+    assert "/setup" in response.text
     assert "btn accent primary" not in response.text
 
 
@@ -235,7 +236,7 @@ def test_sidebar_link_waits_for_opt_in(host):
     response = client.get("/stay-fees")
 
     assert response.status_code == 200
-    assert 'href="/stay-fees"' not in response.text.split('id="app-sidebar"', 1)[1].split('</aside>', 1)[0]
+    assert 'href="/stay-fees"' in response.text.split('id="app-sidebar"', 1)[1].split('</aside>', 1)[0]
     assert 'href="/apartments"' in response.text
 
 

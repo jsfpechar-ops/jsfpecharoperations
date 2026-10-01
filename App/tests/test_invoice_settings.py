@@ -84,7 +84,7 @@ def test_the_settings_route_is_not_eaten_by_the_dynamic_invoice_route(host):
     entity_id = _add_entity()
     page = host.get(f"/invoices/settings?entity={entity_id}")
     assert page.status_code == 200
-    assert 'name="bank_account"' in page.text
+    assert 'name="account_number"' in page.text
 
 
 def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):

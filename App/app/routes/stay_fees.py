@@ -15,8 +15,10 @@ from .. import (
     db,
     host_i18n,
     list_month_filter,
+    payments,
     security,
     stay_fee,
+    stay_fee_adjustment,
     stay_fee_filing,
     validation,
 )
@@ -93,7 +95,8 @@ def stay_fees_list(request: Request):
             status_code=303,
         )
 
-    periods = stay_fee.owner_periods(access.owner_id(request), selected_month)
+    owner_id = access.owner_id(request)
+    periods = stay_fee.owner_periods(owner_id, selected_month)
     rows = []
     for period in periods:
         apartment = period["apartment"]
@@ -107,14 +110,101 @@ def stay_fees_list(request: Request):
             **period,
             "total_display": stay_fee.format_czk(period["total_czk"]),
             "issues": issues,
+            "unset": False,
         })
+    configured = {row["apartment"]["id"] for row in rows}
+    apartments = db.query(
+        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        "AND active = 1 ORDER BY internal_name, id",
+        (owner_id,),
+    )
+    for apartment in apartments:
+        if apartment["id"] not in configured:
+            rows.append({"apartment": apartment, "unset": True})
+    rows.sort(key=lambda row: (row["apartment"]["internal_name"] or "", row["apartment"]["id"]))
 
     return render(request, "stay_fees.html", {
         "nav": "stay_fees",
         "periods": rows,
         "selected_month": selected_month,
+        "has_properties": bool(apartments),
         **_month_filter_template(selected_month, today),
     })
+
+
+def _fee_values(form) -> dict:
+    rate = stay_fee.clamp_rate(_form_str(form, "stay_fee_rate_czk", "0"))
+    cadence = _form_str(form, "stay_fee_cadence", "monthly")
+    values = {
+        "stay_fee_rate_czk": rate,
+        "stay_fee_cadence": cadence if cadence in stay_fee.CADENCES else "monthly",
+        "stay_fee_vs": (
+            "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10] or None
+        ),
+        "stay_fee_authority_name": _form_str(form, "stay_fee_authority_name")[:200].strip() or None,
+        "stay_fee_authority_address": _form_str(form, "stay_fee_authority_address")[:200].strip() or None,
+        "stay_fee_authority_contact": _form_str(form, "stay_fee_authority_contact")[:200].strip() or None,
+        "stay_fee_payee": _form_str(form, "stay_fee_payee")[:60].strip() or None,
+        "stay_fee_instruction": _form_str(form, "stay_fee_instruction")[:500].strip() or None,
+    }
+    if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
+        raw = payments.compose_czech_account(
+            _form_str(form, "account_prefix"),
+            _form_str(form, "account_number"),
+            _form_str(form, "account_bank"),
+        )
+    else:
+        raw = _form_str(form, "stay_fee_council_account")
+    if raw.strip():
+        account, iban = payments.normalise_account(raw)
+        values["stay_fee_council_account"] = account
+        values["stay_fee_council_iban"] = iban
+    else:
+        values["stay_fee_council_account"] = None
+        values["stay_fee_council_iban"] = None
+    return values
+
+
+@router.get("/stay-fees/{apartment_id}/setup")
+def stay_fee_setup(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment or apartment["archived_at"] or not apartment["active"]:
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    return render(request, "stay_fee_setup.html", {
+        "nav": "stay_fees",
+        "apartment": apartment,
+        "account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
+    })
+
+
+@router.post("/stay-fees/{apartment_id}/setup")
+async def stay_fee_setup_save(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    try:
+        values = _fee_values(form)
+    except ValueError:
+        return _back(
+            f"/stay-fees/{apartment_id}/setup",
+            err=_flash(request, "flash.stay_fees.account_invalid"),
+        )
+    db.update("apartment", apartment_id, values)
+    db.audit("stay_fee_setup", f"apartment_id={apartment_id}")
+    month = stay_fee.month_key(_default_month(claim.prague_today()))
+    if values["stay_fee_rate_czk"] <= 0:
+        return _back("/stay-fees", msg=_flash(request, "flash.stay_fees.saved"))
+    return _back(
+        f"/stay-fees/{apartment_id}?month={month}",
+        msg=_flash(request, "flash.stay_fees.saved"),
+    )
 
 
 @router.get("/stay-fees/{apartment_id}")
@@ -300,6 +390,91 @@ def stay_fee_csv_download(apartment_id: int, request: Request):
             ),
             "Cache-Control": "no-store",
         },
+    )
+
+
+def _adjustment_bed_days(form) -> int:
+    mode = _form_str(form, "mode")
+    if mode == "people":
+        people = int(_form_str(form, "people") or "0")
+        nights = int(_form_str(form, "nights") or "0")
+        if people < 1 or people > 99 or nights < 1 or nights > 366:
+            raise ValueError("range")
+        return people * nights
+    days = int(_form_str(form, "bed_days") or "0")
+    if days < 1 or days > 9999:
+        raise ValueError("range")
+    return days
+
+
+@router.post("/stay-fees/{apartment_id}/adjustment")
+async def stay_fee_adjustment_add(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not stay_fee.is_active(apartment):
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    correcting = _form_str(form, "correct") == "1"
+    period = stay_fee.property_period(apartment, month, live_only=correcting)
+    if period and period.get("frozen") and not correcting:
+        return _back(back, err=_flash(request, "flash.stay_fees.saved"))
+    direction = _form_str(form, "direction")
+    mode = _form_str(form, "mode")
+    reason = _form_str(form, "reason").strip()
+    if direction not in ("add", "remove") or mode not in ("people", "bed_days") or len(reason) < 3:
+        return _back(back, err=_flash(request, "flash.stay_fees.reason_required"))
+    try:
+        days = _adjustment_bed_days(form)
+    except ValueError:
+        return _back(back, err=_flash(request, "flash.stay_fees.reason_required"))
+    key = _period_key(stay_fee.cadence_of(apartment), month)
+    current = stay_fee_adjustment.net_bed_days(apartment_id, key)
+    guest_nights = int((period or {}).get("guest_liable_nights") or 0)
+    delta = days if direction == "add" else -days
+    if guest_nights + current + delta < 0:
+        return _back(back, err=_flash(request, "flash.stay_fees.reason_required"))
+    stay_fee_adjustment.add(
+        apartment_id=apartment_id,
+        period_key=key,
+        direction=direction,
+        mode=mode,
+        people_count=int(_form_str(form, "people") or "0"),
+        nights=int(_form_str(form, "nights") or "0"),
+        bed_days=days,
+        reason=reason[:200],
+        created_by=access.owner_id(request),
+    )
+    db.audit(
+        "stay_fee_adjustment",
+        f"apartment_id={apartment_id} period={key} direction={direction} days={days}",
+    )
+    return _back(back, msg=_flash(request, "flash.stay_fees.saved"))
+
+
+@router.post("/stay-fees/{apartment_id}/adjustment/{adjustment_id}/undo")
+async def stay_fee_adjustment_undo(apartment_id: int, adjustment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    row = db.query_one(
+        "SELECT * FROM stay_fee_adjustment WHERE id = ? AND apartment_id = ?",
+        (adjustment_id, apartment_id),
+    )
+    if row and not row["reversed_at"]:
+        stay_fee_adjustment.reverse(adjustment_id, access.owner_id(request))
+        db.audit("stay_fee_adjustment_undo", f"id={adjustment_id}")
+    return _back(
+        f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}",
+        msg=_flash(request, "flash.stay_fees.saved"),
     )
 
 

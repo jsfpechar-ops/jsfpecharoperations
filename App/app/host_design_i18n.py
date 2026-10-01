@@ -1,6 +1,6 @@
 """Copy for the signed-in host design. No guest or public-site strings."""
 
-STRINGS = {'en': {'nav.overview': 'Today',
+STRINGS = {'en': {'nav.overview': 'Dashboard',
         'nav.reports': 'Police reports',
         'nav.housebook': 'Guest register',
         'nav.stay_fees': 'Stay fees',
@@ -21,7 +21,7 @@ STRINGS = {'en': {'nav.overview': 'Today',
         'host.setup_details': 'Setup checklist',
         'host.property_details': 'Property details',
         'host.bookings': 'Bookings',
-        'host.business': 'Business details',
+        'host.business': 'Business & legal details',
         'host.reporting': 'Police reporting',
         'host.fee': 'Optional stay fee',
         'host.open': 'Open',
@@ -45,7 +45,7 @@ STRINGS = {'en': {'nav.overview': 'Today',
         'apartments.lede': 'Bookings, guest links and reporting, in one place.',
         'invoices.lede': '',
         'invoice.new': 'Generate invoice'},
- 'cs': {'nav.overview': 'Dnes',
+ 'cs': {'nav.overview': 'Přehled',
         'nav.reports': 'Hlášení policii',
         'nav.housebook': 'Kniha hostů',
         'nav.stay_fees': 'Poplatky z pobytu',
@@ -66,7 +66,7 @@ STRINGS = {'en': {'nav.overview': 'Today',
         'host.setup_details': 'Kontrola nastavení',
         'host.property_details': 'Údaje ubytování',
         'host.bookings': 'Rezervace',
-        'host.business': 'Firemní údaje',
+        'host.business': 'Firma a právní údaje',
         'host.reporting': 'Hlášení policii',
         'host.fee': 'Volitelný poplatek z pobytu',
         'host.open': 'Otevřít',
@@ -98,7 +98,7 @@ STRINGS['en'].update({
     'host.help_invoices': 'Generate invoices and download PDFs.',
     'host.help_settings': 'Account, archived records, privacy and data.',
     'settings.lede': 'Your account, data and workspace.',
-    'guide.overview.body': 'Today shows stays that need your attention, followed by upcoming stays. Open a stay to review guest details or its police report.',
+    'guide.overview.body': 'Dashboard shows stays that need your attention, followed by upcoming stays. Open a stay to review guest details or its police report.',
     'invoice.detail.note_paid': 'Payment was recorded by the host.',
     'invoice.detail.note_unpaid': 'Record payment here when you receive it.',
     'invoice.mark_paid': 'Record payment',
@@ -110,11 +110,11 @@ STRINGS['cs'].update({
     'host.help_invoices': 'Vystavení faktur a stažení PDF.',
     'host.help_settings': 'Účet, archivované záznamy, soukromí a data.',
     'settings.lede': 'Váš účet, data a pracovní prostor.',
-    'guide.overview.body': 'Dnes ukazuje pobyty, které vyžadují vaši pozornost, a nadcházející pobyty. Otevřete pobyt a zkontrolujte údaje hostů nebo hlášení policii.',
+    'guide.overview.body': 'Přehled ukazuje pobyty, které vyžadují vaši pozornost, a nadcházející pobyty. Otevřete pobyt a zkontrolujte údaje hostů nebo hlášení policii.',
     'invoice.detail.note_paid': 'Platbu zaznamenal ubytovatel.',
     'invoice.detail.note_unpaid': 'Po přijetí platby ji zde zaznamenejte.',
     'invoice.mark_paid': 'Zaznamenat platbu',
 })
 
-STRINGS['en']['dashboard.title'] = 'Today'
-STRINGS['cs']['dashboard.title'] = 'Dnes'
+STRINGS['en']['dashboard.title'] = 'Dashboard'
+STRINGS['cs']['dashboard.title'] = 'Přehled'

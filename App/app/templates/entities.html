@@ -42,24 +42,25 @@
 {% endmacro %}
 
 {% macro signature_fields(prefix, entity, preview='') %}
-  <div class="field">
-    <label for="{{ prefix }}signature_file">{{ t('entity.signature_label') }}</label>
-    <input type="file" id="{{ prefix }}signature_file" name="signature_file" accept="image/png,image/jpeg">
-    {% if preview %}
-    <div class="hint">
-      <img src="{{ preview }}" alt="{{ t('entity.signature_label') }}" style="max-height:48px">
+  <fieldset class="signature-block" data-host-signature>
+    <legend>{{ t('entity.signature.heading') }}</legend>
+    <p class="small">{{ t('entity.signature.scope') }}</p>
+    <canvas id="{{ prefix }}sig-canvas" class="host-signature-pad" tabindex="0"></canvas>
+    <input type="hidden" id="{{ prefix }}signature" name="signature_drawn" value="{{ preview }}">
+    <div class="action-group">
+      <button class="btn" type="button" data-signature-clear>{{ t('entity.signature.clear') }}</button>
+      <label class="btn" for="{{ prefix }}signature_file">{{ t('entity.signature.upload') }}</label>
+      <input class="sr-only" type="file" id="{{ prefix }}signature_file" name="signature_file" accept="image/png,image/jpeg">
     </div>
-    <label class="check">
-      <input type="checkbox" name="signature_remove" value="1">
-      {{ t('entity.signature_remove') }}
-    </label>
+    {% if preview %}
+    <label class="check"><input type="checkbox" name="signature_remove" value="1"> {{ t('entity.signature_remove') }}</label>
     {% endif %}
-  </div>
-  <div class="field">
-    <label for="{{ prefix }}signature_name">{{ t('entity.signature_name_label') }}</label>
-    <input type="text" id="{{ prefix }}signature_name" name="signature_name" maxlength="80"
-           value="{{ (entity.signature_name or '') if entity else '' }}">
-  </div>
+    <div class="field">
+      <label for="{{ prefix }}signature_name">{{ t('entity.signature_name_label') }}</label>
+      <input type="text" id="{{ prefix }}signature_name" name="signature_name" maxlength="80"
+             value="{{ (entity.signature_name or '') if entity else '' }}">
+    </div>
+  </fieldset>
 {% endmacro %}
 
 {% block content %}
@@ -70,7 +71,6 @@
 ]) }}
 {{ page_header(t('entities.title'), t('entities.lede'), '/apartments', t('entities.back')) }}
 {{ onboarding_banner(onboarding) }}
-<p class="lede">{{ t('entities.explainer') }}</p>
 
 {% if edit_entity %}
 <div class="panel entity-form" id="entity-edit">
@@ -107,6 +107,8 @@
         </td>
         <td class="num" data-label="{{ t('entities.properties') }}">{{ entity.apartments }}</td>
         <td class="nowrap row-actions" data-label="">
+          <a class="btn small" href="/entities?edit={{ entity.id }}">{{ t('common.edit') }}</a>
+          <a class="btn small" href="/invoices/settings?entity={{ entity.id }}">{{ t('host.invoice_settings') }}</a>
           {% if not entity.apartments %}
           {{ row_menu_begin() }}
             <form method="post" action="/entities/{{ entity.id }}/archive" class="row-menu-form"

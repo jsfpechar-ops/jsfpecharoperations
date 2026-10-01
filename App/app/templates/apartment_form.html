@@ -430,60 +430,7 @@
       <div class="hint">{{ t('apartment.form.stay_fee.copy_hint') }}</div>
     </div>
     {% endif %}
-    <div class="grid two">
-      <div class="field">
-        <label for="stay_fee_rate_czk">{{ t('apartment.form.stay_fee.rate_label') }}</label>
-        <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" min="0" max="50" step="1"
-               value="{{ apartment.stay_fee_rate_czk or 0 }}">
-        <div class="hint">{{ t('apartment.form.stay_fee.rate_hint') }}</div>
-      </div>
-      <div class="field">
-        <label for="stay_fee_cadence">{{ t('apartment.form.stay_fee.cadence_label') }}</label>
-        <select id="stay_fee_cadence" name="stay_fee_cadence">
-          <option value="monthly" {% if apartment.stay_fee_cadence != 'quarterly' %}selected{% endif %}>
-            {{ t('apartment.form.stay_fee.cadence.monthly') }}
-          </option>
-          <option value="quarterly" {% if apartment.stay_fee_cadence == 'quarterly' %}selected{% endif %}>
-            {{ t('apartment.form.stay_fee.cadence.quarterly') }}
-          </option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="stay_fee_vs">{{ t('apartment.form.stay_fee.vs_label') }}</label>
-        <input type="text" id="stay_fee_vs" name="stay_fee_vs" inputmode="numeric" maxlength="10"
-               value="{{ apartment.stay_fee_vs or '' }}">
-        <div class="hint">{{ t('apartment.form.stay_fee.vs_hint') }}</div>
-      </div>
-      <div class="field">
-        <label for="stay_fee_council_account">{{ t('apartment.form.stay_fee.account_label') }}</label>
-        <input type="text" id="stay_fee_council_account" name="stay_fee_council_account" maxlength="40"
-               value="{{ apartment.stay_fee_council_account or '' }}">
-        <div class="hint">{{ t('apartment.form.stay_fee.account_hint') }}</div>
-      </div>
-      <div class="field">
-        <label for="stay_fee_authority_name">{{ t('apartment.form.stay_fee.authority_name_label') }}</label>
-        <textarea id="stay_fee_authority_name" name="stay_fee_authority_name" rows="2" maxlength="200">{{ apartment.stay_fee_authority_name or '' }}</textarea>
-      </div>
-      <div class="field">
-        <label for="stay_fee_authority_address">{{ t('apartment.form.stay_fee.authority_address_label') }}</label>
-        <textarea id="stay_fee_authority_address" name="stay_fee_authority_address" rows="2" maxlength="200">{{ apartment.stay_fee_authority_address or '' }}</textarea>
-      </div>
-      <div class="field">
-        <label for="stay_fee_authority_contact">{{ t('apartment.form.stay_fee.authority_contact_label') }}</label>
-        <textarea id="stay_fee_authority_contact" name="stay_fee_authority_contact" rows="2" maxlength="200">{{ apartment.stay_fee_authority_contact or '' }}</textarea>
-      </div>
-      <div class="field">
-        <label for="stay_fee_payee">{{ t('apartment.form.stay_fee.payee_label') }}</label>
-        <input type="text" id="stay_fee_payee" name="stay_fee_payee" maxlength="60"
-               value="{{ apartment.stay_fee_payee or '' }}">
-        <div class="hint">{{ t('apartment.form.stay_fee.payee_hint') }}</div>
-      </div>
-      <div class="field">
-        <label for="stay_fee_instruction">{{ t('apartment.form.stay_fee.instruction_label') }}</label>
-        <textarea id="stay_fee_instruction" name="stay_fee_instruction" rows="3" maxlength="500">{{ apartment.stay_fee_instruction or '' }}</textarea>
-        <div class="hint">{{ t('apartment.form.stay_fee.instruction_hint') }}</div>
-      </div>
-    </div>
+    {% include "_stay_fee_fields.html" %}
     {% if apartment.stay_fee_rate_czk > 0 %}
       {% if not (apartment.stay_fee_vs or '').strip()
             or not (apartment.stay_fee_council_account or '').strip()

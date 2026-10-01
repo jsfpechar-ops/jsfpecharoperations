@@ -57,8 +57,8 @@ PINNED = [
      "Have ready: name, IČO, registered address and a contact e-mail.",
      "Připravte si: jméno nebo název, IČO, sídlo a kontaktní e-mail."),
     ("onboarding.entity.action", "Add operator", "Přidat provozovatele"),
-    ("apartments.table.entity", "Operator", "Provozovatel"),
-    ("entities.title", "Operators", "Provozovatelé"),
+    ("apartments.table.entity", "Legal operator", "Právní provozovatel"),
+    ("entities.title", "Business & legal details", "Firma a právní údaje"),
     ("entities.lede",
      "Who runs the accommodation — a company or a self-employed person.",
      "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba."),
@@ -199,27 +199,27 @@ def test_the_navigation_links_to_operators(host):
     page = host.get("/apartments?lang=en")
     assert page.status_code == 200, page.text
     assert 'href="/entities"' in page.text
-    assert ">Business details<" in page.text
+    assert "Business &amp; legal details" in page.text
     assert "Legal entities" not in page.text
 
 
 def test_the_navigation_says_it_in_czech(host):
     page = host.get("/apartments?lang=cs")
-    assert ">Firemní údaje<" in page.text
+    assert ">Firma a právní údaje<" in page.text
     assert "Právnické osoby" not in page.text
 
 
 def test_the_properties_table_has_an_operator_column(host_with_property):
     page = host_with_property.get("/apartments?lang=en")
     assert page.status_code == 200, page.text
-    assert "<th>Operator</th>" in page.text
+    assert "<th>Legal operator</th>" in page.text
     assert ENTITY_NAME in page.text
 
 
 def test_the_operators_page_is_named_and_explained(host):
     page = host.get("/entities?lang=en")
     assert page.status_code == 200, page.text
-    assert "Operators" in page.text
+    assert "Business &amp; legal details" in page.text
     assert (
         "Who runs the accommodation — a company or a self-employed person."
         in page.text
@@ -231,7 +231,7 @@ def test_the_operators_page_is_named_and_explained(host):
 
 def test_the_operators_page_is_named_and_explained_in_czech(host):
     page = host.get("/entities?lang=cs")
-    assert "Provozovatelé" in page.text
+    assert "Firma a právní údaje" in page.text
     assert "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba." in page.text
     assert "Přidat provozovatele" in page.text
     assert "Právnické osoby" not in page.text

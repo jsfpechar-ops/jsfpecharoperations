@@ -1,0 +1,16 @@
+{% set parts = account if account is defined else {'prefix': '', 'number': '', 'bank': '', 'iban': ''} %}
+<div class="account-parts">
+  <div class="field">
+    <label for="{{ prefix }}account_prefix">{{ t('account.prefix') }} <span class="opt">{{ t('common.optional') }}</span></label>
+    <input id="{{ prefix }}account_prefix" name="account_prefix" inputmode="numeric" maxlength="6" value="{{ parts.prefix }}">
+  </div>
+  <div class="field">
+    <label for="{{ prefix }}account_number">{{ t('account.number') }}</label>
+    <input id="{{ prefix }}account_number" name="account_number" inputmode="numeric" maxlength="10" value="{{ parts.number }}">
+  </div>
+  <div class="field">
+    <label for="{{ prefix }}account_bank">{{ t('account.bank') }}</label>
+    <input id="{{ prefix }}account_bank" name="account_bank" inputmode="numeric" maxlength="4" value="{{ parts.bank }}">
+  </div>
+</div>
+{% if parts.iban %}<p class="small">IBAN {{ parts.iban }}</p>{% endif %}

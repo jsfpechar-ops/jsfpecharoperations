@@ -78,14 +78,6 @@ main[aria-busy="true"] > :not([data-page-skeleton]) { display:none }
   tbody tr:hover .row-actions>*,tbody tr:focus-within .row-actions>*,tbody tr.row-selected .row-actions>* { opacity:1 }
 }
 @media (min-width:761px) {
-  .stays-view-timeline { padding:8px 12px 8px 30px;overflow:visible }
-  .stays-view-timeline table,.stays-view-timeline tbody { display:block }
-  .stays-view-timeline thead { position:absolute;clip:rect(0 0 0 0);width:1px;height:1px;overflow:hidden }
-  .stays-view-timeline tbody { position:relative }
-  .stays-view-timeline tbody::before { content:"";position:absolute;top:20px;bottom:20px;left:-15px;width:1px;background:var(--border-strong) }
-  .stays-view-timeline tr { position:relative;display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1.2fr) minmax(130px,1fr) 70px minmax(130px,1fr) minmax(105px,.8fr) auto;align-items:center;border-bottom:1px solid var(--border) }
-  .stays-view-timeline tr:last-child { border-bottom:0 }
-  .stays-view-timeline tr::before { content:"";position:absolute;left:-20px;width:11px;height:11px;border:3px solid var(--surface);border-radius:50%;background:var(--brand);box-shadow:0 0 0 1px var(--border-strong) }
 }
 
 dialog { color:var(--ink-secondary);background:var(--surface-raised) }

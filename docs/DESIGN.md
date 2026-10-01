@@ -36,6 +36,10 @@ and update this section in the same change.
 - Focus design effort on hierarchy, density, motion, accessibility, and EN/CS
   copy—not alternate themes.
 
+## Action geometry
+
+Controls that sit in the same action group share one height (`--action-height`, 42px), one gap (`--action-gap`, 8px), and the same baseline. Primary and secondary treatment may change color, never the control's height or padding. Use `.action-group` for a row, `.action-group-equal` when neighbors should share width, and `.action-group-stack` so the row becomes equal full-width controls below 760px. Do not size one button from a timestamp or a second line of meta; put that meta under the group. A future screen that places two actions together and gives them different heights is a defect, not a local exception.
+
 ## Technical stack (unchanged)
 
 - Server-rendered Jinja2 templates
