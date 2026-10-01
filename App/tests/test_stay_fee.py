@@ -169,6 +169,46 @@ def test_property_period_counts(owner):
     assert stay_fee.property_period(_apt(aid), date(2026, 9, 1))["liable_nights"] == 3
 
 
+def test_calendar_day_ruling_excludes_an_exact_60_night_stay(owner):
+    """60 nights is 61 calendar days, so that council ruling takes the stay out of scope."""
+    ent = _entity(owner)
+    aid = _apartment(
+        owner, ent, "Boundary",
+        stay_fee_scope_rule="calendar_days", stay_fee_scope_reference="UMC-1/2026",
+    )
+    _stay(aid, "2026-08-01", "2026-09-30", [{}])
+    august = stay_fee.property_period(_apt(aid), AUG)
+    assert august["liable_nights"] == 0
+    assert august["total_czk"] == 0
+    assert august["lines"][0]["status"] == "not_subject"
+    issues = stay_fee.report_issues(stay_fee.report_group(_apt(aid), AUG), date(2026, 9, 1))
+    assert "stay_fees.issue.scope_ruling" not in issues
+
+
+def test_nights_ruling_counts_an_exact_60_night_stay(owner):
+    ent = _entity(owner)
+    aid = _apartment(
+        owner, ent, "Boundary",
+        stay_fee_scope_rule="nights", stay_fee_scope_reference="UMC-2/2026",
+    )
+    _stay(aid, "2026-08-01", "2026-09-30", [{}])
+    august = stay_fee.property_period(_apt(aid), AUG)
+    assert august["liable_nights"] == 30
+    assert august["lines"][0]["status"] == "liable"
+    issues = stay_fee.report_issues(stay_fee.report_group(_apt(aid), AUG), date(2026, 9, 1))
+    assert "stay_fees.issue.scope_ruling" not in issues
+
+
+def test_exact_60_night_stay_blocks_until_a_ruling_is_recorded(owner):
+    ent = _entity(owner)
+    aid = _apartment(owner, ent, "Boundary")
+    _stay(aid, "2026-08-01", "2026-09-30", [{}])
+    august = stay_fee.property_period(_apt(aid), AUG)
+    assert august["liable_nights"] == 30
+    issues = stay_fee.report_issues(stay_fee.report_group(_apt(aid), AUG), date(2026, 9, 1))
+    assert "stay_fees.issue.scope_ruling" in issues
+
+
 def test_departure_on_the_first_is_counted_in_that_month(owner):
     """(arrival, departure] includes the departure day even when it is the 1st."""
     ent = _entity(owner)

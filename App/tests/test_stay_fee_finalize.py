@@ -133,3 +133,150 @@ def test_finalize_then_downloads_are_frozen(host):
     db.update("apartment", apartment_id, {"stay_fee_rate_czk": 99})
     pdf_again = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
     assert pdf_again.content == first_pdf
+
+
+def _csrf(client, path: str) -> str:
+    page = client.get(path)
+    assert page.status_code == 200
+    return page.text.split('name="csrf-token" content="')[1].split('"')[0]
+
+
+def test_changing_cadence_cannot_file_over_a_saved_period(host, monkeypatch):
+    client, owner_id, entity_id = host
+    monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 10, 15))
+    apartment_id = _property(owner_id, entity_id)
+    _stay(apartment_id)
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    token = _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08")
+    saved = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    first_pdf = stay_fee_filing.pdf_bytes(stay_fee_filing.latest(apartment_id, "2026-08"))
+    db.update("apartment", apartment_id, {"stay_fee_cadence": "quarterly"})
+
+    pdf_again = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
+    assert pdf_again.status_code == 200
+    assert pdf_again.content == first_pdf
+    august = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
+    assert "Saved (version 1)" in august.text
+
+    overlap = client.get(f"/stay-fees/{apartment_id}?month=2026-07")
+    assert "already covers part of this one" in overlap.text
+    blocked = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={"_csrf": _csrf(client, f"/stay-fees/{apartment_id}?month=2026-07"), "month": "2026-07", "rate_czk": "50"},
+        follow_redirects=False,
+    )
+    assert blocked.status_code == 303
+    assert stay_fee_filing.latest(apartment_id, "2026-Q3") is None
+
+    quarter = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={"_csrf": _csrf(client, f"/stay-fees/{apartment_id}?month=2026-04"), "month": "2026-04", "rate_czk": "50"},
+        follow_redirects=False,
+    )
+    assert quarter.status_code == 303
+    assert stay_fee_filing.latest(apartment_id, "2026-Q2") is not None
+
+    correct = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08&correct=1"),
+            "month": "2026-08",
+            "correct": "1",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    )
+    assert correct.status_code == 303
+    current = stay_fee_filing.latest(apartment_id, "2026-08")
+    assert current["version"] == 2
+    assert current["cadence"] == "monthly"
+    previous = db.query_one(
+        "SELECT * FROM stay_fee_filing WHERE apartment_id = ? AND period_key = ? AND version = 1",
+        (apartment_id, "2026-08"),
+    )
+    assert previous["superseded_at"]
+    assert stay_fee_filing.latest(apartment_id, "2026-Q3") is None
+
+
+def test_a_failed_correction_keeps_the_sealed_file(host, monkeypatch):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id)
+    _stay(apartment_id)
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    token = _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08")
+    assert client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    ).status_code == 303
+    sealed = stay_fee_filing.latest(apartment_id, "2026-08")
+    first_pdf = stay_fee_filing.pdf_bytes(sealed)
+
+    def _boom(_report):
+        raise ValueError("pdf failed")
+
+    monkeypatch.setattr("app.stay_fee_filing.stay_fee_remittance_pdf.render", _boom)
+    failed = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08&correct=1"),
+            "month": "2026-08",
+            "correct": "1",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    )
+    assert failed.status_code == 303
+    current = stay_fee_filing.latest(apartment_id, "2026-08")
+    assert current["id"] == sealed["id"]
+    assert current["superseded_at"] is None
+    assert stay_fee_filing.pdf_bytes(current) == first_pdf
+
+
+def test_disabling_the_fee_leaves_the_sealed_period_downloadable(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id)
+    _stay(apartment_id)
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    token = _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08")
+    assert client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    ).status_code == 303
+    db.update("apartment", apartment_id, {"stay_fee_rate_czk": 0})
+
+    august = client.get("/stay-fees?month=2026-08")
+    july = client.get("/stay-fees?month=2026-07")
+    pdf = client.get(f"/stay-fees/{apartment_id}/pdf?month=2026-08")
+    assert "Finalize Flat" in august.text
+    assert "Finalize Flat" not in july.text
+    assert pdf.status_code == 200
+    assert pdf.content.startswith(b"%PDF")
