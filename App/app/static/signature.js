@@ -27,11 +27,22 @@ function initSignature() {
     var ratio = window.devicePixelRatio || 1;
 
     function resize() {
-      // Keep any existing drawing when the viewport changes.
-      var snapshot = dirty ? canvas.toDataURL("image/png") : null;
       var rect = canvas.getBoundingClientRect();
-      canvas.width = Math.round(rect.width * ratio);
-      canvas.height = Math.round(rect.height * ratio);
+      // A pad on a wizard step that is not showing measures 0 x 0. Sizing the
+      // canvas then leaves it with no pixels at all: the guest's strokes draw
+      // nothing and the saved value is an empty "data:," that the server
+      // refuses. Phones fire resize all the time (the keyboard opening, the
+      // address bar hiding), so wait until the pad is visible instead.
+      if (!rect.width || !rect.height) return;
+      var width = Math.round(rect.width * ratio);
+      var height = Math.round(rect.height * ratio);
+      // Nothing to do when the pad itself did not change size; re-creating the
+      // bitmap would only risk the drawing.
+      if (canvas.width === width && canvas.height === height) return;
+      // Keep any existing drawing when the viewport changes.
+      var snapshot = dirty && canvas.width && canvas.height ? canvas.toDataURL("image/png") : null;
+      canvas.width = width;
+      canvas.height = height;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.lineWidth = 2.2;
       ctx.lineCap = "round";
@@ -52,6 +63,7 @@ function initSignature() {
 
     function start(event) {
       event.preventDefault();
+      if (!canvas.width || !canvas.height) resize();
       drawing = true;
       ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#20201e";
       var p = pos(event);
@@ -71,7 +83,7 @@ function initSignature() {
     function end() {
       if (!drawing) return;
       drawing = false;
-      if (dirty) {
+      if (dirty && canvas.width && canvas.height) {
         hidden.value = canvas.toDataURL("image/png");
         setSignatureStatus("");
       }
@@ -79,6 +91,11 @@ function initSignature() {
 
     resize();
     window.addEventListener("resize", resize);
+    // The wizard shows one step at a time, so the pad is often hidden when the
+    // page loads. Size it again whenever its step is shown.
+    var ownForm = canvas.closest("form");
+    if (ownForm) ownForm.addEventListener("guest-wizard:shown", function () { setTimeout(resize, 0); });
+    if (window.ResizeObserver) new ResizeObserver(function () { resize(); }).observe(canvas);
     ["mousedown", "touchstart"].forEach(function (e) { canvas.addEventListener(e, start, { passive: false }); });
     ["mousemove", "touchmove"].forEach(function (e) { canvas.addEventListener(e, move, { passive: false }); });
     ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach(function (e) { canvas.addEventListener(e, end); });

@@ -19,4 +19,12 @@ fi
 .venv/bin/python -m pip install --quiet --upgrade pip
 .venv/bin/python -m pip install --quiet -r requirements.txt -r requirements-dev.txt
 
+# The guest pages have a browser test (tests/test_guest_browser_e2e.py) that
+# must run, not skip, before a guest change is done. Best effort: a sandbox
+# without network still gets the rest of the setup.
+.venv/bin/python -m pip install --quiet playwright==1.63.0 \
+  && (.venv/bin/python -m playwright install --with-deps chromium \
+      || .venv/bin/python -m playwright install chromium) \
+  || echo "Playwright/Chromium not installed: the guest browser test will skip"
+
 echo "UbyHost dependencies installed into App/.venv"
