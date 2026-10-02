@@ -1485,6 +1485,63 @@ def submit_batch(
     }
 
 
+def recover_stale_submissions(apartment_id: int) -> int:
+    """Treat a batch stuck in ``running`` as one whose outcome is unknown.
+
+    A process that dies mid-call (deploy, OOM) leaves the row ``running`` with
+    no guest pointing at it, so the next pass would refile a batch the register
+    may already hold. A batch is stale as soon as none of its guests holds a
+    live send claim: nobody is sending it any more, and the lapsed claim would
+    otherwise let the next pass claim and refile them. Hold its guests for a
+    person, exactly like an unanswered call.
+    """
+    live_after = time.time() - SUBMISSION_CLAIM_TTL_SECONDS
+    reason = "The send stopped before UbyPort answered."
+    stale = []
+    with db.immediate() as cur:
+        cur.execute(
+            "SELECT id, guest_ids FROM submission WHERE apartment_id = ? AND state = 'running'",
+            (apartment_id,),
+        )
+        for row in cur.fetchall():
+            guest_ids = json.loads(row["guest_ids"] or "[]")
+            if guest_ids:
+                marks = ",".join("?" * len(guest_ids))
+                cur.execute(
+                    f"SELECT 1 FROM submission_claim WHERE guest_id IN ({marks}) "
+                    "AND claimed_at >= ? LIMIT 1",
+                    (*guest_ids, live_after),
+                )
+                if cur.fetchone():
+                    continue
+            stale.append(row["id"])
+            db.update_in(
+                cur, "submission", row["id"],
+                {"state": "outcome_unknown", "finished_at": db.utcnow(), "error_text": reason},
+            )
+            for guest_id in guest_ids:
+                cur.execute(
+                    "UPDATE guest SET submission_id = ? WHERE id = ? AND submit_state != ? "
+                    "AND (submission_id IS NULL OR submission_id < ?)",
+                    (row["id"], guest_id, SENT, row["id"]),
+                )
+    if not stale:
+        return 0
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    alerts.raise_alert(
+        "critical",
+        "submission_outcome_unknown",
+        f"{apartment['internal_name']}: UbyPort may or may not have received the report.",
+        reason,
+        dedupe_key=f"submission_outcome_unknown:{apartment_id}",
+        apartment_id=apartment_id,
+        params={"property": apartment["internal_name"], "error": reason},
+    )
+    log.error("ubyport_submission_stale apartment_id=%s submissions=%s",
+              apartment_id, stale)
+    return len(stale)
+
+
 def submit_for_apartment(
     apartment_id: int,
     only_guest_ids: Optional[List[int]] = None,
@@ -1515,6 +1572,7 @@ def submit_for_apartment(
                 "error_key": "flash.error.demo_preview_only",
             }
         ]
+    recover_stale_submissions(apartment_id)
 
     ap_dict = dict(apartment)
     ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
