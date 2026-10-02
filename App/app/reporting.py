@@ -679,6 +679,10 @@ def submit_stay_if_complete(apartment_id: int, reservation_id: int) -> None:
     completed_at = refresh_registration_completed_at(reservation_id)
     if not completed_at or apartment["automation_mode"] != "immediate":
         return
+    if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
+        # Same pause as the sweep: retrying a refused login on every guest
+        # save risks locking the police account.
+        return
     reservation = db.query_one(
         "SELECT * FROM reservation WHERE id = ?", (reservation_id,)
     )
