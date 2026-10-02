@@ -47,18 +47,34 @@
     'awaiting_guest': t('status.awaiting_guest_short'),
     'awaiting_verification': t('status.awaiting_verification')
   } %}
+  {# Tone follows criticality (tokens.css): red critical, amber host action,
+     blue ready, teal waiting on the guest, green done, grey neutral. #}
+  {% set tones = {
+    'failed': 'red',
+    'reported': 'green',
+    'ready': 'blue',
+    'incomplete': 'amber',
+    'not_required': 'grey',
+    'awaiting_guest': 'teal',
+    'awaiting_verification': 'amber'
+  } %}
+  {% set tone = tones.get(status, 'grey') %}
   {% if is_demo and status in ('ready', 'awaiting_verification') %}
     {% set label = t('status.demo_preview') %}
     {% set tip = t('status.demo_preview_tip') %}
+    {% set tone = 'grey' %}
   {% elif automation_mode == 'immediate' and status in ('awaiting_guest', 'incomplete') %}
     {% set label = t('status.waiting_guest') %}
     {% set tip = t('status.waiting_guest_tip') %}
+    {% set tone = 'teal' %}
   {% elif status in ('ready', 'awaiting_verification') and automation_mode == 'immediate' %}
     {% set label = t('status.ready_immediate') %}
     {% set tip = t('status.ready_immediate_tip') %}
+    {% set tone = 'blue' %}
   {% elif status in ('ready', 'awaiting_verification') and automation_mode == 'scheduled' %}
     {% set label = t('status.ready_scheduled') %}
     {% set tip = t('status.ready_scheduled_tip') %}
+    {% set tone = 'blue' %}
   {% elif status == 'awaiting_verification' %}
     {% set label = t('status.awaiting_verification') %}
     {% set tip = t('status.awaiting_verification_tip') %}
@@ -69,16 +85,21 @@
     {% set label = labels.get(status, status) %}
     {% set tip = '' %}
   {% endif %}
-  {% set tones = {
-    'failed': 'red',
-    'reported': 'green',
-    'ready': 'blue',
-    'incomplete': 'amber',
-    'not_required': 'grey',
-    'awaiting_guest': 'teal',
-    'awaiting_verification': 'blue'
-  } %}
-  <span class="pill {{ tones.get(status, 'grey') }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
+  <span class="pill {{ tone }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
+{% endmacro %}
+
+{# Guest count for a stay. Calendars never carry it, so until the guest or the
+   host declares it the count shows nothing (or a quiet dash in tables). #}
+{% macro guest_count(progress, placeholder=false) %}
+  {% if progress.expected is not none or progress.guests %}
+    <span class="guest-count" title="{{ t('stays.table.guests') }}">
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5c0-2.4 2-3.8 4.5-3.8s4.5 1.4 4.5 3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span class="sr-only">{{ t('stays.table.guests') }}:</span>
+      {% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% else %}{{ progress.guests | length }}{% endif %}
+    </span>
+  {% elif placeholder %}
+    <span class="muted" aria-hidden="true">–</span><span class="sr-only">{{ t('common.guests_unknown') }}</span>
+  {% endif %}
 {% endmacro %}
 
 {% macro row_reporting_actions(reservation, controls, return_to) %}
@@ -196,7 +217,7 @@
     'transport_error': 'red',
     'outcome_unknown': 'red',
     'not_configured': 'amber',
-    'running': 'grey',
+    'running': 'teal',
     'noop': 'grey'
   } %}
   <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
