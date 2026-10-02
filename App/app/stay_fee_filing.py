@@ -103,7 +103,9 @@ def save(
     insert. A failure leaves the earlier file downloadable.
     """
     chosen = cadence if cadence in stay_fee.CADENCES else stay_fee.cadence_of(apartment)
-    period = stay_fee.property_period(apartment, month, live_only=True, cadence=chosen)
+    period = stay_fee.property_period(
+        apartment, month, live_only=True, cadence=chosen, rate=rate_czk
+    )
     if period is None:
         raise ValueError("inactive property")
     group = stay_fee.report_group(apartment, month, live_only=True, period=period, cadence=chosen)
