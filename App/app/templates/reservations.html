@@ -3,7 +3,7 @@
 {% block title %}{{ t('stays.title') }}{% endblock %}
 {% block content %}
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity with context %}
+{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count with context %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
 {% if apartments %}
@@ -156,7 +156,7 @@
             <div><a class="small" href="{{ reservation.reservation_url }}" target="_blank" rel="noopener">{{ t('stays.table.portal') }}</a></div>
           {% endif %}
         </td>
-        <td class="num" data-label="{{ t('stays.table.guests') }}">{% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% else %}<span title="{{ t('common.guests_unknown') }}">—</span>{% endif %}</td>
+        <td class="num" data-label="{{ t('stays.table.guests') }}">{{ guest_count(progress, placeholder=true) }}</td>
         <td data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}{% endif %}
