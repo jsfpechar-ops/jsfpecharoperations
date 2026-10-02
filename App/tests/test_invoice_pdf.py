@@ -57,3 +57,37 @@ def test_storno_and_corrective_render():
             "cs",
         )
         assert data.startswith(b"%PDF")
+
+
+def test_invoice_amount_parsing_and_item_cap():
+    from decimal import Decimal
+
+    from app import invoices
+
+    assert invoices._to_decimal("1.000,50") == Decimal("1000.50")
+    assert invoices._to_decimal("1 234,5") == Decimal("1234.5")
+    assert invoices._to_decimal("12.5") == Decimal("12.5")
+    assert invoices._to_decimal("NaN") == 0
+    assert invoices._to_decimal("1e30") == 0
+    assert invoices.MAX_ITEMS == 4
+
+
+def test_a_price_that_is_not_a_number_blocks_the_invoice():
+    from app import invoices
+
+    form = {
+        "item_description": ["Stay", "Cleaning"],
+        "item_quantity": ["1", "1"],
+        "item_unit": ["", ""],
+        "item_unit_price": ["1000", "1e30"],
+        "item_vat_rate": ["12", "12"],
+    }
+    items = invoices._items_from_form(form, "non_payer")
+    assert [item["price_invalid"] for item in items] == [False, True]
+    draft = {
+        "seller": {"name": "S", "seat": "P", "registry": "R", "dic": ""},
+        "buyer": {"name": "B"}, "vat_status": "non_payer", "items": items,
+        "total_haler": sum(item["gross_haler"] for item in items),
+    }
+    keys = [issue.message for issue in invoices.validate_for_issue(draft)]
+    assert "invoice.err.amount" in keys
