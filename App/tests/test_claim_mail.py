@@ -1797,6 +1797,7 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "completion",
         "submission_problem",
         "invoice_issued",
+        "workspace_deletion",
     }
 
 
