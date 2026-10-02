@@ -375,12 +375,24 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
     context.update(
         {
             "error": error,
-            "require_turnstile": failures >= 3,
+            "require_turnstile": failures >= 3 or _link_challenged(token, apartment),
             "return_to": request.url.path
             + (("?" + str(request.url.query)) if request.url.query else ""),
         }
     )
     return _with_lang(render_guest(request, "guest/pin.html", context), lang)
+
+
+def _link_challenged(token: str, apartment) -> bool:
+    """A link guessed at from many addresses asks every visitor for the check.
+
+    With Turnstile on, a locked link is challenged rather than refused, so one
+    person with an old link cannot shut every guest out for a day.
+    """
+    if not apartment or not turnstile.required():
+        return False
+    expected = apartment["permalink_pin"] or ""
+    return rate_limit.pin_token_blocked(f"{token}:{auth.pin_fingerprint(token, expected)}")
 
 
 def _host_owns_apartment(request: Request, apartment) -> bool:
@@ -796,14 +808,15 @@ async def verify_pin(token: str, request: Request):
     expected = apartment["permalink_pin"] or ""
     pin_key = rate_limit.client_key(request, token)
     pin_lock_key = f"{token}:{auth.pin_fingerprint(token, expected)}"
-    if rate_limit.pin_token_blocked(pin_lock_key):
+    link_locked = rate_limit.pin_token_blocked(pin_lock_key)
+    if link_locked and not turnstile.required():
         return _pin_page(
             request,
             token,
             lang,
             error=i18n.translator(lang)("pin_locked_out"),
         )
-    if rate_limit.pin_failure_count(pin_key) >= 3 and not turnstile.verify(
+    if (link_locked or rate_limit.pin_failure_count(pin_key) >= 3) and not turnstile.verify(
         request, form.get("cf-turnstile-response"), "guest_pin"
     ):
         return _pin_page(
@@ -821,7 +834,22 @@ async def verify_pin(token: str, request: Request):
         # A lockout spread over many addresses is invisible in the per-IP count,
         # so the host is told the moment the link itself burns its budget: every
         # guest using it is refused for a day until the PIN is rotated.
-        if rate_limit.pin_token_blocked(pin_lock_key):
+        if rate_limit.pin_token_blocked(pin_lock_key) and turnstile.required():
+            alerts.raise_alert(
+                "warning",
+                "guest_pin_challenged",
+                "Guest link now asks for a security check after repeated wrong PINs.",
+                detail="Guests can still open it after the check. Generate a new PIN if the link may have leaked.",
+                dedupe_key=f"guest_pin_challenged:{apartment['id']}",
+                apartment_id=apartment["id"],
+            )
+            db.audit(
+                "guest_pin_token_challenged",
+                detail=f"apartment={apartment['id']}",
+                actor="anonymous",
+                owner_user_id=apartment["owner_user_id"],
+            )
+        elif rate_limit.pin_token_blocked(pin_lock_key):
             alerts.raise_alert(
                 "critical",
                 "guest_pin_locked_out",
