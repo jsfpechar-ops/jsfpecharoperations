@@ -639,6 +639,17 @@ def sync_feed(
                     (existing["id"],),
                 )
                 if on_stay and on_stay["n"]:
+                    # Who had signed, and when: each of them must sign again
+                    # before the hold lifts (routes.guest).
+                    signed = {
+                        str(row["id"]): row["signed_at"]
+                        for row in db.query(
+                            "SELECT id, signed_at FROM guest WHERE reservation_id = ? "
+                            "AND archived_at IS NULL AND signed_at IS NOT NULL "
+                            "AND submit_state != ?",
+                            (existing["id"], reporting.SENT),
+                        )
+                    }
                     alerts.raise_alert(
                         "critical",
                         "dates_changed_resign",
@@ -651,6 +662,7 @@ def sync_feed(
                         dedupe_key=f"dates_changed_resign:{existing['id']}",
                         apartment_id=feed["apartment_id"],
                         reservation_id=existing["id"],
+                        params={"signed": signed},
                     )
                     log.warning(
                         "ical_dates_changed_resign_required apartment_id=%s reservation_id=%s",
