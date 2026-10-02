@@ -178,7 +178,14 @@ async def two_factor_login(request: Request):
 
 
 @router.post("/logout")
-def logout():
+def logout(request: Request):
+    # Cookies are signed, not stored, so clearing this browser's copy alone
+    # would leave a copied cookie valid. Log out ends the account's sessions
+    # everywhere (the real account, also when an admin is impersonating).
+    account = auth.current_user(request)
+    if account:
+        auth.end_all_sessions(account["id"])
+        db.audit("logout", actor=account["username"], owner_user_id=account["id"])
     response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
     return response
