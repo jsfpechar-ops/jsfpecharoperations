@@ -14,6 +14,10 @@ from typing import Any, Dict, List, Optional
 from . import db, invoice_pdf, payments, validation
 
 VAT_RATES = (0, 12, 21)
+# The one-page PDF fits four two-line items with VAT detail and the QR block.
+MAX_ITEMS = 4
+# Ten million CZK per figure: anything larger is a typo, not an invoice.
+MAX_AMOUNT = Decimal("10000000")
 PAID_VIA_LABELS = {
     "airbnb": "Airbnb",
     "booking": "Booking.com",
@@ -44,12 +48,24 @@ def _at(values: list, index: int, default: str = "") -> str:
     return str(values[index]) if index < len(values) else default
 
 
-def _to_decimal(text: str) -> Decimal:
-    cleaned = (text or "").replace(" ", "").replace("\u00a0", "").replace(",", ".")
+def _parse_decimal(text: str) -> Optional[Decimal]:
+    """The amount, or None when it is not a finite number within MAX_AMOUNT."""
+    cleaned = (text or "").replace(" ", "").replace("\u00a0", "")
+    if "," in cleaned:
+        # Czech style "1.000,50": the dot groups thousands, the comma is decimal.
+        cleaned = cleaned.replace(".", "").replace(",", ".")
     try:
-        return Decimal(cleaned)
+        value = Decimal(cleaned)
     except (InvalidOperation, ValueError):
-        return Decimal(0)
+        return None
+    if not value.is_finite() or abs(value) > MAX_AMOUNT:
+        return None
+    return value
+
+
+def _to_decimal(text: str) -> Decimal:
+    value = _parse_decimal(text)
+    return Decimal(0) if value is None else value
 
 
 def _to_int(text: str, default: int = 1) -> int:
@@ -86,7 +102,8 @@ def _items_from_form(form, vat_status: str) -> List[Dict[str, Any]]:
             continue
         quantity = max(_to_int(_at(qtys, i, "1"), default=1), 1)
         unit = _at(units, i).strip()[:20]
-        price = _to_decimal(_at(prices, i, "0"))
+        raw_price = _at(prices, i, "0")
+        price = _to_decimal(raw_price)
         if vat_status == "payer":
             rate = _to_rate(_at(rates, i))
             base, vat, gross = vat_parts(quantity, price, rate)
@@ -104,6 +121,8 @@ def _items_from_form(form, vat_status: str) -> List[Dict[str, Any]]:
                 "base_haler": base,
                 "vat_haler": vat,
                 "gross_haler": gross,
+                # A typed price that is not a number must not become 0 Kč.
+                "price_invalid": bool(raw_price.strip()) and _parse_decimal(raw_price) is None,
             }
         )
     return items
@@ -269,7 +288,9 @@ def validate_for_issue(draft: Dict[str, Any]) -> List[validation.Issue]:
         issues.append(validation.Issue("buyer_name", "invoice.buyer.required"))
     if not draft["items"]:
         issues.append(validation.Issue("items", "invoice.err.no_items"))
-    if draft["total_haler"] <= 0:
+    elif len(draft["items"]) > MAX_ITEMS:
+        issues.append(validation.Issue("items", "invoice.err.too_many_items"))
+    if draft["total_haler"] <= 0 or any(i.get("price_invalid") for i in draft["items"]):
         issues.append(validation.Issue("price_czk", "invoice.err.amount"))
     return issues
 
