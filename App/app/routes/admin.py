@@ -1625,6 +1625,8 @@ async def reservation_update(reservation_id: int, request: Request):
         if row:
             claim.expire_on_cancel(row)
     else:
+        if payload.get("status") == "active":
+            alerts.resolve(f"cancelled_with_guests:{reservation_id}")
         current = db.query_one(
             "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
         )
