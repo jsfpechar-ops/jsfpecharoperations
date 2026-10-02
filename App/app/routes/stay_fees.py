@@ -243,6 +243,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
             stay_fee_filing.period_anchor(sealed),
             live_only=True,
             cadence=sealed["cadence"],
+            rate=sealed["rate_czk"],
         )
     else:
         period = stay_fee.property_period(apartment, selected_month, live_only=correcting)
@@ -579,7 +580,8 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         cadence = stay_fee.cadence_of(apartment)
         calc_month = month
     period = stay_fee.property_period(
-        apartment, calc_month, live_only=True, cadence=cadence
+        apartment, calc_month, live_only=True, cadence=cadence,
+        rate=sealed["rate_czk"] if correcting else None,
     )
     group = stay_fee.report_group(
         apartment, calc_month, live_only=True, period=period, cadence=cadence
