@@ -8,13 +8,13 @@
    a command panel that says the state and the next step, the facts strip,
    the line items, and the destructive fold last. #}
 {% if invoice.kind in ('storno', 'corrective') %}
-  {% set state_pill = '<span class="pill amber">' ~ t('invoice.kind.' ~ invoice.kind) ~ '</span>' %}
+  {% set state_pill = '<span class="pill grey">' ~ t('invoice.kind.' ~ invoice.kind) ~ '</span>' %}
   {% set state_note = t('invoice.detail.note_' ~ invoice.kind) %}
 {% elif invoice.marked_paid_at or invoice.paid_on %}
   {% set state_pill = '<span class="pill green">' ~ t('invoice.state.paid') ~ '</span>' %}
   {% set state_note = t('invoice.detail.note_paid') %}
 {% else %}
-  {% set state_pill = '<span class="pill grey">' ~ t('invoice.state.unpaid') ~ '</span>' %}
+  {% set state_pill = '<span class="pill teal">' ~ t('invoice.state.unpaid') ~ '</span>' %}
   {% set state_note = t('invoice.detail.note_unpaid') %}
 {% endif %}
 
