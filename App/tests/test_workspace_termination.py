@@ -48,6 +48,7 @@ def _cleanup():
         db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
         db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (user_id,))
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
+        db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (user_id,))
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
@@ -264,3 +265,58 @@ def test_a_workspace_with_filed_stay_fees_and_property_invoices_is_deleted_compl
     assert db.query_one("SELECT id FROM apartment WHERE id = ?", (apartment,)) is None
     assert db.query_one("SELECT id FROM legal_entity WHERE id = ?", (entity,)) is None
     assert db.query_one("SELECT id FROM email_outbox WHERE id = ?", (mail,)) is None
+
+
+def _notices(owner):
+    return db.query(
+        "SELECT to_email, subject, payload FROM email_outbox "
+        "WHERE kind = 'workspace_deletion' AND owner_user_id = ? ORDER BY id",
+        (owner,),
+    )
+
+
+def test_scheduling_deletion_mails_every_contact_address_once():
+    owner, entity, *_rest = _seed("ws-mail")
+    db.execute("UPDATE legal_entity SET contact_email = ? WHERE id = ?", ("host@example.com", entity))
+    db.insert(
+        "legal_entity",
+        {"name": "second", "owner_user_id": owner, "contact_email": "HOST@example.com",
+         "created_at": db.utcnow()},
+    )
+    _admin("ws-admin")
+    client = _login("ws-admin")
+    response = client.post(
+        f"/admin/users/{owner}/schedule-deletion",
+        data={"confirm": "ws-mail"}, follow_redirects=False,
+    )
+    assert response.status_code == 303
+    rows = _notices(owner)
+    assert [row["to_email"] for row in rows] == ["host@example.com"]
+    assert "will be deleted on" in rows[0]["subject"]
+    payload = json.loads(rows[0]["payload"])
+    assert "support@ubyhost.com" in payload["text"]
+    assert payload["reply_to"] == "support@ubyhost.com"
+
+
+def test_a_workspace_due_within_a_week_gets_one_reminder():
+    owner, entity, *_rest = _seed("ws-soon")
+    db.execute("UPDATE legal_entity SET contact_email = ? WHERE id = ?", ("soon@example.com", entity))
+    later, later_entity, *_rest = _seed("ws-later")
+    db.execute("UPDATE legal_entity SET contact_email = ? WHERE id = ?", ("later@example.com", later_entity))
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        ((date.today() + timedelta(days=5)).isoformat() + "T12:00:00+00:00", owner),
+    )
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        ((date.today() + timedelta(days=20)).isoformat() + "T12:00:00+00:00", later),
+    )
+    retention._workspace_deletion_step(date.today(), True, None)
+    assert _notices(owner) == []  # a dry run deletes nothing, so it warns of nothing
+
+    retention._workspace_deletion_step(date.today(), False, None)
+    retention._workspace_deletion_step(date.today(), False, None)
+    rows = _notices(owner)
+    assert len(rows) == 1
+    assert "in 7 days" in rows[0]["subject"]
+    assert _notices(later) == []
