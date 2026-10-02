@@ -254,6 +254,30 @@ def test_a_failed_correction_keeps_the_sealed_file(host, monkeypatch):
     assert stay_fee_filing.pdf_bytes(current) == first_pdf
 
 
+def test_finalize_rejects_a_non_ascii_collected_amount(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id)
+    _stay(apartment_id)
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    token = _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08")
+    blocked = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "20²",
+        },
+        follow_redirects=False,
+    )
+    assert blocked.status_code == 303
+    assert "err=" in blocked.headers["location"]
+    assert stay_fee_filing.latest(apartment_id, "2026-08") is None
+    page = client.get(blocked.headers["location"])
+    assert "Fix the items shown on the page." in page.text
+
+
 def test_disabling_the_fee_leaves_the_sealed_period_downloadable(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id)
