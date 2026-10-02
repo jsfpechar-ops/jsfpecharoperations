@@ -15,7 +15,6 @@
     <form method="post" action="/stay-fees/{{ apartment.id }}/finalize" class="inline-form">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <input type="hidden" name="month" value="{{ month_key }}">
-      <input type="hidden" name="rate_czk" value="{{ period.rate_czk }}">
       {% if lines %}<input type="hidden" name="confirm_collected" value="1">{% endif %}
       {% for line in lines %}
         <input type="hidden" name="collected_{{ line.guest_id }}" value="{{ line.amount_czk }}">
