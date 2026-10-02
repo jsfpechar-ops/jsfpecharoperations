@@ -133,6 +133,7 @@ def _preview_view(draft) -> dict:
         "due_date": draft.get("due_date"),
         "paid_on": draft.get("paid_on"),
         "paid_via_label": invoices.custom_paid_via_label(draft.get("paid_via")),
+        "note": draft.get("note"),
         "seller_name": seller["name"],
         "seller_seat": seller["seat"],
         "seller_ico": seller["ico"],
@@ -359,6 +360,8 @@ async def invoice_issue(request: Request):
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
     draft = _draft(request, entity, form)
     issues = invoices.validate_for_issue(draft)
+    if not issues and invoices.invoice_pdf.too_long(_preview_view(draft), draft["items"], draft["lang"]):
+        issues = [invoices.validation.Issue("note", "invoice.err.too_long")]
     if issues:
         lang = _lang(request)
         context = _form_context(
