@@ -509,8 +509,10 @@ def hlaseni(group, issued_on: date) -> Dict[str, Any]:
                 "amount_czk": period["adjustment_bed_days"] * period["rate_czk"],
             })
         for line in period["lines"]:
-            if line["status"] == "exempt":
-                bucket = minors if line["auto_minor"] else hosts
+            if line["exempt_nights"]:
+                # A guest who turns 18 inside the period is "liable" overall
+                # but still carries exempt minor nights; they count as minors.
+                bucket = minors if (line["auto_minor"] or line["status"] == "liable") else hosts
                 bucket["count"] += 1
                 bucket["nights"] += line["exempt_nights"]
     not_charged = [
