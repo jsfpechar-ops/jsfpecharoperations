@@ -78,7 +78,7 @@
 .host-today-date { font-size: 12px; font-weight: 650; color: var(--muted); }
 .host-task-list { display: grid; gap: 10px; }
 .host-task { padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: white; display: flex; align-items: center; gap: 18px; }
-.host-task.is-urgent { border-left: 4px solid var(--brand); }
+.host-task.is-urgent { border-left: 4px solid var(--status-critical-border); }
 .host-task-main { flex: 1; min-width: 0; }
 .host-task-main > a { font-size: 16px; font-weight: 750; color: var(--ink); text-decoration: none; }
 .host-task-context { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
@@ -242,12 +242,6 @@ body.host-workspace {
   }
 }
 .host-property-save { position: sticky; bottom: 12px; z-index: 19; width: fit-content; background: white; border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: var(--shadow-popover); }
-body.host-workspace .pill.blue { color: var(--blue); background: var(--blue-bg); border-color: transparent; }
-body.host-workspace .pill.teal { color: var(--teal); background: var(--teal-bg); border-color: transparent; }
-body.host-workspace .pill.green { color: var(--green); background: var(--green-bg); border-color: transparent; }
-body.host-workspace .pill.amber { color: var(--amber); background: var(--amber-bg); border-color: transparent; }
-body.host-workspace .pill.grey { color: var(--gray); background: var(--gray-bg); border-color: transparent; }
-body.host-workspace .pill.red { color: var(--red); background: var(--red-bg); border-color: transparent; }
 .host-today-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .host-today-actions .page-toolbar, .host-today-actions .page-toolbar-row { margin: 0; padding: 0; }
 .host-workspace { --action-gap: 8px; --action-height: 42px; }
@@ -272,19 +266,10 @@ body.host-workspace .pill.red { color: var(--red); background: var(--red-bg); bo
 .host-workspace .dashboard-stats a { display: grid; gap: 2px; min-height: 72px; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; text-decoration: none; color: inherit; }
 .host-workspace .dashboard-stats strong { font-size: 24px; letter-spacing: -.04em; }
 .host-workspace .dashboard-stats span { font-size: 13px; font-weight: 650; }
-/* Strong enough to read against the warm canvas, unlike the pale token tints. */
-.host-workspace .dashboard-stats .stat-action { background: #ffe1cd; border-color: #f6cbb2; }
-.host-workspace .dashboard-stats .stat-action strong,
-.host-workspace .dashboard-stats .stat-action span { color: #9a3f06; }
-.host-workspace .dashboard-stats .stat-waiting { background: #d5ecea; border-color: #b3dcd8; }
-.host-workspace .dashboard-stats .stat-waiting strong,
-.host-workspace .dashboard-stats .stat-waiting span { color: #086b63; }
-.host-workspace .dashboard-stats .stat-ready { background: #d9efe1; border-color: #b5dcc4; }
-.host-workspace .dashboard-stats .stat-ready strong,
-.host-workspace .dashboard-stats .stat-ready span { color: #146a41; }
-.host-workspace .dashboard-stats .stat-overdue { background: #f9d7d3; border-color: #efb9b2; }
-.host-workspace .dashboard-stats .stat-overdue strong,
-.host-workspace .dashboard-stats .stat-overdue span { color: #ab2015; }
+.host-workspace .dashboard-stats .stat-overdue { background: var(--status-critical-bg); border-color: var(--status-critical-border); color: var(--status-critical-ink); }
+.host-workspace .dashboard-stats .stat-action { background: var(--status-action-bg); border-color: var(--status-action-border); color: var(--status-action-ink); }
+.host-workspace .dashboard-stats .stat-ready { background: var(--status-ready-bg); border-color: var(--status-ready-border); color: var(--status-ready-ink); }
+.host-workspace .dashboard-stats .stat-waiting { background: var(--status-waiting-bg); border-color: var(--status-waiting-border); color: var(--status-waiting-ink); }
 .host-workspace .host-month-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 auto 18px; padding: 0; border: 0; background: none; }
 .host-workspace .host-month-filter label { font-size: 13px; font-weight: 700; color: var(--ink-secondary); }
 .host-workspace .host-month-filter input[type=month] { width: 12rem; height: var(--action-height); margin: 0; background: white; border: 1px solid var(--border-strong); border-radius: 9px; padding: 8px 12px; font-weight: 650; }
