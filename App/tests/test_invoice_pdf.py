@@ -91,3 +91,43 @@ def test_a_price_that_is_not_a_number_blocks_the_invoice():
     }
     keys = [issue.message for issue in invoices.validate_for_issue(draft)]
     assert "invoice.err.amount" in keys
+
+
+def test_the_note_is_printed_and_an_overfull_page_is_refused():
+    import io as _io
+
+    import pdfplumber
+
+    inv = _inv(note="Děkujeme za pobyt.")
+    data = invoice_pdf.render(inv, [dict(ACCOM, vat_rate=None, base_haler=None, vat_haler=None)], "cs")
+    with pdfplumber.open(_io.BytesIO(data)) as pdf:
+        assert "Děkujeme za pobyt." in pdf.pages[0].extract_text()
+    long_desc = "Ubytování v apartmánu s dlouhým popisem, který se zalomí na dva řádky v tabulce položek faktury"
+    payer = _inv(vat_status="payer", seller_dic="CZ04656679", note="Děkujeme za pobyt. " * 5)
+    items = [dict(ACCOM, description=long_desc)] * 4
+    assert invoice_pdf.too_long(payer, items, "cs")
+    assert not invoice_pdf.too_long(dict(payer, note=""), items, "cs")
+
+
+def test_an_issued_note_cannot_be_changed():
+    import sqlite3
+
+    import pytest
+
+    from app import db
+
+    db.init_db()
+    now = db.utcnow()
+    entity = db.insert("legal_entity", {"name": "Note s.r.o.", "created_at": now})
+    invoice = db.insert(
+        "invoice",
+        {
+            "legal_entity_id": entity, "kind": "invoice", "seq_year": 2026, "seq_no": 7001,
+            "number": "NOTE-1", "vs": "1", "lang": "cs", "vat_status": "non_payer",
+            "issue_date": "2026-01-01", "seller_name": "S", "seller_seat": "P",
+            "buyer_name": "B", "total_haler": 100, "note": "Původní", "issued_at": now,
+            "created_at": now,
+        },
+    )
+    with pytest.raises(sqlite3.DatabaseError, match="immutable"):
+        db.execute("UPDATE invoice SET note = 'Jiná' WHERE id = ?", (invoice,))
