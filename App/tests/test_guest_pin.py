@@ -371,3 +371,40 @@ def test_wrong_pin_delay_does_not_block_event_loop(pin_required, monkeypatch):
     finally:
         db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
         _cleanup()
+
+
+def test_with_turnstile_a_locked_link_is_challenged_not_refused(pin_required, monkeypatch):
+    """One person with an old link must not shut every guest out for a day."""
+    from app import turnstile
+
+    _stay_id()
+    monkeypatch.setattr("app.routes.guest.asyncio.sleep", AsyncMock())
+    monkeypatch.setattr(turnstile, "required", lambda: True)
+    monkeypatch.setattr(turnstile, "verify", lambda _request, token, _action: token == "human")
+    try:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
+        for attempt in range(rate_limit._PIN_TOKEN_MAX_FAILURES):
+            TestClient(app, client=(f"10.0.0.{attempt}", 50000)).post(
+                f"/l/{TOKEN}/pin",
+                data={"pin": "000000", "cf-turnstile-response": "human", "return_to": f"/l/{TOKEN}"},
+                follow_redirects=False,
+            )
+        assert rate_limit.pin_token_blocked(f"{TOKEN}:{auth.pin_fingerprint(TOKEN, PIN)}")
+
+        guest = TestClient(app, client=("10.0.1.1", 50000))
+        unchecked = guest.post(
+            f"/l/{TOKEN}/pin", data={"pin": PIN, "return_to": f"/l/{TOKEN}"},
+            follow_redirects=False,
+        )
+        assert unchecked.status_code == 200, "a locked link still needs the check"
+        assert 'name="pin"' in unchecked.text
+        checked = guest.post(
+            f"/l/{TOKEN}/pin",
+            data={"pin": PIN, "cf-turnstile-response": "human", "return_to": f"/l/{TOKEN}"},
+            follow_redirects=False,
+        )
+        assert checked.status_code == 303
+    finally:
+        db.execute("DELETE FROM rate_limit_event WHERE key LIKE ?", (f"%:{TOKEN}",))
+        db.execute("DELETE FROM rate_limit_event WHERE scope = ?", ("pin_fail_token",))
+        _cleanup()
