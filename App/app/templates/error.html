@@ -1,0 +1,7 @@
+{% extends "auth_base.html" %}
+{% block title %}{{ t('error.' ~ error_kind ~ '.title') }} · UbyHost{% endblock %}
+{% block auth_body %}
+<h1>{{ t('error.' ~ error_kind ~ '.title') }}</h1>
+<p class="lede">{{ t('error.' ~ error_kind ~ '.body') }}</p>
+<p><a class="btn primary" href="/">{{ t('error.home') }}</a></p>
+{% endblock %}
