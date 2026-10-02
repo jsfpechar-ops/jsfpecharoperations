@@ -373,6 +373,7 @@ CREATE TABLE IF NOT EXISTS invoice (
     due_date             TEXT,
     paid_on              TEXT,
     paid_via             TEXT,
+    note                 TEXT,
     seller_name TEXT NOT NULL, seller_seat TEXT NOT NULL, seller_ico TEXT, seller_dic TEXT,
     seller_registry TEXT, seller_bank_account TEXT, seller_iban TEXT, seller_bic TEXT,
     seller_email TEXT, seller_phone TEXT,
@@ -424,6 +425,15 @@ BEFORE UPDATE OF legal_entity_id, apartment_id, kind, corrects_invoice_id, corre
     stay_from, stay_to, stay_label, total_base_haler, total_vat_haler, total_haler,
     pdf_blob, pdf_sha256, issued_at, issued_by
 ON invoice
+WHEN OLD.issued_at IS NOT NULL
+BEGIN
+    SELECT RAISE(ABORT, 'invoice is issued and immutable');
+END;
+
+-- The note came later; a separate trigger, because CREATE TRIGGER IF NOT
+-- EXISTS never updates the column list of invoice_issued_guard.
+CREATE TRIGGER IF NOT EXISTS invoice_note_guard
+BEFORE UPDATE OF note ON invoice
 WHEN OLD.issued_at IS NOT NULL
 BEGIN
     SELECT RAISE(ABORT, 'invoice is issued and immutable');
@@ -676,6 +686,8 @@ ADDED_COLUMNS = (
     ("guest", "restricted_reason", "TEXT"),
     # BE-10: workspace termination.
     ("user_account", "deletion_due_at", "TEXT"),
+    # The free-text note printed on an invoice.
+    ("invoice", "note", "TEXT"),
     # Stay-fee remittance, host only
     # (docs/plans/stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md).
     ("apartment", "stay_fee_rate_czk", "INTEGER NOT NULL DEFAULT 0"),
