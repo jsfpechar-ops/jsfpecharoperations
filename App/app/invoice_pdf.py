@@ -112,7 +112,21 @@ def _wrap(c, x, y, s, width, font=REG, size=9, color=INK, leading=None):
     return y
 
 
-def render(inv: dict, items: list, lang: str = "cs", preview: bool = False) -> bytes:
+class TooLong(ValueError):
+    """The content would run into the footer: an issued PDF must be one clean page."""
+
+
+def too_long(inv: dict, items: list, lang: str = "cs") -> bool:
+    try:
+        render(inv, items, lang, strict=True)
+    except TooLong:
+        return True
+    return False
+
+
+def render(
+    inv: dict, items: list, lang: str = "cs", preview: bool = False, strict: bool = False
+) -> bytes:
     L = LABELS[lang]
     payer = inv["vat_status"] == "payer"
     buf = io.BytesIO()
@@ -251,8 +265,9 @@ def render(inv: dict, items: list, lang: str = "cs", preview: bool = False) -> b
         yy = ty - 5 * mm
         for rate, (b, v, g) in sorted(rates.items()):
             _text(c, M, yy, f"{rate} %", size=8.5, color=INK_2)
-            _text(c, M + 38 * mm, yy, f"{L['base']} {money(b)}", size=8.5, color=INK_2, right=True)
-            _text(c, M + 70 * mm, yy, f"{L['vat']} {money(v)}", size=8.5, color=INK_2, right=True)
+            # Right edges leave room for "Základ 99 999,99 Kč" after the rate.
+            _text(c, M + 50 * mm, yy, f"{L['base']} {money(b)}", size=8.5, color=INK_2, right=True)
+            _text(c, M + 84 * mm, yy, f"{L['vat']} {money(v)}", size=8.5, color=INK_2, right=True)
             yy -= 4.5 * mm
     paid = bool(inv.get("paid_on"))
     box_w, box_h = 78 * mm, 22 * mm
@@ -303,10 +318,16 @@ def render(inv: dict, items: list, lang: str = "cs", preview: bool = False) -> b
         ny = _wrap(c, M, ny, f"{L['reason']}: {inv['correction_reason']}", CW, size=8.5, color=INK_2)
     if kind == "corrective" and inv.get("correction_date"):
         ny = _wrap(c, M, ny, f"{L['correction_date']}: {cz_date(inv['correction_date'])}", CW, size=8.5, color=INK_2)
+    if inv.get("note"):
+        ny = _wrap(c, M, ny, inv["note"], CW, size=8.5, color=INK_2)
     if not payer:
         ny = _wrap(c, M, ny, L["non_payer"], CW, size=8.5, color=INK_2)
 
     fy2 = M + 10 * mm
+    # ny is the next baseline; the last line's descenders sit about 2 mm above
+    # it, and the registry line's cap height reaches about 7 mm above fy2.
+    if strict and ny + 2 * mm < fy2 + 7 * mm:
+        raise TooLong()
     reg = inv.get("seller_registry") or ""
     contact = "   ·   ".join(p for p in [inv.get("seller_email"), inv.get("seller_phone")] if p)
     if reg:
