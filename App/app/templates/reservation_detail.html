@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end with context %}
+{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count with context %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {{ page_header(
   reservation.internal_name,
@@ -112,7 +112,7 @@
 
 {# --- 2. Guests --------------------------------------------------------- #}
 <section id="guests">
-<div class="section-heading"><h2>{{ t('stay.detail.guests.title') }} <span class="muted">{{ progress.filled }} / {{ progress.expected if progress.expected is not none else '—' }}</span></h2>
+<div class="section-heading"><h2>{{ t('stay.detail.guests.title') }} {{ guest_count(progress, placeholder=true) }}</h2>
   <div class="actions"><a href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
 </div>
 
