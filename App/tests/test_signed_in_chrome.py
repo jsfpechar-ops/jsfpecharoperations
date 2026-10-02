@@ -220,15 +220,12 @@ def test_dashboard_status_counts_use_distinct_colours(host_with_property):
     assert "Waiting for guests" in page
 
 
-def test_stat_tiles_read_against_the_warm_canvas():
-    """The pale token tints vanished on the warm canvas; tiles carry their own."""
+def test_stat_tiles_use_the_status_tokens():
+    """Tiles take their colours from the criticality tokens, never hard-coded hex."""
     css = (Path(__file__).resolve().parents[1] / "app" / "static" / "host.css").read_text()
-    block = css.split(".dashboard-stats .stat-action", 1)[1].split(".host-month-filter", 1)[0]
-    assert "#ffe1cd" in block, "needs action tile must not reuse the washed-out amber tint"
-    assert "var(--amber-bg)" not in block
-    for name in ("stat-waiting", "stat-ready", "stat-overdue"):
-        assert css.count(f".dashboard-stats .{name} {{ background: #") == 1
-        assert f".dashboard-stats .{name} {{ background: var(--" not in css
+    for name, level in (("stat-overdue", "critical"), ("stat-action", "action"),
+                        ("stat-ready", "ready"), ("stat-waiting", "waiting")):
+        assert f".dashboard-stats .{name} {{ background: var(--status-{level}-bg);" in css
 
 
 def test_the_skipped_onboarding_still_gets_the_page_header(empty_host):
