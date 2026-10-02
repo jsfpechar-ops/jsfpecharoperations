@@ -592,7 +592,8 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     key = stay_fee_filing.period_key(group["cadence"], group["first"])
     if stay_fee_filing.latest(apartment["id"], key) and not correcting:
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
-    rate = stay_fee.clamp_rate(_form_str(form, "rate_czk") or apartment["stay_fee_rate_czk"])
+    # The stored rate must be the one the total was calculated with.
+    rate = period["rate_czk"] if period else stay_fee.clamp_rate(apartment["stay_fee_rate_czk"])
     collected: dict[int, int] = {}
     if period:
         for line in period["lines"]:
