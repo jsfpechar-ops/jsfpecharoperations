@@ -284,8 +284,13 @@ def property_period(
     *,
     live_only: bool = False,
     cadence: Optional[str] = None,
+    rate: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Figures for one property and the period (of its cadence) containing month."""
+    """Figures for one property and the period (of its cadence) containing month.
+
+    ``rate`` overrides the property's current rate: a correction recalculates a
+    sealed period at the rate it was sealed with, not at today's rate.
+    """
     chosen = cadence if cadence in CADENCES else cadence_of(apartment)
     if not live_only:
         from . import stay_fee_filing
@@ -296,7 +301,7 @@ def property_period(
     if not is_active(apartment):
         return None
     first, last = period_bounds(chosen, month)
-    rate = int(apartment["stay_fee_rate_czk"])
+    rate = int(apartment["stay_fee_rate_czk"]) if rate is None else int(rate)
     lines: List[Dict[str, Any]] = []
     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
         if not reporting.guest_has_signature(row):
