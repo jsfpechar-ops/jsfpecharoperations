@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import socket
 import sys
+import time
 from typing import Optional
 
 import requests
@@ -23,6 +24,8 @@ from .feed_url import CalendarFetchTarget, FeedUrlError
 USER_AGENT = "UbyHost/1.0 (+self-hosted Czech foreign-police reporting)"
 FETCH_TIMEOUT = 45
 MAX_FEED_BYTES = 5 * 1024 * 1024
+# A server that trickles bytes would otherwise hold the sync for ever.
+TOTAL_TIMEOUT_SECONDS = 60
 MAX_REDIRECTS = 3
 
 
@@ -196,11 +199,19 @@ def fetch_calendar_text(url: str) -> str:
         if content_length.isdigit() and int(content_length) > MAX_FEED_BYTES:
             raise CalendarFetchError("Calendar is too large.")
         body = bytearray()
+        deadline = time.monotonic() + TOTAL_TIMEOUT_SECONDS
         for chunk in response.iter_content(chunk_size=64 * 1024):
             body.extend(chunk)
             if len(body) > MAX_FEED_BYTES:
                 raise CalendarFetchError("Calendar is too large.")
-        text = bytes(body).decode(response.encoding or "utf-8", errors="replace")
+            if time.monotonic() > deadline:
+                raise CalendarFetchError("Calendar download took too long.")
+        # iCal is UTF-8 by spec. requests guesses ISO-8859-1 for any text/*
+        # without a charset, which garbled Czech names; trust only an explicit one.
+        declared = "charset" in response.headers.get("Content-Type", "").lower()
+        encoding = response.encoding if declared and response.encoding else "utf-8-sig"
+        # A BOM survives a declared "charset=utf-8" and breaks the parser.
+        text = bytes(body).decode(encoding, errors="replace").lstrip("\ufeff")
     except requests.RequestException as exc:
         raise CalendarFetchError(f"Could not download the calendar: {exc}") from exc
     finally:
