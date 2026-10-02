@@ -395,6 +395,32 @@ def _link_challenged(token: str, apartment) -> bool:
     return rate_limit.pin_token_blocked(f"{token}:{auth.pin_fingerprint(token, expected)}")
 
 
+def clear_resign_when_everyone_signed(reservation_id: int) -> None:
+    """Lift the "sign again" hold once every guest who signed has signed again.
+
+    The sync records, in the alert, the signature time of every guest who had
+    signed when the dates moved. A guest whose signature time is unchanged
+    still holds a form with the old dates, even when the sync moved the row
+    onto the new dates (owner decision Q6). The host can still send by hand.
+    Alerts raised before that record existed fall back to the date check.
+    """
+    key = f"dates_changed_resign:{reservation_id}"
+    resign = alerts.open_alert(key)
+    stay = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not resign or not stay:
+        return
+    party = db.query(
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
+        (reservation_id,),
+    )
+    if any(reporting.signature_dates_stale(g, stay) for g in party):
+        return
+    signed_then = alerts.stored_params(dict(resign)).get("signed") or {}
+    if any(str(g["id"]) in signed_then and g["signed_at"] == signed_then[str(g["id"])] for g in party):
+        return
+    alerts.resolve(key)
+
+
 def _host_owns_apartment(request: Request, apartment) -> bool:
     """Signed-in host filling the guest form for their own property."""
     if not apartment:
@@ -1723,14 +1749,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     # the warning - but only once *nobody* on the stay is still holding an
     # older signature. Resolving on any one guest's save hid the warning while
     # the rest of the party still had the old dates on file.
-    filing = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
-    if filing:
-        still_stale = db.query(
-            "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL",
-            (reservation_id,),
-        )
-        if not any(reporting.signature_dates_stale(g, filing) for g in still_stale):
-            alerts.resolve(f"dates_changed_resign:{reservation_id}")
+    clear_resign_when_everyone_signed(reservation_id)
     await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
 
     response = RedirectResponse(
