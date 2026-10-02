@@ -340,11 +340,28 @@ def _report(**kw):
     {"recipient_name": ""}, {"vs": ""}, {"total_czk": 90}, {"period_end": "2026-08-30"},
     {"cadence": "quarterly"},                                   # Aug..Aug is not a quarter
     {"rows": [{"property_name": "X", "liable_nights": 2, "rate_czk": 50, "amount_czk": 90}]},
+    {"rows": [{"property_name": "X", "liable_nights": -2, "rate_czk": 50, "amount_czk": -100}],
+     "liable_nights": -2, "total_czk": -100},
     {"exempt_nights": 3, "not_charged": [{"reason": "x", "count": 1, "nights": 2}]},
 ])
 def test_pdf_refuses_bad_reports(bad):
     with pytest.raises(ValueError):
         stay_fee_remittance_pdf.render(_report(**bad))
+
+
+def test_pdf_allows_a_negative_adjustment_when_the_total_stays_due():
+    report = _report(
+        rows=[
+            {"property_name": "X", "liable_nights": 4, "rate_czk": 50, "amount_czk": 200},
+            {"property_name": "Úprava výpočtu", "property_address": "Souhrnná oprava, bez údajů hostů",
+             "liable_nights": -1, "rate_czk": 50, "amount_czk": -50},
+        ],
+        liable_nights=3,
+        total_czk=150,
+    )
+    text = PdfReader(io.BytesIO(stay_fee_remittance_pdf.render(report))).pages[0].extract_text()
+    assert "Úprava výpočtu" in text
+    assert "150 Kč" in text
 
 
 def test_pdf_plurals_and_many_rows_paginate():

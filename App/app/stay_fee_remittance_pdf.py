@@ -48,8 +48,13 @@ def _required(value, label: str) -> str:
     return text
 
 
-def _int(value, label: str) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+def _int(value, label: str, *, signed: bool = False) -> int:
+    """An integer field. A facility line may be negative; a rate may not.
+
+    A removal adjustment is its own row (gross guest nights stay visible), so
+    that line's nights and amount are negative while the report total is not.
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or (value < 0 and not signed):
         raise ValueError(f"{label} must be a non-negative integer")
     return value
 
@@ -74,13 +79,15 @@ def validate(report: dict) -> None:
     total_nights = total_czk = 0
     for row in report.get("rows") or []:
         _required(row.get("property_name"), "property_name")
-        nights = _int(row.get("liable_nights"), "liable_nights")
+        nights = _int(row.get("liable_nights"), "liable_nights", signed=True)
         rate = _int(row.get("rate_czk"), "rate_czk")
-        amount = _int(row.get("amount_czk"), "amount_czk")
+        amount = _int(row.get("amount_czk"), "amount_czk", signed=True)
         if nights * rate != amount:
             raise ValueError("Facility amount does not match nights × rate")
         total_nights += nights
         total_czk += amount
+    if total_nights < 0 or total_czk < 0:
+        raise ValueError("Report total must be a non-negative integer")
     if report.get("liable_nights") != total_nights or report.get("total_czk") != total_czk:
         raise ValueError("Report totals do not match facility rows")
     exempt = 0
