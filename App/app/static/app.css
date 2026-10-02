@@ -1155,6 +1155,8 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pill.blue { background: var(--status-ready-bg); color: var(--status-ready-ink); border-color: var(--status-ready-border); }
 .pill.teal { background: var(--status-waiting-bg); color: var(--status-waiting-ink); border-color: var(--status-waiting-border); }
 .pill.green { background: var(--status-done-bg); color: var(--status-done-ink); border-color: var(--status-done-border); }
+.guest-count { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-secondary); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.guest-count svg { width: 14px; height: 14px; flex: 0 0 auto; }
 
 .deadline { font-weight: 600; font-size: 13.5px; }
 .deadline.urgent { color: var(--status-critical-bg); }
