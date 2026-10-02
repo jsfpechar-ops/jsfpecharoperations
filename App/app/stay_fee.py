@@ -28,6 +28,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import db, payments, reporting, validation
+from .csv_safety import csv_safe
 
 MAX_RATE_CZK = 50        # §3d
 MAX_CALENDAR_DAYS = 60   # §3a
@@ -624,5 +625,5 @@ def register_csv(rows: List[Dict[str, Any]]) -> bytes:
     writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
     writer.writerow([label for _, label in REGISTER_COLUMNS])
     for row in rows:
-        writer.writerow([row[key] for key, _ in REGISTER_COLUMNS])
+        writer.writerow([csv_safe(row[key]) for key, _ in REGISTER_COLUMNS])
     return ("﻿" + buffer.getvalue()).encode("utf-8")
