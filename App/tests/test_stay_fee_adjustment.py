@@ -1,10 +1,12 @@
 """Aggregate stay-fee corrections stay out of the guest register."""
 from __future__ import annotations
 
+import io
 import secrets
 from datetime import date
 
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 
 from app import auth, claim, db, stay_fee_filing
 from app.main import app
@@ -142,6 +144,50 @@ def test_filed_period_rejects_an_open_adjustment(monkeypatch):
         "SELECT COUNT(*) AS n FROM stay_fee_adjustment WHERE apartment_id = ?",
         (apartment,),
     )["n"] == 0
+
+
+def test_a_downward_adjustment_can_be_filed(monkeypatch):
+    """Removing bed-days must still seal the period. The PDF used to reject the
+    negative adjustment line, so finalize returned 'report blocked' and nothing
+    was saved."""
+    monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
+    client, apartment = _host()
+    guest_id = _guest_stay(apartment)
+    token = _csrf(client, f"/stay-fees/{apartment}?month=2026-08&lang=en")
+    removed = client.post(
+        f"/stay-fees/{apartment}/adjustment",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "direction": "remove",
+            "mode": "bed_days",
+            "bed_days": "1",
+            "reason": "Guest left a day early",
+        },
+        follow_redirects=False,
+    )
+    assert removed.status_code == 303
+    token = _csrf(client, f"/stay-fees/{apartment}?month=2026-08&lang=en")
+    saved = client.post(
+        f"/stay-fees/{apartment}/finalize",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=True,
+    )
+    assert saved.status_code == 200
+    assert "Period saved" in saved.text
+    row = stay_fee_filing.latest(apartment, "2026-08")
+    assert row is not None
+    assert row["liable_days"] == 3
+    assert row["total_due_czk"] == 150
+    text = PdfReader(io.BytesIO(stay_fee_filing.pdf_bytes(row))).pages[0].extract_text()
+    assert "Úprava výpočtu" in text
+    assert "150 Kč" in text
 
 
 def test_an_adjustment_saved_in_a_filing_cannot_be_undone(monkeypatch):
