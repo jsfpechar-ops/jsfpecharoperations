@@ -215,3 +215,52 @@ def test_an_issued_invoice_does_not_block_workspace_deletion():
     )
     retention._workspace_deletion_step(date.today(), False, None)
     assert db.query_one("SELECT id FROM invoice WHERE id = ?", (invoice,)) is None
+
+
+def test_a_workspace_with_filed_stay_fees_and_property_invoices_is_deleted_completely():
+    owner, entity, apartment, _reservation, _guest = _seed("ws-full")
+    now = db.utcnow()
+    db.insert("invoice_sequence", {"legal_entity_id": entity, "year": 2026, "last_no": 1})
+    db.insert(
+        "invoice",
+        {
+            "legal_entity_id": entity, "apartment_id": apartment, "kind": "invoice",
+            "seq_year": 2026, "seq_no": 1, "number": "INV-2", "vs": "2", "lang": "en",
+            "vat_status": "non_payer", "issue_date": "2026-01-01", "seller_name": "S",
+            "seller_seat": "P", "buyer_name": "B", "total_haler": 100, "issued_at": now,
+            "owner_user_id": owner, "created_at": now,
+        },
+    )
+    filing = db.insert(
+        "stay_fee_filing",
+        {
+            "apartment_id": apartment, "period_key": "2026-01", "cadence": "monthly",
+            "rate_czk": 50, "liable_days": 1, "exempt_days": 0, "total_due_czk": 50,
+            "total_collected_czk": 50, "created_at": now,
+        },
+    )
+    db.insert(
+        "stay_fee_adjustment",
+        {
+            "apartment_id": apartment, "period_key": "2026-01", "direction": "add",
+            "mode": "bed_days", "bed_days": 1, "reason_enc": "x", "created_at": now,
+            "filing_id": filing,
+        },
+    )
+    mail = db.insert(
+        "email_outbox",
+        {
+            "idempotency_key": "ws-full-mail", "kind": "guest_link", "apartment_id": apartment,
+            "owner_user_id": owner, "to_email": "guest@example.invalid", "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        ((date.today() - timedelta(days=1)).isoformat(), owner),
+    )
+    retention._workspace_deletion_step(date.today(), False, None)
+    assert db.query_one("SELECT id FROM user_account WHERE id = ?", (owner,)) is None
+    assert db.query_one("SELECT id FROM apartment WHERE id = ?", (apartment,)) is None
+    assert db.query_one("SELECT id FROM legal_entity WHERE id = ?", (entity,)) is None
+    assert db.query_one("SELECT id FROM email_outbox WHERE id = ?", (mail,)) is None
