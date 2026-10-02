@@ -867,6 +867,83 @@ def _submission_problem(
     )
 
 
+# --- workspace deletion ----------------------------------------------------
+#
+# The host is the controller and keeps the duty to hold invoices, stay-fee
+# filings and Doručenky. Sign-in is disabled the moment deletion is scheduled,
+# so the notice tells them to ask support for the export an admin can download.
+
+WORKSPACE_DELETION_STAGES = ("scheduled", "week_before")
+
+
+def workspace_contact_emails(owner_user_id: int) -> List[str]:
+    """Every distinct contact address on the workspace's legal entities."""
+    rows = db.query(
+        "SELECT contact_email FROM legal_entity WHERE owner_user_id = ? ORDER BY id",
+        (owner_user_id,),
+    )
+    found: List[str] = []
+    for row in rows:
+        address = mail.normalise_email(row["contact_email"] or "")
+        if address and address not in found:
+            found.append(address)
+    return found
+
+
+def build_workspace_deletion(*, stage: str, date: str, lang: Optional[str] = None) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    support = config.OPERATOR_EMAIL
+    subject = _text(lang, f"mail.workspace_deletion.subject_{stage}", date=date)
+    heading = _text(lang, "mail.workspace_deletion.heading", date=date)
+    intro = _text(lang, f"mail.workspace_deletion.intro_{stage}", date=date)
+    keep_label = _text(lang, "mail.workspace_deletion.keep_label")
+    keep = _text(lang, "mail.workspace_deletion.keep", date=date, support=support)
+    footer = _text(lang, "mail.workspace_deletion.footer", support=support)
+    text = "\n".join([intro, "", f"{keep_label}: {keep}", "", "--", "UbyHost", footer])
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_section(keep_label, keep),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=heading,
+            preheader=intro,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }
+
+
+def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:
+    """Queue the deletion notice to every contact address. Returns how many."""
+    if stage not in WORKSPACE_DELETION_STAGES:
+        raise ValueError(f"unknown stage {stage}")
+    date = validation.fmt_date(due_at[:10])
+    content = build_workspace_deletion(stage=stage, date=date)
+    payload: Dict[str, Any] = {
+        "text": content["text"],
+        "html": content["html"],
+        "lang": HOST_MAIL_LANGUAGE,
+        "reply_to": config.OPERATOR_EMAIL,
+    }
+    queued = 0
+    for address in workspace_contact_emails(owner_user_id):
+        if mail.enqueue(
+            kind="workspace_deletion",
+            idempotency_key=f"workspace_deletion:{owner_user_id}:{due_at}:{stage}:{address}",
+            to_email=address,
+            subject=content["subject"],
+            payload=payload,
+            owner_user_id=owner_user_id,
+        ):
+            queued += 1
+    return queued
+
+
 # --- guest mail -------------------------------------------------------------
 #
 # claim.py decides when these go out; the wording and the markup live here with
