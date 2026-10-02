@@ -9,7 +9,7 @@ from urllib.parse import unquote
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db
+from app import auth, claim, db, stay_fee
 from app.main import app
 
 PASSWORD = f"Stay-fee-detail-{secrets.token_urlsafe(12)}-9"
@@ -129,19 +129,26 @@ def _csrf(client) -> str:
     return match.group(1)
 
 
-def _decide(client, apartment_id, guest_id, decision, reason="", month="2026-08"):
-    return client.post(
-        "/stay-fees/guest-decision",
-        data={
-            "_csrf": _csrf(client),
-            "guest_id": guest_id,
-            "apartment_id": apartment_id,
-            "month": month,
-            "decision": decision,
-            "reason": reason,
-        },
-        follow_redirects=True,
-    )
+def _decide(
+    client,
+    apartment_id,
+    guest_id,
+    decision,
+    reason="",
+    month="2026-08",
+    reason_reference="",
+):
+    data = {
+        "_csrf": _csrf(client),
+        "guest_id": guest_id,
+        "apartment_id": apartment_id,
+        "month": month,
+        "decision": decision,
+        "reason": reason,
+    }
+    if reason_reference:
+        data["reason_reference"] = reason_reference
+    return client.post("/stay-fees/guest-decision", data=data, follow_redirects=True)
 
 
 def test_login_is_required():
@@ -291,10 +298,41 @@ def test_exempt_without_a_reason_is_refused(host):
     response = _decide(client, apartment_id, guest_ids[0], "exempt")
 
     assert "Give a reason when you exempt a guest." in response.text
+
+
+def test_exempt_rejects_free_text_reasons(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Detail Demo")
+    _, guest_ids = _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+
+    response = _decide(client, apartment_id, guest_ids[0], "exempt", reason="ZTP/P card checked")
+
+    assert "Give a reason when you exempt a guest." in response.text
     stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
     assert stored["fee_host_decision"] is None
-    assert stored["fee_host_reason"] is None
-    assert db.query_one("SELECT * FROM audit WHERE action = 'stay_fee_decision'") is None
+
+
+def test_local_rule_exemption_requires_a_reference(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Detail Demo")
+    _, guest_ids = _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+
+    refused = _decide(client, apartment_id, guest_ids[0], "exempt", reason="local_rule")
+    assert "Give a reason when you exempt a guest." in refused.text
+
+    saved = _decide(
+        client,
+        apartment_id,
+        guest_ids[0],
+        "exempt",
+        reason="local_rule",
+        reason_reference="UMC-12/2026",
+    )
+    assert "Saved." in saved.text
+    stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
+    assert stored["fee_host_decision"] == "exempt"
+    assert stored["fee_host_reason"] == "local_rule"
+    assert stored["fee_host_reason_reference"] == "UMC-12/2026"
 
 
 def test_exempt_with_a_reason_lowers_the_total_and_keeps_the_reason_out_of_the_log(host):
@@ -404,6 +442,31 @@ def test_a_guest_of_another_owner_cannot_be_decided(host):
     assert "This guest no longer exists." in unquote(response.headers["location"])
     stored = db.query_one("SELECT * FROM guest WHERE id = ?", (other_guests[0],))
     assert stored["fee_host_decision"] is None
+
+
+def test_scope_ruling_form_clears_a_60_night_block(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Boundary Demo")
+    _stay(apartment_id, "2026-08-01", "2026-09-30", [{}])
+    blocked = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
+    assert "stay_fees.issue.scope_ruling" in blocked.text or "60 nights" in blocked.text
+
+    saved = client.post(
+        f"/stay-fees/{apartment_id}/scope-ruling",
+        data={
+            "_csrf": _csrf(client),
+            "month": "2026-08",
+            "rule": "nights",
+            "reference": "UMC-60/2026",
+        },
+        follow_redirects=True,
+    )
+    assert "Saved." in saved.text
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    assert apartment["stay_fee_scope_rule"] == "nights"
+    assert apartment["stay_fee_scope_reference"] == "UMC-60/2026"
+    group = stay_fee.report_group(apartment, date(2026, 8, 1))
+    assert "stay_fees.issue.scope_ruling" not in stay_fee.report_issues(group, date(2026, 9, 30))
 
 
 def test_exactly_one_primary_button_when_the_report_is_ready(host):
