@@ -4,7 +4,7 @@ Two things are pinned here. The list is sorted with the diacritics folded away,
 because ``sorted`` compares code points and would file "Česko" after "Zimbabwe"
 -- a guest looking under "C" has to find their own country. And the eight
 nationalities a Czech host actually files are lifted into their own group at the
-top, so the guest does not scroll a 253-row wheel for the common case. The field
+top, so the guest does not scroll a 254-row wheel for the common case. The field
 still starts empty: the guest's phone language says nothing about their
 nationality.
 """
@@ -180,3 +180,11 @@ def test_the_country_field_starts_empty():
         assert '<option value=""' in form.text
     finally:
         _cleanup()
+
+
+def test_kosovo_can_be_picked_and_passes_validation():
+    from app import validation
+
+    assert "Kosovo" in _labels("en")
+    assert validation.country_name("XKX", "cs") == "Kosovo"
+    assert "XKX" in validation.country_codes()
