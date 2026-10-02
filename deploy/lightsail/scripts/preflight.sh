@@ -69,6 +69,14 @@ if [ "${DEPLOYMENT}" = "production" ] && [ "${UBYHOST_ICAL_ALLOW_PRIVATE:-0}" = 
   die "UBYHOST_ICAL_ALLOW_PRIVATE must not be enabled on production"
 fi
 
+if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_AGE_RECIPIENT:-}" ]; then
+  die "UBYHOST_BACKUP_AGE_RECIPIENT is empty — the nightly backup refuses to run on production without it"
+fi
+
+if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ]; then
+  warn "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup will go unnoticed"
+fi
+
 if [ -n "${UBYHOST_SECRET_KEY:-}" ] && [ "${#UBYHOST_SECRET_KEY}" -lt 32 ]; then
   die "UBYHOST_SECRET_KEY must be at least 32 characters (or leave empty for auto-generate)"
 fi
