@@ -201,7 +201,7 @@
             <a href="/reservations/{{ line.reservation_id }}">{{ line.name }}</a>
             <div class="small muted">{{ line.stay_from }} – {{ line.stay_to }} · {{ tp('stay_fees.nights', line.nights) }}</div>
           </div>
-          <span class="pill {{ 'amber' if line.status == 'liable' else ('grey' if line.status == 'not_subject' else 'green') }}">{{ t(line.status_key) }}</span>
+          <span class="pill grey no-dot">{{ t(line.status_key) }}</span>
           <span class="fee-amount">{{ line.amount_display }}</span>
           {% if line.local_hint %}
             <div class="small muted fee-hint">{{ t('stay_fees.hint.local_resident') }}</div>
