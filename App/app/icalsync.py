@@ -299,6 +299,32 @@ def platform_of(url: str, ics_text: str = "") -> str:
     return "ical"
 
 
+def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> None:
+    """A cancelled stay that already has guest forms is never filed: say so.
+
+    Some portals re-issue a booking under a new UID when it is modified, so a
+    stay with completed forms may simply have moved. The host decides.
+    """
+    # Only guests the police still expect: Czech nationals are never filed.
+    registered = db.query_one(
+        "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+        "AND submit_state NOT IN ('sent', 'not_required')",
+        (reservation["id"],),
+    )
+    if not registered or not registered["n"]:
+        return
+    alerts.raise_alert(
+        "warning",
+        "cancelled_with_guests",
+        f"A stay from {reservation['date_from']} with guest forms was cancelled in the calendar.",
+        "Nothing will be reported for it. If the booking only moved, set the stay back to Active.",
+        dedupe_key=f"cancelled_with_guests:{reservation['id']}",
+        apartment_id=apartment_id,
+        reservation_id=reservation["id"],
+        params={"date": reservation["date_from"], "variant": variant},
+    )
+
+
 def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str, stats: Dict[str, Any]) -> None:
     """Mark an active future stay as cancelled when the feed signals cancellation."""
     existing = db.query_one(
@@ -330,6 +356,7 @@ def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str,
     from . import claim as stay_claim
 
     stay_claim.expire_on_cancel(existing)
+    _warn_if_guests_registered(existing, apartment_id, "cancelled")
     stats["cancelled"] += 1
 
 
@@ -752,6 +779,7 @@ def sync_feed(
         from . import claim as stay_claim
 
         stay_claim.expire_on_cancel(row)
+        _warn_if_guests_registered(row, feed["apartment_id"], "disappeared")
         stats["cancelled"] += 1
 
     db.update(
