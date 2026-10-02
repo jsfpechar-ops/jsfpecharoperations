@@ -350,3 +350,32 @@ def test_a_failing_connection_is_reported_not_retried_forever(monkeypatch):
     # Port 1 has no listener, so the pinned dial fails on every attempt.
     with pytest.raises(CalendarFetchError, match="Could not download the calendar"):
         fetch_calendar_text("http://dead.example:1/calendar.ics")
+
+
+def test_a_calendar_is_read_as_utf8_and_loses_its_bom(monkeypatch):
+    """No charset means UTF-8, not Latin-1; a BOM never reaches the parser."""
+    _allow_local_servers(monkeypatch, "feed.example")
+    payload = "﻿BEGIN:VCALENDAR\r\nSUMMARY:Novák Šťastný\r\nEND:VCALENDAR\r\n".encode()
+
+    class Plain(_Routes):
+        body = payload
+
+    class Declared(_Routes):
+        body = payload
+
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/calendar; charset=utf-8")
+            self.send_header("Content-Length", str(len(self.body)))
+            self.end_headers()
+            self.wfile.write(self.body)
+
+    plain = _serve(Plain, "127.0.0.1", 0)
+    declared = _serve(Declared, "127.0.0.1", 0)
+    try:
+        for server in (plain, declared):
+            text = fetch_calendar_text(f"http://feed.example:{server.server_port}/calendar.ics")
+            assert text.startswith("BEGIN:VCALENDAR")
+            assert "Novák Šťastný" in text
+    finally:
+        _stop(plain, declared)
