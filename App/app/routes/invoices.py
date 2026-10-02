@@ -5,6 +5,7 @@ An invoice is NOT tied to a stay. Included in main.py after admin.router.
 from __future__ import annotations
 
 from datetime import date
+from functools import lru_cache
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, Request
@@ -41,9 +42,16 @@ def _lang(request: Request) -> str:
     return host_i18n.lang_from_request(request)
 
 
+@lru_cache(maxsize=1)
+def _invoice_columns() -> str:
+    """Every invoice column except the stored PDF, which only downloads read."""
+    names = [row["name"] for row in db.query("PRAGMA table_info(invoice)")]
+    return ", ".join(name for name in names if name != "pdf_blob")
+
+
 def _load_invoice(request: Request, invoice_id: int):
     return db.query_one(
-        "SELECT * FROM invoice WHERE id = ? AND owner_user_id IS ?",
+        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND owner_user_id IS ?",
         (invoice_id, access.owner_id(request)),
     )
 
