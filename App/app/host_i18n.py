@@ -815,6 +815,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.guest_pin_abuse.detail": "Review the message PIN and rotate it if the link may have been shared.",
         "notification.guest_pin_locked_out.title": "Guest link locked out for 24 hours after repeated wrong PINs.",
         "notification.guest_pin_locked_out.detail": "Every guest using this link is refused until you generate a new PIN. The lockout followed attempts spread over many addresses, so the link itself is being guessed at.",
+        "notification.guest_pin_challenged.title": "Guest link now asks for a security check after repeated wrong PINs.",
+        "notification.guest_pin_challenged.detail": "Guests can still open it after the check. The wrong PINs came from many addresses; generate a new PIN if the link may have leaked.",
         # Host flash messages. `back()` carries them through the query string,
         # so they are translated where they are raised, not where they render.
         "flash.demo.loaded": "Demo property loaded. Use “Clear demo data” on Overview when finished.",
@@ -2336,6 +2338,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "notification.guest_pin_abuse.detail": "Zkontrolujte PIN ve zprávě a vygenerujte nový, pokud se odkaz mohl dostat k někomu dalšímu.",
         "notification.guest_pin_locked_out.title": "Hostovský odkaz je po opakovaných chybných PINech zablokován na 24 hodin.",
         "notification.guest_pin_locked_out.detail": "Dokud nevygenerujete nový PIN, žádný host se přes tento odkaz nedostane. Pokusy přicházely z mnoha adres, takže se někdo snaží hádat PIN k odkazu.",
+        "notification.guest_pin_challenged.title": "Hostovský odkaz po opakovaných chybných PINech vyžaduje bezpečnostní kontrolu.",
+        "notification.guest_pin_challenged.detail": "Hosté se přes odkaz po kontrole stále dostanou. Chybné PINy přicházely z mnoha adres; pokud mohl odkaz uniknout, vygenerujte nový PIN.",
         "flash.demo.loaded": "Demo ubytování bylo načteno. Až budete hotovi, použijte v Přehledu „Vymazat demo data“.",
         "flash.demo.cleared": "Demo data byla vymazána.",
         "flash.entities.added_first": "Přidáno: %(name)s. Nyní přidejte první ubytování.",
