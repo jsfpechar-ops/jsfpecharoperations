@@ -19,6 +19,7 @@ from .. import (
     db,
     host_i18n,
     incidents,
+    mail_notify,
     rate_limit,
     security,
     turnstile,
@@ -696,6 +697,7 @@ async def user_schedule_deletion(user_id: int, request: Request):
         datetime.now(timezone.utc) + timedelta(days=WORKSPACE_DELETION_DAYS)
     ).replace(microsecond=0).isoformat()
     db.update("user_account", user_id, {"deletion_due_at": due, "active": 0})
+    mail_notify.workspace_deletion(user_id, due, "scheduled")
     db.audit(
         "workspace_deletion_scheduled",
         f"user={user_id} due={due}",
