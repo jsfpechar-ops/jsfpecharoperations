@@ -16,7 +16,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from . import alerts, config, db, housebook, invoices, passport_photos
+from . import alerts, config, db, housebook, invoices, mail_notify, passport_photos
 
 log = logging.getLogger(__name__)
 
@@ -198,6 +198,8 @@ def _workspace_deletion_step(today: date, dry_run: bool, owner_user_id: Optional
     """
     if owner_user_id is not None:
         return 0
+    if not dry_run:
+        _workspace_deletion_reminders()
     rows = db.query(
         "SELECT id FROM user_account WHERE deletion_due_at IS NOT NULL AND deletion_due_at <= ?",
         (db.utcnow(),),
@@ -207,6 +209,23 @@ def _workspace_deletion_step(today: date, dry_run: bool, owner_user_id: Optional
     for row in rows:
         _delete_workspace(row["id"])
     return len(rows)
+
+
+WORKSPACE_REMINDER_DAYS = 7
+
+
+def _workspace_deletion_reminders() -> None:
+    """Remind each workspace due within a week. The outbox key sends it once."""
+    soon = (
+        datetime.now(timezone.utc) + timedelta(days=WORKSPACE_REMINDER_DAYS)
+    ).replace(microsecond=0).isoformat()
+    rows = db.query(
+        "SELECT id, deletion_due_at FROM user_account "
+        "WHERE deletion_due_at IS NOT NULL AND deletion_due_at > ? AND deletion_due_at <= ?",
+        (db.utcnow(), soon),
+    )
+    for row in rows:
+        mail_notify.workspace_deletion(row["id"], row["deletion_due_at"], "week_before")
 
 
 def _delete_workspace(owner_id: int) -> None:
