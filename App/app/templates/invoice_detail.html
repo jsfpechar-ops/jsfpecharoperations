@@ -127,6 +127,9 @@
       {% endif %}
     </table>
   </div>
+  {% if invoice.note %}
+  <p class="small muted"><strong>{{ t('invoice.note') }}:</strong> {{ invoice.note }}</p>
+  {% endif %}
   </div>{# /invoice-document #}
 
   {% if invoice.kind == 'invoice' and not invoice.corrects_invoice_id %}
