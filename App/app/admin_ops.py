@@ -160,21 +160,26 @@ def stuck_submissions(limit: int = ROW_LIMIT) -> Dict[str, Any]:
 def feeds_needing_attention(limit: int = ROW_LIMIT) -> Dict[str, Any]:
     """Active feeds whose last sync failed, looked suspect, or is too old.
 
-    ``last_sync_at`` moves on every attempt, so for a feed whose status is
-    ``ok`` it is the last successful sync; any other status is listed anyway.
+    Since WP15 an unchanged calendar is not read again, so ``last_sync_at``
+    stays old for a quiet feed. ``last_checked_at`` moves on every check; for a
+    feed whose status is ``ok`` it is the last successful check. Feeds not yet
+    checked since WP15 fall back to ``last_sync_at``. Any status other than
+    ``ok`` is listed anyway.
     """
     cutoff = _iso(_now() - timedelta(hours=FEED_STALE_HOURS))
     where = (
         "FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
         "WHERE f.active = 1 AND a.active = 1 AND a.archived_at IS NULL "
         "AND (f.last_status IS NULL OR f.last_status <> 'ok' "
-        "OR f.last_sync_at IS NULL OR f.last_sync_at < ?)"
+        "OR COALESCE(f.last_checked_at, f.last_sync_at) IS NULL "
+        "OR COALESCE(f.last_checked_at, f.last_sync_at) < ?)"
     )
     count_row = db.query_one(f"SELECT COUNT(*) AS n {where}", (cutoff,))
     rows = db.query(
-        "SELECT f.id, f.label, f.last_status, f.last_sync_at, a.internal_name, "
+        "SELECT f.id, f.label, f.last_status, "
+        "COALESCE(f.last_checked_at, f.last_sync_at) AS last_checked, a.internal_name, "
         "a.owner_user_id, (SELECT username FROM user_account u WHERE u.id = a.owner_user_id) "
-        f"AS workspace {where} ORDER BY f.last_sync_at LIMIT ?",
+        f"AS workspace {where} ORDER BY last_checked LIMIT ?",
         (cutoff, limit),
     )
     now = _now()
@@ -188,7 +193,7 @@ def feeds_needing_attention(limit: int = ROW_LIMIT) -> Dict[str, Any]:
                 "property": row["internal_name"],
                 "owner_user_id": row["owner_user_id"],
                 "workspace": row["workspace"] or "",
-                "age_minutes": age_minutes(row["last_sync_at"], now),
+                "age_minutes": age_minutes(row["last_checked"], now),
             }
             for row in rows
         ],

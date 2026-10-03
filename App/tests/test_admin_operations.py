@@ -175,3 +175,39 @@ def test_failed_mail_is_listed_without_the_recipient():
     result = admin_ops.mail_problems()
     assert any(row["kind"] == "submission_problem" and row["attempts"] == 8 for row in result["rows"])
     assert "secret.recipient" not in repr(result)
+
+
+def test_a_quiet_feed_checked_recently_is_not_stale():
+    """WP15: an unchanged calendar keeps an old last_sync_at; last_checked_at counts."""
+    host_id = _account("feeds", "host")
+    assert demo.seed(host_id)
+    feeds = db.query(
+        "SELECT f.id FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
+        "WHERE a.owner_user_id = ?",
+        (host_id,),
+    )
+    assert len(feeds) >= 1, "the demo seed should create a calendar feed"
+    now = datetime.now(timezone.utc)
+    old = (now - timedelta(hours=admin_ops.FEED_STALE_HOURS + 2)).replace(microsecond=0).isoformat()
+    recent = (now - timedelta(minutes=10)).replace(microsecond=0).isoformat()
+    feed_id = feeds[0]["id"]
+    db.execute(
+        "UPDATE ical_feed SET active = 1, last_status = 'ok', last_sync_at = ?, "
+        "last_checked_at = ? WHERE id = ?",
+        (old, recent, feed_id),
+    )
+    listed = {row["feed_id"] for row in admin_ops.feeds_needing_attention(limit=500)["rows"]}
+    assert feed_id not in listed
+
+    db.execute("UPDATE ical_feed SET last_checked_at = ? WHERE id = ?", (old, feed_id))
+    rows = admin_ops.feeds_needing_attention(limit=500)["rows"]
+    stale = [row for row in rows if row["feed_id"] == feed_id]
+    assert stale and stale[0]["age_minutes"] >= admin_ops.FEED_STALE_HOURS * 60
+
+    # Not yet checked since WP15: last_sync_at still decides.
+    db.execute(
+        "UPDATE ical_feed SET last_checked_at = NULL, last_sync_at = ? WHERE id = ?",
+        (recent, feed_id),
+    )
+    listed = {row["feed_id"] for row in admin_ops.feeds_needing_attention(limit=500)["rows"]}
+    assert feed_id not in listed

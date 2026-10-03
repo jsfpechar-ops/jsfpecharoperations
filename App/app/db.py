@@ -993,6 +993,12 @@ ADDED_COLUMNS = (
     ("guest", "manual_reference", "TEXT"),
     ("guest", "manual_marked_at", "TEXT"),
     ("guest", "manual_prev_state", "TEXT"),
+    # WP15: what the calendar server said last time, so an unchanged feed is
+    # neither downloaded in full (ETag / Last-Modified) nor parsed (body hash).
+    ("ical_feed", "etag", "TEXT"),
+    ("ical_feed", "last_modified", "TEXT"),
+    ("ical_feed", "body_sha256", "TEXT"),
+    ("ical_feed", "last_checked_at", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column

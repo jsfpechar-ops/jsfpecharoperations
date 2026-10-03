@@ -479,7 +479,9 @@
               {% elif feed.last_status == 'suspect' %}<span class="pill amber">{{ t('apartment.form.feed.status.suspect') }}</span>
               {% elif feed.last_status == 'error' %}<span class="pill red">{{ t('apartment.form.feed.status.error') }}</span>
               {% else %}<span class="pill grey">{{ t('apartment.form.feed.status.never') }}</span>{% endif %}
-              {% if feed.last_sync_at %}<div class="small muted">{{ feed.last_sync_at | datetime_local }}</div>{% endif %}
+              {# last_checked_at: the latest check, also when the calendar had not changed (WP15). #}
+              {% set checked_at = feed.last_checked_at or feed.last_sync_at %}
+              {% if checked_at %}<div class="small muted">{{ checked_at | datetime_local }}</div>{% endif %}
               {% if feed.last_error %}<div class="small err-text">{{ feed.last_error }}</div>{% endif %}
             </td>
             <td class="small mono truncate" data-label="{{ t('apartment.form.feed.url') }}">{{ feed.url }}</td>

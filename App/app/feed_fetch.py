@@ -10,6 +10,7 @@ from __future__ import annotations
 import socket
 import sys
 import time
+from dataclasses import dataclass
 from typing import Optional
 
 import requests
@@ -31,6 +32,33 @@ MAX_REDIRECTS = 3
 
 class CalendarFetchError(Exception):
     pass
+
+
+# A stored validator is sent back verbatim, so anything a server could use to
+# smuggle a header (or that requests would refuse) is dropped instead.
+MAX_VALIDATOR_LENGTH = 256
+
+
+def clean_validator(value: Optional[str]) -> Optional[str]:
+    """An ETag or Last-Modified value safe to store and send back, or None."""
+    if not value:
+        return None
+    value = value.strip()
+    if not value or len(value) > MAX_VALIDATOR_LENGTH:
+        return None
+    if any(not 0x20 <= ord(ch) <= 0x7E for ch in value):
+        return None
+    return value
+
+
+@dataclass
+class FetchedCalendar:
+    """One download: the text, or ``not_modified`` when the server answered 304."""
+
+    text: str
+    etag: Optional[str] = None
+    last_modified: Optional[str] = None
+    not_modified: bool = False
 
 
 def _socket_connect_pinned(
@@ -162,14 +190,34 @@ def _request_get(
 
 def fetch_calendar_text(url: str) -> str:
     """Download an iCal document; each hop is validated and pinned to resolved IPs."""
+    return fetch_calendar(url).text
+
+
+def fetch_calendar(
+    url: str, etag: Optional[str] = None, last_modified: Optional[str] = None
+) -> FetchedCalendar:
+    """fetch_calendar_text, made conditional when the previous answer's validators are known.
+
+    With ``etag`` or ``last_modified`` the request carries ``If-None-Match`` /
+    ``If-Modified-Since``, and a 304 comes back as ``not_modified`` with no
+    text. The validators of a full answer are returned for the next request.
+    """
     try:
         current = feed_url.resolve_calendar_target(url)
     except FeedUrlError as exc:
         raise CalendarFetchError(str(exc)) from exc
     headers = {"User-Agent": USER_AGENT, "Accept": "text/calendar"}
+    etag = clean_validator(etag)
+    last_modified = clean_validator(last_modified)
+    if etag:
+        headers["If-None-Match"] = etag
+    if last_modified:
+        headers["If-Modified-Since"] = last_modified
+    conditional = bool(etag or last_modified)
     response: Optional[requests.Response] = None
     session: Optional[requests.Session] = None
     text = ""
+    validators: tuple = (None, None)
     try:
         for hop in range(MAX_REDIRECTS + 1):
             response, session = _request_get(current, headers)
@@ -193,6 +241,14 @@ def fetch_calendar_text(url: str) -> str:
                 raise CalendarFetchError(str(exc)) from exc
         if response is None:
             raise CalendarFetchError("Could not download the calendar.")
+        if response.status_code == 304 and conditional:
+            return FetchedCalendar(
+                "",
+                etag=clean_validator(response.headers.get("ETag")) or etag,
+                last_modified=clean_validator(response.headers.get("Last-Modified"))
+                or last_modified,
+                not_modified=True,
+            )
         if response.status_code != 200:
             raise CalendarFetchError(f"Calendar returned HTTP {response.status_code}.")
         content_length = response.headers.get("Content-Length", "")
@@ -212,6 +268,10 @@ def fetch_calendar_text(url: str) -> str:
         encoding = response.encoding if declared and response.encoding else "utf-8-sig"
         # A BOM survives a declared "charset=utf-8" and breaks the parser.
         text = bytes(body).decode(encoding, errors="replace").lstrip("\ufeff")
+        validators = (
+            clean_validator(response.headers.get("ETag")),
+            clean_validator(response.headers.get("Last-Modified")),
+        )
     except requests.RequestException as exc:
         raise CalendarFetchError(f"Could not download the calendar: {exc}") from exc
     finally:
@@ -224,4 +284,4 @@ def fetch_calendar_text(url: str) -> str:
             "That URL did not return an iCal calendar. Check you copied the whole export link "
             "(it contains '/ical/' and usually ends with '.ics')."
         )
-    return text
+    return FetchedCalendar(text, etag=validators[0], last_modified=validators[1])

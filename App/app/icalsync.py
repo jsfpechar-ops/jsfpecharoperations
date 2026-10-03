@@ -47,7 +47,7 @@ from zoneinfo import ZoneInfo
 from icalendar import Calendar
 
 from . import alerts, config, db, deadlines, host_i18n, mail_notify, reporting
-from .feed_fetch import CalendarFetchError, fetch_calendar_text
+from .feed_fetch import CalendarFetchError, fetch_calendar
 from .feed_url import FeedUrlError
 
 log = logging.getLogger("ubyhost.icalsync")
@@ -112,13 +112,76 @@ RECURRENCE_PROPERTIES = ("RRULE", "RDATE", "EXDATE")
 FEED_COMPLETENESS_THRESHOLD = 0.5
 
 
-def fetch_feed(url: str) -> str:
+class FeedText(str):
+    """Calendar text that also carries what the server said about it.
+
+    A plain ``str`` everywhere it is used as one. ``not_modified`` is True when
+    the server answered 304 to a conditional request; the text is empty then.
+    """
+
+    etag: Optional[str] = None
+    last_modified: Optional[str] = None
+    not_modified: bool = False
+
+
+def fetch_feed(
+    url: str, etag: Optional[str] = None, last_modified: Optional[str] = None
+) -> str:
+    """Download a feed, conditionally when the previous answer's validators are given."""
     try:
-        return fetch_calendar_text(url)
+        fetched = fetch_calendar(url, etag=etag, last_modified=last_modified)
     except CalendarFetchError as exc:
         raise FeedError(str(exc)) from exc
     except FeedUrlError as exc:
         raise FeedError(str(exc)) from exc
+    text = FeedText(fetched.text)
+    text.etag = fetched.etag
+    text.last_modified = fetched.last_modified
+    text.not_modified = fetched.not_modified
+    return text
+
+
+def _feed_value(feed, key: str) -> Any:
+    """A column of a feed row that an older caller's row may not carry."""
+    try:
+        return feed[key]
+    except (KeyError, IndexError):
+        return None
+
+
+def body_digest(ics_text: str) -> str:
+    return hashlib.sha256(ics_text.encode("utf-8", errors="replace")).hexdigest()
+
+
+def _trusted_for_skip(feed) -> bool:
+    """Only a feed whose last read fully succeeded may skip the next one.
+
+    After an error or an incomplete ("suspect") answer the calendar is read and
+    reconciled again even if it has not changed, so the failure is re-checked
+    rather than frozen in place by a 304.
+    """
+    return _feed_value(feed, "last_status") == "ok" and bool(_feed_value(feed, "body_sha256"))
+
+
+def _download(feed) -> str:
+    """The feed's calendar text, sent with its stored validators when it may skip."""
+    if _trusted_for_skip(feed):
+        etag = _feed_value(feed, "etag")
+        last_modified = _feed_value(feed, "last_modified")
+        if etag or last_modified:
+            return fetch_feed(feed["url"], etag=etag, last_modified=last_modified)
+    return fetch_feed(feed["url"])
+
+
+def _validator_values(text: str) -> Dict[str, Any]:
+    values: Dict[str, Any] = {}
+    etag = getattr(text, "etag", None)
+    last_modified = getattr(text, "last_modified", None)
+    if etag:
+        values["etag"] = etag
+    if last_modified:
+        values["last_modified"] = last_modified
+    return values
 
 
 def _as_date(value: Any) -> Optional[date]:
@@ -519,7 +582,12 @@ def _record_feed_failure(feed, exc: BaseException, now: str) -> None:
     db.update(
         "ical_feed",
         feed["id"],
-        {"last_sync_at": now, "last_status": "error", "last_error": str(exc)},
+        {
+            "last_sync_at": now,
+            "last_checked_at": now,
+            "last_status": "error",
+            "last_error": str(exc),
+        },
     )
     alerts.raise_alert(
         "warning",
@@ -544,16 +612,36 @@ def sync_feed(
     so demo seeding never depends on the network or on fetching from itself.
     """
     now = db.utcnow()
-    stats = {"created": 0, "updated": 0, "cancelled": 0, "blocks_skipped": 0}
+    stats = {
+        "created": 0, "updated": 0, "cancelled": 0, "blocks_skipped": 0, "outcome": "changed",
+    }
     try:
         if ics_text is None:
-            ics_text = fetch_feed(feed["url"])
+            ics_text = _download(feed)
+        if getattr(ics_text, "not_modified", False):
+            # 304: the calendar is what was read last time. Only the check is
+            # recorded; last_sync_at still names the last read of the calendar.
+            db.update(
+                "ical_feed", feed["id"], {"last_checked_at": now, **_validator_values(ics_text)}
+            )
+            return {**stats, "outcome": "not_modified"}
+        digest = body_digest(ics_text)
+        if _trusted_for_skip(feed) and digest == _feed_value(feed, "body_sha256"):
+            # Same bytes as the last good read: parsing and reconciling them
+            # again would change nothing.
+            db.update(
+                "ical_feed", feed["id"], {"last_checked_at": now, **_validator_values(ics_text)}
+            )
+            return {**stats, "outcome": "unchanged"}
         events = parse_events(ics_text)
     except Exception as exc:
         # Deliberately broad: an unexpected exception from one malformed feed
         # must not abort the sync of every other apartment.
         _record_feed_failure(feed, exc, now)
         return {"error": str(exc), **stats}
+    # Written with the status at the end, so a read whose reconciliation
+    # fails part-way is never mistaken for a good one to skip next time.
+    read = {"last_checked_at": now, "body_sha256": digest, **_validator_values(ics_text)}
 
     alerts.resolve(f"feed_error:{feed['id']}")
     platform = platform_of(feed["url"], ics_text)
@@ -722,7 +810,7 @@ def sync_feed(
         db.update(
             "ical_feed",
             feed["id"],
-            {"last_sync_at": now, "last_status": "suspect", "last_error": None},
+            {"last_sync_at": now, "last_status": "suspect", "last_error": None, **read},
         )
         alerts.raise_alert(
             "warning",
@@ -778,7 +866,7 @@ def sync_feed(
     db.update(
         "ical_feed",
         feed["id"],
-        {"last_sync_at": now, "last_status": "ok", "last_error": None},
+        {"last_sync_at": now, "last_status": "ok", "last_error": None, **read},
     )
     return stats
 
@@ -798,9 +886,13 @@ def sync_all(
             "AND (? IS NULL OR a.owner_user_id = ?)",
             (owner_user_id, owner_user_id),
         )
-    # ``changed`` counts feeds whose sync created, updated or cancelled a stay;
-    # with ``feeds`` it gives the changed ratio the perf report prints (WP13).
-    totals = {"feeds": 0, "changed": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0}
+    # ``changed`` counts feeds whose calendar changed and was parsed again
+    # (WP15); with ``feeds`` it gives the changed ratio the perf report prints
+    # (WP13). ``not_modified`` and ``unchanged`` are the skipped feeds.
+    totals = {
+        "feeds": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0,
+        "not_modified": 0, "unchanged": 0, "changed": 0,
+    }
     for feed in feeds:
         totals["feeds"] += 1
         try:
@@ -816,7 +908,12 @@ def sync_all(
             continue
         for key in ("created", "updated", "cancelled"):
             totals[key] += stats.get(key, 0)
-        if any(stats.get(key, 0) for key in ("created", "updated", "cancelled")):
-            totals["changed"] += 1
+        outcome = stats.get("outcome", "changed")
+        totals[outcome if outcome in ("not_modified", "unchanged") else "changed"] += 1
     db.set_setting("last_ical_sync", db.utcnow())
+    log.info(
+        "ical_sync_run feeds=%s not_modified=%s unchanged=%s changed=%s errors=%s",
+        totals["feeds"], totals["not_modified"], totals["unchanged"], totals["changed"],
+        totals["errors"],
+    )
     return totals

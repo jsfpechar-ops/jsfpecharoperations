@@ -10,7 +10,8 @@ the last 7 days by default:
 * lock wait p99 per group;
 * error rate (status >= 500) per group;
 * per job: runs, failures, p50/p99 run time, and the iCal changed ratio
-  (feeds whose sync changed a stay, over feeds synced).
+  (feeds whose calendar changed and was parsed again, over feeds synced;
+  WP15 skips the others).
 
 Only group names, job ids and numbers are printed. The access line already
 carries the route template instead of the path, but the report still never
