@@ -120,7 +120,12 @@ UBYPORT_TIMEOUT = int(os.environ.get("UBYHOST_UBYPORT_TIMEOUT", "60"))
 
 ICAL_POLL_MINUTES = int(os.environ.get("UBYHOST_ICAL_POLL_MINUTES", "60"))
 SUBMIT_SWEEP_MINUTES = int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10"))
+# Dead-man switches (for example healthchecks.io), each pinged after a
+# successful run of its job: the submission sweep, the calendar sync and the
+# mail job (WP07). Empty disables the ping.
 HEARTBEAT_URL = os.environ.get("UBYHOST_HEARTBEAT_URL", "").strip()
+HEARTBEAT_ICAL_URL = os.environ.get("UBYHOST_HEARTBEAT_ICAL_URL", "").strip()
+HEARTBEAT_MAIL_URL = os.environ.get("UBYHOST_HEARTBEAT_MAIL_URL", "").strip()
 
 # Used to build the guest permalink shown to hosts for copy/paste.
 PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")

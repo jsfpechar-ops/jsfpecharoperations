@@ -219,9 +219,24 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     # pages must not sit in history, the back/forward cache, or a proxy.
     if not request.url.path.startswith("/static/"):
         response.headers.setdefault("Cache-Control", "no-store, private")
+    elif response.status_code in (200, 304):
+        response.headers.setdefault("Cache-Control", _static_cache_control(request))
     if config.ACCESS_LOG:
         _log_access(request, response.status_code, started)
     return response
+
+
+# WP07: every /static URL in the templates carries ?v=<key>, and the key is
+# bumped whenever the file changes, so a versioned asset may be cached for a
+# year without revalidation. A request without ?v= (the /favicon.ico redirect,
+# the logo in e-mails, a crawler fetching og:image) gets one day only, so a
+# changed unversioned file is never stuck in a cache for a year.
+_STATIC_VERSIONED = "public, max-age=31536000, immutable"
+_STATIC_UNVERSIONED = "public, max-age=86400"
+
+
+def _static_cache_control(request: Request) -> str:
+    return _STATIC_VERSIONED if request.query_params.get("v") else _STATIC_UNVERSIONED
 
 
 def _access_route(request: Request) -> str:

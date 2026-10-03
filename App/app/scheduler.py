@@ -65,6 +65,7 @@ def _job_sync_calendars() -> None:
         _job_failed("ical")
         return
     _job_ok("ical")
+    _ping(config.HEARTBEAT_ICAL_URL, "ical")
 
 
 def _job_submit() -> None:
@@ -82,12 +83,17 @@ def _job_submit() -> None:
 
 def _heartbeat() -> None:
     """Tell an external dead-man switch the submission sweep is alive."""
-    if not config.HEARTBEAT_URL:
+    _ping(config.HEARTBEAT_URL, "submit")
+
+
+def _ping(url: str, job_id: str) -> None:
+    """Ping one job's dead-man switch; a failed ping is logged, never raised."""
+    if not url:
         return
     try:
-        requests.get(config.HEARTBEAT_URL, timeout=5)
+        requests.get(url, timeout=5)
     except Exception:
-        log.warning("heartbeat ping failed", exc_info=True)
+        log.warning("heartbeat ping for %s failed", job_id, exc_info=True)
 
 
 def _job_deadlines() -> None:
@@ -126,6 +132,7 @@ def _job_mail() -> None:
         _job_failed("mail")
     else:
         _job_ok("mail")
+        _ping(config.HEARTBEAT_MAIL_URL, "mail")
 
 
 def _job_photo_sweep() -> None:

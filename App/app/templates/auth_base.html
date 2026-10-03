@@ -7,8 +7,8 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}UbyHost{% endblock %}</title>
   {% include "_seo_head.html" %}
-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
   <link rel="stylesheet" href="/static/app.css?v=20261002a">
   <link rel="stylesheet" href="/static/components.css?v=20261002a">
@@ -18,7 +18,7 @@
   <div class="auth-layout">
     <section id="main-content" class="auth-panel">
       <header class="auth-brand">
-        <img class="auth-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
+        <img class="auth-logo" src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost">
       </header>
       {% block lang_switch %}
       <form method="post" action="/language" class="lang-switch auth-lang-switch">
@@ -59,7 +59,7 @@
     </section>
     <aside class="auth-hero" aria-hidden="true">
       <div class="auth-hero-inner">
-        <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png" alt="">
+        <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png?v=20261004a" alt="">
         <h2>{{ t('login.hero_title') }}</h2>
         <p>{{ t('login.hero_body') }}</p>
         <div class="auth-product-card">

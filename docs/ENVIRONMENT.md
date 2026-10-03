@@ -52,6 +52,8 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_ICAL_POLL_MINUTES` | `60` | Calendar poll interval. |
 | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | Automatic submission sweep interval. |
 | `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
+| `UBYHOST_HEARTBEAT_ICAL_URL` | unset | Pinged after each successful calendar sync (WP07). |
+| `UBYHOST_HEARTBEAT_MAIL_URL` | unset | Pinged after each mail run in which every step succeeded (WP07). |
 
 The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 (12 h) intervals are not configurable. See
