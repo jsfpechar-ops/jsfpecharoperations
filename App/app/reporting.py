@@ -1135,17 +1135,6 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         )
     }
 
-    # Batches whose outcome is unknown (the register may hold them). Their
-    # guests wait for a person; see UbyportOutcomeUnknownError.
-    in_doubt_submissions = {
-        row["id"]
-        for row in db.query(
-            "SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown' "
-            "AND retried_at IS NULL",
-            (apartment_id,),
-        )
-    }
-
     out: List[Tuple[Any, Any]] = []
     # The deadline anchor depends only on the stay (the earliest guest
     # arrival), so the sweep reads it once per stay instead of once per guest.
@@ -1182,8 +1171,18 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         # host takes the record back after fixing it, so it is never bound.
         if not ignore_automation and auto_attempts(guest) >= SUBMISSION_MAX_AUTO_ATTEMPTS:
             continue
-        if not ignore_automation and guest["submission_id"] in in_doubt_submissions:
-            continue
+        # While a guest still points at an outcome-unknown batch, only a host
+        # send may try again. ``retried_at`` on the batch marks the one
+        # automatic retry; if that update lands without clearing this pointer,
+        # the guest must not become sendable to the sweep anyway.
+        if not ignore_automation and guest["submission_id"]:
+            in_doubt = db.query_one(
+                "SELECT 1 AS n FROM submission WHERE id = ? AND state = 'outcome_unknown' "
+                "LIMIT 1",
+                (guest["submission_id"],),
+            )
+            if in_doubt:
+                continue
         if not guest_is_complete(guest, reservation):
             continue
         if signature_dates_stale(guest, reservation):
@@ -1760,16 +1759,18 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
         (apartment_id, AUTO_RESEND_MODE),
     )
     retried = 0
+    now = db.utcnow()
     for row in pending:
         guest_ids = json.loads(row["guest_ids"] or "[]")
-        db.update("submission", row["id"], {"retried_at": db.utcnow()})
+        with db.immediate() as cur:
+            db.update_in(cur, "submission", row["id"], {"retried_at": now})
+            for guest_id in guest_ids:
+                cur.execute(
+                    "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
+                    (guest_id, SENT),
+                )
         if not guest_ids:
             continue
-        for guest_id in guest_ids:
-            db.execute(
-                "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
-                (guest_id, SENT),
-            )
         submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode=AUTO_RESEND_MODE)
         retried += 1
     return retried
