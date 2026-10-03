@@ -236,6 +236,17 @@ def _sweep_apartment(monkeypatch):
     return apartment_id, submission_id, guest_id, owner_id
 
 
+def test_automation_skips_a_guest_while_they_still_point_at_outcome_unknown(monkeypatch):
+    """A partial retry (retried_at set, pointer not cleared) must not reopen the sweep."""
+    db.init_db()
+    apartment_id, submission_id, guest_id, _owner_id = _sweep_apartment(monkeypatch)
+    db.update("submission", submission_id, {"retried_at": db.utcnow()})
+    assert db.query_one(
+        "SELECT submission_id FROM guest WHERE id = ?", (guest_id,)
+    )["submission_id"] == submission_id
+    assert reporting.collect_sendable(apartment_id) == []
+
+
 def test_sweep_retries_an_outcome_unknown_batch_once(monkeypatch):
     db.init_db()
     apartment_id, submission_id, guest_id, owner_id = _sweep_apartment(monkeypatch)
