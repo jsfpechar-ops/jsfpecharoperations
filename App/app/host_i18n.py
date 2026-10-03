@@ -4353,6 +4353,341 @@ from .guide_i18n import GUIDE_STRINGS
 for _lang, _strings in GUIDE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# WP20: self sign-up, its e-mails, and the privacy draft for the Google Ads
+# click ID. Kept in one block so counsel can review the wording in one place.
+_SIGNUP_STRINGS = {
+    "en": {
+        "signup.page_title": "Create your UbyHost account",
+        "signup.meta_description": "Create a UbyHost account for guest registration and UbyPort reporting.",
+        "signup.title": "Create your UbyHost account",
+        "signup.lede": "It takes a minute. We send a confirmation link to your e-mail.",
+        "signup.cta": "Create an account",
+        "signup.email": "E-mail",
+        "signup.email_ph": "you@example.com",
+        "signup.password": "Password",
+        "signup.password_hint": "At least 12 characters, with upper- and lowercase letters and a number.",
+        "signup.workspace": "Business or workspace name",
+        "signup.workspace_ph": "For example: Apartments Old Town",
+        "signup.accept_before": "I accept the ",
+        "signup.accept_terms": "Terms of Service",
+        "signup.accept_between": " and the ",
+        "signup.accept_dpa": "Data Processing Agreement",
+        "signup.accept_privacy_before": ", and I have read the ",
+        "signup.accept_privacy": "Privacy Policy",
+        "signup.accept_after": ".",
+        # Legal position 3, verbatim. Changing it needs a new
+        # signup.CONSENT_VERSIONS entry (the old wording stays on record).
+        "signup.ads_consent": (
+            "Optional: I agree that UbyHost may record that I came from a Google ad "
+            "and share that click identifier with Google (an independent controller) "
+            "to measure our ad campaigns. No personalised ads. You can withdraw "
+            "anytime in Settings."
+        ),
+        "signup.ads_consent_link": "How Google uses data",
+        # Legal position 2, verbatim.
+        "signup.onboarding_opt_out": (
+            "Do not send me setup tips by e-mail (you can change this anytime in Settings)."
+        ),
+        "signup.submit": "Create account",
+        "signup.have_account": "Already have an account?",
+        "signup.login_link": "Log in",
+        "signup.error.email": "Enter a valid e-mail address.",
+        "signup.error.workspace": (
+            "Enter the name of your business or workspace (up to 120 characters)."
+        ),
+        "signup.error.accept": (
+            "To create an account, accept the Terms of Service and the Data Processing Agreement."
+        ),
+        "signup.error.rate_limited": "Too many sign-up attempts. Try again in an hour.",
+        "signup.error.turnstile": (
+            "We couldn't finish the security check. Wait until the check above the button "
+            "shows a tick, then press Create account again."
+        ),
+        "signup.sent.page_title": "Check your inbox",
+        "signup.sent.title": "Check your inbox",
+        "signup.sent.body": (
+            "We have sent a confirmation link to %(email)s. If you already have an account "
+            "with this address, the e-mail tells you how to sign in instead."
+        ),
+        "signup.sent.expiry": "The link works for 24 hours.",
+        "signup.sent.spam": (
+            "No e-mail after a few minutes? Check your spam folder, or sign up again."
+        ),
+        "signup.verify.page_title": "Confirm your e-mail",
+        "signup.verify.title": "Confirm your e-mail",
+        "signup.verify.lede": "Enter the password you chose at sign-up to activate your account.",
+        "signup.verify.submit": "Activate account",
+        "signup.verify.error.password": (
+            "That password doesn't match the one you chose at sign-up."
+        ),
+        "signup.verify.locked": "Too many attempts. Try again in 15 minutes.",
+        "signup.verify.expired.title": "This link no longer works",
+        "signup.verify.expired.body": (
+            "Confirmation links work for 24 hours, and only the newest one works. "
+            "Sign up again to get a new link."
+        ),
+        "signup.verify.expired.action": "Sign up again",
+        "mail.signup_verify.subject": "Confirm your UbyHost account",
+        "mail.signup_verify.heading": "Confirm your e-mail address",
+        "mail.signup_verify.intro": (
+            "Thanks for signing up for UbyHost with the workspace “%(workspace)s”. "
+            "Open the link below and enter your password to activate the account."
+        ),
+        "mail.signup_verify.action": "Confirm e-mail",
+        "mail.signup_verify.expiry": (
+            "The link works for 24 hours. If you did not sign up, ignore this e-mail: "
+            "the unconfirmed account is deleted after 7 days."
+        ),
+        "mail.signup_verify.username": (
+            "You can sign in with this e-mail address or with the username %(username)s."
+        ),
+        "mail.signup_exists.subject": "Someone tried to create a UbyHost account with your e-mail",
+        "mail.signup_exists.heading": "You already have an account",
+        "mail.signup_exists.intro": (
+            "Someone, probably you, tried to create a new UbyHost account with this e-mail "
+            "address. An account with this address already exists, so nothing was created."
+        ),
+        "mail.signup_exists.action": "Log in",
+        "mail.signup_exists.help": (
+            "Forgotten your password? Write to %(support)s. If this was not you, you can "
+            "ignore this e-mail."
+        ),
+        "mail.signup_admin.subject": "New UbyHost sign-up: %(workspace)s",
+        "mail.signup_admin.heading": "New verified sign-up",
+        "mail.signup_admin.intro": (
+            "A new account was created and its e-mail address confirmed. The account is "
+            "active now. If it should not be, disable it under Users."
+        ),
+        "mail.signup_admin.workspace": "Workspace",
+        "mail.signup_admin.email": "E-mail",
+        "mail.signup_admin.username": "Username",
+        "mail.signup_admin.source": "Campaign",
+        "mail.signup_admin.ads": "Google Ads click",
+        "mail.signup_admin.yes": "yes",
+        "mail.signup_admin.no": "no",
+        "mail.signup_admin.action": "Open Users",
+        "notification.mail_kind.signup_verify": "sign-up confirmation link",
+        "notification.mail_kind.signup_exists": "repeated sign-up notice",
+        "notification.mail_kind.signup_admin": "new sign-up notice",
+        "users.status.unverified": "E-mail not confirmed",
+        "users.menu.withdraw_ads_consent": "Withdraw Google Ads consent",
+        "users.ads_export": "Download new Google Ads conversions (CSV)",
+        "users.ads_export_hint": (
+            "Verified sign-ups from a Google ad, with consent, from clicks in the last "
+            "%(days)s days, not downloaded before. Downloading marks them as uploaded, so "
+            "upload the file in Google Ads under Goals, Conversions, Uploads straight away."
+        ),
+        "users.ads_export_again": "Download again, including earlier rows",
+        "flash.signup.consent_withdrawn.google": (
+            "Google Ads consent withdrawn and the click identifier deleted."
+        ),
+        "settings.privacy.title": "Privacy",
+        "settings.privacy.ad_consent.google": "Use my sign-up to measure UbyHost's Google Ads",
+        "settings.privacy.given": "On since %(date)s.",
+        "settings.privacy.withdrawn": (
+            "Off since %(date)s. The click identifier has been deleted."
+        ),
+        "settings.privacy.on": "On",
+        "settings.privacy.off": "Off",
+        "settings.privacy.save": "Save",
+        "settings.privacy.help": (
+            "Untick and save to withdraw. We then delete the click identifier and stop "
+            "using your sign-up for ad measurement. This cannot be turned back on, and "
+            "it does not affect what was measured before."
+        ),
+        "privacy.signup_title": "Self sign-up",
+        "privacy.signup_body": (
+            "When you create an account yourself, we store your e-mail address, the "
+            "workspace name and the time of sign-up to provide the account (contract, "
+            "Art. 6(1)(b) GDPR). We also store the campaign labels of the link you arrived "
+            "by (utm_source, utm_medium, utm_campaign) to see which campaigns bring "
+            "sign-ups (legitimate interest, Art. 6(1)(f) GDPR). No advertising script runs "
+            "on our pages and no cookie is used for this."
+        ),
+        # Legal position 3, verbatim.
+        "privacy.signup_ads_title": "Google Ads measurement",
+        "privacy.signup_ads_body": (
+            "If you arrived at our sign-up page from a Google ad, the page address contains "
+            "a click identifier (gclid). We keep this identifier only if you tick the "
+            "optional consent box during sign-up. We then send it to Google Ireland Ltd. "
+            "together with the fact and time of your sign-up, so that we can see which ads "
+            "bring new customers. We do not send your name or e-mail address and we do not "
+            "use this for personalised advertising. Google processes this data as an "
+            "independent controller; see https://business.safety.google/privacy/. Legal "
+            "basis: your consent (Art. 6(1)(a) GDPR and § 89(3) of Act No. 127/2005 Coll.). "
+            "We delete the identifier at the latest 90 days after the ad click. You can "
+            "withdraw consent anytime in Settings > Privacy. Withdrawal does not affect "
+            "processing before it."
+        ),
+    },
+    "cs": {
+        "signup.page_title": "Založte si účet UbyHost",
+        "signup.meta_description": "Založte si účet UbyHost pro registraci hostů a hlášení do UbyPortu.",
+        "signup.title": "Založte si účet UbyHost",
+        "signup.lede": "Zabere to minutu. Na váš e-mail pošleme potvrzovací odkaz.",
+        "signup.cta": "Založit účet",
+        "signup.email": "E-mail",
+        "signup.email_ph": "vy@example.com",
+        "signup.password": "Heslo",
+        "signup.password_hint": "Alespoň 12 znaků, velká i malá písmena a číslice.",
+        "signup.workspace": "Název firmy nebo pracovního prostoru",
+        "signup.workspace_ph": "Například: Apartmány Staré Město",
+        "signup.accept_before": "Přijímám ",
+        "signup.accept_terms": "obchodní podmínky",
+        "signup.accept_between": " a ",
+        "signup.accept_dpa": "smlouvu o zpracování osobních údajů",
+        "signup.accept_privacy_before": " a seznámil(a) jsem se se ",
+        "signup.accept_privacy": "zásadami ochrany osobních údajů",
+        "signup.accept_after": ".",
+        "signup.ads_consent": (
+            "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, "
+            "a předal tento identifikátor kliknutí společnosti Google (samostatnému "
+            "správci) k měření úspěšnosti našich reklam. Bez personalizované reklamy. "
+            "Souhlas můžete kdykoli odvolat v Nastavení."
+        ),
+        "signup.ads_consent_link": "Jak Google používá data",
+        "signup.onboarding_opt_out": (
+            "Nepřeji si dostávat e-mailem tipy k nastavení (kdykoli to můžete změnit "
+            "v Nastavení)."
+        ),
+        "signup.submit": "Založit účet",
+        "signup.have_account": "Už účet máte?",
+        "signup.login_link": "Přihlaste se",
+        "signup.error.email": "Zadejte platnou e-mailovou adresu.",
+        "signup.error.workspace": (
+            "Zadejte název své firmy nebo pracovního prostoru (nejvýše 120 znaků)."
+        ),
+        "signup.error.accept": (
+            "Pro založení účtu je potřeba přijmout obchodní podmínky a smlouvu o zpracování "
+            "osobních údajů."
+        ),
+        "signup.error.rate_limited": "Příliš mnoho pokusů o registraci. Zkuste to znovu za hodinu.",
+        "signup.error.turnstile": (
+            "Bezpečnostní kontrolu se nepodařilo dokončit. Počkejte, až se u kontroly nad "
+            "tlačítkem objeví fajfka, a stiskněte Založit účet znovu."
+        ),
+        "signup.sent.page_title": "Zkontrolujte e-mail",
+        "signup.sent.title": "Zkontrolujte e-mail",
+        "signup.sent.body": (
+            "Na adresu %(email)s jsme poslali potvrzovací odkaz. Pokud už s touto adresou "
+            "účet máte, e-mail vám místo toho poradí, jak se přihlásit."
+        ),
+        "signup.sent.expiry": "Odkaz platí 24 hodin.",
+        "signup.sent.spam": (
+            "E-mail nepřišel ani po několika minutách? Podívejte se do spamu, nebo se "
+            "zaregistrujte znovu."
+        ),
+        "signup.verify.page_title": "Potvrzení e-mailu",
+        "signup.verify.title": "Potvrďte svůj e-mail",
+        "signup.verify.lede": "Účet aktivujete zadáním hesla, které jste zvolili při registraci.",
+        "signup.verify.submit": "Aktivovat účet",
+        "signup.verify.error.password": "Heslo neodpovídá tomu, které jste zvolili při registraci.",
+        "signup.verify.locked": "Příliš mnoho pokusů. Zkuste to znovu za 15 minut.",
+        "signup.verify.expired.title": "Tento odkaz už neplatí",
+        "signup.verify.expired.body": (
+            "Potvrzovací odkaz platí 24 hodin a funguje jen ten nejnovější. Nový odkaz "
+            "dostanete, když se zaregistrujete znovu."
+        ),
+        "signup.verify.expired.action": "Zaregistrovat se znovu",
+        "mail.signup_verify.subject": "Potvrďte svůj účet UbyHost",
+        "mail.signup_verify.heading": "Potvrďte svou e-mailovou adresu",
+        "mail.signup_verify.intro": (
+            "Děkujeme za registraci do UbyHostu s pracovním prostorem „%(workspace)s“. "
+            "Otevřete odkaz níže a zadáním hesla účet aktivujete."
+        ),
+        "mail.signup_verify.action": "Potvrdit e-mail",
+        "mail.signup_verify.expiry": (
+            "Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: "
+            "nepotvrzený účet se po 7 dnech smaže."
+        ),
+        "mail.signup_verify.username": (
+            "Přihlásit se můžete touto e-mailovou adresou nebo uživatelským jménem %(username)s."
+        ),
+        "mail.signup_exists.subject": "Někdo se pokusil založit účet UbyHost s vaším e-mailem",
+        "mail.signup_exists.heading": "Účet už máte",
+        "mail.signup_exists.intro": (
+            "Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou "
+            "adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo."
+        ),
+        "mail.signup_exists.action": "Přihlásit se",
+        "mail.signup_exists.help": (
+            "Zapomněli jste heslo? Napište na %(support)s. Pokud jste to nebyli vy, "
+            "e-mail můžete ignorovat."
+        ),
+        "mail.signup_admin.subject": "Nová registrace v UbyHostu: %(workspace)s",
+        "mail.signup_admin.heading": "Nová potvrzená registrace",
+        "mail.signup_admin.intro": (
+            "Byl založen nový účet a jeho e-mailová adresa je potvrzená. Účet je už aktivní. "
+            "Pokud aktivní být nemá, deaktivujte ho v sekci Uživatelé."
+        ),
+        "mail.signup_admin.workspace": "Pracovní prostor",
+        "mail.signup_admin.email": "E-mail",
+        "mail.signup_admin.username": "Uživatelské jméno",
+        "mail.signup_admin.source": "Kampaň",
+        "mail.signup_admin.ads": "Proklik z Google Ads",
+        "mail.signup_admin.yes": "ano",
+        "mail.signup_admin.no": "ne",
+        "mail.signup_admin.action": "Otevřít Uživatele",
+        "notification.mail_kind.signup_verify": "odkaz k potvrzení registrace",
+        "notification.mail_kind.signup_exists": "upozornění na opakovanou registraci",
+        "notification.mail_kind.signup_admin": "oznámení o nové registraci",
+        "users.status.unverified": "E-mail nepotvrzen",
+        "users.menu.withdraw_ads_consent": "Odvolat souhlas pro Google Ads",
+        "users.ads_export": "Stáhnout nové konverze pro Google Ads (CSV)",
+        "users.ads_export_hint": (
+            "Potvrzené registrace z reklamy Google se souhlasem, z kliknutí za posledních "
+            "%(days)s dní, dosud nestažené. Stažením se označí jako nahrané, proto soubor "
+            "hned nahrajte v Google Ads v části Cíle, Konverze, Nahrávání."
+        ),
+        "users.ads_export_again": "Stáhnout znovu i s dřívějšími řádky",
+        "flash.signup.consent_withdrawn.google": (
+            "Souhlas pro Google Ads byl odvolán a identifikátor kliknutí smazán."
+        ),
+        "settings.privacy.title": "Soukromí",
+        "settings.privacy.ad_consent.google": (
+            "Použít mou registraci k měření reklam UbyHostu v Google Ads"
+        ),
+        "settings.privacy.given": "Zapnuto od %(date)s.",
+        "settings.privacy.withdrawn": (
+            "Vypnuto od %(date)s. Identifikátor kliknutí byl smazán."
+        ),
+        "settings.privacy.on": "Zapnuto",
+        "settings.privacy.off": "Vypnuto",
+        "settings.privacy.save": "Uložit",
+        "settings.privacy.help": (
+            "Souhlas odvoláte odškrtnutím a uložením. Identifikátor kliknutí pak smažeme "
+            "a vaši registraci už k měření reklam nepoužijeme. Znovu zapnout to nejde "
+            "a na dříve změřená data to nemá vliv."
+        ),
+        "privacy.signup_title": "Registrace",
+        "privacy.signup_body": (
+            "Když si účet založíte sami, ukládáme vaši e-mailovou adresu, název pracovního "
+            "prostoru a čas registrace, abychom vám mohli účet poskytovat (smlouva, čl. 6 "
+            "odst. 1 písm. b) GDPR). Ukládáme také označení kampaně z odkazu, přes který jste "
+            "přišli (utm_source, utm_medium, utm_campaign), abychom viděli, které kampaně "
+            "přinášejí registrace (oprávněný zájem, čl. 6 odst. 1 písm. f) GDPR). Na našich "
+            "stránkách neběží žádný reklamní skript a nepoužíváme k tomu žádné cookies."
+        ),
+        "privacy.signup_ads_title": "Měření reklam Google Ads",
+        "privacy.signup_ads_body": (
+            "Pokud jste na registrační stránku přišli z reklamy Google, obsahuje adresa "
+            "stránky identifikátor kliknutí (gclid). Tento identifikátor uchováme jen tehdy, "
+            "pokud při registraci zaškrtnete nepovinný souhlas. Poté jej spolu s informací "
+            "o registraci a jejím čase předáme společnosti Google Ireland Ltd., abychom "
+            "věděli, které reklamy přivádějí nové zákazníky. Vaše jméno ani e-mail "
+            "nepředáváme a údaje nepoužíváme k personalizované reklamě. Google tyto údaje "
+            "zpracovává jako samostatný správce, viz https://business.safety.google/privacy/. "
+            "Právní základ: váš souhlas (čl. 6 odst. 1 písm. a) GDPR a § 89 odst. 3 zákona "
+            "č. 127/2005 Sb.). Identifikátor smažeme nejpozději 90 dní po kliknutí na "
+            "reklamu. Souhlas můžete kdykoli odvolat v Nastavení > Soukromí. Odvolání nemá "
+            "vliv na zpracování před ním."
+        ),
+    },
+}
+
+for _lang, _strings in _SIGNUP_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 
 # WP10: the admin Operations page. Platform administrators only.
 _ADMIN_OPERATIONS_STRINGS = {
@@ -4483,6 +4818,8 @@ _ADMIN_FUNNEL_STRINGS = {
         "funnel.stage.first_guest": "First guest done",
         "funnel.stage.first_filing": "First filing",
         "funnel.stage.retained": "Retained",
+        "funnel.stage.signed_up": "Signed up",
+        "funnel.stage.email_verified": "E-mail verified",
     },
     "cs": {
         "funnel.title": "Trychtýř",
@@ -4506,6 +4843,8 @@ _ADMIN_FUNNEL_STRINGS = {
         "funnel.stage.first_guest": "První host vyplnil",
         "funnel.stage.first_filing": "První hlášení",
         "funnel.stage.retained": "Aktivně používá",
+        "funnel.stage.signed_up": "Registrován",
+        "funnel.stage.email_verified": "E-mail ověřen",
     },
 }
 for _lang, _strings in _ADMIN_FUNNEL_STRINGS.items():

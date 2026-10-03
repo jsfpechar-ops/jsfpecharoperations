@@ -26,6 +26,7 @@ from .. import (
     mail_notify,
     rate_limit,
     security,
+    signup,
     turnstile,
     workspace_export,
 )
@@ -487,10 +488,22 @@ def _render_users(request: Request, **extra):
     users = db.query(
         "SELECT u.id, u.username, u.display_name, u.role, u.active, "
         "u.must_change_password, u.created_at, u.last_login_at, "
+        "u.email, u.email_verified_at, u.signup_at, "
+        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
+        "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
         "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
         "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
     )
-    return render(request, "users.html", {"users": users, **extra})
+    return render(
+        request,
+        "users.html",
+        {
+            "users": users,
+            "signup_enabled": config.SIGNUP_ENABLED,
+            "ads_export_days": signup.GOOGLE_EXPORT_DAYS,
+            **extra,
+        },
+    )
 
 
 @router.post("/admin/users")

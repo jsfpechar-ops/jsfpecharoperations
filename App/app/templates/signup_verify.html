@@ -1,0 +1,29 @@
+{% extends "auth_base.html" %}
+{% block title %}{{ t('signup.verify.page_title') }}{% endblock %}
+{# A language switch comes back to the same link, also after a failed POST. #}
+{% set lang_next = ('/signup/verify?t=' ~ token) if token else '/signup' %}
+{% block auth_body %}
+<section class="auth-card">
+  {% if expired %}
+  <h1 class="auth-title">{{ t('signup.verify.expired.title') }}</h1>
+  <p class="auth-lede">{{ t('signup.verify.expired.body') }}</p>
+  <a class="auth-submit" href="/signup?lang={{ lang }}">{{ t('signup.verify.expired.action') }}</a>
+  {% else %}
+  <h1 class="auth-title">{{ t('signup.verify.title') }}</h1>
+  <p class="auth-lede">{{ t('signup.verify.lede') }}</p>
+  {% if error %}
+    <div class="auth-alert" role="alert">{{ t(error) }}</div>
+  {% endif %}
+  <form method="post" action="/signup/verify" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="t" value="{{ token }}">
+    <div class="auth-field">
+      <label for="password">{{ t('signup.password') }}</label>
+      <input type="password" id="password" name="password" required autofocus
+             autocomplete="current-password">
+    </div>
+    <button class="auth-submit" type="submit">{{ t('signup.verify.submit') }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

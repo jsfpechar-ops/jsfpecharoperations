@@ -41,12 +41,14 @@ from .. import (
     reporting,
     claim,
     security,
+    signup,
     stay_fee,
     validation,
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
+from . import signup as signup_routes
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import flash_plural as _flash_plural
@@ -62,6 +64,7 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
 router.include_router(api.router)
 router.include_router(onboarding.router)
+router.include_router(signup_routes.router)
 
 
 # --- helpers -------------------------------------------------------------
@@ -208,7 +211,7 @@ def dashboard(request: Request):
         return render(
             request,
             "landing.html",
-            {"show_nav": False, "open_alerts": []},
+            {"show_nav": False, "open_alerts": [], **signup.public_context(request)},
         )
     guard = auth.require_login(request)
     if guard:
@@ -2772,6 +2775,11 @@ def settings_view(request: Request):
             )["n"],
             "backup_status": _backup_status(request),
             "onboarding_emails": _onboarding_emails(request),
+            # WP20: Settings > Privacy, the ad measurement consents given at sign-up.
+            "ad_consents": (
+                signup.consents_for(access.owner_id(request))
+                if access.owner_id(request) is not None else []
+            ),
         },
     )
 

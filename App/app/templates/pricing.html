@@ -65,6 +65,9 @@
         </div>
         <a class="landing-button pricing-button"
            data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
+        {% if signup_href %}
+        <a class="landing-button primary pricing-button" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('signup.cta') }}</a>
+        {% endif %}
         <small>{{ t('landing.cta.note') }}</small>
       </article>
     </section>

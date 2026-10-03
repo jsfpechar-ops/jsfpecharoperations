@@ -41,8 +41,8 @@
 </div>
 
 {#- WP09: 04_legal_positions.md section 5. The Google Ads recipient belongs to
-    self sign-up; no UBYHOST_SIGNUP_ENABLED flag exists yet, so it is always
-    listed (routes/legal.py RECIPIENT_IDS). -#}
+    self sign-up and is listed only while UBYHOST_SIGNUP_ENABLED is on
+    (routes/legal.py recipient_ids()). -#}
 <div class="panel" id="recipients">
   <h2 style="margin-top:0">{{ t('subprocessors.recipients_title') }}</h2>
   <ul class="small muted">

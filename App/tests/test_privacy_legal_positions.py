@@ -77,9 +77,14 @@ def test_the_register_lists_the_section_5_subprocessors_with_safeguards():
             assert name in html, (lang, name)
 
 
-def test_the_register_names_the_recipients_that_are_not_subprocessors():
+def test_the_register_names_the_recipients_that_are_not_subprocessors(monkeypatch):
     for lang, title in (("en", "Recipients that are not subprocessors"),
                         ("cs", "Příjemci, kteří nejsou dalšími zpracovateli")):
+        monkeypatch.setattr(config, "SIGNUP_ENABLED", True)
         html = _get(f"/subprocessors?lang={lang}")
         assert title in html, lang
         assert "Google Ireland Ltd." in html and "Policie ČR, UbyPort" in html, lang
+        # WP20: Google Ads is a recipient only while self sign-up is on.
+        monkeypatch.setattr(config, "SIGNUP_ENABLED", False)
+        html = _get(f"/subprocessors?lang={lang}")
+        assert "Google Ireland Ltd." not in html and "Policie ČR, UbyPort" in html, lang

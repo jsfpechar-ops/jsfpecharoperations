@@ -1,0 +1,87 @@
+{% extends "auth_base.html" %}
+{% block title %}{{ t('signup.page_title') }}{% endblock %}
+{% set meta_description = t('signup.meta_description') %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">{{ t('signup.title') }}</h1>
+  <p class="auth-lede">{{ t('signup.lede') }}</p>
+
+  {% if error and not error_field %}
+    <div class="auth-alert" role="alert">{{ t(error) }}</div>
+  {% endif %}
+
+  <form method="post" action="/signup" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {# The signed click value and the campaign labels travel in the form, never in a cookie. #}
+    {% for key in ('click', 'utm_source', 'utm_medium', 'utm_campaign') %}
+      {% if attr.get(key) %}<input type="hidden" name="{{ key }}" value="{{ attr[key] }}">{% endif %}
+    {% endfor %}
+    <div class="auth-field">
+      <label for="email">{{ t('signup.email') }}</label>
+      <input type="email" id="email" name="email" required maxlength="254"
+             value="{{ email | default('', true) }}"
+             autocomplete="email" autocapitalize="none" spellcheck="false"
+             placeholder="{{ t('signup.email_ph') }}"{% if not error %} autofocus{% endif %}
+             {% if error_field == 'email' %}aria-invalid="true" aria-describedby="email-error"{% endif %}>
+      {% if error_field == 'email' %}
+      <p class="auth-hint err-text" id="email-error" role="alert">{{ t(error) }}</p>
+      {% endif %}
+    </div>
+    <div class="auth-field">
+      <label for="password">{{ t('signup.password') }}</label>
+      <input type="password" id="password" name="password" required minlength="12" maxlength="256"
+             autocomplete="new-password"
+             aria-describedby="password-hint{% if error_field == 'password' %} password-error{% endif %}"
+             {% if error_field == 'password' %}aria-invalid="true"{% endif %}>
+      <p class="auth-hint" id="password-hint">{{ t('signup.password_hint') }}</p>
+      {% if error_field == 'password' %}
+      <p class="auth-hint err-text" id="password-error" role="alert">{{ t(error) }}</p>
+      {% endif %}
+    </div>
+    <div class="auth-field">
+      <label for="workspace">{{ t('signup.workspace') }}</label>
+      <input type="text" id="workspace" name="workspace" required maxlength="120"
+             value="{{ workspace | default('', true) }}" autocomplete="organization"
+             placeholder="{{ t('signup.workspace_ph') }}"
+             {% if error_field == 'workspace' %}aria-invalid="true" aria-describedby="workspace-error"{% endif %}>
+      {% if error_field == 'workspace' %}
+      <p class="auth-hint err-text" id="workspace-error" role="alert">{{ t(error) }}</p>
+      {% endif %}
+    </div>
+    <label class="auth-remember">
+      <input type="checkbox" name="accept" value="1" required
+             {% if error_field == 'accept' %}aria-invalid="true" aria-describedby="accept-error"{% endif %}>
+      <span>{{ t('signup.accept_before') }}<a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_terms') }}</a>{{ t('signup.accept_between') }}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_dpa') }}</a>{{ t('signup.accept_privacy_before') }}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_privacy') }}</a>{{ t('signup.accept_after') }}</span>
+    </label>
+    {% if error_field == 'accept' %}
+    <p class="auth-hint err-text" id="accept-error" role="alert">{{ t(error) }}</p>
+    {% endif %}
+    {# Legal position 3: one optional, unticked box per ad platform, shown only
+       when the visitor's link carried that platform's click identifier. The
+       wording is recorded in consent_texts exactly as rendered here. #}
+    {% for box in consent_boxes %}
+    <label class="auth-remember" data-consent="{{ box.platform }}">
+      <input type="checkbox" name="{{ box.field }}" value="1"{% if box.checked %} checked{% endif %}>
+      <span>{{ box.text }} <a href="{{ box.link_url }}" target="_blank" rel="noopener noreferrer">{{ box.link_label }}</a></span>
+    </label>
+    {% endfor %}
+    {# Legal position 2: refusing setup tips is one optional, unticked box. #}
+    <label class="auth-remember">
+      <input type="checkbox" name="onboarding_opt_out" value="1"{% if onboarding_opt_out %} checked{% endif %}>
+      <span>{{ t('signup.onboarding_opt_out') }}</span>
+    </label>
+    {% if turnstile_site_key %}
+      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
+           data-action="host_signup" data-language="{{ lang }}"></div>
+    {% endif %}
+    <button class="auth-submit" type="submit" data-umami-event="signup_submitted">{{ t('signup.submit') }}</button>
+  </form>
+
+  <div class="auth-foot">
+    <p>{{ t('signup.have_account') }} <a href="/login?lang={{ lang }}">{{ t('signup.login_link') }}</a></p>
+  </div>
+</section>
+{% if turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}

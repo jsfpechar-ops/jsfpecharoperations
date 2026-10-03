@@ -69,7 +69,7 @@
       <h1 id="landing-title">{{ t('landing.title') }}</h1>
       <p class="landing-lede">{{ t('landing.lede') }}</p>
       <div class="landing-hero-actions">
-        <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+        {% if signup_href %}<a class="landing-button primary" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('landing.cta') }}</a>{% else %}<a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>{% endif %}
         <a class="landing-button secondary" href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.contact') }} <span aria-hidden="true">→</span></a>
       </div>
       <p class="landing-trust">{{ t('landing.independent') }}</p>
@@ -186,7 +186,7 @@
     <section class="landing-final">
       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div><h2>{{ t('landing.final.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
-      <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+      {% if signup_href %}<a class="landing-button primary" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('landing.cta') }}</a>{% else %}<a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>{% endif %}
     </section>
   </main>
 

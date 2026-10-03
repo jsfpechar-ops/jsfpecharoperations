@@ -93,8 +93,13 @@ def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
     assert db.schema_version() == LATEST
     after = _schema(current)
     # Marking the baseline changes nothing that was there; the shipped
-    # migrations only add to it.
-    assert {key: after.get(key) for key in before} == before
+    # migrations only add tables, columns and indexes.
+    for key, value in before.items():
+        assert key in after, key
+        if isinstance(value, list):
+            assert set(value) <= set(after[key]), key
+        else:
+            assert after[key] == value, key
     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
 
 

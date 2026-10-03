@@ -22,6 +22,7 @@ from . import (
     passport_photos,
     reporting,
     retention,
+    signup,
 )
 
 log = logging.getLogger("ubyhost.scheduler")
@@ -254,6 +255,12 @@ def _job_photo_sweep() -> None:
         blanked = reporting.purge_submission_payloads()
         if blanked:
             log.info("submission payload purge blanked %s envelope(s)", blanked)
+        # WP20: unconfirmed sign-ups after 7 days, ad click IDs after the
+        # Google Ads import window. Runs with sign-up off too, so switching
+        # the feature off never leaves a click ID behind.
+        signup_counts = signup.purge()
+        if any(signup_counts.values()):
+            log.info("signup purge: %s", signup_counts)
     except Exception:
         log.exception("passport photo sweep failed")
         _job_failed("photo_sweep")

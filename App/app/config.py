@@ -259,6 +259,19 @@ SES_REGION = os.environ.get("UBYHOST_SES_REGION", "eu-central-1").strip()
 AWS_ACCESS_KEY_ID = os.environ.get("UBYHOST_AWS_ACCESS_KEY_ID", "").strip()
 AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").strip()
 
+# WP20: self sign-up at /signup. Off by default; while off the page and its
+# verification route answer 404 and the public pages link to /login as before.
+# Counsel has to confirm the privacy-notice wording and the legal basis for
+# keeping the Google Ads click ID before this is switched on in production.
+SIGNUP_ENABLED = os.environ.get("UBYHOST_SIGNUP_ENABLED", "0").lower() in ("1", "true", "yes")
+# Where the "new verified sign-up" notice goes. Defaults to the support address.
+SIGNUP_NOTIFY_EMAIL = os.environ.get("UBYHOST_SIGNUP_NOTIFY_EMAIL", "").strip() or OPERATOR_EMAIL
+# The conversion action name exactly as created in Google Ads (case-sensitive).
+ADS_CONVERSION_NAME = os.environ.get("UBYHOST_ADS_CONVERSION_NAME", "UbyHost sign-up").strip()
+# The click ID windows (export within 85 days of the click, delete 90 days
+# after it or 30 days after upload) are fixed in signup.py: they come from the
+# legal position, not from deployment preference.
+
 # Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
 # analytics with opt-out, own retention periods and roles. A bump makes the
 # policy pending again, so every host is sent to /account/accept once.

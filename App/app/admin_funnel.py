@@ -6,12 +6,11 @@ touches a guest table beyond counting completed stays and filings, so the page
 and the CSV carry host account data only (e-mail-like username and name are
 fine here, guest data is not).
 
-Hook for WP20 (self sign-up): ``SIGNUP_STAGES`` is empty today. When sign-up
-exists, put ``("signed_up", ...)`` and ``("email_verified", ...)`` there, select
-their columns in ``_SQL``, and fill ``SIGNUP_SOURCE_COLUMNS`` with the
-"UTM or Google Ads click present (yes/no)" column. Every consumer (the page,
-the stage counts and the CSV) reads ``stages()`` and ``csv_columns()``, so
-nothing else has to change.
+WP20 (self sign-up) fills the hook: ``SIGNUP_STAGES`` adds "signed up" and
+"e-mail verified" before "created" (admin-created accounts have neither), and
+``SIGNUP_SOURCE_COLUMNS`` adds "UTM or ad click present" (yes/no, empty for an
+account that did not sign up itself). Every consumer (the page, the stage
+counts and the CSV) reads ``stages()`` and ``csv_columns()``.
 """
 from __future__ import annotations
 
@@ -27,10 +26,15 @@ from .csv_safety import csv_safe
 # Safety cap; far above the host count this page is meant for.
 MAX_ROWS = 5000
 
-# WP20 hook: stages before "created", as (key, column in the query row).
-SIGNUP_STAGES: Tuple[Tuple[str, str], ...] = ()
-# WP20 hook: extra per-account columns for the CSV, as (key, column).
-SIGNUP_SOURCE_COLUMNS: Tuple[Tuple[str, str], ...] = ()
+# WP20: stages before "created", as (key, column in the query row).
+SIGNUP_STAGES: Tuple[Tuple[str, str], ...] = (
+    ("signed_up", "signup_at"),
+    ("email_verified", "email_verified_at"),
+)
+# WP20: extra per-account columns for the CSV, as (key, column).
+SIGNUP_SOURCE_COLUMNS: Tuple[Tuple[str, str], ...] = (
+    ("signup_source_present", "signup_source_present"),
+)
 
 # The funnel order. A host's stage is the furthest one with a date.
 CORE_STAGES: Tuple[Tuple[str, str], ...] = (
@@ -79,6 +83,13 @@ _FILED = ", ".join("?" for _ in FILED_STATES)
 # filing numbers come from one grouped join over submission.
 _SQL = (
     "SELECT u.id, u.username, u.display_name, u.active, u.created_at, u.last_login_at, "
+    "u.signup_at, u.email_verified_at, "
+    # WP20: did the self sign-up carry a UTM label or a consented ad click?
+    "CASE WHEN u.signup_at IS NULL THEN NULL "
+    "WHEN COALESCE(u.signup_utm_source, '') <> '' OR COALESCE(u.signup_utm_medium, '') <> '' "
+    "OR COALESCE(u.signup_utm_campaign, '') <> '' "
+    "OR EXISTS (SELECT 1 FROM ad_click c WHERE c.user_account_id = u.id) "
+    "THEN 'yes' ELSE 'no' END AS signup_source_present, "
     "COALESCE((SELECT MIN(au.at) FROM audit au WHERE au.owner_user_id = u.id "
     "AND au.action IN ('login', 'two_factor_login')), u.last_login_at) AS first_login_at, "
     "(SELECT MIN(la.accepted_at) FROM legal_acceptance la "

@@ -1,0 +1,12 @@
+{% extends "auth_base.html" %}
+{% block title %}{{ t('signup.sent.page_title') }}{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">{{ t('signup.sent.title') }}</h1>
+  <p class="auth-lede">{{ t('signup.sent.body', email=email) }}</p>
+  <p class="auth-lede">{{ t('signup.sent.expiry') }}</p>
+  <div class="auth-foot">
+    <p>{{ t('signup.sent.spam') }}</p>
+  </div>
+</section>
+{% endblock %}

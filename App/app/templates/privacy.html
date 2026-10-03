@@ -72,6 +72,12 @@
       {% endfor %}
       </ul>
     {% endif %}
+    {% if signup_ads_notice %}
+    <h3 id="signup">{{ t('privacy.signup_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_body') }}</div>
+    <h3 id="signup-ads">{{ t('privacy.signup_ads_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_ads_body') | legal_links }}</div>
+    {% endif %}
   {% endif %}
   {% if sid == '11' %}
     {#- WP09: UbyHost's own retention periods, section 4. -#}

@@ -1723,3 +1723,167 @@ def build_deadline_digest(
             footer_lines=["UbyHost", footer],
         ),
     }
+
+
+# --- self sign-up (WP20) -----------------------------------------------------
+#
+# The person signing up chose the page language, so their two messages follow
+# it. The operator's notice is host mail and stays in HOST_MAIL_LANGUAGE. The
+# verification link is queued with mail.CLAIM_SECRET_MARKER standing in for the
+# token, exactly like a guest claim link, so the stored row holds no usable link.
+
+
+def _signup_footer(lang: str) -> List[Any]:
+    return [
+        "UbyHost",
+        _text(lang, "mail.workspace_deletion.footer", support=config.OPERATOR_EMAIL),
+    ]
+
+
+def build_signup_verify(
+    *, lang: str, workspace: str, username: str, link: str
+) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang)
+    subject = _text(lang, "mail.signup_verify.subject")
+    heading = _text(lang, "mail.signup_verify.heading")
+    intro = _text(lang, "mail.signup_verify.intro", workspace=workspace)
+    action = _text(lang, "mail.signup_verify.action")
+    expiry = _text(lang, "mail.signup_verify.expiry")
+    sign_in = _text(lang, "mail.signup_verify.username", username=username)
+    fallback = _guest_text(lang, "mail_link_fallback")
+    footer = _signup_footer(lang)
+    text = "\n".join(
+        [intro, "", f"{action}: {link}", "", expiry, "", sign_in, "", "--", *footer]
+    )
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_button(link, action),
+        _block_paragraph(expiry, size=15),
+        _block_link(link, fallback),
+        _block_paragraph(sign_in, muted=True),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def build_signup_exists(*, lang: str) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang)
+    subject = _text(lang, "mail.signup_exists.subject")
+    heading = _text(lang, "mail.signup_exists.heading")
+    intro = _text(lang, "mail.signup_exists.intro")
+    action = _text(lang, "mail.signup_exists.action")
+    help_text = _text(lang, "mail.signup_exists.help", support=config.OPERATOR_EMAIL)
+    link = _public(f"/login?lang={lang}")
+    footer = _signup_footer(lang)
+    text = "\n".join([intro, "", f"{action}: {link}", "", help_text, "", "--", *footer])
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_button(link, action),
+        _block_paragraph(help_text, size=15),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def build_signup_admin(
+    *, workspace: str, email: str, username: str, campaign: str, ads_click: bool
+) -> Dict[str, str]:
+    lang = HOST_MAIL_LANGUAGE
+    subject = _text(lang, "mail.signup_admin.subject", workspace=workspace)
+    heading = _text(lang, "mail.signup_admin.heading")
+    intro = _text(lang, "mail.signup_admin.intro")
+    action = _text(lang, "mail.signup_admin.action")
+    link = _public("/admin/users")
+    yes_no = _text(lang, "mail.signup_admin.yes" if ads_click else "mail.signup_admin.no")
+    facts = [
+        (_text(lang, "mail.signup_admin.workspace"), workspace),
+        (_text(lang, "mail.signup_admin.email"), email),
+        (_text(lang, "mail.signup_admin.username"), username),
+        (_text(lang, "mail.signup_admin.source"), campaign or "-"),
+        (_text(lang, "mail.signup_admin.ads"), yes_no),
+    ]
+    footer = _signup_footer(lang)
+    text = "\n".join(
+        [intro, "", *[f"{label}: {value}" for label, value in facts], "",
+         f"{action}: {link}", "", "--", *footer]
+    )
+    blocks = [_block_heading(heading), _block_paragraph(intro)]
+    blocks.extend(_block_fact(label, value) for label, value in facts)
+    blocks.append(_block_button(link, action))
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def signup_verify(
+    *, user_id: int, to_email: str, lang: str, workspace: str, username: str,
+    token: str, nonce: str,
+) -> Optional[int]:
+    link = _public(f"/signup/verify?t={mail.CLAIM_SECRET_MARKER}")
+    content = build_signup_verify(
+        lang=lang, workspace=workspace, username=username, link=link
+    )
+    payload: Dict[str, Any] = {
+        "text": content["text"],
+        "html": content["html"],
+        "lang": lang,
+        mail.CLAIM_SECRET_KEY: db.encrypt_field(token),
+    }
+    return mail.enqueue(
+        kind="signup_verify",
+        idempotency_key=f"signup_verify:{user_id}:{nonce}",
+        to_email=to_email,
+        subject=content["subject"],
+        payload=payload,
+        owner_user_id=user_id,
+    )
+
+
+def signup_exists(*, user_id: int, to_email: str, lang: str, bucket: str) -> Optional[int]:
+    """One "you already have an account" mail per account per ``bucket``."""
+    content = build_signup_exists(lang=lang)
+    return mail.enqueue(
+        kind="signup_exists",
+        idempotency_key=f"signup_exists:{user_id}:{bucket}",
+        to_email=to_email,
+        subject=content["subject"],
+        payload={"text": content["text"], "html": content["html"], "lang": lang},
+        owner_user_id=user_id,
+    )
+
+
+def signup_admin(
+    *, user_id: int, workspace: str, email: str, username: str, campaign: str,
+    ads_click: bool,
+) -> Optional[int]:
+    content = build_signup_admin(
+        workspace=workspace, email=email, username=username, campaign=campaign,
+        ads_click=ads_click,
+    )
+    return mail.enqueue(
+        kind="signup_admin",
+        idempotency_key=f"signup_admin:{user_id}",
+        to_email=config.SIGNUP_NOTIFY_EMAIL,
+        subject=content["subject"],
+        payload={
+            "text": content["text"],
+            "html": content["html"],
+            "lang": HOST_MAIL_LANGUAGE,
+        },
+    )

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import config, cookie_inventory, host_i18n, operator
+from .. import config, cookie_inventory, host_i18n, operator, signup
 from ..public_guides import GUIDE_TRANSLATIONS
 from ..templating import render
 
@@ -28,9 +28,16 @@ SUBPROCESSOR_IDS = (
     "google",
 )
 # Recipients that are not subprocessors (section 5). "google_ads" belongs to
-# self sign-up with Google Ads; there is no UBYHOST_SIGNUP_ENABLED flag yet, so
-# it is always listed. Gate it on that flag when sign-up lands.
+# self sign-up with Google Ads (WP20), so it is listed only while
+# UBYHOST_SIGNUP_ENABLED is on (recipient_ids()).
 RECIPIENT_IDS = ("google_ads", "police", "municipality")
+SIGNUP_RECIPIENT_IDS = ("google_ads",)
+
+
+def recipient_ids() -> tuple:
+    if signup.enabled():
+        return RECIPIENT_IDS
+    return tuple(rid for rid in RECIPIENT_IDS if rid not in SIGNUP_RECIPIENT_IDS)
 
 
 @router.get("/jak-to-funguje")
@@ -49,7 +56,7 @@ def pricing(request: Request):
     return render(
         request,
         "pricing.html",
-        {"show_nav": False, "open_alerts": []},
+        {"show_nav": False, "open_alerts": [], **signup.public_context(request)},
     )
 
 
@@ -122,6 +129,8 @@ def privacy_policy(request: Request):
             "cookie_inventory": cookie_inventory.COOKIE_INVENTORY,
             "cookieless_services": cookie_inventory.COOKIELESS_SERVICES,
             "legal_placeholders": config.DEPLOYMENT != "production",
+            # WP20 draft for counsel: shown only while self sign-up is on.
+            "signup_ads_notice": signup.enabled(),
         },
         status_code=200,
     )
@@ -151,7 +160,7 @@ def subprocessor_register(request: Request):
             "operator": operator.details(),
             "wrap_class": "narrow",
             "subprocessor_ids": SUBPROCESSOR_IDS,
-            "recipient_ids": RECIPIENT_IDS,
+            "recipient_ids": recipient_ids(),
         },
         status_code=200,
     )

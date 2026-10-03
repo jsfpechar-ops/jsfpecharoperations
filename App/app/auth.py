@@ -223,9 +223,15 @@ def _dummy_hash() -> str:
 
 
 def authenticate(username: str, password: str):
+    identifier = normalise_username(username)
+    # A self-signed-up host (WP20) knows their e-mail better than the username
+    # generated for them. A username can never contain "@", so the two lookups
+    # cannot reach different accounts for the same input. Unverified sign-ups
+    # are inactive and so are refused here like a disabled account.
+    column = "email" if "@" in identifier else "username"
     account = db.query_one(
-        "SELECT * FROM user_account WHERE username = ? AND active = 1",
-        (normalise_username(username),),
+        f"SELECT * FROM user_account WHERE {column} = ? AND active = 1",
+        (identifier,),
     )
     stored = account["password_hash"] if account else _dummy_hash()
     if not verify_password(password, stored) or not account:

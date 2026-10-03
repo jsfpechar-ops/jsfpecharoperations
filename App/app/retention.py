@@ -313,6 +313,8 @@ def _delete_workspace(owner_id: int) -> None:
         # outlive the account.
         cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (owner_id,))
+        # WP20: ad click and consent records belong to the account as well.
+        cur.execute("DELETE FROM ad_click WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One

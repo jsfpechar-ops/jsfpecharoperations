@@ -279,6 +279,39 @@
       </div>
     </div>
 
+    {% if ad_consents %}
+    <div class="panel" id="settings-privacy">
+      <h2 style="margin-top:0">{{ t('settings.privacy.title') }}</h2>
+      <div class="settings-action-list">
+        {% for consent in ad_consents %}
+        <div class="settings-action-row">
+          <div>
+            <strong>{{ t('settings.privacy.ad_consent.' ~ consent.platform) }}</strong>
+            {% if consent.withdrawn_at %}
+              <small>{{ t('settings.privacy.withdrawn', date=consent.withdrawn_at | datetime_local) }}</small>
+            {% else %}
+              <small>{{ t('settings.privacy.given', date=consent.consented_at | datetime_local) }}</small>
+            {% endif %}
+          </div>
+          {% if consent.withdrawn_at %}
+            <span class="pill grey">{{ t('settings.privacy.off') }}</span>
+          {% else %}
+            <form method="post" action="/settings/privacy/ad-consent">
+              <input type="hidden" name="platform" value="{{ consent.platform }}">
+              <label class="checkline">
+                <input type="checkbox" name="enabled" value="1" checked>
+                <span>{{ t('settings.privacy.on') }}</span>
+              </label>
+              <button class="btn small" type="submit">{{ t('settings.privacy.save') }}</button>
+            </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="small muted">{{ t('settings.privacy.help') }}</p>
+    </div>
+    {% endif %}
+
     <div class="panel" id="settings-legal">
       <h2 style="margin-top:0">{{ t('legal.settings_title') }}</h2>
       <p class="small muted">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>

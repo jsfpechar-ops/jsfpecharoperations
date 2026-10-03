@@ -187,3 +187,25 @@ def test_wp20_hook_adds_stages_before_created(monkeypatch):
     assert [key for key, _c in admin_funnel.stages()][:2] == ["signed_up", "created"]
     columns = [header for header, _key in admin_funnel.csv_columns("2026-09", "2026-10")]
     assert columns.index("signed_up") < columns.index("created")
+
+
+def test_self_sign_up_stages_and_source_column():
+    """WP20 filled the hook: signed up, e-mail verified, and the source flag."""
+    _account("adminmade")
+    tagged = _account("signedup")
+    now = datetime.now(timezone.utc)
+    db.execute(
+        "UPDATE user_account SET signup_at = ?, email_verified_at = ?, "
+        "signup_utm_source = 'google' WHERE id = ?",
+        (_iso(now - timedelta(days=2)), _iso(now - timedelta(days=1)), tagged),
+    )
+    data = admin_funnel.rows()
+    mine = _mine(data)
+    assert data["stages"][:3] == ["signed_up", "email_verified", "created"]
+    assert mine[PREFIX + "signedup"]["signup_source_present"] == "yes"
+    assert mine[PREFIX + "adminmade"]["signup_source_present"] is None
+    assert mine[PREFIX + "adminmade"]["signup_at"] is None
+    db.execute("UPDATE user_account SET signup_utm_source = NULL WHERE id = ?", (tagged,))
+    assert _mine(admin_funnel.rows())[PREFIX + "signedup"]["signup_source_present"] == "no"
+    headers = [h for h, _k in admin_funnel.csv_columns("2026-09", "2026-10")]
+    assert headers.index("signup_source_present") < headers.index("signed_up")

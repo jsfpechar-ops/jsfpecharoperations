@@ -40,6 +40,11 @@ KINDS = (
     "lifecycle_no_property",
     "lifecycle_no_calendar",
     "lifecycle_no_guest",
+    # WP20 self sign-up: the verification link, the "you already have an
+    # account" answer to a repeated sign-up, and the operator's notice.
+    "signup_verify",
+    "signup_exists",
+    "signup_admin",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -68,6 +73,9 @@ HOST_KINDS = (
     "lifecycle_no_property",
     "lifecycle_no_calendar",
     "lifecycle_no_guest",
+    "signup_verify",
+    "signup_exists",
+    "signup_admin",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
