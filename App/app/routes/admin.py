@@ -268,7 +268,7 @@ def guide_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return render(request, "guide.html")
+    return render(request, "guide.html", {"demo_available": config.UBYPORT_ENV == "mock"})
 
 
 # --- guest communication ------------------------------------------------
