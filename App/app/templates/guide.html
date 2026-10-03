@@ -50,6 +50,7 @@
       <h2>{{ t('guide.nav.stays') }}</h2>
       <p>{{ t('guide.stays.body') }}</p>
       <p>{{ t('guide.stays.detail') }}</p>
+      <p>{{ t('guide.stays.dates_changed') }}</p>
       <p class="small muted">{{ t('guide.stays.cancelled') }}</p>
     </section>
 
@@ -75,6 +76,7 @@
         {% endfor %}
       </dl>
       <p>{{ t('guide.reporting.deadline') }}</p>
+      <p>{{ t('guide.reporting.filed') }}</p>
       <p>{{ t('guide.reporting.failure') }}</p>
       <p class="small muted">{{ t('guide.reporting.receipts') }}</p>
     </section>
@@ -110,7 +112,7 @@
       <h2>{{ t('guide.nav.settings') }}</h2>
       <p>{{ t('guide.settings.body') }}</p>
       <ul class="guide-steps">
-        {% for item in ['two_factor', 'retention', 'requests'] %}<li>{{ t('guide.settings.' ~ item) }}</li>{% endfor %}
+        {% for item in ['two_factor', 'retention', 'requests', 'deletion'] %}<li>{{ t('guide.settings.' ~ item) }}</li>{% endfor %}
       </ul>
     </section>
 
