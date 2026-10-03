@@ -228,10 +228,6 @@ def _reason_text(state: str, reason: str, transport: bool, lang: str) -> str:
 #    status slot must not, because two primaries means no primary.
 
 
-def _fmt_dates(date_from: Optional[str], date_to: Optional[str]) -> str:
-    return validation.fmt_date_range(date_from, date_to)
-
-
 def _block_heading(text: str) -> str:
     return (
         f'<tr><td style="padding:20px 24px 0 24px;">'
@@ -349,21 +345,6 @@ def _block_panel(
         f'<div style="background:{CANVAS};border:1px solid {LINE};'
         f'border-radius:12px;padding:18px 20px;">' + "".join(parts) + "</div></td></tr>"
     )
-
-
-def _panel_text_lines(panel: Dict[str, Any]) -> List[str]:
-    """The plain-text mirror of a money panel, in the same order."""
-    lines = []
-    if panel.get("title"):
-        lines.append(str(panel["title"]))
-    for row in panel.get("rows") or []:
-        lines.append(f"{row[0]}: {row[1]}")
-    if panel.get("note"):
-        lines.append(str(panel["note"]))
-    action = panel.get("action")
-    if action:
-        lines.append(f"{action[1]}: {action[0]}")
-    return lines
 
 
 def _block_link(url: str, label: str) -> str:
