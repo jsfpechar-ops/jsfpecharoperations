@@ -8,7 +8,7 @@ import tempfile
 import zipfile
 from typing import List, Optional
 
-from . import db, housebook
+from . import db, housebook, stay_fee_filing
 
 
 def _safe_pdf(base64_text: Optional[str]) -> Optional[bytes]:
@@ -42,7 +42,8 @@ def build_workspace_zip(owner_user_id: int) -> str:
 
     fd, path = tempfile.mkstemp(suffix=".zip", prefix="workspace-")
     os.close(fd)
-    counts = {"guests": len(guests), "receipts": 0, "invoices": 0}
+    counts = {"guests": len(guests), "receipts": 0, "invoices": 0, "stay_fee_filings": 0}
+    stay_fee_files: List[str] = []
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("housebook.csv", b"".join(housebook.iter_housebook_csv_rows(rows)))
         if archived:
@@ -70,6 +71,25 @@ def build_workspace_zip(owner_user_id: int) -> str:
             if pdf:
                 archive.writestr(f"receipts/{submission['id']}.pdf", pdf)
                 counts["receipts"] += 1
+        for row in db.query(
+            "SELECT f.* FROM stay_fee_filing f "
+            "JOIN apartment a ON a.id = f.apartment_id "
+            "WHERE a.owner_user_id IS ? AND f.superseded_at IS NULL",
+            (owner_user_id,),
+        ):
+            pdf = stay_fee_filing.pdf_bytes(row)
+            csv = stay_fee_filing.csv_bytes(row)
+            base = f"stay_fees/{row['apartment_id']}-{row['period_key']}-v{row['version']}"
+            if pdf:
+                name = f"{base}.pdf"
+                archive.writestr(name, pdf)
+                stay_fee_files.append(name)
+            if csv:
+                name = f"{base}.csv"
+                archive.writestr(name, csv)
+                stay_fee_files.append(name)
+            if pdf or csv:
+                counts["stay_fee_filings"] += 1
         for invoice in db.query(
             "SELECT id, pdf_blob FROM invoice WHERE owner_user_id IS ?", (owner_user_id,)
         ):
@@ -89,6 +109,7 @@ def build_workspace_zip(owner_user_id: int) -> str:
                     "counts": counts,
                     "housebook_rows": len(rows),
                     "archived_rows": len(archived),
+                    "stay_fee_files": stay_fee_files,
                 },
                 indent=2,
             ),

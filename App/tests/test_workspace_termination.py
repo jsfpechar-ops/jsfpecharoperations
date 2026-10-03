@@ -141,6 +141,37 @@ def test_the_workspace_export_streams_a_zip_with_a_manifest():
     )
 
 
+def test_workspace_export_includes_saved_stay_fee_filings():
+    owner, _entity, apartment, *_rest = _seed("ws-fee")
+    now = db.utcnow()
+    db.insert(
+        "stay_fee_filing",
+        {
+            "apartment_id": apartment,
+            "period_key": "2026-01",
+            "version": 1,
+            "cadence": "monthly",
+            "rate_czk": 50,
+            "liable_days": 3,
+            "exempt_days": 0,
+            "total_due_czk": 150,
+            "total_collected_czk": 150,
+            "pdf_enc": db.encrypt_blob(b"%PDF-stay-fee"),
+            "csv_enc": db.encrypt_blob(b"period,total\n2026-01,150"),
+            "created_at": now,
+        },
+    )
+    response = _login("ws-fee").post(
+        f"/admin/users/{owner}/export", follow_redirects=False
+    )
+    assert response.status_code == 200
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    pdf_name = f"stay_fees/{apartment}-2026-01-v1.pdf"
+    assert pdf_name in archive.namelist()
+    manifest = json.loads(archive.read("manifest.json"))
+    assert pdf_name in manifest["stay_fee_files"]
+
+
 def test_the_host_can_download_a_zip_while_deletion_is_scheduled():
     owner, *_rest = _seed("ws-self")
     due = (date.today() + timedelta(days=30)).isoformat()
