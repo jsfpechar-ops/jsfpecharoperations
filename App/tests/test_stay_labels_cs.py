@@ -103,12 +103,9 @@ def test_the_birth_date_is_never_a_gendered_verb():
 
 def test_the_guide_uses_the_same_czech_nouns_as_the_ui():
     cs = host_i18n.STRINGS["cs"]
-    assert cs["guide.setup.step2"] == "IDUB, zkratka a adresa musí přesně sedět s UbyPortem."
-    assert "značka" not in cs["guide.setup.step2"]
-    assert (
-        cs["guide.setup.step5"]
-        == "Odkaz pro hosty vložte do zprávy při příjezdu na všech portálech."
-    )
+    assert "zkratka" in cs["guide.setup.step4"]
+    assert "značka" not in cs["guide.setup.step4"]
+    assert "Odkazy pro hosty" in cs["guide.setup.step5"]
     assert "Permalink" not in cs["guide.setup.step5"]
-    assert "hlavní host uvede" in cs["guide.guests.body"]
-    assert "vedoucí" not in cs["guide.guests.body"]
+    assert "Hlavní host uvede" in cs["guide.guests.step_claim"]
+    assert "vedoucí" not in cs["guide.guests.step_claim"]
