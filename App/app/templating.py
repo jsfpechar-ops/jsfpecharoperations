@@ -297,6 +297,7 @@ templates.env.globals.update(
     urgency=deadlines.urgency,
     reporting_deadline=deadlines.reporting_deadline,
     deadline_anchor=reporting.reservation_deadline_anchor,
+    deadline_cell=reporting.deadline_cell,
     purpose_label=validation.purpose_label,
     country_name=validation.country_name,
     format_birth_date=validation.format_birth_date,

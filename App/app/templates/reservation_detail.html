@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count with context %}
+{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge with context %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {{ page_header(
   reservation.internal_name,
@@ -303,12 +303,11 @@
   <div class="section-heading"><h2>{{ t('host.reporting') }}</h2></div>
   <div class="panel tight">
   <div class="stay-metrics detail-hero{% if stay_inactive %} inactive{% endif %}">
-    {% if not stay_inactive %}
+    {% set cell = deadline_cell(progress, check_in) %}
+    {% if not stay_inactive and cell.state != 'none' %}
     <div class="detail-metric">
       <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
-      <div class="metric-value deadline {{ urgency_level }}">
-        {{ describe_time_left(check_in) if check_in else '—' }}
-      </div>
+      {{ deadline_badge(cell, tag='div', extra_class='metric-value') }}
       {% if deadline %}
         <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
       {% endif %}

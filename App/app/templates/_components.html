@@ -224,6 +224,23 @@
   <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
 {% endmacro %}
 
+{# The deadline cell of a stay, from ``deadline_cell(progress, check_in)``.
+   Before filing it counts down; once reported it records when the stay was
+   filed, and whether that was late. Nothing for a stay with no deadline. #}
+{% macro deadline_badge(cell, tag='span', extra_class='') -%}
+  {%- set classes = (' ' ~ extra_class) if extra_class else '' -%}
+  {%- if cell.state == 'filed_on_time' -%}
+    <{{ tag }} class="deadline{{ classes }} done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+  {%- elif cell.state == 'filed_late' -%}
+    <{{ tag }} class="deadline{{ classes }} neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
+      {%- if cell.late_hours < 48 %}{{ t('deadline.filed_late_hours', n=cell.late_hours) }}
+      {%- else %}{{ tp('deadline.filed_late_days', cell.late_hours // 24) }}{% endif -%}
+    </{{ tag }}>
+  {%- elif cell.state == 'countdown' -%}
+    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ describe_time_left(cell.check_in) if cell.check_in else '—' }}</{{ tag }}>
+  {%- endif -%}
+{%- endmacro %}
+
 {% macro empty_state(title, body='', action_url='', action_label='') %}
   <div class="panel empty">
     <h2>{{ title }}</h2>

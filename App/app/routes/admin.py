@@ -1579,7 +1579,6 @@ def reservation_detail(reservation_id: int, request: Request):
             "guest_rows": guest_rows,
             "check_in": check_in,
             "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
-            "urgency_level": deadlines.urgency(check_in) if check_in else "future",
             "submissions": submissions,
             "return_to": _safe_return_to(request, "/reservations"),
             "guest_link": (

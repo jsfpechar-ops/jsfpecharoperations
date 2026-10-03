@@ -1027,6 +1027,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "deadline.overdue_days.few": "overdue by %(n)s days",
         "deadline.hours_left": "%(n)s h left",
         "deadline.overdue_hours": "overdue by %(n)s h",
+        # Once a stay is reported the deadline cell records the filing instead.
+        "deadline.filed_at": "Reported %(when)s",
+        "deadline.filed_late_hours": "Reported %(n)s h late",
+        "deadline.filed_late_days": "Reported %(n)s days late",
+        "deadline.filed_late_days.one": "Reported 1 day late",
+        "deadline.filed_late_days.few": "Reported %(n)s days late",
         "env.mock_title": "Nothing is being reported to the police",
         "env.mock_body": (
             "This workspace is pointed at the practice server, so records marked "
@@ -2453,6 +2459,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "deadline.overdue_days.few": "po termínu o %(n)s dny",
         "deadline.hours_left": "zbývá %(n)s h",
         "deadline.overdue_hours": "po termínu o %(n)s h",
+        "deadline.filed_at": "Nahlášeno %(when)s",
+        "deadline.filed_late_hours": "Nahlášeno %(n)s h po termínu",
+        "deadline.filed_late_days": "Nahlášeno %(n)s dní po termínu",
+        "deadline.filed_late_days.one": "Nahlášeno 1 den po termínu",
+        "deadline.filed_late_days.few": "Nahlášeno %(n)s dny po termínu",
         "env.mock_title": "Policii se nic nehlásí",
         "env.mock_body": (
             "Tento účet je nastavený na cvičný server, takže záznamy označené jako "

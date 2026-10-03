@@ -1005,6 +1005,11 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .deadline.soon { color: var(--status-action-ink); }
 .deadline.ok { color: var(--status-done-ink); }
 .deadline.future { color: var(--muted); font-weight: 500; }
+/* A reported stay: the deadline is a record now, not a countdown. On time
+   is quiet; late is neutral, since nothing can be fixed after the fact. */
+.deadline.done { color: var(--muted); font-weight: 500; }
+.deadline.neutral { color: var(--status-neutral-ink); font-weight: 500; }
+.metric-value.deadline.done { color: var(--status-done-ink); }
 
 /* --- forms ------------------------------------------------------------- */
 

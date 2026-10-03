@@ -525,6 +525,61 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     }
 
 
+def filed_at(progress: Dict[str, Any]) -> Optional[datetime]:
+    """When the stay was filed: the latest ``submitted_at`` of its reportable guests.
+
+    Naive Czech civil time, so it compares directly with
+    ``deadlines.reporting_deadline``. None when no reportable guest carries a
+    filing time.
+    """
+    stamps = [_as_utc(guest["submitted_at"]) for guest in progress.get("reportable") or []]
+    stamps = [stamp for stamp in stamps if stamp is not None]
+    if not stamps:
+        return None
+    return deadlines.local_now(max(stamps))
+
+
+def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[str, Any]:
+    """What the deadline cell shows for a stay, in one place for every page.
+
+    A stay still to be filed counts down to the deadline. Once it is reported
+    the deadline is history, so the cell records when it was filed and, if that
+    was after the deadline, by how much. A stay with only Czech guests has no
+    deadline at all.
+
+    ``state`` is ``countdown``, ``filed_on_time``, ``filed_late`` or ``none``;
+    ``level`` is the CSS level of the badge.
+    """
+    status = progress.get("status")
+    cell: Dict[str, Any] = {
+        "state": "countdown",
+        "level": deadlines.urgency(check_in) if check_in else "future",
+        "check_in": check_in,
+        "filed_at": None,
+        "late_hours": 0,
+    }
+    if status == "not_required":
+        cell.update(state="none", level="none")
+        return cell
+    if status != "reported":
+        return cell
+    when = filed_at(progress)
+    if when is None:
+        # Reported without a filing time on record (an import, say). The status
+        # pill already says it is reported; a countdown would claim it is late.
+        cell.update(state="none", level="none")
+        return cell
+    cell["filed_at"] = when
+    due = deadlines.reporting_deadline(check_in) if check_in else None
+    if due is not None and when > due:
+        # Never "0 h late": anything past the deadline is at least an hour.
+        hours = max(1, int((when - due).total_seconds() // 3600))
+        cell.update(state="filed_late", level="neutral", late_hours=hours)
+    else:
+        cell.update(state="filed_on_time", level="done")
+    return cell
+
+
 def dashboard_rows(
     days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
 ) -> List[Dict[str, Any]]:
@@ -555,6 +610,7 @@ def dashboard_rows(
                 continue
         apartment = access.apartment_for_reservation(reservation, owner_user_id)
         controls = send_controls(reservation, apartment, progress) if apartment else {}
+        cell = deadline_cell(progress, check_in)
         out.append(
             {
                 "reservation": reservation,
@@ -563,6 +619,10 @@ def dashboard_rows(
                 "urgency": level,
                 "check_in": check_in,
                 "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
+                "deadline_cell": cell,
+                "deadline_state": cell["state"],
+                "filed_at": cell["filed_at"],
+                "late_hours": cell["late_hours"],
             }
         )
     out.sort(
