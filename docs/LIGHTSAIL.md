@@ -267,7 +267,12 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 
 ## Scheduler
 
-`UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler:
+`UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler. Since WP06 it runs
+in the separate `worker` container (`UBYHOST_ROLE=worker`, `python -m
+app.worker`); the `ubyhost` container runs two uvicorn workers with
+`UBYHOST_ROLE=web` and never starts it. `./scripts/logs.sh worker` must show
+`scheduler started` exactly once per deploy. The stack needs the **2 GB**
+bundle (Small): memory limits are web 896m, worker 448m, litestream 128m.
 
 | Job | Interval |
 |-----|----------|

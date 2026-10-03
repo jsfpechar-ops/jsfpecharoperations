@@ -18,6 +18,8 @@ services:
     environment:
       UBYHOST_DATA_DIR: /data
       PORT: "8080"
+      # WP06: two uvicorn workers that only serve HTTP; jobs run in `worker`.
+      UBYHOST_ROLE: web
     volumes:
       - ubyhost-data:/data
     expose:
@@ -34,7 +36,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 25s
-    mem_limit: 768m
+    # 2 GB bundle (WP06): web 896m + worker 448m + litestream 128m + Caddy
+    # leaves about 450 MB for the OS and Docker.
+    mem_limit: 896m
     # OPS-3: bound container logs so they cannot grow without limit. Rotated
     # lines are gone for good; capture anything needed during an incident.
     logging:
@@ -42,6 +46,51 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+    networks:
+      - web
+
+  # WP06: the background scheduler (iCal sync, UbyPort sweep, deadline watch,
+  # mail outbox, photo sweep, retention) in its own process. Same image, env
+  # and volume as the web app; it holds DATA_DIR/scheduler.lock, so a second
+  # scheduler anywhere on this volume refuses to start.
+  worker:
+    image: ubyhost:local
+    pull_policy: never
+    restart: unless-stopped
+    # A UbyPort batch already on the wire must record its answer.
+    stop_grace_period: 90s
+    env_file: .env
+    environment:
+      UBYHOST_DATA_DIR: /data
+      UBYHOST_ROLE: worker
+    command: ["python", "-m", "app.worker"]
+    volumes:
+      - ubyhost-data:/data
+    # No HTTP server: the worker touches /data/worker.alive every 30 s while
+    # its scheduler runs.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/data/worker.alive') < 120 else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    mem_limit: 448m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # Built and migrated by the web service first; also creates the volume
+    # with the app's ownership on a fresh server.
+    depends_on:
+      ubyhost:
+        condition: service_healthy
     networks:
       - web
 

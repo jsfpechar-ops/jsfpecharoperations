@@ -35,5 +35,9 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 # --no-access-log: uvicorn's own access log writes the raw request line, which
 # includes guest permalink tokens and query strings. The app logs one PII-free
 # line per request instead (see app/main.py, OPS-3).
-# One worker: the scheduler runs in-process and SQLite has one writer.
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]
+# Two web workers (WP06). UBYHOST_ROLE defaults to web, so neither starts the
+# scheduler: the background jobs run in a separate container from this image
+# (`python -m app.worker`, UBYHOST_ROLE=worker; see deploy/lightsail). SQLite
+# still has one writer at a time; writers queue on its lock (timeout=30) and
+# the start-up migrations are serialised by an flock (app/db.py startup_lock).
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2", "--no-access-log"]

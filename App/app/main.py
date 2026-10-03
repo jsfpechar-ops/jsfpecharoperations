@@ -80,15 +80,25 @@ async def lifespan(_app: FastAPI):
     # Explicit startup work, because importing config no longer creates the data
     # directory or writes the signing key to disk.
     config.ensure_data_dir()
-    # Read the key here, where a bad one stops the app from booting. Left lazy,
-    # it raised on the first page that signed a cookie: /healthz answered 200
-    # while /login answered 500, so the deploy's health check passed and the
-    # broken release went live.
-    config.secret_key()
-    db.init_db()
+    if config.ROLE not in ("web", "all"):
+        raise RuntimeError(
+            f"UBYHOST_ROLE={config.ROLE!r} cannot serve HTTP; use web or all "
+            "(the background worker starts with: python -m app.worker)"
+        )
     from PIL import Image
     Image.MAX_IMAGE_PIXELS = 12_000_000  # every image we render is a signature or a QR code
-    bootstrap_password = auth.ensure_bootstrap_admin()
+    # WP06: two web workers and the scheduler worker boot at the same moment.
+    # Key creation, migrations, the first administrator and the PIN rotation
+    # each assume they run alone, so they run one process at a time.
+    with db.startup_lock():
+        # Read the key here, where a bad one stops the app from booting. Left
+        # lazy, it raised on the first page that signed a cookie: /healthz
+        # answered 200 while /login answered 500, so the deploy's health check
+        # passed and the broken release went live.
+        config.secret_key()
+        db.init_db()
+        bootstrap_password = auth.ensure_bootstrap_admin()
+        rotate_weak_permalinks()
     admin_username = auth.normalise_username(config.ADMIN_USERNAME) or "admin"
     if bootstrap_password:
         log.warning(
@@ -101,7 +111,6 @@ async def lifespan(_app: FastAPI):
             "Created the first administrator (%s). Log in using UBYHOST_ADMIN_PASSWORD.",
             admin_username,
         )
-    rotate_weak_permalinks()
     log.info("database ready at %s", config.DB_PATH)
     log.info(
         "deployment=%s ubyport=%s endpoint=%s",
@@ -119,7 +128,10 @@ async def lifespan(_app: FastAPI):
         log.warning(
             "LIVE production reporting is active — submissions go to the real police register."
         )
-    scheduler.start()
+    if config.ROLE == "all":
+        scheduler.start()
+    elif config.ENABLE_SCHEDULER:
+        log.info("role=web: background jobs run in the worker process (python -m app.worker)")
     try:
         yield
     finally:

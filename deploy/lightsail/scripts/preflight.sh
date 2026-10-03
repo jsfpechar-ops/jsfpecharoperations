@@ -77,6 +77,17 @@ if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ]; 
   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
 fi
 
+# WP06: web (2 workers) + scheduler worker + litestream + Caddy need the 2 GB
+# bundle; on 1 GB their memory limits add up to more than the machine has.
+mem_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+if [ "${mem_kb:-0}" -gt 0 ] && [ "${mem_kb}" -lt 1700000 ]; then
+  if [ "${UBYHOST_ALLOW_SMALL_HOST:-0}" = "1" ]; then
+    warn "only $((mem_kb / 1024)) MB RAM — the stack is sized for the 2 GB bundle"
+  else
+    die "only $((mem_kb / 1024)) MB RAM — move to the 2 GB Lightsail bundle first (or set UBYHOST_ALLOW_SMALL_HOST=1)"
+  fi
+fi
+
 # WP05: the litestream service replicates the database to S3 continuously.
 # Without these it crash-loops and the only off-site copy is a day old.
 if [ "${DEPLOYMENT}" = "production" ]; then

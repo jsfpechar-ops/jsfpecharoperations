@@ -11,6 +11,9 @@ else
   PYTHON="python3"
 fi
 
+# Single process: web app and background scheduler together (WP06). The
+# Lightsail stack runs them as separate containers instead.
+export UBYHOST_ROLE="${UBYHOST_ROLE:-all}"
 PORT="${PORT:-10000}"
 UBYPORT_ENV="${UBYHOST_UBYPORT_ENV:-mock}"
 export UBYHOST_UBYPORT_ENV="${UBYPORT_ENV}"

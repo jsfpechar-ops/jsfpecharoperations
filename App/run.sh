@@ -16,6 +16,9 @@ export UBYHOST_PUBLIC_BASE_URL="${UBYHOST_PUBLIC_BASE_URL:-http://127.0.0.1:8080
 if [ "$UBYHOST_UBYPORT_ENV" = "mock" ]; then
   export UBYHOST_ICAL_ALLOW_PRIVATE="${UBYHOST_ICAL_ALLOW_PRIVATE:-1}"
 fi
+# Single process: web app and background scheduler together (WP06). The
+# Lightsail stack runs them as separate containers instead.
+export UBYHOST_ROLE="${UBYHOST_ROLE:-all}"
 PORT="${PORT:-8080}"
 
 cleanup() {

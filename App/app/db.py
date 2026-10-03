@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import base64
+import fcntl
 import hashlib
 import sqlite3
+import threading
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
@@ -759,10 +761,51 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
             columns[table].add(column)
 
 
+# Start-up work that must run in one process at a time (WP06): two uvicorn
+# workers and the scheduler worker boot together after every deploy. Without
+# this, two of them can both see a column missing and both ALTER TABLE, or both
+# insert the one-off settings row or the first administrator, and the loser
+# crashes on start. An flock on a file in DATA_DIR, so it also holds across
+# containers that share the volume. Reentrant within one process, because
+# init_db() takes it and the lifespan wraps init_db() in it as well.
+STARTUP_LOCK_NAME = "startup.lock"
+_startup_guard = threading.RLock()
+_startup_handle = None
+_startup_depth = 0
+
+
+@contextmanager
+def startup_lock():
+    global _startup_handle, _startup_depth
+    with _startup_guard:
+        if _startup_depth == 0:
+            config.ensure_data_dir()
+            handle = open(config.DATA_DIR / STARTUP_LOCK_NAME, "a+")
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX)
+            except BaseException:
+                handle.close()
+                raise
+            _startup_handle = handle
+        _startup_depth += 1
+        try:
+            yield
+        finally:
+            _startup_depth -= 1
+            if _startup_depth == 0:
+                _startup_handle.close()  # closing the descriptor releases the flock
+                _startup_handle = None
+
+
 def init_db() -> None:
     # The data directory has to exist before sqlite opens the database inside
     # it, and creating it is no longer an import-time side effect of config.
     config.ensure_data_dir()
+    with startup_lock():
+        _init_db_locked()
+
+
+def _init_db_locked() -> None:
     conn = connect()
     try:
         # Migrate before the schema, because SCHEMA also creates indexes over

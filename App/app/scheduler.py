@@ -183,13 +183,20 @@ def _acquire_single_instance_lock() -> bool:
     return True
 
 
-def start() -> None:
+def start() -> bool:
+    """Start the background jobs here; True when this process now runs them.
+
+    False when the scheduler is switched off or another process (or container
+    on the same volume) already holds the scheduler lock.
+    """
     global _scheduler
-    if _scheduler or not config.ENABLE_SCHEDULER:
-        return
+    if _scheduler:
+        return True
+    if not config.ENABLE_SCHEDULER:
+        return False
     if not _acquire_single_instance_lock():
         log.warning("another process holds the scheduler lock; not starting a scheduler here")
-        return
+        return False
     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
     _scheduler.add_job(
         _job_sync_calendars, "interval", minutes=config.ICAL_POLL_MINUTES,
@@ -219,6 +226,12 @@ def start() -> None:
         config.ICAL_POLL_MINUTES,
         config.SUBMIT_SWEEP_MINUTES,
     )
+    return True
+
+
+def running() -> bool:
+    """Whether this process runs the scheduler and its thread is alive."""
+    return bool(_scheduler and _scheduler.running)
 
 
 def _soon():

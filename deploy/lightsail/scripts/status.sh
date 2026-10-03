@@ -10,11 +10,21 @@ docker compose ps
 echo ""
 echo "Internal runtime (not exposed on public /healthz in production):"
 if docker compose exec -T ubyhost python -c \
-  "from app import config; print('deployment=', config.DEPLOYMENT); print('ubyport_env=', config.UBYPORT_ENV); print('endpoint=', config.endpoint_for()); print('scheduler=', config.ENABLE_SCHEDULER); print('guest_pin=', config.GUEST_PIN_REQUIRED); print('public_base_url=', config.PUBLIC_BASE_URL); print('data_dir=', config.DATA_DIR)" \
+  "from app import config; print('deployment=', config.DEPLOYMENT); print('ubyport_env=', config.UBYPORT_ENV); print('endpoint=', config.endpoint_for()); print('scheduler=', config.ENABLE_SCHEDULER); print('role=', config.ROLE); print('guest_pin=', config.GUEST_PIN_REQUIRED); print('public_base_url=', config.PUBLIC_BASE_URL); print('data_dir=', config.DATA_DIR)" \
   2>/dev/null; then
   :
 else
   echo "(ubyhost not running — start with ./scripts/deploy.sh)"
+fi
+
+echo ""
+echo "Background worker (WP06):"
+if docker compose exec -T worker python -c \
+  "import os, time; print('worker.alive age (s)=', int(time.time() - os.path.getmtime('/data/worker.alive')))" \
+  2>/dev/null; then
+  :
+else
+  echo "(worker not running or not alive — ./scripts/logs.sh worker)"
 fi
 
 if [ -f .env ]; then

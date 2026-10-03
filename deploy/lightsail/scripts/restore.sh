@@ -91,8 +91,10 @@ fi
 # existing replica: mixing two histories under one S3 path can make the
 # replica unrestorable. Stop it here; it stays stopped until LITESTREAM_S3_PATH
 # points at a new prefix (see the end of this script and README.md).
-echo "==> Stopping litestream and ubyhost (Caddy stays up and will 502 until restart)"
+echo "==> Stopping litestream, worker and ubyhost (Caddy stays up and will 502 until restart)"
 docker compose stop litestream 2>/dev/null || true
+# WP06: the scheduler worker writes to the database too.
+docker compose stop worker 2>/dev/null || true
 docker compose stop ubyhost
 
 if [ "${LAYOUT}" = "encrypted" ]; then
@@ -151,8 +153,8 @@ else
   "
 fi
 
-echo "==> Starting ubyhost"
-docker compose up -d ubyhost
+echo "==> Starting ubyhost and the worker"
+docker compose up -d ubyhost worker
 
 echo "==> Waiting for health"
 for _ in $(seq 1 30); do
