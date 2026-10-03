@@ -11,6 +11,7 @@ from . import (
     alerts,
     claim,
     config,
+    db,
     dsr,
     filing_watchdog,
     host_i18n,
@@ -53,8 +54,33 @@ def _job_failed(job_id: str) -> None:
     )
 
 
+def job_intervals() -> dict:
+    """Minutes between two runs of each job, as ``start`` schedules them.
+
+    The admin Operations page reads this to call a job late when its last
+    success is older than twice the interval. ``retention`` is a daily cron.
+    """
+    return {
+        "ical": config.ICAL_POLL_MINUTES,
+        "submit": config.SUBMIT_SWEEP_MINUTES,
+        "deadlines": 30,
+        "mail": 5,
+        "photo_sweep": 12 * 60,
+        "retention": 24 * 60,
+    }
+
+
+JOB_LAST_OK_PREFIX = "job_last_ok:"
+
+
 def _job_ok(job_id: str) -> None:
     alerts.resolve(f"job_failed:{job_id}")
+    # Nothing else records a successful run, and a scheduler that silently
+    # stopped looks exactly like one with nothing to do (WP10).
+    try:
+        db.set_setting(f"{JOB_LAST_OK_PREFIX}{job_id}", db.utcnow())
+    except Exception:
+        log.warning("could not record the last success of job %s", job_id, exc_info=True)
 
 
 def _job_sync_calendars() -> None:
@@ -230,22 +256,24 @@ def start() -> bool:
         log.warning("another process holds the scheduler lock; not starting a scheduler here")
         return False
     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
+    minutes = job_intervals()
     _scheduler.add_job(
-        _job_sync_calendars, "interval", minutes=config.ICAL_POLL_MINUTES,
+        _job_sync_calendars, "interval", minutes=minutes["ical"],
         id="ical", max_instances=1, coalesce=True, next_run_time=_soon(),
     )
     _scheduler.add_job(
-        _job_submit, "interval", minutes=config.SUBMIT_SWEEP_MINUTES,
+        _job_submit, "interval", minutes=minutes["submit"],
         id="submit", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_deadlines, "interval", minutes=30, id="deadlines", max_instances=1, coalesce=True,
+        _job_deadlines, "interval", minutes=minutes["deadlines"], id="deadlines",
+        max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_mail, "interval", minutes=5, id="mail", max_instances=1, coalesce=True,
+        _job_mail, "interval", minutes=minutes["mail"], id="mail", max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
-        _job_photo_sweep, "interval", hours=12, id="photo_sweep",
+        _job_photo_sweep, "interval", minutes=minutes["photo_sweep"], id="photo_sweep",
         max_instances=1, coalesce=True, next_run_time=_soon(),
     )
     _scheduler.add_job(

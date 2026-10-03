@@ -15,6 +15,7 @@ from starlette.background import BackgroundTask
 from .. import (
     acceptance,
     access,
+    admin_ops,
     auth,
     config,
     db,
@@ -627,6 +628,18 @@ def incidents_admin(request: Request):
             ),
         },
     )
+
+
+@router.get("/admin/operations")
+def operations_admin(request: Request):
+    """Read-only cross-workspace health: filings, calendars, jobs, mail (WP10).
+
+    No guest field is read, so nothing on the page identifies a guest.
+    """
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    return render(request, "admin_operations.html", {"ops": admin_ops.overview()})
 
 
 @router.post("/admin/incidents")

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% set nav = 'operations' %}
+{% block title %}{{ t('ops.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{% macro age(minutes) -%}
+  {%- if minutes is none -%}{{ t('ops.age.never') }}
+  {%- elif minutes < 120 -%}{{ t('ops.age.minutes', n=minutes) }}
+  {%- elif minutes < 2880 -%}{{ t('ops.age.hours', n=minutes // 60) }}
+  {%- else -%}{{ t('ops.age.days', n=minutes // 1440) }}{%- endif -%}
+{%- endmacro %}
+{% macro workspace_link(row) -%}
+  {%- if row.owner_user_id -%}<a href="/admin/users#user-{{ row.owner_user_id }}">{{ row.workspace or row.owner_user_id }}</a>{%- else -%}<span class="muted">{{ t('ops.no_workspace') }}</span>{%- endif -%}
+{%- endmacro %}
+{{ page_header(t('ops.title'), t('ops.lede')) }}
+
+<section class="panel tight scroll-x" id="ops-filings">
+  <h2 style="margin-top:0">{{ t('ops.filings.title') }} <span class="pill {{ 'red' if ops.filings.count else 'green' }}">{{ ops.filings.count }}</span></h2>
+  <p class="small muted">{{ t('ops.filings.help') }}</p>
+  {% if ops.filings.rows %}
+  <table class="table-cards">
+    <thead><tr><th>{{ t('ops.col.workspace') }}</th><th>{{ t('ops.col.property') }}</th><th>{{ t('ops.col.stay') }}</th><th>{{ t('ops.col.state') }}</th><th>{{ t('ops.col.age') }}</th></tr></thead>
+    <tbody>
+    {% for row in ops.filings.rows %}
+      <tr>
+        <td data-label="{{ t('ops.col.workspace') }}">{{ workspace_link(row) }}</td>
+        <td data-label="{{ t('ops.col.property') }}">{{ row.property }}</td>
+        <td data-label="{{ t('ops.col.stay') }}" class="mono">#{{ row.stay_id }}</td>
+        <td data-label="{{ t('ops.col.state') }}">{{ t('ops.filing_state.' ~ row.state) }}</td>
+        <td data-label="{{ t('ops.col.age') }}">{{ age(row.age_minutes) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('ops.none') }}</p>{% endif %}
+  {% if ops.stuck.count %}
+  <h3>{{ t('ops.stuck.title') }} <span class="pill red">{{ ops.stuck.count }}</span></h3>
+  <table class="table-cards">
+    <thead><tr><th>{{ t('ops.col.workspace') }}</th><th>{{ t('ops.col.property') }}</th><th>{{ t('ops.col.submission') }}</th><th>{{ t('ops.col.age') }}</th></tr></thead>
+    <tbody>
+    {% for row in ops.stuck.rows %}
+      <tr>
+        <td data-label="{{ t('ops.col.workspace') }}">{{ workspace_link(row) }}</td>
+        <td data-label="{{ t('ops.col.property') }}">{{ row.property }}</td>
+        <td data-label="{{ t('ops.col.submission') }}" class="mono">#{{ row.submission_id }}</td>
+        <td data-label="{{ t('ops.col.age') }}">{{ age(row.age_minutes) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section class="panel tight scroll-x" id="ops-feeds">
+  <h2 style="margin-top:0">{{ t('ops.feeds.title') }} <span class="pill {{ 'amber' if ops.feeds.count else 'green' }}">{{ ops.feeds.count }}</span></h2>
+  <p class="small muted">{{ t('ops.feeds.help') }}</p>
+  {% if ops.feeds.rows %}
+  <table class="table-cards">
+    <thead><tr><th>{{ t('ops.col.workspace') }}</th><th>{{ t('ops.col.property') }}</th><th>{{ t('ops.col.feed') }}</th><th>{{ t('ops.col.state') }}</th><th>{{ t('ops.col.last_sync') }}</th></tr></thead>
+    <tbody>
+    {% for row in ops.feeds.rows %}
+      <tr>
+        <td data-label="{{ t('ops.col.workspace') }}">{{ workspace_link(row) }}</td>
+        <td data-label="{{ t('ops.col.property') }}">{{ row.property }}</td>
+        <td data-label="{{ t('ops.col.feed') }}"><span class="mono">#{{ row.feed_id }}</span> {{ row.label }}</td>
+        <td data-label="{{ t('ops.col.state') }}">{{ t('ops.feed_state.' ~ row.status) if row.status in ('ok', 'error', 'suspect', 'never') else row.status }}</td>
+        <td data-label="{{ t('ops.col.last_sync') }}">{{ age(row.age_minutes) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('ops.none') }}</p>{% endif %}
+</section>
+
+<section class="panel tight scroll-x" id="ops-jobs">
+  <h2 style="margin-top:0">{{ t('ops.jobs.title') }} <span class="pill {{ 'red' if ops.jobs.count else 'green' }}">{{ ops.jobs.count }}</span></h2>
+  <p class="small muted">{{ t('ops.jobs.help') }}</p>
+  <table class="table-cards">
+    <thead><tr><th>{{ t('ops.col.job') }}</th><th>{{ t('ops.col.interval') }}</th><th>{{ t('ops.col.last_ok') }}</th><th>{{ t('ops.col.state') }}</th></tr></thead>
+    <tbody>
+    {% for row in ops.jobs.rows %}
+      <tr>
+        <td data-label="{{ t('ops.col.job') }}">{{ t('notification.job_name.' ~ row.job_id) | capitalize }}</td>
+        <td data-label="{{ t('ops.col.interval') }}">{{ age(row.interval_minutes) }}</td>
+        <td data-label="{{ t('ops.col.last_ok') }}">{{ age(row.age_minutes) }}</td>
+        <td data-label="{{ t('ops.col.state') }}">
+          {% if row.failed %}<span class="pill red">{{ t('ops.job_state.failed') }}</span>
+          {% elif row.late %}<span class="pill amber">{{ t('ops.job_state.late') }}</span>
+          {% else %}<span class="pill green">{{ t('ops.job_state.ok') }}</span>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel tight scroll-x" id="ops-mail">
+  <h2 style="margin-top:0">{{ t('ops.mail.title') }} <span class="pill {{ 'amber' if ops.mail.count else 'green' }}">{{ ops.mail.count }}</span></h2>
+  <p class="small muted">{{ t('ops.mail.help') }}</p>
+  {% if ops.mail.rows %}
+  <table class="table-cards">
+    <thead><tr><th>{{ t('ops.col.mail') }}</th><th>{{ t('ops.col.kind') }}</th><th>{{ t('ops.col.state') }}</th><th>{{ t('ops.col.attempts') }}</th><th>{{ t('ops.col.age') }}</th></tr></thead>
+    <tbody>
+    {% for row in ops.mail.rows %}
+      <tr>
+        <td data-label="{{ t('ops.col.mail') }}" class="mono">#{{ row.outbox_id }}</td>
+        <td data-label="{{ t('ops.col.kind') }}" class="mono">{{ row.kind }}</td>
+        <td data-label="{{ t('ops.col.state') }}" class="mono">{{ row.state }}</td>
+        <td data-label="{{ t('ops.col.attempts') }}">{{ row.attempts }}</td>
+        <td data-label="{{ t('ops.col.age') }}">{{ age(row.age_minutes) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('ops.none') }}</p>{% endif %}
+</section>
+
+<section class="panel tight scroll-x" id="ops-alerts">
+  <h2 style="margin-top:0">{{ t('ops.alerts.title') }} <span class="pill {{ 'amber' if ops.alerts.count else 'green' }}">{{ ops.alerts.count }}</span></h2>
+  <p class="small muted">{{ t('ops.alerts.help') }}</p>
+  {% if ops.alerts.rows %}
+  <table class="table-cards">
+    <thead><tr><th>{{ t('ops.col.kind') }}</th><th>{{ t('ops.col.level') }}</th><th>{{ t('ops.col.count') }}</th><th>{{ t('ops.col.oldest') }}</th></tr></thead>
+    <tbody>
+    {% for row in ops.alerts.rows %}
+      <tr>
+        <td data-label="{{ t('ops.col.kind') }}" class="mono">{{ row.kind }}</td>
+        <td data-label="{{ t('ops.col.level') }}">{{ row.level }}</td>
+        <td data-label="{{ t('ops.col.count') }}">{{ row.count }}</td>
+        <td data-label="{{ t('ops.col.oldest') }}">{{ age(row.age_minutes) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('ops.none') }}</p>{% endif %}
+</section>
+{% endblock %}

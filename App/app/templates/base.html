@@ -84,6 +84,7 @@
         {% if current_user.role == 'admin' %}
         <a href="/admin/users">{{ t('nav.users') }}</a>
         <a href="/admin/incidents">{{ t('users.incidents_link') }}</a>
+        <a href="/admin/operations">{{ t('ops.title') }}</a>
         {% endif %}
         <div class="host-menu-rule"></div>
         <form method="post" action="/language" class="lang-switch compact">

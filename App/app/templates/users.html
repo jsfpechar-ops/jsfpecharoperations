@@ -37,7 +37,7 @@
         <thead><tr><th>{{ t('users.table.user') }}</th><th>{{ t('users.table.role') }}</th><th>{{ t('users.table.properties') }}</th><th>{{ t('users.table.status') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr></thead>
         <tbody>
         {% for user in users %}
-          <tr>
+          <tr id="user-{{ user.id }}">
             <td data-label="{{ t('users.table.user') }}">
               <strong>{{ user.display_name or user.username }}</strong>
               <div class="small muted mono">{{ user.username }}</div>
