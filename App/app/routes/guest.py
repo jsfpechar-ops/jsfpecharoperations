@@ -315,10 +315,6 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
     return urlunsplit(("", "", path, split.query, "")) + fragment
 
 
-def _localize_message(message: str) -> str:
-    return validation_i18n.localize(message)
-
-
 # The child-on-a-parent's-passport check is keyed "note" in validation.py, where
 # the column really is called that. The guest form has no "note" box: it has the
 # parent's document number. So for the guest the issue is renamed onto the field
