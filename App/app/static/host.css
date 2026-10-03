@@ -107,7 +107,6 @@
 .host-property-card small { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
 .host-property-card .nav-icon { color: var(--muted); width: 23px; height: 23px; }
 .host-property-card > span:last-child { margin-left: auto; color: var(--muted); }
-.host-property-heading { margin-top: 8px; }
 .host-workspace .property-section > summary { cursor: pointer; font-size: 17px; font-weight: 700; padding: 0; }
 .host-workspace .property-section[open] > summary { margin-bottom: 20px; }
 .host-workspace .property-section { scroll-margin-top: 24px; }
@@ -118,9 +117,6 @@
 .host-workspace .section-nav a { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: 12px; }
 .host-workspace .saved-views:empty { display: none; }
 .host-workspace .saved-views { margin: 0 auto 15px; }
-.host-workspace .focus-card { background: white; border: 1px solid var(--line); box-shadow: none; border-left: 4px solid var(--brand); }
-.host-workspace .focus-title { font-size: 19px; }
-.host-workspace .focus-meta { font-size: 12px; }
 .host-workspace .onboarding-banner, .host-workspace .onboarding-finish { box-shadow: none; background: #fbeae2; }
 .host-workspace .page-toolbar { gap: 8px; }
 .host-workspace .command-dialog, .host-workspace .confirm-dialog { border-radius: 16px; }
@@ -234,26 +230,18 @@ body.host-workspace {
     max-height: 200px;
     gap: 8px;
   }
-  .host-workspace .notification-bubble,
-  .host-workspace .notification-more {
+  .host-workspace .notification-bubble {
     border-radius: 22px;
     border: 0;
     box-shadow: 0 14px 36px rgba(32, 32, 30, 0.14), 0 2px 8px rgba(32, 32, 30, 0.06);
   }
 }
 .host-property-save { position: sticky; bottom: 12px; z-index: 19; width: fit-content; background: white; border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: var(--shadow-popover); }
-.host-today-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-.host-today-actions .page-toolbar, .host-today-actions .page-toolbar-row { margin: 0; padding: 0; }
 .host-workspace { --action-gap: 8px; --action-height: 42px; }
 .host-workspace .action-group { display: flex; align-items: center; gap: var(--action-gap); }
 .host-workspace .action-group > .btn,
 .host-workspace .action-group > form > .btn,
 .host-workspace .action-group .sync-cta .btn { height: var(--action-height); min-height: var(--action-height); }
-.host-workspace .action-group-equal > .btn,
-.host-workspace .action-group-equal > form,
-.host-workspace .action-group-equal > .sync-cta { flex: 1 1 0; min-width: 0; }
-.host-workspace .action-group-equal > form > .btn,
-.host-workspace .action-group-equal .sync-cta .btn { width: 100%; }
 .host-workspace .action-group .sync-cta { display: flex; }
 .host-workspace .action-group .sync-cta-form { flex: 1; }
 .host-workspace .dashboard-actions { display: grid; justify-items: end; gap: 6px; margin-left: auto; max-width: 100%; }
