@@ -14,7 +14,7 @@ from .. import (
     claim,
     db,
     host_i18n,
-    list_month_filter,
+    list_filter,
     payments,
     security,
     stay_fee,
@@ -60,20 +60,35 @@ def _ui_period_label(request: Request, cadence: str, month: date) -> str:
     return f"{host_i18n.translate(lang, f'month.{month.month}')} {month.year}"
 
 
-def _month_filter_template(
-    selected_month: date,
-    today: date,
-    *,
-    form_action: str = "/stay-fees",
-    filter_id: str = "stay-fee-period",
-) -> dict:
+STAY_FEE_STATUSES = (
+    ("attention", "stay_fees.needs_setup"),
+    ("ready", "stay_fees.status.ready"),
+    ("saved", "stay_fees.status.saved"),
+)
+
+
+def _row_status(row: dict) -> str:
+    if row["unset"]:
+        return "attention"
+    if row.get("frozen"):
+        return "saved"
+    if row["issues"] and row["issues"] != ["stay_fees.issue.period_running"]:
+        return "attention"
+    return "ready"
+
+
+def _detail_filter(selected_month: date, today: date, apartment_id: int) -> dict:
+    """The detail page uses the same control, month only."""
+    view = list_filter.ListFilter(selected_month, None, "", "", selected_month)
     return {
-        "filter_id": filter_id,
-        "form_action": form_action,
-        "period_label_key": "stay_fees.filter.period",
-        "hint_label_key": "stay_fees.filter.hint",
-        **list_month_filter.month_filter_nav(
-            selected_month, today, month_required=True
+        "month_key": stay_fee.month_key(selected_month),
+        **list_filter.context(
+            view,
+            action=f"/stay-fees/{apartment_id}",
+            today=today,
+            period_label_key="stay_fees.filter.period",
+            properties=(),
+            statuses=(),
         ),
     }
 
@@ -85,20 +100,22 @@ def stay_fees_list(request: Request):
         return guard
 
     today = claim.prague_today()
-    default_month = _default_month(today)
-    selected_month = stay_fee.parse_month(request.query_params.get("month"))
-    if selected_month is None:
-        selected_month = default_month
-    elif selected_month > today.replace(day=1):
-        return RedirectResponse(
-            f"/stay-fees?month={stay_fee.month_key(default_month)}",
-            status_code=303,
-        )
-
     owner_id = access.owner_id(request)
-    periods = stay_fee.owner_periods(owner_id, selected_month)
+    apartments = db.query(
+        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        "AND active = 1 ORDER BY internal_name, id",
+        (owner_id,),
+    )
+    view = list_filter.parse(
+        request.query_params,
+        today=today,
+        statuses=[value for value, _ in STAY_FEE_STATUSES],
+        default_month=_default_month(today),
+        apartment_ids=[row["id"] for row in apartments],
+    )
+    selected_month = view.month
     rows = []
-    for period in periods:
+    for period in stay_fee.owner_periods(owner_id, selected_month):
         apartment = period["apartment"]
         group = stay_fee.report_group(apartment, selected_month, period=period)
         issues = stay_fee.report_issues(group, today)
@@ -113,14 +130,16 @@ def stay_fees_list(request: Request):
             "unset": False,
         })
     configured = {row["apartment"]["id"] for row in rows}
-    apartments = db.query(
-        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
-        "AND active = 1 ORDER BY internal_name, id",
-        (owner_id,),
-    )
     for apartment in apartments:
         if apartment["id"] not in configured:
-            rows.append({"apartment": apartment, "unset": True})
+            rows.append({"apartment": apartment, "unset": True, "issues": []})
+    for row in rows:
+        row["status"] = _row_status(row)
+    rows = [
+        row for row in rows
+        if (view.apartment_id is None or row["apartment"]["id"] == view.apartment_id)
+        and (not view.status or row["status"] == view.status)
+    ]
     rows.sort(key=lambda row: (row["apartment"]["internal_name"] or "", row["apartment"]["id"]))
 
     return render(request, "stay_fees.html", {
@@ -128,7 +147,14 @@ def stay_fees_list(request: Request):
         "periods": rows,
         "selected_month": selected_month,
         "has_properties": bool(apartments),
-        **_month_filter_template(selected_month, today),
+        **list_filter.context(
+            view,
+            action="/stay-fees",
+            today=today,
+            period_label_key="stay_fees.filter.period",
+            properties=apartments,
+            statuses=STAY_FEE_STATUSES,
+        ),
     })
 
 
@@ -261,12 +287,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
     return render(request, "stay_fee_detail.html", {
         "nav": "stay_fees",
         "apartment": apartment,
-        **_month_filter_template(
-            selected_month,
-            today,
-            form_action=f"/stay-fees/{apartment_id}",
-            filter_id="stay-fee-detail-period",
-        ),
+        **_detail_filter(selected_month, today, apartment_id),
         "period": period,
         "group": group,
         "ui_period": _ui_period_label(request, group["cadence"], selected_month),
