@@ -70,7 +70,7 @@
           {% elif row.reported.startswith('not required') %}<span class="pill grey">{{ t('status.not_required') }}</span>
           {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
           {% elif row.reported.startswith('NO') %}<span class="pill red">{{ t('submission.rejected') }}</span>
-          {% else %}<span class="pill amber">{{ t('housebook.not_sent') }}</span>{% endif %}
+          {% else %}<span class="pill teal">{{ t('housebook.not_sent') }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
