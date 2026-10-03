@@ -1,5 +1,4 @@
 """Contracts for guest-enhancements.js on the Arrival lane shell."""
-import re
 from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1] / "app"

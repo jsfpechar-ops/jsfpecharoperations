@@ -1,0 +1,9 @@
+# CI scans the last 50 commits (`ci.yml` secrets job). Test fixtures use
+# obviously fake tokens and passwords; allow that tree so real leaks elsewhere
+# still fail the job.
+
+[[allowlists]]
+description = "pytest fixtures and fake credentials in App/tests"
+paths = [
+  '''(?i)(?:^|/)App/tests/''',
+]
