@@ -682,7 +682,8 @@ def test_retention_purge_deletes_old_guests():
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    old_end = (date.today() - timedelta(days=365 * 6 + 30)).isoformat()
+    # Past the six years and the 31 January deletion day that follows them.
+    old_end = (housebook.retention_cutoff(date.today()) - timedelta(days=30)).isoformat()
     entity_id = db.insert(
         "legal_entity",
         {"name": "Overhaul Test s.r.o.", "created_at": now},

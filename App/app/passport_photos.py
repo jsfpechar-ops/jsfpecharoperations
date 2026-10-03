@@ -3,7 +3,8 @@
 Guests upload a photo, camera capture, or PDF (e.g. a multi-guest registration
 form). Files stay on disk only until the host confirms the data matches the
 document, then are deleted immediately. Only authenticated hosts can read them
-via the admin route.
+via the admin route. Unverified files go 7 days after check-in, and no file
+lives longer than 30 days after upload (see ``purge_stale``).
 
 Verification is the happy path, not a guarantee: a host can simply never press
 the button. ``purge_stale`` is the backstop that makes the promise true, and it
@@ -216,14 +217,22 @@ def delete_photo(guest_id: int) -> None:
 # --- retention -----------------------------------------------------------
 #
 # A photo exists for one purpose: letting the host compare the form against the
-# document before reporting. That purpose dies with the stay, so the file has
-# to go even when the host never pressed Verify. The grace period is generous
-# enough for a host who was away the week the guest checked out.
-PHOTO_GRACE_DAYS = 30
+# document before reporting. That purpose ends with the check, so the owner's
+# retention decision (legal positions, section 4) is: delete it when the host
+# marks the guest verified, otherwise 7 days after check-in, and never later
+# than 30 days after upload, whatever the stay dates say.
+PHOTO_AFTER_CHECKIN_DAYS = 7
+PHOTO_MAX_AGE_DAYS = 30
 
 
-def stale_cutoff(today: Optional[date] = None) -> date:
-    return (today or date.today()) - timedelta(days=PHOTO_GRACE_DAYS)
+def checkin_cutoff(today: Optional[date] = None) -> date:
+    """A stay that started on or before this date is at the end of its 7 days."""
+    return (today or date.today()) - timedelta(days=PHOTO_AFTER_CHECKIN_DAYS)
+
+
+def upload_cutoff(today: Optional[date] = None) -> date:
+    """A photo uploaded on or before this date has reached the 30-day hard cap."""
+    return (today or date.today()) - timedelta(days=PHOTO_MAX_AGE_DAYS)
 
 
 def _orphan_ids() -> list[int]:
@@ -258,23 +267,30 @@ def _orphan_ids() -> list[int]:
 
 
 def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = None) -> int:
-    """Delete photos whose stay is long over, plus any orphaned files.
+    """Delete photos that have no purpose left, plus any orphaned files.
 
-    Clears ``passport_photo_at`` so the host stops being offered a photo that
-    is no longer there, but never touches the rest of the guest row: that is a
-    house book entry and has its own six-year duty.
+    A photo goes when any one of these holds: the host marked the guest
+    verified (the Verify route deletes at once; this catches every other path
+    that sets ``identity_verified_at``), check-in was more than 7 days ago, or
+    the upload is more than 30 days old. Clears ``passport_photo_at`` so the
+    host stops being offered a photo that is no longer there, but never touches
+    the rest of the guest row: that is a house book entry with its own period.
     """
+    checkin = checkin_cutoff(today).isoformat()
+    uploaded = upload_cutoff(today).isoformat()
     rows = db.query(
         "SELECT g.id AS id, g.passport_photo_at AS marked FROM guest g "
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
-        # date() rather than the raw column: a stay_to that is not a date (an
+        # date() rather than the raw column: a stay_from that is not a date (an
         # old row saved before the form refused them) is NULL here and falls
         # back to the booking, instead of comparing as text - where "garbage"
         # sorts after every cutoff and would keep the photo forever.
-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) < ? "
+        "WHERE (g.identity_verified_at IS NOT NULL "
+        "OR COALESCE(date(g.stay_from), date(r.date_from)) <= ? "
+        "OR date(g.passport_photo_at) <= ?) "
         "AND (? IS NULL OR a.owner_user_id = ?)",
-        (stale_cutoff(today).isoformat(), owner_user_id, owner_user_id),
+        (checkin, uploaded, owner_user_id, owner_user_id),
     )
     removed = 0
     for row in rows:
@@ -289,12 +305,12 @@ def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = Non
         for guest_id in _orphan_ids():
             delete_photo(guest_id)
             removed += 1
-    if removed:
-        db.audit(
-            "passport_photo_sweep",
-            f"deleted {removed} passport image(s) with no remaining purpose",
-            owner_user_id=owner_user_id,
-        )
+    db.audit_retention(
+        "passport_photos",
+        removed,
+        f"check-in on or before {checkin}; upload on or before {uploaded}; or verified",
+        owner_user_id=owner_user_id,
+    )
     return removed
 
 

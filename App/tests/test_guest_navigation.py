@@ -440,8 +440,9 @@ def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
         assert "Choose your nationality in step 1 first." in page.text
         assert (
             "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
-            "sees it, to compare it with what you entered. It is deleted after the check, or "
-            "automatically after your stay. It is never sent to the police."
+            "sees it, to compare it with what you entered. It is deleted after the check, "
+            "otherwise 7 days after check-in, and never later than 30 days after upload. It is "
+            "never sent to the police."
         ) in page.text
         # The internal storage policy is not the guest's problem.
         assert "stale-file sweep" not in page.text

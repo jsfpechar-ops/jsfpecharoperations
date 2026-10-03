@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import fcntl
 import hashlib
+import json
 import sqlite3
 import threading
 from contextlib import contextmanager
@@ -1034,6 +1035,41 @@ def audit(
             "owner_user_id": owner_user_id,
             "actor_user_id": actor_user_id,
             "impersonator_user_id": impersonator_user_id,
+        },
+    )
+
+
+def audit_retention(
+    data_class: str,
+    count: int,
+    cutoff: str,
+    *,
+    owner_user_id: Optional[int] = None,
+    dry_run: bool = False,
+) -> None:
+    """One audit line per deletion run: which class, how many, up to which cutoff.
+
+    Written on every run, a zero count included, so the audit log shows the
+    job ran and which cutoff it applied. Counts only, never personal data. The
+    scope goes into the detail, like the ``retention_run`` line, so the system
+    record does not hang on an account that a later run may delete.
+    """
+    insert(
+        "audit",
+        {
+            "at": utcnow(),
+            "actor": "system",
+            "action": "retention_delete",
+            "detail": json.dumps(
+                {
+                    "class": data_class,
+                    "count": int(count),
+                    "cutoff": cutoff,
+                    "dry_run": bool(dry_run),
+                    "owner_user_id": owner_user_id,
+                },
+                sort_keys=True,
+            ),
         },
     )
 

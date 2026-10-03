@@ -361,8 +361,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal_notice_passport_title": "Passport photo (foreign nationals)",
         "legal_notice_passport_body": (
             "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
-            "sees it, to compare it with what you entered. It is deleted after the check, or "
-            "automatically after your stay. It is never sent to the police."
+            "sees it, to compare it with what you entered. It is deleted after the check, "
+            "otherwise 7 days after check-in, and never later than 30 days after upload. It is "
+            "never sent to the police."
         ),
         "legal_notice_reporting_title": "Police reporting and house book",
         "legal_notice_reporting_body": (
@@ -372,9 +373,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_retention_title": "How long data is kept",
         "legal_notice_retention_body": (
-            "Registration details and your signature are kept for six years from the last "
-            "house-book entry, as required by § 101 of Act No. 326/1999 Coll. Processing is "
-            "based on legal obligation (GDPR Article 6(1)(c)), not consent."
+            "Registration details and your signature are kept for six years after the end of "
+            "your stay, as required by § 101(4) of Act No. 326/1999 Coll., and then deleted. "
+            "Processing is based on legal obligation (GDPR Article 6(1)(c)), not consent."
         ),
         "legal_notice_refusal_title": "If you refuse",
         "legal_notice_refusal_body": (
@@ -479,8 +480,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "If you are not a Czech citizen, you may upload a photograph of your passport or ID "
             "page, or a PDF registration form, so the host can verify your details. The file is "
             "processed only for that check and access in the app is restricted to authorised host "
-            "users. It is deleted after verification; if it remains unverified, a scheduled sweep "
-            "removes it after the stay. Restricted operator or infrastructure access may be required "
+            "users. It is deleted after verification; if it remains unverified, it is deleted 7 "
+            "days after check-in, and never later than 30 days after upload. Restricted operator or infrastructure access may be required "
             "to operate and secure the service. It is not transmitted to the police."
         ),
         "privacy_recipients": "Who receives it",
@@ -512,15 +513,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_retention": "How long it is kept",
         "privacy_retention_body": (
-            "House-book registration details and signatures are kept for six years from the last "
-            "entry, as § 101 requires. The claim e-mail remains linked while the reservation record "
+            "House-book registration details and signatures are kept for six years after the end "
+            "of the stay, as § 101 requires, and then deleted. The claim e-mail remains linked while the reservation record "
             "is retained unless the host releases the claim. Completed or failed message-delivery "
             "records are normally deleted after 14 days; limited backup "
             "copies may persist until their retention cycle expires."
         ),
         "privacy_retention_body_no_email": (
-            "House-book registration details and signatures are kept for six years from the last "
-            "entry, as § 101 requires. Limited backup copies may persist until their retention cycle expires."
+            "House-book registration details and signatures are kept for six years after the end "
+            "of the stay, as § 101 requires, and then deleted. Limited backup copies may persist until their retention cycle expires."
         ),
         "privacy_rights": "Your rights",
         "privacy_rights_body": (
@@ -975,8 +976,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal_notice_passport_title": "Fotografie pasu (cizinci)",
         "legal_notice_passport_body": (
             "Cizinci nahrají fotku stránky pasu nebo průkazu (nebo PDF). Uvidí ji jen ubytovatel, "
-            "aby ji porovnal s vyplněnými údaji. Po kontrole se smaže, jinak automaticky po "
-            "skončení pobytu. Policii se nikdy neposílá."
+            "aby ji porovnal s vyplněnými údaji. Po kontrole se smaže, jinak do 7 dnů od "
+            "příjezdu, nejpozději 30 dní od nahrání. Policii se nikdy neposílá."
         ),
         "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
         "legal_notice_reporting_body": (
@@ -986,8 +987,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal_notice_retention_title": "Jak dlouho se údaje uchovávají",
         "legal_notice_retention_body": (
-            "Registrační údaje a podpis se uchovávají šest let od posledního zápisu v domovní "
-            "knize podle § 101 zákona č. 326/1999 Sb. Zpracování je na základě právní povinnosti "
+            "Registrační údaje a podpis se uchovávají šest let od konce pobytu podle § 101 "
+            "odst. 4 zákona č. 326/1999 Sb. a poté se smažou. Zpracování je na základě právní povinnosti "
             "(GDPR čl. 6 odst. 1 písm. c), nikoli souhlasu."
         ),
         "legal_notice_refusal_title": "Pokud odmítnete",
@@ -1090,7 +1091,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Pokud nejste občanem ČR, můžete nahrát fotografii stránky pasu nebo průkazu, "
             "nebo PDF registrační formulář, aby hostitel ověřil údaje. Soubor slouží jen k této "
             "kontrole a přístup v aplikaci mají jen oprávnění uživatelé ubytovatele. Po ověření "
-            "se smaže; zůstane-li neověřený, plánovaná úloha jej odstraní po pobytu. Omezený přístup "
+            "se smaže; zůstane-li neověřený, smaže se do 7 dnů od příjezdu, nejpozději 30 dní od "
+            "nahrání. Omezený přístup "
             "provozovatele nebo infrastruktury může být nutný k provozu a zabezpečení služby. "
             "Policii se neposílá."
         ),
@@ -1124,14 +1126,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_retention": "Jak dlouho se uchovávají",
         "privacy_retention_body": (
-            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od posledního zápisu "
-            "podle § 101. E-mail k převzetí zůstává spojen s rezervací po dobu jejího uchování, "
+            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od konce pobytu "
+            "podle § 101 a poté se smažou. E-mail k převzetí zůstává spojen s rezervací po dobu jejího uchování, "
             "pokud ubytovatel převzetí neuvolní. Dokončené či neúspěšné záznamy doručení "
             "se běžně mažou po 14 dnech; omezené zálohy mohou zůstat do konce cyklu."
         ),
         "privacy_retention_body_no_email": (
-            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od posledního zápisu "
-            "podle § 101. Omezené zálohy mohou zůstat do konce svého retenčního cyklu."
+            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od konce pobytu "
+            "podle § 101 a poté se smažou. Omezené zálohy mohou zůstat do konce svého retenčního cyklu."
         ),
         "privacy_rights": "Vaše práva",
         "privacy_rights_body": (

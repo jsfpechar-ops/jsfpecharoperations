@@ -117,6 +117,29 @@ def _empty_reservation_step(today: date, dry_run: bool, owner_user_id: Optional[
     return count
 
 
+def _stay_fee_records_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete sealed stay-fee periods and their adjustments past the guest rule.
+
+    The stay-fee book (§ 3g(4) zákon 565/1990 Sb.) has the same six years as
+    the house book and the same 31 January deletion day. A period is a month
+    (``YYYY-MM``) or a quarter (``YYYY-Qn``), so it ends inside the year in its
+    key, and the guest cutoff is always a 1 January: a period is due when its
+    year is before the cutoff year.
+    """
+    cutoff_year = f"{housebook.retention_cutoff(today).year:04d}"
+    scope = "apartment_id IN (SELECT id FROM apartment a WHERE (? IS NULL OR a.owner_user_id = ?))"
+    where = f"substr(period_key, 1, 4) < ? AND {scope}"
+    params = (cutoff_year, owner_user_id, owner_user_id)
+    adjustments = _scalar(f"SELECT COUNT(*) AS n FROM stay_fee_adjustment WHERE {where}", params)
+    filings = _scalar(f"SELECT COUNT(*) AS n FROM stay_fee_filing WHERE {where}", params)
+    if not dry_run and (adjustments or filings):
+        with db.immediate() as cur:
+            # Adjustments point at the filing they were sealed into.
+            cur.execute(f"DELETE FROM stay_fee_adjustment WHERE {where}", params)
+            cur.execute(f"DELETE FROM stay_fee_filing WHERE {where}", params)
+    return adjustments + filings
+
+
 def _days_ago_iso(days: int) -> str:
     return (
         (datetime.now(timezone.utc) - timedelta(days=days))
@@ -325,12 +348,37 @@ STEPS: List[tuple] = [
     ("reservation_contacts", _reservation_contact_step),
     ("submitter_ips", _submitter_ip_step),
     ("empty_reservations", _empty_reservation_step),
+    ("stay_fee_records", _stay_fee_records_step),
     ("audit_rows", _audit_retention_step),
     ("alerts", _alert_retention_step),
     ("rate_limit_events", _rate_limit_retention_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
+
+
+def _cutoffs(today: date) -> Dict[str, str]:
+    """The cutoff each step applies, for its audit line (class, count, cutoff)."""
+    guests = housebook.retention_cutoff(today).isoformat()
+    contact = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()
+    return {
+        "guests": f"stay ended before {guests}",
+        "invoices": f"issued before {invoices.retention_cutoff(today).isoformat()}",
+        "claim_emails": f"stay ended before {contact}",
+        "reservation_contacts": f"stay ended before {contact}",
+        "submitter_ips": (
+            f"stay ended before {(today - timedelta(days=SUBMITTER_IP_GRACE_DAYS)).isoformat()}"
+        ),
+        "empty_reservations": f"stay ended before {guests}",
+        "stay_fee_records": f"period before {guests}",
+        "audit_rows": f"logged before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}",
+        "alerts": f"resolved before {_days_ago_iso(config.ALERT_RETENTION_DAYS)}",
+        "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
+        "legal_acceptance": (
+            f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
+        ),
+        "workspaces": f"deletion due on or before {db.utcnow()}",
+    }
 
 
 def run(
@@ -343,8 +391,9 @@ def run(
 
     ``dry_run`` defaults to ``not config.RETENTION_AUTOPURGE``. Each step is
     wrapped so one failure does not stop the rest; the first failure is
-    re-raised at the end so the scheduler marks the job failed. The run is
-    always audited and its summary stored for the Settings panel (FE-3).
+    re-raised at the end so the scheduler marks the job failed. Every step
+    that ran writes its own audit line (class, count, cutoff); the run as a
+    whole is audited too and its summary stored for the Settings panel (FE-3).
     """
     today = today or date.today()
     if dry_run is None:
@@ -353,11 +402,20 @@ def run(
     counts: Dict[str, int] = {}
     failures: List[BaseException] = []
 
+    cutoffs = _cutoffs(today)
     for name, step in STEPS:
         try:
             counts[name] = step(today, dry_run, owner_user_id)
         except Exception as exc:  # keep going; re-raised below
             failures.append(exc)
+            continue
+        db.audit_retention(
+            name,
+            counts[name],
+            cutoffs.get(name, ""),
+            owner_user_id=owner_user_id,
+            dry_run=dry_run,
+        )
 
     summary = {"dry_run": dry_run, "owner_user_id": owner_user_id, "counts": counts}
     db.audit("retention_run", json.dumps(summary), actor="system")

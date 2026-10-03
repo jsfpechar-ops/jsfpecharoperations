@@ -1999,7 +1999,9 @@ SUBMISSION_PAYLOAD_DAYS = 90
 
 
 def purge_submission_payloads(
-    owner_user_id: Optional[int] = None, days: int = SUBMISSION_PAYLOAD_DAYS
+    owner_user_id: Optional[int] = None,
+    days: int = SUBMISSION_PAYLOAD_DAYS,
+    now: Optional[datetime] = None,
 ) -> int:
     """Blank the request and response envelopes on settled submissions.
 
@@ -2009,10 +2011,17 @@ def purge_submission_payloads(
     because those are the evidence the host has to be able to produce, and
     neither of them contains guest data.
 
+    What stays is the receipt row the retention decision asks for: the stay
+    (``apartment_id`` and ``guest_ids``, ids only), ``created_at`` and
+    ``finished_at``, the result (``state`` and the UbyPort error codes), the
+    reference (``pseudo_stamp``) and the Dorucenka. It lives as long as the
+    guest records it proves, see ``housebook.purge_orphan_submissions``.
+
     Returns the number of rows that were carrying an envelope and lost it.
+    Writes one retention audit line on every run, a zero count included.
     """
     cutoff = (
-        datetime.now(timezone.utc) - timedelta(days=days)
+        (now or datetime.now(timezone.utc)) - timedelta(days=days)
     ).replace(microsecond=0).isoformat()
     marks = ", ".join("?" for _ in TERMINAL_SUBMISSION_STATES)
     rows = db.query(
@@ -2024,6 +2033,7 @@ def purge_submission_payloads(
         (cutoff, *TERMINAL_SUBMISSION_STATES, owner_user_id, owner_user_id),
     )
     if not rows:
+        db.audit_retention("ubyport_xml", 0, cutoff, owner_user_id=owner_user_id)
         return 0
     ids = [row["id"] for row in rows]
     id_marks = ", ".join("?" for _ in ids)
@@ -2037,4 +2047,5 @@ def purge_submission_payloads(
         f"blanked the request and response envelope on {len(ids)} submission(s) "
         f"older than {days} days",
     )
+    db.audit_retention("ubyport_xml", len(ids), cutoff, owner_user_id=owner_user_id)
     return len(ids)

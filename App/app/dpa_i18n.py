@@ -79,7 +79,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "of credentials, display to authorised Controller users, formatting for export, and "
             "transmission toward UbyPort or related endpoints when the Controller enables such features. "
             "Optional passport/ID files are restricted to authorised Host users in the application, "
-            "excluded from UbyPort payloads, and deleted after verification or by the stale-file sweep."
+            "excluded from UbyPort payloads, and deleted after verification, otherwise 7 days after "
+            "check-in and never later than 30 days after upload."
         ),
         "dpa.s05_title": "5. Details of processing (Annex summary)",
         "dpa.s05_body": (
@@ -189,7 +190,12 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "will delete or return Guest Data within a reasonable period, except where storage is "
             "required by law or retained in encrypted backups for a limited disaster-recovery window "
             "before automatic purging. Export tools in the Service should be used before termination. "
-            "Anonymised or aggregated data that cannot identify individuals may be retained."
+            "Anonymised or aggregated data that cannot identify individuals may be retained. "
+            "UbyHost keeps each guest record for 6 years after the end of the stay (§ 101(4) of "
+            "Act No. 326/1999 Coll.; § 3g(4) of Act No. 565/1990 Coll.) and then deletes it, unless "
+            "the host exports it first. ID document photos are deleted within 7 days after "
+            "check-in and never later than 30 days after upload. Raw UbyPort messages are deleted "
+            "after 90 days. A record of each submission without personal data is kept for 6 years."
         ),
         "dpa.s16_title": "16. Audits and information",
         "dpa.s16_body": (
@@ -321,7 +327,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(odkazy k převzetí, upozornění na nedokončení, potvrzení a kopie Správci), přenos, šifrování přihlašovacích údajů, "
             "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí. Volitelné "
             "soubory pasů a dokladů jsou v aplikaci omezeny na oprávněné uživatele ubytovatele, "
-            "nejsou součástí dat pro UbyPort a mažou se po ověření nebo plánovaným úklidem."
+            "nejsou součástí dat pro UbyPort a mažou se po ověření, jinak do 7 dnů od příjezdu, "
+            "nejpozději 30 dní od nahrání."
         ),
         "dpa.s05_title": "5. Podrobnosti zpracování (shrnutí přílohy)",
         "dpa.s05_body": (
@@ -401,7 +408,12 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s15_body": (
             "Po ukončení nebo na pokyn Správce Zpracovatel smaže nebo vrátí údaje v přiměřené lhůtě, "
             "kromě zákonné povinnosti a omezených záloh před vymazáním. Před ukončením použijte export. "
-            "Anonymizovaná agregovaná data mohou zůstat."
+            "Anonymizovaná agregovaná data mohou zůstat. "
+            "UbyHost uchovává každý záznam o hostovi 6 let od konce pobytu (§ 101 odst. 4 zákona "
+            "č. 326/1999 Sb.; § 3g odst. 4 zákona č. 565/1990 Sb.) a poté jej smaže, pokud si jej "
+            "ubytovatel předtím nevyexportuje. Fotografie dokladů totožnosti se mažou do 7 dnů od "
+            "příjezdu, nejpozději 30 dní od nahrání. Původní zprávy pro UbyPort se mažou po 90 "
+            "dnech. Záznam o každém odeslání bez osobních údajů se uchovává 6 let."
         ),
         "dpa.s16_title": "16. Audity a informace",
         "dpa.s16_body": (
