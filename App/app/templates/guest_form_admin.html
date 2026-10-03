@@ -217,8 +217,11 @@
     {% elif has_passport_photo %}
       <div class="passport-preview compact">
         {% if passport_is_pdf %}
-          <iframe class="passport-preview-pdf" src="/guests/{{ guest.id }}/passport-photo"
-                  title="{{ t('guest.admin.passport_pdf_title') }}"></iframe>
+          {# WP08: a PDF is never shown inline from our origin; the host downloads it. #}
+          <p class="passport-preview-pdf-link">
+            <a class="btn small ghost" href="/guests/{{ guest.id }}/passport-photo" download>{{ t('guest.admin.passport_pdf_download') }}</a>
+          </p>
+          <p class="small muted" style="margin:4px 0 0">{{ t('guest.admin.passport_pdf_hint') }}</p>
         {% else %}
           <img src="/guests/{{ guest.id }}/passport-photo" alt="{{ t('guest.admin.passport_photo_alt') }}">
         {% endif %}

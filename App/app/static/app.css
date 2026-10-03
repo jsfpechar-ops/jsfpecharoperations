@@ -1368,16 +1368,14 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
   margin: 12px 0;
   max-width: 420px;
 }
-.passport-preview img,
-.passport-preview-pdf {
+.passport-preview img {
   display: block;
   width: 100%;
   border-radius: 8px;
   border: 1px solid var(--border);
 }
-.passport-preview-pdf {
-  height: 520px;
-  background: #fff;
+.passport-preview-pdf-link {
+  margin: 0;
 }
 .verify-panel .verify-form {
   margin-top: 8px;

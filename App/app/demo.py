@@ -34,6 +34,16 @@ DEMO_SIGNATURE = (
 )
 
 
+def _demo_passport_png() -> bytes:
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (8, 8), (200, 200, 200)).save(out, format="PNG")
+    return out.getvalue()
+
+
 def is_demo_apartment(apartment) -> bool:
     if not apartment:
         return False
@@ -402,12 +412,10 @@ def _enrich_loft(apartment_id: int) -> None:
             res_country="FRA",
             purpose="10",
         )
-        # Minimal valid 1×1 PNG — enough for host review UI, never sent to Police.
-        tiny_png = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
-            b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f"
-            b"\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
-        )
+        # A small grey PNG, enough for the host review UI, never sent to Police.
+        # Built with Pillow: uploads are decoded and re-encoded now (WP08), and
+        # the old hand-written bytes had a broken data stream.
+        tiny_png = _demo_passport_png()
         passport_photos.save_photo(guest_id, tiny_png, "image/png")
         db.update(
             "guest",

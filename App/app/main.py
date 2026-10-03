@@ -20,6 +20,7 @@ from . import (
     db,
     env_guard,
     host_i18n,
+    passport_photos,
     scheduler,
     security,
     seo,
@@ -86,7 +87,11 @@ async def lifespan(_app: FastAPI):
             "(the background worker starts with: python -m app.worker)"
         )
     from PIL import Image
-    Image.MAX_IMAGE_PIXELS = 12_000_000  # every image we render is a signature or a QR code
+    # The process-wide decompression-bomb bound. Passport photos (WP08) are the
+    # largest images we decode, and passport_photos checks its own, stricter
+    # limit from the header first; signatures and QR codes have their own
+    # size checks too. Pillow raises at twice this value.
+    Image.MAX_IMAGE_PIXELS = passport_photos.MAX_IMAGE_PIXELS
     # WP06: two web workers and the scheduler worker boot at the same moment.
     # Key creation, migrations, the first administrator and the PIN rotation
     # each assume they run alone, so they run one process at a time.

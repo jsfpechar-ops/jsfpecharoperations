@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from app import auth, config, db, passport_photos
 from app.main import app
@@ -124,9 +126,10 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
             },
         )
         db.update("guest", guest_id, {"passport_photo_at": db.utcnow()})
-        passport_photos.save_photo(
-            guest_id, b"\xff\xd8\xff" + (b"\x00" * 61), "image/jpeg"
-        )
+        # A real JPEG: uploads are decoded and re-encoded since WP08.
+        jpeg = io.BytesIO()
+        Image.new("RGB", (8, 8), (90, 90, 90)).save(jpeg, format="JPEG")
+        passport_photos.save_photo(guest_id, jpeg.getvalue(), "image/jpeg")
         submission_id = db.insert(
             "submission",
             {

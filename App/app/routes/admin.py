@@ -2236,11 +2236,18 @@ def guest_passport_photo(guest_id: int, request: Request):
         return Response("Not found.", status_code=404)
     content, media_type = payload
     db.audit("passport_photo_viewed", f"guest_id={guest_id}")
+    filename = passport_photos.download_filename(guest_id, media_type)
+    # WP08: never rendered as a page from our origin. Opened directly, the
+    # browser saves the file; an <img> on the host's guest page still shows a
+    # (re-encoded) photo, because Content-Disposition does not apply to images
+    # embedded in a page. nosniff stops a browser second-guessing the type.
     return Response(
         content,
         media_type=media_type,
         headers={
             "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Content-Type-Options": "nosniff",
             "Content-Security-Policy": "sandbox; default-src 'none'",
         },
     )

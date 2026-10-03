@@ -107,15 +107,16 @@ def test_a_saved_attachment_is_encrypted_on_disk_and_round_trips():
     guest_id = _seed_guest()
     passport_photos.save_photo(guest_id, PNG_BYTES, "image/png")
     try:
-        encrypted = passport_photos.PHOTOS_DIR / f"{guest_id}.png.enc"
+        # WP08: images are stored re-encoded as JPEG.
+        encrypted = passport_photos.PHOTOS_DIR / f"{guest_id}.jpg.enc"
         assert encrypted.is_file()
-        plain = passport_photos.PHOTOS_DIR / f"{guest_id}.png"
+        plain = passport_photos.PHOTOS_DIR / f"{guest_id}.jpg"
         assert not plain.exists()
-        # The bytes on disk are not a PNG any more.
-        assert not encrypted.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+        # The bytes on disk are not an image any more.
+        assert not encrypted.read_bytes().startswith(b"\xff\xd8\xff")
         content, media_type = passport_photos.read_photo(guest_id)
-        assert content == PNG_BYTES
-        assert media_type == "image/png"
+        assert content.startswith(b"\xff\xd8\xff")
+        assert media_type == "image/jpeg"
         assert passport_photos.has_photo(guest_id)
     finally:
         passport_photos.delete_photo(guest_id)
@@ -124,7 +125,7 @@ def test_a_saved_attachment_is_encrypted_on_disk_and_round_trips():
 def test_a_tampered_attachment_raises_instead_of_reading_empty():
     guest_id = _seed_guest()
     passport_photos.save_photo(guest_id, PNG_BYTES, "image/png")
-    target = passport_photos.PHOTOS_DIR / f"{guest_id}.png.enc"
+    target = passport_photos.PHOTOS_DIR / f"{guest_id}.jpg.enc"
     try:
         target.write_bytes(b"not a fernet token")
         with pytest.raises(db.DecryptionError):

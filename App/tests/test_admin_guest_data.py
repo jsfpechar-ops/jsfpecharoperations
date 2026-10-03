@@ -390,7 +390,8 @@ def test_reveal_needs_a_reason_writes_the_audit_row_and_unmasks_only_that_guest(
     form_a = client.get(f"/guests/{a}").text
     assert DOC_A in form_a and VISA_A in form_a
     assert demo.DEMO_SIGNATURE in form_a
-    assert client.get(f"/guests/{a}/passport-photo").content == PNG_BYTES
+    # WP08 re-encodes every stored photo, so compare with the stored bytes.
+    assert client.get(f"/guests/{a}/passport-photo").content == passport_photos.read_photo(a)[0]
     assert client.get(f"/guests/{a}/form.pdf").status_code == 200
 
     form_b = client.get(f"/guests/{b}").text

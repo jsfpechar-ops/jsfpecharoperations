@@ -58,6 +58,9 @@ CS_PASSPORT_UPLOAD_MESSAGES = {
     "The file does not look like a valid PDF.": "Soubor nevypadá jako platné PDF.",
     "The photo is too large. Use a file under 5 MB.": "Fotografie je příliš velká. Maximálně 5 MB.",
     "The file does not look like a valid image.": "Soubor nevypadá jako platný obrázek.",
+    "The photo has too many pixels. Take it again at the normal camera setting.": (
+        "Fotografie má příliš mnoho pixelů. Vyfoťte ji znovu v běžném nastavení fotoaparátu."
+    ),
 }
 
 
@@ -1585,9 +1588,13 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         if passport_upload and hasattr(passport_upload, "read"):
             try:
-                passport_bytes = await passport_photos.read_upload_limited(passport_upload)
-                passport_type = passport_photos.validate_upload(
-                    passport_bytes, passport_upload.content_type or ""
+                raw_upload = await passport_photos.read_upload_limited(passport_upload)
+                # WP08: images are decoded and re-encoded here, so a file that
+                # will not decode is refused on the form, not after saving.
+                passport_bytes, passport_type = await run_in_threadpool(
+                    passport_photos.prepare_upload,
+                    raw_upload,
+                    passport_upload.content_type or "",
                 )
             except ValueError as exc:
                 msg = str(exc)
@@ -1696,7 +1703,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         saved_id = db.insert("guest", payload)
 
     if passport_bytes and passport_type:
-        passport_photos.save_photo(saved_id, passport_bytes, passport_type)
+        passport_photos.save_photo(saved_id, passport_bytes, passport_type, prepared=True)
         db.update(
             "guest",
             saved_id,
