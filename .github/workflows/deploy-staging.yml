@@ -1,0 +1,59 @@
+name: Deploy staging
+
+# Deploys any branch to the staging Lightsail server (Step 0): its own
+# instance, domain, .env (UBYHOST_DEPLOYMENT=staging, COMPOSE_PROFILES=staging
+# for the mock UbyPort service) and its own Litestream prefix. Never real guest
+# data. Every HIGH RISK work package is deployed here and clicked through
+# before it is merged.
+#
+# The "ubyport_env" input picks the UbyPort this deploy talks to and is written
+# into the server's .env as UBYHOST_UBYPORT_ENV: "mock" (default, the
+# mock-ubyport service) or "test" (the real UbyPort test environment of the
+# police, with the property's own test web-service credentials). "prod" is
+# never possible here.
+#
+# MANUAL ONLY: Actions → Deploy staging → Run workflow, pick the branch in
+# "Use workflow from" (or type another branch below). Secrets come from the
+# GitHub environment "staging": LIGHTSAIL_HOST, LIGHTSAIL_SSH_PRIVATE_KEY,
+# LIGHTSAIL_KNOWN_HOSTS, and the variable LIGHTSAIL_HEALTH_URL.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy (empty: the branch selected above)"
+        required: false
+        type: string
+        default: ""
+      ubyport_env:
+        description: "UbyPort: mock (mock-ubyport service) or test (real UbyPort test environment)"
+        required: false
+        type: choice
+        options:
+          - mock
+          - test
+        default: mock
+      skip_ci_check:
+        description: "Deploy even if CI has not passed for the branch head"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  checks: read
+
+# One staging deploy at a time; never cancel one half-way.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  lightsail:
+    uses: ./.github/workflows/deploy-lightsail.yml
+    with:
+      environment: staging
+      ref: ${{ inputs.branch || github.ref_name }}
+      require_green_ci: ${{ !inputs.skip_ci_check }}
+      ubyport_env: ${{ inputs.ubyport_env || 'mock' }}
+    secrets: inherit

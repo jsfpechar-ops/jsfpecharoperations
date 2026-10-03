@@ -131,6 +131,34 @@ services:
     networks:
       - web
 
+  # Step 0: the mock UbyPort for the staging server only. Started only when
+  # .env sets COMPOSE_PROFILES=staging; production never runs it. The image
+  # leaves mock_ubyport out (.dockerignore), so the code is mounted from the
+  # checkout. Staging .env points the app at it with
+  # UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc.
+  mock-ubyport:
+    profiles: ["staging"]
+    image: ubyhost:local
+    pull_policy: never
+    restart: unless-stopped
+    entrypoint: ["python", "-m", "mock_ubyport.server"]
+    environment:
+      MOCK_UBYPORT_HOST: 0.0.0.0
+      MOCK_UBYPORT_PORT: "8081"
+      MOCK_UBYPORT_STATE: /tmp/mock_state.json
+    volumes:
+      - ../../App/mock_ubyport:/app/mock_ubyport:ro
+    expose:
+      - "8081"
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - web
+
   caddy:
     image: caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
     restart: unless-stopped

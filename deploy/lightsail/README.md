@@ -6,6 +6,7 @@ Lightsail **General purpose 8 GB** (Frankfurt) — see [LIGHTSAIL.md](../../docs
 | Environment | Platform | UbyPort |
 |-------------|----------|---------|
 | **Staging** | Render `ubyhost-staging` | `mock` |
+| **Staging (Lightsail)** | This stack on a second instance, `UBYHOST_DEPLOYMENT=staging` | `mock` (service `mock-ubyport`, default) or `test` |
 | **Production** | This Lightsail stack | `test` → `prod` |
 
 Production Docker stack with HTTPS. **Guides:**
@@ -258,3 +259,45 @@ If the replica is unusable, fall back to the newest age-encrypted snapshot
 (`restore.sh`, or the S3/Drive off-site copy). `restore.sh` stops Litestream
 and leaves it stopped; set a new `LITESTREAM_S3_PATH`, then
 `docker compose up -d litestream`.
+
+## Staging server (Step 0)
+
+A second Lightsail instance runs this same stack with
+`UBYHOST_DEPLOYMENT=staging`, and either the mock UbyPort (default) or the real
+UbyPort test environment. It never holds real guest data. Every HIGH RISK change is deployed here and clicked through before it is
+merged.
+
+Differences from production, all in the staging `.env`:
+
+```bash
+UBYHOST_DEPLOYMENT=staging
+UBYHOST_UBYPORT_ENV=mock                 # or test; each workflow run sets it
+COMPOSE_PROFILES=staging                 # starts the mock-ubyport service
+UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc
+UBYHOST_DOMAIN=staging.example.com        # its own domain
+UBYHOST_PUBLIC_BASE_URL=https://staging.example.com
+LITESTREAM_S3_PATH=staging/ubyhost        # its own prefix, its own IAM user
+UBYHOST_MAIL_BACKEND=console              # claim links appear in Settings
+UBYHOST_ALLOW_SMALL_HOST=1                # 1 GB bundle; limits are caps, traffic is tiny
+```
+
+`preflight.sh` refuses a staging `.env` whose UbyPort is neither `mock` nor
+`test`, a `mock` staging without the profile or the mock URL, or a Litestream
+prefix containing `production`, and refuses `COMPOSE_PROFILES=staging` on
+production.
+
+Deploy from GitHub: Actions → **Deploy staging** → Run workflow → pick the
+branch and the **ubyport_env** input:
+
+- `mock` (default): the `mock-ubyport` service answers. Use it for everything
+  that does not need the police server.
+- `test`: the real UbyPort test environment
+  (`https://ubyport.pcr.cz/ws_uby_test/ws_uby.svc`). Submissions use the test
+  web-service credentials saved on the staging property, so set those first.
+  Test data only, as everywhere on staging.
+
+The run uses the `staging` environment's secrets and checks, on the server,
+that `.env` says `UBYHOST_DEPLOYMENT=staging` and a UbyPort of `mock` or
+`test` before it changes anything. It then writes the chosen value into the
+server's `.env` as `UBYHOST_UBYPORT_ENV`. The mock service keeps running with
+`test`; it is simply not used.

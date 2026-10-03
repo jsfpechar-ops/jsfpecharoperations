@@ -29,9 +29,40 @@ done
 DEPLOYMENT="${UBYHOST_DEPLOYMENT:-local}"
 UBYPORT="${UBYHOST_UBYPORT_ENV:-mock}"
 
-if [ "${DEPLOYMENT}" != "production" ]; then
-  warn "UBYHOST_DEPLOYMENT=${DEPLOYMENT} — this Lightsail stack is meant to be production"
+if [ "${DEPLOYMENT}" = "staging" ]; then
+  # Step 0: the staging Lightsail server. Either the mock UbyPort, served by
+  # the mock-ubyport compose service (profile "staging"), or the real UbyPort
+  # test environment. Never prod (refused below as well).
+  case "${UBYPORT}" in
+    mock)
+      case ",${COMPOSE_PROFILES:-}," in
+        *,staging,*) ;;
+        *) die "staging on mock needs COMPOSE_PROFILES=staging in .env (starts the mock-ubyport service)" ;;
+      esac
+      case "${UBYHOST_MOCK_URL:-}" in
+        http://mock-ubyport:8081/*) ;;
+        *) die "staging on mock needs UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc" ;;
+      esac
+      ;;
+    test)
+      warn "staging talks to the real UbyPort test environment: test data and test credentials only"
+      ;;
+    *) die "UBYHOST_DEPLOYMENT=staging requires UBYHOST_UBYPORT_ENV=mock or test" ;;
+  esac
+  case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
+    *production*) die "staging must replicate to its own LITESTREAM_S3_PATH, not ${LITESTREAM_S3_PATH:-ubyhost/production}" ;;
+  esac
+elif [ "${DEPLOYMENT}" != "production" ]; then
+  warn "UBYHOST_DEPLOYMENT=${DEPLOYMENT} — this Lightsail stack is meant to be production or staging"
 fi
+
+case ",${COMPOSE_PROFILES:-}," in
+  *,staging,*)
+    if [ "${DEPLOYMENT}" = "production" ]; then
+      die "COMPOSE_PROFILES=staging on production would start the mock UbyPort"
+    fi
+    ;;
+esac
 
 if [ "${UBYPORT}" = "prod" ] && [ "${DEPLOYMENT}" != "production" ]; then
   die "UBYHOST_UBYPORT_ENV=prod requires UBYHOST_DEPLOYMENT=production"
