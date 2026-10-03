@@ -22,7 +22,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
-from . import payments
+from . import payments, pdf_mark
 
 # ---- fonts: DejaVu Sans covers all of Czech; vendored under static/fonts ----
 _FONT_DIR = os.path.join(os.path.dirname(__file__), "static", "fonts")
@@ -41,7 +41,6 @@ CORAL = (0xD3 / 255, 0x54 / 255, 0x45 / 255)
 GREEN = (0x16 / 255, 0x70 / 255, 0x44 / 255)
 GREEN_BG = (0xE6 / 255, 0xF5 / 255, 0xEC / 255)
 
-MARK_PATH = os.path.join(os.path.dirname(__file__), "static", "ubyhost-mark.png")
 FOOTER_URL = "https://ubyhost.com/?utm_source=invoice&utm_medium=pdf"
 
 W, H = A4
@@ -337,7 +336,7 @@ def render(
     c.setStrokeColorRGB(*LINE); c.setLineWidth(0.5)
     c.line(M, M + 5 * mm, W - M, M + 5 * mm)
     mark = 3.6 * mm
-    c.drawImage(MARK_PATH, M, M - 0.4 * mm, mark, mark, mask="auto")
+    c.drawImage(pdf_mark.reader(), M, M - 0.4 * mm, mark, mark, mask="auto")
     credit = f"{L['footer']}  ·  ubyhost.com"
     _text(c, M + mark + 1.8 * mm, M + 0.4 * mm, credit, size=7, color=FAINT)
     cw_ = pdfmetrics.stringWidth(credit, REG, 7)
