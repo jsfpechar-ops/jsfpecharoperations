@@ -119,9 +119,11 @@ def parse_month(value: Optional[str]) -> Optional[date]:
     if len(text) != 7 or text[4] != "-" or not (text[:4] + text[5:]).isdigit():
         return None
     try:
-        return date(int(text[:4]), int(text[5:]), 1)
+        month = date(int(text[:4]), int(text[5:]), 1)
     except ValueError:
         return None
+    # Earlier years only come from a crafted link and break month arithmetic.
+    return month if month.year >= 2000 else None
 
 
 def month_key(day: date) -> str:
