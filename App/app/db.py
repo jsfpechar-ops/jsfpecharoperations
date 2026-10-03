@@ -709,6 +709,7 @@ ADDED_COLUMNS = (
     ("apartment", "stay_fee_scope_reference", "TEXT"),
     ("guest", "fee_host_reason_enc", "TEXT"),
     ("guest", "fee_host_reason_reference", "TEXT"),
+    ("submission", "retried_at", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
@@ -773,8 +774,21 @@ def init_db() -> None:
         conn.executescript(SCHEMA)
         _add_missing_columns(conn)
         _reset_reverted_stay_fee(conn)
+        _resolve_legacy_resign_alerts(conn)
     finally:
         conn.close()
+
+
+def _resolve_legacy_resign_alerts(conn: sqlite3.Connection) -> None:
+    """Date-change re-sign alerts are retired; clear any still open."""
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    conn.execute(
+        "UPDATE alert SET resolved_at = ? WHERE kind = 'dates_changed_resign' "
+        "AND resolved_at IS NULL",
+        (now,),
+    )
 
 
 # --- small query helpers -------------------------------------------------

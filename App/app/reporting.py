@@ -646,16 +646,11 @@ def refresh_registration_completed_at(
 
 
 def signature_dates_stale(guest, reservation) -> bool:
-    """Whether a signed form names dates the calendar has since moved away.
+    """Safety net: a guest window must lie inside the booking before filing.
 
-    The sync deliberately leaves an already-signed guest on the dates they
-    signed - that window is what the police were given, so it is evidence - and
-    raises ``dates_changed_resign`` for the host. Nothing stopped the *filing*
-    though, so the stay went out with dates that contradict the booking.
-
-    Only a window that has fallen outside the booking counts. A guest who
-    signed a shorter period inside it - a late arrival, an early departure - is
-    a normal record and must still be filed.
+    ``icalsync`` trims unsent windows when the calendar moves; this should not
+    fire in normal operation. If it does, the row is skipped rather than filed
+    outside the booking.
     """
     stay_from, stay_to = guest["stay_from"], guest["stay_to"]
     date_from, date_to = reservation["date_from"], reservation["date_to"]
@@ -939,7 +934,8 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     in_doubt_submissions = {
         row["id"]
         for row in db.query(
-            "SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown'",
+            "SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown' "
+            "AND retried_at IS NULL",
             (apartment_id,),
         )
     }
@@ -980,6 +976,13 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         if not ignore_automation and guest["submission_id"] in in_doubt_submissions:
             continue
         if not guest_is_complete(guest, reservation):
+            continue
+        if signature_dates_stale(guest, reservation):
+            log.warning(
+                "collect_sendable_skip_stale_signature guest_id=%s reservation_id=%s",
+                guest["id"],
+                reservation["id"],
+            )
             continue
         if not ignore_schedule:
             if reservation["id"] not in anchors:
@@ -1462,52 +1465,12 @@ def submit_batch(
     }
 
 
-def _retry_interrupted_batch(apartment_id: int, submission_id: int, guest_ids: List[int]) -> bool:
-    """One automatic resend after a crash. A duplicate (150) still counts as success."""
-    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
-    if not apartment:
-        return False
-    ap_dict = dict(apartment)
-    ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
-    pairs: List[Tuple[Any, Any]] = []
-    for guest_id in guest_ids:
-        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
-        if not guest or guest["submit_state"] == SENT:
-            continue
-        reservation = db.query_one(
-            "SELECT * FROM reservation WHERE id = ? AND status = 'active'",
-            (guest["reservation_id"],),
-        )
-        if reservation:
-            pairs.append((guest, reservation))
-    if not pairs:
-        return False
-    db.update(
-        "submission",
-        submission_id,
-        {
-            "state": "error",
-            "finished_at": db.utcnow(),
-            "error_text": "Interrupted; one automatic retry.",
-        },
-    )
-    for guest_id in guest_ids:
-        db.execute(
-            "UPDATE guest SET submission_id = NULL WHERE id = ? AND submission_id = ?",
-            (guest_id, submission_id),
-        )
-    result = submit_batch(ap_dict, pairs, mode="auto")
-    state = result.get("state") or ""
-    return state in ("ok", "ok_duplicate", "partial") or bool(result.get("submitted"))
-
-
 def recover_stale_submissions(apartment_id: int) -> int:
-    """Hold or recover batches stuck in ``running`` after a crash.
+    """Mark batches stuck in ``running`` after a crash as ``outcome_unknown``.
 
-    Staleness is judged by the send claim, not row age. Each stale batch gets
-    one automatic resend (a duplicate answer from UbyPort still counts as
-    success). Only when that retry is unclear does the batch become
-    ``outcome_unknown`` and wait for the host.
+    Staleness is judged by the send claim, not row age. The scheduler's
+    ``sweep()`` performs at most one automatic retry per batch through the normal
+    send path.
     """
     live_after = time.time() - SUBMISSION_CLAIM_TTL_SECONDS
     reason = "The send stopped before UbyPort answered."
@@ -1532,13 +1495,6 @@ def recover_stale_submissions(apartment_id: int) -> int:
 
     stale: List[int] = []
     for submission_id, guest_ids in candidates:
-        if _retry_interrupted_batch(apartment_id, submission_id, guest_ids):
-            log.info(
-                "ubyport_submission_stale_retry_ok apartment_id=%s submission_id=%s",
-                apartment_id,
-                submission_id,
-            )
-            continue
         with db.immediate() as cur:
             db.update_in(
                 cur, "submission", submission_id,
@@ -1567,6 +1523,38 @@ def recover_stale_submissions(apartment_id: int) -> int:
     log.error("ubyport_submission_stale apartment_id=%s submissions=%s",
               apartment_id, stale)
     return len(stale)
+
+
+def _retry_outcome_unknown_batches(apartment_id: int) -> int:
+    """One automatic resend per interrupted batch, only from the scheduler."""
+    if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
+        return 0
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return 0
+    ap_dict = dict(apartment)
+    ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
+    if validation.errors_only(validation.validate_apartment(ap_dict)):
+        return 0
+    pending = db.query(
+        "SELECT id, guest_ids FROM submission WHERE apartment_id = ? "
+        "AND state = 'outcome_unknown' AND retried_at IS NULL",
+        (apartment_id,),
+    )
+    retried = 0
+    for row in pending:
+        guest_ids = json.loads(row["guest_ids"] or "[]")
+        db.update("submission", row["id"], {"retried_at": db.utcnow()})
+        if not guest_ids:
+            continue
+        for guest_id in guest_ids:
+            db.execute(
+                "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
+                (guest_id, SENT),
+            )
+        submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode="auto")
+        retried += 1
+    return retried
 
 
 def submit_for_apartment(
@@ -1657,6 +1645,8 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
             continue
         summary["apartments"] += 1
         try:
+            recover_stale_submissions(apartment["id"])
+            _retry_outcome_unknown_batches(apartment["id"])
             # The quiet-window completion is the one decision nobody makes: the
             # common case is a guest who simply stops filling the form in, and
             # only a pass that runs when nobody is looking can notice it. It
