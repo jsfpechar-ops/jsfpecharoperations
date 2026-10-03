@@ -404,12 +404,6 @@ def pdf_view_row(cur, invoice_id: int) -> Dict[str, Any]:
     return row
 
 
-def view_row(invoice_id: int) -> Dict[str, Any]:
-    """The stored invoice row plus the view fields, for detail/PDF/preview."""
-    with db.cursor() as cur:
-        return pdf_view_row(cur, invoice_id)
-
-
 def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
     """Write an issued document inside one write lock. Returns (id, number)."""
     year = int(draft["issue_date"][:4])
