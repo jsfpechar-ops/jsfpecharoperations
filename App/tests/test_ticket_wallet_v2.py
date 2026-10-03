@@ -6,11 +6,14 @@ from pathlib import Path
 from app import i18n
 
 APP = Path(__file__).resolve().parents[1] / "app"
-CSS = (APP / "static" / "guest-ticket.css").read_text(encoding="utf-8")
-JS = (APP / "static" / "ticket.js").read_text(encoding="utf-8")
-FORM = (APP / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
-CLAIM = (APP / "templates" / "guest" / "claim.html").read_text(encoding="utf-8")
-BASE = (APP / "templates" / "guest" / "base.html").read_text(encoding="utf-8")
+ARCHIVE = APP / "static" / "archive" / "ticket-wallet"
+TW_TEMPLATES = APP / "templates" / "guest" / "archive" / "ticket-wallet"
+CSS = (ARCHIVE / "guest-ticket.css").read_text(encoding="utf-8")
+JS = (ARCHIVE / "ticket.js").read_text(encoding="utf-8")
+FORM = (TW_TEMPLATES / "form.html").read_text(encoding="utf-8")
+CLAIM = (TW_TEMPLATES / "claim.html").read_text(encoding="utf-8")
+BASE = (TW_TEMPLATES / "base.html").read_text(encoding="utf-8")
+ACTIVE_BASE = (APP / "templates" / "guest" / "base.html").read_text(encoding="utf-8")
 
 NEW_KEYS = [
     "tw_email_short", "tw_email_more", "tw_step_details", "tw_step_document",
@@ -65,6 +68,13 @@ def test_the_full_email_text_is_still_on_the_claim_page():
 def test_assets_are_cache_busted_past_v1():
     assert "guest-ticket.css?v=20260929a" not in BASE
     assert "ticket.js?v=20260929a" not in BASE
+
+
+def test_the_live_guest_shell_does_not_load_ticket_wallet():
+    """Arrival lane is active; TW assets stay in static/archive/ticket-wallet/."""
+    assert "guest-ticket.css" not in ACTIVE_BASE
+    assert "ticket.js" not in ACTIVE_BASE
+    assert 'class="tw"' not in ACTIVE_BASE
 
 
 def test_no_dark_mode_sneaks_in():

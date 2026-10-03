@@ -1,8 +1,7 @@
-"""Guest flow fixes kept after reverting Ticket Wallet v3 layout.
+"""Behavioural guest fixes that must hold under Arrival lane (TW archived).
 
-Ticket Wallet v2 visuals and hub layout are restored; these tests pin the
-behavioural fixes (group size default, signature pad, DOB cells) that must
-not regress.
+Ticket Wallet markup lives under templates/guest/archive/ticket-wallet/; only
+the fixes below apply to the active templates and signature.js.
 """
 from pathlib import Path
 
@@ -21,7 +20,9 @@ from tests.test_guest_navigation import (
 
 APP = Path(__file__).resolve().parent.parent / "app"
 SIGNATURE_JS = (APP / "static" / "signature.js").read_text(encoding="utf-8")
-TICKET_JS = (APP / "static" / "ticket.js").read_text(encoding="utf-8")
+TICKET_JS = (APP / "static" / "archive" / "ticket-wallet" / "ticket.js").read_text(
+    encoding="utf-8"
+)
 CLAIM = (APP / "templates" / "guest" / "claim.html").read_text(encoding="utf-8")
 STAY = (APP / "templates" / "guest" / "stay.html").read_text(encoding="utf-8")
 FORM = (APP / "templates" / "guest" / "form.html").read_text(encoding="utf-8")

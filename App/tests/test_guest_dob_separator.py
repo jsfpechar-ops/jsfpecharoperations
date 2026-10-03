@@ -26,7 +26,9 @@ def test_the_guest_form_does_not_repeat_birth_date_format_hints():
 
 
 def test_dob_cells_clamp_month_and_day():
-    source = (STATIC / "ticket.js").read_text(encoding="utf-8")
+    source = (
+        STATIC / "archive" / "ticket-wallet" / "ticket.js"
+    ).read_text(encoding="utf-8")
     assert 'box.value !== "00" && m > 12' in source
     assert 'box.value !== "00" && d > 31' in source
 

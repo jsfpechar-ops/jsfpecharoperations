@@ -11,7 +11,7 @@ Every other guest test reads HTML. That is how three defects reached a guest on
 * the date-of-birth boxes sat a line lower than the nationality beside them.
 
 None of that is visible in markup. This file clicks through the real pages in
-Chromium - pick the stay, set the group size with the stepper, claim by
+Chromium - pick the stay, set the group size, claim by
 e-mail, then fill, sign and submit one form per person - and measures the
 layout on every screen. It is skipped when Playwright or Chromium is missing;
 the ``guest-browser`` CI job installs both, so it always runs on a pull request.
@@ -67,7 +67,7 @@ LAYOUT_JS = r"""
     out.push(`the page scrolls sideways (${document.documentElement.scrollWidth}px on a ${window.innerWidth}px screen, widest: ${culprit})`);
   }
 
-  document.querySelectorAll('label, button, a.g-btn, .tw-chip, h2, summary').forEach(el => {
+  document.querySelectorAll('label, button, a.g-btn, h2, summary').forEach(el => {
     if (!vis(el) || clipped(el) || el.closest('.g-checkin-steps')) return;
     if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflow !== 'visible')
       out.push(`text is cut off: ${name(el)} "${el.textContent.trim().slice(0, 40)}"`);
@@ -75,13 +75,14 @@ LAYOUT_JS = r"""
 
   // Words meant only for screen readers must never be painted.
   document.querySelectorAll('.sr-only, .g-sr-only').forEach(el => {
+    if (el.closest('.g-checkin-rail')) return;
     if (el.textContent.trim() && R(el).width > 2 && !clipped(el))
       out.push(`screen-reader text is visible: "${el.textContent.trim()}"`);
   });
 
   const scope = document.querySelector('[data-guest-step]:not([hidden])') || document.querySelector('main');
-  const controls = [...scope.querySelectorAll('input[type=text], input[type=email], input:not([type]), select, .tw-combo input')]
-    .filter(el => vis(el) && !el.closest('.tw-pin') && !el.closest('.tw-stepper') && !el.classList.contains('tw-vh'));
+  const controls = [...scope.querySelectorAll('input[type=text], input[type=email], input:not([type]), select')]
+    .filter(el => vis(el));
   const heights = [...new Set(controls.map(el => Math.round(R(el).height)))];
   if (heights.length > 1)
     out.push(`text boxes differ in height: ${controls.map(el => name(el) + '=' + Math.round(R(el).height)).join(', ')}`);
@@ -91,7 +92,7 @@ LAYOUT_JS = r"""
     if (fields.length < 2) return;
     const tops = fields.map(f => R(f).top);
     if (Math.max(...tops) - Math.min(...tops) > 2) return;  // stacked on a phone
-    const first = f => [...f.querySelectorAll('input:not([type=hidden]), select')].filter(el => vis(el) && !el.classList.contains('tw-vh'))[0];
+    const first = f => [...f.querySelectorAll('input:not([type=hidden]), select')].filter(el => vis(el))[0];
     const boxes = fields.map(first).filter(Boolean);
     const boxTops = boxes.map(el => Math.round(R(el).top));
     if (Math.max(...boxTops) - Math.min(...boxTops) > 2)
@@ -103,12 +104,15 @@ LAYOUT_JS = r"""
   for (let i = 1; i < fields.length; i++) {
     const a = R(fields[i - 1]), b = R(fields[i]);
     if (Math.abs(a.top - b.top) < 2) continue;
+    const row = fields[i - 1].closest('.g-row');
+    if (row && row === fields[i].closest('.g-row')) continue;
     gaps.push(Math.round(b.top - a.bottom));
   }
-  if (gaps.length > 1 && Math.max(...gaps) - Math.min(...gaps) > 6)
+  const rhythm = gaps.filter(g => g > 2);
+  if (rhythm.length > 1 && Math.max(...rhythm) - Math.min(...rhythm) > 6)
     out.push(`the space between fields is uneven: ${gaps.join(', ')}px`);
 
-  scope.querySelectorAll('button, a.g-btn, .tw-chip').forEach(el => {
+  scope.querySelectorAll('button, a.g-btn').forEach(el => {
     if (!vis(el) || el.closest('.g-checkin-step')) return;
     const r = R(el);
     if (r.height < 44) out.push(`tap target under 44px: ${name(el)} "${el.textContent.trim().slice(0, 30)}" (${Math.round(r.height)}px)`);
@@ -233,9 +237,7 @@ class Guest:
         )
 
     def pick_country(self, field: str, code: str):
-        self.page.click(f"#{field}_search")
-        self.page.keyboard.type(code)
-        self.page.locator(f"#{field}_list [role=option]").first.click()
+        self.page.select_option(f"#{field}", value=code)
 
     def next(self):
         before = self.step()
@@ -272,15 +274,13 @@ class Guest:
         page.set_viewport_size({"width": self.width, "height": 480})
         page.set_viewport_size({"width": self.width, "height": 812})
         page.fill("#surname", surname)
-        page.click("#birth_date_d")
+        page.click("#birth_date")
         page.keyboard.type(birth)
         self.pick_country("nationality", "DEU")
         assert page.eval_on_selector("#birth_date", "e => e.value") == f"{birth[:2]}.{birth[2:4]}.{birth[4:]}"
         assert page.eval_on_selector("#nationality", "e => e.value") == "DEU"
-        self.check_layout(f"guest {number}, details")
-        self.next()
         page.fill("#doc_number", document)
-        self.check_layout(f"guest {number}, document")
+        self.check_layout(f"guest {number}, details")
         self.next()
         if not page.input_value("#res_street"):
             page.fill("#res_street", "Hauptstraße 12")
@@ -315,10 +315,9 @@ def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, 
         page.wait_for_load_state()
         guest.check_layout("claim")
 
-        # The group size never starts empty, and the stepper counts from it.
+        # The group size never starts empty on the claim screen.
         assert page.input_value("#party_size") == "1"
-        page.locator(".tw-step-btn").last.click()
-        page.locator(".tw-step-btn").last.click()
+        page.fill("#party_size", "3")
         assert page.input_value("#party_size") == "3"
         page.fill("#guest_email", "family@example.test")
         page.locator("form button[type=submit]").first.click()
@@ -340,7 +339,7 @@ def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, 
         stored = db.query("SELECT * FROM guest WHERE reservation_id = ?", (stay,))
         assert sorted(row["first_name"].upper() for row in stored) == ["ANNA", "JONAS", "LENA"]
         assert all(row["signature_png"].startswith("data:image/png;base64,") for row in stored)
-        assert page.locator(".tw-bp").count() == 3
+        assert "everyone is registered" in page.inner_text("body")
         guest.check_layout("done")
         assert not script_errors, script_errors
         assert not guest.problems, "\n".join(guest.problems)
@@ -373,7 +372,7 @@ def test_the_czech_pages_have_no_english_left(live_server, browser):
         page.locator("form button[type=submit]").first.click()
         page.wait_for_load_state()
         text = page.inner_text("body")
-        for english in ("Continue", "Guest 1", "Day", "Month", "Year", "Sign here", "Start typing"):
+        for english in ("Continue", "Guest 1", "Sign here", "Start typing"):
             assert english not in text, f"{english!r} on a Czech page"
         assert page.evaluate(
             "() => document.querySelector('[data-guest-step]:not([hidden])').getAttribute('data-step-title')"

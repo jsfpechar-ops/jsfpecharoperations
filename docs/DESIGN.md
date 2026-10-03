@@ -79,7 +79,7 @@ UbyHost has three audiences, and each one has its own design direction. They all
 
 | Surface | Templates | Direction | Status |
 |---|---|---|---|
-| **Guest registration** | `templates/guest/*` | **Ticket Wallet**: every screen is a ticket, and the guest ends up holding a boarding pass | Chosen 29 Sep 2026. Being implemented from [plans/PLAN_TICKET_WALLET_V2.md](plans/PLAN_TICKET_WALLET_V2.md) |
+| **Guest registration** | `templates/guest/*` | **Arrival lane**: pick-your-stay cards, wizard form in `guest.css` | **Active default** (Oct 2026). Ticket Wallet is archived under `static/archive/ticket-wallet/` |
 | **Host app** (signed in) | `templates/*.html` extending `base.html` | **Effortless**: the most intuitive host tool on the market, with the fewest clicks and no way to get lost | The standard for all host UI work from now on |
 | **Public marketing site** | `landing.html`, `product.html`, `pricing.html`, guides, `_public_header.html`, `_public_footer.html`, `landing.css`, `landing.js` | **As it is now**: short, catchy and punchy, in the style of Notion | **Locked.** Do not redesign it |
 
@@ -95,18 +95,28 @@ UbyHost has three audiences, and each one has its own design direction. They all
 6. **EN and CS in the same commit**, always.
 7. **Tokens** live in `static/tokens.css`. A surface's own extra tokens live in that surface's stylesheet (`guest-ticket.css`, `app.css`, `landing.css`), never in `tokens.css`.
 
-## Guest registration: Ticket Wallet
+## Guest registration: Arrival lane (active)
 
 **Files that own it:**
 
-- `static/guest-ticket.css` (the skin, active only under `<body class="tw">`);
-- `static/ticket.js` (progressive enhancements);
-- `templates/guest/_ticket.html` (macros);
-- the `pass_date` Jinja global in `templating.py`.
+- `static/guest.css` and `templates/guest/*` (no `body.tw`, no ticket skin);
+- `static/signature.js` (wizard, dotted date of birth, signature pad);
+- `static/skeleton.js`, `static/csrf.js`.
 
-`guest.css` stays as it is underneath: the skin restyles it, and the tests read it line by line. `signature.js` is edited only to fix behaviour (v3 made the signature pad size itself when its step is shown), never to restyle.
+Group size fields **start at 1** (claim, stay hub party step, first guest on the
+form). Date of birth uses one dotted field (`DD.MM.YYYY`) with the read-back
+chip underneath — no `birth_date_help` line (issue #217).
 
-### The idea
+### Ticket Wallet (archived)
+
+The v2 ticket skin and enhancements are kept for a future revival:
+
+- `static/archive/ticket-wallet/guest-ticket.css`, `ticket.js`, and `README.md`;
+- `templates/guest/archive/ticket-wallet/_ticket.html` plus reference TW templates for tests.
+
+See [static/archive/ticket-wallet/README.md](../App/app/static/archive/ticket-wallet/README.md) to re-enable. Design notes and the original plan remain in [plans/PLAN_TICKET_WALLET_V2.md](plans/PLAN_TICKET_WALLET_V2.md).
+
+### Ticket Wallet design reference (archived)
 
 The guest is boarding a stay. Every screen is a ticket: a coloured **strip** says where they are, the **body** asks one small thing, and the tear-off **stub** holds the button. At the end they hold a **boarding pass** for each person in their group.
 
@@ -336,8 +346,8 @@ Cursor Cloud Agents and other automated contributors **must read this file**
 before proposing or shipping UI changes. When a task mentions “modern UI,”
 “Notion/Linear-style,” or “respect system theme,” **do not** interpret that as
 permission to add dark mode unless the user’s message in that task explicitly
-requests it. The guest flow follows the Ticket Wallet section, the host app the
-Effortless section, and the public site is locked.
+requests it. The guest flow follows the **Arrival lane** section above, the host
+app the Effortless section, and the public site is locked.
 
 ## Consent banner (not in use)
 
