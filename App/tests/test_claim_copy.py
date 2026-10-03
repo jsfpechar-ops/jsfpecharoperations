@@ -27,17 +27,23 @@ AUDIT_COPY = {
         "How many people, and your e-mail",
         "Počet osob a váš e-mail",
     ),
+    # WP17 (review 3.E items 8 and 9): the private link and "no marketing"
+    # now live only in `tw_email_short`, the line right above the fold, so
+    # these two stopped repeating them.
     "claim_help": (
-        "We'll e-mail you a private link so only your group can open the forms.",
-        "Pošleme vám soukromý odkaz, aby formuláře otevřela jen vaše skupina.",
+        "Only your group can open the forms.",
+        "Formuláře otevře jen vaše skupina.",
+    ),
+    "tw_email_short": (
+        "We send your private link here. No marketing.",
+        "Pošleme sem váš soukromý odkaz. Žádný marketing.",
     ),
     "claim_email_help": (
-        "We send the link here, one reminder the day before arrival if forms "
-        "are missing, and a receipt (your host gets a copy). Elsewhere it is "
-        "shown masked. No marketing.",
-        "Pošleme sem odkaz, jedno připomenutí den před příjezdem, pokud "
-        "formuláře chybí, a potvrzení (kopii dostane i hostitel). Jinde se "
-        "adresa zobrazuje zakrytě. Žádný marketing.",
+        "Also one reminder the day before arrival if forms are missing, and a "
+        "receipt (your host gets a copy). Shown masked elsewhere.",
+        "Dále jedno připomenutí den před příjezdem, pokud formuláře chybí, a "
+        "potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje "
+        "zakrytě.",
     ),
     "claim_cookie_help": (
         "Only necessary cookies: PIN access (7 days), your language and this "
@@ -46,6 +52,9 @@ AUDIT_COPY = {
         "(60 dní).",
     ),
 }
+
+# Every hint line the claim card renders, in the order the guest reads them.
+CLAIM_HINT_KEYS = ("claim_help", "tw_email_short", "claim_email_help", "claim_cookie_help")
 
 # The guest pages that render the shared "why we collect this" fold.
 # UX-118 (audit A-31) dropped it from unavailable.html: a dead-end page has no
@@ -70,11 +79,12 @@ def test_the_claim_hints_are_the_audits_condensed_wording():
 
 
 def test_the_claim_hints_stay_under_the_word_budget():
-    # "two hint paragraphs of ~100 words" was the finding; the fix is 58/48.
-    for lang, budget in (("en", 65), ("cs", 55)):
+    # "two hint paragraphs of ~100 words" was the finding; UX-13 got it to
+    # 58/48 for three keys. WP17 counts all four rendered lines and is lower.
+    for lang, budget in (("en", 55), ("cs", 50)):
         total = sum(
             len(i18n.STRINGS[lang][key].split())
-            for key in ("claim_help", "claim_email_help", "claim_cookie_help")
+            for key in CLAIM_HINT_KEYS
         )
         assert total <= budget, (lang, total)
 
@@ -83,7 +93,7 @@ def test_the_claim_hints_keep_every_point_design_md_requires():
     # cheap guard against a future "condensing" pass that drops a promise
     english = " ".join(
         i18n.STRINGS["en"][key].lower()
-        for key in ("claim_help", "claim_email_help", "claim_cookie_help")
+        for key in CLAIM_HINT_KEYS
     )
     assert "private link" in english  # the link is private
     assert "reminder" in english  # exactly one reminder
@@ -112,8 +122,14 @@ def test_the_claim_page_puts_the_fold_below_the_back_link_specifically():
 
 def test_the_assigned_screen_reuses_the_claim_hints_rather_than_its_own():
     template = _read("assigned.html")
+    assert "{{ t('tw_email_short') }}" in template
     assert "{{ t('claim_email_help') }}" in template
     assert "{{ t('claim_cookie_help') }}" in template
+    # WP17: the full text sits in the same fold as on the claim page, so the
+    # screen shows two help lines (body + short e-mail line), not four.
+    assert 'class="tw-more"' in template
+    assert "assigned_resend_help" not in template
+    assert "assigned_private_link" not in template
     # no leftover private copy of the same two paragraphs
     assert "assigned_email_help" not in template
     assert "assigned_cookie_help" not in template

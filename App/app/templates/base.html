@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
-  <link rel="stylesheet" href="/static/app.css?v=20261004y">
+  <link rel="stylesheet" href="/static/app.css?v=20261004z">
   <link rel="stylesheet" href="/static/components.css?v=20261002a">
   {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261004x">{% endif %}
 </head>
@@ -152,7 +152,7 @@
 
 {% set undo_stay = request.query_params.get('undo_stay', '') %}
 {% set undo_return = request.query_params.get('undo_return', '/') %}
-{% if flash or flash_error or (undo_stay and undo_stay.isdigit()) %}
+{% if flash or flash_error or (undo_stay and undo_stay.isdigit()) or celebration_milestone %}
 <div class="toast-stack" role="status" aria-live="polite">
   {% if flash %}
     <div class="toast" data-toast>
@@ -174,6 +174,17 @@
         <button class="toast-undo" type="submit">{{ t('common.undo') }}</button>
       </form>
       <button type="button" data-toast-close aria-label="{{ t('a11y.dismiss') }}">&times;</button>
+    </div>
+  {% endif %}
+  {% if celebration_milestone %}
+    {# A milestone is good news, not a task: a small sticky toast, never a modal. #}
+    <div class="toast" data-toast data-toast-sticky id="celebration-toast">
+      <span class="grow">{{ t('celebration.body', count=sent_guest_count) }}</span>
+      <form method="post" action="/celebrations/dismiss">
+        <input type="hidden" name="milestone" value="{{ celebration_milestone }}">
+        <input type="hidden" name="return_to" value="{{ request.url.path }}">
+        <button class="toast-undo" type="submit">{{ t('celebration.dismiss') }}</button>
+      </form>
     </div>
   {% endif %}
 </div>
@@ -210,21 +221,6 @@
     </div>
   </form>
 </dialog>
-
-{% if celebration_milestone %}
-<dialog id="celebration-dialog" class="celebration-dialog" open>
-  <div class="celebration-card">
-    <div class="celebration-badge" aria-hidden="true">{{ celebration_milestone }}</div>
-    <h2>{{ t('celebration.title') }}</h2>
-    <p>{{ t('celebration.body', count=sent_guest_count, milestone=celebration_milestone) }}</p>
-    <form method="post" action="/celebrations/dismiss">
-      <input type="hidden" name="milestone" value="{{ celebration_milestone }}">
-      <input type="hidden" name="return_to" value="{{ request.url.path }}">
-      <button class="btn primary" type="submit">{{ t('celebration.dismiss') }}</button>
-    </form>
-  </div>
-</dialog>
-{% endif %}
 
 <dialog id="command-dialog" class="command-dialog" aria-labelledby="command-title">
   <div class="command-shell">

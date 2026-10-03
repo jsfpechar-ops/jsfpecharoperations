@@ -2,18 +2,7 @@
   <summary class="g-why-summary">{{ t('why_title') }}</summary>
   <p class="g-intro">{{ t('legal_intro') }}</p>
   <div class="g-details">
-    <h3>{{ t('why_more') }}</h3>
-    <ul>
-      <li>{{ t('why_point_report') }}</li>
-      <li>{{ t('why_point_book') }}</li>
-      <li>{{ t('why_point_czech') }}</li>
-      {% if require_passport|default(false) %}
-      <li>{{ t('why_point_passport') }}</li>
-      {% endif %}
-      <li>{{ t('why_point_accuracy') }}</li>
-      <li>{{ t('why_point_sign') }}</li>
-      <li>{{ t('why_point_nothing_else') }}</li>
-    </ul>
+    <p>{{ t('why_point_accuracy') }}</p>
     <p class="g-law">{{ t('why_law') }}</p>
     {% if privacy_url %}
       <p style="margin-bottom:0"><a href="{{ privacy_url }}">{{ t('privacy_link') }} &rarr;</a></p>

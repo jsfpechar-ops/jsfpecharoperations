@@ -171,15 +171,15 @@ def test_a_key_without_the_placeholders_the_caller_supplies_does_not_raise():
     """A stray or missing value must not cost the guest the form.
 
     The guest lookup used to interpolate unguarded, so a translator dropping a
-    ``%(facility)s`` turned a form render into a traceback.
+    ``%(email)s`` turned a form render into a traceback.
     """
     translate = i18n.translator("cs")
-    raw = i18n.STRINGS["cs"]["arrival_welcome"]
-    assert translate("arrival_welcome", nope=1) == raw
-    assert translate("arrival_welcome") == raw
+    raw = i18n.STRINGS["cs"]["all_done_receipt"]
+    assert translate("all_done_receipt", nope=1) == raw
+    assert translate("all_done_receipt") == raw
     # The matching call still interpolates.
-    assert translate("arrival_welcome", facility="Lang flat") == raw % {
-        "facility": "Lang flat"
+    assert translate("all_done_receipt", email="a***@example.invalid") == raw % {
+        "email": "a***@example.invalid"
     }
 
 

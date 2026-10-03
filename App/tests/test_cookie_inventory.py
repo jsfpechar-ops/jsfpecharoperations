@@ -45,8 +45,9 @@ def test_every_set_cookie_names_a_declared_inventory_row():
 
 def test_every_local_storage_key_is_declared():
     declared = set(cookie_inventory.names())
-    # WP27: inline scripts in templates write storage too (the house book
-    # intro did, undeclared), so they are scanned with the static files.
+    # WP27: inline scripts in templates can write storage too (the house book
+    # intro did, undeclared, until WP17 removed it), so they are scanned with
+    # the static files.
     sources = sorted((APP / "static").glob("*.js")) + sorted((APP / "templates").rglob("*.html"))
     seen = set()
     for path in sources:
@@ -56,7 +57,7 @@ def test_every_local_storage_key_is_declared():
             name = keys.get(identifier, identifier)
             seen.add(name)
             assert name in declared, f"{path.name} writes undeclared storage {name}"
-    assert "ubyhost_housebook_legal_v1" in seen, "the template scan found nothing"
+    assert seen, "the storage scan found nothing"
 
 
 def test_the_published_lifetimes_match_the_code_constants():

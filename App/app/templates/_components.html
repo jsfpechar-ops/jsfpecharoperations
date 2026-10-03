@@ -289,7 +289,7 @@
       <header class="onboarding-finish-intro">
         <p class="onboarding-kicker">{{ t('onboarding.finish_kicker') }}</p>
         <h2>{{ t('onboarding.finish_title') }}</h2>
-        <p class="lede">{{ t('onboarding.finish_lede', property=finish.name) }}</p>
+        <p class="lede">{{ t('onboarding.finish_lede') }}</p>
       </header>
       <div class="onboarding-finish-share">
         <div class="onboarding-finish-field">
@@ -382,7 +382,6 @@
       <div>
         <p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>
         <h1>{{ t('onboarding.welcome_title') }}</h1>
-        <p class="lede">{{ t('onboarding.welcome_lede') }}</p>
       </div>
       <div class="onboarding-meter" aria-label="{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}">
         <strong>{{ onboarding.percent }}%</strong>
@@ -467,12 +466,8 @@
       </p>
     {% endif %}
 
-    <div class="onboarding-bottom {{ 'single' if not demo_available else '' }}">
-      <div class="onboarding-safety">
-        <strong>{{ t('onboarding.safe_title') }}</strong>
-        <p>{{ t('onboarding.safe_body') }}</p>
-      </div>
-      {% if demo_available %}
+    {% if demo_available %}
+    <div class="onboarding-bottom single">
       <div class="onboarding-demo">
         <div>
           <strong>{{ t('onboarding.demo_title') }}</strong>
@@ -483,8 +478,8 @@
           <button class="btn" type="submit">{{ t('demo.load') }}</button>
         </form>
       </div>
-      {% endif %}
     </div>
+    {% endif %}
   </section>
 {% endmacro %}
 

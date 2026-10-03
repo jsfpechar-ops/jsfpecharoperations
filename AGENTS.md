@@ -96,6 +96,21 @@ on a case-insensitive filesystem (macOS) is the same directory as `App/app` —
 so `app/operator.py` shadows the standard library `operator` module and pytest
 fails during collection.
 
+## Writing UI copy (guest and host pages)
+
+Two rules for every string you add to `i18n.py`, `host_i18n.py` or a template:
+
+- **One explanation lives in one place.** If a page needs the background, link
+  to the Help & Guide (or the guest legal notice) instead of repeating it in a
+  lede, hint or dialog. Do not render the same help string twice on one page.
+- **No sentence that the button label already says.** A heading, the field
+  label and a clear button are usually enough; add a hint only when the guest
+  or host cannot act correctly without it.
+
+Legal text is the exception: keep the guest legal notice, its acknowledgement
+and the GDPR Article 13 privacy notice complete even if they overlap with
+other copy.
+
 ## Changing a guest page (anything in `App/app/templates/guest/`, `guest*.css`, `ticket.js`, `signature.js`)
 
 Markup tests are not enough here: Ticket Wallet v2 passed all of them and

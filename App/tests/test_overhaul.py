@@ -557,7 +557,9 @@ def test_guest_pick_explains_law_without_portal_branding():
         assert page.status_code == 200
         assert "Czech law" in page.text
         assert "Why you are filling this in" in page.text
-        assert "What happens with what you enter" in page.text
+        # WP17 (review 3.E item 4): the fold keeps only the accuracy point.
+        assert i18n.STRINGS["en"]["why_point_accuracy"] in page.text
+        assert "What happens with what you enter" not in page.text
         assert '<details class="g-details">' not in page.text
         assert i18n.STRINGS["en"]["stay_not_started"] in page.text
         assert "0 of 2 people completed" not in page.text

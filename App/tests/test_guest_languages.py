@@ -85,7 +85,7 @@ def test_the_legal_facts_survive_translation(lang):
     assert ("DSGVO" if lang == "de" else "RGPD") in table["privacy_basis_body"]
     six = {"de": "sechs", "es": "seis", "fr": "six"}[lang]
     assert six in table["legal_notice_retention_body"]
-    assert six in table["why_point_book"]
+    assert six in table["privacy"]
 
 
 # --- choosing the language ---------------------------------------------------

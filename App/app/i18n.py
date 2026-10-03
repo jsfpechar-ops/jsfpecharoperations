@@ -104,52 +104,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "title": "Guest registration",
         "language_label": "Language",
         "date_placeholder": "DD.MM.YYYY",
-        "legal_intro": (
-            "Czech law treats every rented apartment as an accommodation facility. Your host "
-            "must write each guest into a house book and report every foreign guest to the "
-            "Foreign Police within three working days of arrival. This form is how that is "
-            "done — one form per person, including children."
-        ),
+        "legal_intro": "Czech law requires your host to register every guest, including children, and report foreign guests to the police.",
         "why_title": "Why you are filling this in",
         "why_law": (
             "Act No. 326/1999 Coll., on the Residence of Foreign Nationals, §§ 101–103."
-        ),
-        "why_more": "What happens with what you enter",
-        "why_point_report": (
-            "Foreign nationals are reported electronically to the Police of the Czech "
-            "Republic, Directorate of the Alien Police Service."
-        ),
-        "why_point_book": (
-            "The same details go into the house book (domovní kniha), which the host must "
-            "keep for six years and produce at a police inspection."
-        ),
-        "why_point_czech": (
-            "Czech citizens are not reported to the police — only the house-book entry is made."
-        ),
-        "why_point_passport": (
-            "If your host requires it, foreign guests upload a photo of their passport or ID "
-            "page so the host can check the details. Only your host sees it, and it is deleted "
-            "after the check."
         ),
         "why_point_accuracy": (
             "You must enter truthful information that matches your travel document. The host "
             "is legally responsible for accuracy and may refuse accommodation if you will not "
             "show ID or provide correct details."
         ),
-        "why_point_sign": (
-            "Completing and signing the form is required for adult foreign guests. "
-            "Children under 15 do not have to fill and sign personally — a parent or "
-            "guardian completes the record."
-        ),
-        "why_point_nothing_else": (
-            "Nothing here is used for marketing, and none of it goes back to the booking "
-            "site you booked through."
-        ),
         "pick_stay": "Find your stay",
         "pick_stay_help": "Tap your arrival and departure dates to continue.",
-        "arrival_welcome": "Welcome — guest registration for %(facility)s.",
         "arrival_question": "Which stay is yours?",
-        "arrival_help": "Choose your arrival and departure dates to continue.",
         "arrival_cta": "That’s my stay",
         # Ticket Wallet skin (guest-ticket.css)
         "tw_label_access": "Private access",
@@ -184,31 +151,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "tw_purpose_other": "Other…",
         "tw_sign_here": "Sign here with your finger",
         "tw_signed": "Signed",
-        "tw_done_keep": "Keep this page — it is your confirmation.",
         "tw_guest_n_of": "Guest %(current)s of %(total)s",
         "tw_guest_n": "Guest %(current)s",
         "tw_next_guest": "Register guest %(current)s of %(total)s",
         "stay_ongoing": "Ongoing",
         "stay_arriving_today": "Arriving today",
         "host_details": "Your host",
-        "host_details_help": (
-            "If there is any problem, feel free to contact your host. "
-            "UbyHost does not run the property and cannot change your booking."
-        ),
+        "host_details_help": "Questions? Contact your host.",
         "host_details_missing": (
             "Use the phone or e-mail in the message that contained this link."
         ),
         "message_from_host": "A message from your host",
         "claim_title": "How many people, and your e-mail",
-        "claim_help": (
-            "We'll e-mail you a private link so only your group can open the forms."
-        ),
+        "claim_help": "Only your group can open the forms.",
         "claim_email": "What is your e-mail address?",
-        "claim_email_help": (
-            "We send the link here, one reminder the day before arrival if forms are "
-            "missing, and a receipt (your host gets a copy). Elsewhere it is shown "
-            "masked. No marketing."
-        ),
+        "claim_email_help": "Also one reminder the day before arrival if forms are missing, and a receipt (your host gets a copy). Shown masked elsewhere.",
         "claim_cookie_help": (
             "Only necessary cookies: PIN access (7 days), your language and this stay "
             "(60 days)."
@@ -231,18 +188,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_recipient_rate": "This e-mail has received too many registration links. Try again later.",
         "claim_error_bot": "Please complete the security check and try again.",
         "assigned_title": "This reservation is already assigned",
-        "assigned_body": (
-            "This stay is already linked to the e-mail below. "
-            "If that's you, we can send the private link again."
-        ),
-        "assigned_resend_help": "Enter the same e-mail to receive the link again.",
+        "assigned_body": "This stay is already linked to the e-mail below. If that's you, enter it and we'll send the private link again.",
         "assigned_resend": "Send me the link again",
         "assigned_stay_label": "Your selected stay",
-        "assigned_private_link": "For your privacy, registration continues through the secure link sent to this address.",
         "assigned_last_sent": "Private link last sent %(date)s",
         "assigned_not_mine": "This is not my reservation",
         "claim_confirm_title": "Is this your reservation?",
-        "claim_confirm_help": "One tap to confirm it’s really you.",
         "claim_confirm_button": "Yes, this is my stay",
         "claim_confirm_failed": "That confirmation link is invalid or has expired.",
         "back_to_stays": "Choose different dates",
@@ -291,10 +242,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "form_locked_short": "Saved and locked. To change anything, contact your host.",
         "pin_title": "Enter the access PIN",
-        "pin_help": (
-            "Your host sent a PIN together with the registration link. "
-            "Enter it to open the form."
-        ),
+        "pin_help": "The PIN is in your host's message.",
         "pin_label": "PIN",
         "pin_submit": "Continue",
         "pin_wrong": "That PIN is not correct. Check the message from your host.",
@@ -352,15 +300,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "checkout_info": "Check-out",
         "still_missing": "Still to register: %(n)s",
         "add_another": "Add another person",
-        "someone_missing": (
-            "Forgot someone? Everyone staying must be registered, including children."
-        ),
+        "someone_missing": "Forgot someone? Children must be registered too.",
         "continue_filling": "Continue filling in",
         "surname": "Surname",
         "first_name": "Given name(s)",
         "birth_date": "Date of birth",
         "birth_date_readback": "That is %(date)s.",
-        "residence_help": "Your permanent home address, as in your passport or ID card. Required by law.",
+        "residence_help": "Your permanent home address, as in your passport or ID card.",
         "residence_copied": "Copied from %(name)s — change it if this person lives elsewhere.",
         "nationality": "Nationality",
         "countries_common": "Most common",
@@ -396,11 +342,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_missing": "Please sign in the box before you continue.",
         "signature_kept": "Your signature is saved. Sign again only if you want to change it.",
         "passport_photo_title": "Passport or ID document",
-        "passport_photo_help": (
-            "Your host must check your details against your document. Take a photo of the page "
-            "with your photo, or upload a PDF. Only your host can see it, and it is deleted after "
-            "they check it."
-        ),
+        "passport_photo_help": "Take a photo of the page with your photo, or upload a PDF. Only your host can see it, and it is deleted after they check it.",
         "passport_photo_label": "Passport or ID document",
         "passport_photo_take": "Take photo",
         "passport_photo_choose": "Choose file",
@@ -427,16 +369,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "review_edit": "Change",
         "legal_notice_title": "Legal information",
-        "legal_notice_intro": "Please read this before you send.",
-        "legal_notice_disclaimer": (
-            "UbyHost is a software tool and this information does not replace legal advice."
-        ),
         "legal_notice_duty_title": "Your legal duty",
-        "legal_notice_duty_body": (
-            "Everyone staying must be registered. Foreign guests are reported to the Foreign "
-            "Police within three working days; Czech citizens only go into the house book. "
-            "This is required by law."
-        ),
+        "legal_notice_duty_body": "Everyone staying must be registered. Foreign guests are reported to the Foreign Police; Czech citizens only go into the house book.",
         "legal_notice_accuracy_title": "Accurate information only",
         "legal_notice_accuracy_body": (
             "Enter everything exactly as in your passport or ID card. Your details may be "
@@ -451,11 +385,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "never sent to the police."
         ),
         "legal_notice_reporting_title": "Police reporting and house book",
-        "legal_notice_reporting_body": (
-            "Complete records of foreign guests may be sent to the Czech Police automatically — "
-            "straight away or after a delay your host chooses. The same details stay in the house "
-            "book for six years."
-        ),
+        "legal_notice_reporting_body": "Your host reports the details of foreign guests to the Foreign Police within three working days of arrival, straight away or a little later. Complete records may be sent automatically. The same details stay in the house book for six years.",
         "legal_notice_retention_title": "How long data is kept",
         "legal_notice_retention_body": (
             "Registration details and your signature are kept for six years after the end of "
@@ -478,10 +408,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "required": "required",
         "check_in": "Check-in",
         "check_out": "Check-out",
-        "privacy": (
-            "Your details are used only to meet the host's legal reporting duty towards the "
-            "Police of the Czech Republic and are kept for the statutory six years."
-        ),
+        "privacy": "Used only for your host's legal reporting to the Czech Police, and kept for six years.",
         "skip_to_form": "Skip to the form",
         "loading": "Loading…",
         "privacy_link": "How your data is handled",
@@ -732,48 +659,17 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "title": "Registrace ubytovaného",
         "language_label": "Jazyk",
         "date_placeholder": "DD.MM.RRRR",
-        "legal_intro": (
-            "Podle českého práva je pronajímaný apartmán ubytovacím zařízením. Ubytovatel musí "
-            "každého hosta zapsat do domovní knihy a každého ubytovaného cizince oznámit "
-            "cizinecké policii do 3 pracovních dnů od ubytování. K tomu slouží tento formulář — "
-            "jeden za každou osobu včetně dětí."
-        ),
+        "legal_intro": "Podle zákona musí ubytovatel zaregistrovat každého hosta včetně dětí a cizince ohlásit policii.",
         "why_title": "Proč tento formulář vyplňujete",
         "why_law": "Zákon č. 326/1999 Sb., o pobytu cizinců na území ČR, § 101–103.",
-        "why_more": "Co se s údaji stane",
-        "why_point_report": (
-            "Cizinci se elektronicky oznamují Policii České republiky, Ředitelství služby "
-            "cizinecké policie."
-        ),
-        "why_point_book": (
-            "Stejné údaje se zapisují do domovní knihy, kterou hostitel uchovává 6 let a "
-            "předkládá při kontrole policie."
-        ),
-        "why_point_czech": (
-            "Občané ČR se policii neoznamují — provede se pouze zápis do domovní knihy."
-        ),
-        "why_point_passport": (
-            "Pokud to hostitel vyžaduje, cizinci nahrají fotku stránky pasu nebo průkazu, "
-            "aby mohl údaje zkontrolovat. Vidí ji jen hostitel a po kontrole se smaže."
-        ),
         "why_point_accuracy": (
             "Musíte uvést pravdivé údaje shodné s cestovním dokladem. Hostitel za správnost "
             "odpovídá a může odmítnout ubytování, pokud doklad neukážete nebo údaje nebudou "
             "správné."
         ),
-        "why_point_sign": (
-            "Vyplnit a podepsat formulář musí dospělý cizinec. Děti mladší 15 let "
-            "formulář osobně vyplňovat a podepisovat nemusí — záznam doplní rodič nebo opatrovník."
-        ),
-        "why_point_nothing_else": (
-            "Údaje se nepoužívají k marketingu a nevracejí se rezervačnímu portálu, přes který "
-            "jste rezervovali."
-        ),
         "pick_stay": "Najděte svou rezervaci",
         "pick_stay_help": "Klepněte na termín svého pobytu a pokračujte.",
-        "arrival_welcome": "Vítejte — registrace ubytovaného pro %(facility)s.",
         "arrival_question": "Který pobyt je váš?",
-        "arrival_help": "Vyberte termín příjezdu a odjezdu a pokračujte.",
         "arrival_cta": "To je můj pobyt",
         # Ticket Wallet skin (guest-ticket.css)
         "tw_label_access": "Soukromý přístup",
@@ -808,31 +704,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "tw_purpose_other": "Jiný…",
         "tw_sign_here": "Podepište se zde prstem",
         "tw_signed": "Podepsáno",
-        "tw_done_keep": "Tuto stránku si nechte — je to vaše potvrzení.",
         "tw_guest_n_of": "Host %(current)s z %(total)s",
         "tw_guest_n": "Host %(current)s",
         "tw_next_guest": "Registrovat hosta %(current)s z %(total)s",
         "stay_ongoing": "Právě probíhá",
         "stay_arriving_today": "Příjezd dnes",
         "host_details": "Váš hostitel",
-        "host_details_help": (
-            "Pokud máte jakýkoli problém, neváhejte kontaktovat svého hostitele. "
-            "UbyHost objekt neprovozuje a rezervaci nemůže měnit."
-        ),
+        "host_details_help": "Máte dotaz? Kontaktujte hostitele.",
         "host_details_missing": (
             "Použijte telefon nebo e-mail ze zprávy, ve které byl tento odkaz."
         ),
         "message_from_host": "Zpráva od vašeho hostitele",
         "claim_title": "Počet osob a váš e-mail",
-        "claim_help": (
-            "Pošleme vám soukromý odkaz, aby formuláře otevřela jen vaše skupina."
-        ),
+        "claim_help": "Formuláře otevře jen vaše skupina.",
         "claim_email": "Jaký je váš e-mail?",
-        "claim_email_help": (
-            "Pošleme sem odkaz, jedno připomenutí den před příjezdem, pokud formuláře "
-            "chybí, a potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje "
-            "zakrytě. Žádný marketing."
-        ),
+        "claim_email_help": "Dále jedno připomenutí den před příjezdem, pokud formuláře chybí, a potvrzení (kopii dostane i hostitel). Jinde se adresa zobrazuje zakrytě.",
         "claim_cookie_help": (
             "Jen nezbytné cookies: přístup přes PIN (7 dní), jazyk a tento pobyt (60 dní)."
         ),
@@ -854,18 +740,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_recipient_rate": "Na tento e-mail bylo odesláno příliš mnoho odkazů. Zkuste to později.",
         "claim_error_bot": "Dokončete prosím bezpečnostní kontrolu a zkuste to znovu.",
         "assigned_title": "Tato rezervace už je přiřazena",
-        "assigned_body": (
-            "Tento pobyt je už propojený s e-mailem níže. "
-            "Pokud jste to vy, pošleme vám soukromý odkaz znovu."
-        ),
-        "assigned_resend_help": "Zadejte stejný e-mail a odkaz pošleme znovu.",
+        "assigned_body": "Tento pobyt je už propojený s e-mailem níže. Pokud jste to vy, zadejte ho a soukromý odkaz pošleme znovu.",
         "assigned_resend": "Pošlete mi odkaz znovu",
         "assigned_stay_label": "Vybraný pobyt",
-        "assigned_private_link": "Kvůli ochraně soukromí pokračuje registrace přes zabezpečený odkaz zaslaný na tuto adresu.",
         "assigned_last_sent": "Soukromý odkaz naposledy odeslán %(date)s",
         "assigned_not_mine": "Toto není moje rezervace",
         "claim_confirm_title": "Je to vaše rezervace?",
-        "claim_confirm_help": "Jedním klepnutím potvrďte, že jste to opravdu vy.",
         "claim_confirm_button": "Ano, to je můj pobyt",
         "claim_confirm_failed": "Potvrzovací odkaz je neplatný nebo vypršel.",
         "back_to_stays": "Vybrat jiný termín",
@@ -912,10 +792,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "form_locked_short": "Uloženo a uzamčeno. Pro změnu kontaktujte hostitele.",
         "pin_title": "Zadejte přístupový PIN",
-        "pin_help": (
-            "Hostitel vám spolu s odkazem poslal PIN. "
-            "Zadejte ho pro otevření formuláře."
-        ),
+        "pin_help": "PIN najdete ve zprávě od hostitele.",
         "pin_label": "PIN",
         "pin_submit": "Pokračovat",
         "pin_wrong": "PIN není správný. Zkontrolujte zprávu od hostitele.",
@@ -971,15 +848,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "checkout_info": "Odjezd",
         "still_missing": "Zbývá zaregistrovat: %(n)s",
         "add_another": "Přidat další osobu",
-        "someone_missing": (
-            "Zapomněli jste na někoho? Registrovat se musí každý ubytovaný, včetně dětí."
-        ),
+        "someone_missing": "Zapomněli jste na někoho? Registrují se i děti.",
         "continue_filling": "Pokračovat ve vyplnění",
         "surname": "Příjmení",
         "first_name": "Jméno",
         "birth_date": "Datum narození",
         "birth_date_readback": "Tedy %(date)s.",
-        "residence_help": "Adresa trvalého bydliště podle pasu nebo občanského průkazu. Vyžaduje ji zákon.",
+        "residence_help": "Adresa trvalého bydliště podle pasu nebo občanského průkazu.",
         "residence_copied": "Převzato od: %(name)s. Pokud tato osoba bydlí jinde, adresu změňte.",
         "nationality": "Státní občanství",
         "countries_common": "Nejčastější",
@@ -1015,10 +890,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_missing": "Než budete pokračovat, podepište se prosím do rámečku.",
         "signature_kept": "Podpis máme uložený. Znovu se podepište, jen pokud ho chcete změnit.",
         "passport_photo_title": "Pas nebo průkaz totožnosti",
-        "passport_photo_help": (
-            "Hostitel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
-            "nahrajte PDF. Uvidí ji jen hostitel a po kontrole se smaže."
-        ),
+        "passport_photo_help": "Vyfoťte stránku s fotografií, nebo nahrajte PDF. Uvidí ji jen hostitel a po kontrole se smaže.",
         "passport_photo_label": "Pas nebo průkaz totožnosti",
         "passport_photo_take": "Vyfotit",
         "passport_photo_choose": "Vybrat soubor",
@@ -1045,15 +917,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "review_edit": "Změnit",
         "legal_notice_title": "Právní informace",
-        "legal_notice_intro": "Před odesláním si to prosím přečtěte.",
-        "legal_notice_disclaimer": (
-            "UbyHost je softwarový nástroj a tyto informace nenahrazují právní poradenství."
-        ),
         "legal_notice_duty_title": "Vaše zákonná povinnost",
-        "legal_notice_duty_body": (
-            "Registrovat se musí každý ubytovaný. Cizince ubytovatel do tří pracovních dnů "
-            "ohlásí cizinecké policii, občany ČR jen zapíše do domovní knihy. Vyžaduje to zákon."
-        ),
+        "legal_notice_duty_body": "Registrovat se musí každý ubytovaný. Cizince ubytovatel ohlásí cizinecké policii, občany ČR jen zapíše do domovní knihy.",
         "legal_notice_accuracy_title": "Pouze pravdivé údaje",
         "legal_notice_accuracy_body": (
             "Vše vyplňte přesně podle pasu nebo občanského průkazu. Údaje se mohou ohlásit "
@@ -1067,11 +932,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "příjezdu, nejpozději 30 dní od nahrání. Policii se nikdy neposílá."
         ),
         "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
-        "legal_notice_reporting_body": (
-            "Kompletní záznamy cizinců se mohou Policii ČR odeslat automaticky — hned, nebo "
-            "s odkladem, který nastaví ubytovatel. Stejné údaje zůstávají šest let v domovní "
-            "knize."
-        ),
+        "legal_notice_reporting_body": "Ubytovatel údaje cizinců ohlásí cizinecké policii do tří pracovních dnů od příjezdu, hned, nebo o něco později. Kompletní záznamy se mohou odeslat automaticky. Stejné údaje zůstávají šest let v domovní knize.",
         "legal_notice_retention_title": "Jak dlouho se údaje uchovávají",
         "legal_notice_retention_body": (
             "Registrační údaje a podpis se uchovávají šest let od konce pobytu podle § 101 "
@@ -1094,10 +955,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "required": "povinné",
         "check_in": "Příjezd",
         "check_out": "Odjezd",
-        "privacy": (
-            "Údaje slouží výhradně ke splnění zákonné oznamovací povinnosti ubytovatele vůči "
-            "Policii České republiky a uchovávají se zákonných 6 let."
-        ),
+        "privacy": "Údaje slouží jen k zákonnému hlášení ubytovatele Policii ČR a uchovávají se 6 let.",
         "skip_to_form": "Přejít na formulář",
         "loading": "Načítá se…",
         "privacy_link": "Jak nakládáme s vašimi údaji",
@@ -1340,22 +1198,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "title": "Gästeregistrierung",
         "language_label": "Sprache",
         "date_placeholder": "TT.MM.JJJJ",
-        "legal_intro": "Nach tschechischem Recht gilt jede vermietete Wohnung als Beherbergungseinrichtung. Ihr Gastgeber muss jeden Gast in ein Hausbuch eintragen und jeden ausländischen Gast innerhalb von drei Arbeitstagen nach der Ankunft der Fremdenpolizei melden. Dazu dient dieses Formular — ein Formular pro Person, auch für Kinder.",
+        "legal_intro": "Nach tschechischem Recht muss Ihr Gastgeber jeden Gast registrieren, auch Kinder, und ausländische Gäste der Polizei melden.",
         "why_title": "Warum Sie dies ausfüllen",
         "why_law": "Gesetz Nr. 326/1999 Slg. über den Aufenthalt von Ausländern, §§ 101–103.",
-        "why_more": "Was mit Ihren Angaben geschieht",
-        "why_point_report": "Ausländische Staatsangehörige werden elektronisch an die Polizei der Tschechischen Republik, Direktion der Fremdenpolizei, gemeldet.",
-        "why_point_book": "Dieselben Angaben werden in das Hausbuch (domovní kniha) eingetragen, das der Gastgeber sechs Jahre lang aufbewahren und bei einer polizeilichen Kontrolle vorlegen muss.",
-        "why_point_czech": "Tschechische Staatsbürger werden nicht der Polizei gemeldet — es erfolgt nur der Eintrag ins Hausbuch.",
-        "why_point_passport": "Wenn Ihr Gastgeber es verlangt, laden ausländische Gäste ein Foto ihrer Reisepass- oder Ausweisseite hoch, damit der Gastgeber die Angaben prüfen kann. Nur Ihr Gastgeber sieht es, und es wird nach der Prüfung gelöscht.",
         "why_point_accuracy": "Sie müssen wahrheitsgemäße Angaben machen, die mit Ihrem Reisedokument übereinstimmen. Der Gastgeber ist gesetzlich für die Richtigkeit verantwortlich und kann die Unterbringung verweigern, wenn Sie sich nicht ausweisen oder keine korrekten Angaben machen.",
-        "why_point_sign": "Für erwachsene ausländische Gäste ist das Ausfüllen und Unterschreiben des Formulars Pflicht. Kinder unter 15 Jahren müssen nicht selbst ausfüllen und unterschreiben — ein Elternteil oder Vormund füllt den Eintrag aus.",
-        "why_point_nothing_else": "Nichts davon wird für Marketing verwendet, und nichts geht an die Buchungsplattform zurück, über die Sie gebucht haben.",
         "pick_stay": "Ihren Aufenthalt finden",
         "pick_stay_help": "Tippen Sie auf Ihr An- und Abreisedatum, um fortzufahren.",
-        "arrival_welcome": "Willkommen — Gästeregistrierung für %(facility)s.",
         "arrival_question": "Welcher Aufenthalt ist Ihrer?",
-        "arrival_help": "Wählen Sie Ihr An- und Abreisedatum, um fortzufahren.",
         "arrival_cta": "Das ist mein Aufenthalt",
         "tw_label_access": "Privater Zugang",
         "tw_label_stay": "Ihr Aufenthalt",
@@ -1389,20 +1238,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "tw_purpose_other": "Sonstiges…",
         "tw_sign_here": "Hier mit dem Finger unterschreiben",
         "tw_signed": "Unterschrieben",
-        "tw_done_keep": "Bewahren Sie diese Seite auf — sie ist Ihre Bestätigung.",
         "tw_guest_n_of": "Gast %(current)s von %(total)s",
         "tw_guest_n": "Gast %(current)s",
         "tw_next_guest": "Gast %(current)s von %(total)s registrieren",
         "stay_ongoing": "Laufend",
         "stay_arriving_today": "Anreise heute",
         "host_details": "Ihr Gastgeber",
-        "host_details_help": "Bei Problemen wenden Sie sich gern an Ihren Gastgeber. UbyHost betreibt die Unterkunft nicht und kann Ihre Buchung nicht ändern.",
+        "host_details_help": "Fragen? Wenden Sie sich an Ihren Gastgeber.",
         "host_details_missing": "Nutzen Sie die Telefonnummer oder E-Mail aus der Nachricht, die diesen Link enthielt.",
         "message_from_host": "Eine Nachricht Ihres Gastgebers",
         "claim_title": "Personenzahl und Ihre E-Mail",
-        "claim_help": "Wir senden Ihnen einen privaten Link per E-Mail, damit nur Ihre Gruppe die Formulare öffnen kann.",
+        "claim_help": "Nur Ihre Gruppe kann die Formulare öffnen.",
         "claim_email": "Wie lautet Ihre E-Mail-Adresse?",
-        "claim_email_help": "Wir senden hierhin den Link, eine Erinnerung am Tag vor der Anreise, falls Formulare fehlen, und eine Bestätigung (Ihr Gastgeber erhält eine Kopie). An anderer Stelle wird sie maskiert angezeigt. Kein Marketing.",
+        "claim_email_help": "Außerdem eine Erinnerung am Tag vor der Anreise, falls Formulare fehlen, und eine Bestätigung (Ihr Gastgeber erhält eine Kopie). An anderer Stelle wird sie maskiert angezeigt.",
         "claim_cookie_help": "Nur notwendige Cookies: PIN-Zugang (7 Tage), Ihre Sprache und dieser Aufenthalt (60 Tage).",
         "claim_submit": "Formular-Link senden",
         "claim_sent_title": "Prüfen Sie Ihre E-Mails",
@@ -1417,15 +1265,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_recipient_rate": "An diese E-Mail wurden zu viele Registrierungslinks gesendet. Versuchen Sie es später erneut.",
         "claim_error_bot": "Bitte schließen Sie die Sicherheitsprüfung ab und versuchen Sie es erneut.",
         "assigned_title": "Diese Reservierung ist bereits zugeordnet",
-        "assigned_body": "Dieser Aufenthalt ist bereits mit der unten stehenden E-Mail verknüpft. Wenn das Sie sind, können wir den privaten Link erneut senden.",
-        "assigned_resend_help": "Geben Sie dieselbe E-Mail ein, um den Link erneut zu erhalten.",
+        "assigned_body": "Dieser Aufenthalt ist bereits mit der unten stehenden E-Mail verknüpft. Wenn das Sie sind, geben Sie sie ein, und wir senden den privaten Link erneut.",
         "assigned_resend": "Link erneut senden",
         "assigned_stay_label": "Ihr gewählter Aufenthalt",
-        "assigned_private_link": "Zum Schutz Ihrer Privatsphäre wird die Registrierung über den sicheren Link fortgesetzt, der an diese Adresse gesendet wurde.",
         "assigned_last_sent": "Privater Link zuletzt gesendet am %(date)s",
         "assigned_not_mine": "Das ist nicht meine Reservierung",
         "claim_confirm_title": "Ist das Ihre Reservierung?",
-        "claim_confirm_help": "Ein Tippen genügt, um zu bestätigen, dass Sie es wirklich sind.",
         "claim_confirm_button": "Ja, das ist mein Aufenthalt",
         "claim_confirm_failed": "Dieser Bestätigungslink ist ungültig oder abgelaufen.",
         "back_to_stays": "Anderen Zeitraum wählen",
@@ -1452,7 +1297,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_locked_help": "Ihre Angaben wurden gespeichert und unterschrieben. Zum Schutz Ihrer Daten kann das Formular über diesen Link nicht geändert werden. Bitte schreiben Sie Ihrem Gastgeber, falls etwas korrigiert werden muss.",
         "form_locked_short": "Gespeichert und gesperrt. Für Änderungen wenden Sie sich an Ihren Gastgeber.",
         "pin_title": "Zugangs-PIN eingeben",
-        "pin_help": "Ihr Gastgeber hat zusammen mit dem Registrierungslink eine PIN gesendet. Geben Sie sie ein, um das Formular zu öffnen.",
+        "pin_help": "Die PIN steht in der Nachricht Ihres Gastgebers.",
         "pin_label": "PIN",
         "pin_submit": "Weiter",
         "pin_wrong": "Diese PIN ist nicht korrekt. Prüfen Sie die Nachricht Ihres Gastgebers.",
@@ -1500,13 +1345,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "checkout_info": "Check-out",
         "still_missing": "Noch zu registrieren: %(n)s",
         "add_another": "Weitere Person hinzufügen",
-        "someone_missing": "Jemanden vergessen? Alle Übernachtenden müssen registriert werden, auch Kinder.",
+        "someone_missing": "Jemanden vergessen? Auch Kinder müssen registriert werden.",
         "continue_filling": "Weiter ausfüllen",
         "surname": "Nachname",
         "first_name": "Vorname(n)",
         "birth_date": "Geburtsdatum",
         "birth_date_readback": "Das ist der %(date)s.",
-        "residence_help": "Ihre ständige Wohnanschrift wie in Ihrem Reisepass oder Personalausweis. Gesetzlich vorgeschrieben.",
+        "residence_help": "Ihre ständige Wohnanschrift wie in Ihrem Reisepass oder Personalausweis.",
         "residence_copied": "Von %(name)s übernommen — ändern Sie sie, falls diese Person woanders wohnt.",
         "nationality": "Staatsangehörigkeit",
         "countries_common": "Häufigste",
@@ -1539,7 +1384,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_missing": "Bitte unterschreiben Sie im Feld, bevor Sie fortfahren.",
         "signature_kept": "Ihre Unterschrift ist gespeichert. Unterschreiben Sie nur erneut, wenn Sie sie ändern möchten.",
         "passport_photo_title": "Reisepass oder Ausweis",
-        "passport_photo_help": "Ihr Gastgeber muss Ihre Angaben mit Ihrem Dokument abgleichen. Fotografieren Sie die Seite mit Ihrem Foto oder laden Sie ein PDF hoch. Nur Ihr Gastgeber kann es sehen, und es wird nach der Prüfung gelöscht.",
+        "passport_photo_help": "Fotografieren Sie die Seite mit Ihrem Foto oder laden Sie ein PDF hoch. Nur Ihr Gastgeber kann es sehen, und es wird nach der Prüfung gelöscht.",
         "passport_photo_label": "Reisepass oder Ausweis",
         "passport_photo_take": "Foto aufnehmen",
         "passport_photo_choose": "Datei wählen",
@@ -1556,16 +1401,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "review_help": "Nach dem Senden sind diese Angaben gesperrt und nur Ihr Gastgeber kann sie ändern.",
         "review_edit": "Ändern",
         "legal_notice_title": "Rechtliche Hinweise",
-        "legal_notice_intro": "Bitte lesen Sie dies vor dem Senden.",
-        "legal_notice_disclaimer": "UbyHost ist ein Software-Tool, und diese Informationen ersetzen keine Rechtsberatung.",
         "legal_notice_duty_title": "Ihre gesetzliche Pflicht",
-        "legal_notice_duty_body": "Alle Übernachtenden müssen registriert werden. Ausländische Gäste werden innerhalb von drei Arbeitstagen der Fremdenpolizei gemeldet; tschechische Staatsbürger werden nur ins Hausbuch eingetragen. Dies ist gesetzlich vorgeschrieben.",
+        "legal_notice_duty_body": "Alle Übernachtenden müssen registriert werden. Ausländische Gäste werden der Fremdenpolizei gemeldet; tschechische Staatsbürger werden nur ins Hausbuch eingetragen.",
         "legal_notice_accuracy_title": "Nur korrekte Angaben",
         "legal_notice_accuracy_body": "Geben Sie alles genau wie in Ihrem Reisepass oder Personalausweis ein. Ihre Angaben können automatisch gemeldet werden, bevor Ihr Gastgeber sie prüft, und falsche Angaben können für Ihren Gastgeber ein Bußgeld bedeuten.",
         "legal_notice_passport_title": "Passfoto (ausländische Staatsangehörige)",
         "legal_notice_passport_body": "Ausländische Gäste laden ein Foto ihrer Reisepass- oder Ausweisseite (oder ein PDF) hoch. Nur Ihr Gastgeber sieht es, um es mit Ihren Angaben zu vergleichen. Es wird nach der Prüfung gelöscht, andernfalls 7 Tage nach dem Check-in, und niemals später als 30 Tage nach dem Hochladen. Es wird niemals an die Polizei gesendet.",
         "legal_notice_reporting_title": "Polizeimeldung und Hausbuch",
-        "legal_notice_reporting_body": "Vollständige Einträge ausländischer Gäste können automatisch an die tschechische Polizei gesendet werden — sofort oder nach einer von Ihrem Gastgeber gewählten Verzögerung. Dieselben Angaben bleiben sechs Jahre lang im Hausbuch.",
+        "legal_notice_reporting_body": "Ihr Gastgeber meldet die Angaben ausländischer Gäste innerhalb von drei Arbeitstagen nach der Ankunft der Fremdenpolizei, sofort oder etwas später. Vollständige Einträge können automatisch gesendet werden. Dieselben Angaben bleiben sechs Jahre lang im Hausbuch.",
         "legal_notice_retention_title": "Wie lange Daten gespeichert werden",
         "legal_notice_retention_body": "Registrierungsangaben und Ihre Unterschrift werden sechs Jahre nach Ende Ihres Aufenthalts aufbewahrt, wie es § 101 Abs. 4 des Gesetzes Nr. 326/1999 Slg. vorschreibt, und anschließend gelöscht. Die Verarbeitung beruht auf einer rechtlichen Verpflichtung (Art. 6 Abs. 1 lit. c DSGVO), nicht auf einer Einwilligung.",
         "legal_notice_refusal_title": "Wenn Sie ablehnen",
@@ -1577,7 +1420,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "required": "Pflichtfeld",
         "check_in": "Check-in",
         "check_out": "Check-out",
-        "privacy": "Ihre Angaben werden ausschließlich zur Erfüllung der gesetzlichen Meldepflicht des Gastgebers gegenüber der Polizei der Tschechischen Republik verwendet und für die gesetzlich vorgeschriebenen sechs Jahre aufbewahrt.",
+        "privacy": "Ausschließlich für die gesetzliche Meldung Ihres Gastgebers an die tschechische Polizei verwendet und sechs Jahre lang aufbewahrt.",
         "skip_to_form": "Zum Formular springen",
         "loading": "Wird geladen…",
         "privacy_link": "Umgang mit Ihren Daten",
@@ -1670,22 +1513,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "title": "Registro de huéspedes",
         "language_label": "Idioma",
         "date_placeholder": "DD.MM.AAAA",
-        "legal_intro": "La ley checa considera cada apartamento de alquiler un establecimiento de alojamiento. Su anfitrión debe inscribir a cada huésped en un libro de registro y comunicar cada huésped extranjero a la Policía de Extranjería en un plazo de tres días hábiles desde su llegada. Este formulario sirve para ello — un formulario por persona, incluidos los niños.",
+        "legal_intro": "La ley checa exige que su anfitrión registre a cada huésped, incluidos los niños, y comunique los huéspedes extranjeros a la policía.",
         "why_title": "Por qué rellena este formulario",
         "why_law": "Ley n.º 326/1999 Recop., sobre la residencia de extranjeros, §§ 101–103.",
-        "why_more": "Qué ocurre con los datos que introduce",
-        "why_point_report": "Los extranjeros se comunican por vía electrónica a la Policía de la República Checa, Dirección del Servicio de Policía de Extranjería.",
-        "why_point_book": "Los mismos datos se anotan en el libro de registro (domovní kniha), que el anfitrión debe conservar durante seis años y presentar en caso de inspección policial.",
-        "why_point_czech": "Los ciudadanos checos no se comunican a la policía — solo se anotan en el libro de registro.",
-        "why_point_passport": "Si su anfitrión lo exige, los huéspedes extranjeros suben una foto de la página de datos de su pasaporte o documento de identidad para que el anfitrión compruebe los datos. Solo su anfitrión la ve y se elimina tras la comprobación.",
         "why_point_accuracy": "Debe introducir información veraz que coincida con su documento de viaje. El anfitrión es legalmente responsable de su exactitud y puede negarle el alojamiento si no muestra su documento de identidad o no facilita datos correctos.",
-        "why_point_sign": "Rellenar y firmar el formulario es obligatorio para los huéspedes extranjeros adultos. Los menores de 15 años no tienen que rellenarlo ni firmarlo personalmente — un progenitor o tutor completa el registro.",
-        "why_point_nothing_else": "Nada de esto se utiliza con fines de marketing ni se envía al sitio web en el que hizo la reserva.",
         "pick_stay": "Busque su estancia",
         "pick_stay_help": "Toque sus fechas de llegada y salida para continuar.",
-        "arrival_welcome": "Bienvenido/a — registro de huéspedes de %(facility)s.",
         "arrival_question": "¿Cuál es su estancia?",
-        "arrival_help": "Elija sus fechas de llegada y salida para continuar.",
         "arrival_cta": "Esa es mi estancia",
         "tw_label_access": "Acceso privado",
         "tw_label_stay": "Su estancia",
@@ -1719,20 +1553,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "tw_purpose_other": "Otro…",
         "tw_sign_here": "Firme aquí con el dedo",
         "tw_signed": "Firmado",
-        "tw_done_keep": "Conserve esta página — es su confirmación.",
         "tw_guest_n_of": "Huésped %(current)s de %(total)s",
         "tw_guest_n": "Huésped %(current)s",
         "tw_next_guest": "Registrar huésped %(current)s de %(total)s",
         "stay_ongoing": "En curso",
         "stay_arriving_today": "Llegada hoy",
         "host_details": "Su anfitrión",
-        "host_details_help": "Si surge cualquier problema, no dude en contactar con su anfitrión. UbyHost no gestiona el alojamiento y no puede modificar su reserva.",
+        "host_details_help": "¿Tiene preguntas? Contacte con su anfitrión.",
         "host_details_missing": "Utilice el teléfono o el e-mail del mensaje que contenía este enlace.",
         "message_from_host": "Un mensaje de su anfitrión",
         "claim_title": "Cuántas personas y su e-mail",
-        "claim_help": "Le enviaremos por e-mail un enlace privado para que solo su grupo pueda abrir los formularios.",
+        "claim_help": "Solo su grupo puede abrir los formularios.",
         "claim_email": "¿Cuál es su dirección de e-mail?",
-        "claim_email_help": "Aquí le enviamos el enlace, un recordatorio el día antes de la llegada si faltan formularios y un justificante (su anfitrión recibe una copia). En otros lugares se muestra enmascarada. Sin publicidad.",
+        "claim_email_help": "Además, un recordatorio el día antes de la llegada si faltan formularios y un justificante (su anfitrión recibe una copia). En otros lugares se muestra enmascarada.",
         "claim_cookie_help": "Solo cookies necesarias: acceso con PIN (7 días), su idioma y esta estancia (60 días).",
         "claim_submit": "Enviarme el enlace",
         "claim_sent_title": "Revise su e-mail",
@@ -1747,15 +1580,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_recipient_rate": "Esta dirección ha recibido demasiados enlaces de registro. Inténtelo más tarde.",
         "claim_error_bot": "Complete la verificación de seguridad e inténtelo de nuevo.",
         "assigned_title": "Esta reserva ya está asignada",
-        "assigned_body": "Esta estancia ya está vinculada al e-mail de abajo. Si es usted, podemos enviarle de nuevo el enlace privado.",
-        "assigned_resend_help": "Introduzca el mismo e-mail para recibir de nuevo el enlace.",
+        "assigned_body": "Esta estancia ya está vinculada al e-mail de abajo. Si es usted, introdúzcalo y le enviaremos de nuevo el enlace privado.",
         "assigned_resend": "Enviarme el enlace de nuevo",
         "assigned_stay_label": "Su estancia seleccionada",
-        "assigned_private_link": "Por su privacidad, el registro continúa a través del enlace seguro enviado a esta dirección.",
         "assigned_last_sent": "Último envío del enlace privado: %(date)s",
         "assigned_not_mine": "Esta no es mi reserva",
         "claim_confirm_title": "¿Es esta su reserva?",
-        "claim_confirm_help": "Un toque para confirmar que es usted.",
         "claim_confirm_button": "Sí, es mi estancia",
         "claim_confirm_failed": "Ese enlace de confirmación no es válido o ha caducado.",
         "back_to_stays": "Elegir otras fechas",
@@ -1782,7 +1612,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_locked_help": "Sus datos se han guardado y firmado. Para proteger su información, el formulario no puede modificarse desde este enlace. Escriba a su anfitrión si hay algo que corregir.",
         "form_locked_short": "Guardado y bloqueado. Para cualquier cambio, contacte con su anfitrión.",
         "pin_title": "Introduzca el PIN de acceso",
-        "pin_help": "Su anfitrión le envió un PIN junto con el enlace de registro. Introdúzcalo para abrir el formulario.",
+        "pin_help": "El PIN está en el mensaje de su anfitrión.",
         "pin_label": "PIN",
         "pin_submit": "Continuar",
         "pin_wrong": "El PIN no es correcto. Revise el mensaje de su anfitrión.",
@@ -1830,13 +1660,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "checkout_info": "Check-out",
         "still_missing": "Quedan por registrar: %(n)s",
         "add_another": "Añadir otra persona",
-        "someone_missing": "¿Ha olvidado a alguien? Todas las personas alojadas deben registrarse, incluidos los niños.",
+        "someone_missing": "¿Ha olvidado a alguien? Los niños también deben registrarse.",
         "continue_filling": "Seguir rellenando",
         "surname": "Apellidos",
         "first_name": "Nombre(s)",
         "birth_date": "Fecha de nacimiento",
         "birth_date_readback": "Es decir, %(date)s.",
-        "residence_help": "Su domicilio permanente, tal como figura en su pasaporte o documento de identidad. Obligatorio por ley.",
+        "residence_help": "Su domicilio permanente, tal como figura en su pasaporte o documento de identidad.",
         "residence_copied": "Copiado de %(name)s — cámbielo si esta persona vive en otro lugar.",
         "nationality": "Nacionalidad",
         "countries_common": "Más frecuentes",
@@ -1869,7 +1699,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_missing": "Firme en el recuadro antes de continuar.",
         "signature_kept": "Su firma está guardada. Vuelva a firmar solo si desea cambiarla.",
         "passport_photo_title": "Pasaporte o documento de identidad",
-        "passport_photo_help": "Su anfitrión debe comprobar sus datos con su documento. Haga una foto de la página con su fotografía o suba un PDF. Solo su anfitrión puede verlo y se elimina después de la comprobación.",
+        "passport_photo_help": "Haga una foto de la página con su fotografía o suba un PDF. Solo su anfitrión puede verlo y se elimina después de la comprobación.",
         "passport_photo_label": "Pasaporte o documento de identidad",
         "passport_photo_take": "Hacer foto",
         "passport_photo_choose": "Elegir archivo",
@@ -1886,16 +1716,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "review_help": "Tras el envío, estos datos quedan bloqueados y solo su anfitrión puede modificarlos.",
         "review_edit": "Cambiar",
         "legal_notice_title": "Información legal",
-        "legal_notice_intro": "Lea esto antes de enviar.",
-        "legal_notice_disclaimer": "UbyHost es una herramienta de software y esta información no sustituye al asesoramiento jurídico.",
         "legal_notice_duty_title": "Su obligación legal",
-        "legal_notice_duty_body": "Todas las personas alojadas deben registrarse. Los huéspedes extranjeros se comunican a la Policía de Extranjería en un plazo de tres días hábiles; los ciudadanos checos solo se anotan en el libro de registro. Así lo exige la ley.",
+        "legal_notice_duty_body": "Todas las personas alojadas deben registrarse. Los huéspedes extranjeros se comunican a la Policía de Extranjería; los ciudadanos checos solo se anotan en el libro de registro.",
         "legal_notice_accuracy_title": "Solo información exacta",
         "legal_notice_accuracy_body": "Introduzca todo exactamente como figura en su pasaporte o documento de identidad. Sus datos pueden comunicarse automáticamente, antes de que su anfitrión los revise, y los datos falsos pueden suponer una multa para su anfitrión.",
         "legal_notice_passport_title": "Foto del pasaporte (extranjeros)",
         "legal_notice_passport_body": "Los huéspedes extranjeros suben una foto de la página de datos de su pasaporte o documento de identidad (o un PDF). Solo su anfitrión la ve, para compararla con lo que usted introdujo. Se elimina tras la comprobación o, en su defecto, 7 días después del check-in, y nunca más tarde de 30 días después de subirla. Nunca se envía a la policía.",
         "legal_notice_reporting_title": "Comunicación a la policía y libro de registro",
-        "legal_notice_reporting_body": "Los registros completos de huéspedes extranjeros pueden enviarse automáticamente a la Policía checa — de inmediato o tras un plazo que elige su anfitrión. Los mismos datos permanecen en el libro de registro durante seis años.",
+        "legal_notice_reporting_body": "Su anfitrión comunica los datos de los huéspedes extranjeros a la Policía de Extranjería en un plazo de tres días hábiles desde la llegada, de inmediato o un poco más tarde. Los registros completos pueden enviarse automáticamente. Los mismos datos permanecen en el libro de registro durante seis años.",
         "legal_notice_retention_title": "Cuánto tiempo se conservan los datos",
         "legal_notice_retention_body": "Los datos de registro y su firma se conservan durante seis años tras el final de su estancia, según exige el § 101, apdo. 4, de la Ley n.º 326/1999 Recop., y después se eliminan. El tratamiento se basa en una obligación legal (artículo 6, apartado 1, letra c, del RGPD), no en el consentimiento.",
         "legal_notice_refusal_title": "Si se niega",
@@ -1907,7 +1735,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "required": "obligatorio",
         "check_in": "Check-in",
         "check_out": "Check-out",
-        "privacy": "Sus datos se utilizan únicamente para cumplir la obligación legal del anfitrión de comunicarlos a la Policía de la República Checa y se conservan durante los seis años que establece la ley.",
+        "privacy": "Se utilizan únicamente para la comunicación legal de su anfitrión a la Policía checa y se conservan durante seis años.",
         "skip_to_form": "Ir al formulario",
         "loading": "Cargando…",
         "privacy_link": "Cómo se tratan sus datos",
@@ -2000,22 +1828,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "title": "Enregistrement des voyageurs",
         "language_label": "Langue",
         "date_placeholder": "JJ.MM.AAAA",
-        "legal_intro": "La loi tchèque considère chaque appartement loué comme un établissement d'hébergement. Votre hôte doit inscrire chaque voyageur dans un registre d'hébergement et déclarer chaque voyageur étranger à la police des étrangers dans un délai de trois jours ouvrables suivant son arrivée. Ce formulaire sert à cela — un formulaire par personne, enfants compris.",
+        "legal_intro": "La loi tchèque impose à votre hôte d'enregistrer chaque voyageur, enfants compris, et de déclarer les voyageurs étrangers à la police.",
         "why_title": "Pourquoi remplir ce formulaire",
         "why_law": "Loi n° 326/1999 Rec. relative au séjour des étrangers, §§ 101–103.",
-        "why_more": "Ce que deviennent vos informations",
-        "why_point_report": "Les ressortissants étrangers sont déclarés par voie électronique à la Police de la République tchèque, Direction de la police des étrangers.",
-        "why_point_book": "Les mêmes informations sont inscrites dans le registre d'hébergement (domovní kniha), que l'hôte doit conserver pendant six ans et présenter lors d'un contrôle de police.",
-        "why_point_czech": "Les citoyens tchèques ne sont pas déclarés à la police — seule l'inscription au registre d'hébergement est effectuée.",
-        "why_point_passport": "Si votre hôte l'exige, les voyageurs étrangers téléversent une photo de la page d'identité de leur passeport ou de leur carte d'identité afin que l'hôte puisse vérifier les informations. Seul votre hôte la voit, et elle est supprimée après la vérification.",
         "why_point_accuracy": "Vous devez saisir des informations exactes, conformes à votre document de voyage. L'hôte est légalement responsable de leur exactitude et peut refuser l'hébergement si vous ne présentez pas de pièce d'identité ou ne fournissez pas d'informations correctes.",
-        "why_point_sign": "Les voyageurs étrangers majeurs doivent remplir et signer le formulaire. Les enfants de moins de 15 ans n'ont pas à le remplir ni à le signer eux-mêmes — un parent ou un tuteur complète la fiche.",
-        "why_point_nothing_else": "Rien n'est utilisé à des fins marketing, et aucune donnée n'est renvoyée au site de réservation que vous avez utilisé.",
         "pick_stay": "Trouvez votre séjour",
         "pick_stay_help": "Touchez vos dates d'arrivée et de départ pour continuer.",
-        "arrival_welcome": "Bienvenue — enregistrement des voyageurs pour %(facility)s.",
         "arrival_question": "Quel est votre séjour ?",
-        "arrival_help": "Choisissez vos dates d'arrivée et de départ pour continuer.",
         "arrival_cta": "C'est mon séjour",
         "tw_label_access": "Accès privé",
         "tw_label_stay": "Votre séjour",
@@ -2049,20 +1868,19 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "tw_purpose_other": "Autre…",
         "tw_sign_here": "Signez ici avec le doigt",
         "tw_signed": "Signé",
-        "tw_done_keep": "Conservez cette page — elle vaut confirmation.",
         "tw_guest_n_of": "Voyageur %(current)s sur %(total)s",
         "tw_guest_n": "Voyageur %(current)s",
         "tw_next_guest": "Enregistrer le voyageur %(current)s sur %(total)s",
         "stay_ongoing": "En cours",
         "stay_arriving_today": "Arrivée aujourd'hui",
         "host_details": "Votre hôte",
-        "host_details_help": "En cas de problème, n'hésitez pas à contacter votre hôte. UbyHost ne gère pas le logement et ne peut pas modifier votre réservation.",
+        "host_details_help": "Des questions ? Contactez votre hôte.",
         "host_details_missing": "Utilisez le téléphone ou l'e-mail indiqué dans le message contenant ce lien.",
         "message_from_host": "Un message de votre hôte",
         "claim_title": "Nombre de personnes et votre e-mail",
-        "claim_help": "Nous vous enverrons par e-mail un lien privé pour que seul votre groupe puisse ouvrir les formulaires.",
+        "claim_help": "Seul votre groupe peut ouvrir les formulaires.",
         "claim_email": "Quelle est votre adresse e-mail ?",
-        "claim_email_help": "Nous y envoyons le lien, un rappel la veille de l'arrivée si des formulaires manquent, et un récapitulatif (votre hôte en reçoit une copie). Ailleurs, elle est masquée. Pas de marketing.",
+        "claim_email_help": "Également un rappel la veille de l'arrivée si des formulaires manquent, et un récapitulatif (votre hôte en reçoit une copie). Ailleurs, elle est masquée.",
         "claim_cookie_help": "Uniquement des cookies nécessaires : accès par PIN (7 jours), votre langue et ce séjour (60 jours).",
         "claim_submit": "M'envoyer le lien",
         "claim_sent_title": "Consultez vos e-mails",
@@ -2077,15 +1895,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_error_recipient_rate": "Cette adresse a reçu trop de liens d'enregistrement. Réessayez plus tard.",
         "claim_error_bot": "Veuillez effectuer la vérification de sécurité et réessayer.",
         "assigned_title": "Cette réservation est déjà attribuée",
-        "assigned_body": "Ce séjour est déjà associé à l'e-mail ci-dessous. Si c'est le vôtre, nous pouvons renvoyer le lien privé.",
-        "assigned_resend_help": "Saisissez le même e-mail pour recevoir à nouveau le lien.",
+        "assigned_body": "Ce séjour est déjà associé à l'e-mail ci-dessous. Si c'est le vôtre, saisissez-le et nous renverrons le lien privé.",
         "assigned_resend": "Renvoyer le lien",
         "assigned_stay_label": "Séjour sélectionné",
-        "assigned_private_link": "Pour protéger votre vie privée, l'enregistrement se poursuit via le lien sécurisé envoyé à cette adresse.",
         "assigned_last_sent": "Dernier envoi du lien privé : %(date)s",
         "assigned_not_mine": "Ce n'est pas ma réservation",
         "claim_confirm_title": "Est-ce votre réservation ?",
-        "claim_confirm_help": "Un geste suffit pour confirmer que c'est bien vous.",
         "claim_confirm_button": "Oui, c'est mon séjour",
         "claim_confirm_failed": "Ce lien de confirmation est invalide ou a expiré.",
         "back_to_stays": "Choisir d'autres dates",
@@ -2112,7 +1927,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_locked_help": "Vos informations ont été enregistrées et signées. Pour les protéger, le formulaire ne peut pas être modifié depuis ce lien. Écrivez à votre hôte si une correction est nécessaire.",
         "form_locked_short": "Enregistré et verrouillé. Pour toute modification, contactez votre hôte.",
         "pin_title": "Saisissez le PIN d'accès",
-        "pin_help": "Votre hôte vous a envoyé un PIN avec le lien d'enregistrement. Saisissez-le pour ouvrir le formulaire.",
+        "pin_help": "Le PIN figure dans le message de votre hôte.",
         "pin_label": "PIN",
         "pin_submit": "Continuer",
         "pin_wrong": "Ce PIN est incorrect. Vérifiez le message de votre hôte.",
@@ -2160,13 +1975,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "checkout_info": "Départ",
         "still_missing": "Reste à enregistrer : %(n)s",
         "add_another": "Ajouter une autre personne",
-        "someone_missing": "Vous avez oublié quelqu'un ? Toutes les personnes qui séjournent doivent être enregistrées, enfants compris.",
+        "someone_missing": "Vous avez oublié quelqu'un ? Les enfants doivent aussi être enregistrés.",
         "continue_filling": "Continuer à remplir",
         "surname": "Nom",
         "first_name": "Prénom(s)",
         "birth_date": "Date de naissance",
         "birth_date_readback": "Soit le %(date)s.",
-        "residence_help": "Votre adresse de domicile permanent, comme sur votre passeport ou carte d'identité. Exigée par la loi.",
+        "residence_help": "Votre adresse de domicile permanent, comme sur votre passeport ou carte d'identité.",
         "residence_copied": "Copiée depuis %(name)s — modifiez-la si cette personne habite ailleurs.",
         "nationality": "Nationalité",
         "countries_common": "Les plus courants",
@@ -2199,7 +2014,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "signature_missing": "Veuillez signer dans le cadre avant de continuer.",
         "signature_kept": "Votre signature est enregistrée. Ne signez à nouveau que si vous souhaitez la modifier.",
         "passport_photo_title": "Passeport ou pièce d'identité",
-        "passport_photo_help": "Votre hôte doit vérifier vos informations sur votre document. Photographiez la page comportant votre photo, ou téléversez un PDF. Seul votre hôte peut le voir, et il est supprimé après sa vérification.",
+        "passport_photo_help": "Photographiez la page comportant votre photo, ou téléversez un PDF. Seul votre hôte peut le voir, et il est supprimé après sa vérification.",
         "passport_photo_label": "Passeport ou pièce d'identité",
         "passport_photo_take": "Prendre une photo",
         "passport_photo_choose": "Choisir un fichier",
@@ -2216,16 +2031,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "review_help": "Après l'envoi, ces informations sont verrouillées et seul votre hôte peut les modifier.",
         "review_edit": "Modifier",
         "legal_notice_title": "Informations légales",
-        "legal_notice_intro": "Veuillez lire ceci avant l'envoi.",
-        "legal_notice_disclaimer": "UbyHost est un outil logiciel et ces informations ne remplacent pas un conseil juridique.",
         "legal_notice_duty_title": "Votre obligation légale",
-        "legal_notice_duty_body": "Toutes les personnes qui séjournent doivent être enregistrées. Les voyageurs étrangers sont déclarés à la police des étrangers dans un délai de trois jours ouvrables ; les citoyens tchèques sont seulement inscrits au registre d'hébergement. La loi l'exige.",
+        "legal_notice_duty_body": "Toutes les personnes qui séjournent doivent être enregistrées. Les voyageurs étrangers sont déclarés à la police des étrangers ; les citoyens tchèques sont seulement inscrits au registre d'hébergement.",
         "legal_notice_accuracy_title": "Informations exactes uniquement",
         "legal_notice_accuracy_body": "Saisissez tout exactement comme sur votre passeport ou votre carte d'identité. Vos informations peuvent être déclarées automatiquement, avant que votre hôte ne les vérifie, et des informations fausses peuvent valoir une amende à votre hôte.",
         "legal_notice_passport_title": "Photo du passeport (ressortissants étrangers)",
         "legal_notice_passport_body": "Les voyageurs étrangers téléversent une photo de la page d'identité de leur passeport ou de leur carte d'identité (ou un PDF). Seul votre hôte la voit, pour la comparer avec ce que vous avez saisi. Elle est supprimée après la vérification, sinon 7 jours après l'arrivée, et jamais plus de 30 jours après le téléversement. Elle n'est jamais transmise à la police.",
         "legal_notice_reporting_title": "Déclaration à la police et registre",
-        "legal_notice_reporting_body": "Les fiches complètes des voyageurs étrangers peuvent être transmises automatiquement à la police tchèque — immédiatement ou après un délai choisi par votre hôte. Les mêmes informations restent dans le registre d'hébergement pendant six ans.",
+        "legal_notice_reporting_body": "Votre hôte déclare les informations des voyageurs étrangers à la police des étrangers dans un délai de trois jours ouvrables suivant l'arrivée, immédiatement ou un peu plus tard. Les fiches complètes peuvent être transmises automatiquement. Les mêmes informations restent dans le registre d'hébergement pendant six ans.",
         "legal_notice_retention_title": "Durée de conservation des données",
         "legal_notice_retention_body": "Les informations d'enregistrement et votre signature sont conservées pendant six ans après la fin de votre séjour, conformément au § 101, al. 4, de la loi n° 326/1999 Rec., puis supprimées. Le traitement repose sur une obligation légale (article 6, paragraphe 1, point c), du RGPD), et non sur le consentement.",
         "legal_notice_refusal_title": "En cas de refus",
@@ -2237,7 +2050,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "required": "obligatoire",
         "check_in": "Arrivée",
         "check_out": "Départ",
-        "privacy": "Vos informations servent uniquement à remplir l'obligation légale de déclaration de l'hôte envers la Police de la République tchèque et sont conservées pendant la durée légale de six ans.",
+        "privacy": "Utilisées uniquement pour la déclaration légale de votre hôte à la police tchèque, et conservées pendant six ans.",
         "skip_to_form": "Aller au formulaire",
         "loading": "Chargement…",
         "privacy_link": "Traitement de vos données",

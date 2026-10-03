@@ -194,7 +194,9 @@ def test_onboarding_can_be_reopened_as_a_full_page():
     page = client.get("/onboarding")
 
     assert page.status_code == 200
-    assert "Nothing goes live by accident" in page.text
+    assert "Set up UbyHost in five steps" in page.text
+    # WP17 (review 3.E item 10): the reassurance box is gone from the app.
+    assert "Nothing goes live by accident" not in page.text
     assert "Want to learn before entering real details?" in page.text
 
 

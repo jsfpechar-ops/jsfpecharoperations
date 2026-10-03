@@ -133,22 +133,6 @@
   <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
 </details>
 
-<dialog id="housebook-legal-intro" class="admin-dialog housebook-legal-dialog">
-  <div class="admin-dialog-form">
-    <h2 style="margin-top:0">{{ t('housebook.legal_intro_title') }}</h2>
-    <p class="small muted">{{ t('housebook.legal_body') }}</p>
-    <ul class="legal-list small">
-      <li>{{ t('housebook.legal_paper') }}</li>
-      <li>{{ t('housebook.legal_inspection') }}</li>
-    </ul>
-    <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
-    <div class="actions">
-      <button class="btn" type="button" data-housebook-legal-skip>{{ t('housebook.legal_intro_skip') }}</button>
-      <button class="btn primary" type="button" data-housebook-legal-ack>{{ t('housebook.legal_intro_ack') }}</button>
-    </div>
-  </div>
-</dialog>
-
 <dialog id="housebook-pdf-dialog" class="csv-export-dialog">
   <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
     <h2 style="margin-top:0">{{ t('housebook.pdf_export_title') }}</h2>
@@ -181,22 +165,4 @@
   </form>
 </dialog>
 
-<script>
-(function () {
-  var KEY = "ubyhost_housebook_legal_v1";
-  var intro = document.getElementById("housebook-legal-intro");
-  function dismissIntro() {
-    try { localStorage.setItem(KEY, "1"); } catch (e) {}
-    if (intro && typeof intro.close === "function") intro.close();
-  }
-  if (intro) {
-    var seen = false;
-    try { seen = localStorage.getItem(KEY) === "1"; } catch (e) {}
-    if (!seen && typeof intro.showModal === "function") intro.showModal();
-    intro.querySelectorAll("[data-housebook-legal-ack], [data-housebook-legal-skip]").forEach(function (btn) {
-      btn.addEventListener("click", dismissIntro);
-    });
-  }
-})();
-</script>
 {% endblock %}

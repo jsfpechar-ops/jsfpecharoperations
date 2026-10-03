@@ -18,14 +18,14 @@
 {% if not editing %}{{ onboarding_banner(onboarding) }}{% endif %}
 {{ page_header(
   apartment.internal_name if editing else t('apartment.form.new_property'),
-  (apartment.city_en or apartment.addr_obec or '') if editing else t('apartment.form.lede'),
+  (apartment.city_en or apartment.addr_obec or '') if editing else '',
   '/apartments',
   t('apartment.form.back')
 ) }}
 
 {% if editing %}
 <div class="host-property-grid">
-  {% for anchor, icon, key, hint in [('calendars', 'calendar', 'host.bookings', 'apartment.form.calendars.lede'), ('communication', 'link', 'nav.guest_links', ''), ('ubyport', 'report', 'host.reporting', ''), ('basics', 'entity', 'host.business', ''), ('stay-fee-settings', 'coins', 'host.fee', ''), ('address', 'property', 'host.property_details', '')] %}
+  {% for anchor, icon, key, hint in [('calendars', 'calendar', 'host.bookings', ''), ('communication', 'link', 'nav.guest_links', ''), ('ubyport', 'report', 'host.reporting', ''), ('basics', 'entity', 'host.business', ''), ('stay-fee-settings', 'coins', 'host.fee', ''), ('address', 'property', 'host.property_details', '')] %}
   <a class="host-property-card" href="#{{ anchor }}">{{ nav_icon(icon) }}<div><strong>{{ t(key) }}</strong>
     {% if anchor == 'calendars' %}<small>{{ tp('apartment.form.calendars_count', feeds | length) }}</small>{% endif %}
     {% if anchor == 'basics' %}{% for entity in entities %}{% if entity.id == apartment.legal_entity_id %}<small>{{ entity.name }}</small>{% endif %}{% endfor %}{% endif %}
@@ -182,25 +182,6 @@
         {{ t('automation.sample_pdf') }}</a>
       <span class="muted">{{ t('apartment.form.ubyport.sample_help') }}</span>
     </p>
-    <details class="small" style="margin:12px 0">
-      <summary style="cursor:pointer;font-weight:600">{{ t('apartment.form.ubyport.map_summary') }}</summary>
-      <table class="small" style="width:100%;margin-top:8px;border-collapse:collapse">
-        <tbody>
-          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>IDUB</strong></td>
-              <td>{{ t('apartment.form.ubyport.map.idub') }}</td></tr>
-          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>{{ t('automation.login') }}</strong></td>
-              <td>{{ t('apartment.form.ubyport.map.login') }}</td></tr>
-          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>{{ t('automation.password') }}</strong></td>
-              <td>{{ t('apartment.form.ubyport.map.password') }}</td></tr>
-          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>{{ t('apartment.form.ubyport.map.mark_label') }}</strong></td>
-              <td>{{ t('apartment.form.ubyport.map.mark') }}</td></tr>
-          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>{{ t('automation.facility_name') }}</strong></td>
-              <td>{{ t('apartment.form.ubyport.map.name') }}</td></tr>
-          <tr><td style="padding:4px 8px 4px 0;vertical-align:top"><strong>{{ t('apartment.form.ubyport.map.contact_label') }}</strong></td>
-              <td>{{ t('apartment.form.ubyport.map.contact') }}</td></tr>
-        </tbody>
-      </table>
-    </details>
     <p class="small muted">
       {{ t('apartment.form.ubyport.mismatch_help') }}
     </p>
@@ -313,7 +294,7 @@
     </div>
     {% if editing %}
       <p class="small muted" style="margin-top:-4px">
-        {{ t('apartment.form.guest_link.lede') }}
+        {{ t('guest_links.lede') }}
       </p>
       <div class="copyrow" style="margin-bottom:12px">
         <input type="text" id="permalink" readonly value="{{ permalink }}">
@@ -350,7 +331,6 @@
       </div>
       <details class="message-details" open>
         <summary>{{ t('guest_links.message_title') }}</summary>
-        <p class="small muted">{{ t('guest_links.message_lede') }}</p>
         <pre>{{ bilingual_message('guest_links.message', link=permalink, pin=pin) }}</pre>
       </details>
       <p class="small muted">{{ t('apartment.form.guest_link.message_help') }}</p>

@@ -128,20 +128,6 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
     },
     {
-        # WP27: the house book shows its legal intro once per browser; this
-        # key remembers that it was dismissed. It holds "1" and nothing else.
-        "name": "ubyhost_housebook_legal_v1",
-        "set_by": "templates/housebook.html",
-        "party": "first",
-        "kind": "localStorage",
-        "surface": "host",
-        "purpose": {
-            "en": "Remembers that you closed the house book introduction",
-            "cs": "Pamatuje si, že jste zavřeli úvod k domovní knize",
-        },
-        "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
-    },
-    {
         # WP09: written only when a visitor clicks the opt-out on /privacy
         # (static/umami-optout.js). The Umami tracker reads it and then counts
         # nothing in this browser; the opt-back-in link removes it.
@@ -337,18 +323,6 @@ _GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
             "de": "Gespeicherte Ansichten der Aufenthaltsliste",
             "es": "Vistas guardadas de la lista de estancias",
             "fr": "Vues enregistrées de la liste des séjours",
-        },
-        "lifetime": {
-            "de": "Bis Sie es löschen",
-            "es": "Hasta que la borre",
-            "fr": "Jusqu'à ce que vous l'effaciez",
-        },
-    },
-    "ubyhost_housebook_legal_v1": {
-        "purpose": {
-            "de": "Speichert, dass Sie die Einführung zum Gästebuch geschlossen haben",
-            "es": "Recuerda que ha cerrado la introducción del libro de registro",
-            "fr": "Mémorise que vous avez fermé l'introduction du registre d'hébergement",
         },
         "lifetime": {
             "de": "Bis Sie es löschen",

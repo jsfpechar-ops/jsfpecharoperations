@@ -16,12 +16,8 @@ def test_normalise_language_accepts_supported_codes_and_falls_back():
 
 
 def test_translate_interpolates_kwargs_and_falls_back_to_english():
-    assert host_i18n.translate("en", "dashboard.minutes_saved", minutes=24) == (
-        "~24 min saved vs manual UbyPort entry"
-    )
-    assert host_i18n.translate("cs", "dashboard.minutes_saved", minutes=24) == (
-        "~24 min ušetřeno oproti ručnímu UbyPortu"
-    )
+    assert host_i18n.translate("en", "archive.chip.all_count", count=24) == "All (24)"
+    assert host_i18n.translate("cs", "archive.chip.all_count", count=24) == "Vše (24)"
     assert host_i18n.translate("cs", "missing.key") == "missing.key"
     assert host_i18n.translate("en", "send.guests_count", count=2) == (
         "Send 2 guest(s) on this stay"
@@ -82,8 +78,8 @@ def test_a_malformed_key_returns_raw_text_instead_of_raising():
     from app import i18n
 
     cases = (
-        (host_i18n.STRINGS, host_i18n.DEFAULT_LANGUAGE, "dashboard.minutes_saved"),
-        (i18n.STRINGS, i18n.DEFAULT_LANGUAGE, "arrival_welcome"),
+        (host_i18n.STRINGS, host_i18n.DEFAULT_LANGUAGE, "archive.chip.all_count"),
+        (i18n.STRINGS, i18n.DEFAULT_LANGUAGE, "all_done_receipt"),
     )
     for table, fallback, key in cases:
         for lang in ("en", "cs"):
