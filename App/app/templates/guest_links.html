@@ -56,7 +56,7 @@
         <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('guest_links.property_setup') }}</a>
         {# The link lives on this page, so the preview of what a guest sees
            belongs here too, not only on the onboarding finish card. #}
-        <a class="btn small ghost" href="/l/{{ apartment.permalink_token }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+        <a class="btn small ghost" href="/l/{{ row.link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
         {{ row_menu_begin(t('guest_links.options')) }}
           <button class="row-menu-item" type="button" role="menuitem" data-copy="message-en-{{ apartment.id }}"
                   data-copy-label="{{ t('guest_links.copy_message_en') }}"

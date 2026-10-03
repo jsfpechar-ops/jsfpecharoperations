@@ -634,10 +634,14 @@ def ensure_bootstrap_admin() -> Optional[str]:
     return generated_password
 
 
+# No l, 0 or 1: a link read aloud or copied by hand stays unambiguous. The
+# readable guest link's code (``guest_slug``) draws from the same letters.
+PERMALINK_ALPHABET = "abcdefghijkmnopqrstuvwxyz23456789"
+
+
 def new_permalink_token() -> str:
     """Short, unguessable, and readable enough to paste into a message."""
-    alphabet = "abcdefghijkmnopqrstuvwxyz23456789"
-    return "".join(secrets.choice(alphabet) for _ in range(20))
+    return "".join(secrets.choice(PERMALINK_ALPHABET) for _ in range(20))
 
 
 def new_permalink_pin() -> str:
@@ -670,6 +674,10 @@ def _pin_serializer() -> URLSafeTimedSerializer:
 
 def pin_fingerprint(token: str, pin: str) -> str:
     """Keyed digest of one (link, PIN) pair.
+
+    ``token`` is always the apartment's permanent ``permalink_token``, never a
+    readable slug from the URL: the guest routes resolve the slug first, so the
+    PIN cookie and the lockout are the same whichever link the guest opened.
 
     Safe to keep outside the PIN's own column — the key lives in ``SECRET_KEY``
     and the digest cannot be walked back — and stable enough to scope a lockout

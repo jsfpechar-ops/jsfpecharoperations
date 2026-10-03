@@ -31,6 +31,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    guest_slug,
     host_i18n,
     housebook,
     icalsync,
@@ -289,11 +290,13 @@ def guest_links(request: Request):
     rows = []
     for apartment in apartments:
         apartment = _ensure_apartment_pin(apartment)
+        link_key = guest_slug.link_key(apartment)
         rows.append(
             {
                 "apartment": apartment,
                 "issues": validation.errors_only(_apartment_issues(apartment)),
-                "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+                "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
+                "link_key": link_key,
                 "pin": apartment["permalink_pin"] or "",
             }
         )
@@ -787,6 +790,7 @@ async def apartment_create(request: Request):
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
+    guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")
     return _back(
         f"/apartments/{apartment_id}#calendars",
@@ -809,6 +813,7 @@ def apartment_detail(apartment_id: int, request: Request):
     issues = _apartment_issues(apartment)
     # A connected calendar or a hand-typed stay both mean guests are on their
     # way, which is all the "Ready to invite guests" list asks about.
+    link_key = guest_slug.link_key(apartment)
     has_stays = any(feed["active"] for feed in feeds) or bool(
         db.query_one(
             "SELECT 1 AS present FROM reservation WHERE apartment_id = ? LIMIT 1",
@@ -825,7 +830,14 @@ def apartment_detail(apartment_id: int, request: Request):
             "issues": issues,
             "readiness": _readiness(apartment, entities, issues, has_stays),
             "purposes": codelists.purpose_options("en"),
-            "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+            "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
+            "link_base": f"{config.PUBLIC_BASE_URL}/l/",
+            "link_readable": (
+                guest_slug.readable_of(link_key) if link_key != apartment["permalink_token"] else ""
+            ),
+            "link_code": (
+                guest_slug.code_of(link_key) if link_key != apartment["permalink_token"] else ""
+            ),
             "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
@@ -891,6 +903,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
         payload["permalink_pin"] = pin
+    link_readable = None
+    if "guest_link_name" in form:
+        link_readable, link_error = guest_slug.validate_readable(_form_str(form, "guest_link_name"))
+        if link_error:
+            return _back(
+                f"/apartments/{apartment_id}#communication",
+                err=_flash(request, f"flash.error.link_name_{link_error}"),
+            )
     raw_account = payload.pop("_stay_fee_account_raw", None)
     if raw_account is not None:
         if raw_account.strip():
@@ -913,6 +933,13 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     credentials_changed = bool(password) or (
         (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
     )
+    if link_readable:
+        guest_slug.ensure(apartment)
+        if guest_slug.rename(apartment_id, link_readable) is None:
+            return _back(
+                f"/apartments/{apartment_id}#communication",
+                err=_flash(request, "flash.error.link_name_taken"),
+            )
     db.update("apartment", apartment_id, payload)
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
@@ -957,6 +984,9 @@ async def regenerate_link(apartment_id: int, request: Request):
             "permalink_pin": auth.new_permalink_pin(),
         },
     )
+    # The old slugs go with the old token: one that still redirected would hand
+    # the new link to whoever holds the leaked one.
+    guest_slug.rotate(apartment_id)
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
         _form_return_to(form, "/guest-links"),
@@ -1340,7 +1370,9 @@ def reservations_list(request: Request):
         date_from = date_to = ""
 
     sql = (
-        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
+        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours, "
+        "  (SELECT s.slug FROM apartment_slug s "
+        "   WHERE s.apartment_id = a.id AND s.is_current = 1) AS permalink_slug "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         f"WHERE {db.null_safe_eq('a.owner_user_id')}"
     )
@@ -1615,7 +1647,9 @@ def reservation_detail(reservation_id: int, request: Request):
             "submissions": submissions,
             "return_to": _safe_return_to(request, "/reservations"),
             "guest_link": (
-                f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
+                f"{config.PUBLIC_BASE_URL}/l/"
+                f"{guest_slug.link_key(apartment) if apartment else reservation['permalink_token']}"
+                f"/{reservation_id}"
             ),
             "stay_claim": claim.ensure_row(reservation_id),
             "hand_filing": reporting.hand_filing_view(progress),

@@ -300,6 +300,19 @@
         <input type="text" id="permalink" readonly value="{{ permalink }}">
         {{ copy_button('permalink') }}
       </div>
+      {% if link_code %}
+      <div class="field" style="max-width:520px">
+        <label for="guest_link_name">{{ t('apartment.form.guest_link.name_label') }}</label>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="small muted mono" aria-hidden="true">/l/</span>
+          <input type="text" id="guest_link_name" name="guest_link_name" value="{{ link_readable }}"
+                 class="mono" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false"
+                 aria-describedby="guest_link_name_hint">
+          <span class="small muted mono" aria-hidden="true">-{{ link_code }}</span>
+        </div>
+        <div class="hint" id="guest_link_name_hint">{{ t('apartment.form.guest_link.name_hint') }}</div>
+      </div>
+      {% endif %}
       <div class="field" style="max-width:280px">
         <label for="permalink_pin">{{ t('guest_links.pin') }}</label>
         <div class="copyrow pin-row">

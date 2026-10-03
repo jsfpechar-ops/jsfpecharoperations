@@ -622,6 +622,7 @@ def clear(owner_user_id: Optional[int] = None) -> bool:
         for guest in guests:
             passport_photos.delete_photo(int(guest["id"]))
         db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
+        db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
     for entity_id in entity_ids:
         db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))

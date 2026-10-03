@@ -5,7 +5,7 @@ import re
 
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db
+from app import auth, claim, db, guest_slug
 from app import alerts
 from app import demo
 from app import housebook
@@ -324,7 +324,8 @@ def test_reservation_detail_shows_direct_guest_link():
     try:
         page = _browser().get(f"/reservations/{stays[0]}")
         assert page.status_code == 200
-        assert f"/l/{TOKEN}/{stays[0]}" in page.text
+        # The copied stay link is the readable one (WP19).
+        assert f"/l/{guest_slug.current(apartment_id)}/{stays[0]}" in page.text
         assert "Copy guest link for this stay" in page.text
         assert "Next step" in page.text
         assert "Edit stay details" in page.text
@@ -502,8 +503,9 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
 
         links = browser.get("/guest-links")
         assert links.status_code == 200
-        assert f"/l/{TOKEN}" in links.text
-        assert f"/l/{TOKEN}/{stays[0]}" not in links.text
+        slug = guest_slug.current(apartment_id)
+        assert f"/l/{slug}" in links.text
+        assert f"/l/{slug}/{stays[0]}" not in links.text
         assert "Suggested portal message" in links.text
     finally:
         _cleanup()

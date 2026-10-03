@@ -1258,6 +1258,12 @@ def _init_db_locked() -> None:
             (BASELINE_VERSION, "baseline", utcnow()),
         )
         apply_migrations(conn)
+        # WP19: every apartment gets a readable guest link. After the
+        # migrations, because 0002 creates the apartment_slug table.
+        # Imported here: guest_slug uses this module's helpers.
+        from . import guest_slug
+
+        guest_slug.backfill(conn)
     finally:
         conn.close()
 

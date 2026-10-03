@@ -15,11 +15,20 @@ import pytest
 from app import codelists, config, db
 
 
+# The migration files the app ships (WP19 on). Each test runs on a copy of
+# them, so a test can add its own file with the next free number.
+SHIPPED = db.migration_files()
+LATEST = max([db.BASELINE_VERSION] + [version for version, _n, _p in SHIPPED])
+NEXT = f"{LATEST + 1:04d}"
+
+
 @pytest.fixture
 def fresh(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "fresh.db")
     monkeypatch.setattr(db, "MIGRATIONS_DIR", tmp_path / "migrations")
     (tmp_path / "migrations").mkdir()
+    for _version, _name, path in SHIPPED:
+        (tmp_path / "migrations" / path.name).write_text(path.read_text(encoding="utf-8"))
     return tmp_path
 
 
@@ -63,12 +72,14 @@ def _pre_wp18_database(path: Path) -> None:
 
 def test_an_empty_database_is_created_at_the_baseline(fresh):
     db.init_db()
-    assert db.schema_version() == db.BASELINE_VERSION
+    assert db.schema_version() == LATEST
     tables = {row["name"] for row in db.query("SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert {"guest", "submission", "schema_migrations", "legal_acceptance"} <= tables
     db.init_db()
-    rows = db.query("SELECT version, name FROM schema_migrations")
-    assert [(row["version"], row["name"]) for row in rows] == [(1, "baseline")]
+    rows = db.query("SELECT version, name FROM schema_migrations ORDER BY version")
+    assert [(row["version"], row["name"]) for row in rows] == [(1, "baseline")] + [
+        (version, name) for version, name, _path in SHIPPED
+    ]
 
 
 def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
@@ -79,8 +90,11 @@ def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
 
     db.init_db()
 
-    assert db.schema_version() == db.BASELINE_VERSION
-    assert _schema(current) == before, "marking the version must not change the schema"
+    assert db.schema_version() == LATEST
+    after = _schema(current)
+    # Marking the baseline changes nothing that was there; the shipped
+    # migrations only add to it.
+    assert {key: after.get(key) for key in before} == before
     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
 
 
@@ -94,39 +108,39 @@ def test_an_empty_and_an_upgraded_database_end_with_the_same_schema(fresh, tmp_p
 
 
 def test_a_numbered_migration_is_applied_once_and_recorded(fresh):
-    (fresh / "migrations" / "0002_demo_column.sql").write_text(
+    (fresh / "migrations" / f"{NEXT}_demo_column.sql").write_text(
         "-- a demo migration\n"
         "ALTER TABLE settings ADD COLUMN demo_note TEXT;\n"
         "CREATE INDEX IF NOT EXISTS idx_settings_demo ON settings (demo_note);\n"
     )
     db.init_db()
     db.init_db()
-    assert db.schema_version() == 2
+    assert db.schema_version() == LATEST + 1
     columns = [row["name"] for row in db.query("PRAGMA table_info(settings)")]
     assert columns.count("demo_note") == 1
-    row = db.query_one("SELECT name FROM schema_migrations WHERE version = 2")
+    row = db.query_one("SELECT name FROM schema_migrations WHERE version = ?", (LATEST + 1,))
     assert row["name"] == "demo_column"
 
 
 def test_an_existing_database_gets_later_migrations_on_top_of_the_baseline(fresh):
     _pre_wp18_database(config.DB_PATH)
-    (fresh / "migrations" / "0002_demo_column.sql").write_text(
+    (fresh / "migrations" / f"{NEXT}_demo_column.sql").write_text(
         "ALTER TABLE settings ADD COLUMN demo_note TEXT;\n"
     )
     db.init_db()
-    assert db.schema_version() == 2
+    assert db.schema_version() == LATEST + 1
     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
 
 
 def test_a_failing_migration_leaves_nothing_behind_and_is_not_recorded(fresh):
     db.init_db()
-    (fresh / "migrations" / "0002_broken.sql").write_text(
+    (fresh / "migrations" / f"{NEXT}_broken.sql").write_text(
         "ALTER TABLE settings ADD COLUMN half_done TEXT;\n"
         "ALTER TABLE no_such_table ADD COLUMN x TEXT;\n"
     )
     with pytest.raises(sqlite3.OperationalError):
         db.init_db()
-    assert db.schema_version() == 1
+    assert db.schema_version() == LATEST
     columns = [row["name"] for row in db.query("PRAGMA table_info(settings)")]
     assert "half_done" not in columns
 
@@ -141,7 +155,7 @@ def test_files_that_are_not_migrations_are_ignored(fresh):
     (fresh / "migrations" / ".gitkeep").write_text("")
     (fresh / "migrations" / "notes.txt").write_text("not sql")
     db.init_db()
-    assert db.schema_version() == 1
+    assert db.schema_version() == LATEST
 
 
 # --- RETURNING, ON CONFLICT, null-safe comparison ----------------------------

@@ -37,7 +37,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import claim, db, i18n, mail  # noqa: E402
+from app import claim, db, guest_slug, i18n, mail  # noqa: E402
 
 
 # Layout rules every guest screen must meet. Each returns a sentence per
@@ -314,19 +314,36 @@ _RUNS = [("en", width) for width in (320, 375, 1280)] + [
 
 @pytest.mark.parametrize(("lang", "width"), _RUNS)
 def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, lang, width):
-    token = f"browser-e2e-{lang}-{width}"
+    _register_a_group_of_three(
+        live_server, browser, width, f"browser-e2e-{lang}-{width}", readable=False, lang=lang
+    )
+
+
+@pytest.mark.parametrize("width", [320, 360, 390])
+def test_the_readable_link_takes_the_group_through_the_same_flow(live_server, browser, width):
+    """WP19: the guest opens /l/{slug}; the claim mail still carries the token
+    link, so the flow also crosses from one link to the other mid-way."""
+    _register_a_group_of_three(live_server, browser, width, f"browser-slug-{width}", readable=True)
+
+
+def _register_a_group_of_three(live_server, browser, width, token, readable, lang="en"):
     db.execute("DELETE FROM rate_limit_event")
     stay = _seed(token)
+    key = token
+    if readable:
+        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (token,))
+        key = guest_slug.ensure(apartment)
+        assert key.startswith("browser-loft-")
     context = browser.new_context(viewport={"width": width, "height": 812}, locale=_LOCALES[lang])
     page = context.new_page()
     script_errors = []
     page.on("pageerror", lambda error: script_errors.append(str(error)))
     guest = Guest(page, width, lang)
     try:
-        page.goto(f"{live_server}/l/{token}" + ("?lang=en" if lang == "en" else ""))
+        page.goto(f"{live_server}/l/{key}" + ("?lang=en" if lang == "en" else ""))
         assert page.get_attribute("html", "lang") == lang
         guest.check_layout("pick")
-        page.locator(f"a[href*='/l/{token}/{stay}']").first.click()
+        page.locator(f"a[href*='/l/{key}/{stay}']").first.click()
         page.wait_for_load_state()
         guest.check_layout("claim")
 

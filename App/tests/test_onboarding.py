@@ -6,7 +6,7 @@ import re
 
 from fastapi.testclient import TestClient
 
-from app import auth, db, onboarding
+from app import auth, db, guest_slug, onboarding
 from app.host_i18n import STRINGS as HOST_STRINGS
 from app.main import app
 
@@ -256,7 +256,9 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
     progress = onboarding.progress(owner_id)
     assert progress["finished"] is True
     assert progress["finish"]["pin"] == "246810"
-    assert progress["finish"]["permalink"].endswith("/l/finishlink99")
+    # The copied link is the readable one (WP19); the token behind it is unchanged.
+    assert progress["finish"]["permalink"].endswith(f"/l/{guest_slug.current(apartment_id)}")
+    assert progress["finish"]["link_key"].startswith("ready-studio-")
     assert progress["finish"]["communication_url"] == f"/apartments/{apartment_id}#communication"
 
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
@@ -270,7 +272,7 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
     assert dashboard.status_code == 200
     assert 'class="onboarding-finish"' in dashboard.text
     assert "Guest link and PIN are live" in dashboard.text
-    assert "finishlink99" in dashboard.text
+    assert guest_slug.current(apartment_id) in dashboard.text
     assert "246810" in dashboard.text
     assert "edit host message" in dashboard.text
     assert "Open communication settings" in dashboard.text
@@ -406,7 +408,7 @@ def test_a_hand_typed_stay_also_lets_the_guest_link_step_finish():
 
     assert progress["finished"] is True
     assert progress["completed"] == progress["total"] == 5
-    assert progress["finish"]["permalink"].endswith("/l/manualtoken2")
+    assert progress["finish"]["permalink"].endswith(f"/l/{guest_slug.current(apartment_id)}")
 
 
 def test_a_cancelled_hand_typed_stay_does_not_satisfy_the_calendar_step():

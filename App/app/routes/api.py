@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from .. import access, auth, config, db, host_i18n
+from .. import access, auth, config, db, guest_slug, host_i18n
 
 router = APIRouter()
 
@@ -67,7 +67,7 @@ def command_palette(request: Request):
             items.append({
                 "label": t("command.copy_property_link", property=apartment["internal_name"]),
                 "group": t("command.group.actions"),
-                "copy": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+                "copy": f"{config.PUBLIC_BASE_URL}/l/{guest_slug.link_key(apartment)}",
                 "tone": int(apartment["id"]) % 10,
                 "keywords": "guest permalink pin",
             })

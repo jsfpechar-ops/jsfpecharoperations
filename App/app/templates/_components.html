@@ -312,7 +312,7 @@
       </ul>
       <div class="onboarding-finish-actions">
         <a class="btn primary" href="{{ finish.communication_url }}">{{ t('onboarding.finish_open_communication') }}</a>
-        <a class="btn" href="/l/{{ finish.permalink_token }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
+        <a class="btn" href="/l/{{ finish.link_key }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
         {# On /onboarding the header meter already carries Skip / Reopen, so the
            finish card leaves it out instead of printing the same button twice. #}
         {% if not show_toggle %}

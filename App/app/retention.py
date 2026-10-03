@@ -301,6 +301,9 @@ def _delete_workspace(owner_id: int) -> None:
             f"DELETE FROM email_outbox WHERE owner_user_id = ? OR apartment_id IN {apartments}",
             (owner_id, owner_id),
         )
+        # Also cascades from apartment; explicit so it never depends on the
+        # foreign_keys pragma of whichever database runs this.
+        cur.execute(f"DELETE FROM apartment_slug WHERE apartment_id IN {apartments}", (owner_id,))
         cur.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
         cur.execute(f"DELETE FROM invoice_sequence WHERE legal_entity_id IN {entities}", (owner_id,))
         cur.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))

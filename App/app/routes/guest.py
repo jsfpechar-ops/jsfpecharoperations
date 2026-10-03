@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, guest_slug, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -382,11 +382,11 @@ def _localize_issues(issues, lang: str):
     ]
 
 
-def _apartment_by_token(token: str):
+def _live_apartment(column: str, value):
     row = db.query_one(
-        "SELECT * FROM apartment WHERE permalink_token = ? AND active = 1 "
+        f"SELECT * FROM apartment WHERE {column} = ? AND active = 1 "
         "AND archived_at IS NULL",
-        (token,),
+        (value,),
     )
     if not row:
         return None
@@ -397,14 +397,84 @@ def _apartment_by_token(token: str):
     return row
 
 
+def _apartment_by_token(token: str):
+    return _live_apartment("permalink_token", token)
+
+
+def _resolve_key(key: str):
+    """Map the ``/l/{key}`` segment to ``(apartment, link key, moved)``.
+
+    ``key`` is either the permanent token, which keeps working for ever, or a
+    readable slug (WP19). The link key is what the pages put back into their
+    own links: the token for a token visitor, the *current* slug for a slug
+    visitor. ``moved`` is true when the key was an earlier slug, or the current
+    one in other letter case, so a GET can be redirected to the current one.
+    """
+    apartment = _apartment_by_token(key)
+    if apartment:
+        return apartment, key, False
+    row = guest_slug.lookup(key)
+    if not row:
+        return None, key, False
+    apartment = _live_apartment("id", int(row["apartment_id"]))
+    if not apartment or not apartment["permalink_token"]:
+        return None, key, False
+    if row["is_current"]:
+        link = row["slug"]
+    else:
+        link = guest_slug.current(int(apartment["id"])) or apartment["permalink_token"]
+    return apartment, link, link != key
+
+
+def _apartment_for_key(key: str):
+    return _resolve_key(key)[0] if key else None
+
+
+def _lock_token(key: str) -> str:
+    """The permanent token behind a link key: what every PIN cookie, PIN
+    fingerprint, lockout and rate-limit key is built from, so switching
+    between ``/l/{token}`` and ``/l/{slug}`` neither asks for the PIN again
+    nor starts a fresh failure budget."""
+    apartment = _apartment_for_key(key)
+    return apartment["permalink_token"] if apartment else key
+
+
+def _open_link(request: Request, key: str, lang: str):
+    """The one resolver every ``/l/{key}`` route starts with.
+
+    Returns ``(apartment, link key, response)``. ``response`` is set when the
+    route must answer with it straight away: the "bad link" page (404) for a
+    key nothing matches, including a slug with a wrong code, or a 301 to the
+    current slug for a GET on an earlier one. A POST on an earlier slug is
+    served in place, because a redirect would drop its body.
+    """
+    apartment, link, moved = _resolve_key(key)
+    if not apartment:
+        return None, key, _unavailable(request, lang)
+    if moved and request.method in ("GET", "HEAD"):
+        prefix = f"/l/{key}"
+        path = request.url.path
+        rest = path[len(prefix):] if path.startswith(prefix) else ""
+        target = f"/l/{link}{rest}"
+        if request.url.query:
+            target += "?" + request.url.query
+        response = RedirectResponse(target, status_code=301)
+        # A host may rename back to an earlier name. A 301 a browser cached for
+        # ever would then point the current slug at an old one and loop.
+        response.headers["Cache-Control"] = "no-store"
+        return apartment, link, response
+    return apartment, link, None
+
+
 def _pin_page(request: Request, token: str, lang: str, error: str = ""):
-    failures = rate_limit.pin_failure_count(rate_limit.client_key(request, token))
-    apartment = _apartment_by_token(token)
+    apartment = _apartment_for_key(token)
+    lock_token = apartment["permalink_token"] if apartment else token
+    failures = rate_limit.pin_failure_count(rate_limit.client_key(request, lock_token))
     context = _shared(request, token, lang, apartment)
     context.update(
         {
             "error": error,
-            "require_turnstile": failures >= 3 or _link_challenged(token, apartment),
+            "require_turnstile": failures >= 3 or _link_challenged(apartment),
             "return_to": request.url.path
             + (("?" + str(request.url.query)) if request.url.query else ""),
         }
@@ -412,7 +482,7 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
     return _with_lang(render_guest(request, "guest/pin.html", context), lang)
 
 
-def _link_challenged(token: str, apartment) -> bool:
+def _link_challenged(apartment) -> bool:
     """A link guessed at from many addresses asks every visitor for the check.
 
     With Turnstile on, a locked link is challenged rather than refused, so one
@@ -421,6 +491,7 @@ def _link_challenged(token: str, apartment) -> bool:
     if not apartment or not turnstile.required():
         return False
     expected = apartment["permalink_pin"] or ""
+    token = apartment["permalink_token"]
     return rate_limit.pin_token_blocked(f"{token}:{auth.pin_fingerprint(token, expected)}")
 
 
@@ -438,10 +509,12 @@ def _host_owns_apartment(request: Request, apartment) -> bool:
 def _require_pin(request: Request, token: str, lang: str):
     if not config.GUEST_PIN_REQUIRED:
         return None
-    apartment = _apartment_by_token(token)
+    apartment = _apartment_for_key(token)
     if apartment and (
         _host_owns_apartment(request, apartment)
-        or auth.pin_session_valid(request, token, apartment["permalink_pin"] or "")
+        or auth.pin_session_valid(
+            request, apartment["permalink_token"], apartment["permalink_pin"] or ""
+        )
     ):
         return None
     return _pin_page(request, token, lang)
@@ -567,7 +640,7 @@ def _unavailable(
         "server_error": ("server_error_title", "server_error_help"),
     }
     title_key, body_key = titles.get(reason, titles["bad_link"])
-    apartment = _apartment_by_token(token) if token else None
+    apartment = _apartment_for_key(token) if token else None
     # "Start again" only helps where starting again can change something. On a
     # locked, already-reported or wrong-device form the picker leads straight
     # back to this page.
@@ -813,7 +886,7 @@ def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editin
 def _require_claim_session(request: Request, reservation, token: str, lang: str):
     if not mail.mail_enabled():
         return None
-    apartment = _apartment_by_token(token)
+    apartment = _apartment_for_key(token)
     if _host_owns_apartment(request, apartment):
         return None
     row = claim.ensure_row(reservation["id"])
@@ -846,14 +919,16 @@ def _set_declared_guests(reservation, count: int) -> None:
 @router.post("/l/{token}/pin")
 async def verify_pin(token: str, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     form = await request.form()
     entered = (form.get("pin") or "").strip()
     expected = apartment["permalink_pin"] or ""
-    pin_key = rate_limit.client_key(request, token)
-    pin_lock_key = f"{token}:{auth.pin_fingerprint(token, expected)}"
+    # Keyed on the permanent token, never on the slug in the URL (WP19).
+    lock_token = apartment["permalink_token"]
+    pin_key = rate_limit.client_key(request, lock_token)
+    pin_lock_key = f"{lock_token}:{auth.pin_fingerprint(lock_token, expected)}"
     link_locked = rate_limit.pin_token_blocked(pin_lock_key)
     if link_locked and not turnstile.required():
         return _pin_page(
@@ -875,7 +950,7 @@ async def verify_pin(token: str, request: Request):
             lang,
             error=i18n.translator(lang)("pin_rate_limited"),
         )
-    if not auth.pin_matches(token, entered, expected):
+    if not auth.pin_matches(lock_token, entered, expected):
         rate_limit.record_pin_failure(pin_key, pin_lock_key)
         # A lockout spread over many addresses is invisible in the per-IP count,
         # so the host is told the moment the link itself burns its budget: every
@@ -935,7 +1010,7 @@ async def verify_pin(token: str, request: Request):
         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
     return_to = _safe_return_to(form.get("return_to"), token, lang)
     response = RedirectResponse(return_to, status_code=303)
-    auth.attach_pin_session(response, token, expected)
+    auth.attach_pin_session(response, lock_token, expected)
     return _with_lang(response, lang)
 
 
@@ -944,9 +1019,9 @@ async def verify_pin(token: str, request: Request):
 @router.get("/l/{token}/privacy")
 def privacy_notice(token: str, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -967,9 +1042,9 @@ def privacy_notice(token: str, request: Request):
 @router.get("/l/{token}")
 def pick_stay(token: str, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     _alert_controller_missing(apartment)
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
@@ -1014,9 +1089,9 @@ def pick_stay(token: str, request: Request):
 @router.get("/l/{token}/{reservation_id}")
 def stay_overview(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1104,9 +1179,9 @@ def stay_overview(token: str, reservation_id: int, request: Request):
 @router.get("/l/{token}/{reservation_id}/claim")
 def claim_landing(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     _alert_controller_missing(apartment)
     if not mail.mail_enabled():
         return _with_lang(
@@ -1149,7 +1224,7 @@ def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
     guest's allowance and a shared address cannot be exhausted by a single link.
     Returns the response to send, or None to carry on.
     """
-    key = rate_limit.client_key(request, f"guest:{token}")
+    key = rate_limit.client_key(request, f"guest:{_lock_token(token)}")
     if rate_limit.blocked(scope, key, GUEST_POST_MAX_ATTEMPTS):
         return _unavailable(request, lang, "rate_limited", 429, token)
     rate_limit.record(scope, key)
@@ -1159,9 +1234,9 @@ def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
 @router.post("/l/{token}/{reservation_id}/claim/confirm")
 async def claim_confirm(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     if not mail.mail_enabled():
         return _with_lang(
             RedirectResponse(
@@ -1177,7 +1252,7 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
         return _unavailable(request, lang, "stay_gone", 404, token)
     form = await request.form()
     secret = (form.get("secret") or "").strip()
-    key = rate_limit.client_key(request, f"claim:{token}")
+    key = rate_limit.client_key(request, f"claim:{apartment['permalink_token']}")
     if rate_limit.blocked("claim_confirm", key, 20):
         return _unavailable(request, lang, "stay_gone", 429, token)
     rate_limit.record("claim_confirm", key)
@@ -1200,9 +1275,9 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
 async def set_party_size(token: str, reservation_id: int, request: Request):
     """Claim the stay with party size and e-mail, or change headcount later."""
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1254,7 +1329,7 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
         # hammering, not mail volume (the mail caps in claim.py do that), so it
         # is deliberately loose: a guest fumbling the form must not be locked
         # out after a couple of tries.
-        key = rate_limit.client_key(request, f"claim:{token}")
+        key = rate_limit.client_key(request, f"claim:{apartment['permalink_token']}")
         if rate_limit.blocked("claim_start", key, 10):
             return _with_lang(
                 RedirectResponse(
@@ -1312,9 +1387,9 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
 async def add_another_person(token: str, reservation_id: int, request: Request):
     """Raise the declared headcount by one so another guest can fill the form."""
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1353,8 +1428,10 @@ def _form_context(
     values=None,
     back_url: Optional[str] = None,
     residence_copied_from: Optional[str] = None,
+    token: Optional[str] = None,
 ) -> Dict[str, Any]:
-    token = apartment["permalink_token"]
+    # The key the guest is on (token or slug), so the form's own links stay on it.
+    token = token or apartment["permalink_token"]
     progress = reporting.reservation_progress(reservation)
     expected = progress["expected"]
     remaining = (expected - progress["filled"]) if expected is not None else None
@@ -1423,9 +1500,9 @@ def _form_context(
 @router.get("/l/{token}/{reservation_id}/new")
 def guest_form_new(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     _alert_controller_missing(apartment)
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
@@ -1457,6 +1534,7 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
                 lang,
                 values=prefill,
                 residence_copied_from=copied_from,
+                token=token,
                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
             ),
         ),
@@ -1467,9 +1545,9 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
 @router.get("/l/{token}/{reservation_id}/edit/{guest_id}")
 def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1501,6 +1579,7 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
                 guest,
                 lang,
                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=True),
+                token=token,
             ),
         ),
         lang,
@@ -1510,9 +1589,9 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
 @router.post("/l/{token}/{reservation_id}/save")
 async def guest_form_save(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1662,6 +1741,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             issues=issues,
             values=values,
             back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
+            token=token,
         )
         context["values"].update(
             {
