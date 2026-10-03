@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from app import alerts, db, icalsync
+from app import alerts, db, icalsync, validation
 
 
 @pytest.fixture(autouse=True)
@@ -48,6 +48,50 @@ def test_pending_guests_raise_the_warning_and_reactivation_clears_it():
     assert alerts.open_alert(key)
     alerts.resolve(key)
     assert not alerts.open_alert(key)
+
+
+def test_cancelled_stay_mail_uses_its_own_kind_and_czech_dates():
+    db.init_db()
+    now = db.utcnow()
+    entity = db.insert(
+        "legal_entity",
+        {"name": "CWG entity", "contact_email": "host@example.com", "created_at": now},
+    )
+    apartment = db.insert(
+        "apartment",
+        {
+            "legal_entity_id": entity,
+            "internal_name": "Flat cwg-mail",
+            "created_at": now,
+        },
+    )
+    stay = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment,
+            "uid": "cwg-mail",
+            "date_from": "2030-05-01",
+            "date_to": "2030-05-03",
+            "status": "cancelled",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    stay = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+    _guest(stay["id"], "pending", now)
+    icalsync._warn_if_guests_registered(stay, apartment, "cancelled")
+    row = db.query_one(
+        "SELECT kind, subject FROM email_outbox WHERE idempotency_key = ?",
+        (f"cancelled_with_guests:{stay['id']}:cancelled",),
+    )
+    assert row["kind"] == "cancelled_with_guests"
+    assert "Flat cwg-mail" in row["subject"]
+    assert validation.fmt_date("2030-05-01") in row["subject"]
+    icalsync._warn_if_guests_registered(stay, apartment, "cancelled")
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM email_outbox WHERE idempotency_key = ?",
+        (f"cancelled_with_guests:{stay['id']}:cancelled",),
+    )["n"] == 1
 
 
 def test_guests_the_police_never_expect_raise_nothing():

@@ -1798,6 +1798,7 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "submission_problem",
         "invoice_issued",
         "workspace_deletion",
+        "cancelled_with_guests",
     }
 
 

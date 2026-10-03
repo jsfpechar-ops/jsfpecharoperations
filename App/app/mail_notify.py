@@ -902,6 +902,8 @@ def build_workspace_deletion(*, stage: str, date: str, lang: Optional[str] = Non
 def cancelled_with_guests(apartment_id: int, reservation_id: int, variant: str) -> Optional[int]:
     """Tell the host by e-mail that a cancelled stay still had guest forms."""
     try:
+        from . import validation
+
         apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
         if not apartment:
             return None
@@ -912,25 +914,38 @@ def cancelled_with_guests(apartment_id: int, reservation_id: int, variant: str) 
         if not reservation:
             return None
         lang = HOST_MAIL_LANGUAGE
+        property_name = apartment["internal_name"] or "UbyHost"
+        formatted_date = validation.fmt_date(reservation["date_from"])
         title = host_i18n.translate(
             lang, f"notification.cancelled_with_guests.title.{variant}",
-            date=reservation["date_from"],
+            date=formatted_date,
         )
         detail = host_i18n.translate(lang, "notification.cancelled_with_guests.detail")
-        subject = title
-        text = f"{title}\n\n{detail}\n"
+        subject = host_i18n.translate(
+            lang,
+            "mail.cancelled_with_guests.subject",
+            property=property_name,
+            date=formatted_date,
+        )
+        stay_url = _public(f"/reservations/{reservation_id}")
+        action = host_i18n.translate(lang, "mail.cancelled_with_guests.action")
+        text = "\n".join([title, "", detail, "", f"{action}: {stay_url}"])
         html = _shell(
             lang=lang,
-            title=apartment["internal_name"] or "UbyHost",
+            title=property_name,
             preheader=title,
-            blocks=[_block_heading(title), _block_paragraph(detail)],
+            blocks=[
+                _block_heading(title),
+                _block_paragraph(detail),
+                _block_button(stay_url, action),
+            ],
             footer_lines=[
                 "UbyHost",
                 _text(lang, "mail.workspace_deletion.footer", support=config.OPERATOR_EMAIL),
             ],
         )
         return mail.enqueue(
-            kind="submission_problem",
+            kind="cancelled_with_guests",
             idempotency_key=f"cancelled_with_guests:{reservation_id}:{variant}",
             to_email=to_email,
             subject=subject,

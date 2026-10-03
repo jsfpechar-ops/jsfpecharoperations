@@ -34,6 +34,7 @@ KINDS = (
     "submission_problem",
     "invoice_issued",
     "workspace_deletion",
+    "cancelled_with_guests",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -54,6 +55,7 @@ HOST_KINDS = (
     "reminder_host",
     "submission_problem",
     "workspace_deletion",
+    "cancelled_with_guests",
 )
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
