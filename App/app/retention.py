@@ -11,11 +11,14 @@ Never logs personal data (Rule 8): counts and ids only.
 from __future__ import annotations
 
 import json
+import logging
 import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from . import alerts, config, db, housebook, invoices, passport_photos
+from . import alerts, config, db, housebook, invoices, mail_notify, passport_photos
+
+log = logging.getLogger(__name__)
 
 # G-D5: null the claim e-mail / reservation e-mail / phone fragment this long
 # after the stay's end date.
@@ -195,6 +198,8 @@ def _workspace_deletion_step(today: date, dry_run: bool, owner_user_id: Optional
     """
     if owner_user_id is not None:
         return 0
+    if not dry_run:
+        _workspace_deletion_reminders()
     rows = db.query(
         "SELECT id FROM user_account WHERE deletion_due_at IS NOT NULL AND deletion_due_at <= ?",
         (db.utcnow(),),
@@ -206,60 +211,90 @@ def _workspace_deletion_step(today: date, dry_run: bool, owner_user_id: Optional
     return len(rows)
 
 
-def _delete_workspace(owner_id: int) -> None:
-    """Remove every row that belongs to one workspace, in dependency order."""
-    for guest in db.query(
-        "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
-        "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id IS ?",
-        (owner_id,),
-    ):
-        passport_photos.delete_photo(guest["id"])
-    db.execute(
-        "DELETE FROM guest WHERE reservation_id IN "
-        "(SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE a.owner_user_id IS ?)",
-        (owner_id,),
-    )
-    db.execute(
-        "DELETE FROM submission WHERE apartment_id IN "
-        "(SELECT id FROM apartment WHERE owner_user_id IS ?)",
-        (owner_id,),
-    )
-    db.execute(
-        "DELETE FROM reservation WHERE apartment_id IN "
-        "(SELECT id FROM apartment WHERE owner_user_id IS ?)",
-        (owner_id,),
-    )
-    db.execute("DELETE FROM apartment WHERE owner_user_id IS ?", (owner_id,))
+WORKSPACE_REMINDER_DAYS = 7
 
-    invoice_ids = [
-        row["id"]
-        for row in db.query("SELECT id FROM invoice WHERE owner_user_id IS ?", (owner_id,))
-    ]
-    if invoice_ids:
-        db.execute(
+
+def _workspace_deletion_reminders() -> None:
+    """Remind each workspace due within a week. The outbox key sends it once."""
+    soon = (
+        datetime.now(timezone.utc) + timedelta(days=WORKSPACE_REMINDER_DAYS)
+    ).replace(microsecond=0).isoformat()
+    rows = db.query(
+        "SELECT id, deletion_due_at FROM user_account "
+        "WHERE deletion_due_at IS NOT NULL AND deletion_due_at > ? AND deletion_due_at <= ?",
+        (db.utcnow(), soon),
+    )
+    for row in rows:
+        mail_notify.workspace_deletion(row["id"], row["deletion_due_at"], "week_before")
+
+
+def _delete_workspace(owner_id: int) -> None:
+    """Remove every row that belongs to one workspace, in dependency order.
+
+    One transaction: a failure part-way used to leave the account and its
+    entities behind with the guests already gone, and fail again every night.
+    """
+    apartments = "(SELECT id FROM apartment WHERE owner_user_id IS ?)"
+    entities = "(SELECT id FROM legal_entity WHERE owner_user_id IS ?)"
+    with db.immediate() as cur:
+        # Read inside the lock so a guest saved a moment earlier keeps no photo.
+        cur.execute(
+            "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+            "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id IS ?",
+            (owner_id,),
+        )
+        guest_ids = [row["id"] for row in cur.fetchall()]
+        cur.execute(
+            "DELETE FROM guest WHERE reservation_id IN "
+            f"(SELECT id FROM reservation WHERE apartment_id IN {apartments})",
+            (owner_id,),
+        )
+        cur.execute(f"DELETE FROM submission WHERE apartment_id IN {apartments}", (owner_id,))
+        cur.execute(f"DELETE FROM reservation WHERE apartment_id IN {apartments}", (owner_id,))
+        cur.execute(
+            f"DELETE FROM stay_fee_adjustment WHERE apartment_id IN {apartments}", (owner_id,)
+        )
+        cur.execute(f"DELETE FROM stay_fee_filing WHERE apartment_id IN {apartments}", (owner_id,))
+        cur.execute(
             "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '1') "
             "ON CONFLICT(key) DO UPDATE SET value = '1'"
         )
+        # Corrections first: they reference the invoice they correct.
+        cur.execute(
+            "DELETE FROM invoice_item WHERE invoice_id IN "
+            "(SELECT id FROM invoice WHERE owner_user_id IS ?)",
+            (owner_id,),
+        )
+        cur.execute(
+            "DELETE FROM invoice WHERE owner_user_id IS ? AND corrects_invoice_id IS NOT NULL",
+            (owner_id,),
+        )
+        cur.execute("DELETE FROM invoice WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute(
+            "UPDATE settings SET value = '' WHERE key = 'invoice_purge_unlock'"
+        )
+        # Queued mail carries guest addresses and must not outlive the workspace.
+        cur.execute(
+            f"DELETE FROM email_outbox WHERE owner_user_id IS ? OR apartment_id IN {apartments}",
+            (owner_id, owner_id),
+        )
+        cur.execute("DELETE FROM apartment WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute(f"DELETE FROM invoice_sequence WHERE legal_entity_id IN {entities}", (owner_id,))
+        cur.execute("DELETE FROM legal_entity WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute("DELETE FROM data_subject_request WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute("DELETE FROM alert WHERE owner_user_id IS ?", (owner_id,))
+        # legal_acceptance has a NOT NULL account reference, so it cannot
+        # outlive the account.
+        cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
+        cur.execute("DELETE FROM audit WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+    # Files last: a rolled-back delete must not have lost the photos. One
+    # failing file must not stop the rest; the orphan sweep retries it.
+    for guest_id in guest_ids:
         try:
-            for invoice_id in invoice_ids:
-                db.execute("DELETE FROM invoice_item WHERE invoice_id = ?", (invoice_id,))
-                db.execute("DELETE FROM invoice WHERE id = ?", (invoice_id,))
-        finally:
-            db.execute(
-                "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
-                "ON CONFLICT(key) DO UPDATE SET value = ''"
-            )
-
-    db.execute("DELETE FROM legal_entity WHERE owner_user_id IS ?", (owner_id,))
-
-    db.execute("DELETE FROM data_subject_request WHERE owner_user_id IS ?", (owner_id,))
-    db.execute("DELETE FROM alert WHERE owner_user_id IS ?", (owner_id,))
-    # legal_acceptance has a NOT NULL account reference, so it cannot outlive the
-    # account; see FOLLOWUPS.md for the tension with G-D7.
-    db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
-    db.execute("DELETE FROM audit WHERE owner_user_id IS ?", (owner_id,))
-    db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+            passport_photos.delete_photo(guest_id)
+        except OSError:
+            log.exception("workspace deletion: photo for guest %s not removed", guest_id)
 
 
 def _raise_due_notices(today: date) -> None:

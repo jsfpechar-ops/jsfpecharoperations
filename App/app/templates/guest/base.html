@@ -10,11 +10,10 @@
   <title>{{ t('title') }}</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-  <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
-  <link rel="stylesheet" href="/static/guest.css?v=20260929a">
-  <link rel="stylesheet" href="/static/guest-ticket.css?v=20260930a">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261003a">
+  <link rel="stylesheet" href="/static/guest.css?v=20261003d">
 </head>
-<body class="tw">
+<body>
 <a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
 <div class="g-wrap {% block wrap_class %}{% endblock %}">
   <div class="g-head">
@@ -31,8 +30,6 @@
       <a href="{{ lang_urls.cs }}" class="{{ 'on' if lang == 'cs' }}" hreflang="cs" lang="cs">Čeština</a>
     </div>
     {% endif %}
-    {% block tw_route %}{% endblock %}
-    <div class="tw-progress" aria-hidden="true"><i data-tw-progress data-tw-base="50" data-tw-span="42" style="width: {% block tw_progress %}0{% endblock %}%"></i></div>
   </div>
 
   {% if flash %}<div class="g-ok">{{ flash }}</div>{% endif %}
@@ -58,9 +55,9 @@
     {% if privacy_url %}<p><a href="{{ privacy_url }}">{{ t('privacy_link') }}</a></p>{% endif %}
   </div>
 </div>
-<script src="/static/skeleton.js?v=20260929a"></script>
+<script src="/static/skeleton.js?v=20261003a"></script>
 <script src="/static/signature.js?v=20260930a"></script>
-<script src="/static/ticket.js?v=20261001a"></script>
+<script src="/static/guest-enhancements.js?v=20261003a"></script>
 <script src="/static/csrf.js?v=20260915a"></script>
 </body>
 </html>

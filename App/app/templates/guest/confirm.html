@@ -1,7 +1,4 @@
 {% extends "guest/base.html" %}
-{% import "guest/_ticket.html" as tw with context %}
-{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
-{% block tw_progress %}36{% endblock %}
 {% block content %}
 <div class="g-card g-stay-summary">
   <strong>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</strong>
@@ -10,13 +7,13 @@
 {% if claim_error %}
   <div class="g-err">{{ t('claim_confirm_failed') }}</div>
 {% endif %}
-<div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_confirm') }}">
+<div class="g-card">
   <h2>{{ t('claim_confirm_title') }}</h2>
   <p class="g-intro">{{ t('claim_confirm_help') }}</p>
   <form method="post" action="/l/{{ token }}/{{ reservation.id }}/claim/confirm?lang={{ lang }}" id="claim-confirm-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="secret" id="claim-secret" value="">
-    <div class="tw-stub"><button class="g-btn" type="submit">{{ t('claim_confirm_button') }}</button></div>
+    <button class="g-btn" type="submit">{{ t('claim_confirm_button') }}</button>
   </form>
 </div>
 <script src="/static/claim.js?v=20260918a"></script>

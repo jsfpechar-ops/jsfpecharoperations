@@ -58,7 +58,7 @@ if [ "${DEPLOYMENT}" = "production" ] && [ "${UBYPORT}" = "mock" ]; then
 fi
 
 if [ "${DEPLOYMENT}" = "production" ] && [ "${UBYHOST_GUEST_PIN:-1}" = "0" ]; then
-  warn "UBYHOST_GUEST_PIN=0 on production — guest permalinks are unprotected"
+  die "UBYHOST_GUEST_PIN=0 on production — guest permalinks would be unprotected and the app refuses to start"
 fi
 
 if [ "${DEPLOYMENT}" = "production" ] && [ "${UBYHOST_ENABLE_SCHEDULER:-1}" = "0" ]; then
@@ -67,6 +67,14 @@ fi
 
 if [ "${DEPLOYMENT}" = "production" ] && [ "${UBYHOST_ICAL_ALLOW_PRIVATE:-0}" = "1" ]; then
   die "UBYHOST_ICAL_ALLOW_PRIVATE must not be enabled on production"
+fi
+
+if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_AGE_RECIPIENT:-}" ]; then
+  die "UBYHOST_BACKUP_AGE_RECIPIENT is empty — the nightly backup refuses to run on production without it"
+fi
+
+if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ]; then
+  die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
 fi
 
 if [ -n "${UBYHOST_SECRET_KEY:-}" ] && [ "${#UBYHOST_SECRET_KEY}" -lt 32 ]; then

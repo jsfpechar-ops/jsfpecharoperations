@@ -60,6 +60,10 @@ jobs:
             echo "UBYHOST_ALLOW_PROD_MOCK=$(value UBYHOST_ALLOW_PROD_MOCK)"
             echo "UBYHOST_ADMIN_PASSWORD=$(present UBYHOST_ADMIN_PASSWORD)"
             echo "UBYHOST_SECRET_KEY=$(present UBYHOST_SECRET_KEY)"
+            echo "UBYHOST_BACKUP_PING_URL=$(present UBYHOST_BACKUP_PING_URL)"
+            echo "UBYHOST_OPERATOR_NAME=$(present UBYHOST_OPERATOR_NAME)"
+            echo "UBYHOST_OPERATOR_ICO=$(present UBYHOST_OPERATOR_ICO)"
+            echo "UBYHOST_OPERATOR_ADDRESS=$(present UBYHOST_OPERATOR_ADDRESS)"
             REC="$(value UBYHOST_BACKUP_AGE_RECIPIENT)"
             if [ -z "$REC" ]; then
               echo "UBYHOST_BACKUP_AGE_RECIPIENT=MISSING"

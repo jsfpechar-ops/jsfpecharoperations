@@ -104,9 +104,27 @@ def guest_export(guest_id: int) -> Optional[Dict[str, Any]]:
         "UNION SELECT receipt_submission_id FROM guest WHERE id = ?)",
         (guest_id, guest_id),
     )
+    owner = db.query_one(
+        "SELECT a.owner_user_id AS id FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (guest["reservation_id"],),
+    )
+    # Exact token match inside this workspace only: "guest_id=1" must not
+    # pull in guest 12 or another host's audit trail. Guest actions write
+    # "id=N" and the guest form writes "guest=N", so all three are matched.
+    by_id, by_guest, by_form = f"guest_id={guest_id}", f"id={guest_id}", f"guest={guest_id}"
     audit_rows = db.query(
-        "SELECT at, actor, action, detail FROM audit WHERE detail LIKE ? ORDER BY id",
-        (f"%guest_id={guest_id}%",),
+        "SELECT at, actor, action, detail FROM audit WHERE owner_user_id IS ? AND ("
+        "detail = ? OR detail LIKE ? "
+        "OR (action LIKE 'guest\\_%' ESCAPE '\\' AND (detail = ? OR detail LIKE ?)) "
+        "OR (action = 'guest_form_saved' AND (detail = ? OR detail LIKE ?))"
+        ") ORDER BY id",
+        (
+            owner["id"] if owner else None,
+            by_id, f"{by_id} %",
+            by_guest, f"{by_guest} %",
+            by_form, f"{by_form} %",
+        ),
     )
 
     fields: Dict[str, Any] = {}

@@ -300,6 +300,16 @@ def test_hlaseni_pdf(owner):
     assert "srpna" not in text
 
 
+def test_hlaseni_accepts_a_guest_who_turns_18_in_the_period(owner):
+    ent = _entity(owner, signature_name="Josef Novák")
+    aid = _apartment(owner, ent, "Apartmán Žižkov", stay_fee_payee="MČ Praha 3",
+                     addr_street="Dlouhá", addr_house_no="12", addr_zip="13000", addr_obec="Praha 3")
+    _stay(aid, "2026-08-10", "2026-08-14", [{"birth_date": "12082008"}])
+    data = stay_fee.hlaseni(stay_fee.report_group(_apt(aid), AUG), date(2026, 9, 1))
+    stay_fee_remittance_pdf.render(data)
+    assert [(row["count"], row["nights"]) for row in data["not_charged"]] == [(1, 1)]
+
+
 def test_quarterly_pdf_title(owner):
     ent = _entity(owner)
     aid = _apartment(owner, ent, "Chata u lesa", rate=21, cadence="quarterly", vs="555")

@@ -268,7 +268,7 @@ def guide_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return render(request, "guide.html")
+    return render(request, "guide.html", {"demo_available": config.UBYPORT_ENV == "mock"})
 
 
 # --- guest communication ------------------------------------------------
@@ -353,17 +353,6 @@ ENTITY_FIELDS = (
     "bic",
     "registry_entry",
     "invoice_prefix",
-)
-
-# The identity block shown on the (short) operator form. Bank, VAT, registry
-# and numbering fields keep their saved values when a form posts only these.
-CORE_ENTITY_FIELDS = (
-    "name",
-    "seat",
-    "ico",
-    "contact_email",
-    "contact_phone",
-    "dic",
 )
 
 VAT_STATUSES = ("non_payer", "identified", "payer")
@@ -1625,6 +1614,8 @@ async def reservation_update(reservation_id: int, request: Request):
         if row:
             claim.expire_on_cancel(row)
     else:
+        if payload.get("status") == "active":
+            alerts.resolve(f"cancelled_with_guests:{reservation_id}")
         current = db.query_one(
             "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
         )

@@ -9,10 +9,12 @@ import re
 from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1] / "app"
-JS = (APP / "static" / "ticket.js").read_text(encoding="utf-8")
+ARCHIVE = APP / "static" / "archive" / "ticket-wallet"
+TW_TEMPLATES = APP / "templates" / "guest" / "archive" / "ticket-wallet"
+JS = (ARCHIVE / "ticket.js").read_text(encoding="utf-8")
 SIGNATURE = (APP / "static" / "signature.js").read_text(encoding="utf-8")
 BASE = (APP / "templates" / "guest" / "base.html").read_text(encoding="utf-8")
-FORM = (APP / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
+FORM = (TW_TEMPLATES / "form.html").read_text(encoding="utf-8")
 
 
 def test_the_search_input_is_labelled_without_moving_the_original_label():
@@ -81,6 +83,5 @@ def test_an_invalid_country_marks_the_visible_control_and_says_why():
     assert 'input.setAttribute("aria-describedby", error.id)' in JS
 
 
-def test_the_asset_version_is_past_the_version_these_fixes_shipped_in():
-    assert "ticket.js?v=20260929a" not in BASE
-    assert "ticket.js?v=20260929b" not in BASE
+def test_the_live_shell_does_not_load_archived_ticket_js():
+    assert "ticket.js" not in BASE

@@ -4,15 +4,6 @@
 .command-trigger:hover { border-color:color-mix(in srgb,var(--blue) 36%,var(--border));color:var(--ink);transform:translateY(-1px) }
 .command-trigger-icon { display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--surface-raised);color:var(--blue);font-size:18px;box-shadow:0 1px 3px rgba(20,20,18,.1) }
 kbd { padding:1px 5px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--ink-muted);font:11px/1.5 var(--font-sans) }
-.property-switcher { display:flex;flex-wrap:wrap;gap:7px;margin:0 0 14px;padding:0 2px 13px;border-bottom:1px solid var(--border) }
-.property-switcher a { display:block;text-decoration:none }
-.property-switcher a>span:last-child { position:absolute;clip:rect(0 0 0 0);width:1px;height:1px;overflow:hidden }
-.property-switcher-more {
-  display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 7px;
-  border:1px dashed var(--border-strong);border-radius:var(--radius-sm);
-  background:var(--surface);color:var(--ink-muted);font-size:var(--text-sm);font-weight:700;cursor:pointer
-}
-.property-switcher-more:hover { background:var(--surface-3);color:var(--ink) }
 .saved-views { display:grid;gap:2px;margin:0 0 12px }
 .saved-views:empty { display:none }
 .saved-views .nav-label { padding-left:4px }
@@ -20,11 +11,6 @@ kbd { padding:1px 5px;border:1px solid var(--border);border-radius:var(--radius-
 .saved-views a:hover { color:var(--ink);background:var(--surface-hover) }
 .stays-toolbar { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 16px }
 .stays-toolbar .chips { margin-bottom:0 }
-.view-switch { display:inline-flex;gap:2px;padding:2px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--canvas-subtle) }
-.view-switch a { padding:6px 11px;border-radius:var(--radius-xs);color:var(--ink-muted);font-size:var(--text-sm);font-weight:650;text-decoration:none }
-.view-switch a:hover { color:var(--ink);background:var(--surface-hover) }
-.view-switch a.on { color:var(--ink);background:var(--surface) }
-.shortcut-trigger { width:30px;height:30px;padding:0;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink-muted);font-weight:700;cursor:pointer }
 .property-identity { display:inline-flex;align-items:center;gap:var(--space-2);min-width:0 }
 .property-mark,.avatar { display:inline-grid;place-items:center;width:28px;height:28px;flex:0 0 auto;border-radius:var(--radius-sm);background:var(--gray-bg);color:var(--gray);font-size:var(--text-sm);font-weight:750;text-transform:uppercase }
 .property-tone-0 { background:var(--blue-bg);color:var(--blue) }
@@ -47,7 +33,6 @@ kbd { padding:1px 5px;border:1px solid var(--border);border-radius:var(--radius-
 [data-tooltip] { position:relative }
 [data-tooltip]::after { content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 7px);z-index:var(--z-popover);max-width:240px;padding:5px 8px;border-radius:var(--radius-xs);background:var(--ink);color:var(--canvas);font-size:var(--text-xs);line-height:1.35;white-space:nowrap;opacity:0;pointer-events:none;transform:translate(-50%,3px);transition:opacity var(--motion-fast),transform var(--motion-fast) }
 [data-tooltip]:hover::after,[data-tooltip]:focus-visible::after { opacity:1;transform:translate(-50%,0) }
-.no-js-only { display:none }
 html:not(.has-js) .row-menu-trigger { display:none }
 html:not(.has-js) .row-menu-panel[hidden] {
   position:static!important;
@@ -76,8 +61,6 @@ main[aria-busy="true"] > :not([data-page-skeleton]) { display:none }
 @media (hover:hover) {
   tbody tr .row-actions>* { opacity:0;transition:opacity var(--motion-fast) }
   tbody tr:hover .row-actions>*,tbody tr:focus-within .row-actions>*,tbody tr.row-selected .row-actions>* { opacity:1 }
-}
-@media (min-width:761px) {
 }
 
 dialog { color:var(--ink-secondary);background:var(--surface-raised) }
@@ -138,10 +121,6 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
   box-shadow:none;
 }
 .property-mark,.avatar { border:1px solid color-mix(in srgb,currentColor 28%,transparent) }
-.view-switch { border:1px solid var(--border-strong);border-radius:var(--radius-pill);background:var(--surface) }
-.view-switch a { border-radius:var(--radius-pill);font-weight:660 }
-.view-switch a.on { color:var(--brand-ink);background:var(--brand-soft) }
-.shortcut-trigger { border:1px solid var(--border-strong);border-radius:50%;box-shadow:0 1px 2px rgba(32,32,30,.06) }
 .command-dialog,.shortcuts-dialog {
   border:2px solid var(--ink);
   box-shadow:8px 9px 0 rgba(32,32,30,.32);

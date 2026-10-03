@@ -28,9 +28,9 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import db, payments, reporting, validation
+from .csv_safety import csv_safe
 
 MAX_RATE_CZK = 50        # §3d
-MAX_CALENDAR_DAYS = 60   # §3a
 ADULT_AGE = 18           # §3b(1)(b)
 CADENCES = ("monthly", "quarterly")
 DECISIONS = ("exempt", "charge")
@@ -118,9 +118,11 @@ def parse_month(value: Optional[str]) -> Optional[date]:
     if len(text) != 7 or text[4] != "-" or not (text[:4] + text[5:]).isdigit():
         return None
     try:
-        return date(int(text[:4]), int(text[5:]), 1)
+        month = date(int(text[:4]), int(text[5:]), 1)
     except ValueError:
         return None
+    # Earlier years only come from a crafted link and break month arithmetic.
+    return month if month.year >= 2000 else None
 
 
 def month_key(day: date) -> str:
@@ -283,8 +285,13 @@ def property_period(
     *,
     live_only: bool = False,
     cadence: Optional[str] = None,
+    rate: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Figures for one property and the period (of its cadence) containing month."""
+    """Figures for one property and the period (of its cadence) containing month.
+
+    ``rate`` overrides the property's current rate: a correction recalculates a
+    sealed period at the rate it was sealed with, not at today's rate.
+    """
     chosen = cadence if cadence in CADENCES else cadence_of(apartment)
     if not live_only:
         from . import stay_fee_filing
@@ -295,7 +302,7 @@ def property_period(
     if not is_active(apartment):
         return None
     first, last = period_bounds(chosen, month)
-    rate = int(apartment["stay_fee_rate_czk"])
+    rate = int(apartment["stay_fee_rate_czk"]) if rate is None else int(rate)
     lines: List[Dict[str, Any]] = []
     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
         if not reporting.guest_has_signature(row):
@@ -509,8 +516,10 @@ def hlaseni(group, issued_on: date) -> Dict[str, Any]:
                 "amount_czk": period["adjustment_bed_days"] * period["rate_czk"],
             })
         for line in period["lines"]:
-            if line["status"] == "exempt":
-                bucket = minors if line["auto_minor"] else hosts
+            if line["exempt_nights"]:
+                # A guest who turns 18 inside the period is "liable" overall
+                # but still carries exempt minor nights; they count as minors.
+                bucket = minors if (line["auto_minor"] or line["status"] == "liable") else hosts
                 bucket["count"] += 1
                 bucket["nights"] += line["exempt_nights"]
     not_charged = [
@@ -622,5 +631,5 @@ def register_csv(rows: List[Dict[str, Any]]) -> bytes:
     writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL)
     writer.writerow([label for _, label in REGISTER_COLUMNS])
     for row in rows:
-        writer.writerow([row[key] for key, _ in REGISTER_COLUMNS])
+        writer.writerow([csv_safe(row[key]) for key, _ in REGISTER_COLUMNS])
     return ("﻿" + buffer.getvalue()).encode("utf-8")

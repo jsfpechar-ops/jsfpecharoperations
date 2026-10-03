@@ -7,8 +7,10 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import (
     alerts,
@@ -21,6 +23,7 @@ from . import (
     scheduler,
     security,
     seo,
+    templating,
 )
 from .routes import admin, guest, invoices, legal, stay_fees
 from .sample_calendar import sample_calendar_response
@@ -132,6 +135,59 @@ async def expired_form_handler(_request: Request, exc: security.ExpiredFormError
     return RedirectResponse(exc.location, status_code=303)
 
 
+def _wants_html(request: Request) -> bool:
+    return not request.url.path.startswith("/api/") and "text/html" in request.headers.get("accept", "")
+
+
+_CSP = (
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+    "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
+    "frame-src https://challenges.cloudflare.com; "
+    "connect-src 'self' https://challenges.cloudflare.com"
+)
+
+
+def _harden(response):
+    """Headers every page needs. The 500 handler runs outside the middleware."""
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
+    response.headers.setdefault("Content-Security-Policy", _CSP)
+    return response
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_error_handler(request: Request, exc: StarletteHTTPException):
+    """A branded page for people; the JSON body stays for scripts and the API."""
+    if exc.status_code not in (404, 405) or not _wants_html(request):
+        return await http_exception_handler(request, exc)
+    response = templating.render(
+        request, "error.html", {"error_kind": "not_found"}, status_code=exc.status_code
+    )
+    if exc.headers:
+        response.headers.update(exc.headers)  # keeps Allow on a 405
+    return response
+
+
+@app.exception_handler(Exception)
+async def server_error_handler(request: Request, exc: Exception):
+    """Log the failure and show a calm page instead of a bare 500 text."""
+    # The route template, never the path: guest links carry a token (OPS-3).
+    log.exception("unhandled error on %s", _access_route(request))
+    response = None
+    if _wants_html(request):
+        try:
+            response = templating.render(request, "error.html", {"error_kind": "server"}, status_code=500)
+        except Exception:
+            log.exception("error page failed to render")
+    if response is None:
+        response = PlainTextResponse("Internal Server Error", status_code=500)
+    response.headers["Cache-Control"] = "no-store, private"
+    return _harden(response)
+
+
 @app.exception_handler(security.GuestFormExpiredError)
 async def guest_form_expired_handler(request: Request, exc: security.GuestFormExpiredError):
     """Tell a guest their form expired instead of returning a bare 403 body."""
@@ -145,18 +201,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     started = time.perf_counter()
     response = await call_next(request)
     security.attach_csrf_cookie(request, response)
-    response.headers.setdefault("X-Content-Type-Options", "nosniff")
-    response.headers.setdefault("X-Frame-Options", "DENY")
-    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-    response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
-    response.headers.setdefault(
-        "Content-Security-Policy",
-        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
-        "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-        "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
-        "frame-src https://challenges.cloudflare.com; "
-        "connect-src 'self' https://challenges.cloudflare.com",
-    )
+    _harden(response)
     # Everything outside /static carries passport numbers, addresses and
     # signatures. Guests hand the phone back and hosts share laptops, so these
     # pages must not sit in history, the back/forward cache, or a proxy.

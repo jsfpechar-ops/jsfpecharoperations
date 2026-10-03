@@ -61,8 +61,8 @@ The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `UBYHOST_PUBLIC_BASE_URL` | `http://127.0.0.1:8080` | Used to build guest permalinks, to match `Origin`/`Referer` on host POSTs, and to decide whether guest cookies get the `Secure` flag. If this is wrong, guest links point at the wrong host and the ownership/claim cookies may be issued without `Secure`. |
-| `UBYHOST_DOMAIN` | unset | Expected public hostname. Only used by the startup guard, which warns when it disagrees with `PUBLIC_BASE_URL`. |
-| `UBYHOST_GUEST_PIN` | `1` | `0` removes the PIN gate from every guest route, leaving the permalink token as the only barrier. A production deployment with this off gets a startup warning. |
+| `UBYHOST_DOMAIN` | unset | Expected public hostname. Only used by the startup guard. When it disagrees with `PUBLIC_BASE_URL`, production refuses to start and other deployments get a warning. Production also refuses a `PUBLIC_BASE_URL` that is not `https://`. |
+| `UBYHOST_GUEST_PIN` | `1` | `0` removes the PIN gate from every guest route, leaving the permalink token as the only barrier. A production deployment refuses to start with this off. |
 | `UBYHOST_GUEST_NOTICE_VERSION` | `1.0` | Version stamped on a guest's notice acknowledgement (BE-5). Bump whenever a `legal_notice_*` / `privacy_*` string in `i18n.py` changes materially. |
 | `TURNSTILE_SITE_KEY` | the production widget key in `config.py` | Cloudflare Turnstile site key. |
 | `TURNSTILE_SECRET` | unset | Turnstile secret. |
@@ -124,7 +124,7 @@ isolated to its source.
 | `UBYHOST_OPERATOR_EMAIL` | `support@ubyhost.com` |
 | `UBYHOST_OPERATOR_REGISTRY_URL` | unset |
 
-All six must be set for your own deployment. Without them the legal pages
+All six must be set for your own deployment. Production refuses to start while the name, IČO or address is empty. Set them only in the server `.env`, never in the repository. Without them the legal pages
 will show empty operator details; set `UBYHOST_OPERATOR_REGISTRY_URL` to your
 own public-register entry, or the legal pages will name the wrong company.
 
@@ -171,7 +171,7 @@ them; Render does.
 | `UBYHOST_SECRET_KEY` | unset | `App/scripts/backup_data.sh` — written into the snapshot when there is no `data/secret_key` file, so an off-site restore can be decrypted |
 | `UBYHOST_BACKUP_AGE_RECIPIENT` | unset | `App/scripts/backup_data.sh` — public `age1...` recipient the snapshot is encrypted to. **Required when `UBYHOST_DEPLOYMENT=production`**; the run fails closed without it |
 | `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept |
-| `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup; if unset, no one is told when backups stop |
+| `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup. Required in production: `preflight.sh` refuses to deploy while it is empty. |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
 | `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |
 | `UBYHOST_S3_BUCKET` | unset | `backup-s3.sh` |

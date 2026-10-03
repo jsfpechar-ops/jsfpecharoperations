@@ -58,6 +58,7 @@ def validate_runtime_env(
     public_base_url: Optional[str] = None,
     domain: Optional[str] = None,
     environ: Optional[Mapping[str, str]] = None,
+    operator_identity: Optional[Mapping[str, str]] = None,
 ) -> List[str]:
     """Return warnings. Raise EnvGuardError when starting would be unsafe."""
     env = (ubyport_env if ubyport_env is not None else config.UBYPORT_ENV).lower()
@@ -115,8 +116,9 @@ def validate_runtime_env(
         )
 
     if deploy == "production" and not pin:
-        warnings.append(
-            "UBYHOST_GUEST_PIN is off on production — guest permalinks are unprotected"
+        raise EnvGuardError(
+            "UBYHOST_GUEST_PIN is off on production. Guest permalinks would be "
+            "unprotected. Set UBYHOST_GUEST_PIN=1."
         )
 
     if deploy == "production" and not scheduler:
@@ -128,13 +130,34 @@ def validate_runtime_env(
     expected_host = (domain_name or "").strip().lower()
     actual_host = public_url_host(base_url)
     if expected_host and actual_host and expected_host != actual_host:
-        warnings.append(
+        message = (
             f"UBYHOST_PUBLIC_BASE_URL host {actual_host!r} does not match "
             f"UBYHOST_DOMAIN {expected_host!r} — guest permalinks will be wrong"
         )
+        if deploy == "production":
+            raise EnvGuardError(message)
+        warnings.append(message)
 
     if deploy == "production" and not str(base_url).lower().startswith("https://"):
-        warnings.append("UBYHOST_PUBLIC_BASE_URL should use https:// in production")
+        raise EnvGuardError("UBYHOST_PUBLIC_BASE_URL must use https:// in production")
+
+    if deploy == "production":
+        identity = (
+            operator_identity
+            if operator_identity is not None
+            else {
+                "UBYHOST_OPERATOR_NAME": config.OPERATOR_NAME,
+                "UBYHOST_OPERATOR_ICO": config.OPERATOR_ICO,
+                "UBYHOST_OPERATOR_ADDRESS": config.OPERATOR_ADDRESS,
+            }
+        )
+        missing = [key for key, value in identity.items() if not str(value or "").strip()]
+        if missing:
+            raise EnvGuardError(
+                "The legal notice needs the software operator. Set "
+                + ", ".join(missing)
+                + " in the production .env."
+            )
 
     try:
         warnings.extend(

@@ -228,10 +228,6 @@ def _reason_text(state: str, reason: str, transport: bool, lang: str) -> str:
 #    status slot must not, because two primaries means no primary.
 
 
-def _fmt_dates(date_from: Optional[str], date_to: Optional[str]) -> str:
-    return validation.fmt_date_range(date_from, date_to)
-
-
 def _block_heading(text: str) -> str:
     return (
         f'<tr><td style="padding:20px 24px 0 24px;">'
@@ -349,21 +345,6 @@ def _block_panel(
         f'<div style="background:{CANVAS};border:1px solid {LINE};'
         f'border-radius:12px;padding:18px 20px;">' + "".join(parts) + "</div></td></tr>"
     )
-
-
-def _panel_text_lines(panel: Dict[str, Any]) -> List[str]:
-    """The plain-text mirror of a money panel, in the same order."""
-    lines = []
-    if panel.get("title"):
-        lines.append(str(panel["title"]))
-    for row in panel.get("rows") or []:
-        lines.append(f"{row[0]}: {row[1]}")
-    if panel.get("note"):
-        lines.append(str(panel["note"]))
-    action = panel.get("action")
-    if action:
-        lines.append(f"{action[1]}: {action[0]}")
-    return lines
 
 
 def _block_link(url: str, label: str) -> str:
@@ -865,6 +846,146 @@ def _submission_problem(
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
     )
+
+
+# --- workspace deletion ----------------------------------------------------
+#
+# The host is the controller and keeps the duty to hold invoices, stay-fee
+# filings and Doručenky. Sign-in stays open until deletion; the in-app banner
+# links to a self-service ZIP export.
+
+WORKSPACE_DELETION_STAGES = ("scheduled", "week_before")
+
+
+def workspace_contact_emails(owner_user_id: int) -> List[str]:
+    """Every distinct contact address on the workspace's legal entities."""
+    rows = db.query(
+        "SELECT contact_email FROM legal_entity WHERE owner_user_id = ? ORDER BY id",
+        (owner_user_id,),
+    )
+    found: List[str] = []
+    for row in rows:
+        address = mail.normalise_email(row["contact_email"] or "")
+        if address and address not in found:
+            found.append(address)
+    return found
+
+
+def build_workspace_deletion(*, stage: str, date: str, lang: Optional[str] = None) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    support = config.OPERATOR_EMAIL
+    subject = _text(lang, f"mail.workspace_deletion.subject_{stage}", date=date)
+    heading = _text(lang, "mail.workspace_deletion.heading", date=date)
+    intro = _text(lang, f"mail.workspace_deletion.intro_{stage}", date=date)
+    keep_label = _text(lang, "mail.workspace_deletion.keep_label")
+    keep = _text(lang, "mail.workspace_deletion.keep", date=date, support=support)
+    footer = _text(lang, "mail.workspace_deletion.footer", support=support)
+    text = "\n".join([intro, "", f"{keep_label}: {keep}", "", "--", "UbyHost", footer])
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_section(keep_label, keep),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=heading,
+            preheader=intro,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }
+
+
+def cancelled_with_guests(apartment_id: int, reservation_id: int, variant: str) -> Optional[int]:
+    """Tell the host by e-mail that a cancelled stay still had guest forms."""
+    try:
+        from . import validation
+
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+        if not apartment:
+            return None
+        to_email = _entity_contact_email(apartment["legal_entity_id"])
+        if not to_email:
+            return None
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        if not reservation:
+            return None
+        lang = HOST_MAIL_LANGUAGE
+        property_name = apartment["internal_name"] or "UbyHost"
+        formatted_date = validation.fmt_date(reservation["date_from"])
+        title = host_i18n.translate(
+            lang, f"notification.cancelled_with_guests.title.{variant}",
+            date=formatted_date,
+        )
+        detail = host_i18n.translate(lang, "notification.cancelled_with_guests.detail")
+        subject = host_i18n.translate(
+            lang,
+            "mail.cancelled_with_guests.subject",
+            property=property_name,
+            date=formatted_date,
+        )
+        stay_url = _public(f"/reservations/{reservation_id}")
+        action = host_i18n.translate(lang, "mail.cancelled_with_guests.action")
+        text = "\n".join([title, "", detail, "", f"{action}: {stay_url}"])
+        html = _shell(
+            lang=lang,
+            title=property_name,
+            preheader=title,
+            blocks=[
+                _block_heading(title),
+                _block_paragraph(detail),
+                _block_button(stay_url, action),
+            ],
+            footer_lines=[
+                "UbyHost",
+                _text(lang, "mail.workspace_deletion.footer", support=config.OPERATOR_EMAIL),
+            ],
+        )
+        return mail.enqueue(
+            kind="cancelled_with_guests",
+            idempotency_key=f"cancelled_with_guests:{reservation_id}:{variant}",
+            to_email=to_email,
+            subject=subject,
+            payload={"text": text, "html": html, "lang": lang},
+            apartment_id=apartment_id,
+            owner_user_id=apartment["owner_user_id"],
+        )
+    except Exception:
+        log.exception(
+            "cancelled_with_guests_mail_failed apartment_id=%s reservation_id=%s",
+            apartment_id,
+            reservation_id,
+        )
+        return None
+
+
+def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:
+    """Queue the deletion notice to every contact address. Returns how many."""
+    if stage not in WORKSPACE_DELETION_STAGES:
+        raise ValueError(f"unknown stage {stage}")
+    date = validation.fmt_date(due_at[:10])
+    content = build_workspace_deletion(stage=stage, date=date)
+    payload: Dict[str, Any] = {
+        "text": content["text"],
+        "html": content["html"],
+        "lang": HOST_MAIL_LANGUAGE,
+        "reply_to": config.OPERATOR_EMAIL,
+    }
+    queued = 0
+    for address in workspace_contact_emails(owner_user_id):
+        if mail.enqueue(
+            kind="workspace_deletion",
+            idempotency_key=f"workspace_deletion:{owner_user_id}:{due_at}:{stage}:{address}",
+            to_email=address,
+            subject=content["subject"],
+            payload=payload,
+            owner_user_id=owner_user_id,
+        ):
+            queued += 1
+    return queued
 
 
 # --- guest mail -------------------------------------------------------------

@@ -37,6 +37,7 @@ def _cleanup():
             )
             db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment_id,))
             db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+            db.execute("DELETE FROM stay_fee_filing WHERE apartment_id = ?", (apartment_id,))
             db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
         _unlock("1")
         db.execute("DELETE FROM invoice_item WHERE invoice_id IN "
@@ -48,6 +49,7 @@ def _cleanup():
         db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
         db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (user_id,))
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
+        db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (user_id,))
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
@@ -140,7 +142,56 @@ def test_the_workspace_export_streams_a_zip_with_a_manifest():
     )
 
 
-def test_scheduling_deletion_requires_the_username_and_disables_the_account():
+def test_workspace_export_includes_saved_stay_fee_filings():
+    owner, _entity, apartment, *_rest = _seed("ws-fee")
+    _admin("ws-fee-admin")
+    now = db.utcnow()
+    db.insert(
+        "stay_fee_filing",
+        {
+            "apartment_id": apartment,
+            "period_key": "2026-01",
+            "version": 1,
+            "cadence": "monthly",
+            "rate_czk": 50,
+            "liable_days": 3,
+            "exempt_days": 0,
+            "total_due_czk": 150,
+            "total_collected_czk": 150,
+            "pdf_enc": db.encrypt_blob(b"%PDF-stay-fee"),
+            "csv_enc": db.encrypt_blob(b"period,total\n2026-01,150"),
+            "created_at": now,
+        },
+    )
+    response = _login("ws-fee-admin").post(
+        f"/admin/users/{owner}/export", follow_redirects=False
+    )
+    assert response.status_code == 200
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    pdf_name = f"stay_fees/{apartment}-2026-01-v1.pdf"
+    assert pdf_name in archive.namelist()
+    manifest = json.loads(archive.read("manifest.json"))
+    assert pdf_name in manifest["stay_fee_files"]
+
+
+def test_the_host_can_download_a_zip_while_deletion_is_scheduled():
+    owner, *_rest = _seed("ws-self")
+    due = (date.today() + timedelta(days=30)).isoformat()
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        (due, owner),
+    )
+    client = _login("ws-self")
+    page = client.get("/", follow_redirects=False)
+    assert page.status_code == 200
+    assert "Download everything (ZIP)" in page.text
+    response = client.post("/settings/workspace-export", follow_redirects=False)
+    assert response.status_code == 200
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    assert "manifest.json" in archive.namelist()
+
+
+def test_scheduling_deletion_requires_the_username_and_keeps_sign_in_active():
     owner, *_rest = _seed("ws-del")
     _admin("ws-admin")
     client = _login("ws-admin")
@@ -164,7 +215,7 @@ def test_scheduling_deletion_requires_the_username_and_disables_the_account():
         "SELECT deletion_due_at, active FROM user_account WHERE id = ?", (owner,)
     )
     assert row["deletion_due_at"]
-    assert row["active"] == 0
+    assert row["active"] == 1
 
 
 def test_due_workspaces_are_deleted_and_nothing_else():
@@ -215,3 +266,107 @@ def test_an_issued_invoice_does_not_block_workspace_deletion():
     )
     retention._workspace_deletion_step(date.today(), False, None)
     assert db.query_one("SELECT id FROM invoice WHERE id = ?", (invoice,)) is None
+
+
+def test_a_workspace_with_filed_stay_fees_and_property_invoices_is_deleted_completely():
+    owner, entity, apartment, _reservation, _guest = _seed("ws-full")
+    now = db.utcnow()
+    db.insert("invoice_sequence", {"legal_entity_id": entity, "year": 2026, "last_no": 1})
+    db.insert(
+        "invoice",
+        {
+            "legal_entity_id": entity, "apartment_id": apartment, "kind": "invoice",
+            "seq_year": 2026, "seq_no": 1, "number": "INV-2", "vs": "2", "lang": "en",
+            "vat_status": "non_payer", "issue_date": "2026-01-01", "seller_name": "S",
+            "seller_seat": "P", "buyer_name": "B", "total_haler": 100, "issued_at": now,
+            "owner_user_id": owner, "created_at": now,
+        },
+    )
+    filing = db.insert(
+        "stay_fee_filing",
+        {
+            "apartment_id": apartment, "period_key": "2026-01", "cadence": "monthly",
+            "rate_czk": 50, "liable_days": 1, "exempt_days": 0, "total_due_czk": 50,
+            "total_collected_czk": 50, "created_at": now,
+        },
+    )
+    db.insert(
+        "stay_fee_adjustment",
+        {
+            "apartment_id": apartment, "period_key": "2026-01", "direction": "add",
+            "mode": "bed_days", "bed_days": 1, "reason_enc": "x", "created_at": now,
+            "filing_id": filing,
+        },
+    )
+    mail = db.insert(
+        "email_outbox",
+        {
+            "idempotency_key": "ws-full-mail", "kind": "guest_link", "apartment_id": apartment,
+            "owner_user_id": owner, "to_email": "guest@example.invalid", "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        ((date.today() - timedelta(days=1)).isoformat(), owner),
+    )
+    retention._workspace_deletion_step(date.today(), False, None)
+    assert db.query_one("SELECT id FROM user_account WHERE id = ?", (owner,)) is None
+    assert db.query_one("SELECT id FROM apartment WHERE id = ?", (apartment,)) is None
+    assert db.query_one("SELECT id FROM legal_entity WHERE id = ?", (entity,)) is None
+    assert db.query_one("SELECT id FROM email_outbox WHERE id = ?", (mail,)) is None
+
+
+def _notices(owner):
+    return db.query(
+        "SELECT to_email, subject, payload FROM email_outbox "
+        "WHERE kind = 'workspace_deletion' AND owner_user_id = ? ORDER BY id",
+        (owner,),
+    )
+
+
+def test_scheduling_deletion_mails_every_contact_address_once():
+    owner, entity, *_rest = _seed("ws-mail")
+    db.execute("UPDATE legal_entity SET contact_email = ? WHERE id = ?", ("host@example.com", entity))
+    db.insert(
+        "legal_entity",
+        {"name": "second", "owner_user_id": owner, "contact_email": "HOST@example.com",
+         "created_at": db.utcnow()},
+    )
+    _admin("ws-admin")
+    client = _login("ws-admin")
+    response = client.post(
+        f"/admin/users/{owner}/schedule-deletion",
+        data={"confirm": "ws-mail"}, follow_redirects=False,
+    )
+    assert response.status_code == 303
+    rows = _notices(owner)
+    assert [row["to_email"] for row in rows] == ["host@example.com"]
+    assert "will be deleted on" in rows[0]["subject"]
+    payload = json.loads(rows[0]["payload"])
+    assert "support@ubyhost.com" in payload["text"]
+    assert payload["reply_to"] == "support@ubyhost.com"
+
+
+def test_a_workspace_due_within_a_week_gets_one_reminder():
+    owner, entity, *_rest = _seed("ws-soon")
+    db.execute("UPDATE legal_entity SET contact_email = ? WHERE id = ?", ("soon@example.com", entity))
+    later, later_entity, *_rest = _seed("ws-later")
+    db.execute("UPDATE legal_entity SET contact_email = ? WHERE id = ?", ("later@example.com", later_entity))
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        ((date.today() + timedelta(days=5)).isoformat() + "T12:00:00+00:00", owner),
+    )
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        ((date.today() + timedelta(days=20)).isoformat() + "T12:00:00+00:00", later),
+    )
+    retention._workspace_deletion_step(date.today(), True, None)
+    assert _notices(owner) == []  # a dry run deletes nothing, so it warns of nothing
+
+    retention._workspace_deletion_step(date.today(), False, None)
+    retention._workspace_deletion_step(date.today(), False, None)
+    rows = _notices(owner)
+    assert len(rows) == 1
+    assert "in 7 days" in rows[0]["subject"]
+    assert _notices(later) == []

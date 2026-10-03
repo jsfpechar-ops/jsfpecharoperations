@@ -58,8 +58,8 @@ def test_english_and_czech_carry_the_same_keys():
 
 def test_release_help_describes_optional_passports_and_cookie_lifetimes():
     for lang in ("en", "cs"):
-        passport = host_i18n.translate(lang, "guide.security.passports")
-        cookies = host_i18n.translate(lang, "guide.guests.step_email")
+        passport = host_i18n.translate(lang, "guide.guests.photo")
+        cookies = host_i18n.translate(lang, "guide.guests.cookies")
         assert "UbyPort" in passport
         assert ("off by default" in passport) or ("výchozím stavu vypnuté" in passport)
         assert ("7 days" in cookies and "60 days" in cookies) or (

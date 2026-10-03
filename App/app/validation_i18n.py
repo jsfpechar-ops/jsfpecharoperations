@@ -198,16 +198,6 @@ def localize(message: str, lang: str = "cs") -> str:
     return message
 
 
-def localize_issues(issues: List[validation.Issue], lang: str = "cs") -> List[validation.Issue]:
-    """The same issues, with their sentences in the reader's language."""
-    if lang != "cs":
-        return issues
-    return [
-        validation.Issue(issue.field, localize(issue.message, lang), issue.severity)
-        for issue in issues
-    ]
-
-
 def guest_localize(message: str, lang: str = "cs") -> str:
     """The sentence as the guest form should read it, in the guest's language.
 

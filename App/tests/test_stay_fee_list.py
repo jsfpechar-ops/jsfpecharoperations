@@ -206,7 +206,7 @@ def test_period_filter_uses_month_picker_not_chip_rail(host):
     assert 'href="/stay-fees?month=2026-07"' in response.text
     assert 'href="/stay-fees?month=2026-09"' in response.text
     assert 'class="chip' not in response.text
-    assert "host-month-filter" in response.text
+    assert "list-filter" in response.text
 
 
 def test_period_filter_reaches_old_months(host):
@@ -221,13 +221,14 @@ def test_period_filter_reaches_old_months(host):
     assert f"/stay-fees/{apartment_id}?month=2024-01" in response.text
 
 
-def test_future_month_redirects_to_default(host):
+def test_future_or_crafted_month_falls_back_to_default(host):
     client, _owner_id, _entity_id = host
 
-    response = client.get("/stay-fees?month=2026-10", follow_redirects=False)
+    for month in ("2026-10", "0001-01"):
+        response = client.get(f"/stay-fees?month={month}", follow_redirects=False)
 
-    assert response.status_code == 303
-    assert response.headers["location"] == "/stay-fees?month=2026-08"
+        assert response.status_code == 200
+        assert 'value="2026-08"' in response.text
 
 
 def test_sidebar_link_waits_for_opt_in(host):

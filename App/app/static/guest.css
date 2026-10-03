@@ -380,45 +380,6 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
   background: color-mix(in srgb, var(--g-accent) 4%, transparent);
   transform: none;
 }
-.g-range-cue {
-  position: relative;
-  align-self: stretch;
-  width: 18px;
-  flex: 0 0 18px;
-}
-.g-range-cue::before,
-.g-range-cue::after {
-  content: "";
-  position: absolute;
-  left: 5px;
-  z-index: 1;
-  width: 8px;
-  height: 8px;
-  border: 2px solid var(--g-line-2);
-  border-radius: 50%;
-  background: var(--g-surface);
-  transition: border-color 160ms var(--g-ease), background 160ms var(--g-ease);
-}
-.g-range-cue::before { top: 4px; }
-.g-range-cue::after { bottom: 4px; }
-.g-range-cue i {
-  position: absolute;
-  left: 8px;
-  top: 13px;
-  bottom: 13px;
-  width: 2px;
-  background: var(--g-line-2);
-  transition: background 160ms var(--g-ease);
-}
-.g-arrival-lane:hover .g-range-cue::before,
-.g-arrival-lane:hover .g-range-cue::after,
-.g-arrival-lane:focus-visible .g-range-cue::before,
-.g-arrival-lane:focus-visible .g-range-cue::after {
-  border-color: var(--g-accent);
-  background: var(--g-accent);
-}
-.g-arrival-lane:hover .g-range-cue i,
-.g-arrival-lane:focus-visible .g-range-cue i { background: var(--g-accent); }
 .g-arrival-lane:active { transform: translateY(1px); opacity: .88; }
 .g-lane-status { display: inline; margin-left: 8px; color: var(--g-ok) !important; font-weight: 650; }
 .g-lane-status::before { content: "\00b7"; margin-right: 8px; color: var(--g-muted); }
@@ -663,6 +624,157 @@ select {
 }
 .checkline:has(input:checked) { border-color: var(--g-accent); background: var(--g-accent-soft); }
 
+/* --- guest-enhancements.js (stepper, country search, PIN cells) -------- */
+
+.g-vh {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0 !important;
+  border: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* Native <select> kept for submit/validation; combobox input is the visible control. */
+select.g-vh {
+  display: none !important;
+}
+
+.g-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1.5px solid var(--g-line-2);
+  border-radius: var(--g-radius);
+  background: var(--g-surface);
+}
+.g-stepper input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  border: 0 !important;
+  box-shadow: none !important;
+  text-align: center;
+  font: 700 34px/1 var(--font-sans, inherit);
+  -moz-appearance: textfield;
+  background: transparent;
+}
+.g-stepper input::-webkit-outer-spin-button,
+.g-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.g-step-btn {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--g-accent-soft);
+  color: var(--brand-ink, var(--g-accent));
+  font: 700 26px/1 var(--font-sans, inherit);
+  cursor: pointer;
+}
+.g-step-btn:hover { background: color-mix(in srgb, var(--brand-action) 22%, var(--g-surface)); }
+
+.g-pin-cells {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  max-width: 400px;
+}
+.g-pin-cell {
+  display: grid;
+  place-items: center;
+  height: 64px;
+  border: 1.5px solid var(--g-line-2);
+  border-radius: var(--g-radius-sm);
+  background: var(--g-surface);
+  color: var(--g-ink);
+  font: 700 26px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  transition: border-color 0.14s var(--g-ease), box-shadow 0.14s var(--g-ease);
+}
+.g-pin-cell.is-caret { border-color: var(--brand-action); box-shadow: 0 0 0 4px var(--focus-ring); }
+.g-pin-cell.is-caret:empty::after {
+  content: "";
+  width: 2px;
+  height: 28px;
+  background: var(--brand-action);
+  animation: g-pin-blink 1s steps(1) infinite;
+}
+.g-pin-cells.is-complete .g-pin-cell { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+.g-pin-cells.is-bad .g-pin-cell { border-color: var(--red); }
+.g-pin-cells .g-pin-input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  letter-spacing: 0;
+  opacity: 0.01;
+  box-shadow: none;
+}
+@keyframes g-pin-blink { 50% { opacity: 0; } }
+
+.g-combo { position: relative; }
+.g-combo input { padding-right: 44px; }
+.g-combo::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: 22px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--g-muted);
+  border-bottom: 2px solid var(--g-muted);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.g-combo-list {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  max-height: 280px;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  list-style: none;
+  background: var(--g-surface);
+  border: 1px solid var(--g-line);
+  border-radius: var(--g-radius-sm);
+  box-shadow: 0 12px 32px rgba(22, 25, 27, 0.12);
+}
+.g-combo-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: var(--g-radius-sm);
+  color: var(--g-ink);
+  cursor: pointer;
+}
+.g-combo-list li b { width: 36px; color: var(--g-muted); font-size: 12px; }
+.g-combo-list li:hover,
+.g-combo-list li.is-active { background: var(--g-surface-2); }
+.g-combo-list li[aria-selected="true"] { color: var(--brand-ink, var(--g-accent)); font-weight: 650; }
+.g-combo-list .g-combo-none { color: var(--g-muted); cursor: default; }
+.g-combo-error { color: var(--red); }
+
 .g-pin-input {
   font-size: 30px;
   letter-spacing: 0.35em;
@@ -670,6 +782,12 @@ select {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   padding: 16px 14px;
+}
+.g-pin-cells + .g-pin-input,
+.g-pin-cells .g-pin-input {
+  font-size: 16px;
+  letter-spacing: 0;
+  padding: 0;
 }
 .g-pin-recovery {
   margin: 14px 0 0;
@@ -1045,7 +1163,8 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 .g-review-list dd { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .g-review-change {
   margin-left: auto;
-  padding: 2px 0;
+  min-height: 44px;
+  padding: 10px 0;
   border: 0;
   background: none;
   color: var(--g-accent);

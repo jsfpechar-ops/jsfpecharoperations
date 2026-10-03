@@ -19,6 +19,7 @@ from .. import (
     db,
     host_i18n,
     incidents,
+    mail_notify,
     rate_limit,
     security,
     turnstile,
@@ -178,7 +179,14 @@ async def two_factor_login(request: Request):
 
 
 @router.post("/logout")
-def logout():
+def logout(request: Request):
+    # Cookies are signed, not stored, so clearing this browser's copy alone
+    # would leave a copied cookie valid. Log out ends the account's sessions
+    # everywhere (the real account, also when an admin is impersonating).
+    account = auth.current_user(request)
+    if account:
+        auth.end_all_sessions(account["id"])
+        db.audit("logout", actor=account["username"], owner_user_id=account["id"])
     response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
     return response
@@ -688,7 +696,8 @@ async def user_schedule_deletion(user_id: int, request: Request):
     due = (
         datetime.now(timezone.utc) + timedelta(days=WORKSPACE_DELETION_DAYS)
     ).replace(microsecond=0).isoformat()
-    db.update("user_account", user_id, {"deletion_due_at": due, "active": 0})
+    db.update("user_account", user_id, {"deletion_due_at": due})
+    mail_notify.workspace_deletion(user_id, due, "scheduled")
     db.audit(
         "workspace_deletion_scheduled",
         f"user={user_id} due={due}",

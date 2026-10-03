@@ -1,0 +1,417 @@
+{% extends "guest/base.html" %}
+
+{% macro val(name, fallback='') %}{{ values.get(name) if values.get(name) is not none else (guest[name] if guest and name in guest.keys() and guest[name] else fallback) }}{% endmacro %}
+{% macro err_for(field) %}
+  {% for issue in issues if issue.field == field %}
+    <div class="{{ 'err' if issue.is_error else 'hint' }}"
+         {% if issue.is_error %}id="{{ field }}-error"{% endif %}>{{ issue.message }}</div>
+  {% endfor %}
+{% endmacro %}
+{% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
+{# A red border is invisible to a screen reader, so say it in the markup too
+   and point at the message instead of leaving the guest to hunt for it. #}
+{% macro invalid(field) %}{% if issues | selectattr('is_error') | selectattr('field', 'equalto', field) | list %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}{% endmacro %}
+
+{% block wrap_class %}g-checkin-page{% endblock %}
+{% import "guest/_ticket.html" as tw with context %}
+{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
+{% block tw_progress %}50{% endblock %}
+
+{% block content %}
+<aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
+  <div class="g-checkin-stay">
+    {% if facility %}<span class="g-property-mark property-tone-{{ facility_tone }}" aria-hidden="true">{{ facility[:1] }}</span>{% endif %}
+    <div class="g-checkin-stay-body">
+      <strong>{{ facility }}</strong>
+      <span>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</span>
+      <span>{{ nights_label(reservation.date_from, reservation.date_to) }}{% if person_number and expected_people %} &middot; {{ t('person_progress', current=person_number, total=expected_people) }}{% endif %}</span>
+    </div>
+  </div>
+  <h2 class="g-checkin-steps-title">{{ t('steps_label') }}</h2>
+  <ol class="g-checkin-steps" data-checkin-steps
+      data-done-label="{{ t('step_done') }}" data-edit-label="{{ t('review_edit') }}"></ol>
+</aside>
+
+<div class="g-checkin-main">
+{% if back_url %}
+  <a class="g-back" href="{{ back_url }}">&larr; {{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
+{% elif can_pick_other %}
+  <a class="g-back" href="{{ pick_url }}">&larr; {{ t('wrong_dates') }}</a>
+{% endif %}
+
+{% if issues | selectattr('is_error') | list %}
+  <div class="g-err">
+    <strong>{{ t('fix_errors') }}</strong>
+    <ul>
+      {# A plain "#field" jump cannot reach a field on a step the wizard is not
+         showing, so each item is a link the wizard's own script drives. #}
+      {% for issue in issues if issue.is_error %}<li><a href="#{{ issue.field }}">{{ issue.message }}</a></li>{% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+{% with why_classes = 'g-card g-why g-fold' %}{% include "guest/_why.html" %}{% endwith %}
+
+{% if apartment.guest_message %}
+<details class="g-card g-host-message g-fold">
+  <summary>{{ t('message_from_host') }}</summary>
+  <p>{{ apartment.guest_message }}</p>
+</details>
+{% endif %}
+
+<form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
+      enctype="multipart/form-data" data-guest-wizard
+      data-next-label="{{ t('next_step') }}" data-back-label="{{ t('previous_step') }}"
+      data-progress-label="{{ t('form_step_progress', current='__CURRENT__', total='__TOTAL__') }}"
+      data-progress-title="{{ t('form_step_progress_title', progress='__PROGRESS__', title='__TITLE__') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% if guest %}<input type="hidden" name="guest_id" value="{{ guest.id }}">{% endif %}
+  <input type="hidden" name="stay_from"
+         value="{{ values.get('stay_from') or (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
+  <input type="hidden" name="stay_to"
+         value="{{ values.get('stay_to') or (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
+
+  <p class="g-form-line">
+    <span>{{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}</span>
+    <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
+    {% if person_number and expected_people %}
+      <span>{{ t('person_progress', current=person_number, total=expected_people) }}</span>
+    {% endif %}
+  </p>
+  <div class="g-wizard-progress" data-wizard-progress aria-live="polite" hidden>
+    <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
+  </div>
+
+  <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}" data-tw-short="{{ t('tw_step_details') }}">
+    <h2>
+      {{ t('your_details') }}
+      {% if person_number and person_number > 1 %}
+        <span class="g-chip">{{ t('person') }} {{ person_number }}</span>
+      {% endif %}
+    </h2>
+
+    {% if ask_party_size %}
+      <div class="g-field" data-tw-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
+        <label for="party_size">{{ t('party_question') }}</label>
+        <input type="number" id="party_size" name="party_size" min="1" max="60" required
+               inputmode="numeric" autocomplete="off"
+               value="{{ values.get('party_size') or 1 }}">
+        <div class="hint">{{ t('party_help') }}</div>
+        {{ err_for('party_size') }}
+      </div>
+    {% endif %}
+
+    <div class="g-row">
+      <div class="g-field">
+        <label for="first_name">{{ t('first_name') }}</label>
+        <input class="{{ bad('first_name') }}" {{ invalid('first_name') }} type="text" id="first_name" name="first_name" maxlength="24"
+               autocomplete="given-name" required value="{{ val('first_name') }}">
+        {{ err_for('first_name') }}
+      </div>
+      <div class="g-field">
+        <label for="surname">{{ t('surname') }}</label>
+        <input class="{{ bad('surname') }}" {{ invalid('surname') }} type="text" id="surname" name="surname" maxlength="50" required
+               autocomplete="family-name" value="{{ val('surname') }}">
+        {{ err_for('surname') }}
+      </div>
+    </div>
+
+    <div class="g-row">
+      <div class="g-field">
+        <label for="birth_date">{{ t('birth_date') }}</label>
+        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date" data-tw-day="{{ t('tw_dob_day') }}" data-tw-month="{{ t('tw_dob_month') }}" data-tw-year="{{ t('tw_dob_year') }}"
+               inputmode="numeric" placeholder="{{ t('date_placeholder') }}" maxlength="10" required
+               autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
+        {# The read-back catches a swapped day and month, which the digits alone
+           cannot: nobody notices 04/07 vs 07/04 until the record is locked. #}
+        <div class="hint" id="birth-date-readback" aria-live="polite"
+             data-template="{{ t('birth_date_readback') }}" data-locale="{{ lang }}"></div>
+        {{ err_for('birth_date') }}
+      </div>
+      <div class="g-field">
+        <label for="nationality">{{ t('nationality') }}</label>
+        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" data-tw-required="{{ t('tw_country_required') }}" required>
+          <option value="">—</option>
+          {% for group in country_groups %}
+            <optgroup label="{{ t(group.key) }}">
+              {% for country in group.options %}
+                <option value="{{ country.code }}" {% if val('nationality') == country.code %}selected{% endif %}>
+                  {{ country.label }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+        {{ err_for('nationality') }}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="g-card" data-guest-step data-step-title="{{ t('tw_document_title') }}" data-tw-short="{{ t('tw_step_document') }}">
+    <h2>{{ t('tw_document_title') }}</h2>
+    <div class="g-field" id="doc-wrap">
+      <label for="doc_number">{{ t('doc_number') }}</label>
+      <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
+             autocapitalize="characters" spellcheck="false" autocorrect="off"
+             value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
+      <div class="hint">{{ t('doc_number_help') }}</div>
+      <div class="tw-doc-tip" aria-hidden="true">
+        <span class="tw-doc-page"><i class="tw-doc-photo"></i><i class="tw-doc-no"></i><i class="tw-doc-lines"></i></span>
+      </div>
+      {{ err_for('doc_number') }}
+    </div>
+
+    <div class="g-field">
+      <label class="checkline" for="child_in_passport">
+        <input type="checkbox" id="child_in_passport" name="child_in_passport" value="1"
+               {% if values.get('child_in_passport') or (guest and guest.doc_number == inpass) %}checked{% endif %}>
+        <span>
+          {{ t('child_title') }}
+          <small>{{ t('child_help') }}</small>
+        </span>
+      </label>
+    </div>
+
+    <div class="g-field" id="parent-doc-wrap" style="display:none">
+      <label for="parent_doc_number">{{ t('parent_doc') }}</label>
+      <input class="{{ bad('parent_doc_number') }}" {{ invalid('parent_doc_number') }} type="text" id="parent_doc_number" name="parent_doc_number" maxlength="30"
+             autocapitalize="characters" value="{{ values.get('parent_doc_number', '') }}">
+      {{ err_for('parent_doc_number') }}
+    </div>
+
+    <div class="g-field">
+      <label for="visa_number">{{ t('visa_number') }} <span class="opt">({{ t('optional') }})</span></label>
+      <input class="{{ bad('visa_number') }}" {{ invalid('visa_number') }} type="text" id="visa_number" name="visa_number" maxlength="15"
+             autocapitalize="characters" spellcheck="false" autocorrect="off" value="{{ val('visa_number') }}">
+      <div class="hint">{{ t('visa_help') }}</div>
+      {{ err_for('visa_number') }}
+    </div>
+
+    <div class="g-field">
+      <label for="purpose">{{ t('purpose') }}</label>
+      <select id="purpose" name="purpose" data-tw-common="10,01,03,11" data-tw-other="{{ t('tw_purpose_other') }}">
+        {% for purpose in purposes %}
+          <option value="{{ purpose.code }}"
+            {% if (val('purpose') or default_purpose) == purpose.code %}selected{% endif %}>
+            {{ purpose.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}" data-tw-short="{{ t('tw_step_home') }}">
+    <h2>{{ t('residence_title') }}</h2>
+    <p class="g-intro">{{ t('residence_help') }}</p>
+    {% if residence_copied_from %}
+      <p class="hint" role="status" data-tw-copied>{{ t('residence_copied', name=residence_copied_from) }}</p>
+    {% endif %}
+    <div class="g-field">
+      <label for="res_street">{{ t('res_street') }}</label>
+      <input class="{{ bad('res_street') }}" {{ invalid('res_street') }} type="text" id="res_street" name="res_street" maxlength="42"
+             autocomplete="address-line1" required value="{{ val('res_street') }}">
+      {{ err_for('res_street') }}
+    </div>
+    <div class="g-row">
+      <div class="g-field">
+        <label for="res_city">{{ t('res_city') }}</label>
+        <input class="{{ bad('res_city') }}" {{ invalid('res_city') }} type="text" id="res_city" name="res_city" maxlength="42"
+               autocomplete="address-level2" required value="{{ val('res_city') }}">
+        {{ err_for('res_city') }}
+      </div>
+      <div class="g-field">
+        <label for="res_country">{{ t('res_country') }}</label>
+        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" data-tw-required="{{ t('tw_country_required') }}" autocomplete="country" required>
+          <option value="">—</option>
+          {% for group in country_groups %}
+            <optgroup label="{{ t(group.key) }}">
+              {% for country in group.options %}
+                <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
+                  {{ country.label }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+        {{ err_for('res_country') }}
+      </div>
+    </div>
+  </div>
+
+  {% if require_passport %}
+  <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}" data-tw-short="{{ t('tw_step_photo') }}"
+       data-guest-step-skip-when="CZE"
+       data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
+    <h2>{{ t('passport_photo_title') }}</h2>
+    <p class="g-intro">{{ t('passport_photo_help') }}</p>
+    <p class="hint" id="passport-photo-pending" hidden>{{ t('passport_photo_pending_nat') }}</p>
+    <p class="hint" id="passport-photo-czech" hidden>{{ t('passport_photo_not_required') }}</p>
+    <div class="g-field" id="passport-photo-upload">
+      <span class="g-label" id="passport_photo_label">{{ t('passport_photo_label') }}</span>
+      <div class="passport-upload-actions">
+        <button class="g-btn secondary" type="button" id="passport-take-btn">
+          {{ t('passport_photo_take') }}
+        </button>
+        <button class="g-btn secondary" type="button" id="passport-choose-btn"
+                data-retake-label="{{ t('passport_photo_retake') }}">
+          {{ t('passport_photo_choose') }}
+        </button>
+      </div>
+      <input class="{{ bad('passport_photo') }}" {{ invalid('passport_photo') }} type="file" id="passport_photo" name="passport_photo" hidden>
+      <p class="passport-file-name" id="passport-file-name" hidden></p>
+      <p class="passport-file-err err" id="passport-file-err" role="alert" hidden
+         data-missing="{{ t('passport_photo_missing') }}"></p>
+      <div class="hint">{{ t('passport_photo_hint') }}</div>
+      {{ err_for('passport_photo') }}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}" data-tw-short="{{ t('tw_step_sign') }}">
+    <h2>{{ t('signature') }}</h2>
+    <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
+    <div class="g-sign" data-tw-sign="{{ t('tw_sign_here') }}" data-tw-signed="{{ t('tw_signed') }}">
+      <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('signature') }}"
+              aria-describedby="sig-help sig-status"></canvas>
+      <div class="bar">
+        <span id="sig-status" class="err" role="alert" aria-live="polite"
+              data-missing="{{ t('signature_missing') }}"
+              data-kept="{{ t('signature_kept') }}"></span>
+        <button type="button" id="sig-clear">{{ t('signature_clear') }}</button>
+      </div>
+    </div>
+    <input type="hidden" id="signature" name="signature"
+           value="{{ values.get('signature') or stored_signature }}">
+    {{ err_for('signature') }}
+  </div>
+
+  <div data-guest-step data-step-title="{{ t('legal_notice_title') }}" data-tw-short="{{ t('tw_step_check') }}">
+    <div class="g-card g-review" data-wizard-review
+         data-edit-label="{{ t('review_edit') }}" hidden>
+      <h2>{{ t('review_title') }}</h2>
+      <p class="g-intro">{{ t('review_help') }}</p>
+      <dl class="g-summary-list g-review-list"></dl>
+    </div>
+
+    {% include "guest/_legal_notice.html" %}
+
+    <button class="g-btn" type="submit">{{ t('submit') }}</button>
+  </div>
+</form>
+</div>
+{% if require_passport %}
+<script>
+(function () {
+  var MAX_IMAGE = 5 * 1024 * 1024;
+  var MAX_PDF = 15 * 1024 * 1024;
+  var card = document.getElementById('passport-photo-card');
+  var nationality = document.getElementById('nationality');
+  var input = document.getElementById('passport_photo');
+  var takeBtn = document.getElementById('passport-take-btn');
+  var chooseBtn = document.getElementById('passport-choose-btn');
+  var fileName = document.getElementById('passport-file-name');
+  var fileErr = document.getElementById('passport-file-err');
+  var passportLegal = document.querySelector('.legal-passport-text');
+  var form = input && input.form;
+  var msgs = {
+    tooLargeImage: {{ t('passport_photo_too_large_image') | tojson }},
+    tooLargePdf: {{ t('passport_photo_too_large_pdf') | tojson }},
+    badType: {{ t('passport_photo_bad_type') | tojson }},
+    selected: {{ t('passport_photo_selected') | tojson }}
+  };
+  if (!nationality || !input) return;
+
+  function showErr(text) {
+    if (!fileErr) return;
+    fileErr.textContent = text || '';
+    fileErr.hidden = !text;
+  }
+
+  function validateFile(file) {
+    if (!file) return true;
+    var isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    if (isPdf) {
+      if (file.size > MAX_PDF) {
+        showErr(msgs.tooLargePdf);
+        return false;
+      }
+    } else if (file.size > MAX_IMAGE) {
+      showErr(msgs.tooLargeImage);
+      return false;
+    }
+    var okType = /^image\/(jpeg|png|webp)$/i.test(file.type) || isPdf;
+    if (!okType) {
+      showErr(msgs.badType);
+      return false;
+    }
+    showErr('');
+    if (fileName) {
+      fileName.textContent = msgs.selected.replace('%(name)s', file.name);
+      fileName.hidden = false;
+    }
+    if (chooseBtn) chooseBtn.textContent = chooseBtn.getAttribute('data-retake-label') || chooseBtn.textContent;
+    return true;
+  }
+
+  function openPicker(mode) {
+    input.value = '';
+    if (mode === 'camera') {
+      input.setAttribute('capture', 'environment');
+      input.setAttribute('accept', 'image/*');
+    } else {
+      input.removeAttribute('capture');
+      input.setAttribute('accept', 'image/jpeg,image/png,image/webp,application/pdf');
+    }
+    input.click();
+  }
+
+  if (takeBtn) takeBtn.addEventListener('click', function () { openPicker('camera'); });
+  if (chooseBtn) chooseBtn.addEventListener('click', function () { openPicker('file'); });
+
+  input.addEventListener('change', function () {
+    var file = input.files && input.files[0];
+    if (!validateFile(file)) {
+      input.value = '';
+      if (fileName) fileName.hidden = true;
+    }
+  });
+
+  if (form) {
+    form.addEventListener('submit', function (ev) {
+      var foreign = nationality.value && nationality.value !== 'CZE';
+      var hasExisting = card && card.getAttribute('data-has-existing') === '1';
+      if (!foreign) return;
+      var file = input.files && input.files[0];
+      if (!file && hasExisting) return;
+      if (!file) return;
+      if (!validateFile(file)) {
+        ev.preventDefault();
+      }
+    });
+  }
+
+  var pendingNat = document.getElementById('passport-photo-pending');
+  var czechNote = document.getElementById('passport-photo-czech');
+  var uploadWrap = document.getElementById('passport-photo-upload');
+
+  function sync() {
+    var code = nationality.value;
+    var foreign = code && code !== 'CZE';
+    var hasExisting = card && card.getAttribute('data-has-existing') === '1';
+    if (uploadWrap) uploadWrap.hidden = !foreign;
+    if (pendingNat) pendingNat.hidden = !!code;
+    if (czechNote) czechNote.hidden = foreign || !code;
+    input.required = foreign && !hasExisting;
+    var passportSection = document.getElementById('legal-passport-section');
+    if (passportSection) passportSection.style.display = foreign ? '' : 'none';
+    if (passportLegal) passportLegal.style.display = foreign ? '' : 'none';
+    if (!foreign) {
+      input.value = '';
+      showErr('');
+      if (fileName) fileName.hidden = true;
+    }
+  }
+  nationality.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endif %}
+{% endblock %}

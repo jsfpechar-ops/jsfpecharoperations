@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Request
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
+from starlette.background import BackgroundTask
 
 from .. import (
     access,
@@ -27,6 +29,7 @@ from .. import (
     reporting,
     retention,
     stays_export,
+    workspace_export,
 )
 from ..templating import render
 from .admin_helpers import back as _back
@@ -292,6 +295,31 @@ def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks)
         return _back("/housebook", err=_flash(request, "flash.error.no_housebook_matches"))
     db.audit("export_housebook_pdfs", f"rows={len(rows)}")
     return response
+
+
+@router.post("/settings/workspace-export")
+def settings_workspace_export(request: Request, background_tasks: BackgroundTasks):
+    """ZIP of everything in the signed-in workspace (scheduled-deletion window)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    if not account or not account["deletion_due_at"]:
+        return _back("/settings", err=_flash(request, "flash.error.workspace_export_not_scheduled"))
+    path = workspace_export.build_workspace_zip(owner_id)
+    db.audit(
+        "workspace_exported",
+        f"user={owner_id}",
+        actor=account["username"],
+        owner_user_id=owner_id,
+    )
+    return FileResponse(
+        path,
+        media_type="application/zip",
+        filename=f"workspace-{owner_id}.zip",
+        background=BackgroundTask(os.unlink, path),
+    )
 
 
 @router.get("/settings/archived")

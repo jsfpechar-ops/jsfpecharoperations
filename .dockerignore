@@ -8,3 +8,14 @@ App/data/*
 .screenshots
 *.md
 !App/README.md
+docs/
+artifacts/
+.cursor/
+App/tests
+App/tools
+App/mock_ubyport
+**/.env
+**/.env.*
+!**/.env.example
+**/.coverage
+**/htmlcov

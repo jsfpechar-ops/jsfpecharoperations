@@ -279,21 +279,81 @@ def test_moved_ical_stay_keeps_the_signature_it_collected(monkeypatch, tmp_path)
     assert guest["signed_at"] is not None
 
 
-def test_moved_ical_stay_alerts_the_host(monkeypatch, tmp_path):
+def test_a_shrunk_booking_trims_an_unsent_guest_window(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "shrink-feed.sqlite3")
+    db.init_db()
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {"internal_name": "Shrink feed test", "automation_mode": "manual", "active": 1, "created_at": now},
+    )
+    feed_id = db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/shrink.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "ical_feed_id": feed_id,
+            "uid": "shrink-stay",
+            "date_from": "2099-01-01",
+            "date_to": "2099-01-10",
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": reservation_id,
+            "stay_from": "2099-01-03",
+            "stay_to": "2099-01-08",
+            "signature_png": "data:image/png;base64,signed",
+            "signed_at": now,
+            "submit_state": "pending",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    shrunk = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20990101\nDTEND;VALUE=DATE:20990105\n"
+        "UID:shrink-stay\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+    )
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: shrunk)
+    icalsync.sync_feed(db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,)))
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["stay_from"] == "2099-01-03"
+    assert guest["stay_to"] == "2099-01-05"
+    assert guest["signature_png"] == "data:image/png;base64,signed"
+
+
+def test_a_filed_guest_is_not_moved_when_the_booking_changes(monkeypatch, tmp_path):
+    feed_id, _reservation_id, guest_id = _moved_stay(
+        tmp_path, monkeypatch, submit_state="sent"
+    )
+    before = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    _sync(feed_id)
+    after = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    assert before == after
+
+
+def test_moved_ical_stay_does_not_raise_a_resign_alert(monkeypatch, tmp_path):
     feed_id, reservation_id, _guest_id = _moved_stay(tmp_path, monkeypatch)
 
     _sync(feed_id)
 
-    alert = db.query_one(
+    assert db.query_one(
         "SELECT * FROM alert WHERE dedupe_key = ?",
         (f"dates_changed_resign:{reservation_id}",),
-    )
-    assert alert is not None
-    assert alert["kind"] == "dates_changed_resign"
-    assert alert["level"] == "critical"
-    assert alert["reservation_id"] == reservation_id
-    assert alert["resolved_at"] is None
-    assert alert["message"] and alert["detail"]
+    ) is None
 
 
 def test_moved_ical_stay_leaves_a_guest_with_their_own_dates_alone(
@@ -306,6 +366,12 @@ def test_moved_ical_stay_leaves_a_guest_with_their_own_dates_alone(
         guest_stay_from="2099-01-10",
         guest_stay_to="2099-01-11",
     )
+    extended = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20990110\nDTEND;VALUE=DATE:20990114\n"
+        "UID:moved-stay\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+    )
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: extended)
 
     _sync(feed_id)
 
@@ -938,7 +1004,7 @@ def test_a_moved_stay_with_nothing_filed_does_not_warn_about_a_report(
     _sync(feed_id)
 
     assert _open_alert(f"moved_after_report:{reservation_id}") is None
-    assert _open_alert(f"dates_changed_resign:{reservation_id}") is not None
+    assert _open_alert(f"dates_changed_resign:{reservation_id}") is None
 
 
 def test_a_stay_that_now_looks_like_a_block_is_not_cancelled(monkeypatch, tmp_path):

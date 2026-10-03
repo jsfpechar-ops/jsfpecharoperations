@@ -742,8 +742,8 @@ def test_guest_english_and_czech_carry_the_same_keys():
     assert czech - english == set(), f"missing English: {sorted(czech - english)}"
 
 
-def test_re_signing_a_moved_stay_clears_the_date_change_alert(monkeypatch):
-    """W1.1: the host's warning is stale once the guest signs the new dates."""
+def test_a_calendar_move_does_not_raise_a_resign_alert(monkeypatch):
+    """Date changes file with the new stay; guests do not have to sign again."""
     db.init_db()
     _cleanup()
     now = db.utcnow()
@@ -810,10 +810,8 @@ def test_re_signing_a_moved_stay_clears_the_date_change_alert(monkeypatch):
         )
         assert db.query_one(
             "SELECT id FROM alert WHERE dedupe_key = ? AND resolved_at IS NULL", (key,)
-        )
+        ) is None
 
-        # The next guest to sign the stay signs the moved dates, so the warning
-        # that the filed dates moved is stale.
         again = browser.post(
             f"/l/{TOKEN}/{stay}/save",
             data=_form(surname="Jones", first_name="Mary", party_size="2"),
@@ -824,9 +822,6 @@ def test_re_signing_a_moved_stay_clears_the_date_change_alert(monkeypatch):
         assert db.query_one(
             "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (stay,)
         )["n"] == 2
-        assert db.query_one(
-            "SELECT resolved_at FROM alert WHERE dedupe_key = ?", (key,)
-        )["resolved_at"]
     finally:
         db.execute("DELETE FROM alert WHERE reservation_id = ?", (stay,))
         db.execute("DELETE FROM alert WHERE dedupe_key = ?", (f"feed_incomplete:{feed_id}",))

@@ -432,6 +432,14 @@ def create_account(
     )
 
 
+def end_all_sessions(user_id: int) -> None:
+    """Retire every session cookie issued for this account, on every device."""
+    db.execute(
+        "UPDATE user_account SET session_version = session_version + 1 WHERE id = ?",
+        (user_id,),
+    )
+
+
 def set_account_password(user_id: int, password: str, must_change: bool = False) -> None:
     error = password_error(password)
     if error:

@@ -46,6 +46,18 @@
   --brown: #79533d;  --brown-bg: #f3ece7;
   --gray: #5f625f;   --gray-bg: #eceeec;
 
+  /* Status by criticality. The more a status needs the host, the stronger
+     its contrast; calm and finished states stay quiet. Text contrast on its
+     own background (WCAG AA needs 4.5:1): critical 6.6, action 7.9,
+     ready 6.9, waiting 6.8, done 6.7, neutral 6.2. Every badge also carries
+     a text label, and critical adds a "!" mark, so colour is never alone. */
+  --status-critical-bg: #b42318; --status-critical-ink: #ffffff; --status-critical-border: #b42318;
+  --status-action-bg: #fde9c2;   --status-action-ink: #6b3a00;   --status-action-border: #eec27a;
+  --status-ready-bg: #e9f0fc;    --status-ready-ink: #1d4f9e;    --status-ready-border: #c8d8f3;
+  --status-waiting-bg: #eef6f5;  --status-waiting-ink: #285e59;  --status-waiting-border: #d3e7e4;
+  --status-done-bg: #eef6f1;     --status-done-ink: #24613f;     --status-done-border: #d3e8db;
+  --status-neutral-bg: #ffffff;  --status-neutral-ink: #5f625f;  --status-neutral-border: #deded9;
+
   /* Type scale */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

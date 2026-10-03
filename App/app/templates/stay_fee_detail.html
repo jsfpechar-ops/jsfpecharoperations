@@ -4,7 +4,7 @@
 {% block content %}
 {% from "_components.html" import page_header, copy_button with context %}
 <a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
-{% include "_host_month_filter.html" %}
+{% include "_list_filter.html" %}
 {% set actions %}
   {% if frozen %}
     <span class="pill green">{{ t('stay_fees.saved_version', version=filing_version) }}</span>
@@ -15,7 +15,6 @@
     <form method="post" action="/stay-fees/{{ apartment.id }}/finalize" class="inline-form">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <input type="hidden" name="month" value="{{ month_key }}">
-      <input type="hidden" name="rate_czk" value="{{ period.rate_czk }}">
       {% if lines %}<input type="hidden" name="confirm_collected" value="1">{% endif %}
       {% for line in lines %}
         <input type="hidden" name="collected_{{ line.guest_id }}" value="{{ line.amount_czk }}">
@@ -202,7 +201,7 @@
             <a href="/reservations/{{ line.reservation_id }}">{{ line.name }}</a>
             <div class="small muted">{{ line.stay_from }} – {{ line.stay_to }} · {{ tp('stay_fees.nights', line.nights) }}</div>
           </div>
-          <span class="pill {{ 'amber' if line.status == 'liable' else ('grey' if line.status == 'not_subject' else 'green') }}">{{ t(line.status_key) }}</span>
+          <span class="pill grey no-dot">{{ t(line.status_key) }}</span>
           <span class="fee-amount">{{ line.amount_display }}</span>
           {% if line.local_hint %}
             <div class="small muted fee-hint">{{ t('stay_fees.hint.local_resident') }}</div>

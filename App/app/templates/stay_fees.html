@@ -4,7 +4,7 @@
 {% block content %}
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('stay_fees.title'), '', '', '', '', '') }}
-{% include "_host_month_filter.html" %}
+{% include "_list_filter.html" %}
 {% if periods %}
 <div class="panel tight scroll-x">
   <table class="table-cards">
@@ -47,8 +47,12 @@
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">{{ period.exempt_nights }}</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">{{ period.total_display }}</td>
         <td class="nowrap">
-          {% if period.issues and period.issues != ['stay_fees.issue.period_running'] %}
+          {% if period.status == 'saved' %}
+            <span class="pill green">{{ t('stay_fees.saved_version', version=period.version) }}</span>
+          {% elif period.status == 'attention' %}
             <span class="pill amber">{{ t('stay_fees.needs_setup') }}</span>
+          {% elif period.status == 'waiting' %}
+            <span class="pill teal">{{ t('stay_fees.status.in_progress') }}</span>
           {% else %}
             <span class="pill blue">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}
@@ -61,8 +65,13 @@
 </div>
 {% else %}
 <div class="panel empty">
+  {% if filter_active and has_properties %}
+  <h2>{{ t('filter.no_results') }}</h2>
+  <a class="btn" href="{{ filter_reset_href }}">{{ t('filter.reset') }}</a>
+  {% else %}
   <h2>{{ t('stay_fees.empty_title') }}</h2>
   <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

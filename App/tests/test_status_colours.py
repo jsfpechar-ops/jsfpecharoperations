@@ -274,3 +274,15 @@ def test_red_is_still_used_for_a_police_rejection():
         assert tone == "red"
     finally:
         _cleanup()
+
+
+def test_a_duplicate_filing_is_green_because_nothing_is_left_to_do():
+    """Code 150 means the register already holds every record: a success."""
+    from app import templating
+
+    html = templating.templates.env.from_string(
+        "{% from '_components.html' import submission_pill %}"
+        "{{ submission_pill('ok_duplicate') }}"
+    ).render(t=lambda key, **kw: host_i18n.translate("en", key))
+    tone, _tip, _label = PILL.search(html).groups()
+    assert tone == "green"

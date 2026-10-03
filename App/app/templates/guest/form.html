@@ -13,9 +13,6 @@
 {% macro invalid(field) %}{% if issues | selectattr('is_error') | selectattr('field', 'equalto', field) | list %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}{% endmacro %}
 
 {% block wrap_class %}g-checkin-page{% endblock %}
-{% import "guest/_ticket.html" as tw with context %}
-{% block tw_route %}{{ tw.route(reservation) }}{% endblock %}
-{% block tw_progress %}50{% endblock %}
 
 {% block content %}
 <aside class="g-checkin-rail" aria-label="{{ t('stay_label') }}">
@@ -59,18 +56,6 @@
 </details>
 {% endif %}
 
-{# The coloured strip on every step says whose form this is. It used to repeat
-   the step title that the heading right under it already shows, and nothing
-   on the form said "guest 2 of 3", so a group could not tell where it was. #}
-{% if guest and guest.first_name %}
-  {% set tw_strip = (guest.first_name ~ ' ' ~ (guest.surname or '')) | trim %}
-{% elif person_number and expected_people %}
-  {% set tw_strip = t('tw_guest_n_of', current=person_number, total=expected_people) %}
-{% elif person_number %}
-  {% set tw_strip = t('tw_guest_n', current=person_number) %}
-{% else %}
-  {% set tw_strip = t('title') %}
-{% endif %}
 <form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
       enctype="multipart/form-data" data-guest-wizard
       data-next-label="{{ t('next_step') }}" data-back-label="{{ t('previous_step') }}"
@@ -94,7 +79,7 @@
     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
   </div>
 
-  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('your_details') }}" data-tw-short="{{ t('tw_step_details') }}">
+  <div class="g-card" data-guest-step data-step-title="{{ t('your_details') }}">
     <h2>
       {{ t('your_details') }}
       {% if person_number and person_number > 1 %}
@@ -103,7 +88,7 @@
     </h2>
 
     {% if ask_party_size %}
-      <div class="g-field" data-tw-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
+      <div class="g-field" data-guest-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
         <label for="party_size">{{ t('party_question') }}</label>
         <input type="number" id="party_size" name="party_size" min="1" max="60" required
                inputmode="numeric" autocomplete="off"
@@ -131,7 +116,7 @@
     <div class="g-row">
       <div class="g-field">
         <label for="birth_date">{{ t('birth_date') }}</label>
-        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date" data-tw-day="{{ t('tw_dob_day') }}" data-tw-month="{{ t('tw_dob_month') }}" data-tw-year="{{ t('tw_dob_year') }}"
+        <input class="{{ bad('birth_date') }}" {{ invalid('birth_date') }} type="text" id="birth_date" name="birth_date"
                inputmode="numeric" placeholder="{{ t('date_placeholder') }}" maxlength="10" required
                autocomplete="bday" value="{{ display_birth_date(val('birth_date')) }}">
         {# The read-back catches a swapped day and month, which the digits alone
@@ -142,7 +127,9 @@
       </div>
       <div class="g-field">
         <label for="nationality">{{ t('nationality') }}</label>
-        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" data-tw-required="{{ t('tw_country_required') }}" required>
+        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality"
+                data-guest-placeholder="{{ t('tw_country_search') }}" data-guest-none="{{ t('tw_country_none') }}"
+                data-guest-required="{{ t('tw_country_required') }}" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
@@ -157,19 +144,12 @@
       </div>
     </div>
 
-  </div>
-
-  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('tw_document_title') }}" data-tw-short="{{ t('tw_step_document') }}">
-    <h2>{{ t('tw_document_title') }}</h2>
     <div class="g-field" id="doc-wrap">
       <label for="doc_number">{{ t('doc_number') }}</label>
       <input class="{{ bad('doc_number') }}" {{ invalid('doc_number') }} type="text" id="doc_number" name="doc_number" maxlength="30"
              autocapitalize="characters" spellcheck="false" autocorrect="off"
              value="{{ val('doc_number') if val('doc_number') != inpass else '' }}">
       <div class="hint">{{ t('doc_number_help') }}</div>
-      <div class="tw-doc-tip" aria-hidden="true">
-        <span class="tw-doc-page"><i class="tw-doc-photo"></i><i class="tw-doc-no"></i><i class="tw-doc-lines"></i></span>
-      </div>
       {{ err_for('doc_number') }}
     </div>
 
@@ -201,7 +181,7 @@
 
     <div class="g-field">
       <label for="purpose">{{ t('purpose') }}</label>
-      <select id="purpose" name="purpose" data-tw-common="10,01,03,11" data-tw-other="{{ t('tw_purpose_other') }}">
+      <select id="purpose" name="purpose">
         {% for purpose in purposes %}
           <option value="{{ purpose.code }}"
             {% if (val('purpose') or default_purpose) == purpose.code %}selected{% endif %}>
@@ -211,11 +191,11 @@
     </div>
   </div>
 
-  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('residence_title') }}" data-tw-short="{{ t('tw_step_home') }}">
+  <div class="g-card" data-guest-step data-step-title="{{ t('residence_title') }}">
     <h2>{{ t('residence_title') }}</h2>
     <p class="g-intro">{{ t('residence_help') }}</p>
     {% if residence_copied_from %}
-      <p class="hint" role="status" data-tw-copied>{{ t('residence_copied', name=residence_copied_from) }}</p>
+      <p class="hint" role="status">{{ t('residence_copied', name=residence_copied_from) }}</p>
     {% endif %}
     <div class="g-field">
       <label for="res_street">{{ t('res_street') }}</label>
@@ -232,7 +212,9 @@
       </div>
       <div class="g-field">
         <label for="res_country">{{ t('res_country') }}</label>
-        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" data-tw-placeholder="{{ t('tw_country_search') }}" data-tw-none="{{ t('tw_country_none') }}" data-tw-required="{{ t('tw_country_required') }}" autocomplete="country" required>
+        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country"
+                data-guest-placeholder="{{ t('tw_country_search') }}" data-guest-none="{{ t('tw_country_none') }}"
+                data-guest-required="{{ t('tw_country_required') }}" autocomplete="country" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
@@ -249,7 +231,7 @@
   </div>
 
   {% if require_passport %}
-  <div class="g-card" id="passport-photo-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('passport_photo_title') }}" data-tw-short="{{ t('tw_step_photo') }}"
+  <div class="g-card" id="passport-photo-card" data-guest-step data-step-title="{{ t('passport_photo_title') }}"
        data-guest-step-skip-when="CZE"
        data-has-existing="{{ '1' if has_existing_passport_photo else '0' }}">
     <h2>{{ t('passport_photo_title') }}</h2>
@@ -277,10 +259,10 @@
   </div>
   {% endif %}
 
-  <div class="g-card" data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('signature') }}" data-tw-short="{{ t('tw_step_sign') }}">
+  <div class="g-card" data-guest-step data-step-title="{{ t('signature') }}">
     <h2>{{ t('signature') }}</h2>
     <p class="g-intro" id="sig-help">{{ t('signature_help') }}</p>
-    <div class="g-sign" data-tw-sign="{{ t('tw_sign_here') }}" data-tw-signed="{{ t('tw_signed') }}">
+    <div class="g-sign">
       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('signature') }}"
               aria-describedby="sig-help sig-status"></canvas>
       <div class="bar">
@@ -295,7 +277,7 @@
     {{ err_for('signature') }}
   </div>
 
-  <div data-guest-step data-tw-strip="{{ tw_strip }}" data-step-title="{{ t('legal_notice_title') }}" data-tw-short="{{ t('tw_step_check') }}">
+  <div data-guest-step data-step-title="{{ t('legal_notice_title') }}">
     <div class="g-card g-review" data-wizard-review
          data-edit-label="{{ t('review_edit') }}" hidden>
       <h2>{{ t('review_title') }}</h2>

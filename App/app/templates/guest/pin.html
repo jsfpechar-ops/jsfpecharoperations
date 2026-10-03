@@ -1,7 +1,6 @@
 {% extends "guest/base.html" %}
-{% block tw_progress %}6{% endblock %}
 {% block content %}
-<div class="g-card tw-ticket" data-tw-label="{{ t('tw_label_access') }}">
+<div class="g-card">
   <h2>{{ t('pin_title') }}</h2>
   <p class="g-intro">{{ t('pin_help') }}</p>
   {% if error %}<div class="g-err" id="pin-error">{{ error }}</div>{% endif %}
@@ -17,10 +16,8 @@
     {% if require_turnstile and turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-action="guest_pin"></div>
     {% endif %}
-    <div class="tw-stub">
-      <button class="g-btn" type="submit">{{ t('pin_submit') }}</button>
-      <p class="g-pin-recovery tw-stub-note">{{ t('pin_recovery') }}</p>
-    </div>
+    <button class="g-btn" type="submit">{{ t('pin_submit') }}</button>
+    <p class="g-pin-recovery">{{ t('pin_recovery') }}</p>
   </form>
 </div>
 {% if require_turnstile and turnstile_site_key %}

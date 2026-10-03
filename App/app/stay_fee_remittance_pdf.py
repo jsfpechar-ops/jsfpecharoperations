@@ -19,11 +19,12 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas as pdfcanvas
 
+from . import pdf_mark
+
 _FONT_DIR = os.path.join(os.path.dirname(__file__), "static", "fonts")
 pdfmetrics.registerFont(TTFont("UHRemit", os.path.join(_FONT_DIR, "DejaVuSans.ttf")))
 pdfmetrics.registerFont(TTFont("UHRemit-Bold", os.path.join(_FONT_DIR, "DejaVuSans-Bold.ttf")))
 REG, BOLD = "UHRemit", "UHRemit-Bold"
-MARK = os.path.join(os.path.dirname(__file__), "static", "ubyhost-mark.png")
 
 W, H = A4
 M = 18 * mm
@@ -168,7 +169,7 @@ def _amount(value: int) -> str:
 
 def _footer(c, page: int):
     _rule(c, 20 * mm)
-    c.drawImage(ImageReader(MARK), M, 12.7 * mm, 4.5 * mm, 4.5 * mm, mask="auto")
+    c.drawImage(pdf_mark.reader(), M, 12.7 * mm, 4.5 * mm, 4.5 * mm, mask="auto")
     _text(c, M + 6.5 * mm, 14 * mm, "UbyHost", size=8.5, bold=True)
     _text(c, M + 32 * mm, 14 * mm, "Vytvořeno v UbyHost", size=7, color=MUTED)
     _text(c, R, 14 * mm, f"Strana {page}", size=7, color=MUTED, right=True)

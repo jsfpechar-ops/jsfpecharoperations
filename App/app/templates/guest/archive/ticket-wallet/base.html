@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>{{ t('title') }}</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+  <link rel="stylesheet" href="/static/guest.css?v=20261002a">
+  <link rel="stylesheet" href="/static/guest-ticket.css?v=20261003b">
+</head>
+<body class="tw">
+<a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
+<div class="g-wrap {% block wrap_class %}{% endblock %}">
+  <div class="g-head">
+    <div class="g-title g-property">
+      {% if facility %}<span class="g-property-mark property-tone-{{ facility_tone }}" aria-hidden="true">{{ facility[:1] }}</span>{% endif %}
+      <div>
+        <h1>{{ t('title') }}</h1>
+        {% if facility %}<p class="g-facility">{{ facility }}</p>{% endif %}
+      </div>
+    </div>
+    {% if lang_urls %}
+    <div class="g-lang" role="group" aria-label="{{ t('language_label') }}">
+      <a href="{{ lang_urls.en }}" class="{{ 'on' if lang == 'en' }}" hreflang="en" lang="en">English</a>
+      <a href="{{ lang_urls.cs }}" class="{{ 'on' if lang == 'cs' }}" hreflang="cs" lang="cs">Čeština</a>
+    </div>
+    {% endif %}
+    {% block tw_route %}{% endblock %}
+    <div class="tw-progress" aria-hidden="true"><i data-tw-progress data-tw-base="50" data-tw-span="42" style="width: {% block tw_progress %}0{% endblock %}%"></i></div>
+  </div>
+
+  {% if flash %}<div class="g-ok">{{ flash }}</div>{% endif %}
+  {% if flash_error %}<div class="g-err">{{ flash_error }}</div>{% endif %}
+
+  <main id="g-main">
+    {% block content %}{% endblock %}
+    {% include "guest/_host.html" %}
+    <div class="g-page-skeleton" data-page-skeleton role="status" hidden>
+      <span class="g-sr-only">{{ t('loading') }}</span>
+      <div aria-hidden="true">
+        <span class="g-skeleton medium"></span>
+        <span class="g-skeleton short"></span>
+        <span class="g-skeleton block"></span>
+        <span class="g-skeleton"></span>
+        <span class="g-skeleton medium"></span>
+      </div>
+    </div>
+  </main>
+
+  <div class="g-foot">
+    <p>{{ t('privacy') }}</p>
+    {% if privacy_url %}<p><a href="{{ privacy_url }}">{{ t('privacy_link') }}</a></p>{% endif %}
+  </div>
+</div>
+<script src="/static/skeleton.js?v=20260929a"></script>
+<script src="/static/signature.js?v=20260930a"></script>
+<script src="/static/ticket.js?v=20261001a"></script>
+<script src="/static/csrf.js?v=20260915a"></script>
+</body>
+</html>

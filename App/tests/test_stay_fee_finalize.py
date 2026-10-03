@@ -281,3 +281,39 @@ def test_disabling_the_fee_leaves_the_sealed_period_downloadable(host):
     assert f"/stay-fees/{apartment_id}/pdf?month=2026-07" not in july.text
     assert pdf.status_code == 200
     assert pdf.content.startswith(b"%PDF")
+
+
+def test_a_correction_keeps_the_rate_the_period_was_sealed_with(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id)
+    _stay(apartment_id)
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    saved = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08"),
+            "month": "2026-08",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    first = stay_fee_filing.latest(apartment_id, "2026-08")
+    db.update("apartment", apartment_id, {"stay_fee_rate_czk": 90})
+    corrected = client.post(
+        f"/stay-fees/{apartment_id}/finalize",
+        data={
+            "_csrf": _csrf(client, f"/stay-fees/{apartment_id}?month=2026-08&correct=1"),
+            "month": "2026-08",
+            "correct": "1",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    )
+    assert corrected.status_code == 303
+    second = stay_fee_filing.latest(apartment_id, "2026-08")
+    assert second["id"] != first["id"]
+    assert second["rate_czk"] == first["rate_czk"] == 50
+    assert second["total_due_czk"] == first["total_due_czk"]

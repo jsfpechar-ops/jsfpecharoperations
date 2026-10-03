@@ -53,7 +53,7 @@ jobs:
           FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GH_DEPLOY_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/jsfpechar-ops/jsfpecharoperations/commits/${DEPLOY_SHA}/check-runs?per_page=100" \
-            | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke"]; bad=[n for n in need if n not in runs or runs[n]["conclusion"]!="success"]; print(" ".join(bad))')"
+            | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke","guest-browser","shellcheck","docker","secrets"]; bad=[n for n in need if n not in runs or runs[n]["conclusion"]!="success"]; print(" ".join(bad))')"
           if [ -n "${FAILED_OR_MISSING}" ]; then
             echo "CI has not passed for ${DEPLOY_SHA} (not green: ${FAILED_OR_MISSING}). Refusing to deploy." >&2
             exit 1

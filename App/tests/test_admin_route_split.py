@@ -47,6 +47,7 @@ MOVED_PATHS = {
         ("GET", "/housebook/pdfs.zip"),
         ("GET", "/settings/archived"),
         ("POST", "/settings/purge-expired"),
+        ("POST", "/settings/workspace-export"),
     },
 }
 

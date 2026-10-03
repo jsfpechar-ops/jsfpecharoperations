@@ -7,6 +7,12 @@ from fastapi.testclient import TestClient
 from app import __version__, config, env_guard
 from app.main import app
 
+OPERATOR = {
+    "UBYHOST_OPERATOR_NAME": "Example Operator",
+    "UBYHOST_OPERATOR_ICO": "12345678",
+    "UBYHOST_OPERATOR_ADDRESS": "Example Street 1, Praha",
+}
+
 
 def test_healthz_includes_env_outside_production():
     response = TestClient(app).get("/healthz")
@@ -51,6 +57,7 @@ def test_test_endpoint_allowed_on_lightsail_production():
         public_base_url="https://ubyhost.com",
         domain="ubyhost.com",
         environ={"UBYHOST_MAIL_BACKEND": "disabled"},
+        operator_identity=OPERATOR,
     )
     assert warnings == ["guest e-mail is disabled on production"]
 
@@ -64,37 +71,59 @@ def test_prod_allowed_on_lightsail_production():
         public_base_url="https://ubyhost.com",
         domain="ubyhost.com",
         environ={"UBYHOST_MAIL_BACKEND": "disabled"},
+        operator_identity=OPERATOR,
     )
     assert warnings == ["guest e-mail is disabled on production"]
 
 
-def test_warns_when_guest_pin_and_scheduler_off():
-    warnings = env_guard.validate_runtime_env(
-        ubyport_env="test",
-        deployment="production",
-        guest_pin_required=False,
-        scheduler_enabled=False,
-        public_base_url="http://ubyhost.com",
-        domain="ubyhost.com",
-        environ={},
-    )
-    joined = " ".join(warnings)
-    assert "GUEST_PIN" in joined
-    assert "ENABLE_SCHEDULER" in joined
-    assert "https://" in joined
-
-
-def test_warns_when_public_url_host_mismatches_domain():
-    warnings = env_guard.validate_runtime_env(
+def _production(**overrides):
+    args = dict(
         ubyport_env="test",
         deployment="production",
         guest_pin_required=True,
         scheduler_enabled=True,
+        public_base_url="https://ubyhost.com",
+        domain="ubyhost.com",
+        environ={"UBYHOST_MAIL_BACKEND": "disabled"},
+        operator_identity=OPERATOR,
+    )
+    args.update(overrides)
+    return env_guard.validate_runtime_env(**args)
+
+
+def test_warns_when_scheduler_off():
+    assert any("ENABLE_SCHEDULER" in item for item in _production(scheduler_enabled=False))
+
+
+def test_refuse_production_without_guest_pin():
+    with pytest.raises(env_guard.EnvGuardError, match="GUEST_PIN"):
+        _production(guest_pin_required=False)
+
+
+def test_refuse_production_without_https():
+    with pytest.raises(env_guard.EnvGuardError, match="https://"):
+        _production(public_base_url="http://ubyhost.com")
+
+
+def test_refuse_production_when_public_url_host_mismatches_domain():
+    with pytest.raises(env_guard.EnvGuardError, match="does not match"):
+        _production(public_base_url="https://wrong.example")
+
+
+def test_staging_only_warns_when_public_url_host_mismatches_domain():
+    warnings = env_guard.validate_runtime_env(
+        ubyport_env="mock",
+        deployment="staging",
         public_base_url="https://wrong.example",
         domain="ubyhost.com",
         environ={},
     )
     assert any("does not match" in item for item in warnings)
+
+
+def test_refuse_production_without_operator_identity():
+    with pytest.raises(env_guard.EnvGuardError, match="UBYHOST_OPERATOR_ICO"):
+        _production(operator_identity={**OPERATOR, "UBYHOST_OPERATOR_ICO": " "})
 
 
 def test_invalid_ubyport_env():
@@ -133,6 +162,10 @@ def test_production_mock_allowed_with_explicit_opt_in():
     warnings = env_guard.validate_runtime_env(
         ubyport_env="mock",
         deployment="production",
+        guest_pin_required=True,
+        public_base_url="https://ubyhost.com",
+        domain="ubyhost.com",
         environ={"UBYHOST_ALLOW_PROD_MOCK": "1"},
+        operator_identity=OPERATOR,
     )
     assert any("nothing is reported" in item for item in warnings)
