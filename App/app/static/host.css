@@ -272,7 +272,7 @@ body.host-workspace {
 .host-workspace .dashboard-stats .stat-waiting { background: var(--status-waiting-bg); border-color: var(--status-waiting-border); color: var(--status-waiting-ink); }
 /* Shared list filter (Stay fee, Invoices): the .filters panel used across the app. */
 .host-workspace .list-filter { padding: 14px 16px; }
-.host-workspace .list-filter .month-row { display: flex; align-items: center; gap: 4px; }
+.host-workspace .list-filter .month-row { display: flex; align-items: center; gap: 8px; }
 .host-workspace .list-filter .month-step { width: var(--action-height); min-width: var(--action-height); height: var(--action-height); padding: 0; justify-content: center; font-size: 18px; font-weight: 700; color: var(--brand-ink); }
 .host-workspace .list-filter .month-step[disabled] { color: var(--ink-faint); }
 .host-workspace .month-control { position: relative; display: flex; align-items: center; flex: 1 1 auto; }
@@ -281,7 +281,7 @@ body.host-workspace {
 .host-workspace .month-control.is-empty input[type=month] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; }
 .host-workspace .month-control-face { font-size: 13.5px; font-weight: 650; color: var(--ink-muted); white-space: nowrap; }
 .host-workspace .list-filter .list-filter-period { max-width: 260px; flex-basis: 220px; }
-.host-workspace .list-filter .list-filter-search { max-width: 240px; }
+.host-workspace .list-filter .list-filter-search { max-width: 240px; min-width: 200px; flex-basis: 200px; }
 .host-workspace .list-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 6px; padding: 0 6px; border-radius: var(--radius-pill); background: var(--ink); color: var(--canvas); font-size: 12px; font-weight: 700; }
 .host-workspace .account-parts, .host-workspace .fee-adjust-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .host-workspace .fee-adjust-reason { grid-column: 1 / -1; }
