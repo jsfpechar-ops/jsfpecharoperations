@@ -1019,7 +1019,13 @@ def guest_payload(
 
 
 def property_label(apartment: Any, lang: str) -> str:
-    name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
+    """The property's name in a guest e-mail: the same one the guest pages show.
+
+    The host's own name comes first, because that is the name the guest knows
+    from the booking. The police-register name (``uby_name``, often a short
+    code) is only a fallback. A report to UbyPort still carries ``uby_name``.
+    """
+    name = (apartment["internal_name"] or "").strip() or (apartment["uby_name"] or "").strip()
     if name:
         return name
     # Both names are optional on a property, and an empty one would leave the
@@ -1166,28 +1172,40 @@ def build_invoice_issued(
     total: str,
     download_url: str,
     host: Optional[Dict[str, str]] = None,
+    stay_property: str = "",
 ) -> Dict[str, str]:
-    """The host clicked "Send to customer": one money panel with a download button."""
-    subject = _guest_text(lang, "invoice_mail_issued_subject", number=number)
+    """The host clicked "Send to customer": one money panel with a download button.
+
+    ``property_name`` is the issuer (the host's legal entity). When the invoice
+    belongs to a stay, ``stay_property`` is that stay's property under the name
+    the guest pages use, so the buyer can tell which booking it is for.
+    """
+    stay_property = (stay_property or "").strip()
+    if stay_property:
+        subject = _guest_text(
+            lang, "invoice_mail_issued_subject_stay", number=number, stay_property=stay_property
+        )
+    else:
+        subject = _guest_text(lang, "invoice_mail_issued_subject", number=number)
     intro = _guest_text(lang, "invoice_mail_issued_intro", property=property_name)
     footer_lines = _guest_footer_lines(lang, property_name, host)
+    rows = [(_guest_text(lang, "mail_invoice_number"), number)]
+    if stay_property:
+        rows.append((_guest_text(lang, "mail_invoice_property"), stay_property))
+    rows.append((_guest_text(lang, "mail_invoice_total"), total))
     blocks = [
         _block_heading(_guest_text(lang, "mail_invoice_title")),
         _block_paragraph(intro),
         _block_panel(
             _guest_text(lang, "mail_invoice_title"),
-            [
-                (_guest_text(lang, "mail_invoice_number"), number),
-                (_guest_text(lang, "mail_invoice_total"), total),
-            ],
+            rows,
             action=(download_url, _guest_text(lang, "invoice_mail_issued_button")),
         ),
     ]
     lines = [
         intro,
         "",
-        f"{_guest_text(lang, 'mail_invoice_number')}: {number}",
-        f"{_guest_text(lang, 'mail_invoice_total')}: {total}",
+        *(f"{label}: {value}" for label, value in rows),
         f"{_guest_text(lang, 'invoice_mail_issued_button')}: {download_url}",
     ]
     text = "\n".join([*lines, "", "--", *_footer_text(footer_lines)])

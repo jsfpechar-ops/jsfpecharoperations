@@ -477,6 +477,24 @@ async def invoice_mark_paid(invoice_id: int, request: Request):
     return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.marked_paid_flash"))
 
 
+def _stay_property_name(invoice) -> str:
+    """The guest-facing name of the property of the stay this invoice is for.
+
+    Empty when the invoice is not linked to a stay. Same order as the guest
+    pages: the host's own name, then the police-register name.
+    """
+    if not invoice["reservation_id"]:
+        return ""
+    row = db.query_one(
+        "SELECT a.internal_name, a.uby_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (invoice["reservation_id"],),
+    )
+    if not row:
+        return ""
+    return (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
+
+
 @router.post("/invoices/{invoice_id}/send")
 async def invoice_send(invoice_id: int, request: Request):
     guard = auth.require_login(request)
@@ -497,6 +515,7 @@ async def invoice_send(invoice_id: int, request: Request):
         total=invoices.invoice_pdf.money(invoice["total_haler"]),
         download_url=url,
         host=mail_notify.host_details(invoice["legal_entity_id"]),
+        stay_property=_stay_property_name(invoice),
     )
     payload = mail_notify.guest_payload(
         {"legal_entity_id": invoice["legal_entity_id"]}, content, invoice["lang"]
