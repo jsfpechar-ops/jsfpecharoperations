@@ -1,0 +1,56 @@
+{# The one list filter for Stay fee and Invoices (app/list_filter.py).
+   A plain GET form: changes apply on their own, Reset returns to the page's
+   default view, and the badge counts what differs from that default. #}
+{% set view = filter %}
+<form method="get" action="{{ filter_action }}" class="filters panel list-filter" data-auto-submit role="search">
+  <div class="field list-filter-period">
+    <label for="filter-month">{{ t(filter_period_label_key) }}</label>
+    <div class="month-row">
+      <a class="btn month-step" href="{{ filter_prev_href }}" aria-label="{{ t('host.filter.prev_month') }}" title="{{ t('host.filter.prev_month') }}">‹</a>
+      <div class="month-control{% if not view.month %} is-empty{% endif %}">
+        {% if not view.month %}<span class="month-control-face" aria-hidden="true">{{ t('host.filter.all_dates') }}</span>{% endif %}
+        <input type="month" id="filter-month" name="month" value="{{ view.month_key }}" max="{{ filter_max_month }}"
+               {% if not filter_month_optional %}required{% endif %}>
+      </div>
+      {% if filter_next_href %}
+      <a class="btn month-step" href="{{ filter_next_href }}" aria-label="{{ t('host.filter.next_month') }}" title="{{ t('host.filter.next_month') }}">›</a>
+      {% else %}
+      <button class="btn month-step" type="button" disabled aria-label="{{ t('host.filter.next_month') }}">›</button>
+      {% endif %}
+    </div>
+  </div>
+  {% if filter_properties | length > 1 %}
+  <div class="field">
+    <label for="filter-apartment">{{ t('stays.filter.apartment') }}</label>
+    <select id="filter-apartment" name="apartment">
+      <option value="">{{ t('stays.filter.all_apartments') }}</option>
+      {% for apartment in filter_properties %}
+      <option value="{{ apartment.id }}" {% if view.apartment_id == apartment.id %}selected{% endif %}>{{ apartment.internal_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  {% if filter_statuses %}
+  <div class="field">
+    <label for="filter-status">{{ t('filter.status') }}</label>
+    <select id="filter-status" name="status">
+      <option value="">{{ t('stays.filter.all_apartments') }}</option>
+      {% for value, label_key in filter_statuses %}
+      <option value="{{ value }}" {% if view.status == value %}selected{% endif %}>{{ t(label_key) }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  {% if filter_search %}
+  <div class="field list-filter-search">
+    <label for="filter-q">{{ t('filter.search') }}</label>
+    <input type="search" id="filter-q" name="q" value="{{ view.q }}" maxlength="60" placeholder="{{ t('invoices.filter.search_placeholder') }}">
+  </div>
+  {% endif %}
+  <div class="field filter-actions filter-actions-end">
+    <button class="btn filter-apply" type="submit">{{ t('common.apply') }}</button>
+    {% if filter_active %}
+    <a class="btn ghost list-filter-reset" href="{{ filter_reset_href }}">{{ t('filter.reset') }} <span class="list-filter-count" aria-label="{{ t('filter.active', count=filter_active) }}">{{ filter_active }}</span></a>
+    {% endif %}
+  </div>
+</form>
