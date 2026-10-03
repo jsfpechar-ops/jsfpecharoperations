@@ -5,95 +5,86 @@
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('guide.title'), t('guide.lede')) }}
 
-<nav class="host-property-grid" aria-label="{{ t('host.section_navigation') }}">
-  {% for href, key, hint in [('/reservations', 'nav.stays', 'host.help_stays'), ('/apartments', 'nav.properties', 'host.help_properties'), ('/invoices', 'nav.invoices', 'host.help_invoices'), ('/settings', 'nav.settings', 'host.help_settings')] %}
-    <a class="host-property-card" href="{{ href }}"><div><strong>{{ t(key) }}</strong><small>{{ t(hint) }}</small></div><span aria-hidden="true">→</span></a>
-  {% endfor %}
-</nav>
+{% set sections = ['overview', 'statuses', 'setup', 'stays', 'guests', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'faster', 'faq', 'legal'] + (['demo'] if demo_available else []) %}
 <div class="guide-layout">
   <nav class="guide-nav panel" aria-label="{{ t('guide.title') }}">
-    <a href="#overview" class="guide-nav-link">{{ t('guide.nav.overview') }}</a>
-    <a href="#productivity" class="guide-nav-link">{{ t('guide.nav.productivity') }}</a>
-    <a href="#setup" class="guide-nav-link">{{ t('guide.nav.setup') }}</a>
-    <a href="#stays" class="guide-nav-link">{{ t('guide.nav.stays') }}</a>
-    <a href="#guests" class="guide-nav-link">{{ t('guide.nav.guests') }}</a>
-    <a href="#reporting" class="guide-nav-link">{{ t('guide.nav.reporting') }}</a>
-    <a href="#housebook" class="guide-nav-link">{{ t('guide.nav.housebook') }}</a>
-    <a href="#security" class="guide-nav-link">{{ t('guide.nav.security') }}</a>
-    <a href="#legal" class="guide-nav-link">{{ t('guide.nav.legal') }}</a>
-    <a href="#demo" class="guide-nav-link">{{ t('guide.nav.demo') }}</a>
+    {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
   </nav>
 
   <div class="guide-content">
     <section class="guide-section panel" id="overview">
       <h2>{{ t('guide.nav.overview') }}</h2>
       <p>{{ t('guide.overview.body') }}</p>
-
+      <p>{{ t('guide.overview.count') }}</p>
+      <p>{{ t('guide.overview.deadline') }}</p>
     </section>
 
-    <section class="guide-section panel" id="productivity">
-      <h2>{{ t('guide.nav.productivity') }}</h2>
-      <ul class="guide-steps">
-        <li>{{ t('guide.productivity.search') }}</li>
-        <li>{{ t('guide.productivity.shortcuts') }}</li>
-        <li>{{ t('guide.productivity.views') }}</li>
-        <li>{{ t('guide.productivity.quick_edit') }}</li>
-      </ul>
+    <section class="guide-section panel" id="statuses">
+      <h2>{{ t('guide.nav.statuses') }}</h2>
+      <p>{{ t('guide.statuses.lede') }}</p>
+      <dl class="kv guide-statuses">
+        {% for tone, label_key, body_key in [
+          ('red', 'status.failed', 'guide.statuses.failed'),
+          ('amber', 'status.incomplete', 'guide.statuses.incomplete'),
+          ('blue', 'status.ready', 'guide.statuses.ready'),
+          ('teal', 'status.awaiting_guest_short', 'guide.statuses.waiting'),
+          ('green', 'status.reported', 'guide.statuses.reported'),
+          ('grey', 'status.not_required', 'guide.statuses.not_required')] %}
+        <dt><span class="pill {{ tone }}">{{ t(label_key) }}</span></dt>
+        <dd>{{ t(body_key) }}</dd>
+        {% endfor %}
+      </dl>
+      <p class="small muted">{{ t('guide.statuses.other') }}</p>
     </section>
 
     <section class="guide-section panel" id="setup">
       <h2>{{ t('guide.nav.setup') }}</h2>
       <ol class="guide-steps">
-        <li><strong>{{ t('guide.setup.step1_title') }}</strong> — {{ t('guide.setup.step1') }}</li>
-        <li><strong>{{ t('guide.setup.step2_title') }}</strong> — {{ t('guide.setup.step2') }}</li>
-        <li><strong>{{ t('guide.setup.step3_title') }}</strong> — {{ t('guide.setup.step3') }}</li>
-        <li><strong>{{ t('guide.setup.step4_title') }}</strong> — {{ t('guide.setup.step4') }}</li>
-        <li><strong>{{ t('guide.setup.step5_title') }}</strong> — {{ t('guide.setup.step5') }}</li>
+        {% for n in range(1, 6) %}
+        <li><strong>{{ t('guide.setup.step' ~ n ~ '_title') }}</strong> — {{ t('guide.setup.step' ~ n) }}</li>
+        {% endfor %}
       </ol>
     </section>
 
     <section class="guide-section panel" id="stays">
       <h2>{{ t('guide.nav.stays') }}</h2>
       <p>{{ t('guide.stays.body') }}</p>
-      <p class="small muted">{{ t('guide.stays.csv') }}</p>
+      <p>{{ t('guide.stays.detail') }}</p>
+      <p class="small muted">{{ t('guide.stays.cancelled') }}</p>
     </section>
 
     <section class="guide-section panel" id="guests">
       <h2>{{ t('guide.nav.guests') }}</h2>
       <p>{{ t('guide.guests.body') }}</p>
-      <ul class="guide-steps">
-        <li>{{ t('guide.guests.step_email') }}</li>
-        <li>{{ t('guide.guests.step_party') }}</li>
-        <li>{{ t('guide.guests.step_details') }}</li>
-        <li>{{ t('guide.guests.step_photo') }}</li>
-        <li>{{ t('guide.guests.step_czech') }}</li>
-      </ul>
-      <div class="guide-shot guest" aria-hidden="true">
-        <div class="guide-shot-phone">
-          <div class="guide-shot-line"></div>
-          <div class="guide-shot-line wide"></div>
-          <div class="guide-shot-line"></div>
-          <div class="guide-shot-btn"></div>
-        </div>
-      </div>
+      <ol class="guide-steps">
+        {% for step in ['pin', 'pick', 'claim', 'form'] %}<li>{{ t('guide.guests.step_' ~ step) }}</li>{% endfor %}
+      </ol>
+      <p>{{ t('guide.guests.step_mail') }}</p>
+      <p>{{ t('guide.guests.czech') }}</p>
+      <p class="small muted">{{ t('guide.guests.photo') }}</p>
+      <p class="small muted">{{ t('guide.guests.cookies') }}</p>
     </section>
 
     <section class="guide-section panel" id="reporting">
       <h2>{{ t('guide.nav.reporting') }}</h2>
       <p>{{ t('guide.reporting.body') }}</p>
-      <figure class="guide-figure">
-        <img src="/static/guide/reporting-status.png" alt="Reporting status badges on a stay" loading="lazy">
-        <figcaption>{{ t('guide.reporting.caption') }}</figcaption>
-      </figure>
       <dl class="kv">
-        <dt>{{ t('guide.reporting.immediate') }}</dt>
-        <dd>{{ t('guide.reporting.immediate_detail') }}</dd>
-        <dt>{{ t('guide.reporting.scheduled') }}</dt>
-        <dd>{{ t('guide.reporting.scheduled_detail') }}</dd>
-        <dt>{{ t('guide.reporting.manual') }}</dt>
-        <dd>{{ t('guide.reporting.manual_detail') }}</dd>
+        {% for mode in ['immediate', 'scheduled', 'manual'] %}
+        <dt>{{ t('guide.reporting.' ~ mode) }}</dt>
+        <dd>{{ t('guide.reporting.' ~ mode ~ '_detail') }}</dd>
+        {% endfor %}
       </dl>
-      <p class="small muted">{{ t('guide.reporting.bulk') }}</p>
+      <p>{{ t('guide.reporting.deadline') }}</p>
+      <p>{{ t('guide.reporting.failure') }}</p>
+      <p class="small muted">{{ t('guide.reporting.receipts') }}</p>
+    </section>
+
+    <section class="guide-section panel" id="filters">
+      <h2>{{ t('guide.nav.filters') }}</h2>
+      <p>{{ t('guide.filters.body') }}</p>
+      <ul class="guide-steps">
+        {% for item in ['month', 'property', 'status', 'search', 'reset'] %}<li>{{ t('guide.filters.' ~ item) }}</li>{% endfor %}
+      </ul>
     </section>
 
     <section class="guide-section panel" id="housebook">
@@ -102,37 +93,59 @@
       <p class="small muted">{{ t('housebook.legal_footnote') }}</p>
     </section>
 
-    <section class="guide-section panel" id="security">
-      <h2>{{ t('guide.nav.security') }}</h2>
+    <section class="guide-section panel" id="stay_fee">
+      <h2>{{ t('guide.nav.stay_fee') }}</h2>
+      <p>{{ t('guide.stay_fee.body') }}</p>
+      <p>{{ t('guide.stay_fee.rules') }}</p>
+      <p>{{ t('guide.stay_fee.save') }}</p>
+    </section>
+
+    <section class="guide-section panel" id="invoices">
+      <h2>{{ t('guide.nav.invoices') }}</h2>
+      <p>{{ t('guide.invoices.body') }}</p>
+      <p>{{ t('guide.invoices.flow') }}</p>
+    </section>
+
+    <section class="guide-section panel" id="settings">
+      <h2>{{ t('guide.nav.settings') }}</h2>
+      <p>{{ t('guide.settings.body') }}</p>
       <ul class="guide-steps">
-        <li>{{ t('guide.security.two_factor') }}</li>
-        <li>{{ t('guide.security.turnstile') }}</li>
-        <li>{{ t('guide.security.passports') }}</li>
-        <li>{{ t('guide.security.backups') }}</li>
+        {% for item in ['two_factor', 'retention', 'requests'] %}<li>{{ t('guide.settings.' ~ item) }}</li>{% endfor %}
       </ul>
+    </section>
+
+    <section class="guide-section panel" id="faster">
+      <h2>{{ t('guide.nav.faster') }}</h2>
+      <ul class="guide-steps">
+        <li>{{ t('guide.faster.search') }}</li>
+        <li>{{ t('guide.faster.shortcuts') }}</li>
+      </ul>
+    </section>
+
+    <section class="guide-section panel" id="faq">
+      <h2>{{ t('guide.nav.faq') }}</h2>
+      <dl class="kv">
+        {% for item in ['link', 'count', 'czech', 'twice', 'edit'] %}
+        <dt>{{ t('guide.faq.' ~ item ~ '_q') }}</dt>
+        <dd>{{ t('guide.faq.' ~ item ~ '_a') }}</dd>
+        {% endfor %}
+      </dl>
     </section>
 
     <section class="guide-section panel guide-legal" id="legal">
       <h2>{{ t('guide.nav.legal') }}</h2>
       <p class="lede">{{ t('guide.legal.lede') }}</p>
-      <h3>{{ t('guide.legal.housebook_title') }}</h3>
-      <p>{{ t('guide.legal.housebook_body') }}</p>
-      <h3>{{ t('guide.legal.paper_title') }}</h3>
-      <p>{{ t('guide.legal.paper_body') }}</p>
-      <h3>{{ t('guide.legal.signature_title') }}</h3>
-      <p>{{ t('guide.legal.signature_body') }}</p>
-      <h3>{{ t('guide.legal.verification_title') }}</h3>
-      <p>{{ t('guide.legal.verification_body') }}</p>
-      <h3>{{ t('guide.legal.reporting_title') }}</h3>
-      <p>{{ t('guide.legal.reporting_body') }}</p>
-      <h3>{{ t('guide.legal.retention_title') }}</h3>
-      <p>{{ t('guide.legal.retention_body') }}</p>
+      {% for item in ['housebook', 'paper', 'signature', 'verification', 'reporting', 'retention'] %}
+      <h3>{{ t('guide.legal.' ~ item ~ '_title') }}</h3>
+      <p>{{ t('guide.legal.' ~ item ~ '_body') }}</p>
+      {% endfor %}
       <div class="legal-disclaimer panel quiet">
-        <h3 style="margin-top:0">{{ t('guide.legal.disclaimer_title') }}</h3>
-        <p class="small muted" style="margin-bottom:0">{{ t('guide.legal.disclaimer_body') }}</p>
+        <h3>{{ t('guide.legal.disclaimer_title') }}</h3>
+        <p class="small muted">{{ t('guide.legal.disclaimer_body') }}</p>
       </div>
     </section>
 
+    {% if demo_available %}
     <section class="guide-section panel" id="demo">
       <h2>{{ t('guide.nav.demo') }}</h2>
       <p>{{ t('guide.demo.body') }}</p>
@@ -140,6 +153,7 @@
         <button class="btn primary" type="submit">{{ t('demo.load') }}</button>
       </form>
     </section>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
