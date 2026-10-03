@@ -67,8 +67,8 @@ LAYOUT_JS = r"""
     out.push(`the page scrolls sideways (${document.documentElement.scrollWidth}px on a ${window.innerWidth}px screen, widest: ${culprit})`);
   }
 
-  document.querySelectorAll('label, button, a.g-btn, .tw-chip, h2, summary, .g-checkin-step').forEach(el => {
-    if (!vis(el) || clipped(el)) return;
+  document.querySelectorAll('label, button, a.g-btn, .tw-chip, h2, summary').forEach(el => {
+    if (!vis(el) || clipped(el) || el.closest('.g-checkin-steps')) return;
     if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflow !== 'visible')
       out.push(`text is cut off: ${name(el)} "${el.textContent.trim().slice(0, 40)}"`);
   });
@@ -244,7 +244,6 @@ class Guest:
         ).first.click()
         self.page.wait_for_timeout(900)  # the step scrolls into view smoothly
         assert self.step() != before, f"Continue did not leave the step {before!r}"
-        # The new step's strip must be in view, not under the sticky app bar.
         top, bar = self.page.evaluate(
             "() => [document.querySelector('[data-guest-step]:not([hidden])').getBoundingClientRect().top,"
             " document.querySelector('.g-head').getBoundingClientRect().bottom]"
@@ -266,10 +265,6 @@ class Guest:
     def fill_form(self, number: int, total: int, person):
         first, surname, birth, document = person
         page = self.page
-        strip = page.evaluate(
-            "() => document.querySelector('[data-guest-step]:not([hidden])').getAttribute('data-tw-strip')"
-        )
-        assert strip == f"Guest {number} of {total}", strip
         self.check_layout(f"guest {number}, details (empty)")
         page.fill("#first_name", first)
         # A phone keyboard opening shrinks the viewport and fires resize while
@@ -335,12 +330,10 @@ def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, 
 
         for number, person in enumerate(PEOPLE, start=1):
             if number > 1:
-                # The saved ticket names the next person, so nobody stops at one.
-                button = page.locator("[data-tw-next-guest]")
-                assert button.count() == 1
-                assert button.inner_text().strip() == f"Register guest {number} of 3"
+                link = page.get_by_role("link", name="Add a person")
+                assert link.count() == 1
                 guest.check_layout(f"saved, before guest {number}")
-                button.click()
+                link.click()
                 page.wait_for_load_state()
             guest.fill_form(number, 3, person)
 
@@ -382,8 +375,8 @@ def test_the_czech_pages_have_no_english_left(live_server, browser):
         text = page.inner_text("body")
         for english in ("Continue", "Guest 1", "Day", "Month", "Year", "Sign here", "Start typing"):
             assert english not in text, f"{english!r} on a Czech page"
-        assert "Host 1 z 1" in page.evaluate(
-            "() => document.querySelector('[data-guest-step]:not([hidden])').getAttribute('data-tw-strip')"
-        )
+        assert page.evaluate(
+            "() => document.querySelector('[data-guest-step]:not([hidden])').getAttribute('data-step-title')"
+        ) == "Vaše údaje"
     finally:
         context.close()

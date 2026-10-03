@@ -39,11 +39,10 @@ def test_the_next_action_sits_above_the_records():
         page = _hub()
     finally:
         _cleanup()
-    # The button names who is next. "Add a person" read as optional, and a
-    # guest who had just saved their own form thought the group was done.
-    assert "Register guest 2 of 3" in page
-    assert page.index("Register guest 2 of 3") < page.index('class="g-card g-summary"')
-    assert page.index("Register guest 2 of 3") < page.index("Your submission")
+    # The group card and its primary action sit above the folded records.
+    assert "Add a person" in page
+    assert page.index("Add a person") < page.index('class="g-card g-summary"')
+    assert page.index("Add a person") < page.index("Your submission")
 
 
 def test_the_status_line_says_how_many_are_still_to_register():

@@ -1200,16 +1200,7 @@
 }
 
 
-/* =======================================================================
-   Ticket Wallet v3 fixes (30 Sep 2026). Each rule answers a defect found
-   by driving the real flow in a browser; tests/e2e/test_guest_browser.py
-   repeats that walk so none of them can come back unnoticed.
-   ======================================================================= */
-
-/* 32. Things that must never show ---------------------------------------- */
-/* signature.js labels finished tracker steps with a class="sr-only" span.
-   guest.css only defines .g-sr-only, so the word "Done" was painted next to
-   every finished step ("DetailsDone") and cut the labels off. */
+/* Form polish kept from Ticket Wallet v3 (hub layout stays pre-v3). -------- */
 .tw .sr-only {
   position: absolute !important;
   width: 1px;
@@ -1218,66 +1209,30 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
-/* The app bar already carries the dates and the nights. A second date card
-   under it, and the "3 nights · Person 1 of 3" line above the tracker, said
-   the same thing again and pushed the question below the fold. */
-.tw .g-stay-summary,
-.tw .g-checkin-stay { display: none; }
-/* The strip says "Guest 2 of 3" now, so the chip beside the heading goes. */
-.tw [data-guest-step] h2 .g-chip { display: none; }
-/* guest.css caps question headings at 15ch for the old card; on a ticket
-   that broke "How many people, and your e-mail" into four ragged lines. */
 .tw .g-question-card h2 { max-width: none; }
-
-/* 33. Whose form this is -------------------------------------------------- */
-.tw [data-guest-step][data-tw-strip]::before { content: attr(data-tw-strip); }
-
-/* 34. Scrolling under the sticky bars ------------------------------------- */
-/* A new step used to scroll its own strip and heading under the app bar,
-   and a focused field could hide behind the sticky Continue bar. */
 .tw { scroll-padding-top: 112px; }
 .tw [data-guest-step],
 .tw .tw-ticket { scroll-margin-top: 104px; }
 @media (max-width: 560px) {
   .tw { scroll-padding-bottom: 96px; }
 }
-
-/* 34b. The app bar stays one line on the smallest phones ------------------ */
-/* At 320px the title claimed its full text width, so the EN | CS switch
-   wrapped to a second line and the bar grew to 128px, taller than the room
-   the steps leave for it. Let the name shrink and ellipsize instead. */
 .tw .g-head .g-title { flex: 1 1 0; }
 .tw .g-head .g-lang { flex: 0 0 auto; }
 @media (max-width: 360px) {
   .tw .g-head .g-facility { font-size: 17px; }
   .tw .g-head .g-lang a { min-width: 40px; padding: 0 8px; }
 }
-
-/* 34c. Nothing may push the page sideways ------------------------------- */
-/* The stamp springs in from 1.8x its size, and on a 320px phone that made
-   the page scroll sideways for a moment on every "saved" screen. */
 body.tw { overflow-x: clip; }
-
-/* 35. One rhythm for every field ------------------------------------------ */
-/* .g-field:last-child dropped the margin on the second field of a row, so
-   Surname sat flush against Date of birth while every other pair had air. */
 .tw .g-field { margin-bottom: 20px; }
 .tw .g-field:last-child { margin-bottom: 0; }
 .tw .g-row { gap: 20px; margin-bottom: 20px; }
 .tw .g-row:last-child { margin-bottom: 0; }
 .tw .g-row > .g-field { margin-bottom: 0; }
 .tw .g-field > label:not(.checkline) { display: block; margin-bottom: 8px; }
-
-/* 36. Date of birth: level with every other field ------------------------ */
 .tw .tw-dob { align-items: start; }
 .tw .tw-dob-part { display: block; }
 .tw .tw-dob-part input { margin: 0; }
 .tw .tw-dob-part input::placeholder { color: var(--ink-faint); letter-spacing: 0.08em; }
-
-/* 37. Stub: Back and Continue on one line --------------------------------- */
-/* Two full-width buttons stacked took a fifth of a phone screen and, being
-   sticky, covered the field the guest was typing in. Back is the quiet
-   choice, so it takes only the room it needs. */
 .tw .tw-stub,
 .tw [data-guest-step] > .g-wizard-nav { flex-wrap: nowrap; align-items: stretch; }
 .tw [data-guest-step] > .g-wizard-nav > .g-btn.secondary {
@@ -1291,31 +1246,16 @@ body.tw { overflow-x: clip; }
 @media (max-width: 560px) {
   .tw [data-guest-step] > .g-wizard-nav { padding-top: var(--space-4); padding-bottom: var(--space-4); }
 }
-/* A form that ends in the stub must not leave a white band under it. */
 .tw .tw-ticket > form:last-child:has(> .tw-stub:last-child) { margin-bottom: 0; }
-
-/* 38. Small targets ------------------------------------------------------- */
 .tw .g-review-change {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
   padding: 0 var(--space-2);
 }
-
-/* 39. Saved + next guest in one ticket ------------------------------------ */
-.tw .g-saved .tw-group-progress { margin: var(--space-4) 0 var(--space-2); text-align: left; }
-.tw .g-saved .g-still-missing { text-align: left; margin: 0; }
-.tw .g-saved .tw-stub .g-btn { flex: 1 1 auto; }
-
-/* 39b. Passport photo buttons ------------------------------------------- */
-/* Side by side, "Retake or choose another" wrapped to three lines inside a
-   pill and the two buttons read as circles. One per line, full width. */
 .tw .passport-upload-actions { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
 .tw .passport-upload-actions .g-btn { width: 100%; margin: 0; }
 .tw .passport-file-name { margin: var(--space-3) 0 0; font-weight: 650; color: var(--ink); }
-
-/* 40. Desktop page: no stray lines ---------------------------------------- */
-/* The two dashed rules down the page edges read as a rendering fault. */
 @media (min-width: 1020px) {
   .tw {
     background:
@@ -1323,6 +1263,7 @@ body.tw { overflow-x: clip; }
       var(--tw-page);
   }
 }
+
 
 /* 17. Motion ------------------------------------------------------------ */
 .tw .tw-ticket,
