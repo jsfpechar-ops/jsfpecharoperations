@@ -4449,6 +4449,59 @@ for _lang, _strings in _ADMIN_OPERATIONS_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 
+# WP11: the admin funnel page. Platform administrators only.
+_ADMIN_FUNNEL_STRINGS = {
+    "en": {
+        "funnel.title": "Funnel",
+        "funnel.lede": "How far each host account has got, read from the records the app already keeps. Host account data only; no guest data.",
+        "funnel.export_csv": "Export CSV",
+        "funnel.counts_title": "Accounts per stage",
+        "funnel.counts_help": "An account is counted at every stage it has reached. First login falls back to the last login once old audit rows have expired.",
+        "funnel.empty": "No host accounts yet.",
+        "funnel.col.account": "Account",
+        "funnel.col.filings_month": "Filings %(month)s",
+        "funnel.col.last_login": "Last login",
+        "funnel.col.last_filing": "Last filing",
+        "funnel.col.stage": "Stage reached",
+        "funnel.stage.": "None",
+        "funnel.stage.created": "Created",
+        "funnel.stage.first_login": "First login",
+        "funnel.stage.legal_accepted": "Terms accepted",
+        "funnel.stage.first_entity": "First business",
+        "funnel.stage.first_property": "First property",
+        "funnel.stage.first_calendar": "Calendar connected",
+        "funnel.stage.first_guest": "First guest done",
+        "funnel.stage.first_filing": "First filing",
+        "funnel.stage.retained": "Retained",
+    },
+    "cs": {
+        "funnel.title": "Trychtýř",
+        "funnel.lede": "Jak daleko se který účet hostitele dostal, podle záznamů, které aplikace už vede. Jen údaje o účtech hostitelů, žádné údaje hostů.",
+        "funnel.export_csv": "Export CSV",
+        "funnel.counts_title": "Účty podle fáze",
+        "funnel.counts_help": "Účet se započítá do každé fáze, které dosáhl. Po vypršení starých auditních záznamů se jako první přihlášení použije poslední přihlášení.",
+        "funnel.empty": "Zatím žádné účty hostitelů.",
+        "funnel.col.account": "Účet",
+        "funnel.col.filings_month": "Hlášení %(month)s",
+        "funnel.col.last_login": "Poslední přihlášení",
+        "funnel.col.last_filing": "Poslední hlášení",
+        "funnel.col.stage": "Dosažená fáze",
+        "funnel.stage.": "Žádná",
+        "funnel.stage.created": "Založen",
+        "funnel.stage.first_login": "První přihlášení",
+        "funnel.stage.legal_accepted": "Podmínky přijaty",
+        "funnel.stage.first_entity": "První subjekt",
+        "funnel.stage.first_property": "První ubytování",
+        "funnel.stage.first_calendar": "Kalendář připojen",
+        "funnel.stage.first_guest": "První host vyplnil",
+        "funnel.stage.first_filing": "První hlášení",
+        "funnel.stage.retained": "Aktivně používá",
+    },
+}
+for _lang, _strings in _ADMIN_FUNNEL_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

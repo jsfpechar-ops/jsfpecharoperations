@@ -9,12 +9,13 @@ from datetime import datetime, timedelta, timezone
 import pyotp
 import qrcode
 from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from starlette.background import BackgroundTask
 
 from .. import (
     acceptance,
     access,
+    admin_funnel,
     admin_ops,
     auth,
     config,
@@ -640,6 +641,31 @@ def operations_admin(request: Request):
     if guard:
         return guard
     return render(request, "admin_operations.html", {"ops": admin_ops.overview()})
+
+
+@router.get("/admin/funnel")
+def funnel_admin(request: Request):
+    """One row per host account: how far each got, from existing rows (WP11)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    return render(request, "admin_funnel.html", {"funnel": admin_funnel.rows()})
+
+
+@router.get("/admin/funnel.csv")
+def funnel_admin_csv(request: Request):
+    """The funnel table as CSV, for pasting into a CRM. Host accounts only."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    data = admin_funnel.rows()
+    db.audit("export_funnel_csv", f"rows={len(data['rows'])}", actor=account["username"])
+    stamp = datetime.now().strftime("%Y%m%d")
+    return StreamingResponse(
+        admin_funnel.iter_csv(data),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="funnel-{stamp}.csv"'},
+    )
 
 
 @router.post("/admin/incidents")

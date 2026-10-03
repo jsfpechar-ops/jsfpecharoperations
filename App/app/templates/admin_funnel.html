@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% set nav = 'funnel' %}
+{% block title %}{{ t('funnel.title') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{% macro day(value) -%}{{ value[:10] if value else '' }}{%- endmacro %}
+{{ page_header(
+  t('funnel.title'),
+  t('funnel.lede'),
+  actions='<a class="btn" href="/admin/funnel.csv">' ~ t('funnel.export_csv') ~ '</a>'
+) }}
+
+<section class="panel" id="funnel-counts">
+  <h2 style="margin-top:0">{{ t('funnel.counts_title') }}</h2>
+  <ol class="funnel-counts">
+    {% for stage in funnel.stages %}
+    <li><span class="muted">{{ t('funnel.stage.' ~ stage) }}</span> <strong data-stage="{{ stage }}">{{ funnel.counts[stage] }}</strong></li>
+    {% endfor %}
+  </ol>
+  <p class="small muted">{{ t('funnel.counts_help') }}</p>
+</section>
+
+<section class="panel tight scroll-x" id="funnel-table">
+  {% if funnel.rows %}
+  <table class="table-cards">
+    <thead><tr>
+      <th>{{ t('funnel.col.account') }}</th>
+      {% for stage in funnel.stages %}<th>{{ t('funnel.stage.' ~ stage) }}</th>{% endfor %}
+      <th>{{ t('funnel.col.filings_month', month=funnel.previous_month) }}</th>
+      <th>{{ t('funnel.col.filings_month', month=funnel.current_month) }}</th>
+      <th>{{ t('funnel.col.last_login') }}</th>
+      <th>{{ t('funnel.col.last_filing') }}</th>
+      <th>{{ t('funnel.col.stage') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for row in funnel.rows %}
+      <tr data-account="{{ row.id }}">
+        <td data-label="{{ t('funnel.col.account') }}">
+          <a href="/admin/users#user-{{ row.id }}"><strong>{{ row.display_name or row.username }}</strong></a>
+          <div class="small muted mono">{{ row.username }}{% if not row.active %} &middot; {{ t('users.status.disabled') }}{% endif %}</div>
+        </td>
+        {% for stage, column in funnel.stage_columns %}
+        <td data-label="{{ t('funnel.stage.' ~ stage) }}">{{ day(row[column]) }}</td>
+        {% endfor %}
+        <td data-label="{{ t('funnel.col.filings_month', month=funnel.previous_month) }}">{{ row.filings_previous }}</td>
+        <td data-label="{{ t('funnel.col.filings_month', month=funnel.current_month) }}">{{ row.filings_current }}</td>
+        <td data-label="{{ t('funnel.col.last_login') }}">{{ day(row.last_login_at) }}</td>
+        <td data-label="{{ t('funnel.col.last_filing') }}">{{ day(row.last_filing_at) }}</td>
+        <td data-label="{{ t('funnel.col.stage') }}" data-stage="{{ row.stage }}">{{ t('funnel.stage.' ~ row.stage) }} <span class="small muted">{{ day(row.stage_at) }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">{{ t('funnel.empty') }}</p>{% endif %}
+</section>
+{% endblock %}
