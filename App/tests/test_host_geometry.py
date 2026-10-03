@@ -154,7 +154,7 @@ def test_the_month_filter_shares_its_page_edges(base):
         measured = {}
         for route in ("/stay-fees?lang=en", "/invoices?lang=en"):
             page.goto(base + route)
-            page.wait_for_selector(".host-month-filter", timeout=30000)
+            page.wait_for_selector(".list-filter", timeout=30000)
             measured[route] = page.evaluate(
                 """() => {
                   const box = (selector) => document.querySelector(selector).getBoundingClientRect();
@@ -162,11 +162,11 @@ def test_the_month_filter_shares_its_page_edges(base):
                     const rect = box(selector);
                     return [Math.round(rect.left), Math.round(rect.right)];
                   };
-                  const filter = box('.host-month-filter');
+                  const filter = box('.list-filter');
                   const control = box('.month-control');
-                  const stepper = box('.month-stepper');
+                  const stepper = box('.month-row .month-step:last-child');
                   return {
-                    filter: edges('.host-month-filter'),
+                    filter: edges('.list-filter'),
                     table: edges('.panel, table'),
                     title: edges('.page-header, h1'),
                     controlGap: Math.round(stepper.left - control.right),
@@ -181,16 +181,16 @@ def test_the_month_filter_shares_its_page_edges(base):
                 for path in ("/stay-fees", "/invoices"):
                     route = f"{path}?lang={lang}"
                     page.goto(base + route)
-                    page.wait_for_selector(".host-month-filter", timeout=30000)
+                    page.wait_for_selector(".list-filter", timeout=30000)
                     responsive[(width, route)] = page.evaluate(
                         """() => {
                           const root = document.documentElement;
-                          const filter = document.querySelector('.host-month-filter');
+                          const filter = document.querySelector('.list-filter');
                           const bounds = filter.getBoundingClientRect();
                           const children = [...filter.children].filter(
                             (element) => getComputedStyle(element).display !== 'none'
                           );
-                          const buttons = [...filter.querySelectorAll('.month-stepper .btn')];
+                          const buttons = [...filter.querySelectorAll('.month-step')];
                           return {
                             overflow: root.scrollWidth > root.clientWidth + 1,
                             childOutside: children.some((element) => {
