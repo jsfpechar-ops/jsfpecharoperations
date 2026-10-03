@@ -1715,10 +1715,6 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             apartment,
         )
     )
-    # The form just signed shows the stay's current dates, so this save clears
-    # the warning - but only once *nobody* on the stay is still holding an
-    # older signature. Resolving on any one guest's save hid the warning while
-    # the rest of the party still had the old dates on file.
     await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
 
     response = RedirectResponse(

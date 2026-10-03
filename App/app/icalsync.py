@@ -299,6 +299,53 @@ def platform_of(url: str, ics_text: str = "") -> str:
     return "ical"
 
 
+def _fit_unsent_guest_windows(
+    reservation_id: int,
+    apartment_id: int,
+    new_from: str,
+    new_to: str,
+    now: str,
+) -> int:
+    """Trim unsent guest stay windows to fit a booking that moved in the calendar."""
+    from . import validation
+
+    new_start = validation.parse_iso_date(new_from)
+    new_end = validation.parse_iso_date(new_to)
+    if not new_start or not new_end:
+        return 0
+    apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+    owner_user_id = apartment["owner_user_id"] if apartment else None
+    moved = 0
+    for guest in db.query(
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+        "AND submit_state != ?",
+        (reservation_id, reporting.SENT),
+    ):
+        sf = validation.parse_iso_date(guest["stay_from"]) or new_start
+        st = validation.parse_iso_date(guest["stay_to"]) or new_end
+        fitted_from = max(sf, new_start)
+        fitted_to = min(st, new_end)
+        if fitted_from >= fitted_to:
+            fitted_from, fitted_to = new_start, new_end
+        new_sf, new_st = fitted_from.isoformat(), fitted_to.isoformat()
+        if guest["stay_from"] == new_sf and guest["stay_to"] == new_st:
+            continue
+        old_window = f"{guest['stay_from']}..{guest['stay_to']}"
+        db.update(
+            "guest",
+            guest["id"],
+            {"stay_from": new_sf, "stay_to": new_st, "updated_at": now},
+        )
+        db.audit(
+            "guest_stay_window_fitted",
+            f"guest={guest['id']} reservation={reservation_id} was={old_window} "
+            f"now={new_sf}..{new_st}",
+            owner_user_id=owner_user_id,
+        )
+        moved += 1
+    return moved
+
+
 def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> None:
     """A cancelled stay that already has guest forms is never filed: say so.
 
@@ -589,61 +636,19 @@ def sync_feed(
                         existing["id"],
                     )
             if dates_changed:
-                # Guests whose window came from the booking move with it, and
-                # that is two cases, not one. A guest still sitting on the
-                # booking's *exact* old window inherited those dates and never
-                # chose them. A guest whose whole window now lies after the new
-                # stay ends cannot be staying here at all - the room is not
-                # booked then - so those dates are the old booking's too.
-                # Matching the old window exactly was the only case the sync
-                # used to move, so a booking that jumped a month backwards left
-                # its guests on dates the stay no longer covers: the deadline
-                # clock then ran from the stale arrival and the stay was never
-                # chased. A window that still overlaps the new stay - an early
-                # arrival, a departure a day short - is the guest's own and is
-                # left alone. The signature is deliberately left alone in every
-                # case: it names the dates the guest actually signed for, so
-                # wiping it would destroy evidence the host may still need. The
-                # host is told instead.
-                moved = 0
-                with db.cursor() as cur:
-                    cur.execute(
-                        "UPDATE guest SET stay_from = ?, stay_to = ?, updated_at = ? "
-                        "WHERE reservation_id = ? AND submit_state != ? "
-                        "AND stay_from IS NOT NULL AND stay_to IS NOT NULL "
-                        "AND ((stay_from = ? AND stay_to = ?) OR stay_from > ?)",
-                        (
-                            event["date_from"],
-                            event["date_to"],
-                            now,
-                            existing["id"],
-                            reporting.SENT,
-                            existing["date_from"],
-                            existing["date_to"],
-                            event["date_to"],
-                        ),
-                    )
-                    moved = cur.rowcount
+                moved = _fit_unsent_guest_windows(
+                    existing["id"],
+                    feed["apartment_id"],
+                    event["date_from"],
+                    event["date_to"],
+                    now,
+                )
                 if moved:
                     log.info(
                         "ical_dates_moved_guests apartment_id=%s reservation_id=%s guests=%s",
                         feed["apartment_id"],
                         existing["id"],
                         moved,
-                    )
-                # A stay with nobody on it has no signature to re-collect, and
-                # a critical "the guest must sign again" alert for an empty
-                # stay is noise the host learns to ignore.
-                on_stay = db.query_one(
-                    "SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ? "
-                    "AND archived_at IS NULL",
-                    (existing["id"],),
-                )
-                if on_stay and on_stay["n"]:
-                    log.info(
-                        "ical_dates_moved_guests_on_stay apartment_id=%s reservation_id=%s",
-                        feed["apartment_id"],
-                        existing["id"],
                     )
                 reported = db.query_one(
                     "SELECT COUNT(*) AS n FROM guest "

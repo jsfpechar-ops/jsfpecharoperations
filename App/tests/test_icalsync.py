@@ -279,6 +279,72 @@ def test_moved_ical_stay_keeps_the_signature_it_collected(monkeypatch, tmp_path)
     assert guest["signed_at"] is not None
 
 
+def test_a_shrunk_booking_trims_an_unsent_guest_window(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "DB_PATH", tmp_path / "shrink-feed.sqlite3")
+    db.init_db()
+    now = db.utcnow()
+    apartment_id = db.insert(
+        "apartment",
+        {"internal_name": "Shrink feed test", "automation_mode": "manual", "active": 1, "created_at": now},
+    )
+    feed_id = db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apartment_id,
+            "url": "https://calendar.example/shrink.ics",
+            "active": 1,
+            "created_at": now,
+        },
+    )
+    reservation_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": apartment_id,
+            "ical_feed_id": feed_id,
+            "uid": "shrink-stay",
+            "date_from": "2099-01-01",
+            "date_to": "2099-01-10",
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    guest_id = db.insert(
+        "guest",
+        {
+            "reservation_id": reservation_id,
+            "stay_from": "2099-01-03",
+            "stay_to": "2099-01-08",
+            "signature_png": "data:image/png;base64,signed",
+            "signed_at": now,
+            "submit_state": "pending",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    shrunk = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20990101\nDTEND;VALUE=DATE:20990105\n"
+        "UID:shrink-stay\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+    )
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: shrunk)
+    icalsync.sync_feed(db.query_one("SELECT * FROM ical_feed WHERE id = ?", (feed_id,)))
+    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+    assert guest["stay_from"] == "2099-01-03"
+    assert guest["stay_to"] == "2099-01-05"
+    assert guest["signature_png"] == "data:image/png;base64,signed"
+
+
+def test_a_filed_guest_is_not_moved_when_the_booking_changes(monkeypatch, tmp_path):
+    feed_id, _reservation_id, guest_id = _moved_stay(
+        tmp_path, monkeypatch, submit_state="sent"
+    )
+    before = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    _sync(feed_id)
+    after = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    assert before == after
+
+
 def test_moved_ical_stay_does_not_raise_a_resign_alert(monkeypatch, tmp_path):
     feed_id, reservation_id, _guest_id = _moved_stay(tmp_path, monkeypatch)
 

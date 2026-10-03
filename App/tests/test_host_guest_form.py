@@ -533,7 +533,7 @@ def test_a_legacy_resign_alert_does_not_block_filing():
             )
         }
         assert inside in offered
-        assert outside in offered
+        assert outside not in offered
     finally:
         _cleanup()
 
