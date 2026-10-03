@@ -48,7 +48,8 @@
     'awaiting_verification': t('status.awaiting_verification')
   } %}
   {# Tone follows criticality (tokens.css): red critical, amber host action,
-     blue ready, teal waiting on the guest, green done, grey neutral. #}
+     blue ready (the ID check is optional, so an unchecked ID is still ready),
+     teal waiting on the guest, green done, grey neutral. #}
   {% set tones = {
     'failed': 'red',
     'reported': 'green',
@@ -56,7 +57,7 @@
     'incomplete': 'amber',
     'not_required': 'grey',
     'awaiting_guest': 'teal',
-    'awaiting_verification': 'amber'
+    'awaiting_verification': 'blue'
   } %}
   {% set tone = tones.get(status, 'grey') %}
   {% if is_demo and status in ('ready', 'awaiting_verification') %}
