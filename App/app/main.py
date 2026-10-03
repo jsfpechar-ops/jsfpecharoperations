@@ -249,6 +249,9 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""
     client_ip.apply_visitor_client(request.scope, request.headers)
     started = time.perf_counter()
+    # A fresh counter per request (WP13). The route runs in a copy of this
+    # context, which shares the object, so its queries land here.
+    stats = db.start_request_stats()
     response = await call_next(request)
     security.attach_csrf_cookie(request, response)
     _harden(response, public_analytics=analytics.is_public_page(request))
@@ -260,7 +263,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     elif response.status_code in (200, 304):
         response.headers.setdefault("Cache-Control", _static_cache_control(request))
     if config.ACCESS_LOG:
-        _log_access(request, response.status_code, started)
+        _log_access(request, response.status_code, started, stats)
     return response
 
 
@@ -288,16 +291,27 @@ def _access_route(request: Request) -> str:
     return getattr(route, "path", None) or "<unmatched>"
 
 
-def _log_access(request: Request, status_code: int, started: float) -> None:
+def _log_access(
+    request: Request,
+    status_code: int,
+    started: float,
+    stats: "db.RequestStats | None" = None,
+) -> None:
     path = request.url.path
     if path.startswith("/static/") or path == "/healthz":
         return
+    stats = stats or db.RequestStats()
+    # q, db_ms and lock_ms are counts and durations only; they carry nothing
+    # from the request, so the line stays as PII-free as the route template.
     log_access.info(
-        "method=%s route=%s status=%s ms=%d",
+        "method=%s route=%s status=%s ms=%d q=%d db_ms=%d lock_ms=%d",
         request.method,
         _access_route(request),
         status_code,
         int((time.perf_counter() - started) * 1000),
+        stats.queries,
+        int(stats.db_seconds * 1000),
+        int(stats.lock_seconds * 1000),
     )
 
 

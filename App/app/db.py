@@ -7,6 +7,7 @@ import hashlib
 import json
 import sqlite3
 import threading
+import time
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
@@ -19,6 +20,65 @@ from . import config
 _current_owner_id: ContextVar[Optional[int]] = ContextVar("ubyhost_owner_id", default=None)
 # (user_id, username, impersonator_id) of whoever is acting in this request.
 _current_actor: ContextVar[Optional[tuple]] = ContextVar("ubyhost_actor", default=None)
+
+
+class RequestStats:
+    """What one request cost the database (WP13, review 7.3.4).
+
+    ``queries`` counts statements run on the request's connections, without
+    the connection PRAGMAs and the BEGIN/COMMIT around a transaction.
+    ``db_seconds`` is wall time inside the helpers below, connection opening
+    included; for ``cursor()``/``immediate()`` it is the whole block.
+    ``lock_seconds`` is the time ``BEGIN IMMEDIATE`` waited for the write lock.
+
+    The object is mutable on purpose: a sync route runs in a worker thread with
+    a *copy* of the request's context, so the copy has to point at the same
+    object for the middleware to read the totals afterwards.
+    """
+
+    __slots__ = ("queries", "db_seconds", "lock_seconds")
+
+    def __init__(self) -> None:
+        self.queries = 0
+        self.db_seconds = 0.0
+        self.lock_seconds = 0.0
+
+
+_request_stats: ContextVar[Optional[RequestStats]] = ContextVar(
+    "ubyhost_request_stats", default=None
+)
+# "--" is how SQLite reports a statement run inside a trigger.
+_UNCOUNTED_PREFIXES = ("PRAGMA", "BEGIN", "COMMIT", "ROLLBACK", "--")
+
+
+def start_request_stats() -> RequestStats:
+    """Give the current context a fresh counter and return it."""
+    stats = RequestStats()
+    _request_stats.set(stats)
+    return stats
+
+
+def current_request_stats() -> Optional[RequestStats]:
+    return _request_stats.get()
+
+
+def _count_statement(statement: str) -> None:
+    stats = _request_stats.get()
+    if stats is not None and not statement.lstrip().upper().startswith(_UNCOUNTED_PREFIXES):
+        stats.queries += 1
+
+
+@contextmanager
+def _timed():
+    stats = _request_stats.get()
+    if stats is None:
+        yield
+        return
+    started = time.perf_counter()
+    try:
+        yield
+    finally:
+        stats.db_seconds += time.perf_counter() - started
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -585,6 +645,9 @@ def connect() -> sqlite3.Connection:
     except OSError:
         pass
     conn.row_factory = sqlite3.Row
+    if _request_stats.get() is not None:
+        # Only inside a request; the scheduler and the CLI pay nothing.
+        conn.set_trace_callback(_count_statement)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
     # Overwrite freed pages instead of leaving the old bytes behind. Without
@@ -596,35 +659,41 @@ def connect() -> sqlite3.Connection:
 
 @contextmanager
 def cursor():
-    conn = connect()
-    try:
-        cur = conn.cursor()
-        cur.execute("BEGIN")
+    with _timed():
+        conn = connect()
         try:
-            yield cur
-            cur.execute("COMMIT")
-        except Exception:
-            cur.execute("ROLLBACK")
-            raise
-    finally:
-        conn.close()
+            cur = conn.cursor()
+            cur.execute("BEGIN")
+            try:
+                yield cur
+                cur.execute("COMMIT")
+            except Exception:
+                cur.execute("ROLLBACK")
+                raise
+        finally:
+            conn.close()
 
 
 @contextmanager
 def immediate():
     """Like cursor(), but takes the write lock before the first read."""
-    conn = connect()
-    try:
-        cur = conn.cursor()
-        cur.execute("BEGIN IMMEDIATE")
+    with _timed():
+        conn = connect()
         try:
-            yield cur
-            cur.execute("COMMIT")
-        except Exception:
-            cur.execute("ROLLBACK")
-            raise
-    finally:
-        conn.close()
+            cur = conn.cursor()
+            stats = _request_stats.get()
+            waited_from = time.perf_counter()
+            cur.execute("BEGIN IMMEDIATE")
+            if stats is not None:
+                stats.lock_seconds += time.perf_counter() - waited_from
+            try:
+                yield cur
+                cur.execute("COMMIT")
+            except Exception:
+                cur.execute("ROLLBACK")
+                raise
+        finally:
+            conn.close()
 
 
 # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
@@ -910,11 +979,13 @@ def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def query(sql: str, params: Iterable[Any] = ()) -> List[sqlite3.Row]:
-    conn = connect()
-    try:
-        return [_hydrate(row) for row in conn.execute(sql, tuple(params)).fetchall()]
-    finally:
-        conn.close()
+    with _timed():
+        conn = connect()
+        try:
+            rows = conn.execute(sql, tuple(params)).fetchall()
+        finally:
+            conn.close()
+    return [_hydrate(row) for row in rows]
 
 
 def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
@@ -923,12 +994,13 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
 
 
 def execute(sql: str, params: Iterable[Any] = ()) -> int:
-    conn = connect()
-    try:
-        cur = conn.execute(sql, tuple(params))
-        return cur.lastrowid
-    finally:
-        conn.close()
+    with _timed():
+        conn = connect()
+        try:
+            cur = conn.execute(sql, tuple(params))
+            return cur.lastrowid
+        finally:
+            conn.close()
 
 
 def insert(table: str, values: Dict[str, Any]) -> int:
@@ -973,11 +1045,12 @@ def update_if(
         clauses.append(extra_where)
     sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)
     params = list(values.values()) + [row_id] + list(expected.values()) + list(extra_params)
-    conn = connect()
-    try:
-        return conn.execute(sql, params).rowcount == 1
-    finally:
-        conn.close()
+    with _timed():
+        conn = connect()
+        try:
+            return conn.execute(sql, params).rowcount == 1
+        finally:
+            conn.close()
 
 
 def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:

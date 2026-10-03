@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import fcntl
 import logging
+import time
 
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -83,19 +84,43 @@ def _job_ok(job_id: str) -> None:
         log.warning("could not record the last success of job %s", job_id, exc_info=True)
 
 
+def _log_run(job_id: str, started: float, ok: bool, items: dict | None = None) -> None:
+    """One line per job run with its duration and item counts (WP13).
+
+    ``tools/perf_report.py`` reads these: ``job=<id> ok=<0|1> ms=<n>`` then
+    ``key=<int>`` pairs. Only numbers, never names or URLs.
+    """
+    counts = " ".join(
+        f"{key}={int(value)}"
+        for key, value in (items or {}).items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+    )
+    log.info(
+        "job run job=%s ok=%d ms=%d%s",
+        job_id,
+        1 if ok else 0,
+        int((time.perf_counter() - started) * 1000),
+        f" {counts}" if counts else "",
+    )
+
+
 def _job_sync_calendars() -> None:
+    started = time.perf_counter()
     try:
         totals = icalsync.sync_all()
         log.info("calendar sync: %s", totals)
     except Exception:
         log.exception("calendar sync failed")
         _job_failed("ical")
+        _log_run("ical", started, False)
         return
     _job_ok("ical")
+    _log_run("ical", started, True, totals)
     _ping(config.HEARTBEAT_ICAL_URL, "ical")
 
 
 def _job_submit() -> None:
+    started = time.perf_counter()
     try:
         summary = reporting.sweep()
         if summary["submitted"] or summary["failed"]:
@@ -103,8 +128,10 @@ def _job_submit() -> None:
     except Exception:
         log.exception("ubyport sweep failed")
         _job_failed("submit")
+        _log_run("submit", started, False)
         return
     _job_ok("submit")
+    _log_run("submit", started, True, summary)
     _heartbeat()
 
 
@@ -124,7 +151,9 @@ def _ping(url: str, job_id: str) -> None:
 
 
 def _job_deadlines() -> None:
+    started = time.perf_counter()
     watch_ok = True
+    raised = due_requests = 0
     try:
         raised = reporting.check_deadlines()
         due_requests = dsr.raise_due_alerts()
@@ -152,9 +181,22 @@ def _job_deadlines() -> None:
         # No ping at all: the external monitor alerts on the missing ping.
         log.exception("filing watchdog failed")
         _job_failed("deadlines")
+        _log_run("deadlines", started, False)
         return
     if watch_ok:
         _job_ok("deadlines")
+    _log_run(
+        "deadlines", started, watch_ok,
+        {
+            "alerts": raised or 0,
+            "requests_due": due_requests or 0,
+            "at_risk": watchdog["at_risk"],
+            "unknown_risk": watchdog.get("unknown_risk", 0),
+            "awaiting_retry": watchdog.get("awaiting_retry", 0),
+            "host_mails": watchdog["host_mails"],
+            "digest": watchdog["digest"],
+        },
+    )
     # A failed deadline watch counts as a failure too: nobody is being told.
     _filing_heartbeat(watchdog["at_risk"] > 0 or not watch_ok)
 
@@ -165,7 +207,9 @@ def _filing_heartbeat(at_risk: bool) -> None:
 
 
 def _job_mail() -> None:
+    started = time.perf_counter()
     failed = False
+    items: dict = {}
     for name, step in (
         ("expire_holds", claim.expire_holds),
         ("drain", mail.drain),
@@ -176,6 +220,11 @@ def _job_mail() -> None:
             result = step()
             if result:
                 log.info("mail job %s: %s", name, result)
+            if isinstance(result, dict):
+                for key, value in result.items():
+                    items[f"{name}_{key}"] = value
+            elif isinstance(result, int) and not isinstance(result, bool):
+                items[name] = result
         except Exception:
             log.exception("mail job step %s failed", name)
             failed = True
@@ -184,6 +233,7 @@ def _job_mail() -> None:
     else:
         _job_ok("mail")
         _ping(config.HEARTBEAT_MAIL_URL, "mail")
+    _log_run("mail", started, not failed, items)
 
 
 def _job_photo_sweep() -> None:
@@ -193,6 +243,7 @@ def _job_photo_sweep() -> None:
     hold - and this is the only job that runs on a long enough cycle to be a
     backstop for the Settings button.
     """
+    started = time.perf_counter()
     try:
         removed = passport_photos.purge_stale()
         if removed:
@@ -203,8 +254,10 @@ def _job_photo_sweep() -> None:
     except Exception:
         log.exception("passport photo sweep failed")
         _job_failed("photo_sweep")
+        _log_run("photo_sweep", started, False)
         return
     _job_ok("photo_sweep")
+    _log_run("photo_sweep", started, True, {"photos": removed or 0, "payloads": blanked or 0})
 
 
 def _job_retention() -> None:
@@ -213,6 +266,7 @@ def _job_retention() -> None:
     Dry-run by default: it audits the exact row set and deletes nothing until
     ``UBYHOST_RETENTION_AUTOPURGE=1`` (see ``retention.run``).
     """
+    started = time.perf_counter()
     try:
         summary = retention.run()
         if any(summary["counts"].values()):
@@ -220,8 +274,10 @@ def _job_retention() -> None:
     except Exception:
         log.exception("retention run failed")
         _job_failed("retention")
+        _log_run("retention", started, False)
         return
     _job_ok("retention")
+    _log_run("retention", started, True, summary.get("counts") or {})
 
 
 def _acquire_single_instance_lock() -> bool:

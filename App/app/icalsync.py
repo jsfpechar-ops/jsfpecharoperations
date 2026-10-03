@@ -798,7 +798,9 @@ def sync_all(
             "AND (? IS NULL OR a.owner_user_id = ?)",
             (owner_user_id, owner_user_id),
         )
-    totals = {"feeds": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0}
+    # ``changed`` counts feeds whose sync created, updated or cancelled a stay;
+    # with ``feeds`` it gives the changed ratio the perf report prints (WP13).
+    totals = {"feeds": 0, "changed": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0}
     for feed in feeds:
         totals["feeds"] += 1
         try:
@@ -814,5 +816,7 @@ def sync_all(
             continue
         for key in ("created", "updated", "cancelled"):
             totals[key] += stats.get(key, 0)
+        if any(stats.get(key, 0) for key in ("created", "updated", "cancelled")):
+            totals["changed"] += 1
     db.set_setting("last_ical_sync", db.utcnow())
     return totals
