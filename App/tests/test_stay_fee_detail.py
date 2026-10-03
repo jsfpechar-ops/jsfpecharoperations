@@ -298,6 +298,10 @@ def test_exempt_without_a_reason_is_refused(host):
     response = _decide(client, apartment_id, guest_ids[0], "exempt")
 
     assert "Give a reason when you exempt a guest." in response.text
+    stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
+    assert stored["fee_host_decision"] is None
+    assert stored["fee_host_reason"] is None
+    assert db.query_one("SELECT * FROM audit WHERE action = 'stay_fee_decision'") is None
 
 
 def test_exempt_rejects_free_text_reasons(host):
