@@ -355,17 +355,6 @@ ENTITY_FIELDS = (
     "invoice_prefix",
 )
 
-# The identity block shown on the (short) operator form. Bank, VAT, registry
-# and numbering fields keep their saved values when a form posts only these.
-CORE_ENTITY_FIELDS = (
-    "name",
-    "seat",
-    "ico",
-    "contact_email",
-    "contact_phone",
-    "dic",
-)
-
 VAT_STATUSES = ("non_payer", "identified", "payer")
 ENTITY_SIGNATURE_MAX_BYTES = 300 * 1024
 
