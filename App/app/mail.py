@@ -559,7 +559,7 @@ def recent_console_messages(
         rows = db.query(
             f"SELECT {columns} FROM console_mail_log l "
             "JOIN email_outbox o ON o.id = l.outbox_id "
-            "WHERE o.owner_user_id IS ? "
+            f"WHERE {db.null_safe_eq('o.owner_user_id')} "
             "ORDER BY l.id DESC LIMIT ?",
             (owner_user_id, limit),
         )

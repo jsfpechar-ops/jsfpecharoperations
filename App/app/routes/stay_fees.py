@@ -106,7 +106,7 @@ def stay_fees_list(request: Request):
     today = claim.prague_today()
     owner_id = access.owner_id(request)
     apartments = db.query(
-        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        f"SELECT * FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
         "AND active = 1 ORDER BY internal_name, id",
         (owner_id,),
     )

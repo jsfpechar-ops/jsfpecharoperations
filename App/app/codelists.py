@@ -54,8 +54,13 @@ def store(kind: str, rows: List[Dict[str, str]]) -> int:
             if not code:
                 continue
             cur.execute(
-                "INSERT OR REPLACE INTO codelist (kind, code, text_cs, text_en, extra, fetched_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                # An upsert, not OR REPLACE: the same result here (every column
+                # is written, nothing references codelist rows, no triggers),
+                # and the spelling both SQLite and Postgres accept.
+                "INSERT INTO codelist (kind, code, text_cs, text_en, extra, fetched_at) "
+                "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (kind, code) DO UPDATE SET "
+                "text_cs = excluded.text_cs, text_en = excluded.text_en, "
+                "extra = excluded.extra, fetched_at = excluded.fetched_at",
                 (kind, code, text_cs, text_en, (row.get("Kod2") or "").strip(), now),
             )
             written += 1

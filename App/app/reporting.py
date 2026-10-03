@@ -1241,8 +1241,8 @@ def claim_sendable(
             ):
                 continue
             cur.execute(
-                "INSERT OR IGNORE INTO submission_claim (guest_id, claim_token, claimed_at) "
-                "VALUES (?, ?, ?)",
+                "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+                "VALUES (?, ?, ?) ON CONFLICT (guest_id) DO NOTHING",
                 (guest["id"], token, time.time()),
             )
             if cur.rowcount == 1:

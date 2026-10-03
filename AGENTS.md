@@ -110,6 +110,24 @@ Two rules for every string you add to `i18n.py`, `host_i18n.py` or a template:
 Legal text is the exception: keep the guest legal notice, its acknowledgement
 and the GDPR Article 13 privacy notice complete even if they overlap with
 other copy.
+## Database access — keep a later Postgres move mechanical
+
+Permanent rules (UbyHost runs on SQLite; Postgres comes only when a second app
+server is needed):
+
+- All SQL goes through the `App/app/db.py` helpers, parameterised. No string
+  formatting of values into SQL; f-strings only build placeholder lists or name
+  trusted columns.
+- No new triggers and no new SQLite-only syntax: no `INSERT OR IGNORE` /
+  `INSERT OR REPLACE` (use `INSERT ... ON CONFLICT ... DO NOTHING / DO UPDATE`),
+  no `lastrowid` (`db.insert` uses `RETURNING id`), no bare `x IS ?` (use
+  `db.null_safe_eq("x")`, or plain `x = ?` where the value is never NULL).
+- Schema changes are numbered files in `App/app/migrations/`
+  (`NNNN_short_name.sql`, next free number), applied once by `db.init_db` and
+  recorded in `schema_migrations`. Do not add to `db.SCHEMA` or
+  `db.ADDED_COLUMNS`; those are the frozen baseline (version 1).
+- Keep `with db.immediate()` blocks small. Never call UbyPort or fetch a feed
+  inside an open transaction. No logic may rely on there being only one writer.
 
 ## Changing a guest page (anything in `App/app/templates/guest/`, `guest*.css`, `ticket.js`, `signature.js`)
 

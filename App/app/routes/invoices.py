@@ -52,14 +52,14 @@ def _invoice_columns() -> str:
 
 def _load_invoice(request: Request, invoice_id: int):
     return db.query_one(
-        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND owner_user_id IS ?",
+        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND {db.null_safe_eq('owner_user_id')}",
         (invoice_id, access.owner_id(request)),
     )
 
 
 def _entities(request: Request):
     return db.query(
-        "SELECT * FROM legal_entity WHERE archived_at IS NULL AND owner_user_id IS ? "
+        f"SELECT * FROM legal_entity WHERE archived_at IS NULL AND {db.null_safe_eq('owner_user_id')} "
         "ORDER BY name",
         (access.owner_id(request),),
     )
@@ -187,7 +187,7 @@ def invoices_list(request: Request):
     today = claim.prague_today()
     owner_id = access.owner_id(request)
     properties = db.query(
-        "SELECT id, internal_name FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        f"SELECT id, internal_name FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
         "ORDER BY internal_name, id",
         (owner_id,),
     )
@@ -203,7 +203,7 @@ def invoices_list(request: Request):
         page_no = max(int(request.query_params.get("page") or "1"), 1)
     except ValueError:
         page_no = 1
-    where, params = ["owner_user_id IS ?"], [owner_id]
+    where, params = [f"{db.null_safe_eq('owner_user_id')}"], [owner_id]
     if view.month:
         first, last = stay_fee.period_bounds("monthly", view.month)
         where.append("issue_date >= ? AND issue_date <= ?")

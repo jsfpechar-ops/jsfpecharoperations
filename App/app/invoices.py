@@ -414,10 +414,11 @@ def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
         seq_year, seq_no, number, vs = allocate_number(cur, entity, year)
         columns = _invoice_columns(draft, number, vs, seq_year, seq_no)
         cur.execute(
-            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)})",
+            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)}) "
+            "RETURNING id",
             list(columns.values()),
         )
-        invoice_id = cur.lastrowid
+        invoice_id = int(cur.fetchall()[0][0])
         for position, item in enumerate(draft["items"], start=1):
             cur.execute(
                 "INSERT INTO invoice_item (invoice_id, position, kind, description, quantity, "

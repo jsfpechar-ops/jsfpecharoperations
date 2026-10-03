@@ -31,14 +31,14 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     """Return setup steps and the next action for a workspace."""
     entity_count = int(
         db.query_one(
-            "SELECT COUNT(*) AS n FROM legal_entity WHERE owner_user_id IS ?",
+            f"SELECT COUNT(*) AS n FROM legal_entity WHERE {db.null_safe_eq('owner_user_id')}",
             (owner_user_id,),
         )["n"]
     )
     ready_entity_count = int(
         db.query_one(
             "SELECT COUNT(*) AS n FROM legal_entity "
-            "WHERE owner_user_id IS ? AND TRIM(COALESCE(name, '')) != '' "
+            f"WHERE {db.null_safe_eq('owner_user_id')} AND TRIM(COALESCE(name, '')) != '' "
             "AND TRIM(COALESCE(seat, '')) != '' "
             "AND TRIM(COALESCE(ico, '')) != '' "
             "AND TRIM(COALESCE(contact_email, '')) != ''",
@@ -49,7 +49,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         "SELECT a.*, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
         "FROM apartment a "
-        "WHERE a.archived_at IS NULL AND a.owner_user_id IS ? "
+        f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
         "ORDER BY a.id",
         (owner_user_id,),
     )
@@ -61,7 +61,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         db.query_one(
             "SELECT COUNT(*) AS n FROM reservation r "
             "JOIN apartment a ON a.id = r.apartment_id "
-            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL "
+            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL "
             "AND r.status = 'active' AND r.source = 'manual'",
             (owner_user_id,),
         )["n"]

@@ -368,7 +368,7 @@ def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:
 def owner_periods(owner_user_id, month: date) -> List[Dict[str, Any]]:
     """The list page: active properties, plus disabled ones that still have a sealed period."""
     rows = db.query(
-        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        f"SELECT * FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
         "AND (stay_fee_rate_czk > 0 OR id IN ("
         "SELECT apartment_id FROM stay_fee_filing WHERE superseded_at IS NULL)) "
         "ORDER BY internal_name, id",

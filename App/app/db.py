@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -14,6 +15,7 @@ import weakref
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
@@ -916,6 +918,8 @@ def close_connections() -> None:
 
 # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
 # existing database untouched, so every later column has to be added by hand.
+# Frozen since WP18: this list is part of the baseline (schema version 1). A new
+# column is a numbered file in app/migrations instead (see init_db).
 ADDED_COLUMNS = (
     ("user_account", "totp_secret_enc", "TEXT"),
     ("user_account", "totp_enabled", "INTEGER NOT NULL DEFAULT 0"),
@@ -1113,6 +1117,118 @@ def startup_lock():
                 _startup_handle = None
 
 
+# --- numbered migrations -------------------------------------------------
+#
+# Every schema change from WP18 on is a numbered SQL file in app/migrations,
+# ``NNNN_short_name.sql``, applied once, in order, and recorded in
+# schema_migrations. Version 1 is the baseline: SCHEMA plus ADDED_COLUMNS
+# above, which stay as they are (idempotent, run on every start) so a database
+# from any earlier release still reaches the baseline first. Do not add to
+# SCHEMA or ADDED_COLUMNS any more; write the next numbered file instead.
+# A database that predates this table is detected by not having a baseline row
+# and is marked as at the baseline once the idempotent pass has run.
+
+MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
+BASELINE_VERSION = 1
+_MIGRATION_NAME = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
+
+_MIGRATIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version    INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL,
+    applied_at TEXT NOT NULL
+)
+"""
+
+
+def migration_files(directory: Optional[Path] = None) -> List[tuple]:
+    """``(version, name, path)`` for every migration file, in version order."""
+    folder = directory or MIGRATIONS_DIR
+    found: List[tuple] = []
+    if not folder.is_dir():
+        return found
+    for path in folder.iterdir():
+        match = _MIGRATION_NAME.match(path.name)
+        if not match:
+            continue
+        version = int(match.group(1))
+        if version <= BASELINE_VERSION:
+            raise RuntimeError(
+                f"migration {path.name}: versions up to {BASELINE_VERSION} are the baseline"
+            )
+        found.append((version, match.group(2), path))
+    found.sort()
+    versions = [version for version, _name, _path in found]
+    if len(versions) != len(set(versions)):
+        raise RuntimeError("two migration files share a version number")
+    return found
+
+
+def _statements(script: str) -> List[str]:
+    """Split a migration script into statements, the way sqlite3 itself does."""
+    statements: List[str] = []
+    buffer = ""
+    for line in script.splitlines(keepends=True):
+        buffer += line
+        if sqlite3.complete_statement(buffer):
+            if buffer.strip():
+                statements.append(buffer.strip())
+            buffer = ""
+    if buffer.strip() and not all(
+        part.strip().startswith("--") or not part.strip() for part in buffer.splitlines()
+    ):
+        raise RuntimeError("migration ends with an incomplete statement")
+    return statements
+
+
+def schema_version(conn: Optional[sqlite3.Connection] = None) -> int:
+    """The highest applied migration, 0 when the database has none recorded."""
+    own = conn is None
+    conn = conn or connect()
+    try:
+        exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'"
+        ).fetchone()
+        if not exists:
+            return 0
+        row = conn.execute("SELECT MAX(version) AS v FROM schema_migrations").fetchone()
+        return int(row["v"] or 0)
+    finally:
+        if own:
+            conn.close()
+
+
+def apply_migrations(conn: sqlite3.Connection, directory: Optional[Path] = None) -> List[int]:
+    """Apply every migration file not yet recorded; the versions applied.
+
+    Each file runs in its own write transaction together with its
+    schema_migrations row, so a failing file leaves nothing behind and is
+    retried on the next start. The check runs inside the lock, so two
+    processes starting together apply a file once.
+    """
+    applied: List[int] = []
+    for version, name, path in migration_files(directory):
+        script = path.read_text(encoding="utf-8")
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            done = conn.execute(
+                "SELECT 1 FROM schema_migrations WHERE version = ?", (version,)
+            ).fetchone()
+            if not done:
+                for statement in _statements(script):
+                    conn.execute(statement)
+                conn.execute(
+                    "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+                    (version, name, utcnow()),
+                )
+                applied.append(version)
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+    return applied
+
+
 def init_db() -> None:
     # The data directory has to exist before sqlite opens the database inside
     # it, and creating it is no longer an import-time side effect of config.
@@ -1134,6 +1250,14 @@ def _init_db_locked() -> None:
         _add_missing_columns(conn)
         _reset_reverted_stay_fee(conn)
         _resolve_legacy_resign_alerts(conn)
+        # The baseline is reached; record it, then apply the numbered files.
+        conn.execute(_MIGRATIONS_TABLE)
+        conn.execute(
+            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) "
+            "ON CONFLICT (version) DO NOTHING",
+            (BASELINE_VERSION, "baseline", utcnow()),
+        )
+        apply_migrations(conn)
     finally:
         conn.close()
 
@@ -1232,39 +1356,67 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
     return rows[0] if rows else None
 
 
-def _inserts(sql: str) -> bool:
-    head = sql.lstrip()[:7].upper()
-    return head.startswith("INSERT") or head.startswith("REPLACE")
-
-
 def execute(sql: str, params: Iterable[Any] = ()) -> int:
-    """Run one statement. Returns the new row's id when it inserted a row, else 0.
+    """Run one statement on this thread's connection; the number of rows it changed.
 
-    On a fresh connection ``lastrowid`` was 0 unless this very statement
-    inserted, and callers rely on that (``INSERT OR IGNORE`` counts inserts by
-    it). A shared connection remembers the previous insert, so the value is
-    reduced to what a fresh connection reported. One case cannot be told apart:
-    an upsert (``ON CONFLICT ... DO UPDATE``) that updated reports the
-    connection's previous id. No caller reads the result of an upsert.
+    The row count rather than ``lastrowid`` (WP18): it means the same thing on
+    every engine, and ``INSERT ... ON CONFLICT DO NOTHING`` answers 0 when the
+    row was already there. Use ``insert()`` for a new row's id. The row count is
+    also independent of what the shared per-thread connection (WP14) inserted
+    before.
     """
-    with _helper_conn() as conn:
-        cur = conn.execute(sql, tuple(params))
-        if not _inserts(sql) or cur.rowcount <= 0:
-            return 0
-        return cur.lastrowid
-
-
-def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
-    """execute(), returning the number of rows the statement changed."""
     with _helper_conn() as conn:
         return conn.execute(sql, tuple(params)).rowcount
 
 
-def insert(table: str, values: Dict[str, Any]) -> int:
+def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
+    """Same as execute() since WP18; kept for the callers WP14 added."""
+    return execute(sql, params)
+
+
+# Tables keyed by something other than an ``id`` column. insert() cannot ask
+# them for ``RETURNING id``, and nobody needs an id back from them.
+_TABLES_WITHOUT_ID = frozenset({
+    "settings", "codelist", "invoice_sequence", "submission_claim",
+    "reservation_claim", "schema_migrations",
+})
+
+
+def insert(table: str, values: Dict[str, Any]) -> Optional[int]:
+    """INSERT one row; its id, from ``RETURNING id`` (SQLite 3.35+, Postgres).
+
+    ``None`` for the tables in ``_TABLES_WITHOUT_ID``.
+    """
     values = _write_values(table, values)
     cols = ", ".join(values)
     marks = ", ".join("?" for _ in values)
-    return execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(values.values()))
+    sql = f"INSERT INTO {table} ({cols}) VALUES ({marks})"
+    if table in _TABLES_WITHOUT_ID:
+        execute(sql, list(values.values()))
+        return None
+    with _helper_conn() as conn:
+        # fetchall, not fetchone: the statement has to run to completion
+        # before the autocommit transaction it opened is committed (and before
+        # _helper_conn checks that the shared connection is idle again).
+        rows = conn.execute(sql + " RETURNING id", list(values.values())).fetchall()
+    return int(rows[0][0])
+
+
+# SQLite's ``IS`` is null-safe equality: ``owner_user_id IS ?`` matches NULL
+# when the parameter is None, where ``=`` would match nothing. Postgres spells
+# it ``IS NOT DISTINCT FROM`` (SQLite only learnt that spelling in 3.39, newer
+# than some hosts this still runs on). Every such comparison goes through this
+# helper, so moving engines changes this one constant.
+NULL_SAFE_EQ = "IS"
+
+
+def null_safe_eq(column: str) -> str:
+    """``column`` compared null-safely with one ``?`` parameter.
+
+    ``column`` is trusted SQL (a column name written in the code), never input.
+    Use plain ``column = ?`` where the value can never be None.
+    """
+    return f"{column} {NULL_SAFE_EQ} ?"
 
 
 def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
@@ -1286,15 +1438,15 @@ def update_if(
     """UPDATE the row only if it still holds ``expected``; True when it did.
 
     Compare-and-set for rows a background job may change between a request's
-    read and its write. ``expected`` values compare with IS, so None matches
-    NULL. ``extra_where`` is a trusted SQL fragment (never user input).
+    read and its write. ``expected`` values compare null-safely
+    (``null_safe_eq``), so None matches NULL. ``extra_where`` is a trusted SQL fragment (never user input).
     Encrypted fields are handled exactly as in update().
     """
     if not values:
         return False
     values = _write_values(table, values)
     sets = ", ".join(f"{k} = ?" for k in values)
-    clauses = ["id = ?"] + [f"{k} IS ?" for k in expected]
+    clauses = ["id = ?"] + [null_safe_eq(k) for k in expected]
     if extra_where:
         clauses.append(extra_where)
     sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)

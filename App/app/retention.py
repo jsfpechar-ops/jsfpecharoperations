@@ -257,13 +257,13 @@ def _delete_workspace(owner_id: int) -> None:
     One transaction: a failure part-way used to leave the account and its
     entities behind with the guests already gone, and fail again every night.
     """
-    apartments = "(SELECT id FROM apartment WHERE owner_user_id IS ?)"
-    entities = "(SELECT id FROM legal_entity WHERE owner_user_id IS ?)"
+    apartments = "(SELECT id FROM apartment WHERE owner_user_id = ?)"
+    entities = "(SELECT id FROM legal_entity WHERE owner_user_id = ?)"
     with db.immediate() as cur:
         # Read inside the lock so a guest saved a moment earlier keeps no photo.
         cur.execute(
             "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
-            "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id IS ?",
+            "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id = ?",
             (owner_id,),
         )
         guest_ids = [row["id"] for row in cur.fetchall()]
@@ -285,32 +285,32 @@ def _delete_workspace(owner_id: int) -> None:
         # Corrections first: they reference the invoice they correct.
         cur.execute(
             "DELETE FROM invoice_item WHERE invoice_id IN "
-            "(SELECT id FROM invoice WHERE owner_user_id IS ?)",
+            "(SELECT id FROM invoice WHERE owner_user_id = ?)",
             (owner_id,),
         )
         cur.execute(
-            "DELETE FROM invoice WHERE owner_user_id IS ? AND corrects_invoice_id IS NOT NULL",
+            "DELETE FROM invoice WHERE owner_user_id = ? AND corrects_invoice_id IS NOT NULL",
             (owner_id,),
         )
-        cur.execute("DELETE FROM invoice WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute("DELETE FROM invoice WHERE owner_user_id = ?", (owner_id,))
         cur.execute(
             "UPDATE settings SET value = '' WHERE key = 'invoice_purge_unlock'"
         )
         # Queued mail carries guest addresses and must not outlive the workspace.
         cur.execute(
-            f"DELETE FROM email_outbox WHERE owner_user_id IS ? OR apartment_id IN {apartments}",
+            f"DELETE FROM email_outbox WHERE owner_user_id = ? OR apartment_id IN {apartments}",
             (owner_id, owner_id),
         )
-        cur.execute("DELETE FROM apartment WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
         cur.execute(f"DELETE FROM invoice_sequence WHERE legal_entity_id IN {entities}", (owner_id,))
-        cur.execute("DELETE FROM legal_entity WHERE owner_user_id IS ?", (owner_id,))
-        cur.execute("DELETE FROM data_subject_request WHERE owner_user_id IS ?", (owner_id,))
-        cur.execute("DELETE FROM alert WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))
+        cur.execute("DELETE FROM data_subject_request WHERE owner_user_id = ?", (owner_id,))
+        cur.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner_id,))
         # legal_acceptance has a NOT NULL account reference, so it cannot
         # outlive the account.
         cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (owner_id,))
-        cur.execute("DELETE FROM audit WHERE owner_user_id IS ?", (owner_id,))
+        cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One
     # failing file must not stop the rest; the orphan sweep retries it.

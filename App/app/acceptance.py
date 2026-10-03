@@ -94,9 +94,10 @@ def record(
 
     for doc in wanted:
         db.execute(
-            "INSERT OR IGNORE INTO legal_acceptance "
+            "INSERT INTO legal_acceptance "
             "(user_account_id, document, version, accepted_at, method, ip, user_agent) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (user_account_id, document, version) DO NOTHING",
             (user_id, doc, versions[doc], accepted_at, method, ip, user_agent),
         )
 
@@ -133,9 +134,10 @@ def backfill_from_audit() -> int:
             continue
         for doc in DOCUMENTS:
             if db.execute(
-                "INSERT OR IGNORE INTO legal_acceptance "
+                "INSERT INTO legal_acceptance "
                 "(user_account_id, document, version, accepted_at, method) "
-                "VALUES (?, ?, ?, ?, 'backfill')",
+                "VALUES (?, ?, ?, ?, 'backfill') "
+                "ON CONFLICT (user_account_id, document, version) DO NOTHING",
                 (row["owner_user_id"], doc, match.group(doc), row["at"]),
             ):
                 inserted += 1

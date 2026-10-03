@@ -163,14 +163,20 @@ def test_a_nested_read_block_uses_its_own_connection(fresh_db):
     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 8
 
 
-def test_execute_reports_an_id_only_for_a_row_it_inserted(fresh_db):
-    new_id = db.execute("INSERT INTO counter (n) VALUES (1)")
+def test_execute_reports_the_rows_it_changed_not_a_previous_insert(fresh_db):
+    # WP18: execute() returns the row count. On the shared connection (WP14)
+    # it must not leak the previous statement's insert.
+    new_id = db.insert("counter", {"n": 1})
     assert new_id > 1
-    # A fresh connection reported 0 here; the shared one must too.
-    assert db.execute("INSERT OR IGNORE INTO counter (id, n) VALUES (1, 0)") == 0
-    assert db.execute("UPDATE counter SET n = n + 1 WHERE id = 1") == 0
-    assert db.execute("DELETE FROM counter WHERE id = ?", (new_id,)) == 0
-    assert db.execute_rowcount("UPDATE counter SET n = 0") == 1
+    assert db.execute("INSERT INTO counter (n) VALUES (2)") == 1
+    assert (
+        db.execute("INSERT INTO counter (id, n) VALUES (1, 0) ON CONFLICT (id) DO NOTHING")
+        == 0
+    )
+    assert db.execute("UPDATE counter SET n = n + 1 WHERE id = 1") == 1
+    assert db.execute("UPDATE counter SET n = n + 1 WHERE id = -1") == 0
+    assert db.execute("DELETE FROM counter WHERE id = ?", (new_id,)) == 1
+    assert db.execute_rowcount("UPDATE counter SET n = 0") == 2
 
 
 # --- concurrency ----------------------------------------------------------------

@@ -25,7 +25,7 @@ def guest_ids(owner_user_id: int) -> List[int]:
         row["id"]
         for row in db.query(
             "SELECT g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
-            "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id IS ?",
+            f"JOIN apartment a ON a.id = r.apartment_id WHERE {db.null_safe_eq('a.owner_user_id')}",
             (owner_user_id,),
         )
     ]
@@ -64,7 +64,7 @@ def build_workspace_zip(owner_user_id: int) -> str:
         for submission in db.query(
             "SELECT s.id, s.receipt_pdf FROM submission s "
             "JOIN apartment a ON a.id = s.apartment_id "
-            "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL",
+            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND s.receipt_pdf IS NOT NULL",
             (owner_user_id,),
         ):
             pdf = _safe_pdf(submission["receipt_pdf"])
@@ -74,7 +74,7 @@ def build_workspace_zip(owner_user_id: int) -> str:
         for row in db.query(
             "SELECT f.* FROM stay_fee_filing f "
             "JOIN apartment a ON a.id = f.apartment_id "
-            "WHERE a.owner_user_id IS ? AND f.superseded_at IS NULL",
+            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND f.superseded_at IS NULL",
             (owner_user_id,),
         ):
             pdf = stay_fee_filing.pdf_bytes(row)
@@ -91,7 +91,7 @@ def build_workspace_zip(owner_user_id: int) -> str:
             if pdf or csv:
                 counts["stay_fee_filings"] += 1
         for invoice in db.query(
-            "SELECT id, pdf_blob FROM invoice WHERE owner_user_id IS ?", (owner_user_id,)
+            f"SELECT id, pdf_blob FROM invoice WHERE {db.null_safe_eq('owner_user_id')}", (owner_user_id,)
         ):
             blob = invoice["pdf_blob"]
             if not blob:

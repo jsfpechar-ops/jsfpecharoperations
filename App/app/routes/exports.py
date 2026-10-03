@@ -178,7 +178,7 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
         # pull both SOAP envelopes and the error PDF as well.
         "SELECT s.id, s.created_at, s.pseudo_stamp, s.receipt_pdf "
         "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
+        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
     )
     params: List[Any] = [owner_id]
     if date_from:
@@ -389,14 +389,14 @@ def settings_archived_view(request: Request):
             db.query_one(
                 "SELECT COUNT(*) AS n FROM reservation r "
                 "JOIN apartment a ON a.id = r.apartment_id "
-                "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ?",
+                f"WHERE r.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')}",
                 (owner_id,),
             )["n"]
         ),
         "properties": int(
             db.query_one(
                 "SELECT COUNT(*) AS n FROM apartment "
-                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
+                f"WHERE archived_at IS NOT NULL AND {db.null_safe_eq('owner_user_id')}",
                 (owner_id,),
             )["n"]
         ),
@@ -405,14 +405,14 @@ def settings_archived_view(request: Request):
                 "SELECT COUNT(*) AS n FROM guest g "
                 "JOIN reservation r ON r.id = g.reservation_id "
                 "JOIN apartment a ON a.id = r.apartment_id "
-                "WHERE g.archived_at IS NOT NULL AND a.owner_user_id IS ?",
+                f"WHERE g.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')}",
                 (owner_id,),
             )["n"]
         ),
         "entities": int(
             db.query_one(
                 "SELECT COUNT(*) AS n FROM legal_entity "
-                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
+                f"WHERE archived_at IS NOT NULL AND {db.null_safe_eq('owner_user_id')}",
                 (owner_id,),
             )["n"]
         ),
@@ -428,7 +428,7 @@ def settings_archived_view(request: Request):
         archived_stays = db.query(
             "SELECT r.*, a.internal_name FROM reservation r "
             "JOIN apartment a ON a.id = r.apartment_id "
-            "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ? "
+            f"WHERE r.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} "
             "ORDER BY r.archived_at DESC, r.id DESC",
             (owner_id,),
         )
@@ -437,7 +437,7 @@ def settings_archived_view(request: Request):
             "SELECT a.*, "
             "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id) AS reservations "
             "FROM apartment a "
-            "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? "
+            f"WHERE a.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} "
             "ORDER BY a.archived_at DESC",
             (owner_id,),
         )
@@ -446,7 +446,7 @@ def settings_archived_view(request: Request):
     if item_type in ("all", "entities"):
         archived_entities = db.query(
             "SELECT e.* FROM legal_entity e "
-            "WHERE e.archived_at IS NOT NULL AND e.owner_user_id IS ? "
+            f"WHERE e.archived_at IS NOT NULL AND {db.null_safe_eq('e.owner_user_id')} "
             "ORDER BY e.archived_at DESC",
             (owner_id,),
         )
