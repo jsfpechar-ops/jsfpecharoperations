@@ -30,14 +30,18 @@ SUBPROCESSOR_IDS = (
 # Recipients that are not subprocessors (section 5). "google_ads" belongs to
 # self sign-up with Google Ads (WP20), so it is listed only while
 # UBYHOST_SIGNUP_ENABLED is on (recipient_ids()).
-RECIPIENT_IDS = ("google_ads", "police", "municipality")
-SIGNUP_RECIPIENT_IDS = ("google_ads",)
+# "meta_ads" (WP21) is listed only while sign-up is on and the Meta
+# Conversions API is configured.
+RECIPIENT_IDS = ("google_ads", "meta_ads", "police", "municipality")
 
 
 def recipient_ids() -> tuple:
-    if signup.enabled():
-        return RECIPIENT_IDS
-    return tuple(rid for rid in RECIPIENT_IDS if rid not in SIGNUP_RECIPIENT_IDS)
+    hidden = set()
+    if not signup.enabled():
+        hidden.update(("google_ads", "meta_ads"))
+    elif not config.meta_capi_enabled():
+        hidden.add("meta_ads")
+    return tuple(rid for rid in RECIPIENT_IDS if rid not in hidden)
 
 
 @router.get("/jak-to-funguje")
@@ -131,6 +135,8 @@ def privacy_policy(request: Request):
             "legal_placeholders": config.DEPLOYMENT != "production",
             # WP20 draft for counsel: shown only while self sign-up is on.
             "signup_ads_notice": signup.enabled(),
+            # WP21: the Meta paragraph only once the Conversions API is configured.
+            "signup_meta_notice": signup.enabled() and config.meta_capi_enabled(),
         },
         status_code=200,
     )
@@ -161,6 +167,7 @@ def subprocessor_register(request: Request):
             "wrap_class": "narrow",
             "subprocessor_ids": SUBPROCESSOR_IDS,
             "recipient_ids": recipient_ids(),
+            "signup_meta_notice": signup.enabled() and config.meta_capi_enabled(),
         },
         status_code=200,
     )

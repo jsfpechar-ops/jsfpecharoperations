@@ -91,6 +91,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Google Ireland Ltd. (Google Ads conversion measurement, independent controller, only "
             "with consent)"
         ),
+        "subprocessors.recipient_meta_ads": (
+            "Meta Platforms Ireland Ltd. (Facebook and Instagram conversion measurement, joint "
+            "controller for collection and sending, then independent controller, only with consent)"
+        ),
         "subprocessors.recipient_police": (
             "Policie ČR, UbyPort (statutory reporting on the host's behalf)"
         ),
@@ -194,6 +198,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.recipients_title": "Příjemci, kteří nejsou dalšími zpracovateli",
         "subprocessors.recipient_google_ads": (
             "Google Ireland Ltd. (měření konverzí Google Ads, samostatný správce, jen se souhlasem)"
+        ),
+        "subprocessors.recipient_meta_ads": (
+            "Meta Platforms Ireland Ltd. (měření konverzí z Facebooku a Instagramu, společný "
+            "správce pro shromáždění a odeslání, poté samostatný správce, jen se souhlasem)"
         ),
         "subprocessors.recipient_police": (
             "Policie ČR, UbyPort (zákonné hlášení jménem ubytovatele)"

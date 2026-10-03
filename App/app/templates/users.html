@@ -42,6 +42,7 @@
               <strong>{{ user.display_name or user.username }}</strong>
               <div class="small muted mono">{{ user.username }}</div>
               {% if user.email %}<div class="small muted">{{ user.email }}</div>{% endif %}
+              {% if user.signup_source %}<div class="small muted">{{ t('users.source', source=t('users.source.' ~ user.signup_source)) }}</div>{% endif %}
             </td>
             <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
             <td data-label="{{ t('users.table.properties') }}">{{ user.apartment_count }}</td>
@@ -65,6 +66,12 @@
                   <button class="row-menu-item" type="button" role="menuitem"
                           data-reset-password data-user-id="{{ user.id }}"
                           data-user-label="{{ user.display_name or user.username }}">{{ t('users.menu.reset_password') }}</button>
+                  {% if user.meta_consent %}
+                  <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
+                    <input type="hidden" name="platform" value="meta">
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.withdraw_meta_consent') }}</button>
+                  </form>
+                  {% endif %}
                   {% if user.google_consent %}
                   <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
                     <input type="hidden" name="platform" value="google">

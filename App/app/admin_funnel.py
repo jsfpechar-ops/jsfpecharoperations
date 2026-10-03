@@ -9,7 +9,8 @@ fine here, guest data is not).
 WP20 (self sign-up) fills the hook: ``SIGNUP_STAGES`` adds "signed up" and
 "e-mail verified" before "created" (admin-created accounts have neither), and
 ``SIGNUP_SOURCE_COLUMNS`` adds "UTM or ad click present" (yes/no, empty for an
-account that did not sign up itself). Every consumer (the page, the stage
+account that did not sign up itself); WP21 adds the stored source (google,
+meta or none). Every consumer (the page, the stage
 counts and the CSV) reads ``stages()`` and ``csv_columns()``.
 """
 from __future__ import annotations
@@ -34,6 +35,8 @@ SIGNUP_STAGES: Tuple[Tuple[str, str], ...] = (
 # WP20: extra per-account columns for the CSV, as (key, column).
 SIGNUP_SOURCE_COLUMNS: Tuple[Tuple[str, str], ...] = (
     ("signup_source_present", "signup_source_present"),
+    # WP21: google, meta or none (signup.signup_source).
+    ("signup_source", "signup_source"),
 )
 
 # The funnel order. A host's stage is the furthest one with a date.
@@ -83,7 +86,7 @@ _FILED = ", ".join("?" for _ in FILED_STATES)
 # filing numbers come from one grouped join over submission.
 _SQL = (
     "SELECT u.id, u.username, u.display_name, u.active, u.created_at, u.last_login_at, "
-    "u.signup_at, u.email_verified_at, "
+    "u.signup_at, u.email_verified_at, u.signup_source, "
     # WP20: did the self sign-up carry a UTM label or a consented ad click?
     "CASE WHEN u.signup_at IS NULL THEN NULL "
     "WHEN COALESCE(u.signup_utm_source, '') <> '' OR COALESCE(u.signup_utm_medium, '') <> '' "

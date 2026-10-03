@@ -272,6 +272,23 @@ ADS_CONVERSION_NAME = os.environ.get("UBYHOST_ADS_CONVERSION_NAME", "UbyHost sig
 # after it or 30 days after upload) are fixed in signup.py: they come from the
 # legal position, not from deployment preference.
 
+# WP21: Meta (Facebook/Instagram) Conversions API, server-side only: no Meta
+# Pixel and no cookie. Off unless both the dataset (pixel) ID and the access
+# token are set; while off, the Meta consent box is not shown either.
+META_DATASET_ID = os.environ.get("UBYHOST_META_DATASET_ID", "").strip()
+META_ACCESS_TOKEN = os.environ.get("UBYHOST_META_ACCESS_TOKEN", "").strip()
+# Events Manager > Test events. Only for trying the integration on staging;
+# Meta says to remove it for production traffic.
+META_TEST_EVENT_CODE = os.environ.get("UBYHOST_META_TEST_EVENT_CODE", "").strip()
+# Graph API version for graph.facebook.com/<version>/<dataset>/events.
+# v26.0 was the latest on 4 Oct 2026 (Graph API changelog).
+META_GRAPH_VERSION = os.environ.get("UBYHOST_META_GRAPH_VERSION", "v26.0").strip()
+
+
+def meta_capi_enabled() -> bool:
+    return bool(META_DATASET_ID and META_ACCESS_TOKEN)
+
+
 # Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
 # analytics with opt-out, own retention periods and roles. A bump makes the
 # policy pending again, so every host is sent to /account/accept once.

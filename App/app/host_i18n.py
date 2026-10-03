@@ -4688,6 +4688,151 @@ _SIGNUP_STRINGS = {
 for _lang, _strings in _SIGNUP_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# WP21: Meta (Facebook/Instagram) Conversions API. The consent and privacy
+# wording is legal position 6 (04_legal_positions.md), verbatim.
+_META_STRINGS = {
+    "en": {
+        "signup.meta_consent": (
+            "Optional: I agree that UbyHost may record that I came from Facebook "
+            "or Instagram and send that click identifier and my browser type "
+            "string, with the fact and time of my sign-up, to Meta Platforms "
+            "Ireland Ltd. to measure our campaigns. Meta receives it as a joint "
+            "controller and then uses it as its own controller. You can withdraw "
+            "anytime in Settings."
+        ),
+        "signup.meta_consent_link": "How Meta uses data",
+        "mail.signup_admin.meta": "Facebook/Instagram click (with consent)",
+        "notification.job_name.meta_capi": "Meta conversion sending",
+        "notification.meta_capi_config.title": (
+            "Meta Conversions API refused the access token or dataset."
+        ),
+        "notification.meta_capi_config.detail": (
+            "Sign-up events to Meta are held back and retried for up to 7 days. "
+            "Check UBYHOST_META_DATASET_ID and UBYHOST_META_ACCESS_TOKEN. Meta said: %(error)s"
+        ),
+        "settings.privacy.ad_consent.meta": (
+            "Use my sign-up to measure UbyHost's Facebook and Instagram campaigns"
+        ),
+        "flash.signup.consent_withdrawn.meta": (
+            "Meta consent withdrawn and the click identifier deleted."
+        ),
+        "users.menu.withdraw_meta_consent": "Withdraw Meta consent",
+        "users.source": "Source: %(source)s",
+        "users.source.google": "Google",
+        "users.source.meta": "Facebook/Instagram",
+        "users.source.none": "direct or other",
+        "privacy.signup_meta_title": "Facebook and Instagram measurement",
+        "privacy.signup_meta_body": (
+            "If you arrived at our sign-up page from Facebook or Instagram, from "
+            "an ad or from an ordinary post or group, the page address usually "
+            "contains a click identifier (fbclid). We keep it only if you tick the "
+            "optional Meta consent box during sign-up. After you confirm your "
+            "e-mail address, our server sends Meta Platforms Ireland Ltd. one "
+            "sign-up event with this identifier, your browser type string (the "
+            "User-Agent your browser sent with the sign-up form), the time of "
+            "sign-up, a random event number and the address of our sign-up page. "
+            "We do not send your name, e-mail address, phone number or IP address, "
+            "we do not use the Meta Pixel, and we set no cookie for this. We mark "
+            "the event for measurement only, so that Meta uses it to report on our "
+            "campaigns and not to optimise ad delivery. For collecting and sending "
+            "these data, we and Meta Platforms Ireland Ltd. are joint controllers "
+            "under Art. 26 GDPR (Meta Controller Addendum, "
+            "https://www.facebook.com/legal/controller_addendum). Meta is "
+            "responsible for your rights under Art. 15 to 20 GDPR for the data it "
+            "stores after receiving them, and it processes them further as an "
+            "independent controller; see https://www.facebook.com/privacy/policy/. "
+            "Legal basis: your consent (Art. 6(1)(a) GDPR and § 89(3) of Act No. "
+            "127/2005 Coll.). We delete the identifier and the browser type string "
+            "7 days after they were sent, and if they were never sent, at the "
+            "latest 90 days after the click. You can withdraw consent anytime in "
+            "Settings > Privacy. Withdrawal does not affect processing before it."
+        ),
+        "privacy.signup_recipients_title": "Recipients for ad measurement",
+        "privacy.signup_recipients_body": (
+            "Only with your consent, and not as our processors: Google Ireland Ltd. "
+            "(Google Ads conversion measurement, independent controller)."
+        ),
+        "privacy.signup_recipients_meta": (
+            "Also only with your consent: Meta Platforms Ireland Ltd. (Facebook and "
+            "Instagram conversion measurement, joint controller for collection and "
+            "sending, then independent controller)."
+        ),
+    },
+    "cs": {
+        "signup.meta_consent": (
+            "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z "
+            "Facebooku nebo Instagramu, a předal tento identifikátor kliknutí a "
+            "údaj o typu mého prohlížeče spolu s informací o mé registraci a jejím "
+            "čase společnosti Meta Platforms Ireland Ltd. k měření úspěšnosti "
+            "našich kampaní. Meta je při předání společným správcem a dále údaje "
+            "zpracovává jako samostatný správce. Souhlas můžete kdykoli odvolat v "
+            "Nastavení."
+        ),
+        "signup.meta_consent_link": "Jak Meta používá data",
+        "mail.signup_admin.meta": "Proklik z Facebooku/Instagramu (se souhlasem)",
+        "notification.job_name.meta_capi": "odesílání konverzí do Mety",
+        "notification.meta_capi_config.title": (
+            "Conversions API společnosti Meta odmítlo přístupový token nebo dataset."
+        ),
+        "notification.meta_capi_config.detail": (
+            "Události registrace pro Metu se zadržují a zkoušejí se odeslat nejvýše 7 dní. "
+            "Zkontrolujte UBYHOST_META_DATASET_ID a UBYHOST_META_ACCESS_TOKEN. Meta uvedla: "
+            "%(error)s"
+        ),
+        "settings.privacy.ad_consent.meta": (
+            "Použít mou registraci k měření kampaní UbyHostu na Facebooku a Instagramu"
+        ),
+        "flash.signup.consent_withdrawn.meta": (
+            "Souhlas pro Metu byl odvolán a identifikátor kliknutí smazán."
+        ),
+        "users.menu.withdraw_meta_consent": "Odvolat souhlas pro Metu",
+        "users.source": "Zdroj: %(source)s",
+        "users.source.google": "Google",
+        "users.source.meta": "Facebook/Instagram",
+        "users.source.none": "přímo nebo jinak",
+        "privacy.signup_meta_title": "Měření na Facebooku a Instagramu",
+        "privacy.signup_meta_body": (
+            "Pokud jste na registrační stránku přišli z Facebooku nebo Instagramu, "
+            "ať už z reklamy, nebo z běžného příspěvku či skupiny, obsahuje adresa "
+            "stránky obvykle identifikátor kliknutí (fbclid). Uchováme jej jen "
+            "tehdy, pokud při registraci zaškrtnete nepovinný souhlas pro Metu. Po "
+            "potvrzení vaší e-mailové adresy odešle náš server společnosti Meta "
+            "Platforms Ireland Ltd. jednu událost registrace s tímto "
+            "identifikátorem, údajem o typu vašeho prohlížeče (User-Agent, který "
+            "prohlížeč odeslal s registračním formulářem), časem registrace, "
+            "náhodným číslem události a adresou naší registrační stránky. Vaše "
+            "jméno, e-mail, telefon ani IP adresu nepředáváme, nepoužíváme Meta "
+            "Pixel a nenastavujeme k tomu žádné cookies. Událost označujeme jen "
+            "pro měření, aby ji Meta použila k vykázání výsledků našich kampaní, a "
+            "ne k optimalizaci doručování reklam. Pro shromáždění a odeslání "
+            "těchto údajů jsme my a společnost Meta Platforms Ireland Ltd. "
+            "společnými správci podle čl. 26 GDPR (Dodatek o správcích společnosti "
+            "Meta, https://www.facebook.com/legal/controller_addendum). Za vaše "
+            "práva podle čl. 15 až 20 GDPR k údajům, které Meta po přijetí "
+            "uchovává, odpovídá Meta, která je dále zpracovává jako samostatný "
+            "správce, viz https://www.facebook.com/privacy/policy/. Právní základ: "
+            "váš souhlas (čl. 6 odst. 1 písm. a) GDPR a § 89 odst. 3 zákona č. "
+            "127/2005 Sb.). Identifikátor a údaj o typu prohlížeče smažeme 7 dní "
+            "po odeslání, a pokud odeslány nebyly, nejpozději 90 dní po kliknutí. "
+            "Souhlas můžete kdykoli odvolat v Nastavení > Soukromí. Odvolání nemá "
+            "vliv na zpracování před ním."
+        ),
+        "privacy.signup_recipients_title": "Příjemci pro měření reklam",
+        "privacy.signup_recipients_body": (
+            "Jen s vaším souhlasem a nikoli jako naši zpracovatelé: Google Ireland Ltd. "
+            "(měření konverzí Google Ads, samostatný správce)."
+        ),
+        "privacy.signup_recipients_meta": (
+            "Rovněž jen s vaším souhlasem: Meta Platforms Ireland Ltd. (měření konverzí "
+            "z Facebooku a Instagramu, společný správce pro shromáždění a odeslání, poté "
+            "samostatný správce)."
+        ),
+    },
+}
+
+for _lang, _strings in _META_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 
 # WP10: the admin Operations page. Platform administrators only.
 _ADMIN_OPERATIONS_STRINGS = {

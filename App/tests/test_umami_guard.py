@@ -281,6 +281,15 @@ def test_auth_pages_never_carry_umami(umami_on, path):
     assert response.headers.get("content-security-policy") == _CSP, path
 
 
+def test_the_sign_up_pages_never_carry_umami(umami_on, monkeypatch):
+    # WP20/WP21: /signup reads gclid and fbclid; it is an auth page, no tag.
+    monkeypatch.setattr(config, "SIGNUP_ENABLED", True)
+    for path in ("/signup?lang=en&gclid=TEST123&fbclid=TEST456", "/signup/verify?t=x"):
+        response = TestClient(app).get(path, follow_redirects=True)
+        assert not _markers(response.text), (path, _markers(response.text))
+        assert response.headers.get("content-security-policy") == _CSP, path
+
+
 def test_app_and_guest_pages_never_carry_umami(umami_on):
     owner_id, stay_id = hg._host_stay()
     try:

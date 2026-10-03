@@ -77,6 +77,12 @@
     <div class="terms-section">{{ t('privacy.signup_body') }}</div>
     <h3 id="signup-ads">{{ t('privacy.signup_ads_title') }}</h3>
     <div class="terms-section">{{ t('privacy.signup_ads_body') | legal_links }}</div>
+    {% if signup_meta_notice %}
+    <h3 id="signup-meta">{{ t('privacy.signup_meta_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_meta_body') | legal_links }}</div>
+    {% endif %}
+    <h3 id="signup-recipients">{{ t('privacy.signup_recipients_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_recipients_body') | legal_links }}{% if signup_meta_notice %} {{ t('privacy.signup_recipients_meta') }}{% endif %}</div>
     {% endif %}
   {% endif %}
   {% if sid == '11' %}

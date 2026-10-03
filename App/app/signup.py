@@ -30,6 +30,11 @@ Ad click identifiers (legal position 3), without a cookie or an ad script:
 - The identifier is blanked 90 days after the click or 30 days after upload,
   whichever comes first, or at once when consent is withdrawn (Settings >
   Privacy, or an admin on request). The consent record itself stays.
+
+WP21 adds ``fbclid`` (Meta) the same way: its own unticked box, shown only when
+the link carried an ``fbclid`` and the Conversions API is configured, stored as
+``fbc``, sent once by ``meta_capi`` after e-mail verification, and blanked 7
+days after sending or 90 days after the click.
 """
 from __future__ import annotations
 
@@ -71,25 +76,40 @@ UTM_KEYS = ("utm_source", "utm_medium", "utm_campaign")
 # optional consent box, its own consent wording and its own retention rule.
 
 GOOGLE = "google"
-PLATFORMS = (GOOGLE,)
+META = "meta"
+PLATFORMS = (GOOGLE, META)
 
 # URL parameter -> (platform, validation pattern).
 CLICK_PARAMS: Dict[str, tuple] = {
     "gclid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
     "gbraid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
     "wbraid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
+    # WP21. Facebook adds fbclid to outbound links from ads and from ordinary
+    # posts and groups alike, so it means "came from Facebook or Instagram",
+    # not "came from an ad". Case-sensitive; never altered.
+    "fbclid": (META, re.compile(r"^[A-Za-z0-9_-]{1,500}$")),
 }
 # The ad_click columns that hold a platform's identifiers. Blanked on schedule.
-ID_COLUMNS: Dict[str, tuple] = {GOOGLE: ("gclid", "gbraid", "wbraid")}
+# Blanked together on every deletion path (withdrawal, purge). For Meta that
+# includes the browser's User-Agent string, which is sent as
+# client_user_agent (Meta requires it for website events; owner decision).
+ID_COLUMNS: Dict[str, tuple] = {
+    GOOGLE: ("gclid", "gbraid", "wbraid"),
+    META: ("fbc", "client_user_agent"),
+}
+# The User-Agent kept for the Meta event: printable ASCII only, capped.
+USER_AGENT_MAX = 512
 # Name of the platform's checkbox on the sign-up form.
-CONSENT_FIELDS: Dict[str, str] = {GOOGLE: "ads_consent"}
+CONSENT_FIELDS: Dict[str, str] = {GOOGLE: "ads_consent", META: "meta_consent"}
 # Bump when the wording of the box changes; the language is appended.
-CONSENT_VERSIONS: Dict[str, str] = {GOOGLE: "ads-google-v1"}
-# (days after the click, days after a successful upload) before the
-# identifiers are blanked, whichever comes first (legal position 3).
-ID_RETENTION_DAYS: Dict[str, tuple] = {GOOGLE: (90, 30)}
+# v2 of the Meta text names the browser type string (client_user_agent).
+CONSENT_VERSIONS: Dict[str, str] = {GOOGLE: "ads-google-v1", META: "ads-meta-v2"}
+# (days after the click, days after a successful upload or send) before the
+# identifiers are blanked, whichever comes first (legal positions 3 and 6).
+ID_RETENTION_DAYS: Dict[str, tuple] = {GOOGLE: (90, 30), META: (90, 7)}
 
 GOOGLE_PRIVACY_URL = "https://business.safety.google/privacy/"
+META_PRIVACY_URL = "https://www.facebook.com/privacy/policy/"
 # Rows older than this are not exported: a safety margin inside Google's
 # 90-day import window.
 GOOGLE_EXPORT_DAYS = 85
@@ -183,12 +203,23 @@ def read_click(token: Any, now_ms: Optional[int] = None) -> Optional[Dict[str, A
     return {"ids": ids, "seen_ms": seen_ms}
 
 
+def platform_active(platform: str) -> bool:
+    """Whether consent for a platform may be asked for at all.
+
+    Meta only once the Conversions API is configured: asking for consent to
+    something the app would never do is not a valid consent request.
+    """
+    if platform == META:
+        return config.meta_capi_enabled()
+    return True
+
+
 def click_platforms(click: Optional[Dict[str, Any]]) -> List[str]:
-    """The platforms a click value has identifiers for, in display order."""
+    """The active platforms a click value has identifiers for, in display order."""
     if not click:
         return []
     present = {CLICK_PARAMS[param][0] for param in click["ids"]}
-    return [platform for platform in PLATFORMS if platform in present]
+    return [p for p in PLATFORMS if p in present and platform_active(p)]
 
 
 def attribution(params: Any, *, mint: bool = False) -> Dict[str, str]:
@@ -314,6 +345,12 @@ def consent_label(platform: str, lang: str) -> Dict[str, str]:
             "link_label": host_i18n.translate(lang, "signup.ads_consent_link"),
             "link_url": GOOGLE_PRIVACY_URL,
         }
+    if platform == META:
+        return {
+            "text": host_i18n.translate(lang, "signup.meta_consent"),
+            "link_label": host_i18n.translate(lang, "signup.meta_consent_link"),
+            "link_url": META_PRIVACY_URL,
+        }
     raise ValueError(f"unknown ad platform {platform!r}")
 
 
@@ -357,15 +394,39 @@ def _iso_from_ms(ms: int) -> str:
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).replace(microsecond=0).isoformat()
 
 
-def _click_values(platform: str, click: Dict[str, Any]) -> Dict[str, Any]:
+def clean_user_agent(value: Optional[str]) -> Optional[str]:
+    """The User-Agent header as stored for Meta: printable ASCII, at most 512 chars."""
+    if not value:
+        return None
+    text = "".join(ch for ch in str(value) if " " <= ch <= "~").strip()
+    return text[:USER_AGENT_MAX] or None
+
+
+def _click_values(
+    platform: str, click: Dict[str, Any], user_agent: Optional[str] = None
+) -> Dict[str, Any]:
     """The ad_click columns for one platform's identifiers."""
     ids = {param: value for param, value in click["ids"].items()
            if CLICK_PARAMS[param][0] == platform}
+    if platform == META:
+        # Meta's ClickID format: fb.<subdomain index>.<creation ms>.<fbclid>.
+        # Index 1 because the value is built on the server and no _fbc cookie
+        # is set; creation time is when the fbclid was first seen. The
+        # User-Agent of the sign-up submit goes with it (client_user_agent),
+        # only because the Meta box was ticked.
+        return {
+            "fbc": f"fb.1.{int(click['seen_ms'])}.{ids['fbclid']}",
+            "client_user_agent": clean_user_agent(user_agent),
+        }
     return {column: ids.get(column) for column in ID_COLUMNS[platform]}
 
 
 def _store_clicks(
-    user_id: int, click: Optional[Dict[str, Any]], consents: Dict[str, bool], lang: str
+    user_id: int,
+    click: Optional[Dict[str, Any]],
+    consents: Dict[str, bool],
+    lang: str,
+    user_agent: Optional[str] = None,
 ) -> List[str]:
     """Replace the account's click rows with the consented ones. Returns platforms stored.
 
@@ -383,7 +444,7 @@ def _store_clicks(
             {
                 "user_account_id": user_id,
                 "platform": platform,
-                **_click_values(platform, click),
+                **_click_values(platform, click, user_agent),
                 "clicked_at": _iso_from_ms(click["seen_ms"]),
                 "consent_text_id": consent_text_id(platform, lang),
                 "consented_at": now,
@@ -414,6 +475,29 @@ def consents_for(user_id: int) -> List[Dict[str, Any]]:
         )
     }
     return [rows[platform] for platform in PLATFORMS if platform in rows]
+
+
+_SOURCE_UTM = {
+    GOOGLE: ("google", "adwords", "googleads", "google_ads"),
+    META: ("facebook", "fb", "instagram", "ig", "meta"),
+}
+
+
+def signup_source(stored: List[str], attr: Dict[str, str]) -> str:
+    """``google``, ``meta`` or ``none`` for the admin funnel.
+
+    A consented click decides first. Otherwise the campaign label the owner
+    put into the ad link. An identifier without consent counts for nothing:
+    nothing about it is stored, not even that it was there.
+    """
+    for platform in PLATFORMS:
+        if platform in stored:
+            return platform
+    label = (attr.get("utm_source") or "").strip().lower()
+    for platform, names in _SOURCE_UTM.items():
+        if label in names:
+            return platform
+    return "none"
 
 
 # --- sign-up ------------------------------------------------------------------
@@ -495,7 +579,13 @@ def register(
             log.info("signup race on one address; treated as repeated")
             return "exists"
         outcome = "created"
-    _store_clicks(user_id, read_click(attr.get("click")), consents or {}, lang)
+    # The User-Agent is read here, at form submit, and stored only on a Meta
+    # row, which exists only when the Meta box was ticked.
+    user_agent = request.headers.get("user-agent") if request is not None else None
+    stored = _store_clicks(
+        user_id, read_click(attr.get("click")), consents or {}, lang, user_agent
+    )
+    db.update("user_account", user_id, {"signup_source": signup_source(stored, attr)})
     # The sign-up checkbox is a clickwrap; the table only knows that method.
     acceptance.record(user_id, ("terms", "dpa", "privacy"), "clickwrap", request)
     db.audit("signup_" + outcome, actor="anonymous", owner_user_id=user_id)
@@ -542,7 +632,13 @@ def activate(account) -> bool:
             ) if value
         ),
         ads_click=has_click(int(account["id"]), GOOGLE),
+        meta_click=has_click(int(account["id"]), META),
     )
+    # WP21: queue the Meta sign-up event. The background job sends it; this
+    # request never talks to Meta.
+    from . import meta_capi
+
+    meta_capi.enqueue(int(account["id"]))
     return True
 
 
@@ -566,7 +662,14 @@ def withdraw_consent(user_id: int, platform: str, actor: str) -> bool:
     if not db.update_if(
         "ad_click",
         row["id"],
-        {**blank, "withdrawn_at": now, "ids_deleted_at": row["ids_deleted_at"] or now},
+        {
+            **blank,
+            "withdrawn_at": now,
+            "ids_deleted_at": row["ids_deleted_at"] or now,
+            # A Meta event not sent yet is never sent.
+            "send_state": "withdrawn" if row["send_state"] in ("pending", "sending")
+            else row["send_state"],
+        },
         {"withdrawn_at": None},
     ):
         return False
@@ -615,6 +718,9 @@ def purge(now: Optional[datetime] = None) -> Dict[str, int]:
             )
     cleared = 0
     stamp = (now or datetime.now(timezone.utc)).replace(microsecond=0).isoformat()
+    from . import meta_capi
+
+    expired = meta_capi.expire_unsendable(now)
     for platform in PLATFORMS:
         after_click, after_upload = ID_RETENTION_DAYS[platform]
         blank = ", ".join(f"{column} = NULL" for column in ID_COLUMNS[platform])
@@ -622,7 +728,8 @@ def purge(now: Optional[datetime] = None) -> Dict[str, int]:
             cur.execute(
                 f"UPDATE ad_click SET {blank}, ids_deleted_at = ? "
                 "WHERE platform = ? AND ids_deleted_at IS NULL AND ("
-                "clicked_at < ? OR uploaded_at < ? OR withdrawn_at IS NOT NULL)",
+                "clicked_at < ? OR uploaded_at < ? OR withdrawn_at IS NOT NULL "
+                "OR send_state IN ('failed', 'expired'))",
                 (
                     stamp,
                     platform,
@@ -631,7 +738,11 @@ def purge(now: Optional[datetime] = None) -> Dict[str, int]:
                 ),
             )
             cleared += max(cur.rowcount, 0)
-    return {"unverified_deleted": len(stale), "click_ids_cleared": cleared}
+    return {
+        "unverified_deleted": len(stale),
+        "click_ids_cleared": cleared,
+        "meta_events_expired": expired,
+    }
 
 
 # --- Google Ads export --------------------------------------------------------

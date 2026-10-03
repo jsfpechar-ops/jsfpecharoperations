@@ -19,6 +19,7 @@ from . import (
     icalsync,
     lifecycle_mail,
     mail,
+    meta_capi,
     passport_photos,
     reporting,
     retention,
@@ -38,6 +39,7 @@ _JOB_LEVELS = {
     "mail": "warning",
     "photo_sweep": "warning",
     "retention": "warning",
+    "meta_capi": "warning",
 }
 
 
@@ -69,6 +71,7 @@ def job_intervals() -> dict:
         "deadlines": 30,
         "mail": 5,
         "photo_sweep": 12 * 60,
+        "meta_capi": 10,
         "retention": 24 * 60,
     }
 
@@ -270,6 +273,27 @@ def _job_photo_sweep() -> None:
     _log_run("photo_sweep", started, True, {"photos": removed or 0, "payloads": blanked or 0})
 
 
+def _job_meta_capi() -> None:
+    """WP21: send queued Meta sign-up events. Does nothing while Meta is off."""
+    started = time.perf_counter()
+    try:
+        summary = meta_capi.send_pending()
+        if any(summary.values()):
+            log.info("meta conversions: %s", summary)
+    except Exception:
+        log.exception("meta conversions job failed")
+        _job_failed("meta_capi")
+        _log_run("meta_capi", started, False)
+        return
+    _job_ok("meta_capi")
+    # WP13: one run line per job, counts only.
+    _log_run(
+        "meta_capi", started, True,
+        {key: value for key, value in summary.items()
+         if isinstance(value, int) and not isinstance(value, bool)},
+    )
+
+
 def _job_retention() -> None:
     """Compute (and, once enabled, apply) the retention schedule.
 
@@ -341,6 +365,10 @@ def start() -> bool:
     _scheduler.add_job(
         _job_photo_sweep, "interval", minutes=minutes["photo_sweep"], id="photo_sweep",
         max_instances=1, coalesce=True, next_run_time=_soon(),
+    )
+    _scheduler.add_job(
+        _job_meta_capi, "interval", minutes=minutes["meta_capi"], id="meta_capi",
+        max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
         _job_retention, "cron", hour=3, minute=30, id="retention",

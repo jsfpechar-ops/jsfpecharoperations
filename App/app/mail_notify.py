@@ -1798,7 +1798,8 @@ def build_signup_exists(*, lang: str) -> Dict[str, str]:
 
 
 def build_signup_admin(
-    *, workspace: str, email: str, username: str, campaign: str, ads_click: bool
+    *, workspace: str, email: str, username: str, campaign: str, ads_click: bool,
+    meta_click: bool = False,
 ) -> Dict[str, str]:
     lang = HOST_MAIL_LANGUAGE
     subject = _text(lang, "mail.signup_admin.subject", workspace=workspace)
@@ -1813,6 +1814,10 @@ def build_signup_admin(
         (_text(lang, "mail.signup_admin.username"), username),
         (_text(lang, "mail.signup_admin.source"), campaign or "-"),
         (_text(lang, "mail.signup_admin.ads"), yes_no),
+        (
+            _text(lang, "mail.signup_admin.meta"),
+            _text(lang, "mail.signup_admin.yes" if meta_click else "mail.signup_admin.no"),
+        ),
     ]
     footer = _signup_footer(lang)
     text = "\n".join(
@@ -1870,11 +1875,11 @@ def signup_exists(*, user_id: int, to_email: str, lang: str, bucket: str) -> Opt
 
 def signup_admin(
     *, user_id: int, workspace: str, email: str, username: str, campaign: str,
-    ads_click: bool,
+    ads_click: bool, meta_click: bool = False,
 ) -> Optional[int]:
     content = build_signup_admin(
         workspace=workspace, email=email, username=username, campaign=campaign,
-        ads_click=ads_click,
+        ads_click=ads_click, meta_click=meta_click,
     )
     return mail.enqueue(
         kind="signup_admin",

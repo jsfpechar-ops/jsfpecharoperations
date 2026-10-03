@@ -207,5 +207,8 @@ def test_self_sign_up_stages_and_source_column():
     assert mine[PREFIX + "adminmade"]["signup_at"] is None
     db.execute("UPDATE user_account SET signup_utm_source = NULL WHERE id = ?", (tagged,))
     assert _mine(admin_funnel.rows())[PREFIX + "signedup"]["signup_source_present"] == "no"
+    db.execute("UPDATE user_account SET signup_source = 'meta' WHERE id = ?", (tagged,))
+    assert _mine(admin_funnel.rows())[PREFIX + "signedup"]["signup_source"] == "meta"
     headers = [h for h, _k in admin_funnel.csv_columns("2026-09", "2026-10")]
     assert headers.index("signup_source_present") < headers.index("signed_up")
+    assert "signup_source" in headers
