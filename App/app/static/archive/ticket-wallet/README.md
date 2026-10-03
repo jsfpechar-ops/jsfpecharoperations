@@ -1,8 +1,8 @@
 # Ticket Wallet (archived)
 
-The **Arrival lane** guest UI is the active default again (`guest.css`, templates under
-`templates/guest/`). Ticket Wallet v2 assets live here so they can be revived without
-digging through git history.
+The **Arrival lane** guest UI is the active default again (`guest.css`,
+`guest-enhancements.js`, templates under `templates/guest/`). Ticket Wallet v2 assets
+live here so they can be revived without digging through git history.
 
 ## Files
 

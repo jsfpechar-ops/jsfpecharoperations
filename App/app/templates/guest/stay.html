@@ -24,7 +24,7 @@
     <p class="g-intro">{{ t('party_help') }}</p>
     <form method="post" action="/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <div class="g-field">
+      <div class="g-field" data-guest-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
         <label for="party_size">{{ t('party_question') }}</label>
         <input type="number" id="party_size" name="party_size" min="1" max="60"
                required inputmode="numeric" autocomplete="off" value="1">

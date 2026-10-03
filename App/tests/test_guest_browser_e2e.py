@@ -237,7 +237,9 @@ class Guest:
         )
 
     def pick_country(self, field: str, code: str):
-        self.page.select_option(f"#{field}", value=code)
+        self.page.click(f"#{field}_search")
+        self.page.keyboard.type(code)
+        self.page.locator(f"#{field}_list [role=option]").first.click()
 
     def next(self):
         before = self.step()

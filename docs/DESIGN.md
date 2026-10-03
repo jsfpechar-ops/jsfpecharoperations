@@ -100,6 +100,7 @@ UbyHost has three audiences, and each one has its own design direction. They all
 **Files that own it:**
 
 - `static/guest.css` and `templates/guest/*` (no `body.tw`, no ticket skin);
+- `static/guest-enhancements.js` (party −/+, country search combobox, PIN cells);
 - `static/signature.js` (wizard, dotted date of birth, signature pad);
 - `static/skeleton.js`, `static/csrf.js`.
 

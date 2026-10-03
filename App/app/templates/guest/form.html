@@ -88,7 +88,7 @@
     </h2>
 
     {% if ask_party_size %}
-      <div class="g-field">
+      <div class="g-field" data-guest-stepper data-less-label="{{ t('tw_fewer') }}" data-more-label="{{ t('tw_more') }}">
         <label for="party_size">{{ t('party_question') }}</label>
         <input type="number" id="party_size" name="party_size" min="1" max="60" required
                inputmode="numeric" autocomplete="off"
@@ -127,7 +127,9 @@
       </div>
       <div class="g-field">
         <label for="nationality">{{ t('nationality') }}</label>
-        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality" required>
+        <select class="{{ bad('nationality') }}" {{ invalid('nationality') }} id="nationality" name="nationality"
+                data-guest-placeholder="{{ t('tw_country_search') }}" data-guest-none="{{ t('tw_country_none') }}"
+                data-guest-required="{{ t('tw_country_required') }}" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
@@ -210,7 +212,9 @@
       </div>
       <div class="g-field">
         <label for="res_country">{{ t('res_country') }}</label>
-        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country" autocomplete="country" required>
+        <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country"
+                data-guest-placeholder="{{ t('tw_country_search') }}" data-guest-none="{{ t('tw_country_none') }}"
+                data-guest-required="{{ t('tw_country_required') }}" autocomplete="country" required>
           <option value="">—</option>
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
