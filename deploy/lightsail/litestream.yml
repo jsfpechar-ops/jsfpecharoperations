@@ -1,0 +1,61 @@
+# Litestream 0.5.x: continuous replication of the UbyHost SQLite database to S3
+# (WP05). Mounted read-only into the `litestream` service as
+# /etc/litestream.yml. Pinned image: see docker-compose.yml.
+#
+# Every ${VAR} below is expanded by Litestream from the container environment,
+# which docker-compose.yml fills from .env. Credentials are not written here:
+# Litestream reads LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY
+# from the environment on its own.
+#
+# Encryption: Litestream 0.5 has no client-side encryption (the 0.3 `age:`
+# block is rejected at startup since 0.5.1). Replicas are protected by S3
+# server-side encryption (bucket default SSE-S3), Block Public Access and a
+# dedicated IAM user. Document numbers, visa numbers and signatures are
+# encrypted inside the database with a key derived from UBYHOST_SECRET_KEY,
+# which is never in the database and therefore never in this replica.
+
+logging:
+  level: info
+  type: text
+  stderr: true
+
+# A full snapshot every 6 hours keeps a restore short (fewer LTX files to
+# replay); snapshots and the LTX files between them are kept for 7 days, so a
+# point-in-time restore can go back a week. Durations accept s, m and h only.
+snapshot:
+  interval: 6h
+  retention: 168h
+
+# Litestream deletes LTX files and snapshots that fall out of the window above.
+# Bucket versioning keeps a deleted object as a non-current version for 30
+# days (lifecycle rule), so a leaked key cannot destroy the history at once.
+retention:
+  enabled: true
+
+# Check the replica's LTX chain for gaps and overlaps a few times a day.
+validation:
+  interval: 6h
+
+# Dead-man switch: pinged only while every database has synced successfully
+# within the interval, so a missed ping means replication is unhealthy. Empty
+# (the default) disables it.
+heartbeat-url: ${LITESTREAM_HEARTBEAT_URL}
+heartbeat-interval: 5m
+
+# On SIGTERM, push what is left in the WAL before exiting.
+# docker-compose.yml gives the container a longer stop_grace_period.
+shutdown-sync-timeout: 30s
+
+dbs:
+  - path: ${LITESTREAM_DB_PATH}
+    # The app's own connections wait up to 30 s (sqlite3 timeout=30); this is
+    # how long Litestream waits for a lock during its checkpoints.
+    busy-timeout: 5s
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_S3_BUCKET}
+      path: ${LITESTREAM_S3_PATH}
+      region: ${LITESTREAM_S3_REGION}
+      # Writes are pushed every 10 s: that is the data-loss window if the VM
+      # dies. 1 s (the default) costs about 10x the PUT requests for little gain.
+      sync-interval: 10s

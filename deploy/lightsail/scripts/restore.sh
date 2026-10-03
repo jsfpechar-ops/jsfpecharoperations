@@ -87,7 +87,12 @@ if [ -z "${CONTAINER}" ]; then
   exit 1
 fi
 
-echo "==> Stopping ubyhost (Caddy stays up and will 502 until restart)"
+# WP05: Litestream must not replicate the restored (older) file into the
+# existing replica: mixing two histories under one S3 path can make the
+# replica unrestorable. Stop it here; it stays stopped until LITESTREAM_S3_PATH
+# points at a new prefix (see the end of this script and README.md).
+echo "==> Stopping litestream and ubyhost (Caddy stays up and will 502 until restart)"
+docker compose stop litestream 2>/dev/null || true
 docker compose stop ubyhost
 
 if [ "${LAYOUT}" = "encrypted" ]; then
@@ -110,6 +115,7 @@ if [ "${LAYOUT}" = "encrypted" ]; then
       set -euo pipefail
       if [ -f /data/ubyhost.db ]; then cp -a /data/ubyhost.db /data/ubyhost.db.before-restore-\$(date -u +%Y%m%dT%H%M%SZ); fi
       rm -f /data/ubyhost.db-wal /data/ubyhost.db-shm
+      rm -rf /data/.ubyhost.db-litestream
       cp -a /restore/ubyhost.db /data/ubyhost.db
       if [ -f /restore/secret_key ]; then
         cp -a /restore/secret_key /data/secret_key
@@ -132,6 +138,7 @@ else
     fi
     if [ -f /data/ubyhost.db ]; then cp -a /data/ubyhost.db /data/ubyhost.db.before-restore-\$(date -u +%Y%m%dT%H%M%SZ); fi
     rm -f /data/ubyhost.db-wal /data/ubyhost.db-shm
+    rm -rf /data/.ubyhost.db-litestream
     cp -a \"\${SRC}/ubyhost.db\" /data/ubyhost.db
     if [ -f \"\${SRC}/secret_key\" ]; then
       cp -a \"\${SRC}/secret_key\" /data/secret_key
@@ -153,6 +160,11 @@ for _ in $(seq 1 30); do
     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
     >/dev/null 2>&1; then
     echo "Restore complete. Sign in and open one stay to confirm data."
+    echo ""
+    echo "Litestream is STOPPED. Point it at a fresh replica prefix before restarting it:"
+    echo "  1. In .env set LITESTREAM_S3_PATH to a new value, e.g. ubyhost/production-$(date -u +%Y%m%d)"
+    echo "  2. docker compose up -d litestream"
+    echo "  3. ./scripts/restore_test.sh"
     exit 0
   fi
   sleep 2

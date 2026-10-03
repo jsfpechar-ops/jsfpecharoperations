@@ -22,7 +22,7 @@ chmod +x scripts/*.sh
 ./scripts/deploy.sh
 ```
 
-Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/smoke-remote.sh`.
+Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/restore_test.sh`, `./scripts/smoke-remote.sh`.
 
 
 ## Encrypted backups (OPS-1)
@@ -149,3 +149,112 @@ Weekly cron (example; set your bucket name):
 You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if you want bare minimum.
 
 </details>
+
+## Litestream: continuous S3 replica (WP05)
+
+The `litestream` service (image `litestream/litestream:0.5.17`, config
+`litestream.yml`) streams every change of `/data/ubyhost.db` to
+`s3://$LITESTREAM_S3_BUCKET/$LITESTREAM_S3_PATH` in `eu-central-1`, about
+every 10 seconds. That is the data-loss window if the VM is lost. The nightly
+age-encrypted backup above stays as a second, independent copy.
+
+What the replica does **not** hold:
+
+- the secret key (`UBYHOST_SECRET_KEY` in `.env` or `/data/secret_key`). It
+  decrypts document numbers, signatures, TOTP secrets and UbyPort passwords.
+  Keep a copy in the owner's password manager. Without it a restored database
+  opens but every encrypted field is unreadable;
+- passport photos under `/data/passport_photos` (short-lived by design);
+- client-side encryption. Litestream 0.5 has none. The bucket's default
+  encryption (SSE-S3), Block Public Access and the dedicated IAM user protect
+  it. Guest names and stay dates are in it in the clear, like in the live file.
+
+### One-time AWS setup
+
+1. S3 → Create bucket, for example `ubyhost-litestream-<suffix>`, region
+   **eu-central-1**. Block all public access: **on**. Bucket versioning:
+   **enable**. Default encryption: **SSE-S3**.
+2. Bucket → Management → Lifecycle rule `expire-noncurrent`, whole bucket:
+   "Permanently delete noncurrent versions of objects" after **30** days, and
+   "Delete expired object delete markers". Do not add a rule that expires
+   current versions: Litestream removes old files itself (7-day window).
+3. IAM → Users → Create user `ubyhost-litestream` (no console access). Attach
+   an inline policy (replace the bucket name; the prefix must match
+   `LITESTREAM_S3_PATH`; `ubyhost/*` also covers the new prefix you switch to
+   after a restore):
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "ListReplicaPrefix",
+         "Effect": "Allow",
+         "Action": "s3:ListBucket",
+         "Resource": "arn:aws:s3:::ubyhost-litestream-SUFFIX",
+         "Condition": {"StringLike": {"s3:prefix": ["ubyhost/*", "ubyhost"]}}
+       },
+       {
+         "Sid": "ReadWriteReplicaObjects",
+         "Effect": "Allow",
+         "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+         "Resource": "arn:aws:s3:::ubyhost-litestream-SUFFIX/ubyhost/*"
+       }
+     ]
+   }
+   ```
+
+4. Create an access key for that user ("Application running outside AWS").
+   Put it in the server `.env` as `LITESTREAM_ACCESS_KEY_ID` and
+   `LITESTREAM_SECRET_ACCESS_KEY`, and the bucket as `LITESTREAM_S3_BUCKET`.
+5. Optional: a healthchecks.io check with period 5 min and grace 10 min; put
+   its ping URL in `LITESTREAM_HEARTBEAT_URL`.
+
+Then `./scripts/deploy.sh` (preflight refuses a production deploy while the
+bucket or keys are empty), and:
+
+```bash
+docker compose logs --tail=30 litestream   # expect "snapshot complete"
+./scripts/restore_test.sh                  # must end with "Restore drill passed"
+```
+
+Run `./scripts/restore_test.sh` again once per quarter. It restores the
+newest replica into a temporary file inside a throwaway container, checks
+`PRAGMA integrity_check`, compares row counts of the main tables with the live
+database and deletes the copy. Non-zero exit on any mismatch.
+
+### Runbook: the VM is lost
+
+1. Create a new Lightsail instance (Frankfurt, same bundle) and follow
+   [docs/LIGHTSAIL.md](../../docs/LIGHTSAIL.md) up to, but not including,
+   `./scripts/deploy.sh`. Restore `.env` from the password manager, including
+   `UBYHOST_SECRET_KEY`. If production kept the key only in
+   `/data/secret_key`, set `UBYHOST_SECRET_KEY` in `.env` to the saved copy.
+2. Build the image and create the data volume with the app's ownership,
+   without starting the app (an app start would create an empty database):
+
+   ```bash
+   cd /opt/ubyhost/deploy/lightsail
+   docker compose build
+   docker compose run --rm --no-deps --entrypoint true ubyhost
+   ```
+
+3. Restore the newest replica into the volume:
+
+   ```bash
+   docker compose run --rm --no-deps litestream \
+     restore -config /etc/litestream.yml -integrity-check full /data/ubyhost.db
+   ```
+
+   For a point in time, add `-timestamp 2026-10-01T12:00:00Z`.
+4. In `.env`, set `LITESTREAM_S3_PATH` to a new prefix, for example
+   `ubyhost/production-YYYYMMDD`. The new server must never replicate into
+   the old prefix: two histories under one path can make it unrestorable.
+5. `./scripts/deploy.sh`, sign in, open one stay, then
+   `./scripts/restore_test.sh`.
+6. Move the static IP (or DNS) to the new instance.
+
+If the replica is unusable, fall back to the newest age-encrypted snapshot
+(`restore.sh`, or the S3/Drive off-site copy). `restore.sh` stops Litestream
+and leaves it stopped; set a new `LITESTREAM_S3_PATH`, then
+`docker compose up -d litestream`.
