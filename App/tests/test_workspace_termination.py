@@ -37,6 +37,7 @@ def _cleanup():
             )
             db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment_id,))
             db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+            db.execute("DELETE FROM stay_fee_filing WHERE apartment_id = ?", (apartment_id,))
             db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
         _unlock("1")
         db.execute("DELETE FROM invoice_item WHERE invoice_id IN "
@@ -143,6 +144,7 @@ def test_the_workspace_export_streams_a_zip_with_a_manifest():
 
 def test_workspace_export_includes_saved_stay_fee_filings():
     owner, _entity, apartment, *_rest = _seed("ws-fee")
+    _admin("ws-fee-admin")
     now = db.utcnow()
     db.insert(
         "stay_fee_filing",
@@ -161,7 +163,7 @@ def test_workspace_export_includes_saved_stay_fee_filings():
             "created_at": now,
         },
     )
-    response = _login("ws-fee").post(
+    response = _login("ws-fee-admin").post(
         f"/admin/users/{owner}/export", follow_redirects=False
     )
     assert response.status_code == 200

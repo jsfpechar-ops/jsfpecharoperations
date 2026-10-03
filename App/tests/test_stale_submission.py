@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import time
 from datetime import date, timedelta
 
@@ -12,10 +13,13 @@ import base64
 from app import alerts, db, reporting
 from app.ubyport.client import SubmissionResult
 
-@pytest.fixture(autouse=True)
-def _purge_sweep_fixtures():
-    yield
-    for row in db.query("SELECT id FROM apartment WHERE permalink_token = ?", ("stale-sweep",)):
+def _purge_sweep_rows():
+    owners = []
+    for row in db.query(
+        "SELECT id, owner_user_id FROM apartment WHERE permalink_token = ?", ("stale-sweep",)
+    ):
+        if row["owner_user_id"]:
+            owners.append(row["owner_user_id"])
         db.execute("DELETE FROM alert WHERE apartment_id = ?", (row["id"],))
         db.execute("DELETE FROM submission WHERE apartment_id = ?", (row["id"],))
         db.execute(
@@ -25,7 +29,20 @@ def _purge_sweep_fixtures():
         )
         db.execute("DELETE FROM reservation WHERE apartment_id = ?", (row["id"],))
         db.execute("DELETE FROM apartment WHERE id = ?", (row["id"],))
+    for owner_id in owners:
+        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+        db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (owner_id,))
     db.execute("DELETE FROM legal_entity WHERE name = 'Sweep stale'")
+    db.execute("DELETE FROM user_account WHERE username = ?", ("stale-sweep-owner",))
+
+
+@pytest.fixture(autouse=True)
+def _purge_sweep_fixtures():
+    yield
+    try:
+        _purge_sweep_rows()
+    except sqlite3.OperationalError:
+        pass
 
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -123,6 +140,16 @@ def _sweep_apartment(monkeypatch):
     today = date.today()
     stay_from = (today - timedelta(days=2)).isoformat()
     stay_to = (today + timedelta(days=1)).isoformat()
+    owner_id = db.insert(
+        "user_account",
+        {
+            "username": "stale-sweep-owner",
+            "password_hash": "x",
+            "role": "host",
+            "active": 1,
+            "created_at": now,
+        },
+    )
     entity_id = db.insert(
         "legal_entity",
         {"name": "Sweep stale", "seat": "Praha", "ico": "12345678", "created_at": now},
@@ -131,6 +158,7 @@ def _sweep_apartment(monkeypatch):
         "apartment",
         {
             "legal_entity_id": entity_id,
+            "owner_user_id": owner_id,
             "internal_name": "Sweep flat",
             "city_en": "Prague",
             "permalink_token": "stale-sweep",
@@ -205,12 +233,12 @@ def _sweep_apartment(monkeypatch):
 
     monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: FakeClient())
     monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
-    return apartment_id, submission_id, guest_id
+    return apartment_id, submission_id, guest_id, owner_id
 
 
 def test_sweep_retries_an_outcome_unknown_batch_once(monkeypatch):
     db.init_db()
-    apartment_id, submission_id, guest_id = _sweep_apartment(monkeypatch)
+    apartment_id, submission_id, guest_id, owner_id = _sweep_apartment(monkeypatch)
     batches = []
     real_submit = reporting.submit_batch
 
@@ -220,18 +248,18 @@ def test_sweep_retries_an_outcome_unknown_batch_once(monkeypatch):
 
     monkeypatch.setattr(reporting, "submit_batch", track_batch)
 
-    reporting.sweep()
+    reporting.sweep(owner_user_id=owner_id)
     assert batches == [1]
     assert db.query_one("SELECT retried_at FROM submission WHERE id = ?", (submission_id,))["retried_at"]
     assert db.query_one("SELECT submit_state FROM guest WHERE id = ?", (guest_id,))["submit_state"] == reporting.SENT
 
-    reporting.sweep()
+    reporting.sweep(owner_user_id=owner_id)
     assert batches == [1], "a second sweep must not resend the same interrupted batch"
 
 
 def test_sweep_skips_retry_while_auth_failed(monkeypatch):
     db.init_db()
-    apartment_id, submission_id, _guest_id = _sweep_apartment(monkeypatch)
+    apartment_id, submission_id, _guest_id, owner_id = _sweep_apartment(monkeypatch)
     alerts.raise_alert(
         "critical",
         "ubyport_auth_failed",
@@ -246,14 +274,14 @@ def test_sweep_skips_retry_while_auth_failed(monkeypatch):
         "submit_batch",
         lambda *a, **k: batches.append(1) or {"submitted": 0, "state": "noop"},
     )
-    reporting.sweep()
+    reporting.sweep(owner_user_id=owner_id)
     assert batches == []
     assert db.query_one("SELECT retried_at FROM submission WHERE id = ?", (submission_id,))["retried_at"] is None
 
 
 def test_sweep_skips_retry_when_ubyport_setup_is_incomplete(monkeypatch):
     db.init_db()
-    apartment_id, submission_id, _guest_id = _sweep_apartment(monkeypatch)
+    apartment_id, submission_id, _guest_id, owner_id = _sweep_apartment(monkeypatch)
     monkeypatch.setattr(
         reporting.validation,
         "validate_apartment",
@@ -265,14 +293,14 @@ def test_sweep_skips_retry_when_ubyport_setup_is_incomplete(monkeypatch):
         "submit_batch",
         lambda *a, **k: batches.append(1) or {"submitted": 0, "state": "noop"},
     )
-    reporting.sweep()
+    reporting.sweep(owner_user_id=owner_id)
     assert batches == []
     assert db.query_one("SELECT retried_at FROM submission WHERE id = ?", (submission_id,))["retried_at"] is None
 
 
 def test_immediate_guest_save_does_not_run_the_scheduler_retry(monkeypatch):
     db.init_db()
-    apartment_id, submission_id, guest_id = _sweep_apartment(monkeypatch)
+    apartment_id, submission_id, guest_id, _owner_id = _sweep_apartment(monkeypatch)
     batches = []
     monkeypatch.setattr(
         reporting,

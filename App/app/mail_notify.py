@@ -951,7 +951,7 @@ def cancelled_with_guests(apartment_id: int, reservation_id: int, variant: str) 
             subject=subject,
             payload={"text": text, "html": html, "lang": lang},
             apartment_id=apartment_id,
-            owner_user_id=apartment.get("owner_user_id"),
+            owner_user_id=apartment["owner_user_id"],
         )
     except Exception:
         log.exception(

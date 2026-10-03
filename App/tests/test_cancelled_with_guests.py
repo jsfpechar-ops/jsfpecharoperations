@@ -9,15 +9,19 @@ from app import alerts, db, icalsync, validation
 @pytest.fixture(autouse=True)
 def _cleanup():
     yield
-    for row in db.query("SELECT id FROM apartment WHERE internal_name LIKE 'Flat cwg-%'"):
+    for row in db.query("SELECT id, legal_entity_id FROM apartment WHERE internal_name LIKE 'Flat cwg-%'"):
         db.execute("DELETE FROM alert WHERE apartment_id = ?", (row["id"],))
+        db.execute("DELETE FROM email_outbox WHERE apartment_id = ?", (row["id"],))
         db.execute(
             "DELETE FROM guest WHERE reservation_id IN "
             "(SELECT id FROM reservation WHERE apartment_id = ?)",
             (row["id"],),
         )
         db.execute("DELETE FROM reservation WHERE apartment_id = ?", (row["id"],))
+        entity_id = row["legal_entity_id"]
         db.execute("DELETE FROM apartment WHERE id = ?", (row["id"],))
+        if entity_id:
+            db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
 
 
 def _stay(now: str, uid: str) -> dict:

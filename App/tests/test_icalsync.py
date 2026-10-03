@@ -366,6 +366,12 @@ def test_moved_ical_stay_leaves_a_guest_with_their_own_dates_alone(
         guest_stay_from="2099-01-10",
         guest_stay_to="2099-01-11",
     )
+    extended = (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n"
+        "DTSTART;VALUE=DATE:20990110\nDTEND;VALUE=DATE:20990114\n"
+        "UID:moved-stay\nSUMMARY:Reserved\nEND:VEVENT\nEND:VCALENDAR\n"
+    )
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _url: extended)
 
     _sync(feed_id)
 
