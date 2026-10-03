@@ -21,12 +21,13 @@ from .. import (
     host_i18n,
     invoice_links,
     invoices,
-    list_month_filter,
+    list_filter,
     mail,
     mail_notify,
     payments,
     rate_limit,
     security,
+    stay_fee,
 )
 
 VAT_STATUSES = ("non_payer", "identified", "payer")
@@ -161,36 +162,72 @@ def _preview_view(draft) -> dict:
     }
 
 
+INVOICE_STATUSES = (
+    ("unpaid", "invoice.state.unpaid"),
+    ("paid", "invoice.state.paid"),
+    ("correction", "invoices.filter.corrections"),
+)
+_CANCELLED = (
+    "EXISTS (SELECT 1 FROM invoice c WHERE c.corrects_invoice_id = invoice.id "
+    "AND c.kind = 'storno')"
+)
+_PAID = "(paid_on IS NOT NULL OR marked_paid_at IS NOT NULL)"
+_STATUS_SQL = {
+    "unpaid": f"kind = 'invoice' AND NOT {_PAID} AND NOT {_CANCELLED}",
+    "paid": f"kind = 'invoice' AND {_PAID}",
+    "correction": "kind IN ('storno', 'corrective')",
+}
+
+
 @router.get("/invoices")
 def invoices_list(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
     today = claim.prague_today()
-    selected_month = list_month_filter.parse_month_param(request.query_params.get("month"))
-    if selected_month and selected_month > today.replace(day=1):
-        return RedirectResponse("/invoices", status_code=303)
     owner_id = access.owner_id(request)
+    properties = db.query(
+        "SELECT id, internal_name FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        "ORDER BY internal_name, id",
+        (owner_id,),
+    )
+    view = list_filter.parse(
+        request.query_params,
+        today=today,
+        statuses=_STATUS_SQL,
+        default_month=None,
+        apartment_ids=[row["id"] for row in properties],
+    )
     page_size = 50
     try:
         page_no = max(int(request.query_params.get("page") or "1"), 1)
     except ValueError:
         page_no = 1
-    offset = (page_no - 1) * page_size
-    if selected_month:
-        first, last = list_month_filter.month_bounds(selected_month)
-        where, params = (
-            "owner_user_id IS ? AND issue_date >= ? AND issue_date <= ?",
-            (owner_id, first.isoformat(), last.isoformat()),
-        )
-    else:
-        where, params = "owner_user_id IS ?", (owner_id,)
-    total = int(db.query_one(f"SELECT COUNT(*) AS n FROM invoice WHERE {where}", params)["n"])
+    where, params = ["owner_user_id IS ?"], [owner_id]
+    if view.month:
+        first, last = stay_fee.period_bounds("monthly", view.month)
+        where.append("issue_date >= ? AND issue_date <= ?")
+        params += [first.isoformat(), last.isoformat()]
+    if view.apartment_id is not None:
+        where.append("apartment_id = ?")
+        params.append(view.apartment_id)
+    if view.status:
+        where.append(_STATUS_SQL[view.status])
+    if view.q:
+        where.append("(instr(lower(number), ?) > 0 OR instr(lower(buyer_name), ?) > 0)")
+        params += [view.q.lower(), view.q.lower()]
+    clause = " AND ".join(where)
+    total = int(db.query_one(f"SELECT COUNT(*) AS n FROM invoice WHERE {clause}", params)["n"])
     rows = db.query(
-        f"SELECT * FROM invoice WHERE {where} ORDER BY issue_date DESC, id DESC LIMIT ? OFFSET ?",
-        (*params, page_size, offset),
+        "SELECT id, number, issue_date, buyer_name, kind, total_haler, "
+        f"CASE WHEN kind != 'invoice' THEN 'correction' WHEN {_PAID} THEN 'paid' "
+        f"WHEN {_CANCELLED} THEN 'cancelled' ELSE 'unpaid' END AS state "
+        f"FROM invoice WHERE {clause} ORDER BY issue_date DESC, id DESC LIMIT ? OFFSET ?",
+        (*params, page_size, (page_no - 1) * page_size),
     )
     pages = max((total + page_size - 1) // page_size, 1)
+    query = view.query()
+    page_href = "/invoices?" + (query + "&" if query else "") + "page="
     return render(
         request,
         "invoices.html",
@@ -199,12 +236,15 @@ def invoices_list(request: Request):
             "invoices": rows,
             "invoice_page": page_no,
             "invoice_pages": pages,
-            "filter_id": "invoice-list",
-            "form_action": "/invoices",
-            "period_label_key": "invoices.filter.period",
-            "hint_label_key": "invoices.filter.hint",
-            **list_month_filter.month_filter_nav(
-                selected_month, today, month_required=False
+            "page_href": page_href,
+            **list_filter.context(
+                view,
+                action="/invoices",
+                today=today,
+                period_label_key="invoices.filter.period",
+                properties=properties,
+                statuses=INVOICE_STATUSES,
+                search=True,
             ),
         },
     )
