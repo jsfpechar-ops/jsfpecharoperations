@@ -274,7 +274,7 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 | Component | Rule |
 |---|---|
 | Next-action card | One sentence, one coral button, and an optional "Why?" link. There is at most one on a page. |
-| Status pill | A dot plus the fixed status word, in semantic colours (green ready/done, amber waiting, coral needs you, red rejected). One per row. |
+| Status pill | A dot plus the fixed status word, coloured by criticality from the `--status-*` tokens in `tokens.css`: solid red with "!" = critical (failed, rejected, overdue), amber = host action, blue = ready, teal = waiting on the guest or payer, green = done, white outline = neutral. One per row. |
 | Side panel | Opens from the right on desktop and as a full sheet on a phone. It has a title, the form, and a sticky footer with the primary button and Cancel. `Esc` closes it. Unsaved changes ask before closing. |
 | Toast | Bottom-left, 6 seconds, "Saved — Undo". It never carries an error that needs action; those stay on the page. |
 | Empty state | An icon, one sentence and one button. It never shows a blank table. |
