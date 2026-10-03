@@ -77,6 +77,22 @@ if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ]; 
   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
 fi
 
+# WP05: the litestream service replicates the database to S3 continuously.
+# Without these it crash-loops and the only off-site copy is a day old.
+if [ "${DEPLOYMENT}" = "production" ]; then
+  for var in LITESTREAM_S3_BUCKET LITESTREAM_ACCESS_KEY_ID LITESTREAM_SECRET_ACCESS_KEY; do
+    if [ -z "${!var:-}" ]; then
+      die "${var} is empty — Litestream cannot replicate the database to S3 (see README.md, Litestream)"
+    fi
+  done
+  if [ -z "${LITESTREAM_HEARTBEAT_URL:-}" ]; then
+    warn "LITESTREAM_HEARTBEAT_URL is empty — stalled replication would go unnoticed"
+  fi
+fi
+case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
+  /*|*/) die "LITESTREAM_S3_PATH must not start or end with a slash" ;;
+esac
+
 if [ -n "${UBYHOST_SECRET_KEY:-}" ] && [ "${#UBYHOST_SECRET_KEY}" -lt 32 ]; then
   die "UBYHOST_SECRET_KEY must be at least 32 characters (or leave empty for auto-generate)"
 fi
