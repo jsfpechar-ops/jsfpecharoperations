@@ -142,6 +142,8 @@ async def lifespan(_app: FastAPI):
         yield
     finally:
         scheduler.shutdown()
+        # After the scheduler, whose threads use them too.
+        db.close_connections()
 
 
 app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)

@@ -370,10 +370,14 @@ def test_a_computed_card_is_rendered_from_live_data_in_both_languages(kind, monk
     monkeypatch.setattr(alerts.db, "query_one", fake_query_one)
     monkeypatch.setattr(
         "app.reporting.reservation_progress",
-        lambda _r: {"filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True},
+        lambda _r, _guests=None: {
+            "filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True,
+            "guests": [],
+        },
     )
     monkeypatch.setattr(
-        "app.reporting.reservation_deadline_anchor", lambda _r: date(2026, 9, 19)
+        "app.reporting.reservation_deadline_anchor",
+        lambda _r, _guests=None: date(2026, 9, 19),
     )
 
     alert = {

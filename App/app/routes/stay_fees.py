@@ -124,7 +124,7 @@ def stay_fees_list(request: Request):
         group = stay_fee.report_group(apartment, selected_month, period=period)
         issues = stay_fee.report_issues(group, today)
         if not period.get("frozen") and period.get("first") and stay_fee.unsigned_stays(
-            apartment["id"], period["first"], period["last"]
+            apartment["id"], period["first"], period["last"], period
         ):
             issues.append("stay_fees.issue.unsigned")
         rows.append({
@@ -284,7 +284,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
     issues: list[str] = []
     if not frozen:
         issues = stay_fee.report_issues(group, today)
-        if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"]):
+        if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"], period):
             issues.append("stay_fees.issue.unsigned")
         issues = list(dict.fromkeys(issues))
     pay = stay_fee.payment_details(group) if frozen else None
@@ -618,7 +618,7 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         apartment, calc_month, live_only=True, period=period, cadence=cadence
     )
     issues = stay_fee.report_issues(group, today)
-    if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"]):
+    if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"], period):
         issues.append("stay_fees.issue.unsigned")
     if issues:
         return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))

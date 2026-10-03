@@ -79,7 +79,9 @@ def test_present_rebuilds_stay_title_with_czech_dates(monkeypatch):
     )
     monkeypatch.setattr(
         "app.reporting.reservation_progress",
-        lambda _res: {"filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True},
+        lambda _res, _guests=None: {
+            "filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True,
+        },
     )
 
     alert = {

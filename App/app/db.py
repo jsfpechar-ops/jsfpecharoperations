@@ -5,9 +5,12 @@ import base64
 import fcntl
 import hashlib
 import json
+import logging
+import os
 import sqlite3
 import threading
 import time
+import weakref
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
@@ -17,6 +20,7 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from . import config
 
+log = logging.getLogger("ubyhost.db")
 _current_owner_id: ContextVar[Optional[int]] = ContextVar("ubyhost_owner_id", default=None)
 # (user_id, username, impersonator_id) of whoever is acting in this request.
 _current_actor: ContextVar[Optional[tuple]] = ContextVar("ubyhost_actor", default=None)
@@ -638,15 +642,24 @@ def utcnow() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(config.DB_PATH), timeout=30, isolation_level=None)
+def _open(factory=sqlite3.Connection, check_same_thread: bool = True) -> sqlite3.Connection:
+    conn = sqlite3.connect(
+        str(config.DB_PATH),
+        timeout=30,
+        isolation_level=None,
+        factory=factory,
+        check_same_thread=check_same_thread,
+    )
     try:
         config.DB_PATH.chmod(0o600)
     except OSError:
         pass
     conn.row_factory = sqlite3.Row
-    if _request_stats.get() is not None:
-        # Only inside a request; the scheduler and the CLI pay nothing.
+    if factory is _ThreadConnection or _request_stats.get() is not None:
+        # WP13: count statements per request. A shared per-thread connection
+        # (WP14) outlives the request that opened it, so it always carries the
+        # callback; _count_statement does nothing outside a request. A private
+        # connection only gets it inside a request.
         conn.set_trace_callback(_count_statement)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
@@ -657,43 +670,229 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
+def connect() -> sqlite3.Connection:
+    """A new connection of the caller's own, which the caller must close.
+
+    The helpers below do not use this: they share one connection per thread
+    (``_thread_conn``). It stays for the schema setup and for code that needs a
+    connection outside the shared one.
+    """
+    return _open()
+
+
+# --- one connection per thread ---------------------------------------------
+#
+# Opening a connection and running its three PRAGMAs cost far more than the
+# query it was opened for, and every helper call used to do it. Each thread now
+# keeps one connection and reuses it. Bound to the thread, not the request:
+# FastAPI runs a request's sync dependencies and endpoint in pool threads that
+# need not be the same one, and the scheduler has its own threads.
+#
+# Transaction semantics are unchanged. Connections are in autocommit mode
+# (isolation_level=None), so a helper call is its own statement-level
+# transaction, and cursor()/immediate() open an explicit one that is always
+# committed or rolled back before the block returns. No transaction is ever
+# left open on a shared connection; _check_idle enforces it.
+
+
+class _ThreadConnection(sqlite3.Connection):
+    """A shared per-thread connection (a subclass only so it can be weakly referenced)."""
+
+
+_local = threading.local()
+_registry_lock = threading.Lock()
+# Every live shared connection, so shutdown can close them. Weak, so a pool
+# thread that exits takes its connection with it.
+_registry: "weakref.WeakSet[_ThreadConnection]" = weakref.WeakSet()
+# Bumped by close_connections(); a thread whose cached connection is from an
+# older generation opens a new one.
+_generation = 0
+
+
+def _file_identity(path: str) -> Optional[tuple]:
+    """Which file ``path`` is now, so a replaced or deleted database is noticed."""
+    try:
+        stat = os.stat(path)
+    except OSError:
+        return None
+    return (stat.st_dev, stat.st_ino)
+
+
+def _discard(conn: sqlite3.Connection) -> None:
+    with _registry_lock:
+        _registry.discard(conn)
+    try:
+        conn.close()
+    except sqlite3.Error:
+        pass
+
+
+def _drop_thread_conn() -> None:
+    cached = getattr(_local, "conn", None)
+    _local.conn = None
+    if cached is not None:
+        _discard(cached[0])
+
+
+def _thread_conn() -> sqlite3.Connection:
+    """This thread's connection to ``config.DB_PATH``, opened on first use.
+
+    Keyed by the database path and the file behind it: a test (or a restore)
+    that points DB_PATH elsewhere, or replaces the file, gets a fresh
+    connection instead of one still reading the old file.
+    """
+    path = str(config.DB_PATH)
+    cached = getattr(_local, "conn", None)
+    if cached is not None:
+        conn, cached_path, identity, generation = cached
+        if (
+            cached_path == path
+            and generation == _generation
+            and identity is not None
+            and _file_identity(path) == identity
+        ):
+            if conn.in_transaction and not getattr(_local, "depth", 0):
+                # Something left a transaction open outside a block. Never let
+                # it swallow the next caller's writes.
+                log.error("db: shared connection had an open transaction; rolled back")
+                if not _rollback(conn):
+                    return _thread_conn()
+            return conn
+        _drop_thread_conn()
+    conn = _open(factory=_ThreadConnection, check_same_thread=False)
+    with _registry_lock:
+        _registry.add(conn)
+    _local.conn = (conn, path, _file_identity(path), _generation)
+    return conn
+
+
+def _rollback(conn: sqlite3.Connection) -> bool:
+    """Roll back an open transaction. False when the connection had to be dropped."""
+    try:
+        if conn.in_transaction:
+            conn.execute("ROLLBACK")
+    except sqlite3.Error:
+        log.exception("db: rollback failed; dropping the connection")
+    if conn.in_transaction:
+        _drop_if_cached(conn)
+        return False
+    return True
+
+
+def _drop_if_cached(conn: sqlite3.Connection) -> None:
+    cached = getattr(_local, "conn", None)
+    if cached is not None and cached[0] is conn:
+        _drop_thread_conn()
+    else:
+        _discard(conn)
+
+
+def _check_idle(conn: sqlite3.Connection) -> None:
+    """A helper call must not leave a transaction open on the shared connection."""
+    if conn.in_transaction:
+        _rollback(conn)
+        raise RuntimeError("a database helper left a transaction open; it was rolled back")
+
+
+@contextmanager
+def _helper_conn():
+    """The connection a one-statement helper runs on.
+
+    Normally the thread's shared connection. Inside a cursor()/immediate()
+    block on the same thread a helper gets a connection of its own, exactly as
+    before connections were shared, so a stray helper call never becomes part
+    of (or commits) the block's transaction.
+    """
+    # WP13: the whole helper call counts as database time for the request.
+    with _timed():
+        if getattr(_local, "depth", 0):
+            conn = _open()
+            try:
+                yield conn
+            finally:
+                conn.close()
+            return
+        conn = _thread_conn()
+        try:
+            yield conn
+        finally:
+            _check_idle(conn)
+
+
+@contextmanager
+def _transaction(begin: str):
+    # WP13: the whole block counts as database time for the request.
+    with _timed():
+        with _transaction_inner(begin) as cur:
+            yield cur
+
+
+@contextmanager
+def _transaction_inner(begin: str):
+    nested = bool(getattr(_local, "depth", 0))
+    # A block opened inside another block on the same thread gets its own
+    # connection, as every block did before connections were shared. (It will
+    # wait on the outer block's lock if it writes, exactly as it always did.)
+    conn = _open() if nested else _thread_conn()
+    cur = conn.cursor()
+    try:
+        # WP13: lock_ms is the wait for the write lock in BEGIN IMMEDIATE.
+        stats = _request_stats.get() if begin == "BEGIN IMMEDIATE" else None
+        waited_from = time.perf_counter()
+        cur.execute(begin)
+        if stats is not None:
+            stats.lock_seconds += time.perf_counter() - waited_from
+        if not nested:
+            _local.depth = 1
+        try:
+            yield cur
+        except BaseException:
+            _rollback(conn)
+            raise
+        try:
+            cur.execute("COMMIT")
+        except BaseException:
+            _rollback(conn)
+            raise
+        _check_idle(conn)
+    finally:
+        cur.close()
+        if nested:
+            conn.close()
+        else:
+            _local.depth = 0
+
+
 @contextmanager
 def cursor():
-    with _timed():
-        conn = connect()
-        try:
-            cur = conn.cursor()
-            cur.execute("BEGIN")
-            try:
-                yield cur
-                cur.execute("COMMIT")
-            except Exception:
-                cur.execute("ROLLBACK")
-                raise
-        finally:
-            conn.close()
+    """A deferred transaction on this thread's connection: committed or rolled back."""
+    with _transaction("BEGIN") as cur:
+        yield cur
 
 
 @contextmanager
 def immediate():
     """Like cursor(), but takes the write lock before the first read."""
-    with _timed():
-        conn = connect()
+    with _transaction("BEGIN IMMEDIATE") as cur:
+        yield cur
+
+
+def close_connections() -> None:
+    """Close every shared connection (shutdown, and between tests).
+
+    Threads that run again afterwards open a new one on first use.
+    """
+    global _generation
+    with _registry_lock:
+        _generation += 1
+        conns = list(_registry)
+        _registry.clear()
+    _local.conn = None
+    for conn in conns:
         try:
-            cur = conn.cursor()
-            stats = _request_stats.get()
-            waited_from = time.perf_counter()
-            cur.execute("BEGIN IMMEDIATE")
-            if stats is not None:
-                stats.lock_seconds += time.perf_counter() - waited_from
-            try:
-                yield cur
-                cur.execute("COMMIT")
-            except Exception:
-                cur.execute("ROLLBACK")
-                raise
-        finally:
             conn.close()
+        except sqlite3.Error:
+            pass
 
 
 # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
@@ -943,6 +1142,11 @@ class _HydratedRow(dict):
         return iter(dict.__getitem__(self, name) for name in self._order)
 
 
+def is_decrypted(row: Any) -> bool:
+    """True when ``row`` came from a helper that already decrypted its guest fields."""
+    return isinstance(row, _HydratedRow)
+
+
 def _hydrate(row: sqlite3.Row) -> Any:
     """Merge decrypted guest fields into a row, leaving other rows untouched.
 
@@ -979,12 +1183,8 @@ def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def query(sql: str, params: Iterable[Any] = ()) -> List[sqlite3.Row]:
-    with _timed():
-        conn = connect()
-        try:
-            rows = conn.execute(sql, tuple(params)).fetchall()
-        finally:
-            conn.close()
+    with _helper_conn() as conn:
+        rows = conn.execute(sql, tuple(params)).fetchall()
     return [_hydrate(row) for row in rows]
 
 
@@ -993,14 +1193,32 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
     return rows[0] if rows else None
 
 
+def _inserts(sql: str) -> bool:
+    head = sql.lstrip()[:7].upper()
+    return head.startswith("INSERT") or head.startswith("REPLACE")
+
+
 def execute(sql: str, params: Iterable[Any] = ()) -> int:
-    with _timed():
-        conn = connect()
-        try:
-            cur = conn.execute(sql, tuple(params))
-            return cur.lastrowid
-        finally:
-            conn.close()
+    """Run one statement. Returns the new row's id when it inserted a row, else 0.
+
+    On a fresh connection ``lastrowid`` was 0 unless this very statement
+    inserted, and callers rely on that (``INSERT OR IGNORE`` counts inserts by
+    it). A shared connection remembers the previous insert, so the value is
+    reduced to what a fresh connection reported. One case cannot be told apart:
+    an upsert (``ON CONFLICT ... DO UPDATE``) that updated reports the
+    connection's previous id. No caller reads the result of an upsert.
+    """
+    with _helper_conn() as conn:
+        cur = conn.execute(sql, tuple(params))
+        if not _inserts(sql) or cur.rowcount <= 0:
+            return 0
+        return cur.lastrowid
+
+
+def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
+    """execute(), returning the number of rows the statement changed."""
+    with _helper_conn() as conn:
+        return conn.execute(sql, tuple(params)).rowcount
 
 
 def insert(table: str, values: Dict[str, Any]) -> int:
@@ -1045,12 +1263,8 @@ def update_if(
         clauses.append(extra_where)
     sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)
     params = list(values.values()) + [row_id] + list(expected.values()) + list(extra_params)
-    with _timed():
-        conn = connect()
-        try:
-            return conn.execute(sql, params).rowcount == 1
-        finally:
-            conn.close()
+    with _helper_conn() as conn:
+        return conn.execute(sql, params).rowcount == 1
 
 
 def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:

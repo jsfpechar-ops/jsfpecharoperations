@@ -214,7 +214,7 @@ def dashboard(request: Request):
         return guard
     owner_user_id = access.owner_id(request)
     apartments = access.apartments(request)
-    rows = reporting.dashboard_rows(owner_user_id=owner_user_id)
+    rows = reporting.dashboard_rows(owner_user_id=owner_user_id, apartments=apartments)
     queue = reporting.queue_groups(rows)
     counts = reporting.queue_counts(rows, queue)
     needs_action, waiting = queue["needs_action"][:20], queue["waiting"][:20]
@@ -1385,9 +1385,15 @@ def reservations_list(request: Request):
     sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
     reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
     rows = []
+    # One guest query for the page, and each property read once, instead of
+    # both again for every stay on it.
+    preloaded = reporting.preload_guests(reservations)
+    apartments_by_id: Dict[int, Any] = {}
     for row in reservations:
-        apartment = access.apartment(request, row["apartment_id"])
-        progress = reporting.reservation_progress(row)
+        if row["apartment_id"] not in apartments_by_id:
+            apartments_by_id[row["apartment_id"]] = access.apartment(request, row["apartment_id"])
+        apartment = apartments_by_id[row["apartment_id"]]
+        progress = reporting.reservation_progress(row, preloaded.get(row["id"]))
         rows.append(
             {
                 "reservation": row,
@@ -1675,19 +1681,15 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
     back = f"/reservations/{reservation_id}#guests"
     if expected is None or not 2 <= expected <= 60:
         return _back(back, err=_flash(request, "host.count_changed"))
-    conn = db.connect()
-    try:
-        changed = conn.execute(
-            "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
-            "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
-            "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
-            "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
-            "AND archived_at IS NULL) < ? "
-            "AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS ?)",
-            (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
-        ).rowcount
-    finally:
-        conn.close()
+    changed = db.execute_rowcount(
+        "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
+        "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
+        "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+        "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
+        "AND archived_at IS NULL) < ? "
+        "AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS ?)",
+        (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
+    )
     if not changed:
         return _back(back, err=_flash(request, "host.count_changed"))
     db.audit("reservation_headcount_corrected", f"id={reservation_id} expected={expected - 1}")

@@ -34,7 +34,7 @@ import secrets
 import time
 import zipfile
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
@@ -347,13 +347,56 @@ def expected_guest_count(reservation) -> Optional[int]:
     return reservation["declared_guests"]
 
 
-def reservation_progress(reservation) -> Dict[str, Any]:
-    """How far along this reservation is, for the dashboard."""
-    guests = db.query(
-        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
-        "ORDER BY is_lead DESC, id",
-        (reservation["id"],),
-    )
+# Well under SQLite's bound-parameter limit (999 on old builds).
+IN_CHUNK = 500
+
+
+def guests_by_reservation(reservation_ids: Iterable[int]) -> Dict[int, List[Any]]:
+    """The live guests of many stays, in the order reservation_progress reads them.
+
+    One ``IN (...)`` query per chunk instead of one query per stay. Every
+    requested stay is in the result, with an empty list when it has no guests.
+    Raises ``db.DecryptionError`` like the per-stay read; callers that skip one
+    unreadable stay fall back to that read (see dashboard_rows).
+    """
+    ids = list(dict.fromkeys(int(rid) for rid in reservation_ids))
+    out: Dict[int, List[Any]] = {rid: [] for rid in ids}
+    for start in range(0, len(ids), IN_CHUNK):
+        chunk = ids[start:start + IN_CHUNK]
+        marks = ", ".join("?" for _ in chunk)
+        for guest in db.query(
+            f"SELECT * FROM guest WHERE reservation_id IN ({marks}) AND archived_at IS NULL "
+            "ORDER BY reservation_id, is_lead DESC, id",
+            chunk,
+        ):
+            out[guest["reservation_id"]].append(guest)
+    return out
+
+
+def preload_guests(reservations: Iterable[Any]) -> Dict[int, List[Any]]:
+    """guests_by_reservation for a page of stays, or {} when one will not decrypt.
+
+    An empty result makes every stay read its own guests again, so the one
+    unreadable stay fails on its own, exactly as before, instead of the page.
+    """
+    try:
+        return guests_by_reservation(row["id"] for row in reservations)
+    except db.DecryptionError:
+        return {}
+
+
+def reservation_progress(reservation, guests: Optional[List[Any]] = None) -> Dict[str, Any]:
+    """How far along this reservation is, for the dashboard.
+
+    ``guests`` is the stay's live guests when the caller already loaded them
+    (``guests_by_reservation``); otherwise they are read here.
+    """
+    if guests is None:
+        guests = db.query(
+            "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+            "ORDER BY is_lead DESC, id",
+            (reservation["id"],),
+        )
     expected = expected_guest_count(reservation)
     # A guest the host filed by hand in UbyPort is done, whatever UbyHost still
     # lacks for it (a signature, say): the register has the record.
@@ -652,9 +695,17 @@ def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[st
 
 
 def dashboard_rows(
-    days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
+    days_ahead: int = 21,
+    days_back: int = 45,
+    owner_user_id: Optional[int] = None,
+    apartments: Optional[List[Any]] = None,
 ) -> List[Dict[str, Any]]:
-    """Every stay worth looking at, ordered by how urgent it is."""
+    """Every stay worth looking at, ordered by how urgent it is.
+
+    ``apartments`` is the owner's apartment rows (``SELECT *``) when the caller
+    already loaded them; a stay whose apartment is not among them is looked up
+    as before.
+    """
     start = (date.today() - timedelta(days=days_back)).isoformat()
     end = (date.today() + timedelta(days=days_ahead)).isoformat()
     rows = db.query(
@@ -667,10 +718,22 @@ def dashboard_rows(
         (owner_user_id, owner_user_id, start, end),
     )
     out: List[Dict[str, Any]] = []
+    preloaded = preload_guests(rows)
+    apartments_by_id: Dict[int, Any] = {}
+    if apartments:
+        if owner_user_id is None:
+            apartments_by_id = {apartment["id"]: apartment for apartment in apartments}
+        else:
+            apartments_by_id = {
+                apartment["id"]: apartment
+                for apartment in apartments
+                if apartment["owner_user_id"] == owner_user_id
+            }
     for reservation in rows:
-        check_in = reservation_deadline_anchor(reservation)
+        guests = preloaded.get(reservation["id"])
+        check_in = reservation_deadline_anchor(reservation, guests)
         try:
-            progress = reservation_progress(reservation)
+            progress = reservation_progress(reservation, guests)
         except db.DecryptionError:
             log.exception("dashboard skipped reservation_id=%s", reservation["id"])
             continue
@@ -679,7 +742,12 @@ def dashboard_rows(
         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
             if check_in and check_in < date.today() - timedelta(days=3):
                 continue
-        apartment = access.apartment_for_reservation(reservation, owner_user_id)
+        apartment_id = reservation["apartment_id"]
+        if apartment_id not in apartments_by_id:
+            apartments_by_id[apartment_id] = access.apartment_for_reservation(
+                reservation, owner_user_id
+            )
+        apartment = apartments_by_id[apartment_id]
         controls = send_controls(reservation, apartment, progress) if apartment else {}
         cell = deadline_cell(progress, check_in)
         out.append(
@@ -2015,19 +2083,27 @@ def hand_filing_view(progress: Dict[str, Any], now: Optional[datetime] = None) -
 
 # --- deadline monitoring -------------------------------------------------
 
-def reservation_deadline_anchor(reservation: Dict[str, Any]) -> Optional[date]:
+def reservation_deadline_anchor(
+    reservation: Dict[str, Any], guests: Optional[List[Any]] = None
+) -> Optional[date]:
     """The date the statutory clock starts from.
 
     The record filed with the police carries each guest's own ``stay_from``, so
     the deadline has to run from the earliest of those. Earliest, because the
     clock starts at the first arrival. Falls back to the reservation's own
     ``date_from`` when no guest has given a date.
+
+    ``guests`` is the stay's live (unarchived) guests when the caller already
+    has them, for example ``reservation_progress(...)["guests"]``.
     """
-    rows = db.query(
-        "SELECT stay_from FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
-        "AND stay_from IS NOT NULL AND stay_from != ''",
-        (reservation["id"],),
-    )
+    if guests is None:
+        rows = db.query(
+            "SELECT stay_from FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+            "AND stay_from IS NOT NULL AND stay_from != ''",
+            (reservation["id"],),
+        )
+    else:
+        rows = [guest for guest in guests if guest["stay_from"]]
     starts = [validation.parse_iso_date(row["stay_from"]) for row in rows]
     starts = [start for start in starts if start]
     if starts:

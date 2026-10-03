@@ -105,6 +105,21 @@ def test_lock_wait_is_measured_on_begin_immediate():
     assert stats.queries == 1  # BEGIN, COMMIT and the PRAGMAs are not counted
 
 
+def test_a_shared_connection_opened_before_the_request_still_counts():
+    # WP14 keeps one connection per thread. One opened outside any request
+    # (startup, a previous job) must still count the next request's statements.
+    db.init_db()
+    db.close_connections()
+    db.query("SELECT 1")  # opens this thread's shared connection, no counter
+    stats = db.start_request_stats()
+    db.query("SELECT 1")
+    db.query_one("SELECT 2")
+    with db.cursor() as cur:
+        cur.execute("SELECT 3")
+    assert stats.queries == 3
+    assert stats.db_seconds > 0
+
+
 def test_no_token_query_string_or_guest_data_in_the_line(caplog):
     db.init_db()
     token = "z9y8x7w6v5u4t3s2r1q0" * 2

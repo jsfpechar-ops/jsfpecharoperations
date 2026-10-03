@@ -90,6 +90,8 @@ def run(stop: Optional[threading.Event] = None) -> int:
     finally:
         log.info("worker stopping; waiting for running jobs to finish")
         scheduler.shutdown()
+        # WP14: after the scheduler, whose threads use the shared connections.
+        db.close_connections()
         try:
             alive_path().unlink()
         except OSError:
