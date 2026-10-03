@@ -31,7 +31,6 @@ from . import db, payments, reporting, validation
 from .csv_safety import csv_safe
 
 MAX_RATE_CZK = 50        # §3d
-MAX_CALENDAR_DAYS = 60   # §3a
 ADULT_AGE = 18           # §3b(1)(b)
 CADENCES = ("monthly", "quarterly")
 DECISIONS = ("exempt", "charge")
