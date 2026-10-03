@@ -154,9 +154,5 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
 )
 
 
-def for_surface(surface: str) -> Tuple[Dict[str, object], ...]:
-    return tuple(row for row in COOKIE_INVENTORY if row["surface"] in (surface, "any"))
-
-
 def names() -> Tuple[str, ...]:
     return tuple(str(row["name"]) for row in COOKIE_INVENTORY)
