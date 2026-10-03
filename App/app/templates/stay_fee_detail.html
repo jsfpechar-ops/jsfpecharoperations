@@ -4,7 +4,7 @@
 {% block content %}
 {% from "_components.html" import page_header, copy_button with context %}
 <a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
-{% include "_host_month_filter.html" %}
+{% include "_list_filter.html" %}
 {% set actions %}
   {% if frozen %}
     <span class="pill green">{{ t('stay_fees.saved_version', version=filing_version) }}</span>
