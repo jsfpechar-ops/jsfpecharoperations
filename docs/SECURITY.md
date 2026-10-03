@@ -12,7 +12,7 @@ summarises the threat model, controls, and known limitations.
 | **Host 2FA** | Authenticator-app TOTP required in production; one-use recovery codes |
 | **Guest access** | 100-bit permalink token + optional six-digit PIN + signed PIN cookie bound to token and current PIN; the claim secret is stored hashed and never written into a mail body |
 | **Multi-tenant** | All host routes resolve resources through `access.*` joins on `owner_user_id` |
-| **Secrets** | UbyPort passwords, host TOTP secrets, guest travel-document numbers and queued claim secrets encrypted at rest (Fernet); `SECRET_KEY` in `data/secret_key` |
+| **Secrets** | UbyPort passwords, host TOTP secrets, guest travel-document numbers, birth date, street and town of residence, signatures, the UbyPort request envelope and queued claim secrets encrypted at rest (MultiFernet over `UBYHOST_DATA_KEYS`, separate from the session secret; the old key derived from `SECRET_KEY` is kept for decryption until `scripts/reencrypt.py` has run); `SECRET_KEY` in `data/secret_key` |
 | **Uploads** | Passport photos/PDFs: type/size/magic-byte checks; host-only download route |
 
 ## Hardening (application)

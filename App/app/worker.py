@@ -56,6 +56,9 @@ def prepare() -> None:
     config.ensure_data_dir()
     with db.startup_lock():
         config.secret_key()
+        # WP16: a malformed UBYHOST_DATA_KEYS stops the worker at start, as it
+        # stops the web process, not the first job that reads a guest.
+        db.check_data_keys()
         db.init_db()
     env_guard.apply()
 

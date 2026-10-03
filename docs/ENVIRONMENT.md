@@ -20,7 +20,9 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | --- | --- | --- |
 | `UBYHOST_DATA_DIR` | `App/data` | Database, secret key, passport photos. Created at import time with mode `0700`. |
 | `UBYHOST_DB` | `$UBYHOST_DATA_DIR/ubyhost.db` | Full path override for the SQLite file. `App/scripts/backup_data.sh` honours it too, so if you set one you must set it for the backup script as well. |
-| `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and derives the Fernet key for UbyPort passwords **and host TOTP secrets**. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
+| `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and, while `UBYHOST_DATA_KEY_LEGACY` is on, derives the legacy Fernet key for data at rest. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
+| `UBYHOST_DATA_KEYS` | unset | Comma-separated Fernet keys for data at rest, newest first. The first encrypts; all decrypt. Unset means the legacy key derived from `UBYHOST_SECRET_KEY` is the only key. A malformed entry stops the app at startup. Rotate with `App/scripts/reencrypt.py`. |
+| `UBYHOST_DATA_KEY_LEGACY` | `1` | Whether the legacy key derived from `UBYHOST_SECRET_KEY` is still tried for decryption. Set `0` only after `scripts/reencrypt.py --check` exits 0; refused while `UBYHOST_DATA_KEYS` is empty. |
 | `UBYHOST_DEPLOYMENT` | `local` | `local`, `staging` or `production`. Gates real behaviour, not just labels: host CSRF enforcement, Turnstile, SES, and secure cookie flags are all conditional on `production`. |
 | `PORT` | `8080` (Lightsail) / Render-supplied | Read by `App/render_start.sh` and `deploy/lightsail/docker-compose.yml`, not by the app. |
 

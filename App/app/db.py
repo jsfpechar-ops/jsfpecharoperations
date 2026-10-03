@@ -1,4 +1,4 @@
-"""SQLite access layer plus at-rest encryption for UbyPort passwords."""
+"""SQLite access layer plus at-rest encryption of secrets and guest fields."""
 from __future__ import annotations
 
 import base64
@@ -16,7 +16,7 @@ from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
 from . import config
 
@@ -1023,6 +1023,11 @@ ADDED_COLUMNS = (
     # land first.
     ("user_account", "onboarding_emails_opt_out", "INTEGER NOT NULL DEFAULT 0"),
     ("user_account", "onboarding_emails_opt_out_at", "TEXT"),
+    # WP16: more fields encrypted at rest (see ENCRYPTED_COLUMNS).
+    ("guest", "birth_date_enc", "TEXT"),
+    ("guest", "res_street_enc", "TEXT"),
+    ("guest", "res_city_enc", "TEXT"),
+    ("submission", "request_xml_enc", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
@@ -1178,32 +1183,36 @@ def is_decrypted(row: Any) -> bool:
 
 
 def _hydrate(row: sqlite3.Row) -> Any:
-    """Merge decrypted guest fields into a row, leaving other rows untouched.
+    """Merge decrypted fields into a row, leaving other rows untouched.
 
     A row only qualifies when it actually selected one of the encrypted
-    columns, so the cost is paid by guest reads and nothing else.
+    columns, so the cost is paid by guest and submission reads and nothing
+    else. A query that wants a decrypted field selects its ``*_enc`` column
+    under its own name (``SELECT *`` does that).
     """
     keys = row.keys()
-    present = [name for name, enc in ENCRYPTED_GUEST_COLUMNS.items() if enc in keys]
+    present = [(name, enc) for name, enc in _ENCRYPTED_PAIRS if enc in keys]
     if not present:
         return row
     values: Dict[str, Any] = dict(row)
-    for name in present:
-        values[name] = decrypt_field(
-            row[ENCRYPTED_GUEST_COLUMNS[name]], row[name] if name in keys else None
-        )
+    for name, enc in present:
+        values[name] = decrypt_field(row[enc], row[name] if name in keys else None)
     return _HydratedRow(values, keys)
 
 
-def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
-    """Redirect a guest field to its encrypted column and blank the plaintext.
+def _write_values(table: str, values: Dict[str, Any]) -> Dict[str, Any]:
+    """Redirect an encrypted field to its ``*_enc`` column and blank the plaintext.
 
     Blanking on write means an existing row loses the copy the backfill has not
-    reached yet the first time anything saves it again.
+    reached yet the first time anything saves it again. Tables with no
+    encrypted fields pass through unchanged.
     """
+    columns = ENCRYPTED_COLUMNS.get(table)
+    if not columns:
+        return values
     out: Dict[str, Any] = {}
     for key, value in values.items():
-        enc = ENCRYPTED_GUEST_COLUMNS.get(key)
+        enc = columns.get(key)
         if enc is None:
             out[key] = value
         else:
@@ -1252,8 +1261,7 @@ def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
 
 
 def insert(table: str, values: Dict[str, Any]) -> int:
-    if table == "guest":
-        values = _guest_write_values(values)
+    values = _write_values(table, values)
     cols = ", ".join(values)
     marks = ", ".join("?" for _ in values)
     return execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(values.values()))
@@ -1262,8 +1270,7 @@ def insert(table: str, values: Dict[str, Any]) -> int:
 def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
     if not values:
         return
-    if table == "guest":
-        values = _guest_write_values(values)
+    values = _write_values(table, values)
     sets = ", ".join(f"{k} = ?" for k in values)
     execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
 
@@ -1281,12 +1288,11 @@ def update_if(
     Compare-and-set for rows a background job may change between a request's
     read and its write. ``expected`` values compare with IS, so None matches
     NULL. ``extra_where`` is a trusted SQL fragment (never user input).
-    Guest values are encrypted exactly as in update().
+    Encrypted fields are handled exactly as in update().
     """
     if not values:
         return False
-    if table == "guest":
-        values = _guest_write_values(values)
+    values = _write_values(table, values)
     sets = ", ".join(f"{k} = ?" for k in values)
     clauses = ["id = ?"] + [f"{k} IS ?" for k in expected]
     if extra_where:
@@ -1301,8 +1307,7 @@ def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:
     """update(), but on a cursor from cursor()/immediate(), inside its transaction."""
     if not values:
         return
-    if table == "guest":
-        values = _guest_write_values(values)
+    values = _write_values(table, values)
     sets = ", ".join(f"{k} = ?" for k in values)
     cur.execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
 
@@ -1404,20 +1409,105 @@ def audit_retention(
 
 
 # --- secret handling -----------------------------------------------------
+#
+# Everything encrypted at rest goes through one MultiFernet. Its keys, in
+# order: every key in UBYHOST_DATA_KEYS (the first one encrypts), then, while
+# the migration to those keys is not finished, the legacy key that is the
+# SHA-256 of the session secret. With no UBYHOST_DATA_KEYS the legacy key is
+# the only key, which is exactly how every release before this one worked.
 
-_fernet_cache: Dict[str, Fernet] = {}
+_fernet_cache: Dict[tuple, MultiFernet] = {}
 
 
-def _fernet() -> Fernet:
-    secret = config.secret_key()
-    cached = _fernet_cache.get(secret)
+class DataKeyError(RuntimeError):
+    """UBYHOST_DATA_KEYS / UBYHOST_DATA_KEY_LEGACY cannot give a usable key."""
+
+
+def _legacy_fernet(secret: str) -> Fernet:
+    digest = hashlib.sha256(secret.encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
+
+def _key_material() -> tuple:
+    keys = tuple(config.data_keys())
+    legacy = config.legacy_data_key_enabled()
+    if not keys and not legacy:
+        raise DataKeyError(
+            "UBYHOST_DATA_KEY_LEGACY=0 needs at least one key in UBYHOST_DATA_KEYS"
+        )
+    # Only touch the session secret when the legacy key is actually in use:
+    # config.secret_key() can mint a file, and a deployment that has finished
+    # the migration has no reason to depend on it for data any more.
+    secret = config.secret_key() if (legacy or not keys) else None
+    return keys, secret
+
+
+def _fernet() -> MultiFernet:
+    keys, secret = _key_material()
+    cache_key = (keys, secret)
+    cached = _fernet_cache.get(cache_key)
     if cached is not None:
         return cached
-    digest = hashlib.sha256(secret.encode("utf-8")).digest()
-    cached = Fernet(base64.urlsafe_b64encode(digest))
+    fernets: List[Fernet] = []
+    for position, key in enumerate(keys, start=1):
+        try:
+            fernets.append(Fernet(key.encode("ascii")))
+        except (ValueError, UnicodeEncodeError) as exc:
+            # Never echo the value: it is a secret even when it is malformed.
+            raise DataKeyError(
+                f"UBYHOST_DATA_KEYS entry {position} is not a valid Fernet key"
+            ) from exc
+    if secret is not None:
+        fernets.append(_legacy_fernet(secret))
+    cached = MultiFernet(fernets)
     _fernet_cache.clear()
-    _fernet_cache[secret] = cached
+    _fernet_cache[cache_key] = cached
     return cached
+
+
+def _primary_fernet() -> Fernet:
+    keys, secret = _key_material()
+    if keys:
+        _fernet()  # validates every key with a clear error
+        return Fernet(keys[0].encode("ascii"))
+    return _legacy_fernet(secret)
+
+
+def check_data_keys() -> None:
+    """Build the key list once, so a bad key stops the app at startup."""
+    _fernet()
+
+
+def token_is_current(token: Any) -> bool:
+    """True when ``token`` is encrypted under the key new data is written with.
+
+    Fernet tokens do not name their key, so this tries the primary key alone.
+    ``scripts/reencrypt.py`` uses it to skip work already done, which is what
+    makes a re-run resume instead of starting over.
+    """
+    primary = _primary_fernet()
+    try:
+        raw = token if isinstance(token, bytes) else str(token).encode("ascii")
+        primary.decrypt(raw)
+        return True
+    except (InvalidToken, ValueError):
+        return False
+
+
+def rotate_token(token: Any) -> Any:
+    """Re-encrypt ``token`` under the primary key; same type out as in.
+
+    Raises ``DecryptionError`` when no configured key can read it, so the
+    caller can count it instead of silently writing garbage back.
+    """
+    as_bytes = isinstance(token, bytes)
+    cipher = _fernet()
+    try:
+        raw = token if as_bytes else str(token).encode("ascii")
+        rotated = cipher.rotate(raw)
+    except (InvalidToken, ValueError) as exc:
+        raise DecryptionError("stored value could not be decrypted with any key") from exc
+    return rotated if as_bytes else rotated.decode("ascii")
 
 
 def encrypt_secret(plain: str) -> str:
@@ -1451,7 +1541,26 @@ ENCRYPTED_GUEST_COLUMNS = {
     "signature_png": "signature_png_enc",
     # Stay-fee exemption category (may be disability). Plaintext is a read fallback only.
     "fee_host_reason": "fee_host_reason_enc",
+    # WP16: birth date and the street and town of residence. Nothing filters or
+    # sorts on them in SQL; the stay-fee age rule reads them in Python. The
+    # residence country stays plain, like nationality: it is a country code,
+    # and the stay-fee "resident of this municipality" rule reads it.
+    "birth_date": "birth_date_enc",
+    "res_street": "res_street_enc",
+    "res_city": "res_city_enc",
 }
+
+# Every table with fields that are stored encrypted, plaintext name -> column.
+# The query helpers decrypt any row that selected one of these columns and the
+# write helpers encrypt on the way in, so callers keep using the plain name.
+ENCRYPTED_COLUMNS: Dict[str, Dict[str, str]] = {
+    "guest": ENCRYPTED_GUEST_COLUMNS,
+    # WP16: the request envelope carries every reported guest's passport number.
+    "submission": {"request_xml": "request_xml_enc"},
+}
+_ENCRYPTED_PAIRS = tuple(
+    (name, enc) for columns in ENCRYPTED_COLUMNS.values() for name, enc in columns.items()
+)
 
 
 def encrypt_blob(data: bytes) -> bytes:

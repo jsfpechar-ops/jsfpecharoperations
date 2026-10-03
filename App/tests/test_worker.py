@@ -151,3 +151,17 @@ def test_second_worker_process_exits_while_the_first_holds_the_lock(tmp_path):
         )
     assert proc.returncode == worker.EXIT_LOCK_HELD
     assert "refusing to start a second scheduler" in proc.stderr + proc.stdout
+
+
+def test_the_worker_refuses_to_start_with_a_malformed_data_key(monkeypatch, tmp_path):
+    # WP16 + WP06: the worker files reports and reads guests, so a bad
+    # UBYHOST_DATA_KEYS must stop it at start, as it stops the web process.
+    _private_data(monkeypatch, tmp_path)
+    monkeypatch.setattr(config, "ROLE", "worker")
+    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
+    monkeypatch.setenv("UBYHOST_DATA_KEYS", "not-a-fernet-key")
+    started = []
+    monkeypatch.setattr(scheduler, "start", lambda: started.append(1) or True)
+    with pytest.raises(db.DataKeyError):
+        worker.run(threading.Event())
+    assert started == []

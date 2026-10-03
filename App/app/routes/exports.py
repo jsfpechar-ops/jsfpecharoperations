@@ -273,11 +273,16 @@ def submission_xml(submission_id: int, which: str, request: Request):
     owned = access.submission(request, submission_id)
     if not owned:
         return Response("Not found.", status_code=404, media_type="text/plain")
+    # request_xml_enc is selected so the query helper decrypts the request
+    # envelope (WP16); the response carries no guest identity and stays plain.
     row = db.query_one(
-        f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,)
+        "SELECT request_xml, request_xml_enc, response_xml FROM submission WHERE id = ?",
+        (submission_id,),
     )
     db.audit("export_submission_xml", f"submission_id={submission_id} which={which}")
-    return Response((row["body"] if row else "") or "", media_type="application/xml")
+    return Response(
+        (row[f"{which}_xml"] if row else "") or "", media_type="application/xml"
+    )
 
 
 @router.get("/housebook.csv")

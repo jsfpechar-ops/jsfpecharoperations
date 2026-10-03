@@ -2300,7 +2300,8 @@ def purge_submission_payloads(
         f"JOIN apartment a ON a.id = s.apartment_id "
         f"WHERE s.created_at < ? AND s.state IN ({marks}) "
         f"AND (? IS NULL OR a.owner_user_id = ?) "
-        f"AND (s.request_xml IS NOT NULL OR s.response_xml IS NOT NULL)",
+        f"AND (s.request_xml IS NOT NULL OR s.request_xml_enc IS NOT NULL "
+        f"OR s.response_xml IS NOT NULL)",
         (cutoff, *TERMINAL_SUBMISSION_STATES, owner_user_id, owner_user_id),
     )
     if not rows:
@@ -2309,7 +2310,8 @@ def purge_submission_payloads(
     ids = [row["id"] for row in rows]
     id_marks = ", ".join("?" for _ in ids)
     db.execute(
-        f"UPDATE submission SET request_xml = NULL, response_xml = NULL "
+        f"UPDATE submission SET request_xml = NULL, request_xml_enc = NULL, "
+        f"response_xml = NULL "
         f"WHERE id IN ({id_marks})",
         ids,
     )

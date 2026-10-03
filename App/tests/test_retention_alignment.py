@@ -381,9 +381,8 @@ def test_raw_xml_goes_after_ninety_days_and_the_receipt_row_stays():
     assert row["apartment_id"] and row["guest_ids"] == "[1]"
     assert row["created_at"] and row["state"] == "ok"
     assert row["pseudo_stamp"] == "REF-0001" and row["receipt_pdf"]
-    assert db.query_one("SELECT request_xml FROM submission WHERE id = ?", (recent,))[
-        "request_xml"
-    ]
+    # WP16 keeps the envelope in request_xml_enc; SELECT * decrypts it.
+    assert db.query_one("SELECT * FROM submission WHERE id = ?", (recent,))["request_xml"]
 
     line = _retention_lines("ubyport_xml")[0]
     assert line["count"] == 1

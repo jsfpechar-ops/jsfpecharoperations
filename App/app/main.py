@@ -102,6 +102,10 @@ async def lifespan(_app: FastAPI):
         # answered 200 while /login answered 500, so the deploy's health check
         # passed and the broken release went live.
         config.secret_key()
+        # Same reason for the data-encryption keys (WP16): a malformed
+        # UBYHOST_DATA_KEYS must stop the boot, not the first page that reads
+        # a guest.
+        db.check_data_keys()
         db.init_db()
         bootstrap_password = auth.ensure_bootstrap_admin()
         rotate_weak_permalinks()

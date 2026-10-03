@@ -13,7 +13,7 @@ import os
 import secrets
 from datetime import date
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -21,8 +21,8 @@ DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
 
 DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
 
-# The secret key signs session cookies and derives the key that encrypts
-# UbyPort passwords at rest. Losing it means re-entering those passwords.
+# The secret key signs session cookies. Until UBYHOST_DATA_KEYS is set it also
+# derives the key that encrypts data at rest (see data_keys() below).
 _SECRET_FILE = DATA_DIR / "secret_key"
 
 
@@ -97,6 +97,32 @@ def require_secret_key() -> str:
             f"no UBYHOST_SECRET_KEY is set and there is no key file at {_SECRET_FILE}"
         )
     return secret_key()
+
+
+def data_keys() -> List[str]:
+    """The data-encryption keys from ``UBYHOST_DATA_KEYS``, newest first.
+
+    Comma-separated Fernet keys (``Fernet.generate_key()``). The first one
+    encrypts everything written from now on; every key in the list is tried
+    when reading. They are separate from ``UBYHOST_SECRET_KEY`` so that the
+    session-signing secret can be rotated without making stored data
+    unreadable. Read on every call rather than cached, so a test or a tool can
+    change the environment; the cost is a string split.
+    """
+    raw = os.environ.get("UBYHOST_DATA_KEYS", "")
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+def legacy_data_key_enabled() -> bool:
+    """Whether the old key derived from the session secret is still tried.
+
+    On by default, and forced on while no ``UBYHOST_DATA_KEYS`` is set, because
+    then it is the only key there is. Turn it off with
+    ``UBYHOST_DATA_KEY_LEGACY=0`` once ``scripts/reencrypt.py`` has moved every
+    value to the new key and its ``--check`` reports nothing left.
+    """
+    value = os.environ.get("UBYHOST_DATA_KEY_LEGACY", "1").strip().lower()
+    return value not in {"0", "false", "no", "off"}
 
 
 # "mock" | "test" | "prod".  Controls which UbyPort endpoint submissions go to.
