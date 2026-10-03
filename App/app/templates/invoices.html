@@ -5,7 +5,7 @@
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('invoices.title'), t('invoices.lede'), '', '', '',
     '<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
-{% include "_host_month_filter.html" %}
+{% include "_list_filter.html" %}
 {% if invoices %}
 <div class="panel tight scroll-x">
   <table class="table-cards">
@@ -16,6 +16,7 @@
         <th class="col-name">{{ t('invoices.col.customer') }}</th>
         <th>{{ t('invoices.col.kind') }}</th>
         <th>{{ t('invoices.col.total') }}</th>
+        <th>{{ t('filter.status') }}</th>
         <th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr>
     </thead>
@@ -27,6 +28,7 @@
         <td class="col-name" data-label="{{ t('invoices.col.customer') }}">{{ inv.buyer_name }}</td>
         <td class="small" data-label="{{ t('invoices.col.kind') }}">{{ t('invoice.kind.' ~ inv.kind) }}</td>
         <td class="num" data-label="{{ t('invoices.col.total') }}">{{ inv.total_haler | money_czk }}</td>
+        <td data-label="{{ t('filter.status') }}">{% if inv.state == 'paid' %}<span class="pill green">{{ t('invoice.state.paid') }}</span>{% elif inv.state == 'unpaid' %}<span class="pill teal">{{ t('invoice.state.unpaid') }}</span>{% elif inv.state == 'cancelled' %}<span class="pill grey">{{ t('invoice.state.cancelled') }}</span>{% else %}<span class="pill grey">{{ t('invoice.kind.' ~ inv.kind) }}</span>{% endif %}</td>
         <td class="row-actions" data-label=""><a class="btn small" href="/invoices/{{ inv.id }}.pdf">{{ t('host.invoice_pdf') }}</a></td>
       </tr>
     {% endfor %}
@@ -36,17 +38,22 @@
 {% if invoice_pages > 1 %}
 <nav class="action-group" aria-label="{{ t('invoices.title') }}">
   {% if invoice_page > 1 %}
-  <a class="btn" href="/invoices?page={{ invoice_page - 1 }}{% if month_key %}&month={{ month_key }}{% endif %}" aria-label="{{ invoice_page - 1 }}">‹</a>
+  <a class="btn" href="{{ page_href }}{{ invoice_page - 1 }}" aria-label="{{ invoice_page - 1 }}">‹</a>
   {% endif %}
   {% if invoice_page < invoice_pages %}
-  <a class="btn" href="/invoices?page={{ invoice_page + 1 }}{% if month_key %}&month={{ month_key }}{% endif %}" aria-label="{{ invoice_page + 1 }}">›</a>
+  <a class="btn" href="{{ page_href }}{{ invoice_page + 1 }}" aria-label="{{ invoice_page + 1 }}">›</a>
   {% endif %}
 </nav>
 {% endif %}
 {% else %}
 <div class="panel empty">
+  {% if filter_active %}
+  <h2>{{ t('filter.no_results') }}</h2>
+  <a class="btn" href="{{ filter_reset_href }}">{{ t('filter.reset') }}</a>
+  {% else %}
   <h2>{{ t('invoices.empty_title') }}</h2>
   <p class="lede">{{ t('invoices.empty') }}</p>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}
