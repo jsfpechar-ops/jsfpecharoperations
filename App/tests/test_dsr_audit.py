@@ -34,5 +34,13 @@ def test_the_export_matches_every_audit_format_for_this_guest_only():
         ("passport_photo_viewed", f"guest_id={guest}", None),
     ):
         db.audit(action, detail, owner_user_id=who)
-    actions = [row["action"] for row in dsr.guest_export(guest)["audit"]]
-    assert actions == ["passport_photo_viewed", "guest_updated", "guest_form_saved"]
+    try:
+        actions = [row["action"] for row in dsr.guest_export(guest)["audit"]]
+        assert actions == ["passport_photo_viewed", "guest_updated", "guest_form_saved"]
+    finally:
+        db.execute("DELETE FROM audit WHERE owner_user_id = ? OR action = 'passport_photo_viewed' "
+                   "AND detail = ?", (owner, f"guest_id={guest}"))
+        db.execute("DELETE FROM guest WHERE id = ?", (guest,))
+        db.execute("DELETE FROM reservation WHERE id = ?", (reservation,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment,))
+        db.execute("DELETE FROM user_account WHERE id = ?", (owner,))

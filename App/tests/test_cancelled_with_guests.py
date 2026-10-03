@@ -1,7 +1,23 @@
 """A stay cancelled in the calendar after guests filled in forms raises a warning."""
 from __future__ import annotations
 
+import pytest
+
 from app import alerts, db, icalsync
+
+
+@pytest.fixture(autouse=True)
+def _cleanup():
+    yield
+    for row in db.query("SELECT id FROM apartment WHERE internal_name LIKE 'Flat cwg-%'"):
+        db.execute("DELETE FROM alert WHERE apartment_id = ?", (row["id"],))
+        db.execute(
+            "DELETE FROM guest WHERE reservation_id IN "
+            "(SELECT id FROM reservation WHERE apartment_id = ?)",
+            (row["id"],),
+        )
+        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (row["id"],))
+        db.execute("DELETE FROM apartment WHERE id = ?", (row["id"],))
 
 
 def _stay(now: str, uid: str) -> dict:
