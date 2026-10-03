@@ -115,9 +115,10 @@ def test_invoice_list_month_filter_matches_issue_date(host, monkeypatch):
     assert "2026-0008" in all_page.text
     assert "2026-0009" in all_page.text
     assert 'type="month"' in all_page.text
-    assert "host-month-filter" in all_page.text
+    assert "list-filter" in all_page.text
     assert "month-control is-empty" in all_page.text
     assert "All dates" in all_page.text
+    assert "list-filter-reset" not in all_page.text
 
     august = host.get("/invoices?month=2026-08")
     assert august.status_code == 200
@@ -125,7 +126,12 @@ def test_invoice_list_month_filter_matches_issue_date(host, monkeypatch):
     assert "2026-0009" not in august.text
     assert 'value="2026-08"' in august.text
     assert "month-control is-empty" not in august.text
-    assert 'href="/invoices"' in august.text  # All dates when filtered
+    assert 'class="btn ghost list-filter-reset" href="/invoices"' in august.text
+
+    unpaid = host.get("/invoices?status=unpaid&q=0009")
+    assert "2026-0009" in unpaid.text
+    assert "2026-0008" not in unpaid.text
+    assert host.get("/invoices?status=paid").text.count("/invoices/") < all_page.text.count("/invoices/")
 
 
 def test_the_builder_form_is_a_free_form_with_items(host):
