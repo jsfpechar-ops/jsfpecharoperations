@@ -83,7 +83,11 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
         "due_date", "duzp", "note",
         "legal_entity_id",
     )}
-    state["already_paid"] = "1" if form.get("already_paid") else "0"
+    # Same spelling as invoices.build_draft: "0" is payment requested, and a
+    # truthy form.get("already_paid") would treat it as already paid.
+    state["already_paid"] = (
+        "1" if _form_str(form, "already_paid") in ("1", "on") else "0"
+    )
     state["lang"] = _form_str(form, "lang")
     state["item_rows"] = [
         {key: row[key] for key in (

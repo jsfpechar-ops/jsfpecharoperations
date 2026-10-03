@@ -116,6 +116,43 @@ def test_the_unpaid_choice_requests_payment(host):
     assert row["due_date"] is not None
 
 
+def test_a_validation_error_keeps_payment_requested(host):
+    """Payment requested posts already_paid=0. The 422 re-render used to treat
+    any present field as already paid, so the radio flipped and a second Issue
+    stored paid_on / dropped the due date."""
+    import re
+
+    entity_id = _add_entity()
+    failed = host.post(
+        "/invoices",
+        data={"legal_entity_id": str(entity_id), "already_paid": "0",
+              "buyer_name": "", "item_description": ["Stay"],
+              "item_quantity": ["1"], "item_unit_price": ["1000"]},
+        follow_redirects=False,
+    )
+    assert failed.status_code == 422
+    page = failed.text
+    paid = re.search(r'<input[^>]*id="already_paid"[^>]*>', page).group(0)
+    requested = re.search(r'<input[^>]*id="payment_requested"[^>]*>', page).group(0)
+    assert "checked" not in paid
+    assert "checked" in requested
+    due = page.split('id="due-fields"', 1)[1][:80]
+    assert "hidden" not in due
+
+    issued = host.post(
+        "/invoices",
+        data={"legal_entity_id": str(entity_id), "already_paid": "0",
+              "buyer_name": "Buyer", "item_description": ["Stay"],
+              "item_quantity": ["1"], "item_unit_price": ["1000"]},
+        follow_redirects=False,
+    )
+    assert issued.status_code in (302, 303)
+    invoice_id = int(issued.headers["location"].split("?")[0].rsplit("/", 1)[1])
+    row = db.query_one("SELECT * FROM invoice WHERE id = ?", (invoice_id,))
+    assert row["paid_on"] is None
+    assert row["due_date"] is not None
+
+
 def test_issue_is_the_only_coral_primary_in_the_builder(host):
     entity_id = _add_entity()
     page = host.get(f"/invoices/new?entity={entity_id}").text
