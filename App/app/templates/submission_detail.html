@@ -103,7 +103,7 @@
         <td data-label="{{ t('reports.detail.guest') }}">
           <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
           {% if guest.restricted_at %}<span class="pill amber">{{ t('guest.restricted_badge') }}</span>{% endif %}
-          <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest.doc_number }}</div>
+          <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest_identifier(guest.doc_number, guest.id) }}</div>
         </td>
         <td data-label="{{ t('reports.detail.result') }}">
           {% if guest.result == 'duplicate' %}

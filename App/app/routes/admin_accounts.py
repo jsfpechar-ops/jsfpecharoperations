@@ -14,6 +14,7 @@ from starlette.background import BackgroundTask
 
 from .. import (
     acceptance,
+    access,
     auth,
     config,
     db,
@@ -521,13 +522,25 @@ async def user_password_reset(user_id: int, request: Request):
 
 
 @router.post("/admin/users/{user_id}/impersonate")
-def user_impersonate(user_id: int, request: Request):
+async def user_impersonate(user_id: int, request: Request):
     account, guard = _require_admin(request)
     target = db.query_one(
         "SELECT * FROM user_account WHERE id = ? AND active = 1", (user_id,)
     )
     if guard or not target:
         return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
+    form = await request.form()
+    reason = auth.support_reason(_form_str(form, "reason"))
+    if reason is None:
+        return _back(
+            "/admin/users",
+            err=_flash(
+                request,
+                "flash.error.support_reason",
+                min=auth.SUPPORT_REASON_MIN,
+                max=auth.SUPPORT_REASON_MAX,
+            ),
+        )
     response = RedirectResponse("/", status_code=303)
     auth.attach_session(
         response,
@@ -535,7 +548,7 @@ def user_impersonate(user_id: int, request: Request):
     )
     db.audit(
         "impersonation_started",
-        f"admin={account['username']}",
+        f"admin={account['username']} reason={reason}",
         actor=account["username"],
         owner_user_id=user_id,
     )
@@ -575,9 +588,21 @@ def stop_impersonating(request: Request):
     account, guard = _require_admin(request)
     if guard:
         return guard
+    workspace = auth.workspace_user(request)
     response = RedirectResponse("/admin/users", status_code=303)
     auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
-    db.audit("impersonation_stopped", actor=account["username"], owner_user_id=account["id"])
+    # The host sees the end of a support session in their own Settings audit,
+    # not only the start; the admin's own workspace keeps its copy too.
+    owners = [account["id"]]
+    if workspace and workspace["id"] != account["id"]:
+        owners.insert(0, workspace["id"])
+    for owner_id in owners:
+        db.audit(
+            "impersonation_stopped",
+            "exit",
+            actor=account["username"],
+            owner_user_id=owner_id,
+        )
     return response
 
 
@@ -666,6 +691,9 @@ def user_workspace_export(user_id: int, request: Request):
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if not target:
         return _back("/admin/users", err=_flash(request, "flash.error.no_such_user"))
+    if not access.identity_visible(request):
+        # Inside a host's workspace the ZIP is as blocked here as in Settings.
+        return _back("/", err=_flash(request, "flash.error.identity_hidden_export"))
     path = workspace_export.build_workspace_zip(user_id)
     db.audit(
         "workspace_exported",

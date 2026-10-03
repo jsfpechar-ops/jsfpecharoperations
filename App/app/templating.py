@@ -132,6 +132,28 @@ def _template_plural(context, base: str, n: int, **kwargs) -> str:
 
 
 @pass_context
+def _template_identity_visible(context, guest_id=None) -> bool:
+    """``access.identity_visible`` for templates; see there."""
+    request = context.get("request")
+    return access.identity_visible(request, guest_id) if request else False
+
+
+@pass_context
+def _template_guest_identifier(context, value, guest_id) -> str:
+    """A document or visa number as this request may see it."""
+    request = context.get("request")
+    if request is None:
+        return access.mask_identifier(value)
+    return access.identifier_for(request, guest_id, value)
+
+
+@pass_context
+def _template_impersonation_minutes_left(context):
+    request = context.get("request")
+    return auth.impersonation_minutes_left(request) if request else None
+
+
+@pass_context
 def _template_time_left(context, check_in) -> str:
     """The deadline countdown, in the host's language.
 
@@ -285,6 +307,9 @@ templates.env.filters["from_json"] = _from_json
 templates.env.filters["legal_links"] = _legal_links
 templates.env.globals["t"] = _template_translate
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
+templates.env.globals["identity_visible"] = _template_identity_visible
+templates.env.globals["guest_identifier"] = _template_guest_identifier
+templates.env.globals["impersonation_minutes_left"] = _template_impersonation_minutes_left
 templates.env.globals.update(
     app_version=__version__,
     operator=operator.details,

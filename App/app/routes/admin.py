@@ -1882,6 +1882,12 @@ def _render_host_guest_form(
     *,
     editing: bool,
 ):
+    # A guest not yet saved has nothing stored to hide; what the form echoes
+    # back is what the person at the keyboard just typed.
+    identity_hidden = bool(
+        editing and guest and guest["id"]
+        and not access.identity_visible(request, int(guest["id"]))
+    )
     return render(
         request,
         "guest_form_admin.html",
@@ -1890,7 +1896,8 @@ def _render_host_guest_form(
             "guest": guest,
             "issues": issues,
             "editing": editing,
-            "signature_value": _signature_for_display(guest),
+            "identity_hidden": identity_hidden,
+            "signature_value": "" if identity_hidden else _signature_for_display(guest),
             "doc_types": validation.DOC_TYPES,
             "selected_doc_type": (
                 stay_fee.doc_type_of(guest)
@@ -2028,6 +2035,12 @@ async def guest_update(guest_id: int, request: Request):
     form = await request.form()
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form, guest)
+    if not access.identity_visible(request, guest_id):
+        # The form showed these masked and without inputs, so the stored values
+        # stand: a masked number must never be saved over the real one.
+        payload["doc_number"] = guest["doc_number"]
+        payload["visa_number"] = guest["visa_number"]
+        signature = guest["signature_png"] or ""
     preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
     issues = reporting.guest_issues(preview, reservation)
     if validation.errors_only(issues):
@@ -2179,6 +2192,13 @@ def guest_passport_photo(guest_id: int, request: Request):
     guest = access.guest(request, guest_id)
     if not guest or not reporting.guest_has_passport_photo(guest):
         return Response("Not found.", status_code=404)
+    if not access.identity_visible(request, guest_id):
+        return Response(
+            _flash(request, "identity.hidden"),
+            status_code=403,
+            media_type="text/plain",
+            headers={"Cache-Control": "no-store"},
+        )
     payload = passport_photos.read_photo(guest_id)
     if not payload:
         return Response("Not found.", status_code=404)
@@ -2192,6 +2212,57 @@ def guest_passport_photo(guest_id: int, request: Request):
             "Content-Security-Policy": "sandbox; default-src 'none'",
         },
     )
+
+
+@router.post("/guests/{guest_id}/reveal-identity")
+async def guest_reveal_identity(guest_id: int, request: Request):
+    """Show one guest's identity data to a supporting admin, with a logged reason.
+
+    The reveal lasts for the rest of this impersonation (the guest id joins
+    the session payload) and is written to the host's own audit.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    form = await request.form()
+    return_to = security.safe_local_path(
+        str(form.get("return_to") or ""), f"/guests/{guest_id}"
+    )
+    if not auth.impersonating(request):
+        return _back(return_to)
+    reason = auth.support_reason(_form_str(form, "reason"))
+    if reason is None:
+        return _back(
+            return_to,
+            err=_flash(
+                request,
+                "flash.error.support_reason",
+                min=auth.SUPPORT_REASON_MIN,
+                max=auth.SUPPORT_REASON_MAX,
+            ),
+        )
+    account = auth.current_user(request)
+    workspace = auth.workspace_user(request)
+    response = _back(return_to, msg=_flash(request, "flash.identity.revealed"))
+    auth.attach_session(
+        response,
+        auth.issue_session(
+            account["id"],
+            account["session_version"],
+            workspace_user_id=workspace["id"],
+            impersonation_started_at=auth.impersonation_started_at(request),
+            revealed_guest_ids=[*auth.revealed_guest_ids(request), guest_id],
+        ),
+    )
+    db.audit(
+        "guest_identity_revealed",
+        f"guest_id={guest_id} reason={reason}",
+        owner_user_id=workspace["id"],
+    )
+    return response
 
 
 @router.post("/guests/{guest_id}/archive")
@@ -2476,11 +2547,27 @@ def dismiss_alert(alert_id: int, request: Request):
     return RedirectResponse(_redirect_path_from_referer(request), status_code=303)
 
 
+SUPPORT_AUDIT_ACTIONS = (
+    "impersonation_started",
+    "impersonation_stopped",
+    "guest_identity_revealed",
+)
+
+
 @router.get("/settings")
 def settings_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    # "Support sessions": when an admin opened this workspace, left it or ran
+    # out of time, revealed a guest, and everything done in between.
+    audit_filter = "support" if request.query_params.get("audit") == "support" else ""
+    audit_where = ""
+    audit_params: tuple = ()
+    if audit_filter:
+        marks = ", ".join("?" for _ in SUPPORT_AUDIT_ACTIONS)
+        audit_where = f" AND (a.impersonator_user_id IS NOT NULL OR a.action IN ({marks}))"
+        audit_params = SUPPORT_AUDIT_ACTIONS
     return render(
         request,
         "settings.html",
@@ -2494,13 +2581,14 @@ def settings_view(request: Request):
             "audit": db.query(
                 "SELECT a.*, i.username AS impersonator_username FROM audit a "
                 "LEFT JOIN user_account i ON i.id = a.impersonator_user_id "
-                "WHERE a.owner_user_id IS ? ORDER BY a.id DESC LIMIT 500",
-                (access.owner_id(request),),
+                f"WHERE a.owner_user_id IS ?{audit_where} ORDER BY a.id DESC LIMIT 500",
+                (access.owner_id(request), *audit_params),
             ),
             "audit_count": db.query_one(
-                "SELECT COUNT(*) AS n FROM audit WHERE owner_user_id IS ?",
-                (access.owner_id(request),),
+                f"SELECT COUNT(*) AS n FROM audit a WHERE a.owner_user_id IS ?{audit_where}",
+                (access.owner_id(request), *audit_params),
             )["n"],
+            "audit_filter": audit_filter,
             "poll_minutes": config.ICAL_POLL_MINUTES,
             "sweep_minutes": config.SUBMIT_SWEEP_MINUTES,
             "mail_backend": mail.backend_name(),

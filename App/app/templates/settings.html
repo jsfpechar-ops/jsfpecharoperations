@@ -182,6 +182,11 @@
       <summary>{{ t('settings.nav.audit') }}</summary>
       <p class="small muted">{{ t('settings.audit.help') }}</p>
       <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
+      <p class="small" data-audit-filter>{{ t('settings.audit.filter_label') }}:
+        {% if audit_filter %}<a href="/settings#settings-audit">{{ t('settings.audit.filter_all') }}</a>{% else %}<strong aria-current="true">{{ t('settings.audit.filter_all') }}</strong>{% endif %}
+        &middot;
+        {% if audit_filter == 'support' %}<strong aria-current="true">{{ t('settings.audit.filter_support') }}</strong>{% else %}<a href="/settings?audit=support#settings-audit">{{ t('settings.audit.filter_support') }}</a>{% endif %}
+      </p>
       <div class="scroll-x">
         <table class="table-cards">
           <thead><tr><th>{{ t('settings.audit.when') }}</th><th>{{ t('settings.audit.who') }}</th><th>{{ t('settings.audit.action') }}</th><th>{{ t('settings.audit.detail') }}</th></tr></thead>

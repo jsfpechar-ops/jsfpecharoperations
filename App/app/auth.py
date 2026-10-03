@@ -28,6 +28,12 @@ SESSION_COOKIE = "ubyhost_session"
 SESSION_MAX_AGE = 60 * 60 * 12
 SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
 TWO_FACTOR_PENDING_MAX_AGE = 10 * 60
+# An admin inside a host's workspace is sent back to their own view after this
+# long. The start time travels in the signed session payload ("ast").
+IMPERSONATION_MAX_AGE = 60 * 60
+# Guests whose identity the admin revealed in this impersonation ("rv"). The
+# cap keeps the cookie small; a reveal past it drops the oldest entry.
+MAX_REVEALED_GUESTS = 50
 _PBKDF2_ROUNDS = 600_000
 _USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,31}$")
 _dummy_password_hash: Optional[str] = None
@@ -233,12 +239,25 @@ def issue_session(
     session_version: int,
     workspace_user_id: Optional[int] = None,
     remember: bool = False,
+    impersonation_started_at: Optional[int] = None,
+    revealed_guest_ids: Optional[list[int]] = None,
 ) -> str:
-    payload = {"uid": int(user_id), "sv": int(session_version)}
+    payload: dict[str, Any] = {"uid": int(user_id), "sv": int(session_version)}
     if remember:
         payload["rm"] = 1
     if workspace_user_id and workspace_user_id != user_id:
         payload["as"] = int(workspace_user_id)
+        payload["ast"] = int(
+            impersonation_started_at
+            if impersonation_started_at is not None
+            else time.time()
+        )
+        if revealed_guest_ids:
+            unique: list[int] = []
+            for guest_id in revealed_guest_ids:
+                if int(guest_id) not in unique:
+                    unique.append(int(guest_id))
+            payload["rv"] = unique[-MAX_REVEALED_GUESTS:]
     return _serializer().dumps(payload)
 
 
@@ -294,12 +313,121 @@ def workspace_user(request: Request):
     payload = getattr(request.state, "session_payload", {}) or {}
     target_id = payload.get("as")
     if target_id and account["role"] == "admin":
+        if impersonation_expired(payload):
+            # The admin is back in their own view from this request on;
+            # require_login writes the stop row and replaces the cookie.
+            request.state.impersonation_expired_for = int(target_id)
+            return account
         target = db.query_one(
             "SELECT * FROM user_account WHERE id = ? AND active = 1", (target_id,)
         )
         if target:
             return target
     return account
+
+
+SUPPORT_REASON_MIN = 5
+SUPPORT_REASON_MAX = 300
+
+
+def support_reason(value) -> Optional[str]:
+    """A reason for opening a workspace or revealing a guest, or None.
+
+    Whitespace (including line breaks) is folded to single spaces so the
+    reason sits on one line of the audit detail. 5 to 300 characters.
+    """
+    text = " ".join(str(value or "").split())
+    if not SUPPORT_REASON_MIN <= len(text) <= SUPPORT_REASON_MAX:
+        return None
+    return text
+
+
+def impersonation_expired(payload: Optional[dict[str, Any]]) -> bool:
+    """True once an impersonation has run for IMPERSONATION_MAX_AGE.
+
+    A payload with "as" but no usable start time (one issued before the limit
+    existed) counts as expired, so every session inside a host's workspace has
+    a reason and a clock.
+    """
+    if not payload or not payload.get("as"):
+        return False
+    started = payload.get("ast")
+    if not isinstance(started, int) or isinstance(started, bool):
+        return True
+    return time.time() - started >= IMPERSONATION_MAX_AGE
+
+
+def impersonating(request: Request) -> bool:
+    """Whether the signed-in admin is looking at another account's workspace.
+
+    Cached on the request: templates ask once per guest row, and the answer
+    cannot change while one request is being served.
+    """
+    cached = getattr(request.state, "impersonating", None)
+    if cached is not None:
+        return cached
+    account = current_user(request)
+    workspace = workspace_user(request)
+    result = bool(account and workspace and workspace["id"] != account["id"])
+    if account is not None:
+        request.state.impersonating = result
+    return result
+
+
+def impersonation_started_at(request: Request) -> Optional[int]:
+    if not impersonating(request):
+        return None
+    payload = getattr(request.state, "session_payload", None) or {}
+    started = payload.get("ast")
+    return started if isinstance(started, int) else None
+
+
+def impersonation_minutes_left(request: Request) -> Optional[int]:
+    """Whole minutes left in this impersonation, rounded up; None outside one."""
+    started = impersonation_started_at(request)
+    if started is None:
+        return None
+    remaining = IMPERSONATION_MAX_AGE - (time.time() - started)
+    return max(0, int(-(-remaining // 60)))
+
+
+def revealed_guest_ids(request: Request) -> list[int]:
+    if not impersonating(request):
+        return []
+    payload = getattr(request.state, "session_payload", None) or {}
+    values = payload.get("rv") or []
+    if not isinstance(values, list):
+        return []
+    return [int(value) for value in values if isinstance(value, int)]
+
+
+def end_expired_impersonation(request: Request) -> Optional[RedirectResponse]:
+    """Send an admin whose impersonation ran out back to their own view.
+
+    Writes ``impersonation_stopped`` (detail ``expired``) to the host's
+    workspace and to the admin's own, and swaps the cookie for a plain one.
+    """
+    target_id = getattr(request.state, "impersonation_expired_for", None)
+    account = current_user(request)
+    if not target_id or not account:
+        return None
+    request.state.impersonation_expired_for = None
+    db.set_current_actor(account["id"], account["username"], impersonating=True)
+    for owner_id in dict.fromkeys((int(target_id), int(account["id"]))):
+        db.audit(
+            "impersonation_stopped",
+            "expired",
+            actor=account["username"],
+            owner_user_id=owner_id,
+        )
+    notice = host_i18n.translate(
+        host_i18n.lang_from_request(request), "impersonation.expired"
+    )
+    response = RedirectResponse(
+        f"/admin/users?msg={quote(notice)}", status_code=303
+    )
+    attach_session(response, issue_session(account["id"], account["session_version"]))
+    return response
 
 
 def session_remembers(request: Request) -> bool:
@@ -357,6 +485,9 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     ):
         return RedirectResponse("/account/2fa/setup", status_code=303)
     workspace = workspace_user(request)
+    expired = end_expired_impersonation(request)
+    if expired is not None:
+        return expired
     # Acceptance evidence belongs to the real account, never to the workspace an
     # admin is previewing, so an impersonating admin is not sent to the screen.
     impersonating = bool(workspace and workspace["id"] != account["id"])

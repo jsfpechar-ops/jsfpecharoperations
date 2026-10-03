@@ -390,6 +390,12 @@ def stay_fee_csv_download(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    # The register CSV lists every guest's document number.
+    if not access.identity_visible(request):
+        return _back(
+            f"/stay-fees/{apartment_id}",
+            err=_flash(request, "flash.error.identity_hidden_export"),
+        )
 
     today = claim.prague_today()
     default_month = _default_month(today)

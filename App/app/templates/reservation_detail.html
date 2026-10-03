@@ -201,8 +201,8 @@
         </div>
         <div>
           <dt>{{ t('stay.detail.guests.document') }}</dt>
-          <dd><span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ (guest.doc_type or '') %}{{ t(doc_key) if t(doc_key) != doc_key else (guest.doc_type or '—') }} </span><span class="mono">{{ guest.doc_number or '—' }}{% if guest.visa_number %}
-            <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest.visa_number) }}</span>{% endif %}</span></dd>
+          <dd><span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ (guest.doc_type or '') %}{{ t(doc_key) if t(doc_key) != doc_key else (guest.doc_type or '—') }} </span><span class="mono">{{ guest_identifier(guest.doc_number, guest.id) or '—' }}{% if guest.visa_number %}
+            <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest_identifier(guest.visa_number, guest.id)) }}</span>{% endif %}</span></dd>
         </div>
         <div>
           <dt>{{ t('stay.detail.guests.purpose') }}</dt>

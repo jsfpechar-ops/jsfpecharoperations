@@ -256,7 +256,9 @@ def test_admin_can_open_a_host_workspace_without_knowing_the_password():
         assert PASSWORD not in users.text
 
         response = admin.post(
-            f"/admin/users/{host_id}/impersonate", follow_redirects=False
+            f"/admin/users/{host_id}/impersonate",
+            data={"reason": "Support ticket 123"},
+            follow_redirects=False
         )
         assert response.status_code == 303
         workspace = admin.get("/")

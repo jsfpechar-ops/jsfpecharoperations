@@ -122,6 +122,10 @@
         <span class="impersonation-eyebrow">{{ t('impersonation.previewing') }}</span>
         <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>
         <span class="impersonation-handle">@{{ workspace_user.username }}</span>
+        {% set support_minutes = impersonation_minutes_left() %}
+        {% if support_minutes is not none %}
+          <span class="impersonation-handle" data-impersonation-minutes="{{ support_minutes }}">{{ tp('impersonation.minutes_left', support_minutes) }}</span>
+        {% endif %}
       </div>
       <form method="post" action="/admin/stop-impersonating">
         <button class="btn small" type="submit">{{ t('impersonation.exit') }}</button>

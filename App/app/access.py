@@ -11,6 +11,45 @@ from fastapi import Request
 from . import auth, db
 
 
+# What a masked document or visa number keeps visible while an admin supports
+# a host: enough to match a guest's word on the phone, not enough to copy.
+MASK_KEEP = 3
+MASK_CHAR = "\u2022"
+
+
+def identity_visible(request: Request, guest_id: int | None = None) -> bool:
+    """Whether this request may see a guest's identity data in full.
+
+    Identity data means document and visa numbers, signatures, passport
+    photos, and every export that carries them. The host always sees it. An
+    admin inside the host's workspace sees it only for a guest revealed (with
+    a logged reason) in this impersonation; with no ``guest_id`` (bulk
+    exports, the workspace ZIP) the answer while impersonating is always no.
+    """
+    if not auth.impersonating(request):
+        return True
+    if guest_id is None:
+        return False
+    return int(guest_id) in auth.revealed_guest_ids(request)
+
+
+def mask_identifier(value) -> str:
+    """A document or visa number with all but its last characters hidden."""
+    text = str(value or "")
+    if not text:
+        return ""
+    if len(text) <= MASK_KEEP:
+        return MASK_CHAR * 3
+    return MASK_CHAR * 3 + text[-MASK_KEEP:]
+
+
+def identifier_for(request: Request, guest_id, value) -> str:
+    """``value`` in full when the guest's identity is visible, masked otherwise."""
+    if identity_visible(request, guest_id):
+        return "" if value is None else str(value)
+    return mask_identifier(value)
+
+
 def owner_id(request: Request) -> int | None:
     workspace = auth.workspace_user(request)
     return int(workspace["id"]) if workspace else None

@@ -43,6 +43,23 @@ router = APIRouter()
 ARCHIVED_TYPES = ("all", "stays", "properties", "housebook", "entities")
 
 
+def _identity_hidden(request: Request, back_path: str, guest_id: Optional[int] = None):
+    """A redirect with the reason when this download would show hidden identity data.
+
+    While an admin is inside a host's workspace, a download that carries
+    document or visa numbers, signatures or passport images is refused: a
+    bulk one always, a single guest's until that guest is revealed.
+    """
+    if access.identity_visible(request, guest_id):
+        return None
+    key = (
+        "flash.error.identity_hidden_guest"
+        if guest_id is not None
+        else "flash.error.identity_hidden_export"
+    )
+    return _back(back_path, err=_flash(request, key))
+
+
 @router.get("/reservations.csv")
 def reservations_export(request: Request):
     guard = auth.require_login(request)
@@ -75,6 +92,9 @@ def guest_form_pdf(guest_id: int, request: Request):
         return guard
     if not access.guest(request, guest_id):
         return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    hidden = _identity_hidden(request, f"/guests/{guest_id}", guest_id)
+    if hidden:
+        return hidden
     try:
         pdf = housebook.registration_form_pdf(guest_id)
     except ValueError:
@@ -95,6 +115,9 @@ def guest_export_json(guest_id: int, request: Request):
         return guard
     if not access.guest(request, guest_id):
         return Response("Not found.", status_code=404, media_type="text/plain")
+    hidden = _identity_hidden(request, f"/guests/{guest_id}", guest_id)
+    if hidden:
+        return hidden
     bundle = dsr.guest_export(guest_id)
     if bundle is None:
         return Response("Not found.", status_code=404, media_type="text/plain")
@@ -142,6 +165,11 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
     guard = auth.require_login(request)
     if guard:
         return guard
+    # A Doručenka is the police's own PDF of the filed records; it cannot be
+    # masked, so it is held back while an admin is supporting the host.
+    hidden = _identity_hidden(request, "/submissions")
+    if hidden:
+        return hidden
     owner_id = access.owner_id(request)
     date_from = _query_date(request, "from")
     date_to = _query_date(request, "to")
@@ -206,6 +234,9 @@ def submission_receipt(submission_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
+    if hidden:
+        return hidden
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     if owned:
@@ -218,6 +249,9 @@ def submission_errors(submission_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
+    if hidden:
+        return hidden
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     if owned:
@@ -232,6 +266,10 @@ def submission_xml(submission_id: int, which: str, request: Request):
         return guard
     if which not in ("request", "response"):
         return Response("Unknown document.", status_code=404, media_type="text/plain")
+    # The request envelope carries every reported guest's document number.
+    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
+    if hidden:
+        return hidden
     owned = access.submission(request, submission_id)
     if not owned:
         return Response("Not found.", status_code=404, media_type="text/plain")
@@ -247,6 +285,9 @@ def housebook_download(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    hidden = _identity_hidden(request, "/housebook")
+    if hidden:
+        return hidden
     stamp = datetime.now().strftime("%Y%m%d")
     rows = housebook.housebook_rows(
         _query_int(request, "apartment"),
@@ -267,6 +308,9 @@ def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks)
     guard = auth.require_login(request)
     if guard:
         return guard
+    hidden = _identity_hidden(request, "/housebook")
+    if hidden:
+        return hidden
     rows = housebook.housebook_rows(
         _query_int(request, "apartment"),
         _query_date(request, "from") or None,
@@ -303,6 +347,9 @@ def settings_workspace_export(request: Request, background_tasks: BackgroundTask
     guard = auth.require_login(request)
     if guard:
         return guard
+    hidden = _identity_hidden(request, "/settings")
+    if hidden:
+        return hidden
     owner_id = access.owner_id(request)
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     if not account or not account["deletion_due_at"]:

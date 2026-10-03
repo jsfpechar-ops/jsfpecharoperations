@@ -9,6 +9,15 @@
   {% endfor %}
 {% endmacro %}
 {% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
+{# While an admin supports the host, identity data waits behind a logged
+   reveal. The reveal form renders after the main form (forms cannot nest);
+   the reason field and the buttons join it through the form attribute. #}
+{% macro identity_placeholder() %}
+  <div class="identity-hidden" data-identity-hidden>
+    <p class="small muted" style="margin:0 0 8px"><strong>{{ t('identity.hidden') }}</strong></p>
+    <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
+  </div>
+{% endmacro %}
 {% macro field_val(name) %}{{ guest[name] if guest and guest[name] is not none else '' }}{% endmacro %}
 
 {% block content %}
@@ -40,6 +49,21 @@
       <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
       <small>{{ t('guest.admin.banner.sent_help') }}</small>
     </div>
+  </div>
+{% endif %}
+
+{% if identity_hidden %}
+  <div class="banner warning" id="identity-hidden-note" role="status">
+    <div class="grow">
+      <strong>{{ t('identity.hidden') }}</strong>
+      <small>{{ t('identity.hidden_help') }}</small>
+      <div class="field" style="margin:10px 0 0">
+        <label for="reveal-reason">{{ t('identity.reveal_reason') }}</label>
+        <input type="text" id="reveal-reason" name="reason" form="reveal-identity"
+               minlength="5" maxlength="300" required>
+      </div>
+    </div>
+    <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
   </div>
 {% endif %}
 
@@ -97,15 +121,23 @@
       </div>
       <div class="field">
         <label for="doc_number">{{ t('guest.admin.document') }}</label>
+        {% if identity_hidden %}
+        <input type="text" id="doc_number" value="{{ guest_identifier(guest.doc_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
+        {% else %}
         <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
                value="{{ field_val('doc_number') }}">
+        {% endif %}
         <div class="hint">{{ t('guest.admin.document_hint') }}</div>
         {{ err_for('doc_number') }}
       </div>
       <div class="field">
         <label for="visa_number">{{ t('guest.admin.visa') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        {% if identity_hidden %}
+        <input type="text" id="visa_number" value="{{ guest_identifier(guest.visa_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
+        {% else %}
         <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
                value="{{ field_val('visa_number') }}">
+        {% endif %}
         {{ err_for('visa_number') }}
       </div>
     </div>
@@ -175,7 +207,9 @@
 
   {% if editing and needs_verification %}
   <div class="panel verify-panel tight">
-    {% if has_passport_photo %}
+    {% if has_passport_photo and identity_hidden %}
+      {{ identity_placeholder() }}
+    {% elif has_passport_photo %}
       <div class="passport-preview compact">
         {% if passport_is_pdf %}
           <iframe class="passport-preview-pdf" src="/guests/{{ guest.id }}/passport-photo"
@@ -205,6 +239,9 @@
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('host.signature_title') }}</h2>
+    {% if identity_hidden %}
+    {{ identity_placeholder() }}
+    {% else %}
     <p class="small muted">{{ t('host.signature_help') }}</p>
     <div class="signature-pad">
       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('host.signature_title') }}"
@@ -218,6 +255,7 @@
     </div>
     <input type="hidden" id="signature" name="signature"
            value="{{ signature_value }}">
+    {% endif %}
     {{ err_for('signature') }}
   </div>
 
@@ -237,6 +275,13 @@
     {% endif %}
   </div>
 </form>
+
+{% if identity_hidden %}
+<form id="reveal-identity" method="post" action="/guests/{{ guest.id }}/reveal-identity">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
+</form>
+{% endif %}
 
 {% if editing and needs_verification %}
 <form id="verify-{{ guest.id }}" method="post" action="/guests/{{ guest.id }}/verify-identity">

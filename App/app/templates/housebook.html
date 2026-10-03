@@ -57,7 +57,7 @@
           <span class="small">{{ row.first_name }}</span></td>
         <td class="nowrap small" data-label="{{ t('housebook.born') }}">{{ row.birth_date }}</td>
         <td class="small" data-label="{{ t('housebook.nationality') }}">{{ row.nationality }}</td>
-        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ row.doc_number }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=row.visa_number) }}{% endif %}</td>
+        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</td>
         <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
         <td class="small col-purpose" data-label="{{ t('housebook.purpose') }}">{{ row.purpose }}</td>
         <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="pill green">{{ t('housebook.signed_yes') }}</span>

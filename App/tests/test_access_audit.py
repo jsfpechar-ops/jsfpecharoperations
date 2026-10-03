@@ -175,14 +175,18 @@ def test_an_impersonated_export_names_the_admin_and_the_workspace():
     try:
         client = _login("audit-admin")
         started = client.post(
-            f"/admin/users/{owner}/impersonate", follow_redirects=False
+            f"/admin/users/{owner}/impersonate",
+            data={"reason": "Support ticket 123"},
+            follow_redirects=False
         )
         assert started.status_code == 303
-        response = client.get(f"/submissions/{submission}/receipt.pdf")
+        # The Doručenka is held back while supporting (WP04); a stays export
+        # carries no identity data and still shows who acted.
+        response = client.get("/reservations.csv?from=2026-01-01&to=2026-12-31")
         assert response.status_code == 200
 
         row = db.query_one(
-            "SELECT * FROM audit WHERE action = 'export_submission_pdf' "
+            "SELECT * FROM audit WHERE action = 'export_reservations_csv' "
             "AND owner_user_id = ? ORDER BY id DESC LIMIT 1",
             (owner,),
         )
