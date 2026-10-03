@@ -204,10 +204,12 @@ def test_the_anchor_clears_the_sticky_public_header_without_doubling_up():
 #
 # When OPS-1 and OPS-2 ship, update the copy *and* this test together, citing
 # the vendor evidence file (`docs/vendors/README.md`, LD-9). The four keys
-# below are the backup rows: AWS' S3 purpose and Google's purpose and data.
+# below are the backup rows: S3's and Google's purpose and data (WP09 split
+# the AWS row into Lightsail, SES and S3).
 
 REGISTER_BACKUP_KEYS = (
-    "subprocessors.aws_purpose",
+    "subprocessors.aws_s3_purpose",
+    "subprocessors.aws_s3_data",
     "subprocessors.google_purpose",
     "subprocessors.google_data",
 )
@@ -230,5 +232,5 @@ def test_the_register_does_not_claim_unencrypted_backups_are_encrypted():
 
 def test_the_register_records_the_corrective_version():
     client = _client()
-    for lang, effective in (("en", "Version 1.1"), ("cs", "Verze 1.1")):
+    for lang, effective in (("en", "Version 1.2"), ("cs", "Verze 1.2")):
         assert effective in client.get(f"/subprocessors?lang={lang}").text, lang

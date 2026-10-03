@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "replace the guest privacy notice shown to your guests — that notice names the controller "
             "configured for the property, which may differ from its property manager."
         ),
-        "privacy.effective": "Effective date: 19 September 2026. Version 1.5.",
+        "privacy.effective": "Effective date: 4 October 2026. Version 1.6.",
         "privacy.cookies.table_intro": "The table below lists every cookie and item of local storage the service sets.",
         "cookies.table.name": "Name",
         "cookies.table.party": "Set by",
@@ -135,6 +135,52 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "login. Browsers may also honour HTTP Strict Transport Security (HSTS) so this hostname "
             "is opened only over HTTPS for a limited period."
         ),
+        # WP09: owner's final wording from 04_legal_positions.md, sections 1, 4
+        # and 5. analytics_* and optout_* are shown on /privacy only while
+        # Umami is configured; roles_* sits in section 3, own_retention_* in 11.
+        "privacy.analytics_title": "Website analytics",
+        "privacy.analytics_body": (
+            "On our public pages (not in the app) we use Umami Cloud, operated by Umami Software, "
+            "Inc., with data stored in the EU, to count visits. Umami does not set cookies and does "
+            "not store your IP address. It derives a short-lived anonymous visit identifier from "
+            "your IP address, browser type and our website ID, and we see only aggregated "
+            "statistics (pages viewed, referring site, browser, device type, country). We do not "
+            "combine this data with account data and we do not use it for advertising. Legal "
+            "basis: our legitimate interest in understanding how our website is used (Art. 6(1)(f) "
+            "GDPR). The exemption under § 89(3) of Act No. 127/2005 Coll. applies because the "
+            "measurement serves only anonymous traffic statistics. You can switch measurement off "
+            "in your browser here:"
+        ),
+        "privacy.analytics_dnt": "We also respect your browser's Do Not Track setting.",
+        "privacy.optout_lede": (
+            "We measure visits to our public pages with Umami, without cookies."
+        ),
+        "privacy.optout_disable": "Turn off measurement in this browser",
+        "privacy.optout_off_note": "Measurement is off in this browser.",
+        "privacy.optout_enable": "Turn measurement back on",
+        "privacy.own_retention_title": "How long we keep data",
+        "privacy.own_retention_body": (
+            "Invoices: 10 years from the end of the year of issue (Act No. 235/2004 Coll., § 35). "
+            "Account data: while your account is active and 3 years after closure. Sign-up click "
+            "identifier from Google Ads: at most 90 days after the click. Consent records: while "
+            "your account is active and 3 years after. Backups are overwritten within 30 days."
+        ),
+        "privacy.roles_title": "Who is responsible",
+        "privacy.roles_body": (
+            "For your account, invoices, our website statistics and Google Ads measurement, "
+            "%(name)s, IČO %(ico)s, %(address)s is the controller. For the data of your guests "
+            "(guest book, stay-fee records, reports to the foreign police through UbyPort and any "
+            "document photos), you as the accommodation provider are the controller and we "
+            "process the data only on your instructions as your processor, under our data "
+            "processing agreement. Our subprocessors are listed at /subprocessors. Google Ireland "
+            "Ltd. receives the Google Ads click identifier only if you consent, and it processes "
+            "this as an independent controller."
+        ),
+        # Shown only outside production when an UBYHOST_OPERATOR_* value is
+        # empty; production refuses to start without them (env_guard).
+        "privacy.placeholder_name": "[Company name]",
+        "privacy.placeholder_ico": "[xxxxxxxx]",
+        "privacy.placeholder_address": "[registered address]",
         "privacy.s08_title": "8. Server logs and security monitoring",
         "privacy.s08_body": (
             "Our infrastructure automatically logs technical data: IP addresses, timestamps, request "
@@ -283,7 +329,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
             "který se může lišit od správce objektu."
         ),
-        "privacy.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
+        "privacy.effective": "Účinnost od: 4. října 2026. Verze 1.6.",
         "privacy.cookies.table_intro": "Tabulka níže uvádí všechny soubory cookie a položky místního úložiště, které služba nastavuje.",
         "cookies.table.name": "Název",
         "cookies.table.party": "Nastavuje",
@@ -385,6 +431,49 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "cookie přihlášení nefunguje. Prohlížeče mohou také dodržovat HTTP Strict Transport "
             "Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
         ),
+        # WP09: konečné znění provozovatele z 04_legal_positions.md, oddíly 1,
+        # 4 a 5. analytics_* a optout_* jen při zapnutém Umami.
+        "privacy.analytics_title": "Měření návštěvnosti",
+        "privacy.analytics_body": (
+            "Na veřejných stránkách webu (ne v aplikaci) používáme nástroj Umami Cloud provozovaný "
+            "společností Umami Software, Inc. s ukládáním dat v EU, abychom zjistili počet návštěv. "
+            "Umami nepoužívá cookies a neukládá vaši IP adresu. Z IP adresy, typu prohlížeče a "
+            "identifikátoru našeho webu vytváří krátkodobý anonymní identifikátor návštěvy a my "
+            "vidíme pouze souhrnné statistiky (zobrazené stránky, odkazující web, prohlížeč, typ "
+            "zařízení, země). Tato data nespojujeme s údaji z vašeho účtu a nepoužíváme je k "
+            "reklamě. Právní základ: náš oprávněný zájem porozumět používání webu (čl. 6 odst. 1 "
+            "písm. f) GDPR). Jde o měření nezbytné pro provoz webu ve smyslu § 89 odst. 3 zákona "
+            "č. 127/2005 Sb., protože slouží jen k anonymní statistice návštěvnosti. Měření můžete "
+            "ve svém prohlížeči vypnout zde:"
+        ),
+        "privacy.analytics_dnt": "Respektujeme také nastavení Do Not Track ve vašem prohlížeči.",
+        "privacy.optout_lede": (
+            "Návštěvnost veřejných stránek měříme nástrojem Umami bez cookies."
+        ),
+        "privacy.optout_disable": "Vypnout měření v tomto prohlížeči",
+        "privacy.optout_off_note": "Měření je v tomto prohlížeči vypnuté.",
+        "privacy.optout_enable": "Znovu zapnout měření",
+        "privacy.own_retention_title": "Jak dlouho údaje uchováváme",
+        "privacy.own_retention_body": (
+            "Faktury: 10 let od konce roku vystavení (§ 35 zákona č. 235/2004 Sb.). Údaje účtu: po "
+            "dobu trvání účtu a 3 roky po jeho zrušení. Identifikátor kliknutí z Google Ads: "
+            "nejvýše 90 dní od kliknutí. Záznamy o souhlasech: po dobu trvání účtu a 3 roky poté. "
+            "Zálohy se přepisují do 30 dní."
+        ),
+        "privacy.roles_title": "Kdo odpovídá za zpracování",
+        "privacy.roles_body": (
+            "Za údaje vašeho účtu, faktury, statistiky návštěvnosti webu a měření reklam Google "
+            "Ads je správcem %(name)s, IČO %(ico)s, %(address)s. Za údaje vašich hostů (domovní "
+            "kniha, evidence k poplatku z pobytu, hlášení cizinecké policii přes UbyPort a "
+            "případné fotografie dokladů) jste správcem vy jako ubytovatel a my je zpracováváme "
+            "pouze podle vašich pokynů jako zpracovatel na základě zpracovatelské smlouvy. Seznam "
+            "našich subzpracovatelů najdete na /subprocessors. Společnost Google Ireland Ltd. "
+            "obdrží identifikátor kliknutí z Google Ads jen s vaším souhlasem a zpracovává jej "
+            "jako samostatný správce."
+        ),
+        "privacy.placeholder_name": "[Obchodní firma]",
+        "privacy.placeholder_ico": "[xxxxxxxx]",
+        "privacy.placeholder_address": "[sídlo]",
         "privacy.s08_title": "8. Serverové logy a bezpečnost",
         "privacy.s08_body": (
             "Infrastruktura automaticky zaznamenává IP adresy, čas, cesty požadavků, user agent, chyby "

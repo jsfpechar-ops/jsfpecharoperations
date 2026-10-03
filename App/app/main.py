@@ -14,6 +14,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import (
     alerts,
+    analytics,
     auth,
     client_ip,
     config,
@@ -156,22 +157,43 @@ def _wants_html(request: Request) -> bool:
     return not request.url.path.startswith("/api/") and "text/html" in request.headers.get("accept", "")
 
 
-_CSP = (
-    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
-    "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
-    "frame-src https://challenges.cloudflare.com; "
-    "connect-src 'self' https://challenges.cloudflare.com"
-)
+def _csp(extra_script: tuple = (), extra_connect: tuple = ()) -> str:
+    script = " ".join(("'self' 'unsafe-inline' https://challenges.cloudflare.com",) + extra_script)
+    connect = " ".join(("'self' https://challenges.cloudflare.com",) + extra_connect)
+    return (
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+        "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+        f"script-src {script}; "
+        "frame-src https://challenges.cloudflare.com; "
+        f"connect-src {connect}"
+    )
 
 
-def _harden(response):
+# Host, guest and auth pages: no third-party origin beyond Turnstile, ever.
+_CSP = _csp()
+
+
+def _public_csp() -> str:
+    """WP09: the CSP for the public pages that carry the Umami tag.
+
+    Derived from UMAMI_SCRIPT_URL (and UMAMI_HOST_URL), never hard-coded, so
+    the policy always matches the tag that templating rendered.
+    """
+    origin = analytics.script_origin()
+    if not origin:
+        return _CSP
+    return _csp((origin,), analytics.connect_origins())
+
+
+def _harden(response, public_analytics: bool = False):
     """Headers every page needs. The 500 handler runs outside the middleware."""
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
-    response.headers.setdefault("Content-Security-Policy", _CSP)
+    response.headers.setdefault(
+        "Content-Security-Policy", _public_csp() if public_analytics else _CSP
+    )
     return response
 
 
@@ -218,7 +240,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     started = time.perf_counter()
     response = await call_next(request)
     security.attach_csrf_cookie(request, response)
-    _harden(response)
+    _harden(response, public_analytics=analytics.is_public_page(request))
     # Everything outside /static carries passport numbers, addresses and
     # signatures. Guests hand the phone back and hosts share laptops, so these
     # pages must not sit in history, the back/forward cache, or a proxy.

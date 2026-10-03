@@ -12,7 +12,21 @@ router = APIRouter()
 TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
 PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
 DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
-SUBPROCESSOR_IDS = ("aws", "cloudflare", "render", "google")
+# WP09: the five rows of 04_legal_positions.md section 5 first, then the two
+# conditional providers the repo still documents (Render demo, Drive backups).
+SUBPROCESSOR_IDS = (
+    "aws_lightsail",
+    "aws_ses",
+    "aws_s3",
+    "cloudflare",
+    "umami",
+    "render",
+    "google",
+)
+# Recipients that are not subprocessors (section 5). "google_ads" belongs to
+# self sign-up with Google Ads; there is no UBYHOST_SIGNUP_ENABLED flag yet, so
+# it is always listed. Gate it on that flag when sign-up lands.
+RECIPIENT_IDS = ("google_ads", "police", "municipality")
 
 
 @router.get("/jak-to-funguje")
@@ -102,6 +116,8 @@ def privacy_policy(request: Request):
             "wrap_class": "narrow",
             "privacy_sections": PRIVACY_SECTION_IDS,
             "cookie_inventory": cookie_inventory.COOKIE_INVENTORY,
+            "cookieless_services": cookie_inventory.COOKIELESS_SERVICES,
+            "legal_placeholders": config.DEPLOYMENT != "production",
         },
         status_code=200,
     )
@@ -131,6 +147,7 @@ def subprocessor_register(request: Request):
             "operator": operator.details(),
             "wrap_class": "narrow",
             "subprocessor_ids": SUBPROCESSOR_IDS,
+            "recipient_ids": RECIPIENT_IDS,
         },
         status_code=200,
     )

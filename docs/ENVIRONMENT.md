@@ -77,6 +77,23 @@ Turnstile is **inert unless all three of the `TURNSTILE_*` values are set**.
 When it is active, an unreachable Cloudflare fails open a bounded number of
 times per address and raises `turnstile_unavailable`.
 
+## Page analytics (Umami)
+
+| Variable | Default | Notes |
+|---|---|---|
+| `UMAMI_WEBSITE_ID` | unset | Website ID from the Umami website settings. |
+| `UMAMI_SCRIPT_URL` | unset | Exact `src` of the tracking code from the Umami website settings. Must be `https://`. |
+| `UMAMI_HOST_URL` | unset | Optional `data-host-url`. Unset uses the tracker default; for the Umami Cloud script that is `https://gateway.umami.is`. |
+| `UMAMI_DOMAINS` | host of `UBYHOST_PUBLIC_BASE_URL` | `data-domains`, comma-separated. |
+
+The tag is rendered **only when both `UMAMI_WEBSITE_ID` and `UMAMI_SCRIPT_URL`
+are set**, and only on the public marketing and legal pages listed in
+`app/analytics.py`. Those pages get a CSP that adds the script origin to
+`script-src` and the event endpoint to `connect-src`; app, guest and auth pages
+keep the strict CSP. `tests/test_umami_guard.py` enforces this.
+While it is on, `/privacy` shows the analytics paragraph with an opt-out and
+opt-back-in link (`static/umami-optout.js`, localStorage key `umami.disabled`).
+
 ## Reverse proxy and client IP
 
 | Variable | Default | Notes |
@@ -138,7 +155,7 @@ own public-register entry, or the legal pages will name the wrong company.
 | Variable | Default |
 | --- | --- |
 | `UBYHOST_TERMS_VERSION` | `1.5` |
-| `UBYHOST_PRIVACY_VERSION` | `1.5` |
+| `UBYHOST_PRIVACY_VERSION` | `1.6` |
 | `UBYHOST_DPA_VERSION` | `1.5` |
 
 These override the version number displayed and logged against user acceptance.

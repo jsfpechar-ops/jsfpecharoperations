@@ -11,7 +11,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "The service providers that may process personal data for UbyHost, what they do, "
             "and when they are used. This register forms part of the Data Processing Agreement."
         ),
-        "subprocessors.effective": "Effective date: 28 September 2026. Version 1.1.",
+        "subprocessors.effective": "Effective date: 4 October 2026. Version 1.2.",
         "subprocessors.controller_note_title": "Who appoints these providers",
         "subprocessors.controller_note": (
             "For Guest Data, the accommodation provider or alternate controller configured for the "
@@ -26,41 +26,54 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Enabled services, account regions, and contractual transfer mechanisms are documented "
             "for the supported deployment paths."
         ),
-        "subprocessors.table_provider": "Provider",
+        "subprocessors.table_provider": "Subprocessor",
         "subprocessors.table_purpose": "Purpose",
-        "subprocessors.table_data": "Potential data",
-        "subprocessors.table_location": "Location / transfer note",
-        "subprocessors.aws_provider": "Amazon Web Services (AWS)",
-        "subprocessors.aws_purpose": (
-            "Production hosting on Lightsail; transactional e-mail through SES when enabled; "
-            "optional S3 backups."
+        "subprocessors.table_data": "Data",
+        "subprocessors.table_location": "Location",
+        "subprocessors.table_safeguard": "Transfer safeguard",
+        # WP09: rows from 04_legal_positions.md section 5 (owner's decision).
+        # Backup rows must not call the off-site copies encrypted until OPS-2
+        # ships (LD-4, tests/test_legal_contents.py).
+        "subprocessors.aws_lightsail_provider": "Amazon Web Services EMEA SARL (AWS Lightsail)",
+        "subprocessors.aws_lightsail_purpose": "Application hosting and database.",
+        "subprocessors.aws_lightsail_data": "All app data, including Guest Data.",
+        "subprocessors.aws_lightsail_location": "EU, Frankfurt (eu-central-1).",
+        "subprocessors.aws_lightsail_safeguard": (
+            "AWS GDPR Data Processing Addendum in the AWS Service Terms, Standard Contractual "
+            "Clauses."
         ),
-        "subprocessors.aws_data": (
-            "Host accounts, property and stay data, Guest Data, encrypted integration credentials, "
-            "technical logs; e-mail addresses and message content for SES."
+        "subprocessors.aws_ses_provider": "Amazon Web Services EMEA SARL (Amazon SES)",
+        "subprocessors.aws_ses_purpose": "Sending e-mail.",
+        "subprocessors.aws_ses_data": "Recipient address, e-mail content.",
+        "subprocessors.aws_ses_location": "eu-central-1 (Frankfurt).",
+        "subprocessors.aws_ses_safeguard": "Same as AWS Lightsail.",
+        "subprocessors.aws_s3_provider": "Amazon Web Services EMEA SARL (Amazon S3)",
+        "subprocessors.aws_s3_purpose": "Off-site backups, later file storage.",
+        "subprocessors.aws_s3_data": "Backup archives of all app data, including Guest Data.",
+        "subprocessors.aws_s3_location": "eu-central-1 (Frankfurt).",
+        "subprocessors.aws_s3_safeguard": "Same as AWS Lightsail.",
+        "subprocessors.cloudflare_provider": "Cloudflare, Inc.",
+        "subprocessors.cloudflare_purpose": "Turnstile bot protection; optional CDN and proxy.",
+        "subprocessors.cloudflare_data": "IP address, browser signals, request metadata.",
+        "subprocessors.cloudflare_location": "Global network, US company.",
+        "subprocessors.cloudflare_safeguard": (
+            "Cloudflare DPA, EU Standard Contractual Clauses, EU-US Data Privacy Framework."
         ),
-        "subprocessors.aws_location": (
-            "Production is configured for the EU (Frankfurt/eu-central-1). Provider support and "
-            "security operations may involve international access subject to the provider DPA and "
-            "lawful GDPR Chapter V safeguards where required."
+        "subprocessors.umami_provider": "Umami Software, Inc. (Umami Cloud)",
+        "subprocessors.umami_purpose": "Website statistics, marketing pages only.",
+        "subprocessors.umami_data": (
+            "Page views, referrer, browser, device, country, short-lived visit hash. No Guest Data."
         ),
-        "subprocessors.cloudflare_provider": "Cloudflare",
-        "subprocessors.cloudflare_purpose": (
-            "DNS, CDN/proxy, TLS and edge security, including Turnstile and managed challenges."
-        ),
-        "subprocessors.cloudflare_data": (
-            "IP address, request metadata, security signals, and content transiting the proxy as "
-            "necessary to deliver and protect the Service."
-        ),
-        "subprocessors.cloudflare_location": (
-            "Global network. Transfers outside the EEA are covered by the provider's applicable "
-            "DPA and lawful safeguards such as adequacy mechanisms or Standard Contractual Clauses."
-        ),
+        "subprocessors.umami_location": "EU region. Used only while the Operator enables it.",
+        "subprocessors.umami_safeguard": "Umami DPA.",
         "subprocessors.render_provider": "Render",
         "subprocessors.render_purpose": "Demo hosting.",
         "subprocessors.render_data": "Demo and test data plus technical logs.",
         "subprocessors.render_location": (
             "Conditional; not part of the production Guest Data path."
+        ),
+        "subprocessors.render_safeguard": (
+            "Provider DPA and lawful GDPR Chapter V safeguards where required."
         ),
         "subprocessors.google_provider": "Google Drive (Google)",
         "subprocessors.google_purpose": "Optional off-site production backups.",
@@ -68,8 +81,21 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Backup archives that may contain account, property, stay and Guest Data."
         ),
         "subprocessors.google_location": (
-            "Conditional; used only when the Operator configures the documented backup job. "
-            "Provider DPA and lawful GDPR Chapter V safeguards apply where required."
+            "Conditional; used only when the Operator configures the documented backup job."
+        ),
+        "subprocessors.google_safeguard": (
+            "Provider DPA and lawful GDPR Chapter V safeguards where required."
+        ),
+        "subprocessors.recipients_title": "Recipients that are not subprocessors",
+        "subprocessors.recipient_google_ads": (
+            "Google Ireland Ltd. (Google Ads conversion measurement, independent controller, only "
+            "with consent)"
+        ),
+        "subprocessors.recipient_police": (
+            "Policie ČR, UbyPort (statutory reporting on the host's behalf)"
+        ),
+        "subprocessors.recipient_municipality": (
+            "The municipality (stay-fee reports, if the host uses that feature)"
         ),
         "subprocessors.change_title": "Changes and objections",
         "subprocessors.change_body": (
@@ -93,7 +119,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "Poskytovatelé, kteří mohou pro UbyHost zpracovávat osobní údaje, účel jejich zapojení "
             "a podmínky použití. Tento seznam je součástí zpracovatelské smlouvy."
         ),
-        "subprocessors.effective": "Účinnost od: 28. září 2026. Verze 1.1.",
+        "subprocessors.effective": "Účinnost od: 4. října 2026. Verze 1.2.",
         "subprocessors.controller_note_title": "Kdo tyto poskytovatele zapojuje",
         "subprocessors.controller_note": (
             "Správcem údajů hostů je ubytovatel nebo alternativní správce nastavený pro dané "
@@ -107,50 +133,73 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
             "služby, regiony účtů a smluvní mechanismy předání jsou popsané pro podporované "
             "způsoby nasazení."
         ),
-        "subprocessors.table_provider": "Poskytovatel",
+        "subprocessors.table_provider": "Další zpracovatel",
         "subprocessors.table_purpose": "Účel",
-        "subprocessors.table_data": "Možné údaje",
-        "subprocessors.table_location": "Umístění / předání",
-        "subprocessors.aws_provider": "Amazon Web Services (AWS)",
-        "subprocessors.aws_purpose": (
-            "Produkční hosting Lightsail; transakční e-mail přes SES po zapnutí; volitelné "
-            "zálohy S3."
+        "subprocessors.table_data": "Údaje",
+        "subprocessors.table_location": "Umístění",
+        "subprocessors.table_safeguard": "Záruky při předání",
+        "subprocessors.aws_lightsail_provider": "Amazon Web Services EMEA SARL (AWS Lightsail)",
+        "subprocessors.aws_lightsail_purpose": "Hosting aplikace a databáze.",
+        "subprocessors.aws_lightsail_data": "Všechna data aplikace včetně údajů hostů.",
+        "subprocessors.aws_lightsail_location": "EU, Frankfurt (eu-central-1).",
+        "subprocessors.aws_lightsail_safeguard": (
+            "Dodatek AWS o zpracování údajů podle GDPR v AWS Service Terms, standardní smluvní "
+            "doložky."
         ),
-        "subprocessors.aws_data": (
-            "Účty ubytovatelů, údaje o ubytování a pobytech, údaje hostů, šifrované integrační "
-            "přihlašovací údaje a technické logy; u SES e-mailové adresy a obsah zpráv."
+        "subprocessors.aws_ses_provider": "Amazon Web Services EMEA SARL (Amazon SES)",
+        "subprocessors.aws_ses_purpose": "Odesílání e-mailů.",
+        "subprocessors.aws_ses_data": "Adresa příjemce, obsah e-mailu.",
+        "subprocessors.aws_ses_location": "eu-central-1 (Frankfurt).",
+        "subprocessors.aws_ses_safeguard": "Stejně jako u AWS Lightsail.",
+        "subprocessors.aws_s3_provider": "Amazon Web Services EMEA SARL (Amazon S3)",
+        "subprocessors.aws_s3_purpose": "Zálohy mimo server, později ukládání souborů.",
+        "subprocessors.aws_s3_data": "Záložní archivy všech dat aplikace včetně údajů hostů.",
+        "subprocessors.aws_s3_location": "eu-central-1 (Frankfurt).",
+        "subprocessors.aws_s3_safeguard": "Stejně jako u AWS Lightsail.",
+        "subprocessors.cloudflare_provider": "Cloudflare, Inc.",
+        "subprocessors.cloudflare_purpose": "Ochrana proti botům Turnstile; volitelně CDN a proxy.",
+        "subprocessors.cloudflare_data": "IP adresa, signály prohlížeče, metadata požadavků.",
+        "subprocessors.cloudflare_location": "Globální síť, americká společnost.",
+        "subprocessors.cloudflare_safeguard": (
+            "DPA Cloudflare, standardní smluvní doložky EU, rámec EU-US Data Privacy Framework."
         ),
-        "subprocessors.aws_location": (
-            "Produkce je nastavena v EU (Frankfurt/eu-central-1). Podpora a bezpečnostní provoz "
-            "poskytovatele mohou zahrnovat mezinárodní přístup podle jeho DPA a zákonných záruk "
-            "kapitoly V GDPR, jsou-li nutné."
+        "subprocessors.umami_provider": "Umami Software, Inc. (Umami Cloud)",
+        "subprocessors.umami_purpose": "Statistiky návštěvnosti webu, jen marketingové stránky.",
+        "subprocessors.umami_data": (
+            "Zobrazení stránek, odkazující web, prohlížeč, zařízení, země, krátkodobý hash "
+            "návštěvy. Žádné údaje hostů."
         ),
-        "subprocessors.cloudflare_provider": "Cloudflare",
-        "subprocessors.cloudflare_purpose": (
-            "DNS, CDN/proxy, TLS a ochrana na hraně sítě včetně Turnstile a řízených výzev."
-        ),
-        "subprocessors.cloudflare_data": (
-            "IP adresa, metadata požadavku, bezpečnostní signály a obsah procházející proxy v rozsahu "
-            "nutném pro doručení a ochranu Služby."
-        ),
-        "subprocessors.cloudflare_location": (
-            "Globální síť. Předání mimo EHP se řídí příslušnou DPA poskytovatele a zákonnými zárukami, "
-            "například rozhodnutím o odpovídající ochraně nebo standardními smluvními doložkami."
-        ),
+        "subprocessors.umami_location": "Region EU. Používá se, jen pokud jej Provozovatel zapne.",
+        "subprocessors.umami_safeguard": "DPA Umami.",
         "subprocessors.render_provider": "Render",
         "subprocessors.render_purpose": "Ukázkový provoz.",
         "subprocessors.render_data": "Ukázková a testovací data a technické logy.",
         "subprocessors.render_location": (
-            "Podmíněné použití; není součástí produkční cesty údajů hostů."
+            "Podmíněné použití; není součástí produkčního zpracování údajů hostů."
+        ),
+        "subprocessors.render_safeguard": (
+            "DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
         ),
         "subprocessors.google_provider": "Google Drive (Google)",
         "subprocessors.google_purpose": "Volitelné zálohy produkce mimo server.",
         "subprocessors.google_data": (
-            "Záložní archivy, které mohou obsahovat účty, ubytování, pobyty a údaje hostů."
+            "Záložní archivy, které mohou obsahovat údaje účtů, ubytování, pobytů a hostů."
         ),
         "subprocessors.google_location": (
-            "Podmíněné použití pouze po nastavení dokumentované zálohovací úlohy Provozovatelem. "
-            "Použije se DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
+            "Podmíněné použití pouze po nastavení dokumentované zálohovací úlohy Provozovatelem."
+        ),
+        "subprocessors.google_safeguard": (
+            "DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
+        ),
+        "subprocessors.recipients_title": "Příjemci, kteří nejsou dalšími zpracovateli",
+        "subprocessors.recipient_google_ads": (
+            "Google Ireland Ltd. (měření konverzí Google Ads, samostatný správce, jen se souhlasem)"
+        ),
+        "subprocessors.recipient_police": (
+            "Policie ČR, UbyPort (zákonné hlášení jménem ubytovatele)"
+        ),
+        "subprocessors.recipient_municipality": (
+            "Obec (hlášení k poplatku z pobytu, pokud ubytovatel tuto funkci používá)"
         ),
         "subprocessors.change_title": "Změny a námitky",
         "subprocessors.change_body": (

@@ -194,6 +194,19 @@ TURNSTILE_HOSTNAMES = {
 }
 TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET and TURNSTILE_HOSTNAMES)
 
+# Umami Cloud page analytics, public marketing and legal pages only (WP09).
+# Both values empty by default; set them only in the production .env, copied
+# from the tracking-code snippet in the Umami website settings. The tag and the
+# CSP allowance appear only when both are set (see analytics.py).
+UMAMI_WEBSITE_ID = os.environ.get("UMAMI_WEBSITE_ID", "").strip()
+UMAMI_SCRIPT_URL = os.environ.get("UMAMI_SCRIPT_URL", "").strip()
+# Optional: Umami's data-host-url, where the tracker sends its events. Empty
+# means "the tracker's own default"; see analytics.py for what that is.
+UMAMI_HOST_URL = os.environ.get("UMAMI_HOST_URL", "").strip().rstrip("/")
+# data-domains: the hostnames the tracker may run on. Defaults to the host of
+# UBYHOST_PUBLIC_BASE_URL, so a staging copy never reports into production.
+UMAMI_DOMAINS = os.environ.get("UMAMI_DOMAINS", "").strip()
+
 # Bumped when Terms of Service change materially (logged on host login).
 TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.5")
 
@@ -205,8 +218,10 @@ SES_REGION = os.environ.get("UBYHOST_SES_REGION", "eu-central-1").strip()
 AWS_ACCESS_KEY_ID = os.environ.get("UBYHOST_AWS_ACCESS_KEY_ID", "").strip()
 AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").strip()
 
-# Bumped when the public Privacy Policy changes materially.
-PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.5")
+# Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
+# analytics with opt-out, own retention periods and roles. A bump makes the
+# policy pending again, so every host is sent to /account/accept once.
+PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.6")
 
 # Bumped when the Data Processing Agreement changes materially.
 DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.5")

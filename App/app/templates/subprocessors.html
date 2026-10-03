@@ -22,6 +22,7 @@
           <th>{{ t('subprocessors.table_purpose') }}</th>
           <th>{{ t('subprocessors.table_data') }}</th>
           <th>{{ t('subprocessors.table_location') }}</th>
+          <th>{{ t('subprocessors.table_safeguard') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -31,11 +32,24 @@
           <td data-label="{{ t('subprocessors.table_purpose') }}">{{ t('subprocessors.' ~ sid ~ '_purpose') }}</td>
           <td data-label="{{ t('subprocessors.table_data') }}">{{ t('subprocessors.' ~ sid ~ '_data') }}</td>
           <td data-label="{{ t('subprocessors.table_location') }}">{{ t('subprocessors.' ~ sid ~ '_location') }}</td>
+          <td data-label="{{ t('subprocessors.table_safeguard') }}">{{ t('subprocessors.' ~ sid ~ '_safeguard') }}</td>
         </tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
+</div>
+
+{#- WP09: 04_legal_positions.md section 5. The Google Ads recipient belongs to
+    self sign-up; no UBYHOST_SIGNUP_ENABLED flag exists yet, so it is always
+    listed (routes/legal.py RECIPIENT_IDS). -#}
+<div class="panel" id="recipients">
+  <h2 style="margin-top:0">{{ t('subprocessors.recipients_title') }}</h2>
+  <ul class="small muted">
+  {% for rid in recipient_ids %}
+    <li>{{ t('subprocessors.recipient_' ~ rid) }}</li>
+  {% endfor %}
+  </ul>
 </div>
 
 <div class="panel">

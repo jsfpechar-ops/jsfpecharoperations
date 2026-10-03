@@ -35,6 +35,7 @@
     ]
   } | tojson }}
   </script>
+  {% include "_umami.html" %}
 </head>
 <body>
 {% set active = 'how' %}{% set switch_path = '/jak-to-funguje' %}
@@ -45,7 +46,7 @@
       <p class="landing-eyebrow">{{ t('product.eyebrow') }}</p>
       <h1>{{ t('product.title') }}</h1>
       <p>{{ t('product.lede') }}</p>
-      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+      <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
     </header>
 
     <section class="product-feature-section" id="features" aria-labelledby="feature-title">
@@ -107,7 +108,7 @@
     <section class="landing-final product-final">
       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div><h2>{{ t('product.cta.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
-      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+      <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
     </section>
   </main>
 

@@ -128,6 +128,31 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
     },
     {
+        # WP09: written only when a visitor clicks the opt-out on /privacy
+        # (static/umami-optout.js). The Umami tracker reads it and then counts
+        # nothing in this browser; the opt-back-in link removes it.
+        "name": "umami.disabled",
+        "set_by": "static/umami-optout.js",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "public",
+        "purpose": {
+            "en": (
+                "Cookieless analytics (Umami): no cookies are set. This optional key is stored "
+                "only after you turn measurement off on the Privacy Policy page"
+            ),
+            "cs": (
+                "Měření návštěvnosti bez cookies (Umami): žádné cookies se nenastavují. Tento "
+                "nepovinný klíč se uloží jen poté, co měření vypnete na stránce Zásad ochrany "
+                "osobních údajů"
+            ),
+        },
+        "lifetime": {
+            "en": "Until you turn measurement back on or clear it",
+            "cs": "Dokud měření znovu nezapnete nebo klíč nevymažete",
+        },
+    },
+    {
         "name": "__cf_bm",
         "set_by": "Cloudflare edge",
         "party": "Cloudflare",
@@ -150,6 +175,33 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
             "cs": "Potvrzen\u00ed v\u00fdzvy Cloudflare, nastav\u00ed se po jej\u00edm projit\u00ed",
         },
         "lifetime": {"en": "Up to 1 year", "cs": "A\u017e 1 rok"},
+    },
+)
+
+
+# Third-party services on the public pages that set no cookie, listed so the
+# privacy page can say so (WP09, 04_legal_positions.md section 1). Umami itself
+# writes nothing; the only storage key involved is the visitor's own opt-out,
+# "umami.disabled", which is a COOKIE_INVENTORY row above because our
+# umami-optout.js writes it.
+COOKIELESS_SERVICES: Tuple[Dict[str, object], ...] = (
+    {
+        "name": "Umami Cloud",
+        "surface": "public",
+        "party": "Umami Software, Inc.",
+        "note": {
+            "en": (
+                "Cookieless analytics, no cookies set; optional localStorage key umami.disabled "
+                "only after opt-out. Public marketing and legal pages only, data stored in the EU. "
+                "Never loaded in the app, on sign-in or on guest pages."
+            ),
+            "cs": (
+                "Měření návštěvnosti bez cookies, žádné cookies se nenastavují; nepovinný klíč "
+                "umami.disabled v localStorage jen po vypnutí měření. Jen veřejné marketingové a "
+                "právní stránky, data uložená v EU. V aplikaci, při přihlášení ani na stránkách "
+                "pro hosty se nikdy nenačítá."
+            ),
+        },
     },
 )
 
