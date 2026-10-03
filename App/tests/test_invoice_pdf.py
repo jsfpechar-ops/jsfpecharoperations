@@ -131,3 +131,11 @@ def test_an_issued_note_cannot_be_changed():
     )
     with pytest.raises(sqlite3.DatabaseError, match="immutable"):
         db.execute("UPDATE invoice SET note = 'Jiná' WHERE id = ?", (invoice,))
+
+
+def test_the_printed_mark_is_small_so_stored_pdfs_stay_small():
+    from app import pdf_mark
+
+    assert len(pdf_mark._png()) < 40_000
+    data = invoice_pdf.render(_inv(), [dict(ACCOM, vat_rate=None, base_haler=None, vat_haler=None)], "cs")
+    assert len(data) < 100_000, "the full-size web mark was embedded again"
