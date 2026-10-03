@@ -103,6 +103,17 @@
 <main id="main-content" class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
   {% if show_nav | default(true) %}
     {% include "_env_banner.html" %}
+    {% if workspace_user and workspace_user.deletion_due_at %}
+    <aside class="banner warning workspace-deletion-banner" role="status">
+      <div class="grow">
+        <strong>{{ t('workspace.deletion.banner_title', date=workspace_user.deletion_due_at | datetime_local) }}</strong>
+        <p class="small muted" style="margin:6px 0 0">{{ t('workspace.deletion.banner_detail', date=workspace_user.deletion_due_at | datetime_local) }}</p>
+      </div>
+      <form method="post" action="/settings/workspace-export">
+        <button class="btn small" type="submit">{{ t('workspace.deletion.download_zip') }}</button>
+      </form>
+    </aside>
+    {% endif %}
     {% include "_host_alerts.html" %}
   {% endif %}
   {% if current_user and workspace_user and current_user.id != workspace_user.id %}

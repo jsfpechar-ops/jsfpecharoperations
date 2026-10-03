@@ -62,6 +62,7 @@ def _ui_period_label(request: Request, cadence: str, month: date) -> str:
 
 STAY_FEE_STATUSES = (
     ("attention", "stay_fees.needs_setup"),
+    ("waiting", "stay_fees.status.in_progress"),
     ("ready", "stay_fees.status.ready"),
     ("saved", "stay_fees.status.saved"),
 )
@@ -72,7 +73,10 @@ def _row_status(row: dict) -> str:
         return "attention"
     if row.get("frozen"):
         return "saved"
-    if row["issues"] and row["issues"] != ["stay_fees.issue.period_running"]:
+    issues = row["issues"] or []
+    if issues == ["stay_fees.issue.period_running"]:
+        return "waiting"
+    if issues:
         return "attention"
     return "ready"
 

@@ -696,7 +696,7 @@ async def user_schedule_deletion(user_id: int, request: Request):
     due = (
         datetime.now(timezone.utc) + timedelta(days=WORKSPACE_DELETION_DAYS)
     ).replace(microsecond=0).isoformat()
-    db.update("user_account", user_id, {"deletion_due_at": due, "active": 0})
+    db.update("user_account", user_id, {"deletion_due_at": due})
     mail_notify.workspace_deletion(user_id, due, "scheduled")
     db.audit(
         "workspace_deletion_scheduled",

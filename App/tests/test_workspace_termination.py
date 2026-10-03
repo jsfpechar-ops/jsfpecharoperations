@@ -141,7 +141,24 @@ def test_the_workspace_export_streams_a_zip_with_a_manifest():
     )
 
 
-def test_scheduling_deletion_requires_the_username_and_disables_the_account():
+def test_the_host_can_download_a_zip_while_deletion_is_scheduled():
+    owner, *_rest = _seed("ws-self")
+    due = (date.today() + timedelta(days=30)).isoformat()
+    db.execute(
+        "UPDATE user_account SET deletion_due_at = ? WHERE id = ?",
+        (due, owner),
+    )
+    client = _login("ws-self")
+    page = client.get("/", follow_redirects=False)
+    assert page.status_code == 200
+    assert "Download everything (ZIP)" in page.text
+    response = client.post("/settings/workspace-export", follow_redirects=False)
+    assert response.status_code == 200
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    assert "manifest.json" in archive.namelist()
+
+
+def test_scheduling_deletion_requires_the_username_and_keeps_sign_in_active():
     owner, *_rest = _seed("ws-del")
     _admin("ws-admin")
     client = _login("ws-admin")
@@ -165,7 +182,7 @@ def test_scheduling_deletion_requires_the_username_and_disables_the_account():
         "SELECT deletion_due_at, active FROM user_account WHERE id = ?", (owner,)
     )
     assert row["deletion_due_at"]
-    assert row["active"] == 0
+    assert row["active"] == 1
 
 
 def test_due_workspaces_are_deleted_and_nothing_else():

@@ -51,6 +51,8 @@
             <span class="pill green">{{ t('stay_fees.saved_version', version=period.version) }}</span>
           {% elif period.status == 'attention' %}
             <span class="pill amber">{{ t('stay_fees.needs_setup') }}</span>
+          {% elif period.status == 'waiting' %}
+            <span class="pill teal">{{ t('stay_fees.status.in_progress') }}</span>
           {% else %}
             <span class="pill blue">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}

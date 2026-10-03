@@ -46,7 +46,7 @@ from zoneinfo import ZoneInfo
 
 from icalendar import Calendar
 
-from . import alerts, config, db, deadlines, host_i18n, reporting
+from . import alerts, config, db, deadlines, host_i18n, mail_notify, reporting
 from .feed_fetch import CalendarFetchError, fetch_calendar_text
 from .feed_url import FeedUrlError
 
@@ -323,6 +323,7 @@ def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> 
         reservation_id=reservation["id"],
         params={"date": reservation["date_from"], "variant": variant},
     )
+    mail_notify.cancelled_with_guests(apartment_id, reservation["id"], variant)
 
 
 def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str, stats: Dict[str, Any]) -> None:
@@ -639,33 +640,8 @@ def sync_feed(
                     (existing["id"],),
                 )
                 if on_stay and on_stay["n"]:
-                    # Who had signed, and when: each of them must sign again
-                    # before the hold lifts (routes.guest).
-                    signed = {
-                        str(row["id"]): row["signed_at"]
-                        for row in db.query(
-                            "SELECT id, signed_at FROM guest WHERE reservation_id = ? "
-                            "AND archived_at IS NULL AND signed_at IS NOT NULL "
-                            "AND submit_state != ?",
-                            (existing["id"], reporting.SENT),
-                        )
-                    }
-                    alerts.raise_alert(
-                        "critical",
-                        "dates_changed_resign",
-                        host_i18n.translate(
-                            host_i18n.DEFAULT_LANGUAGE, "notification.dates_changed_resign.title"
-                        ),
-                        host_i18n.translate(
-                            host_i18n.DEFAULT_LANGUAGE, "notification.reason.dates_changed_resign"
-                        ),
-                        dedupe_key=f"dates_changed_resign:{existing['id']}",
-                        apartment_id=feed["apartment_id"],
-                        reservation_id=existing["id"],
-                        params={"signed": signed},
-                    )
-                    log.warning(
-                        "ical_dates_changed_resign_required apartment_id=%s reservation_id=%s",
+                    log.info(
+                        "ical_dates_moved_guests_on_stay apartment_id=%s reservation_id=%s",
                         feed["apartment_id"],
                         existing["id"],
                     )

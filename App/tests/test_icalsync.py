@@ -279,21 +279,15 @@ def test_moved_ical_stay_keeps_the_signature_it_collected(monkeypatch, tmp_path)
     assert guest["signed_at"] is not None
 
 
-def test_moved_ical_stay_alerts_the_host(monkeypatch, tmp_path):
+def test_moved_ical_stay_does_not_raise_a_resign_alert(monkeypatch, tmp_path):
     feed_id, reservation_id, _guest_id = _moved_stay(tmp_path, monkeypatch)
 
     _sync(feed_id)
 
-    alert = db.query_one(
+    assert db.query_one(
         "SELECT * FROM alert WHERE dedupe_key = ?",
         (f"dates_changed_resign:{reservation_id}",),
-    )
-    assert alert is not None
-    assert alert["kind"] == "dates_changed_resign"
-    assert alert["level"] == "critical"
-    assert alert["reservation_id"] == reservation_id
-    assert alert["resolved_at"] is None
-    assert alert["message"] and alert["detail"]
+    ) is None
 
 
 def test_moved_ical_stay_leaves_a_guest_with_their_own_dates_alone(
@@ -938,7 +932,7 @@ def test_a_moved_stay_with_nothing_filed_does_not_warn_about_a_report(
     _sync(feed_id)
 
     assert _open_alert(f"moved_after_report:{reservation_id}") is None
-    assert _open_alert(f"dates_changed_resign:{reservation_id}") is not None
+    assert _open_alert(f"dates_changed_resign:{reservation_id}") is None
 
 
 def test_a_stay_that_now_looks_like_a_block_is_not_cancelled(monkeypatch, tmp_path):

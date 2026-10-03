@@ -495,63 +495,8 @@ def test_a_stored_junk_signature_is_not_offered_back_to_the_host():
         _cleanup()
 
 
-def test_the_resign_warning_waits_for_every_guest_on_the_stay():
-    """[F15] One guest's save must not clear another guest's stale signature.
-
-    The calendar moved the stay, so the sync left a critical
-    ``dates_changed_resign`` alert for the host. The guest form resolved that
-    key on *any* save, so the first guest to touch the page hid the warning
-    while the rest of the party still had the old dates on file.
-    """
-    from app import alerts
-
-    _owner_id, stay_id = _host_stay()
-    try:
-        today = claim.prague_today()
-        moved_from = (today + timedelta(days=30)).isoformat()
-        moved_to = (today + timedelta(days=32)).isoformat()
-        stale = {
-            "stay_from": moved_from,
-            "stay_to": moved_to,
-        }
-        first = _host_guest(stay_id, birth_date="01011990", **stale)
-        second = _host_guest(stay_id, birth_date="01011990", **stale)
-        key = f"dates_changed_resign:{stay_id}"
-        alerts.raise_alert(
-            "critical",
-            "dates_changed_resign",
-            "The calendar moved this stay.",
-            "The signed form names the old dates.",
-            dedupe_key=key,
-            reservation_id=stay_id,
-        )
-
-        client = _claimed_guest(stay_id)
-        # Claiming the stay rewrites declared_guests, so the party has to be
-        # widened after it: while the party is unfinished a save still reaches
-        # the resolve step, and the point here is the resolve, not capacity.
-        db.update("reservation", stay_id, {"declared_guests": 5})
-        assert _save(client, stay_id, **_complete_guest()).status_code == 303
-        assert alerts.open_alert(key) is not None, "one save cannot clear the others"
-
-        db.update("guest", first, {"stay_from": today.isoformat(), "stay_to": None})
-        assert _save(client, stay_id, **_complete_guest()).status_code == 303
-        assert alerts.open_alert(key) is not None, "the second guest is still stale"
-
-        db.update("guest", second, {"stay_from": today.isoformat(), "stay_to": None})
-        assert _save(client, stay_id, **_complete_guest()).status_code == 303
-        assert alerts.open_alert(key) is None
-    finally:
-        _cleanup()
-
-
-def test_a_stale_signature_is_not_filed_until_the_guest_re_signs():
-    """[F15] Nothing blocked filing the old signature, so it reached the register.
-
-    A row whose signed window has fallen outside the booking cannot be filed
-    automatically, and neither can any row on a stay the calendar moved. A host
-    pressing send is still the override, the same as it is for the retry cap.
-    """
+def test_a_legacy_resign_alert_does_not_block_filing():
+    """Calendar date changes no longer gate police filing on re-signing."""
     from app import alerts
 
     _owner_id, stay_id = _host_stay()
@@ -559,14 +504,12 @@ def test_a_stale_signature_is_not_filed_until_the_guest_re_signs():
         today = claim.prague_today()
         stay = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay_id,))
         apartment_id = stay["apartment_id"]
-        # Inside the booking: a late arrival is a normal record.
         inside = _host_guest(
             stay_id,
             birth_date="01011990",
             stay_from=today.isoformat(),
             stay_to=(today + timedelta(days=1)).isoformat(),
         )
-        # Outside it: the booking moved out from under this signature.
         outside = _host_guest(
             stay_id,
             birth_date="01011990",
@@ -574,16 +517,6 @@ def test_a_stale_signature_is_not_filed_until_the_guest_re_signs():
             stay_to=(today + timedelta(days=32)).isoformat(),
         )
         db.update("reservation", stay_id, {"declared_guests": 5})
-
-        offered = {
-            g["id"]
-            for g, _r in reporting.collect_sendable(
-                apartment_id, ignore_schedule=True, allow_resend=True
-            )
-        }
-        assert inside in offered
-        assert outside not in offered
-
         key = f"dates_changed_resign:{stay_id}"
         alerts.raise_alert(
             "critical",
@@ -599,19 +532,8 @@ def test_a_stale_signature_is_not_filed_until_the_guest_re_signs():
                 apartment_id, ignore_schedule=True, allow_resend=True
             )
         }
-        assert offered == set(), "an open re-sign warning holds the whole stay"
-
-        offered = {
-            g["id"]
-            for g, _r in reporting.collect_sendable(
-                apartment_id,
-                ignore_schedule=True,
-                allow_resend=True,
-                ignore_automation=True,
-            )
-        }
-        assert inside in offered, "the host can still send by hand"
-        assert outside not in offered
+        assert inside in offered
+        assert outside in offered
     finally:
         _cleanup()
 

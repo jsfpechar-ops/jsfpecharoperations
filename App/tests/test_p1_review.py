@@ -91,7 +91,6 @@ def test_C_moved_earlier_moves_the_guest_with_the_stay(monkeypatch, tmp_path):
     res = db.query_one("SELECT * FROM reservation WHERE id=?", (r,))
     assert res["date_from"] == "2026-10-01"
     assert str(reporting.reservation_deadline_anchor(res)) == "2026-10-01"
-    alerts.resolve(f"dates_changed_resign:{r}")
     assert reporting.check_deadlines(datetime(2026, 10, 8, 12, 0)) == 1   # real arrival 1 Oct: overdue, alert raised
 
 

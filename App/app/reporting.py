@@ -981,33 +981,6 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
             continue
         if not guest_is_complete(guest, reservation):
             continue
-        # A form signed before the calendar moved names the old dates. Filing
-        # it would put a window in the register that the booking no longer
-        # contains, so the record waits for the re-sign the sync asked for.
-        if signature_dates_stale(guest, reservation):
-            log.warning(
-                "guest_signature_dates_stale guest=%s reservation=%s signed=%s..%s booking=%s..%s",
-                guest["id"],
-                reservation["id"],
-                guest["stay_from"],
-                guest["stay_to"],
-                reservation["date_from"],
-                reservation["date_to"],
-            )
-            continue
-        # A calendar move left this stay's signatures naming dates the booking
-        # no longer has, and the sync asked the host to have them re-signed.
-        # Filing anyway is how the old window reached the register. A host
-        # pressing send is the override, exactly as it is for the retry cap.
-        if not ignore_automation and alerts.open_alert(
-            f"dates_changed_resign:{reservation['id']}"
-        ):
-            log.warning(
-                "guest_signature_awaiting_resign guest=%s reservation=%s",
-                guest["id"],
-                reservation["id"],
-            )
-            continue
         if not ignore_schedule:
             if reservation["id"] not in anchors:
                 anchors[reservation["id"]] = reservation_deadline_anchor(reservation)
@@ -1489,19 +1462,56 @@ def submit_batch(
     }
 
 
-def recover_stale_submissions(apartment_id: int) -> int:
-    """Treat a batch stuck in ``running`` as one whose outcome is unknown.
+def _retry_interrupted_batch(apartment_id: int, submission_id: int, guest_ids: List[int]) -> bool:
+    """One automatic resend after a crash. A duplicate (150) still counts as success."""
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return False
+    ap_dict = dict(apartment)
+    ap_dict["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
+    pairs: List[Tuple[Any, Any]] = []
+    for guest_id in guest_ids:
+        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
+        if not guest or guest["submit_state"] == SENT:
+            continue
+        reservation = db.query_one(
+            "SELECT * FROM reservation WHERE id = ? AND status = 'active'",
+            (guest["reservation_id"],),
+        )
+        if reservation:
+            pairs.append((guest, reservation))
+    if not pairs:
+        return False
+    db.update(
+        "submission",
+        submission_id,
+        {
+            "state": "error",
+            "finished_at": db.utcnow(),
+            "error_text": "Interrupted; one automatic retry.",
+        },
+    )
+    for guest_id in guest_ids:
+        db.execute(
+            "UPDATE guest SET submission_id = NULL WHERE id = ? AND submission_id = ?",
+            (guest_id, submission_id),
+        )
+    result = submit_batch(ap_dict, pairs, mode="auto")
+    state = result.get("state") or ""
+    return state in ("ok", "ok_duplicate", "partial") or bool(result.get("submitted"))
 
-    A process that dies mid-call (deploy, OOM) leaves the row ``running`` with
-    no guest pointing at it, so the next pass would refile a batch the register
-    may already hold. A batch is stale as soon as none of its guests holds a
-    live send claim: nobody is sending it any more, and the lapsed claim would
-    otherwise let the next pass claim and refile them. Hold its guests for a
-    person, exactly like an unanswered call.
+
+def recover_stale_submissions(apartment_id: int) -> int:
+    """Hold or recover batches stuck in ``running`` after a crash.
+
+    Staleness is judged by the send claim, not row age. Each stale batch gets
+    one automatic resend (a duplicate answer from UbyPort still counts as
+    success). Only when that retry is unclear does the batch become
+    ``outcome_unknown`` and wait for the host.
     """
     live_after = time.time() - SUBMISSION_CLAIM_TTL_SECONDS
     reason = "The send stopped before UbyPort answered."
-    stale = []
+    candidates: List[Tuple[int, List[int]]] = []
     with db.immediate() as cur:
         cur.execute(
             "SELECT id, guest_ids FROM submission WHERE apartment_id = ? AND state = 'running'",
@@ -1518,17 +1528,30 @@ def recover_stale_submissions(apartment_id: int) -> int:
                 )
                 if cur.fetchone():
                     continue
-            stale.append(row["id"])
+            candidates.append((row["id"], guest_ids))
+
+    stale: List[int] = []
+    for submission_id, guest_ids in candidates:
+        if _retry_interrupted_batch(apartment_id, submission_id, guest_ids):
+            log.info(
+                "ubyport_submission_stale_retry_ok apartment_id=%s submission_id=%s",
+                apartment_id,
+                submission_id,
+            )
+            continue
+        with db.immediate() as cur:
             db.update_in(
-                cur, "submission", row["id"],
+                cur, "submission", submission_id,
                 {"state": "outcome_unknown", "finished_at": db.utcnow(), "error_text": reason},
             )
             for guest_id in guest_ids:
                 cur.execute(
                     "UPDATE guest SET submission_id = ? WHERE id = ? AND submit_state != ? "
                     "AND (submission_id IS NULL OR submission_id < ?)",
-                    (row["id"], guest_id, SENT, row["id"]),
+                    (submission_id, guest_id, SENT, submission_id),
                 )
+        stale.append(submission_id)
+
     if not stale:
         return 0
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))

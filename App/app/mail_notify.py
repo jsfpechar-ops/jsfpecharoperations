@@ -851,8 +851,8 @@ def _submission_problem(
 # --- workspace deletion ----------------------------------------------------
 #
 # The host is the controller and keeps the duty to hold invoices, stay-fee
-# filings and Doručenky. Sign-in is disabled the moment deletion is scheduled,
-# so the notice tells them to ask support for the export an admin can download.
+# filings and Doručenky. Sign-in stays open until deletion; the in-app banner
+# links to a self-service ZIP export.
 
 WORKSPACE_DELETION_STAGES = ("scheduled", "week_before")
 
@@ -897,6 +897,54 @@ def build_workspace_deletion(*, stage: str, date: str, lang: Optional[str] = Non
             footer_lines=["UbyHost", footer],
         ),
     }
+
+
+def cancelled_with_guests(apartment_id: int, reservation_id: int, variant: str) -> Optional[int]:
+    """Tell the host by e-mail that a cancelled stay still had guest forms."""
+    try:
+        apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+        if not apartment:
+            return None
+        to_email = _entity_contact_email(apartment["legal_entity_id"])
+        if not to_email:
+            return None
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        if not reservation:
+            return None
+        lang = HOST_MAIL_LANGUAGE
+        title = host_i18n.translate(
+            lang, f"notification.cancelled_with_guests.title.{variant}",
+            date=reservation["date_from"],
+        )
+        detail = host_i18n.translate(lang, "notification.cancelled_with_guests.detail")
+        subject = title
+        text = f"{title}\n\n{detail}\n"
+        html = _shell(
+            lang=lang,
+            title=apartment["internal_name"] or "UbyHost",
+            preheader=title,
+            blocks=[_block_heading(title), _block_paragraph(detail)],
+            footer_lines=[
+                "UbyHost",
+                _text(lang, "mail.workspace_deletion.footer", support=config.OPERATOR_EMAIL),
+            ],
+        )
+        return mail.enqueue(
+            kind="submission_problem",
+            idempotency_key=f"cancelled_with_guests:{reservation_id}:{variant}",
+            to_email=to_email,
+            subject=subject,
+            payload={"text": text, "html": html, "lang": lang},
+            apartment_id=apartment_id,
+            owner_user_id=apartment.get("owner_user_id"),
+        )
+    except Exception:
+        log.exception(
+            "cancelled_with_guests_mail_failed apartment_id=%s reservation_id=%s",
+            apartment_id,
+            reservation_id,
+        )
+        return None
 
 
 def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:

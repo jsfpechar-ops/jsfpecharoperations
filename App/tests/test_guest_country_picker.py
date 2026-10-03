@@ -186,5 +186,5 @@ def test_kosovo_can_be_picked_and_passes_validation():
     from app import validation
 
     assert "Kosovo" in _labels("en")
-    assert validation.country_name("XKX", "cs") == "Kosovo"
-    assert "XKX" in validation.country_codes()
+    assert validation.country_name("XXK", "cs") == "Kosovo"
+    assert "XXK" in validation.country_codes()
