@@ -461,94 +461,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Thank you for keeping everything in order."
         ),
         "celebration.dismiss": "Thanks!",
-        "guide.title": "Help & guide",
-        "guide.lede": "Everything you need to run guest reporting calmly, from setup to the house book.",
-        "guide.nav.overview": "Overview",
-        "guide.nav.productivity": "Faster everyday work",
-        "guide.nav.setup": "First-time setup",
-        "guide.nav.stays": "Stays & calendars",
-        "guide.nav.guests": "Guest forms",
-        "guide.nav.reporting": "Police reporting",
-        "guide.nav.housebook": "House book",
-        "guide.nav.security": "Security & backups",
-        "guide.nav.demo": "Demo data",
-        "guide.overview.body": (
-            "Overview shows what needs attention now: missing guest forms, stays ready to report, "
-            "and deadlines. Stays lists every booking; Reports keeps Doručenka receipts."
-        ),
-        "guide.overview.caption": "The next-up card shows the most urgent stay and its send button.",
-        "guide.productivity.search": (
-            "Press Ctrl+K (or Cmd+K on a Mac) to search and jump to a property, stay, guest, or page."
-        ),
-        "guide.productivity.shortcuts": (
-            "Open the ? menu at the bottom of the sidebar for navigation and table keyboard shortcuts."
-        ),
-        "guide.productivity.views": (
-            "On Stays, switch between List and Timeline, set filters, and choose Save view to "
-            "keep a useful view for next time."
-        ),
-        "guide.productivity.quick_edit": (
-            "Open a stay for its guest link, Add a guest, reporting controls, and the compact Quick edit panel."
-        ),
-        "guide.setup.step1_title": "Operator",
-        "guide.setup.step1": "The company or person registered with the police.",
-        "guide.setup.step2_title": "Property",
-        "guide.setup.step2": "IDUB, mark, and address must match UbyPort exactly.",
-        "guide.setup.step3_title": "Calendars",
-        "guide.setup.step3": "Paste Airbnb or Booking.com iCal export links.",
-        "guide.setup.step4_title": "UbyPort credentials",
-        "guide.setup.step4": (
-            "Enter the UBY-WS web-service login from the police letter on the property page. "
-            "The annotated sample shows the exact fields; leaving an already-saved password blank keeps it."
-        ),
-        "guide.setup.step5_title": "Guest link",
-        "guide.setup.step5": "Put the permalink in your check-in message on every portal.",
-        "guide.stays.body": (
-            "Stays arrive from calendars or manual entry. Open a row to add guests, copy the guest link, "
-            "or send completed records."
-        ),
-        "guide.stays.csv": (
-            "Use Export stays (CSV) in the filter bar for a spreadsheet copy. House book offers CSV "
-            "and an inspection PDF bundle from its Export menu. Exports respect the current filters."
-        ),
-        "guide.guests.body": (
-            "Each stay has a guest link meant for a phone. Guests pick their arrival dates, the lead "
-            "guest states how many people are staying, claims the reservation by e-mail, then each "
-            "person fills in a short step-by-step form. An incomplete claimed form remains reachable "
-            "after check-in until it is completed or you explicitly lock guest access."
-        ),
-        "guide.guests.step_email": (
-            "The e-mail receives the private form link, one reminder if incomplete the day before "
-            "check-in, and a completion receipt. The host gets a completion copy; public screens "
-            "mask the address. Necessary guest cookies preserve PIN access for up to 7 days and "
-            "language, confirmed-stay access, and forms submitted on the device for up to 60 days."
-        ),
-        "guide.guests.step_party": (
-            "Headcount first — everyone in the group, including children, gets a separate form so "
-            "nobody sees anyone else's passport details. The count is stored with the stay to measure "
-            "whether all expected forms are complete and follows the stay's retention."
-        ),
-        "guide.guests.step_details": (
-            "Each guest types name, birth date, nationality, and document number as printed on the "
-            "travel document (no scanning or machine-readable line copying)."
-        ),
-        "guide.guests.step_photo": (
-            "Passport/ID upload is off by default. A property can require a temporary image or PDF "
-            "from foreign guests; it is never sent to UbyPort."
-        ),
-        "guide.guests.step_czech": (
-            "Czech guests are still written to the house book but are not reported to the police."
-        ),
-        "guide.reporting.body": "Each property chooses how completed guest records reach UbyPort:",
-        "guide.reporting.caption": (
-            "Passport checking is an optional explicit host action. Automatic reporting follows "
-            "the completion timing you choose and does not wait for that check."
-        ),
-        "guide.reporting.immediate": "Immediately after completion",
-        "guide.reporting.immediate_detail": (
-            "Sent automatically as soon as every declared guest form is complete, "
-            "without waiting for host verification."
-        ),
         "guide.legal.verification_title": "Verify every foreign guest",
         "guide.legal.verification_body": (
             "You are legally responsible for accurate police records. Check the travel document "
@@ -557,38 +469,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "If a guest refuses to show ID, you may "
             "refuse accommodation."
         ),
-        "guide.reporting.scheduled": "Scheduled",
-        "guide.reporting.scheduled_detail": "Sent automatically after your chosen delay from completion.",
-        "guide.reporting.manual": "Manual",
-        "guide.reporting.manual_detail": "You click Send on the stay or use Send all ready stays.",
-        "guide.reporting.bulk": (
-            "Send all ready stays only sends stays that are complete and allowed by the automation mode — "
-            "it never forces a partial stay."
-        ),
-        "guide.housebook.body": (
-            "The house book lists every guest — Czech and foreign. Export CSV or download PDFs for "
-            "inspections from the Export menu. Import is currently unavailable."
-        ),
-        "guide.security.two_factor": (
-            "Enable two-factor authentication in Settings with an authenticator app, and store the "
-            "one-time recovery codes somewhere safe."
-        ),
-        "guide.security.turnstile": (
-            "Production sits behind Cloudflare: Turnstile on sign-in and after repeated guest PIN "
-            "failures, Bot Fight Mode, leaked-credential checks on login, HSTS, and client-side "
-            "script monitoring. Legitimate visitors may occasionally see a short challenge."
-        ),
-        "guide.security.passports": (
-            "Passport/ID upload is off by default. When enabled, access is restricted to authorised "
-            "host users in the app; the file is deleted after verification, with a stale-file sweep "
-            "as a backstop. It is never sent to UbyPort."
-        ),
-        "guide.security.backups": (
-            "The Settings \u201cData protection\u201d panel (platform administrators only) shows when "
-            "the last backup ran, whether it was encrypted, and the retention window. Keep an "
-            "independent export before closing the service or making major changes."
-        ),
-        "guide.nav.legal": "Your legal duties",
         "guide.legal.lede": (
             "UbyHost helps you comply, but the accommodation provider remains legally responsible. "
             "Read this section carefully."
@@ -691,12 +571,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.support_help": (
             "Software questions: support@ubyhost.com. Guests with a stay question should use "
             "the host name, e-mail, and phone shown on the guest form."
-        ),
-        "guide.demo.body": (
-            "Load demo data to explore both sample properties: mail claim, assigned stays, late "
-            "incomplete forms, the optional passport toggle, a separate controller, and reporting. "
-            "On staging, open Settings → Guest e-mails for the confirmation links. Demo guests are "
-            "never sent to the real police register."
         ),
         "a11y.skip_to_content": "Skip to main content",
         "a11y.breadcrumb": "Breadcrumb",
@@ -2008,130 +1882,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Díky, že máte vše v pořádku."
         ),
         "celebration.dismiss": "Díky!",
-        "guide.title": "Nápověda a průvodce",
-        "guide.lede": "Vše pro klidné hlášení hostů — od nastavení po domovní knihu.",
-        "guide.nav.overview": "Přehled",
-        "guide.nav.productivity": "Rychlejší každodenní práce",
-        "guide.nav.setup": "První nastavení",
-        "guide.nav.stays": "Pobyty a kalendáře",
-        "guide.nav.guests": "Formuláře hostů",
-        "guide.nav.reporting": "Hlášení na policii",
-        "guide.nav.housebook": "Domovní kniha",
-        "guide.nav.security": "Zabezpečení a zálohy",
-        "guide.nav.demo": "Ukázková data",
-        "guide.overview.body": (
-            "Přehled ukazuje, co vyžaduje pozornost: chybějící formuláře, připravená hlášení a termíny. "
-            "Pobyty obsahují rezervace; Hlášení uchovává doručenky."
-        ),
-        "guide.overview.caption": "Karta Další na řadě ukazuje nejnaléhavější pobyt a tlačítko Odeslat.",
-        "guide.productivity.search": (
-            "Klávesami Ctrl+K (na Macu Cmd+K) otevřete hledání ubytování, pobytu, hosta nebo stránky."
-        ),
-        "guide.productivity.shortcuts": (
-            "V nabídce ? dole v postranním panelu najdete klávesové zkratky pro navigaci a tabulky."
-        ),
-        "guide.productivity.views": (
-            "Na stránce Pobyty přepínejte Seznam a Časovou osu, nastavte filtry a volbou Uložit "
-            "pohled si je uchovejte pro příště."
-        ),
-        "guide.productivity.quick_edit": (
-            "V detailu pobytu najdete odkaz pro hosty, Přidat hosta, ovládání hlášení a stručnou Rychlou úpravu."
-        ),
-        "guide.setup.step1_title": "Provozovatel",
-        "guide.setup.step1": "Firma nebo osoba registrovaná u policie.",
-        "guide.setup.step2_title": "Ubytování",
-        "guide.setup.step2": "IDUB, zkratka a adresa musí přesně sedět s UbyPortem.",
-        "guide.setup.step3_title": "Kalendáře",
-        "guide.setup.step3": "Vložte exportní iCal odkazy z Airbnb nebo Booking.com.",
-        "guide.setup.step4_title": "Přihlašovací údaje UbyPort",
-        "guide.setup.step4": (
-            "Na stránce ubytování zadejte přihlašovací jméno UBY-WS z policejního dopisu. "
-            "Anotovaná ukázka přesně ukazuje pole; prázdné již uložené heslo se při uložení zachová."
-        ),
-        "guide.setup.step5_title": "Odkaz pro hosty",
-        "guide.setup.step5": "Odkaz pro hosty vložte do zprávy při příjezdu na všech portálech.",
-        "guide.stays.body": (
-            "Pobyty přicházejí z kalendářů nebo ručního zadání. Otevřete řádek pro hosty, odkaz nebo odeslání."
-        ),
-        "guide.stays.csv": (
-            "Tlačítkem Export pobytů (CSV) v panelu filtrů získáte tabulku. Domovní kniha nabízí "
-            "v nabídce Export CSV a balíček PDF pro kontrolu. Export respektuje aktuální filtry."
-        ),
-        "guide.guests.body": (
-            "Každý pobyt má odkaz pro hosty na telefonu. Vyberou termín pobytu, hlavní host uvede "
-            "počet osob, převezme rezervaci e-mailem a každý pak vyplní vlastní krátký formulář. "
-            "Nedokončený převzatý formulář zůstává po příjezdu dostupný, dokud není dokončen nebo "
-            "přístup výslovně nezamknete."
-        ),
-        "guide.guests.step_email": (
-            "Na e-mail přijde soukromý odkaz, jedno upozornění při nedokončení den před příjezdem "
-            "a potvrzení o dokončení. Ubytovatel dostane kopii potvrzení; veřejné obrazovky adresu "
-            "zastřou. Nezbytné cookies pro hosty uchovají přístup přes PIN nejvýše 7 dní a jazyk, "
-            "přístup k potvrzenému pobytu a odeslané formuláře v zařízení nejvýše 60 dní."
-        ),
-        "guide.guests.step_party": (
-            "Nejdřív počet osob — včetně dětí; každý má vlastní formulář, aby nikdo neviděl "
-            "údaje z pasu ostatních. Počet se ukládá k pobytu pro kontrolu, zda jsou hotové všechny "
-            "očekávané formuláře, a uchovává se stejně dlouho jako pobyt."
-        ),
-        "guide.guests.step_details": (
-            "Každý host ručně zadá jméno, datum narození, státní občanství a číslo dokladu tak, "
-            "jak jsou v cestovním dokladu (bez skenování ani přepisování strojově čitelných řádků)."
-        ),
-        "guide.guests.step_photo": (
-            "Nahrávání pasu či dokladu je ve výchozím stavu vypnuté. Ubytování může od cizinců "
-            "vyžadovat dočasnou fotografii nebo PDF; do UbyPortu se nikdy neposílá."
-        ),
-        "guide.guests.step_czech": (
-            "Občané ČR se zapisují do domovní knihy, policii se neoznamují."
-        ),
-        "guide.reporting.body": "Každé ubytování volí, jak se hotová hlášení dostanou do UbyPortu:",
-        "guide.reporting.caption": (
-            "Kontrola pasu je volitelný výslovný úkon ubytovatele. Automatické hlášení se řídí "
-            "zvoleným časem od dokončení a na kontrolu nečeká."
-        ),
-        "guide.reporting.immediate": "Okamžitě po dokončení",
-        "guide.reporting.immediate_detail": (
-            "Odešle se automaticky, jakmile jsou hotové všechny nahlášené formuláře hostů, "
-            "bez čekání na ověření ubytovatelem."
-        ),
         "guide.legal.verification_title": "Ověřte každého cizince",
         "guide.legal.verification_body": (
             "Za správnost policejních záznamů odpovídáte vy. Doklad zkontrolujte osobně, pokud to "
             "vyžaduje váš postup nebo zákon. Volitelné nahrání dokladu tuto odpovědnost nenahrazuje. "
             "Odmítne-li host doklad ukázat, můžete odmítnout ubytování."
         ),
-        "guide.reporting.scheduled": "Naplánované",
-        "guide.reporting.scheduled_detail": "Odešle se automaticky po zvolené prodlevě od dokončení.",
-        "guide.reporting.manual": "Ruční",
-        "guide.reporting.manual_detail": "Kliknete Odeslat u pobytu nebo Odeslat všechny připravené.",
-        "guide.reporting.bulk": (
-            "Hromadné odeslání jen u kompletních pobytů povolených režimem — nikdy ne částečných."
-        ),
-        "guide.housebook.body": (
-            "Domovní kniha obsahuje všechny hosty — Čechy i cizince. CSV nebo PDF pro kontroly "
-            "stáhnete z nabídky Export. Import nyní není k dispozici."
-        ),
-        "guide.security.two_factor": (
-            "V Nastavení zapněte dvoufázové ověření pomocí autentizační aplikace a jednorázové "
-            "obnovovací kódy uložte na bezpečné místo."
-        ),
-        "guide.security.turnstile": (
-            "Produkce je za Cloudflare: Turnstile při přihlášení a po opakovaných chybách PIN, "
-            "Bot Fight Mode, kontrola uniklých přihlašovacích údajů, HSTS a monitoring skriptů "
-            "v prohlížeči. Návštěvník může občas vidět krátkou výzvu."
-        ),
-        "guide.security.passports": (
-            "Nahrávání pasu či dokladu je ve výchozím stavu vypnuté. Po zapnutí k souboru v aplikaci "
-            "přistupují jen oprávnění uživatelé ubytovatele; po ověření se smaže a pojistkou je "
-            "automatické mazání starých souborů. Do UbyPortu se nikdy neposílá."
-        ),
-        "guide.security.backups": (
-            "Panel Nastavení \u201eOchrana údajů\u201c (pouze pro administrátory platformy) ukazuje, kdy "
-            "proběhla poslední záloha, zda byla šifrovaná, a dobu uchování. Před ukončením služby "
-            "nebo zásadní změnou si ponechte také vlastní export."
-        ),
-        "guide.nav.legal": "Vaše právní povinnosti",
         "guide.legal.lede": (
             "UbyHost pomáhá s plněním povinností, ale ubytovatel zůstává právně odpovědný. "
             "Tuto část si pečlivě přečtěte."
@@ -2233,12 +1989,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "legal.support_help": (
             "Dotazy k software: support@ubyhost.com. Hosté s otázkou k pobytu mají použít "
             "jméno, e-mail a telefon ubytovatele na formuláři pro hosty."
-        ),
-        "guide.demo.body": (
-            "Načtěte ukázková data a projděte obě ubytování: převzetí e-mailem, přiřazené pobyty, "
-            "nedokončené formuláře po příjezdu, volitelný pas, odděleného správce a hlášení. "
-            "Na stagingu jsou potvrzovací odkazy v Nastavení → E-maily hostům. Na skutečnou "
-            "policii se ukázková data nikdy neodešlou."
         ),
         "a11y.skip_to_content": "Přeskočit na hlavní obsah",
         "a11y.breadcrumb": "Drobečková navigace",
@@ -4501,6 +4251,10 @@ for _lang, _subprocessors in SUBPROCESSOR_STRINGS.items():
 # The selected host design owns these concise labels in both languages.
 from .host_design_i18n import STRINGS as HOST_DESIGN_STRINGS
 for _lang, _strings in HOST_DESIGN_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+from .guide_i18n import GUIDE_STRINGS
+for _lang, _strings in GUIDE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 
