@@ -309,6 +309,7 @@ def _delete_workspace(owner_id: int) -> None:
         # legal_acceptance has a NOT NULL account reference, so it cannot
         # outlive the account.
         cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
+        cur.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id IS ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One

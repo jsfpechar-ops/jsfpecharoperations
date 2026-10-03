@@ -635,6 +635,25 @@ CREATE TABLE IF NOT EXISTS data_subject_request (
     updated_at          TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_dsr_owner_status ON data_subject_request (owner_user_id, status, due_at);
+
+-- WP12: one row per account and lifecycle tip that went out, so no tip is sent
+-- twice. Kept apart from email_outbox, which is purged after 14 days.
+CREATE TABLE IF NOT EXISTS lifecycle_mail_sent (
+    user_account_id INTEGER NOT NULL REFERENCES user_account(id) ON DELETE CASCADE,
+    kind            TEXT NOT NULL,
+    sent_at         TEXT NOT NULL,
+    PRIMARY KEY (user_account_id, kind)
+);
+
+-- WP12: addresses that refused a kind of optional mail (scope 'onboarding').
+-- Only a keyed hash of the normalised address is kept, never the address and
+-- never an account id, so the refusal outlives a deleted workspace.
+CREATE TABLE IF NOT EXISTS mail_suppression (
+    email_hash TEXT NOT NULL,
+    scope      TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (email_hash, scope)
+);
 """
 
 
@@ -999,6 +1018,11 @@ ADDED_COLUMNS = (
     ("ical_feed", "last_modified", "TEXT"),
     ("ical_feed", "body_sha256", "TEXT"),
     ("ical_feed", "last_checked_at", "TEXT"),
+    # WP12: the host refused onboarding e-mails (never service mail). A sign-up
+    # WP adds the same two entries; a repeated entry is skipped, so either can
+    # land first.
+    ("user_account", "onboarding_emails_opt_out", "INTEGER NOT NULL DEFAULT 0"),
+    ("user_account", "onboarding_emails_opt_out_at", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column

@@ -130,6 +130,10 @@ Also bump the `?v=` cache key in `guest/base.html` for each CSS/JS file you
 touched. The full checklist is in `docs/DESIGN.md` ("Definition of done for
 any guest-page change").
 
+## Onboarding e-mails (lifecycle tips)
+
+Content rule (legal position 2): the tips are about the host's own setup only, with no discounts, pricing or third-party offers; if marketing content is ever added, prefix the subject with "Novinky:" and treat the e-mail as a newsletter.
+
 ## Merging a pull request
 
 Branch protection is not available on this private plan, so GitHub does not

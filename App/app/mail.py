@@ -37,6 +37,9 @@ KINDS = (
     "cancelled_with_guests",
     "deadline_at_risk",
     "deadline_digest",
+    "lifecycle_no_property",
+    "lifecycle_no_calendar",
+    "lifecycle_no_guest",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -62,6 +65,16 @@ HOST_KINDS = (
     # digest. Neither goes to a guest.
     "deadline_at_risk",
     "deadline_digest",
+    "lifecycle_no_property",
+    "lifecycle_no_calendar",
+    "lifecycle_no_guest",
+)
+# The only kinds a host can unsubscribe from (WP12). Everything else is service
+# mail about filings, stays or the account and ignores the opt-out flag.
+LIFECYCLE_KINDS = (
+    "lifecycle_no_property",
+    "lifecycle_no_calendar",
+    "lifecycle_no_guest",
 )
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -319,6 +332,41 @@ def _ses_client():
     return boto3.client("ses", **kwargs)
 
 
+def _sesv2_client():
+    """SES API v2. Only its SendEmail takes extra headers on a Simple message.
+
+    The v1 SendEmail above has no header field, so the lifecycle tips, which
+    need List-Unsubscribe, go through this one. Same IAM action
+    (``ses:SendEmail``), same region and credentials.
+    """
+    import boto3
+
+    kwargs: Dict[str, Any] = {"region_name": config.SES_REGION or "eu-central-1"}
+    if config.AWS_ACCESS_KEY_ID and config.AWS_SECRET_ACCESS_KEY:
+        kwargs["aws_access_key_id"] = config.AWS_ACCESS_KEY_ID
+        kwargs["aws_secret_access_key"] = config.AWS_SECRET_ACCESS_KEY
+    return boto3.client("sesv2", **kwargs)
+
+
+def list_unsubscribe_headers(row, payload: Dict[str, Any]) -> List[Dict[str, str]]:
+    """RFC 2369 and RFC 8058 headers, for the lifecycle kinds only.
+
+    Every other kind is service mail with nothing to unsubscribe from, so it
+    never carries them. The URL must be https and printable ASCII (the SES v2
+    header rules); anything else is dropped rather than sent broken.
+    """
+    url = str(payload.get("list_unsubscribe") or "")
+    if row["kind"] not in LIFECYCLE_KINDS or not url.startswith("https://"):
+        return []
+    value = f"<{url}>"
+    if len(value) > 995 or not all(32 <= ord(ch) < 127 for ch in value):
+        return []
+    return [
+        {"Name": "List-Unsubscribe", "Value": value},
+        {"Name": "List-Unsubscribe-Post", "Value": "List-Unsubscribe=One-Click"},
+    ]
+
+
 def display_from(address: Optional[str] = None) -> str:
     """The envelope From, with a readable name in front of the address.
 
@@ -335,7 +383,7 @@ def display_from(address: Optional[str] = None) -> str:
 
 
 def _send_ses(row) -> str:
-    """Deliver one outbox row through Amazon SES SendEmail."""
+    """Deliver one outbox row through Amazon SES SendEmail (v2 for lifecycle tips)."""
     if backend_name() != "ses":
         raise MailConfigError("SES sender invoked while UBYHOST_MAIL_BACKEND is not ses.")
     if not config.MAIL_FROM:
@@ -370,7 +418,24 @@ def _send_ses(row) -> str:
     if reply_to:
         kwargs["ReplyToAddresses"] = [reply_to]
 
-    response = _ses_client().send_email(**kwargs)
+    headers = list_unsubscribe_headers(row, payload)
+    if headers:
+        v2: Dict[str, Any] = {
+            "FromEmailAddress": kwargs["Source"],
+            "Destination": destination,
+            "Content": {
+                "Simple": {
+                    "Subject": kwargs["Message"]["Subject"],
+                    "Body": ses_body,
+                    "Headers": headers,
+                }
+            },
+        }
+        if reply_to:
+            v2["ReplyToAddresses"] = [reply_to]
+        response = _sesv2_client().send_email(**v2)
+    else:
+        response = _ses_client().send_email(**kwargs)
     message_id = (response or {}).get("MessageId") or ""
     if not message_id:
         raise MailConfigError("SES SendEmail returned no MessageId.")

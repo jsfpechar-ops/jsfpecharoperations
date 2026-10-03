@@ -27,7 +27,7 @@ from . import (
     seo,
     templating,
 )
-from .routes import admin, guest, invoices, legal, stay_fees
+from .routes import admin, guest, invoices, legal, mail_unsubscribe, stay_fees
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -323,6 +323,8 @@ app.include_router(admin.router)
 app.include_router(invoices.router)
 app.include_router(stay_fees.router)
 app.include_router(legal.router)
+# Public, outside the host CSRF dependency: RFC 8058 one-click posts (WP12).
+app.include_router(mail_unsubscribe.router)
 
 
 @app.get("/sample-airbnb.ics", include_in_schema=False)

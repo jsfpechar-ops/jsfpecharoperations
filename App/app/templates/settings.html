@@ -255,6 +255,18 @@
             </form>
           </details>
         {% endif %}
+        {% if onboarding_emails is not none %}
+          <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">
+            <div>
+              <label class="checkline">
+                <input type="checkbox" name="enabled" value="1"{% if onboarding_emails %} checked{% endif %}>
+                <strong>{{ t('settings.account.onboarding_emails') }}</strong>
+              </label>
+              <small>{{ t('settings.account.onboarding_emails_help') }}</small>
+            </div>
+            <button class="btn small" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
+          </form>
+        {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>

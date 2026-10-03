@@ -4502,6 +4502,85 @@ for _lang, _strings in _ADMIN_FUNNEL_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 
+# WP12: lifecycle tips to hosts, the unsubscribe page and the Settings toggle.
+# The footer is the wording of legal position 2 (04_legal_positions.md); the
+# sender identity comes from UBYHOST_OPERATOR_*.
+_LIFECYCLE_MAIL_STRINGS = {
+    "en": {
+        "notification.mail_kind.lifecycle_no_property": "setup tip: add a property",
+        "notification.mail_kind.lifecycle_no_calendar": "setup tip: connect a calendar",
+        "notification.mail_kind.lifecycle_no_guest": "setup tip: send the guest link",
+        "mail.lifecycle.lifecycle_no_property.subject": "Add your first property to UbyHost",
+        "mail.lifecycle.lifecycle_no_property.heading": "Add your first property",
+        "mail.lifecycle.lifecycle_no_property.intro": "You signed in to UbyHost a few days ago but have not added a property yet.",
+        "mail.lifecycle.lifecycle_no_property.next": "It takes about five minutes: the address, your UbyPort access and what guests need to know on arrival. After that, UbyHost can collect guest details and file the police reports for you.",
+        "mail.lifecycle.lifecycle_no_property.action": "Add a property",
+        "mail.lifecycle.lifecycle_no_calendar.subject": "Connect your booking calendar",
+        "mail.lifecycle.lifecycle_no_calendar.heading": "Connect your booking calendar",
+        "mail.lifecycle.lifecycle_no_calendar.intro": "Your property is set up, but no booking calendar is connected yet.",
+        "mail.lifecycle.lifecycle_no_calendar.next": "Paste the iCal link from Airbnb, Booking.com or your channel manager into the property. UbyHost then picks up every stay on its own, so no guest is missed.",
+        "mail.lifecycle.lifecycle_no_calendar.action": "Connect a calendar",
+        "mail.lifecycle.lifecycle_no_guest.subject": "Send your guests the registration link",
+        "mail.lifecycle.lifecycle_no_guest.heading": "Send your guests the registration link",
+        "mail.lifecycle.lifecycle_no_guest.intro": "Your calendar is connected, but no guest has completed registration yet.",
+        "mail.lifecycle.lifecycle_no_guest.next": "Put the property's guest link in your booking message. Guests fill in their details on their phone, and UbyHost files the report.",
+        "mail.lifecycle.lifecycle_no_guest.action": "Open guest links",
+        "mail.lifecycle.signoff": "Questions? Reply to this e-mail or write to %(support)s.",
+        "mail.lifecycle.footer": "You are receiving this because you created a UbyHost account and have not finished setting it up. Don't want these setup tips? %(unsubscribe)s. You will still receive essential account and service e-mails. Sender: %(name)s, IČO %(ico)s, %(address)s. Privacy: %(privacy)s.",
+        "mail.lifecycle.unsubscribe_label": "Unsubscribe with one click",
+        "settings.account.onboarding_emails": "Setup tips by e-mail",
+        "settings.account.onboarding_emails_help": "Up to three short e-mails with help while your account is not fully set up. Account and service e-mails are not affected.",
+        "settings.account.onboarding_emails_save": "Save",
+        "flash.accounts.onboarding_emails_on": "Setup tips by e-mail are on.",
+        "flash.accounts.onboarding_emails_off": "Setup tips by e-mail are off.",
+        "unsubscribe.title": "Setup tips by e-mail",
+        "unsubscribe.lede": "Stop the occasional setup tips UbyHost sends to this account?",
+        "unsubscribe.confirm": "Unsubscribe from tips",
+        "unsubscribe.done": "Done. You will not get setup tips any more. You can turn them back on in Settings.",
+        "unsubscribe.service_mail": "You will still get the messages UbyHost needs to send about your account and your filings, such as a report the police did not accept.",
+        "unsubscribe.invalid": "This unsubscribe link is not valid. Copy the whole link from the e-mail, or write to support.",
+        "unsubscribe.too_many": "Too many attempts from this connection. Try again in an hour.",
+    },
+    "cs": {
+        "notification.mail_kind.lifecycle_no_property": "tip k nastavení: přidat ubytování",
+        "notification.mail_kind.lifecycle_no_calendar": "tip k nastavení: připojit kalendář",
+        "notification.mail_kind.lifecycle_no_guest": "tip k nastavení: poslat odkaz hostům",
+        "mail.lifecycle.lifecycle_no_property.subject": "Přidejte do UbyHost své první ubytování",
+        "mail.lifecycle.lifecycle_no_property.heading": "Přidejte své první ubytování",
+        "mail.lifecycle.lifecycle_no_property.intro": "Před několika dny jste se přihlásili do UbyHost, ale zatím jste nepřidali žádné ubytování.",
+        "mail.lifecycle.lifecycle_no_property.next": "Zabere to asi pět minut: adresa, přístup do UbyPortu a co hosté potřebují vědět při příjezdu. Potom za vás UbyHost může sbírat údaje hostů a podávat hlášení cizinecké policii.",
+        "mail.lifecycle.lifecycle_no_property.action": "Přidat ubytování",
+        "mail.lifecycle.lifecycle_no_calendar.subject": "Připojte svůj rezervační kalendář",
+        "mail.lifecycle.lifecycle_no_calendar.heading": "Připojte svůj rezervační kalendář",
+        "mail.lifecycle.lifecycle_no_calendar.intro": "Ubytování máte nastavené, ale zatím k němu není připojený žádný rezervační kalendář.",
+        "mail.lifecycle.lifecycle_no_calendar.next": "Vložte k ubytování odkaz iCal z Airbnb, Booking.com nebo ze svého channel manageru. UbyHost pak sám načte každý pobyt a žádný host vám neunikne.",
+        "mail.lifecycle.lifecycle_no_calendar.action": "Připojit kalendář",
+        "mail.lifecycle.lifecycle_no_guest.subject": "Pošlete hostům odkaz k registraci",
+        "mail.lifecycle.lifecycle_no_guest.heading": "Pošlete hostům odkaz k registraci",
+        "mail.lifecycle.lifecycle_no_guest.intro": "Kalendář máte připojený, ale zatím žádný host nedokončil registraci.",
+        "mail.lifecycle.lifecycle_no_guest.next": "Vložte odkaz pro hosty do zprávy k rezervaci. Hosté vyplní údaje v telefonu a UbyHost podá hlášení.",
+        "mail.lifecycle.lifecycle_no_guest.action": "Otevřít odkazy pro hosty",
+        "mail.lifecycle.signoff": "Máte dotaz? Odpovězte na tento e-mail nebo napište na %(support)s.",
+        "mail.lifecycle.footer": "Tento e-mail dostáváte, protože jste si založili účet UbyHost a ještě jste nedokončili jeho nastavení. Nechcete tyto tipy k nastavení dostávat? %(unsubscribe)s. Nezbytné e-maily k účtu a službě vám budeme posílat i nadále. Odesílatel: %(name)s, IČO %(ico)s, %(address)s. Ochrana osobních údajů: %(privacy)s.",
+        "mail.lifecycle.unsubscribe_label": "Odhlásit jedním kliknutím",
+        "settings.account.onboarding_emails": "Tipy k nastavení e-mailem",
+        "settings.account.onboarding_emails_help": "Nejvýše tři krátké e-maily s nápovědou, dokud účet nemáte celý nastavený. E-mailů k účtu a službě se to netýká.",
+        "settings.account.onboarding_emails_save": "Uložit",
+        "flash.accounts.onboarding_emails_on": "Tipy k nastavení e-mailem jsou zapnuté.",
+        "flash.accounts.onboarding_emails_off": "Tipy k nastavení e-mailem jsou vypnuté.",
+        "unsubscribe.title": "Tipy k nastavení e-mailem",
+        "unsubscribe.lede": "Přestat tomuto účtu posílat občasné tipy k nastavení UbyHost?",
+        "unsubscribe.confirm": "Odhlásit tipy",
+        "unsubscribe.done": "Hotovo. Tipy k nastavení už dostávat nebudete. V Nastavení je můžete znovu zapnout.",
+        "unsubscribe.service_mail": "Zprávy, které vám UbyHost musí posílat k účtu a k hlášením, budete dostávat dál, například když policie hlášení nepřijme.",
+        "unsubscribe.invalid": "Tento odkaz pro odhlášení není platný. Zkopírujte z e-mailu celý odkaz, nebo napište podpoře.",
+        "unsubscribe.too_many": "Z tohoto připojení bylo příliš mnoho pokusů. Zkuste to znovu za hodinu.",
+    },
+}
+for _lang, _strings in _LIFECYCLE_MAIL_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

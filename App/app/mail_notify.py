@@ -23,6 +23,7 @@ from __future__ import annotations
 import html
 import json
 import logging
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import config, db, deadlines, host_i18n, i18n, mail, validation
@@ -394,6 +395,54 @@ class _FooterLink:
         self.href = href
 
 
+class _FooterSentence:
+    """A footer sentence with links inside it, such as the unsubscribe line.
+
+    ``text`` holds ``%(name)s`` markers; ``links`` maps each name to a
+    ``(label, href)`` pair. The text part prints "label (URL)", or the bare
+    URL when the label is empty; the HTML part makes that spot an anchor.
+    """
+
+    __slots__ = ("text", "links")
+
+    _MARKER = re.compile(r"%\((\w+)\)s")
+
+    def __init__(self, text: str, links: Dict[str, Tuple[str, str]]) -> None:
+        self.text = text
+        self.links = links
+
+    def _parts(self) -> List[Any]:
+        pieces = self._MARKER.split(self.text)
+        # re.split with one group alternates text and marker names.
+        return [
+            piece if index % 2 == 0 else self.links.get(piece, ("", ""))
+            for index, piece in enumerate(pieces)
+        ]
+
+    def plain(self) -> str:
+        out = []
+        for part in self._parts():
+            if isinstance(part, str):
+                out.append(part)
+            else:
+                label, href = part
+                out.append(f"{label} ({href})" if label else href)
+        return "".join(out)
+
+    def html(self) -> str:
+        out = []
+        for part in self._parts():
+            if isinstance(part, str):
+                out.append(_esc(part))
+            else:
+                label, href = part
+                out.append(
+                    f'<a href="{_esc(href)}" style="color:{INK_SECONDARY};'
+                    f'text-decoration:underline;">{_esc(label or href)}</a>'
+                )
+        return "".join(out)
+
+
 # The same separator the guest pages use between two channels.
 _FOOTER_SEPARATOR = " \u00b7 "
 
@@ -404,6 +453,8 @@ def _footer_text(lines: List[Any]) -> List[str]:
     for line in lines:
         if isinstance(line, list):
             rendered.append(_FOOTER_SEPARATOR.join(link.label for link in line))
+        elif isinstance(line, _FooterSentence):
+            rendered.append(line.plain())
         else:
             rendered.append(line)
     return rendered
@@ -411,6 +462,8 @@ def _footer_text(lines: List[Any]) -> List[str]:
 
 def _footer_line_html(line: Any) -> str:
     """One footer line as HTML. A list of ``_FooterLink`` becomes anchors."""
+    if isinstance(line, _FooterSentence):
+        return line.html()
     if not isinstance(line, list):
         return _esc(line)
     return _FOOTER_SEPARATOR.join(
@@ -986,6 +1039,83 @@ def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:
         ):
             queued += 1
     return queued
+
+
+# --- lifecycle tips (WP12) -------------------------------------------------
+#
+# lifecycle_mail.py decides who gets which tip and when; this is the wording.
+# Each tip says why the host receives it and carries an unsubscribe link that
+# needs no sign-in. Only these kinds honour the opt-out (mail.LIFECYCLE_KINDS).
+
+LIFECYCLE_ACTIONS = {
+    "lifecycle_no_property": "/apartments/new",
+    "lifecycle_no_calendar": "/apartments",
+    "lifecycle_no_guest": "/guest-links",
+}
+
+
+def build_lifecycle(kind: str, *, unsubscribe_url: str, lang: Optional[str] = None) -> Dict[str, str]:
+    if kind not in LIFECYCLE_ACTIONS:
+        raise ValueError(f"unknown lifecycle kind {kind}")
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    key = f"mail.lifecycle.{kind}"
+    subject = _text(lang, f"{key}.subject")
+    heading = _text(lang, f"{key}.heading")
+    intro = _text(lang, f"{key}.intro")
+    next_step = _text(lang, f"{key}.next")
+    action_label = _text(lang, f"{key}.action")
+    action_url = _public(LIFECYCLE_ACTIONS[kind])
+    signoff = _text(lang, "mail.lifecycle.signoff", support=config.OPERATOR_EMAIL)
+    # The sentence is the wording of legal position 2. The two links stay as
+    # markers through translate() and become anchors in the HTML part.
+    footer_sentence = _FooterSentence(
+        _text(
+            lang,
+            "mail.lifecycle.footer",
+            name=config.OPERATOR_NAME,
+            ico=config.OPERATOR_ICO,
+            address=config.OPERATOR_ADDRESS,
+            unsubscribe="%(unsubscribe)s",
+            privacy="%(privacy)s",
+        ),
+        {
+            "unsubscribe": (_text(lang, "mail.lifecycle.unsubscribe_label"), unsubscribe_url),
+            "privacy": ("", _public(f"/privacy?lang={lang}")),
+        },
+    )
+    footer_lines: List[Any] = ["UbyHost", footer_sentence]
+    text = "\n".join(
+        [
+            intro,
+            "",
+            next_step,
+            "",
+            f"{action_label}: {action_url}",
+            "",
+            signoff,
+            "",
+            "--",
+            *_footer_text(footer_lines),
+        ]
+    )
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_paragraph(next_step),
+        _block_button(action_url, action_label),
+        _block_paragraph(signoff, muted=True),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=heading,
+            preheader=intro,
+            blocks=blocks,
+            footer_lines=footer_lines,
+        ),
+    }
 
 
 # --- guest mail -------------------------------------------------------------

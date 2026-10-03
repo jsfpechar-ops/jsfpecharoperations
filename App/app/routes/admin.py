@@ -2737,8 +2737,23 @@ def settings_view(request: Request):
                 (access.owner_id(request),),
             )["n"],
             "backup_status": _backup_status(request),
+            "onboarding_emails": _onboarding_emails(request),
         },
     )
+
+
+def _onboarding_emails(request: Request):
+    """The "Setup tips by e-mail" toggle: True or False, None when hidden.
+
+    Only a host sees it, and only on their own account, not in a preview.
+    """
+    account = auth.current_user(request)
+    workspace = auth.workspace_user(request)
+    if not account or account["role"] != "host":
+        return None
+    if workspace and workspace["id"] != account["id"]:
+        return None
+    return not account["onboarding_emails_opt_out"]
 
 
 def _backup_status(request: Request):

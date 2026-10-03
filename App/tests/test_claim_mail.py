@@ -1802,6 +1802,10 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "cancelled_with_guests",
         "deadline_at_risk",
         "deadline_digest",
+        # WP12: the three lifecycle tips (lifecycle_mail.py, mail_notify.build_lifecycle).
+        "lifecycle_no_property",
+        "lifecycle_no_calendar",
+        "lifecycle_no_guest",
     }
 
 

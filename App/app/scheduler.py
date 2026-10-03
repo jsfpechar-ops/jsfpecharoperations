@@ -17,6 +17,7 @@ from . import (
     filing_watchdog,
     host_i18n,
     icalsync,
+    lifecycle_mail,
     mail,
     passport_photos,
     reporting,
@@ -214,6 +215,8 @@ def _job_mail() -> None:
         ("expire_holds", claim.expire_holds),
         ("drain", mail.drain),
         ("reminders", claim.sweep_reminders),
+        # Once a day and only with UBYHOST_LIFECYCLE_MAIL=1 (WP12).
+        ("lifecycle", lifecycle_mail.run_daily),
         ("purge", mail.purge_old),
     ):
         try:

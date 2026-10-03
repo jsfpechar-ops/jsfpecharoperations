@@ -1,0 +1,20 @@
+{% extends "auth_base.html" %}
+{% block title %}{{ t('unsubscribe.title') }}{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">{{ t('unsubscribe.title') }}</h1>
+  {% if message %}
+    <p class="auth-lede" role="alert">{{ t(message) }}</p>
+  {% elif done %}
+    <p class="auth-lede" role="status">{{ t('unsubscribe.done') }}</p>
+    <p class="small muted">{{ t('unsubscribe.service_mail') }}</p>
+  {% else %}
+    <p class="auth-lede">{{ t('unsubscribe.lede') }}</p>
+    <p class="small muted">{{ t('unsubscribe.service_mail') }}</p>
+    <form method="post" action="/mail/unsubscribe/{{ token }}" class="auth-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="auth-submit" type="submit">{{ t('unsubscribe.confirm') }}</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

@@ -47,6 +47,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
 | `UBYHOST_GUEST_LANGS` | `en,cs` | Guest form languages, comma-separated, picked from the browser language. English and Czech are always on. Add `de`, `es`, `fr` only after a native speaker has read that catalog in `App/app/i18n.py` (WP33). |
 | `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
+| `UBYHOST_LIFECYCLE_MAIL` | `0` | `1` lets the mail job send the three setup tips to hosts once a day (no property, no calendar, no completed guest). Nothing is sent while `UBYHOST_OPERATOR_NAME`, `_ICO` or `_ADDRESS` is empty, because every tip names the sender. Service mail is not affected (WP12, legal position 2). |
 | `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
 | `UBYHOST_AUDIT_RETENTION_DAYS` | `1095` | Audit rows older than this go; `legal_accepted` evidence has its own rule (BE-4, G-D7). |
 | `UBYHOST_ALERT_RETENTION_DAYS` | `365` | Resolved alerts older than this go (BE-4, G-D7). |

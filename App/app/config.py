@@ -156,6 +156,10 @@ ACCESS_LOG = os.environ.get("UBYHOST_ACCESS_LOG", "1") not in ("0", "false", "no
 RETENTION_AUTOPURGE = os.environ.get("UBYHOST_RETENTION_AUTOPURGE", "0") in (
     "1", "true", "yes",
 )
+# WP12: the three lifecycle tips to hosts (no property, no calendar, no guest
+# yet). Off until counsel confirms the legal basis and the opt-out wording
+# under Czech Act 480/2004; service mail is not affected either way.
+LIFECYCLE_MAIL = os.environ.get("UBYHOST_LIFECYCLE_MAIL", "0").lower() in ("1", "true", "yes")
 # How far ahead the "records reach the end of their retention period" notice looks.
 RETENTION_NOTICE_DAYS = int(os.environ.get("UBYHOST_RETENTION_NOTICE_DAYS", "30"))
 

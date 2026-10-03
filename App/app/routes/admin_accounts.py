@@ -22,6 +22,7 @@ from .. import (
     db,
     host_i18n,
     incidents,
+    lifecycle_mail,
     mail_notify,
     rate_limit,
     security,
@@ -193,6 +194,30 @@ def logout(request: Request):
     response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
     return response
+
+
+@router.post("/account/onboarding-emails")
+async def onboarding_emails_submit(request: Request):
+    """The Settings toggle "Setup tips by e-mail" (WP12, legal position 2).
+
+    Only the account holder changes it: an admin previewing a workspace does
+    not choose for the host.
+    """
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    workspace = auth.workspace_user(request)
+    if account["role"] != "host" or (workspace and workspace["id"] != account["id"]):
+        return _back("/settings#settings-account")
+    form = await request.form()
+    wanted = str(form.get("enabled", "")) == "1"
+    if wanted:
+        lifecycle_mail.resubscribe(int(account["id"]), actor=account["username"])
+        key = "flash.accounts.onboarding_emails_on"
+    else:
+        lifecycle_mail.set_opt_out(int(account["id"]), True, actor=account["username"])
+        key = "flash.accounts.onboarding_emails_off"
+    return _back("/settings#settings-account", msg=_flash(request, key))
 
 
 def _pending_doc_rows(docs) -> list:
