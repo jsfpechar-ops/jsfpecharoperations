@@ -72,10 +72,3 @@ def reverse(adjustment_id: int, actor_id: int) -> None:
         {"reversed_at": db.utcnow(), "reversed_by": actor_id},
     )
 
-
-def attach_open(apartment_id: int, period_key: str, filing_id: int) -> None:
-    db.execute(
-        "UPDATE stay_fee_adjustment SET filing_id = ? "
-        "WHERE apartment_id = ? AND period_key = ? AND reversed_at IS NULL AND filing_id IS NULL",
-        (filing_id, apartment_id, period_key),
-    )
