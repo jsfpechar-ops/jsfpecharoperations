@@ -94,12 +94,17 @@ def _counted_get(client, path, monkeypatch):
     return response, queries
 
 
+# WP33 merges overdue unfinished stays into the default Stays list via
+# reporting.dashboard_rows, which adds a few reads on /reservations only.
+_LIST_QUERY_BUDGET = {"/": 20, "/reservations": 25}
+
+
 @pytest.mark.parametrize("path", ["/", "/reservations"])
 def test_dashboard_and_stays_list_stay_under_twenty_queries(seeded, monkeypatch, path):
     seeded.get(path)  # first view may write one-off state (onboarding, alerts)
     response, queries = _counted_get(seeded, path, monkeypatch)
     assert response.status_code == 200
-    assert len(queries) < 20, "\n".join(queries)
+    assert len(queries) < _LIST_QUERY_BUDGET[path], "\n".join(queries)
     per_stay_guest_reads = [
         sql for sql in queries if re.search(r"FROM guest WHERE reservation_id = \d", sql)
     ]
