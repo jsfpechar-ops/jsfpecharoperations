@@ -52,6 +52,11 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
+# recover_stale_submissions writes this onto crash-stuck ``running`` batches.
+# _retry_outcome_unknown_batches retries only those rows; a live
+# UbyportOutcomeUnknownError (timeout/5xx after send) keeps a different
+# error_text and waits for a person (OD-1).
+STALE_SUBMISSION_REASON = "The send stopped before UbyPort answered."
 
 # Scheduled mode waits for the host's review window, but never past this
 # many hours before the statutory deadline (owner decision OD-2).
@@ -1473,7 +1478,7 @@ def recover_stale_submissions(apartment_id: int) -> int:
     send path.
     """
     live_after = time.time() - SUBMISSION_CLAIM_TTL_SECONDS
-    reason = "The send stopped before UbyPort answered."
+    reason = STALE_SUBMISSION_REASON
     candidates: List[Tuple[int, List[int]]] = []
     with db.immediate() as cur:
         cur.execute(
@@ -1526,7 +1531,11 @@ def recover_stale_submissions(apartment_id: int) -> int:
 
 
 def _retry_outcome_unknown_batches(apartment_id: int) -> int:
-    """One automatic resend per interrupted batch, only from the scheduler."""
+    """One automatic resend per crash-interrupted batch, only from the scheduler.
+
+    Live unknown outcomes (the register may already hold them) are not retried
+    here. Those wait for a person; see UbyportOutcomeUnknownError / OD-1.
+    """
     if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
         return 0
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
@@ -1538,8 +1547,8 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
         return 0
     pending = db.query(
         "SELECT id, guest_ids FROM submission WHERE apartment_id = ? "
-        "AND state = 'outcome_unknown' AND retried_at IS NULL",
-        (apartment_id,),
+        "AND state = 'outcome_unknown' AND retried_at IS NULL AND error_text = ?",
+        (apartment_id, STALE_SUBMISSION_REASON),
     )
     retried = 0
     for row in pending:

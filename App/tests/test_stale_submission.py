@@ -214,7 +214,7 @@ def _sweep_apartment(monkeypatch):
             "mode": "auto",
             "state": "outcome_unknown",
             "guest_ids": json.dumps([guest_id]),
-            "error_text": "stopped",
+            "error_text": reporting.STALE_SUBMISSION_REASON,
         },
     )
     db.execute(
@@ -234,6 +234,29 @@ def _sweep_apartment(monkeypatch):
     monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: FakeClient())
     monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
     return apartment_id, submission_id, guest_id, owner_id
+
+
+def test_sweep_does_not_retry_a_live_unknown_outcome(monkeypatch):
+    """A timeout after send is OD-1: the host checks UbyPort, the sweep does not resend."""
+    db.init_db()
+    apartment_id, submission_id, guest_id, owner_id = _sweep_apartment(monkeypatch)
+    db.update("submission", submission_id, {"error_text": "read timed out"})
+    batches = []
+    monkeypatch.setattr(
+        reporting,
+        "submit_batch",
+        lambda *a, **k: batches.append(1) or {"submitted": 0, "state": "noop"},
+    )
+
+    reporting.sweep(owner_user_id=owner_id)
+
+    assert batches == []
+    assert db.query_one("SELECT retried_at FROM submission WHERE id = ?", (submission_id,))["retried_at"] is None
+    assert db.query_one("SELECT submission_id FROM guest WHERE id = ?", (guest_id,))["submission_id"] == submission_id
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM submission WHERE apartment_id = ?",
+        (apartment_id,),
+    )["n"] == 1
 
 
 def test_sweep_retries_an_outcome_unknown_batch_once(monkeypatch):
