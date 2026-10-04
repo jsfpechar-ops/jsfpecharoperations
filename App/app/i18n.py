@@ -399,6 +399,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "skip_to_form": "Skip to the form",
         "loading": "Loading…",
         "privacy_link": "How your data is handled",
+        # WP27: privacy first, shown in the guest footer.
+        "privacy_first_line": (
+            "UbyHost collects only what Czech law and your registration need, and does "
+            "not use tracking cookies."
+        ),
         "privacy_title": "Privacy notice",
         "privacy_intro": (
             "What happens to the details you enter, as required by Articles 13 and 14 of the "
@@ -1008,6 +1013,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "skip_to_form": "Přejít na formulář",
         "loading": "Načítá se…",
         "privacy_link": "Jak nakládáme s vašimi údaji",
+        "privacy_first_line": (
+            "UbyHost shromažďuje jen to, co vyžaduje český zákon a vaše registrace, "
+            "a nepoužívá sledovací cookies."
+        ),
         "privacy_title": "Informace o zpracování osobních údajů",
         "privacy_intro": (
             "Co se děje s údaji, které vyplníte — podle článků 13 a 14 GDPR."

@@ -6,6 +6,36 @@ Before changing UbyHost’s user interface, read **[docs/DESIGN.md](docs/DESIGN.
 `prefers-color-scheme` dark styling unless the product owner explicitly requests
 it in the current task. UbyHost is light-mode only by policy.
 
+## Privacy first — a product principle
+
+UbyHost is a privacy-first app. The owner's words: "We do not store anything
+extra, only what is needed." Full rules in
+[docs/DESIGN.md](docs/DESIGN.md#privacy-first). In short:
+
+- **Store only what the law or the feature needs.** Guest-book fields
+  (§ 102 zákon 326/1999 Sb.) and stay-fee fields (§ 3g zákon 565/1990 Sb.) are
+  required by law; anything else needs a feature that cannot work without it.
+- **No tracking cookies.** The app sets only the strictly necessary cookies in
+  `App/app/cookie_inventory.py` (`STRICTLY_NECESSARY_COOKIES`).
+  `tests/test_privacy_first.py` crawls host, guest and public pages and fails on
+  any other cookie name. Never write "no cookies" in copy: say "no tracking
+  cookies".
+- **No third-party scripts in the app or on guest pages.** The one exception is
+  the Cloudflare Turnstile bot check on sign-in and the guest PIN/claim pages,
+  when `TURNSTILE_*` is configured. No analytics, ads or fonts from a CDN.
+- **Analytics only cookieless, only on public pages** (Umami, `analytics.py`).
+- **Ads measurement only with explicit consent and server-side** (unticked
+  box, click id only, no pixel, no cookie).
+- **Every new personal-data field needs a purpose and a retention line in
+  `App/app/retention.py`** (or the module that purges it, referenced from
+  there), in the same PR.
+- **Every new outbound request needs a reason in the PR description**: what is
+  sent, to whom, and why.
+- **Brand claims must be true for the code.** If you change behaviour behind a
+  claim on the landing, pricing, product or privacy page (`privacy_first.*` in
+  `landing_i18n.py`, `privacy_first_line` in `i18n.py`), fix the copy in the
+  same commit.
+
 ## Secrets, keys, and personal data — non-negotiable
 
 This repository is **public**. Everything committed to any branch is

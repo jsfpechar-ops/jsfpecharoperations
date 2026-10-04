@@ -128,6 +128,20 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
     },
     {
+        # WP27: the house book shows its legal intro once per browser; this
+        # key remembers that it was dismissed. It holds "1" and nothing else.
+        "name": "ubyhost_housebook_legal_v1",
+        "set_by": "templates/housebook.html",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "host",
+        "purpose": {
+            "en": "Remembers that you closed the house book introduction",
+            "cs": "Pamatuje si, že jste zavřeli úvod k domovní knize",
+        },
+        "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
+    },
+    {
         # WP09: written only when a visitor clicks the opt-out on /privacy
         # (static/umami-optout.js). The Umami tracker reads it and then counts
         # nothing in this browser; the opt-back-in link removes it.
@@ -208,3 +222,16 @@ COOKIELESS_SERVICES: Tuple[Dict[str, object], ...] = (
 
 def names() -> Tuple[str, ...]:
     return tuple(str(row["name"]) for row in COOKIE_INVENTORY)
+
+
+# WP27 (privacy first): the only cookies the app itself ever sets. Every one is
+# strictly necessary: sign-in, CSRF protection, the guest PIN and claim, the
+# guest's own submitted forms, and the language the visitor chose. There is no
+# analytics, advertising or other tracking cookie. ``tests/test_privacy_first.py``
+# crawls host, guest and public pages and fails if the set of Set-Cookie names
+# differs from this one. The Cloudflare rows are set by the edge, not the app.
+STRICTLY_NECESSARY_COOKIES = frozenset(
+    str(row["name"])
+    for row in COOKIE_INVENTORY
+    if row["kind"] == "cookie" and row["party"] == "first"
+)
