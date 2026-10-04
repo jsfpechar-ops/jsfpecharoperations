@@ -107,8 +107,8 @@ misaligned date of birth. Before you call a guest change done:
 .venv/bin/python -m pytest tests/test_guest_browser_e2e.py -q -rs   # must say 0 skipped
 ```
 
-The second command drives the real pages in Chromium (group of three, EN and
-CS, 320/375/1280px) and measures every screen. `.cursor/install.sh` installs
+The second command drives the real pages in Chromium (group of three, EN at
+320/375/1280px, DE/ES/FR at 320/360/390px, and CS) and measures every screen. `.cursor/install.sh` installs
 Playwright and Chromium; elsewhere run
 `pip install playwright==1.63.0 && python -m playwright install chromium`.
 Also bump the `?v=` cache key in `guest/base.html` for each CSS/JS file you

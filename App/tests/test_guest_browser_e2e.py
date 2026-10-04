@@ -37,7 +37,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import claim, db, mail  # noqa: E402
+from app import claim, db, i18n, mail  # noqa: E402
 
 
 # Layout rules every guest screen must meet. Each returns a sentence per
@@ -221,9 +221,10 @@ def _claim_link(base: str, reservation_id: int) -> str:
 
 
 class Guest:
-    def __init__(self, page, width):
+    def __init__(self, page, width, lang="en"):
         self.page = page
         self.width = width
+        self.lang = lang
         self.problems = []
 
     def check_layout(self, where: str):
@@ -301,18 +302,30 @@ class Guest:
         assert "/save" not in page.url, page.inner_text(".g-err") if page.locator(".g-err").count() else page.url
 
 
-@pytest.mark.parametrize("width", [320, 375, 1280])
-def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, width):
-    token = f"browser-e2e-{width}"
+# WP26: German, Spanish and French run the whole flow too, at the narrow
+# phone widths where long words break a layout first (German is the longest).
+# They arrive with no ?lang= at all: the browser's own locale is what sends
+# Accept-Language, so this also proves the language is picked automatically.
+_LOCALES = {"en": "en-GB", "de": "de-AT", "es": "es-MX", "fr": "fr-CA"}
+_RUNS = [("en", width) for width in (320, 375, 1280)] + [
+    (lang, width) for lang in ("de", "es", "fr") for width in (320, 360, 390)
+]
+
+
+@pytest.mark.parametrize(("lang", "width"), _RUNS)
+def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, lang, width):
+    token = f"browser-e2e-{lang}-{width}"
     db.execute("DELETE FROM rate_limit_event")
     stay = _seed(token)
-    context = browser.new_context(viewport={"width": width, "height": 812}, locale="en-GB")
+    context = browser.new_context(viewport={"width": width, "height": 812}, locale=_LOCALES[lang])
     page = context.new_page()
     script_errors = []
     page.on("pageerror", lambda error: script_errors.append(str(error)))
-    guest = Guest(page, width)
+    guest = Guest(page, width, lang)
     try:
-        page.goto(f"{live_server}/l/{token}?lang=en")
+        page.goto(f"{live_server}/l/{token}" + ("?lang=en" if lang == "en" else ""))
+        assert page.get_attribute("html", "lang") == lang
+        guest.check_layout("pick")
         page.locator(f"a[href*='/l/{token}/{stay}']").first.click()
         page.wait_for_load_state()
         guest.check_layout("claim")
@@ -331,7 +344,7 @@ def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, 
 
         for number, person in enumerate(PEOPLE, start=1):
             if number > 1:
-                link = page.get_by_role("link", name="Add a person")
+                link = page.get_by_role("link", name=i18n.translator(lang)("add_person"))
                 assert link.count() == 1
                 guest.check_layout(f"saved, before guest {number}")
                 link.click()
@@ -341,8 +354,12 @@ def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, 
         stored = db.query("SELECT * FROM guest WHERE reservation_id = ?", (stay,))
         assert sorted(row["first_name"].upper() for row in stored) == ["ANNA", "JONAS", "LENA"]
         assert all(row["signature_png"].startswith("data:image/png;base64,") for row in stored)
-        assert "everyone is registered" in page.inner_text("body")
+        assert i18n.translator(lang)("all_done_title") in page.inner_text("body")
         guest.check_layout("done")
+        # The privacy notice is the longest text a guest gets; it must fit too.
+        page.goto(f"{live_server}/l/{token}/privacy")
+        assert page.get_attribute("html", "lang") == lang
+        guest.check_layout("privacy")
         assert not script_errors, script_errors
         assert not guest.problems, "\n".join(guest.problems)
     finally:

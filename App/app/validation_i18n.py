@@ -171,6 +171,130 @@ GUEST_CS_MESSAGES: Dict[str, str] = {
     ),
 }
 
+# WP26: the guest form in German, Spanish and French. Keyed by the English
+# sentence ``validation.py`` writes, like the tables above, and already worded
+# the guest's way (the field named as its label names it). Only the guest
+# sentences are here: the property banner is host copy and stays EN/CS.
+# ``tests/test_guest_languages.py`` checks every guest sentence of the Czech
+# table has an entry in each of these, so a changed limit cannot leave one
+# language behind.
+GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
+    "de": {
+        "Date of birth is required.": "Das Geburtsdatum ist erforderlich.",
+        "Enter the full date as DD.MM.YYYY.": "Geburtsdatum: Geben Sie das vollständige Datum als TT.MM.JJJJ ein.",
+        "Year must be 1900 or later.": "Geburtsdatum: Das Jahr muss 1900 oder später sein.",
+        "Month must be between 01 and 12.": "Geburtsdatum: Der Monat muss zwischen 01 und 12 liegen.",
+        "Day must be between 01 and 31.": "Geburtsdatum: Der Tag muss zwischen 01 und 31 liegen.",
+        "That date does not exist - please check day and month.": "Geburtsdatum: Dieses Datum existiert nicht — prüfen Sie Tag und Monat.",
+        "Date of birth cannot be after your arrival date.": "Das Geburtsdatum darf nicht nach Ihrem Anreisedatum liegen.",
+        "Date of birth cannot be in the future.": "Das Geburtsdatum darf nicht in der Zukunft liegen.",
+        "Surname is required.": "Der Nachname ist erforderlich.",
+        "Given name looks missing - please check the passport.": "Der Vorname scheint zu fehlen - bitte prüfen Sie den Reisepass.",
+        "Nationality is required.": "Wählen Sie Ihre Staatsangehörigkeit.",
+        "Travel document number is required.": "Die Nummer des Reisedokuments ist erforderlich.",
+        "Street and number are required.": "Straße und Hausnummer sind erforderlich.",
+        "City is required.": "Der Ort ist erforderlich.",
+        "Country is required.": "Wählen Sie das Land Ihrer Wohnanschrift.",
+        "Unknown country code.": "Unbekannter Ländercode.",
+        "Unknown purpose-of-stay code.": "Unbekannter Code für den Aufenthaltszweck.",
+        "Purpose of stay is required.": "Der Aufenthaltszweck ist erforderlich.",
+        "Remove the | character and any line breaks.": "Entfernen Sie das Zeichen | und alle Zeilenumbrüche.",
+        "Departure date must be later than the arrival date.": "Das Abreisedatum muss nach dem Anreisedatum liegen.",
+        "These dates do not match your booking. Reload this page, or ask your host.": "Diese Daten stimmen nicht mit Ihrer Buchung überein. Laden Sie die Seite neu oder fragen Sie Ihren Gastgeber.",
+        "The stay dates on this page are not readable. Reload the page and try again.": "Die Aufenthaltsdaten auf dieser Seite sind nicht lesbar. Laden Sie die Seite neu und versuchen Sie es erneut.",
+        "That signature could not be saved. Sign again on the signature pad.": "Die Unterschrift konnte nicht gespeichert werden. Unterschreiben Sie erneut im Unterschriftsfeld.",
+        "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.": "Verwenden Sie lateinische Buchstaben (A-Z), genau wie in den beiden maschinenlesbaren Zeilen unten in Ihrem Reisepass.",
+        "Surname must be at most 50 characters.": "Der Nachname darf höchstens 50 Zeichen lang sein.",
+        "Given name must be at most 24 characters.": "Der Vorname darf höchstens 24 Zeichen lang sein.",
+        "Document number must be at least 6 characters.": "Die Dokumentnummer muss mindestens 6 Zeichen lang sein.",
+        "Document number must be at most 30 characters.": "Die Dokumentnummer darf höchstens 30 Zeichen lang sein.",
+        "Visa number must be at most 15 characters.": "Die Visumnummer darf höchstens 15 Zeichen lang sein.",
+        "Street must be at most 42 characters.": "Die Straße darf höchstens 42 Zeichen lang sein.",
+        "City must be at most 42 characters.": "Der Ort darf höchstens 42 Zeichen lang sein.",
+        "Street cannot consist of digits only.": "Die Straße darf nicht nur aus Ziffern bestehen.",
+        "City cannot consist of digits only.": "Der Ort darf nicht nur aus Ziffern bestehen.",
+        "Home address is too long.": "Die Wohnanschrift ist zu lang.",
+        "Note must be at most 255 characters.": "Die Anmerkung darf höchstens 255 Zeichen lang sein.",
+        "For a child recorded in a parent's passport the note must contain the parent's document number.": "Bei einem Kind, das im Reisepass eines Elternteils eingetragen ist, muss die Anmerkung die Dokumentnummer des Elternteils enthalten.",
+    },
+    "es": {
+        "Date of birth is required.": "La fecha de nacimiento es obligatoria.",
+        "Enter the full date as DD.MM.YYYY.": "Fecha de nacimiento: introduzca la fecha completa como DD.MM.AAAA.",
+        "Year must be 1900 or later.": "Fecha de nacimiento: el año debe ser 1900 o posterior.",
+        "Month must be between 01 and 12.": "Fecha de nacimiento: el mes debe estar entre 01 y 12.",
+        "Day must be between 01 and 31.": "Fecha de nacimiento: el día debe estar entre 01 y 31.",
+        "That date does not exist - please check day and month.": "Fecha de nacimiento: esa fecha no existe — revise el día y el mes.",
+        "Date of birth cannot be after your arrival date.": "La fecha de nacimiento no puede ser posterior a su fecha de llegada.",
+        "Date of birth cannot be in the future.": "La fecha de nacimiento no puede ser futura.",
+        "Surname is required.": "Los apellidos son obligatorios.",
+        "Given name looks missing - please check the passport.": "Parece que falta el nombre - revise el pasaporte.",
+        "Nationality is required.": "Elija su nacionalidad.",
+        "Travel document number is required.": "El número del documento de viaje es obligatorio.",
+        "Street and number are required.": "La calle y el número son obligatorios.",
+        "City is required.": "La ciudad es obligatoria.",
+        "Country is required.": "Elija el país de su domicilio.",
+        "Unknown country code.": "Código de país desconocido.",
+        "Unknown purpose-of-stay code.": "Código de motivo de la estancia desconocido.",
+        "Purpose of stay is required.": "El motivo de la estancia es obligatorio.",
+        "Remove the | character and any line breaks.": "Elimine el carácter | y cualquier salto de línea.",
+        "Departure date must be later than the arrival date.": "La fecha de salida debe ser posterior a la de llegada.",
+        "These dates do not match your booking. Reload this page, or ask your host.": "Estas fechas no coinciden con su reserva. Recargue la página o consulte a su anfitrión.",
+        "The stay dates on this page are not readable. Reload the page and try again.": "No se pueden leer las fechas de la estancia en esta página. Recárguela e inténtelo de nuevo.",
+        "That signature could not be saved. Sign again on the signature pad.": "No se ha podido guardar la firma. Vuelva a firmar en el recuadro de firma.",
+        "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.": "Escríbalo con letras latinas (A-Z), exactamente como aparece en las dos líneas de lectura mecánica de la parte inferior de su pasaporte.",
+        "Surname must be at most 50 characters.": "Los apellidos pueden tener como máximo 50 caracteres.",
+        "Given name must be at most 24 characters.": "El nombre puede tener como máximo 24 caracteres.",
+        "Document number must be at least 6 characters.": "El número de documento debe tener al menos 6 caracteres.",
+        "Document number must be at most 30 characters.": "El número de documento puede tener como máximo 30 caracteres.",
+        "Visa number must be at most 15 characters.": "El número de visado puede tener como máximo 15 caracteres.",
+        "Street must be at most 42 characters.": "La calle puede tener como máximo 42 caracteres.",
+        "City must be at most 42 characters.": "La ciudad puede tener como máximo 42 caracteres.",
+        "Street cannot consist of digits only.": "La calle no puede contener solo números.",
+        "City cannot consist of digits only.": "La ciudad no puede contener solo números.",
+        "Home address is too long.": "El domicilio es demasiado largo.",
+        "Note must be at most 255 characters.": "La nota puede tener como máximo 255 caracteres.",
+        "For a child recorded in a parent's passport the note must contain the parent's document number.": "Para un menor inscrito en el pasaporte de un progenitor, la nota debe contener el número de documento del progenitor.",
+    },
+    "fr": {
+        "Date of birth is required.": "La date de naissance est obligatoire.",
+        "Enter the full date as DD.MM.YYYY.": "Date de naissance : saisissez la date complète au format JJ.MM.AAAA.",
+        "Year must be 1900 or later.": "Date de naissance : l'année doit être 1900 ou postérieure.",
+        "Month must be between 01 and 12.": "Date de naissance : le mois doit être compris entre 01 et 12.",
+        "Day must be between 01 and 31.": "Date de naissance : le jour doit être compris entre 01 et 31.",
+        "That date does not exist - please check day and month.": "Date de naissance : cette date n'existe pas — vérifiez le jour et le mois.",
+        "Date of birth cannot be after your arrival date.": "La date de naissance ne peut pas être postérieure à votre date d'arrivée.",
+        "Date of birth cannot be in the future.": "La date de naissance ne peut pas être dans le futur.",
+        "Surname is required.": "Le nom est obligatoire.",
+        "Given name looks missing - please check the passport.": "Le prénom semble manquer - veuillez vérifier le passeport.",
+        "Nationality is required.": "Choisissez votre nationalité.",
+        "Travel document number is required.": "Le numéro du document de voyage est obligatoire.",
+        "Street and number are required.": "La rue et le numéro sont obligatoires.",
+        "City is required.": "La ville est obligatoire.",
+        "Country is required.": "Choisissez le pays de votre domicile.",
+        "Unknown country code.": "Code pays inconnu.",
+        "Unknown purpose-of-stay code.": "Code de motif du séjour inconnu.",
+        "Purpose of stay is required.": "Le motif du séjour est obligatoire.",
+        "Remove the | character and any line breaks.": "Supprimez le caractère | et tout saut de ligne.",
+        "Departure date must be later than the arrival date.": "La date de départ doit être postérieure à la date d'arrivée.",
+        "These dates do not match your booking. Reload this page, or ask your host.": "Ces dates ne correspondent pas à votre réservation. Rechargez la page ou demandez à votre hôte.",
+        "The stay dates on this page are not readable. Reload the page and try again.": "Les dates de séjour de cette page sont illisibles. Rechargez la page et réessayez.",
+        "That signature could not be saved. Sign again on the signature pad.": "La signature n'a pas pu être enregistrée. Signez à nouveau dans le cadre de signature.",
+        "Type this using Latin letters (A-Z), exactly as printed in the two machine-readable lines at the bottom of your passport.": "Saisissez-le en lettres latines (A-Z), exactement comme dans les deux lignes lisibles par machine en bas de votre passeport.",
+        "Surname must be at most 50 characters.": "Le nom ne doit pas dépasser 50 caractères.",
+        "Given name must be at most 24 characters.": "Le prénom ne doit pas dépasser 24 caractères.",
+        "Document number must be at least 6 characters.": "Le numéro de document doit comporter au moins 6 caractères.",
+        "Document number must be at most 30 characters.": "Le numéro de document ne doit pas dépasser 30 caractères.",
+        "Visa number must be at most 15 characters.": "Le numéro de visa ne doit pas dépasser 15 caractères.",
+        "Street must be at most 42 characters.": "La rue ne doit pas dépasser 42 caractères.",
+        "City must be at most 42 characters.": "La ville ne doit pas dépasser 42 caractères.",
+        "Street cannot consist of digits only.": "La rue ne peut pas comporter uniquement des chiffres.",
+        "City cannot consist of digits only.": "La ville ne peut pas comporter uniquement des chiffres.",
+        "Home address is too long.": "L'adresse de domicile est trop longue.",
+        "Note must be at most 255 characters.": "La remarque ne doit pas dépasser 255 caractères.",
+        "For a child recorded in a parent's passport the note must contain the parent's document number.": "Pour un enfant inscrit sur le passeport d'un parent, la remarque doit contenir le numéro de document du parent.",
+    },
+}
+
 # Sentences that embed a value the host typed, so they cannot be dictionary keys.
 CS_PATTERNS: Tuple[Tuple[re.Pattern, str], ...] = (
     (
@@ -207,6 +331,10 @@ def guest_localize(message: str, lang: str = "cs") -> str:
     """
     if not message:
         return message
+    if lang in GUEST_MESSAGES:
+        # No host table behind these: a sentence with no entry stays English,
+        # which is the guest catalog's own fallback.
+        return GUEST_MESSAGES[lang].get(message) or GUEST_EN_MESSAGES.get(message) or message
     table = GUEST_EN_MESSAGES if lang != "cs" else GUEST_CS_MESSAGES
     return table.get(message) or localize(message, lang)
 

@@ -253,10 +253,16 @@ def _entered_by_label(context, value) -> str:
 _PASS_MONTHS = {
     "en": ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
     "cs": ("led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"),
+    "de": ("Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"),
+    "es": ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"),
+    "fr": ("janv", "févr", "mars", "avr", "mai", "juin", "juil", "août", "sept", "oct", "nov", "déc"),
 }
 _PASS_WEEKDAYS = {
     "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
     "cs": ("po", "út", "st", "čt", "pá", "so", "ne"),
+    "de": ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"),
+    "es": ("lun", "mar", "mié", "jue", "vie", "sáb", "dom"),
+    "fr": ("lun", "mar", "mer", "jeu", "ven", "sam", "dim"),
 }
 
 
@@ -329,6 +335,8 @@ templates.env.globals["legal_effective"] = _template_legal_effective
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals["identity_visible"] = _template_identity_visible
 templates.env.globals["guest_identifier"] = _template_guest_identifier
+# WP26: the guest switcher names each language in its own words.
+templates.env.globals["guest_endonyms"] = i18n.ENDONYMS
 templates.env.globals["impersonation_minutes_left"] = _template_impersonation_minutes_left
 templates.env.globals.update(
     app_version=__version__,

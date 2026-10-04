@@ -197,14 +197,22 @@ def _harden(response, public_analytics: bool = False):
     return response
 
 
+def _is_guest_path(request: Request) -> bool:
+    """A guest link (``/l/...``): its error pages speak the guest's language."""
+    return request.url.path == "/l" or request.url.path.startswith("/l/")
+
+
 @app.exception_handler(StarletteHTTPException)
 async def http_error_handler(request: Request, exc: StarletteHTTPException):
     """A branded page for people; the JSON body stays for scripts and the API."""
     if exc.status_code not in (404, 405) or not _wants_html(request):
         return await http_exception_handler(request, exc)
-    response = templating.render(
-        request, "error.html", {"error_kind": "not_found"}, status_code=exc.status_code
-    )
+    if _is_guest_path(request):
+        response = guest.error_page(request, "not_found", exc.status_code)
+    else:
+        response = templating.render(
+            request, "error.html", {"error_kind": "not_found"}, status_code=exc.status_code
+        )
     if exc.headers:
         response.headers.update(exc.headers)  # keeps Allow on a 405
     return response
@@ -218,7 +226,10 @@ async def server_error_handler(request: Request, exc: Exception):
     response = None
     if _wants_html(request):
         try:
-            response = templating.render(request, "error.html", {"error_kind": "server"}, status_code=500)
+            if _is_guest_path(request):
+                response = guest.error_page(request, "server", 500)
+            else:
+                response = templating.render(request, "error.html", {"error_kind": "server"}, status_code=500)
         except Exception:
             log.exception("error page failed to render")
     if response is None:

@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -64,6 +64,38 @@ CS_PASSPORT_UPLOAD_MESSAGES = {
 }
 
 
+# WP26: the same refusals for the other guest languages, keyed the same way.
+PASSPORT_UPLOAD_MESSAGES: Dict[str, Dict[str, str]] = {
+    "cs": CS_PASSPORT_UPLOAD_MESSAGES,
+    "de": {
+        "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Laden Sie ein JPEG-, PNG- oder WebP-Foto Ihrer Reisepass-Datenseite oder ein PDF hoch (zum Beispiel ein Meldeformular mit bis zu 11 Gästen).",
+        "The uploaded file looks empty.": "Die hochgeladene Datei scheint leer zu sein.",
+        "The PDF is too large. Use a file under 15 MB.": "Das PDF ist zu groß. Verwenden Sie eine Datei unter 15 MB.",
+        "The file does not look like a valid PDF.": "Die Datei scheint kein gültiges PDF zu sein.",
+        "The photo is too large. Use a file under 5 MB.": "Das Foto ist zu groß. Verwenden Sie eine Datei unter 5 MB.",
+        "The file does not look like a valid image.": "Die Datei scheint kein gültiges Bild zu sein.",
+        "The photo has too many pixels. Take it again at the normal camera setting.": "Das Foto hat zu viele Pixel. Nehmen Sie es mit der normalen Kameraeinstellung erneut auf.",
+    },
+    "es": {
+        "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Suba una foto JPEG, PNG o WebP de la página de datos de su pasaporte, o un PDF (por ejemplo, un formulario de registro de hasta 11 huéspedes).",
+        "The uploaded file looks empty.": "El archivo subido parece estar vacío.",
+        "The PDF is too large. Use a file under 15 MB.": "El PDF es demasiado grande. Use un archivo de menos de 15 MB.",
+        "The file does not look like a valid PDF.": "El archivo no parece un PDF válido.",
+        "The photo is too large. Use a file under 5 MB.": "La foto es demasiado grande. Use un archivo de menos de 5 MB.",
+        "The file does not look like a valid image.": "El archivo no parece una imagen válida.",
+        "The photo has too many pixels. Take it again at the normal camera setting.": "La foto tiene demasiados píxeles. Vuelva a hacerla con la configuración normal de la cámara.",
+    },
+    "fr": {
+        "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Téléversez une photo JPEG, PNG ou WebP de la page d'identité de votre passeport, ou un PDF (par exemple un formulaire d'enregistrement de 11 voyageurs maximum).",
+        "The uploaded file looks empty.": "Le fichier téléversé semble vide.",
+        "The PDF is too large. Use a file under 15 MB.": "Le PDF est trop volumineux. Utilisez un fichier de moins de 15 Mo.",
+        "The file does not look like a valid PDF.": "Le fichier ne semble pas être un PDF valide.",
+        "The photo is too large. Use a file under 5 MB.": "La photo est trop volumineuse. Utilisez un fichier de moins de 5 Mo.",
+        "The file does not look like a valid image.": "Le fichier ne semble pas être une image valide.",
+        "The photo has too many pixels. Take it again at the normal camera setting.": "La photo comporte trop de pixels. Reprenez-la avec le réglage normal de l'appareil photo.",
+    },
+}
+
 def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-owned")
 
@@ -73,57 +105,52 @@ def _claim_serializer() -> URLSafeSerializer:
 
 
 def _accept_language(request: Request) -> str:
-    """What the guest's phone asks for: Czech or Slovak -> Czech, else English.
+    """What the guest's browser asks for, matched against the guest catalogs.
 
-    Read only when the guest has said nothing themselves. A browser always
-    sends this header, so a German guest's first screen is English instead of
-    Czech. The first tag wins, because browsers list their languages in order
-    of preference. A request that asks for nothing in particular -- no header
-    at all, or a bare ``*`` -- is not a foreign guest, so the public default
-    stands rather than being quietly turned into English.
+    Read only when the guest has said nothing themselves. Every browser sends
+    this header, ranked by q-value, so a German phone gets German, ``es-MX``
+    gets Spanish and a Slovak phone gets Czech. Only the header is read: no IP
+    lookup, no outside service, nothing stored. A header naming nothing we
+    speak, or no header at all, gets English, because the guest is by
+    definition a foreigner (WP26 owner decision).
     """
-    header = request.headers.get("accept-language") or ""
-    for part in header.split(","):
-        tag = part.split(";")[0].strip().lower().replace("_", "-")
-        if not tag or tag == "*":
-            continue
-        if tag[:2] in ("cs", "sk"):
-            return "cs"
-        return "en"
-    return host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    return i18n.accept_language_match(request.headers.get("accept-language")) or (
+        i18n.DEFAULT_LANGUAGE
+    )
 
 
 def _language(request: Request) -> str:
-    """The guest's language: what they asked for, else what their phone asks for.
+    """The guest's language: what they asked for, else what their browser asks for.
 
     A ``?lang=`` on a link, or the switcher's cookie, is the guest saying so,
-    and wins. When they name a language we do not speak the public default
-    stands. A guest who has said nothing at all gets the language of their own
-    phone, because the catalog is written for foreigners and a German guest
-    should not land on "Zadejte přístupový PIN".
+    and wins. A choice naming a language we do not speak is treated as no
+    choice, so the browser's header still decides rather than a Czech default.
     """
-    asked = request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
-    if asked:
-        return host_i18n.supported_language(asked) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
-    return _accept_language(request)
+    return _chosen_language(request) or _accept_language(request)
 
 
 def _chosen_language(request: Request) -> Optional[str]:
     """The language the guest actually asked for, or ``None`` if they did not.
 
-    ``_language`` falls back to Czech, because the link a host sends is Czech
-    and the guest has said nothing. That fallback is right for the page and
-    wrong for an e-mail: a foreign guest who never touched the switcher got a
-    Czech claim mail and a Czech reminder they could not read.
+    The link wins over the cookie, because a link with ``?lang=`` is the newer
+    choice: the switcher writes it and the cookie follows on the response.
     """
-    return host_i18n.supported_language(
-        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
+    return i18n.supported_language(request.query_params.get("lang")) or (
+        i18n.supported_language(request.cookies.get(LANG_COOKIE))
     )
 
 
 def _mail_language(request: Request) -> str:
-    """The language for a message sent to the guest, not rendered for them."""
-    return _chosen_language(request) or i18n.DEFAULT_LANGUAGE
+    """The language for a message sent to the guest, not rendered for them.
+
+    The same as the page's: the explicit choice, else the browser's header,
+    else English. It used to skip the header because the page then fell back
+    to Czech; since WP26 nothing falls back to Czech, so the claim mail goes
+    out in the language the guest was reading. It is stored on the claim row
+    (``reservation_claim.lang``, which already existed), and the reminder and
+    the completion receipt read it from there.
+    """
+    return _language(request)
 
 
 def _owned_ids(request: Request) -> List[int]:
@@ -326,10 +353,13 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
 # keep reading its own wording.
 _GUEST_ISSUE_FIELDS = {"note": "parent_doc_number"}
 _GUEST_ISSUE_MESSAGES = {
-    "note": (
-        "Enter the parent's passport or ID number.",
-        "Zadejte číslo pasu nebo průkazu rodiče.",
-    ),
+    "note": {
+        "en": "Enter the parent's passport or ID number.",
+        "cs": "Zadejte číslo pasu nebo průkazu rodiče.",
+        "de": "Geben Sie die Pass- oder Ausweisnummer des Elternteils ein.",
+        "es": "Introduzca el número de pasaporte o documento de identidad del padre o la madre.",
+        "fr": "Saisissez le numéro de passeport ou de carte d'identité du parent.",
+    },
 }
 
 
@@ -341,7 +371,7 @@ def _guest_issue(issue, lang: str):
     field = _GUEST_ISSUE_FIELDS.get(issue.field, issue.field)
     if override is None:
         return issue
-    message = override[0 if lang != "cs" else 1]
+    message = override.get(lang) or override["en"]
     return validation.Issue(field, message, issue.severity)
 
 
@@ -534,6 +564,7 @@ def _unavailable(
         "not_yours": ("not_yours_title", "not_yours_help"),
         "already_filed": ("already_filed_title", "already_filed_help"),
         "form_locked": ("form_locked_title", "form_locked_help"),
+        "server_error": ("server_error_title", "server_error_help"),
     }
     title_key, body_key = titles.get(reason, titles["bad_link"])
     apartment = _apartment_by_token(token) if token else None
@@ -573,6 +604,22 @@ def _unavailable(
         context,
         status_code=status_code,
     )
+
+
+def error_page(request: Request, kind: str, status_code: int):
+    """WP26: the app-wide 404 and 500 pages, for a request under ``/l/``.
+
+    Those used to render the host's error page, in the host's two languages, in
+    front of a guest. A guest gets the guest page in their own language
+    instead. A server error renders without the apartment: whatever failed may
+    be the database, so this page must not need it.
+    """
+    lang = _language(request)
+    if kind == "server":
+        return _unavailable(request, lang, "server_error", status_code)
+    parts = request.url.path.split("/")
+    token = parts[2] if len(parts) > 2 and parts[2] else None
+    return _unavailable(request, lang, "bad_link", status_code, token)
 
 
 def csrf_expired_page(request: Request, token: str = ""):
@@ -1598,8 +1645,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
                 )
             except ValueError as exc:
                 msg = str(exc)
-                if lang == "cs":
-                    msg = CS_PASSPORT_UPLOAD_MESSAGES.get(msg, msg)
+                msg = PASSPORT_UPLOAD_MESSAGES.get(lang, {}).get(msg, msg)
                 issues.append(validation.Issue("passport_photo", msg))
         elif not has_existing_photo:
             issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))

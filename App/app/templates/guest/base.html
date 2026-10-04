@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261003a">
-  <link rel="stylesheet" href="/static/guest.css?v=20261004w">
+  <link rel="stylesheet" href="/static/guest.css?v=20261004z">
 </head>
 <body>
 <a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
@@ -25,10 +25,18 @@
       </div>
     </div>
     {% if lang_urls %}
-    <div class="g-lang" role="group" aria-label="{{ t('language_label') }}">
-      <a href="{{ lang_urls.en }}" class="{{ 'on' if lang == 'en' }}" hreflang="en" lang="en">English</a>
-      <a href="{{ lang_urls.cs }}" class="{{ 'on' if lang == 'cs' }}" hreflang="cs" lang="cs">Čeština</a>
-    </div>
+    {# WP26: five guest languages no longer fit as pills beside the property
+       name on a 320px phone, so the switcher is a disclosure: the bar shows
+       the current code, the list names every language in its own words.
+       Same links, same ?lang= and the same guest cookie as before; no JS. #}
+    <details class="g-lang" data-lang-menu>
+      <summary aria-label="{{ t('language_label') }}: {{ guest_endonyms[lang] }}"><span aria-hidden="true">{{ lang | upper }}</span></summary>
+      <div class="g-lang-list" role="group" aria-label="{{ t('language_label') }}">
+        {% for code, url in lang_urls.items() %}
+        <a href="{{ url }}" class="{{ 'on' if lang == code }}"{% if lang == code %} aria-current="true"{% endif %} hreflang="{{ code }}" lang="{{ code }}">{{ guest_endonyms[code] }}</a>
+        {% endfor %}
+      </div>
+    </details>
     {% endif %}
   </div>
 
@@ -59,7 +67,7 @@
 <script src="/static/skeleton.js?v=20261003a"></script>
 {# WP07: signature.js (signature pad, wizard, date of birth, PIN return) runs
    only on the form and the PIN page; those set load_signature_js. #}
-{% if load_signature_js %}<script src="/static/signature.js?v=20260930a"></script>{% endif %}
+{% if load_signature_js %}<script src="/static/signature.js?v=20261004b"></script>{% endif %}
 <script src="/static/guest-enhancements.js?v=20261003a"></script>
 <script src="/static/csrf.js?v=20260915a"></script>
 </body>

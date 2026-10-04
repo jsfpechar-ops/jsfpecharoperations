@@ -200,7 +200,8 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 1. `python -m pytest tests -q` (the whole suite).
 2. `python -m pytest tests/test_guest_browser_e2e.py -q -rs` with Playwright and
    Chromium installed, and **0 skipped**. It registers a group of three in real
-   Chromium at 320, 375 and 1280px and in Czech, and measures every screen:
+   Chromium at 320, 375 and 1280px, in German, Spanish and French at 320, 360
+   and 390px (WP26), and in Czech, and measures every screen:
    no sideways scroll, no clipped text, equal box heights, side-by-side fields
    level, even field spacing, 44px tap targets, no visible screen-reader text.
    CI runs it in the `guest-browser` job.
