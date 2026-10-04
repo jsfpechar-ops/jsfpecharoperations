@@ -154,6 +154,14 @@ Do **deploy production** after each phase unless the step says “staging only�
 
 ### Phase 1 — Infrastructure (merged PRs 0001–0005)
 
+#### A. Litestream → S3 (WP05) — AWS console (optional for first deploy)
+
+To ship Doručenka and other fixes **before** S3 is ready, add to production `.env`:
+
+`UBYHOST_LITESTREAM_ENABLED=0`
+
+Preflight will warn instead of requiring `LITESTREAM_*` keys; nightly backup still runs. Turn Litestream on later (steps below), set the keys, remove or set `UBYHOST_LITESTREAM_ENABLED=1`, and redeploy.
+
 #### A. Litestream → S3 (WP05) — AWS console
 
 1. [AWS Console](https://console.aws.amazon.com) → top-right region → **Europe (Frankfurt) eu-central-1**.
