@@ -4,6 +4,8 @@ Single reference for everything the owner does by hand. Cursor applies code from
 
 **Do first (not tied to a patch):** Ask the Foreign Police / UbyPort support for access to the **UbyPort test environment** so Gate 2 is not blocked waiting on them.
 
+**Already true on production (ubyhost.com):** Guest and host mail via **SES** has been live since 2026-09-21. Keep `UBYHOST_MAIL_BACKEND=ses` and the existing SES variables in the server `.env`; do not revert to `disabled`. **healthchecks.io** dead-man pings are already configured if your checks are green—no need to send ping URLs to Cursor or commit them anywhere (they stay only in `.env` on the server).
+
 ---
 
 ## 1. Prerequisites before any deploy works
@@ -55,8 +57,8 @@ Before automated production deploy:
 |------|------|
 | **Litestream (WP05)** | S3 bucket in **eu-central-1**, IAM user scoped to prefix, keys in `.env`: `LITESTREAM_S3_BUCKET`, `LITESTREAM_ACCESS_KEY_ID`, `LITESTREAM_SECRET_ACCESS_KEY`, `LITESTREAM_S3_PATH=ubyhost/production` |
 | **Nightly backup** | `UBYHOST_BACKUP_AGE_RECIPIENT` = public **age1…** recipient (not the private key) |
-| **Backup dead-man (WP07)** | `UBYHOST_BACKUP_PING_URL` — healthchecks check (period 1 day, grace ~2 h) |
-| **SES (when mail goes live)** | `UBYHOST_MAIL_BACKEND=ses` plus `UBYHOST_MAIL_FROM`, `UBYHOST_SES_REGION`, `UBYHOST_AWS_ACCESS_KEY_ID`, `UBYHOST_AWS_SECRET_ACCESS_KEY`. Fresh stacks often start with `UBYHOST_MAIL_BACKEND=disabled` until credentials exist. |
+| **Backup dead-man (WP07)** | `UBYHOST_BACKUP_PING_URL` — healthchecks check (period 1 day, grace ~2 h). **Production:** leave as-is if the check is already green. |
+| **SES** | **Production:** `UBYHOST_MAIL_BACKEND=ses` (already live). `UBYHOST_MAIL_FROM`, `UBYHOST_SES_REGION`, `UBYHOST_AWS_ACCESS_KEY_ID`, `UBYHOST_AWS_SECRET_ACCESS_KEY` must stay set. **New staging** or a copy of `.env.example` may use `console` / `disabled` until that server has its own SES keys— that does not apply to current production. |
 
 ### UbyPort
 
@@ -91,7 +93,9 @@ Infrastructure first. After **0001–0005**, owner verifies **Gate 1**: `./scrip
 
 ### 0003 — WP07 Heartbeats, cache, compression
 
-Create healthchecks.io checks; put ping URLs in `.env` and redeploy:
+**Production:** if healthchecks are already green, only add any **new** keys this workplan introduces (for example `UBYHOST_HEARTBEAT_FILING_URL` in WP23) and redeploy. Cursor does **not** need your ping URLs—never paste them in chat or the repo.
+
+**New server or first-time setup:** create healthchecks.io checks; put ping URLs in `.env` and redeploy:
 
 | Check | `.env` key | Period | Grace |
 |-------|------------|--------|-------|
@@ -285,7 +289,7 @@ For Gate 2 later: switch staging to `UBYHOST_UBYPORT_ENV=test` (and drop mock pr
 ### 0032 — WP20 Self sign-up + Google Ads (HIGH RISK)
 
 - Only when running Google Ads: conversion action “Import > Conversions from clicks”, auto-tagging, customer data terms.
-- SES live before enabling sign-up.
+- Production SES is already live; enable sign-up only when lawyer + Google Ads setup are ready (`UBYHOST_SIGNUP_ENABLED=1`).
 - Staging: `UBYHOST_SIGNUP_ENABLED=1`, test `?gclid=TEST123`, consent box, verify, Settings → Privacy, CSV export.
 - Upload CSV to Google Ads immediately after download; verify `Ad Personalization=Denied` rows.
 
