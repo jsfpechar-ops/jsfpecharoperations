@@ -152,6 +152,37 @@ def _reservation_row(reservation_id: Any) -> Any:
     )
 
 
+def _preload_stays(alerts: List[Any]) -> Dict[str, Dict[Any, Any]]:
+    """The stays (and their guests) behind a list of computed alerts, in two queries.
+
+    Every page renders the open alerts, and each stay card used to read its
+    reservation and its guests on its own. A stay missing from the result is
+    read the old way by ``_present_computed``.
+    """
+    rows = [dict(alert) for alert in alerts]
+    ids = list(dict.fromkeys(
+        row["reservation_id"] for row in rows
+        if (row.get("kind") or "") in _COMPUTED_ALERT_KINDS and row.get("reservation_id")
+    ))
+    if not ids:
+        return {"reservations": {}, "guests": {}}
+    from . import reporting
+
+    reservations: List[Any] = []
+    for start in range(0, len(ids), reporting.IN_CHUNK):
+        chunk = ids[start:start + reporting.IN_CHUNK]
+        marks = ", ".join("?" for _ in chunk)
+        reservations.extend(db.query(
+            "SELECT r.*, a.internal_name FROM reservation r "
+            f"JOIN apartment a ON a.id = r.apartment_id WHERE r.id IN ({marks})",
+            chunk,
+        ))
+    return {
+        "reservations": {row["id"]: row for row in reservations},
+        "guests": reporting.preload_guests(reservations),
+    }
+
+
 def _title_key(kind: str, params: Dict[str, Any], lang: str) -> str:
     """The title key for a kind, allowing a ``variant`` to pick a wording.
 
@@ -193,8 +224,13 @@ def _present_stored(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]
     return row
 
 
-def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]:
-    """Rebuild the card of an alert whose text is derived from live data."""
+def _present_computed(
+    row: Dict[str, Any], kind: str, lang: str, stays: Optional[Dict[str, Dict[Any, Any]]] = None
+) -> Dict[str, Any]:
+    """Rebuild the card of an alert whose text is derived from live data.
+
+    ``stays`` is ``_preload_stays`` output when presenting a whole list.
+    """
     if kind == "job_failed":
         job_id = (row.get("dedupe_key") or "").split(":", 1)[-1]
         row["display_title"] = host_i18n.translate(
@@ -215,7 +251,13 @@ def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, An
         )
         row["display_detail"] = host_i18n.translate(lang, f"notification.reason.{kind}")
         return row
-    reservation = _reservation_row(row["reservation_id"]) if row.get("reservation_id") else None
+    reservation_id = row.get("reservation_id")
+    if not reservation_id:
+        reservation = None
+    elif stays and reservation_id in stays["reservations"]:
+        reservation = stays["reservations"][reservation_id]
+    else:
+        reservation = _reservation_row(reservation_id)
     if not reservation:
         row["display_title"] = row.get("message") or ""
         row["display_detail"] = row.get("detail") or ""
@@ -229,14 +271,16 @@ def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, An
         return row
     from . import reporting
 
-    progress = reporting.reservation_progress(reservation)
+    progress = reporting.reservation_progress(
+        reservation, stays["guests"].get(reservation["id"]) if stays else None
+    )
     if kind == "headcount_mismatch":
         filled, expected = _forms_count(progress)
         row["display_detail"] = host_i18n.translate(
             lang, "notification.reason.headcount_mismatch", filled=filled, expected=expected
         )
         return row
-    start = reporting.reservation_deadline_anchor(reservation)
+    start = reporting.reservation_deadline_anchor(reservation, progress.get("guests"))
     if start:
         row["display_detail"] = deadline_reason(lang, start, progress)
     else:
@@ -250,7 +294,9 @@ def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, An
     return row
 
 
-def present(alert: Any, lang: str) -> Dict[str, Any]:
+def present(
+    alert: Any, lang: str, stays: Optional[Dict[str, Dict[Any, Any]]] = None
+) -> Dict[str, Any]:
     """Compact title + reason for the notification card.
 
     Stay alerts are rebuilt from the reservation so hosts see short EN/CS copy
@@ -260,7 +306,7 @@ def present(alert: Any, lang: str) -> Dict[str, Any]:
     row = dict(alert)
     kind = row.get("kind") or ""
     if kind in _COMPUTED_ALERT_KINDS:
-        return _present_computed(row, kind, lang)
+        return _present_computed(row, kind, lang, stays)
     return _present_stored(row, kind, lang)
 
 
@@ -274,8 +320,9 @@ def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
     """
     cards: List[Dict[str, Any]] = []
     seen: Dict[Any, int] = {}
+    stays = _preload_stays(alerts)
     for alert in alerts:
-        card = present(alert, lang)
+        card = present(alert, lang, stays)
         reservation_id = card.get("reservation_id")
         if not reservation_id:
             cards.append(card)

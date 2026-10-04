@@ -34,7 +34,7 @@ import secrets
 import time
 import zipfile
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
@@ -49,6 +49,11 @@ SENT = "sent"
 ERROR = "error"
 BLOCKED = "blocked"  # rejected in a way that resending cannot fix
 NOT_REQUIRED = "not_required"  # Czech nationals: house book only
+
+# A guest the host filed by hand in the UbyPort web application (WP23) is
+# ``SENT`` like any filed guest, so every guard that keeps UbyHost from filing a
+# record twice (collect_sendable, claim_sendable, the sweep, the watchdog)
+# already holds. ``guest.manual_filed_at`` marks it as filed by hand.
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
@@ -82,6 +87,13 @@ HOST_SIGNATURE_REQUIRED_MESSAGE = (
 # and saving the guest form resets the count, so "fix the data and send again"
 # is never blocked by this.
 SUBMISSION_MAX_AUTO_ATTEMPTS = 3
+
+# submission.mode of the sweep's one automatic resend of an interrupted batch
+# (WP31, owner decision Q4). Set when the resend's row is inserted, so it holds
+# even if the resend itself is cut off by a crash. A batch with this mode is
+# never resent automatically: when its answer is unclear too, its guests stay
+# in doubt and the host is alerted. A send by the host starts afresh.
+AUTO_RESEND_MODE = "auto_resend"
 
 # How long a stay must go untouched before the party is taken as final. A guest
 # link holder can raise the declared headcount, so the completion gate must not
@@ -142,6 +154,50 @@ def guest_payload(guest, reservation) -> Dict[str, Any]:
         "cSpz": None,  # documented as unused
         "cNote": guest["note"] or None,
     }
+
+
+# The guest columns guest_payload() puts on the wire. Once a guest is filed
+# (submit_state 'sent', by UbyHost or by hand) these are what the police hold,
+# and UbyPort has no call that corrects a filed record, so the host form keeps
+# them read-only. Anything not listed here (doc_type for the stay-fee register,
+# for example) stays editable.
+FILED_FIELDS = (
+    "surname",
+    "first_name",
+    "birth_date",
+    "nationality",
+    "doc_number",
+    "visa_number",
+    "res_street",
+    "res_city",
+    "res_country",
+    "purpose",
+    "note",
+    "stay_from",
+    "stay_to",
+)
+
+
+def _field(row, key: str) -> Any:
+    """``row[key]``, or None for a row (or test dict) without that column."""
+    try:
+        return row[key]
+    except (KeyError, IndexError):
+        return None
+
+
+def guest_is_filed(guest) -> bool:
+    """True once the record is in the police register, including filed by hand."""
+    return bool(guest) and _field(guest, "submit_state") == SENT
+
+
+def filed_record_changed(stored, proposed, reservation) -> bool:
+    """Would saving ``proposed`` make the house book differ from what was filed?
+
+    Compared as the UbyPort record, so a stay date left empty (which files the
+    booking's dates) is not mistaken for a change.
+    """
+    return guest_payload(stored, reservation) != guest_payload(proposed, reservation)
 
 
 # --- readiness -----------------------------------------------------------
@@ -291,15 +347,62 @@ def expected_guest_count(reservation) -> Optional[int]:
     return reservation["declared_guests"]
 
 
-def reservation_progress(reservation) -> Dict[str, Any]:
-    """How far along this reservation is, for the dashboard."""
-    guests = db.query(
-        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
-        "ORDER BY is_lead DESC, id",
-        (reservation["id"],),
-    )
+# Well under SQLite's bound-parameter limit (999 on old builds).
+IN_CHUNK = 500
+
+
+def guests_by_reservation(reservation_ids: Iterable[int]) -> Dict[int, List[Any]]:
+    """The live guests of many stays, in the order reservation_progress reads them.
+
+    One ``IN (...)`` query per chunk instead of one query per stay. Every
+    requested stay is in the result, with an empty list when it has no guests.
+    Raises ``db.DecryptionError`` like the per-stay read; callers that skip one
+    unreadable stay fall back to that read (see dashboard_rows).
+    """
+    ids = list(dict.fromkeys(int(rid) for rid in reservation_ids))
+    out: Dict[int, List[Any]] = {rid: [] for rid in ids}
+    for start in range(0, len(ids), IN_CHUNK):
+        chunk = ids[start:start + IN_CHUNK]
+        marks = ", ".join("?" for _ in chunk)
+        for guest in db.query(
+            f"SELECT * FROM guest WHERE reservation_id IN ({marks}) AND archived_at IS NULL "
+            "ORDER BY reservation_id, is_lead DESC, id",
+            chunk,
+        ):
+            out[guest["reservation_id"]].append(guest)
+    return out
+
+
+def preload_guests(reservations: Iterable[Any]) -> Dict[int, List[Any]]:
+    """guests_by_reservation for a page of stays, or {} when one will not decrypt.
+
+    An empty result makes every stay read its own guests again, so the one
+    unreadable stay fails on its own, exactly as before, instead of the page.
+    """
+    try:
+        return guests_by_reservation(row["id"] for row in reservations)
+    except db.DecryptionError:
+        return {}
+
+
+def reservation_progress(reservation, guests: Optional[List[Any]] = None) -> Dict[str, Any]:
+    """How far along this reservation is, for the dashboard.
+
+    ``guests`` is the stay's live guests when the caller already loaded them
+    (``guests_by_reservation``); otherwise they are read here.
+    """
+    if guests is None:
+        guests = db.query(
+            "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+            "ORDER BY is_lead DESC, id",
+            (reservation["id"],),
+        )
     expected = expected_guest_count(reservation)
-    complete = [g for g in guests if guest_is_complete(g, reservation)]
+    # A guest the host filed by hand in UbyPort is done, whatever UbyHost still
+    # lacks for it (a signature, say): the register has the record.
+    complete = [
+        g for g in guests if guest_filed_by_hand(g) or guest_is_complete(g, reservation)
+    ]
     complete_ids = {g["id"] for g in complete}
     reportable = [g for g in complete if validation.guest_is_reportable(g["nationality"])]
     unverified = [g for g in reportable if not guest_identity_verified(g)]
@@ -518,10 +621,91 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
     }
 
 
+def _filing_stamp(guest) -> Optional[datetime]:
+    """When this guest was filed: by hand if the host marked it, else by UbyPort."""
+    return _as_utc(_field(guest, "manual_filed_at") or _field(guest, "submitted_at"))
+
+
+def _latest_filing(progress: Dict[str, Any]) -> Tuple[Optional[datetime], bool]:
+    """The latest filing time of the stay's reportable guests, and whether it was by hand."""
+    latest: Optional[datetime] = None
+    by_hand = False
+    for guest in progress.get("reportable") or []:
+        stamp = _filing_stamp(guest)
+        if stamp is not None and (latest is None or stamp > latest):
+            latest = stamp
+            by_hand = bool(_field(guest, "manual_filed_at"))
+    return latest, by_hand
+
+
+def filed_at(progress: Dict[str, Any]) -> Optional[datetime]:
+    """When the stay was filed: the latest filing time of its reportable guests.
+
+    That is ``submitted_at``, or ``manual_filed_at`` for a guest the host filed
+    by hand in UbyPort. Naive Czech civil time, so it compares directly with
+    ``deadlines.reporting_deadline``. None when no reportable guest carries a
+    filing time.
+    """
+    latest, _by_hand = _latest_filing(progress)
+    return deadlines.local_now(latest) if latest is not None else None
+
+
+def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[str, Any]:
+    """What the deadline cell shows for a stay, in one place for every page.
+
+    A stay still to be filed counts down to the deadline. Once it is reported
+    the deadline is history, so the cell records when it was filed and, if that
+    was after the deadline, by how much. A stay with only Czech guests has no
+    deadline at all.
+
+    ``state`` is ``countdown``, ``filed_on_time``, ``filed_late`` or ``none``;
+    ``level`` is the CSS level of the badge. ``by_hand`` is true when the
+    latest filing was the host's own, in the UbyPort web application.
+    """
+    status = progress.get("status")
+    cell: Dict[str, Any] = {
+        "state": "countdown",
+        "level": deadlines.urgency(check_in) if check_in else "future",
+        "check_in": check_in,
+        "filed_at": None,
+        "late_hours": 0,
+        "by_hand": False,
+    }
+    if status == "not_required":
+        cell.update(state="none", level="none")
+        return cell
+    if status != "reported":
+        return cell
+    when = filed_at(progress)
+    cell["by_hand"] = _latest_filing(progress)[1]
+    if when is None:
+        # Reported without a filing time on record (an import, say). The status
+        # pill already says it is reported; a countdown would claim it is late.
+        cell.update(state="none", level="none")
+        return cell
+    cell["filed_at"] = when
+    due = deadlines.reporting_deadline(check_in) if check_in else None
+    if due is not None and when > due:
+        # Never "0 h late": anything past the deadline is at least an hour.
+        hours = max(1, int((when - due).total_seconds() // 3600))
+        cell.update(state="filed_late", level="neutral", late_hours=hours)
+    else:
+        cell.update(state="filed_on_time", level="done")
+    return cell
+
+
 def dashboard_rows(
-    days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
+    days_ahead: int = 21,
+    days_back: int = 45,
+    owner_user_id: Optional[int] = None,
+    apartments: Optional[List[Any]] = None,
 ) -> List[Dict[str, Any]]:
-    """Every stay worth looking at, ordered by how urgent it is."""
+    """Every stay worth looking at, ordered by how urgent it is.
+
+    ``apartments`` is the owner's apartment rows (``SELECT *``) when the caller
+    already loaded them; a stay whose apartment is not among them is looked up
+    as before.
+    """
     start = (date.today() - timedelta(days=days_back)).isoformat()
     end = (date.today() + timedelta(days=days_ahead)).isoformat()
     rows = db.query(
@@ -534,10 +718,22 @@ def dashboard_rows(
         (owner_user_id, owner_user_id, start, end),
     )
     out: List[Dict[str, Any]] = []
+    preloaded = preload_guests(rows)
+    apartments_by_id: Dict[int, Any] = {}
+    if apartments:
+        if owner_user_id is None:
+            apartments_by_id = {apartment["id"]: apartment for apartment in apartments}
+        else:
+            apartments_by_id = {
+                apartment["id"]: apartment
+                for apartment in apartments
+                if apartment["owner_user_id"] == owner_user_id
+            }
     for reservation in rows:
-        check_in = reservation_deadline_anchor(reservation)
+        guests = preloaded.get(reservation["id"])
+        check_in = reservation_deadline_anchor(reservation, guests)
         try:
-            progress = reservation_progress(reservation)
+            progress = reservation_progress(reservation, guests)
         except db.DecryptionError:
             log.exception("dashboard skipped reservation_id=%s", reservation["id"])
             continue
@@ -546,8 +742,14 @@ def dashboard_rows(
         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
             if check_in and check_in < date.today() - timedelta(days=3):
                 continue
-        apartment = access.apartment_for_reservation(reservation, owner_user_id)
+        apartment_id = reservation["apartment_id"]
+        if apartment_id not in apartments_by_id:
+            apartments_by_id[apartment_id] = access.apartment_for_reservation(
+                reservation, owner_user_id
+            )
+        apartment = apartments_by_id[apartment_id]
         controls = send_controls(reservation, apartment, progress) if apartment else {}
+        cell = deadline_cell(progress, check_in)
         out.append(
             {
                 "reservation": reservation,
@@ -556,6 +758,10 @@ def dashboard_rows(
                 "urgency": level,
                 "check_in": check_in,
                 "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
+                "deadline_cell": cell,
+                "deadline_state": cell["state"],
+                "filed_at": cell["filed_at"],
+                "late_hours": cell["late_hours"],
             }
         )
     out.sort(
@@ -957,7 +1163,10 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
             if guest["submit_state"] not in (NOT_REQUIRED, SENT):
                 db.update("guest", guest["id"], {"submit_state": NOT_REQUIRED, "updated_at": db.utcnow()})
             continue
-        if guest["submit_state"] == SENT and not allow_resend:
+        # A guest the host filed by hand is never sent by UbyHost, not even as
+        # a resend: the register already has the record. The host undoes the
+        # mark first if it was a mistake.
+        if guest["submit_state"] == SENT and (not allow_resend or guest_filed_by_hand(guest)):
             continue
         if guest["submit_state"] == BLOCKED and not allow_resend:
             continue
@@ -1015,7 +1224,8 @@ def claim_sendable(
         )
         for guest, _reservation in pairs:
             cur.execute(
-                "SELECT submit_state, archived_at FROM guest WHERE id = ?", (guest["id"],)
+                "SELECT submit_state, archived_at, manual_filed_at FROM guest WHERE id = ?",
+                (guest["id"],),
             )
             row = cur.fetchone()
             # Only a row that *moved on* since the list was built is dropped.
@@ -1026,12 +1236,13 @@ def claim_sendable(
             if (
                 row is None
                 or row["archived_at"]
+                or row["manual_filed_at"]
                 or row["submit_state"] != guest["submit_state"]
             ):
                 continue
             cur.execute(
-                "INSERT OR IGNORE INTO submission_claim (guest_id, claim_token, claimed_at) "
-                "VALUES (?, ?, ?)",
+                "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+                "VALUES (?, ?, ?) ON CONFLICT (guest_id) DO NOTHING",
                 (guest["id"], token, time.time()),
             )
             if cur.rowcount == 1:
@@ -1526,7 +1737,13 @@ def recover_stale_submissions(apartment_id: int) -> int:
 
 
 def _retry_outcome_unknown_batches(apartment_id: int) -> int:
-    """One automatic resend per interrupted batch, only from the scheduler."""
+    """One automatic resend per interrupted batch, only from the scheduler.
+
+    The resend is itself a batch (``AUTO_RESEND_MODE``). If its answer is
+    unclear as well, it is not resent again: its guests stay in doubt, out of
+    the sweep, and the outcome-unknown alert and mail already raised for it
+    tell the host to check UbyPort and send by hand (WP31).
+    """
     if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
         return 0
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
@@ -1538,8 +1755,9 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
         return 0
     pending = db.query(
         "SELECT id, guest_ids FROM submission WHERE apartment_id = ? "
-        "AND state = 'outcome_unknown' AND retried_at IS NULL",
-        (apartment_id,),
+        "AND state = 'outcome_unknown' AND retried_at IS NULL "
+        "AND COALESCE(mode, '') != ?",
+        (apartment_id, AUTO_RESEND_MODE),
     )
     retried = 0
     for row in pending:
@@ -1552,7 +1770,7 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
                 "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
                 (guest_id, SENT),
             )
-        submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode="auto")
+        submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode=AUTO_RESEND_MODE)
         retried += 1
     return retried
 
@@ -1700,21 +1918,192 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
     return summary
 
 
+
+# --- filed by hand (WP23) -------------------------------------------------
+#
+# When UbyHost cannot file a stay in time, the host files it in the UbyPort web
+# application and marks it here. The guests become ``SENT``, so nothing files
+# them again, and keep ``manual_filed_at`` (the filing time the host gave),
+# ``manual_reference`` (receipt or reference, optional), ``manual_marked_at``
+# (when the mark was made) and ``manual_prev_state`` (what an undo restores).
+
+# The host may take the mark back, if it was a mistake, for this long.
+MANUAL_UNDO_WINDOW = timedelta(hours=24)
+MANUAL_REFERENCE_MAX = 200
+# A filing time ahead of the clock by more than this is a typo.
+MANUAL_FILED_AT_MAX_AHEAD = timedelta(minutes=5)
+# And one older than this is not a filing of a stay UbyHost is still watching.
+MANUAL_FILED_AT_MAX_AGE = timedelta(days=60)
+_HAND_FILABLE_STATES = (PENDING, ERROR, BLOCKED)
+
+
+def guest_filed_by_hand(guest) -> bool:
+    """True for a guest the host filed by hand in the UbyPort web application."""
+    return guest["submit_state"] == SENT and bool(_field(guest, "manual_filed_at"))
+
+
+def hand_filing_candidates(guests: List[Any]) -> List[Any]:
+    """Guests a "filed by hand" mark would cover: reportable and not filed yet."""
+    return [
+        guest
+        for guest in guests
+        if guest["submit_state"] in _HAND_FILABLE_STATES
+        and validation.guest_is_reportable(guest["nationality"])
+    ]
+
+
+def parse_manual_filed_at(raw: str, now: Optional[datetime] = None) -> Optional[str]:
+    """The form's local ``YYYY-MM-DDTHH:MM`` as a stored UTC stamp, or None if invalid.
+
+    Empty means now. A time in the future or more than 60 days back is refused.
+    """
+    current = datetime.now(timezone.utc) if now is None else now
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=ZoneInfo(config.TIMEZONE))
+    current = current.astimezone(timezone.utc)
+    raw = (raw or "").strip()
+    if not raw:
+        return current.replace(microsecond=0).isoformat()
+    try:
+        local = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if local.tzinfo is None:
+        local = local.replace(tzinfo=ZoneInfo(config.TIMEZONE))
+    when = local.astimezone(timezone.utc).replace(microsecond=0)
+    if when - current > MANUAL_FILED_AT_MAX_AHEAD or current - when > MANUAL_FILED_AT_MAX_AGE:
+        return None
+    return when.isoformat()
+
+
+def clean_manual_reference(raw: Optional[str]) -> Optional[str]:
+    """The optional receipt or reference text: one line, at most 200 characters."""
+    text = " ".join((raw or "").split())
+    return text[:MANUAL_REFERENCE_MAX] or None
+
+
+def mark_filed_by_hand(
+    reservation_id: int, filed_at_utc: str, reference: Optional[str]
+) -> Dict[str, Any]:
+    """Mark the stay's unfiled reportable guests as filed by hand.
+
+    One write transaction re-reads every guest, so a guest filed or changed
+    meanwhile is left alone. A guest UbyHost is filing at this moment (a live
+    ``submission_claim``) is skipped too and counted in ``busy``: marking it
+    while the batch is in flight would hide the batch's own result.
+    """
+    marked_at = db.utcnow()
+    live_after = time.time() - SUBMISSION_CLAIM_TTL_SECONDS
+    marked: List[int] = []
+    busy = 0
+    with db.immediate() as cur:
+        cur.execute(
+            "SELECT id, submit_state, nationality FROM guest "
+            "WHERE reservation_id = ? AND archived_at IS NULL ORDER BY id",
+            (reservation_id,),
+        )
+        for row in hand_filing_candidates(cur.fetchall()):
+            cur.execute(
+                "SELECT 1 FROM submission_claim WHERE guest_id = ? AND claimed_at >= ?",
+                (row["id"], live_after),
+            )
+            if cur.fetchone():
+                busy += 1
+                continue
+            cur.execute(
+                "UPDATE guest SET submit_state = ?, manual_filed_at = ?, "
+                "manual_reference = ?, manual_marked_at = ?, manual_prev_state = ? "
+                "WHERE id = ? AND submit_state = ?",
+                (SENT, filed_at_utc, reference, marked_at, row["submit_state"],
+                 row["id"], row["submit_state"]),
+            )
+            if cur.rowcount == 1:
+                marked.append(row["id"])
+    return {"marked": len(marked), "busy": busy, "guest_ids": marked}
+
+
+def _undo_open(guest, now: datetime) -> bool:
+    marked = _as_utc(_field(guest, "manual_marked_at"))
+    return marked is not None and timedelta(0) <= now - marked <= MANUAL_UNDO_WINDOW
+
+
+def undo_filed_by_hand(reservation_id: int, now: Optional[datetime] = None) -> List[int]:
+    """Take back a "filed by hand" mark made in the last 24 hours.
+
+    Each guest gets back the state it had before the mark. A mark older than
+    24 hours stays: by then it is the record of a filing, not a slip.
+    """
+    current = datetime.now(timezone.utc) if now is None else now.astimezone(timezone.utc)
+    undone: List[int] = []
+    with db.immediate() as cur:
+        cur.execute(
+            "SELECT id, submit_state, manual_filed_at, manual_marked_at, manual_prev_state "
+            "FROM guest WHERE reservation_id = ? AND submit_state = ? "
+            "AND manual_filed_at IS NOT NULL ORDER BY id",
+            (reservation_id, SENT),
+        )
+        for row in cur.fetchall():
+            if not _undo_open(row, current):
+                continue
+            previous = row["manual_prev_state"]
+            if previous not in _HAND_FILABLE_STATES:
+                previous = PENDING
+            cur.execute(
+                "UPDATE guest SET submit_state = ?, manual_filed_at = NULL, "
+                "manual_reference = NULL, manual_marked_at = NULL, manual_prev_state = NULL "
+                "WHERE id = ? AND submit_state = ? AND manual_marked_at = ?",
+                (previous, row["id"], SENT, row["manual_marked_at"]),
+            )
+            if cur.rowcount == 1:
+                undone.append(row["id"])
+    return undone
+
+
+def hand_filing_view(progress: Dict[str, Any], now: Optional[datetime] = None) -> Dict[str, Any]:
+    """What the stay page shows about filing by hand."""
+    current = datetime.now(timezone.utc) if now is None else now.astimezone(timezone.utc)
+    guests = progress.get("guests") or []
+    by_hand = [guest for guest in guests if guest_filed_by_hand(guest)]
+    latest = max(by_hand, key=lambda guest: guest["manual_filed_at"], default=None)
+    undoable = [guest for guest in by_hand if _undo_open(guest, current)]
+    undo_until = None
+    if undoable:
+        last_mark = max(_as_utc(guest["manual_marked_at"]) for guest in undoable)
+        undo_until = deadlines.local_now(last_mark + MANUAL_UNDO_WINDOW)
+    return {
+        "candidates": len(hand_filing_candidates(guests)),
+        "count": len(by_hand),
+        "filed_at": deadlines.local_now(_as_utc(latest["manual_filed_at"])) if latest else None,
+        "reference": latest["manual_reference"] if latest else None,
+        "can_undo": bool(undoable),
+        "undo_until": undo_until,
+        "default_filed_at": deadlines.local_now(current).strftime("%Y-%m-%dT%H:%M"),
+    }
+
+
 # --- deadline monitoring -------------------------------------------------
 
-def reservation_deadline_anchor(reservation: Dict[str, Any]) -> Optional[date]:
+def reservation_deadline_anchor(
+    reservation: Dict[str, Any], guests: Optional[List[Any]] = None
+) -> Optional[date]:
     """The date the statutory clock starts from.
 
     The record filed with the police carries each guest's own ``stay_from``, so
     the deadline has to run from the earliest of those. Earliest, because the
     clock starts at the first arrival. Falls back to the reservation's own
     ``date_from`` when no guest has given a date.
+
+    ``guests`` is the stay's live (unarchived) guests when the caller already
+    has them, for example ``reservation_progress(...)["guests"]``.
     """
-    rows = db.query(
-        "SELECT stay_from FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
-        "AND stay_from IS NOT NULL AND stay_from != ''",
-        (reservation["id"],),
-    )
+    if guests is None:
+        rows = db.query(
+            "SELECT stay_from FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+            "AND stay_from IS NOT NULL AND stay_from != ''",
+            (reservation["id"],),
+        )
+    else:
+        rows = [guest for guest in guests if guest["stay_from"]]
     starts = [validation.parse_iso_date(row["stay_from"]) for row in rows]
     starts = [start for start in starts if start]
     if starts:
@@ -1881,7 +2270,9 @@ SUBMISSION_PAYLOAD_DAYS = 90
 
 
 def purge_submission_payloads(
-    owner_user_id: Optional[int] = None, days: int = SUBMISSION_PAYLOAD_DAYS
+    owner_user_id: Optional[int] = None,
+    days: int = SUBMISSION_PAYLOAD_DAYS,
+    now: Optional[datetime] = None,
 ) -> int:
     """Blank the request and response envelopes on settled submissions.
 
@@ -1891,10 +2282,17 @@ def purge_submission_payloads(
     because those are the evidence the host has to be able to produce, and
     neither of them contains guest data.
 
+    What stays is the receipt row the retention decision asks for: the stay
+    (``apartment_id`` and ``guest_ids``, ids only), ``created_at`` and
+    ``finished_at``, the result (``state`` and the UbyPort error codes), the
+    reference (``pseudo_stamp``) and the Dorucenka. It lives as long as the
+    guest records it proves, see ``housebook.purge_orphan_submissions``.
+
     Returns the number of rows that were carrying an envelope and lost it.
+    Writes one retention audit line on every run, a zero count included.
     """
     cutoff = (
-        datetime.now(timezone.utc) - timedelta(days=days)
+        (now or datetime.now(timezone.utc)) - timedelta(days=days)
     ).replace(microsecond=0).isoformat()
     marks = ", ".join("?" for _ in TERMINAL_SUBMISSION_STATES)
     rows = db.query(
@@ -1902,15 +2300,18 @@ def purge_submission_payloads(
         f"JOIN apartment a ON a.id = s.apartment_id "
         f"WHERE s.created_at < ? AND s.state IN ({marks}) "
         f"AND (? IS NULL OR a.owner_user_id = ?) "
-        f"AND (s.request_xml IS NOT NULL OR s.response_xml IS NOT NULL)",
+        f"AND (s.request_xml IS NOT NULL OR s.request_xml_enc IS NOT NULL "
+        f"OR s.response_xml IS NOT NULL)",
         (cutoff, *TERMINAL_SUBMISSION_STATES, owner_user_id, owner_user_id),
     )
     if not rows:
+        db.audit_retention("ubyport_xml", 0, cutoff, owner_user_id=owner_user_id)
         return 0
     ids = [row["id"] for row in rows]
     id_marks = ", ".join("?" for _ in ids)
     db.execute(
-        f"UPDATE submission SET request_xml = NULL, response_xml = NULL "
+        f"UPDATE submission SET request_xml = NULL, request_xml_enc = NULL, "
+        f"response_xml = NULL "
         f"WHERE id IN ({id_marks})",
         ids,
     )
@@ -1919,4 +2320,5 @@ def purge_submission_payloads(
         f"blanked the request and response envelope on {len(ids)} submission(s) "
         f"older than {days} days",
     )
+    db.audit_retention("ubyport_xml", len(ids), cutoff, owner_user_id=owner_user_id)
     return len(ids)

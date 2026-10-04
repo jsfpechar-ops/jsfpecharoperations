@@ -224,6 +224,26 @@
   <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
 {% endmacro %}
 
+{# The deadline cell of a stay, from ``deadline_cell(progress, check_in)``.
+   Before filing it counts down; once reported it records when the stay was
+   filed, and whether that was late. Nothing for a stay with no deadline. #}
+{% macro deadline_badge(cell, tag='span', extra_class='') -%}
+  {%- set classes = (' ' ~ extra_class) if extra_class else '' -%}
+  {%- if cell.by_hand and cell.state in ('filed_on_time', 'filed_late') -%}
+    {#- Filed by the host in the UbyPort web application: say so, late or not. -#}
+    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ t('deadline.filed_by_hand', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+  {%- elif cell.state == 'filed_on_time' -%}
+    <{{ tag }} class="deadline{{ classes }} done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+  {%- elif cell.state == 'filed_late' -%}
+    <{{ tag }} class="deadline{{ classes }} neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
+      {%- if cell.late_hours < 48 %}{{ t('deadline.filed_late_hours', n=cell.late_hours) }}
+      {%- else %}{{ tp('deadline.filed_late_days', cell.late_hours // 24) }}{% endif -%}
+    </{{ tag }}>
+  {%- elif cell.state == 'countdown' -%}
+    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ describe_time_left(cell.check_in) if cell.check_in else '—' }}</{{ tag }}>
+  {%- endif -%}
+{%- endmacro %}
+
 {% macro empty_state(title, body='', action_url='', action_label='') %}
   <div class="panel empty">
     <h2>{{ title }}</h2>
@@ -232,10 +252,12 @@
   </div>
 {% endmacro %}
 
-{% macro property_identity(id, name, compact=false) %}
-  <span class="property-identity">
+{# ``truncate`` keeps a dense table row on one line: the name ends in an
+   ellipsis and the full name stays in the tooltip and for screen readers. #}
+{% macro property_identity(id, name, compact=false, truncate=false) %}
+  <span class="property-identity{{ ' truncate' if truncate }}"{% if truncate %} title="{{ name }}"{% endif %}>
     <span class="property-mark property-tone-{{ id % 10 }}" aria-hidden="true">{{ name[:1] }}</span>
-    <span class="{{ 'small' if compact }}">{{ name }}</span>
+    <span class="{{ 'small' if compact }}{{ ' property-identity-name' if truncate }}">{{ name }}</span>
   </span>
 {% endmacro %}
 
@@ -260,14 +282,14 @@
           title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
 {% endmacro %}
 
-{% macro onboarding_finish(onboarding) %}
+{% macro onboarding_finish(onboarding, show_toggle=True) %}
   {% if onboarding and onboarding.finished and onboarding.finish %}
     {% set finish = onboarding.finish %}
     <section class="onboarding-finish" aria-label="{{ t('onboarding.finish_title') }}">
       <header class="onboarding-finish-intro">
         <p class="onboarding-kicker">{{ t('onboarding.finish_kicker') }}</p>
         <h2>{{ t('onboarding.finish_title') }}</h2>
-        <p class="lede">{{ t('onboarding.finish_lede', property=finish.name) }}</p>
+        <p class="lede">{{ t('onboarding.finish_lede') }}</p>
       </header>
       <div class="onboarding-finish-share">
         <div class="onboarding-finish-field">
@@ -290,8 +312,11 @@
       </ul>
       <div class="onboarding-finish-actions">
         <a class="btn primary" href="{{ finish.communication_url }}">{{ t('onboarding.finish_open_communication') }}</a>
-        <a class="btn" href="/l/{{ finish.permalink_token }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
-        {% if not onboarding.dismissed %}
+        <a class="btn" href="/l/{{ finish.link_key }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
+        {# On /onboarding the header meter already carries Skip / Reopen, so the
+           finish card leaves it out instead of printing the same button twice. #}
+        {% if not show_toggle %}
+        {% elif not onboarding.dismissed %}
           <form method="post" action="/onboarding/dismiss">
             <input type="hidden" name="return_to" value="{{ request.url.path }}">
             <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
@@ -353,11 +378,10 @@
   {% set compact_list = compact and onboarding.current and not onboarding.finished %}
   <section class="onboarding-welcome">
     <header class="onboarding-intro">
-      <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="">
+      <img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div>
         <p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>
         <h1>{{ t('onboarding.welcome_title') }}</h1>
-        <p class="lede">{{ t('onboarding.welcome_lede') }}</p>
       </div>
       <div class="onboarding-meter" aria-label="{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}">
         <strong>{{ onboarding.percent }}%</strong>
@@ -379,7 +403,7 @@
     </header>
 
     {% if onboarding.finished %}
-      {{ onboarding_finish(onboarding) }}
+      {{ onboarding_finish(onboarding, show_toggle=False) }}
     {% elif onboarding.current %}
       <div class="onboarding-now">
         <div class="onboarding-now-label">
@@ -442,12 +466,8 @@
       </p>
     {% endif %}
 
-    <div class="onboarding-bottom {{ 'single' if not demo_available else '' }}">
-      <div class="onboarding-safety">
-        <strong>{{ t('onboarding.safe_title') }}</strong>
-        <p>{{ t('onboarding.safe_body') }}</p>
-      </div>
-      {% if demo_available %}
+    {% if demo_available %}
+    <div class="onboarding-bottom single">
       <div class="onboarding-demo">
         <div>
           <strong>{{ t('onboarding.demo_title') }}</strong>
@@ -458,8 +478,8 @@
           <button class="btn" type="submit">{{ t('demo.load') }}</button>
         </form>
       </div>
-      {% endif %}
     </div>
+    {% endif %}
   </section>
 {% endmacro %}
 

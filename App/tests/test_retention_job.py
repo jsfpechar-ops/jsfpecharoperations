@@ -175,12 +175,13 @@ def test_a_malformed_stay_to_falls_back_to_the_reservation_end():
 def test_the_due_notice_fires_once_per_owner_per_month(monkeypatch):
     monkeypatch.setattr(config, "RETENTION_AUTOPURGE", False)
     owner = _owner("retjob-due")
-    # The six-year clock on this stay ends 15 days from today.
-    stay_end = housebook.retention_cutoff(date.today()) + timedelta(days=15)
-    _guest(owner, stay_end=stay_end, token="retjob-due")
+    # Deletion runs on 31 January, so on 10 January a stay that ended in 2020
+    # (six years over at the end of 2026) is due within the notice window.
+    today = date(2027, 1, 10)
+    _guest(owner, stay_end=date(2020, 6, 15), token="retjob-due")
 
-    retention.run()
-    key = f"retention_due:{owner}:{date.today().strftime('%Y-%m')}"
+    retention.run(today)
+    key = f"retention_due:{owner}:{today.strftime('%Y-%m')}"
     alert = db.query_one("SELECT * FROM alert WHERE dedupe_key = ?", (key,))
     assert alert is not None
     assert alert["kind"] == "retention_due"
@@ -188,7 +189,7 @@ def test_the_due_notice_fires_once_per_owner_per_month(monkeypatch):
     assert params["days"] == config.RETENTION_NOTICE_DAYS
     assert params["count"] >= 1
 
-    retention.run()
+    retention.run(today)
     rows = db.query("SELECT id FROM alert WHERE dedupe_key = ?", (key,))
     assert len(rows) == 1
 

@@ -26,7 +26,7 @@ GUIDE_STRINGS = {
 
         "guide.overview.body": "The Dashboard lists the stays that need you first, then stays waiting for guests, upcoming arrivals and finished stays. The four tiles count what needs action, what waits for guests, what is ready to send and what is overdue.",
         "guide.overview.count": "The person icon shows registered guests against the expected number, for example 2 / 3. Calendars never include a guest count, so nothing is shown until the guest states the group size or you set it on the stay.",
-        "guide.overview.deadline": "Each row shows the time left until the police deadline. Red means less than a day or already late.",
+        "guide.overview.deadline": "Until a stay is reported, its row shows the time left until the police deadline. Red means less than a day or already late.",
 
         "guide.statuses.lede": "The stronger the colour, the more it needs you. Every badge also has a word, so colour is never the only signal.",
         "guide.statuses.failed": "UbyPort rejected the record, the delivery failed or the outcome is unknown. Open the stay and act.",
@@ -50,7 +50,8 @@ GUIDE_STRINGS = {
 
         "guide.stays.body": "Stays come from your calendars, or you add them with Add stay. Update calendars fetches all feeds now. Filter by property, state and dates, save a view in this browser, and export the filtered stays as CSV.",
         "guide.stays.detail": "Open a stay to add or remove guests, copy the guest link, send the report, change the expected number of guests, set the state (active, cancelled, ignored), reopen guest access or release the assignment, and create an invoice.",
-        "guide.stays.cancelled": "If a booking disappears from the calendar or is cancelled, the stay is cancelled and never reported. If guests had already filled in forms, you get a warning: when the booking only moved, set the stay back to Active.",
+        "guide.stays.cancelled": "If a booking disappears from the calendar or is cancelled, the stay is cancelled and never reported. If guests had already filled in forms, you get a warning in UbyHost and by e-mail: when the booking only moved, set the stay back to Active.",
+        "guide.stays.dates_changed": "If a booking's dates change in the calendar, the stay changes with it and guests do not sign again. UbyHost shortens each guest's dates to fit inside the new booking; a guest whose dates fall completely outside it gets the new booking dates. Each change is written to the activity log. A guest who was already reported keeps the dates that were filed, and you get a warning: check the booking, and if the filed dates are wrong, correct them in the UbyPort web application.",
 
         "guide.guests.body": "Guests open your property link on their phone and follow these steps:",
         "guide.guests.step_pin": "Enter the PIN you sent them.",
@@ -70,8 +71,18 @@ GUIDE_STRINGS = {
         "guide.reporting.manual": "Manual",
         "guide.reporting.manual_detail": "Nothing is sent until you press Send this stay or Send all ready stays.",
         "guide.reporting.deadline": "The deadline is the end of the third working day, counting the arrival day when it is a working day. Weekends and Czech public holidays do not count.",
-        "guide.reporting.failure": "If UbyPort is down, UbyHost retries on its own and alerts you. If UbyPort refuses the login, automatic sending for that property pauses until you save or test new credentials. If the answer never arrives, the guests are held and you decide whether to send again, so nothing is reported twice.",
+        "guide.reporting.filed": "After a stay is reported, its deadline shows when it was filed, or how late if that was after the deadline.",
+        "guide.reporting.failure": "If UbyPort is down, UbyHost retries on its own and alerts you. If UbyPort refuses the login, automatic sending for that property pauses until you save or test new credentials. If a send gets no clear answer, you get an alert and UbyHost sends that batch once more on its own at the next automatic check. A guest the police already hold counts as reported, so nothing is filed twice.",
         "guide.reporting.receipts": "Police reports lists every report with its Doručenka receipt. You can download receipts one by one or as a ZIP for a date range.",
+        "guide.reporting.manual_filing_title": "If UbyHost cannot file in time",
+        "guide.reporting.manual_filing_lede": "Reporting foreign guests is your legal duty, within 3 working days from the start of the stay. When a stay is less than 24 hours from its deadline and still not reported, UbyHost e-mails you once for that stay. File the guests yourself if UbyHost shows a filing as rejected, failed or outcome unknown, if UbyHost warns that the deadline is close and the guest is still not reported, if UbyHost or the UbyPort web service is down while the deadline runs, or if your UbyPort web-service credentials are invalid or blocked.",
+        "guide.reporting.manual_filing_before": "Outcome unknown: first check in the UbyPort web application that the guest is not already reported, because a second filing counts as a duplicate. You need the user name and password for the UbyPort web application from the \"login details\" document the foreign police sent you. They are different from the web-service access stored in UbyHost. Lost them? Call the UbyPort helpline +420 731 670 444 (working days 8:00 to 11:00) or write to ubyport@pcr.cz, with your IDUB or IČO and the property address ready.",
+        "guide.reporting.manual_filing_step1": "Open the UbyPort web application at https://ubyport.pcr.cz/UbyPort/Home/Login and sign in with your own user name and password as the host.",
+        "guide.reporting.manual_filing_step2": "Choose entering data in the web form (the manual entry module) and enter each guest who is not reported yet. You find their data in UbyHost under Stays > the stay > the guest, or in the guest's form PDF.",
+        "guide.reporting.manual_filing_step3": "Send. On the result page click \"Stažení dokumentu DORUČENKA – doporučeno\" (download the receipt) and save the PDF. Check that the guest is in the list of accepted records, not rejected ones. Keep the receipt with your house book for 6 years, as proof that the report was made in time.",
+        "guide.reporting.manual_filing_step4": "Then open the stay in UbyHost and press \"I filed this stay by hand in UbyPort\". Enter when you filed and, if you like, the receipt number. UbyHost then counts those guests as reported and never sends them. If you marked a stay by mistake, you can undo it within 24 hours.",
+        "guide.reporting.manual_filing_correction": "Correcting an earlier report? Report the guest again with the right data and write in the note: PŘEDCHOZÍ OZNÁMENÍ OBSAHOVALO CHYBY (\"the previous report contained errors\").",
+        "guide.reporting.manual_filing_duty": "The legal duty to report stays with you as the host, also when UbyHost cannot file. UbyHost does not check a report made by hand; the mark is your record of it.",
 
         "guide.filters.body": "Stay fees and Invoices share the same filter. Changes apply as soon as you pick them.",
         "guide.filters.month": "Month: use the arrows for the previous or next month. Stay fees always show one period (the last finished month by default). Invoices show all dates until you pick a month.",
@@ -93,6 +104,7 @@ GUIDE_STRINGS = {
         "guide.settings.two_factor": "Two-factor sign-in uses an authenticator app. Store the recovery codes somewhere safe; each works once.",
         "guide.settings.retention": "Guest records are kept 6 years after the stay, invoices 10 years. Document photos go after 30 days, raw police request data after 90 days.",
         "guide.settings.requests": "Data requests records a guest's GDPR request and its one-month deadline.",
+        "guide.settings.deletion": "When your account is scheduled for deletion, a banner at the top of every page shows the date, 30 days ahead. You get an e-mail then and a reminder 7 days before. Until that date you can still sign in and work as usual. Download everything (ZIP) in the banner gives you the guest register as CSV, every guest's signed registration form, the police receipts, your invoices and your saved stay-fee filings (PDF and CSV). On the deletion date everything in the account is permanently deleted; records you must keep by law are then yours to keep.",
 
         "guide.faster.search": "Press Ctrl+K (Cmd+K on a Mac) or / to search pages, properties, stays and reports.",
         "guide.faster.shortcuts": "Press ? for keyboard shortcuts: g d Dashboard, g s Stays, g r Police reports, g h Guest register, j and k to move between rows, Enter to open one.",
@@ -104,7 +116,7 @@ GUIDE_STRINGS = {
         "guide.faq.czech_q": "Why was a stay not reported?",
         "guide.faq.czech_a": "Czech guests are not reported. Otherwise check the status: incomplete forms, Manual mode, or a paused login stop sending.",
         "guide.faq.twice_q": "Can a guest be reported twice?",
-        "guide.faq.twice_a": "Not by UbyHost on its own. When the police answer is unclear, the guests wait for you instead of being resent.",
+        "guide.faq.twice_a": "Not by UbyHost. When the police answer is unclear, UbyHost sends that batch once more at the next automatic check, and an answer that the police already hold the guest counts as reported. You get an alert whenever an answer is unclear.",
         "guide.faq.edit_q": "A guest made a mistake after the report was sent.",
         "guide.faq.edit_a": "Correct it on the stay and send again. Records the police rejected can be corrected and are retried up to three times.",
 
@@ -131,7 +143,7 @@ GUIDE_STRINGS = {
 
         "guide.overview.body": "Přehled ukazuje nejdřív pobyty, které potřebují vás, pak pobyty čekající na hosty, nadcházející příjezdy a hotové pobyty. Čtyři dlaždice počítají, co vyžaduje akci, co čeká na hosty, co je připraveno k odeslání a co je po termínu.",
         "guide.overview.count": "Ikona osoby ukazuje registrované hosty proti očekávanému počtu, například 2 / 3. Kalendáře počet hostů neuvádějí, takže se nic nezobrazí, dokud host neuvede velikost skupiny nebo ji nenastavíte u pobytu.",
-        "guide.overview.deadline": "Každý řádek ukazuje čas do termínu hlášení. Červená znamená méně než den nebo už po termínu.",
+        "guide.overview.deadline": "Dokud pobyt není nahlášený, jeho řádek ukazuje čas do termínu hlášení. Červená znamená méně než den nebo už po termínu.",
 
         "guide.statuses.lede": "Čím výraznější barva, tím víc to potřebuje vás. Každý štítek má i slovo, barva tedy nikdy není jediný signál.",
         "guide.statuses.failed": "UbyPort záznam odmítl, doručení selhalo nebo výsledek není známý. Otevřete pobyt a jednejte.",
@@ -155,7 +167,8 @@ GUIDE_STRINGS = {
 
         "guide.stays.body": "Pobyty přicházejí z kalendářů, nebo je přidáte tlačítkem Přidat pobyt. Aktualizovat kalendáře je načte hned. Filtrujte podle ubytování, stavu a dat, uložte si pohled v tomto prohlížeči a vyfiltrované pobyty exportujte do CSV.",
         "guide.stays.detail": "Na pobytu přidáte nebo odeberete hosty, zkopírujete odkaz pro hosty, odešlete hlášení, změníte očekávaný počet hostů, nastavíte stav (aktivní, zrušený, ignorovaný), znovu otevřete přístup hostům nebo uvolníte přiřazení a vystavíte fakturu.",
-        "guide.stays.cancelled": "Když rezervace z kalendáře zmizí nebo je zrušená, pobyt se zruší a nikdy se nenahlásí. Pokud už hosté vyplnili formuláře, dostanete upozornění: když se rezervace jen přesunula, nastavte pobyt zpět na Aktivní.",
+        "guide.stays.cancelled": "Když rezervace z kalendáře zmizí nebo je zrušená, pobyt se zruší a nikdy se nenahlásí. Pokud už hosté vyplnili formuláře, dostanete upozornění v UbyHostu a e-mailem: když se rezervace jen přesunula, nastavte pobyt zpět na Aktivní.",
+        "guide.stays.dates_changed": "Když se v kalendáři změní data rezervace, pobyt se změní s ní a hosté znovu nepodepisují. UbyHost zkrátí data každého hosta tak, aby se vešla do nové rezervace; host, jehož data leží úplně mimo ni, dostane data nové rezervace. Každá změna se zapíše do protokolu aktivit. Host, který už byl nahlášen, si ponechá podaná data a dostanete upozornění: zkontrolujte rezervaci, a pokud jsou podaná data špatně, opravte je ve webové aplikaci UbyPort.",
 
         "guide.guests.body": "Hosté otevřou odkaz vašeho ubytování v telefonu a projdou tyto kroky:",
         "guide.guests.step_pin": "Zadají PIN, který jste jim poslali.",
@@ -175,8 +188,18 @@ GUIDE_STRINGS = {
         "guide.reporting.manual": "Ručně",
         "guide.reporting.manual_detail": "Nic se neodešle, dokud nestisknete Odeslat tento pobyt nebo Odeslat všechny připravené.",
         "guide.reporting.deadline": "Termín je konec třetího pracovního dne, počítá se i den příjezdu, pokud je pracovní. Víkendy a české svátky se nepočítají.",
-        "guide.reporting.failure": "Když UbyPort nefunguje, UbyHost to zkouší znovu sám a upozorní vás. Když UbyPort odmítne přihlášení, automatické odesílání pro toto ubytování se zastaví, dokud neuložíte nebo neotestujete nové údaje. Když odpověď nepřijde, hosté se podrží a o novém odeslání rozhodnete vy, aby se nic nenahlásilo dvakrát.",
+        "guide.reporting.filed": "Po nahlášení pobytu se místo termínu ukazuje, kdy bylo hlášení podáno, případně o kolik po termínu.",
+        "guide.reporting.failure": "Když UbyPort nefunguje, UbyHost to zkouší znovu sám a upozorní vás. Když UbyPort odmítne přihlášení, automatické odesílání pro toto ubytování se zastaví, dokud neuložíte nebo neotestujete nové údaje. Když na odeslání nepřijde jasná odpověď, dostanete upozornění a UbyHost tuto dávku při příští automatické kontrole jednou zopakuje sám. Host, kterého už policie má, se počítá jako nahlášený, takže se nic nepodá dvakrát.",
         "guide.reporting.receipts": "Hlášení policii obsahují každé hlášení s doručenkou. Doručenky stáhnete jednotlivě nebo jako ZIP za zvolené období.",
+        "guide.reporting.manual_filing_title": "Když UbyHost nestihne hlášení podat",
+        "guide.reporting.manual_filing_lede": "Hlášení cizinců je vaše zákonná povinnost: do 3 pracovních dnů od začátku ubytování. Když do termínu zbývá méně než 24 hodin a pobyt stále není nahlášený, UbyHost vám k tomuto pobytu jednou pošle e-mail. Nahlaste hosty sami, pokud UbyHost u hlášení ukáže odmítnuto, chyba odeslání nebo neznámý výsledek, pokud upozorní, že se blíží lhůta a host stále není nahlášen, pokud UbyHost nebo webová služba UbyPort nejsou dostupné a lhůta běží, nebo pokud máte neplatné či zablokované přístupové údaje k webové službě.",
+        "guide.reporting.manual_filing_before": "Neznámý výsledek: nejdřív ve webové aplikaci UbyPort zkontrolujte, zda host už nahlášen není. Druhé odeslání se počítá jako duplicita. Potřebujete přihlašovací jméno a heslo do webové aplikace UbyPort z dokumentu „přihlašovací údaje“ od cizinecké policie. Jsou to jiné údaje než přístup k webové službě, který máte uložený v UbyHostu. Ztratili jste je? Volejte infolinku UbyPort +420 731 670 444 (pracovní dny 8:00 až 11:00) nebo pište na ubyport@pcr.cz. Připravte si IDUB nebo IČO a adresu ubytování.",
+        "guide.reporting.manual_filing_step1": "Otevřete přihlašovací stránku webové aplikace UbyPort https://ubyport.pcr.cz/UbyPort/Home/Login a přihlaste se svým vlastním přihlašovacím jménem a heslem ubytovatele.",
+        "guide.reporting.manual_filing_step2": "Zvolte zadání údajů do webového formuláře (modul pro ruční zápis) a zadejte každého hosta, který ještě není nahlášený. Jeho údaje najdete v UbyHostu v části Pobyty > pobyt > host, nebo v PDF formuláře hosta.",
+        "guide.reporting.manual_filing_step3": "Odešlete. Na stránce s výsledkem klikněte na „Stažení dokumentu DORUČENKA – doporučeno“ a PDF uložte. Zkontrolujte, že host je v seznamu přijatých záznamů, ne nepřijatých. Uschovejte si doručenku u domovní knihy po dobu 6 let jako doklad, že hlášení bylo podáno včas.",
+        "guide.reporting.manual_filing_step4": "Pak v UbyHostu otevřete pobyt a stiskněte „Tento pobyt jsem nahlásil(a) ručně v UbyPortu“. Zadejte, kdy jste hlášení podali, a případně číslo doručenky. UbyHost pak tyto hosty počítá jako nahlášené a už je nikdy neodešle. Pokud jste pobyt označili omylem, můžete to do 24 hodin vrátit.",
+        "guide.reporting.manual_filing_correction": "Opravujete chybu v dřívějším hlášení? Nahlaste hosta znovu se správnými údaji a do poznámky napište: PŘEDCHOZÍ OZNÁMENÍ OBSAHOVALO CHYBY.",
+        "guide.reporting.manual_filing_duty": "Zákonná povinnost hlásit zůstává na vás jako na ubytovateli, i když UbyHost hlášení podat nemůže. Ručně podané hlášení UbyHost nekontroluje; označení je váš záznam o něm.",
 
         "guide.filters.body": "Poplatky z pobytu a Faktury mají stejný filtr. Změny se použijí hned po výběru.",
         "guide.filters.month": "Měsíc: šipkami přejdete na předchozí nebo další měsíc. Poplatky vždy ukazují jedno období (výchozí je poslední skončený měsíc). Faktury ukazují všechna data, dokud měsíc nevyberete.",
@@ -194,10 +217,11 @@ GUIDE_STRINGS = {
         "guide.invoices.body": "Fakturu vystavíte k jakémukoli pobytu nebo odběrateli. Dodavatelem je jeden z vašich ubytovatelů; sazby DPH se zobrazí jen plátcům. Faktura má nejvýše čtyři položky, aby se vešla na jednu stránku.",
         "guide.invoices.flow": "Náhled, pak vystavení: číslo se přidělí podle ubytovatele a roku a nejde změnit. Potom můžete zaznamenat platbu, poslat ji e-mailem s odkazem ke stažení platným 30 dní, stáhnout PDF nebo ji zrušit stornem či opravným dokladem.",
 
-        "guide.settings.body": "Nastavení obsahuje heslo a dvoufázové přihlášení, nastavení PINu pro hosty, archiv, ochranu dat (doba uchování a mazání prošlých záznamů), protokol činnosti a technické údaje.",
+        "guide.settings.body": "Nastavení obsahuje heslo a dvoufázové přihlášení, nastavení PINu pro hosty, archiv, ochranu dat (doba uchování a mazání prošlých záznamů), protokol aktivit a technické údaje.",
         "guide.settings.two_factor": "Dvoufázové přihlášení používá ověřovací aplikaci. Záložní kódy si uložte na bezpečné místo; každý platí jednou.",
         "guide.settings.retention": "Záznamy hostů se uchovávají 6 let po pobytu, faktury 10 let. Fotky dokladů se mažou po 30 dnech, surová data hlášení po 90 dnech.",
         "guide.settings.requests": "Žádosti o data zaznamenávají žádost hosta podle GDPR a její měsíční lhůtu.",
+        "guide.settings.deletion": "Když je smazání účtu naplánované, v horní části každé stránky se zobrazí banner s datem, 30 dní dopředu. Hned dostanete e-mail a 7 dní předem připomínku. Do té doby se můžete dál přihlašovat a normálně pracovat. Tlačítkem Stáhnout vše (ZIP) v banneru získáte knihu hostů v CSV, podepsaný registrační formulář každého hosta, doručenky z policie, faktury a uložená hlášení k poplatku z pobytu (PDF a CSV). V den smazání se vše z účtu trvale smaže; doklady, které musíte podle zákona uchovat, pak uchováváte sami.",
 
         "guide.faster.search": "Stiskněte Ctrl+K (na Macu Cmd+K) nebo / a hledejte stránky, ubytování, pobyty a hlášení.",
         "guide.faster.shortcuts": "Stiskněte ? pro klávesové zkratky: g d Přehled, g s Pobyty, g r Hlášení policii, g h Kniha hostů, j a k pro pohyb mezi řádky, Enter pro otevření.",
@@ -209,7 +233,7 @@ GUIDE_STRINGS = {
         "guide.faq.czech_q": "Proč se pobyt nenahlásil?",
         "guide.faq.czech_a": "Čeští hosté se nehlásí. Jinak zkontrolujte stav: odesílání zastaví nehotové formuláře, ruční režim nebo pozastavené přihlášení.",
         "guide.faq.twice_q": "Může se host nahlásit dvakrát?",
-        "guide.faq.twice_a": "Sám od sebe ne. Když odpověď policie není jasná, hosté čekají na vás a znovu se neposílají.",
+        "guide.faq.twice_a": "UbyHostem ne. Když odpověď policie není jasná, UbyHost tuto dávku při příští automatické kontrole odešle ještě jednou a odpověď, že policie hosta už má, se počítá jako nahlášení. Při každé nejasné odpovědi dostanete upozornění.",
         "guide.faq.edit_q": "Host se spletl a hlášení už odešlo.",
         "guide.faq.edit_a": "Opravte údaje na pobytu a odešlete znovu. Záznamy, které policie odmítla, lze opravit a zkouší se až třikrát.",
 

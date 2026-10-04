@@ -1,4 +1,8 @@
-"""UX-116 (audit A-29): the confirm-from-e-mail screen's help and dates card."""
+"""UX-116 (audit A-29): the confirm-from-e-mail screen's help and dates card.
+
+WP17 (review 3.E item 10) then cut the help line altogether: "Yes, this is my
+stay" already says what the tap does, so the card is the title and the button.
+"""
 from datetime import timedelta
 from pathlib import Path
 
@@ -13,13 +17,11 @@ ENTITY = "Confirm Help Test"
 PASSWORD = "Confirm-Help-Password-123"
 ADMIN_USERNAME = "confirm-help-admin"
 
-AUDIT_COPY = {
+# The line WP17 cut, in both languages. It only repeated the button label.
+CUT_COPY = {
     "en": "One tap to confirm it’s really you.",
     "cs": "Jedním klepnutím potvrďte, že jste to opravdu vy.",
 }
-
-# The wording A-29 rejected: it explained the mechanism and said "Click" on a phone.
-REJECTED = ("scanner", "Click", "skener", "tlačítkem")
 
 
 def _read(name: str) -> str:
@@ -101,16 +103,15 @@ def _seed() -> int:
     )
 
 
-def test_the_audit_copy_is_shipped_in_both_languages():
-    for lang, expected in AUDIT_COPY.items():
-        assert i18n.STRINGS[lang]["claim_confirm_help"] == expected, lang
-
-
-def test_the_help_no_longer_explains_the_mechanism():
+def test_the_help_line_that_repeated_the_button_is_gone():
     for lang in ("en", "cs"):
-        value = i18n.STRINGS[lang]["claim_confirm_help"]
-        for rejected in REJECTED:
-            assert rejected not in value, f"{lang}: {rejected}"
+        assert "claim_confirm_help" not in i18n.STRINGS[lang], lang
+    template = _read("guest/confirm.html")
+    assert "claim_confirm_help" not in template
+    card = template[template.index('<div class="g-card">\n  <h2>{{ t(\'claim_confirm_title\') }}') :]
+    assert "{{ t('claim_confirm_title') }}" in card
+    assert "{{ t('claim_confirm_button') }}" in card
+    assert 'class="g-intro"' not in card
 
 
 def test_the_dates_card_carries_the_nights():
@@ -124,7 +125,9 @@ def test_the_rendered_card_shows_the_stay_length():
     try:
         response = TestClient(app).get(f"/l/{TOKEN}/{stay_id}/claim?lang=en")
         assert response.status_code == 200
-        assert i18n.STRINGS["en"]["claim_confirm_help"] in response.text
+        for cut in CUT_COPY.values():
+            assert cut not in response.text
+        assert i18n.STRINGS["en"]["claim_confirm_title"] in response.text
         assert i18n.STRINGS["en"]["nights_few"] % {"n": 3} in response.text
     finally:
         _cleanup()

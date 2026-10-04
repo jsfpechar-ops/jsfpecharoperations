@@ -5,8 +5,7 @@
 {% from "_components.html" import page_header, onboarding_banner with context %}
 {{ onboarding_banner(onboarding) }}
 {{ page_header(
-  t('automation.title'),
-  t('automation.lede')
+  t('automation.title')
 ) }}
 
 {% if rows %}
@@ -72,7 +71,7 @@
         <h3 style="margin-top:22px">{{ t('automation.credentials_title') }}</h3>
         <p class="small muted">
           {{ t('automation.credentials_help') }}
-          <a href="/static/docs/ubyport-ws-credential-sample.pdf" target="_blank" rel="noopener">{{ t('automation.sample_pdf') }}</a>
+          <a href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('automation.sample_pdf') }}</a>
           {{ t('automation.or_use') }}
           <a href="/apartments/{{ apartment.id }}#ubyport">{{ t('automation.full_setup') }}</a>.
         </p>
@@ -130,7 +129,7 @@
                   formmethod="post" formnovalidate>{{ t('automation.test') }}</button>
           <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/refresh-codelists"
                   formmethod="post" formnovalidate>{{ t('automation.refresh') }}</button>
-          <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('automation.full_setup') }}</a>
+          <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('automation.full_setup_button') }}</a>
         </div>
         <p class="small muted">{{ t('automation.saved_credentials_help') }}</p>
       </form>

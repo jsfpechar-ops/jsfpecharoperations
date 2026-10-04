@@ -24,6 +24,25 @@ def current_versions() -> Dict[str, str]:
     }
 
 
+_EN_MONTHS = (
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
+# Genitive, as in "4. října 2026".
+_CS_MONTHS = (
+    "ledna", "února", "března", "dubna", "května", "června",
+    "července", "srpna", "září", "října", "listopadu", "prosince",
+)
+
+
+def effective_date_text(lang: str) -> str:
+    """The shared effective date of Terms, Privacy and DPA, written out (WP24)."""
+    day = config.LEGAL_EFFECTIVE_DATE
+    if lang == "cs":
+        return f"{day.day}. {_CS_MONTHS[day.month - 1]} {day.year}"
+    return f"{day.day} {_EN_MONTHS[day.month - 1]} {day.year}"
+
+
 def pending(user_id: int) -> List[str]:
     """The documents whose current version this account has not accepted."""
     versions = current_versions()
@@ -75,9 +94,10 @@ def record(
 
     for doc in wanted:
         db.execute(
-            "INSERT OR IGNORE INTO legal_acceptance "
+            "INSERT INTO legal_acceptance "
             "(user_account_id, document, version, accepted_at, method, ip, user_agent) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (user_account_id, document, version) DO NOTHING",
             (user_id, doc, versions[doc], accepted_at, method, ip, user_agent),
         )
 
@@ -114,9 +134,10 @@ def backfill_from_audit() -> int:
             continue
         for doc in DOCUMENTS:
             if db.execute(
-                "INSERT OR IGNORE INTO legal_acceptance "
+                "INSERT INTO legal_acceptance "
                 "(user_account_id, document, version, accepted_at, method) "
-                "VALUES (?, ?, ?, ?, 'backfill')",
+                "VALUES (?, ?, ?, ?, 'backfill') "
+                "ON CONFLICT (user_account_id, document, version) DO NOTHING",
                 (row["owner_user_id"], doc, match.group(doc), row["at"]),
             ):
                 inserted += 1

@@ -269,6 +269,7 @@ def test_an_old_submission_keeps_its_receipt_but_loses_its_envelope():
 
     row = db.query_one("SELECT * FROM submission WHERE id = ?", (submission_id,))
     assert row["request_xml"] is None, "the passport numbers are still on disk"
+    assert row["request_xml_enc"] is None
     assert row["response_xml"] is None
     assert row["receipt_pdf"] == RECEIPT_B64, (
         "the Dorucenka is the evidence the host must still be able to produce"
@@ -341,10 +342,10 @@ def test_purging_one_owner_leaves_another_owners_envelope_alone():
     assert reporting.purge_submission_payloads(owner_user_id=mine) == 1
 
     assert db.query_one(
-        "SELECT request_xml FROM submission WHERE id = ?", (my_submission,)
+        "SELECT request_xml, request_xml_enc FROM submission WHERE id = ?", (my_submission,)
     )["request_xml"] is None
     assert db.query_one(
-        "SELECT request_xml FROM submission WHERE id = ?", (their_submission,)
+        "SELECT request_xml, request_xml_enc FROM submission WHERE id = ?", (their_submission,)
     )["request_xml"] == SUBMISSION_REQUEST, (
         "one host's purge blanked another host's submission envelope"
     )

@@ -7,12 +7,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "privacy.page_title": "Privacy Policy",
         "privacy.page_lede": (
-            "How %(name)s (the UbyHost software operator) processes personal data when you use "
-            "the hosted service, visit public pages, or interact with us. This policy does not "
-            "replace the guest privacy notice shown to your guests — that notice names the controller "
-            "configured for the property, which may differ from its property manager."
+            "How %(name)s (the UbyHost software operator) processes personal data when you use the hosted service, visit public pages, or interact with us. This policy does not replace the guest privacy notice shown to your guests. That notice names the controller configured for the property, which may differ from its property manager."
         ),
-        "privacy.effective": "Effective date: 19 September 2026. Version 1.5.",
+        "privacy.effective": "Effective date: %(date)s. Version %(version)s.",
         "privacy.cookies.table_intro": "The table below lists every cookie and item of local storage the service sets.",
         "cookies.table.name": "Name",
         "cookies.table.party": "Set by",
@@ -41,15 +38,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.cross_privacy": "Privacy Policy",
         "privacy.s01_title": "1. Scope and who should read this",
         "privacy.s01_body": (
-            "This Privacy Policy (\"Policy\") describes how %(name)s, identification number (IČO) "
-            "%(ico)s (the \"Operator\"), processes personal data in connection with the UbyHost "
-            "web application and related websites (the \"Service\"). It applies to: (a) accommodation "
-            "providers and their staff who hold a Host account (\"Host Users\"); (b) visitors to "
-            "public pages such as /login, /legal, /terms, and /privacy; and (c) technical processing "
-            "of Guest Data on behalf of Hosts as described below. It does not govern the relationship "
-            "between a Host and their Guests as controller and data subject — that is covered by the "
-            "guest-facing privacy notice at each property link (/l/{token}/privacy) and by the Host's "
-            "own policies."
+            "This Privacy Policy (\"Policy\") describes how %(name)s, identification number (IČO) %(ico)s (the \"Operator\"), processes personal data in connection with the UbyHost web application and related websites (the \"Service\"). It applies to: (a) accommodation providers and their staff who hold a Host account (\"Host Users\"); (b) visitors to public pages such as /login, /legal, /terms, and /privacy; and (c) technical processing of Guest Data on behalf of Hosts as described below. It does not govern the relationship between a Host and their Guests as controller and data subject. That is covered by the guest-facing privacy notice at each property link (/l/{token}/privacy) and by the Host's own policies."
         ),
         "privacy.s02_title": "2. Controller identity and contact",
         "privacy.s02_body": (
@@ -64,19 +53,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s03_title": "3. Roles: Operator, Host, and Guest",
         "privacy.s03_body": (
-            "For each property, the configured controller legal entity is the data controller for "
-            "personal data about Guests (names, travel documents, stays, signatures, and related "
-            "records). The operating property manager is the default controller and remains the "
-            "practical point of contact for questions about the stay. If the Host selects a different "
-            "controller, that entity must genuinely determine the purposes and means of processing; "
-            "changing a label in the Service does not itself transfer legal responsibility. The "
-            "Operator provides hosted software and processes Guest Data "
-            "only on the Host's documented instructions to deliver the Service — typically as a data "
-            "processor under GDPR Article 28. The Operator is not a joint controller with the Host "
-            "unless expressly agreed in writing. The Operator is controller for its own business data "
-            "(accounts, security, hosting). Guest Data processing terms are in the Data Processing "
-            "Agreement at /dpa. Nothing in this Policy transfers statutory duties of accommodation "
-            "providers or controllers to the Operator."
+            "For each property, the configured controller legal entity is the data controller for personal data about Guests (names, travel documents, stays, signatures, and related records). The operating property manager is the default controller and remains the practical point of contact for questions about the stay. If the Host selects a different controller, that entity must genuinely determine the purposes and means of processing; changing a label in the Service does not itself transfer legal responsibility. The Operator provides hosted software and processes Guest Data only on the Host's documented instructions to deliver the Service, typically as a data processor under GDPR Article 28. The Operator is not a joint controller with the Host unless expressly agreed in writing. The Operator is controller for its own business data (accounts, security, hosting). Guest Data processing terms are in the Data Processing Agreement at /dpa. Nothing in this Policy transfers statutory duties of accommodation providers or controllers to the Operator."
         ),
         "privacy.s04_title": "4. Categories of Host User data",
         "privacy.s04_body": (
@@ -135,6 +112,52 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "login. Browsers may also honour HTTP Strict Transport Security (HSTS) so this hostname "
             "is opened only over HTTPS for a limited period."
         ),
+        # WP09: owner's final wording from 04_legal_positions.md, sections 1, 4
+        # and 5. analytics_* and optout_* are shown on /privacy only while
+        # Umami is configured; roles_* sits in section 3, own_retention_* in 11.
+        "privacy.analytics_title": "Website analytics",
+        "privacy.analytics_body": (
+            "On our public pages (not in the app) we use Umami Cloud, operated by Umami Software, "
+            "Inc., with data stored in the EU, to count visits. Umami does not set cookies and does "
+            "not store your IP address. It derives a short-lived anonymous visit identifier from "
+            "your IP address, browser type and our website ID, and we see only aggregated "
+            "statistics (pages viewed, referring site, browser, device type, country). We do not "
+            "combine this data with account data and we do not use it for advertising. Legal "
+            "basis: our legitimate interest in understanding how our website is used (Art. 6(1)(f) "
+            "GDPR). The exemption under § 89(3) of Act No. 127/2005 Coll. applies because the "
+            "measurement serves only anonymous traffic statistics. You can switch measurement off "
+            "in your browser here:"
+        ),
+        "privacy.analytics_dnt": "We also respect your browser's Do Not Track setting.",
+        "privacy.optout_lede": (
+            "We measure visits to our public pages with Umami, without cookies."
+        ),
+        "privacy.optout_disable": "Turn off measurement in this browser",
+        "privacy.optout_off_note": "Measurement is off in this browser.",
+        "privacy.optout_enable": "Turn measurement back on",
+        "privacy.own_retention_title": "How long we keep data",
+        "privacy.own_retention_body": (
+            "Invoices: 10 years from the end of the year of issue (Act No. 235/2004 Coll., § 35). "
+            "Account data: while your account is active and 3 years after closure. Sign-up click "
+            "identifier from Google Ads: at most 90 days after the click. Consent records: while "
+            "your account is active and 3 years after. Backups are overwritten within 30 days."
+        ),
+        "privacy.roles_title": "Who is responsible",
+        "privacy.roles_body": (
+            "For your account, invoices, our website statistics and Google Ads measurement, "
+            "%(name)s, IČO %(ico)s, %(address)s is the controller. For the data of your guests "
+            "(guest book, stay-fee records, reports to the foreign police through UbyPort and any "
+            "document photos), you as the accommodation provider are the controller and we "
+            "process the data only on your instructions as your processor, under our data "
+            "processing agreement. Our subprocessors are listed at /subprocessors. Google Ireland "
+            "Ltd. receives the Google Ads click identifier only if you consent, and it processes "
+            "this as an independent controller."
+        ),
+        # Shown only outside production when an UBYHOST_OPERATOR_* value is
+        # empty; production refuses to start without them (env_guard).
+        "privacy.placeholder_name": "[Company name]",
+        "privacy.placeholder_ico": "[xxxxxxxx]",
+        "privacy.placeholder_address": "[registered address]",
         "privacy.s08_title": "8. Server logs and security monitoring",
         "privacy.s08_body": (
             "Our infrastructure automatically logs technical data: IP addresses, timestamps, request "
@@ -147,21 +170,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s09_title": "9. Recipients and subprocessors",
         "privacy.s09_body": (
-            "Personal data is accessed by authorised Operator personnel and contractors bound by "
-            "confidentiality. We use infrastructure subprocessors to host the Service, including "
-            "Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), "
-            "Render.com (demo hosting), DNS or "
-            "CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential "
-            "mitigation, client-side script monitoring, and HSTS when enabled for the production zone), "
-            "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a "
-            "transactional e-mail provider (including Amazon SES when enabled) or support tools. "
-            "Completion receipts may disclose the guest recipient address to the Host copied on the "
-            "message. Guest Data may be transmitted to the Czech Police UbyPort "
-            "systems or related endpoints when a Host enables reporting — that transmission occurs on "
-            "the Host's instructions as processor. We require subprocessors that process personal data "
-            "on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, "
-            "purposes, possible data and transfer notes are at /subprocessors. Material changes are "
-            "published there and reflected in this Policy."
+            "Personal data is accessed by authorised Operator personnel and contractors bound by confidentiality. We use infrastructure subprocessors to host the Service, including Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), Render.com (demo hosting), DNS or CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential mitigation, client-side script monitoring, and HSTS when enabled for the production zone), Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a transactional e-mail provider (including Amazon SES when enabled) or support tools. Completion receipts may disclose the guest recipient address to the Host copied on the message. Guest Data may be transmitted to the Czech Police UbyPort systems or related endpoints when a Host enables reporting. That transmission occurs on the Host's instructions as processor. We require subprocessors that process personal data on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, purposes, possible data and transfer notes are at /subprocessors. Material changes are published there and reflected in this Policy."
         ),
         "privacy.s10_title": "10. International transfers",
         "privacy.s10_body": (
@@ -278,12 +287,9 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
     "cs": {
         "privacy.page_title": "Zásady ochrany osobních údajů",
         "privacy.page_lede": (
-            "Jak %(name)s (provozovatel softwaru UbyHost) zpracovává osobní údaje při používání "
-            "hostované služby, návštěvě veřejných stránek nebo komunikaci s námi. Tyto zásady "
-            "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
-            "který se může lišit od správce objektu."
+            "Jak %(name)s (provozovatel softwaru UbyHost) zpracovává osobní údaje při používání hostované služby, návštěvě veřejných stránek nebo komunikaci s námi. Tyto zásady nenahrazují informaci pro hosty. V ní je uveden správce nastavený pro dané ubytování, který se může lišit od správce objektu."
         ),
-        "privacy.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
+        "privacy.effective": "Účinnost od: %(date)s. Verze %(version)s.",
         "privacy.cookies.table_intro": "Tabulka níže uvádí všechny soubory cookie a položky místního úložiště, které služba nastavuje.",
         "cookies.table.name": "Název",
         "cookies.table.party": "Nastavuje",
@@ -311,13 +317,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         "terms.cross_privacy": "Zásady ochrany osobních údajů",
         "privacy.s01_title": "1. Rozsah a komu je text určen",
         "privacy.s01_body": (
-            "Tyto zásady ochrany osobních údajů (\"Zásady\") popisují, jak %(name)s, IČO %(ico)s "
-            "(\"Provozovatel\"), zpracovává osobní údaje v souvislosti s webovou aplikací UbyHost "
-            "a souvisejícími stránkami (\"Služba\"). Platí pro: (a) poskytovatele ubytování a jejich "
-            "pracovníky s účtem (\"Uživatelé účtu\"); (b) návštěvníky veřejných stránek (/login, "
-            "/legal, /terms, /privacy); (c) technické zpracování údajů hostů na pokyn ubytovatele "
-            "dle níže. Neupravují vztah ubytovatele a hosta jako správce a subjektu údajů — to řeší "
-            "informace pro hosty u odkazu (/l/{token}/privacy) a vlastní dokumenty ubytovatele."
+            "Tyto zásady ochrany osobních údajů (\"Zásady\") popisují, jak %(name)s, IČO %(ico)s (\"Provozovatel\"), zpracovává osobní údaje v souvislosti s webovou aplikací UbyHost a souvisejícími stránkami (\"Služba\"). Platí pro: (a) poskytovatele ubytování a jejich pracovníky s účtem (\"Uživatelé účtu\"); (b) návštěvníky veřejných stránek (/login, /legal, /terms, /privacy); (c) technické zpracování údajů hostů na pokyn ubytovatele dle níže. Neupravují vztah ubytovatele a hosta jako správce a subjektu údajů. To řeší informace pro hosty u odkazu (/l/{token}/privacy) a vlastní dokumenty ubytovatele."
         ),
         "privacy.s02_title": "2. Identita správce a kontakt",
         "privacy.s02_body": (
@@ -329,15 +329,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s03_title": "3. Role: provozovatel, ubytovatel a host",
         "privacy.s03_body": (
-            "Správcem údajů hostů (jména, cestovní doklady, pobyty, podpisy aj.) je právnická osoba "
-            "nastavená pro konkrétní ubytování. Provozovatel/správce ubytování je výchozím správcem "
-            "údajů a praktickým kontaktem pro otázky k pobytu. Je-li zvolen jiný správce údajů, musí "
-            "skutečně určovat účely a prostředky zpracování; pouhá změna označení ve Službě právní "
-            "odpovědnost nepřenáší. Provozovatel UbyHostu poskytuje software a údaje hostů "
-            "zpracovává jen na dokumentovaný pokyn ubytovatele — obvykle jako zpracovatel dle čl. 28 "
-            "GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. "
-            "Provozovatel je správcem vlastních provozních údajů. Podmínky zpracování údajů hostů jsou "
-            "v DPA na /dpa. Povinnosti ubytovatele podle zákona se na Provozovatele nepřenášejí."
+            "Správcem údajů hostů (jména, cestovní doklady, pobyty, podpisy aj.) je právnická osoba nastavená pro konkrétní ubytování. Provozovatel/správce ubytování je výchozím správcem údajů a praktickým kontaktem pro otázky k pobytu. Je-li zvolen jiný správce údajů, musí skutečně určovat účely a prostředky zpracování; pouhá změna označení ve Službě právní odpovědnost nepřenáší. Provozovatel UbyHostu poskytuje software a údaje hostů zpracovává jen na dokumentovaný pokyn ubytovatele, obvykle jako zpracovatel dle čl. 28 GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. Provozovatel je správcem vlastních provozních údajů. Podmínky zpracování údajů hostů jsou v DPA na /dpa. Povinnosti ubytovatele podle zákona se na Provozovatele nepřenášejí."
         ),
         "privacy.s04_title": "4. Kategorie údajů uživatelů účtu",
         "privacy.s04_body": (
@@ -385,6 +377,49 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "cookie přihlášení nefunguje. Prohlížeče mohou také dodržovat HTTP Strict Transport "
             "Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
         ),
+        # WP09: konečné znění provozovatele z 04_legal_positions.md, oddíly 1,
+        # 4 a 5. analytics_* a optout_* jen při zapnutém Umami.
+        "privacy.analytics_title": "Měření návštěvnosti",
+        "privacy.analytics_body": (
+            "Na veřejných stránkách webu (ne v aplikaci) používáme nástroj Umami Cloud provozovaný "
+            "společností Umami Software, Inc. s ukládáním dat v EU, abychom zjistili počet návštěv. "
+            "Umami nepoužívá cookies a neukládá vaši IP adresu. Z IP adresy, typu prohlížeče a "
+            "identifikátoru našeho webu vytváří krátkodobý anonymní identifikátor návštěvy a my "
+            "vidíme pouze souhrnné statistiky (zobrazené stránky, odkazující web, prohlížeč, typ "
+            "zařízení, země). Tato data nespojujeme s údaji z vašeho účtu a nepoužíváme je k "
+            "reklamě. Právní základ: náš oprávněný zájem porozumět používání webu (čl. 6 odst. 1 "
+            "písm. f) GDPR). Jde o měření nezbytné pro provoz webu ve smyslu § 89 odst. 3 zákona "
+            "č. 127/2005 Sb., protože slouží jen k anonymní statistice návštěvnosti. Měření můžete "
+            "ve svém prohlížeči vypnout zde:"
+        ),
+        "privacy.analytics_dnt": "Respektujeme také nastavení Do Not Track ve vašem prohlížeči.",
+        "privacy.optout_lede": (
+            "Návštěvnost veřejných stránek měříme nástrojem Umami bez cookies."
+        ),
+        "privacy.optout_disable": "Vypnout měření v tomto prohlížeči",
+        "privacy.optout_off_note": "Měření je v tomto prohlížeči vypnuté.",
+        "privacy.optout_enable": "Znovu zapnout měření",
+        "privacy.own_retention_title": "Jak dlouho údaje uchováváme",
+        "privacy.own_retention_body": (
+            "Faktury: 10 let od konce roku vystavení (§ 35 zákona č. 235/2004 Sb.). Údaje účtu: po "
+            "dobu trvání účtu a 3 roky po jeho zrušení. Identifikátor kliknutí z Google Ads: "
+            "nejvýše 90 dní od kliknutí. Záznamy o souhlasech: po dobu trvání účtu a 3 roky poté. "
+            "Zálohy se přepisují do 30 dní."
+        ),
+        "privacy.roles_title": "Kdo odpovídá za zpracování",
+        "privacy.roles_body": (
+            "Za údaje vašeho účtu, faktury, statistiky návštěvnosti webu a měření reklam Google "
+            "Ads je správcem %(name)s, IČO %(ico)s, %(address)s. Za údaje vašich hostů (domovní "
+            "kniha, evidence k poplatku z pobytu, hlášení cizinecké policii přes UbyPort a "
+            "případné fotografie dokladů) jste správcem vy jako ubytovatel a my je zpracováváme "
+            "pouze podle vašich pokynů jako zpracovatel na základě zpracovatelské smlouvy. Seznam "
+            "našich subzpracovatelů najdete na /subprocessors. Společnost Google Ireland Ltd. "
+            "obdrží identifikátor kliknutí z Google Ads jen s vaším souhlasem a zpracovává jej "
+            "jako samostatný správce."
+        ),
+        "privacy.placeholder_name": "[Obchodní firma]",
+        "privacy.placeholder_ico": "[xxxxxxxx]",
+        "privacy.placeholder_address": "[sídlo]",
         "privacy.s08_title": "8. Serverové logy a bezpečnost",
         "privacy.s08_body": (
             "Infrastruktura automaticky zaznamenává IP adresy, čas, cesty požadavků, user agent, chyby "

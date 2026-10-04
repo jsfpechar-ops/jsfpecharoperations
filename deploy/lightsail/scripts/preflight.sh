@@ -29,9 +29,47 @@ done
 DEPLOYMENT="${UBYHOST_DEPLOYMENT:-local}"
 UBYPORT="${UBYHOST_UBYPORT_ENV:-mock}"
 
-if [ "${DEPLOYMENT}" != "production" ]; then
-  warn "UBYHOST_DEPLOYMENT=${DEPLOYMENT} — this Lightsail stack is meant to be production"
+if [ "${DEPLOYMENT}" = "staging" ]; then
+  # Step 0: the staging Lightsail server. Either the mock UbyPort, served by
+  # the mock-ubyport compose service (profile "staging"), or the real UbyPort
+  # test environment. Never prod (refused below as well).
+  case "${UBYPORT}" in
+    mock)
+      case ",${COMPOSE_PROFILES:-}," in
+        *,staging,*) ;;
+        *) die "staging on mock needs COMPOSE_PROFILES=staging in .env (starts the mock-ubyport service)" ;;
+      esac
+      case "${UBYHOST_MOCK_URL:-}" in
+        http://mock-ubyport:8081/*) ;;
+        *) die "staging on mock needs UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc" ;;
+      esac
+      ;;
+    test)
+      warn "staging talks to the real UbyPort test environment: test data and test credentials only"
+      ;;
+    *) die "UBYHOST_DEPLOYMENT=staging requires UBYHOST_UBYPORT_ENV=mock or test" ;;
+  esac
+  case "${UBYHOST_WEB_WORKERS:-2}" in
+  ''|*[!0-9]*|0|0*) die "UBYHOST_WEB_WORKERS must be a whole number from 1 to 16" ;;
+esac
+if [ "${UBYHOST_WEB_WORKERS:-2}" -gt 16 ]; then
+  die "UBYHOST_WEB_WORKERS must be a whole number from 1 to 16"
 fi
+
+case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
+    *production*) die "staging must replicate to its own LITESTREAM_S3_PATH, not ${LITESTREAM_S3_PATH:-ubyhost/production}" ;;
+  esac
+elif [ "${DEPLOYMENT}" != "production" ]; then
+  warn "UBYHOST_DEPLOYMENT=${DEPLOYMENT} — this Lightsail stack is meant to be production or staging"
+fi
+
+case ",${COMPOSE_PROFILES:-}," in
+  *,staging,*)
+    if [ "${DEPLOYMENT}" = "production" ]; then
+      die "COMPOSE_PROFILES=staging on production would start the mock UbyPort"
+    fi
+    ;;
+esac
 
 if [ "${UBYPORT}" = "prod" ] && [ "${DEPLOYMENT}" != "production" ]; then
   die "UBYHOST_UBYPORT_ENV=prod requires UBYHOST_DEPLOYMENT=production"
@@ -75,6 +113,46 @@ fi
 
 if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ]; then
   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
+fi
+
+# WP06: web + scheduler worker + litestream + Caddy need at least the 2 GB
+# bundle. WP32: the compose defaults (web 2g, worker 1g, litestream 256m,
+# caddy 256m) are sized for the 8 GB production server; a smaller server sets
+# lower UBYHOST_*_MEM values in .env (see docs/LIGHTSAIL.md, Sizing).
+mem_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+if [ "${mem_kb:-0}" -gt 0 ] && [ "${mem_kb}" -lt 1700000 ]; then
+  if [ "${UBYHOST_ALLOW_SMALL_HOST:-0}" = "1" ]; then
+    warn "only $((mem_kb / 1024)) MB RAM — the stack is sized for the 2 GB bundle"
+  else
+    die "only $((mem_kb / 1024)) MB RAM — move to the 2 GB Lightsail bundle first (or set UBYHOST_ALLOW_SMALL_HOST=1)"
+  fi
+fi
+
+# WP05: the litestream service replicates the database to S3 continuously.
+# Set UBYHOST_LITESTREAM_ENABLED=0 to deploy without S3 (nightly backup only).
+litestream_enabled="${UBYHOST_LITESTREAM_ENABLED:-1}"
+case "${litestream_enabled}" in
+  0|false|no|FALSE|NO) litestream_enabled=0 ;;
+  *) litestream_enabled=1 ;;
+esac
+if [ "${litestream_enabled}" = "0" ]; then
+  if [ "${DEPLOYMENT}" = "production" ]; then
+    warn "UBYHOST_LITESTREAM_ENABLED=0 — no continuous S3 replica; rely on nightly backup until Litestream is configured"
+  fi
+elif [ "${DEPLOYMENT}" = "production" ]; then
+  for var in LITESTREAM_S3_BUCKET LITESTREAM_ACCESS_KEY_ID LITESTREAM_SECRET_ACCESS_KEY; do
+    if [ -z "${!var:-}" ]; then
+      die "${var} is empty — Litestream cannot replicate the database to S3 (see README.md, Litestream), or set UBYHOST_LITESTREAM_ENABLED=0"
+    fi
+  done
+  if [ -z "${LITESTREAM_HEARTBEAT_URL:-}" ]; then
+    warn "LITESTREAM_HEARTBEAT_URL is empty — stalled replication would go unnoticed"
+  fi
+fi
+if [ "${litestream_enabled}" = "1" ]; then
+  case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
+    /*|*/) die "LITESTREAM_S3_PATH must not start or end with a slash" ;;
+  esac
 fi
 
 if [ -n "${UBYHOST_SECRET_KEY:-}" ] && [ "${#UBYHOST_SECRET_KEY}" -lt 32 ]; then

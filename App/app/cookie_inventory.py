@@ -128,6 +128,31 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
     },
     {
+        # WP09: written only when a visitor clicks the opt-out on /privacy
+        # (static/umami-optout.js). The Umami tracker reads it and then counts
+        # nothing in this browser; the opt-back-in link removes it.
+        "name": "umami.disabled",
+        "set_by": "static/umami-optout.js",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "public",
+        "purpose": {
+            "en": (
+                "Cookieless analytics (Umami): no cookies are set. This optional key is stored "
+                "only after you turn measurement off on the Privacy Policy page"
+            ),
+            "cs": (
+                "Měření návštěvnosti bez cookies (Umami): žádné cookies se nenastavují. Tento "
+                "nepovinný klíč se uloží jen poté, co měření vypnete na stránce Zásad ochrany "
+                "osobních údajů"
+            ),
+        },
+        "lifetime": {
+            "en": "Until you turn measurement back on or clear it",
+            "cs": "Dokud měření znovu nezapnete nebo klíč nevymažete",
+        },
+    },
+    {
         "name": "__cf_bm",
         "set_by": "Cloudflare edge",
         "party": "Cloudflare",
@@ -154,5 +179,212 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
 )
 
 
+# Third-party services on the public pages that set no cookie, listed so the
+# privacy page can say so (WP09, 04_legal_positions.md section 1). Umami itself
+# writes nothing; the only storage key involved is the visitor's own opt-out,
+# "umami.disabled", which is a COOKIE_INVENTORY row above because our
+# umami-optout.js writes it.
+COOKIELESS_SERVICES: Tuple[Dict[str, object], ...] = (
+    {
+        "name": "Umami Cloud",
+        "surface": "public",
+        "party": "Umami Software, Inc.",
+        "note": {
+            "en": (
+                "Cookieless analytics, no cookies set; optional localStorage key umami.disabled "
+                "only after opt-out. Public marketing and legal pages only, data stored in the EU. "
+                "Never loaded in the app, on sign-in or on guest pages."
+            ),
+            "cs": (
+                "Měření návštěvnosti bez cookies, žádné cookies se nenastavují; nepovinný klíč "
+                "umami.disabled v localStorage jen po vypnutí měření. Jen veřejné marketingové a "
+                "právní stránky, data uložená v EU. V aplikaci, při přihlášení ani na stránkách "
+                "pro hosty se nikdy nenačítá."
+            ),
+        },
+    },
+)
+
+
+# WP26: purpose and lifetime for the guest pages' other languages. The guest
+# privacy page renders this whole table, so every row carries them; the host
+# and public pages stay EN/CS and never read these keys.
+_GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
+    "ubyhost_session": {
+        "purpose": {
+            "de": "Hält Sie angemeldet",
+            "es": "Mantiene su sesión iniciada",
+            "fr": "Maintient votre connexion",
+        },
+        "lifetime": {
+            "de": "12 Stunden oder 30 Tage mit „Angemeldet bleiben“",
+            "es": "12 horas, o 30 días con «recordarme»",
+            "fr": "12 heures, ou 30 jours avec « se souvenir de moi »",
+        },
+    },
+    "ubyhost_csrf": {
+        "purpose": {
+            "de": "Schützt Formulare vor Cross-Site-Anfragen",
+            "es": "Protege los formularios contra solicitudes entre sitios",
+            "fr": "Protège les formulaires contre les requêtes intersites",
+        },
+        "lifetime": {
+            "de": "Wie die Sitzung, bis zu 30 Tage",
+            "es": "Igual que la sesión, hasta 30 días",
+            "fr": "Liée à la session, jusqu'à 30 jours",
+        },
+    },
+    "ubyhost_lang": {
+        "purpose": {
+            "de": "Speichert Ihre Sprache",
+            "es": "Recuerda su idioma",
+            "fr": "Mémorise votre langue",
+        },
+        "lifetime": {
+            "de": "180 Tage",
+            "es": "180 días",
+            "fr": "180 jours",
+        },
+    },
+    "ubyhost_pin": {
+        "purpose": {
+            "de": "Speichert Ihren Gastzugang zum Aufenthalt auf diesem Gerät",
+            "es": "Mantiene su acceso a la estancia en este dispositivo",
+            "fr": "Conserve votre accès voyageur au séjour sur cet appareil",
+        },
+        "lifetime": {
+            "de": "7 Tage",
+            "es": "7 días",
+            "fr": "7 jours",
+        },
+    },
+    "ubyhost_owned": {
+        "purpose": {
+            "de": "Speichert, welche Formulare dieses Gerät gesendet hat",
+            "es": "Recuerda qué formularios envió este dispositivo",
+            "fr": "Mémorise les formulaires envoyés depuis cet appareil",
+        },
+        "lifetime": {
+            "de": "60 Tage",
+            "es": "60 días",
+            "fr": "60 jours",
+        },
+    },
+    "ubyhost_claim": {
+        "purpose": {
+            "de": "Speichert eine beanspruchte Reservierung auf diesem Gerät",
+            "es": "Mantiene una reserva reclamada en este dispositivo",
+            "fr": "Conserve une réservation revendiquée sur cet appareil",
+        },
+        "lifetime": {
+            "de": "60 Tage",
+            "es": "60 días",
+            "fr": "60 jours",
+        },
+    },
+    "ubyhost_guest_lang": {
+        "purpose": {
+            "de": "Speichert die Sprache des Gastes",
+            "es": "Recuerda el idioma del huésped",
+            "fr": "Mémorise la langue du voyageur",
+        },
+        "lifetime": {
+            "de": "60 Tage",
+            "es": "60 días",
+            "fr": "60 jours",
+        },
+    },
+    "ubyhost-sidebar-collapsed": {
+        "purpose": {
+            "de": "Speichert den Zustand der Seitenleiste",
+            "es": "Recuerda el estado de la barra lateral",
+            "fr": "Mémorise l'état de la barre latérale",
+        },
+        "lifetime": {
+            "de": "Bis Sie es löschen",
+            "es": "Hasta que la borre",
+            "fr": "Jusqu'à ce que vous l'effaciez",
+        },
+    },
+    "ubyhost-command-recents": {
+        "purpose": {
+            "de": "Zuletzt verwendete Einträge der Befehlspalette",
+            "es": "Elementos recientes de la paleta de comandos",
+            "fr": "Éléments récents de la palette de commandes",
+        },
+        "lifetime": {
+            "de": "Bis Sie es löschen",
+            "es": "Hasta que la borre",
+            "fr": "Jusqu'à ce que vous l'effaciez",
+        },
+    },
+    "ubyhost-saved-stay-views": {
+        "purpose": {
+            "de": "Gespeicherte Ansichten der Aufenthaltsliste",
+            "es": "Vistas guardadas de la lista de estancias",
+            "fr": "Vues enregistrées de la liste des séjours",
+        },
+        "lifetime": {
+            "de": "Bis Sie es löschen",
+            "es": "Hasta que la borre",
+            "fr": "Jusqu'à ce que vous l'effaciez",
+        },
+    },
+    "umami.disabled": {
+        "purpose": {
+            "de": "Cookielose Analyse (Umami): Es werden keine Cookies gesetzt. Dieser optionale Schlüssel wird nur gespeichert, nachdem Sie die Messung auf der Seite zur Datenschutzerklärung deaktiviert haben",
+            "es": "Analítica sin cookies (Umami): no se establecen cookies. Esta clave opcional solo se guarda después de que desactive la medición en la página de la Política de privacidad",
+            "fr": "Mesure d'audience sans cookies (Umami) : aucun cookie n'est défini. Cette clé facultative n'est enregistrée qu'après la désactivation de la mesure sur la page Politique de confidentialité",
+        },
+        "lifetime": {
+            "de": "Bis Sie die Messung wieder aktivieren oder ihn löschen",
+            "es": "Hasta que vuelva a activar la medición o la borre",
+            "fr": "Jusqu'à la réactivation de la mesure ou son effacement",
+        },
+    },
+    "__cf_bm": {
+        "purpose": {
+            "de": "Cloudflare-Bot-Management, nur gesetzt, wenn der Edge-Server die Anfrage prüft",
+            "es": "Gestión de bots de Cloudflare; solo se establece cuando el servidor perimetral pone a prueba la solicitud",
+            "fr": "Gestion des bots Cloudflare, définie uniquement lorsque le réseau périphérique soumet la requête à un contrôle",
+        },
+        "lifetime": {
+            "de": "Etwa 30 Minuten",
+            "es": "Unos 30 minutos",
+            "fr": "Environ 30 minutes",
+        },
+    },
+    "cf_clearance": {
+        "purpose": {
+            "de": "Cloudflare-Freigabe nach bestandener Prüfung, nur danach gesetzt",
+            "es": "Autorización tras el desafío de Cloudflare; solo se establece después de superarlo",
+            "fr": "Autorisation après contrôle Cloudflare, définie uniquement après la réussite d'un contrôle",
+        },
+        "lifetime": {
+            "de": "Bis zu 1 Jahr",
+            "es": "Hasta 1 año",
+            "fr": "Jusqu'à 1 an",
+        },
+    },
+}
+
+for _row in COOKIE_INVENTORY:
+    for _field, _texts in _GUEST_LANGUAGE_TEXT.get(str(_row["name"]), {}).items():
+        _row[_field].update(_texts)  # type: ignore[union-attr]
+
+
 def names() -> Tuple[str, ...]:
     return tuple(str(row["name"]) for row in COOKIE_INVENTORY)
+
+
+# WP27 (privacy first): the only cookies the app itself ever sets. Every one is
+# strictly necessary: sign-in, CSRF protection, the guest PIN and claim, the
+# guest's own submitted forms, and the language the visitor chose. There is no
+# analytics, advertising or other tracking cookie. ``tests/test_privacy_first.py``
+# crawls host, guest and public pages and fails if the set of Set-Cookie names
+# differs from this one. The Cloudflare rows are set by the edge, not the app.
+STRICTLY_NECESSARY_COOKIES = frozenset(
+    str(row["name"])
+    for row in COOKIE_INVENTORY
+    if row["kind"] == "cookie" and row["party"] == "first"
+)

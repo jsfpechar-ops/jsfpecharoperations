@@ -120,8 +120,14 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "blocked": "NO - rejected, cannot be corrected",
         "pending": "not yet",
     }.get(row["submit_state"], row["submit_state"])
+    by_hand = reporting.guest_filed_by_hand(row)
+    if by_hand:
+        # WP23: the host filed this guest in the UbyPort web application.
+        reported = "yes - filed by hand in UbyPort"
     stamp = ""
-    if row["submission_id"]:
+    if by_hand:
+        stamp = row["manual_reference"] or ""
+    elif row["submission_id"]:
         sub = db.query_one("SELECT pseudo_stamp FROM submission WHERE id = ?", (row["submission_id"],))
         stamp = (sub["pseudo_stamp"] if sub else "") or ""
     return {
@@ -142,7 +148,7 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "note": row["note"] or "",
         "signed": "yes" if reporting.guest_has_signature(row) else "no",
         "reported": reported,
-        "reported_at": row["submitted_at"] or "",
+        "reported_at": (row["manual_filed_at"] if by_hand else row["submitted_at"]) or "",
         "stamp": stamp,
         "_guest_id": row["id"],
         "_apartment_id": row["apartment_id"],
@@ -376,11 +382,18 @@ def registration_form_pdf(guest_id: int) -> bytes:
     }
     pdf.setFont(FONT_REGULAR, 9)
     pdf.setFillGray(0)
-    pdf.drawRightString(width - 20 * mm, y - 7 * mm,
-                        status_map.get(guest["submit_state"], guest["submit_state"]))
-    if guest["submitted_at"]:
+    by_hand = reporting.guest_filed_by_hand(guest)
+    status = status_map.get(guest["submit_state"], guest["submit_state"])
+    if by_hand:
+        status = "Reported to the Foreign Police (filed by hand in UbyPort)"
+    pdf.drawRightString(width - 20 * mm, y - 7 * mm, status)
+    filed = guest["manual_filed_at"] if by_hand else guest["submitted_at"]
+    if filed:
         pdf.setFillGray(0.4)
-        pdf.drawRightString(width - 20 * mm, y - 12 * mm, f"at {guest['submitted_at']}")
+        line = f"at {filed}"
+        if by_hand and guest["manual_reference"]:
+            line += f", ref. {guest['manual_reference']}"
+        pdf.drawRightString(width - 20 * mm, y - 12 * mm, line)
 
     if guest["notice_version"]:
         pdf.setFont(FONT_REGULAR, 7)
@@ -414,22 +427,38 @@ def _house_label(row) -> str:
 
 # --- retention -----------------------------------------------------------
 #
-# Six years is a floor set by § 101, and under GDPR's storage-limitation
-# principle it is also a ceiling: once it passes there is no longer a legal
-# basis for holding a guest's passport number, so the record has to go.
+# Six years is a floor set by § 101(4) zákon 326/1999 Sb. and § 3g(4) zákon
+# 565/1990 Sb., and under GDPR's storage-limitation principle it is also a
+# ceiling. Both laws count "from the last entry" of the book; for a book kept
+# continuously that would mean never deleting, so the owner's decision (legal
+# positions, section 4) reads it per record: six years from the end of each
+# stay, the rule § 101(4) itself applies to the paper forms. Deletion runs once
+# a year: a record whose six years end in year Y goes on 31 January of Y + 1.
+# The host DPA states this reading; the host can export the book first.
+
+PURGE_MONTH = 1
+PURGE_DAY = 31
+
 
 def retention_cutoff(today: Optional[date] = None) -> date:
+    """Records whose stay ended before this date are due for deletion.
+
+    A stay ending in year Y reaches six years in Y + 6 and is deleted on
+    31 January of Y + 7. So from 31 January of this year every stay that ended
+    up to 31 December seven years ago is due; before that day, one year less.
+    """
     today = today or date.today()
-    try:
-        return date(today.year - RETENTION_YEARS, today.month, today.day)
-    except ValueError:  # 29 February in a leap year
-        return date(today.year - RETENTION_YEARS, today.month, today.day - 1)
+    if today >= date(today.year, PURGE_MONTH, PURGE_DAY):
+        last_year_due = today.year - RETENTION_YEARS - 1
+    else:
+        last_year_due = today.year - RETENTION_YEARS - 2
+    return date(last_year_due + 1, 1, 1)
 
 
 def expired_guest_ids(
     today: Optional[date] = None, owner_user_id: Optional[int] = None
 ) -> List[int]:
-    """Guest records whose stay ended more than six years ago.
+    """Guest records past their six years and their 31 January deletion day.
 
     ``date()`` is applied to both sides of the ``COALESCE`` so a malformed
     ``stay_to`` (SQLite ``date()`` returns NULL for it) falls back to the
@@ -530,7 +559,8 @@ def purge_expired(
         db.execute(f"DELETE FROM guest WHERE id IN ({marks})", ids)
         db.audit(
             "retention_purge",
-            f"deleted {len(ids)} guest record(s) older than {RETENTION_YEARS} years",
+            f"deleted {len(ids)} guest record(s) whose stay ended before "
+            f"{retention_cutoff(today).isoformat()}",
         )
     # The guests those submissions described are gone, so the envelope they
     # carried has no owner left to be evidence for.

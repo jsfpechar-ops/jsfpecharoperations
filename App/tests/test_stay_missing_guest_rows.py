@@ -90,7 +90,7 @@ def test_the_rows_are_numbered_after_the_guests_that_exist(stay):
 
     assert host_i18n.translate("en", "stay.detail.guests.placeholder", n=2) in page.text
     assert host_i18n.translate("en", "stay.detail.guests.placeholder", n=3) in page.text
-    assert "Guest 1 — not registered yet" not in page.text
+    assert "Guest 1: not registered yet" not in page.text
 
 
 def test_a_czech_host_reads_the_rows_in_czech(stay):
@@ -98,8 +98,8 @@ def test_a_czech_host_reads_the_rows_in_czech(stay):
 
     page = client.get(f"/reservations/{reservation['id']}?lang=cs")
 
-    assert "Host č. 2 — zatím neregistrován" in page.text
-    assert "Host č. 3 — zatím neregistrován" in page.text
+    assert "Host č. 2: zatím neregistrován" in page.text
+    assert "Host č. 3: zatím neregistrován" in page.text
 
 
 def test_each_row_carries_both_ways_to_fill_it(stay):
@@ -151,10 +151,10 @@ def test_an_unknown_headcount_guesses_nothing(stay):
 
 def test_the_copy_is_in_both_dictionaries():
     assert host_i18n.STRINGS["en"]["stay.detail.guests.placeholder"] == (
-        "Guest %(n)s — not registered yet"
+        "Guest %(n)s: not registered yet"
     )
     assert host_i18n.STRINGS["cs"]["stay.detail.guests.placeholder"] == (
-        "Host č. %(n)s — zatím neregistrován"
+        "Host č. %(n)s: zatím neregistrován"
     )
     assert host_i18n.STRINGS["en"]["stay.detail.guests.add_by_hand"] == "Add by hand"
     assert host_i18n.STRINGS["cs"]["stay.detail.guests.add_by_hand"] == "Přidat ručně"

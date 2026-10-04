@@ -209,13 +209,13 @@ def _add_guest(client, reservation_id: int) -> int:
         ),
         (
             "flash.apartments.connection_ok",
-            "Connection works — UbyPort accepted your web-service login.",
-            "Spojení funguje — UbyPort přijal vaše přihlašovací údaje.",
+            "Connection works. UbyPort accepted your web-service login.",
+            "Spojení funguje. UbyPort přijal vaše přihlašovací údaje.",
         ),
         (
             "flash.reservations.claim_released",
-            "Assignment released — another e-mail can now claim this stay.",
-            "Přiřazení uvolněno — pobyt teď může převzít jiný e-mail.",
+            "Assignment released. Another e-mail can now claim this stay.",
+            "Přiřazení uvolněno. Pobyt teď může převzít jiný e-mail.",
         ),
     ],
 )

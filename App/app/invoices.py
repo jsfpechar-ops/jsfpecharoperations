@@ -414,10 +414,11 @@ def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
         seq_year, seq_no, number, vs = allocate_number(cur, entity, year)
         columns = _invoice_columns(draft, number, vs, seq_year, seq_no)
         cur.execute(
-            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)})",
+            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)}) "
+            "RETURNING id",
             list(columns.values()),
         )
-        invoice_id = cur.lastrowid
+        invoice_id = int(cur.fetchall()[0][0])
         for position, item in enumerate(draft["items"], start=1):
             cur.execute(
                 "INSERT INTO invoice_item (invoice_id, position, kind, description, quantity, "
@@ -537,20 +538,38 @@ def cancel(invoice_id: int, reason: str, correction_date: Optional[str], actor_u
     return new_id
 
 
+def retention_cutoff(today: date) -> date:
+    """Issued before this date means the 10 years have run (§ 35 zákon 235/2004 Sb.).
+
+    Ten years from the end of the calendar year of issue: a 2015 invoice is
+    kept through 31 December 2025 and goes from 1 January 2026.
+    """
+    return date(today.year - 10, 1, 1)
+
+
 def expired_ids(today: date, owner_user_id: Optional[int] = None) -> List[int]:
-    """Issued documents older than 10 full years (the 10-year rule)."""
-    cutoff = date(today.year - 10, 1, 1).isoformat()
+    """Issued documents past the 10-year rule; ``None`` means every workspace.
+
+    An original whose correction is still inside its own ten years stays: the
+    correction points at it and has to remain readable. Corrections come first
+    in the list so a batch that holds both deletes them in a valid order.
+    """
+    cutoff = retention_cutoff(today).isoformat()
     return [
         r["id"]
         for r in db.query(
-            "SELECT id FROM invoice WHERE issue_date < ? AND owner_user_id IS ?",
-            (cutoff, owner_user_id),
+            "SELECT id FROM invoice WHERE issue_date < ? "
+            "AND (? IS NULL OR owner_user_id = ?) "
+            "AND NOT EXISTS (SELECT 1 FROM invoice c "
+            "                WHERE c.corrects_invoice_id = invoice.id AND c.issue_date >= ?) "
+            "ORDER BY CASE WHEN corrects_invoice_id IS NULL THEN 1 ELSE 0 END, id",
+            (cutoff, owner_user_id, owner_user_id, cutoff),
         )
     ]
 
 
 def purge_expired(today: date, owner_user_id: Optional[int] = None) -> int:
-    """Delete issued documents older than 10 full years, with the unlock flag."""
+    """Delete issued documents past the 10-year rule, with the unlock flag."""
     ids = expired_ids(today, owner_user_id)
     if not ids:
         return 0

@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, guest_slug, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -58,8 +58,43 @@ CS_PASSPORT_UPLOAD_MESSAGES = {
     "The file does not look like a valid PDF.": "Soubor nevypadá jako platné PDF.",
     "The photo is too large. Use a file under 5 MB.": "Fotografie je příliš velká. Maximálně 5 MB.",
     "The file does not look like a valid image.": "Soubor nevypadá jako platný obrázek.",
+    "The photo has too many pixels. Take it again at the normal camera setting.": (
+        "Fotografie má příliš mnoho pixelů. Vyfoťte ji znovu v běžném nastavení fotoaparátu."
+    ),
 }
 
+
+# WP26: the same refusals for the other guest languages, keyed the same way.
+PASSPORT_UPLOAD_MESSAGES: Dict[str, Dict[str, str]] = {
+    "cs": CS_PASSPORT_UPLOAD_MESSAGES,
+    "de": {
+        "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Laden Sie ein JPEG-, PNG- oder WebP-Foto Ihrer Reisepass-Datenseite oder ein PDF hoch (zum Beispiel ein Meldeformular mit bis zu 11 Gästen).",
+        "The uploaded file looks empty.": "Die hochgeladene Datei scheint leer zu sein.",
+        "The PDF is too large. Use a file under 15 MB.": "Das PDF ist zu groß. Verwenden Sie eine Datei unter 15 MB.",
+        "The file does not look like a valid PDF.": "Die Datei scheint kein gültiges PDF zu sein.",
+        "The photo is too large. Use a file under 5 MB.": "Das Foto ist zu groß. Verwenden Sie eine Datei unter 5 MB.",
+        "The file does not look like a valid image.": "Die Datei scheint kein gültiges Bild zu sein.",
+        "The photo has too many pixels. Take it again at the normal camera setting.": "Das Foto hat zu viele Pixel. Nehmen Sie es mit der normalen Kameraeinstellung erneut auf.",
+    },
+    "es": {
+        "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Suba una foto JPEG, PNG o WebP de la página de datos de su pasaporte, o un PDF (por ejemplo, un formulario de registro de hasta 11 huéspedes).",
+        "The uploaded file looks empty.": "El archivo subido parece estar vacío.",
+        "The PDF is too large. Use a file under 15 MB.": "El PDF es demasiado grande. Use un archivo de menos de 15 MB.",
+        "The file does not look like a valid PDF.": "El archivo no parece un PDF válido.",
+        "The photo is too large. Use a file under 5 MB.": "La foto es demasiado grande. Use un archivo de menos de 5 MB.",
+        "The file does not look like a valid image.": "El archivo no parece una imagen válida.",
+        "The photo has too many pixels. Take it again at the normal camera setting.": "La foto tiene demasiados píxeles. Vuelva a hacerla con la configuración normal de la cámara.",
+    },
+    "fr": {
+        "Upload a JPEG, PNG, or WebP photo of your passport ID page, or a PDF (for example a registration form with up to 11 guests).": "Téléversez une photo JPEG, PNG ou WebP de la page d'identité de votre passeport, ou un PDF (par exemple un formulaire d'enregistrement de 11 voyageurs maximum).",
+        "The uploaded file looks empty.": "Le fichier téléversé semble vide.",
+        "The PDF is too large. Use a file under 15 MB.": "Le PDF est trop volumineux. Utilisez un fichier de moins de 15 Mo.",
+        "The file does not look like a valid PDF.": "Le fichier ne semble pas être un PDF valide.",
+        "The photo is too large. Use a file under 5 MB.": "La photo est trop volumineuse. Utilisez un fichier de moins de 5 Mo.",
+        "The file does not look like a valid image.": "Le fichier ne semble pas être une image valide.",
+        "The photo has too many pixels. Take it again at the normal camera setting.": "La photo comporte trop de pixels. Reprenez-la avec le réglage normal de l'appareil photo.",
+    },
+}
 
 def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-owned")
@@ -70,57 +105,52 @@ def _claim_serializer() -> URLSafeSerializer:
 
 
 def _accept_language(request: Request) -> str:
-    """What the guest's phone asks for: Czech or Slovak -> Czech, else English.
+    """What the guest's browser asks for, matched against the guest catalogs.
 
-    Read only when the guest has said nothing themselves. A browser always
-    sends this header, so a German guest's first screen is English instead of
-    Czech. The first tag wins, because browsers list their languages in order
-    of preference. A request that asks for nothing in particular -- no header
-    at all, or a bare ``*`` -- is not a foreign guest, so the public default
-    stands rather than being quietly turned into English.
+    Read only when the guest has said nothing themselves. Every browser sends
+    this header, ranked by q-value, so a German phone gets German, ``es-MX``
+    gets Spanish and a Slovak phone gets Czech. Only the header is read: no IP
+    lookup, no outside service, nothing stored. A header naming nothing we
+    speak, or no header at all, gets English, because the guest is by
+    definition a foreigner (WP26 owner decision).
     """
-    header = request.headers.get("accept-language") or ""
-    for part in header.split(","):
-        tag = part.split(";")[0].strip().lower().replace("_", "-")
-        if not tag or tag == "*":
-            continue
-        if tag[:2] in ("cs", "sk"):
-            return "cs"
-        return "en"
-    return host_i18n.PUBLIC_DEFAULT_LANGUAGE
+    return i18n.accept_language_match(request.headers.get("accept-language")) or (
+        i18n.DEFAULT_LANGUAGE
+    )
 
 
 def _language(request: Request) -> str:
-    """The guest's language: what they asked for, else what their phone asks for.
+    """The guest's language: what they asked for, else what their browser asks for.
 
     A ``?lang=`` on a link, or the switcher's cookie, is the guest saying so,
-    and wins. When they name a language we do not speak the public default
-    stands. A guest who has said nothing at all gets the language of their own
-    phone, because the catalog is written for foreigners and a German guest
-    should not land on "Zadejte přístupový PIN".
+    and wins. A choice naming a language we do not speak is treated as no
+    choice, so the browser's header still decides rather than a Czech default.
     """
-    asked = request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
-    if asked:
-        return host_i18n.supported_language(asked) or host_i18n.PUBLIC_DEFAULT_LANGUAGE
-    return _accept_language(request)
+    return _chosen_language(request) or _accept_language(request)
 
 
 def _chosen_language(request: Request) -> Optional[str]:
     """The language the guest actually asked for, or ``None`` if they did not.
 
-    ``_language`` falls back to Czech, because the link a host sends is Czech
-    and the guest has said nothing. That fallback is right for the page and
-    wrong for an e-mail: a foreign guest who never touched the switcher got a
-    Czech claim mail and a Czech reminder they could not read.
+    The link wins over the cookie, because a link with ``?lang=`` is the newer
+    choice: the switcher writes it and the cookie follows on the response.
     """
-    return host_i18n.supported_language(
-        request.query_params.get("lang") or request.cookies.get(LANG_COOKIE)
+    return i18n.supported_language(request.query_params.get("lang")) or (
+        i18n.supported_language(request.cookies.get(LANG_COOKIE))
     )
 
 
 def _mail_language(request: Request) -> str:
-    """The language for a message sent to the guest, not rendered for them."""
-    return _chosen_language(request) or i18n.DEFAULT_LANGUAGE
+    """The language for a message sent to the guest, not rendered for them.
+
+    The same as the page's: the explicit choice, else the browser's header,
+    else English. It used to skip the header because the page then fell back
+    to Czech; since WP26 nothing falls back to Czech, so the claim mail goes
+    out in the language the guest was reading. It is stored on the claim row
+    (``reservation_claim.lang``, which already existed), and the reminder and
+    the completion receipt read it from there.
+    """
+    return _language(request)
 
 
 def _owned_ids(request: Request) -> List[int]:
@@ -323,10 +353,13 @@ def _safe_return_to(requested: Optional[str], token: str, lang: str) -> str:
 # keep reading its own wording.
 _GUEST_ISSUE_FIELDS = {"note": "parent_doc_number"}
 _GUEST_ISSUE_MESSAGES = {
-    "note": (
-        "Enter the parent's passport or ID number.",
-        "Zadejte číslo pasu nebo průkazu rodiče.",
-    ),
+    "note": {
+        "en": "Enter the parent's passport or ID number.",
+        "cs": "Zadejte číslo pasu nebo průkazu rodiče.",
+        "de": "Geben Sie die Pass- oder Ausweisnummer des Elternteils ein.",
+        "es": "Introduzca el número de pasaporte o documento de identidad del padre o la madre.",
+        "fr": "Saisissez le numéro de passeport ou de carte d'identité du parent.",
+    },
 }
 
 
@@ -338,7 +371,7 @@ def _guest_issue(issue, lang: str):
     field = _GUEST_ISSUE_FIELDS.get(issue.field, issue.field)
     if override is None:
         return issue
-    message = override[0 if lang != "cs" else 1]
+    message = override.get(lang) or override["en"]
     return validation.Issue(field, message, issue.severity)
 
 
@@ -349,11 +382,11 @@ def _localize_issues(issues, lang: str):
     ]
 
 
-def _apartment_by_token(token: str):
+def _live_apartment(column: str, value):
     row = db.query_one(
-        "SELECT * FROM apartment WHERE permalink_token = ? AND active = 1 "
+        f"SELECT * FROM apartment WHERE {column} = ? AND active = 1 "
         "AND archived_at IS NULL",
-        (token,),
+        (value,),
     )
     if not row:
         return None
@@ -364,14 +397,84 @@ def _apartment_by_token(token: str):
     return row
 
 
+def _apartment_by_token(token: str):
+    return _live_apartment("permalink_token", token)
+
+
+def _resolve_key(key: str):
+    """Map the ``/l/{key}`` segment to ``(apartment, link key, moved)``.
+
+    ``key`` is either the permanent token, which keeps working for ever, or a
+    readable slug (WP19). The link key is what the pages put back into their
+    own links: the token for a token visitor, the *current* slug for a slug
+    visitor. ``moved`` is true when the key was an earlier slug, or the current
+    one in other letter case, so a GET can be redirected to the current one.
+    """
+    apartment = _apartment_by_token(key)
+    if apartment:
+        return apartment, key, False
+    row = guest_slug.lookup(key)
+    if not row:
+        return None, key, False
+    apartment = _live_apartment("id", int(row["apartment_id"]))
+    if not apartment or not apartment["permalink_token"]:
+        return None, key, False
+    if row["is_current"]:
+        link = row["slug"]
+    else:
+        link = guest_slug.current(int(apartment["id"])) or apartment["permalink_token"]
+    return apartment, link, link != key
+
+
+def _apartment_for_key(key: str):
+    return _resolve_key(key)[0] if key else None
+
+
+def _lock_token(key: str) -> str:
+    """The permanent token behind a link key: what every PIN cookie, PIN
+    fingerprint, lockout and rate-limit key is built from, so switching
+    between ``/l/{token}`` and ``/l/{slug}`` neither asks for the PIN again
+    nor starts a fresh failure budget."""
+    apartment = _apartment_for_key(key)
+    return apartment["permalink_token"] if apartment else key
+
+
+def _open_link(request: Request, key: str, lang: str):
+    """The one resolver every ``/l/{key}`` route starts with.
+
+    Returns ``(apartment, link key, response)``. ``response`` is set when the
+    route must answer with it straight away: the "bad link" page (404) for a
+    key nothing matches, including a slug with a wrong code, or a 301 to the
+    current slug for a GET on an earlier one. A POST on an earlier slug is
+    served in place, because a redirect would drop its body.
+    """
+    apartment, link, moved = _resolve_key(key)
+    if not apartment:
+        return None, key, _unavailable(request, lang)
+    if moved and request.method in ("GET", "HEAD"):
+        prefix = f"/l/{key}"
+        path = request.url.path
+        rest = path[len(prefix):] if path.startswith(prefix) else ""
+        target = f"/l/{link}{rest}"
+        if request.url.query:
+            target += "?" + request.url.query
+        response = RedirectResponse(target, status_code=301)
+        # A host may rename back to an earlier name. A 301 a browser cached for
+        # ever would then point the current slug at an old one and loop.
+        response.headers["Cache-Control"] = "no-store"
+        return apartment, link, response
+    return apartment, link, None
+
+
 def _pin_page(request: Request, token: str, lang: str, error: str = ""):
-    failures = rate_limit.pin_failure_count(rate_limit.client_key(request, token))
-    apartment = _apartment_by_token(token)
+    apartment = _apartment_for_key(token)
+    lock_token = apartment["permalink_token"] if apartment else token
+    failures = rate_limit.pin_failure_count(rate_limit.client_key(request, lock_token))
     context = _shared(request, token, lang, apartment)
     context.update(
         {
             "error": error,
-            "require_turnstile": failures >= 3 or _link_challenged(token, apartment),
+            "require_turnstile": failures >= 3 or _link_challenged(apartment),
             "return_to": request.url.path
             + (("?" + str(request.url.query)) if request.url.query else ""),
         }
@@ -379,7 +482,7 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
     return _with_lang(render_guest(request, "guest/pin.html", context), lang)
 
 
-def _link_challenged(token: str, apartment) -> bool:
+def _link_challenged(apartment) -> bool:
     """A link guessed at from many addresses asks every visitor for the check.
 
     With Turnstile on, a locked link is challenged rather than refused, so one
@@ -388,6 +491,7 @@ def _link_challenged(token: str, apartment) -> bool:
     if not apartment or not turnstile.required():
         return False
     expected = apartment["permalink_pin"] or ""
+    token = apartment["permalink_token"]
     return rate_limit.pin_token_blocked(f"{token}:{auth.pin_fingerprint(token, expected)}")
 
 
@@ -405,10 +509,12 @@ def _host_owns_apartment(request: Request, apartment) -> bool:
 def _require_pin(request: Request, token: str, lang: str):
     if not config.GUEST_PIN_REQUIRED:
         return None
-    apartment = _apartment_by_token(token)
+    apartment = _apartment_for_key(token)
     if apartment and (
         _host_owns_apartment(request, apartment)
-        or auth.pin_session_valid(request, token, apartment["permalink_pin"] or "")
+        or auth.pin_session_valid(
+            request, apartment["permalink_token"], apartment["permalink_pin"] or ""
+        )
     ):
         return None
     return _pin_page(request, token, lang)
@@ -531,9 +637,10 @@ def _unavailable(
         "not_yours": ("not_yours_title", "not_yours_help"),
         "already_filed": ("already_filed_title", "already_filed_help"),
         "form_locked": ("form_locked_title", "form_locked_help"),
+        "server_error": ("server_error_title", "server_error_help"),
     }
     title_key, body_key = titles.get(reason, titles["bad_link"])
-    apartment = _apartment_by_token(token) if token else None
+    apartment = _apartment_for_key(token) if token else None
     # "Start again" only helps where starting again can change something. On a
     # locked, already-reported or wrong-device form the picker leads straight
     # back to this page.
@@ -570,6 +677,22 @@ def _unavailable(
         context,
         status_code=status_code,
     )
+
+
+def error_page(request: Request, kind: str, status_code: int):
+    """WP26: the app-wide 404 and 500 pages, for a request under ``/l/``.
+
+    Those used to render the host's error page, in the host's two languages, in
+    front of a guest. A guest gets the guest page in their own language
+    instead. A server error renders without the apartment: whatever failed may
+    be the database, so this page must not need it.
+    """
+    lang = _language(request)
+    if kind == "server":
+        return _unavailable(request, lang, "server_error", status_code)
+    parts = request.url.path.split("/")
+    token = parts[2] if len(parts) > 2 and parts[2] else None
+    return _unavailable(request, lang, "bad_link", status_code, token)
 
 
 def csrf_expired_page(request: Request, token: str = ""):
@@ -609,7 +732,7 @@ def _lang_urls(request: Request, path: str = "") -> Dict[str, str]:
     keep = [(k, v) for k, v in request.query_params.multi_items() if k != "lang"]
     target = path or request.url.path
     out = {}
-    for code in i18n.LANGUAGES:
+    for code in i18n.enabled_languages():
         pairs = "".join(f"&{k}={quote(str(v))}" for k, v in keep)
         out[code] = f"{target}?lang={code}{pairs}"
     return out
@@ -763,7 +886,7 @@ def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editin
 def _require_claim_session(request: Request, reservation, token: str, lang: str):
     if not mail.mail_enabled():
         return None
-    apartment = _apartment_by_token(token)
+    apartment = _apartment_for_key(token)
     if _host_owns_apartment(request, apartment):
         return None
     row = claim.ensure_row(reservation["id"])
@@ -796,14 +919,16 @@ def _set_declared_guests(reservation, count: int) -> None:
 @router.post("/l/{token}/pin")
 async def verify_pin(token: str, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     form = await request.form()
     entered = (form.get("pin") or "").strip()
     expected = apartment["permalink_pin"] or ""
-    pin_key = rate_limit.client_key(request, token)
-    pin_lock_key = f"{token}:{auth.pin_fingerprint(token, expected)}"
+    # Keyed on the permanent token, never on the slug in the URL (WP19).
+    lock_token = apartment["permalink_token"]
+    pin_key = rate_limit.client_key(request, lock_token)
+    pin_lock_key = f"{lock_token}:{auth.pin_fingerprint(lock_token, expected)}"
     link_locked = rate_limit.pin_token_blocked(pin_lock_key)
     if link_locked and not turnstile.required():
         return _pin_page(
@@ -825,7 +950,7 @@ async def verify_pin(token: str, request: Request):
             lang,
             error=i18n.translator(lang)("pin_rate_limited"),
         )
-    if not auth.pin_matches(token, entered, expected):
+    if not auth.pin_matches(lock_token, entered, expected):
         rate_limit.record_pin_failure(pin_key, pin_lock_key)
         # A lockout spread over many addresses is invisible in the per-IP count,
         # so the host is told the moment the link itself burns its budget: every
@@ -885,7 +1010,7 @@ async def verify_pin(token: str, request: Request):
         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
     return_to = _safe_return_to(form.get("return_to"), token, lang)
     response = RedirectResponse(return_to, status_code=303)
-    auth.attach_pin_session(response, token, expected)
+    auth.attach_pin_session(response, lock_token, expected)
     return _with_lang(response, lang)
 
 
@@ -894,9 +1019,9 @@ async def verify_pin(token: str, request: Request):
 @router.get("/l/{token}/privacy")
 def privacy_notice(token: str, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -917,9 +1042,9 @@ def privacy_notice(token: str, request: Request):
 @router.get("/l/{token}")
 def pick_stay(token: str, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     _alert_controller_missing(apartment)
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
@@ -964,9 +1089,9 @@ def pick_stay(token: str, request: Request):
 @router.get("/l/{token}/{reservation_id}")
 def stay_overview(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1054,9 +1179,9 @@ def stay_overview(token: str, reservation_id: int, request: Request):
 @router.get("/l/{token}/{reservation_id}/claim")
 def claim_landing(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     _alert_controller_missing(apartment)
     if not mail.mail_enabled():
         return _with_lang(
@@ -1099,7 +1224,7 @@ def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
     guest's allowance and a shared address cannot be exhausted by a single link.
     Returns the response to send, or None to carry on.
     """
-    key = rate_limit.client_key(request, f"guest:{token}")
+    key = rate_limit.client_key(request, f"guest:{_lock_token(token)}")
     if rate_limit.blocked(scope, key, GUEST_POST_MAX_ATTEMPTS):
         return _unavailable(request, lang, "rate_limited", 429, token)
     rate_limit.record(scope, key)
@@ -1109,9 +1234,9 @@ def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
 @router.post("/l/{token}/{reservation_id}/claim/confirm")
 async def claim_confirm(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     if not mail.mail_enabled():
         return _with_lang(
             RedirectResponse(
@@ -1127,7 +1252,7 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
         return _unavailable(request, lang, "stay_gone", 404, token)
     form = await request.form()
     secret = (form.get("secret") or "").strip()
-    key = rate_limit.client_key(request, f"claim:{token}")
+    key = rate_limit.client_key(request, f"claim:{apartment['permalink_token']}")
     if rate_limit.blocked("claim_confirm", key, 20):
         return _unavailable(request, lang, "stay_gone", 429, token)
     rate_limit.record("claim_confirm", key)
@@ -1150,9 +1275,9 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
 async def set_party_size(token: str, reservation_id: int, request: Request):
     """Claim the stay with party size and e-mail, or change headcount later."""
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1204,7 +1329,7 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
         # hammering, not mail volume (the mail caps in claim.py do that), so it
         # is deliberately loose: a guest fumbling the form must not be locked
         # out after a couple of tries.
-        key = rate_limit.client_key(request, f"claim:{token}")
+        key = rate_limit.client_key(request, f"claim:{apartment['permalink_token']}")
         if rate_limit.blocked("claim_start", key, 10):
             return _with_lang(
                 RedirectResponse(
@@ -1262,9 +1387,9 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
 async def add_another_person(token: str, reservation_id: int, request: Request):
     """Raise the declared headcount by one so another guest can fill the form."""
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1303,8 +1428,10 @@ def _form_context(
     values=None,
     back_url: Optional[str] = None,
     residence_copied_from: Optional[str] = None,
+    token: Optional[str] = None,
 ) -> Dict[str, Any]:
-    token = apartment["permalink_token"]
+    # The key the guest is on (token or slug), so the form's own links stay on it.
+    token = token or apartment["permalink_token"]
     progress = reporting.reservation_progress(reservation)
     expected = progress["expected"]
     remaining = (expected - progress["filled"]) if expected is not None else None
@@ -1373,9 +1500,9 @@ def _form_context(
 @router.get("/l/{token}/{reservation_id}/new")
 def guest_form_new(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     _alert_controller_missing(apartment)
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
@@ -1407,6 +1534,7 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
                 lang,
                 values=prefill,
                 residence_copied_from=copied_from,
+                token=token,
                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
             ),
         ),
@@ -1417,9 +1545,9 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
 @router.get("/l/{token}/{reservation_id}/edit/{guest_id}")
 def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1451,6 +1579,7 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
                 guest,
                 lang,
                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=True),
+                token=token,
             ),
         ),
         lang,
@@ -1460,9 +1589,9 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
 @router.post("/l/{token}/{reservation_id}/save")
 async def guest_form_save(token: str, reservation_id: int, request: Request):
     lang = _language(request)
-    apartment = _apartment_by_token(token)
-    if not apartment:
-        return _unavailable(request, lang)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
     pin_guard = _require_pin(request, token, lang)
     if pin_guard:
         return pin_guard
@@ -1585,14 +1714,17 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
         if passport_upload and hasattr(passport_upload, "read"):
             try:
-                passport_bytes = await passport_photos.read_upload_limited(passport_upload)
-                passport_type = passport_photos.validate_upload(
-                    passport_bytes, passport_upload.content_type or ""
+                raw_upload = await passport_photos.read_upload_limited(passport_upload)
+                # WP08: images are decoded and re-encoded here, so a file that
+                # will not decode is refused on the form, not after saving.
+                passport_bytes, passport_type = await run_in_threadpool(
+                    passport_photos.prepare_upload,
+                    raw_upload,
+                    passport_upload.content_type or "",
                 )
             except ValueError as exc:
                 msg = str(exc)
-                if lang == "cs":
-                    msg = CS_PASSPORT_UPLOAD_MESSAGES.get(msg, msg)
+                msg = PASSPORT_UPLOAD_MESSAGES.get(lang, {}).get(msg, msg)
                 issues.append(validation.Issue("passport_photo", msg))
         elif not has_existing_photo:
             issues.append(validation.Issue("passport_photo", translate("passport_photo_missing")))
@@ -1609,6 +1741,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
             issues=issues,
             values=values,
             back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
+            token=token,
         )
         context["values"].update(
             {
@@ -1696,7 +1829,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         saved_id = db.insert("guest", payload)
 
     if passport_bytes and passport_type:
-        passport_photos.save_photo(saved_id, passport_bytes, passport_type)
+        passport_photos.save_photo(saved_id, passport_bytes, passport_type, prepared=True)
         db.update(
             "guest",
             saved_id,

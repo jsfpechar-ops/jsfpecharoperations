@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import os
 import secrets
+from datetime import date
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -20,8 +21,8 @@ DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
 
 DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
 
-# The secret key signs session cookies and derives the key that encrypts
-# UbyPort passwords at rest. Losing it means re-entering those passwords.
+# The secret key signs session cookies. Until UBYHOST_DATA_KEYS is set it also
+# derives the key that encrypts data at rest (see data_keys() below).
 _SECRET_FILE = DATA_DIR / "secret_key"
 
 
@@ -98,6 +99,32 @@ def require_secret_key() -> str:
     return secret_key()
 
 
+def data_keys() -> List[str]:
+    """The data-encryption keys from ``UBYHOST_DATA_KEYS``, newest first.
+
+    Comma-separated Fernet keys (``Fernet.generate_key()``). The first one
+    encrypts everything written from now on; every key in the list is tried
+    when reading. They are separate from ``UBYHOST_SECRET_KEY`` so that the
+    session-signing secret can be rotated without making stored data
+    unreadable. Read on every call rather than cached, so a test or a tool can
+    change the environment; the cost is a string split.
+    """
+    raw = os.environ.get("UBYHOST_DATA_KEYS", "")
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+def legacy_data_key_enabled() -> bool:
+    """Whether the old key derived from the session secret is still tried.
+
+    On by default, and forced on while no ``UBYHOST_DATA_KEYS`` is set, because
+    then it is the only key there is. Turn it off with
+    ``UBYHOST_DATA_KEY_LEGACY=0`` once ``scripts/reencrypt.py`` has moved every
+    value to the new key and its ``--check`` reports nothing left.
+    """
+    value = os.environ.get("UBYHOST_DATA_KEY_LEGACY", "1").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
 # "mock" | "test" | "prod".  Controls which UbyPort endpoint submissions go to.
 UBYPORT_ENV = os.environ.get("UBYHOST_UBYPORT_ENV", "mock").lower()
 
@@ -120,12 +147,32 @@ UBYPORT_TIMEOUT = int(os.environ.get("UBYHOST_UBYPORT_TIMEOUT", "60"))
 
 ICAL_POLL_MINUTES = int(os.environ.get("UBYHOST_ICAL_POLL_MINUTES", "60"))
 SUBMIT_SWEEP_MINUTES = int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10"))
+# Dead-man switches (for example healthchecks.io), each pinged after a
+# successful run of its job: the submission sweep, the calendar sync and the
+# mail job (WP07). Empty disables the ping.
 HEARTBEAT_URL = os.environ.get("UBYHOST_HEARTBEAT_URL", "").strip()
+HEARTBEAT_ICAL_URL = os.environ.get("UBYHOST_HEARTBEAT_ICAL_URL", "").strip()
+HEARTBEAT_MAIL_URL = os.environ.get("UBYHOST_HEARTBEAT_MAIL_URL", "").strip()
+# Filing watchdog (WP23). Unlike the three above, this one is pinged on every
+# run of the deadline job: <url> while no stay is at risk of missing its police
+# deadline, <url>/fail while at least one is (healthchecks.io semantics). The
+# healthchecks.io check then notifies the owner by e-mail. That mail comes from
+# healthchecks.io, not from UbyHost's own mail, so it still arrives when
+# UbyHost's mail is broken, and it fires on the missing ping when the VM is
+# down. Empty disables it.
+HEARTBEAT_FILING_URL = os.environ.get("UBYHOST_HEARTBEAT_FILING_URL", "").strip()
 
 # Used to build the guest permalink shown to hosts for copy/paste.
 PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
 
 ENABLE_SCHEDULER = os.environ.get("UBYHOST_ENABLE_SCHEDULER", "1") not in ("0", "false", "no")
+
+# WP06: what this process runs. "web" serves HTTP and never starts the
+# scheduler (production runs two uvicorn workers); "worker" runs only the
+# background jobs (``python -m app.worker``); "all" does both in one process,
+# for local development and the single-process Render staging service.
+ROLES = ("web", "worker", "all")
+ROLE = os.environ.get("UBYHOST_ROLE", "web").strip().lower() or "web"
 # One PII-free access line per request (OPS-3). Off in production by the
 # Dockerfile's --no-access-log; this flag is the app-level switch.
 ACCESS_LOG = os.environ.get("UBYHOST_ACCESS_LOG", "1") not in ("0", "false", "no")
@@ -135,6 +182,10 @@ ACCESS_LOG = os.environ.get("UBYHOST_ACCESS_LOG", "1") not in ("0", "false", "no
 RETENTION_AUTOPURGE = os.environ.get("UBYHOST_RETENTION_AUTOPURGE", "0") in (
     "1", "true", "yes",
 )
+# WP12: the three lifecycle tips to hosts (no property, no calendar, no guest
+# yet). Off until counsel confirms the legal basis and the opt-out wording
+# under Czech Act 480/2004; service mail is not affected either way.
+LIFECYCLE_MAIL = os.environ.get("UBYHOST_LIFECYCLE_MAIL", "0").lower() in ("1", "true", "yes")
 # How far ahead the "records reach the end of their retention period" notice looks.
 RETENTION_NOTICE_DAYS = int(os.environ.get("UBYHOST_RETENTION_NOTICE_DAYS", "30"))
 
@@ -182,8 +233,23 @@ TURNSTILE_HOSTNAMES = {
 }
 TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET and TURNSTILE_HOSTNAMES)
 
+# Umami Cloud page analytics, public marketing and legal pages only (WP09).
+# Both values empty by default; set them only in the production .env, copied
+# from the tracking-code snippet in the Umami website settings. The tag and the
+# CSP allowance appear only when both are set (see analytics.py).
+UMAMI_WEBSITE_ID = os.environ.get("UMAMI_WEBSITE_ID", "").strip()
+UMAMI_SCRIPT_URL = os.environ.get("UMAMI_SCRIPT_URL", "").strip()
+# Optional: Umami's data-host-url, where the tracker sends its events. Empty
+# means "the tracker's own default"; see analytics.py for what that is.
+UMAMI_HOST_URL = os.environ.get("UMAMI_HOST_URL", "").strip().rstrip("/")
+# data-domains: the hostnames the tracker may run on. Defaults to the host of
+# UBYHOST_PUBLIC_BASE_URL, so a staging copy never reports into production.
+UMAMI_DOMAINS = os.environ.get("UMAMI_DOMAINS", "").strip()
+
 # Bumped when Terms of Service change materially (logged on host login).
-TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.5")
+# 1.6 (WP24): stay fee duty, filing on the host's instruction, filing by hand,
+# UbyPort credentials (§ 10a), best-effort availability, liability (§ 17).
+TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.6")
 
 # Transactional mail. Staging uses console (links appear in Settings).
 # SES is refused unless deployment is production and credentials are complete.
@@ -193,11 +259,53 @@ SES_REGION = os.environ.get("UBYHOST_SES_REGION", "eu-central-1").strip()
 AWS_ACCESS_KEY_ID = os.environ.get("UBYHOST_AWS_ACCESS_KEY_ID", "").strip()
 AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").strip()
 
-# Bumped when the public Privacy Policy changes materially.
-PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.5")
+# WP20: self sign-up at /signup. Off by default; while off the page and its
+# verification route answer 404 and the public pages link to /login as before.
+# Counsel has to confirm the privacy-notice wording and the legal basis for
+# keeping the Google Ads click ID before this is switched on in production.
+SIGNUP_ENABLED = os.environ.get("UBYHOST_SIGNUP_ENABLED", "0").lower() in ("1", "true", "yes")
+# Where the "new verified sign-up" notice goes. Defaults to the support address.
+SIGNUP_NOTIFY_EMAIL = os.environ.get("UBYHOST_SIGNUP_NOTIFY_EMAIL", "").strip() or OPERATOR_EMAIL
+# The conversion action name exactly as created in Google Ads (case-sensitive).
+ADS_CONVERSION_NAME = os.environ.get("UBYHOST_ADS_CONVERSION_NAME", "UbyHost sign-up").strip()
+# The click ID windows (export within 85 days of the click, delete 90 days
+# after it or 30 days after upload) are fixed in signup.py: they come from the
+# legal position, not from deployment preference.
 
-# Bumped when the Data Processing Agreement changes materially.
-DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.5")
+# WP21: Meta (Facebook/Instagram) Conversions API, server-side only: no Meta
+# Pixel and no cookie. Off unless both the dataset (pixel) ID and the access
+# token are set; while off, the Meta consent box is not shown either.
+META_DATASET_ID = os.environ.get("UBYHOST_META_DATASET_ID", "").strip()
+META_ACCESS_TOKEN = os.environ.get("UBYHOST_META_ACCESS_TOKEN", "").strip()
+# Events Manager > Test events. Only for trying the integration on staging;
+# Meta says to remove it for production traffic.
+META_TEST_EVENT_CODE = os.environ.get("UBYHOST_META_TEST_EVENT_CODE", "").strip()
+# Graph API version for graph.facebook.com/<version>/<dataset>/events.
+# v26.0 was the latest on 4 Oct 2026 (Graph API changelog).
+META_GRAPH_VERSION = os.environ.get("UBYHOST_META_GRAPH_VERSION", "v26.0").strip()
+
+
+def meta_capi_enabled() -> bool:
+    return bool(META_DATASET_ID and META_ACCESS_TOKEN)
+
+
+# Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
+# analytics with opt-out, own retention periods and roles. A bump makes the
+# policy pending again, so every host is sent to /account/accept once.
+PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.6")
+
+# Bumped when the Data Processing Agreement changes materially. 1.6 (WP24):
+# § 11 names Render and Google Drive only as "only if used" subprocessors.
+DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.6")
+
+# WP24: the one effective date shown on /terms, /privacy and /dpa. Terms 1.6,
+# Privacy 1.6 and DPA 1.6 take effect together, so every host accepts all
+# three on one /account/accept page. The owner sets this at release, at least
+# 30 days after hosts are told (Terms § 22). ISO date, YYYY-MM-DD; a malformed
+# value stops start-up rather than printing a wrong date on a contract.
+LEGAL_EFFECTIVE_DATE = date.fromisoformat(
+    os.environ.get("UBYHOST_LEGAL_EFFECTIVE_DATE", "").strip() or "2026-11-16"
+)
 
 # BE-5: bumped whenever a legal_notice_* / privacy_* string in i18n.py changes
 # materially, so a guest's acknowledgement records which notice they saw.

@@ -5,10 +5,15 @@ it", and in Czech that every non-Czech must upload. Both halves of that are
 true of the feature - the host turns the policy on, and foreign guests are
 then the ones who have to upload - so the sentence has to say both, the same
 way, in both languages.
+
+WP17 (review 3.E item 4) then cut the "why" fold down to the accuracy point.
+The passport fact now lives in one place: the legal notice on the form, which
+is also gated on the policy. These tests follow it there.
 """
 from __future__ import annotations
 
 from datetime import timedelta
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -20,6 +25,8 @@ from tests.conftest import complete_guest_claim
 TOKEN = "whypptoken"
 OLD_EN = "asks for it"
 OLD_CS = "nejste občanem ČR"
+EN_PASSPORT = "Foreign guests upload a photo of their passport or ID page"
+CS_PASSPORT = "Cizinci nahrají fotku stránky pasu nebo průkazu"
 
 
 def _cleanup():
@@ -76,29 +83,37 @@ def _seed(policy: str):
     return reservation_id
 
 
-def test_both_languages_say_the_host_requires_it_and_foreign_guests_upload():
+def test_the_why_fold_no_longer_repeats_the_passport_point():
+    for lang in ("en", "cs"):
+        assert "why_point_passport" not in i18n.STRINGS[lang], lang
+    template = (
+        Path(__file__).resolve().parents[1] / "app" / "templates" / "guest" / "_why.html"
+    ).read_text(encoding="utf-8")
+    assert "why_point_passport" not in template
+    assert "require_passport" not in template
+
+
+def test_both_languages_say_foreign_guests_upload():
     """The two catalogues must carry the same fact, not two different rules."""
-    en = i18n.STRINGS["en"]["why_point_passport"]
-    cs = i18n.STRINGS["cs"]["why_point_passport"]
-    assert "your host requires it" in en
-    assert "foreign guests upload" in en
-    assert "hostitel vyžaduje" in cs
-    assert "cizinci nahrají" in cs
+    en = i18n.STRINGS["en"]["legal_notice_passport_body"]
+    cs = i18n.STRINGS["cs"]["legal_notice_passport_body"]
+    assert en.startswith(EN_PASSPORT)
+    assert cs.startswith(CS_PASSPORT)
     # Neither side may still claim the old, contradictory rule.
     assert OLD_EN not in en
     assert OLD_CS not in cs
 
 
 def test_both_languages_say_only_the_host_sees_it_and_it_is_deleted():
-    en = i18n.STRINGS["en"]["why_point_passport"]
-    cs = i18n.STRINGS["cs"]["why_point_passport"]
+    en = i18n.STRINGS["en"]["legal_notice_passport_body"]
+    cs = i18n.STRINGS["cs"]["legal_notice_passport_body"]
     assert "Only your host sees it" in en
     assert "deleted after the check" in en
-    assert "Vidí ji jen hostitel" in cs
-    assert "po kontrole se smaže" in cs
+    assert "Uvidí ji jen ubytovatel" in cs
+    assert "Po kontrole se smaže" in cs
 
 
-def test_the_passport_point_renders_the_new_copy_when_the_host_requires_it():
+def test_the_passport_point_renders_when_the_host_requires_it():
     reservation_id = _seed("required_foreign")
     try:
         browser = TestClient(app)
@@ -106,14 +121,14 @@ def test_the_passport_point_renders_the_new_copy_when_the_host_requires_it():
         complete_guest_claim(browser, TOKEN, reservation_id, party_size=1)
         en_page = browser.get(f"/l/{TOKEN}/{reservation_id}", follow_redirects=True)
         assert en_page.status_code == 200
-        assert "If your host requires it, foreign guests upload" in en_page.text
+        assert EN_PASSPORT in en_page.text
         assert OLD_EN not in en_page.text
 
         cs_page = browser.get(
             f"/l/{TOKEN}/{reservation_id}?lang=cs", follow_redirects=True
         )
         assert cs_page.status_code == 200
-        assert "Pokud to hostitel vyžaduje, cizinci nahrají" in cs_page.text
+        assert CS_PASSPORT in cs_page.text
         assert OLD_CS not in cs_page.text
     finally:
         _cleanup()
@@ -128,6 +143,6 @@ def test_the_passport_point_is_absent_when_the_host_does_not_ask_for_it():
         complete_guest_claim(browser, TOKEN, reservation_id, party_size=1)
         page = browser.get(f"/l/{TOKEN}/{reservation_id}", follow_redirects=True)
         assert page.status_code == 200
-        assert "foreign guests upload" not in page.text
+        assert EN_PASSPORT not in page.text
     finally:
         _cleanup()

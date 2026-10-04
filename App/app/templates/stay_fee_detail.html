@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set nav = 'stay_fees' %}
-{% block title %}{{ apartment.internal_name }} — {{ ui_period }}{% endblock %}
+{% block title %}{{ apartment.internal_name }} ({{ ui_period }}){% endblock %}
 {% block content %}
 {% from "_components.html" import page_header, copy_button with context %}
 <a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
@@ -26,7 +26,7 @@
     <button class="btn" type="button" disabled>{{ t('stay_fees.save_period') }}</button>
   {% endif %}
 {% endset %}
-{{ page_header(apartment.internal_name ~ ' — ' ~ ui_period, '', '', '', t('nav.stay_fees'), actions) }}
+{{ page_header(apartment.internal_name ~ ' (' ~ ui_period ~ ')', '', '', '', t('nav.stay_fees'), actions) }}
 
 {% if not frozen %}
 <section class="panel" id="fee-adjust">
@@ -74,7 +74,7 @@
   <ul class="fee-adjust-list">
     {% for row in period.adjustments %}
     <li>
-      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}{% if row.reason %} — {{ row.reason }}{% endif %}</span>
+      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}{% if row.reason %} ({{ row.reason }}){% endif %}</span>
       {% if not row.filing_id %}
       <form method="post" action="/stay-fees/{{ apartment.id }}/adjustment/{{ row.id }}/undo">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">

@@ -52,14 +52,14 @@ def _invoice_columns() -> str:
 
 def _load_invoice(request: Request, invoice_id: int):
     return db.query_one(
-        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND owner_user_id IS ?",
+        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND {db.null_safe_eq('owner_user_id')}",
         (invoice_id, access.owner_id(request)),
     )
 
 
 def _entities(request: Request):
     return db.query(
-        "SELECT * FROM legal_entity WHERE archived_at IS NULL AND owner_user_id IS ? "
+        f"SELECT * FROM legal_entity WHERE archived_at IS NULL AND {db.null_safe_eq('owner_user_id')} "
         "ORDER BY name",
         (access.owner_id(request),),
     )
@@ -187,7 +187,7 @@ def invoices_list(request: Request):
     today = claim.prague_today()
     owner_id = access.owner_id(request)
     properties = db.query(
-        "SELECT id, internal_name FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        f"SELECT id, internal_name FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
         "ORDER BY internal_name, id",
         (owner_id,),
     )
@@ -203,7 +203,7 @@ def invoices_list(request: Request):
         page_no = max(int(request.query_params.get("page") or "1"), 1)
     except ValueError:
         page_no = 1
-    where, params = ["owner_user_id IS ?"], [owner_id]
+    where, params = [f"{db.null_safe_eq('owner_user_id')}"], [owner_id]
     if view.month:
         first, last = stay_fee.period_bounds("monthly", view.month)
         where.append("issue_date >= ? AND issue_date <= ?")
@@ -477,6 +477,24 @@ async def invoice_mark_paid(invoice_id: int, request: Request):
     return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.marked_paid_flash"))
 
 
+def _stay_property_name(invoice) -> str:
+    """The guest-facing name of the property of the stay this invoice is for.
+
+    Empty when the invoice is not linked to a stay. Same order as the guest
+    pages: the host's own name, then the police-register name.
+    """
+    if not invoice["reservation_id"]:
+        return ""
+    row = db.query_one(
+        "SELECT a.internal_name, a.uby_name FROM reservation r "
+        "JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+        (invoice["reservation_id"],),
+    )
+    if not row:
+        return ""
+    return (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
+
+
 @router.post("/invoices/{invoice_id}/send")
 async def invoice_send(invoice_id: int, request: Request):
     guard = auth.require_login(request)
@@ -497,6 +515,7 @@ async def invoice_send(invoice_id: int, request: Request):
         total=invoices.invoice_pdf.money(invoice["total_haler"]),
         download_url=url,
         host=mail_notify.host_details(invoice["legal_entity_id"]),
+        stay_property=_stay_property_name(invoice),
     )
     payload = mail_notify.guest_payload(
         {"legal_entity_id": invoice["legal_entity_id"]}, content, invoice["lang"]

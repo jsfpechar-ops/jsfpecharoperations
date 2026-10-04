@@ -2,6 +2,9 @@
 # Requires origin.pem + origin-key.pem in caddy/certs/ (see docs/CLOUDFLARE.md).
 # Access logging is intentionally off (OPS-3): a request line would carry guest
 # permalink tokens. Container logs are bounded by docker-compose `logging:`.
+# The same holds for ad click identifiers in query strings (gclid, gbraid,
+# wbraid, fbclid): with no access log they are never written (legal position 3).
+# Do not add a `log` directive without a filter that drops the query string.
 {
 	email {$ACME_EMAIL}
 	servers {
@@ -21,7 +24,7 @@
 	request_body {
 		max_size 20MB
 	}
-	encode gzip
+	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
 	reverse_proxy ubyhost:8080 {
 		# Always overwrite: a client-sent CF-Connecting-IP must never reach the app.

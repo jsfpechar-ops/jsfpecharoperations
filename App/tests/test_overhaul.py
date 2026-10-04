@@ -5,7 +5,7 @@ import re
 
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db
+from app import auth, claim, db, guest_slug
 from app import alerts
 from app import demo
 from app import housebook
@@ -324,7 +324,8 @@ def test_reservation_detail_shows_direct_guest_link():
     try:
         page = _browser().get(f"/reservations/{stays[0]}")
         assert page.status_code == 200
-        assert f"/l/{TOKEN}/{stays[0]}" in page.text
+        # The copied stay link is the readable one (WP19).
+        assert f"/l/{guest_slug.current(apartment_id)}/{stays[0]}" in page.text
         assert "Copy guest link for this stay" in page.text
         assert "Next step" in page.text
         assert "Edit stay details" in page.text
@@ -374,7 +375,7 @@ def test_an_archived_stay_says_so():
     try:
         db.update("reservation", stays[0], {"archived_at": db.utcnow()})
         page = _browser().get(f"/reservations/{stays[0]}")
-        assert "Archived — hidden from your daily work." in page.text
+        assert "Archived and hidden from your daily work." in page.text
         assert COPY_LINK_PRIMARY not in page.text
         assert "Reporting deadline" not in page.text
     finally:
@@ -387,7 +388,7 @@ def test_a_live_stay_keeps_its_deadline_and_copy_link():
         page = _browser().get(f"/reservations/{stays[0]}")
         assert "This stay is cancelled" not in page.text
         assert "Marked as not a guest stay" not in page.text
-        assert "Archived — hidden from your daily work." not in page.text
+        assert "Archived and hidden from your daily work." not in page.text
         assert COPY_LINK_PRIMARY in page.text
         assert "Reporting deadline" in page.text
         assert 'class="stay-metrics detail-hero inactive"' not in page.text
@@ -502,8 +503,9 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
 
         links = browser.get("/guest-links")
         assert links.status_code == 200
-        assert f"/l/{TOKEN}" in links.text
-        assert f"/l/{TOKEN}/{stays[0]}" not in links.text
+        slug = guest_slug.current(apartment_id)
+        assert f"/l/{slug}" in links.text
+        assert f"/l/{slug}/{stays[0]}" not in links.text
         assert "Suggested portal message" in links.text
     finally:
         _cleanup()
@@ -557,7 +559,9 @@ def test_guest_pick_explains_law_without_portal_branding():
         assert page.status_code == 200
         assert "Czech law" in page.text
         assert "Why you are filling this in" in page.text
-        assert "What happens with what you enter" in page.text
+        # WP17 (review 3.E item 4): the fold keeps only the accuracy point.
+        assert i18n.STRINGS["en"]["why_point_accuracy"] in page.text
+        assert "What happens with what you enter" not in page.text
         assert '<details class="g-details">' not in page.text
         assert i18n.STRINGS["en"]["stay_not_started"] in page.text
         assert "0 of 2 people completed" not in page.text
@@ -682,7 +686,8 @@ def test_retention_purge_deletes_old_guests():
     db.init_db()
     _cleanup()
     now = db.utcnow()
-    old_end = (date.today() - timedelta(days=365 * 6 + 30)).isoformat()
+    # Past the six years and the 31 January deletion day that follows them.
+    old_end = (housebook.retention_cutoff(date.today()) - timedelta(days=30)).isoformat()
     entity_id = db.insert(
         "legal_entity",
         {"name": "Overhaul Test s.r.o.", "created_at": now},

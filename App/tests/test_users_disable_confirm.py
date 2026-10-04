@@ -29,7 +29,7 @@ COPY = {
     },
     "cs": {
         "lede": "Vytvořte soukromý pracovní prostor pro každého hostitele. Hesla jsou "
-        "bezpečně uložená — lze je jen resetovat, nikdy zobrazit.",
+        "bezpečně uložená: lze je jen resetovat, nikdy zobrazit.",
         "confirm": "Vypnout účet %(name)s? Nebude se moci přihlásit, dokud ho znovu nezapnete.",
     },
 }

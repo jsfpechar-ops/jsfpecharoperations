@@ -6,7 +6,7 @@
   {% set host_links = [('/apartments', 'nav.properties', nav == 'apartments'), ('/entities', 'host.business', nav == 'entities')] %}
 {% elif nav == 'invoices' %}
   {% set host_links = [('/invoices', 'nav.invoices', request.url.path != '/invoices/settings'), ('/invoices/settings', 'host.invoice_settings', request.url.path == '/invoices/settings')] %}
-{% elif nav in ('settings', 'privacy_requests', 'users', 'incidents') %}
+{% elif nav in ('settings', 'privacy_requests', 'users', 'incidents', 'operations', 'funnel') %}
   {% set host_links = [('/settings', 'nav.settings', nav == 'settings' and request.url.path == '/settings'), ('/settings/archived', 'settings.nav.archive', request.url.path == '/settings/archived'), ('/privacy-requests', 'nav.privacy_requests', nav == 'privacy_requests')] %}
 {% endif %}
 {% if host_links %}

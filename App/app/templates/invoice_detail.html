@@ -136,7 +136,8 @@
   <details class="panel danger-zone" id="cancel">
     <summary>{{ t('invoice.cancel') }}</summary>
     <p class="small muted">{{ t('invoice.cancel_help') }}</p>
-    <form method="post" action="/invoices/{{ invoice.id }}/cancel">
+    <form method="post" action="/invoices/{{ invoice.id }}/cancel"
+          data-confirm data-confirm-message="{{ t('confirm.cancel_invoice') }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <div class="field">
         <label for="reason">{{ t('invoice.cancel_reason') }}</label>

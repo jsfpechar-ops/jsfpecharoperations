@@ -123,7 +123,7 @@ def test_an_overdue_stay_comes_before_the_finish_card(host):
 
     assert page.status_code == 200
     focus = page.text.index('id="needs-action"')
-    strip = page.text.index("Setup is done — your guest link and PIN are ready.")
+    strip = page.text.index("Setup is done. Your guest link and PIN are ready.")
     assert focus < strip, "the finish card is still outranking an overdue stay"
 
 
@@ -134,7 +134,7 @@ def test_an_overdue_stay_shrinks_the_finish_card_to_one_line(host):
     page = host.get("/?lang=en")
 
     assert 'class="onboarding-finish"' not in page.text, "the tall finish card is back"
-    assert "Setup is done — your guest link and PIN are ready." in page.text
+    assert "Setup is done. Your guest link and PIN are ready." in page.text
     assert "Show link" in page.text
 
 
@@ -154,7 +154,7 @@ def test_the_finish_card_keeps_its_room_when_nothing_is_overdue(host):
     page = host.get("/?lang=en")
 
     assert 'class="onboarding-finish"' in page.text
-    assert "Setup is done — your guest link and PIN are ready." not in page.text
+    assert "Setup is done. Your guest link and PIN are ready." not in page.text
     queue = page.text.index('id="needs-action"')
     finish = page.text.index('class="onboarding-finish"')
     assert finish > queue, "the finish card still sits above the work queue"
@@ -166,5 +166,5 @@ def test_the_one_line_finish_card_is_in_czech(host):
 
     page = host.get("/?lang=cs")
 
-    assert "Nastavení je hotové — odkaz a PIN pro hosty jsou připravené." in page.text
+    assert "Nastavení je hotové. Odkaz a PIN pro hosty jsou připravené." in page.text
     assert "Zobrazit odkaz" in page.text

@@ -20,7 +20,7 @@ LANDING_STRINGS = {
             "and keeps the guest book."
         ),
         "landing.cta": "Try UbyHost",
-        "landing.cta.note": "Or write to support@ubyhost.com — we reply with next steps.",
+        "landing.cta.note": "Or write to support@ubyhost.com. We reply with next steps.",
         "landing.contact": "How it works",
         "landing.independent": "UbyHost is an independent private service. It is not operated or endorsed by the Czech Police or UbyPort.",
         "landing.demo.label": "A quick tour of UbyHost",
@@ -53,6 +53,33 @@ LANDING_STRINGS = {
         "landing.benefit.guest.body": "Guests fill in and sign their details through one private link.",
         "landing.benefit.ubyport.title": "UbyPort gets the report",
         "landing.benefit.ubyport.body": "Send it and keep the real delivery receipt.",
+        # WP27: privacy first. Every claim here is true for the code; see
+        # tests/test_privacy_first.py and notes WP27 before changing one.
+        "privacy_first.eyebrow": "Privacy first",
+        "privacy_first.title": "Only what the law asks for. Nothing extra.",
+        "privacy_first.lede": "We store as little as we can, and say exactly what and for how long.",
+        "privacy_first.link": "Privacy policy",
+        "privacy_first.law.title": "Only the fields Czech law asks for",
+        "privacy_first.law.body": (
+            "The guest form asks for the guest-book and stay-fee details, plus an e-mail "
+            "for the guest's private link."
+        ),
+        "privacy_first.cookies.title": "No tracking cookies",
+        "privacy_first.cookies.body": "Only the cookies that keep you signed in and protect your forms.",
+        "privacy_first.trackers.title": "No trackers in the app",
+        "privacy_first.trackers.body": (
+            "No ad or analytics scripts in the app or on guest pages. Website statistics "
+            "run on public pages only."
+        ),
+        "privacy_first.photos.title": "Passport photos deleted after check-in",
+        "privacy_first.photos.body": (
+            "Optional and off by default. Deleted as soon as you verify the guest, otherwise "
+            "automatically 7 days after check-in."
+        ),
+        "privacy_first.line": (
+            "UbyHost collects only what Czech law and the service itself need, and does not "
+            "use tracking cookies."
+        ),
         "landing.steps.title": "From booking to reported in three moves.",
         "landing.steps.1": "Connect your calendar",
         "landing.steps.2": "Share the guest link",
@@ -90,8 +117,7 @@ LANDING_STRINGS = {
         "pricing.card.kicker": "What you get",
         "pricing.card.price": "By agreement",
         "pricing.card.summary": (
-            "One plan with everything below. The monthly price depends on how many "
-            "properties you run — write to us and we reply with a quote."
+            "One plan with everything below. The monthly price depends on how many properties you run. Write to us and we reply with a quote."
         ),
         "pricing.card.note": "Priced for what you actually run.",
         "pricing.card.cta": "Request access and a price",
@@ -204,7 +230,7 @@ LANDING_STRINGS = {
             "ubytovací knihu."
         ),
         "landing.cta": "Vyzkoušet UbyHost",
-        "landing.cta.note": "Nebo napište na support@ubyhost.com — ozveme se s dalším postupem.",
+        "landing.cta.note": "Nebo napište na support@ubyhost.com. Ozveme se s dalším postupem.",
         "landing.contact": "Jak to funguje",
         "landing.independent": "UbyHost je nezávislá soukromá služba. Neprovozuje ji ani nedoporučuje Policie ČR ani UbyPort.",
         "landing.demo.label": "Rychlá ukázka UbyHostu",
@@ -237,6 +263,31 @@ LANDING_STRINGS = {
         "landing.benefit.guest.body": "Hosté vše vyplní a podepíší přes jeden soukromý odkaz.",
         "landing.benefit.ubyport.title": "UbyPort dostane hlášení",
         "landing.benefit.ubyport.body": "Odešlete ho a uchovejte skutečnou doručenku.",
+        "privacy_first.eyebrow": "Soukromí na prvním místě",
+        "privacy_first.title": "Jen to, co žádá zákon. Nic navíc.",
+        "privacy_first.lede": "Ukládáme co nejméně a přesně říkáme co a jak dlouho.",
+        "privacy_first.link": "Zásady ochrany osobních údajů",
+        "privacy_first.law.title": "Jen údaje, které žádá český zákon",
+        "privacy_first.law.body": (
+            "Formulář pro hosty chce jen údaje do domovní knihy a k poplatku z pobytu, "
+            "k tomu e-mail pro soukromý odkaz hosta."
+        ),
+        "privacy_first.cookies.title": "Žádné sledovací cookies",
+        "privacy_first.cookies.body": "Jen cookies, které vás udrží přihlášené a chrání formuláře.",
+        "privacy_first.trackers.title": "V aplikaci nic nesleduje",
+        "privacy_first.trackers.body": (
+            "V aplikaci ani na stránkách pro hosty nejsou reklamní ani analytické skripty. "
+            "Návštěvnost webu měříme jen na veřejných stránkách."
+        ),
+        "privacy_first.photos.title": "Fotky dokladů se po příjezdu mažou",
+        "privacy_first.photos.body": (
+            "Nepovinné a ve výchozím stavu vypnuté. Smažou se, jakmile hosta ověříte, "
+            "jinak automaticky 7 dní po příjezdu."
+        ),
+        "privacy_first.line": (
+            "UbyHost shromažďuje jen to, co vyžaduje český zákon a samotná služba, "
+            "a nepoužívá sledovací cookies."
+        ),
         "landing.steps.title": "Od rezervace k hlášení ve třech krocích.",
         "landing.steps.1": "Propojte kalendář",
         "landing.steps.2": "Sdílejte odkaz pro hosty",
@@ -274,8 +325,7 @@ LANDING_STRINGS = {
         "pricing.card.kicker": "Co dostanete",
         "pricing.card.price": "Dle domluvy",
         "pricing.card.summary": (
-            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování "
-            "— napište nám a pošleme nabídku."
+            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování. Napište nám a pošleme nabídku."
         ),
         "pricing.card.note": "Cenu nastavíme podle toho, co skutečně provozujete.",
         "pricing.card.cta": "Požádat o přístup a cenu",

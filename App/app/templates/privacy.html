@@ -2,10 +2,19 @@
 {% block title %}{{ t('privacy.page_title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
+{#- WP09: the controller named in the roles paragraph. Production refuses to
+    start without UBYHOST_OPERATOR_NAME / _ICO / _ADDRESS (env_guard), so the
+    visible placeholders can only appear outside production. -#}
+{%- set controller = {
+  'name': operator.name or (t('privacy.placeholder_name') if legal_placeholders else ''),
+  'ico': operator.ico or (t('privacy.placeholder_ico') if legal_placeholders else ''),
+  'address': operator.address or (t('privacy.placeholder_address') if legal_placeholders else ''),
+} -%}
 
 {{ page_header(t('privacy.page_title'), t('privacy.page_lede', name=operator.name)) }}
 
-<p class="small muted">{{ t('privacy.effective') }}</p>
+<p class="lede">{{ t('privacy_first.line') }}</p>
+<p class="small muted">{{ legal_effective('privacy') }}</p>
 
 {% with sections = privacy_sections, prefix = 'privacy' %}{% include "_legal_toc.html" %}{% endwith %}
 
@@ -24,7 +33,7 @@
     <dd>{{ operator.address }}</dd>
     {% if operator.email %}
       <dt>{{ t('legal.operator_contact') }}</dt>
-      <dd><a href="mailto:{{ operator.email }}">{{ operator.email }}</a></dd>
+      <dd><a href="mailto:{{ operator.email }}" data-umami-event="contact_click">{{ operator.email }}</a></dd>
     {% endif %}
     <dt>{{ t('legal.operator_registry') }}</dt>
     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">{{ t('legal.registry_link') }}</a></dd>
@@ -37,8 +46,49 @@
 <section class="legal-section" id="s{{ sid }}">
   <h2>{{ t('privacy.s' ~ sid ~ '_title') }}</h2>
   <div class="terms-section">{{ t('privacy.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) | legal_links }}</div>
+  {% if sid == '03' %}
+    {#- WP09: roles, 04_legal_positions.md section 5. -#}
+    <h3>{{ t('privacy.roles_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.roles_body', name=controller.name, ico=controller.ico, address=controller.address) | legal_links }}</div>
+  {% endif %}
   {% if sid == '07' %}
     {% include "_cookie_table.html" %}
+    {% if umami_tag %}
+      {#- WP09: described only while the tag is actually served (section 1). -#}
+      <h3 id="analytics">{{ t('privacy.analytics_title') }}</h3>
+      <p>{{ t('privacy.analytics_body') }}</p>
+      {#- Opt-out and opt-back-in; umami-optout.js toggles localStorage
+          "umami.disabled". Only this page loads that script. -#}
+      <div class="panel quiet" id="analytics-optout" aria-live="polite">
+        <p>{{ t('privacy.optout_lede') }}</p>
+        <p data-optout-when="on" style="margin-bottom:0"><a href="#analytics-optout" role="button" data-optout-action="disable">{{ t('privacy.optout_disable') }}</a></p>
+        <p data-optout-when="off" style="margin-bottom:0" hidden>{{ t('privacy.optout_off_note') }} <a href="#analytics-optout" role="button" data-optout-action="enable">{{ t('privacy.optout_enable') }}</a></p>
+      </div>
+      <script src="/static/umami-optout.js?v=20261004a" defer></script>
+      <p>{{ t('privacy.analytics_dnt') }}</p>
+      <ul class="small muted">
+      {% for service in cookieless_services %}
+        <li><strong>{{ service.name }}</strong> ({{ service.party }}): {{ service.note[lang] }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+    {% if signup_ads_notice %}
+    <h3 id="signup">{{ t('privacy.signup_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_body') }}</div>
+    <h3 id="signup-ads">{{ t('privacy.signup_ads_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_ads_body') | legal_links }}</div>
+    {% if signup_meta_notice %}
+    <h3 id="signup-meta">{{ t('privacy.signup_meta_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_meta_body') | legal_links }}</div>
+    {% endif %}
+    <h3 id="signup-recipients">{{ t('privacy.signup_recipients_title') }}</h3>
+    <div class="terms-section">{{ t('privacy.signup_recipients_body') | legal_links }}{% if signup_meta_notice %} {{ t('privacy.signup_recipients_meta') }}{% endif %}</div>
+    {% endif %}
+  {% endif %}
+  {% if sid == '11' %}
+    {#- WP09: UbyHost's own retention periods, section 4. -#}
+    <h3>{{ t('privacy.own_retention_title') }}</h3>
+    <p>{{ t('privacy.own_retention_body') }}</p>
   {% endif %}
   <p class="legal-back"><a href="#legal-contents">{{ t('legal.back_to_toc') }} <span aria-hidden="true">&uarr;</span></a></p>
 </section>

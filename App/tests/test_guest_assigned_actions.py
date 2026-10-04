@@ -28,11 +28,12 @@ ENTITY = "Assigned Test"
 APP_DIR = Path(__file__).resolve().parents[1]
 
 AUDIT_COPY = {
+    # WP17 (review 3.E item 11) folded the resend instruction into the body.
     "assigned_body": (
-        "This stay is already linked to the e-mail below. If that's you, we can "
-        "send the private link again.",
-        "Tento pobyt je už propojený s e-mailem níže. Pokud jste to vy, pošleme "
-        "vám soukromý odkaz znovu.",
+        "This stay is already linked to the e-mail below. If that's you, enter "
+        "it and we'll send the private link again.",
+        "Tento pobyt je už propojený s e-mailem níže. Pokud jste to vy, zadejte "
+        "ho a soukromý odkaz pošleme znovu.",
     ),
 }
 

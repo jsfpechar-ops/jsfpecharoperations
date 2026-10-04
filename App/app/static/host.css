@@ -63,7 +63,10 @@
 .host-workspace td { padding: 14px 16px; vertical-align: middle; }
 .host-workspace th { padding: 12px 16px; }
 .host-workspace .row-primary-link { font-weight: 700; }
-.host-workspace .table-cards td, .host-workspace .guest-facts dd { overflow-wrap: anywhere; }
+/* break-word, not anywhere: anywhere lets a table shrink a column below its
+   longest word, which printed "Airbn b" and split e-mail addresses. */
+.host-workspace .table-cards td { overflow-wrap: break-word; }
+.host-workspace .guest-facts dd { overflow-wrap: anywhere; }
 .host-workspace .mono { font-size: 12px; }
 .host-local-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--line); padding: 0 0 14px; margin-bottom: 26px; }
 .host-local-nav > a, .host-tools > summary { padding: 9px 12px; border-radius: 8px; color: var(--ink-secondary); text-decoration: none; font-size: 13px; font-weight: 650; min-height: 40px; cursor: pointer; }
@@ -98,7 +101,7 @@
 .host-workspace .guest-facts dt { font-size: 11px; color: var(--muted); }
 .host-workspace .guest-facts dd { font-size: 13px; color: var(--ink); margin-top: 4px; }
 .host-workspace .guest-card.placeholder { background: #fafbf8; border-style: dashed; }
-.host-workspace .guest-card.placeholder .guest-card-head { border: 0; }
+.host-workspace .guest-card.placeholder .guest-card-head { border: 0; padding-bottom: 16px; }
 .host-workspace .guest-card-note, .host-workspace .guest-card-action { margin: 12px 20px; }
 .host-property-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
 .host-property-card { background: white; padding: 20px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; display: flex; gap: 14px; align-items: center; }
@@ -151,6 +154,7 @@
   .host-workspace .btn, .host-workspace .btn.small { min-height: 44px; }
   .host-property-grid { grid-template-columns: 1fr; }
   .host-workspace .guest-card-head { padding: 15px; gap: 12px; }
+  .host-workspace .guest-card.placeholder .guest-card-head { padding-bottom: 15px; }
   .host-workspace .guest-facts { padding: 15px; gap: 14px; }
   .host-workspace .guest-facts .fact-wide { grid-column: 1 / -1; }
   .host-workspace .detail-metric { padding: 12px; }
@@ -292,3 +296,96 @@ body.host-workspace {
   .host-workspace .list-filter .field { flex: 1 1 100%; max-width: none; }
   .host-workspace .list-filter .filter-actions-end { margin-left: 0; }
 }
+
+/* House book register (WP25). Workspace table cells may break long words
+   (break-word, WP28) so card facts never overflow on a phone; in the
+   eleven-column register even that let a column shrink too far. Words stay
+   whole here and the floors below keep each column readable. The sideways
+   scroll itself is the shared .panel.tight.scroll-x rule in app.css (WP28);
+   position: relative keeps the sr-only header from widening the page. */
+.host-workspace .panel.housebook-scroll { position: relative; }
+.host-workspace .housebook-table td { overflow-wrap: normal; word-break: normal; }
+.host-workspace .housebook-table th,
+.host-workspace .housebook-table td { padding-left: 7px; padding-right: 7px; }
+.host-workspace .housebook-table th:first-child,
+.host-workspace .housebook-table td:first-child { padding-left: 12px; }
+/* Headings may wrap between words ("Date of / birth"), never inside one. */
+.host-workspace .housebook-table th { white-space: normal; overflow-wrap: normal; letter-spacing: .02em; }
+.housebook-table .col-stay, .housebook-table .col-born { white-space: nowrap; }
+.housebook-table .col-name { min-width: 92px; }
+.housebook-table .col-address { min-width: 120px; }
+.housebook-table .col-purpose { min-width: 64px; }
+.housebook-table .col-reported { min-width: 92px; }
+.housebook-table td.col-reported { white-space: normal; }
+.host-workspace .housebook-table td.row-actions { padding-left: 4px; padding-right: 8px; }
+.housebook-table .property-identity.truncate { gap: 6px; }
+.housebook-table td.col-reported .pill { white-space: normal; text-align: left; border-radius: 10px; }
+.property-identity.truncate { max-width: 100%; }
+.property-identity.truncate .property-identity-name {
+  display: block; min-width: 0; max-width: 5.75rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Scroll shadows: the shaded edge appears only on a side that has more
+   columns behind it (the cover gradients scroll with the content). */
+.housebook-scroll {
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent) left center / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 30%, transparent) right center / 32px 100% no-repeat local,
+    linear-gradient(to right, rgba(20, 20, 18, 0.12), transparent) left center / 12px 100% no-repeat scroll,
+    linear-gradient(to left, rgba(20, 20, 18, 0.12), transparent) right center / 12px 100% no-repeat scroll,
+    var(--surface);
+}
+.host-workspace .panel.housebook-scroll { background-color: var(--surface); }
+.housebook-scroll:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .property-identity.truncate .property-identity-name { max-width: none; white-space: normal; }
+  /* The card layout spaces facts with the row's grid gap; the workspace's
+     desktop cell padding (14px 16px) outranked app.css's reset here and
+     doubled every gap on a phone. */
+  .host-workspace .table-cards td,
+  .host-workspace .housebook-table td,
+  .host-workspace .housebook-table td:first-child { padding: 0; }
+  .housebook-scroll { background: var(--surface); }
+}
+@media print {
+  .housebook-scroll { overflow: visible !important; background: none; }
+  .property-identity.truncate .property-identity-name { max-width: none; white-space: normal; overflow: visible; }
+}
+
+/* A filed guest's signature is shown, not offered for re-signing (WP25). */
+.signature-saved { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 12px; }
+.signature-saved img { display: block; width: 100%; height: 140px; object-fit: contain; }
+.signature-saved-note { margin: 8px 0 0; }
+.host-workspace .panel.verify-panel.tight { padding: 16px 20px; }
+
+/* Report outcome accent follows the outcome level, not the brand (WP25). */
+.host-workspace .stay-command-panel.outcome-done { border-left-color: var(--green); }
+.host-workspace .stay-command-panel.outcome-action { border-left-color: var(--amber); }
+.host-workspace .stay-command-panel.outcome-critical { border-left-color: var(--status-critical-border); }
+.host-workspace .stay-command-panel.outcome-waiting { border-left-color: var(--teal); }
+.host-workspace .stay-command-panel.outcome-neutral { border-left-color: var(--line-2); }
+/* The stamp is one monospace line where the tile allows it; when it does not,
+   it breaks cleanly and the copy button stays centred beside it. */
+.report-stamp-value { display: flex; align-items: center; gap: 8px; }
+.report-stamp-value .report-stamp {
+  flex: 0 1 auto; min-width: 0;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere;
+}
+.report-stamp-value .btn-icon { flex: 0 0 auto; }
+@media (min-width: 1101px) {
+  .report-metrics { grid-template-columns: minmax(120px, 1fr) minmax(300px, 1.8fr) minmax(150px, 1fr) minmax(120px, 1fr); }
+}
+.report-receipt-missing { margin: 6px 0 0; }
+/* Locked fields read as locked: a disabled text box must not look editable. */
+.host-workspace input:disabled:not([type=checkbox]):not([type=radio]),
+.host-workspace select:disabled,
+.host-workspace textarea:disabled {
+  background: var(--canvas); color: var(--ink-secondary); border-color: var(--line);
+  cursor: not-allowed; opacity: 1; -webkit-text-fill-color: var(--ink-secondary);
+}
+
+/* The operator signature block was an unstyled browser fieldset. */
+.host-workspace .signature-block { min-width: 0; margin: 0 0 16px; padding: 14px 16px 2px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.host-workspace .signature-block > legend { padding: 0 6px; color: var(--ink); font-size: 14px; font-weight: 650; }
+.host-workspace .signature-block .action-group { margin: 10px 0 14px; }
+.host-workspace .signature-block .action-group > label.btn { margin: 0; }

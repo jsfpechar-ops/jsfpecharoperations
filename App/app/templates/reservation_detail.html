@@ -2,7 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count with context %}
+{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge with context %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {{ page_header(
   reservation.internal_name,
@@ -79,7 +79,16 @@
       {% elif progress.status == 'failed' %}
         <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
       {% elif progress.status == 'reported' and submissions %}
-        <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+        {# The Doručenka is the proof of filing, so once the stay is reported
+           it is the first thing offered. The route keeps WP04's block while an
+           admin views the workspace. #}
+        {% set receipt_report = submissions | selectattr('has_receipt') | first %}
+        {% if receipt_report %}
+          <a class="btn accent primary" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+          <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+        {% else %}
+          <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+        {% endif %}
       {% elif not stay_inactive %}
         <button class="btn primary" type="button" data-copy="stay-link"
                 data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
@@ -161,7 +170,10 @@
           {% if guest.restricted_at %}
             <span class="pill amber">{{ t('guest.restricted_badge') }}</span>
           {% endif %}
-          {% if guest.submit_state == 'sent' %}
+          {% if guest.submit_state == 'sent' and guest.manual_filed_at %}
+            <span class="pill green">{{ t('stay.detail.guests.filed_by_hand') }}</span>
+            <span class="small muted">{{ guest.manual_filed_at | datetime_local }}</span>
+          {% elif guest.submit_state == 'sent' %}
             <span class="pill green">{{ t('stay.detail.guests.reported') }}</span>
             {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at | datetime_local }}</span>{% endif %}
           {% elif guest.submit_state == 'not_required' %}
@@ -201,8 +213,8 @@
         </div>
         <div>
           <dt>{{ t('stay.detail.guests.document') }}</dt>
-          <dd><span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ (guest.doc_type or '') %}{{ t(doc_key) if t(doc_key) != doc_key else (guest.doc_type or '—') }} </span><span class="mono">{{ guest.doc_number or '—' }}{% if guest.visa_number %}
-            <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest.visa_number) }}</span>{% endif %}</span></dd>
+          <dd>{% if guest.doc_type %}<span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ guest.doc_type %}{{ t(doc_key) if t(doc_key) != doc_key else guest.doc_type }} </span>{% endif %}<span class="mono">{{ guest_identifier(guest.doc_number, guest.id) or '—' }}{% if guest.visa_number %}
+            <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest_identifier(guest.visa_number, guest.id)) }}</span>{% endif %}</span></dd>
         </div>
         <div>
           <dt>{{ t('stay.detail.guests.purpose') }}</dt>
@@ -234,7 +246,7 @@
       </dl>
 
       {% if row.needs_verification %}
-        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form guest-card-action">
+        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form guest-card-action">
           <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
           <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
           {% if row.has_passport_photo %}
@@ -303,12 +315,11 @@
   <div class="section-heading"><h2>{{ t('host.reporting') }}</h2></div>
   <div class="panel tight">
   <div class="stay-metrics detail-hero{% if stay_inactive %} inactive{% endif %}">
-    {% if not stay_inactive %}
+    {% set cell = deadline_cell(progress, check_in) %}
+    {% if not stay_inactive and cell.state != 'none' %}
     <div class="detail-metric">
       <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
-      <div class="metric-value deadline {{ urgency_level }}">
-        {{ describe_time_left(check_in) if check_in else '—' }}
-      </div>
+      {{ deadline_badge(cell, tag='div', extra_class='metric-value') }}
       {% if deadline %}
         <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
       {% endif %}
@@ -316,11 +327,46 @@
     {% endif %}
     <div class="detail-metric">
       <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
-      <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
+      {# A cancelled or archived stay sends nothing, so "Waiting for guest"
+         would contradict the banner above; show the stay's own state. #}
+      <div class="metric-value small-value">{% if stay_inactive %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}</div>
 
     </div>
   </div>
   </div>
+  {# WP23: the host filed this stay in the UbyPort web application. #}
+  {% if hand_filing.count %}
+  <div class="panel" id="filed-by-hand">
+    <p><strong>{{ t('stay.hand_filing.done', when=hand_filing.filed_at.strftime('%d.%m.%Y %H:%M')) }}</strong></p>
+    {% if hand_filing.reference %}<p class="small muted">{{ t('stay.hand_filing.done_reference', reference=hand_filing.reference) }}</p>{% endif %}
+    {% if hand_filing.can_undo %}
+    <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand/undo" class="inline"
+          data-confirm data-confirm-message="{{ t('stay.hand_filing.undo_confirm') }}">
+      <button class="btn small" type="submit">{{ t('stay.hand_filing.undo') }}</button>
+      <span class="small muted">{{ t('stay.hand_filing.undo_until', when=hand_filing.undo_until.strftime('%d.%m. %H:%M')) }}</span>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if hand_filing.candidates and not stay_inactive %}
+  <details class="panel" id="file-by-hand">
+    <summary>{{ t('stay.hand_filing.open') }}</summary>
+    <p class="small muted">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
+    <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">
+      <div class="field">
+        <label for="hand_filed_at">{{ t('stay.hand_filing.filed_at') }}</label>
+        <input type="datetime-local" id="hand_filed_at" name="filed_at" value="{{ hand_filing.default_filed_at }}" max="{{ hand_filing.default_filed_at }}" required>
+      </div>
+      <div class="field">
+        <label for="hand_reference">{{ t('stay.hand_filing.reference') }}</label>
+        <input type="text" id="hand_reference" name="reference" maxlength="200" autocomplete="off">
+        <div class="hint">{{ t('stay.hand_filing.reference_hint') }}</div>
+      </div>
+      <p class="small muted">{{ t('stay.hand_filing.covers', count=hand_filing.candidates) }}</p>
+      <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('stay.hand_filing.confirm') }}</button></div>
+    </form>
+  </details>
+  {% endif %}
   {% if submissions %}
   <div class="panel tight scroll-x">
     <table class="table-cards">

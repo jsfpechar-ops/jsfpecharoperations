@@ -135,7 +135,8 @@ def test_stay_cards_are_links_not_radios():
         assert f'href="/l/{token}/{right}?lang=en"' in page.text
         assert "Which stay is yours?" in page.text
         assert "That’s my stay" in page.text
-        assert "guest registration for" in page.text
+        # WP17: the welcome line only repeated the heading and property name.
+        assert "guest registration for" not in page.text
     finally:
         _cleanup()
 
@@ -432,16 +433,16 @@ def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
         page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert page.status_code == 200
         assert (
-            "Your host must check your details against your document. Take a photo of the page "
-            "with your photo, or upload a PDF. Only your host can see it, and it is deleted after "
-            "they check it."
+            "Take a photo of the page with your photo, or upload a PDF. Only your host can see "
+            "it, and it is deleted after they check it."
         ) in page.text
         assert "A JPEG, PNG or WebP photo up to 5 MB, or a PDF up to 15 MB." in page.text
         assert "Choose your nationality in step 1 first." in page.text
         assert (
             "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
-            "sees it, to compare it with what you entered. It is deleted after the check, or "
-            "automatically after your stay. It is never sent to the police."
+            "sees it, to compare it with what you entered. It is deleted after the check, "
+            "otherwise 7 days after check-in, and never later than 30 days after upload. It is "
+            "never sent to the police."
         ) in page.text
         # The internal storage policy is not the guest's problem.
         assert "stale-file sweep" not in page.text
@@ -451,8 +452,8 @@ def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
         cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
         assert cs_page.status_code == 200
         assert (
-            "Hostitel musí vaše údaje porovnat s dokladem. Vyfoťte stránku s fotografií, nebo "
-            "nahrajte PDF. Uvidí ji jen hostitel a po kontrole se smaže."
+            "Vyfoťte stránku s fotografií, nebo nahrajte PDF. Uvidí ji jen hostitel a po "
+            "kontrole se smaže."
         ) in cs_page.text
         assert "Fotka JPEG, PNG nebo WebP do 5 MB, nebo PDF do 15 MB." in cs_page.text
         assert "Nejdřív v kroku 1 vyberte státní občanství." in cs_page.text
@@ -470,11 +471,12 @@ def test_the_legal_notice_talks_to_the_guest_instead_of_the_builder():
         complete_guest_claim(browser, token, wrong, party_size=1)
         page = browser.get(f"/l/{token}/{wrong}", follow_redirects=True)
         assert page.status_code == 200
-        assert "Please read this before you send." in page.text
+        # WP17 (review 3.E item 16): intro cut, duty and reporting shortened. Owner decision:
+        # the reporting section still names the three-working-day deadline and the timing.
+        assert "Please read this before you send." not in page.text
         assert (
             "Everyone staying must be registered. Foreign guests are reported to the Foreign "
-            "Police within three working days; Czech citizens only go into the house book. "
-            "This is required by law."
+            "Police; Czech citizens only go into the house book."
         ) in page.text
         assert (
             "Enter everything exactly as in your passport or ID card. Your details may be "
@@ -482,9 +484,9 @@ def test_the_legal_notice_talks_to_the_guest_instead_of_the_builder():
             "a fine for your host."
         ) in page.text
         assert (
-            "Complete records of foreign guests may be sent to the Czech Police automatically — "
-            "straight away or after a delay your host chooses. The same details stay in the house "
-            "book for six years."
+            "Your host reports the details of foreign guests to the Foreign Police within three "
+            "working days of arrival, straight away or a little later. Complete records may be "
+            "sent automatically. The same details stay in the house book for six years."
         ) in page.text
         assert (
             "My details are correct, and I have read the information above and the privacy "
@@ -497,10 +499,10 @@ def test_the_legal_notice_talks_to_the_guest_instead_of_the_builder():
 
         cs_page = browser.get(f"/l/{token}/{wrong}?lang=cs", follow_redirects=True)
         assert cs_page.status_code == 200
-        assert "Před odesláním si to prosím přečtěte." in cs_page.text
+        assert "Před odesláním si to prosím přečtěte." not in cs_page.text
         assert (
-            "Registrovat se musí každý ubytovaný. Cizince ubytovatel do tří pracovních dnů "
-            "ohlásí cizinecké policii, občany ČR jen zapíše do domovní knihy. Vyžaduje to zákon."
+            "Registrovat se musí každý ubytovaný. Cizince ubytovatel ohlásí cizinecké policii, "
+            "občany ČR jen zapíše do domovní knihy."
         ) in cs_page.text
         assert (
             "Vše vyplňte přesně podle pasu nebo občanského průkazu. Údaje se mohou ohlásit "
@@ -508,9 +510,9 @@ def test_the_legal_notice_talks_to_the_guest_instead_of_the_builder():
             "hrozí ubytovateli pokuta."
         ) in cs_page.text
         assert (
-            "Kompletní záznamy cizinců se mohou Policii ČR odeslat automaticky — hned, nebo "
-            "s odkladem, který nastaví ubytovatel. Stejné údaje zůstávají šest let v domovní "
-            "knize."
+            "Ubytovatel údaje cizinců ohlásí cizinecké policii do tří pracovních dnů od příjezdu, "
+            "hned, nebo o něco později. Kompletní záznamy se mohou odeslat automaticky. Stejné "
+            "údaje zůstávají šest let v domovní knize."
         ) in cs_page.text
         assert (
             "Moje údaje jsou správné a přečetl(a) jsem si informace výše i zásady zpracování "

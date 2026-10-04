@@ -12,7 +12,7 @@ import html
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n
+from app import auth, db, guest_slug, host_i18n
 from app.main import app
 
 PASSWORD = "Secure-Password-123"
@@ -137,9 +137,10 @@ def test_the_message_carries_the_link_and_the_pin(host):
 
     message = _message_block(page.text, f"message-{apartment_id}")
     english, czech = message.split(CS_OPENING, 1)
-    assert f"/l/{TOKEN}" in english
+    slug = guest_slug.current(apartment_id)
+    assert slug and f"/l/{slug}" in english
     assert PIN in english
-    assert f"/l/{TOKEN}" in czech
+    assert f"/l/{slug}" in czech
     assert PIN in czech
 
 

@@ -19,8 +19,8 @@
   <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
   <meta property="og:image" content="{{ public_base_url }}/static/apple-touch-icon.png">
   <meta name="twitter:card" content="summary">
-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
   <script type="application/ld+json">
@@ -34,6 +34,7 @@
     "isPartOf": {"@type": "WebSite", "name": "UbyHost", "url": public_base_url ~ "/"}
   } | tojson }}
   </script>
+  {% include "_umami.html" %}
 </head>
 <body>
 {% set active = 'pricing' %}{% set switch_path = '/cenik' %}
@@ -49,7 +50,7 @@
       <article class="pricing-card">
         <div class="pricing-card-head">
           <span>{{ t('pricing.card.kicker') }}</span>
-          <img src="/static/ubyhost-mark.png" alt="">
+          <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
         </div>
         <strong class="pricing-price">{{ t('pricing.card.price') }}</strong>
         <p class="pricing-note">{{ t('pricing.card.summary') }}</p>
@@ -63,7 +64,10 @@
           </ul>
         </div>
         <a class="landing-button pricing-button"
-           href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
+           data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
+        {% if signup_href %}
+        <a class="landing-button primary pricing-button" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('signup.cta') }}</a>
+        {% endif %}
         <small>{{ t('landing.cta.note') }}</small>
       </article>
     </section>
@@ -80,10 +84,12 @@
       </ol>
     </section>
 
+    {% include "_privacy_first.html" %}
+
     <section class="landing-final pricing-final">
-      <img src="/static/ubyhost-mark.png" alt="">
+      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
-      <a class="landing-button primary" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
+      <a class="landing-button primary" data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
     </section>
   </main>
 

@@ -40,6 +40,7 @@
       <label for="guest_email">{{ t('claim_email') }}</label>
       <input type="email" id="guest_email" name="guest_email" required autocomplete="email"
              maxlength="254">
+      <div class="hint">{{ t('tw_email_short') }}</div>
       <div class="hint">{{ t('claim_email_help') }}</div>
       <div class="hint">{{ t('claim_cookie_help') }}
         {% if privacy_url %}<a href="{{ privacy_url }}">{{ t('privacy_link') }}</a>{% endif %}

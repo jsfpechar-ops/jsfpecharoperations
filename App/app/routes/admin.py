@@ -31,6 +31,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    guest_slug,
     host_i18n,
     housebook,
     icalsync,
@@ -40,12 +41,14 @@ from .. import (
     reporting,
     claim,
     security,
+    signup,
     stay_fee,
     validation,
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
+from . import signup as signup_routes
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import flash_plural as _flash_plural
@@ -61,6 +64,7 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
 router.include_router(api.router)
 router.include_router(onboarding.router)
+router.include_router(signup_routes.router)
 
 
 # --- helpers -------------------------------------------------------------
@@ -207,14 +211,14 @@ def dashboard(request: Request):
         return render(
             request,
             "landing.html",
-            {"show_nav": False, "open_alerts": []},
+            {"show_nav": False, "open_alerts": [], **signup.public_context(request)},
         )
     guard = auth.require_login(request)
     if guard:
         return guard
     owner_user_id = access.owner_id(request)
     apartments = access.apartments(request)
-    rows = reporting.dashboard_rows(owner_user_id=owner_user_id)
+    rows = reporting.dashboard_rows(owner_user_id=owner_user_id, apartments=apartments)
     queue = reporting.queue_groups(rows)
     counts = reporting.queue_counts(rows, queue)
     needs_action, waiting = queue["needs_action"][:20], queue["waiting"][:20]
@@ -233,7 +237,7 @@ def dashboard(request: Request):
         db.query_one(
             "SELECT COUNT(*) AS n FROM ical_feed f "
             "JOIN apartment a ON a.id = f.apartment_id "
-            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
+            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL AND f.active = 1",
             (owner_user_id,),
         )["n"]
     )
@@ -282,18 +286,20 @@ def guest_links(request: Request):
         "SELECT a.*, e.name AS entity_name, "
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.active = 1 AND a.archived_at IS NULL AND a.owner_user_id IS ? "
+        f"WHERE a.active = 1 AND a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
         "ORDER BY a.internal_name",
         (access.owner_id(request),),
     )
     rows = []
     for apartment in apartments:
         apartment = _ensure_apartment_pin(apartment)
+        link_key = guest_slug.link_key(apartment)
         rows.append(
             {
                 "apartment": apartment,
                 "issues": validation.errors_only(_apartment_issues(apartment)),
-                "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+                "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
+                "link_key": link_key,
                 "pin": apartment["permalink_pin"] or "",
             }
         )
@@ -311,13 +317,13 @@ def entities(request: Request):
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
         "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
-        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NULL ORDER BY e.name",
+        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NULL ORDER BY e.name",
         (owner_user_id,),
     )
     archived = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
         "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
-        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NOT NULL "
+        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NOT NULL "
         "ORDER BY e.archived_at DESC",
         (owner_user_id,),
     )
@@ -562,7 +568,7 @@ def archive_entity(entity_id: int, request: Request):
         return _back("/entities", err=_flash(request, "flash.error.already_archived"))
     used = db.query_one(
         "SELECT COUNT(*) AS n FROM apartment WHERE "
-        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
+        f"(legal_entity_id = ? OR data_controller_entity_id = ?) AND {db.null_safe_eq('owner_user_id')}",
         (entity_id, entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
@@ -604,7 +610,7 @@ def delete_entity(entity_id: int, request: Request):
         return _back("/entities", err=_flash(request, "flash.error.archive_entity_first"))
     used = db.query_one(
         "SELECT COUNT(*) AS n FROM apartment WHERE "
-        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
+        f"(legal_entity_id = ? OR data_controller_entity_id = ?) AND {db.null_safe_eq('owner_user_id')}",
         (entity_id, entity_id, access.owner_id(request)),
     )
     if used and used["n"]:
@@ -631,7 +637,7 @@ def apartments_list(request: Request):
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.archived_at IS NULL AND a.owner_user_id IS ? ORDER BY a.internal_name",
+        f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.internal_name",
         (access.owner_id(request),),
     )
     archived = db.query(
@@ -639,7 +645,7 @@ def apartments_list(request: Request):
         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? ORDER BY a.archived_at DESC",
+        f"WHERE a.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.archived_at DESC",
         (access.owner_id(request),),
     )
     enriched = [
@@ -787,6 +793,7 @@ async def apartment_create(request: Request):
     password = _form_str(form, "uby_ws_password")
     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
     apartment_id = db.insert("apartment", payload)
+    guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")
     return _back(
         f"/apartments/{apartment_id}#calendars",
@@ -809,6 +816,7 @@ def apartment_detail(apartment_id: int, request: Request):
     issues = _apartment_issues(apartment)
     # A connected calendar or a hand-typed stay both mean guests are on their
     # way, which is all the "Ready to invite guests" list asks about.
+    link_key = guest_slug.link_key(apartment)
     has_stays = any(feed["active"] for feed in feeds) or bool(
         db.query_one(
             "SELECT 1 AS present FROM reservation WHERE apartment_id = ? LIMIT 1",
@@ -825,7 +833,14 @@ def apartment_detail(apartment_id: int, request: Request):
             "issues": issues,
             "readiness": _readiness(apartment, entities, issues, has_stays),
             "purposes": codelists.purpose_options("en"),
-            "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
+            "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
+            "link_base": f"{config.PUBLIC_BASE_URL}/l/",
+            "link_readable": (
+                guest_slug.readable_of(link_key) if link_key != apartment["permalink_token"] else ""
+            ),
+            "link_code": (
+                guest_slug.code_of(link_key) if link_key != apartment["permalink_token"] else ""
+            ),
             "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
@@ -891,6 +906,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
         payload["permalink_pin"] = pin
+    link_readable = None
+    if "guest_link_name" in form:
+        link_readable, link_error = guest_slug.validate_readable(_form_str(form, "guest_link_name"))
+        if link_error:
+            return _back(
+                f"/apartments/{apartment_id}#communication",
+                err=_flash(request, f"flash.error.link_name_{link_error}"),
+            )
     raw_account = payload.pop("_stay_fee_account_raw", None)
     if raw_account is not None:
         if raw_account.strip():
@@ -913,6 +936,13 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     credentials_changed = bool(password) or (
         (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
     )
+    if link_readable:
+        guest_slug.ensure(apartment)
+        if guest_slug.rename(apartment_id, link_readable) is None:
+            return _back(
+                f"/apartments/{apartment_id}#communication",
+                err=_flash(request, "flash.error.link_name_taken"),
+            )
     db.update("apartment", apartment_id, payload)
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
@@ -957,6 +987,9 @@ async def regenerate_link(apartment_id: int, request: Request):
             "permalink_pin": auth.new_permalink_pin(),
         },
     )
+    # The old slugs go with the old token: one that still redirected would hand
+    # the new link to whoever holds the leaked one.
+    guest_slug.rotate(apartment_id)
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
         _form_return_to(form, "/guest-links"),
@@ -1301,6 +1334,17 @@ RESERVATION_PAGE_SIZE = 50
 RESERVATION_RANGES = ("upcoming", "past", "all")
 
 
+def _overdue_unfinished_ids(request: Request) -> List[int]:
+    """Stays past their deadline that are not reported, the dashboard's own rule."""
+    rows = reporting.dashboard_rows(owner_user_id=access.owner_id(request))
+    return [
+        int(row["reservation"]["id"])
+        for row in rows
+        if row["urgency"] == "overdue"
+        and row["progress"]["status"] not in reporting.FINISHED_STATUSES
+    ]
+
+
 @router.get("/reservations")
 def reservations_list(request: Request):
     guard = auth.require_login(request)
@@ -1329,9 +1373,11 @@ def reservations_list(request: Request):
         date_from = date_to = ""
 
     sql = (
-        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
+        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours, "
+        "  (SELECT s.slug FROM apartment_slug s "
+        "   WHERE s.apartment_id = a.id AND s.is_current = 1) AS permalink_slug "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        "WHERE a.owner_user_id IS ?"
+        f"WHERE {db.null_safe_eq('a.owner_user_id')}"
     )
     params: List[Any] = [access.owner_id(request)]
     if show_archive:
@@ -1346,7 +1392,19 @@ def reservations_list(request: Request):
         params.append(apartment_id)
     # A stay counts as inside the window when it overlaps it, so a guest who is
     # in the flat right now still shows under "upcoming".
-    if date_from:
+    if date_from and date_range == "upcoming":
+        # WP33: a stay whose police deadline has passed with a guest still
+        # unfiled stays in the default view until it is filed, however long
+        # ago the guests left. Hiding it is how a host misses a fine.
+        overdue_ids = _overdue_unfinished_ids(request)
+        if overdue_ids:
+            marks = ",".join("?" for _ in overdue_ids)
+            sql += f" AND (r.date_to >= ? OR r.id IN ({marks}))"
+            params.extend([date_from, *overdue_ids])
+        else:
+            sql += " AND r.date_to >= ?"
+            params.append(date_from)
+    elif date_from:
         sql += " AND r.date_to >= ?"
         params.append(date_from)
     if date_to:
@@ -1362,9 +1420,15 @@ def reservations_list(request: Request):
     sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
     reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
     rows = []
+    # One guest query for the page, and each property read once, instead of
+    # both again for every stay on it.
+    preloaded = reporting.preload_guests(reservations)
+    apartments_by_id: Dict[int, Any] = {}
     for row in reservations:
-        apartment = access.apartment(request, row["apartment_id"])
-        progress = reporting.reservation_progress(row)
+        if row["apartment_id"] not in apartments_by_id:
+            apartments_by_id[row["apartment_id"]] = access.apartment(request, row["apartment_id"])
+        apartment = apartments_by_id[row["apartment_id"]]
+        progress = reporting.reservation_progress(row, preloaded.get(row["id"]))
         rows.append(
             {
                 "reservation": row,
@@ -1403,7 +1467,7 @@ def reservations_list(request: Request):
             "next_page_url": page_url(page + 1) if page < page_count else "",
             "has_any": bool(db.query_one(
                 "SELECT 1 AS x FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-                "WHERE a.owner_user_id IS ? LIMIT 1",
+                f"WHERE {db.null_safe_eq('a.owner_user_id')} LIMIT 1",
                 (access.owner_id(request),),
             )),
             # Without a feed there is nothing to sync, so an empty list offers
@@ -1412,7 +1476,7 @@ def reservations_list(request: Request):
                 db.query_one(
                     "SELECT COUNT(*) AS n FROM ical_feed f "
                     "JOIN apartment a ON a.id = f.apartment_id "
-                    "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
+                    f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL AND f.active = 1",
                     (access.owner_id(request),),
                 )["n"]
             ),
@@ -1483,7 +1547,7 @@ async def reservations_submit_ready(request: Request):
     reservations = db.query(
         "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
-        "AND a.archived_at IS NULL AND a.owner_user_id IS ?",
+        f"AND a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')}",
         (access.owner_id(request),),
     )
     sent_stays = 0
@@ -1566,8 +1630,12 @@ def reservation_detail(reservation_id: int, request: Request):
         "       (receipt_pdf IS NOT NULL AND TRIM(receipt_pdf) != '') AS has_receipt "
         "FROM submission WHERE id IN ("
         "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
+        # A duplicate answer moves submission_id to the refused resend; the
+        # report that holds the Doručenka is kept in receipt_submission_id.
+        "  UNION SELECT DISTINCT receipt_submission_id FROM guest"
+        "  WHERE reservation_id = ? AND receipt_submission_id IS NOT NULL"
         ") AND apartment_id = ? ORDER BY created_at DESC",
-        (reservation_id, reservation["apartment_id"]),
+        (reservation_id, reservation_id, reservation["apartment_id"]),
     )
     return render(
         request,
@@ -1579,13 +1647,15 @@ def reservation_detail(reservation_id: int, request: Request):
             "guest_rows": guest_rows,
             "check_in": check_in,
             "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
-            "urgency_level": deadlines.urgency(check_in) if check_in else "future",
             "submissions": submissions,
             "return_to": _safe_return_to(request, "/reservations"),
             "guest_link": (
-                f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
+                f"{config.PUBLIC_BASE_URL}/l/"
+                f"{guest_slug.link_key(apartment) if apartment else reservation['permalink_token']}"
+                f"/{reservation_id}"
             ),
             "stay_claim": claim.ensure_row(reservation_id),
+            "hand_filing": reporting.hand_filing_view(progress),
         },
     )
 
@@ -1648,19 +1718,15 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
     back = f"/reservations/{reservation_id}#guests"
     if expected is None or not 2 <= expected <= 60:
         return _back(back, err=_flash(request, "host.count_changed"))
-    conn = db.connect()
-    try:
-        changed = conn.execute(
-            "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
-            "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
-            "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
-            "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
-            "AND archived_at IS NULL) < ? "
-            "AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS ?)",
-            (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
-        ).rowcount
-    finally:
-        conn.close()
+    changed = db.execute_rowcount(
+        "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
+        "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
+        "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+        "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
+        "AND archived_at IS NULL) < ? "
+        f"AND apartment_id IN (SELECT id FROM apartment WHERE {db.null_safe_eq('owner_user_id')})",
+        (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
+    )
     if not changed:
         return _back(back, err=_flash(request, "host.count_changed"))
     db.audit("reservation_headcount_corrected", f"id={reservation_id} expected={expected - 1}")
@@ -1760,6 +1826,52 @@ async def reservation_release_claim(reservation_id: int, request: Request):
     claim.release(reservation_id)
     db.audit("guest_claim_released", f"reservation={reservation_id}")
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.claim_released"))
+
+
+@router.post("/reservations/{reservation_id}/filed-by-hand")
+async def reservation_filed_by_hand(reservation_id: int, request: Request):
+    """WP23: the host filed this stay in the UbyPort web application."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    back = f"/reservations/{reservation_id}#reports"
+    form = await request.form()
+    filed_at = reporting.parse_manual_filed_at(_form_str(form, "filed_at") or "")
+    if not filed_at:
+        return _back(back, err=_flash(request, "flash.error.hand_filing_time"))
+    reference = reporting.clean_manual_reference(_form_str(form, "reference"))
+    result = reporting.mark_filed_by_hand(reservation_id, filed_at, reference)
+    if not result["marked"]:
+        key = "flash.error.hand_filing_busy" if result["busy"] else "flash.error.hand_filing_nothing"
+        return _back(back, err=_flash(request, key))
+    # No guest data in the audit row: ids, counts and the host's own reference.
+    db.audit(
+        "stay_filed_manually",
+        f"reservation={reservation_id} guests={result['marked']} filed_at={filed_at}"
+        + (f" busy={result['busy']}" if result["busy"] else "")
+        + (f" reference={reference}" if reference else ""),
+    )
+    return _back(back, msg=_flash(request, "flash.hand_filing.marked"))
+
+
+@router.post("/reservations/{reservation_id}/filed-by-hand/undo")
+async def reservation_filed_by_hand_undo(reservation_id: int, request: Request):
+    """WP23: take back a "filed by hand" mark made by mistake, within 24 hours."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    back = f"/reservations/{reservation_id}#reports"
+    undone = reporting.undo_filed_by_hand(reservation_id)
+    if not undone:
+        return _back(back, err=_flash(request, "flash.error.hand_filing_undo_closed"))
+    db.audit("stay_filed_manually_undone", f"reservation={reservation_id} guests={len(undone)}")
+    return _back(back, msg=_flash(request, "flash.hand_filing.undone"))
 
 
 @router.post("/reservations/{reservation_id}/submit")
@@ -1883,6 +1995,12 @@ def _render_host_guest_form(
     *,
     editing: bool,
 ):
+    # A guest not yet saved has nothing stored to hide; what the form echoes
+    # back is what the person at the keyboard just typed.
+    identity_hidden = bool(
+        editing and guest and guest["id"]
+        and not access.identity_visible(request, int(guest["id"]))
+    )
     return render(
         request,
         "guest_form_admin.html",
@@ -1891,7 +2009,8 @@ def _render_host_guest_form(
             "guest": guest,
             "issues": issues,
             "editing": editing,
-            "signature_value": _signature_for_display(guest),
+            "identity_hidden": identity_hidden,
+            "signature_value": "" if identity_hidden else _signature_for_display(guest),
             "doc_types": validation.DOC_TYPES,
             "selected_doc_type": (
                 stay_fee.doc_type_of(guest)
@@ -2029,9 +2148,38 @@ async def guest_update(guest_id: int, request: Request):
     form = await request.form()
     payload = _guest_payload(form)
     signature = _guest_signature_from_form(form, guest)
+    if not access.identity_visible(request, guest_id):
+        # The form showed these masked and without inputs, so the stored values
+        # stand: a masked number must never be saved over the real one.
+        payload["doc_number"] = guest["doc_number"]
+        payload["visa_number"] = guest["visa_number"]
+        signature = guest["signature_png"] or ""
+    if reporting.guest_is_filed(guest):
+        # Filed (by UbyHost or by hand): the police hold this record and UbyPort
+        # has no call that corrects it, so the reported fields and the signature
+        # are read-only here. The form posts none of them (they render
+        # disabled); a post that does carry them, from an old tab or by hand,
+        # must match what was filed or nothing is saved.
+        for field in reporting.FILED_FIELDS:
+            if field not in form:
+                payload[field] = guest[field]
+        posted_signature = _form_str(form, "signature")
+        signature_changed = bool(
+            posted_signature
+            and validation.is_valid_signature(posted_signature)
+            and posted_signature != (guest["signature_png"] or "")
+        )
+        if signature_changed or reporting.filed_record_changed(
+            guest, {**dict(guest), **payload}, reservation
+        ):
+            db.audit("guest_update_refused_filed", f"id={guest_id} by=host")
+            return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.guest_filed_locked"))
+        # Only what never went to the police is saved.
+        payload = {"doc_type": payload["doc_type"]}
+        signature = guest["signature_png"] or ""
     preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
     issues = reporting.guest_issues(preview, reservation)
-    if validation.errors_only(issues):
+    if validation.errors_only(issues) and not reporting.guest_is_filed(guest):
         return _render_host_guest_form(
             request,
             reservation,
@@ -2040,10 +2188,15 @@ async def guest_update(guest_id: int, request: Request):
             editing=True,
         )
     payload["signature_png"] = signature
-    if signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
+    if reporting.guest_is_filed(guest):
+        payload.pop("signature_png")
+    elif signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
         payload["signed_at"] = db.utcnow()
     payload["updated_at"] = db.utcnow()
-    if validation.guest_is_reportable(payload["nationality"]):
+    if reporting.guest_is_filed(guest):
+        # Changing the stay-fee document type attests nothing about identity.
+        pass
+    elif validation.guest_is_reportable(payload["nationality"]):
         payload["identity_verified_at"] = db.utcnow()
         payload["identity_verified_by"] = access.owner_id(request)
     if guest["submit_state"] == reporting.SENT:
@@ -2180,19 +2333,84 @@ def guest_passport_photo(guest_id: int, request: Request):
     guest = access.guest(request, guest_id)
     if not guest or not reporting.guest_has_passport_photo(guest):
         return Response("Not found.", status_code=404)
+    if not access.identity_visible(request, guest_id):
+        return Response(
+            _flash(request, "identity.hidden"),
+            status_code=403,
+            media_type="text/plain",
+            headers={"Cache-Control": "no-store"},
+        )
     payload = passport_photos.read_photo(guest_id)
     if not payload:
         return Response("Not found.", status_code=404)
     content, media_type = payload
     db.audit("passport_photo_viewed", f"guest_id={guest_id}")
+    filename = passport_photos.download_filename(guest_id, media_type)
+    # WP08: never rendered as a page from our origin. Opened directly, the
+    # browser saves the file; an <img> on the host's guest page still shows a
+    # (re-encoded) photo, because Content-Disposition does not apply to images
+    # embedded in a page. nosniff stops a browser second-guessing the type.
     return Response(
         content,
         media_type=media_type,
         headers={
             "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Content-Type-Options": "nosniff",
             "Content-Security-Policy": "sandbox; default-src 'none'",
         },
     )
+
+
+@router.post("/guests/{guest_id}/reveal-identity")
+async def guest_reveal_identity(guest_id: int, request: Request):
+    """Show one guest's identity data to a supporting admin, with a logged reason.
+
+    The reveal lasts for the rest of this impersonation (the guest id joins
+    the session payload) and is written to the host's own audit.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    guest = access.guest(request, guest_id)
+    if not guest:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
+    form = await request.form()
+    return_to = security.safe_local_path(
+        str(form.get("return_to") or ""), f"/guests/{guest_id}"
+    )
+    if not auth.impersonating(request):
+        return _back(return_to)
+    reason = auth.support_reason(_form_str(form, "reason"))
+    if reason is None:
+        return _back(
+            return_to,
+            err=_flash(
+                request,
+                "flash.error.support_reason",
+                min=auth.SUPPORT_REASON_MIN,
+                max=auth.SUPPORT_REASON_MAX,
+            ),
+        )
+    account = auth.current_user(request)
+    workspace = auth.workspace_user(request)
+    response = _back(return_to, msg=_flash(request, "flash.identity.revealed"))
+    auth.attach_session(
+        response,
+        auth.issue_session(
+            account["id"],
+            account["session_version"],
+            workspace_user_id=workspace["id"],
+            impersonation_started_at=auth.impersonation_started_at(request),
+            revealed_guest_ids=[*auth.revealed_guest_ids(request), guest_id],
+        ),
+    )
+    db.audit(
+        "guest_identity_revealed",
+        f"guest_id={guest_id} reason={reason}",
+        owner_user_id=workspace["id"],
+    )
+    return response
 
 
 @router.post("/guests/{guest_id}/archive")
@@ -2345,7 +2563,7 @@ def submissions_list(request: Request):
         "       (s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != '') AS has_receipt, "
         "       a.internal_name "
         "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
-        "WHERE a.owner_user_id IS ? ORDER BY s.created_at DESC LIMIT 200",
+        f"WHERE {db.null_safe_eq('a.owner_user_id')} ORDER BY s.created_at DESC LIMIT 200",
         (access.owner_id(request),),
     )
     receipt_count = sum(1 for row in rows if row["has_receipt"])
@@ -2477,11 +2695,27 @@ def dismiss_alert(alert_id: int, request: Request):
     return RedirectResponse(_redirect_path_from_referer(request), status_code=303)
 
 
+SUPPORT_AUDIT_ACTIONS = (
+    "impersonation_started",
+    "impersonation_stopped",
+    "guest_identity_revealed",
+)
+
+
 @router.get("/settings")
 def settings_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
+    # "Support sessions": when an admin opened this workspace, left it or ran
+    # out of time, revealed a guest, and everything done in between.
+    audit_filter = "support" if request.query_params.get("audit") == "support" else ""
+    audit_where = ""
+    audit_params: tuple = ()
+    if audit_filter:
+        marks = ", ".join("?" for _ in SUPPORT_AUDIT_ACTIONS)
+        audit_where = f" AND (a.impersonator_user_id IS NOT NULL OR a.action IN ({marks}))"
+        audit_params = SUPPORT_AUDIT_ACTIONS
     return render(
         request,
         "settings.html",
@@ -2495,13 +2729,14 @@ def settings_view(request: Request):
             "audit": db.query(
                 "SELECT a.*, i.username AS impersonator_username FROM audit a "
                 "LEFT JOIN user_account i ON i.id = a.impersonator_user_id "
-                "WHERE a.owner_user_id IS ? ORDER BY a.id DESC LIMIT 500",
-                (access.owner_id(request),),
+                f"WHERE {db.null_safe_eq('a.owner_user_id')}{audit_where} ORDER BY a.id DESC LIMIT 500",
+                (access.owner_id(request), *audit_params),
             ),
             "audit_count": db.query_one(
-                "SELECT COUNT(*) AS n FROM audit WHERE owner_user_id IS ?",
-                (access.owner_id(request),),
+                f"SELECT COUNT(*) AS n FROM audit a WHERE {db.null_safe_eq('a.owner_user_id')}{audit_where}",
+                (access.owner_id(request), *audit_params),
             )["n"],
+            "audit_filter": audit_filter,
             "poll_minutes": config.ICAL_POLL_MINUTES,
             "sweep_minutes": config.SUBMIT_SWEEP_MINUTES,
             "mail_backend": mail.backend_name(),
@@ -2513,13 +2748,13 @@ def settings_view(request: Request):
             ),
             "entities_without_contact": db.query(
                 "SELECT id, name FROM legal_entity "
-                "WHERE owner_user_id IS ? AND archived_at IS NULL AND "
+                f"WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL AND "
                 "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
                 (access.owner_id(request),),
             ),
             "apartments_without_entity": db.query(
                 "SELECT id, internal_name FROM apartment "
-                "WHERE owner_user_id IS ? AND legal_entity_id IS NULL AND active = 1 "
+                f"WHERE {db.null_safe_eq('owner_user_id')} AND legal_entity_id IS NULL AND active = 1 "
                 "ORDER BY internal_name",
                 (access.owner_id(request),),
             ),
@@ -2535,12 +2770,32 @@ def settings_view(request: Request):
             ),
             "open_dsr_count": db.query_one(
                 "SELECT COUNT(*) AS n FROM data_subject_request "
-                "WHERE owner_user_id IS ? AND status IN ('open','extended')",
+                f"WHERE {db.null_safe_eq('owner_user_id')} AND status IN ('open','extended')",
                 (access.owner_id(request),),
             )["n"],
             "backup_status": _backup_status(request),
+            "onboarding_emails": _onboarding_emails(request),
+            # WP20: Settings > Privacy, the ad measurement consents given at sign-up.
+            "ad_consents": (
+                signup.consents_for(access.owner_id(request))
+                if access.owner_id(request) is not None else []
+            ),
         },
     )
+
+
+def _onboarding_emails(request: Request):
+    """The "Setup tips by e-mail" toggle: True or False, None when hidden.
+
+    Only a host sees it, and only on their own account, not in a preview.
+    """
+    account = auth.current_user(request)
+    workspace = auth.workspace_user(request)
+    if not account or account["role"] != "host":
+        return None
+    if workspace and workspace["id"] != account["id"]:
+        return None
+    return not account["onboarding_emails_opt_out"]
 
 
 def _backup_status(request: Request):

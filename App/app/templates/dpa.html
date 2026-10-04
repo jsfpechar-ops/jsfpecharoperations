@@ -5,7 +5,7 @@
 
 {{ page_header(t('dpa.page_title'), t('dpa.page_lede', name=operator.name)) }}
 
-<p class="small muted">{{ t('dpa.effective') }}</p>
+<p class="small muted">{{ legal_effective('dpa') }}</p>
 
 {% with sections = dpa_sections, prefix = 'dpa' %}{% include "_legal_toc.html" %}{% endwith %}
 
@@ -24,7 +24,7 @@
     <dd>{{ operator.address }}</dd>
     {% if operator.email %}
       <dt>{{ t('legal.operator_contact') }}</dt>
-      <dd><a href="mailto:{{ operator.email }}">{{ operator.email }}</a></dd>
+      <dd><a href="mailto:{{ operator.email }}" data-umami-event="contact_click">{{ operator.email }}</a></dd>
     {% endif %}
     <dt>{{ t('legal.operator_registry') }}</dt>
     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">{{ t('legal.registry_link') }}</a></dd>

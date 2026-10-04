@@ -16,6 +16,20 @@ set -a
 source .env
 set +a
 
+litestream_enabled="${UBYHOST_LITESTREAM_ENABLED:-1}"
+case "${litestream_enabled}" in
+  0|false|no|FALSE|NO) litestream_enabled=0 ;;
+  *) litestream_enabled=1 ;;
+esac
+if [ "${litestream_enabled}" = "1" ]; then
+  case ",${COMPOSE_PROFILES:-}," in
+    *,litestream,*) ;;
+    *)
+      export COMPOSE_PROFILES="${COMPOSE_PROFILES:+$COMPOSE_PROFILES,}litestream"
+      ;;
+  esac
+fi
+
 for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL UBYHOST_ADMIN_PASSWORD; do
   if [ -z "${!var:-}" ]; then
     echo "Required variable ${var} is empty in .env" >&2
@@ -166,10 +180,35 @@ if [ "${HEALTHY}" != "1" ]; then
   if docker image inspect ubyhost:previous >/dev/null 2>&1; then
     echo "==> Rolling back to ubyhost:previous" >&2
     docker tag ubyhost:previous ubyhost:local
-    docker compose up -d --no-build ubyhost
+    docker compose up -d --no-build ubyhost worker
   fi
   exit 1
 fi
+
+# WP06: the scheduler runs only in the worker container. Wait until it reports
+# alive (it touches /data/worker.alive while its scheduler runs) and confirm
+# the web container did not start one.
+echo "==> Waiting for the background worker"
+WORKER_ALIVE=0
+for _ in $(seq 1 30); do
+  if docker compose exec -T worker python -c \
+    "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/data/worker.alive') < 120 else 1)" \
+    >/dev/null 2>&1; then
+    WORKER_ALIVE=1
+    break
+  fi
+  sleep 2
+done
+if [ "${WORKER_ALIVE}" != "1" ]; then
+  echo "The worker never started its scheduler. Logs:" >&2
+  docker compose logs --tail=50 worker >&2 || true
+  exit 1
+fi
+if docker compose logs ubyhost 2>/dev/null | grep -q "scheduler started"; then
+  echo "The web container started a scheduler; it must run only in the worker (UBYHOST_ROLE)." >&2
+  exit 1
+fi
+echo "Worker is running the scheduler (exactly one: the scheduler lock is held)."
 
 echo ""
 docker compose ps

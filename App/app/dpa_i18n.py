@@ -12,7 +12,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "This DPA is incorporated into the Terms of Service; using the Service constitutes "
             "acceptance unless a separate signed agreement expressly replaces it."
         ),
-        "dpa.effective": "Effective date: 19 September 2026. Version 1.5.",
+        "dpa.effective": "Effective date: %(date)s. Version %(version)s.",
         "dpa.operator_title": "Processor (service provider)",
         "dpa.footer_link": "Data Processing Agreement",
         "dpa.footer_short": "DPA",
@@ -31,9 +31,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.dpa_title": "Guest data processing (DPA)",
         "legal.dpa_body": (
-            "When you use the hosted service, the Operator processes guest personal data on your "
-            "instructions under a GDPR Article 28 Data Processing Agreement at /dpa. It is "
-            "automatically incorporated into the Terms — review it before processing live guest data."
+            "When you use the hosted service, the Operator processes guest personal data on your instructions under a GDPR Article 28 Data Processing Agreement at /dpa. It is automatically incorporated into the Terms. Review it before processing live guest data."
         ),
         "legal.cross_dpa": "Data Processing Agreement",
         "terms.cross_dpa": "Data Processing Agreement",
@@ -79,7 +77,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "of credentials, display to authorised Controller users, formatting for export, and "
             "transmission toward UbyPort or related endpoints when the Controller enables such features. "
             "Optional passport/ID files are restricted to authorised Host users in the application, "
-            "excluded from UbyPort payloads, and deleted after verification or by the stale-file sweep."
+            "excluded from UbyPort payloads, and deleted after verification, otherwise 7 days after "
+            "check-in and never later than 30 days after upload."
         ),
         "dpa.s05_title": "5. Details of processing (Annex summary)",
         "dpa.s05_body": (
@@ -149,15 +148,17 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s11_title": "11. Subprocessors",
         "dpa.s11_body": (
             "The Controller provides general written authorisation for the Processor to engage "
-            "Subprocessors in the current register at /subprocessors (including, where enabled, "
-            "AWS Lightsail and SES, Cloudflare, Render, Google Drive and Amazon S3 backups). "
-            "The register identifies conditional use and transfer notes; the Privacy Policy at /privacy "
-            "provides additional context. The Processor will impose data protection terms on Subprocessors substantially "
-            "similar to this DPA. The Processor remains liable to the Controller for Subprocessor "
+            "the Subprocessors in the current register at /subprocessors: AWS Lightsail, Amazon "
+            "SES, Amazon S3 backups and Cloudflare. Only if used: Render (demo hosting only, no "
+            "production Guest Data) and Google Drive (off-site backups, only when the Operator "
+            "configures the documented backup job). The register identifies conditional use and "
+            "transfer notes; the Privacy Policy at /privacy provides additional context. The "
+            "Processor will impose data protection terms on Subprocessors substantially similar "
+            "to this DPA. The Processor remains liable to the Controller for Subprocessor "
             "performance to the extent required by Article 28(4). The Processor will inform the "
-            "Controller of intended material changes at least 30 days in advance where practicable by "
-            "updating the register and notifying account contacts, and allow the Controller to object "
-            "on reasonable data-protection grounds; if unresolved, the "
+            "Controller of intended material changes at least 30 days in advance where "
+            "practicable by updating the register and notifying account contacts, and allow the "
+            "Controller to object on reasonable data-protection grounds; if unresolved, the "
             "Controller may terminate the affected Service as per the Terms."
         ),
         "dpa.s12_title": "12. Assistance with data subject rights",
@@ -189,7 +190,12 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "will delete or return Guest Data within a reasonable period, except where storage is "
             "required by law or retained in encrypted backups for a limited disaster-recovery window "
             "before automatic purging. Export tools in the Service should be used before termination. "
-            "Anonymised or aggregated data that cannot identify individuals may be retained."
+            "Anonymised or aggregated data that cannot identify individuals may be retained. "
+            "UbyHost keeps each guest record for 6 years after the end of the stay (§ 101(4) of "
+            "Act No. 326/1999 Coll.; § 3g(4) of Act No. 565/1990 Coll.) and then deletes it, unless "
+            "the host exports it first. ID document photos are deleted within 7 days after "
+            "check-in and never later than 30 days after upload. Raw UbyPort messages are deleted "
+            "after 90 days. A record of each submission without personal data is kept for 6 years."
         ),
         "dpa.s16_title": "16. Audits and information",
         "dpa.s16_body": (
@@ -264,7 +270,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(Provozovatel jako zpracovatel) o údajích hostů v UbyHostu. DPA je součástí obchodních "
             "podmínek; používáním Služby ji přijímáte, pokud ji nepřepíše samostatná písemná smlouva."
         ),
-        "dpa.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
+        "dpa.effective": "Účinnost od: %(date)s. Verze %(version)s.",
         "dpa.operator_title": "Zpracovatel (poskytovatel služby)",
         "dpa.footer_link": "Smlouva o zpracování údajů (DPA)",
         "dpa.footer_short": "DPA",
@@ -283,8 +289,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.dpa_title": "Zpracování údajů hostů (DPA)",
         "legal.dpa_body": (
-            "Při používání hostované služby zpracovává údaje hostů na váš pokyn smlouva podle čl. 28 "
-            "GDPR. Je automaticky součástí smlouvy — před ostrým provozem si ji přečtěte na /dpa."
+            "Při používání hostované služby zpracovává údaje hostů na váš pokyn smlouva podle čl. 28 GDPR. Je automaticky součástí smlouvy. Před ostrým provozem si ji přečtěte na /dpa."
         ),
         "legal.cross_dpa": "Smlouva o zpracování údajů (DPA)",
         "terms.cross_dpa": "Smlouva o zpracování údajů (DPA)",
@@ -321,7 +326,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "(odkazy k převzetí, upozornění na nedokončení, potvrzení a kopie Správci), přenos, šifrování přihlašovacích údajů, "
             "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí. Volitelné "
             "soubory pasů a dokladů jsou v aplikaci omezeny na oprávněné uživatele ubytovatele, "
-            "nejsou součástí dat pro UbyPort a mažou se po ověření nebo plánovaným úklidem."
+            "nejsou součástí dat pro UbyPort a mažou se po ověření, jinak do 7 dnů od příjezdu, "
+            "nejpozději 30 dní od nahrání."
         ),
         "dpa.s05_title": "5. Podrobnosti zpracování (shrnutí přílohy)",
         "dpa.s05_body": (
@@ -372,11 +378,13 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s11_title": "11. Subzpracovatelé",
         "dpa.s11_body": (
             "Správce uděluje obecné povolení k dalším zpracovatelům v aktuálním seznamu na "
-            "/subprocessors (podle zapnutých funkcí zejména AWS Lightsail a SES, Cloudflare, "
-            "Render a zálohy Google Drive či Amazon S3). Seznam uvádí podmíněné použití a informace "
-            "o předání; doplňují jej Zásady na /privacy. Zpracovatel ukládá obdobné povinnosti. "
-            "Odpovídá za subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací "
-            "seznamu a, je-li to praktické, kontakty účtu nejméně 30 dní předem); Správce může vznést "
+            "/subprocessors: AWS Lightsail, Amazon SES, zálohy Amazon S3 a Cloudflare. Jen pokud "
+            "se používají: Render (pouze ukázkový provoz, bez produkčních údajů hostů) a Google "
+            "Drive (zálohy mimo server, jen po nastavení dokumentované zálohovací úlohy "
+            "Provozovatelem). Seznam uvádí podmíněné použití a informace o předání; doplňují jej "
+            "Zásady na /privacy. Zpracovatel ukládá obdobné povinnosti. Odpovídá za "
+            "subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací seznamu "
+            "a, je-li to praktické, kontakty účtu nejméně 30 dní předem); Správce může vznést "
             "oprávněnou námitku a při neřešení ukončit Službu dle Podmínek."
         ),
         "dpa.s12_title": "12. Pomoc s právy subjektů",
@@ -401,7 +409,12 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         "dpa.s15_body": (
             "Po ukončení nebo na pokyn Správce Zpracovatel smaže nebo vrátí údaje v přiměřené lhůtě, "
             "kromě zákonné povinnosti a omezených záloh před vymazáním. Před ukončením použijte export. "
-            "Anonymizovaná agregovaná data mohou zůstat."
+            "Anonymizovaná agregovaná data mohou zůstat. "
+            "UbyHost uchovává každý záznam o hostovi 6 let od konce pobytu (§ 101 odst. 4 zákona "
+            "č. 326/1999 Sb.; § 3g odst. 4 zákona č. 565/1990 Sb.) a poté jej smaže, pokud si jej "
+            "ubytovatel předtím nevyexportuje. Fotografie dokladů totožnosti se mažou do 7 dnů od "
+            "příjezdu, nejpozději 30 dní od nahrání. Původní zprávy pro UbyPort se mažou po 90 "
+            "dnech. Záznam o každém odeslání bez osobních údajů se uchovává 6 let."
         ),
         "dpa.s16_title": "16. Audity a informace",
         "dpa.s16_body": (

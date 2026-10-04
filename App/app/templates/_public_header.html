@@ -18,7 +18,7 @@
   <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
   <header class="landing-header">
     <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
-      <img src="/static/ubyhost-logo.png" alt="UbyHost">
+      <img src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost">
     </a>
     <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
       {%- for href, key, names in nav_items %}
@@ -30,7 +30,7 @@
         <a href="{{ switch_path }}?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}"{% if lang == 'cs' %} aria-current="true"{% endif %}>CZ</a>
         <a href="{{ switch_path }}?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
       </nav>
-      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
+      <a class="landing-login" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.nav.login') }}</a>
     </div>
     {#- Below 900px the nav above is hidden; this is the only way through it. -#}
     <details class="landing-menu">

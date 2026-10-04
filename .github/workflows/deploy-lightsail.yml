@@ -1,0 +1,179 @@
+name: Deploy to Lightsail (reusable)
+
+# Called by deploy-production.yml (environment production, main only) and
+# deploy-staging.yml (environment staging, any branch). Each GitHub environment
+# holds its own LIGHTSAIL_HOST, LIGHTSAIL_SSH_PRIVATE_KEY and
+# LIGHTSAIL_KNOWN_HOSTS secrets, and optionally a LIGHTSAIL_HEALTH_URL variable.
+#
+# Before anything on the server changes, the run reads the server's own .env
+# and refuses unless it matches the target: production needs
+# UBYHOST_DEPLOYMENT=production; staging needs UBYHOST_DEPLOYMENT=staging and a
+# UBYHOST_UBYPORT_ENV of mock or test. A staging run whose secrets point at the
+# production server therefore stops before it checks out a feature branch
+# there. On staging the run then writes its ubyport_env input (mock or test)
+# into the server .env; production's .env is never edited by this workflow.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "GitHub environment and target tier: production or staging"
+        required: true
+        type: string
+      ref:
+        description: "Branch to deploy (resolved to its current head commit)"
+        required: true
+        type: string
+      require_green_ci:
+        description: "Refuse to deploy a commit whose CI checks have not all passed"
+        required: false
+        type: boolean
+        default: true
+      ubyport_env:
+        description: "Staging only: mock or test, written to the server .env as UBYHOST_UBYPORT_ENV (empty on production)"
+        required: false
+        type: string
+        default: ""
+      health_url:
+        description: "Public /healthz URL to check after the deploy (default: environment variable LIGHTSAIL_HEALTH_URL)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  lightsail:
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Lightsail (${{ inputs.environment }})
+        env:
+          TARGET: ${{ inputs.environment }}
+          DEPLOY_REF: ${{ inputs.ref }}
+          UBYPORT_TARGET: ${{ inputs.ubyport_env }}
+          REQUIRE_CI: ${{ inputs.require_green_ci }}
+          HEALTH_URL: ${{ inputs.health_url || vars.LIGHTSAIL_HEALTH_URL }}
+          REPO_SLUG: ${{ github.repository }}
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
+          GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          case "${TARGET}" in
+            production|staging) ;;
+            *) echo "Unknown deploy target '${TARGET}'." >&2; exit 1 ;;
+          esac
+          if [ "${TARGET}" = "staging" ]; then
+            UBYPORT_TARGET="${UBYPORT_TARGET:-mock}"
+            case "${UBYPORT_TARGET}" in
+              mock|test) ;;
+              *) echo "Staging UbyPort must be mock or test, not '${UBYPORT_TARGET}'." >&2; exit 1 ;;
+            esac
+          elif [ -n "${UBYPORT_TARGET}" ]; then
+            echo "ubyport_env is for staging only; production keeps the UbyPort set in its own .env." >&2
+            exit 1
+          fi
+          if ! printf '%s' "${DEPLOY_REF}" | grep -Eq '^[A-Za-z0-9._/-]+$'; then
+            echo "Branch name '${DEPLOY_REF}' has characters this workflow does not accept." >&2
+            exit 1
+          fi
+          # A manual dispatch runs from whatever branch it was started on, and
+          # github.sha would be that branch's HEAD. Resolve the requested branch
+          # to its current head commit instead, and deploy exactly that.
+          DEPLOY_SHA="$(git ls-remote \
+            "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" \
+            "refs/heads/${DEPLOY_REF}" | cut -f1)"
+          if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "Branch '${DEPLOY_REF}' was not found (got '${DEPLOY_SHA}')." >&2
+            exit 1
+          fi
+          echo "Deploying ${DEPLOY_REF} at ${DEPLOY_SHA} to ${TARGET}${UBYPORT_TARGET:+ (UbyPort ${UBYPORT_TARGET})}"
+          if [ "${REQUIRE_CI}" = "true" ]; then
+            FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GH_DEPLOY_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${REPO_SLUG}/commits/${DEPLOY_SHA}/check-runs?per_page=100" \
+              | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke","guest-browser","shellcheck","docker","secrets"]; bad=[n for n in need if n not in runs or runs[n]["conclusion"]!="success"]; print(" ".join(bad))')"
+            if [ -n "${FAILED_OR_MISSING}" ]; then
+              echo "CI has not passed for ${DEPLOY_SHA} (not green: ${FAILED_OR_MISSING}). Refusing to deploy." >&2
+              exit 1
+            fi
+          else
+            echo "WARNING: CI check skipped on request (staging only)."
+          fi
+          if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
+            echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY are not set in the ${TARGET} environment." >&2
+            echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git fetch origin ${DEPLOY_REF} && git reset --hard FETCH_HEAD && cd deploy/lightsail && ./scripts/deploy.sh'" >&2
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
+          chmod 600 ~/.ssh/lightsail_deploy.pem
+          if [ -z "${LIGHTSAIL_KNOWN_HOSTS}" ]; then echo "LIGHTSAIL_KNOWN_HOSTS secret is missing." >&2; exit 1; fi
+          printf '%s\n' "${LIGHTSAIL_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
+          LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
+          DEPLOY_SHA="${DEPLOY_SHA}"
+          TARGET="${TARGET}"
+          UBYPORT_TARGET="${UBYPORT_TARGET}"
+          set -euo pipefail
+          INSTALL=/opt/ubyhost
+          ENVF="\${INSTALL}/deploy/lightsail/.env"
+          # Identity check first: nothing on this server changes unless its own
+          # .env says it is the target this run was started for.
+          if [ ! -f "\${ENVF}" ]; then
+            echo "ERROR: \${ENVF} is missing; set the server up first (deploy/lightsail/README.md)." >&2
+            exit 1
+          fi
+          envval() { grep -E "^\$1=" "\${ENVF}" | tail -1 | cut -d= -f2- | tr -d "\"' \r"; }
+          SERVER_DEPLOYMENT="\$(envval UBYHOST_DEPLOYMENT)"
+          SERVER_UBYPORT="\$(envval UBYHOST_UBYPORT_ENV)"
+          if [ "\${SERVER_DEPLOYMENT}" != "\${TARGET}" ]; then
+            echo "ERROR: this server's .env has UBYHOST_DEPLOYMENT=\${SERVER_DEPLOYMENT:-unset}, not \${TARGET}. Wrong host in the \${TARGET} environment secrets?" >&2
+            exit 1
+          fi
+          if [ "\${TARGET}" = "staging" ]; then
+            case "\${SERVER_UBYPORT}" in
+              mock|test|"") ;;
+              *)
+                echo "ERROR: staging must run UBYHOST_UBYPORT_ENV=mock or test (server has \${SERVER_UBYPORT})." >&2
+                exit 1
+                ;;
+            esac
+            # The run's ubyport_env input decides which UbyPort staging talks
+            # to. .env is not tracked by git, so the reset below keeps it.
+            if grep -qE '^UBYHOST_UBYPORT_ENV=' "\${ENVF}"; then
+              sed -i -E "s|^UBYHOST_UBYPORT_ENV=.*|UBYHOST_UBYPORT_ENV=\${UBYPORT_TARGET}|" "\${ENVF}"
+            else
+              printf '\nUBYHOST_UBYPORT_ENV=%s\n' "\${UBYPORT_TARGET}" >> "\${ENVF}"
+            fi
+            echo "==> staging: UBYHOST_UBYPORT_ENV=\${UBYPORT_TARGET}"
+          fi
+          REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git"
+          if [ ! -d "\${INSTALL}/.git" ]; then
+            echo "==> No git repo at \${INSTALL}; bootstrapping for CI deploy"
+            cd "\${INSTALL}"
+            git init
+            git remote add origin "\${REPO}" 2>/dev/null || git remote set-url origin "\${REPO}"
+            git fetch --depth 1 origin "\${DEPLOY_SHA}"
+            git reset --hard "\${DEPLOY_SHA}"
+          fi
+          cd "\${INSTALL}"
+          git remote set-url origin "\${REPO}"
+          git fetch origin "\${DEPLOY_SHA}"
+          git reset --hard "\${DEPLOY_SHA}"
+          cd deploy/lightsail
+          chmod +x scripts/*.sh
+          ./scripts/deploy.sh
+          REMOTE
+          rm -f ~/.ssh/lightsail_deploy.pem
+          if [ -n "${HEALTH_URL}" ]; then
+            curl --fail --show-error --silent --retry 5 --retry-delay 5 "${HEALTH_URL}"
+          else
+            echo "WARNING: no health URL for ${TARGET} (set the LIGHTSAIL_HEALTH_URL environment variable)."
+          fi

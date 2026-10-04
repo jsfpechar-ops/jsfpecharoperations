@@ -16,12 +16,8 @@ def test_normalise_language_accepts_supported_codes_and_falls_back():
 
 
 def test_translate_interpolates_kwargs_and_falls_back_to_english():
-    assert host_i18n.translate("en", "dashboard.minutes_saved", minutes=24) == (
-        "~24 min saved vs manual UbyPort entry"
-    )
-    assert host_i18n.translate("cs", "dashboard.minutes_saved", minutes=24) == (
-        "~24 min ušetřeno oproti ručnímu UbyPortu"
-    )
+    assert host_i18n.translate("en", "archive.chip.all_count", count=24) == "All (24)"
+    assert host_i18n.translate("cs", "archive.chip.all_count", count=24) == "Vše (24)"
     assert host_i18n.translate("cs", "missing.key") == "missing.key"
     assert host_i18n.translate("en", "send.guests_count", count=2) == (
         "Send 2 guest(s) on this stay"
@@ -71,9 +67,8 @@ def test_the_guest_engine_delegates_to_the_single_lookup():
     """One interpolation guard for both engines - the guest form must not raise."""
     from app import i18n
 
-    assert not hasattr(i18n, "normalise_language"), (
-        "normalise_language belongs to host_i18n only"
-    )
+    # WP26: the guest engine normalises to its own five languages, but the
+    # lookup and its interpolation guard stay the single host_i18n.lookup.
     assert i18n.translator("cs")("arrival_question") == host_i18n.lookup(
         i18n.STRINGS["cs"], i18n.STRINGS[i18n.DEFAULT_LANGUAGE], "arrival_question"
     )
@@ -83,8 +78,8 @@ def test_a_malformed_key_returns_raw_text_instead_of_raising():
     from app import i18n
 
     cases = (
-        (host_i18n.STRINGS, host_i18n.DEFAULT_LANGUAGE, "dashboard.minutes_saved"),
-        (i18n.STRINGS, i18n.DEFAULT_LANGUAGE, "arrival_welcome"),
+        (host_i18n.STRINGS, host_i18n.DEFAULT_LANGUAGE, "archive.chip.all_count"),
+        (i18n.STRINGS, i18n.DEFAULT_LANGUAGE, "all_done_receipt"),
     )
     for table, fallback, key in cases:
         for lang in ("en", "cs"):
@@ -106,7 +101,8 @@ def test_the_page_default_follows_the_guests_own_phone():
 
     This used to be the Czech public default, which put "Zadejte přístupový PIN"
     in front of every foreigner. The product owner changed it, so a Czech or
-    Slovak phone gets Czech and any other phone gets English. The host UI and
+    Slovak phone gets Czech, a German, Spanish or French phone its own
+    language (WP26), and any other phone English. The host UI and
     the public site keep their own defaults.
     """
     from app import i18n
@@ -125,19 +121,19 @@ def test_the_page_default_follows_the_guests_own_phone():
             self.cookies = {GUEST_LANG_COOKIE: cookie} if cookie else {}
             self.headers = {"accept-language": accept} if accept else {}
 
-    # Nothing at all: the phone is the only signal left, and a client that never
-    # told us anything is not a foreign guest, so the documented guest-link
-    # default stands. A real browser always sends this header.
-    assert _language(_Guest()) == "cs"
-    # A header that names no language is the same silent client.
-    assert _language(_Guest(accept="*")) == "cs"
-    assert _language(_Guest(accept=",,")) == "cs"
+    # Nothing at all, or a header naming no language: English (WP26 owner
+    # decision: explicit choice > Accept-Language > English).
+    assert _language(_Guest()) == "en"
+    assert _language(_Guest(accept="*")) == "en"
+    assert _language(_Guest(accept=",,")) == "en"
     # A Czech or Slovak phone gets Czech, whatever it lists second.
     assert _language(_Guest(accept="cs-CZ,cs;q=0.9,en;q=0.8")) == "cs"
     assert _language(_Guest(accept="sk-SK,sk;q=0.9,cs;q=0.8")) == "cs"
-    # A language we do not speak still falls back to the public default, and a
-    # guest's own explicit choice beats the phone.
-    assert _language(_Guest(lang="de")) == "cs"
-    assert _language(_Guest(cookie="de")) == "cs"
+    # German, Spanish and French are guest languages now; a language we do not
+    # speak is no choice, so the header decides; an explicit choice beats it.
+    assert _language(_Guest(lang="de")) == "de"
+    assert _language(_Guest(cookie="fr")) == "fr"
+    assert _language(_Guest(lang="it", accept="es-MX")) == "es"
+    assert _language(_Guest(cookie="it")) == "en"
     assert _language(_Guest(lang="en", accept="cs-CZ")) == "en"
     assert _language(_Guest(cookie="en", accept="cs-CZ")) == "en"

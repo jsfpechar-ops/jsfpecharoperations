@@ -154,14 +154,14 @@ def save(
             "INSERT INTO stay_fee_filing ("
             "apartment_id, period_key, version, cadence, rate_czk, liable_days, exempt_days, "
             "total_due_czk, total_collected_czk, pdf_enc, csv_enc, payload_enc, created_at, "
-            "superseded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
+            "superseded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL) RETURNING id",
             (
                 apartment["id"], key, version, group["cadence"], rate_czk,
                 group["liable_nights"], group["exempt_nights"], due, collected_total,
                 db.encrypt_blob(pdf), db.encrypt_blob(csv), payload_enc, now,
             ),
         )
-        filing_id = int(cur.lastrowid)
+        filing_id = int(cur.fetchall()[0][0])
         cur.execute(
             "UPDATE stay_fee_adjustment SET filing_id = ? "
             "WHERE apartment_id = ? AND period_key = ? AND reversed_at IS NULL "

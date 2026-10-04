@@ -15,6 +15,13 @@ staging instance kept its configured `mock` value; verify
 
 Use Render for mock demos and UX checks. Run live reporting only on Lightsail.
 
+**Core function:** UbyPort filing and Doručenka PDF handling must stay correct
+on every production deploy. See **[UBYPORT_CORE.md](UBYPORT_CORE.md)**. Do not
+treat green CI alone as enough when the release touches `ubyport/`, the worker
+submit path, or guest fields mapped to the police register — use UbyPort **test**
+and owner **Gate 2** (test filing + PDF download) before widening traffic or
+switching to `prod`.
+
 | Tier | Host | `UBYHOST_DEPLOYMENT` | `UBYHOST_UBYPORT_ENV` | Disk | Purpose |
 |------|------|----------------------|------------------------|------|---------|
 | **Local** | — | `local` (default) | `mock` | `./App/data` | Development on your laptop |
@@ -104,9 +111,11 @@ Use this whenever you ship a change that affects hosts or guests.
 
 1. **PR first.** Every change is pushed to a feature branch and opened as a pull
    request. CI (tests + smoke) must pass on the PR.
-2. **Staging** — Render → **`ubyhost-staging`** → Manual Deploy of the PR branch.
-   Record the tested commit and obtain explicit product-owner approval using the
-   checklist above.
+2. **Staging** — **Render → `ubyhost-staging` → Manual Deploy** (see
+   `docs/UbyHost_workplan/STAGING_ON_RENDER_STEP_BY_STEP.md` for click-by-click
+   setup). Optional: **Actions → Deploy staging** on a Lightsail staging VM
+   (`deploy/lightsail/README.md` "Staging server"). Record the tested commit
+   and obtain explicit product-owner approval using the checklist above.
 3. **Merge the approved PR to `main`.** Nothing deploys on this merge: the
    production workflow no longer runs on a push.
 4. **Production (Lightsail) — manual only.** Promote by running **Actions →

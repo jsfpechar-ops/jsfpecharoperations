@@ -3,6 +3,18 @@
 This document records product-owner decisions for anyone changing the interface
 (host app, guest forms, auth screens, e-mail HTML, or design tooling).
 
+## Core product function: UbyPort reporting
+
+The only part of UbyHost that **cannot break** is end-to-end **police
+reporting**: correct guest data sent to UbyPort, a correct response parsed
+(errors, stamp, Doručenka PDF), and the host shown truthful filing status.
+Design, mail, backups, and staging exist around that duty.
+
+Full rules, affected features, gates, and deploy expectations:
+**[UBYPORT_CORE.md](UBYPORT_CORE.md)**. Any guest-form or host-report change
+that could alter what gets filed or how success is shown must be checked against
+that document, not only against layout tests.
+
 ## Signed-in host app: selected redesign
 
 **[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.
@@ -200,7 +212,8 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 1. `python -m pytest tests -q` (the whole suite).
 2. `python -m pytest tests/test_guest_browser_e2e.py -q -rs` with Playwright and
    Chromium installed, and **0 skipped**. It registers a group of three in real
-   Chromium at 320, 375 and 1280px and in Czech, and measures every screen:
+   Chromium at 320, 375 and 1280px, in German, Spanish and French at 320, 360
+   and 390px (WP26), and in Czech, and measures every screen:
    no sideways scroll, no clipped text, equal box heights, side-by-side fields
    level, even field spacing, 44px tap targets, no visible screen-reader text.
    CI runs it in the `guest-browser` job.
@@ -315,6 +328,51 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 - Don't copy a competitor's colours, gradients or layout.
 - Don't add dark mode.
 
+## Privacy first
+
+UbyHost is privacy first, and that is part of the brand on every surface.
+Owner decision (WP27): "We do not store anything extra, only what is needed."
+
+**Rules for every change**
+
+1. **Store only what the law or the feature needs.** The guest form collects
+   the guest-book fields of § 102 zákon 326/1999 Sb. and the stay-fee fields of
+   § 3g zákon 565/1990 Sb.; everything else must name the feature that cannot
+   work without it. If a field is "nice to have", do not add it.
+2. **No tracking cookies.** The only cookies the app sets are the strictly
+   necessary ones in `cookie_inventory.STRICTLY_NECESSARY_COOKIES`: session,
+   CSRF, language choice, guest PIN, guest claim, the guest's own submitted
+   forms and the guest's language. `tests/test_privacy_first.py` fails if a
+   crawl sees any other Set-Cookie name. Cloudflare's own `__cf_bm` and
+   `cf_clearance` are set by the edge for bot protection and are listed too.
+3. **No third-party scripts in the app or on guest pages.** The single
+   exception is the Cloudflare Turnstile bot check on sign-in and on the guest
+   PIN and claim pages, loaded only when Turnstile is configured. No CDN fonts,
+   no embeds, no pixels.
+4. **Analytics only cookieless and only on public pages** (Umami, see
+   `analytics.PUBLIC_ANALYTICS_TEMPLATES`), with an opt-out on the privacy page.
+5. **Ads measurement only with explicit consent and server-side**: an unticked
+   box, the click id only, no pixel, no cookie.
+6. **Every new personal-data field needs a purpose and a retention line** in
+   `retention.py` (or a purge step it references) in the same PR.
+7. **Every new outbound request needs a reason in the PR**: what is sent, to
+   whom, why, and whether it carries personal data.
+
+**How we say it**
+
+- Say "no tracking cookies", never "no cookies": the app needs session and
+  CSRF cookies to work.
+- Say only what the code does today. The public copy lives in
+  `landing_i18n.py` (`privacy_first.*`, shown by `_privacy_first.html` on the
+  landing, product and pricing pages, and `privacy_first.line` on the privacy
+  page) and in `i18n.py` (`privacy_first_line`, the guest footer). Do not claim
+  "all data in the EU" until the hosting region is confirmed
+  (04_legal_positions.md, open item 2), and do not claim automatic deletion of
+  guest records while `UBYHOST_RETENTION_AUTOPURGE` is off by default.
+- The "Privacy first" block reuses the landing benefit list (`benefit-list`)
+  and adds no CSS and no images. It was added with the owner's go-ahead in WP27;
+  the rest of the public site stays locked.
+
 ## Public marketing site: locked
 
 The current public site is **approved as it is**: short, catchy and punchy, in the style of Notion. That covers `landing.html`, `product.html`, `pricing.html`, the guides, the public header and footer, `landing.css` and `landing.js`.
@@ -325,6 +383,7 @@ The current public site is **approved as it is**: short, catchy and punchy, in t
   - legal or factual accuracy fixes (prices, the "not operated or endorsed by the Czech Police or UbyPort" line);
   - broken-link, accessibility and performance fixes;
   - SEO metadata.
+- The "Privacy first" block (`_privacy_first.html`, WP27) is part of the approved site.
 - If a new page or section is needed, it must reuse the existing `landing.css` classes and match the current voice: one short headline, one line of support, one button.
 - Any other change needs Joe's written go-ahead in the task.
 

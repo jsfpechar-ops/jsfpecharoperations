@@ -5,12 +5,25 @@ emits members in alphabetical order, which is what the wire example in
 appendix 5 section 5.1.1 shows. Appendix 5 section 7 explicitly warns against
 renaming or reordering nodes when the body is built by hand, so the field
 order below is fixed and deliberate.
+
+"Alphabetical" means the ordinal (byte) comparison DataContractSerializer
+uses, so every member starting with an upper-case letter comes before every
+member starting with a lower-case one. The 5.1.1 wire example shows exactly
+that: ``Ubytovani`` first, then ``uCont`` .. ``uStr``. ``VracetPDF`` (added
+by the December 2016 change request, so absent from that example) sorts
+between them: ``Ubytovani`` < ``VracetPDF`` < ``uCont``. DataContractSerializer
+reads members strictly in that order and silently skips an element that
+arrives after a later member, so a ``VracetPDF`` sent after ``uStr`` is
+dropped and defaults to false: the service then answers without the
+Dorucenka (DokumentPotvrzeni) while still returning the stamp.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import re
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from xml.sax.saxutils import escape
 
 NS_SOAP = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -25,7 +38,10 @@ ACTION_PREFIX = "http://UBY.pcr.cz/WS_UBY/IWS_UBY/"
 # whole UbyPort batch unparseable for every guest in it.
 _XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
-# Alphabetical, exactly as the service serialises SeznamUbytovanych.
+# Alphabetical (ordinal), exactly as the service serialises SeznamUbytovanych:
+# Ubytovani, VracetPDF, then these. See the module docstring.
+SEZNAM_LIST_FIELD = "Ubytovani"
+SEZNAM_PDF_FLAG = "VracetPDF"
 HEADER_FIELDS = (
     "uCont",
     "uHomN",
@@ -99,9 +115,11 @@ def build_zapis_ubytovane(
 
     seznam = (
         f'<Seznam xmlns:d="{NS_DATA}" xmlns:i="{NS_XSI}">'
-        f"<d:Ubytovani>{''.join(guest_xml)}</d:Ubytovani>"
+        f"<d:{SEZNAM_LIST_FIELD}>{''.join(guest_xml)}</d:{SEZNAM_LIST_FIELD}>"
+        # Always true: the Dorucenka is the receipt the host must keep. It must
+        # sit here, before the lower-case header members, or WCF ignores it.
+        + _node("d", SEZNAM_PDF_FLAG, True)
         + "".join(_node("d", name, header.get(name)) for name in HEADER_FIELDS)
-        + _node("d", "VracetPDF", True)
         + "</Seznam>"
     )
     body = (
@@ -169,8 +187,64 @@ def parse_fault(xml_text: str) -> Optional[str]:
     return " / ".join(parts) or "Unspecified SOAP fault"
 
 
+# A Dorucenka is a few kB to a few hundred kB. Anything far larger is not a
+# receipt we want in a TEXT column; it is dropped and logged instead.
+MAX_PDF_BYTES = 10 * 1024 * 1024
+
+_B64_WHITESPACE = re.compile(r"\s+")
+
+
+def clean_pdf_base64(text: Optional[str]) -> Tuple[str, str]:
+    """Validate a base64 PDF from the Chyby class and return it ready to store.
+
+    Returns ``(base64_text, problem)``. On success ``base64_text`` is the
+    canonical base64 of the decoded bytes (line breaks removed, which is what
+    the submission columns and every download route expect) and ``problem``
+    is empty. On failure ``base64_text`` is empty and ``problem`` names why,
+    without echoing any of the content.
+    """
+    compact = _B64_WHITESPACE.sub("", text or "")
+    if not compact:
+        return "", "empty"
+    # Cheap bound before decoding: base64 is 4/3 of the payload.
+    if len(compact) > (MAX_PDF_BYTES * 4) // 3 + 4:
+        return "", "too_large"
+    try:
+        raw = base64.b64decode(compact, validate=True)
+    except (binascii.Error, ValueError):
+        return "", "not_base64"
+    if len(raw) > MAX_PDF_BYTES:
+        return "", "too_large"
+    if not raw.startswith(b"%PDF"):
+        return "", "not_pdf"
+    return base64.b64encode(raw).decode("ascii"), ""
+
+
+def response_element_names(xml_text: str) -> List[str]:
+    """Local names of the members inside ZapisUbytovaneResult, in wire order.
+
+    Names only, never values, so it is safe to log: it shows where (and
+    whether) the service put the Dorucenka without exposing guest data.
+    """
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return []
+    result = _find(root, "ZapisUbytovaneResult")
+    if result is None:
+        return []
+    return [_local(child.tag) for child in result]
+
+
 def parse_zapis_response(xml_text: str) -> Dict[str, Any]:
-    """Extract the Chyby class returned by ZapisUbytovane."""
+    """Extract the Chyby class returned by ZapisUbytovane.
+
+    Appendix 5, section 4.2, class Chyby: ChybyHlavicky, ChybyZaznamu,
+    DokumentPotvrzeni ("PDF dokument ve tvaru basecode64 obsahujici potvrzeni
+    o zpracovani dat"), DokumentChybyPotvrzeni (the same for errors) and
+    PseudoRazitko. Elements are matched by local name, so the namespace prefix
+    and member order do not matter here.
+    """
     root = ET.fromstring(xml_text)
     result: Dict[str, Any] = {
         "header_errors": "",
@@ -178,6 +252,8 @@ def parse_zapis_response(xml_text: str) -> Dict[str, Any]:
         "receipt_pdf": "",
         "error_pdf": "",
         "pseudo_stamp": "",
+        # key -> reason a document element was present but unusable.
+        "pdf_problems": {},
     }
 
     el = _find(root, "ChybyHlavicky")
@@ -194,8 +270,13 @@ def parse_zapis_response(xml_text: str) -> Dict[str, Any]:
         ("error_pdf", "DokumentChybyPotvrzeni"),
     ):
         el = _find(root, tag)
-        if el is not None and not _is_nil(el):
-            result[key] = (el.text or "").strip()
+        if el is None or _is_nil(el):
+            continue
+        cleaned, problem = clean_pdf_base64(el.text)
+        if problem:
+            result["pdf_problems"][key] = problem
+        else:
+            result[key] = cleaned
 
     # The specification text spells this both "PseudoRazitko" and
     # "PseudoRazirko"; accept either.

@@ -1,12 +1,14 @@
 name: Deploy production
 
-# Production = AWS Lightsail (ubyhost.com). Staging = Render ubyhost-staging (mock).
+# Production = AWS Lightsail (ubyhost.com). Staging = the staging Lightsail
+# server (deploy-staging.yml, mock UbyPort) and Render ubyhost-staging (mock).
 # See docs/DEPLOYMENT.md
 #
 # MANUAL ONLY. This deploy no longer runs automatically on a push to main. Every
 # change reaches main through a reviewed pull request, and production is promoted
 # by a person running this workflow (Actions → Deploy production → Run workflow)
-# with force_confirm=DEPLOY. Staging is deployed separately (manual, in Render).
+# with force_confirm=DEPLOY. Staging is deployed separately: Actions → Deploy
+# staging (any branch), or manually in Render.
 
 on:
   workflow_dispatch:
@@ -28,87 +30,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The steps live in deploy-lightsail.yml, shared with deploy-staging.yml.
+  # It pins the run to the current head of main, refuses unless CI is green
+  # for that commit, and checks that the server's .env says production before
+  # anything on it changes.
   lightsail:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
-    environment: production
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy Lightsail (production)
-        env:
-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
-          LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
-          GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEPLOY_SHA: ${{ github.sha }}
-        run: |
-          # A manual dispatch runs from whatever branch it was started on, and
-          # github.sha would be that branch's HEAD — so a dispatch from a
-          # feature branch could deploy it to production. Pin the run to main
-          # instead: the input says "the current main revision", and this is how
-          # it is made true.
-          DEPLOY_SHA="$(git ls-remote \
-            "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git" \
-            refs/heads/main | cut -f1)"
-          echo "Manual deploy pinned to main: ${DEPLOY_SHA}"
-          FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GH_DEPLOY_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/jsfpechar-ops/jsfpecharoperations/commits/${DEPLOY_SHA}/check-runs?per_page=100" \
-            | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke","guest-browser","shellcheck","docker","secrets"]; bad=[n for n in need if n not in runs or runs[n]["conclusion"]!="success"]; print(" ".join(bad))')"
-          if [ -n "${FAILED_OR_MISSING}" ]; then
-            echo "CI has not passed for ${DEPLOY_SHA} (not green: ${FAILED_OR_MISSING}). Refusing to deploy." >&2
-            exit 1
-          fi
-          if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
-            echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
-            echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
-            exit 1
-          fi
-          # Validate the SHA before it is interpolated into the remote shell.
-          if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
-            echo "DEPLOY_SHA is not a 40-character lowercase hex SHA: '${DEPLOY_SHA}'" >&2
-            exit 1
-          fi
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
-          chmod 600 ~/.ssh/lightsail_deploy.pem
-          if [ -z "${LIGHTSAIL_KNOWN_HOSTS}" ]; then echo "LIGHTSAIL_KNOWN_HOSTS secret is missing." >&2; exit 1; fi
-          printf '%s\n' "${LIGHTSAIL_KNOWN_HOSTS}" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-          LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
-          LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
-          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
-          DEPLOY_SHA="${DEPLOY_SHA}"
-          set -euo pipefail
-          INSTALL=/opt/ubyhost
-          REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git"
-          if [ ! -d "\${INSTALL}/.git" ]; then
-            echo "==> No git repo at \${INSTALL}; bootstrapping for CI deploy"
-            if [ -d "\${INSTALL}/deploy/lightsail" ]; then
-              cd "\${INSTALL}"
-              git init
-              git remote add origin "\${REPO}" 2>/dev/null || git remote set-url origin "\${REPO}"
-              git fetch --depth 1 origin "\${DEPLOY_SHA}"
-              git reset --hard "\${DEPLOY_SHA}"
-            elif [ ! -e "\${INSTALL}" ] || [ -z "\$(ls -A "\${INSTALL}" 2>/dev/null)" ]; then
-              git clone --depth 1 "\${REPO}" "\${INSTALL}"
-              cd "\${INSTALL}"
-              git fetch --depth 1 origin "\${DEPLOY_SHA}"
-              git reset --hard "\${DEPLOY_SHA}"
-            else
-              echo "ERROR: \${INSTALL} is not a git repo and layout is unexpected" >&2
-              exit 1
-            fi
-          fi
-          cd "\${INSTALL}"
-          git remote set-url origin "\${REPO}"
-          git fetch origin "\${DEPLOY_SHA}"
-          git reset --hard "\${DEPLOY_SHA}"
-          cd deploy/lightsail
-          chmod +x scripts/*.sh
-          ./scripts/deploy.sh
-          REMOTE
-          rm -f ~/.ssh/lightsail_deploy.pem
-          curl --fail --show-error --silent --retry 5 --retry-delay 5 https://ubyhost.com/healthz
+    uses: ./.github/workflows/deploy-lightsail.yml
+    with:
+      environment: production
+      ref: main
+      require_green_ci: true
+      health_url: https://ubyhost.com/healthz
+    secrets: inherit
 
   render-staging:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'

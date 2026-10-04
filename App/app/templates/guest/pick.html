@@ -3,7 +3,6 @@
 
 <section class="g-arrival-hero" aria-labelledby="arrival-welcome">
   <h2 id="arrival-welcome">{{ property_name }}</h2>
-  <p>{{ t('arrival_welcome', facility=property_name) }}</p>
   {% if apartment.city_en %}<p class="g-arrival-location">{{ apartment.city_en }}</p>{% endif %}
   {% if apartment.guest_message %}
     <details class="g-arrival-message">
@@ -17,7 +16,6 @@
 
 <section class="g-arrival-choice" aria-labelledby="arrival-question">
   <h2 class="g-section" id="arrival-question">{{ t('arrival_question') }}</h2>
-  <p class="g-intro">{{ t('arrival_help') }}</p>
 
   <div class="g-arrival-lanes">
   {% for row in rows %}

@@ -1,25 +1,32 @@
 name: Deploy preflight
 
-# Read-only readiness check for the production server. Manual only. It prints
+# Read-only readiness check for the production or the staging server. Manual only. It prints
 # the connection result and whether the required .env keys exist. It never
 # prints a secret value.
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which server to check"
+        required: true
+        type: choice
+        options: [production, staging]
+        default: production
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-preflight
+  group: deploy-preflight-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:
   preflight:
-    environment: production
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check the production server (read-only)
+      - name: Check the ${{ inputs.environment }} server (read-only)
         env:
           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
@@ -57,10 +64,16 @@ jobs:
             echo "ACME_EMAIL=$(present ACME_EMAIL)"
             echo "UBYHOST_DEPLOYMENT=$(value UBYHOST_DEPLOYMENT)"
             echo "UBYHOST_UBYPORT_ENV=$(value UBYHOST_UBYPORT_ENV)"
+            echo "COMPOSE_PROFILES=$(value COMPOSE_PROFILES)"
             echo "UBYHOST_ALLOW_PROD_MOCK=$(value UBYHOST_ALLOW_PROD_MOCK)"
             echo "UBYHOST_ADMIN_PASSWORD=$(present UBYHOST_ADMIN_PASSWORD)"
             echo "UBYHOST_SECRET_KEY=$(present UBYHOST_SECRET_KEY)"
             echo "UBYHOST_BACKUP_PING_URL=$(present UBYHOST_BACKUP_PING_URL)"
+            echo "LITESTREAM_S3_BUCKET=$(present LITESTREAM_S3_BUCKET)"
+            echo "LITESTREAM_S3_PATH=$(value LITESTREAM_S3_PATH)"
+            echo "LITESTREAM_ACCESS_KEY_ID=$(present LITESTREAM_ACCESS_KEY_ID)"
+            echo "LITESTREAM_SECRET_ACCESS_KEY=$(present LITESTREAM_SECRET_ACCESS_KEY)"
+            echo "LITESTREAM_HEARTBEAT_URL=$(present LITESTREAM_HEARTBEAT_URL)"
             echo "UBYHOST_OPERATOR_NAME=$(present UBYHOST_OPERATOR_NAME)"
             echo "UBYHOST_OPERATOR_ICO=$(present UBYHOST_OPERATOR_ICO)"
             echo "UBYHOST_OPERATOR_ADDRESS=$(present UBYHOST_OPERATOR_ADDRESS)"

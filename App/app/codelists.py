@@ -54,8 +54,13 @@ def store(kind: str, rows: List[Dict[str, str]]) -> int:
             if not code:
                 continue
             cur.execute(
-                "INSERT OR REPLACE INTO codelist (kind, code, text_cs, text_en, extra, fetched_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                # An upsert, not OR REPLACE: the same result here (every column
+                # is written, nothing references codelist rows, no triggers),
+                # and the spelling both SQLite and Postgres accept.
+                "INSERT INTO codelist (kind, code, text_cs, text_en, extra, fetched_at) "
+                "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (kind, code) DO UPDATE SET "
+                "text_cs = excluded.text_cs, text_en = excluded.text_en, "
+                "extra = excluded.extra, fetched_at = excluded.fetched_at",
                 (kind, code, text_cs, text_en, (row.get("Kod2") or "").strip(), now),
             )
             written += 1
@@ -100,14 +105,27 @@ def _all_countries(lang: str) -> List[Dict[str, str]]:
     """Every country, accent-folded sorted, labelled in ``lang``."""
     rows = cached(KIND_COUNTRIES)
     if len(rows) >= _MIN_CACHED_COUNTRIES:
+        # The police list only names countries in Czech and English. For the
+        # other guest languages (WP26) the bundled table supplies the name by
+        # code, and the police English text covers a code it does not know.
+        bundled = validation.country_codes() if lang not in ("en", "cs") else {}
         options = []
         for row in rows:
-            label = (row["text_en"] if lang == "en" else row["text_cs"]) or row["text_cs"] or row["code"]
+            if lang in ("en", "cs"):
+                label = (row["text_en"] if lang == "en" else row["text_cs"]) or row["text_cs"] or row["code"]
+            else:
+                label = (
+                    (bundled.get(row["code"]) or {}).get(lang)
+                    or row["text_en"]
+                    or row["text_cs"]
+                    or row["code"]
+                )
             options.append({"code": row["code"], "label": label})
         return sorted(options, key=lambda o: _fold(o["label"]))
+    label_key = lang if lang in ("cs", "de", "es", "fr") else "en"
     return sorted(
         (
-            {"code": c["code"], "label": c["en"] if lang == "en" else c["cs"]}
+            {"code": c["code"], "label": c.get(label_key) or c["en"]}
             for c in validation.countries()
         ),
         key=lambda o: _fold(o["label"]),
@@ -155,13 +173,21 @@ def purpose_options(lang: str = "en") -> List[Dict[str, str]]:
             cs, en = by_code.get(code, ("", ""))
             if lang == "cs":
                 label = cs or row["text_cs"] or row["text_en"] or code
+            elif lang in validation.PURPOSE_LABELS:
+                label = (
+                    validation.PURPOSE_LABELS[lang].get(code)
+                    or en
+                    or row["text_en"]
+                    or row["text_cs"]
+                    or code
+                )
             else:
                 label = en or row["text_en"] or row["text_cs"] or code
             options.append({"code": code, "label": label})
         return options
     return [
-        {"code": code, "label": cs if lang == "cs" else en}
-        for code, cs, en in validation.PURPOSES
+        {"code": code, "label": validation.purpose_label(code, lang)}
+        for code, _cs, _en in validation.PURPOSES
     ]
 
 

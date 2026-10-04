@@ -128,12 +128,12 @@
       </form>
 
       <div class="panel" id="settings-data" style="margin-top:14px">
-        <h2 style="margin-top:0">{{ t('settings.data.title') }}</h2>
+        <h3 style="margin-top:0">{{ t('settings.data.title') }}</h3>
         <dl class="kv">
           <dt>{{ t('settings.data.retention_last') }}</dt>
           <dd>
             {% if retention_last_run %}
-              {{ retention_last_run.at }} —
+              {{ retention_last_run.at }},
               {{ t('settings.data.dry_run') if retention_last_run.dry_run else t('settings.data.live') }}
               {% if retention_last_run.counts %}
                 <span class="small muted">
@@ -149,7 +149,7 @@
           {% if backup_status %}
             <dt>{{ t('settings.data.backup') }}</dt>
             <dd>
-              {{ backup_status.at }} —
+              {{ backup_status.at }},
               {{ t('settings.data.encrypted') if backup_status.encrypted else t('settings.data.not_encrypted') }}
               <span class="small muted">{{ t('settings.data.retention_days', days=backup_status.retention_days) }}</span>
             </dd>
@@ -170,8 +170,8 @@
             {% endif %}
             {% if entities_without_contact %}
               <small>{{ t('settings.privacy.no_contact_prefix') }}
-                {% for entity in entities_without_contact %}{{ entity.name }}{{ ", " if not loop.last }}{% endfor %}
-                — <a href="/entities">{{ t('settings.privacy.add_contact') }}</a>{{ t('settings.privacy.no_contact_suffix') }}</small>
+                {% for entity in entities_without_contact %}{{ entity.name }}{{ ", " if not loop.last }}{% endfor %}.
+                <a href="/entities">{{ t('settings.privacy.add_contact') }}</a>{{ t('settings.privacy.no_contact_suffix') }}</small>
             {% endif %}
           </div>
         </div>
@@ -182,6 +182,11 @@
       <summary>{{ t('settings.nav.audit') }}</summary>
       <p class="small muted">{{ t('settings.audit.help') }}</p>
       <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
+      <p class="small" data-audit-filter>{{ t('settings.audit.filter_label') }}:
+        {% if audit_filter %}<a href="/settings#settings-audit">{{ t('settings.audit.filter_all') }}</a>{% else %}<strong aria-current="true">{{ t('settings.audit.filter_all') }}</strong>{% endif %}
+        &middot;
+        {% if audit_filter == 'support' %}<strong aria-current="true">{{ t('settings.audit.filter_support') }}</strong>{% else %}<a href="/settings?audit=support#settings-audit">{{ t('settings.audit.filter_support') }}</a>{% endif %}
+      </p>
       <div class="scroll-x">
         <table class="table-cards">
           <thead><tr><th>{{ t('settings.audit.when') }}</th><th>{{ t('settings.audit.who') }}</th><th>{{ t('settings.audit.action') }}</th><th>{{ t('settings.audit.detail') }}</th></tr></thead>
@@ -250,6 +255,18 @@
             </form>
           </details>
         {% endif %}
+        {% if onboarding_emails is not none %}
+          <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">
+            <div>
+              <label class="checkline">
+                <input type="checkbox" name="enabled" value="1"{% if onboarding_emails %} checked{% endif %}>
+                <strong>{{ t('settings.account.onboarding_emails') }}</strong>
+              </label>
+              <small>{{ t('settings.account.onboarding_emails_help') }}</small>
+            </div>
+            <button class="btn small" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
+          </form>
+        {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>
@@ -261,6 +278,39 @@
         {% endif %}
       </div>
     </div>
+
+    {% if ad_consents %}
+    <div class="panel" id="settings-privacy">
+      <h2 style="margin-top:0">{{ t('settings.privacy.title') }}</h2>
+      <div class="settings-action-list">
+        {% for consent in ad_consents %}
+        <div class="settings-action-row">
+          <div>
+            <strong>{{ t('settings.privacy.ad_consent.' ~ consent.platform) }}</strong>
+            {% if consent.withdrawn_at %}
+              <small>{{ t('settings.privacy.withdrawn', date=consent.withdrawn_at | datetime_local) }}</small>
+            {% else %}
+              <small>{{ t('settings.privacy.given', date=consent.consented_at | datetime_local) }}</small>
+            {% endif %}
+          </div>
+          {% if consent.withdrawn_at %}
+            <span class="pill grey">{{ t('settings.privacy.off') }}</span>
+          {% else %}
+            <form method="post" action="/settings/privacy/ad-consent">
+              <input type="hidden" name="platform" value="{{ consent.platform }}">
+              <label class="checkline">
+                <input type="checkbox" name="enabled" value="1" checked>
+                <span>{{ t('settings.privacy.on') }}</span>
+              </label>
+              <button class="btn small" type="submit">{{ t('settings.privacy.save') }}</button>
+            </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="small muted">{{ t('settings.privacy.help') }}</p>
+    </div>
+    {% endif %}
 
     <div class="panel" id="settings-legal">
       <h2 style="margin-top:0">{{ t('legal.settings_title') }}</h2>

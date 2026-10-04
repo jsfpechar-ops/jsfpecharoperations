@@ -5,7 +5,7 @@
 
 {{ page_header(t('terms.page_title'), t('terms.page_lede')) }}
 
-<p class="small muted">{{ t('terms.effective') }}</p>
+<p class="small muted">{{ legal_effective('terms') }}</p>
 
 {% with sections = terms_sections, prefix = 'terms' %}{% include "_legal_toc.html" %}{% endwith %}
 

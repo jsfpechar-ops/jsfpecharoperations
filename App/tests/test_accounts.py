@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from app import auth, config, db, passport_photos
 from app.main import app
@@ -124,9 +126,10 @@ def test_hosts_cannot_read_or_mutate_another_workspace():
             },
         )
         db.update("guest", guest_id, {"passport_photo_at": db.utcnow()})
-        passport_photos.save_photo(
-            guest_id, b"\xff\xd8\xff" + (b"\x00" * 61), "image/jpeg"
-        )
+        # A real JPEG: uploads are decoded and re-encoded since WP08.
+        jpeg = io.BytesIO()
+        Image.new("RGB", (8, 8), (90, 90, 90)).save(jpeg, format="JPEG")
+        passport_photos.save_photo(guest_id, jpeg.getvalue(), "image/jpeg")
         submission_id = db.insert(
             "submission",
             {
@@ -256,7 +259,9 @@ def test_admin_can_open_a_host_workspace_without_knowing_the_password():
         assert PASSWORD not in users.text
 
         response = admin.post(
-            f"/admin/users/{host_id}/impersonate", follow_redirects=False
+            f"/admin/users/{host_id}/impersonate",
+            data={"reason": "Support ticket 123"},
+            follow_redirects=False
         )
         assert response.status_code == 303
         workspace = admin.get("/")
@@ -643,9 +648,11 @@ def test_dpa_page_shows_operator_and_article_28():
 
 
 def test_release_legal_versions_are_coordinated():
-    assert config.TERMS_VERSION == "1.5"
-    assert config.PRIVACY_VERSION == "1.5"
-    assert config.DPA_VERSION == "1.5"
+    # WP24 bumps Terms and DPA together with WP09's Privacy 1.6, so hosts
+    # accept all three once.
+    assert config.TERMS_VERSION == "1.6"
+    assert config.PRIVACY_VERSION == "1.6"
+    assert config.DPA_VERSION == "1.6"
 
 
 def test_public_legal_pages_cross_link_dpa():

@@ -19,14 +19,15 @@
   <meta name="theme-color" content="#f7f7f5">
   <title>{% block title %}UbyHost{% endblock %}</title>
   {% include "_seo_head.html" %}
-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
   {#- landing.css first so app.css keeps the reading typography and the link
       colour; it is here only for the shared header and footer. -#}
   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
-  <link rel="stylesheet" href="/static/app.css?v=20261002a">
+  <link rel="stylesheet" href="/static/app.css?v=20261004z">
   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+  {% include "_umami.html" %}
 </head>
 <body class="layout-host no-nav">
 {#- No nav item names a legal page, and the language switch comes back here. -#}

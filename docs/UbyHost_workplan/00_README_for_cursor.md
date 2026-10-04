@@ -1,6 +1,6 @@
 # UbyHost work plan for Cursor
 
-Read this file first, then `AGENTS.md`, then the notes for the work package (WP) you are asked to do.
+Read this file first, then `AGENTS.md` and **[../../UBYPORT_CORE.md](../../UBYPORT_CORE.md)** (police reporting is the core function and must not regress), then the notes for the work package (WP) you are asked to do.
 
 ## What is here
 
@@ -15,6 +15,10 @@ Read this file first, then `AGENTS.md`, then the notes for the work package (WP)
 | `06_council_verdict.md`, `07_council_verdict_round2.md` | Why the order is what it is, and the four gates. |
 | `UbyHost_architecture_review.md` | Background reasoning. Section 12 holds the owner decisions on infrastructure and analytics. |
 | `skills/` | Two skills the owner uses (poteto-mode, llm-council). Not part of the app. |
+| `OWNER_MANUAL_SETUP.md` | Consolidated owner secrets, server setup, and per-patch manual steps. |
+| `OWNER_WORKFLOW_STEP_BY_STEP.md` | Full owner playbook: where to click for GitHub, Render, AWS, Lightsail `.env`, all phases. |
+| `MERGE_SEQUENCE.md` | Prepared `cursor/wp-stack-NN-682e` branches and merge order for all 34 PRs. |
+| `STAGING_ON_RENDER_STEP_BY_STEP.md` | Owner click-by-click guide to recreate **ubyhost-staging** on Render. |
 
 Put the whole folder in the repo at `docs/plans/UbyHost_workplan/`, except `skills/`.
 
@@ -93,6 +97,7 @@ The owner is not a developer. Each gate is something he can see on staging. Do n
 
 ## Permanent rules
 
+0. **UbyPort filing correctness is non-negotiable.** Correct `ZapisUbytovane` requests, response parsing, Doručenka PDF storage, and no double-filing outweigh any other goal. See `docs/UBYPORT_CORE.md`. HIGH-risk WPs in the filing row (0006, 0007, 0018, …) need explicit filing tests and owner Gate 2 when the workplan says so.
 1. Do only what the WP says. Anything else that looks wrong goes in the PR under "Noticed, not changed".
 2. Match the existing code style. No new dependency.
 3. Never commit secrets, operator identity, real guest data or `.env` values (AGENTS.md).

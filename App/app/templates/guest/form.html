@@ -1,4 +1,5 @@
 {% extends "guest/base.html" %}
+{% set load_signature_js = true %}
 
 {% macro val(name, fallback='') %}{{ values.get(name) if values.get(name) is not none else (guest[name] if guest and name in guest.keys() and guest[name] else fallback) }}{% endmacro %}
 {% macro err_for(field) %}

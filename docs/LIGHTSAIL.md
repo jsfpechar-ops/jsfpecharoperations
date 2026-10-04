@@ -29,12 +29,21 @@ unchanged when the IP is reused.
 
 ## Recommended Lightsail plan
 
+<<<<<<< HEAD
 | Your scale | Bundle | Price (IPv4, approx.) | RAM |
 |------------|--------|------------------------|-----|
 | **Production (ubyhost.com)** | **General purpose 8 GB** | **$44/mo** (bundle only) | **8 GB** |
 | Solo host / cost-conscious try-out | Micro | ~$7/mo | 1 GB |
 | Growing toward many properties on a budget | Small | ~$12/mo | 2 GB |
 | **Not supported** | Nano | ~$5/mo | 512 MB — the app container has `mem_limit: 768m` |
+=======
+| Your scale | Plan | Price (IPv4) | RAM |
+|------------|------|--------------|-----|
+| **~10 properties, busy weeks** | **Micro** | **$7/mo** | 1 GB |
+| Growing toward 25+ properties | Small | $12/mo | 2 GB |
+| **Not supported** | Nano | $5/mo | 512 MB |
+| **Production (WP32)** | 8 GB, 2 vCPUs, 160 GB SSD | | 8 GB; see [Sizing](#sizing-wp32) |
+>>>>>>> ccd9ede (WP32: Size the containers for the 8 GB server)
 
 Use **Frankfurt (`eu-central-1`)** or your nearest EU region. Enable the **static
 IP** (included). Do **not** buy Lightsail managed MySQL — UbyHost uses SQLite on
@@ -267,7 +276,36 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 
 ## Scheduler
 
-`UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler:
+`UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler. Since WP06 it runs
+in the separate `worker` container (`UBYHOST_ROLE=worker`, `python -m
+app.worker`); the `ubyhost` container runs two uvicorn workers with
+`UBYHOST_ROLE=web` and never starts it. `./scripts/logs.sh worker` must show
+`scheduler started` exactly once per deploy. The stack needs at least the
+**2 GB** bundle; production runs on the 8 GB server (see **Sizing** below).
+
+## Sizing (WP32)
+
+Production: Lightsail **8 GB RAM, 2 vCPUs, 160 GB SSD**. Every value is set in
+`.env`; the compose file holds the defaults.
+
+| Setting | `.env` variable | Production (8 GB) | Staging (2 GB) |
+|---------|-----------------|-------------------|----------------|
+| Web workers (uvicorn) | `UBYHOST_WEB_WORKERS` | `4` (image default `2`) | `2` |
+| Web `mem_limit` | `UBYHOST_WEB_MEM` | `2g` (default) | `896m` |
+| Worker `mem_limit` | `UBYHOST_WORKER_MEM` | `1g` (default) | `448m` |
+| Litestream `mem_limit` | `UBYHOST_LITESTREAM_MEM` | `256m` (default) | `128m` |
+| Caddy `mem_limit` | `UBYHOST_CADDY_MEM` | `256m` (default) | `128m` |
+| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS` | `7` once Litestream replicates (default `30`) | `7` |
+
+- Four workers on two vCPUs: requests mostly wait on SQLite, UbyPort or mail,
+  so two per core keeps the CPUs busy. SQLite still has one writer at a time.
+- The caps add up to 3.5 GB; the rest is for the OS, Docker and the page cache
+  that serves SQLite reads. A cap is a ceiling, not a reservation.
+- `mem_limit` applies only to running containers. It has no effect on
+  `docker compose build` speed: the build runs in BuildKit outside these
+  limits, and is bound by the CPUs, the disk and the network.
+- After changing a value: `./scripts/deploy.sh` (or `docker compose up -d`),
+  then `docker stats --no-stream` shows the new limits.
 
 | Job | Interval |
 |-----|----------|

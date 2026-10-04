@@ -404,7 +404,7 @@ RULES FOR THIS TASK — follow exactly.
   - Protect `main`: require PRs and require the `test` and `smoke` checks to pass.
 - **O-5 (AR-41): Cursor's Cloudflare access.** Before running this plan, remove the write-capable Cloudflare MCP server from `.cursor/mcp.json` in your local Cursor settings, or authorise it with a read-only token.
 - **O-6 (AR-16, AR-31): monitoring and off-site copies.**
-  - Create an external uptime check on `https://ubyhost.com/healthz` (UptimeRobot, Better Stack or a Cloudflare health check) that alerts you by e-mail or SMS.
+  - Create an external uptime check on `https://ubyhost.com/healthz` (UptimeRobot, Better Stack or a Cloudflare health check) that alerts you by e-mail.
   - Create two dead-man checks (e.g. healthchecks.io): "backup-daily", with a 26 h period, and "submit-sweep", with a 30 min period. Keep the ping URLs for tasks 5.2 and 5.3.
   - Enable Lightsail automatic snapshots.
   - Decide the off-site cadence (daily recommended) and install that cron by hand.

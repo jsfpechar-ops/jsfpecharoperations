@@ -2,9 +2,46 @@
 
 Before changing UbyHost’s user interface, read **[docs/DESIGN.md](docs/DESIGN.md)**.
 
+**UbyPort filing is the core function.** Police reporting (`ZapisUbytovane`),
+correct SOAP, stored Doručenka PDFs, and honest submission state must not
+regress. Read **[docs/UBYPORT_CORE.md](docs/UBYPORT_CORE.md)** before any change
+to `App/app/ubyport/`, submission/claim/automation that files stays, or guest
+data that maps to UbyPort fields. Optional features (backups, mail, UI) never
+outrank filing correctness.
+
 **Dark mode:** Do not add or restore dark mode, system-theme switching, or
 `prefers-color-scheme` dark styling unless the product owner explicitly requests
 it in the current task. UbyHost is light-mode only by policy.
+
+## Privacy first — a product principle
+
+UbyHost is a privacy-first app. The owner's words: "We do not store anything
+extra, only what is needed." Full rules in
+[docs/DESIGN.md](docs/DESIGN.md#privacy-first). In short:
+
+- **Store only what the law or the feature needs.** Guest-book fields
+  (§ 102 zákon 326/1999 Sb.) and stay-fee fields (§ 3g zákon 565/1990 Sb.) are
+  required by law; anything else needs a feature that cannot work without it.
+- **No tracking cookies.** The app sets only the strictly necessary cookies in
+  `App/app/cookie_inventory.py` (`STRICTLY_NECESSARY_COOKIES`).
+  `tests/test_privacy_first.py` crawls host, guest and public pages and fails on
+  any other cookie name. Never write "no cookies" in copy: say "no tracking
+  cookies".
+- **No third-party scripts in the app or on guest pages.** The one exception is
+  the Cloudflare Turnstile bot check on sign-in and the guest PIN/claim pages,
+  when `TURNSTILE_*` is configured. No analytics, ads or fonts from a CDN.
+- **Analytics only cookieless, only on public pages** (Umami, `analytics.py`).
+- **Ads measurement only with explicit consent and server-side** (unticked
+  box, click id only, no pixel, no cookie).
+- **Every new personal-data field needs a purpose and a retention line in
+  `App/app/retention.py`** (or the module that purges it, referenced from
+  there), in the same PR.
+- **Every new outbound request needs a reason in the PR description**: what is
+  sent, to whom, and why.
+- **Brand claims must be true for the code.** If you change behaviour behind a
+  claim on the landing, pricing, product or privacy page (`privacy_first.*` in
+  `landing_i18n.py`, `privacy_first_line` in `i18n.py`), fix the copy in the
+  same commit.
 
 ## Secrets, keys, and personal data — non-negotiable
 
@@ -66,6 +103,39 @@ on a case-insensitive filesystem (macOS) is the same directory as `App/app` —
 so `app/operator.py` shadows the standard library `operator` module and pytest
 fails during collection.
 
+## Writing UI copy (guest and host pages)
+
+Two rules for every string you add to `i18n.py`, `host_i18n.py` or a template:
+
+- **One explanation lives in one place.** If a page needs the background, link
+  to the Help & Guide (or the guest legal notice) instead of repeating it in a
+  lede, hint or dialog. Do not render the same help string twice on one page.
+- **No sentence that the button label already says.** A heading, the field
+  label and a clear button are usually enough; add a hint only when the guest
+  or host cannot act correctly without it.
+
+Legal text is the exception: keep the guest legal notice, its acknowledgement
+and the GDPR Article 13 privacy notice complete even if they overlap with
+other copy.
+## Database access — keep a later Postgres move mechanical
+
+Permanent rules (UbyHost runs on SQLite; Postgres comes only when a second app
+server is needed):
+
+- All SQL goes through the `App/app/db.py` helpers, parameterised. No string
+  formatting of values into SQL; f-strings only build placeholder lists or name
+  trusted columns.
+- No new triggers and no new SQLite-only syntax: no `INSERT OR IGNORE` /
+  `INSERT OR REPLACE` (use `INSERT ... ON CONFLICT ... DO NOTHING / DO UPDATE`),
+  no `lastrowid` (`db.insert` uses `RETURNING id`), no bare `x IS ?` (use
+  `db.null_safe_eq("x")`, or plain `x = ?` where the value is never NULL).
+- Schema changes are numbered files in `App/app/migrations/`
+  (`NNNN_short_name.sql`, next free number), applied once by `db.init_db` and
+  recorded in `schema_migrations`. Do not add to `db.SCHEMA` or
+  `db.ADDED_COLUMNS`; those are the frozen baseline (version 1).
+- Keep `with db.immediate()` blocks small. Never call UbyPort or fetch a feed
+  inside an open transaction. No logic may rely on there being only one writer.
+
 ## Changing a guest page (anything in `App/app/templates/guest/`, `guest*.css`, `ticket.js`, `signature.js`)
 
 Markup tests are not enough here: Ticket Wallet v2 passed all of them and
@@ -77,13 +147,17 @@ misaligned date of birth. Before you call a guest change done:
 .venv/bin/python -m pytest tests/test_guest_browser_e2e.py -q -rs   # must say 0 skipped
 ```
 
-The second command drives the real pages in Chromium (group of three, EN and
-CS, 320/375/1280px) and measures every screen. `.cursor/install.sh` installs
+The second command drives the real pages in Chromium (group of three, EN at
+320/375/1280px, DE/ES/FR at 320/360/390px, and CS) and measures every screen. `.cursor/install.sh` installs
 Playwright and Chromium; elsewhere run
 `pip install playwright==1.63.0 && python -m playwright install chromium`.
 Also bump the `?v=` cache key in `guest/base.html` for each CSS/JS file you
 touched. The full checklist is in `docs/DESIGN.md` ("Definition of done for
 any guest-page change").
+
+## Onboarding e-mails (lifecycle tips)
+
+Content rule (legal position 2): the tips are about the host's own setup only, with no discounts, pricing or third-party offers; if marketing content is ever added, prefix the subject with "Novinky:" and treat the e-mail as a newsletter.
 
 ## Merging a pull request
 

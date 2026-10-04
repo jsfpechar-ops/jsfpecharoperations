@@ -21,8 +21,8 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="{{ t('landing.page_title') }}">
   <meta name="twitter:description" content="{{ t('landing.meta_description') }}">
-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
   <script type="application/ld+json">
@@ -57,6 +57,7 @@
     "inLanguage": ["cs", "en"]
   } | tojson }}
   </script>
+  {% include "_umami.html" %}
 </head>
 <body>
 {% set active = 'home' %}{% set switch_path = '/' %}
@@ -68,7 +69,7 @@
       <h1 id="landing-title">{{ t('landing.title') }}</h1>
       <p class="landing-lede">{{ t('landing.lede') }}</p>
       <div class="landing-hero-actions">
-        <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+        {% if signup_href %}<a class="landing-button primary" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('landing.cta') }}</a>{% else %}<a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>{% endif %}
         <a class="landing-button secondary" href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.contact') }} <span aria-hidden="true">→</span></a>
       </div>
       <p class="landing-trust">{{ t('landing.independent') }}</p>
@@ -91,7 +92,7 @@
         </div>
         <div class="reel-screen">
           <div class="reel-side" aria-hidden="true">
-            <img src="/static/ubyhost-mark.png" alt="">
+            <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
             <i class="is-active"></i><i></i><i></i><i></i>
           </div>
           <div class="reel-scenes" role="img" aria-label="{{ t('landing.demo.label') }}">
@@ -180,10 +181,12 @@
       <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.details.link') }} →</a>
     </section>
 
+    {% include "_privacy_first.html" %}
+
     <section class="landing-final">
-      <img src="/static/ubyhost-mark.png" alt="">
+      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div><h2>{{ t('landing.final.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
-      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+      {% if signup_href %}<a class="landing-button primary" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('landing.cta') }}</a>{% else %}<a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>{% endif %}
     </section>
   </main>
 

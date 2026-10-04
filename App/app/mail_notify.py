@@ -23,6 +23,7 @@ from __future__ import annotations
 import html
 import json
 import logging
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import config, db, deadlines, host_i18n, i18n, mail, validation
@@ -394,6 +395,54 @@ class _FooterLink:
         self.href = href
 
 
+class _FooterSentence:
+    """A footer sentence with links inside it, such as the unsubscribe line.
+
+    ``text`` holds ``%(name)s`` markers; ``links`` maps each name to a
+    ``(label, href)`` pair. The text part prints "label (URL)", or the bare
+    URL when the label is empty; the HTML part makes that spot an anchor.
+    """
+
+    __slots__ = ("text", "links")
+
+    _MARKER = re.compile(r"%\((\w+)\)s")
+
+    def __init__(self, text: str, links: Dict[str, Tuple[str, str]]) -> None:
+        self.text = text
+        self.links = links
+
+    def _parts(self) -> List[Any]:
+        pieces = self._MARKER.split(self.text)
+        # re.split with one group alternates text and marker names.
+        return [
+            piece if index % 2 == 0 else self.links.get(piece, ("", ""))
+            for index, piece in enumerate(pieces)
+        ]
+
+    def plain(self) -> str:
+        out = []
+        for part in self._parts():
+            if isinstance(part, str):
+                out.append(part)
+            else:
+                label, href = part
+                out.append(f"{label} ({href})" if label else href)
+        return "".join(out)
+
+    def html(self) -> str:
+        out = []
+        for part in self._parts():
+            if isinstance(part, str):
+                out.append(_esc(part))
+            else:
+                label, href = part
+                out.append(
+                    f'<a href="{_esc(href)}" style="color:{INK_SECONDARY};'
+                    f'text-decoration:underline;">{_esc(label or href)}</a>'
+                )
+        return "".join(out)
+
+
 # The same separator the guest pages use between two channels.
 _FOOTER_SEPARATOR = " \u00b7 "
 
@@ -404,6 +453,8 @@ def _footer_text(lines: List[Any]) -> List[str]:
     for line in lines:
         if isinstance(line, list):
             rendered.append(_FOOTER_SEPARATOR.join(link.label for link in line))
+        elif isinstance(line, _FooterSentence):
+            rendered.append(line.plain())
         else:
             rendered.append(line)
     return rendered
@@ -411,6 +462,8 @@ def _footer_text(lines: List[Any]) -> List[str]:
 
 def _footer_line_html(line: Any) -> str:
     """One footer line as HTML. A list of ``_FooterLink`` becomes anchors."""
+    if isinstance(line, _FooterSentence):
+        return line.html()
     if not isinstance(line, list):
         return _esc(line)
     return _FOOTER_SEPARATOR.join(
@@ -988,6 +1041,83 @@ def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:
     return queued
 
 
+# --- lifecycle tips (WP12) -------------------------------------------------
+#
+# lifecycle_mail.py decides who gets which tip and when; this is the wording.
+# Each tip says why the host receives it and carries an unsubscribe link that
+# needs no sign-in. Only these kinds honour the opt-out (mail.LIFECYCLE_KINDS).
+
+LIFECYCLE_ACTIONS = {
+    "lifecycle_no_property": "/apartments/new",
+    "lifecycle_no_calendar": "/apartments",
+    "lifecycle_no_guest": "/guest-links",
+}
+
+
+def build_lifecycle(kind: str, *, unsubscribe_url: str, lang: Optional[str] = None) -> Dict[str, str]:
+    if kind not in LIFECYCLE_ACTIONS:
+        raise ValueError(f"unknown lifecycle kind {kind}")
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    key = f"mail.lifecycle.{kind}"
+    subject = _text(lang, f"{key}.subject")
+    heading = _text(lang, f"{key}.heading")
+    intro = _text(lang, f"{key}.intro")
+    next_step = _text(lang, f"{key}.next")
+    action_label = _text(lang, f"{key}.action")
+    action_url = _public(LIFECYCLE_ACTIONS[kind])
+    signoff = _text(lang, "mail.lifecycle.signoff", support=config.OPERATOR_EMAIL)
+    # The sentence is the wording of legal position 2. The two links stay as
+    # markers through translate() and become anchors in the HTML part.
+    footer_sentence = _FooterSentence(
+        _text(
+            lang,
+            "mail.lifecycle.footer",
+            name=config.OPERATOR_NAME,
+            ico=config.OPERATOR_ICO,
+            address=config.OPERATOR_ADDRESS,
+            unsubscribe="%(unsubscribe)s",
+            privacy="%(privacy)s",
+        ),
+        {
+            "unsubscribe": (_text(lang, "mail.lifecycle.unsubscribe_label"), unsubscribe_url),
+            "privacy": ("", _public(f"/privacy?lang={lang}")),
+        },
+    )
+    footer_lines: List[Any] = ["UbyHost", footer_sentence]
+    text = "\n".join(
+        [
+            intro,
+            "",
+            next_step,
+            "",
+            f"{action_label}: {action_url}",
+            "",
+            signoff,
+            "",
+            "--",
+            *_footer_text(footer_lines),
+        ]
+    )
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_paragraph(next_step),
+        _block_button(action_url, action_label),
+        _block_paragraph(signoff, muted=True),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=heading,
+            preheader=intro,
+            blocks=blocks,
+            footer_lines=footer_lines,
+        ),
+    }
+
+
 # --- guest mail -------------------------------------------------------------
 #
 # claim.py decides when these go out; the wording and the markup live here with
@@ -1019,7 +1149,13 @@ def guest_payload(
 
 
 def property_label(apartment: Any, lang: str) -> str:
-    name = (apartment["uby_name"] or apartment["internal_name"] or "").strip()
+    """The property's name in a guest e-mail: the same one the guest pages show.
+
+    The host's own name comes first, because that is the name the guest knows
+    from the booking. The police-register name (``uby_name``, often a short
+    code) is only a fallback. A report to UbyPort still carries ``uby_name``.
+    """
+    name = (apartment["internal_name"] or "").strip() or (apartment["uby_name"] or "").strip()
     if name:
         return name
     # Both names are optional on a property, and an empty one would leave the
@@ -1166,28 +1302,40 @@ def build_invoice_issued(
     total: str,
     download_url: str,
     host: Optional[Dict[str, str]] = None,
+    stay_property: str = "",
 ) -> Dict[str, str]:
-    """The host clicked "Send to customer": one money panel with a download button."""
-    subject = _guest_text(lang, "invoice_mail_issued_subject", number=number)
+    """The host clicked "Send to customer": one money panel with a download button.
+
+    ``property_name`` is the issuer (the host's legal entity). When the invoice
+    belongs to a stay, ``stay_property`` is that stay's property under the name
+    the guest pages use, so the buyer can tell which booking it is for.
+    """
+    stay_property = (stay_property or "").strip()
+    if stay_property:
+        subject = _guest_text(
+            lang, "invoice_mail_issued_subject_stay", number=number, stay_property=stay_property
+        )
+    else:
+        subject = _guest_text(lang, "invoice_mail_issued_subject", number=number)
     intro = _guest_text(lang, "invoice_mail_issued_intro", property=property_name)
     footer_lines = _guest_footer_lines(lang, property_name, host)
+    rows = [(_guest_text(lang, "mail_invoice_number"), number)]
+    if stay_property:
+        rows.append((_guest_text(lang, "mail_invoice_property"), stay_property))
+    rows.append((_guest_text(lang, "mail_invoice_total"), total))
     blocks = [
         _block_heading(_guest_text(lang, "mail_invoice_title")),
         _block_paragraph(intro),
         _block_panel(
             _guest_text(lang, "mail_invoice_title"),
-            [
-                (_guest_text(lang, "mail_invoice_number"), number),
-                (_guest_text(lang, "mail_invoice_total"), total),
-            ],
+            rows,
             action=(download_url, _guest_text(lang, "invoice_mail_issued_button")),
         ),
     ]
     lines = [
         intro,
         "",
-        f"{_guest_text(lang, 'mail_invoice_number')}: {number}",
-        f"{_guest_text(lang, 'mail_invoice_total')}: {total}",
+        *(f"{label}: {value}" for label, value in rows),
         f"{_guest_text(lang, 'invoice_mail_issued_button')}: {download_url}",
     ]
     text = "\n".join([*lines, "", "--", *_footer_text(footer_lines)])
@@ -1369,3 +1517,378 @@ def build_reminder_host(
             footer_lines=["UbyHost", footer],
         ),
     }
+
+
+# --- filing watchdog (WP23) ---------------------------------------------------
+#
+# filing_watchdog.py decides which stays are at risk and when to write; the
+# wording and the markup live here with the rest of the host mail.
+
+
+def _deadline_text(deadline: Any) -> str:
+    """The deadline as the mail prints it: the Czech date and the end of day."""
+    return f"{deadline.strftime('%d.%m.%Y')} {deadline.strftime('%H:%M')}"
+
+
+def build_deadline_at_risk(
+    *,
+    property_name: str,
+    arrival: str,
+    deadline: Any,
+    unfiled: int,
+    stay_url: str,
+    lang: Optional[str] = None,
+    no_guests: bool = False,
+) -> Dict[str, str]:
+    """The host's one warning that a stay may miss its police deadline.
+
+    ``no_guests`` is the variant for a stay with no guest on file yet, where
+    UbyHost cannot tell whether a report is due at all.
+    """
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    due = _deadline_text(deadline)
+    variant = "mail.deadline_at_risk.no_guests" if no_guests else "mail.deadline_at_risk"
+    subject = _text(lang, f"{variant}.subject", property=property_name, deadline=due)
+    preheader = _text(lang, f"{variant}.preheader", count=unfiled)
+    heading = _text(lang, f"{variant}.heading")
+    intro = _text(
+        lang, f"{variant}.intro",
+        property=property_name, arrival=arrival, deadline=due,
+    )
+    facts = [
+        (_text(lang, "mail.deadline_at_risk.property_label"), property_name),
+        (_text(lang, "mail.deadline_at_risk.arrival_label"), arrival),
+    ]
+    if not no_guests:
+        facts.append((_text(lang, "mail.deadline_at_risk.unfiled_label"), str(unfiled)))
+    facts.append((_text(lang, "mail.deadline_at_risk.deadline_label"), due))
+    next_label = _text(lang, "mail.deadline_at_risk.next_label")
+    next_steps = _text(lang, f"{variant}.next_steps")
+    manual_label = _text(lang, "mail.deadline_at_risk.manual_label")
+    manual = _text(lang, "mail.deadline_at_risk.manual")
+    action = _text(lang, "mail.deadline_at_risk.action_stay")
+    fallback = _guest_text(lang, "mail_link_fallback")
+    footer = _text(lang, f"{variant}.footer")
+
+    extra_blocks = [_block_link(stay_url, fallback)]
+    extra_blocks += [_block_fact(label, value) for label, value in facts]
+    extra_blocks.append(_block_section(next_label, next_steps))
+    extra_blocks.append(_block_note(manual_label, manual))
+    blocks = _guest_blocks(
+        heading=heading,
+        intro=intro,
+        action_url=stay_url,
+        action_label=action,
+        extra_blocks=extra_blocks,
+    )
+    text_lines = [intro, ""]
+    text_lines += [f"{label}: {value}" for label, value in facts]
+    text_lines += [
+        "",
+        f"{next_label}: {next_steps}",
+        "",
+        f"{manual_label}: {manual}",
+        "",
+        f"{action}: {stay_url}",
+        "",
+        "--",
+        "UbyHost",
+        footer,
+    ]
+    return {
+        "subject": subject,
+        "text": "\n".join(text_lines),
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=preheader,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }
+
+
+# The digest lists at most this many stays; the rest are counted. A longer
+# list would mean something is broken for everyone, and the count says so.
+DEADLINE_DIGEST_MAX_ROWS = 50
+
+
+def _block_table(header: List[str], rows: List[List[str]]) -> str:
+    cell = f"padding:6px 8px;border-bottom:1px solid {LINE};text-align:left;"
+    head = "".join(
+        f'<th style="{cell}font:600 13px/1.4 {_FONT};color:{INK};">{_esc(h)}</th>'
+        for h in header
+    )
+    body = "".join(
+        "<tr>"
+        + "".join(
+            f'<td style="{cell}font:400 13px/1.4 {_FONT};color:{INK_SECONDARY};">{_esc(v)}</td>'
+            for v in row
+        )
+        + "</tr>"
+        for row in rows
+    )
+    return (
+        '<tr><td style="padding:20px 24px 0 24px;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'border="0" style="border-collapse:collapse;">'
+        f"<tr>{head}</tr>{body}</table></td></tr>"
+    )
+
+
+def _digest_section(
+    lang: str, stays: List[Dict[str, Any]], columns: Tuple[str, ...]
+) -> Tuple[List[str], List[List[str]], str]:
+    """Header, rows (at most DEADLINE_DIGEST_MAX_ROWS) and the "and N more" line."""
+    header = [_text(lang, f"mail.deadline_digest.col_{column}") for column in columns]
+    shown = stays[:DEADLINE_DIGEST_MAX_ROWS]
+    rows = []
+    for stay in shown:
+        values = {
+            "workspace": stay.get("workspace") or "",
+            "property": stay.get("property") or "",
+            "arrival": stay["arrival"].strftime("%d.%m.%Y"),
+            "deadline": _deadline_text(stay["deadline"]),
+            "unfiled": str(stay.get("unfiled", 0)),
+        }
+        rows.append([values[column] for column in columns])
+    hidden = len(stays) - len(shown)
+    more = _text(lang, "mail.deadline_digest.more", count=hidden) if hidden else ""
+    return header, rows, more
+
+
+def build_deadline_digest(
+    stays: List[Dict[str, Any]],
+    lang: Optional[str] = None,
+    unknown: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, str]:
+    """The operator's digest of every stay at risk, across all workspaces.
+
+    Each row names the workspace, the property, the arrival, the deadline and
+    how many guests are not filed. It never names a guest. ``unknown`` lists
+    stays with no guest on file in a section of their own, without a count.
+    """
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    unknown = unknown or []
+    if unknown:
+        subject = _text(
+            lang, "mail.deadline_digest.subject_unknown", count=len(stays), unknown=len(unknown)
+        )
+    else:
+        subject = _text(lang, "mail.deadline_digest.subject", count=len(stays))
+    heading = _text(lang, "mail.deadline_digest.heading")
+    intro = _text(lang, "mail.deadline_digest.intro")
+    footer = _text(lang, "mail.deadline_digest.footer")
+    blocks = [_block_heading(heading)]
+    text_lines: List[str] = []
+    if stays:
+        header, rows, more = _digest_section(
+            lang, stays, ("workspace", "property", "arrival", "deadline", "unfiled")
+        )
+        blocks += [_block_paragraph(intro), _block_table(header, rows)]
+        if more:
+            blocks.append(_block_paragraph(more, muted=True))
+        text_lines += [intro, "", " | ".join(header)]
+        text_lines += [" | ".join(row) for row in rows]
+        if more:
+            text_lines += ["", more]
+    if unknown:
+        unknown_heading = _text(lang, "mail.deadline_digest.unknown_heading")
+        unknown_intro = _text(lang, "mail.deadline_digest.unknown_intro")
+        header, rows, more = _digest_section(
+            lang, unknown, ("workspace", "property", "arrival", "deadline")
+        )
+        blocks += [
+            _block_heading(unknown_heading),
+            _block_paragraph(unknown_intro),
+            _block_table(header, rows),
+        ]
+        if more:
+            blocks.append(_block_paragraph(more, muted=True))
+        if text_lines:
+            text_lines.append("")
+        text_lines += [unknown_heading, unknown_intro, "", " | ".join(header)]
+        text_lines += [" | ".join(row) for row in rows]
+        if more:
+            text_lines += ["", more]
+    text_lines += ["", "--", "UbyHost", footer]
+    return {
+        "subject": subject,
+        "text": "\n".join(text_lines),
+        "html": _shell(
+            lang=lang,
+            title=heading,
+            preheader=intro if stays else _text(lang, "mail.deadline_digest.unknown_intro"),
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }
+
+
+# --- self sign-up (WP20) -----------------------------------------------------
+#
+# The person signing up chose the page language, so their two messages follow
+# it. The operator's notice is host mail and stays in HOST_MAIL_LANGUAGE. The
+# verification link is queued with mail.CLAIM_SECRET_MARKER standing in for the
+# token, exactly like a guest claim link, so the stored row holds no usable link.
+
+
+def _signup_footer(lang: str) -> List[Any]:
+    return [
+        "UbyHost",
+        _text(lang, "mail.workspace_deletion.footer", support=config.OPERATOR_EMAIL),
+    ]
+
+
+def build_signup_verify(
+    *, lang: str, workspace: str, username: str, link: str
+) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang)
+    subject = _text(lang, "mail.signup_verify.subject")
+    heading = _text(lang, "mail.signup_verify.heading")
+    intro = _text(lang, "mail.signup_verify.intro", workspace=workspace)
+    action = _text(lang, "mail.signup_verify.action")
+    expiry = _text(lang, "mail.signup_verify.expiry")
+    sign_in = _text(lang, "mail.signup_verify.username", username=username)
+    fallback = _guest_text(lang, "mail_link_fallback")
+    footer = _signup_footer(lang)
+    text = "\n".join(
+        [intro, "", f"{action}: {link}", "", expiry, "", sign_in, "", "--", *footer]
+    )
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_button(link, action),
+        _block_paragraph(expiry, size=15),
+        _block_link(link, fallback),
+        _block_paragraph(sign_in, muted=True),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def build_signup_exists(*, lang: str) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang)
+    subject = _text(lang, "mail.signup_exists.subject")
+    heading = _text(lang, "mail.signup_exists.heading")
+    intro = _text(lang, "mail.signup_exists.intro")
+    action = _text(lang, "mail.signup_exists.action")
+    help_text = _text(lang, "mail.signup_exists.help", support=config.OPERATOR_EMAIL)
+    link = _public(f"/login?lang={lang}")
+    footer = _signup_footer(lang)
+    text = "\n".join([intro, "", f"{action}: {link}", "", help_text, "", "--", *footer])
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_button(link, action),
+        _block_paragraph(help_text, size=15),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def build_signup_admin(
+    *, workspace: str, email: str, username: str, campaign: str, ads_click: bool,
+    meta_click: bool = False,
+) -> Dict[str, str]:
+    lang = HOST_MAIL_LANGUAGE
+    subject = _text(lang, "mail.signup_admin.subject", workspace=workspace)
+    heading = _text(lang, "mail.signup_admin.heading")
+    intro = _text(lang, "mail.signup_admin.intro")
+    action = _text(lang, "mail.signup_admin.action")
+    link = _public("/admin/users")
+    yes_no = _text(lang, "mail.signup_admin.yes" if ads_click else "mail.signup_admin.no")
+    facts = [
+        (_text(lang, "mail.signup_admin.workspace"), workspace),
+        (_text(lang, "mail.signup_admin.email"), email),
+        (_text(lang, "mail.signup_admin.username"), username),
+        (_text(lang, "mail.signup_admin.source"), campaign or "-"),
+        (_text(lang, "mail.signup_admin.ads"), yes_no),
+        (
+            _text(lang, "mail.signup_admin.meta"),
+            _text(lang, "mail.signup_admin.yes" if meta_click else "mail.signup_admin.no"),
+        ),
+    ]
+    footer = _signup_footer(lang)
+    text = "\n".join(
+        [intro, "", *[f"{label}: {value}" for label, value in facts], "",
+         f"{action}: {link}", "", "--", *footer]
+    )
+    blocks = [_block_heading(heading), _block_paragraph(intro)]
+    blocks.extend(_block_fact(label, value) for label, value in facts)
+    blocks.append(_block_button(link, action))
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def signup_verify(
+    *, user_id: int, to_email: str, lang: str, workspace: str, username: str,
+    token: str, nonce: str,
+) -> Optional[int]:
+    link = _public(f"/signup/verify?t={mail.CLAIM_SECRET_MARKER}")
+    content = build_signup_verify(
+        lang=lang, workspace=workspace, username=username, link=link
+    )
+    payload: Dict[str, Any] = {
+        "text": content["text"],
+        "html": content["html"],
+        "lang": lang,
+        mail.CLAIM_SECRET_KEY: db.encrypt_field(token),
+    }
+    return mail.enqueue(
+        kind="signup_verify",
+        idempotency_key=f"signup_verify:{user_id}:{nonce}",
+        to_email=to_email,
+        subject=content["subject"],
+        payload=payload,
+        owner_user_id=user_id,
+    )
+
+
+def signup_exists(*, user_id: int, to_email: str, lang: str, bucket: str) -> Optional[int]:
+    """One "you already have an account" mail per account per ``bucket``."""
+    content = build_signup_exists(lang=lang)
+    return mail.enqueue(
+        kind="signup_exists",
+        idempotency_key=f"signup_exists:{user_id}:{bucket}",
+        to_email=to_email,
+        subject=content["subject"],
+        payload={"text": content["text"], "html": content["html"], "lang": lang},
+        owner_user_id=user_id,
+    )
+
+
+def signup_admin(
+    *, user_id: int, workspace: str, email: str, username: str, campaign: str,
+    ads_click: bool, meta_click: bool = False,
+) -> Optional[int]:
+    content = build_signup_admin(
+        workspace=workspace, email=email, username=username, campaign=campaign,
+        ads_click=ads_click, meta_click=meta_click,
+    )
+    return mail.enqueue(
+        kind="signup_admin",
+        idempotency_key=f"signup_admin:{user_id}",
+        to_email=config.SIGNUP_NOTIFY_EMAIL,
+        subject=content["subject"],
+        payload={
+            "text": content["text"],
+            "html": content["html"],
+            "lang": HOST_MAIL_LANGUAGE,
+        },
+    )

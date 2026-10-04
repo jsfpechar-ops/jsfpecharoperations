@@ -20,14 +20,24 @@ NEW_KEYS = [
     "tw_step_home", "tw_step_photo", "tw_step_sign", "tw_step_check",
     "tw_dob_day", "tw_dob_month", "tw_dob_year", "tw_country_search",
     "tw_country_none", "tw_purpose_other", "tw_sign_here", "tw_signed",
-    "tw_done_keep",
 ]
+# WP17 (review 3.E item 14) cut "Keep this page" from the done screen: it
+# contradicted "You can close this page" a few lines above it.
+CUT_KEYS = ["tw_done_keep"]
 
 
 def test_every_new_key_exists_in_both_languages():
     for key in NEW_KEYS:
         assert i18n.STRINGS["en"].get(key), f"en.{key}"
         assert i18n.STRINGS["cs"].get(key), f"cs.{key}"
+
+
+def test_cut_keys_are_gone_from_both_languages_and_the_templates():
+    stay = (APP / "templates" / "guest" / "stay.html").read_text(encoding="utf-8")
+    for key in CUT_KEYS:
+        assert key not in i18n.STRINGS["en"], key
+        assert key not in i18n.STRINGS["cs"], key
+        assert key not in stay, key
 
 
 def test_every_enhancement_is_registered_in_start():

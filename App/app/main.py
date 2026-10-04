@@ -14,18 +14,20 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import (
     alerts,
+    analytics,
     auth,
     client_ip,
     config,
     db,
     env_guard,
     host_i18n,
+    passport_photos,
     scheduler,
     security,
     seo,
     templating,
 )
-from .routes import admin, guest, invoices, legal, stay_fees
+from .routes import admin, guest, invoices, legal, mail_unsubscribe, stay_fees
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -80,15 +82,33 @@ async def lifespan(_app: FastAPI):
     # Explicit startup work, because importing config no longer creates the data
     # directory or writes the signing key to disk.
     config.ensure_data_dir()
-    # Read the key here, where a bad one stops the app from booting. Left lazy,
-    # it raised on the first page that signed a cookie: /healthz answered 200
-    # while /login answered 500, so the deploy's health check passed and the
-    # broken release went live.
-    config.secret_key()
-    db.init_db()
+    if config.ROLE not in ("web", "all"):
+        raise RuntimeError(
+            f"UBYHOST_ROLE={config.ROLE!r} cannot serve HTTP; use web or all "
+            "(the background worker starts with: python -m app.worker)"
+        )
     from PIL import Image
-    Image.MAX_IMAGE_PIXELS = 12_000_000  # every image we render is a signature or a QR code
-    bootstrap_password = auth.ensure_bootstrap_admin()
+    # The process-wide decompression-bomb bound. Passport photos (WP08) are the
+    # largest images we decode, and passport_photos checks its own, stricter
+    # limit from the header first; signatures and QR codes have their own
+    # size checks too. Pillow raises at twice this value.
+    Image.MAX_IMAGE_PIXELS = passport_photos.MAX_IMAGE_PIXELS
+    # WP06: two web workers and the scheduler worker boot at the same moment.
+    # Key creation, migrations, the first administrator and the PIN rotation
+    # each assume they run alone, so they run one process at a time.
+    with db.startup_lock():
+        # Read the key here, where a bad one stops the app from booting. Left
+        # lazy, it raised on the first page that signed a cookie: /healthz
+        # answered 200 while /login answered 500, so the deploy's health check
+        # passed and the broken release went live.
+        config.secret_key()
+        # Same reason for the data-encryption keys (WP16): a malformed
+        # UBYHOST_DATA_KEYS must stop the boot, not the first page that reads
+        # a guest.
+        db.check_data_keys()
+        db.init_db()
+        bootstrap_password = auth.ensure_bootstrap_admin()
+        rotate_weak_permalinks()
     admin_username = auth.normalise_username(config.ADMIN_USERNAME) or "admin"
     if bootstrap_password:
         log.warning(
@@ -101,7 +121,6 @@ async def lifespan(_app: FastAPI):
             "Created the first administrator (%s). Log in using UBYHOST_ADMIN_PASSWORD.",
             admin_username,
         )
-    rotate_weak_permalinks()
     log.info("database ready at %s", config.DB_PATH)
     log.info(
         "deployment=%s ubyport=%s endpoint=%s",
@@ -119,11 +138,16 @@ async def lifespan(_app: FastAPI):
         log.warning(
             "LIVE production reporting is active — submissions go to the real police register."
         )
-    scheduler.start()
+    if config.ROLE == "all":
+        scheduler.start()
+    elif config.ENABLE_SCHEDULER:
+        log.info("role=web: background jobs run in the worker process (python -m app.worker)")
     try:
         yield
     finally:
         scheduler.shutdown()
+        # After the scheduler, whose threads use them too.
+        db.close_connections()
 
 
 app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
@@ -139,23 +163,49 @@ def _wants_html(request: Request) -> bool:
     return not request.url.path.startswith("/api/") and "text/html" in request.headers.get("accept", "")
 
 
-_CSP = (
-    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
-    "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
-    "frame-src https://challenges.cloudflare.com; "
-    "connect-src 'self' https://challenges.cloudflare.com"
-)
+def _csp(extra_script: tuple = (), extra_connect: tuple = ()) -> str:
+    script = " ".join(("'self' 'unsafe-inline' https://challenges.cloudflare.com",) + extra_script)
+    connect = " ".join(("'self' https://challenges.cloudflare.com",) + extra_connect)
+    return (
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+        "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+        f"script-src {script}; "
+        "frame-src https://challenges.cloudflare.com; "
+        f"connect-src {connect}"
+    )
 
 
-def _harden(response):
+# Host, guest and auth pages: no third-party origin beyond Turnstile, ever.
+_CSP = _csp()
+
+
+def _public_csp() -> str:
+    """WP09: the CSP for the public pages that carry the Umami tag.
+
+    Derived from UMAMI_SCRIPT_URL (and UMAMI_HOST_URL), never hard-coded, so
+    the policy always matches the tag that templating rendered.
+    """
+    origin = analytics.script_origin()
+    if not origin:
+        return _CSP
+    return _csp((origin,), analytics.connect_origins())
+
+
+def _harden(response, public_analytics: bool = False):
     """Headers every page needs. The 500 handler runs outside the middleware."""
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
-    response.headers.setdefault("Content-Security-Policy", _CSP)
+    response.headers.setdefault(
+        "Content-Security-Policy", _public_csp() if public_analytics else _CSP
+    )
     return response
+
+
+def _is_guest_path(request: Request) -> bool:
+    """A guest link (``/l/...``): its error pages speak the guest's language."""
+    return request.url.path == "/l" or request.url.path.startswith("/l/")
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -163,9 +213,12 @@ async def http_error_handler(request: Request, exc: StarletteHTTPException):
     """A branded page for people; the JSON body stays for scripts and the API."""
     if exc.status_code not in (404, 405) or not _wants_html(request):
         return await http_exception_handler(request, exc)
-    response = templating.render(
-        request, "error.html", {"error_kind": "not_found"}, status_code=exc.status_code
-    )
+    if _is_guest_path(request):
+        response = guest.error_page(request, "not_found", exc.status_code)
+    else:
+        response = templating.render(
+            request, "error.html", {"error_kind": "not_found"}, status_code=exc.status_code
+        )
     if exc.headers:
         response.headers.update(exc.headers)  # keeps Allow on a 405
     return response
@@ -179,7 +232,10 @@ async def server_error_handler(request: Request, exc: Exception):
     response = None
     if _wants_html(request):
         try:
-            response = templating.render(request, "error.html", {"error_kind": "server"}, status_code=500)
+            if _is_guest_path(request):
+                response = guest.error_page(request, "server", 500)
+            else:
+                response = templating.render(request, "error.html", {"error_kind": "server"}, status_code=500)
         except Exception:
             log.exception("error page failed to render")
     if response is None:
@@ -199,17 +255,35 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""
     client_ip.apply_visitor_client(request.scope, request.headers)
     started = time.perf_counter()
+    # A fresh counter per request (WP13). The route runs in a copy of this
+    # context, which shares the object, so its queries land here.
+    stats = db.start_request_stats()
     response = await call_next(request)
     security.attach_csrf_cookie(request, response)
-    _harden(response)
+    _harden(response, public_analytics=analytics.is_public_page(request))
     # Everything outside /static carries passport numbers, addresses and
     # signatures. Guests hand the phone back and hosts share laptops, so these
     # pages must not sit in history, the back/forward cache, or a proxy.
     if not request.url.path.startswith("/static/"):
         response.headers.setdefault("Cache-Control", "no-store, private")
+    elif response.status_code in (200, 304):
+        response.headers.setdefault("Cache-Control", _static_cache_control(request))
     if config.ACCESS_LOG:
-        _log_access(request, response.status_code, started)
+        _log_access(request, response.status_code, started, stats)
     return response
+
+
+# WP07: every /static URL in the templates carries ?v=<key>, and the key is
+# bumped whenever the file changes, so a versioned asset may be cached for a
+# year without revalidation. A request without ?v= (the /favicon.ico redirect,
+# the logo in e-mails, a crawler fetching og:image) gets one day only, so a
+# changed unversioned file is never stuck in a cache for a year.
+_STATIC_VERSIONED = "public, max-age=31536000, immutable"
+_STATIC_UNVERSIONED = "public, max-age=86400"
+
+
+def _static_cache_control(request: Request) -> str:
+    return _STATIC_VERSIONED if request.query_params.get("v") else _STATIC_UNVERSIONED
 
 
 def _access_route(request: Request) -> str:
@@ -223,16 +297,27 @@ def _access_route(request: Request) -> str:
     return getattr(route, "path", None) or "<unmatched>"
 
 
-def _log_access(request: Request, status_code: int, started: float) -> None:
+def _log_access(
+    request: Request,
+    status_code: int,
+    started: float,
+    stats: "db.RequestStats | None" = None,
+) -> None:
     path = request.url.path
     if path.startswith("/static/") or path == "/healthz":
         return
+    stats = stats or db.RequestStats()
+    # q, db_ms and lock_ms are counts and durations only; they carry nothing
+    # from the request, so the line stays as PII-free as the route template.
     log_access.info(
-        "method=%s route=%s status=%s ms=%d",
+        "method=%s route=%s status=%s ms=%d q=%d db_ms=%d lock_ms=%d",
         request.method,
         _access_route(request),
         status_code,
         int((time.perf_counter() - started) * 1000),
+        stats.queries,
+        int(stats.db_seconds * 1000),
+        int(stats.lock_seconds * 1000),
     )
 
 
@@ -242,6 +327,8 @@ app.include_router(admin.router)
 app.include_router(invoices.router)
 app.include_router(stay_fees.router)
 app.include_router(legal.router)
+# Public, outside the host CSRF dependency: RFC 8058 one-click posts (WP12).
+app.include_router(mail_unsubscribe.router)
 
 
 @app.get("/sample-airbnb.ics", include_in_schema=False)

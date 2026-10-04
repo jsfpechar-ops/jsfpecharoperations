@@ -18,8 +18,8 @@
   <meta property="og:url" content="{{ canonical_url }}">
   <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
   <meta name="twitter:card" content="summary">
-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
   <script type="application/ld+json">
@@ -36,6 +36,7 @@
     "publisher": {"@type": "Organization", "name": "UbyHost", "url": public_base_url ~ "/"}
   } | tojson }}
   </script>
+  {% include "_umami.html" %}
 </head>
 <body>
 {% set active = 'guides' if current_slug == 'hlaseni-cizincu-ubyport' else '' %}
@@ -73,7 +74,7 @@
               <li><span aria-hidden="true">✓</span>{{ item }}</li>
             {% endfor %}
           </ul>
-          <a href="/login?lang={{ lang }}" class="landing-button primary">{{ t('landing.cta') }}</a>
+          <a href="/login?lang={{ lang }}" class="landing-button primary" data-umami-event="login_click">{{ t('landing.cta') }}</a>
           <a href="/jak-to-funguje?lang={{ lang }}" class="guide-product-link">{{ t('landing.details.link') }} →</a>
         </aside>
       </div>

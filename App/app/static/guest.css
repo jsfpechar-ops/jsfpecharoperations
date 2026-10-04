@@ -87,29 +87,68 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 .g-checkin-page .g-head h1 { font-size: 28px; letter-spacing: -0.025em; }
 .g-facility { font-size: 14px; color: var(--g-muted); margin: 5px 0 0; }
 
-.g-lang {
-  display: flex;
-  gap: 2px;
-  background: var(--g-surface);
-  border: 1px solid var(--g-line);
-  border-radius: var(--g-pill);
-  padding: 3px;
-  flex: 0 0 auto;
-}
-.g-lang a {
-  font-size: 12.5px;
-  font-weight: 650;
-  text-decoration: none;
-  color: var(--g-muted);
-  border-radius: var(--g-pill);
-  min-height: 44px;
-  padding: 12px 14px;
+/* Language menu (WP26). Five guest languages do not fit as pills beside the
+   property name on a 320px phone, so the switcher is a <details> disclosure:
+   the summary shows the current code and the list hangs below the header. */
+.g-lang { position: relative; flex: 0 0 auto; }
+.g-lang > summary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--g-line);
+  border-radius: var(--g-pill);
+  background: var(--g-surface);
+  color: var(--g-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  list-style: none;
+  cursor: pointer;
+}
+.g-lang > summary::-webkit-details-marker { display: none; }
+.g-lang > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+.g-lang[open] > summary::after { margin-top: 3px; transform: rotate(-135deg); }
+.g-lang-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 176px;
+  padding: 6px;
+  border: 1px solid var(--g-line);
+  border-radius: 14px;
+  background: var(--g-surface);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+}
+.g-lang-list a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: var(--g-ink);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
   transition: background 0.16s var(--g-ease), color 0.16s var(--g-ease);
 }
-.g-lang a:hover { color: var(--g-ink); }
-.g-lang a.on { background: var(--g-ink); color: var(--g-bg); }
+.g-lang-list a:hover { background: var(--g-bg); }
+.g-lang-list a.on { background: var(--g-ink); color: var(--g-bg); font-weight: 700; }
 
 /* --- check-in composition (guest registration form) --------------------- */
 
@@ -1235,4 +1274,49 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* The privacy notice's cookie table: four columns do not fit a phone, so the
+   table scrolls inside its card instead of widening the whole page. */
+.scroll-x { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.scroll-x table { border-collapse: collapse; font-size: 13px; }
+.scroll-x th, .scroll-x td { padding: 6px 8px; text-align: left; vertical-align: top; }
+.scroll-x td:first-child { white-space: nowrap; }
+
+/* --- cookie table on the guest privacy notice (WP26) -------------------- */
+/* The table is shared with the public privacy page, whose card layout lives
+   in app.css, which guest pages do not load. Without these rules it pushed a
+   320px phone sideways in every language. On a phone each row becomes a card
+   of labelled facts, the same pattern the host app uses. */
+.g-legal .scroll-x { overflow-x: auto; }
+.g-legal .table-cards { width: 100%; border-collapse: collapse; font-size: 14px; }
+.g-legal .table-cards th,
+.g-legal .table-cards td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 8px 8px 0;
+  border-bottom: 1px solid var(--g-line);
+}
+.g-legal .table-cards code { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .g-legal .table-cards thead { display: none; }
+  .g-legal .table-cards tr {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--g-line);
+  }
+  .g-legal .table-cards td { display: block; padding: 0; border: 0; min-width: 0; }
+  .g-legal .table-cards td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--g-muted);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .g-legal .table-cards td:first-child { grid-column: 1 / -1; white-space: normal; }
 }

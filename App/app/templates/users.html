@@ -37,15 +37,18 @@
         <thead><tr><th>{{ t('users.table.user') }}</th><th>{{ t('users.table.role') }}</th><th>{{ t('users.table.properties') }}</th><th>{{ t('users.table.status') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr></thead>
         <tbody>
         {% for user in users %}
-          <tr>
+          <tr id="user-{{ user.id }}">
             <td data-label="{{ t('users.table.user') }}">
               <strong>{{ user.display_name or user.username }}</strong>
               <div class="small muted mono">{{ user.username }}</div>
+              {% if user.email %}<div class="small muted">{{ user.email }}</div>{% endif %}
+              {% if user.signup_source %}<div class="small muted">{{ t('users.source', source=t('users.source.' ~ user.signup_source)) }}</div>{% endif %}
             </td>
             <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
             <td data-label="{{ t('users.table.properties') }}">{{ user.apartment_count }}</td>
             <td data-label="{{ t('users.table.status') }}">
-              {% if not user.active %}<span class="pill grey">{{ t('users.status.disabled') }}</span>
+              {% if user.signup_at and not user.email_verified_at and not user.active %}<span class="pill amber">{{ t('users.status.unverified') }}</span>
+              {% elif not user.active %}<span class="pill grey">{{ t('users.status.disabled') }}</span>
               {% elif user.must_change_password %}<span class="pill amber">{{ t('users.status.temporary_password') }}</span>
               {% else %}<span class="pill green">{{ t('users.status.active') }}</span>{% endif %}
             </td>
@@ -53,6 +56,8 @@
               {% if user.id != current_user.id %}
                 {{ row_menu_begin(t('users.menu.aria')) }}
                   <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
+                    <label class="small muted" for="support-reason-{{ user.id }}">{{ t('users.menu.open_workspace_reason') }}</label>
+                    <input type="text" id="support-reason-{{ user.id }}" name="reason" minlength="5" maxlength="300" required>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.open_workspace') }}</button>
                   </form>
                   <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form"{% if user.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=user.display_name or user.username) }}"{% endif %}>
@@ -61,6 +66,18 @@
                   <button class="row-menu-item" type="button" role="menuitem"
                           data-reset-password data-user-id="{{ user.id }}"
                           data-user-label="{{ user.display_name or user.username }}">{{ t('users.menu.reset_password') }}</button>
+                  {% if user.meta_consent %}
+                  <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
+                    <input type="hidden" name="platform" value="meta">
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.withdraw_meta_consent') }}</button>
+                  </form>
+                  {% endif %}
+                  {% if user.google_consent %}
+                  <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
+                    <input type="hidden" name="platform" value="google">
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.withdraw_ads_consent') }}</button>
+                  </form>
+                  {% endif %}
                   <form method="post" action="/admin/users/{{ user.id }}/export" class="row-menu-form">
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.export') }}</button>
                   </form>
@@ -80,6 +97,16 @@
   </section>
 
   <aside class="panel">
+    {% if signup_enabled %}
+    <form method="post" action="/admin/ads-conversions.csv">
+      <button class="btn" type="submit">{{ t('users.ads_export') }}</button>
+    </form>
+    <p class="small muted">{{ t('users.ads_export_hint', days=ads_export_days) }}</p>
+    <form method="post" action="/admin/ads-conversions.csv">
+      <input type="hidden" name="again" value="1">
+      <button class="btn small" type="submit">{{ t('users.ads_export_again') }}</button>
+    </form>
+    {% endif %}
     <h2 style="margin-top:0">{{ t('users.create.title') }}</h2>
     <p class="small muted">{{ t('users.create.lede') }}</p>
     <form method="post" action="/admin/users">

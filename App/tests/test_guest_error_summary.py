@@ -214,11 +214,11 @@ def test_the_czech_summary_links_the_same_way():
 def test_a_bad_birth_date_reads_as_a_sentence_about_the_birth_date():
     items = _items(_page("en", birth_date="31/02/1990"))
     assert items["birth_date"] == (
-        "Date of birth: that date does not exist — check the day and month."
+        "Date of birth: that date does not exist. Check the day and month."
     )
     items = _items(_page("cs", birth_date="31/02/1990"))
     assert items["birth_date"] == (
-        "Datum narození: takové datum neexistuje — zkontrolujte den a měsíc."
+        "Datum narození: takové datum neexistuje. Zkontrolujte den a měsíc."
     )
 
 

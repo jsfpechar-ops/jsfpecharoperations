@@ -15,8 +15,10 @@ from markupsafe import Markup, escape
 
 from . import (
     __version__,
+    acceptance,
     access,
     alerts,
+    analytics,
     auth,
     config,
     deadlines,
@@ -120,6 +122,23 @@ def _template_translate(context, key: str, **kwargs) -> str:
 
 
 @pass_context
+def _template_legal_effective(context, doc: str) -> str:
+    """"Effective date: ... Version ..." for /terms, /privacy or /dpa (WP24).
+
+    The date is the single ``config.LEGAL_EFFECTIVE_DATE`` and the version is
+    the one hosts accept, so the page can never show another number.
+    """
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    return host_i18n.translate(
+        lang,
+        f"{doc}.effective",
+        date=acceptance.effective_date_text(host_i18n.normalise_language(lang)),
+        version=acceptance.current_versions()[doc],
+    )
+
+
+@pass_context
 def _template_plural(context, base: str, n: int, **kwargs) -> str:
     """A counted string, in the one/few/many form its count needs.
 
@@ -129,6 +148,28 @@ def _template_plural(context, base: str, n: int, **kwargs) -> str:
     request = context.get("request")
     lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
     return host_i18n.translate_plural(lang, base, n, **kwargs)
+
+
+@pass_context
+def _template_identity_visible(context, guest_id=None) -> bool:
+    """``access.identity_visible`` for templates; see there."""
+    request = context.get("request")
+    return access.identity_visible(request, guest_id) if request else False
+
+
+@pass_context
+def _template_guest_identifier(context, value, guest_id) -> str:
+    """A document or visa number as this request may see it."""
+    request = context.get("request")
+    if request is None:
+        return access.mask_identifier(value)
+    return access.identifier_for(request, guest_id, value)
+
+
+@pass_context
+def _template_impersonation_minutes_left(context):
+    request = context.get("request")
+    return auth.impersonation_minutes_left(request) if request else None
 
 
 @pass_context
@@ -212,10 +253,16 @@ def _entered_by_label(context, value) -> str:
 _PASS_MONTHS = {
     "en": ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
     "cs": ("led", "úno", "bře", "dub", "kvě", "čvn", "čvc", "srp", "zář", "říj", "lis", "pro"),
+    "de": ("Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"),
+    "es": ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"),
+    "fr": ("janv", "févr", "mars", "avr", "mai", "juin", "juil", "août", "sept", "oct", "nov", "déc"),
 }
 _PASS_WEEKDAYS = {
     "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
     "cs": ("po", "út", "st", "čt", "pá", "so", "ne"),
+    "de": ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"),
+    "es": ("lun", "mar", "mié", "jue", "vie", "sáb", "dom"),
+    "fr": ("lun", "mar", "mer", "jeu", "ven", "sam", "dim"),
 }
 
 
@@ -284,7 +331,13 @@ templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
 templates.env.filters["legal_links"] = _legal_links
 templates.env.globals["t"] = _template_translate
+templates.env.globals["legal_effective"] = _template_legal_effective
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
+templates.env.globals["identity_visible"] = _template_identity_visible
+templates.env.globals["guest_identifier"] = _template_guest_identifier
+# WP26: the guest switcher names each language in its own words.
+templates.env.globals["guest_endonyms"] = i18n.ENDONYMS
+templates.env.globals["impersonation_minutes_left"] = _template_impersonation_minutes_left
 templates.env.globals.update(
     app_version=__version__,
     operator=operator.details,
@@ -297,6 +350,7 @@ templates.env.globals.update(
     urgency=deadlines.urgency,
     reporting_deadline=deadlines.reporting_deadline,
     deadline_anchor=reporting.reservation_deadline_anchor,
+    deadline_cell=reporting.deadline_cell,
     purpose_label=validation.purpose_label,
     country_name=validation.country_name,
     format_birth_date=validation.format_birth_date,
@@ -357,6 +411,9 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("demo_available", config.UBYPORT_ENV == "mock")
     if workspace and workspace["id"]:
         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
+    # WP09: set here, never from a route's context, so only the allowed public
+    # templates can ever get a tag (and the matching CSP in main._harden).
+    data["umami_tag"] = analytics.tag() if analytics.mark_public_page(request, name) else None
     response = templates.TemplateResponse(request, name, data, status_code=status_code)
     # Arriving on a ?lang= link (the hreflang URLs search engines index) is as
     # much a choice as clicking the switcher, so it survives the next click.
@@ -372,6 +429,7 @@ def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] 
     data["request"] = request
     data["csrf_token"] = security.csrf_token(request)
     data["open_alerts"] = []
+    data["umami_tag"] = None  # permanent rule: guest pages are never measured
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
     return templates.TemplateResponse(request, name, data, status_code=status_code)

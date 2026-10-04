@@ -5,12 +5,18 @@ onboarding finish card - two screens away, and gone once onboarding is done.
 """
 from __future__ import annotations
 
-from app import host_i18n
+from app import db, guest_slug, host_i18n
 from tests.test_guest_links_bilingual import TOKEN, _apartment_id, host  # noqa: F401
 
 
+def _preview_href() -> str:
+    """The preview opens the readable link (WP19), which resolves to TOKEN."""
+    row = db.query_one("SELECT id FROM apartment WHERE permalink_token = ?", (TOKEN,))
+    return f'href="/l/{guest_slug.current(row["id"])}"'
+
+
 def _preview_anchor(text: str) -> str:
-    marker = f'href="/l/{TOKEN}"'
+    marker = _preview_href()
     assert marker in text, "no preview link to the guest picker"
     anchor = text.split(marker, 1)[1]
     return marker + anchor.split("</a>", 1)[0]
@@ -22,7 +28,7 @@ def test_the_page_offers_a_preview_of_the_guest_picker(host):  # noqa: F811
     page = host.get("/guest-links?lang=en")
 
     assert page.status_code == 200
-    assert 'href="/l/' + TOKEN + '"' in page.text
+    assert _preview_href() in page.text
     assert host_i18n.STRINGS["en"]["guest_links.preview"] in page.text
 
 
@@ -62,7 +68,7 @@ def test_the_preview_targets_the_guest_side_not_the_host_property_page(host):  #
     anchor = _preview_anchor(host.get("/guest-links?lang=en").text)
 
     assert f"/apartments/{apartment_id}" not in anchor
-    assert anchor.endswith(f'href="/l/{TOKEN}" target="_blank" rel="noopener">'
+    assert anchor.endswith(f'{_preview_href()} target="_blank" rel="noopener">'
                            f'{host_i18n.STRINGS["en"]["guest_links.preview"]}')
 
 

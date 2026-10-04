@@ -164,7 +164,8 @@ function initSignature() {
     if (!input) return;
     var readback = document.getElementById("birth-date-readback");
     var template = readback ? readback.getAttribute("data-template") || "" : "";
-    var locale = readback && readback.getAttribute("data-locale") === "cs" ? "cs-CZ" : "en-GB";
+    var locales = { cs: "cs-CZ", de: "de-DE", es: "es-ES", fr: "fr-FR" };
+    var locale = (readback && locales[readback.getAttribute("data-locale")]) || "en-GB";
     var formatter = null;
     try {
       formatter = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" });

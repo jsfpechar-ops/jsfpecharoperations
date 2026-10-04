@@ -140,6 +140,8 @@ def test_G_mid_sync_exception_is_recorded(monkeypatch, tmp_path):
     def boom(*a, **k):
         raise RuntimeError("reconcile blew up")
     monkeypatch.setattr(icalsync, "_existing_reservation", boom)
+    # A changed calendar, so the sync reconciles instead of skipping (WP15).
+    monkeypatch.setattr(icalsync, "fetch_feed", lambda _u: _cal([("s", "2099-03-01", "2099-03-06")]))
     scheduler._job_sync_calendars()
     row = db.query_one("SELECT last_status, last_error FROM ical_feed WHERE id=?", (feed,))
     assert row["last_status"] == "error"

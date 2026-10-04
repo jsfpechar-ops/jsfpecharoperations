@@ -1,6 +1,7 @@
 """HTTP/NTLM transport for the UbyPort web service."""
 from __future__ import annotations
 
+import logging
 import os
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -15,6 +16,8 @@ try:
     from requests_ntlm import HttpNtlmAuth
 except ImportError:  # pragma: no cover - dependency is declared
     HttpNtlmAuth = None
+
+log = logging.getLogger("ubyhost.ubyport")
 
 
 def include_wsa_header() -> bool:
@@ -213,6 +216,17 @@ class UbyportClient:
             )
             err.request_xml = envelope
             raise err from exc
+        # Element names and sizes only, never values: this is what tells the
+        # owner, on a real filing, where (and whether) the Dorucenka came back.
+        log.info(
+            "ZapisUbytovane response: elements=%s receipt_pdf_bytes=%d error_pdf_bytes=%d "
+            "pdf_problems=%s stamp=%s",
+            ",".join(soap.response_element_names(text)) or "-",
+            len(parsed["receipt_pdf"]) * 3 // 4,
+            len(parsed["error_pdf"]) * 3 // 4,
+            ",".join(f"{k}:{v}" for k, v in sorted(parsed["pdf_problems"].items())) or "none",
+            "yes" if parsed["pseudo_stamp"] else "no",
+        )
         if len(parsed["record_errors"]) != len(guests):
             err = UbyportOutcomeUnknownError(
                 "UbyPort returned an incomplete result: "

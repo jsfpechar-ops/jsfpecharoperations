@@ -134,7 +134,7 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
         assert claim_page.status_code == 200
         assert "Your host" in claim_page.text
-        assert "If there is any problem, feel free to contact your host" in claim_page.text
+        assert "Questions? Contact your host." in claim_page.text
         assert "Claim Mail" in claim_page.text
         assert "host@claim.test" in claim_page.text
         assert "+420111222333" in claim_page.text
@@ -209,7 +209,8 @@ def test_claim_form_and_privacy_notice_disclose_email_and_cookies(monkeypatch):
         browser = TestClient(app)
         browser.cookies.set(guest.LANG_COOKIE, "en")
         claim_page = browser.get(f"/l/{TOKEN}/{current}")
-        assert "private link so only your group can open the forms" in claim_page.text
+        assert "We send your private link here." in claim_page.text
+        assert "Only your group can open the forms." in claim_page.text
         assert "one reminder the day before arrival if forms are missing" in claim_page.text
         assert "a receipt (your host gets a copy)" in claim_page.text
         assert "Only necessary cookies" in claim_page.text
@@ -672,7 +673,7 @@ def test_incomplete_stay_inside_the_reach_back_window_stays_reachable():
         assert "There&#39;s nothing to register yet" in apartment_landing.text
         assert (
             "Registration opens a few days before arrival. Come back to this same link then. "
-            "Already arrived? Message your host — they can send you a direct link to your stay."
+            "Already arrived? Message your host. They can send you a direct link to your stay."
         ) in apartment_landing.text
         assert f"/l/{TOKEN}/{past}" not in apartment_landing.text
 
@@ -1200,7 +1201,7 @@ def test_guest_facing_assignment_masks_email_and_lock_hides_it():
         assert "Claim flat" in public.text
         assert "Claim Facility" not in public.text
         assert "Your selected stay" in public.text
-        assert "secure link sent to this address" in public.text
+        assert "send the private link again" in public.text
         assert "This is not my reservation" in public.text
         assert "host@claim.test" in public.text
 
@@ -1479,7 +1480,7 @@ def test_the_sent_claim_page_confirms_the_address_and_folds_the_form_away(monkey
         )["email_masked"]
         assert masked
         assert f"We sent a link to {masked}." in page.text
-        assert "it works for 30 minutes" in page.text
+        assert "It works for 30 minutes" in page.text
         assert "If it asks for the PIN again, enter the same PIN." in page.text
         # The form is still there, but behind a closed disclosure.
         assert '<details class="g-card g-fold">' in page.text
@@ -1799,6 +1800,15 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "invoice_issued",
         "workspace_deletion",
         "cancelled_with_guests",
+        "deadline_at_risk",
+        "deadline_digest",
+        # WP12: the three lifecycle tips (lifecycle_mail.py, mail_notify.build_lifecycle).
+        "lifecycle_no_property",
+        "lifecycle_no_calendar",
+        "lifecycle_no_guest",
+        "signup_verify",
+        "signup_exists",
+        "signup_admin",
     }
 
 

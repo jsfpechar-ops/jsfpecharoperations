@@ -20,7 +20,9 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | --- | --- | --- |
 | `UBYHOST_DATA_DIR` | `App/data` | Database, secret key, passport photos. Created at import time with mode `0700`. |
 | `UBYHOST_DB` | `$UBYHOST_DATA_DIR/ubyhost.db` | Full path override for the SQLite file. `App/scripts/backup_data.sh` honours it too, so if you set one you must set it for the backup script as well. |
-| `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and derives the Fernet key for UbyPort passwords **and host TOTP secrets**. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
+| `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and, while `UBYHOST_DATA_KEY_LEGACY` is on, derives the legacy Fernet key for data at rest. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
+| `UBYHOST_DATA_KEYS` | unset | Comma-separated Fernet keys for data at rest, newest first. The first encrypts; all decrypt. Unset means the legacy key derived from `UBYHOST_SECRET_KEY` is the only key. A malformed entry stops the app at startup. Rotate with `App/scripts/reencrypt.py`. |
+| `UBYHOST_DATA_KEY_LEGACY` | `1` | Whether the legacy key derived from `UBYHOST_SECRET_KEY` is still tried for decryption. Set `0` only after `scripts/reencrypt.py --check` exits 0; refused while `UBYHOST_DATA_KEYS` is empty. |
 | `UBYHOST_DEPLOYMENT` | `local` | `local`, `staging` or `production`. Gates real behaviour, not just labels: host CSRF enforcement, Turnstile, SES, and secure cookie flags are all conditional on `production`. |
 | `PORT` | `8080` (Lightsail) / Render-supplied | Read by `App/render_start.sh` and `deploy/lightsail/docker-compose.yml`, not by the app. |
 
@@ -41,8 +43,13 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
+| `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
+| `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
+| `UBYHOST_WEB_MEM`, `UBYHOST_WORKER_MEM`, `UBYHOST_LITESTREAM_MEM`, `UBYHOST_CADDY_MEM` | `2g`, `1g`, `256m`, `256m` | Lightsail compose `mem_limit` per container (WP32). Read by `docker compose` from `deploy/lightsail/.env`. Staging on 2 GB: `896m`, `448m`, `128m`, `128m`. |
 | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
+| `UBYHOST_GUEST_LANGS` | `en,cs` | Guest form languages, comma-separated, picked from the browser language. English and Czech are always on. Add `de`, `es`, `fr` only after a native speaker has read that catalog in `App/app/i18n.py` (WP33). |
 | `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
+| `UBYHOST_LIFECYCLE_MAIL` | `0` | `1` lets the mail job send the three setup tips to hosts once a day (no property, no calendar, no completed guest). Nothing is sent while `UBYHOST_OPERATOR_NAME`, `_ICO` or `_ADDRESS` is empty, because every tip names the sender. Service mail is not affected (WP12, legal position 2). |
 | `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
 | `UBYHOST_AUDIT_RETENTION_DAYS` | `1095` | Audit rows older than this go; `legal_accepted` evidence has its own rule (BE-4, G-D7). |
 | `UBYHOST_ALERT_RETENTION_DAYS` | `365` | Resolved alerts older than this go (BE-4, G-D7). |
@@ -51,6 +58,9 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_ICAL_POLL_MINUTES` | `60` | Calendar poll interval. |
 | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | Automatic submission sweep interval. |
 | `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
+| `UBYHOST_HEARTBEAT_ICAL_URL` | unset | Pinged after each successful calendar sync (WP07). |
+| `UBYHOST_HEARTBEAT_MAIL_URL` | unset | Pinged after each mail run in which every step succeeded (WP07). |
+| `UBYHOST_HEARTBEAT_FILING_URL` | unset | Filing watchdog (WP23, `app/filing_watchdog.py`). Pinged on every deadline-job run: `<url>` when no stay is at risk of missing its police deadline, `<url>/fail` when at least one stay with a known reportable guest is (healthchecks.io semantics). Stays with no guest entered never cause `/fail`. Not pinged when the watchdog itself fails. The operator digest of at-risk stays goes to `UBYHOST_OPERATOR_EMAIL`, at most every 6 hours. |
 
 The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 (12 h) intervals are not configurable. See
@@ -71,6 +81,23 @@ The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 Turnstile is **inert unless all three of the `TURNSTILE_*` values are set**.
 When it is active, an unreachable Cloudflare fails open a bounded number of
 times per address and raises `turnstile_unavailable`.
+
+## Page analytics (Umami)
+
+| Variable | Default | Notes |
+|---|---|---|
+| `UMAMI_WEBSITE_ID` | unset | Website ID from the Umami website settings. |
+| `UMAMI_SCRIPT_URL` | unset | Exact `src` of the tracking code from the Umami website settings. Must be `https://`. |
+| `UMAMI_HOST_URL` | unset | Optional `data-host-url`. Unset uses the tracker default; for the Umami Cloud script that is `https://gateway.umami.is`. |
+| `UMAMI_DOMAINS` | host of `UBYHOST_PUBLIC_BASE_URL` | `data-domains`, comma-separated. |
+
+The tag is rendered **only when both `UMAMI_WEBSITE_ID` and `UMAMI_SCRIPT_URL`
+are set**, and only on the public marketing and legal pages listed in
+`app/analytics.py`. Those pages get a CSP that adds the script origin to
+`script-src` and the event endpoint to `connect-src`; app, guest and auth pages
+keep the strict CSP. `tests/test_umami_guard.py` enforces this.
+While it is on, `/privacy` shows the analytics paragraph with an opt-out and
+opt-back-in link (`static/umami-optout.js`, localStorage key `umami.disabled`).
 
 ## Reverse proxy and client IP
 
@@ -132,9 +159,10 @@ own public-register entry, or the legal pages will name the wrong company.
 
 | Variable | Default |
 | --- | --- |
-| `UBYHOST_TERMS_VERSION` | `1.5` |
-| `UBYHOST_PRIVACY_VERSION` | `1.5` |
-| `UBYHOST_DPA_VERSION` | `1.5` |
+| `UBYHOST_TERMS_VERSION` | `1.6` |
+| `UBYHOST_PRIVACY_VERSION` | `1.6` |
+| `UBYHOST_DPA_VERSION` | `1.6` |
+| `UBYHOST_LEGAL_EFFECTIVE_DATE` | `2026-11-16` |
 
 These override the version number displayed and logged against user acceptance.
 The document *text* lives in `App/app/terms_i18n.py`,
@@ -142,6 +170,14 @@ The document *text* lives in `App/app/terms_i18n.py`,
 changing the text — or the reverse — silently desynchronises what a host
 accepted from what they were shown. Prefer editing the text and the default in
 the same commit and leaving these unset.
+
+`UBYHOST_LEGAL_EFFECTIVE_DATE` (ISO `YYYY-MM-DD`) is the one effective date
+printed on `/terms`, `/privacy` and `/dpa`; the version beside it is the
+configured version above. Terms 1.6, Privacy 1.6 and DPA 1.6 take effect
+together, so a host accepts all three on a single `/account/accept` page. Set
+the date at release, at least 30 days after hosts are told (Terms § 22), either
+here or by changing `LEGAL_EFFECTIVE_DATE` in `App/app/config.py`. A malformed
+value stops start-up.
 
 ## Development and test only
 
@@ -170,7 +206,7 @@ them; Render does.
 | `UBYHOST_BACKUP_DIR` | `$UBYHOST_DATA_DIR/backups` | `App/scripts/backup_data.sh` |
 | `UBYHOST_SECRET_KEY` | unset | `App/scripts/backup_data.sh` — written into the snapshot when there is no `data/secret_key` file, so an off-site restore can be decrypted |
 | `UBYHOST_BACKUP_AGE_RECIPIENT` | unset | `App/scripts/backup_data.sh` — public `age1...` recipient the snapshot is encrypted to. **Required when `UBYHOST_DEPLOYMENT=production`**; the run fails closed without it |
-| `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept |
+| `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept. Set `7` once Litestream replicates (WP32) |
 | `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup. Required in production: `preflight.sh` refuses to deploy while it is empty. |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
 | `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |

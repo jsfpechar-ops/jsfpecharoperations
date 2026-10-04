@@ -184,7 +184,9 @@ def test_an_impersonating_admin_is_not_sent_to_the_screen(real_acceptance_pendin
     assert acceptance.pending(target_id) == ["terms", "privacy", "dpa"]
 
     started = client.post(
-        f"/admin/users/{target_id}/impersonate", follow_redirects=False
+        f"/admin/users/{target_id}/impersonate",
+            data={"reason": "Support ticket 123"},
+            follow_redirects=False
     )
     assert started.status_code == 303
     page = client.get("/", follow_redirects=False)

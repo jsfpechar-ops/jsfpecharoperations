@@ -53,7 +53,7 @@ def test_the_screens_that_named_the_other_word_now_name_the_host():
     assert cs["form_locked_short"] == "Uloženo a uzamčeno. Pro změnu kontaktujte hostitele."
     assert "hostitel" in cs["pin_help"].lower()
     assert "hostitel" in cs["passport_photo_help"]
-    assert "hostitel" in cs["why_point_book"]
+    assert "hostitel" in cs["why_point_accuracy"].lower()
 
 
 def test_the_guest_mail_footer_agrees_with_the_ui():

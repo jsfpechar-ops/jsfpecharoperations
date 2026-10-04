@@ -37,34 +37,37 @@
 </form>
 
 {% if rows %}
-<div class="panel tight scroll-x">
-  <table class="table-cards">
+{# The register is eleven columns of legal record. It keeps every word whole
+   and scrolls sideways inside its own panel when the viewport is narrower
+   than the row; the shaded edge shows there is more to the right. #}
+<div class="panel tight scroll-x housebook-scroll" tabindex="0" role="region" aria-label="{{ t('housebook.title') }}">
+  <table class="table-cards housebook-table">
     <thead>
       <tr>
-        <th>{{ t('housebook.stay') }}</th><th>{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th>{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
-        <th>{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
+        <th class="col-stay">{{ t('housebook.stay') }}</th><th class="col-property">{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th class="col-born">{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
+        <th class="col-doc">{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
         <th class="col-purpose">{{ t('housebook.purpose') }}</th><th>{{ t('housebook.signed') }}</th>
-        <th>{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
+        <th class="col-reported">{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr>
     </thead>
     <tbody>
     {% for row in rows %}
       <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
         <td class="nowrap small" data-label="{{ t('housebook.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
-        <td class="small" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
+        <td class="small col-property" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true, truncate=true) }}</td>
         {# Two deliberate lines beat three ragged ones in a column this narrow. #}
         <td class="col-name" data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong><br>
           <span class="small">{{ row.first_name }}</span></td>
         <td class="nowrap small" data-label="{{ t('housebook.born') }}">{{ row.birth_date }}</td>
         <td class="small" data-label="{{ t('housebook.nationality') }}">{{ row.nationality }}</td>
-        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ row.doc_number }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=row.visa_number) }}{% endif %}</td>
+        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</td>
         <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
         <td class="small col-purpose" data-label="{{ t('housebook.purpose') }}">{{ row.purpose }}</td>
         <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="pill green">{{ t('housebook.signed_yes') }}</span>
           {% else %}<span class="pill amber">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
         {# The stored values double as the CSV column, which the importer reads
            back, so they stay as they are and only the label changes here. #}
-        <td class="small nowrap" data-label="{{ t('housebook.reported') }}">
+        <td class="small col-reported" data-label="{{ t('housebook.reported') }}">
           {% if row.reported == 'yes' %}<span class="pill green">{{ t('status.reported') }}</span>
             <div class="small muted">{{ row.reported_at[:10] }}</div>
           {% elif row.reported.startswith('not required') %}<span class="pill grey">{{ t('status.not_required') }}</span>
@@ -130,22 +133,6 @@
   <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
 </details>
 
-<dialog id="housebook-legal-intro" class="admin-dialog housebook-legal-dialog">
-  <div class="admin-dialog-form">
-    <h2 style="margin-top:0">{{ t('housebook.legal_intro_title') }}</h2>
-    <p class="small muted">{{ t('housebook.legal_body') }}</p>
-    <ul class="legal-list small">
-      <li>{{ t('housebook.legal_paper') }}</li>
-      <li>{{ t('housebook.legal_inspection') }}</li>
-    </ul>
-    <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
-    <div class="actions">
-      <button class="btn" type="button" data-housebook-legal-skip>{{ t('housebook.legal_intro_skip') }}</button>
-      <button class="btn primary" type="button" data-housebook-legal-ack>{{ t('housebook.legal_intro_ack') }}</button>
-    </div>
-  </div>
-</dialog>
-
 <dialog id="housebook-pdf-dialog" class="csv-export-dialog">
   <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
     <h2 style="margin-top:0">{{ t('housebook.pdf_export_title') }}</h2>
@@ -178,22 +165,4 @@
   </form>
 </dialog>
 
-<script>
-(function () {
-  var KEY = "ubyhost_housebook_legal_v1";
-  var intro = document.getElementById("housebook-legal-intro");
-  function dismissIntro() {
-    try { localStorage.setItem(KEY, "1"); } catch (e) {}
-    if (intro && typeof intro.close === "function") intro.close();
-  }
-  if (intro) {
-    var seen = false;
-    try { seen = localStorage.getItem(KEY) === "1"; } catch (e) {}
-    if (!seen && typeof intro.showModal === "function") intro.showModal();
-    intro.querySelectorAll("[data-housebook-legal-ack], [data-housebook-legal-skip]").forEach(function (btn) {
-      btn.addEventListener("click", dismissIntro);
-    });
-  }
-})();
-</script>
 {% endblock %}

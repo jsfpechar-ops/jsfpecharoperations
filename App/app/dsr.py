@@ -39,7 +39,7 @@ def one_month_later(iso: str) -> str:
 
 def list_for_owner(owner_user_id: Optional[int]) -> List[Any]:
     return db.query(
-        "SELECT * FROM data_subject_request WHERE owner_user_id IS ? "
+        f"SELECT * FROM data_subject_request WHERE {db.null_safe_eq('owner_user_id')} "
         "ORDER BY (status IN ('open','extended')) DESC, due_at, id",
         (owner_user_id,),
     )
@@ -114,7 +114,7 @@ def guest_export(guest_id: int) -> Optional[Dict[str, Any]]:
     # "id=N" and the guest form writes "guest=N", so all three are matched.
     by_id, by_guest, by_form = f"guest_id={guest_id}", f"id={guest_id}", f"guest={guest_id}"
     audit_rows = db.query(
-        "SELECT at, actor, action, detail FROM audit WHERE owner_user_id IS ? AND ("
+        f"SELECT at, actor, action, detail FROM audit WHERE {db.null_safe_eq('owner_user_id')} AND ("
         "detail = ? OR detail LIKE ? "
         "OR (action LIKE 'guest\\_%' ESCAPE '\\' AND (detail = ? OR detail LIKE ?)) "
         "OR (action = 'guest_form_saved' AND (detail = ? OR detail LIKE ?))"

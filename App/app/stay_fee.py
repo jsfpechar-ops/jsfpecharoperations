@@ -232,7 +232,9 @@ def guest_period(guest, reservation, first: date, last: date) -> Optional[Dict[s
     elif liable:
         status = "liable"
     reason = guest["fee_host_reason"] or ""
-    if guest.get("fee_host_reason_enc"):
+    # A row from the db helpers already carries the decrypted reason; decrypting
+    # it a second time per guest and period was most of the list page's work.
+    if guest.get("fee_host_reason_enc") and not db.is_decrypted(guest):
         reason = db.decrypt_field(guest["fee_host_reason_enc"]) or reason
     return {
         "guest_id": guest["id"],
@@ -304,8 +306,12 @@ def property_period(
     first, last = period_bounds(chosen, month)
     rate = int(apartment["stay_fee_rate_czk"]) if rate is None else int(rate)
     lines: List[Dict[str, Any]] = []
+    # Counted in the same pass so the pages need not read (and decrypt) the
+    # period's guests a second time for unsigned_stays().
+    unsigned = 0
     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
         if not reporting.guest_has_signature(row):
+            unsigned += 1
             continue
         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
                              first, last)
@@ -336,6 +342,7 @@ def property_period(
         "total_czk": liable * rate,
         "adjustment_bed_days": 0,
         "adjustments": [],
+        "unsigned_guests": unsigned,
     }
     return _apply_adjustments(period, month)
 
@@ -361,7 +368,7 @@ def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:
 def owner_periods(owner_user_id, month: date) -> List[Dict[str, Any]]:
     """The list page: active properties, plus disabled ones that still have a sealed period."""
     rows = db.query(
-        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
+        f"SELECT * FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
         "AND (stay_fee_rate_czk > 0 OR id IN ("
         "SELECT apartment_id FROM stay_fee_filing WHERE superseded_at IS NULL)) "
         "ORDER BY internal_name, id",
@@ -451,7 +458,23 @@ def _period_line_issues(apartment, period) -> List[str]:
     return issues
 
 
-def unsigned_stays(apartment_id: int, first: date, last: date) -> int:
+def unsigned_stays(
+    apartment_id: int, first: date, last: date, period: Optional[Dict[str, Any]] = None
+) -> int:
+    """Guests in the period with no signature yet (they are left out of the fee).
+
+    ``period`` is the live ``property_period`` for the same property and dates
+    when the caller has it; its count comes from the same rows, so no second
+    read is needed.
+    """
+    if (
+        period is not None
+        and "unsigned_guests" in period
+        and period.get("first") == first
+        and period.get("last") == last
+        and period["apartment"]["id"] == apartment_id
+    ):
+        return period["unsigned_guests"]
     rows = db.query(
         "SELECT g.* FROM guest g JOIN reservation r ON r.id = g.reservation_id "
         "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "

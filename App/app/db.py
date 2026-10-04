@@ -1,21 +1,90 @@
-"""SQLite access layer plus at-rest encryption for UbyPort passwords."""
+"""SQLite access layer plus at-rest encryption of secrets and guest fields."""
 from __future__ import annotations
 
 import base64
+import fcntl
 import hashlib
+import json
+import logging
+import os
+import re
 import sqlite3
+import threading
+import time
+import weakref
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
 from . import config
 
+log = logging.getLogger("ubyhost.db")
 _current_owner_id: ContextVar[Optional[int]] = ContextVar("ubyhost_owner_id", default=None)
 # (user_id, username, impersonator_id) of whoever is acting in this request.
 _current_actor: ContextVar[Optional[tuple]] = ContextVar("ubyhost_actor", default=None)
+
+
+class RequestStats:
+    """What one request cost the database (WP13, review 7.3.4).
+
+    ``queries`` counts statements run on the request's connections, without
+    the connection PRAGMAs and the BEGIN/COMMIT around a transaction.
+    ``db_seconds`` is wall time inside the helpers below, connection opening
+    included; for ``cursor()``/``immediate()`` it is the whole block.
+    ``lock_seconds`` is the time ``BEGIN IMMEDIATE`` waited for the write lock.
+
+    The object is mutable on purpose: a sync route runs in a worker thread with
+    a *copy* of the request's context, so the copy has to point at the same
+    object for the middleware to read the totals afterwards.
+    """
+
+    __slots__ = ("queries", "db_seconds", "lock_seconds")
+
+    def __init__(self) -> None:
+        self.queries = 0
+        self.db_seconds = 0.0
+        self.lock_seconds = 0.0
+
+
+_request_stats: ContextVar[Optional[RequestStats]] = ContextVar(
+    "ubyhost_request_stats", default=None
+)
+# "--" is how SQLite reports a statement run inside a trigger.
+_UNCOUNTED_PREFIXES = ("PRAGMA", "BEGIN", "COMMIT", "ROLLBACK", "--")
+
+
+def start_request_stats() -> RequestStats:
+    """Give the current context a fresh counter and return it."""
+    stats = RequestStats()
+    _request_stats.set(stats)
+    return stats
+
+
+def current_request_stats() -> Optional[RequestStats]:
+    return _request_stats.get()
+
+
+def _count_statement(statement: str) -> None:
+    stats = _request_stats.get()
+    if stats is not None and not statement.lstrip().upper().startswith(_UNCOUNTED_PREFIXES):
+        stats.queries += 1
+
+
+@contextmanager
+def _timed():
+    stats = _request_stats.get()
+    if stats is None:
+        yield
+        return
+    started = time.perf_counter()
+    try:
+        yield
+    finally:
+        stats.db_seconds += time.perf_counter() - started
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -568,6 +637,25 @@ CREATE TABLE IF NOT EXISTS data_subject_request (
     updated_at          TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_dsr_owner_status ON data_subject_request (owner_user_id, status, due_at);
+
+-- WP12: one row per account and lifecycle tip that went out, so no tip is sent
+-- twice. Kept apart from email_outbox, which is purged after 14 days.
+CREATE TABLE IF NOT EXISTS lifecycle_mail_sent (
+    user_account_id INTEGER NOT NULL REFERENCES user_account(id) ON DELETE CASCADE,
+    kind            TEXT NOT NULL,
+    sent_at         TEXT NOT NULL,
+    PRIMARY KEY (user_account_id, kind)
+);
+
+-- WP12: addresses that refused a kind of optional mail (scope 'onboarding').
+-- Only a keyed hash of the normalised address is kept, never the address and
+-- never an account id, so the refusal outlives a deleted workspace.
+CREATE TABLE IF NOT EXISTS mail_suppression (
+    email_hash TEXT NOT NULL,
+    scope      TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (email_hash, scope)
+);
 """
 
 
@@ -575,13 +663,25 @@ def utcnow() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(config.DB_PATH), timeout=30, isolation_level=None)
+def _open(factory=sqlite3.Connection, check_same_thread: bool = True) -> sqlite3.Connection:
+    conn = sqlite3.connect(
+        str(config.DB_PATH),
+        timeout=30,
+        isolation_level=None,
+        factory=factory,
+        check_same_thread=check_same_thread,
+    )
     try:
         config.DB_PATH.chmod(0o600)
     except OSError:
         pass
     conn.row_factory = sqlite3.Row
+    if factory is _ThreadConnection or _request_stats.get() is not None:
+        # WP13: count statements per request. A shared per-thread connection
+        # (WP14) outlives the request that opened it, so it always carries the
+        # callback; _count_statement does nothing outside a request. A private
+        # connection only gets it inside a request.
+        conn.set_trace_callback(_count_statement)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
     # Overwrite freed pages instead of leaving the old bytes behind. Without
@@ -591,41 +691,235 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
-@contextmanager
-def cursor():
-    conn = connect()
+def connect() -> sqlite3.Connection:
+    """A new connection of the caller's own, which the caller must close.
+
+    The helpers below do not use this: they share one connection per thread
+    (``_thread_conn``). It stays for the schema setup and for code that needs a
+    connection outside the shared one.
+    """
+    return _open()
+
+
+# --- one connection per thread ---------------------------------------------
+#
+# Opening a connection and running its three PRAGMAs cost far more than the
+# query it was opened for, and every helper call used to do it. Each thread now
+# keeps one connection and reuses it. Bound to the thread, not the request:
+# FastAPI runs a request's sync dependencies and endpoint in pool threads that
+# need not be the same one, and the scheduler has its own threads.
+#
+# Transaction semantics are unchanged. Connections are in autocommit mode
+# (isolation_level=None), so a helper call is its own statement-level
+# transaction, and cursor()/immediate() open an explicit one that is always
+# committed or rolled back before the block returns. No transaction is ever
+# left open on a shared connection; _check_idle enforces it.
+
+
+class _ThreadConnection(sqlite3.Connection):
+    """A shared per-thread connection (a subclass only so it can be weakly referenced)."""
+
+
+_local = threading.local()
+_registry_lock = threading.Lock()
+# Every live shared connection, so shutdown can close them. Weak, so a pool
+# thread that exits takes its connection with it.
+_registry: "weakref.WeakSet[_ThreadConnection]" = weakref.WeakSet()
+# Bumped by close_connections(); a thread whose cached connection is from an
+# older generation opens a new one.
+_generation = 0
+
+
+def _file_identity(path: str) -> Optional[tuple]:
+    """Which file ``path`` is now, so a replaced or deleted database is noticed."""
     try:
-        cur = conn.cursor()
-        cur.execute("BEGIN")
+        stat = os.stat(path)
+    except OSError:
+        return None
+    return (stat.st_dev, stat.st_ino)
+
+
+def _discard(conn: sqlite3.Connection) -> None:
+    with _registry_lock:
+        _registry.discard(conn)
+    try:
+        conn.close()
+    except sqlite3.Error:
+        pass
+
+
+def _drop_thread_conn() -> None:
+    cached = getattr(_local, "conn", None)
+    _local.conn = None
+    if cached is not None:
+        _discard(cached[0])
+
+
+def _thread_conn() -> sqlite3.Connection:
+    """This thread's connection to ``config.DB_PATH``, opened on first use.
+
+    Keyed by the database path and the file behind it: a test (or a restore)
+    that points DB_PATH elsewhere, or replaces the file, gets a fresh
+    connection instead of one still reading the old file.
+    """
+    path = str(config.DB_PATH)
+    cached = getattr(_local, "conn", None)
+    if cached is not None:
+        conn, cached_path, identity, generation = cached
+        if (
+            cached_path == path
+            and generation == _generation
+            and identity is not None
+            and _file_identity(path) == identity
+        ):
+            if conn.in_transaction and not getattr(_local, "depth", 0):
+                # Something left a transaction open outside a block. Never let
+                # it swallow the next caller's writes.
+                log.error("db: shared connection had an open transaction; rolled back")
+                if not _rollback(conn):
+                    return _thread_conn()
+            return conn
+        _drop_thread_conn()
+    conn = _open(factory=_ThreadConnection, check_same_thread=False)
+    with _registry_lock:
+        _registry.add(conn)
+    _local.conn = (conn, path, _file_identity(path), _generation)
+    return conn
+
+
+def _rollback(conn: sqlite3.Connection) -> bool:
+    """Roll back an open transaction. False when the connection had to be dropped."""
+    try:
+        if conn.in_transaction:
+            conn.execute("ROLLBACK")
+    except sqlite3.Error:
+        log.exception("db: rollback failed; dropping the connection")
+    if conn.in_transaction:
+        _drop_if_cached(conn)
+        return False
+    return True
+
+
+def _drop_if_cached(conn: sqlite3.Connection) -> None:
+    cached = getattr(_local, "conn", None)
+    if cached is not None and cached[0] is conn:
+        _drop_thread_conn()
+    else:
+        _discard(conn)
+
+
+def _check_idle(conn: sqlite3.Connection) -> None:
+    """A helper call must not leave a transaction open on the shared connection."""
+    if conn.in_transaction:
+        _rollback(conn)
+        raise RuntimeError("a database helper left a transaction open; it was rolled back")
+
+
+@contextmanager
+def _helper_conn():
+    """The connection a one-statement helper runs on.
+
+    Normally the thread's shared connection. Inside a cursor()/immediate()
+    block on the same thread a helper gets a connection of its own, exactly as
+    before connections were shared, so a stray helper call never becomes part
+    of (or commits) the block's transaction.
+    """
+    # WP13: the whole helper call counts as database time for the request.
+    with _timed():
+        if getattr(_local, "depth", 0):
+            conn = _open()
+            try:
+                yield conn
+            finally:
+                conn.close()
+            return
+        conn = _thread_conn()
+        try:
+            yield conn
+        finally:
+            _check_idle(conn)
+
+
+@contextmanager
+def _transaction(begin: str):
+    # WP13: the whole block counts as database time for the request.
+    with _timed():
+        with _transaction_inner(begin) as cur:
+            yield cur
+
+
+@contextmanager
+def _transaction_inner(begin: str):
+    nested = bool(getattr(_local, "depth", 0))
+    # A block opened inside another block on the same thread gets its own
+    # connection, as every block did before connections were shared. (It will
+    # wait on the outer block's lock if it writes, exactly as it always did.)
+    conn = _open() if nested else _thread_conn()
+    cur = conn.cursor()
+    try:
+        # WP13: lock_ms is the wait for the write lock in BEGIN IMMEDIATE.
+        stats = _request_stats.get() if begin == "BEGIN IMMEDIATE" else None
+        waited_from = time.perf_counter()
+        cur.execute(begin)
+        if stats is not None:
+            stats.lock_seconds += time.perf_counter() - waited_from
+        if not nested:
+            _local.depth = 1
         try:
             yield cur
-            cur.execute("COMMIT")
-        except Exception:
-            cur.execute("ROLLBACK")
+        except BaseException:
+            _rollback(conn)
             raise
+        try:
+            cur.execute("COMMIT")
+        except BaseException:
+            _rollback(conn)
+            raise
+        _check_idle(conn)
     finally:
-        conn.close()
+        cur.close()
+        if nested:
+            conn.close()
+        else:
+            _local.depth = 0
+
+
+@contextmanager
+def cursor():
+    """A deferred transaction on this thread's connection: committed or rolled back."""
+    with _transaction("BEGIN") as cur:
+        yield cur
 
 
 @contextmanager
 def immediate():
     """Like cursor(), but takes the write lock before the first read."""
-    conn = connect()
-    try:
-        cur = conn.cursor()
-        cur.execute("BEGIN IMMEDIATE")
+    with _transaction("BEGIN IMMEDIATE") as cur:
+        yield cur
+
+
+def close_connections() -> None:
+    """Close every shared connection (shutdown, and between tests).
+
+    Threads that run again afterwards open a new one on first use.
+    """
+    global _generation
+    with _registry_lock:
+        _generation += 1
+        conns = list(_registry)
+        _registry.clear()
+    _local.conn = None
+    for conn in conns:
         try:
-            yield cur
-            cur.execute("COMMIT")
-        except Exception:
-            cur.execute("ROLLBACK")
-            raise
-    finally:
-        conn.close()
+            conn.close()
+        except sqlite3.Error:
+            pass
 
 
 # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
 # existing database untouched, so every later column has to be added by hand.
+# Frozen since WP18: this list is part of the baseline (schema version 1). A new
+# column is a numbered file in app/migrations instead (see init_db).
 ADDED_COLUMNS = (
     ("user_account", "totp_secret_enc", "TEXT"),
     ("user_account", "totp_enabled", "INTEGER NOT NULL DEFAULT 0"),
@@ -710,6 +1004,34 @@ ADDED_COLUMNS = (
     ("guest", "fee_host_reason_enc", "TEXT"),
     ("guest", "fee_host_reason_reference", "TEXT"),
     ("submission", "retried_at", "TEXT"),
+    # WP23: when the filing watchdog mailed the host that this stay may miss
+    # its police deadline. Set once; the host is warned once per stay.
+    ("reservation", "at_risk_mailed_at", "TEXT"),
+    # WP23: a guest the host filed by hand in the UbyPort web application. The
+    # guest is then ``sent`` like any filed guest, so every "already filed"
+    # guard holds; these columns say it was by hand, when (UTC), with which
+    # receipt or reference, when the mark was made (for the 24 hour undo) and
+    # which state the undo restores.
+    ("guest", "manual_filed_at", "TEXT"),
+    ("guest", "manual_reference", "TEXT"),
+    ("guest", "manual_marked_at", "TEXT"),
+    ("guest", "manual_prev_state", "TEXT"),
+    # WP15: what the calendar server said last time, so an unchanged feed is
+    # neither downloaded in full (ETag / Last-Modified) nor parsed (body hash).
+    ("ical_feed", "etag", "TEXT"),
+    ("ical_feed", "last_modified", "TEXT"),
+    ("ical_feed", "body_sha256", "TEXT"),
+    ("ical_feed", "last_checked_at", "TEXT"),
+    # WP12: the host refused onboarding e-mails (never service mail). A sign-up
+    # WP adds the same two entries; a repeated entry is skipped, so either can
+    # land first.
+    ("user_account", "onboarding_emails_opt_out", "INTEGER NOT NULL DEFAULT 0"),
+    ("user_account", "onboarding_emails_opt_out_at", "TEXT"),
+    # WP16: more fields encrypted at rest (see ENCRYPTED_COLUMNS).
+    ("guest", "birth_date_enc", "TEXT"),
+    ("guest", "res_street_enc", "TEXT"),
+    ("guest", "res_city_enc", "TEXT"),
+    ("submission", "request_xml_enc", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
@@ -759,10 +1081,163 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
             columns[table].add(column)
 
 
+# Start-up work that must run in one process at a time (WP06): two uvicorn
+# workers and the scheduler worker boot together after every deploy. Without
+# this, two of them can both see a column missing and both ALTER TABLE, or both
+# insert the one-off settings row or the first administrator, and the loser
+# crashes on start. An flock on a file in DATA_DIR, so it also holds across
+# containers that share the volume. Reentrant within one process, because
+# init_db() takes it and the lifespan wraps init_db() in it as well.
+STARTUP_LOCK_NAME = "startup.lock"
+_startup_guard = threading.RLock()
+_startup_handle = None
+_startup_depth = 0
+
+
+@contextmanager
+def startup_lock():
+    global _startup_handle, _startup_depth
+    with _startup_guard:
+        if _startup_depth == 0:
+            config.ensure_data_dir()
+            handle = open(config.DATA_DIR / STARTUP_LOCK_NAME, "a+")
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX)
+            except BaseException:
+                handle.close()
+                raise
+            _startup_handle = handle
+        _startup_depth += 1
+        try:
+            yield
+        finally:
+            _startup_depth -= 1
+            if _startup_depth == 0:
+                _startup_handle.close()  # closing the descriptor releases the flock
+                _startup_handle = None
+
+
+# --- numbered migrations -------------------------------------------------
+#
+# Every schema change from WP18 on is a numbered SQL file in app/migrations,
+# ``NNNN_short_name.sql``, applied once, in order, and recorded in
+# schema_migrations. Version 1 is the baseline: SCHEMA plus ADDED_COLUMNS
+# above, which stay as they are (idempotent, run on every start) so a database
+# from any earlier release still reaches the baseline first. Do not add to
+# SCHEMA or ADDED_COLUMNS any more; write the next numbered file instead.
+# A database that predates this table is detected by not having a baseline row
+# and is marked as at the baseline once the idempotent pass has run.
+
+MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
+BASELINE_VERSION = 1
+_MIGRATION_NAME = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
+
+_MIGRATIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version    INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL,
+    applied_at TEXT NOT NULL
+)
+"""
+
+
+def migration_files(directory: Optional[Path] = None) -> List[tuple]:
+    """``(version, name, path)`` for every migration file, in version order."""
+    folder = directory or MIGRATIONS_DIR
+    found: List[tuple] = []
+    if not folder.is_dir():
+        return found
+    for path in folder.iterdir():
+        match = _MIGRATION_NAME.match(path.name)
+        if not match:
+            continue
+        version = int(match.group(1))
+        if version <= BASELINE_VERSION:
+            raise RuntimeError(
+                f"migration {path.name}: versions up to {BASELINE_VERSION} are the baseline"
+            )
+        found.append((version, match.group(2), path))
+    found.sort()
+    versions = [version for version, _name, _path in found]
+    if len(versions) != len(set(versions)):
+        raise RuntimeError("two migration files share a version number")
+    return found
+
+
+def _statements(script: str) -> List[str]:
+    """Split a migration script into statements, the way sqlite3 itself does."""
+    statements: List[str] = []
+    buffer = ""
+    for line in script.splitlines(keepends=True):
+        buffer += line
+        if sqlite3.complete_statement(buffer):
+            if buffer.strip():
+                statements.append(buffer.strip())
+            buffer = ""
+    if buffer.strip() and not all(
+        part.strip().startswith("--") or not part.strip() for part in buffer.splitlines()
+    ):
+        raise RuntimeError("migration ends with an incomplete statement")
+    return statements
+
+
+def schema_version(conn: Optional[sqlite3.Connection] = None) -> int:
+    """The highest applied migration, 0 when the database has none recorded."""
+    own = conn is None
+    conn = conn or connect()
+    try:
+        exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'"
+        ).fetchone()
+        if not exists:
+            return 0
+        row = conn.execute("SELECT MAX(version) AS v FROM schema_migrations").fetchone()
+        return int(row["v"] or 0)
+    finally:
+        if own:
+            conn.close()
+
+
+def apply_migrations(conn: sqlite3.Connection, directory: Optional[Path] = None) -> List[int]:
+    """Apply every migration file not yet recorded; the versions applied.
+
+    Each file runs in its own write transaction together with its
+    schema_migrations row, so a failing file leaves nothing behind and is
+    retried on the next start. The check runs inside the lock, so two
+    processes starting together apply a file once.
+    """
+    applied: List[int] = []
+    for version, name, path in migration_files(directory):
+        script = path.read_text(encoding="utf-8")
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            done = conn.execute(
+                "SELECT 1 FROM schema_migrations WHERE version = ?", (version,)
+            ).fetchone()
+            if not done:
+                for statement in _statements(script):
+                    conn.execute(statement)
+                conn.execute(
+                    "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+                    (version, name, utcnow()),
+                )
+                applied.append(version)
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+    return applied
+
+
 def init_db() -> None:
     # The data directory has to exist before sqlite opens the database inside
     # it, and creating it is no longer an import-time side effect of config.
     config.ensure_data_dir()
+    with startup_lock():
+        _init_db_locked()
+
+
+def _init_db_locked() -> None:
     conn = connect()
     try:
         # Migrate before the schema, because SCHEMA also creates indexes over
@@ -775,6 +1250,20 @@ def init_db() -> None:
         _add_missing_columns(conn)
         _reset_reverted_stay_fee(conn)
         _resolve_legacy_resign_alerts(conn)
+        # The baseline is reached; record it, then apply the numbered files.
+        conn.execute(_MIGRATIONS_TABLE)
+        conn.execute(
+            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) "
+            "ON CONFLICT (version) DO NOTHING",
+            (BASELINE_VERSION, "baseline", utcnow()),
+        )
+        apply_migrations(conn)
+        # WP19: every apartment gets a readable guest link. After the
+        # migrations, because 0002 creates the apartment_slug table.
+        # Imported here: guest_slug uses this module's helpers.
+        from . import guest_slug
+
+        guest_slug.backfill(conn)
     finally:
         conn.close()
 
@@ -818,33 +1307,42 @@ class _HydratedRow(dict):
         return iter(dict.__getitem__(self, name) for name in self._order)
 
 
+def is_decrypted(row: Any) -> bool:
+    """True when ``row`` came from a helper that already decrypted its guest fields."""
+    return isinstance(row, _HydratedRow)
+
+
 def _hydrate(row: sqlite3.Row) -> Any:
-    """Merge decrypted guest fields into a row, leaving other rows untouched.
+    """Merge decrypted fields into a row, leaving other rows untouched.
 
     A row only qualifies when it actually selected one of the encrypted
-    columns, so the cost is paid by guest reads and nothing else.
+    columns, so the cost is paid by guest and submission reads and nothing
+    else. A query that wants a decrypted field selects its ``*_enc`` column
+    under its own name (``SELECT *`` does that).
     """
     keys = row.keys()
-    present = [name for name, enc in ENCRYPTED_GUEST_COLUMNS.items() if enc in keys]
+    present = [(name, enc) for name, enc in _ENCRYPTED_PAIRS if enc in keys]
     if not present:
         return row
     values: Dict[str, Any] = dict(row)
-    for name in present:
-        values[name] = decrypt_field(
-            row[ENCRYPTED_GUEST_COLUMNS[name]], row[name] if name in keys else None
-        )
+    for name, enc in present:
+        values[name] = decrypt_field(row[enc], row[name] if name in keys else None)
     return _HydratedRow(values, keys)
 
 
-def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
-    """Redirect a guest field to its encrypted column and blank the plaintext.
+def _write_values(table: str, values: Dict[str, Any]) -> Dict[str, Any]:
+    """Redirect an encrypted field to its ``*_enc`` column and blank the plaintext.
 
     Blanking on write means an existing row loses the copy the backfill has not
-    reached yet the first time anything saves it again.
+    reached yet the first time anything saves it again. Tables with no
+    encrypted fields pass through unchanged.
     """
+    columns = ENCRYPTED_COLUMNS.get(table)
+    if not columns:
+        return values
     out: Dict[str, Any] = {}
     for key, value in values.items():
-        enc = ENCRYPTED_GUEST_COLUMNS.get(key)
+        enc = columns.get(key)
         if enc is None:
             out[key] = value
         else:
@@ -854,11 +1352,9 @@ def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def query(sql: str, params: Iterable[Any] = ()) -> List[sqlite3.Row]:
-    conn = connect()
-    try:
-        return [_hydrate(row) for row in conn.execute(sql, tuple(params)).fetchall()]
-    finally:
-        conn.close()
+    with _helper_conn() as conn:
+        rows = conn.execute(sql, tuple(params)).fetchall()
+    return [_hydrate(row) for row in rows]
 
 
 def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
@@ -867,27 +1363,72 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
 
 
 def execute(sql: str, params: Iterable[Any] = ()) -> int:
-    conn = connect()
-    try:
-        cur = conn.execute(sql, tuple(params))
-        return cur.lastrowid
-    finally:
-        conn.close()
+    """Run one statement on this thread's connection; the number of rows it changed.
+
+    The row count rather than ``lastrowid`` (WP18): it means the same thing on
+    every engine, and ``INSERT ... ON CONFLICT DO NOTHING`` answers 0 when the
+    row was already there. Use ``insert()`` for a new row's id. The row count is
+    also independent of what the shared per-thread connection (WP14) inserted
+    before.
+    """
+    with _helper_conn() as conn:
+        return conn.execute(sql, tuple(params)).rowcount
 
 
-def insert(table: str, values: Dict[str, Any]) -> int:
-    if table == "guest":
-        values = _guest_write_values(values)
+def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
+    """Same as execute() since WP18; kept for the callers WP14 added."""
+    return execute(sql, params)
+
+
+# Tables keyed by something other than an ``id`` column. insert() cannot ask
+# them for ``RETURNING id``, and nobody needs an id back from them.
+_TABLES_WITHOUT_ID = frozenset({
+    "settings", "codelist", "invoice_sequence", "submission_claim",
+    "reservation_claim", "schema_migrations",
+})
+
+
+def insert(table: str, values: Dict[str, Any]) -> Optional[int]:
+    """INSERT one row; its id, from ``RETURNING id`` (SQLite 3.35+, Postgres).
+
+    ``None`` for the tables in ``_TABLES_WITHOUT_ID``.
+    """
+    values = _write_values(table, values)
     cols = ", ".join(values)
     marks = ", ".join("?" for _ in values)
-    return execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(values.values()))
+    sql = f"INSERT INTO {table} ({cols}) VALUES ({marks})"
+    if table in _TABLES_WITHOUT_ID:
+        execute(sql, list(values.values()))
+        return None
+    with _helper_conn() as conn:
+        # fetchall, not fetchone: the statement has to run to completion
+        # before the autocommit transaction it opened is committed (and before
+        # _helper_conn checks that the shared connection is idle again).
+        rows = conn.execute(sql + " RETURNING id", list(values.values())).fetchall()
+    return int(rows[0][0])
+
+
+# SQLite's ``IS`` is null-safe equality: ``owner_user_id IS ?`` matches NULL
+# when the parameter is None, where ``=`` would match nothing. Postgres spells
+# it ``IS NOT DISTINCT FROM`` (SQLite only learnt that spelling in 3.39, newer
+# than some hosts this still runs on). Every such comparison goes through this
+# helper, so moving engines changes this one constant.
+NULL_SAFE_EQ = "IS"
+
+
+def null_safe_eq(column: str) -> str:
+    """``column`` compared null-safely with one ``?`` parameter.
+
+    ``column`` is trusted SQL (a column name written in the code), never input.
+    Use plain ``column = ?`` where the value can never be None.
+    """
+    return f"{column} {NULL_SAFE_EQ} ?"
 
 
 def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
     if not values:
         return
-    if table == "guest":
-        values = _guest_write_values(values)
+    values = _write_values(table, values)
     sets = ", ".join(f"{k} = ?" for k in values)
     execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
 
@@ -903,33 +1444,28 @@ def update_if(
     """UPDATE the row only if it still holds ``expected``; True when it did.
 
     Compare-and-set for rows a background job may change between a request's
-    read and its write. ``expected`` values compare with IS, so None matches
-    NULL. ``extra_where`` is a trusted SQL fragment (never user input).
-    Guest values are encrypted exactly as in update().
+    read and its write. ``expected`` values compare null-safely
+    (``null_safe_eq``), so None matches NULL. ``extra_where`` is a trusted SQL fragment (never user input).
+    Encrypted fields are handled exactly as in update().
     """
     if not values:
         return False
-    if table == "guest":
-        values = _guest_write_values(values)
+    values = _write_values(table, values)
     sets = ", ".join(f"{k} = ?" for k in values)
-    clauses = ["id = ?"] + [f"{k} IS ?" for k in expected]
+    clauses = ["id = ?"] + [null_safe_eq(k) for k in expected]
     if extra_where:
         clauses.append(extra_where)
     sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)
     params = list(values.values()) + [row_id] + list(expected.values()) + list(extra_params)
-    conn = connect()
-    try:
+    with _helper_conn() as conn:
         return conn.execute(sql, params).rowcount == 1
-    finally:
-        conn.close()
 
 
 def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:
     """update(), but on a cursor from cursor()/immediate(), inside its transaction."""
     if not values:
         return
-    if table == "guest":
-        values = _guest_write_values(values)
+    values = _write_values(table, values)
     sets = ", ".join(f"{k} = ?" for k in values)
     cur.execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
 
@@ -995,21 +1531,141 @@ def audit(
     )
 
 
+def audit_retention(
+    data_class: str,
+    count: int,
+    cutoff: str,
+    *,
+    owner_user_id: Optional[int] = None,
+    dry_run: bool = False,
+) -> None:
+    """One audit line per deletion run: which class, how many, up to which cutoff.
+
+    Written on every run, a zero count included, so the audit log shows the
+    job ran and which cutoff it applied. Counts only, never personal data. The
+    scope goes into the detail, like the ``retention_run`` line, so the system
+    record does not hang on an account that a later run may delete.
+    """
+    insert(
+        "audit",
+        {
+            "at": utcnow(),
+            "actor": "system",
+            "action": "retention_delete",
+            "detail": json.dumps(
+                {
+                    "class": data_class,
+                    "count": int(count),
+                    "cutoff": cutoff,
+                    "dry_run": bool(dry_run),
+                    "owner_user_id": owner_user_id,
+                },
+                sort_keys=True,
+            ),
+        },
+    )
+
+
 # --- secret handling -----------------------------------------------------
+#
+# Everything encrypted at rest goes through one MultiFernet. Its keys, in
+# order: every key in UBYHOST_DATA_KEYS (the first one encrypts), then, while
+# the migration to those keys is not finished, the legacy key that is the
+# SHA-256 of the session secret. With no UBYHOST_DATA_KEYS the legacy key is
+# the only key, which is exactly how every release before this one worked.
 
-_fernet_cache: Dict[str, Fernet] = {}
+_fernet_cache: Dict[tuple, MultiFernet] = {}
 
 
-def _fernet() -> Fernet:
-    secret = config.secret_key()
-    cached = _fernet_cache.get(secret)
+class DataKeyError(RuntimeError):
+    """UBYHOST_DATA_KEYS / UBYHOST_DATA_KEY_LEGACY cannot give a usable key."""
+
+
+def _legacy_fernet(secret: str) -> Fernet:
+    digest = hashlib.sha256(secret.encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
+
+def _key_material() -> tuple:
+    keys = tuple(config.data_keys())
+    legacy = config.legacy_data_key_enabled()
+    if not keys and not legacy:
+        raise DataKeyError(
+            "UBYHOST_DATA_KEY_LEGACY=0 needs at least one key in UBYHOST_DATA_KEYS"
+        )
+    # Only touch the session secret when the legacy key is actually in use:
+    # config.secret_key() can mint a file, and a deployment that has finished
+    # the migration has no reason to depend on it for data any more.
+    secret = config.secret_key() if (legacy or not keys) else None
+    return keys, secret
+
+
+def _fernet() -> MultiFernet:
+    keys, secret = _key_material()
+    cache_key = (keys, secret)
+    cached = _fernet_cache.get(cache_key)
     if cached is not None:
         return cached
-    digest = hashlib.sha256(secret.encode("utf-8")).digest()
-    cached = Fernet(base64.urlsafe_b64encode(digest))
+    fernets: List[Fernet] = []
+    for position, key in enumerate(keys, start=1):
+        try:
+            fernets.append(Fernet(key.encode("ascii")))
+        except (ValueError, UnicodeEncodeError) as exc:
+            # Never echo the value: it is a secret even when it is malformed.
+            raise DataKeyError(
+                f"UBYHOST_DATA_KEYS entry {position} is not a valid Fernet key"
+            ) from exc
+    if secret is not None:
+        fernets.append(_legacy_fernet(secret))
+    cached = MultiFernet(fernets)
     _fernet_cache.clear()
-    _fernet_cache[secret] = cached
+    _fernet_cache[cache_key] = cached
     return cached
+
+
+def _primary_fernet() -> Fernet:
+    keys, secret = _key_material()
+    if keys:
+        _fernet()  # validates every key with a clear error
+        return Fernet(keys[0].encode("ascii"))
+    return _legacy_fernet(secret)
+
+
+def check_data_keys() -> None:
+    """Build the key list once, so a bad key stops the app at startup."""
+    _fernet()
+
+
+def token_is_current(token: Any) -> bool:
+    """True when ``token`` is encrypted under the key new data is written with.
+
+    Fernet tokens do not name their key, so this tries the primary key alone.
+    ``scripts/reencrypt.py`` uses it to skip work already done, which is what
+    makes a re-run resume instead of starting over.
+    """
+    primary = _primary_fernet()
+    try:
+        raw = token if isinstance(token, bytes) else str(token).encode("ascii")
+        primary.decrypt(raw)
+        return True
+    except (InvalidToken, ValueError):
+        return False
+
+
+def rotate_token(token: Any) -> Any:
+    """Re-encrypt ``token`` under the primary key; same type out as in.
+
+    Raises ``DecryptionError`` when no configured key can read it, so the
+    caller can count it instead of silently writing garbage back.
+    """
+    as_bytes = isinstance(token, bytes)
+    cipher = _fernet()
+    try:
+        raw = token if as_bytes else str(token).encode("ascii")
+        rotated = cipher.rotate(raw)
+    except (InvalidToken, ValueError) as exc:
+        raise DecryptionError("stored value could not be decrypted with any key") from exc
+    return rotated if as_bytes else rotated.decode("ascii")
 
 
 def encrypt_secret(plain: str) -> str:
@@ -1043,7 +1699,26 @@ ENCRYPTED_GUEST_COLUMNS = {
     "signature_png": "signature_png_enc",
     # Stay-fee exemption category (may be disability). Plaintext is a read fallback only.
     "fee_host_reason": "fee_host_reason_enc",
+    # WP16: birth date and the street and town of residence. Nothing filters or
+    # sorts on them in SQL; the stay-fee age rule reads them in Python. The
+    # residence country stays plain, like nationality: it is a country code,
+    # and the stay-fee "resident of this municipality" rule reads it.
+    "birth_date": "birth_date_enc",
+    "res_street": "res_street_enc",
+    "res_city": "res_city_enc",
 }
+
+# Every table with fields that are stored encrypted, plaintext name -> column.
+# The query helpers decrypt any row that selected one of these columns and the
+# write helpers encrypt on the way in, so callers keep using the plain name.
+ENCRYPTED_COLUMNS: Dict[str, Dict[str, str]] = {
+    "guest": ENCRYPTED_GUEST_COLUMNS,
+    # WP16: the request envelope carries every reported guest's passport number.
+    "submission": {"request_xml": "request_xml_enc"},
+}
+_ENCRYPTED_PAIRS = tuple(
+    (name, enc) for columns in ENCRYPTED_COLUMNS.values() for name, enc in columns.items()
+)
 
 
 def encrypt_blob(data: bytes) -> bytes:

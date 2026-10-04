@@ -84,6 +84,61 @@ PURPOSES: List[Tuple[str, str, str]] = [
     ("93", "Vízum ADS (občané Číny)", "ADS visa (Chinese nationals)"),
     ("99", "Ostatní", "Other"),
 ]
+# WP26: the purpose labels for the guest form's other languages. ``PURPOSES``
+# keeps its (code, cs, en) shape because the host app and UbyPort read it.
+PURPOSE_LABELS: Dict[str, Dict[str, str]] = {
+    "de": {
+        "00": "Medizinisch",
+        "01": "Geschäftlich",
+        "02": "Kulturell",
+        "03": "Besuch von Familie oder Freunden",
+        "04": "Einladung",
+        "05": "Dienstlich (politisch)",
+        "06": "Selbstständige Tätigkeit",
+        "07": "Sport",
+        "10": "Tourismus",
+        "11": "Studium (Ausbildung, Praktikum)",
+        "12": "Transit",
+        "13": "Flughafentransit",
+        "27": "Beschäftigung",
+        "93": "ADS-Visum (chinesische Staatsangehörige)",
+        "99": "Sonstiges",
+    },
+    "es": {
+        "00": "Médico",
+        "01": "Negocios",
+        "02": "Cultural",
+        "03": "Visita a familiares o amigos",
+        "04": "Invitación",
+        "05": "Oficial (político)",
+        "06": "Trabajo por cuenta propia",
+        "07": "Deporte",
+        "10": "Turismo",
+        "11": "Estudios (formación, prácticas)",
+        "12": "Tránsito",
+        "13": "Tránsito aeroportuario",
+        "27": "Empleo",
+        "93": "Visado ADS (ciudadanos chinos)",
+        "99": "Otro",
+    },
+    "fr": {
+        "00": "Médical",
+        "01": "Affaires",
+        "02": "Culture",
+        "03": "Visite familiale ou amicale",
+        "04": "Invitation",
+        "05": "Officiel (politique)",
+        "06": "Activité indépendante",
+        "07": "Sport",
+        "10": "Tourisme",
+        "11": "Études (formation, stage)",
+        "12": "Transit",
+        "13": "Transit aéroportuaire",
+        "27": "Emploi",
+        "93": "Visa ADS (ressortissants chinois)",
+        "99": "Autre",
+    },
+}
 PURPOSE_CODES = {code for code, _cs, _en in PURPOSES}
 DEFAULT_PURPOSE = "99"
 
@@ -140,13 +195,17 @@ def country_name(code: str, lang: str = "en") -> str:
     entry = country_codes().get((code or "").upper())
     if not entry:
         return code or ""
-    return entry.get("cs" if lang == "cs" else "en", code)
+    if lang in ("cs", "de", "es", "fr") and entry.get(lang):
+        return entry[lang]
+    return entry.get("en", code)
 
 
 def purpose_label(code: str, lang: str = "en") -> str:
     """The purpose as a person reads it — no police code, sentence case."""
     for c, cs, en in PURPOSES:
         if c == code:
+            if lang in PURPOSE_LABELS:
+                return PURPOSE_LABELS[lang].get(c) or en
             return cs if lang == "cs" else en
     return code or ""
 

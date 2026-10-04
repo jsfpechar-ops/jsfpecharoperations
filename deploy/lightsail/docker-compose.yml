@@ -18,6 +18,10 @@ services:
     environment:
       UBYHOST_DATA_DIR: /data
       PORT: "8080"
+      # WP06: uvicorn workers that only serve HTTP; jobs run in `worker`.
+      # WP32: the number comes from UBYHOST_WEB_WORKERS in .env (image default
+      # 2; 4 on the 8 GB / 2 vCPU server, see docs/LIGHTSAIL.md).
+      UBYHOST_ROLE: web
     volumes:
       - ubyhost-data:/data
     expose:
@@ -34,9 +38,124 @@ services:
       timeout: 5s
       retries: 3
       start_period: 25s
-    mem_limit: 768m
+    # WP32: sized for the 8 GB / 2 vCPU production server. Web 2g + worker 1g
+    # + litestream 256m + caddy 256m leaves over 4 GB for the OS, Docker and
+    # the page cache that serves SQLite reads. Each limit is a cap, not a
+    # reservation; a smaller server (staging) sets lower values in .env.
+    mem_limit: ${UBYHOST_WEB_MEM:-2g}
     # OPS-3: bound container logs so they cannot grow without limit. Rotated
     # lines are gone for good; capture anything needed during an incident.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - web
+
+  # WP06: the background scheduler (iCal sync, UbyPort sweep, deadline watch,
+  # mail outbox, photo sweep, retention) in its own process. Same image, env
+  # and volume as the web app; it holds DATA_DIR/scheduler.lock, so a second
+  # scheduler anywhere on this volume refuses to start.
+  worker:
+    image: ubyhost:local
+    pull_policy: never
+    restart: unless-stopped
+    # A UbyPort batch already on the wire must record its answer.
+    stop_grace_period: 90s
+    env_file: .env
+    environment:
+      UBYHOST_DATA_DIR: /data
+      UBYHOST_ROLE: worker
+    command: ["python", "-m", "app.worker"]
+    volumes:
+      - ubyhost-data:/data
+    # No HTTP server: the worker touches /data/worker.alive every 30 s while
+    # its scheduler runs.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/data/worker.alive') < 120 else 1)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    mem_limit: ${UBYHOST_WORKER_MEM:-1g}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # Built and migrated by the web service first; also creates the volume
+    # with the app's ownership on a fresh server.
+    depends_on:
+      ubyhost:
+        condition: service_healthy
+    networks:
+      - web
+
+  # WP05: continuous replication of the SQLite database to S3. Runs as the
+  # app's uid on the same volume, so it can read the database and write its
+  # .ubyhost.db-litestream metadata next to it. Only the variables it needs are
+  # passed in, not the whole .env (which holds the app's secret key).
+  litestream:
+    profiles: ["litestream"]
+    # Pinned by tag and digest (multi-arch index of litestream/litestream:0.5.17).
+    image: litestream/litestream:0.5.17@sha256:4b02b9859a6b6b4087d8b8944e15f7e984bd7957cba322bbeee38b0e27b9656a
+    restart: unless-stopped
+    user: "10001:10001"
+    command: ["replicate", "-config", "/etc/litestream.yml"]
+    # Litestream pushes the last WAL frames on SIGTERM (shutdown-sync-timeout 30s).
+    stop_grace_period: 40s
+    environment:
+      LITESTREAM_DB_PATH: ${UBYHOST_DB:-/data/ubyhost.db}
+      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID:-}
+      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY:-}
+      LITESTREAM_S3_BUCKET: ${LITESTREAM_S3_BUCKET:-}
+      LITESTREAM_S3_PATH: ${LITESTREAM_S3_PATH:-ubyhost/production}
+      LITESTREAM_S3_REGION: ${LITESTREAM_S3_REGION:-eu-central-1}
+      LITESTREAM_HEARTBEAT_URL: ${LITESTREAM_HEARTBEAT_URL:-}
+    volumes:
+      - ubyhost-data:/data
+      - ./litestream.yml:/etc/litestream.yml:ro
+    mem_limit: ${UBYHOST_LITESTREAM_MEM:-256m}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # The app creates the database (and the volume with uid 10001 ownership)
+    # on first start; Litestream must not start before that.
+    depends_on:
+      ubyhost:
+        condition: service_healthy
+    networks:
+      - web
+
+  # Step 0: the mock UbyPort for the staging server only. Started only when
+  # .env sets COMPOSE_PROFILES=staging; production never runs it. The image
+  # leaves mock_ubyport out (.dockerignore), so the code is mounted from the
+  # checkout. Staging .env points the app at it with
+  # UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc.
+  mock-ubyport:
+    profiles: ["staging"]
+    image: ubyhost:local
+    pull_policy: never
+    restart: unless-stopped
+    entrypoint: ["python", "-m", "mock_ubyport.server"]
+    environment:
+      MOCK_UBYPORT_HOST: 0.0.0.0
+      MOCK_UBYPORT_PORT: "8081"
+      MOCK_UBYPORT_STATE: /tmp/mock_state.json
+    volumes:
+      - ../../App/mock_ubyport:/app/mock_ubyport:ro
+    expose:
+      - "8081"
+    mem_limit: 128m
     logging:
       driver: json-file
       options:
@@ -60,6 +179,7 @@ services:
       - ./caddy/certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
+    mem_limit: ${UBYHOST_CADDY_MEM:-256m}
     # OPS-3: bound Caddy's container logs too. Caddy access logging itself stays
     # off (see caddy/Caddyfile.cloudflare), so this only bounds lifecycle noise.
     logging:

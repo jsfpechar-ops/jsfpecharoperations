@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from . import config, db, validation
+from . import config, db, guest_slug, validation
 
 
 def _dismissed_key(owner_user_id: int) -> str:
@@ -31,14 +31,14 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     """Return setup steps and the next action for a workspace."""
     entity_count = int(
         db.query_one(
-            "SELECT COUNT(*) AS n FROM legal_entity WHERE owner_user_id IS ?",
+            f"SELECT COUNT(*) AS n FROM legal_entity WHERE {db.null_safe_eq('owner_user_id')}",
             (owner_user_id,),
         )["n"]
     )
     ready_entity_count = int(
         db.query_one(
             "SELECT COUNT(*) AS n FROM legal_entity "
-            "WHERE owner_user_id IS ? AND TRIM(COALESCE(name, '')) != '' "
+            f"WHERE {db.null_safe_eq('owner_user_id')} AND TRIM(COALESCE(name, '')) != '' "
             "AND TRIM(COALESCE(seat, '')) != '' "
             "AND TRIM(COALESCE(ico, '')) != '' "
             "AND TRIM(COALESCE(contact_email, '')) != ''",
@@ -47,9 +47,12 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     )
     apartments = db.query(
         "SELECT a.*, "
-        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
+        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
+        # WP19 slug read here, so the finished panel needs no query per page (WP14 budget).
+        "  (SELECT s.slug FROM apartment_slug s "
+        "   WHERE s.apartment_id = a.id AND s.is_current = 1) AS permalink_slug "
         "FROM apartment a "
-        "WHERE a.archived_at IS NULL AND a.owner_user_id IS ? "
+        f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
         "ORDER BY a.id",
         (owner_user_id,),
     )
@@ -61,7 +64,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         db.query_one(
             "SELECT COUNT(*) AS n FROM reservation r "
             "JOIN apartment a ON a.id = r.apartment_id "
-            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL "
+            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL "
             "AND r.status = 'active' AND r.source = 'manual'",
             (owner_user_id,),
         )["n"]
@@ -130,13 +133,14 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
     finished = completed == len(steps)
     finish = None
     if finished and first_apartment:
-        token = first_apartment["permalink_token"] or ""
+        token = first_apartment["permalink_slug"] or guest_slug.link_key(first_apartment)
         policy = first_apartment["passport_photo_policy"] or "off"
         finish = {
             "apartment_id": first_apartment["id"],
             "name": first_apartment["internal_name"],
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{token}",
-            "permalink_token": token,
+            "permalink_token": first_apartment["permalink_token"] or "",
+            "link_key": token,
             "pin": first_apartment["permalink_pin"] or "",
             "passport_policy": policy,
             "communication_url": f"/apartments/{first_apartment['id']}#communication",

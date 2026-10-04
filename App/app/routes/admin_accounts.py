@@ -9,19 +9,24 @@ from datetime import datetime, timedelta, timezone
 import pyotp
 import qrcode
 from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from starlette.background import BackgroundTask
 
 from .. import (
     acceptance,
+    access,
+    admin_funnel,
+    admin_ops,
     auth,
     config,
     db,
     host_i18n,
     incidents,
+    lifecycle_mail,
     mail_notify,
     rate_limit,
     security,
+    signup,
     turnstile,
     workspace_export,
 )
@@ -190,6 +195,30 @@ def logout(request: Request):
     response = RedirectResponse("/login?notice=logged_out", status_code=303)
     auth.clear_session(response)
     return response
+
+
+@router.post("/account/onboarding-emails")
+async def onboarding_emails_submit(request: Request):
+    """The Settings toggle "Setup tips by e-mail" (WP12, legal position 2).
+
+    Only the account holder changes it: an admin previewing a workspace does
+    not choose for the host.
+    """
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    workspace = auth.workspace_user(request)
+    if account["role"] != "host" or (workspace and workspace["id"] != account["id"]):
+        return _back("/settings#settings-account")
+    form = await request.form()
+    wanted = str(form.get("enabled", "")) == "1"
+    if wanted:
+        lifecycle_mail.resubscribe(int(account["id"]), actor=account["username"])
+        key = "flash.accounts.onboarding_emails_on"
+    else:
+        lifecycle_mail.set_opt_out(int(account["id"]), True, actor=account["username"])
+        key = "flash.accounts.onboarding_emails_off"
+    return _back("/settings#settings-account", msg=_flash(request, key))
 
 
 def _pending_doc_rows(docs) -> list:
@@ -459,10 +488,24 @@ def _render_users(request: Request, **extra):
     users = db.query(
         "SELECT u.id, u.username, u.display_name, u.role, u.active, "
         "u.must_change_password, u.created_at, u.last_login_at, "
+        "u.email, u.email_verified_at, u.signup_at, u.signup_source, "
+        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
+        "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
+        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
+        "AND c.platform = 'meta' AND c.withdrawn_at IS NULL) AS meta_consent, "
         "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
         "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
     )
-    return render(request, "users.html", {"users": users, **extra})
+    return render(
+        request,
+        "users.html",
+        {
+            "users": users,
+            "signup_enabled": config.SIGNUP_ENABLED,
+            "ads_export_days": signup.GOOGLE_EXPORT_DAYS,
+            **extra,
+        },
+    )
 
 
 @router.post("/admin/users")
@@ -521,13 +564,25 @@ async def user_password_reset(user_id: int, request: Request):
 
 
 @router.post("/admin/users/{user_id}/impersonate")
-def user_impersonate(user_id: int, request: Request):
+async def user_impersonate(user_id: int, request: Request):
     account, guard = _require_admin(request)
     target = db.query_one(
         "SELECT * FROM user_account WHERE id = ? AND active = 1", (user_id,)
     )
     if guard or not target:
         return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
+    form = await request.form()
+    reason = auth.support_reason(_form_str(form, "reason"))
+    if reason is None:
+        return _back(
+            "/admin/users",
+            err=_flash(
+                request,
+                "flash.error.support_reason",
+                min=auth.SUPPORT_REASON_MIN,
+                max=auth.SUPPORT_REASON_MAX,
+            ),
+        )
     response = RedirectResponse("/", status_code=303)
     auth.attach_session(
         response,
@@ -535,7 +590,7 @@ def user_impersonate(user_id: int, request: Request):
     )
     db.audit(
         "impersonation_started",
-        f"admin={account['username']}",
+        f"admin={account['username']} reason={reason}",
         actor=account["username"],
         owner_user_id=user_id,
     )
@@ -575,9 +630,21 @@ def stop_impersonating(request: Request):
     account, guard = _require_admin(request)
     if guard:
         return guard
+    workspace = auth.workspace_user(request)
     response = RedirectResponse("/admin/users", status_code=303)
     auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
-    db.audit("impersonation_stopped", actor=account["username"], owner_user_id=account["id"])
+    # The host sees the end of a support session in their own Settings audit,
+    # not only the start; the admin's own workspace keeps its copy too.
+    owners = [account["id"]]
+    if workspace and workspace["id"] != account["id"]:
+        owners.insert(0, workspace["id"])
+    for owner_id in owners:
+        db.audit(
+            "impersonation_stopped",
+            "exit",
+            actor=account["username"],
+            owner_user_id=owner_id,
+        )
     return response
 
 
@@ -601,6 +668,43 @@ def incidents_admin(request: Request):
                 "SELECT id, username FROM user_account ORDER BY username"
             ),
         },
+    )
+
+
+@router.get("/admin/operations")
+def operations_admin(request: Request):
+    """Read-only cross-workspace health: filings, calendars, jobs, mail (WP10).
+
+    No guest field is read, so nothing on the page identifies a guest.
+    """
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    return render(request, "admin_operations.html", {"ops": admin_ops.overview()})
+
+
+@router.get("/admin/funnel")
+def funnel_admin(request: Request):
+    """One row per host account: how far each got, from existing rows (WP11)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    return render(request, "admin_funnel.html", {"funnel": admin_funnel.rows()})
+
+
+@router.get("/admin/funnel.csv")
+def funnel_admin_csv(request: Request):
+    """The funnel table as CSV, for pasting into a CRM. Host accounts only."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    data = admin_funnel.rows()
+    db.audit("export_funnel_csv", f"rows={len(data['rows'])}", actor=account["username"])
+    stamp = datetime.now().strftime("%Y%m%d")
+    return StreamingResponse(
+        admin_funnel.iter_csv(data),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="funnel-{stamp}.csv"'},
     )
 
 
@@ -666,6 +770,9 @@ def user_workspace_export(user_id: int, request: Request):
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     if not target:
         return _back("/admin/users", err=_flash(request, "flash.error.no_such_user"))
+    if not access.identity_visible(request):
+        # Inside a host's workspace the ZIP is as blocked here as in Settings.
+        return _back("/", err=_flash(request, "flash.error.identity_hidden_export"))
     path = workspace_export.build_workspace_zip(user_id)
     db.audit(
         "workspace_exported",

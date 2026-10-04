@@ -1,0 +1,16 @@
+{#- WP27: the "Privacy first" block on the landing, product and pricing pages.
+    It reuses the landing benefit list, so it adds no CSS. Every claim must stay
+    true for the code (tests/test_privacy_first.py); EN and CS live in
+    landing_i18n.py under privacy_first.*. -#}
+    <section class="landing-section benefits privacy-first" id="privacy-first" aria-labelledby="privacy-first-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('privacy_first.eyebrow') }}</p>
+        <h2 id="privacy-first-title">{{ t('privacy_first.title') }}</h2>
+        <p>{{ t('privacy_first.lede') }} <a href="/privacy?lang={{ lang }}">{{ t('privacy_first.link') }} →</a></p>
+      </div>
+      <ol class="benefit-list">
+        {% for name in ('law', 'cookies', 'trackers', 'photos') %}
+        <li><span>0{{ loop.index }}</span><div><h3>{{ t('privacy_first.' ~ name ~ '.title') }}</h3><p>{{ t('privacy_first.' ~ name ~ '.body') }}</p></div></li>
+        {% endfor %}
+      </ol>
+    </section>
