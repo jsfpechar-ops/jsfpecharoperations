@@ -274,14 +274,15 @@ def test_register_csv(owner):
     ent = _entity(owner)
     aid = _apartment(owner, ent, "R")
     _stay(aid, "2026-08-10", "2026-08-14", [{"nationality": "CZE"}, {"birth_date": "01012015"},
-                                            {"restricted_at": db.utcnow()}])
+                                            {"restricted_at": db.utcnow(), "surname": "=1+1"}])
     rows = stay_fee.register_rows(stay_fee.property_period(_apt(aid), AUG))
     assert rows[0]["doc_type"] == "Občanský průkaz" and rows[1]["doc_type"] == "Cestovní pas"
     assert rows[1]["exempt_reason"] == "mladší 18 let"
-    assert rows[2]["surname"] == "Test" and stay_fee.RESTRICTED_NOTE in rows[2]["exempt_reason"]
+    assert rows[2]["surname"] == "=1+1" and stay_fee.RESTRICTED_NOTE in rows[2]["exempt_reason"]
     data = stay_fee.register_csv(rows)
     assert data.startswith("﻿".encode()) and b";" in data
     assert data.decode("utf-8-sig").splitlines()[0].split(";") == [l for _, l in stay_fee.REGISTER_COLUMNS]
+    assert "'=1+1" in data.decode("utf-8-sig")
 
 
 def test_hlaseni_pdf(owner):

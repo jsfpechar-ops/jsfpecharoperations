@@ -72,6 +72,29 @@ def test_invoice_amount_parsing_and_item_cap():
     assert invoices.MAX_ITEMS == 4
 
 
+def test_more_than_four_line_items_cannot_be_issued():
+    from app import invoices
+
+    items = [
+        {
+            "description": f"Line {index}",
+            "quantity": 1,
+            "gross_haler": 10000,
+            "price_invalid": False,
+        }
+        for index in range(5)
+    ]
+    draft = {
+        "seller": {"name": "S", "seat": "P", "registry": "R", "dic": ""},
+        "buyer": {"name": "B"},
+        "vat_status": "non_payer",
+        "items": items,
+        "total_haler": 50000,
+    }
+    keys = [issue.message for issue in invoices.validate_for_issue(draft)]
+    assert keys == ["invoice.err.too_many_items"]
+
+
 def test_a_price_that_is_not_a_number_blocks_the_invoice():
     from app import invoices
 
