@@ -9,7 +9,7 @@ counsel.
 
 | Provider | Role | DPA mechanism | Region / account | Checked |
 | --- | --- | --- | --- | --- |
-| Amazon Web Services | Lightsail hosting, SES mail, optional S3 backups | AWS GDPR DPA, incorporated into the Service Terms | `eu-central-1`; record the Lightsail region and account id here | TODO |
+| Amazon Web Services | Lightsail hosting, SES mail, optional S3 backups | AWS GDPR DPA, incorporated into the Service Terms | `eu-central-1` (Frankfurt); Lightsail **General purpose 8 GB** (2 vCPU, 160 GB SSD); record AWS account id here | TODO |
 | Cloudflare | DNS, proxy, TLS, Turnstile, WAF, challenges | Customer DPA incorporated into the Self-Serve Subscription Agreement, with SCCs | Global network (a transfer; see the register) | TODO |
 | Render | Staging/demo hosting | [render.com/dpa](https://render.com/dpa), DPF-certified | Only used with synthetic data; never real Guest Data | TODO |
 | Google Drive | Optional off-site backup | **Workspace/Cloud only** — the Cloud Data Processing Addendum. A consumer account has no processor DPA | Retire unless it is a Workspace account (OPS-2) | TODO |

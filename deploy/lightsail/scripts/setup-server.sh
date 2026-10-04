@@ -75,7 +75,7 @@ Next steps (as ${DEPLOY_USER} or root):
   6. Optional — weekly Google Drive off-site copy (Sunday 04:00 UTC), after rclone config:
        (crontab -l 2>/dev/null; echo "0 4 * * 0 cd ${INSTALL_DIR}/deploy/lightsail && ./scripts/backup-gdrive.sh >> /home/${DEPLOY_USER}/ubyhost-gdrive.log 2>&1") | crontab -
 
-  7. Keep an eye on disk (1 GB Lightsail fills with photos, logs, and backups):
+  7. Keep an eye on disk (small bundles fill quickly with photos, logs, and backups):
        df -h
        docker system df
        ./scripts/status.sh
@@ -94,7 +94,8 @@ Log rotation for backup scripts (as root):
 ROTATE
 
 
-Recommended Lightsail plan for ~10 properties: Micro (1 GB RAM, \$7/mo).
+Production (ubyhost.com) uses General purpose 8 GB (2 vCPU, 160 GB SSD, ~\$44/mo).
+New try-outs can start on Micro (1 GB RAM, ~\$7/mo) — see docs/LIGHTSAIL.md.
 Point your domain A record at this instance's static IP before deploy.
 
 EOF

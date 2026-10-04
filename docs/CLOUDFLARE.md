@@ -11,7 +11,7 @@ This guide matches the Docker stack in `deploy/lightsail/`.
 | Item | Example |
 |------|---------|
 | Domain on Cloudflare | `ubyhost.example.com` or transfer an existing `.com` |
-| VPS with static IP | Lightsail Micro, Hetzner CX, … |
+| VPS with static IP | Lightsail (production: 8 GB general purpose), Hetzner CX, … |
 | This repo deployed | `deploy/lightsail/scripts/deploy.sh` |
 
 For a **`.cz`** domain, register at a Czech registrar (e.g. WEDOS) and point
@@ -429,7 +429,8 @@ Encrypt certificate automatically. You lose DDoS shielding and origin IP hiding.
 |------|----------------|
 | `.com` on Cloudflare | ~$10–11/year |
 | Cloudflare DNS + proxy (free plan) | $0 |
-| VPS (Lightsail Micro) | ~$7/month |
+| VPS (Lightsail production 8 GB) | ~$44/month |
+| VPS (Lightsail Micro try-out) | ~$7/month |
 | Origin certificate | $0 |
 
 No Route 53 hosted-zone fee, no registrar markup on renewal.
