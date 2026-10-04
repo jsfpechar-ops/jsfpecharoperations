@@ -4,7 +4,9 @@ Merge **in numeric order** `0001` → `0034`. Each row is a draft branch on `ori
 
 **Owner setup (secrets, AWS, healthchecks, gates):** see [OWNER_MANUAL_SETUP.md](OWNER_MANUAL_SETUP.md).
 
-**One-shot option:** merge branch `cursor/workplan-ordered-682e` → `main` once (all patches + owner manual doc). Same end state as merging `cursor/wp-stack-34-682e`.
+**One-shot option:** merge draft PR [#237](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/237) (`cursor/workplan-ordered-682e` → `main`). Same end state as merging through `cursor/wp-stack-34-682e` (tip includes owner manual, merge docs, and the WP33 query-budget test fix).
+
+**Per-patch drafts:** branches `cursor/wp-stack-01-682e` … `cursor/wp-stack-34-682e` are on `origin`. Each targets `main` and is cumulative; merge in table order (or close the per-patch drafts and merge #237 only).
 
 | # | WP | Draft branch | PR title |
 |---|-----|--------------|----------|
