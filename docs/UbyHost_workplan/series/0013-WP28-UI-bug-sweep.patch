@@ -1,0 +1,917 @@
+From ce6e813b467da4a8d11cee8792feb6ecf1db519e Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 10:44:42 +0200
+Subject: [PATCH 13/34] WP28: UI bug sweep
+
+Conflict resolution: cache keys in base.html, auth_base.html, public_legal_base.html and guest/base.html. app.css takes WP28's 20261004w; host.css, changed by WP25 and WP28, goes to 20261004x; guest/base.html keeps PR 230's stylesheet list (no guest-ticket.css, which main archived) with guest.css at 20261004w. host.css: kept WP25's house book, signature and report blocks and WP28's signature-block rules. One overflow fix: WP28's shared .panel.tight.scroll-x rule in app.css makes every wide table scroll, so WP25's duplicate .host-workspace .panel.tight.scroll-x rule became .host-workspace .panel.housebook-scroll { position: relative } and its comment names the shared rule; WP25's word-wrap floors for the register stay. reservation_detail.html: the hand-filing panels (WP23) are not in this order yet; WP23's step applies them with WP28's padding fix (class panel, not panel tight).
+---
+ App/app/host_i18n.py                      |  36 ++--
+ App/app/static/app.css                    |  15 +-
+ App/app/static/guest.css                  |   7 +
+ App/app/static/host.css                   |  27 ++-
+ App/app/templates/_components.html        |   9 +-
+ App/app/templates/apartment_form.html     |   4 +-
+ App/app/templates/auth_base.html          |   2 +-
+ App/app/templates/automation.html         |   2 +-
+ App/app/templates/base.html               |   4 +-
+ App/app/templates/guest/base.html         |   2 +-
+ App/app/templates/invoice_detail.html     |   3 +-
+ App/app/templates/public_legal_base.html  |   2 +-
+ App/app/templates/reservation_detail.html |   8 +-
+ App/app/templates/settings.html           |   2 +-
+ App/tests/test_wp28_geometry.py           | 225 ++++++++++++++++++++++
+ App/tests/test_wp28_ui_sweep.py           | 174 +++++++++++++++++
+ 16 files changed, 484 insertions(+), 38 deletions(-)
+ create mode 100644 App/tests/test_wp28_geometry.py
+ create mode 100644 App/tests/test_wp28_ui_sweep.py
+
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 2b4ea9e..3283840 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -240,7 +240,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "and guest e-mail stays off until delivery is configured."
+         ),
+         "onboarding.finish_line": "Finish these five steps and you can send guests their registration link.",
+-        "onboarding.finish_line_done": "All five checks are done — share the link below with your guests.",
++        "onboarding.finish_line_done": "All five checks are done. Share the guest link above with your guests.",
+         "onboarding.finish_kicker": "You are ready",
+         "onboarding.finish_strip": "Setup is done — your guest link and PIN are ready.",
+         "onboarding.finish_strip_link": "Show link",
+@@ -1007,6 +1007,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "confirm.purge_expired": "Permanently delete every guest record past the retention period? This cannot be undone.",
+         "confirm.delete_entity": "Delete this operator? This cannot be undone.",
+         "confirm.archive_entity": "Archive this operator? You can restore it later.",
++        "confirm.cancel_invoice": "Issue a correcting document that reverses this invoice? This cannot be undone.",
+         "confirm.remove_guest": "Remove this guest record?",
+         "confirm.archive_guest": "Archive this guest? The entry leaves your house book export until you restore it.",
+         "confirm.disconnect_feed": "Disconnect this calendar feed? Existing stays are preserved.",
+@@ -1336,13 +1337,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "invoice.detail.note_unpaid": "Waiting for the customer's payment. Mark it paid when the money arrives.",
+         "invoice.detail.note_storno": "This document cancels the original invoice. Keep both PDFs together.",
+         "invoice.detail.note_corrective": "This document corrects the original invoice. Keep both PDFs together.",
+-        "invoice.cancel_help": "Cancelling issues a new document that reverses this invoice. The original stays on file — this cannot be undone.",
++        "invoice.cancel_help": "Cancelling issues a new document that reverses this invoice. The original stays on file, and this cannot be undone.",
+         "invoice.send_confirm": "Send the invoice to %(email)s?",
+         "invoice.items_empty": "This invoice has no line items.",
+         "invoice.err.fix": "The invoice cannot be issued yet:",
+         "invoice.entity.label": "Supplier (operator)",
+         "invoice.edit_details": "Edit invoice details",
+-        "invoice.settings.title": "Invoice details — %(name)s",
++        "invoice.settings.title": "Invoice details: %(name)s",
+         "invoice.settings.lede": "Printed on every invoice this operator issues through UbyHost.",
+         "invoice.items_help": "Add as many lines as you need. For a VAT payer the unit price is without VAT; the rate is 21, 12 or 0 %.",
+         "invoice.col.description": "Description",
+@@ -1401,6 +1402,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "apartments.table.entity": "Legal operator",
+         "apartments.table.idub": "IDUB",
+         "apartments.table.calendars": "Calendars",
++        "apartment.form.calendars_count": "%(count)s calendars",
++        "apartment.form.calendars_count.one": "1 calendar",
++        "apartment.form.calendars_count.few": "%(count)s calendars",
+         "apartments.table.stays": "Stays",
+         "apartments.table.automation": "Automation",
+         "apartments.table.setup": "Setup readiness",
+@@ -1692,7 +1696,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "neodešlou a e-maily hostům zůstanou vypnuté, dokud není připraveno doručení."
+         ),
+         "onboarding.finish_line": "Dokončete těchto pět kroků a můžete hostům poslat odkaz k registraci.",
+-        "onboarding.finish_line_done": "Všech pět kontrol je hotových — odkaz níže pošlete hostům.",
++        "onboarding.finish_line_done": "Všech pět kontrol je hotových. Odkaz výše teď pošlete hostům.",
+         "onboarding.finish_kicker": "Jste připraveni",
+         "onboarding.finish_strip": "Nastavení je hotové — odkaz a PIN pro hosty jsou připravené.",
+         "onboarding.finish_strip_link": "Zobrazit odkaz",
+@@ -2463,6 +2467,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "confirm.purge_expired": "Trvale smazat všechny záznamy hostů po uplynutí zákonné doby uchovávání? Nelze vrátit.",
+         "confirm.delete_entity": "Smazat tohoto provozovatele? Nelze vrátit.",
+         "confirm.archive_entity": "Archivovat tohoto provozovatele? Později ho můžete obnovit.",
++        "confirm.cancel_invoice": "Vystavit opravný doklad, který tuto fakturu obrací? Tuto akci nelze vrátit.",
+         "confirm.remove_guest": "Odstranit tento záznam hosta?",
+         "confirm.archive_guest": "Archivovat tohoto hosta? Záznam zmizí z exportu domovní knihy, dokud ho neobnovíte.",
+         "confirm.disconnect_feed": "Odpojit tento kalendář? Existující pobyty zůstanou.",
+@@ -2787,13 +2792,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "invoice.detail.note_unpaid": "Čeká se na platbu odběratele. Po přijetí peněz ji označte jako zaplacenou.",
+         "invoice.detail.note_storno": "Tento doklad ruší původní fakturu. Uschovejte obě PDF spolu.",
+         "invoice.detail.note_corrective": "Tento doklad opravuje původní fakturu. Uschovejte obě PDF spolu.",
+-        "invoice.cancel_help": "Zrušení vystaví nový doklad, který tuto fakturu obrací. Původní zůstane v archivu — tuto akci nelze vrátit.",
++        "invoice.cancel_help": "Zrušení vystaví nový doklad, který tuto fakturu obrací. Původní zůstane v archivu a tuto akci nelze vrátit.",
+         "invoice.send_confirm": "Poslat fakturu na %(email)s?",
+         "invoice.items_empty": "Tato faktura nemá žádné položky.",
+         "invoice.err.fix": "Fakturu zatím nelze vystavit:",
+         "invoice.entity.label": "Dodavatel (provozovatel)",
+         "invoice.edit_details": "Upravit údaje pro faktury",
+-        "invoice.settings.title": "Údaje pro faktury — %(name)s",
++        "invoice.settings.title": "Údaje pro faktury: %(name)s",
+         "invoice.settings.lede": "Tisknou se na každou fakturu, kterou tento provozovatel v UbyHostu vystaví.",
+         "invoice.items_help": "Přidejte libovolný počet řádků. U plátce DPH je jednotková cena bez DPH; sazba je 21, 12 nebo 0 %.",
+         "invoice.col.description": "Popis",
+@@ -2852,6 +2857,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "apartments.table.entity": "Právní provozovatel",
+         "apartments.table.idub": "IDUB",
+         "apartments.table.calendars": "Kalendáře",
++        "apartment.form.calendars_count": "%(count)s kalendářů",
++        "apartment.form.calendars_count.one": "1 kalendář",
++        "apartment.form.calendars_count.few": "%(count)s kalendáře",
+         "apartments.table.stays": "Pobyty",
+         "apartments.table.automation": "Automatizace",
+         "apartments.table.setup": "Připravenost",
+@@ -2977,6 +2985,7 @@ _INTERFACE_STRINGS = {
+         "automation.sample_pdf": "Open annotated sample PDF",
+         "automation.or_use": "or use the",
+         "automation.full_setup": "full property setup",
++        "automation.full_setup_button": "Full property setup",
+         "automation.mark": "Facility abbreviation",
+         "automation.facility_name": "Facility name in UbyPort",
+         "automation.contact": "Contact at registration",
+@@ -3022,7 +3031,7 @@ _INTERFACE_STRINGS = {
+         "apartment.form.automation.summary.immediate": 'Immediately after all declared forms are complete',
+         "apartment.form.automation.summary.manual": 'Only when you press send',
+         "apartment.form.back": 'Back to properties',
+-        "apartment.form.back_list": 'Back to apartments',
++        "apartment.form.back_list": 'Back to properties',
+         "apartment.form.basics.title": 'Basic details',
+         "apartment.form.blocking_title": 'This apartment cannot report to UbyPort yet.',
+         "apartment.form.calendars.add_sync": 'Add and sync',
+@@ -3578,15 +3587,15 @@ _INTERFACE_STRINGS = {
+         "settings.retention.delete.one": "Delete %(count)s expired record",
+         "settings.retention.delete.few": "Delete %(count)s expired records",
+         "settings.retention.delete_help": "Keeping passport numbers beyond the legal period is itself a breach. Review this annually.",
+-        "settings.data.title": "Data protection",
++        "settings.data.title": "Retention status",
+         "settings.data.retention_last": "Last retention run",
+         "settings.data.dry_run": "dry run (nothing deleted)",
+         "settings.data.live": "live",
+         "settings.data.never": "Never run",
+         "settings.data.due": "Records due within 30 days",
+-        "settings.data.due_count": "%(count)s record(s) — open house book",
++        "settings.data.due_count": "%(count)s · open the house book",
+         "settings.data.dsr": "Open data requests",
+-        "settings.data.dsr_count": "%(count)s open — manage",
++        "settings.data.dsr_count": "%(count)s open · manage",
+         "settings.data.backup": "Last backup",
+         "settings.data.encrypted": "encrypted",
+         "settings.data.not_encrypted": "NOT encrypted",
+@@ -3662,6 +3671,7 @@ _INTERFACE_STRINGS = {
+         "automation.sample_pdf": "Otevřít anotovaný vzor PDF",
+         "automation.or_use": "nebo použijte",
+         "automation.full_setup": "úplné nastavení ubytování",
++        "automation.full_setup_button": "Úplné nastavení ubytování",
+         "automation.mark": "Zkratka ubytovacího zařízení",
+         "automation.facility_name": "Název zařízení v UbyPortu",
+         "automation.contact": "Kontaktní osoba při registraci",
+@@ -4263,15 +4273,15 @@ _INTERFACE_STRINGS = {
+         "settings.retention.delete.one": "Smazat %(count)s prošlý záznam",
+         "settings.retention.delete.few": "Smazat %(count)s prošlé záznamy",
+         "settings.retention.delete_help": "Uchovávání čísel pasů nad zákonnou dobu je samo porušením. Kontrolujte jednou ročně.",
+-        "settings.data.title": "Ochrana údajů",
++        "settings.data.title": "Stav uchovávání",
+         "settings.data.retention_last": "Poslední běh retence",
+         "settings.data.dry_run": "zkušební běh (nic se nemaže)",
+         "settings.data.live": "ostrý běh",
+         "settings.data.never": "Zatím neproběhlo",
+         "settings.data.due": "Záznamy s termínem do 30 dnů",
+-        "settings.data.due_count": "%(count)s záznamů — otevřít domovní knihu",
++        "settings.data.due_count": "%(count)s · otevřít domovní knihu",
+         "settings.data.dsr": "Otevřené žádosti o údaje",
+-        "settings.data.dsr_count": "%(count)s otevřených — spravovat",
++        "settings.data.dsr_count": "Otevřené: %(count)s · spravovat",
+         "settings.data.backup": "Poslední záloha",
+         "settings.data.encrypted": "šifrovaná",
+         "settings.data.not_encrypted": "NEšifrovaná",
+diff --git a/App/app/static/app.css b/App/app/static/app.css
+index 341a534..00dbdfa 100644
+--- a/App/app/static/app.css
++++ b/App/app/static/app.css
+@@ -945,6 +945,10 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
+ .row-primary-link { color: var(--ink); font-weight: 650; text-decoration: none; }
+ .clickable-row:hover .row-primary-link { color: var(--brand); }
+ .scroll-x { overflow-x: auto; }
++/* .panel.tight clips its corners with overflow: hidden, which outranks the
++   single-class .scroll-x and cut off the right-hand columns (row actions)
++   of every wide table instead of letting it scroll. */
++.panel.tight.scroll-x { overflow-x: auto; }
+ /* Eleven columns of legal record. The columns holding free text need a width
+    floor of their own, or the browser spends the room on the short ones and
+    folds every name onto three lines. Past that the table scrolls sideways. */
+@@ -1018,7 +1022,8 @@ label { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink-2)
+ label .opt { font-weight: 400; color: var(--faint); text-transform: none; }
+ 
+ input:not([type]), input[type=text], input[type=password], input[type=date], input[type=number],
+-input[type=email], input[type=url], input[type=file], select, textarea {
++input[type=email], input[type=url], input[type=file], input[type=tel],
++input[type=datetime-local], input[type=search]:not([data-command-input]), select, textarea {
+   width: 100%;
+   padding: 11px 13px;
+   border: 1px solid var(--line-2);
+@@ -1478,6 +1483,7 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
+ .metric-value { font-size: 21px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink); margin-top: 6px; }
+ .metric-value.small-value { font-size: 15px; font-weight: 600; }
+ .metric-value.deadline { font-size: 21px; font-weight: 700; }
++.metric-value.deadline.overdue { display: inline-block; }  /* a pill, not a full-width bar */
+ .metric-note { color: var(--muted); font-size: 13px; margin-top: 5px; }
+ 
+ /* The stay page has one clear action area. Secondary metadata editing stays
+@@ -1731,6 +1737,7 @@ details.raw pre {
+ 
+ .message-template {
+   white-space: pre-wrap;
++  overflow-wrap: anywhere;  /* the guest link is one long word on a phone */
+   padding: 14px;
+   border-radius: var(--radius-sm);
+   background: var(--surface-3);
+@@ -1750,6 +1757,9 @@ details.raw pre {
+ 
+ .err-text { color: var(--bad); }
+ .truncate { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++/* The calendar table shares its row with the connect form, so the feed URL
++   gives up width to keep the Remove button in view. */
++@media (min-width: 721px) { .feed-table .truncate { max-width: 200px; } }
+ @media (max-width: 720px) { .truncate { max-width: none; white-space: normal; overflow-wrap: anywhere; } }
+ 
+ .action-panel { margin-bottom: 18px; }
+@@ -2834,6 +2844,9 @@ input[type=number],
+ input[type=email],
+ input[type=url],
+ input[type=file],
++input[type=tel],
++input[type=datetime-local],
++input[type=search]:not([data-command-input]),
+ select,
+ textarea {
+   min-height: 42px;
+diff --git a/App/app/static/guest.css b/App/app/static/guest.css
+index e0944ea..493d699 100644
+--- a/App/app/static/guest.css
++++ b/App/app/static/guest.css
+@@ -1236,3 +1236,10 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
+ @media (prefers-reduced-motion: reduce) {
+   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+ }
++
++/* The privacy notice's cookie table: four columns do not fit a phone, so the
++   table scrolls inside its card instead of widening the whole page. */
++.scroll-x { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
++.scroll-x table { border-collapse: collapse; font-size: 13px; }
++.scroll-x th, .scroll-x td { padding: 6px 8px; text-align: left; vertical-align: top; }
++.scroll-x td:first-child { white-space: nowrap; }
+diff --git a/App/app/static/host.css b/App/app/static/host.css
+index d6e88a3..09aaa41 100644
+--- a/App/app/static/host.css
++++ b/App/app/static/host.css
+@@ -63,7 +63,10 @@
+ .host-workspace td { padding: 14px 16px; vertical-align: middle; }
+ .host-workspace th { padding: 12px 16px; }
+ .host-workspace .row-primary-link { font-weight: 700; }
+-.host-workspace .table-cards td, .host-workspace .guest-facts dd { overflow-wrap: anywhere; }
++/* break-word, not anywhere: anywhere lets a table shrink a column below its
++   longest word, which printed "Airbn b" and split e-mail addresses. */
++.host-workspace .table-cards td { overflow-wrap: break-word; }
++.host-workspace .guest-facts dd { overflow-wrap: anywhere; }
+ .host-workspace .mono { font-size: 12px; }
+ .host-local-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--line); padding: 0 0 14px; margin-bottom: 26px; }
+ .host-local-nav > a, .host-tools > summary { padding: 9px 12px; border-radius: 8px; color: var(--ink-secondary); text-decoration: none; font-size: 13px; font-weight: 650; min-height: 40px; cursor: pointer; }
+@@ -98,7 +101,7 @@
+ .host-workspace .guest-facts dt { font-size: 11px; color: var(--muted); }
+ .host-workspace .guest-facts dd { font-size: 13px; color: var(--ink); margin-top: 4px; }
+ .host-workspace .guest-card.placeholder { background: #fafbf8; border-style: dashed; }
+-.host-workspace .guest-card.placeholder .guest-card-head { border: 0; }
++.host-workspace .guest-card.placeholder .guest-card-head { border: 0; padding-bottom: 16px; }
+ .host-workspace .guest-card-note, .host-workspace .guest-card-action { margin: 12px 20px; }
+ .host-property-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
+ .host-property-card { background: white; padding: 20px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; display: flex; gap: 14px; align-items: center; }
+@@ -151,6 +154,7 @@
+   .host-workspace .btn, .host-workspace .btn.small { min-height: 44px; }
+   .host-property-grid { grid-template-columns: 1fr; }
+   .host-workspace .guest-card-head { padding: 15px; gap: 12px; }
++  .host-workspace .guest-card.placeholder .guest-card-head { padding-bottom: 15px; }
+   .host-workspace .guest-facts { padding: 15px; gap: 14px; }
+   .host-workspace .guest-facts .fact-wide { grid-column: 1 / -1; }
+   .host-workspace .detail-metric { padding: 12px; }
+@@ -293,12 +297,13 @@ body.host-workspace {
+   .host-workspace .list-filter .filter-actions-end { margin-left: 0; }
+ }
+ 
+-/* House book register (WP25). The workspace lets table cells break anywhere so
+-   card facts never overflow on a phone, but in the eleven-column register that
+-   let the browser shrink a column to one letter per line. Words stay whole
+-   here; the floors below keep each column readable and the panel scrolls
+-   sideways when the row is wider than the viewport. */
+-.host-workspace .panel.tight.scroll-x { overflow-x: auto; position: relative; }
++/* House book register (WP25). Workspace table cells may break long words
++   (break-word, WP28) so card facts never overflow on a phone; in the
++   eleven-column register even that let a column shrink too far. Words stay
++   whole here and the floors below keep each column readable. The sideways
++   scroll itself is the shared .panel.tight.scroll-x rule in app.css (WP28);
++   position: relative keeps the sr-only header from widening the page. */
++.host-workspace .panel.housebook-scroll { position: relative; }
+ .host-workspace .housebook-table td { overflow-wrap: normal; word-break: normal; }
+ .host-workspace .housebook-table th,
+ .host-workspace .housebook-table td { padding-left: 7px; padding-right: 7px; }
+@@ -378,3 +383,9 @@ body.host-workspace {
+   background: var(--canvas); color: var(--ink-secondary); border-color: var(--line);
+   cursor: not-allowed; opacity: 1; -webkit-text-fill-color: var(--ink-secondary);
+ }
++
++/* The operator signature block was an unstyled browser fieldset. */
++.host-workspace .signature-block { min-width: 0; margin: 0 0 16px; padding: 14px 16px 2px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
++.host-workspace .signature-block > legend { padding: 0 6px; color: var(--ink); font-size: 14px; font-weight: 650; }
++.host-workspace .signature-block .action-group { margin: 10px 0 14px; }
++.host-workspace .signature-block .action-group > label.btn { margin: 0; }
+diff --git a/App/app/templates/_components.html b/App/app/templates/_components.html
+index e0ed60d..3264f51 100644
+--- a/App/app/templates/_components.html
++++ b/App/app/templates/_components.html
+@@ -279,7 +279,7 @@
+           title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
+ {% endmacro %}
+ 
+-{% macro onboarding_finish(onboarding) %}
++{% macro onboarding_finish(onboarding, show_toggle=True) %}
+   {% if onboarding and onboarding.finished and onboarding.finish %}
+     {% set finish = onboarding.finish %}
+     <section class="onboarding-finish" aria-label="{{ t('onboarding.finish_title') }}">
+@@ -310,7 +310,10 @@
+       <div class="onboarding-finish-actions">
+         <a class="btn primary" href="{{ finish.communication_url }}">{{ t('onboarding.finish_open_communication') }}</a>
+         <a class="btn" href="/l/{{ finish.permalink_token }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
+-        {% if not onboarding.dismissed %}
++        {# On /onboarding the header meter already carries Skip / Reopen, so the
++           finish card leaves it out instead of printing the same button twice. #}
++        {% if not show_toggle %}
++        {% elif not onboarding.dismissed %}
+           <form method="post" action="/onboarding/dismiss">
+             <input type="hidden" name="return_to" value="{{ request.url.path }}">
+             <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
+@@ -398,7 +401,7 @@
+     </header>
+ 
+     {% if onboarding.finished %}
+-      {{ onboarding_finish(onboarding) }}
++      {{ onboarding_finish(onboarding, show_toggle=False) }}
+     {% elif onboarding.current %}
+       <div class="onboarding-now">
+         <div class="onboarding-now-label">
+diff --git a/App/app/templates/apartment_form.html b/App/app/templates/apartment_form.html
+index 6ab6701..7b674b5 100644
+--- a/App/app/templates/apartment_form.html
++++ b/App/app/templates/apartment_form.html
+@@ -27,7 +27,7 @@
+ <div class="host-property-grid">
+   {% for anchor, icon, key, hint in [('calendars', 'calendar', 'host.bookings', 'apartment.form.calendars.lede'), ('communication', 'link', 'nav.guest_links', ''), ('ubyport', 'report', 'host.reporting', ''), ('basics', 'entity', 'host.business', ''), ('stay-fee-settings', 'coins', 'host.fee', ''), ('address', 'property', 'host.property_details', '')] %}
+   <a class="host-property-card" href="#{{ anchor }}">{{ nav_icon(icon) }}<div><strong>{{ t(key) }}</strong>
+-    {% if anchor == 'calendars' %}<small>{{ feeds | length }} {{ t('apartments.table.calendars') | lower }}</small>{% endif %}
++    {% if anchor == 'calendars' %}<small>{{ tp('apartment.form.calendars_count', feeds | length) }}</small>{% endif %}
+     {% if anchor == 'basics' %}{% for entity in entities %}{% if entity.id == apartment.legal_entity_id %}<small>{{ entity.name }}</small>{% endif %}{% endfor %}{% endif %}
+     {% if anchor == 'stay-fee-settings' %}<small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small>{% endif %}
+   </div><span aria-hidden="true">→</span></a>
+@@ -467,7 +467,7 @@
+   <div>
+     {% if feeds %}
+     <div class="panel tight scroll-x">
+-      <table class="table-cards">
++      <table class="table-cards feed-table">
+         <thead><tr><th>{{ t('apartment.form.feed.name') }}</th><th>{{ t('apartment.form.feed.portal') }}</th><th>{{ t('apartment.form.feed.last_sync') }}</th><th>{{ t('apartment.form.feed.url') }}</th><th></th></tr></thead>
+         <tbody>
+         {% for feed in feeds %}
+diff --git a/App/app/templates/auth_base.html b/App/app/templates/auth_base.html
+index 15f94e9..a7e9bdb 100644
+--- a/App/app/templates/auth_base.html
++++ b/App/app/templates/auth_base.html
+@@ -10,7 +10,7 @@
+   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+-  <link rel="stylesheet" href="/static/app.css?v=20261004a">
++  <link rel="stylesheet" href="/static/app.css?v=20261004w">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+ </head>
+ <body class="auth-page">
+diff --git a/App/app/templates/automation.html b/App/app/templates/automation.html
+index 78e8c1c..c08ede9 100644
+--- a/App/app/templates/automation.html
++++ b/App/app/templates/automation.html
+@@ -130,7 +130,7 @@
+                   formmethod="post" formnovalidate>{{ t('automation.test') }}</button>
+           <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/refresh-codelists"
+                   formmethod="post" formnovalidate>{{ t('automation.refresh') }}</button>
+-          <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('automation.full_setup') }}</a>
++          <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('automation.full_setup_button') }}</a>
+         </div>
+         <p class="small muted">{{ t('automation.saved_credentials_help') }}</p>
+       </form>
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index 9f7312a..b2fa937 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -10,9 +10,9 @@
+   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+-  <link rel="stylesheet" href="/static/app.css?v=20261004a">
++  <link rel="stylesheet" href="/static/app.css?v=20261004w">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+-  {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261004w25">{% endif %}
++  {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261004x">{% endif %}
+ </head>
+ <body class="layout-host {{ 'host-workspace' if show_nav | default(true) }} {{ 'no-nav' if not (show_nav | default(true)) }}">
+ <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
+diff --git a/App/app/templates/guest/base.html b/App/app/templates/guest/base.html
+index 236f621..cb0955d 100644
+--- a/App/app/templates/guest/base.html
++++ b/App/app/templates/guest/base.html
+@@ -11,7 +11,7 @@
+   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261003a">
+-  <link rel="stylesheet" href="/static/guest.css?v=20261003d">
++  <link rel="stylesheet" href="/static/guest.css?v=20261004w">
+ </head>
+ <body>
+ <a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
+diff --git a/App/app/templates/invoice_detail.html b/App/app/templates/invoice_detail.html
+index 57ac870..569359c 100644
+--- a/App/app/templates/invoice_detail.html
++++ b/App/app/templates/invoice_detail.html
+@@ -136,7 +136,8 @@
+   <details class="panel danger-zone" id="cancel">
+     <summary>{{ t('invoice.cancel') }}</summary>
+     <p class="small muted">{{ t('invoice.cancel_help') }}</p>
+-    <form method="post" action="/invoices/{{ invoice.id }}/cancel">
++    <form method="post" action="/invoices/{{ invoice.id }}/cancel"
++          data-confirm data-confirm-message="{{ t('confirm.cancel_invoice') }}">
+       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+       <div class="field">
+         <label for="reason">{{ t('invoice.cancel_reason') }}</label>
+diff --git a/App/app/templates/public_legal_base.html b/App/app/templates/public_legal_base.html
+index 8b023d2..5430d2a 100644
+--- a/App/app/templates/public_legal_base.html
++++ b/App/app/templates/public_legal_base.html
+@@ -25,7 +25,7 @@
+   {#- landing.css first so app.css keeps the reading typography and the link
+       colour; it is here only for the shared header and footer. -#}
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+-  <link rel="stylesheet" href="/static/app.css?v=20261004a">
++  <link rel="stylesheet" href="/static/app.css?v=20261004w">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+ </head>
+ <body class="layout-host no-nav">
+diff --git a/App/app/templates/reservation_detail.html b/App/app/templates/reservation_detail.html
+index 65d9278..c7b9ffd 100644
+--- a/App/app/templates/reservation_detail.html
++++ b/App/app/templates/reservation_detail.html
+@@ -210,7 +210,7 @@
+         </div>
+         <div>
+           <dt>{{ t('stay.detail.guests.document') }}</dt>
+-          <dd><span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ (guest.doc_type or '') %}{{ t(doc_key) if t(doc_key) != doc_key else (guest.doc_type or '—') }} </span><span class="mono">{{ guest_identifier(guest.doc_number, guest.id) or '—' }}{% if guest.visa_number %}
++          <dd>{% if guest.doc_type %}<span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ guest.doc_type %}{{ t(doc_key) if t(doc_key) != doc_key else guest.doc_type }} </span>{% endif %}<span class="mono">{{ guest_identifier(guest.doc_number, guest.id) or '—' }}{% if guest.visa_number %}
+             <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest_identifier(guest.visa_number, guest.id)) }}</span>{% endif %}</span></dd>
+         </div>
+         <div>
+@@ -243,7 +243,7 @@
+       </dl>
+ 
+       {% if row.needs_verification %}
+-        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="inline verify-form guest-card-action">
++        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form guest-card-action">
+           <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+           <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
+           {% if row.has_passport_photo %}
+@@ -324,7 +324,9 @@
+     {% endif %}
+     <div class="detail-metric">
+       <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
+-      <div class="metric-value small-value">{{ progress_pill(progress.status, reservation.automation_mode) }}</div>
++      {# A cancelled or archived stay sends nothing, so "Waiting for guest"
++         would contradict the banner above; show the stay's own state. #}
++      <div class="metric-value small-value">{% if stay_inactive %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}</div>
+ 
+     </div>
+   </div>
+diff --git a/App/app/templates/settings.html b/App/app/templates/settings.html
+index 1a15018..921731c 100644
+--- a/App/app/templates/settings.html
++++ b/App/app/templates/settings.html
+@@ -128,7 +128,7 @@
+       </form>
+ 
+       <div class="panel" id="settings-data" style="margin-top:14px">
+-        <h2 style="margin-top:0">{{ t('settings.data.title') }}</h2>
++        <h3 style="margin-top:0">{{ t('settings.data.title') }}</h3>
+         <dl class="kv">
+           <dt>{{ t('settings.data.retention_last') }}</dt>
+           <dd>
+diff --git a/App/tests/test_wp28_geometry.py b/App/tests/test_wp28_geometry.py
+new file mode 100644
+index 0000000..ef2cd04
+--- /dev/null
++++ b/App/tests/test_wp28_geometry.py
+@@ -0,0 +1,225 @@
++"""WP28: computed geometry for the defects the UI sweep found in the demo.
++
++Markup cannot show that a button hangs out of its card or that a table hides
++its last column, so these load the seeded demo workspace in Chromium, in the
++style of tests/test_host_geometry.py. Skipped without Playwright unless
++UBYHOST_REQUIRE_BROWSER=1.
++"""
++import os
++import secrets
++import socket
++import threading
++import time
++
++import pytest
++
++REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
++if REQUIRE_BROWSER:
++    import playwright.sync_api as sync_api
++else:
++    sync_api = pytest.importorskip("playwright.sync_api")
++
++import uvicorn
++from fastapi.testclient import TestClient
++
++from app import auth, db, demo, reporting
++from app.main import app
++
++PASSWORD = "Sweep-Geometry-123"
++
++NO_SIDEWAYS_SCROLL = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
++
++
++def _free_port():
++    with socket.socket() as sock:
++        sock.bind(("127.0.0.1", 0))
++        return sock.getsockname()[1]
++
++
++@pytest.fixture(scope="module")
++def base():
++    db.init_db()
++    port = _free_port()
++    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
++    thread = threading.Thread(target=server.run, daemon=True)
++    thread.start()
++    deadline = time.time() + 15
++    while not server.started and time.time() < deadline:
++        time.sleep(0.05)
++    if not server.started:
++        pytest.fail("the test server did not start")
++    yield f"http://127.0.0.1:{port}"
++    server.should_exit = True
++    thread.join(timeout=5)
++
++
++@pytest.fixture(scope="module")
++def world():
++    db.init_db()
++    username = f"sweepgeo{secrets.token_hex(4)}"
++    owner = auth.create_account(username, PASSWORD, "Sweep Geometry", role="host", must_change_password=False)
++    studio = demo.seed(owner)
++    assert studio, "the demo seed needs UBYHOST_UBYPORT_ENV=mock"
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en", data={"username": username, "password": PASSWORD}, follow_redirects=False
++    )
++    assert response.status_code == 303, response.text
++    stay = None
++    for row in db.query(
++        "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' ORDER BY date_from", (studio,)
++    ):
++        registered = db.query_one("SELECT COUNT(*) AS n FROM guest WHERE reservation_id = ?", (row["id"],))["n"]
++        if registered and (reporting.expected_guest_count(row) or 0) > registered:
++            stay = row
++            break
++    token = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (studio,))["permalink_token"]
++    return {
++        "session": client.cookies.get(auth.SESSION_COOKIE),
++        "studio": studio,
++        "stay": stay["id"] if stay else None,
++        "token": token,
++    }
++
++
++@pytest.fixture(scope="module")
++def browser():
++    with sync_api.sync_playwright() as playwright:
++        try:
++            chromium = playwright.chromium.launch()
++        except Exception as exc:
++            if REQUIRE_BROWSER:
++                raise
++            pytest.skip(f"Chromium is not available: {exc}")
++        yield chromium
++        chromium.close()
++
++
++def _page(browser, base, world, width, signed_in=True):
++    context = browser.new_context(viewport={"width": width, "height": 900})
++    if signed_in:
++        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": world["session"], "url": base + "/"}])
++    return context, context.new_page()
++
++
++@pytest.mark.parametrize("width", [390, 1280])
++def test_guest_links_message_wraps_instead_of_widening_the_page(base, world, browser, width):
++    context, page = _page(browser, base, world, width)
++    try:
++        page.goto(base + "/guest-links?lang=en")
++        page.wait_for_selector(".message-template")
++        assert page.evaluate(NO_SIDEWAYS_SCROLL) <= 1
++    finally:
++        context.close()
++
++
++def test_calendar_remove_button_is_visible_without_scrolling(base, world, browser):
++    context, page = _page(browser, base, world, 1280)
++    try:
++        page.goto(f"{base}/apartments/{world['studio']}?lang=en")
++        page.wait_for_selector(".feed-table")
++        box = page.evaluate(
++            """() => {
++              const wrap = document.querySelector('.feed-table').closest('.scroll-x');
++              const button = wrap.querySelector('.row-actions .btn');
++              const w = wrap.getBoundingClientRect(), b = button.getBoundingClientRect();
++              const name = wrap.querySelector('td strong');
++              const range = document.createRange(); range.selectNodeContents(name);
++              const lines = new Set([...range.getClientRects()].map(r => Math.round(r.top))).size;
++              return {inside: b.right <= w.right + 1 && b.left >= w.left - 1,
++                      hidden: wrap.scrollWidth - wrap.clientWidth, nameLines: lines,
++                      overflow: getComputedStyle(wrap).overflowX};
++            }"""
++        )
++    finally:
++        context.close()
++    assert box["overflow"] == "auto"
++    assert box["inside"], box
++    assert box["hidden"] <= 1, box
++    assert box["nameLines"] == 1, "the feed name broke mid-word"
++
++
++def test_stay_page_cards_hold_their_buttons(base, world, browser):
++    if not world["stay"]:
++        pytest.skip("the demo seed has no partly registered stay")
++    context, page = _page(browser, base, world, 1280)
++    try:
++        page.goto(f"{base}/reservations/{world['stay']}?lang=en")
++        page.wait_for_selector(".guest-card.placeholder")
++        measured = page.evaluate(
++            """() => {
++              const R = el => el.getBoundingClientRect();
++              const out = {placeholders: [], verify: null, filing: null};
++              document.querySelectorAll('.guest-card.placeholder').forEach(card => {
++                const c = R(card);
++                const worst = Math.max(...[...card.querySelectorAll('.btn')].map(b => R(b).bottom));
++                out.placeholders.push(Math.round(c.bottom - worst));
++              });
++              const verify = document.querySelector('.guest-card .verify-form .btn');
++              if (verify) {
++                const card = verify.closest('.guest-card');
++                out.verify = Math.round(R(card).bottom - R(verify).bottom);
++              }
++              const filing = document.querySelector('#file-by-hand');
++              if (filing) out.filing = parseFloat(getComputedStyle(filing).paddingLeft);
++              return out;
++            }"""
++        )
++    finally:
++        context.close()
++    assert measured["placeholders"], measured
++    assert min(measured["placeholders"]) >= 8, f"a button sits on the card edge: {measured}"
++    if measured["verify"] is not None:
++        assert measured["verify"] >= 8, f"Mark ID checked touches the card edge: {measured}"
++    if measured["filing"] is not None:
++        assert measured["filing"] >= 12, "the hand-filing panel lost its padding"
++
++
++def test_overdue_deadline_is_a_pill_not_a_bar(base, world, browser):
++    overdue = db.query_one(
++        "SELECT r.id FROM reservation r WHERE r.apartment_id = ? AND r.status = 'active' "
++        "AND r.date_from < date('now', '-5 day') ORDER BY r.date_from LIMIT 1",
++        (world["studio"],),
++    )
++    if not overdue:
++        pytest.skip("the demo seed has no overdue stay")
++    context, page = _page(browser, base, world, 1280)
++    try:
++        page.goto(f"{base}/reservations/{overdue['id']}?lang=en")
++        widths = page.evaluate(
++            """() => { const pill = document.querySelector('.metric-value.deadline.overdue');
++              if (!pill) return null;
++              return [pill.getBoundingClientRect().width, pill.parentElement.getBoundingClientRect().width]; }"""
++        )
++    finally:
++        context.close()
++    if widths is None:
++        pytest.skip("the stay is not overdue on this date")
++    assert widths[0] < widths[1] * 0.8, widths
++
++
++def test_operator_signature_block_is_styled(base, world, browser):
++    context, page = _page(browser, base, world, 1280)
++    try:
++        page.goto(base + "/entities?lang=en")
++        page.wait_for_selector(".signature-block")
++        style = page.evaluate(
++            """() => { const f = document.querySelector('.signature-block'); const cs = getComputedStyle(f);
++              const b = [...f.querySelectorAll('.action-group .btn')].map(e => Math.round(e.getBoundingClientRect().top));
++              return {border: cs.borderTopStyle, radius: parseFloat(cs.borderTopLeftRadius), tops: b}; }"""
++        )
++    finally:
++        context.close()
++    assert style["border"] == "solid"
++    assert style["radius"] > 0
++    assert len(set(style["tops"])) == 1, f"Clear and Upload image are not level: {style}"
++
++
++def test_guest_privacy_notice_fits_a_phone(base, world, browser):
++    context, page = _page(browser, base, world, 390, signed_in=False)
++    try:
++        page.goto(f"{base}/l/{world['token']}/privacy?lang=en")
++        page.wait_for_selector("table")
++        assert page.evaluate(NO_SIDEWAYS_SCROLL) <= 1
++    finally:
++        context.close()
+diff --git a/App/tests/test_wp28_ui_sweep.py b/App/tests/test_wp28_ui_sweep.py
+new file mode 100644
+index 0000000..e1ed7d0
+--- /dev/null
++++ b/App/tests/test_wp28_ui_sweep.py
+@@ -0,0 +1,174 @@
++"""WP28: rendered-markup checks for the UI bug sweep.
++
++Each test pins one defect found by clicking through the demo workspace, so a
++later template change cannot quietly bring it back. Geometry that markup cannot
++prove lives in tests/test_wp28_geometry.py.
++"""
++from __future__ import annotations
++
++import re
++import secrets
++from datetime import date
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++from starlette.datastructures import FormData
++
++from app import auth, db, demo, host_i18n, invoices
++
++PASSWORD = "Sweep-Host-12345"
++STATIC = Path(__file__).resolve().parent.parent / "app" / "static"
++
++
++@pytest.fixture(scope="module")
++def world():
++    db.init_db()
++    username = f"sweep{secrets.token_hex(4)}"
++    owner = auth.create_account(username, PASSWORD, "Sweep Host", role="host", must_change_password=False)
++    studio = demo.seed(owner)
++    assert studio, "the demo seed needs UBYHOST_UBYPORT_ENV=mock"
++    loft = db.query_one(
++        "SELECT id FROM apartment WHERE owner_user_id = ? AND internal_name = ?", (owner, demo.DEMO_LOFT)
++    )["id"]
++    entity = db.query_one(
++        "SELECT * FROM legal_entity WHERE owner_user_id = ? AND name = ?", (owner, demo.DEMO_ENTITY)
++    )
++    db.execute(
++        "UPDATE legal_entity SET registry_entry = ? WHERE id = ?",
++        ("Zapsán v živnostenském rejstříku", entity["id"]),
++    )
++    entity = db.query_one("SELECT * FROM legal_entity WHERE id = ?", (entity["id"],))
++    draft = invoices.build_draft(
++        entity,
++        FormData([("buyer_name", "Demo Buyer s.r.o."), ("item_description", "Accommodation"),
++                  ("item_quantity", "2"), ("item_unit_price", "1500")]),
++        "en",
++        today=date.today(),
++    )
++    draft["legal_entity_id"] = entity["id"]
++    draft["owner_user_id"] = owner
++    invoice = invoices.issue(draft, owner)
++    return {"username": username, "owner": owner, "studio": studio, "loft": loft, "invoice": invoice}
++
++
++@pytest.fixture(scope="module")
++def client(world):
++    from app.main import app
++
++    with TestClient(app) as test_client:
++        response = test_client.post(
++            "/login", data={"username": world["username"], "password": PASSWORD}, follow_redirects=False
++        )
++        assert response.status_code == 303
++        yield test_client
++
++
++def _stay(world, apartment, status="active", guests=None):
++    rows = db.query(
++        "SELECT r.id, (SELECT COUNT(*) FROM guest g WHERE g.reservation_id = r.id) AS n "
++        "FROM reservation r WHERE r.apartment_id = ? AND r.status = ? ORDER BY r.date_from",
++        (apartment, status),
++    )
++    for row in rows:
++        if guests is None or (row["n"] > 0) == guests:
++            return row["id"]
++    raise AssertionError("the demo seed has no such stay")
++
++
++def test_wide_tables_scroll_instead_of_clipping_their_last_column():
++    css = (STATIC / "app.css").read_text(encoding="utf-8")
++    # .panel.tight (overflow: hidden) outranked .scroll-x and hid row actions.
++    assert re.search(r"\.panel\.tight\.scroll-x\s*\{\s*overflow-x:\s*auto;", css)
++    host = (STATIC / "host.css").read_text(encoding="utf-8")
++    assert ".host-workspace .table-cards td { overflow-wrap: break-word; }" in host
++    assert ".table-cards td, .host-workspace .guest-facts dd { overflow-wrap: anywhere" not in host
++
++
++def test_every_text_like_input_gets_the_field_style():
++    css = (STATIC / "app.css").read_text(encoding="utf-8")
++    selector = css[css.index("input:not([type]), input[type=text]"):].split("{", 1)[0]
++    for kind in ("tel", "datetime-local"):
++        assert f"input[type={kind}]" in selector
++    assert "input[type=search]:not([data-command-input])" in selector
++
++
++def test_the_guest_privacy_cookie_table_scrolls_inside_its_card():
++    css = (STATIC / "guest.css").read_text(encoding="utf-8")
++    assert re.search(r"\.scroll-x\s*\{[^}]*overflow-x:\s*auto", css)
++
++
++def test_cancelling_an_invoice_asks_first(client, world):
++    page = client.get(f"/invoices/{world['invoice']}?lang=en")
++    assert page.status_code == 200
++    form = re.search(r'<form[^>]*action="/invoices/%d/cancel"[^>]*>' % world["invoice"], page.text, re.S)
++    assert form, "the cancel form is missing"
++    assert "data-confirm" in form.group(0)
++    assert host_i18n.translate("en", "confirm.cancel_invoice") in page.text
++    assert "\u2014" not in host_i18n.translate("en", "invoice.cancel_help")
++
++
++def test_the_property_page_counts_calendars_in_the_right_form(client, world):
++    en = client.get(f"/apartments/{world['studio']}?lang=en").text
++    assert "<small>1 calendar</small>" in en
++    assert "1 calendars" not in en
++    assert "Back to apartments" not in en
++    cs = client.get(f"/apartments/{world['studio']}?lang=cs").text
++    assert "<small>1 kalendář</small>" in cs
++
++
++def test_the_feed_table_keeps_room_for_remove(client, world):
++    page = client.get(f"/apartments/{world['studio']}?lang=en").text
++    assert 'class="table-cards feed-table"' in page
++
++
++def test_automation_button_label_is_capitalised(client):
++    page = client.get("/automation?lang=en").text
++    buttons = re.findall(r'<a class="btn small" href="/apartments/\d+">([^<]+)</a>', page)
++    assert buttons and set(buttons) == {"Full property setup"}
++
++
++def test_finished_onboarding_shows_skip_once(client):
++    page = client.get("/onboarding?lang=en").text
++    assert page.count(">Skip setup guidance<") == 1
++    assert "share the link below" not in page
++    assert "Share the guest link above with your guests." in page
++
++
++def test_settings_does_not_nest_a_second_data_protection_heading(client):
++    page = client.get("/settings?lang=en").text
++    assert page.count(">Data protection</h2>") == 1
++    assert ">Retention status</h3>" in page
++    assert "record(s)" not in page
++
++
++def test_stay_page_hand_filing_panel_and_verify_button_have_room(client, world):
++    stay = _stay(world, world["studio"], guests=True)
++    page = client.get(f"/reservations/{stay}?lang=en").text
++    if 'id="file-by-hand"' in page:
++        assert '<details class="panel" id="file-by-hand">' in page
++    assert 'class="inline verify-form' not in page
++    # A guest without a document type no longer prints a lone dash before the number.
++    assert '<span class="fact-extra">\u2014 </span>' not in page
++
++
++def test_cancelled_stay_does_not_say_waiting_for_guest(client, world):
++    stay = _stay(world, world["loft"], status="cancelled")
++    page = client.get(f"/reservations/{stay}?lang=en").text
++    reporting = page[page.index('id="reports"'):]
++    reporting = reporting[: reporting.index("</section>")]
++    assert '<span class="pill grey">Cancelled</span>' in reporting
++    assert "Waiting for guest" not in reporting
++
++
++def test_new_strings_exist_in_both_languages():
++    for key in (
++        "confirm.cancel_invoice",
++        "automation.full_setup_button",
++        "apartment.form.calendars_count",
++        "apartment.form.calendars_count.one",
++        "apartment.form.calendars_count.few",
++    ):
++        assert key in host_i18n.STRINGS["en"], key
++        assert key in host_i18n.STRINGS["cs"], key
++        assert host_i18n.STRINGS["cs"][key] != host_i18n.STRINGS["en"][key], key
+-- 
+2.34.1
+

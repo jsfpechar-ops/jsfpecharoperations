@@ -1,0 +1,874 @@
+From e92011edd6c270ed0282beb3ff0889f80ead62b2 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sat, 3 Oct 2026 23:51:54 +0200
+Subject: [PATCH 23/34] WP13: Per-request query, DB-time and lock-time logging
+
+Integration: db.py import conflict with WP06 (threading) kept both imports. scheduler.py conflicts with WP07 heartbeats: the ical job logs its run line (WP13) then pings its heartbeat (WP07); the mail job pings on success and then logs its run line.
+
+Integration with WP23: _job_deadlines writes one run line for the whole job, with at_risk, unknown_risk, awaiting_retry, host_mails and digest counts next to alerts and requests_due; ok=0 when the alert pass or the watchdog failed; the filing heartbeat is pinged after the line.
+---
+ App/app/db.py                  | 149 ++++++++++++++++++------
+ App/app/icalsync.py            |   6 +-
+ App/app/main.py                |  20 +++-
+ App/app/scheduler.py           |  56 +++++++++
+ App/tests/test_perf_logging.py | 181 +++++++++++++++++++++++++++++
+ App/tools/perf_report.py       | 206 +++++++++++++++++++++++++++++++++
+ 6 files changed, 576 insertions(+), 42 deletions(-)
+ create mode 100644 App/tests/test_perf_logging.py
+ create mode 100644 App/tools/perf_report.py
+
+diff --git a/App/app/db.py b/App/app/db.py
+index b14df4d..e6e638d 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -7,6 +7,7 @@ import hashlib
+ import json
+ import sqlite3
+ import threading
++import time
+ from contextlib import contextmanager
+ from contextvars import ContextVar
+ from datetime import datetime, timezone
+@@ -20,6 +21,65 @@ _current_owner_id: ContextVar[Optional[int]] = ContextVar("ubyhost_owner_id", de
+ # (user_id, username, impersonator_id) of whoever is acting in this request.
+ _current_actor: ContextVar[Optional[tuple]] = ContextVar("ubyhost_actor", default=None)
+ 
++
++class RequestStats:
++    """What one request cost the database (WP13, review 7.3.4).
++
++    ``queries`` counts statements run on the request's connections, without
++    the connection PRAGMAs and the BEGIN/COMMIT around a transaction.
++    ``db_seconds`` is wall time inside the helpers below, connection opening
++    included; for ``cursor()``/``immediate()`` it is the whole block.
++    ``lock_seconds`` is the time ``BEGIN IMMEDIATE`` waited for the write lock.
++
++    The object is mutable on purpose: a sync route runs in a worker thread with
++    a *copy* of the request's context, so the copy has to point at the same
++    object for the middleware to read the totals afterwards.
++    """
++
++    __slots__ = ("queries", "db_seconds", "lock_seconds")
++
++    def __init__(self) -> None:
++        self.queries = 0
++        self.db_seconds = 0.0
++        self.lock_seconds = 0.0
++
++
++_request_stats: ContextVar[Optional[RequestStats]] = ContextVar(
++    "ubyhost_request_stats", default=None
++)
++# "--" is how SQLite reports a statement run inside a trigger.
++_UNCOUNTED_PREFIXES = ("PRAGMA", "BEGIN", "COMMIT", "ROLLBACK", "--")
++
++
++def start_request_stats() -> RequestStats:
++    """Give the current context a fresh counter and return it."""
++    stats = RequestStats()
++    _request_stats.set(stats)
++    return stats
++
++
++def current_request_stats() -> Optional[RequestStats]:
++    return _request_stats.get()
++
++
++def _count_statement(statement: str) -> None:
++    stats = _request_stats.get()
++    if stats is not None and not statement.lstrip().upper().startswith(_UNCOUNTED_PREFIXES):
++        stats.queries += 1
++
++
++@contextmanager
++def _timed():
++    stats = _request_stats.get()
++    if stats is None:
++        yield
++        return
++    started = time.perf_counter()
++    try:
++        yield
++    finally:
++        stats.db_seconds += time.perf_counter() - started
++
+ SCHEMA = """
+ CREATE TABLE IF NOT EXISTS settings (
+     key   TEXT PRIMARY KEY,
+@@ -585,6 +645,9 @@ def connect() -> sqlite3.Connection:
+     except OSError:
+         pass
+     conn.row_factory = sqlite3.Row
++    if _request_stats.get() is not None:
++        # Only inside a request; the scheduler and the CLI pay nothing.
++        conn.set_trace_callback(_count_statement)
+     conn.execute("PRAGMA foreign_keys = ON")
+     conn.execute("PRAGMA journal_mode = WAL")
+     # Overwrite freed pages instead of leaving the old bytes behind. Without
+@@ -596,35 +659,41 @@ def connect() -> sqlite3.Connection:
+ 
+ @contextmanager
+ def cursor():
+-    conn = connect()
+-    try:
+-        cur = conn.cursor()
+-        cur.execute("BEGIN")
++    with _timed():
++        conn = connect()
+         try:
+-            yield cur
+-            cur.execute("COMMIT")
+-        except Exception:
+-            cur.execute("ROLLBACK")
+-            raise
+-    finally:
+-        conn.close()
++            cur = conn.cursor()
++            cur.execute("BEGIN")
++            try:
++                yield cur
++                cur.execute("COMMIT")
++            except Exception:
++                cur.execute("ROLLBACK")
++                raise
++        finally:
++            conn.close()
+ 
+ 
+ @contextmanager
+ def immediate():
+     """Like cursor(), but takes the write lock before the first read."""
+-    conn = connect()
+-    try:
+-        cur = conn.cursor()
+-        cur.execute("BEGIN IMMEDIATE")
++    with _timed():
++        conn = connect()
+         try:
+-            yield cur
+-            cur.execute("COMMIT")
+-        except Exception:
+-            cur.execute("ROLLBACK")
+-            raise
+-    finally:
+-        conn.close()
++            cur = conn.cursor()
++            stats = _request_stats.get()
++            waited_from = time.perf_counter()
++            cur.execute("BEGIN IMMEDIATE")
++            if stats is not None:
++                stats.lock_seconds += time.perf_counter() - waited_from
++            try:
++                yield cur
++                cur.execute("COMMIT")
++            except Exception:
++                cur.execute("ROLLBACK")
++                raise
++        finally:
++            conn.close()
+ 
+ 
+ # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
+@@ -910,11 +979,13 @@ def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
+ 
+ 
+ def query(sql: str, params: Iterable[Any] = ()) -> List[sqlite3.Row]:
+-    conn = connect()
+-    try:
+-        return [_hydrate(row) for row in conn.execute(sql, tuple(params)).fetchall()]
+-    finally:
+-        conn.close()
++    with _timed():
++        conn = connect()
++        try:
++            rows = conn.execute(sql, tuple(params)).fetchall()
++        finally:
++            conn.close()
++    return [_hydrate(row) for row in rows]
+ 
+ 
+ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
+@@ -923,12 +994,13 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
+ 
+ 
+ def execute(sql: str, params: Iterable[Any] = ()) -> int:
+-    conn = connect()
+-    try:
+-        cur = conn.execute(sql, tuple(params))
+-        return cur.lastrowid
+-    finally:
+-        conn.close()
++    with _timed():
++        conn = connect()
++        try:
++            cur = conn.execute(sql, tuple(params))
++            return cur.lastrowid
++        finally:
++            conn.close()
+ 
+ 
+ def insert(table: str, values: Dict[str, Any]) -> int:
+@@ -973,11 +1045,12 @@ def update_if(
+         clauses.append(extra_where)
+     sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)
+     params = list(values.values()) + [row_id] + list(expected.values()) + list(extra_params)
+-    conn = connect()
+-    try:
+-        return conn.execute(sql, params).rowcount == 1
+-    finally:
+-        conn.close()
++    with _timed():
++        conn = connect()
++        try:
++            return conn.execute(sql, params).rowcount == 1
++        finally:
++            conn.close()
+ 
+ 
+ def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:
+diff --git a/App/app/icalsync.py b/App/app/icalsync.py
+index 59d70dd..b447606 100644
+--- a/App/app/icalsync.py
++++ b/App/app/icalsync.py
+@@ -798,7 +798,9 @@ def sync_all(
+             "AND (? IS NULL OR a.owner_user_id = ?)",
+             (owner_user_id, owner_user_id),
+         )
+-    totals = {"feeds": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0}
++    # ``changed`` counts feeds whose sync created, updated or cancelled a stay;
++    # with ``feeds`` it gives the changed ratio the perf report prints (WP13).
++    totals = {"feeds": 0, "changed": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0}
+     for feed in feeds:
+         totals["feeds"] += 1
+         try:
+@@ -814,5 +816,7 @@ def sync_all(
+             continue
+         for key in ("created", "updated", "cancelled"):
+             totals[key] += stats.get(key, 0)
++        if any(stats.get(key, 0) for key in ("created", "updated", "cancelled")):
++            totals["changed"] += 1
+     db.set_setting("last_ical_sync", db.utcnow())
+     return totals
+diff --git a/App/app/main.py b/App/app/main.py
+index e043b85..59c9602 100644
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -249,6 +249,9 @@ async def cloudflare_connecting_ip(request: Request, call_next):
+     """Use the visitor IP when a trusted proxy forwards Cloudflare's header."""
+     client_ip.apply_visitor_client(request.scope, request.headers)
+     started = time.perf_counter()
++    # A fresh counter per request (WP13). The route runs in a copy of this
++    # context, which shares the object, so its queries land here.
++    stats = db.start_request_stats()
+     response = await call_next(request)
+     security.attach_csrf_cookie(request, response)
+     _harden(response, public_analytics=analytics.is_public_page(request))
+@@ -260,7 +263,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
+     elif response.status_code in (200, 304):
+         response.headers.setdefault("Cache-Control", _static_cache_control(request))
+     if config.ACCESS_LOG:
+-        _log_access(request, response.status_code, started)
++        _log_access(request, response.status_code, started, stats)
+     return response
+ 
+ 
+@@ -288,16 +291,27 @@ def _access_route(request: Request) -> str:
+     return getattr(route, "path", None) or "<unmatched>"
+ 
+ 
+-def _log_access(request: Request, status_code: int, started: float) -> None:
++def _log_access(
++    request: Request,
++    status_code: int,
++    started: float,
++    stats: "db.RequestStats | None" = None,
++) -> None:
+     path = request.url.path
+     if path.startswith("/static/") or path == "/healthz":
+         return
++    stats = stats or db.RequestStats()
++    # q, db_ms and lock_ms are counts and durations only; they carry nothing
++    # from the request, so the line stays as PII-free as the route template.
+     log_access.info(
+-        "method=%s route=%s status=%s ms=%d",
++        "method=%s route=%s status=%s ms=%d q=%d db_ms=%d lock_ms=%d",
+         request.method,
+         _access_route(request),
+         status_code,
+         int((time.perf_counter() - started) * 1000),
++        stats.queries,
++        int(stats.db_seconds * 1000),
++        int(stats.lock_seconds * 1000),
+     )
+ 
+ 
+diff --git a/App/app/scheduler.py b/App/app/scheduler.py
+index b1fc059..d5e81c6 100644
+--- a/App/app/scheduler.py
++++ b/App/app/scheduler.py
+@@ -3,6 +3,7 @@ from __future__ import annotations
+ 
+ import fcntl
+ import logging
++import time
+ 
+ import requests
+ from apscheduler.schedulers.background import BackgroundScheduler
+@@ -83,19 +84,43 @@ def _job_ok(job_id: str) -> None:
+         log.warning("could not record the last success of job %s", job_id, exc_info=True)
+ 
+ 
++def _log_run(job_id: str, started: float, ok: bool, items: dict | None = None) -> None:
++    """One line per job run with its duration and item counts (WP13).
++
++    ``tools/perf_report.py`` reads these: ``job=<id> ok=<0|1> ms=<n>`` then
++    ``key=<int>`` pairs. Only numbers, never names or URLs.
++    """
++    counts = " ".join(
++        f"{key}={int(value)}"
++        for key, value in (items or {}).items()
++        if isinstance(value, (int, float)) and not isinstance(value, bool)
++    )
++    log.info(
++        "job run job=%s ok=%d ms=%d%s",
++        job_id,
++        1 if ok else 0,
++        int((time.perf_counter() - started) * 1000),
++        f" {counts}" if counts else "",
++    )
++
++
+ def _job_sync_calendars() -> None:
++    started = time.perf_counter()
+     try:
+         totals = icalsync.sync_all()
+         log.info("calendar sync: %s", totals)
+     except Exception:
+         log.exception("calendar sync failed")
+         _job_failed("ical")
++        _log_run("ical", started, False)
+         return
+     _job_ok("ical")
++    _log_run("ical", started, True, totals)
+     _ping(config.HEARTBEAT_ICAL_URL, "ical")
+ 
+ 
+ def _job_submit() -> None:
++    started = time.perf_counter()
+     try:
+         summary = reporting.sweep()
+         if summary["submitted"] or summary["failed"]:
+@@ -103,8 +128,10 @@ def _job_submit() -> None:
+     except Exception:
+         log.exception("ubyport sweep failed")
+         _job_failed("submit")
++        _log_run("submit", started, False)
+         return
+     _job_ok("submit")
++    _log_run("submit", started, True, summary)
+     _heartbeat()
+ 
+ 
+@@ -124,7 +151,9 @@ def _ping(url: str, job_id: str) -> None:
+ 
+ 
+ def _job_deadlines() -> None:
++    started = time.perf_counter()
+     watch_ok = True
++    raised = due_requests = 0
+     try:
+         raised = reporting.check_deadlines()
+         due_requests = dsr.raise_due_alerts()
+@@ -152,9 +181,22 @@ def _job_deadlines() -> None:
+         # No ping at all: the external monitor alerts on the missing ping.
+         log.exception("filing watchdog failed")
+         _job_failed("deadlines")
++        _log_run("deadlines", started, False)
+         return
+     if watch_ok:
+         _job_ok("deadlines")
++    _log_run(
++        "deadlines", started, watch_ok,
++        {
++            "alerts": raised or 0,
++            "requests_due": due_requests or 0,
++            "at_risk": watchdog["at_risk"],
++            "unknown_risk": watchdog.get("unknown_risk", 0),
++            "awaiting_retry": watchdog.get("awaiting_retry", 0),
++            "host_mails": watchdog["host_mails"],
++            "digest": watchdog["digest"],
++        },
++    )
+     # A failed deadline watch counts as a failure too: nobody is being told.
+     _filing_heartbeat(watchdog["at_risk"] > 0 or not watch_ok)
+ 
+@@ -165,7 +207,9 @@ def _filing_heartbeat(at_risk: bool) -> None:
+ 
+ 
+ def _job_mail() -> None:
++    started = time.perf_counter()
+     failed = False
++    items: dict = {}
+     for name, step in (
+         ("expire_holds", claim.expire_holds),
+         ("drain", mail.drain),
+@@ -176,6 +220,11 @@ def _job_mail() -> None:
+             result = step()
+             if result:
+                 log.info("mail job %s: %s", name, result)
++            if isinstance(result, dict):
++                for key, value in result.items():
++                    items[f"{name}_{key}"] = value
++            elif isinstance(result, int) and not isinstance(result, bool):
++                items[name] = result
+         except Exception:
+             log.exception("mail job step %s failed", name)
+             failed = True
+@@ -184,6 +233,7 @@ def _job_mail() -> None:
+     else:
+         _job_ok("mail")
+         _ping(config.HEARTBEAT_MAIL_URL, "mail")
++    _log_run("mail", started, not failed, items)
+ 
+ 
+ def _job_photo_sweep() -> None:
+@@ -193,6 +243,7 @@ def _job_photo_sweep() -> None:
+     hold - and this is the only job that runs on a long enough cycle to be a
+     backstop for the Settings button.
+     """
++    started = time.perf_counter()
+     try:
+         removed = passport_photos.purge_stale()
+         if removed:
+@@ -203,8 +254,10 @@ def _job_photo_sweep() -> None:
+     except Exception:
+         log.exception("passport photo sweep failed")
+         _job_failed("photo_sweep")
++        _log_run("photo_sweep", started, False)
+         return
+     _job_ok("photo_sweep")
++    _log_run("photo_sweep", started, True, {"photos": removed or 0, "payloads": blanked or 0})
+ 
+ 
+ def _job_retention() -> None:
+@@ -213,6 +266,7 @@ def _job_retention() -> None:
+     Dry-run by default: it audits the exact row set and deletes nothing until
+     ``UBYHOST_RETENTION_AUTOPURGE=1`` (see ``retention.run``).
+     """
++    started = time.perf_counter()
+     try:
+         summary = retention.run()
+         if any(summary["counts"].values()):
+@@ -220,8 +274,10 @@ def _job_retention() -> None:
+     except Exception:
+         log.exception("retention run failed")
+         _job_failed("retention")
++        _log_run("retention", started, False)
+         return
+     _job_ok("retention")
++    _log_run("retention", started, True, summary.get("counts") or {})
+ 
+ 
+ def _acquire_single_instance_lock() -> bool:
+diff --git a/App/tests/test_perf_logging.py b/App/tests/test_perf_logging.py
+new file mode 100644
+index 0000000..00ebf5f
+--- /dev/null
++++ b/App/tests/test_perf_logging.py
+@@ -0,0 +1,181 @@
++"""WP13: per-request query, DB-time and lock-time numbers, and the report.
++
++The access line gains ``q=``, ``db_ms=`` and ``lock_ms=``; the counter behind
++them is a fresh object per request; nothing from the request itself (a token,
++a query string, guest data) reaches the line; jobs log their run time; and
++``tools/perf_report.py`` turns a week of lines into per-group numbers without
++ever printing a route.
++"""
++from __future__ import annotations
++
++import io
++import logging
++import re
++import sqlite3
++import sys
++import threading
++import time
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import config, db, scheduler
++from app.main import app
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
++import perf_report  # noqa: E402
++
++ACCESS_LOGGER = "ubyhost.access"
++LINE_RE = re.compile(
++    r"^method=\w+ route=\S+ status=\d+ ms=\d+ q=(\d+) db_ms=(\d+) lock_ms=(\d+)$"
++)
++
++
++@pytest.fixture(autouse=True)
++def _no_counter_left_behind():
++    """Tests that start a counter by hand must not leave it on the main thread."""
++    token = db._request_stats.set(None)
++    yield
++    db._request_stats.reset(token)
++
++
++def _lines(caplog, name=ACCESS_LOGGER):
++    return [record.getMessage() for record in caplog.records if record.name == name]
++
++
++def test_the_access_line_carries_query_count_and_db_time(caplog):
++    db.init_db()
++    with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
++        TestClient(app).get("/login?lang=en")
++    lines = _lines(caplog)
++    assert len(lines) == 1, lines
++    match = LINE_RE.match(lines[0])
++    assert match, lines[0]
++    assert int(match.group(1)) >= 1  # the login page reads the database
++
++
++def test_the_counter_starts_fresh_for_every_request(caplog):
++    db.init_db()
++    client = TestClient(app)
++    with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
++        for _ in range(3):
++            client.get("/login?lang=en")
++    counts = [int(LINE_RE.match(line).group(1)) for line in _lines(caplog)]
++    assert len(counts) == 3
++    # Identical requests cost the same; a counter that carried over would grow.
++    assert counts[1] == counts[2]
++    assert counts[2] <= counts[0]
++
++
++def test_start_request_stats_replaces_the_previous_counter():
++    first = db.start_request_stats()
++    db.query("SELECT 1 AS one")
++    assert first.queries == 1
++    second = db.start_request_stats()
++    assert second is not first
++    assert second.queries == 0
++    assert db.current_request_stats() is second
++    db.query("SELECT 1 AS one")
++    assert (first.queries, second.queries) == (1, 1)
++    assert second.db_seconds > 0
++
++
++def test_lock_wait_is_measured_on_begin_immediate():
++    db.init_db()
++    holder_ready = threading.Event()
++
++    def hold_the_write_lock():
++        conn = sqlite3.connect(str(config.DB_PATH), timeout=30, isolation_level=None)
++        conn.execute("BEGIN IMMEDIATE")
++        holder_ready.set()
++        time.sleep(0.3)
++        conn.execute("COMMIT")
++        conn.close()
++
++    thread = threading.Thread(target=hold_the_write_lock)
++    thread.start()
++    holder_ready.wait(5)
++    stats = db.start_request_stats()
++    with db.immediate() as cur:
++        cur.execute("SELECT 1")
++    thread.join()
++    assert stats.lock_seconds >= 0.2
++    assert stats.db_seconds >= stats.lock_seconds
++    assert stats.queries == 1  # BEGIN, COMMIT and the PRAGMAs are not counted
++
++
++def test_no_token_query_string_or_guest_data_in_the_line(caplog):
++    db.init_db()
++    token = "z9y8x7w6v5u4t3s2r1q0" * 2
++    with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
++        TestClient(app).get(f"/l/{token}?email=guest@example.test&surname=Novak")
++    lines = _lines(caplog)
++    assert lines and all(LINE_RE.match(line) for line in lines), lines
++    joined = " ".join(lines)
++    for leaked in (token, "guest@example.test", "Novak", "email="):
++        assert leaked not in joined
++    assert "route=/l/{token}" in joined
++
++
++def test_scheduler_jobs_log_run_time_and_items(monkeypatch, caplog):
++    db.init_db()
++    monkeypatch.setattr(
++        scheduler.icalsync,
++        "sync_all",
++        lambda: {"feeds": 4, "changed": 1, "created": 2, "updated": 0, "cancelled": 0, "errors": 0},
++    )
++    with caplog.at_level(logging.INFO, logger="ubyhost.scheduler"):
++        scheduler._job_sync_calendars()
++    runs = [line for line in _lines(caplog, "ubyhost.scheduler") if line.startswith("job run ")]
++    assert len(runs) == 1
++    assert re.match(r"^job run job=ical ok=1 ms=\d+ feeds=4 changed=1 created=2 ", runs[0]), runs
++
++
++SAMPLE = """\
++2026-10-01 10:00:00,001 INFO    ubyhost.access: method=GET route=/ status=200 ms=10 q=5 db_ms=2 lock_ms=0
++2026-10-01 10:00:01,001 INFO    ubyhost.access: method=GET route=/reservations status=200 ms=30 q=9 db_ms=6 lock_ms=1
++2026-10-01 10:00:02,001 INFO    ubyhost.access: method=GET route=/l/{token}/{reservation_id} status=200 ms=20 q=4 db_ms=3 lock_ms=0
++2026-10-01 10:00:03,001 INFO    ubyhost.access: method=POST route=/l/{token}/{reservation_id}/save status=500 ms=80 q=12 db_ms=40 lock_ms=25
++2026-10-01 10:00:04,001 INFO    ubyhost.access: method=GET route=/cenik status=200 ms=5 q=1 db_ms=1 lock_ms=0
++2026-10-01 10:00:05,001 INFO    ubyhost.access: method=GET route=/admin/operations status=200 ms=15 q=8 db_ms=5 lock_ms=0
++2026-10-01 10:00:06,001 INFO    ubyhost.scheduler: job run job=ical ok=1 ms=900 feeds=10 changed=2 created=3
++2026-10-01 11:00:06,001 INFO    ubyhost.scheduler: job run job=ical ok=0 ms=50
++2026-09-01 10:00:00,001 INFO    ubyhost.access: method=GET route=/old status=200 ms=99999 q=1 db_ms=1 lock_ms=0
++2026-10-01 10:00:07,001 INFO    ubyhost.app: something unrelated route=/l/abcdef
++"""
++
++
++def test_perf_report_groups_routes_and_skips_old_lines(tmp_path, capsys):
++    log_file = tmp_path / "app.log"
++    log_file.write_text(SAMPLE, encoding="utf-8")
++    assert perf_report.main([str(log_file), "--now", "2026-10-03T12:00:00"]) == 0
++    out = capsys.readouterr().out
++    rows = {line.split()[0]: line.split() for line in out.splitlines() if line.strip()}
++    assert rows["host"][1] == "2"  # "/" and /reservations
++    assert rows["guest"][1] == "2"
++    assert rows["public"][1] == "1"
++    assert rows["admin"][1] == "1"
++    assert rows["guest"][-1] == "50.00"  # one 500 out of two guest requests
++    assert "99999" not in out  # the September line is outside the window
++    assert "iCal changed ratio: 2/10" in out
++    assert "ical" in rows and rows["ical"][2] == "1"  # one failed run
++    # No route, and nothing token-shaped, is ever printed.
++    assert "/l/" not in out and "{token}" not in out and "/reservations" not in out
++
++
++def test_perf_report_reads_stdin(monkeypatch, capsys):
++    monkeypatch.setattr(sys, "stdin", io.StringIO(SAMPLE))
++    assert perf_report.main(["--days", "0"]) == 0
++    out = capsys.readouterr().out
++    assert "99999" in out  # --days 0 keeps every line
++
++
++def test_route_groups():
++    assert perf_report.route_group("/l/{token}") == "guest"
++    assert perf_report.route_group("/admin/users") == "admin"
++    assert perf_report.route_group("/pruvodce/{slug}") == "public"
++    assert perf_report.route_group("/") == "host"
++    assert perf_report.route_group("<unmatched>") == "other"
++    assert perf_report.percentile([1, 2, 3, 4, 100], 99) == 100
++    assert perf_report.percentile([], 50) == 0
+diff --git a/App/tools/perf_report.py b/App/tools/perf_report.py
+new file mode 100644
+index 0000000..7e0c81b
+--- /dev/null
++++ b/App/tools/perf_report.py
+@@ -0,0 +1,206 @@
++#!/usr/bin/env python3
++"""Weekly performance numbers from the app log (WP13, review 7.3.4).
++
++Reads the PII-free access lines (``ubyhost.access``) and the scheduler's job
++lines (``ubyhost.scheduler: job run ...``) from a file or stdin and prints, for
++the last 7 days by default:
++
++* p50 and p99 response time per route group (host, guest, public, admin);
++* queries per request (mean and p99) and DB time p99 per group;
++* lock wait p99 per group;
++* error rate (status >= 500) per group;
++* per job: runs, failures, p50/p99 run time, and the iCal changed ratio
++  (feeds whose sync changed a stay, over feeds synced).
++
++Only group names, job ids and numbers are printed. The access line already
++carries the route template instead of the path, but the report still never
++prints a route, so nothing token-shaped can reach its output.
++
++Usage::
++
++    docker compose logs --no-color app | python tools/perf_report.py
++    python tools/perf_report.py /var/log/ubyhost/app.log --days 7
++"""
++from __future__ import annotations
++
++import argparse
++import math
++import re
++import sys
++from collections import defaultdict
++from datetime import datetime, timedelta
++from typing import Dict, Iterable, List, Optional, TextIO
++
++GROUPS = ("host", "guest", "public", "admin", "other")
++
++# Signed-out pages. "/" is counted as host: signed in it is the dashboard,
++# which is where nearly all of its traffic comes from.
++_PUBLIC_EXACT = {
++    "/cenik", "/dpa", "/jak-to-funguje", "/legal", "/privacy", "/subprocessors",
++    "/terms", "/login", "/login/2fa", "/robots.txt", "/sitemap.xml",
++    "/sample-airbnb.ics", "/favicon.ico", "/healthz",
++}
++_PUBLIC_PREFIXES = ("/pruvodce/", "/invoice/d/")
++
++_TIMESTAMP_RE = re.compile(r"(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})")
++_PAIR_RE = re.compile(r"\b([a-z_]+)=(\S+)")
++
++
++def route_group(route: str) -> str:
++    """The group of a route template; never returns the route itself."""
++    if not route or route.startswith("<"):
++        return "other"
++    if route.startswith("/l/") or route == "/l":
++        return "guest"
++    if route.startswith("/admin/") or route == "/admin":
++        return "admin"
++    if route in _PUBLIC_EXACT or route.startswith(_PUBLIC_PREFIXES):
++        return "public"
++    return "host"
++
++
++def percentile(values: List[float], pct: float) -> float:
++    """Nearest-rank percentile; 0 for an empty list."""
++    if not values:
++        return 0.0
++    ordered = sorted(values)
++    rank = max(1, math.ceil(pct / 100.0 * len(ordered)))
++    return float(ordered[min(rank, len(ordered)) - 1])
++
++
++def _timestamp(line: str) -> Optional[datetime]:
++    match = _TIMESTAMP_RE.search(line)
++    if not match:
++        return None
++    try:
++        return datetime.fromisoformat(f"{match.group(1)}T{match.group(2)}")
++    except ValueError:
++        return None
++
++
++def _int(value: Optional[str]) -> Optional[int]:
++    try:
++        return int(value) if value is not None else None
++    except ValueError:
++        return None
++
++
++def parse(lines: Iterable[str], since: Optional[datetime] = None) -> Dict[str, dict]:
++    """Collect the numbers, keyed by group and by job id."""
++    requests: Dict[str, dict] = defaultdict(
++        lambda: {"ms": [], "q": [], "db_ms": [], "lock_ms": [], "errors": 0}
++    )
++    jobs: Dict[str, dict] = defaultdict(
++        lambda: {"ms": [], "failed": 0, "items": defaultdict(int)}
++    )
++    for line in lines:
++        is_access = "ubyhost.access" in line and "route=" in line
++        is_job = "ubyhost.scheduler" in line and "job run " in line
++        if not (is_access or is_job):
++            continue
++        if since is not None:
++            stamp = _timestamp(line)
++            if stamp is not None and stamp < since:
++                continue
++        pairs = dict(_PAIR_RE.findall(line))
++        if is_access:
++            bucket = requests[route_group(pairs.get("route", ""))]
++            ms = _int(pairs.get("ms"))
++            if ms is None:
++                continue
++            bucket["ms"].append(ms)
++            for key in ("q", "db_ms", "lock_ms"):
++                value = _int(pairs.get(key))
++                if value is not None:
++                    bucket[key].append(value)
++            status = _int(pairs.get("status")) or 0
++            if status >= 500:
++                bucket["errors"] += 1
++        else:
++            job_id = pairs.get("job")
++            if not job_id or not re.fullmatch(r"[a-z_]{1,40}", job_id):
++                continue
++            bucket = jobs[job_id]
++            ms = _int(pairs.get("ms"))
++            if ms is not None:
++                bucket["ms"].append(ms)
++            if pairs.get("ok") == "0":
++                bucket["failed"] += 1
++            for key, raw in pairs.items():
++                if key in ("job", "ok", "ms"):
++                    continue
++                value = _int(raw)
++                if value is not None:
++                    bucket["items"][key] += value
++    return {"requests": dict(requests), "jobs": dict(jobs)}
++
++
++def render(data: Dict[str, dict], out: TextIO) -> None:
++    requests = data["requests"]
++    out.write("Requests by route group\n")
++    out.write(
++        f"{'group':<8}{'count':>8}{'p50 ms':>9}{'p99 ms':>9}{'q/req':>8}{'q p99':>8}"
++        f"{'db p99':>8}{'lock p99':>10}{'err %':>8}\n"
++    )
++    for group in GROUPS:
++        bucket = requests.get(group)
++        if not bucket or not bucket["ms"]:
++            continue
++        count = len(bucket["ms"])
++        mean_q = sum(bucket["q"]) / len(bucket["q"]) if bucket["q"] else 0.0
++        out.write(
++            f"{group:<8}{count:>8}{percentile(bucket['ms'], 50):>9.0f}"
++            f"{percentile(bucket['ms'], 99):>9.0f}{mean_q:>8.1f}"
++            f"{percentile(bucket['q'], 99):>8.0f}{percentile(bucket['db_ms'], 99):>8.0f}"
++            f"{percentile(bucket['lock_ms'], 99):>10.0f}"
++            f"{100.0 * bucket['errors'] / count:>8.2f}\n"
++        )
++    all_lock = [value for bucket in requests.values() for value in bucket["lock_ms"]]
++    total = sum(len(bucket["ms"]) for bucket in requests.values())
++    errors = sum(bucket["errors"] for bucket in requests.values())
++    out.write(
++        f"all     {total:>8}  lock wait p99 {percentile(all_lock, 99):.0f} ms, "
++        f"error rate {100.0 * errors / total if total else 0.0:.2f} %\n"
++    )
++
++    jobs = data["jobs"]
++    if jobs:
++        out.write("\nScheduler jobs\n")
++        out.write(f"{'job':<13}{'runs':>6}{'failed':>8}{'p50 ms':>9}{'p99 ms':>9}  items\n")
++        for job_id in sorted(jobs):
++            bucket = jobs[job_id]
++            items = " ".join(f"{key}={value}" for key, value in sorted(bucket["items"].items()))
++            out.write(
++                f"{job_id:<13}{len(bucket['ms']):>6}{bucket['failed']:>8}"
++                f"{percentile(bucket['ms'], 50):>9.0f}{percentile(bucket['ms'], 99):>9.0f}"
++                f"  {items}\n"
++            )
++        ical = jobs.get("ical")
++        if ical:
++            feeds = ical["items"].get("feeds", 0)
++            changed = ical["items"].get("changed", 0)
++            ratio = 100.0 * changed / feeds if feeds else 0.0
++            out.write(f"\niCal changed ratio: {changed}/{feeds} feed syncs ({ratio:.1f} %)\n")
++
++
++def main(argv: Optional[List[str]] = None) -> int:
++    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
++    parser.add_argument("path", nargs="?", help="log file; stdin when omitted or '-'")
++    parser.add_argument("--days", type=int, default=7, help="look back this many days (default 7)")
++    parser.add_argument(
++        "--now", help="end of the window, ISO date-time (default: now, local time of the log)"
++    )
++    args = parser.parse_args(argv)
++    now = datetime.fromisoformat(args.now) if args.now else datetime.now()
++    since = now - timedelta(days=args.days) if args.days > 0 else None
++    if not args.path or args.path == "-":
++        data = parse(sys.stdin, since)
++    else:
++        with open(args.path, encoding="utf-8", errors="replace") as handle:
++            data = parse(handle, since)
++    render(data, sys.stdout)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+-- 
+2.34.1
+

@@ -1,0 +1,1168 @@
+From 62dc6e432b8f8a66936b3af0150c1e041bda40f2 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 01:03:13 +0200
+Subject: [PATCH 17/34] WP22: Retention alignment with the owner's legal
+ decision
+
+---
+ App/app/db.py                         |  36 ++
+ App/app/dpa_i18n.py                   |  20 +-
+ App/app/housebook.py                  |  35 +-
+ App/app/i18n.py                       |  42 +--
+ App/app/invoices.py                   |  28 +-
+ App/app/passport_photos.py            |  58 +--
+ App/app/reporting.py                  |  15 +-
+ App/app/retention.py                  |  62 +++-
+ App/tests/test_guest_navigation.py    |   5 +-
+ App/tests/test_overhaul.py            |   3 +-
+ App/tests/test_retention_alignment.py | 494 ++++++++++++++++++++++++++
+ App/tests/test_retention_job.py       |  13 +-
+ 12 files changed, 739 insertions(+), 72 deletions(-)
+ create mode 100644 App/tests/test_retention_alignment.py
+
+diff --git a/App/app/db.py b/App/app/db.py
+index 3c9d5e7..ae190b7 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -4,6 +4,7 @@ from __future__ import annotations
+ import base64
+ import fcntl
+ import hashlib
++import json
+ import sqlite3
+ import threading
+ from contextlib import contextmanager
+@@ -1038,6 +1039,41 @@ def audit(
+     )
+ 
+ 
++def audit_retention(
++    data_class: str,
++    count: int,
++    cutoff: str,
++    *,
++    owner_user_id: Optional[int] = None,
++    dry_run: bool = False,
++) -> None:
++    """One audit line per deletion run: which class, how many, up to which cutoff.
++
++    Written on every run, a zero count included, so the audit log shows the
++    job ran and which cutoff it applied. Counts only, never personal data. The
++    scope goes into the detail, like the ``retention_run`` line, so the system
++    record does not hang on an account that a later run may delete.
++    """
++    insert(
++        "audit",
++        {
++            "at": utcnow(),
++            "actor": "system",
++            "action": "retention_delete",
++            "detail": json.dumps(
++                {
++                    "class": data_class,
++                    "count": int(count),
++                    "cutoff": cutoff,
++                    "dry_run": bool(dry_run),
++                    "owner_user_id": owner_user_id,
++                },
++                sort_keys=True,
++            ),
++        },
++    )
++
++
+ # --- secret handling -----------------------------------------------------
+ 
+ _fernet_cache: Dict[str, Fernet] = {}
+diff --git a/App/app/dpa_i18n.py b/App/app/dpa_i18n.py
+index 122987f..1e8ce52 100644
+--- a/App/app/dpa_i18n.py
++++ b/App/app/dpa_i18n.py
+@@ -79,7 +79,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+             "of credentials, display to authorised Controller users, formatting for export, and "
+             "transmission toward UbyPort or related endpoints when the Controller enables such features. "
+             "Optional passport/ID files are restricted to authorised Host users in the application, "
+-            "excluded from UbyPort payloads, and deleted after verification or by the stale-file sweep."
++            "excluded from UbyPort payloads, and deleted after verification, otherwise 7 days after "
++            "check-in and never later than 30 days after upload."
+         ),
+         "dpa.s05_title": "5. Details of processing (Annex summary)",
+         "dpa.s05_body": (
+@@ -189,7 +190,12 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+             "will delete or return Guest Data within a reasonable period, except where storage is "
+             "required by law or retained in encrypted backups for a limited disaster-recovery window "
+             "before automatic purging. Export tools in the Service should be used before termination. "
+-            "Anonymised or aggregated data that cannot identify individuals may be retained."
++            "Anonymised or aggregated data that cannot identify individuals may be retained. "
++            "UbyHost keeps each guest record for 6 years after the end of the stay (§ 101(4) of "
++            "Act No. 326/1999 Coll.; § 3g(4) of Act No. 565/1990 Coll.) and then deletes it, unless "
++            "the host exports it first. ID document photos are deleted within 7 days after "
++            "check-in and never later than 30 days after upload. Raw UbyPort messages are deleted "
++            "after 90 days. A record of each submission without personal data is kept for 6 years."
+         ),
+         "dpa.s16_title": "16. Audits and information",
+         "dpa.s16_body": (
+@@ -321,7 +327,8 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+             "(odkazy k převzetí, upozornění na nedokončení, potvrzení a kopie Správci), přenos, šifrování přihlašovacích údajů, "
+             "zobrazení oprávněným uživatelům, export a přenos do UbyPortu při zapnutí. Volitelné "
+             "soubory pasů a dokladů jsou v aplikaci omezeny na oprávněné uživatele ubytovatele, "
+-            "nejsou součástí dat pro UbyPort a mažou se po ověření nebo plánovaným úklidem."
++            "nejsou součástí dat pro UbyPort a mažou se po ověření, jinak do 7 dnů od příjezdu, "
++            "nejpozději 30 dní od nahrání."
+         ),
+         "dpa.s05_title": "5. Podrobnosti zpracování (shrnutí přílohy)",
+         "dpa.s05_body": (
+@@ -401,7 +408,12 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+         "dpa.s15_body": (
+             "Po ukončení nebo na pokyn Správce Zpracovatel smaže nebo vrátí údaje v přiměřené lhůtě, "
+             "kromě zákonné povinnosti a omezených záloh před vymazáním. Před ukončením použijte export. "
+-            "Anonymizovaná agregovaná data mohou zůstat."
++            "Anonymizovaná agregovaná data mohou zůstat. "
++            "UbyHost uchovává každý záznam o hostovi 6 let od konce pobytu (§ 101 odst. 4 zákona "
++            "č. 326/1999 Sb.; § 3g odst. 4 zákona č. 565/1990 Sb.) a poté jej smaže, pokud si jej "
++            "ubytovatel předtím nevyexportuje. Fotografie dokladů totožnosti se mažou do 7 dnů od "
++            "příjezdu, nejpozději 30 dní od nahrání. Původní zprávy pro UbyPort se mažou po 90 "
++            "dnech. Záznam o každém odeslání bez osobních údajů se uchovává 6 let."
+         ),
+         "dpa.s16_title": "16. Audity a informace",
+         "dpa.s16_body": (
+diff --git a/App/app/housebook.py b/App/app/housebook.py
+index c16a19c..e6277a8 100644
+--- a/App/app/housebook.py
++++ b/App/app/housebook.py
+@@ -414,22 +414,38 @@ def _house_label(row) -> str:
+ 
+ # --- retention -----------------------------------------------------------
+ #
+-# Six years is a floor set by § 101, and under GDPR's storage-limitation
+-# principle it is also a ceiling: once it passes there is no longer a legal
+-# basis for holding a guest's passport number, so the record has to go.
++# Six years is a floor set by § 101(4) zákon 326/1999 Sb. and § 3g(4) zákon
++# 565/1990 Sb., and under GDPR's storage-limitation principle it is also a
++# ceiling. Both laws count "from the last entry" of the book; for a book kept
++# continuously that would mean never deleting, so the owner's decision (legal
++# positions, section 4) reads it per record: six years from the end of each
++# stay, the rule § 101(4) itself applies to the paper forms. Deletion runs once
++# a year: a record whose six years end in year Y goes on 31 January of Y + 1.
++# The host DPA states this reading; the host can export the book first.
++
++PURGE_MONTH = 1
++PURGE_DAY = 31
++
+ 
+ def retention_cutoff(today: Optional[date] = None) -> date:
++    """Records whose stay ended before this date are due for deletion.
++
++    A stay ending in year Y reaches six years in Y + 6 and is deleted on
++    31 January of Y + 7. So from 31 January of this year every stay that ended
++    up to 31 December seven years ago is due; before that day, one year less.
++    """
+     today = today or date.today()
+-    try:
+-        return date(today.year - RETENTION_YEARS, today.month, today.day)
+-    except ValueError:  # 29 February in a leap year
+-        return date(today.year - RETENTION_YEARS, today.month, today.day - 1)
++    if today >= date(today.year, PURGE_MONTH, PURGE_DAY):
++        last_year_due = today.year - RETENTION_YEARS - 1
++    else:
++        last_year_due = today.year - RETENTION_YEARS - 2
++    return date(last_year_due + 1, 1, 1)
+ 
+ 
+ def expired_guest_ids(
+     today: Optional[date] = None, owner_user_id: Optional[int] = None
+ ) -> List[int]:
+-    """Guest records whose stay ended more than six years ago.
++    """Guest records past their six years and their 31 January deletion day.
+ 
+     ``date()`` is applied to both sides of the ``COALESCE`` so a malformed
+     ``stay_to`` (SQLite ``date()`` returns NULL for it) falls back to the
+@@ -530,7 +546,8 @@ def purge_expired(
+         db.execute(f"DELETE FROM guest WHERE id IN ({marks})", ids)
+         db.audit(
+             "retention_purge",
+-            f"deleted {len(ids)} guest record(s) older than {RETENTION_YEARS} years",
++            f"deleted {len(ids)} guest record(s) whose stay ended before "
++            f"{retention_cutoff(today).isoformat()}",
+         )
+     # The guests those submissions described are gone, so the envelope they
+     # carried has no owner left to be evidence for.
+diff --git a/App/app/i18n.py b/App/app/i18n.py
+index e1bbf22..cc0438a 100644
+--- a/App/app/i18n.py
++++ b/App/app/i18n.py
+@@ -361,8 +361,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "legal_notice_passport_title": "Passport photo (foreign nationals)",
+         "legal_notice_passport_body": (
+             "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
+-            "sees it, to compare it with what you entered. It is deleted after the check, or "
+-            "automatically after your stay. It is never sent to the police."
++            "sees it, to compare it with what you entered. It is deleted after the check, "
++            "otherwise 7 days after check-in, and never later than 30 days after upload. It is "
++            "never sent to the police."
+         ),
+         "legal_notice_reporting_title": "Police reporting and house book",
+         "legal_notice_reporting_body": (
+@@ -372,9 +373,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "legal_notice_retention_title": "How long data is kept",
+         "legal_notice_retention_body": (
+-            "Registration details and your signature are kept for six years from the last "
+-            "house-book entry, as required by § 101 of Act No. 326/1999 Coll. Processing is "
+-            "based on legal obligation (GDPR Article 6(1)(c)), not consent."
++            "Registration details and your signature are kept for six years after the end of "
++            "your stay, as required by § 101(4) of Act No. 326/1999 Coll., and then deleted. "
++            "Processing is based on legal obligation (GDPR Article 6(1)(c)), not consent."
+         ),
+         "legal_notice_refusal_title": "If you refuse",
+         "legal_notice_refusal_body": (
+@@ -479,8 +480,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "If you are not a Czech citizen, you may upload a photograph of your passport or ID "
+             "page, or a PDF registration form, so the host can verify your details. The file is "
+             "processed only for that check and access in the app is restricted to authorised host "
+-            "users. It is deleted after verification; if it remains unverified, a scheduled sweep "
+-            "removes it after the stay. Restricted operator or infrastructure access may be required "
++            "users. It is deleted after verification; if it remains unverified, it is deleted 7 "
++            "days after check-in, and never later than 30 days after upload. Restricted operator or infrastructure access may be required "
+             "to operate and secure the service. It is not transmitted to the police."
+         ),
+         "privacy_recipients": "Who receives it",
+@@ -512,15 +513,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy_retention": "How long it is kept",
+         "privacy_retention_body": (
+-            "House-book registration details and signatures are kept for six years from the last "
+-            "entry, as § 101 requires. The claim e-mail remains linked while the reservation record "
++            "House-book registration details and signatures are kept for six years after the end "
++            "of the stay, as § 101 requires, and then deleted. The claim e-mail remains linked while the reservation record "
+             "is retained unless the host releases the claim. Completed or failed message-delivery "
+             "records are normally deleted after 14 days; limited backup "
+             "copies may persist until their retention cycle expires."
+         ),
+         "privacy_retention_body_no_email": (
+-            "House-book registration details and signatures are kept for six years from the last "
+-            "entry, as § 101 requires. Limited backup copies may persist until their retention cycle expires."
++            "House-book registration details and signatures are kept for six years after the end "
++            "of the stay, as § 101 requires, and then deleted. Limited backup copies may persist until their retention cycle expires."
+         ),
+         "privacy_rights": "Your rights",
+         "privacy_rights_body": (
+@@ -975,8 +976,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "legal_notice_passport_title": "Fotografie pasu (cizinci)",
+         "legal_notice_passport_body": (
+             "Cizinci nahrají fotku stránky pasu nebo průkazu (nebo PDF). Uvidí ji jen ubytovatel, "
+-            "aby ji porovnal s vyplněnými údaji. Po kontrole se smaže, jinak automaticky po "
+-            "skončení pobytu. Policii se nikdy neposílá."
++            "aby ji porovnal s vyplněnými údaji. Po kontrole se smaže, jinak do 7 dnů od "
++            "příjezdu, nejpozději 30 dní od nahrání. Policii se nikdy neposílá."
+         ),
+         "legal_notice_reporting_title": "Hlášení policii a domovní kniha",
+         "legal_notice_reporting_body": (
+@@ -986,8 +987,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "legal_notice_retention_title": "Jak dlouho se údaje uchovávají",
+         "legal_notice_retention_body": (
+-            "Registrační údaje a podpis se uchovávají šest let od posledního zápisu v domovní "
+-            "knize podle § 101 zákona č. 326/1999 Sb. Zpracování je na základě právní povinnosti "
++            "Registrační údaje a podpis se uchovávají šest let od konce pobytu podle § 101 "
++            "odst. 4 zákona č. 326/1999 Sb. a poté se smažou. Zpracování je na základě právní povinnosti "
+             "(GDPR čl. 6 odst. 1 písm. c), nikoli souhlasu."
+         ),
+         "legal_notice_refusal_title": "Pokud odmítnete",
+@@ -1090,7 +1091,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "Pokud nejste občanem ČR, můžete nahrát fotografii stránky pasu nebo průkazu, "
+             "nebo PDF registrační formulář, aby hostitel ověřil údaje. Soubor slouží jen k této "
+             "kontrole a přístup v aplikaci mají jen oprávnění uživatelé ubytovatele. Po ověření "
+-            "se smaže; zůstane-li neověřený, plánovaná úloha jej odstraní po pobytu. Omezený přístup "
++            "se smaže; zůstane-li neověřený, smaže se do 7 dnů od příjezdu, nejpozději 30 dní od "
++            "nahrání. Omezený přístup "
+             "provozovatele nebo infrastruktury může být nutný k provozu a zabezpečení služby. "
+             "Policii se neposílá."
+         ),
+@@ -1124,14 +1126,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy_retention": "Jak dlouho se uchovávají",
+         "privacy_retention_body": (
+-            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od posledního zápisu "
+-            "podle § 101. E-mail k převzetí zůstává spojen s rezervací po dobu jejího uchování, "
++            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od konce pobytu "
++            "podle § 101 a poté se smažou. E-mail k převzetí zůstává spojen s rezervací po dobu jejího uchování, "
+             "pokud ubytovatel převzetí neuvolní. Dokončené či neúspěšné záznamy doručení "
+             "se běžně mažou po 14 dnech; omezené zálohy mohou zůstat do konce cyklu."
+         ),
+         "privacy_retention_body_no_email": (
+-            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od posledního zápisu "
+-            "podle § 101. Omezené zálohy mohou zůstat do konce svého retenčního cyklu."
++            "Registrační údaje domovní knihy a podpisy se uchovávají šest let od konce pobytu "
++            "podle § 101 a poté se smažou. Omezené zálohy mohou zůstat do konce svého retenčního cyklu."
+         ),
+         "privacy_rights": "Vaše práva",
+         "privacy_rights_body": (
+diff --git a/App/app/invoices.py b/App/app/invoices.py
+index 91ad5cb..d179773 100644
+--- a/App/app/invoices.py
++++ b/App/app/invoices.py
+@@ -537,20 +537,38 @@ def cancel(invoice_id: int, reason: str, correction_date: Optional[str], actor_u
+     return new_id
+ 
+ 
++def retention_cutoff(today: date) -> date:
++    """Issued before this date means the 10 years have run (§ 35 zákon 235/2004 Sb.).
++
++    Ten years from the end of the calendar year of issue: a 2015 invoice is
++    kept through 31 December 2025 and goes from 1 January 2026.
++    """
++    return date(today.year - 10, 1, 1)
++
++
+ def expired_ids(today: date, owner_user_id: Optional[int] = None) -> List[int]:
+-    """Issued documents older than 10 full years (the 10-year rule)."""
+-    cutoff = date(today.year - 10, 1, 1).isoformat()
++    """Issued documents past the 10-year rule; ``None`` means every workspace.
++
++    An original whose correction is still inside its own ten years stays: the
++    correction points at it and has to remain readable. Corrections come first
++    in the list so a batch that holds both deletes them in a valid order.
++    """
++    cutoff = retention_cutoff(today).isoformat()
+     return [
+         r["id"]
+         for r in db.query(
+-            "SELECT id FROM invoice WHERE issue_date < ? AND owner_user_id IS ?",
+-            (cutoff, owner_user_id),
++            "SELECT id FROM invoice WHERE issue_date < ? "
++            "AND (? IS NULL OR owner_user_id = ?) "
++            "AND NOT EXISTS (SELECT 1 FROM invoice c "
++            "                WHERE c.corrects_invoice_id = invoice.id AND c.issue_date >= ?) "
++            "ORDER BY CASE WHEN corrects_invoice_id IS NULL THEN 1 ELSE 0 END, id",
++            (cutoff, owner_user_id, owner_user_id, cutoff),
+         )
+     ]
+ 
+ 
+ def purge_expired(today: date, owner_user_id: Optional[int] = None) -> int:
+-    """Delete issued documents older than 10 full years, with the unlock flag."""
++    """Delete issued documents past the 10-year rule, with the unlock flag."""
+     ids = expired_ids(today, owner_user_id)
+     if not ids:
+         return 0
+diff --git a/App/app/passport_photos.py b/App/app/passport_photos.py
+index fadad7e..d8d0079 100644
+--- a/App/app/passport_photos.py
++++ b/App/app/passport_photos.py
+@@ -3,7 +3,8 @@
+ Guests upload a photo, camera capture, or PDF (e.g. a multi-guest registration
+ form). Files stay on disk only until the host confirms the data matches the
+ document, then are deleted immediately. Only authenticated hosts can read them
+-via the admin route.
++via the admin route. Unverified files go 7 days after check-in, and no file
++lives longer than 30 days after upload (see ``purge_stale``).
+ 
+ Verification is the happy path, not a guarantee: a host can simply never press
+ the button. ``purge_stale`` is the backstop that makes the promise true, and it
+@@ -216,14 +217,22 @@ def delete_photo(guest_id: int) -> None:
+ # --- retention -----------------------------------------------------------
+ #
+ # A photo exists for one purpose: letting the host compare the form against the
+-# document before reporting. That purpose dies with the stay, so the file has
+-# to go even when the host never pressed Verify. The grace period is generous
+-# enough for a host who was away the week the guest checked out.
+-PHOTO_GRACE_DAYS = 30
++# document before reporting. That purpose ends with the check, so the owner's
++# retention decision (legal positions, section 4) is: delete it when the host
++# marks the guest verified, otherwise 7 days after check-in, and never later
++# than 30 days after upload, whatever the stay dates say.
++PHOTO_AFTER_CHECKIN_DAYS = 7
++PHOTO_MAX_AGE_DAYS = 30
+ 
+ 
+-def stale_cutoff(today: Optional[date] = None) -> date:
+-    return (today or date.today()) - timedelta(days=PHOTO_GRACE_DAYS)
++def checkin_cutoff(today: Optional[date] = None) -> date:
++    """A stay that started on or before this date is at the end of its 7 days."""
++    return (today or date.today()) - timedelta(days=PHOTO_AFTER_CHECKIN_DAYS)
++
++
++def upload_cutoff(today: Optional[date] = None) -> date:
++    """A photo uploaded on or before this date has reached the 30-day hard cap."""
++    return (today or date.today()) - timedelta(days=PHOTO_MAX_AGE_DAYS)
+ 
+ 
+ def _orphan_ids() -> list[int]:
+@@ -258,23 +267,30 @@ def _orphan_ids() -> list[int]:
+ 
+ 
+ def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = None) -> int:
+-    """Delete photos whose stay is long over, plus any orphaned files.
+-
+-    Clears ``passport_photo_at`` so the host stops being offered a photo that
+-    is no longer there, but never touches the rest of the guest row: that is a
+-    house book entry and has its own six-year duty.
++    """Delete photos that have no purpose left, plus any orphaned files.
++
++    A photo goes when any one of these holds: the host marked the guest
++    verified (the Verify route deletes at once; this catches every other path
++    that sets ``identity_verified_at``), check-in was more than 7 days ago, or
++    the upload is more than 30 days old. Clears ``passport_photo_at`` so the
++    host stops being offered a photo that is no longer there, but never touches
++    the rest of the guest row: that is a house book entry with its own period.
+     """
++    checkin = checkin_cutoff(today).isoformat()
++    uploaded = upload_cutoff(today).isoformat()
+     rows = db.query(
+         "SELECT g.id AS id, g.passport_photo_at AS marked FROM guest g "
+         "JOIN reservation r ON r.id = g.reservation_id "
+         "JOIN apartment a ON a.id = r.apartment_id "
+-        # date() rather than the raw column: a stay_to that is not a date (an
++        # date() rather than the raw column: a stay_from that is not a date (an
+         # old row saved before the form refused them) is NULL here and falls
+         # back to the booking, instead of comparing as text - where "garbage"
+         # sorts after every cutoff and would keep the photo forever.
+-        "WHERE COALESCE(date(g.stay_to), date(r.date_to)) < ? "
++        "WHERE (g.identity_verified_at IS NOT NULL "
++        "OR COALESCE(date(g.stay_from), date(r.date_from)) <= ? "
++        "OR date(g.passport_photo_at) <= ?) "
+         "AND (? IS NULL OR a.owner_user_id = ?)",
+-        (stale_cutoff(today).isoformat(), owner_user_id, owner_user_id),
++        (checkin, uploaded, owner_user_id, owner_user_id),
+     )
+     removed = 0
+     for row in rows:
+@@ -289,12 +305,12 @@ def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = Non
+         for guest_id in _orphan_ids():
+             delete_photo(guest_id)
+             removed += 1
+-    if removed:
+-        db.audit(
+-            "passport_photo_sweep",
+-            f"deleted {removed} passport image(s) with no remaining purpose",
+-            owner_user_id=owner_user_id,
+-        )
++    db.audit_retention(
++        "passport_photos",
++        removed,
++        f"check-in on or before {checkin}; upload on or before {uploaded}; or verified",
++        owner_user_id=owner_user_id,
++    )
+     return removed
+ 
+ 
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index b8b41a5..cb3a3da 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -1999,7 +1999,9 @@ SUBMISSION_PAYLOAD_DAYS = 90
+ 
+ 
+ def purge_submission_payloads(
+-    owner_user_id: Optional[int] = None, days: int = SUBMISSION_PAYLOAD_DAYS
++    owner_user_id: Optional[int] = None,
++    days: int = SUBMISSION_PAYLOAD_DAYS,
++    now: Optional[datetime] = None,
+ ) -> int:
+     """Blank the request and response envelopes on settled submissions.
+ 
+@@ -2009,10 +2011,17 @@ def purge_submission_payloads(
+     because those are the evidence the host has to be able to produce, and
+     neither of them contains guest data.
+ 
++    What stays is the receipt row the retention decision asks for: the stay
++    (``apartment_id`` and ``guest_ids``, ids only), ``created_at`` and
++    ``finished_at``, the result (``state`` and the UbyPort error codes), the
++    reference (``pseudo_stamp``) and the Dorucenka. It lives as long as the
++    guest records it proves, see ``housebook.purge_orphan_submissions``.
++
+     Returns the number of rows that were carrying an envelope and lost it.
++    Writes one retention audit line on every run, a zero count included.
+     """
+     cutoff = (
+-        datetime.now(timezone.utc) - timedelta(days=days)
++        (now or datetime.now(timezone.utc)) - timedelta(days=days)
+     ).replace(microsecond=0).isoformat()
+     marks = ", ".join("?" for _ in TERMINAL_SUBMISSION_STATES)
+     rows = db.query(
+@@ -2024,6 +2033,7 @@ def purge_submission_payloads(
+         (cutoff, *TERMINAL_SUBMISSION_STATES, owner_user_id, owner_user_id),
+     )
+     if not rows:
++        db.audit_retention("ubyport_xml", 0, cutoff, owner_user_id=owner_user_id)
+         return 0
+     ids = [row["id"] for row in rows]
+     id_marks = ", ".join("?" for _ in ids)
+@@ -2037,4 +2047,5 @@ def purge_submission_payloads(
+         f"blanked the request and response envelope on {len(ids)} submission(s) "
+         f"older than {days} days",
+     )
++    db.audit_retention("ubyport_xml", len(ids), cutoff, owner_user_id=owner_user_id)
+     return len(ids)
+diff --git a/App/app/retention.py b/App/app/retention.py
+index 2f7361e..a686564 100644
+--- a/App/app/retention.py
++++ b/App/app/retention.py
+@@ -117,6 +117,29 @@ def _empty_reservation_step(today: date, dry_run: bool, owner_user_id: Optional[
+     return count
+ 
+ 
++def _stay_fee_records_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
++    """Delete sealed stay-fee periods and their adjustments past the guest rule.
++
++    The stay-fee book (§ 3g(4) zákon 565/1990 Sb.) has the same six years as
++    the house book and the same 31 January deletion day. A period is a month
++    (``YYYY-MM``) or a quarter (``YYYY-Qn``), so it ends inside the year in its
++    key, and the guest cutoff is always a 1 January: a period is due when its
++    year is before the cutoff year.
++    """
++    cutoff_year = f"{housebook.retention_cutoff(today).year:04d}"
++    scope = "apartment_id IN (SELECT id FROM apartment a WHERE (? IS NULL OR a.owner_user_id = ?))"
++    where = f"substr(period_key, 1, 4) < ? AND {scope}"
++    params = (cutoff_year, owner_user_id, owner_user_id)
++    adjustments = _scalar(f"SELECT COUNT(*) AS n FROM stay_fee_adjustment WHERE {where}", params)
++    filings = _scalar(f"SELECT COUNT(*) AS n FROM stay_fee_filing WHERE {where}", params)
++    if not dry_run and (adjustments or filings):
++        with db.immediate() as cur:
++            # Adjustments point at the filing they were sealed into.
++            cur.execute(f"DELETE FROM stay_fee_adjustment WHERE {where}", params)
++            cur.execute(f"DELETE FROM stay_fee_filing WHERE {where}", params)
++    return adjustments + filings
++
++
+ def _days_ago_iso(days: int) -> str:
+     return (
+         (datetime.now(timezone.utc) - timedelta(days=days))
+@@ -325,6 +348,7 @@ STEPS: List[tuple] = [
+     ("reservation_contacts", _reservation_contact_step),
+     ("submitter_ips", _submitter_ip_step),
+     ("empty_reservations", _empty_reservation_step),
++    ("stay_fee_records", _stay_fee_records_step),
+     ("audit_rows", _audit_retention_step),
+     ("alerts", _alert_retention_step),
+     ("rate_limit_events", _rate_limit_retention_step),
+@@ -333,6 +357,30 @@ STEPS: List[tuple] = [
+ ]
+ 
+ 
++def _cutoffs(today: date) -> Dict[str, str]:
++    """The cutoff each step applies, for its audit line (class, count, cutoff)."""
++    guests = housebook.retention_cutoff(today).isoformat()
++    contact = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()
++    return {
++        "guests": f"stay ended before {guests}",
++        "invoices": f"issued before {invoices.retention_cutoff(today).isoformat()}",
++        "claim_emails": f"stay ended before {contact}",
++        "reservation_contacts": f"stay ended before {contact}",
++        "submitter_ips": (
++            f"stay ended before {(today - timedelta(days=SUBMITTER_IP_GRACE_DAYS)).isoformat()}"
++        ),
++        "empty_reservations": f"stay ended before {guests}",
++        "stay_fee_records": f"period before {guests}",
++        "audit_rows": f"logged before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}",
++        "alerts": f"resolved before {_days_ago_iso(config.ALERT_RETENTION_DAYS)}",
++        "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
++        "legal_acceptance": (
++            f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
++        ),
++        "workspaces": f"deletion due on or before {db.utcnow()}",
++    }
++
++
+ def run(
+     today: Optional[date] = None,
+     *,
+@@ -343,8 +391,9 @@ def run(
+ 
+     ``dry_run`` defaults to ``not config.RETENTION_AUTOPURGE``. Each step is
+     wrapped so one failure does not stop the rest; the first failure is
+-    re-raised at the end so the scheduler marks the job failed. The run is
+-    always audited and its summary stored for the Settings panel (FE-3).
++    re-raised at the end so the scheduler marks the job failed. Every step
++    that ran writes its own audit line (class, count, cutoff); the run as a
++    whole is audited too and its summary stored for the Settings panel (FE-3).
+     """
+     today = today or date.today()
+     if dry_run is None:
+@@ -353,11 +402,20 @@ def run(
+     counts: Dict[str, int] = {}
+     failures: List[BaseException] = []
+ 
++    cutoffs = _cutoffs(today)
+     for name, step in STEPS:
+         try:
+             counts[name] = step(today, dry_run, owner_user_id)
+         except Exception as exc:  # keep going; re-raised below
+             failures.append(exc)
++            continue
++        db.audit_retention(
++            name,
++            counts[name],
++            cutoffs.get(name, ""),
++            owner_user_id=owner_user_id,
++            dry_run=dry_run,
++        )
+ 
+     summary = {"dry_run": dry_run, "owner_user_id": owner_user_id, "counts": counts}
+     db.audit("retention_run", json.dumps(summary), actor="system")
+diff --git a/App/tests/test_guest_navigation.py b/App/tests/test_guest_navigation.py
+index b0df826..79f6390 100644
+--- a/App/tests/test_guest_navigation.py
++++ b/App/tests/test_guest_navigation.py
+@@ -440,8 +440,9 @@ def test_the_passport_copy_speaks_to_the_guest_not_to_the_engineers():
+         assert "Choose your nationality in step 1 first." in page.text
+         assert (
+             "Foreign guests upload a photo of their passport or ID page (or a PDF). Only your host "
+-            "sees it, to compare it with what you entered. It is deleted after the check, or "
+-            "automatically after your stay. It is never sent to the police."
++            "sees it, to compare it with what you entered. It is deleted after the check, "
++            "otherwise 7 days after check-in, and never later than 30 days after upload. It is "
++            "never sent to the police."
+         ) in page.text
+         # The internal storage policy is not the guest's problem.
+         assert "stale-file sweep" not in page.text
+diff --git a/App/tests/test_overhaul.py b/App/tests/test_overhaul.py
+index 3395167..8c22419 100644
+--- a/App/tests/test_overhaul.py
++++ b/App/tests/test_overhaul.py
+@@ -682,7 +682,8 @@ def test_retention_purge_deletes_old_guests():
+     db.init_db()
+     _cleanup()
+     now = db.utcnow()
+-    old_end = (date.today() - timedelta(days=365 * 6 + 30)).isoformat()
++    # Past the six years and the 31 January deletion day that follows them.
++    old_end = (housebook.retention_cutoff(date.today()) - timedelta(days=30)).isoformat()
+     entity_id = db.insert(
+         "legal_entity",
+         {"name": "Overhaul Test s.r.o.", "created_at": now},
+diff --git a/App/tests/test_retention_alignment.py b/App/tests/test_retention_alignment.py
+new file mode 100644
+index 0000000..37e965e
+--- /dev/null
++++ b/App/tests/test_retention_alignment.py
+@@ -0,0 +1,494 @@
++"""WP22: retention periods match the owner's legal decision (legal positions, section 4).
++
++Every test freezes the date it runs on by passing ``today`` or ``now``, so the
++outcome does not depend on the day the suite runs.
++
++- passport/ID photos: gone on verification, else 7 days after check-in, and
++  never later than 30 days after upload;
++- guest records and stay-fee evidence: six years from the end of the stay,
++  deleted on 31 January of the year after the six years end;
++- raw UbyPort XML: 90 days, the receipt row without personal data stays;
++- invoices: 10 years from the end of the calendar year of issue;
++- every deletion run writes an audit line with class, count and cutoff.
++"""
++from __future__ import annotations
++
++import base64
++import json
++from datetime import date, datetime, timedelta, timezone
++
++import pytest
++
++from app import config, db, housebook, invoices, passport_photos, reporting, retention
++
++PNG_BYTES = base64.b64decode(
++    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
++    "DQottAAAAABJRU5ErkJggg=="
++)
++PREFIX = "wp22-"
++
++
++@pytest.fixture(autouse=True)
++def _cleanup():
++    db.init_db()
++    _purge()
++    yield
++    _purge()
++
++
++def _purge():
++    db.init_db()
++    owners = [r["id"] for r in db.query(
++        "SELECT id FROM user_account WHERE username LIKE ?", (PREFIX + "%",)
++    )]
++    for owner in owners:
++        for row in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (owner,)):
++            for g in db.query(
++                "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
++                "WHERE r.apartment_id = ?",
++                (row["id"],),
++            ):
++                passport_photos.delete_photo(int(g["id"]))
++            db.execute(
++                "DELETE FROM guest WHERE reservation_id IN"
++                " (SELECT id FROM reservation WHERE apartment_id = ?)",
++                (row["id"],),
++            )
++            db.execute("DELETE FROM submission WHERE apartment_id = ?", (row["id"],))
++            db.execute("DELETE FROM reservation WHERE apartment_id = ?", (row["id"],))
++            db.execute("DELETE FROM stay_fee_adjustment WHERE apartment_id = ?", (row["id"],))
++            db.execute("DELETE FROM stay_fee_filing WHERE apartment_id = ?", (row["id"],))
++        db.execute(
++            "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '1') "
++            "ON CONFLICT(key) DO UPDATE SET value = '1'"
++        )
++        db.execute(
++            "DELETE FROM invoice_item WHERE invoice_id IN"
++            " (SELECT id FROM invoice WHERE owner_user_id = ?)",
++            (owner,),
++        )
++        db.execute(
++            "DELETE FROM invoice WHERE owner_user_id = ? AND corrects_invoice_id IS NOT NULL",
++            (owner,),
++        )
++        db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (owner,))
++        db.execute("UPDATE settings SET value = '' WHERE key = 'invoice_purge_unlock'")
++        db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner,))
++        db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner,))
++        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner,))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner,))
++        db.execute("DELETE FROM user_account WHERE id = ?", (owner,))
++    db.execute("DELETE FROM settings WHERE key = 'retention_last_run'")
++
++
++_counter = 0
++
++
++def _owner() -> int:
++    global _counter
++    _counter += 1
++    return db.insert(
++        "user_account",
++        {
++            "username": f"{PREFIX}{_counter}",
++            "display_name": "Test host",
++            "password_hash": "x",
++            "role": "host",
++            "created_at": db.utcnow(),
++        },
++    )
++
++
++def _apartment(owner: int) -> tuple[int, int]:
++    global _counter
++    _counter += 1
++    now = db.utcnow()
++    entity_id = db.insert(
++        "legal_entity",
++        {"name": "WP22 Test", "seat": "Praha", "created_at": now, "owner_user_id": owner},
++    )
++    apartment_id = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity_id,
++            "owner_user_id": owner,
++            "internal_name": "Flat",
++            "permalink_token": f"{PREFIX}tok-{_counter}",
++            "automation_mode": "manual",
++            "default_purpose": "10",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    return entity_id, apartment_id
++
++
++def _guest(
++    owner: int,
++    *,
++    check_in: date,
++    check_out: date,
++    photo_uploaded: date | None = None,
++    verified: bool = False,
++) -> int:
++    global _counter
++    _counter += 1
++    _entity, apartment_id = _apartment(owner)
++    now = db.utcnow()
++    reservation_id = db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment_id,
++            "source": "manual",
++            "uid": f"{PREFIX}stay-{_counter}",
++            "date_from": check_in.isoformat(),
++            "date_to": check_out.isoformat(),
++            "status": "active",
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++    guest_id = db.insert(
++        "guest",
++        {
++            "reservation_id": reservation_id,
++            "surname": "Example",
++            "first_name": "Guest",
++            "nationality": "GBR",
++            "purpose": "10",
++            "stay_from": check_in.isoformat(),
++            "stay_to": check_out.isoformat(),
++            "entered_by": "guest",
++            "identity_verified_at": now if verified else None,
++            "passport_photo_at": (
++                datetime.combine(photo_uploaded, datetime.min.time(), timezone.utc).isoformat()
++                if photo_uploaded
++                else None
++            ),
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++    if photo_uploaded:
++        passport_photos.save_photo(guest_id, PNG_BYTES, "image/png")
++    return guest_id
++
++
++def _retention_lines(data_class: str) -> list[dict]:
++    rows = db.query(
++        "SELECT detail FROM audit WHERE action = 'retention_delete' ORDER BY id DESC LIMIT 200"
++    )
++    found = [json.loads(r["detail"]) for r in rows]
++    return [d for d in found if d["class"] == data_class]
++
++
++# --- passport and ID photos -----------------------------------------------
++
++TODAY = date(2026, 6, 10)
++
++
++def test_an_unverified_photo_goes_seven_days_after_check_in():
++    owner = _owner()
++    due = _guest(
++        owner, check_in=TODAY - timedelta(days=7), check_out=TODAY + timedelta(days=3),
++        photo_uploaded=TODAY - timedelta(days=8),
++    )
++    kept = _guest(
++        owner, check_in=TODAY - timedelta(days=6), check_out=TODAY + timedelta(days=3),
++        photo_uploaded=TODAY - timedelta(days=8),
++    )
++
++    removed = passport_photos.purge_stale(owner_user_id=owner, today=TODAY)
++
++    assert removed == 1
++    assert not passport_photos.has_photo(due)
++    assert passport_photos.has_photo(kept), "six days after check-in is still inside the window"
++    assert db.query_one("SELECT passport_photo_at FROM guest WHERE id = ?", (due,))[
++        "passport_photo_at"
++    ] is None
++    assert db.query_one("SELECT id FROM guest WHERE id = ?", (due,)), "the record itself stays"
++
++
++def test_no_photo_lives_past_thirty_days_after_upload_even_before_check_in():
++    owner = _owner()
++    # Uploaded long before a far-off stay: the check-in rule alone would keep it.
++    capped = _guest(
++        owner, check_in=TODAY + timedelta(days=20), check_out=TODAY + timedelta(days=25),
++        photo_uploaded=TODAY - timedelta(days=30),
++    )
++    younger = _guest(
++        owner, check_in=TODAY + timedelta(days=20), check_out=TODAY + timedelta(days=25),
++        photo_uploaded=TODAY - timedelta(days=29),
++    )
++
++    passport_photos.purge_stale(owner_user_id=owner, today=TODAY)
++
++    assert not passport_photos.has_photo(capped)
++    assert passport_photos.has_photo(younger)
++
++
++def test_a_verified_guest_keeps_no_photo_whatever_set_the_flag():
++    """The Verify route deletes at once; a host edit also sets the flag, so the sweep backs it up."""
++    owner = _owner()
++    verified = _guest(
++        owner, check_in=TODAY + timedelta(days=2), check_out=TODAY + timedelta(days=5),
++        photo_uploaded=TODAY, verified=True,
++    )
++
++    passport_photos.purge_stale(owner_user_id=owner, today=TODAY)
++
++    assert not passport_photos.has_photo(verified)
++
++
++def test_the_photo_sweep_writes_its_audit_line_even_with_nothing_to_do():
++    owner = _owner()
++    passport_photos.purge_stale(owner_user_id=owner, today=TODAY)
++
++    line = _retention_lines("passport_photos")[0]
++    assert line["count"] == 0
++    assert line["owner_user_id"] == owner
++    assert "2026-06-03" in line["cutoff"]  # check-in cutoff, 7 days
++    assert "2026-05-11" in line["cutoff"]  # upload cutoff, 30 days
++
++
++# --- guest records and stay-fee evidence -----------------------------------
++
++
++@pytest.mark.parametrize(
++    "today, cutoff",
++    [
++        (date(2026, 12, 31), date(2020, 1, 1)),
++        (date(2027, 1, 30), date(2020, 1, 1)),
++        (date(2027, 1, 31), date(2021, 1, 1)),
++        (date(2027, 6, 1), date(2021, 1, 1)),
++        (date(2028, 2, 29), date(2022, 1, 1)),
++    ],
++)
++def test_the_guest_cutoff_moves_once_a_year_on_31_january(today, cutoff):
++    assert housebook.retention_cutoff(today) == cutoff
++
++
++def test_a_guest_record_goes_on_31_january_after_its_six_years():
++    owner = _owner()
++    # Stay ended 31 Dec 2020: six years end 31 Dec 2026, deletion 31 Jan 2027.
++    ending_2020 = _guest(owner, check_in=date(2020, 12, 28), check_out=date(2020, 12, 31))
++    ending_2021 = _guest(owner, check_in=date(2020, 12, 30), check_out=date(2021, 1, 2))
++
++    assert housebook.purge_expired(date(2027, 1, 30), owner_user_id=owner) == 0
++    assert db.query_one("SELECT id FROM guest WHERE id = ?", (ending_2020,))
++
++    assert housebook.purge_expired(date(2027, 1, 31), owner_user_id=owner) == 1
++    assert db.query_one("SELECT id FROM guest WHERE id = ?", (ending_2020,)) is None
++    assert db.query_one("SELECT id FROM guest WHERE id = ?", (ending_2021,))
++
++
++def _filing(apartment_id: int, period_key: str) -> int:
++    return db.insert(
++        "stay_fee_filing",
++        {
++            "apartment_id": apartment_id,
++            "period_key": period_key,
++            "cadence": "quarterly" if "Q" in period_key else "monthly",
++            "rate_czk": 50,
++            "liable_days": 1,
++            "exempt_days": 0,
++            "total_due_czk": 50,
++            "total_collected_czk": 50,
++            "created_at": db.utcnow(),
++        },
++    )
++
++
++def test_stay_fee_evidence_follows_the_same_31_january_rule(monkeypatch):
++    monkeypatch.setattr(config, "RETENTION_AUTOPURGE", True)
++    owner = _owner()
++    _entity, apartment_id = _apartment(owner)
++    old_filing = _filing(apartment_id, "2020-Q4")
++    db.insert(
++        "stay_fee_adjustment",
++        {
++            "apartment_id": apartment_id,
++            "period_key": "2020-Q4",
++            "direction": "add",
++            "mode": "bed_days",
++            "bed_days": 1,
++            "reason_enc": "x",
++            "created_at": db.utcnow(),
++            "filing_id": old_filing,
++        },
++    )
++    newer_filing = _filing(apartment_id, "2021-01")
++
++    before = retention.run(date(2027, 1, 30), dry_run=False, owner_user_id=owner)
++    assert before["counts"]["stay_fee_records"] == 0
++    assert db.query_one("SELECT id FROM stay_fee_filing WHERE id = ?", (old_filing,))
++
++    on_the_day = retention.run(date(2027, 1, 31), dry_run=False, owner_user_id=owner)
++    assert on_the_day["counts"]["stay_fee_records"] == 2  # the filing and its adjustment
++    assert db.query_one("SELECT id FROM stay_fee_filing WHERE id = ?", (old_filing,)) is None
++    assert db.query_one(
++        "SELECT id FROM stay_fee_adjustment WHERE apartment_id = ?", (apartment_id,)
++    ) is None
++    assert db.query_one("SELECT id FROM stay_fee_filing WHERE id = ?", (newer_filing,))
++
++
++def test_a_dry_run_counts_stay_fee_evidence_and_deletes_nothing():
++    owner = _owner()
++    _entity, apartment_id = _apartment(owner)
++    filing = _filing(apartment_id, "2019-12")
++
++    summary = retention.run(date(2027, 2, 1), dry_run=True, owner_user_id=owner)
++
++    assert summary["counts"]["stay_fee_records"] == 1
++    assert db.query_one("SELECT id FROM stay_fee_filing WHERE id = ?", (filing,))
++
++
++# --- raw UbyPort XML and the receipt row ------------------------------------
++
++NOW = datetime(2026, 6, 10, 12, 0, tzinfo=timezone.utc)
++
++
++def _submission(owner: int, created: datetime) -> int:
++    _entity, apartment_id = _apartment(owner)
++    stamp = created.replace(microsecond=0).isoformat()
++    return db.insert(
++        "submission",
++        {
++            "apartment_id": apartment_id,
++            "created_at": stamp,
++            "finished_at": stamp,
++            "mode": "manual",
++            "state": "ok",
++            "guest_ids": "[1]",
++            "pseudo_stamp": "REF-0001",
++            "receipt_pdf": base64.b64encode(b"%PDF-1.4 receipt").decode(),
++            "request_xml": "<request>example</request>",
++            "response_xml": "<response>example</response>",
++        },
++    )
++
++
++def test_raw_xml_goes_after_ninety_days_and_the_receipt_row_stays():
++    owner = _owner()
++    old = _submission(owner, NOW - timedelta(days=91))
++    recent = _submission(owner, NOW - timedelta(days=89))
++
++    assert reporting.purge_submission_payloads(owner_user_id=owner, now=NOW) == 1
++
++    row = db.query_one("SELECT * FROM submission WHERE id = ?", (old,))
++    assert row["request_xml"] is None and row["response_xml"] is None
++    # The receipt: stay link, time, result, reference and the Dorucenka.
++    assert row["apartment_id"] and row["guest_ids"] == "[1]"
++    assert row["created_at"] and row["state"] == "ok"
++    assert row["pseudo_stamp"] == "REF-0001" and row["receipt_pdf"]
++    assert db.query_one("SELECT request_xml FROM submission WHERE id = ?", (recent,))[
++        "request_xml"
++    ]
++
++    line = _retention_lines("ubyport_xml")[0]
++    assert line["count"] == 1
++    assert line["cutoff"] == (NOW - timedelta(days=90)).isoformat()
++
++
++# --- invoices ----------------------------------------------------------------
++
++
++def _invoice(owner: int, entity_id: int, issue: date, n: int, corrects: int | None = None) -> int:
++    now = db.utcnow()
++    return db.insert(
++        "invoice",
++        {
++            "legal_entity_id": entity_id, "owner_user_id": owner,
++            "kind": "corrective" if corrects else "invoice", "corrects_invoice_id": corrects,
++            "seq_year": issue.year, "seq_no": n, "number": f"{issue.year}-{n:04d}",
++            "vs": f"{issue.year}{n:04d}", "lang": "cs", "vat_status": "non_payer",
++            "issue_date": issue.isoformat(), "seller_name": "E", "seller_seat": "Praha",
++            "buyer_name": "B", "total_haler": 100, "created_at": now, "issued_at": now,
++        },
++    )
++
++
++def test_an_invoice_is_kept_ten_years_from_the_end_of_its_year():
++    owner = _owner()
++    entity_id, _apartment_id = _apartment(owner)
++    last_day = _invoice(owner, entity_id, date(2015, 12, 31), 1)
++    next_year = _invoice(owner, entity_id, date(2016, 1, 1), 2)
++
++    assert invoices.purge_expired(date(2025, 12, 31), owner_user_id=owner) == 0
++    assert invoices.purge_expired(date(2026, 1, 1), owner_user_id=owner) == 1
++    assert db.query_one("SELECT id FROM invoice WHERE id = ?", (last_day,)) is None
++    assert db.query_one("SELECT id FROM invoice WHERE id = ?", (next_year,))
++
++
++def test_the_nightly_run_reaches_every_workspaces_invoices():
++    """The global run used to match only invoices with no owner, so no host invoice ever aged out."""
++    owner = _owner()
++    entity_id, _apartment_id = _apartment(owner)
++    old = _invoice(owner, entity_id, date(2015, 6, 1), 1)
++
++    assert old in invoices.expired_ids(date(2026, 1, 1), owner_user_id=None)
++
++
++def test_an_original_stays_while_its_correction_is_inside_ten_years():
++    owner = _owner()
++    entity_id, _apartment_id = _apartment(owner)
++    original = _invoice(owner, entity_id, date(2015, 11, 1), 1)
++    correction = _invoice(owner, entity_id, date(2017, 2, 1), 1, corrects=original)
++
++    assert invoices.purge_expired(date(2026, 1, 1), owner_user_id=owner) == 0
++    assert db.query_one("SELECT id FROM invoice WHERE id = ?", (original,))
++
++    assert invoices.purge_expired(date(2028, 1, 1), owner_user_id=owner) == 2
++    assert db.query_one("SELECT id FROM invoice WHERE id = ?", (correction,)) is None
++
++
++# --- audit line per class ----------------------------------------------------
++
++
++def test_every_step_of_the_run_writes_class_count_and_cutoff():
++    owner = _owner()
++    _guest(owner, check_in=date(2019, 5, 1), check_out=date(2019, 5, 3))
++
++    summary = retention.run(date(2027, 2, 1), dry_run=True, owner_user_id=owner)
++
++    for name, _step in retention.STEPS:
++        line = _retention_lines(name)[0]
++        assert line["count"] == summary["counts"][name]
++        assert line["cutoff"], f"{name} has no cutoff in its audit line"
++        assert line["dry_run"] is True
++        assert line["owner_user_id"] == owner
++    guests = _retention_lines("guests")[0]
++    assert guests["count"] == 1
++    assert guests["cutoff"] == "stay ended before 2021-01-01"
++    assert _retention_lines("invoices")[0]["cutoff"] == "issued before 2017-01-01"
++
++
++# --- texts that state the periods ---------------------------------------------
++
++
++def test_the_host_dpa_states_the_periods_in_both_languages():
++    from app import dpa_i18n
++
++    en = dpa_i18n.DPA_STRINGS["en"]["dpa.s15_body"]
++    cs = dpa_i18n.DPA_STRINGS["cs"]["dpa.s15_body"]
++    assert "6 years after the end of the stay" in en
++    assert "within 7 days after check-in and never later than 30 days after upload" in en
++    assert "deleted after 90 days" in en
++    assert "6 let od konce pobytu" in cs
++    assert "do 7 dnů od příjezdu, nejpozději 30 dní od nahrání" in cs
++    assert "mažou po 90 dnech" in cs
++
++
++def test_the_guest_notice_states_the_periods_in_both_languages():
++    from app import i18n
++
++    for lang, stay_rule, photo_rule in (
++        ("en", "six years after the end of", "never later than 30 days after upload"),
++        ("cs", "šest let od konce pobytu", "nejpozději 30 dní od nahrání"),
++    ):
++        strings = i18n.STRINGS[lang]
++        assert stay_rule in strings["legal_notice_retention_body"]
++        assert stay_rule in strings["privacy_retention_body"].replace("\n", " ")
++        assert photo_rule in strings["legal_notice_passport_body"]
++        assert photo_rule in strings["privacy_passport_photo_body"]
++        assert "posledního zápisu" not in strings["legal_notice_retention_body"]
+diff --git a/App/tests/test_retention_job.py b/App/tests/test_retention_job.py
+index 0beefe9..7c94c3a 100644
+--- a/App/tests/test_retention_job.py
++++ b/App/tests/test_retention_job.py
+@@ -175,12 +175,13 @@ def test_a_malformed_stay_to_falls_back_to_the_reservation_end():
+ def test_the_due_notice_fires_once_per_owner_per_month(monkeypatch):
+     monkeypatch.setattr(config, "RETENTION_AUTOPURGE", False)
+     owner = _owner("retjob-due")
+-    # The six-year clock on this stay ends 15 days from today.
+-    stay_end = housebook.retention_cutoff(date.today()) + timedelta(days=15)
+-    _guest(owner, stay_end=stay_end, token="retjob-due")
++    # Deletion runs on 31 January, so on 10 January a stay that ended in 2020
++    # (six years over at the end of 2026) is due within the notice window.
++    today = date(2027, 1, 10)
++    _guest(owner, stay_end=date(2020, 6, 15), token="retjob-due")
+ 
+-    retention.run()
+-    key = f"retention_due:{owner}:{date.today().strftime('%Y-%m')}"
++    retention.run(today)
++    key = f"retention_due:{owner}:{today.strftime('%Y-%m')}"
+     alert = db.query_one("SELECT * FROM alert WHERE dedupe_key = ?", (key,))
+     assert alert is not None
+     assert alert["kind"] == "retention_due"
+@@ -188,7 +189,7 @@ def test_the_due_notice_fires_once_per_owner_per_month(monkeypatch):
+     assert params["days"] == config.RETENTION_NOTICE_DAYS
+     assert params["count"] >= 1
+ 
+-    retention.run()
++    retention.run(today)
+     rows = db.query("SELECT id FROM alert WHERE dedupe_key = ?", (key,))
+     assert len(rows) == 1
+ 
+-- 
+2.34.1
+

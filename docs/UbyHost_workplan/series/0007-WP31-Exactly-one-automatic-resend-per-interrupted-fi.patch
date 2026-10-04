@@ -1,0 +1,335 @@
+From 9b7022fa7f0e0f47f28b466edfc17bd0337e12b6 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 12:02:11 +0200
+Subject: [PATCH 07/34] WP31: Exactly one automatic resend per interrupted
+ filing
+
+Bug found during integration: when the sweep's one automatic resend of an
+interrupted (crash or timeout) batch came back unclear too, the resend was a
+new outcome_unknown batch with retried_at empty, so the next sweep resent it
+again. The resend repeated every sweep for as long as UbyPort timed out.
+
+Owner decision Q4: one automatic retry, then hold and alert the host.
+
+- reporting._retry_outcome_unknown_batches sends the resend with
+  submission.mode = 'auto_resend' (reporting.AUTO_RESEND_MODE) and never
+  resends a batch with that mode. The mode is written when the resend's row
+  is inserted, so a resend cut off by a crash is not resent either.
+- An unclear resend stays outcome_unknown: its guests stay in doubt, out of
+  the sweep, and the existing submission_outcome_unknown alert and mail fire
+  for it. No schema change.
+- A send by the host (manual, ignore_automation) is still allowed and is not
+  the automatic one: if its own answer is unclear, the sweep resends it once.
+- Unchanged: claim_sendable as the only double-filing guard, the in-doubt
+  filter, and duplicate answer 150 counting as filed.
+- Reports show the new mode: reports.mode.auto_resend (EN, CS).
+
+Tests (tests/test_stale_submission.py): a crashed filing is resent once; an
+unclear resend is not resent over three sweeps, the guest stays held and the
+host is alerted and mailed once; a crash during the resend is not resent;
+a manual send afterwards files the guest and clears the alert; an unclear
+manual send gets one automatic resend; an accepted or duplicate (150) resend
+resolves everything. The WP23 watchdog test for such a stay is added with
+WP23. test_host_labels lists the new mode.
+---
+ App/app/host_i18n.py               |   2 +
+ App/app/reporting.py               |  22 +++-
+ App/tests/test_host_labels.py      |   2 +
+ App/tests/test_stale_submission.py | 190 +++++++++++++++++++++++++++++
+ 4 files changed, 212 insertions(+), 4 deletions(-)
+
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 057b7c3..f5cb1f2 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -3360,6 +3360,7 @@ _INTERFACE_STRINGS = {
+         "reports.mode.scheduled": "sent on schedule",
+         "reports.mode.manual": "sent manually",
+         "reports.mode.auto": "sent automatically",
++        "reports.mode.auto_resend": "resent automatically after an unclear answer",
+         "reports.mode.completion_immediate": "sent immediately after completion",
+         "reports.mode.manual_bulk": "sent manually, several stays at once",
+         "reports.mode.manual_resend": "sent manually again",
+@@ -4043,6 +4044,7 @@ _INTERFACE_STRINGS = {
+         "reports.mode.scheduled": "odesláno podle plánu",
+         "reports.mode.manual": "odesláno ručně",
+         "reports.mode.auto": "odesláno automaticky",
++        "reports.mode.auto_resend": "automaticky odesláno znovu po nejasné odpovědi",
+         "reports.mode.completion_immediate": "odesláno okamžitě po dokončení",
+         "reports.mode.manual_bulk": "odesláno ručně, více pobytů najednou",
+         "reports.mode.manual_resend": "odesláno ručně znovu",
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index 3070aae..1191544 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -83,6 +83,13 @@ HOST_SIGNATURE_REQUIRED_MESSAGE = (
+ # is never blocked by this.
+ SUBMISSION_MAX_AUTO_ATTEMPTS = 3
+ 
++# submission.mode of the sweep's one automatic resend of an interrupted batch
++# (WP31, owner decision Q4). Set when the resend's row is inserted, so it holds
++# even if the resend itself is cut off by a crash. A batch with this mode is
++# never resent automatically: when its answer is unclear too, its guests stay
++# in doubt and the host is alerted. A send by the host starts afresh.
++AUTO_RESEND_MODE = "auto_resend"
++
+ # How long a stay must go untouched before the party is taken as final. A guest
+ # link holder can raise the declared headcount, so the completion gate must not
+ # wait forever for forms that are never coming: once every form on file is
+@@ -1526,7 +1533,13 @@ def recover_stale_submissions(apartment_id: int) -> int:
+ 
+ 
+ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
+-    """One automatic resend per interrupted batch, only from the scheduler."""
++    """One automatic resend per interrupted batch, only from the scheduler.
++
++    The resend is itself a batch (``AUTO_RESEND_MODE``). If its answer is
++    unclear as well, it is not resent again: its guests stay in doubt, out of
++    the sweep, and the outcome-unknown alert and mail already raised for it
++    tell the host to check UbyPort and send by hand (WP31).
++    """
+     if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
+         return 0
+     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+@@ -1538,8 +1551,9 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
+         return 0
+     pending = db.query(
+         "SELECT id, guest_ids FROM submission WHERE apartment_id = ? "
+-        "AND state = 'outcome_unknown' AND retried_at IS NULL",
+-        (apartment_id,),
++        "AND state = 'outcome_unknown' AND retried_at IS NULL "
++        "AND COALESCE(mode, '') != ?",
++        (apartment_id, AUTO_RESEND_MODE),
+     )
+     retried = 0
+     for row in pending:
+@@ -1552,7 +1566,7 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
+                 "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
+                 (guest_id, SENT),
+             )
+-        submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode="auto")
++        submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode=AUTO_RESEND_MODE)
+         retried += 1
+     return retried
+ 
+diff --git a/App/tests/test_host_labels.py b/App/tests/test_host_labels.py
+index 5b1d1b1..5087c92 100644
+--- a/App/tests/test_host_labels.py
++++ b/App/tests/test_host_labels.py
+@@ -29,6 +29,7 @@ ENTERED_BY_KEYS = [
+ ]
+ MODE_KEYS = [
+     "reports.mode.auto",
++    "reports.mode.auto_resend",
+     "reports.mode.manual",
+     "reports.mode.manual_bulk",
+     "reports.mode.manual_resend",
+@@ -41,6 +42,7 @@ WRITTEN_MODES = [
+     "manual_bulk",
+     "manual_resend",
+     "auto",
++    "auto_resend",
+     "completion_immediate",
+     "demo",
+ ]
+diff --git a/App/tests/test_stale_submission.py b/App/tests/test_stale_submission.py
+index e2d9e41..fdd2c50 100644
+--- a/App/tests/test_stale_submission.py
++++ b/App/tests/test_stale_submission.py
+@@ -310,3 +310,193 @@ def test_immediate_guest_save_does_not_run_the_scheduler_retry(monkeypatch):
+     reporting.submit_for_apartment(apartment_id, mode="completion_immediate")
+     assert batches == []
+     assert db.query_one("SELECT retried_at FROM submission WHERE id = ?", (submission_id,))["retried_at"] is None
++
++
++# --- WP31: exactly one automatic resend per interrupted filing ---------------
++
++
++class _ScriptedClient:
++    """Answers each submit with the next scripted outcome and counts the calls."""
++
++    def __init__(self, outcomes):
++        self.outcomes = list(outcomes)
++        self.calls = 0
++
++    def submit(self, _header, guests):
++        self.calls += 1
++        outcome = self.outcomes.pop(0) if self.outcomes else "timeout"
++        if outcome == "timeout":
++            from app.ubyport.client import UbyportOutcomeUnknownError
++
++            raise UbyportOutcomeUnknownError("read timed out")
++        return SubmissionResult(
++            endpoint="test",
++            request_xml="<request/>",
++            response_xml="<response/>",
++            pseudo_stamp="ok" if outcome == "ok" else "",
++            record_errors=["150"] * len(guests) if outcome == "duplicate" else [],
++        )
++
++
++def _crashed_filing(monkeypatch, outcomes):
++    """A stay whose first automatic send died mid-flight, plus a scripted UbyPort."""
++    apartment_id, submission_id, guest_id, owner_id = _sweep_apartment(monkeypatch)
++    # The process died while the batch was on the wire: running, no live claim.
++    db.update("submission", submission_id, {"state": "running", "error_text": None})
++    db.execute("UPDATE guest SET submission_id = NULL WHERE id = ?", (guest_id,))
++    client = _ScriptedClient(outcomes)
++    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: client)
++    return apartment_id, submission_id, guest_id, owner_id, client
++
++
++def _batches(apartment_id):
++    return db.query(
++        "SELECT id, mode, state, retried_at FROM submission WHERE apartment_id = ? ORDER BY id",
++        (apartment_id,),
++    )
++
++
++def _guest_row(guest_id):
++    return db.query_one(
++        "SELECT submit_state, submission_id FROM guest WHERE id = ?", (guest_id,)
++    )
++
++
++def test_a_crashed_filing_is_resent_exactly_once(monkeypatch):
++    db.init_db()
++    apartment_id, original, guest_id, owner_id, client = _crashed_filing(monkeypatch, ["ok"])
++
++    reporting.sweep(owner_user_id=owner_id)
++
++    assert client.calls == 1
++    rows = _batches(apartment_id)
++    assert [r["id"] for r in rows][0] == original
++    assert rows[0]["state"] == "outcome_unknown" and rows[0]["retried_at"]
++    assert rows[1]["mode"] == reporting.AUTO_RESEND_MODE
++    assert rows[1]["state"] == "ok"
++    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
++
++    reporting.sweep(owner_user_id=owner_id)
++    assert client.calls == 1
++
++
++def test_an_unclear_resend_is_never_resent_automatically(monkeypatch):
++    db.init_db()
++    apartment_id, original, guest_id, owner_id, client = _crashed_filing(
++        monkeypatch, ["timeout", "timeout", "timeout", "timeout"]
++    )
++    mails = []
++    monkeypatch.setattr(
++        reporting.mail_notify,
++        "submission_problem",
++        lambda _apartment, submission_id, **kw: mails.append((submission_id, kw["state"])),
++    )
++
++    for _ in range(3):
++        reporting.sweep(owner_user_id=owner_id)
++
++    # One resend in three sweeps, not one per sweep.
++    assert client.calls == 1
++    rows = _batches(apartment_id)
++    assert len(rows) == 2
++    resend = rows[1]
++    assert resend["mode"] == reporting.AUTO_RESEND_MODE
++    assert resend["state"] == "outcome_unknown"
++    assert resend["retried_at"] is None
++    guest = _guest_row(guest_id)
++    assert guest["submit_state"] == reporting.PENDING
++    assert guest["submission_id"] == resend["id"], "the guest stays held on the unclear resend"
++    assert reporting.apartment_in_doubt(apartment_id)
++    assert alerts.open_alert(f"submission_outcome_unknown:{apartment_id}"), "the host is alerted"
++    assert mails == [(resend["id"], "transport_error")], "and mailed once, for the resend"
++
++
++def test_a_crash_during_the_resend_is_not_resent_again(monkeypatch):
++    db.init_db()
++    apartment_id, original, guest_id, owner_id, client = _crashed_filing(monkeypatch, [])
++    reporting.recover_stale_submissions(apartment_id)
++    # The resend itself is cut off: its row is left running with no claim.
++    resend = db.insert(
++        "submission",
++        {"apartment_id": apartment_id, "created_at": db.utcnow(),
++         "mode": reporting.AUTO_RESEND_MODE, "state": "running",
++         "guest_ids": json.dumps([guest_id])},
++    )
++    db.update("submission", original, {"retried_at": db.utcnow()})
++    db.execute("UPDATE guest SET submission_id = NULL WHERE id = ?", (guest_id,))
++
++    for _ in range(3):
++        reporting.sweep(owner_user_id=owner_id)
++
++    assert client.calls == 0
++    assert db.query_one("SELECT state FROM submission WHERE id = ?", (resend,))["state"] == "outcome_unknown"
++    assert _guest_row(guest_id)["submission_id"] == resend
++    assert alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
++
++
++def test_the_host_can_still_send_by_hand_after_an_unclear_resend(monkeypatch):
++    db.init_db()
++    apartment_id, original, guest_id, owner_id, client = _crashed_filing(
++        monkeypatch, ["timeout", "ok"]
++    )
++    reporting.sweep(owner_user_id=owner_id)
++    reporting.sweep(owner_user_id=owner_id)
++    assert client.calls == 1
++
++    # The host's send button: ignore_automation, as routes/admin.py passes it.
++    results = reporting.submit_for_apartment(
++        apartment_id, only_guest_ids=[guest_id], mode="manual", ignore_automation=True
++    )
++    assert [r["state"] for r in results] == ["ok"]
++    assert client.calls == 2
++    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
++    assert not reporting.apartment_in_doubt(apartment_id)
++    assert not alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
++    modes = [r["mode"] for r in _batches(apartment_id)]
++    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual"]
++
++    reporting.sweep(owner_user_id=owner_id)
++    assert client.calls == 2, "a filed guest is never sent again"
++
++
++def test_an_unclear_manual_send_still_gets_its_one_automatic_resend(monkeypatch):
++    db.init_db()
++    apartment_id, original, guest_id, owner_id, client = _crashed_filing(
++        monkeypatch, ["timeout", "timeout", "ok"]
++    )
++    reporting.sweep(owner_user_id=owner_id)
++    reporting.submit_for_apartment(
++        apartment_id, only_guest_ids=[guest_id], mode="manual", ignore_automation=True
++    )
++    assert client.calls == 2
++    # The host's send is not the automatic one: its unclear answer is resent once.
++    reporting.sweep(owner_user_id=owner_id)
++    reporting.sweep(owner_user_id=owner_id)
++    assert client.calls == 3
++    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
++    modes = [r["mode"] for r in _batches(apartment_id)]
++    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual", reporting.AUTO_RESEND_MODE]
++
++
++@pytest.mark.parametrize("answer", ["ok", "duplicate"])
++def test_an_accepted_resend_resolves_everything(monkeypatch, answer):
++    db.init_db()
++    apartment_id, original, guest_id, owner_id, client = _crashed_filing(monkeypatch, [answer])
++    reporting.recover_stale_submissions(apartment_id)
++    assert alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
++
++    reporting.sweep(owner_user_id=owner_id)
++
++    assert client.calls == 1
++    resend = _batches(apartment_id)[1]
++    # Duplicate answer code 150 means the register already holds the record.
++    assert resend["state"] == ("ok" if answer == "ok" else "ok_duplicate")
++    guest = _guest_row(guest_id)
++    assert guest["submit_state"] == reporting.SENT
++    assert guest["submission_id"] == resend["id"]
++    assert not reporting.apartment_in_doubt(apartment_id)
++    assert not alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
++
++    for _ in range(2):
++        reporting.sweep(owner_user_id=owner_id)
++    assert client.calls == 1
+-- 
+2.34.1
+

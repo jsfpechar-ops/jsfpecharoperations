@@ -1,0 +1,1114 @@
+From 8b903669599e492c904665c589e6e600feb6a411 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 02:49:02 +0200
+Subject: [PATCH 19/34] WP24: Terms, DPA and manual-filing texts
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Terms 1.6 (EN, CS), from compliance/04_terms_clauses.md with the owner's
+decisions: § 5 stay fee duty; § 10 rewritten as 10.1 to 10.5 (filing on the
+host's instruction, with the host's own access and in the host's name; filing
+by hand, recorded with "I filed this stay by hand in UbyPort"); new § 10a
+UbyPort access credentials ("zmocňuje" / "authorises and mandates"); § 13
+best effort with notice of planned downtime where possible, no maintenance
+window; § 17 cap of the fees paid in the 12 months before the claim and at
+least CZK 10,000, never limited for intent or gross negligence (§ 2898
+občanský zákoník).
+
+DPA 1.6: § 11 lists Render and Google Drive only as "only if used" rows.
+
+Terms, Privacy and DPA show one effective date, config.LEGAL_EFFECTIVE_DATE
+(UBYHOST_LEGAL_EFFECTIVE_DATE), with the configured version, so all three
+1.6 versions are accepted once on /account/accept.
+
+Guide "If UbyHost cannot file in time" follows
+compliance/05_manual_filing_fallback.md: when to file by hand, the UbyPort
+web application URL and helpline, steps, keeping the Doručenka, then pressing
+"I filed this stay by hand in UbyPort".
+
+Integration: tests/test_legal_contents.py accepts the "10a" anchor;
+tests/test_filing_watchdog.py compares escaped guide text.
+
+Conflict resolution: privacy.html header: WP27's privacy-first line (earlier in this order) stays above the effective-date line, which now prints legal_effective('privacy').
+---
+ App/app/acceptance.py             |  19 ++
+ App/app/config.py                 |  19 +-
+ App/app/dpa_i18n.py               |  34 ++--
+ App/app/guide_i18n.py             |  24 ++-
+ App/app/privacy_policy_i18n.py    |   4 +-
+ App/app/routes/legal.py           |   6 +-
+ App/app/templates/dpa.html        |   2 +-
+ App/app/templates/guide.html      |   2 +
+ App/app/templates/privacy.html    |   2 +-
+ App/app/templates/terms.html      |   2 +-
+ App/app/templating.py             |  19 ++
+ App/app/terms_i18n.py             | 232 +++++++++++++++------
+ App/tests/test_accounts.py        |   7 +-
+ App/tests/test_filing_watchdog.py |   3 +-
+ App/tests/test_legal_contents.py  |   4 +-
+ App/tests/test_wp24_terms_dpa.py  | 328 ++++++++++++++++++++++++++++++
+ docs/ENVIRONMENT.md               |  13 +-
+ 17 files changed, 613 insertions(+), 107 deletions(-)
+ create mode 100644 App/tests/test_wp24_terms_dpa.py
+
+diff --git a/App/app/acceptance.py b/App/app/acceptance.py
+index 2b26618..5fcc0d9 100644
+--- a/App/app/acceptance.py
++++ b/App/app/acceptance.py
+@@ -24,6 +24,25 @@ def current_versions() -> Dict[str, str]:
+     }
+ 
+ 
++_EN_MONTHS = (
++    "January", "February", "March", "April", "May", "June",
++    "July", "August", "September", "October", "November", "December",
++)
++# Genitive, as in "4. října 2026".
++_CS_MONTHS = (
++    "ledna", "února", "března", "dubna", "května", "června",
++    "července", "srpna", "září", "října", "listopadu", "prosince",
++)
++
++
++def effective_date_text(lang: str) -> str:
++    """The shared effective date of Terms, Privacy and DPA, written out (WP24)."""
++    day = config.LEGAL_EFFECTIVE_DATE
++    if lang == "cs":
++        return f"{day.day}. {_CS_MONTHS[day.month - 1]} {day.year}"
++    return f"{day.day} {_EN_MONTHS[day.month - 1]} {day.year}"
++
++
+ def pending(user_id: int) -> List[str]:
+     """The documents whose current version this account has not accepted."""
+     versions = current_versions()
+diff --git a/App/app/config.py b/App/app/config.py
+index 69f0d3c..79c33d3 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -11,6 +11,7 @@ from __future__ import annotations
+ 
+ import os
+ import secrets
++from datetime import date
+ from pathlib import Path
+ from typing import Optional
+ 
+@@ -216,7 +217,9 @@ UMAMI_HOST_URL = os.environ.get("UMAMI_HOST_URL", "").strip().rstrip("/")
+ UMAMI_DOMAINS = os.environ.get("UMAMI_DOMAINS", "").strip()
+ 
+ # Bumped when Terms of Service change materially (logged on host login).
+-TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.5")
++# 1.6 (WP24): stay fee duty, filing on the host's instruction, filing by hand,
++# UbyPort credentials (§ 10a), best-effort availability, liability (§ 17).
++TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.6")
+ 
+ # Transactional mail. Staging uses console (links appear in Settings).
+ # SES is refused unless deployment is production and credentials are complete.
+@@ -231,8 +234,18 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").stri
+ # policy pending again, so every host is sent to /account/accept once.
+ PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.6")
+ 
+-# Bumped when the Data Processing Agreement changes materially.
+-DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.5")
++# Bumped when the Data Processing Agreement changes materially. 1.6 (WP24):
++# § 11 names Render and Google Drive only as "only if used" subprocessors.
++DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.6")
++
++# WP24: the one effective date shown on /terms, /privacy and /dpa. Terms 1.6,
++# Privacy 1.6 and DPA 1.6 take effect together, so every host accepts all
++# three on one /account/accept page. The owner sets this at release, at least
++# 30 days after hosts are told (Terms § 22). ISO date, YYYY-MM-DD; a malformed
++# value stops start-up rather than printing a wrong date on a contract.
++LEGAL_EFFECTIVE_DATE = date.fromisoformat(
++    os.environ.get("UBYHOST_LEGAL_EFFECTIVE_DATE", "").strip() or "2026-11-16"
++)
+ 
+ # BE-5: bumped whenever a legal_notice_* / privacy_* string in i18n.py changes
+ # materially, so a guest's acknowledgement records which notice they saw.
+diff --git a/App/app/dpa_i18n.py b/App/app/dpa_i18n.py
+index 1e8ce52..9c1e464 100644
+--- a/App/app/dpa_i18n.py
++++ b/App/app/dpa_i18n.py
+@@ -12,7 +12,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+             "This DPA is incorporated into the Terms of Service; using the Service constitutes "
+             "acceptance unless a separate signed agreement expressly replaces it."
+         ),
+-        "dpa.effective": "Effective date: 19 September 2026. Version 1.5.",
++        "dpa.effective": "Effective date: %(date)s. Version %(version)s.",
+         "dpa.operator_title": "Processor (service provider)",
+         "dpa.footer_link": "Data Processing Agreement",
+         "dpa.footer_short": "DPA",
+@@ -150,15 +150,17 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+         "dpa.s11_title": "11. Subprocessors",
+         "dpa.s11_body": (
+             "The Controller provides general written authorisation for the Processor to engage "
+-            "Subprocessors in the current register at /subprocessors (including, where enabled, "
+-            "AWS Lightsail and SES, Cloudflare, Render, Google Drive and Amazon S3 backups). "
+-            "The register identifies conditional use and transfer notes; the Privacy Policy at /privacy "
+-            "provides additional context. The Processor will impose data protection terms on Subprocessors substantially "
+-            "similar to this DPA. The Processor remains liable to the Controller for Subprocessor "
++            "the Subprocessors in the current register at /subprocessors: AWS Lightsail, Amazon "
++            "SES, Amazon S3 backups and Cloudflare. Only if used: Render (demo hosting only, no "
++            "production Guest Data) and Google Drive (off-site backups, only when the Operator "
++            "configures the documented backup job). The register identifies conditional use and "
++            "transfer notes; the Privacy Policy at /privacy provides additional context. The "
++            "Processor will impose data protection terms on Subprocessors substantially similar "
++            "to this DPA. The Processor remains liable to the Controller for Subprocessor "
+             "performance to the extent required by Article 28(4). The Processor will inform the "
+-            "Controller of intended material changes at least 30 days in advance where practicable by "
+-            "updating the register and notifying account contacts, and allow the Controller to object "
+-            "on reasonable data-protection grounds; if unresolved, the "
++            "Controller of intended material changes at least 30 days in advance where "
++            "practicable by updating the register and notifying account contacts, and allow the "
++            "Controller to object on reasonable data-protection grounds; if unresolved, the "
+             "Controller may terminate the affected Service as per the Terms."
+         ),
+         "dpa.s12_title": "12. Assistance with data subject rights",
+@@ -270,7 +272,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+             "(Provozovatel jako zpracovatel) o údajích hostů v UbyHostu. DPA je součástí obchodních "
+             "podmínek; používáním Služby ji přijímáte, pokud ji nepřepíše samostatná písemná smlouva."
+         ),
+-        "dpa.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
++        "dpa.effective": "Účinnost od: %(date)s. Verze %(version)s.",
+         "dpa.operator_title": "Zpracovatel (poskytovatel služby)",
+         "dpa.footer_link": "Smlouva o zpracování údajů (DPA)",
+         "dpa.footer_short": "DPA",
+@@ -379,11 +381,13 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+         "dpa.s11_title": "11. Subzpracovatelé",
+         "dpa.s11_body": (
+             "Správce uděluje obecné povolení k dalším zpracovatelům v aktuálním seznamu na "
+-            "/subprocessors (podle zapnutých funkcí zejména AWS Lightsail a SES, Cloudflare, "
+-            "Render a zálohy Google Drive či Amazon S3). Seznam uvádí podmíněné použití a informace "
+-            "o předání; doplňují jej Zásady na /privacy. Zpracovatel ukládá obdobné povinnosti. "
+-            "Odpovídá za subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací "
+-            "seznamu a, je-li to praktické, kontakty účtu nejméně 30 dní předem); Správce může vznést "
++            "/subprocessors: AWS Lightsail, Amazon SES, zálohy Amazon S3 a Cloudflare. Jen pokud "
++            "se používají: Render (pouze ukázkový provoz, bez produkčních údajů hostů) a Google "
++            "Drive (zálohy mimo server, jen po nastavení dokumentované zálohovací úlohy "
++            "Provozovatelem). Seznam uvádí podmíněné použití a informace o předání; doplňují jej "
++            "Zásady na /privacy. Zpracovatel ukládá obdobné povinnosti. Odpovídá za "
++            "subzpracovatele dle čl. 28 odst. 4. O změnách informuje (např. aktualizací seznamu "
++            "a, je-li to praktické, kontakty účtu nejméně 30 dní předem); Správce může vznést "
+             "oprávněnou námitku a při neřešení ukončit Službu dle Podmínek."
+         ),
+         "dpa.s12_title": "12. Pomoc s právy subjektů",
+diff --git a/App/app/guide_i18n.py b/App/app/guide_i18n.py
+index f67c764..0600fd9 100644
+--- a/App/app/guide_i18n.py
++++ b/App/app/guide_i18n.py
+@@ -75,11 +75,13 @@ GUIDE_STRINGS = {
+         "guide.reporting.failure": "If UbyPort is down, UbyHost retries on its own and alerts you. If UbyPort refuses the login, automatic sending for that property pauses until you save or test new credentials. If a send gets no clear answer, you get an alert and UbyHost sends that batch once more on its own at the next automatic check. A guest the police already hold counts as reported, so nothing is filed twice.",
+         "guide.reporting.receipts": "Police reports lists every report with its Doručenka receipt. You can download receipts one by one or as a ZIP for a date range.",
+         "guide.reporting.manual_filing_title": "If UbyHost cannot file in time",
+-        "guide.reporting.manual_filing_lede": "When a stay is less than 24 hours from its deadline and still not reported, UbyHost e-mails you once for that stay. If UbyHost cannot send it in time, file it yourself:",
+-        "guide.reporting.manual_filing_step1": "Sign in to the UbyPort web application of the Foreign Police with your own access as the host.",
+-        "guide.reporting.manual_filing_step2": "Enter each guest who is not reported yet.",
+-        "guide.reporting.manual_filing_step3": "Keep the receipt UbyPort gives you, as proof that the report was made in time.",
+-        "guide.reporting.manual_filing_step4": "Open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\". Enter when you filed and, if you like, the receipt number. UbyHost then counts those guests as reported and never sends them. If you marked a stay by mistake, you can undo it within 24 hours.",
++        "guide.reporting.manual_filing_lede": "Reporting foreign guests is your legal duty, within 3 working days from the start of the stay. When a stay is less than 24 hours from its deadline and still not reported, UbyHost e-mails you once for that stay. File the guests yourself if UbyHost shows a filing as rejected, failed or outcome unknown, if UbyHost warns that the deadline is close and the guest is still not reported, if UbyHost or the UbyPort web service is down while the deadline runs, or if your UbyPort web-service credentials are invalid or blocked.",
++        "guide.reporting.manual_filing_before": "Outcome unknown: first check in the UbyPort web application that the guest is not already reported, because a second filing counts as a duplicate. You need the user name and password for the UbyPort web application from the \"login details\" document the foreign police sent you. They are different from the web-service access stored in UbyHost. Lost them? Call the UbyPort helpline +420 731 670 444 (working days 8:00 to 11:00) or write to ubyport@pcr.cz, with your IDUB or IČO and the property address ready.",
++        "guide.reporting.manual_filing_step1": "Open the UbyPort web application at https://ubyport.pcr.cz/UbyPort/Home/Login and sign in with your own user name and password as the host.",
++        "guide.reporting.manual_filing_step2": "Choose entering data in the web form (the manual entry module) and enter each guest who is not reported yet. You find their data in UbyHost under Stays > the stay > the guest, or in the guest's form PDF.",
++        "guide.reporting.manual_filing_step3": "Send. On the result page click \"Stažení dokumentu DORUČENKA – doporučeno\" (download the receipt) and save the PDF. Check that the guest is in the list of accepted records, not rejected ones. Keep the receipt with your house book for 6 years, as proof that the report was made in time.",
++        "guide.reporting.manual_filing_step4": "Then open the stay in UbyHost and press \"I filed this stay by hand in UbyPort\". Enter when you filed and, if you like, the receipt number. UbyHost then counts those guests as reported and never sends them. If you marked a stay by mistake, you can undo it within 24 hours.",
++        "guide.reporting.manual_filing_correction": "Correcting an earlier report? Report the guest again with the right data and write in the note: PŘEDCHOZÍ OZNÁMENÍ OBSAHOVALO CHYBY (\"the previous report contained errors\").",
+         "guide.reporting.manual_filing_duty": "The legal duty to report stays with you as the host, also when UbyHost cannot file. UbyHost does not check a report made by hand; the mark is your record of it.",
+ 
+         "guide.filters.body": "Stay fees and Invoices share the same filter. Changes apply as soon as you pick them.",
+@@ -190,11 +192,13 @@ GUIDE_STRINGS = {
+         "guide.reporting.failure": "Když UbyPort nefunguje, UbyHost to zkouší znovu sám a upozorní vás. Když UbyPort odmítne přihlášení, automatické odesílání pro toto ubytování se zastaví, dokud neuložíte nebo neotestujete nové údaje. Když na odeslání nepřijde jasná odpověď, dostanete upozornění a UbyHost tuto dávku při příští automatické kontrole jednou zopakuje sám. Host, kterého už policie má, se počítá jako nahlášený, takže se nic nepodá dvakrát.",
+         "guide.reporting.receipts": "Hlášení policii obsahují každé hlášení s doručenkou. Doručenky stáhnete jednotlivě nebo jako ZIP za zvolené období.",
+         "guide.reporting.manual_filing_title": "Když UbyHost nestihne hlášení podat",
+-        "guide.reporting.manual_filing_lede": "Když do termínu zbývá méně než 24 hodin a pobyt stále není nahlášený, UbyHost vám k tomuto pobytu jednou pošle e-mail. Pokud ho UbyHost nemůže včas odeslat, podejte hlášení sami:",
+-        "guide.reporting.manual_filing_step1": "Přihlaste se do webové aplikace UbyPort cizinecké policie svým vlastním přístupem ubytovatele.",
+-        "guide.reporting.manual_filing_step2": "Zadejte každého hosta, který ještě není nahlášený.",
+-        "guide.reporting.manual_filing_step3": "Uschovejte si doručenku, kterou UbyPort vrátí, jako doklad, že hlášení bylo podáno včas.",
+-        "guide.reporting.manual_filing_step4": "V UbyHostu otevřete pobyt a zvolte „Tento pobyt jsem nahlásil(a) ručně v UbyPortu“. Zadejte, kdy jste hlášení podali, a případně číslo doručenky. UbyHost pak tyto hosty počítá jako nahlášené a už je nikdy neodešle. Pokud jste pobyt označili omylem, můžete to do 24 hodin vrátit.",
++        "guide.reporting.manual_filing_lede": "Hlášení cizinců je vaše zákonná povinnost: do 3 pracovních dnů od začátku ubytování. Když do termínu zbývá méně než 24 hodin a pobyt stále není nahlášený, UbyHost vám k tomuto pobytu jednou pošle e-mail. Nahlaste hosty sami, pokud UbyHost u hlášení ukáže odmítnuto, chyba odeslání nebo neznámý výsledek, pokud upozorní, že se blíží lhůta a host stále není nahlášen, pokud UbyHost nebo webová služba UbyPort nejsou dostupné a lhůta běží, nebo pokud máte neplatné či zablokované přístupové údaje k webové službě.",
++        "guide.reporting.manual_filing_before": "Neznámý výsledek: nejdřív ve webové aplikaci UbyPort zkontrolujte, zda host už nahlášen není. Druhé odeslání se počítá jako duplicita. Potřebujete přihlašovací jméno a heslo do webové aplikace UbyPort z dokumentu „přihlašovací údaje“ od cizinecké policie. Jsou to jiné údaje než přístup k webové službě, který máte uložený v UbyHostu. Ztratili jste je? Volejte infolinku UbyPort +420 731 670 444 (pracovní dny 8:00 až 11:00) nebo pište na ubyport@pcr.cz. Připravte si IDUB nebo IČO a adresu ubytování.",
++        "guide.reporting.manual_filing_step1": "Otevřete přihlašovací stránku webové aplikace UbyPort https://ubyport.pcr.cz/UbyPort/Home/Login a přihlaste se svým vlastním přihlašovacím jménem a heslem ubytovatele.",
++        "guide.reporting.manual_filing_step2": "Zvolte zadání údajů do webového formuláře (modul pro ruční zápis) a zadejte každého hosta, který ještě není nahlášený. Jeho údaje najdete v UbyHostu v části Pobyty > pobyt > host, nebo v PDF formuláře hosta.",
++        "guide.reporting.manual_filing_step3": "Odešlete. Na stránce s výsledkem klikněte na „Stažení dokumentu DORUČENKA – doporučeno“ a PDF uložte. Zkontrolujte, že host je v seznamu přijatých záznamů, ne nepřijatých. Uschovejte si doručenku u domovní knihy po dobu 6 let jako doklad, že hlášení bylo podáno včas.",
++        "guide.reporting.manual_filing_step4": "Pak v UbyHostu otevřete pobyt a stiskněte „Tento pobyt jsem nahlásil(a) ručně v UbyPortu“. Zadejte, kdy jste hlášení podali, a případně číslo doručenky. UbyHost pak tyto hosty počítá jako nahlášené a už je nikdy neodešle. Pokud jste pobyt označili omylem, můžete to do 24 hodin vrátit.",
++        "guide.reporting.manual_filing_correction": "Opravujete chybu v dřívějším hlášení? Nahlaste hosta znovu se správnými údaji a do poznámky napište: PŘEDCHOZÍ OZNÁMENÍ OBSAHOVALO CHYBY.",
+         "guide.reporting.manual_filing_duty": "Zákonná povinnost hlásit zůstává na vás jako na ubytovateli, i když UbyHost hlášení podat nemůže. Ručně podané hlášení UbyHost nekontroluje; označení je váš záznam o něm.",
+ 
+         "guide.filters.body": "Poplatky z pobytu a Faktury mají stejný filtr. Změny se použijí hned po výběru.",
+diff --git a/App/app/privacy_policy_i18n.py b/App/app/privacy_policy_i18n.py
+index 8050d62..c69bbe4 100644
+--- a/App/app/privacy_policy_i18n.py
++++ b/App/app/privacy_policy_i18n.py
+@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+             "replace the guest privacy notice shown to your guests — that notice names the controller "
+             "configured for the property, which may differ from its property manager."
+         ),
+-        "privacy.effective": "Effective date: 4 October 2026. Version 1.6.",
++        "privacy.effective": "Effective date: %(date)s. Version %(version)s.",
+         "privacy.cookies.table_intro": "The table below lists every cookie and item of local storage the service sets.",
+         "cookies.table.name": "Name",
+         "cookies.table.party": "Set by",
+@@ -329,7 +329,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+             "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
+             "který se může lišit od správce objektu."
+         ),
+-        "privacy.effective": "Účinnost od: 4. října 2026. Verze 1.6.",
++        "privacy.effective": "Účinnost od: %(date)s. Verze %(version)s.",
+         "privacy.cookies.table_intro": "Tabulka níže uvádí všechny soubory cookie a položky místního úložiště, které služba nastavuje.",
+         "cookies.table.name": "Název",
+         "cookies.table.party": "Nastavuje",
+diff --git a/App/app/routes/legal.py b/App/app/routes/legal.py
+index 12db91a..26ee0ab 100644
+--- a/App/app/routes/legal.py
++++ b/App/app/routes/legal.py
+@@ -9,7 +9,11 @@ from ..templating import render
+ 
+ router = APIRouter()
+ 
+-TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
++# WP24: § 10a (UbyPort access credentials) sits between § 10 and § 11, so the
++# later clauses keep their numbers.
++TERMS_SECTION_IDS = (
++    tuple(f"{n:02d}" for n in range(1, 11)) + ("10a",) + tuple(f"{n:02d}" for n in range(11, 28))
++)
+ PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
+ DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
+ # WP09: the five rows of 04_legal_positions.md section 5 first, then the two
+diff --git a/App/app/templates/dpa.html b/App/app/templates/dpa.html
+index 322f4a2..ae0ce56 100644
+--- a/App/app/templates/dpa.html
++++ b/App/app/templates/dpa.html
+@@ -5,7 +5,7 @@
+ 
+ {{ page_header(t('dpa.page_title'), t('dpa.page_lede', name=operator.name)) }}
+ 
+-<p class="small muted">{{ t('dpa.effective') }}</p>
++<p class="small muted">{{ legal_effective('dpa') }}</p>
+ 
+ {% with sections = dpa_sections, prefix = 'dpa' %}{% include "_legal_toc.html" %}{% endwith %}
+ 
+diff --git a/App/app/templates/guide.html b/App/app/templates/guide.html
+index 76be334..271b2ce 100644
+--- a/App/app/templates/guide.html
++++ b/App/app/templates/guide.html
+@@ -81,11 +81,13 @@
+       <p class="small muted">{{ t('guide.reporting.receipts') }}</p>
+       <h3 id="manual-filing">{{ t('guide.reporting.manual_filing_title') }}</h3>
+       <p>{{ t('guide.reporting.manual_filing_lede') }}</p>
++      <p>{{ t('guide.reporting.manual_filing_before') }}</p>
+       <ol>
+         {% for step in ['step1', 'step2', 'step3', 'step4'] %}
+         <li>{{ t('guide.reporting.manual_filing_' ~ step) }}</li>
+         {% endfor %}
+       </ol>
++      <p class="small muted">{{ t('guide.reporting.manual_filing_correction') }}</p>
+       <p>{{ t('guide.reporting.manual_filing_duty') }}</p>
+     </section>
+ 
+diff --git a/App/app/templates/privacy.html b/App/app/templates/privacy.html
+index ab41de1..cd3e5f2 100644
+--- a/App/app/templates/privacy.html
++++ b/App/app/templates/privacy.html
+@@ -14,7 +14,7 @@
+ {{ page_header(t('privacy.page_title'), t('privacy.page_lede', name=operator.name)) }}
+ 
+ <p class="lede">{{ t('privacy_first.line') }}</p>
+-<p class="small muted">{{ t('privacy.effective') }}</p>
++<p class="small muted">{{ legal_effective('privacy') }}</p>
+ 
+ {% with sections = privacy_sections, prefix = 'privacy' %}{% include "_legal_toc.html" %}{% endwith %}
+ 
+diff --git a/App/app/templates/terms.html b/App/app/templates/terms.html
+index 1dcd38a..075da15 100644
+--- a/App/app/templates/terms.html
++++ b/App/app/templates/terms.html
+@@ -5,7 +5,7 @@
+ 
+ {{ page_header(t('terms.page_title'), t('terms.page_lede')) }}
+ 
+-<p class="small muted">{{ t('terms.effective') }}</p>
++<p class="small muted">{{ legal_effective('terms') }}</p>
+ 
+ {% with sections = terms_sections, prefix = 'terms' %}{% include "_legal_toc.html" %}{% endwith %}
+ 
+diff --git a/App/app/templating.py b/App/app/templating.py
+index 84baa15..00d626c 100644
+--- a/App/app/templating.py
++++ b/App/app/templating.py
+@@ -15,6 +15,7 @@ from markupsafe import Markup, escape
+ 
+ from . import (
+     __version__,
++    acceptance,
+     access,
+     alerts,
+     analytics,
+@@ -120,6 +121,23 @@ def _template_translate(context, key: str, **kwargs) -> str:
+     return host_i18n.translate(lang, key, **kwargs)
+ 
+ 
++@pass_context
++def _template_legal_effective(context, doc: str) -> str:
++    """"Effective date: ... Version ..." for /terms, /privacy or /dpa (WP24).
++
++    The date is the single ``config.LEGAL_EFFECTIVE_DATE`` and the version is
++    the one hosts accept, so the page can never show another number.
++    """
++    request = context.get("request")
++    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
++    return host_i18n.translate(
++        lang,
++        f"{doc}.effective",
++        date=acceptance.effective_date_text(host_i18n.normalise_language(lang)),
++        version=acceptance.current_versions()[doc],
++    )
++
++
+ @pass_context
+ def _template_plural(context, base: str, n: int, **kwargs) -> str:
+     """A counted string, in the one/few/many form its count needs.
+@@ -307,6 +325,7 @@ templates.env.filters["datetime_local"] = _datetime_local
+ templates.env.filters["from_json"] = _from_json
+ templates.env.filters["legal_links"] = _legal_links
+ templates.env.globals["t"] = _template_translate
++templates.env.globals["legal_effective"] = _template_legal_effective
+ templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
+ templates.env.globals["identity_visible"] = _template_identity_visible
+ templates.env.globals["guest_identifier"] = _template_guest_identifier
+diff --git a/App/app/terms_i18n.py b/App/app/terms_i18n.py
+index e857c67..6a230c9 100644
+--- a/App/app/terms_i18n.py
++++ b/App/app/terms_i18n.py
+@@ -10,7 +10,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+             "Contract between the UbyHost software operator and accommodation providers "
+             "who use the service. Please read carefully before using UbyHost."
+         ),
+-        "terms.effective": "Effective date: 19 September 2026. Version 1.5.",
++        "terms.effective": "Effective date: %(date)s. Version %(version)s.",
+         "terms.operator_title": "Service provider",
+         "terms.footer_link": "Terms of Service",
+         "terms.footer_short": "Terms",
+@@ -69,14 +69,20 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s05_title": "5. Roles of the parties",
+         "terms.s05_body": (
+-            "The Host is solely responsible for compliance with obligations of an accommodation provider "
+-            "under Czech law, including Act No. 326/1999 Coll. on residence of foreign nationals, "
+-            "related decrees, house book rules, and GDPR duties as data controller. The Operator "
+-            "provides technical infrastructure and processes Guest Data on the Host's documented "
+-            "instructions to deliver the Service — as a data processor under GDPR Article 28 pursuant "
+-            "to the Data Processing Agreement at /dpa. Nothing in these Terms transfers statutory duties "
+-            "of the Host to the Operator. The Operator is not a joint controller unless expressly agreed "
+-            "in a separate written agreement."
++            "The Host is solely responsible for compliance with obligations of an accommodation "
++            "provider under Czech law, including Act No. 326/1999 Coll. on residence of foreign "
++            "nationals, related decrees, house book rules, and GDPR duties as data controller. "
++            "The Operator provides technical infrastructure and processes Guest Data on the "
++            "Host's documented instructions to deliver the Service — as a data processor under "
++            "GDPR Article 28 pursuant to the Data Processing Agreement at /dpa. Nothing in these "
++            "Terms transfers statutory duties of the Host to the Operator. The Operator is not a "
++            "joint controller unless expressly agreed in a separate written agreement. The Host "
++            "is also solely responsible for the local stay fee (poplatek z pobytu) under Act No. "
++            "565/1990 Coll. and the municipal ordinance: for collecting it, keeping the record "
++            "book, reporting to the municipality and paying it. Where the Service calculates the "
++            "fee or prepares a report, a register or a payment QR code, these are aids for the "
++            "Host. The Operator does not file the report or pay the fee. The Host checks the "
++            "figures before using them."
+         ),
+         "terms.s06_title": "6. Account registration and security",
+         "terms.s06_body": (
+@@ -131,16 +137,52 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s10_title": "10. UbyPort and police reporting",
+         "terms.s10_body": (
+-            "Where enabled, the Service may format and transmit reports toward UbyPort or related "
+-            "channels under the Host's configured instructions: manually, immediately when all declared "
+-            "forms are complete, or after a configured delay from completion, without requiring an in-app "
+-            "identity-verification step. The Operator does not guarantee that any submission will "
+-            "be received, accepted, validated, or deemed compliant by the Czech Police, Ministry of the "
+-            "Interior, or any authority. Outages, schema changes, credential issues, network failures, "
+-            "and manual review by authorities are outside the Operator's control. The Host must "
+-            "independently verify submission status, retain proof of reporting, and maintain contingency "
+-            "procedures (including manual filing where required). Demo, sandbox, or test data must not be "
+-            "relied upon as official police records."
++            "10.1 The duty to report accommodated foreigners to the Police of the Czech Republic "
++            "under Act No. 326/1999 Coll. is the Host's. The Service is a technical tool. Where "
++            "reporting is enabled, the Service transmits records to UbyPort only on the Host's "
++            "instruction, given through the property's reporting setting (manual, immediately "
++            "when all declared forms are complete, or after a set delay) or by a send action in "
++            "the Service. Each transmission is made with the Host's own UbyPort web-service "
++            "access and in the Host's name. The Operator does not act as the Host's "
++            "representative or agent toward the police and does not report anything in its own "
++            "name. 10.2 The Operator does not guarantee that any submission will be received, "
++            "accepted, validated, or deemed compliant by the Police of the Czech Republic, the "
++            "Ministry of the Interior, or any authority. Outages, schema changes, credential "
++            "issues, network failures, and manual review by authorities are outside the "
++            "Operator's control. 10.3 The Host checks the result of every filing in the Service "
++            "(status and the police receipt, Doručenka) and keeps proof of reporting. Demo, "
++            "sandbox, or test data must not be relied upon as official police records. 10.4 If "
++            "the Service shows that a filing was rejected, failed, or has an unknown outcome, or "
++            "warns that a deadline is near, or if the Service or UbyPort's web service is "
++            "unavailable, the Host files the affected guests itself within the statutory time "
++            "limit (currently 3 working days from the start of accommodation), for example "
++            "through the UbyPort web application with its own login. Instructions are in the "
++            "Service's guide, section \"If UbyHost cannot file in time\". Before sending again "
++            "from the Service, the Host checks in the UbyPort web application that the guest is "
++            "not already reported, because a second filing counts as a duplicate. After filing "
++            "by hand, the Host records this on the stay in the Service (\"I filed this stay by "
++            "hand in UbyPort\"), so that the Service does not send those guests again. 10.5 "
++            "Notices from the Service about filings are shown in the Service and sent to the "
++            "Account e-mail. The Host keeps that e-mail address working and reads these notices."
++        ),
++        "terms.s10a_title": "10a. UbyPort access credentials",
++        "terms.s10a_body": (
++            "The Host authorises and mandates the Operator to store the UbyPort web-service user "
++            "name and password that the Host enters for a property, and to use them solely to "
++            "transmit the Host's reports to UbyPort and to test the connection when the Host "
++            "asks. This authorisation and mandate covers only storing and using the credentials "
++            "as described here; it does not make the Operator the Host's representative toward "
++            "the police (§ 10.1). The Operator stores the password encrypted, does not show it "
++            "in the Service, does not use it for any other purpose and does not give it to "
++            "anyone except as required by law. The Host may change or delete the credentials in "
++            "the Service at any time; reporting from the Service then stops until valid "
++            "credentials are entered. The Host requests web-service credentials from the Police "
++            "of the Czech Republic and keeps its own login to the UbyPort web application, so "
++            "that it can file by hand. If the Host suspects that the credentials have been "
++            "misused, it asks the police for new ones and tells the Operator. The Operator tells "
++            "the Host without undue delay if it learns that stored credentials may have been "
++            "exposed. The authorisation ends when the credentials are deleted or the Account is "
++            "closed; the Operator then deletes them."
+         ),
+         "terms.s11_title": "11. Intellectual property",
+         "terms.s11_body": (
+@@ -162,13 +204,16 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s13_title": "13. Service availability and support",
+         "terms.s13_body": (
+-            "The Service is provided on a commercially reasonable efforts basis. The Operator does not "
+-            "guarantee uninterrupted or error-free operation, specific uptime percentages, or response "
+-            "times unless agreed in a separate written SLA. Maintenance, upgrades, and emergency work "
+-            "may cause temporary unavailability. The Operator is not liable for failures caused by "
+-            "third-party networks, hosting providers, UbyPort, internet connectivity, or force majeure. "
+-            "Support is provided through channels the Operator makes available from time to time; no "
+-            "support email is guaranteed unless published on the /legal page."
++            "The Service is provided on a best-effort basis. The Operator does not guarantee "
++            "uninterrupted or error-free operation, specific uptime percentages, or response "
++            "times unless agreed in a separate written SLA. Maintenance, upgrades, and emergency "
++            "work may cause temporary unavailability; where possible, the Operator announces "
++            "planned downtime in the Service in advance. The Operator is not liable for failures "
++            "caused by third-party networks, hosting providers, UbyPort, internet connectivity, "
++            "or force majeure. An outage of the Service, of UbyPort or of a provider does not "
++            "extend the Host's statutory time limits; in that case the Host follows § 10.4. "
++            "Support is provided through channels the Operator makes available from time to "
++            "time; no support email is guaranteed unless published on the /legal page."
+         ),
+         "terms.s14_title": "14. Beta features and demo data",
+         "terms.s14_body": (
+@@ -200,16 +245,23 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s17_title": "17. Limitation of liability",
+         "terms.s17_body": (
+-            "To the maximum extent permitted by Czech law, the Operator shall not be liable for indirect, "
+-            "incidental, special, consequential, or punitive damages, or for loss of profit, revenue, "
+-            "goodwill, data, or business opportunity, even if advised of the possibility. The Operator's "
+-            "aggregate liability arising out of or relating to the Service or these Terms shall not "
+-            "exceed the greater of (a) amounts paid by the Host to the Operator for the Service in the "
+-            "twelve (12) months preceding the claim, or (b) CZK 5,000, except where liability cannot be "
+-            "limited under mandatory law (including intentional harm or gross negligence where such "
+-            "limits are impermissible). For business users, the parties acknowledge that these limitations "
+-            "are a material allocation of risk. Nothing excludes liability for death or personal injury "
+-            "caused by negligence where exclusion is unlawful."
++            "17.1 The Operator is not liable for loss of profit, lost business opportunity or "
++            "other indirect or consequential damage. 17.2 The Operator's total liability for all "
++            "claims arising from the Service or these Terms in any calendar year is limited to "
++            "the fees the Host paid to the Operator for the Service in the twelve (12) months "
++            "before the claim, and to no less than CZK 10,000. 17.3 The Operator is not liable "
++            "for fines or other consequences of a report that was late, missing or wrong, to the "
++            "extent the Host did not check the result of the filing or did not file by hand "
++            "under § 10.4 after the Service reported a problem or was unavailable. 17.4 "
++            "Liability for damage caused intentionally or through gross negligence is never "
++            "excluded or limited. Sections 17.1 to 17.3 also do not apply to harm to a person's "
++            "natural rights (including life, health and privacy), or where the Host is a "
++            "consumer or otherwise a weaker party, because Czech law does not allow such "
++            "liability to be excluded or limited in advance (§ 2898 of Act No. 89/2012 Coll., "
++            "Civil Code). They do not limit either party's liability to data subjects or "
++            "supervisory authorities under the GDPR. 17.5 For business users the parties agree "
++            "that these limits are a fair allocation of risk, taking into account the price of "
++            "the Service and the Host's duty to check filings."
+         ),
+         "terms.s18_title": "18. Indemnification",
+         "terms.s18_body": (
+@@ -307,7 +359,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+             "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kteří službu "
+             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
+         ),
+-        "terms.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
++        "terms.effective": "Účinnost od: %(date)s. Verze %(version)s.",
+         "terms.operator_title": "Poskytovatel služby",
+         "terms.footer_link": "Obchodní podmínky",
+         "terms.footer_short": "Podmínky",
+@@ -364,12 +416,18 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s05_title": "5. Role stran",
+         "terms.s05_body": (
+-            "Ubytovatel výhradně odpovídá za plnění povinností poskytovatele ubytování podle českého "
+-            "práva, včetně zákona č. 326/1999 Sb. o pobytu cizinců, prováděcích předpisů, pravidel "
+-            "domovní knihy a povinností správce podle GDPR. Provozovatel poskytuje technickou "
+-            "infrastrukturu a zpracovává Údaje hostů na dokumentovaný pokyn Ubytovatele jako zpracovatel "
+-            "podle čl. 28 GDPR dle DPA na /dpa. Nic v těchto Podmínkách nepřenáší zákonné povinnosti "
+-            "Ubytovatele na Provozovatele. Společná správa údajů nastává jen při výslovné písemné dohodě."
++            "Ubytovatel výhradně odpovídá za plnění povinností poskytovatele ubytování podle "
++            "českého práva, včetně zákona č. 326/1999 Sb. o pobytu cizinců, prováděcích "
++            "předpisů, pravidel domovní knihy a povinností správce podle GDPR. Provozovatel "
++            "poskytuje technickou infrastrukturu a zpracovává Údaje hostů na dokumentovaný pokyn "
++            "Ubytovatele jako zpracovatel podle čl. 28 GDPR dle DPA na /dpa. Nic v těchto "
++            "Podmínkách nepřenáší zákonné povinnosti Ubytovatele na Provozovatele. Společná "
++            "správa údajů nastává jen při výslovné písemné dohodě. Ubytovatel dále výhradně "
++            "odpovídá za místní poplatek z pobytu podle zákona č. 565/1990 Sb. a obecně závazné "
++            "vyhlášky obce: za jeho vybrání, vedení evidenční knihy, ohlášení obci a odvod. "
++            "Pokud Služba poplatek vypočítá nebo připraví hlášení, evidenci či QR kód pro "
++            "platbu, jde o pomůcku pro Ubytovatele. Provozovatel hlášení nepodává a poplatek "
++            "neodvádí. Ubytovatel údaje před použitím zkontroluje."
+         ),
+         "terms.s06_title": "6. Registrace účtu a bezpečnost",
+         "terms.s06_body": (
+@@ -417,14 +475,47 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s10_title": "10. UbyPort a hlášení policii",
+         "terms.s10_body": (
+-            "Je-li zapnuto, Služba může formátovat a odesílat hlášení směrem k UbyPortu podle nastavení "
+-            "Ubytovatele: ručně, okamžitě po dokončení všech nahlášených formulářů nebo po nastavené "
+-            "prodlevě od dokončení, bez povinného ověření totožnosti v aplikaci. Provozovatel nezaručuje "
+-            "přijetí, validaci ani soulad s požadavky Policie ČR, "
+-            "MV ČR či jiného úřadu. Výpadky, změny schémat, problémy s přihlašovacími údaji, síť a "
+-            "ruční kontrola úřady jsou mimo kontrolu Provozovatele. Ubytovatel sám ověřuje stav hlášení, "
+-            "uchovává důkazy a má náhradní postupy (včetně manuálního podání). Demo, testovací nebo "
+-            "vzorová data nelze považovat za oficiální policejní záznamy."
++            "10.1 Povinnost hlásit ubytování cizinců Policii České republiky podle zákona č. "
++            "326/1999 Sb. má Ubytovatel. Služba je technický nástroj. Je-li hlášení zapnuto, "
++            "Služba odesílá záznamy do UbyPortu pouze na pokyn Ubytovatele, daný nastavením "
++            "hlášení u ubytování (ručně, okamžitě po dokončení všech nahlášených formulářů, nebo "
++            "po nastavené prodlevě) nebo odesláním ve Službě. Každé odeslání probíhá s vlastními "
++            "přístupovými údaji Ubytovatele k webové službě UbyPort a jménem Ubytovatele. "
++            "Provozovatel není vůči policii zástupcem ani zmocněncem Ubytovatele a nic nehlásí "
++            "vlastním jménem. 10.2 Provozovatel nezaručuje, že hlášení Policie ČR, Ministerstvo "
++            "vnitra ČR ani jiný úřad přijme, ověří nebo uzná za řádné. Výpadky, změny schémat, "
++            "problémy s přístupovými údaji, výpadky sítě a ruční kontrola úřady jsou mimo "
++            "kontrolu Provozovatele. 10.3 Ubytovatel u každého hlášení ve Službě zkontroluje "
++            "výsledek (stav a doručenku Policie ČR) a uchovává doklad o splnění povinnosti. "
++            "Demo, testovací nebo vzorová data nelze považovat za oficiální policejní záznamy. "
++            "10.4 Pokud Služba ukáže, že hlášení bylo odmítnuto, selhalo nebo má neznámý "
++            "výsledek, nebo upozorní na blížící se lhůtu, nebo pokud Služba či webová služba "
++            "UbyPort nejsou dostupné, podá Ubytovatel hlášení dotčených hostů sám v zákonné "
++            "lhůtě (nyní 3 pracovní dny od začátku ubytování), například ve webové aplikaci "
++            "UbyPort se svým přihlášením. Návod je v průvodci ve Službě, v části „Když UbyHost "
++            "nestihne hlášení podat“. Před dalším odesláním ze Služby Ubytovatel ve webové "
++            "aplikaci UbyPort ověří, že host již nahlášen není, protože druhé odeslání se počítá "
++            "jako duplicita. Po ručním podání to Ubytovatel zaznamená u pobytu ve Službě („Tento "
++            "pobyt jsem nahlásil(a) ručně v UbyPortu“), aby Služba tyto hosty znovu neodeslala. "
++            "10.5 Upozornění Služby k hlášení se zobrazují ve Službě a posílají na e-mail Účtu. "
++            "Ubytovatel udržuje tuto adresu funkční a upozornění čte."
++        ),
++        "terms.s10a_title": "10a. Přístupové údaje k UbyPortu",
++        "terms.s10a_body": (
++            "Ubytovatel zmocňuje Provozovatele, aby uchovával přihlašovací jméno a heslo k "
++            "webové službě UbyPort, které Ubytovatel u ubytování zadá, a používal je výhradně k "
++            "odesílání hlášení Ubytovatele do UbyPortu a k ověření spojení na žádost "
++            "Ubytovatele. Toto zmocnění se týká jen uchování a použití přístupových údajů podle "
++            "tohoto článku; Provozovatel se jím nestává zástupcem Ubytovatele vůči policii (čl. "
++            "10.1). Provozovatel heslo uchovává šifrované, ve Službě ho nezobrazuje, nepoužívá "
++            "ho k jinému účelu a nikomu ho nepředává, ledaže to vyžaduje zákon. Ubytovatel může "
++            "údaje ve Službě kdykoli změnit nebo smazat; hlášení ze Služby se pak zastaví, dokud "
++            "nezadá platné údaje. Ubytovatel si přístupové údaje k webové službě vyžádá od "
++            "Policie ČR a ponechá si vlastní přihlášení do webové aplikace UbyPort, aby mohl "
++            "hlásit ručně. Při podezření na zneužití údajů požádá Ubytovatel policii o nové a "
++            "informuje Provozovatele. Provozovatel bez zbytečného odkladu informuje Ubytovatele, "
++            "zjistí-li, že uložené údaje mohly být vyzrazeny. Zmocnění končí smazáním údajů nebo "
++            "zrušením Účtu; Provozovatel je poté smaže."
+         ),
+         "terms.s11_title": "11. Duševní vlastnictví",
+         "terms.s11_body": (
+@@ -444,11 +535,15 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s13_title": "13. Dostupnost služby a podpora",
+         "terms.s13_body": (
+-            "Služba je poskytována s přiměřeným obchodním úsilím. Provozovatel nezaručuje nepřetržitý "
+-            "provoz bez chyb, konkrétní dostupnost v procentech ani reakční doby, ledaže je dohodnuto "
+-            "písemně. Údržba, aktualizace a havárie mohou způsobit výpadky. Provozovatel neodpovídá za "
+-            "selhání třetích stran, UbyPortu, sítě či vyšší moci. Podpora probíhá kanály, které "
+-            "Provozovatel zpřístupní; e-mail podpory není zaručen, pokud není uveden na /legal."
++            "Služba je poskytována podle možností Provozovatele (best effort). Provozovatel "
++            "nezaručuje nepřetržitý provoz bez chyb, konkrétní dostupnost v procentech ani "
++            "reakční doby, ledaže je dohodnuto písemně. Údržba, aktualizace a havárie mohou "
++            "způsobit výpadky; plánovanou odstávku Provozovatel oznámí ve Službě předem, je-li "
++            "to možné. Provozovatel neodpovídá za selhání třetích stran, UbyPortu, sítě či vyšší "
++            "moci. Výpadek Služby, UbyPortu nebo dodavatele neprodlužuje zákonné lhůty "
++            "Ubytovatele; v takovém případě postupuje Ubytovatel podle čl. 10.4. Podpora probíhá "
++            "kanály, které Provozovatel zpřístupní; e-mail podpory není zaručen, pokud není "
++            "uveden na /legal."
+         ),
+         "terms.s14_title": "14. Beta funkce a demo data",
+         "terms.s14_body": (
+@@ -478,15 +573,22 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s17_title": "17. Omezení odpovědnosti",
+         "terms.s17_body": (
+-            "V maximálním rozsahu povoleném českým právem Provozovatel neodpovídá za nepřímé, "
+-            "nahodilé, zvláštní, následné nebo represivní škody ani za ušlý zisk, příjmy, goodwill, "
+-            "data či obchodní příležitost, i když na možnost byl upozorněn. Celková odpovědnost "
+-            "Provozovatele z titulu Služby nebo těchto Podmínek nepřesáhne vyšší z (a) částek uhrazených "
+-            "Ubytovatelem za Službu za dvanáct (12) měsíců před vznikem nároku, nebo (b) 5 000 Kč, "
+-            "s výjimkou případů, kdy odpovědnost nelze podle kogentního práva omezit (včetně úmyslu "
+-            "či hrubé nedbalosti, pokud je vyloučení nepřípustné). U podnikatelů strany uznávají, že "
+-            "jde o podstatné rozdělení rizika. Vyloučení se netýká smrti nebo újmy na zdraví z nedbalosti, "
+-            "pokud je vyloučení nezákonné."
++            "17.1 Provozovatel neodpovídá za ušlý zisk, ztrátu obchodní příležitosti ani jinou "
++            "nepřímou či následnou škodu. 17.2 Celková odpovědnost Provozovatele za všechny "
++            "nároky ze Služby nebo z těchto Podmínek v jednom kalendářním roce je omezena na "
++            "úplatu, kterou Ubytovatel Provozovateli za Službu zaplatil za dvanáct (12) měsíců "
++            "před vznikem nároku, nejméně však na 10 000 Kč. 17.3 Provozovatel neodpovídá za "
++            "pokuty ani jiné následky opožděného, chybějícího nebo chybného hlášení v rozsahu, v "
++            "jakém Ubytovatel nezkontroloval výsledek hlášení nebo nepodal hlášení ručně podle "
++            "čl. 10.4 poté, co Služba ohlásila problém nebo nebyla dostupná. 17.4 Odpovědnost za "
++            "škodu způsobenou úmyslně nebo z hrubé nedbalosti se nikdy nevylučuje ani neomezuje. "
++            "Články 17.1 až 17.3 se nepoužijí ani na újmu na přirozených právech člověka (včetně "
++            "života, zdraví a soukromí), ani je-li Ubytovatel spotřebitelem nebo jinak slabší "
++            "stranou, protože české právo neumožňuje takovou odpovědnost předem vyloučit ani "
++            "omezit (§ 2898 zákona č. 89/2012 Sb., občanský zákoník). Neomezují ani odpovědnost "
++            "kterékoli strany vůči subjektům údajů a dozorovým úřadům podle GDPR. 17.5 U "
++            "podnikatelů strany souhlasí, že jde o přiměřené rozdělení rizika s ohledem na cenu "
++            "Služby a povinnost Ubytovatele kontrolovat hlášení."
+         ),
+         "terms.s18_title": "18. Náhrada škody (indemnifikace)",
+         "terms.s18_body": (
+diff --git a/App/tests/test_accounts.py b/App/tests/test_accounts.py
+index 7de0dcc..e17af33 100644
+--- a/App/tests/test_accounts.py
++++ b/App/tests/test_accounts.py
+@@ -648,10 +648,11 @@ def test_dpa_page_shows_operator_and_article_28():
+ 
+ 
+ def test_release_legal_versions_are_coordinated():
+-    assert config.TERMS_VERSION == "1.5"
+-    # WP09 bumped only the privacy policy (analytics, own retention, roles).
++    # WP24 bumps Terms and DPA together with WP09's Privacy 1.6, so hosts
++    # accept all three once.
++    assert config.TERMS_VERSION == "1.6"
+     assert config.PRIVACY_VERSION == "1.6"
+-    assert config.DPA_VERSION == "1.5"
++    assert config.DPA_VERSION == "1.6"
+ 
+ 
+ def test_public_legal_pages_cross_link_dpa():
+diff --git a/App/tests/test_filing_watchdog.py b/App/tests/test_filing_watchdog.py
+index e51f71c..20a92b9 100644
+--- a/App/tests/test_filing_watchdog.py
++++ b/App/tests/test_filing_watchdog.py
+@@ -13,6 +13,7 @@ import json
+ from datetime import date, datetime, timedelta, timezone
+ 
+ import pytest
++from markupsafe import escape
+ 
+ from app import auth, config, db, filing_watchdog, host_i18n, mail, mail_notify, scheduler
+ from tests.test_submission_retry_cap import host as host  # noqa: F401
+@@ -542,7 +543,7 @@ def test_the_guide_page_shows_the_manual_filing_section(host):
+         page = host.get(f"/guide?lang={lang}").text
+         assert 'id="manual-filing"' in page
+         for key in ("title", "step1", "step2", "step3"):
+-            text = host_i18n.translate(lang, f"guide.reporting.manual_filing_{key}")
++            text = str(escape(host_i18n.translate(lang, f"guide.reporting.manual_filing_{key}")))
+             assert text[:40] in page, (lang, key)
+ 
+ 
+diff --git a/App/tests/test_legal_contents.py b/App/tests/test_legal_contents.py
+index 23408b7..c6e2af7 100644
+--- a/App/tests/test_legal_contents.py
++++ b/App/tests/test_legal_contents.py
+@@ -59,7 +59,7 @@ def _toc_block(html: str) -> str:
+ def _toc_halves(html: str) -> tuple[list[str], list[str]]:
+     block = _toc_block(html)
+     wide, narrow = block.split("<details", 1)
+-    href = re.compile(r'<a href="#s(\d+)">')
++    href = re.compile(r'<a href="#s(\d+[a-z]?)">')
+     return href.findall(wide), href.findall(narrow)
+ 
+ 
+@@ -69,7 +69,7 @@ def test_every_clause_has_a_stable_anchor_matching_the_route():
+         for lang in ("en", "cs"):
+             html = client.get(f"{path}?lang={lang}").text
+             found = re.findall(
+-                r'<section class="legal-section" id="s(\d+)">', html
++                r'<section class="legal-section" id="s(\d+[a-z]?)">', html
+             )
+             assert found == list(ids), (path, lang, len(found), len(ids))
+             assert len(set(found)) == len(found), path
+diff --git a/App/tests/test_wp24_terms_dpa.py b/App/tests/test_wp24_terms_dpa.py
+new file mode 100644
+index 0000000..0493df3
+--- /dev/null
++++ b/App/tests/test_wp24_terms_dpa.py
+@@ -0,0 +1,328 @@
++"""WP24: Terms 1.6 and DPA 1.6 texts, one effective date, one acceptance.
++
++The clause texts come from compliance/04_terms_clauses.md with the owner's
++decisions applied: a CZK 10,000 liability floor and no limit for intent or
++gross negligence (§ 2898 občanský zákoník), "zmocňuje" in § 10a, no
++maintenance-window promise, and Render and Google Drive in DPA § 11 only as
++"only if used" rows. The guide section "If UbyHost cannot file in time"
++follows compliance/05_manual_filing_fallback.md.
++"""
++from __future__ import annotations
++
++import datetime as dt
++import os
++import re
++import subprocess
++import sys
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++from markupsafe import escape
++
++from app import acceptance, auth, config, db, host_i18n
++from app.guide_i18n import GUIDE_STRINGS
++from app.main import app
++from app.routes.legal import TERMS_SECTION_IDS
++
++PASSWORD = "Secure-Password-123"
++APP_DIR = Path(__file__).resolve().parents[1]
++
++
++def _page(path: str, lang: str) -> str:
++    db.init_db()
++    response = TestClient(app).get(f"{path}?lang={lang}")
++    assert response.status_code == 200, (path, lang)
++    return response.text
++
++
++def _text(lang: str, key: str) -> str:
++    return host_i18n.translate(lang, key)
++
++
++# --- Terms -----------------------------------------------------------------------
++
++
++def test_section_10a_sits_between_10_and_11():
++    index = TERMS_SECTION_IDS.index("10a")
++    assert TERMS_SECTION_IDS[index - 1] == "10"
++    assert TERMS_SECTION_IDS[index + 1] == "11"
++    assert len(TERMS_SECTION_IDS) == 28
++
++
++def test_the_terms_page_renders_the_new_clauses_in_both_languages():
++    expected = {
++        "en": (
++            "10a. UbyPort access credentials",
++            "The Host authorises and mandates the Operator to store the UbyPort",
++            "poplatek z pobytu",
++            "Act No. 565/1990 Coll.",
++            "in the Host's name",
++            "10.4 If the Service shows that a filing was rejected",
++            "I filed this stay by hand in UbyPort",
++            "If UbyHost cannot file in time",
++            "best-effort basis",
++            "announces planned downtime in the Service in advance",
++            "does not extend the Host's statutory time limits",
++            "and to no less than CZK 10,000",
++            "Liability for damage caused intentionally or through gross negligence is never "
++            "excluded or limited",
++            "§ 2898 of Act No. 89/2012 Coll.",
++        ),
++        "cs": (
++            "10a. Přístupové údaje k UbyPortu",
++            "Ubytovatel zmocňuje Provozovatele, aby uchovával",
++            "místní poplatek z pobytu podle zákona č. 565/1990 Sb.",
++            "jménem Ubytovatele",
++            "10.4 Pokud Služba ukáže, že hlášení bylo odmítnuto",
++            "Tento pobyt jsem nahlásil(a) ručně v UbyPortu",
++            "Když UbyHost nestihne hlášení podat",
++            "podle možností Provozovatele (best effort)",
++            "plánovanou odstávku Provozovatel oznámí ve Službě předem",
++            "neprodlužuje zákonné lhůty Ubytovatele",
++            "nejméně však na 10 000 Kč",
++            "Odpovědnost za škodu způsobenou úmyslně nebo z hrubé nedbalosti se nikdy "
++            "nevylučuje ani neomezuje",
++            "§ 2898 zákona č. 89/2012 Sb.",
++        ),
++    }
++    for lang, snippets in expected.items():
++        page = _page("/terms", lang)
++        assert 'id="s10a"' in page and 'href="#s10a"' in page, lang
++        flat = re.sub(r"<[^>]+>", "", page).replace("&#39;", "'").replace("&#34;", '"')
++        flat = flat.replace("&quot;", '"')
++        for snippet in snippets:
++            assert snippet in flat, (lang, snippet)
++
++
++def test_the_old_liability_and_availability_wording_is_gone():
++    for lang in ("en", "cs"):
++        liability = _text(lang, "terms.s17_body")
++        availability = _text(lang, "terms.s13_body")
++        assert "5,000" not in liability and "5 000" not in liability, lang
++        assert "impermissible" not in liability and "nepřípustné" not in liability, lang
++        assert "punitive" not in liability and "represivní" not in liability, lang
++        # The owner dropped the maintenance-window promise.
++        assert "20:00" not in availability and "8:00" not in availability, lang
++        assert "commercially reasonable" not in availability, lang
++
++
++def test_section_10a_uses_the_owners_word():
++    assert _text("cs", "terms.s10a_body").startswith("Ubytovatel zmocňuje Provozovatele")
++    assert "opravňuje" not in _text("cs", "terms.s10a_body")
++    assert _text("en", "terms.s10a_body").startswith(
++        "The Host authorises and mandates the Operator"
++    )
++    # 10.1 still says the Operator is nobody's representative toward the police.
++    assert "zástupcem ani zmocněncem" in _text("cs", "terms.s10_body")
++
++
++def test_the_terms_name_the_real_hand_filing_button_and_guide_section():
++    for lang in ("en", "cs"):
++        body = _text(lang, "terms.s10_body")
++        assert _text(lang, "stay.hand_filing.open") in body, lang
++        assert _text(lang, "guide.reporting.manual_filing_title") in body, lang
++        # The draft's guide slug was never published; the clause must not cite it.
++        assert "/pruvodce/" not in body, lang
++
++
++# --- DPA -------------------------------------------------------------------------
++
++
++def test_dpa_section_11_lists_render_and_drive_only_as_only_if_used():
++    for lang, marker in (("en", "Only if used:"), ("cs", "Jen pokud se používají:")):
++        body = _text(lang, "dpa.s11_body")
++        assert marker in body, lang
++        before, after = body.split(marker, 1)
++        for name in ("Render", "Google Drive"):
++            assert name not in before, (lang, name)
++            assert name in after, (lang, name)
++        for name in ("AWS Lightsail", "Amazon SES", "Amazon S3", "Cloudflare"):
++            assert name in before, (lang, name)
++        page = _page("/dpa", lang)
++        assert marker in page, lang
++
++
++# --- versions and effective date --------------------------------------------------
++
++
++def test_terms_privacy_and_dpa_are_all_version_1_6():
++    assert acceptance.current_versions() == {"terms": "1.6", "privacy": "1.6", "dpa": "1.6"}
++
++
++def test_one_effective_date_is_shown_on_all_three_pages(monkeypatch):
++    monkeypatch.setattr(config, "LEGAL_EFFECTIVE_DATE", dt.date(2027, 3, 4))
++    for lang, date_text, word in (
++        ("en", "4 March 2027", "Version"),
++        ("cs", "4. března 2027", "Verze"),
++    ):
++        for path, doc in (("/terms", "terms"), ("/privacy", "privacy"), ("/dpa", "dpa")):
++            page = _page(path, lang)
++            version = acceptance.current_versions()[doc]
++            assert f"{date_text}. {word} {version}." in page, (path, lang)
++            # No document keeps a date of its own.
++            assert "19 September 2026" not in page and "19. září 2026" not in page
++
++
++def test_the_effective_date_is_written_out_in_both_languages(monkeypatch):
++    monkeypatch.setattr(config, "LEGAL_EFFECTIVE_DATE", dt.date(2026, 10, 1))
++    assert acceptance.effective_date_text("en") == "1 October 2026"
++    assert acceptance.effective_date_text("cs") == "1. října 2026"
++    monkeypatch.setattr(config, "LEGAL_EFFECTIVE_DATE", dt.date(2026, 5, 31))
++    assert acceptance.effective_date_text("cs") == "31. května 2026"
++
++
++def test_no_effective_string_hardcodes_a_date_or_version():
++    for lang in ("en", "cs"):
++        for doc in ("terms", "privacy", "dpa"):
++            raw = host_i18n.STRINGS[lang][f"{doc}.effective"]
++            assert "%(date)s" in raw and "%(version)s" in raw, (lang, doc)
++            assert not re.search(r"\d", raw), (lang, doc)
++
++
++def test_a_malformed_effective_date_stops_start_up():
++    env = dict(os.environ, UBYHOST_LEGAL_EFFECTIVE_DATE="16.11.2026")
++    result = subprocess.run(
++        [sys.executable, "-c", "import app.config"],
++        cwd=APP_DIR,
++        env=env,
++        capture_output=True,
++        text=True,
++        timeout=60,
++    )
++    assert result.returncode != 0
++    assert "Invalid isoformat" in result.stderr or "isoformat" in result.stderr
++
++
++# --- one acceptance for all three -------------------------------------------------
++
++
++def _cleanup(username: str) -> None:
++    for row in db.query("SELECT id FROM user_account WHERE username = ?", (username,)):
++        user_id = row["id"]
++        db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (user_id,))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
++        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
++
++
++def test_a_host_on_the_old_versions_accepts_all_three_once(real_acceptance_pending):
++    db.init_db()
++    username = "wp24-accept-once"
++    _cleanup(username)
++    user_id = auth.create_account(
++        username, PASSWORD, "Acceptance", role="host", must_change_password=False
++    )
++    try:
++        # Accepted before this release: Terms 1.5, Privacy 1.5, DPA 1.5.
++        for doc in acceptance.DOCUMENTS:
++            db.execute(
++                "INSERT INTO legal_acceptance "
++                "(user_account_id, document, version, accepted_at, method) "
++                "VALUES (?, ?, '1.5', ?, 'clickwrap')",
++                (user_id, doc, db.utcnow()),
++            )
++        assert acceptance.pending(user_id) == ["terms", "privacy", "dpa"]
++
++        client = TestClient(app)
++        login = client.post(
++            "/login?lang=en",
++            data={"username": username, "password": PASSWORD},
++            follow_redirects=False,
++        )
++        assert login.status_code == 303
++        gate = client.get("/", follow_redirects=False)
++        assert gate.status_code == 303
++        assert gate.headers["location"].startswith("/account/accept")
++
++        screen = client.get("/account/accept").text
++        for doc in acceptance.DOCUMENTS:
++            assert f'href="/{doc}?lang=en"' in screen, doc
++        assert screen.count(_text("en", "account.accept.version").split("%")[0]) >= 3
++
++        done = client.post(
++            "/account/accept", data={"accept": "1", "next": "/"}, follow_redirects=False
++        )
++        assert done.status_code == 303
++        assert acceptance.pending(user_id) == []
++        assert client.get("/", follow_redirects=False).status_code == 200
++
++        events = db.query(
++            "SELECT detail FROM audit WHERE action = 'legal_accepted' AND owner_user_id = ?",
++            (user_id,),
++        )
++        assert len(events) == 1
++        assert "terms_v1.6 privacy_v1.6 dpa_v1.6" in events[0]["detail"]
++
++        # Signing in again asks nothing more.
++        client.post("/logout", data={}, follow_redirects=False)
++        again = TestClient(app)
++        again.post(
++            "/login?lang=en",
++            data={"username": username, "password": PASSWORD},
++            follow_redirects=False,
++        )
++        assert again.get("/", follow_redirects=False).status_code == 200
++    finally:
++        _cleanup(username)
++
++
++# --- guide: "If UbyHost cannot file in time" matches 05 ---------------------------
++
++
++def test_the_guide_follows_the_manual_filing_fallback():
++    en, cs = GUIDE_STRINGS["en"], GUIDE_STRINGS["cs"]
++    url = "https://ubyport.pcr.cz/UbyPort/Home/Login"
++    assert url in en["guide.reporting.manual_filing_step1"]
++    assert url in cs["guide.reporting.manual_filing_step1"]
++    for strings in (en, cs):
++        assert "+420 731 670 444" in strings["guide.reporting.manual_filing_before"]
++        assert "ubyport@pcr.cz" in strings["guide.reporting.manual_filing_before"]
++        assert "Stažení dokumentu DORUČENKA – doporučeno" in strings[
++            "guide.reporting.manual_filing_step3"
++        ]
++        assert "PŘEDCHOZÍ OZNÁMENÍ OBSAHOVALO CHYBY" in strings[
++            "guide.reporting.manual_filing_correction"
++        ]
++    assert "3 working days" in en["guide.reporting.manual_filing_lede"]
++    assert "3 pracovních dnů" in cs["guide.reporting.manual_filing_lede"]
++    assert "duplicate" in en["guide.reporting.manual_filing_before"]
++    assert "duplicita" in cs["guide.reporting.manual_filing_before"]
++    assert "6 years" in en["guide.reporting.manual_filing_step3"]
++    assert "6 let" in cs["guide.reporting.manual_filing_step3"]
++    # The last step presses the real button, word for word.
++    for lang, strings in (("en", en), ("cs", cs)):
++        assert host_i18n.translate(lang, "stay.hand_filing.open") in strings[
++            "guide.reporting.manual_filing_step4"
++        ], lang
++
++
++@pytest.fixture
++def host():
++    db.init_db()
++    username = "wp24-guide-host"
++    _cleanup(username)
++    auth.create_account(username, PASSWORD, "Guide Host", must_change_password=False)
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en",
++        data={"username": username, "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303, response.text
++    try:
++        yield client
++    finally:
++        _cleanup(username)
++
++
++def test_the_guide_page_renders_the_whole_fallback(host):
++    for lang in ("en", "cs"):
++        page = host.get(f"/guide?lang={lang}").text
++        section = page[page.index('id="manual-filing"'):]
++        order = [
++            section.index(
++                str(escape(host_i18n.translate(lang, f"guide.reporting.manual_filing_{key}")))[:40]
++            )
++            for key in ("lede", "before", "step1", "step2", "step3", "step4", "correction", "duty")
++        ]
++        assert order == sorted(order), lang
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index 847c2a4..ecddfb3 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -155,9 +155,10 @@ own public-register entry, or the legal pages will name the wrong company.
+ 
+ | Variable | Default |
+ | --- | --- |
+-| `UBYHOST_TERMS_VERSION` | `1.5` |
++| `UBYHOST_TERMS_VERSION` | `1.6` |
+ | `UBYHOST_PRIVACY_VERSION` | `1.6` |
+-| `UBYHOST_DPA_VERSION` | `1.5` |
++| `UBYHOST_DPA_VERSION` | `1.6` |
++| `UBYHOST_LEGAL_EFFECTIVE_DATE` | `2026-11-16` |
+ 
+ These override the version number displayed and logged against user acceptance.
+ The document *text* lives in `App/app/terms_i18n.py`,
+@@ -166,6 +167,14 @@ changing the text — or the reverse — silently desynchronises what a host
+ accepted from what they were shown. Prefer editing the text and the default in
+ the same commit and leaving these unset.
+ 
++`UBYHOST_LEGAL_EFFECTIVE_DATE` (ISO `YYYY-MM-DD`) is the one effective date
++printed on `/terms`, `/privacy` and `/dpa`; the version beside it is the
++configured version above. Terms 1.6, Privacy 1.6 and DPA 1.6 take effect
++together, so a host accepts all three on a single `/account/accept` page. Set
++the date at release, at least 30 days after hosts are told (Terms § 22), either
++here or by changing `LEGAL_EFFECTIVE_DATE` in `App/app/config.py`. A malformed
++value stops start-up.
++
+ ## Development and test only
+ 
+ | Variable | Default | Notes |
+-- 
+2.34.1
+

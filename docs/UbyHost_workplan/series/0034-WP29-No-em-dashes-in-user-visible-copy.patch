@@ -1,0 +1,2414 @@
+From 907a609b472666f1f57a9071a978d37a6c2092da Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 11:44:46 +0200
+Subject: [PATCH 34/34] WP29: No em dashes in user-visible copy
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Every em dash (U+2014) used as punctuation in a user-visible string is replaced
+with a full stop, comma, colon or parentheses, with the meaning unchanged:
+
+- i18n.py, in all five guest languages (en, cs, de, es, fr);
+- host_i18n.py, including its interface strings;
+- the legal catalogues (terms_i18n, privacy_policy_i18n, dpa_i18n), the public
+  pages (landing_i18n) and the guest validation messages (validation_i18n);
+- guide_i18n.py had none left;
+- host templates that joined two pieces of text with a dash: guide.html
+  (step title, colon), settings.html (retention and backup lines, comma; the
+  missing-contact note now reads "...: A, B. Add one so ..."), and
+  stay_fee_detail.html (period and adjustment reason in parentheses).
+
+Placeholders: the select options "(none)" / "(select)" replace "— none —" and
+"— select —"; a lone dash as an empty-cell placeholder stays. Legal and mail
+templates had dashes only in Jinja comments, which are not rendered.
+
+The legal texts change punctuation only, not meaning, so no legal version
+moves.
+
+New test tests/test_no_em_dashes.py fails if any string in any app/*_i18n.py
+catalogue (or i18n.py) contains " — " or "— ", checks every guest language,
+and checks the visible text of the legal and mail templates. Tests that pinned
+the old wording are updated.
+---
+ App/app/dpa_i18n.py                       |   7 +-
+ App/app/host_i18n.py                      | 340 ++++++++++------------
+ App/app/i18n.py                           | 118 ++++----
+ App/app/landing_i18n.py                   |  10 +-
+ App/app/privacy_policy_i18n.py            |  68 +----
+ App/app/templates/guide.html              |   2 +-
+ App/app/templates/settings.html           |   8 +-
+ App/app/templates/stay_fee_detail.html    |   6 +-
+ App/app/terms_i18n.py                     |  15 +-
+ App/app/validation_i18n.py                |  10 +-
+ App/tests/test_claim_mail.py              |   4 +-
+ App/tests/test_claim_resend_complete.py   |   2 +-
+ App/tests/test_dashboard_order.py         |   8 +-
+ App/tests/test_dashboard_queue_copy.py    |   8 +-
+ App/tests/test_flash_next_step.py         |   8 +-
+ App/tests/test_guest_error_summary.py     |   4 +-
+ App/tests/test_guest_mail.py              |   2 +-
+ App/tests/test_guest_residence_prefill.py |   2 +-
+ App/tests/test_no_em_dashes.py            |  95 ++++++
+ App/tests/test_onboarding.py              |   4 +-
+ App/tests/test_operator_naming.py         |  16 +-
+ App/tests/test_overhaul.py                |   4 +-
+ App/tests/test_plural_helper.py           |   8 +-
+ App/tests/test_stay_fee_detail.py         |   8 +-
+ App/tests/test_stay_missing_guest_rows.py |  10 +-
+ App/tests/test_two_factor_lockout.py      |   4 +-
+ App/tests/test_two_factor_setup_page.py   |   4 +-
+ App/tests/test_users_disable_confirm.py   |   2 +-
+ 28 files changed, 384 insertions(+), 393 deletions(-)
+ create mode 100644 App/tests/test_no_em_dashes.py
+
+diff --git a/App/app/dpa_i18n.py b/App/app/dpa_i18n.py
+index 9c1e464..df410d1 100644
+--- a/App/app/dpa_i18n.py
++++ b/App/app/dpa_i18n.py
+@@ -31,9 +31,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "legal.dpa_title": "Guest data processing (DPA)",
+         "legal.dpa_body": (
+-            "When you use the hosted service, the Operator processes guest personal data on your "
+-            "instructions under a GDPR Article 28 Data Processing Agreement at /dpa. It is "
+-            "automatically incorporated into the Terms — review it before processing live guest data."
++            "When you use the hosted service, the Operator processes guest personal data on your instructions under a GDPR Article 28 Data Processing Agreement at /dpa. It is automatically incorporated into the Terms. Review it before processing live guest data."
+         ),
+         "legal.cross_dpa": "Data Processing Agreement",
+         "terms.cross_dpa": "Data Processing Agreement",
+@@ -291,8 +289,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "legal.dpa_title": "Zpracování údajů hostů (DPA)",
+         "legal.dpa_body": (
+-            "Při používání hostované služby zpracovává údaje hostů na váš pokyn smlouva podle čl. 28 "
+-            "GDPR. Je automaticky součástí smlouvy — před ostrým provozem si ji přečtěte na /dpa."
++            "Při používání hostované služby zpracovává údaje hostů na váš pokyn smlouva podle čl. 28 GDPR. Je automaticky součástí smlouvy. Před ostrým provozem si ji přečtěte na /dpa."
+         ),
+         "legal.cross_dpa": "Smlouva o zpracování údajů (DPA)",
+         "terms.cross_dpa": "Smlouva o zpracování údajů (DPA)",
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index fcc2117..0c91383 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -94,7 +94,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay_fees.quarter": "Q%(n)s %(year)s",
+         "stay_fees.open": "Open",
+         "stay_fees.needs_setup": "Needs setup",
+-        "stay_fees.footnote": "Only properties with a rate appear here. Set a rate on a property to enable the stay fee — it is optional and never part of onboarding.",
++        "stay_fees.footnote": "Only properties with a rate appear here. Set a rate on a property to enable the stay fee. It is optional and never part of onboarding.",
+         "stay_fees.empty_title": "No property has a stay fee yet",
+         "stay_fees.empty": "Set a rate in a property's Stay fee section to see the totals here.",
+         "stay_fees.empty_action": "Open properties",
+@@ -116,7 +116,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay_fees.payment.vs_hint": "The council assigned this symbol to you. Include it with the payment.",
+         "stay_fees.payment.qr_alt": "QR code for paying the stay fee to the council",
+         "stay_fees.payment.qr_help": "Scan it in your banking app and pay %(amount)s to the council. It carries the amount, the account and the variable symbol.",
+-        "stay_fees.payment.footnote": "You enter these payment details yourself (council account and variable symbol). They are not part of the report — they are only for paying.",
++        "stay_fees.payment.footnote": "You enter these payment details yourself (council account and variable symbol). They are only for paying and are not part of the report.",
+         "stay_fees.guests.title": "Guests in this period",
+         "stay_fees.guests.empty": "No signed guest stayed in this period. The report is still due, with zero.",
+         "stay_fees.nights": "%(count)s nights",
+@@ -124,8 +124,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay_fees.nights.few": "%(count)s nights",
+         "stay_fees.status.liable": "Liable",
+         "stay_fees.status.exempt": "Exempt",
+-        "stay_fees.status.under_18": "Exempt — under 18",
+-        "stay_fees.status.not_subject": "Stay over 60 days — not subject",
++        "stay_fees.status.under_18": "Exempt (under 18)",
++        "stay_fees.status.not_subject": "Stay over 60 days (not subject)",
+         "stay_fees.decision.change": "Change",
+         "stay_fees.decision.exempt": "Exempt",
+         "stay_fees.decision.charge": "Charge",
+@@ -169,7 +169,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "month.11": "November",
+         "month.12": "December",
+         "nav.properties": "Properties",
+-        "nav.properties_more": "%(count)s more properties — open search",
++        "nav.properties_more": "%(count)s more properties. Open search",
+         "nav.all_properties": "All properties",
+         "nav.per_property": "Set per property",
+         "nav.account": "Account",
+@@ -195,7 +195,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "login.remember": "Remember me for 30 days",
+         "login.submit": "Continue",
+         "login.footnote": (
+-            "No account yet? UbyHost is invite-only — write to %(email)s."
++            "No account yet? UbyHost is invite-only. Write to %(email)s."
+         ),
+         "login.forgot_summary": "Forgot your password?",
+         "login.forgot_body": (
+@@ -213,8 +213,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "login.acceptance_after": ".",
+         "login.hero_title": "Guest reporting, handled for you.",
+         "login.hero_body": (
+-            "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace — "
+-            "built for Czech short-term hosts."
++            "Calendars, guest forms, house book, and UbyPort submissions in one calm workspace, built for Czech short-term hosts."
+         ),
+         "onboarding.kicker": "Your five-step launch",
+         "onboarding.welcome_title": "Set up UbyHost in five steps",
+@@ -233,13 +232,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "onboarding.finish_line": "Finish these five steps and you can send guests their registration link.",
+         "onboarding.finish_line_done": "All five checks are done. Share the guest link above with your guests.",
+         "onboarding.finish_kicker": "You are ready",
+-        "onboarding.finish_strip": "Setup is done — your guest link and PIN are ready.",
++        "onboarding.finish_strip": "Setup is done. Your guest link and PIN are ready.",
+         "onboarding.finish_strip_link": "Show link",
+         "onboarding.finish_title": "Guest link and PIN are live",
+         "onboarding.finish_lede": "Paste the link and PIN into each portal's pre-arrival message.",
+         "onboarding.finish_link_label": "Permanent guest link",
+         "onboarding.finish_message_tip": (
+-            "Optional host welcome message lives under Communication on the property page —"
++            "Optional host welcome message lives under Communication on the property page:"
+         ),
+         "onboarding.finish_message_link": "edit host message",
+         "onboarding.finish_passport_tip": "Passport or ID photo for this property:",
+@@ -252,7 +251,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "onboarding.step_done": "Done",
+         "onboarding.continue": "Continue: %(action)s",
+         "onboarding.entity.title": "Operator",
+-        "onboarding.entity.detail": "Who runs the accommodation — a company or a self-employed person.",
++        "onboarding.entity.detail": "Who runs the accommodation: a company or a self-employed person.",
+         "onboarding.entity.prepare": "Have ready: name, IČO, registered address and a contact e-mail.",
+         "onboarding.entity.why": "This identity appears in guest privacy information and host contact details.",
+         "onboarding.entity.action": "Add operator",
+@@ -265,9 +264,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "onboarding.property.action": "Add property",
+         "onboarding.calendars.title": "Calendar links",
+         "onboarding.calendars.detail": (
+-            "Connect Airbnb or Booking.com — or add a direct booking by hand."
++            "Connect Airbnb or Booking.com, or add a direct booking by hand."
+         ),
+-        "onboarding.calendars.prepare": "Copy each listing's private iCal export URL—not its public booking page.",
++        "onboarding.calendars.prepare": "Copy each listing's private iCal export URL, not its public booking page.",
+         "onboarding.calendars.why": "iCal supplies dates only; guests provide names and documents securely.",
+         "onboarding.calendars.action": "Connect calendars",
+         "onboarding.calendars.manual": "Add a stay by hand",
+@@ -365,8 +364,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "housebook.export_menu": "Export",
+         "housebook.pdf_export_title": "Download PDF bundle",
+         "housebook.pdf_export_help": (
+-            "Choose the stay dates and property to include. Each guest form is generated on the server "
+-            "one at a time — large ranges take longer and use more server capacity."
++            "Choose the stay dates and property to include. Each guest form is generated on the server one at a time. Large ranges take longer and use more server capacity."
+         ),
+         "housebook.pdf_hint": (
+             "Up to %(limit)s forms per download. Use a narrower date range if you have many entries."
+@@ -393,7 +391,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "host.verify_pending": "ID not checked",
+         "host.verify_view_photo": "View uploaded ID",
+         "host.verify_footnote": "UbyHost does not collect a passport image.",
+-        "host.verify_waiting_photo": "No document check recorded — you can mark an in-person check.",
++        "host.verify_waiting_photo": "No document check recorded. You can mark an in-person check.",
+         "host.verify_done": "ID checked on",
+         "host.verify_host_entry": (
+             "When you enter a guest by hand you confirm the details against their document in "
+@@ -406,9 +404,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "send.filled_forms": "Send filled forms",
+         "send.filled_forms_hint": "Submit every completed guest form on this stay to UbyPort",
+         "send.guests_count": "Send %(count)s guest(s) on this stay",
+-        "status.ready_manual": "Ready — you send",
++        "status.ready_manual": "Ready (you send)",
+         "status.ready_manual_tip": "Guest forms are complete. Click Send because this property uses manual reporting.",
+-        "status.ready_immediate": "Complete — sending now",
++        "status.ready_immediate": "Complete (sending now)",
+         "status.ready_immediate_tip": "All declared forms are complete, so UbyHost sends automatically without waiting for verification.",
+         "status.awaiting_verification": "Ready to report",
+         "status.awaiting_verification_tip": "ID not checked (optional)",
+@@ -419,7 +417,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "status.waiting_guest_tip": "Guest forms are not complete yet.",
+         "status.waiting_signature": "Waiting for signature",
+         "status.waiting_signature_tip": "Guest forms are not signed yet.",
+-        "status.ready_scheduled": "Ready — scheduled",
++        "status.ready_scheduled": "Ready (scheduled)",
+         "status.ready_scheduled_tip": "Will go out automatically after the delay measured from completion of all declared forms.",
+         "status.demo_preview": "Preview only",
+         "status.demo_preview_tip": "Demo data is never sent to the police.",
+@@ -458,8 +456,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "guide.legal.reporting_title": "Reporting foreigners to the police",
+         "guide.legal.reporting_body": (
+-            "Report each foreign guest through UbyPort within three working days of check-in (§ 100). "
+-            "Czech nationals stay in the house book only — they are not reported to the Foreign Police."
++            "Report each foreign guest through UbyPort within three working days of check-in (§ 100). Czech nationals stay in the house book only and are not reported to the Foreign Police."
+         ),
+         "guide.legal.retention_title": "Retention and GDPR",
+         "guide.legal.retention_body": (
+@@ -505,9 +502,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "legal.disclaimer_title": "Disclaimer",
+         "legal.disclaimer_body": (
+-            "The software is provided without warranty to the extent permitted by law. Liability is limited "
+-            "to mandatory statutory rules. Nothing here changes who must register guests or keep the house "
+-            "book — that remains the accommodation provider."
++            "The software is provided without warranty to the extent permitted by law. Liability is limited to mandatory statutory rules. Nothing here changes who must register guests or keep the house book. That remains the accommodation provider."
+         ),
+         "legal.back_home": "Back to UbyHost",
+         "legal.back_login": "Back to login",
+@@ -596,7 +591,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "settings.audit.filter_support": "Support sessions",
+         "notification.open_stay": "Open the stay",
+         "notification.open_property": "Open the property",
+-        "notification.more": "%(n)s more alerts — see Overview",
++        "notification.more": "%(n)s more alerts. See Overview",
+         "notification.stay_title": "%(property)s · %(dates)s",
+         "notification.reason.overdue_forms": "Overdue by %(n)s days · %(filled)s/%(expected)s",
+         "notification.reason.overdue_forms.one": "Overdue by 1 day · %(filled)s/%(expected)s",
+@@ -718,7 +713,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.apartments.archived": "“%(name)s” archived. Its history is kept.",
+         "flash.apartments.restored": "Property restored from archive.",
+         "flash.apartments.connection_ok": (
+-            "Connection works — UbyPort accepted your web-service login."
++            "Connection works. UbyPort accepted your web-service login."
+         ),
+         "flash.apartments.codelists_refreshed": "Code lists refreshed from UbyPort: %(countries)s countries, %(purposes)s purposes, %(errors)s error codes.",
+         "flash.feeds.added": "Calendar added. %(count)s stays imported.",
+@@ -739,7 +734,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.reservations.restored": "Stay restored from archive.",
+         "flash.reservations.access_reopened": "Guest access reopened.",
+         "flash.reservations.claim_released": (
+-            "Assignment released — another e-mail can now claim this stay."
++            "Assignment released. Another e-mail can now claim this stay."
+         ),
+         "flash.reservations.accepted": "%(count)s guests accepted.",
+         "flash.reservations.accepted.one": "%(count)s guest accepted.",
+@@ -788,7 +783,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.error.stay_dates_required": "Pick a property and both dates.",
+         "flash.error.dates_order": "Departure must be after arrival.",
+         "flash.error.nothing_ready": (
+-            "Nothing is ready to send yet — open a stay to see what's missing."
++            "Nothing is ready to send yet. Open a stay to see what's missing."
+         ),
+         "flash.error.nothing_sendable": (
+             "Nothing could be sent: every guest is incomplete, already reported, "
+@@ -797,27 +792,25 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.error.nothing_to_send": "There was nothing to send.",
+         "flash.error.not_sendable": "This stay can't be sent right now.",
+         "flash.error.record_not_sendable": (
+-            "This record can't be sent yet — fix the validation errors first."
++            "This record can't be sent yet. Fix the validation errors first."
+         ),
+         "flash.error.rejected": (
+-            "UbyPort rejected %(count)s guest records — open the stay to fix and resend."
++            "UbyPort rejected %(count)s guest records. Open the stay to fix and resend."
+         ),
+         "flash.error.rejected.one": (
+-            "UbyPort rejected %(count)s guest record — open the stay to fix and resend."
++            "UbyPort rejected %(count)s guest record. Open the stay to fix and resend."
+         ),
+         "flash.error.rejected.few": (
+-            "UbyPort rejected %(count)s guest records — open the stay to fix and resend."
++            "UbyPort rejected %(count)s guest records. Open the stay to fix and resend."
+         ),
+         "flash.error.resent_rejected": (
+-            "Re-sent, but UbyPort rejected it again — see the Doručenka."
++            "Re-sent, but UbyPort rejected it again. See the Doručenka."
+         ),
+         "flash.error.already_reported_duplicate": (
+-            "UbyPort already holds this record, so re-sending can't be accepted and "
+-            "would count as another duplicate. The guest is reported — see the Doručenka."
++            "UbyPort already holds this record, so re-sending can't be accepted and would count as another duplicate. The guest is reported (see the Doručenka)."
+         ),
+         "flash.error.reported_kept": (
+-            "This guest was already reported to the police — the record must stay in "
+-            "the house book."
++            "This guest was already reported to the police. The record must stay in the house book."
+         ),
+         "flash.error.czech_no_verification": "Czech guests don't need their passport checked.",
+         "flash.error.confirm_duplicate": (
+@@ -828,27 +821,26 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "re-sending accepted records."
+         ),
+         "flash.error.feeds_unreadable": (
+-            "Some calendars couldn't be read — see the alert on the property."
++            "Some calendars couldn't be read. See the alert on the property."
+         ),
+         "flash.error.feed_added_unreadable": (
+-            "Calendar added, but it couldn't be read — see the alert above."
++            "Calendar added, but it couldn't be read. See the alert above."
+         ),
+         "flash.error.codelists_refresh": (
+-            "Code lists couldn't be refreshed — try again in a few minutes."
++            "Code lists couldn't be refreshed. Try again in a few minutes."
+         ),
+         "flash.error.ubyport_not_configured": (
+-            "UbyPort isn't set up completely for this property — check the connection "
+-            "settings."
++            "UbyPort isn't set up completely for this property. Check the connection settings."
+         ),
+         "flash.error.ubyport_unreachable": (
+-            "UbyPort couldn't be reached — try again in a few minutes."
++            "UbyPort couldn't be reached. Try again in a few minutes."
+         ),
+         "flash.error.ubyport_outcome_unknown": (
+             "UbyPort's answer did not arrive, so it is not known whether the report "
+             "was filed. Check UbyPort before sending again."
+         ),
+         "flash.error.connection_failed": (
+-            "The connection test failed — check the web-service login and try again."
++            "The connection test failed. Check the web-service login and try again."
+         ),
+         "flash.error.entity_has_properties": (
+             "Detach or archive the properties linked to this operator first."
+@@ -874,7 +866,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "flash.error.demo_missing": "The built-in demo dataset wasn't found.",
+         "flash.error.demo_preview_only": (
+-            "Demo data is only a preview — it's never sent to the police."
++            "Demo data is only a preview. It's never sent to the police."
+         ),
+         "flash.error.feed_url_malformed": (
+             "That doesn't look like a calendar link. Copy it again from Airbnb or "
+@@ -939,12 +931,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "workspace.deletion.banner_detail": "Download everything you need before then. Invoices and filings you must keep by law are your responsibility after deletion.",
+         "workspace.deletion.download_zip": "Download everything (ZIP)",
+         "flash.error.workspace_export_not_scheduled": "Workspace export is only available while account deletion is scheduled.",
+-        "mail.submission_problem.subject_transport": "Report for %(property)s not delivered yet — retrying automatically",
++        "mail.submission_problem.subject_transport": "Report for %(property)s not delivered yet: retrying automatically",
+         "mail.submission_problem.heading": "Your report was not accepted",
+         "mail.submission_problem.intro": "UbyPort did not take the guest report for %(property)s. Nothing from this attempt reached the register, so these guests are not declared yet.",
+         "mail.submission_problem.intro_transport": "UbyHost could not deliver the guest report for %(property)s to UbyPort. Nothing from this attempt reached the register, so these guests are not declared yet.",
+-        "mail.submission_problem.preheader": "Nothing reached the register — open the stay and send the report again.",
+-        "mail.submission_problem.preheader_transport": "UbyHost will try again automatically — nothing for you to do yet.",
++        "mail.submission_problem.preheader": "Nothing reached the register. Open the stay and send the report again.",
++        "mail.submission_problem.preheader_transport": "UbyHost will try again automatically. Nothing for you to do yet.",
+         "mail.submission_problem.reason_label": "What UbyPort reported",
+         "mail.submission_problem.reason_label_transport": "What happened",
+         "mail.submission_problem.reason_transport": "The connection to UbyPort failed before the report was delivered.",
+@@ -965,8 +957,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "mail.reminder_host.assigned_label": "Registration link sent to",
+         "mail.reminder_host.assigned_unknown": "the guest has not claimed the stay yet",
+         "mail.reminder_host.next_label": "What to do next",
+-        "mail.reminder_host.next_steps_claimed": "%(filled)s of %(expected)s guests have registered. Open the stay to see who is missing — the guest can still finish from the device they started on.",
+-        "mail.reminder_host.next_steps_unclaimed": "Nobody has opened the registration yet. Send the guest the registration link and PIN again — copy the link from the stay page.",
++        "mail.reminder_host.next_steps_claimed": "%(filled)s of %(expected)s guests have registered. Open the stay to see who is missing. The guest can still finish from the device they started on.",
++        "mail.reminder_host.next_steps_unclaimed": "Nobody has opened the registration yet. Send the guest the registration link and PIN again. Copy the link from the stay page.",
+         "mail.reminder_host.action_stay": "Open the stay",
+         "mail.reminder_host.footer": "You are receiving this because check-in is today and the registration is incomplete.",
+         # WP23 filing watchdog: one warning per stay, to the host.
+@@ -1021,28 +1013,28 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "confirm.regenerate_pin": "Generate a new random PIN?",
+         "confirm.disable_user": "Disable %(name)s? They can't sign in until you enable them again.",
+         "action.failed": "Open the stay, fix the rejection, and send again.",
+-        "action.ready_immediate": "All forms complete — UbyHost sends them automatically.",
++        "action.ready_immediate": "All forms complete. UbyHost sends them automatically.",
+         "action.ready": "Guest details are complete. Open the stay and send when ready.",
+         "action.incomplete": "Open the stay to finish missing guest details.",
+         "action.awaiting_guest": "Share the guest link or add the details yourself.",
+-        "action.awaiting_verification": "Forms complete — mark ID checked or send from this stay.",
++        "action.awaiting_verification": "Forms complete. Mark ID checked or send from this stay.",
+         "action.reported": "All guests reported. Nothing to do.",
+-        "action.not_required": "Only Czech guests — nothing to report.",
++        "action.not_required": "Only Czech guests: nothing to report.",
+         "action.check_missing": "Open the stay and check what is missing.",
+         "hint.awaiting_verification": "Optionally record an in-person document check",
+         "hint.awaiting_guest": "Send the check-in link to the guest, or add their details yourself",
+         "hint.auto_immediate": "Sends automatically when all declared guest forms are complete",
+-        "hint.all_reported": "All guests are reported — nothing left to send.",
+-        "hint.nothing_duty": "Only Czech guests on this stay — nothing goes to the police.",
++        "hint.all_reported": "All guests are reported. Nothing left to send.",
++        "hint.nothing_duty": "Only Czech guests on this stay: nothing goes to the police.",
+         "hint.need_signature": "Every foreign guest must sign before reporting to UbyPort",
+         "hint.need_verification": "Verify each guest against their passport before reporting",
+         "hint.nothing_left": "Nothing left to send for this stay",
+-        "hint.not_ready": "Some guest details or signatures are missing — see the guests marked below.",
++        "hint.not_ready": "Some guest details or signatures are missing. See the guests marked below.",
+         "hint.missing_guests": "Guest forms: %(filled)s/%(expected)s. Send the link to the others, add them yourself, or lower the guest count if fewer came.",
+         "hint.ready_to_send": "Send completed guest records to UbyPort now",
+-        "hint.ready_id_optional": "Forms complete — send now. Checking the ID first is optional.",
++        "hint.ready_id_optional": "Forms complete. Send now. Checking the ID first is optional.",
+         "hint.failed": "UbyPort rejected a guest record. Fix the details marked in red below, then send again.",
+-        "hint.demo_preview": "Demo stays are never sent — use a real property to report to UbyPort",
++        "hint.demo_preview": "Demo stays are never sent. Use a real property to report to UbyPort",
+         # Czech needs three forms for "day" (1 / 2-4 / 5+), so every day-based
+         # countdown carries .one and .few alongside the base many form.
+         "deadline.arrives_days": "arrives in %(n)s days",
+@@ -1109,7 +1101,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "dashboard.section.needs_action": "Needs action now (%(count)s)",
+         "dashboard.section.waiting": "Waiting for guests",
+         "dashboard.section.upcoming": "Upcoming arrivals",
+-        "dashboard.section.completed": "Done — nothing to do",
++        "dashboard.section.completed": "Done, nothing to do",
+         "dashboard.section.view_stays": "View all stays",
+         "dashboard.section.view_reports": "View reports",
+         "dashboard.queue.empty.action": "You are caught up. Nothing needs action now.",
+@@ -1185,9 +1177,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stays.empty.no_apartments": "There are no properties yet, so there is nothing to show.",
+         "stays.empty.add_first": "Add your first property",
+         "stay.detail.back": "Back to stays",
+-        "stay.detail.banner.cancelled": "This stay is cancelled — UbyHost sends nothing for it. If that's a mistake, set it back to Active in Stay settings.",
+-        "stay.detail.banner.ignored": "Marked as not a guest stay — hidden from daily work.",
+-        "stay.detail.banner.archived": "Archived — hidden from your daily work. Restore it from the ⋯ menu if that was a mistake.",
++        "stay.detail.banner.cancelled": "This stay is cancelled. UbyHost sends nothing for it. If that's a mistake, set it back to Active in Stay settings.",
++        "stay.detail.banner.ignored": "Marked as not a guest stay and hidden from daily work.",
++        "stay.detail.banner.archived": "Archived and hidden from your daily work. Restore it from the ⋯ menu if that was a mistake.",
+         "stay.claim.title": "Guest assignment",
+         "stay.claim.unclaimed": "No guest e-mail has claimed this stay yet.",
+         "stay.claim.provisional": "A confirmation e-mail is waiting for %(email)s.",
+@@ -1269,7 +1261,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay.detail.guests.empty_hint": "Copy the guest link above, or add the details yourself.",
+         # Counts the same people as stay.fee.headcount: someone the host
+         # declared but nobody has registered. Keep the two wordings in step.
+-        "stay.detail.guests.placeholder": "Guest %(n)s — not registered yet",
++        "stay.detail.guests.placeholder": "Guest %(n)s: not registered yet",
+         "stay.detail.guests.add_by_hand": "Add by hand",
+         "stay.detail.money.title": "Payments",
+         "invoices.title": "Invoices",
+@@ -1355,7 +1347,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "invoice.detail.status": "Status",
+         "invoice.state.paid": "Paid",
+         "invoice.state.unpaid": "Awaiting payment",
+-        "invoice.detail.note_paid": "This invoice is paid. The PDF is your record — keep it with the stay's papers.",
++        "invoice.detail.note_paid": "This invoice is paid. The PDF is your record. Keep it with the stay's papers.",
+         "invoice.detail.note_unpaid": "Waiting for the customer's payment. Mark it paid when the money arrives.",
+         "invoice.detail.note_storno": "This document cancels the original invoice. Keep both PDFs together.",
+         "invoice.detail.note_corrective": "This document corrects the original invoice. Keep both PDFs together.",
+@@ -1568,7 +1560,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay_fees.quarter": "%(n)s. čtvrtletí %(year)s",
+         "stay_fees.open": "Zobrazit",
+         "stay_fees.needs_setup": "Doplnit údaje",
+-        "stay_fees.footnote": "Zobrazují se jen nemovitosti se zadanou sazbou. Poplatek zapnete zadáním sazby u nemovitosti — je volitelný a není součástí úvodního nastavení.",
++        "stay_fees.footnote": "Zobrazují se jen nemovitosti se zadanou sazbou. Poplatek zapnete zadáním sazby u nemovitosti. Je volitelný a není součástí úvodního nastavení.",
+         "stay_fees.empty_title": "Žádná nemovitost zatím nemá poplatek z pobytu",
+         "stay_fees.empty": "Zadejte sazbu v sekci Poplatek z pobytu u nemovitosti a součty se zobrazí zde.",
+         "stay_fees.empty_action": "Otevřít nemovitosti",
+@@ -1590,7 +1582,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay_fees.payment.vs_hint": "Tento symbol vám přidělil úřad. Uveďte ho v platbě.",
+         "stay_fees.payment.qr_alt": "QR kód pro zaplacení poplatku úřadu",
+         "stay_fees.payment.qr_help": "Naskenujte v bankovní aplikaci a zaplaťte %(amount)s na účet úřadu. QR kód obsahuje částku, účet i variabilní symbol.",
+-        "stay_fees.payment.footnote": "Tyto platební údaje zadáváte sami (účet úřadu a variabilní symbol). Nejsou součástí hlášení pro úřad — slouží jen k zaplacení.",
++        "stay_fees.payment.footnote": "Tyto platební údaje zadáváte sami (účet úřadu a variabilní symbol). Nejsou součástí hlášení pro úřad, slouží jen k zaplacení.",
+         "stay_fees.guests.title": "Hosté v tomto období",
+         "stay_fees.guests.empty": "V tomto období nebyl žádný podepsaný host. Hlášení je přesto nutné podat, s nulou.",
+         "stay_fees.nights": "%(count)s nocí",
+@@ -1598,8 +1590,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay_fees.nights.few": "%(count)s noci",
+         "stay_fees.status.liable": "Podléhá",
+         "stay_fees.status.exempt": "Osvobozen/a",
+-        "stay_fees.status.under_18": "Osvobozen/a — mladší 18 let",
+-        "stay_fees.status.not_subject": "Pobyt nad 60 dnů — nepodléhá",
++        "stay_fees.status.under_18": "Osvobozen/a. Mladší 18 let",
++        "stay_fees.status.not_subject": "Pobyt nad 60 dnů. Nepodléhá",
+         "stay_fees.decision.change": "Změnit",
+         "stay_fees.decision.exempt": "Osvobodit",
+         "stay_fees.decision.charge": "Zpoplatnit",
+@@ -1643,7 +1635,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "month.11": "Listopad",
+         "month.12": "Prosinec",
+         "nav.properties": "Ubytování",
+-        "nav.properties_more": "Dalších %(count)s ubytování — otevřít hledání",
++        "nav.properties_more": "Dalších %(count)s ubytování. Otevřít hledání",
+         "nav.all_properties": "Všechna ubytování",
+         "nav.per_property": "Nastavuje se u ubytování",
+         "nav.account": "Účet",
+@@ -1669,7 +1661,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "login.remember": "Zapamatovat na 30 dní",
+         "login.submit": "Pokračovat",
+         "login.footnote": (
+-            "Ještě nemáte účet? UbyHost je jen na pozvání — napište na %(email)s."
++            "Ještě nemáte účet? UbyHost je jen na pozvání. Napište na %(email)s."
+         ),
+         "login.forgot_summary": "Zapomněli jste heslo?",
+         "login.forgot_body": (
+@@ -1687,8 +1679,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "login.acceptance_after": ".",
+         "login.hero_title": "Hlášení hostů vyřídíme za vás.",
+         "login.hero_body": (
+-            "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě — "
+-            "pro krátkodobé pronájmy v Česku."
++            "Kalendáře, formuláře hostů, domovní kniha a odeslání do UbyPortu na jednom místě, pro krátkodobé pronájmy v Česku."
+         ),
+         "onboarding.kicker": "Spuštění v pěti krocích",
+         "onboarding.welcome_title": "Nastavení UbyHostu v pěti krocích",
+@@ -1707,13 +1698,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "onboarding.finish_line": "Dokončete těchto pět kroků a můžete hostům poslat odkaz k registraci.",
+         "onboarding.finish_line_done": "Všech pět kontrol je hotových. Odkaz výše teď pošlete hostům.",
+         "onboarding.finish_kicker": "Jste připraveni",
+-        "onboarding.finish_strip": "Nastavení je hotové — odkaz a PIN pro hosty jsou připravené.",
++        "onboarding.finish_strip": "Nastavení je hotové. Odkaz a PIN pro hosty jsou připravené.",
+         "onboarding.finish_strip_link": "Zobrazit odkaz",
+         "onboarding.finish_title": "Odkaz pro hosty a PIN jsou aktivní",
+         "onboarding.finish_lede": "Odkaz a PIN vložte do zprávy před příjezdem na každém portálu.",
+         "onboarding.finish_link_label": "Trvalý odkaz pro hosty",
+         "onboarding.finish_message_tip": (
+-            "Volitelná uvítací zpráva hostitele je v sekci Komunikace na stránce ubytování —"
++            "Volitelná uvítací zpráva hostitele je v sekci Komunikace na stránce ubytování:"
+         ),
+         "onboarding.finish_message_link": "upravit zprávu hostitele",
+         "onboarding.finish_passport_tip": "Fotka pasu nebo dokladu u tohoto ubytování:",
+@@ -1727,7 +1718,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "onboarding.continue": "Pokračovat: %(action)s",
+         "onboarding.entity.title": "Provozovatel",
+         "onboarding.entity.detail": (
+-            "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba."
++            "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba."
+         ),
+         "onboarding.entity.prepare": "Připravte si: jméno nebo název, IČO, sídlo a kontaktní e-mail.",
+         "onboarding.entity.why": "Tato identita se zobrazí v informaci o soukromí a kontaktu pro hosty.",
+@@ -1741,7 +1732,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "onboarding.property.action": "Přidat ubytování",
+         "onboarding.calendars.title": "Odkazy na kalendáře",
+         "onboarding.calendars.detail": (
+-            "Připojte Airbnb nebo Booking.com — nebo přidejte přímou rezervaci ručně."
++            "Připojte Airbnb nebo Booking.com, nebo přidejte přímou rezervaci ručně."
+         ),
+         "onboarding.calendars.prepare": "Zkopírujte soukromou URL exportu iCal, ne veřejnou stránku nabídky.",
+         "onboarding.calendars.why": "iCal přináší jen termíny; jména a doklady host doplní bezpečně.",
+@@ -1841,8 +1832,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "housebook.export_menu": "Export",
+         "housebook.pdf_export_title": "Stáhnout balíček PDF",
+         "housebook.pdf_export_help": (
+-            "Vyberte rozsah pobytů a ubytování. Každý formulář hosta se na serveru generuje zvlášť — "
+-            "velký rozsah trvá déle a zatěžuje server."
++            "Vyberte rozsah pobytů a ubytování. Každý formulář hosta se na serveru generuje zvlášť. Velký rozsah trvá déle a zatěžuje server."
+         ),
+         "housebook.pdf_hint": (
+             "Nejvýše %(limit)s formulářů na jedno stažení. Při velkém počtu záznamů zužte datumy."
+@@ -1869,7 +1859,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "host.verify_pending": "Doklad nezkontrolován",
+         "host.verify_view_photo": "Zobrazit nahraný doklad",
+         "host.verify_footnote": "UbyHost obrázek pasu ani dokladu nesbírá.",
+-        "host.verify_waiting_photo": "Kontrola dokladu není zaznamenána — osobní kontrolu můžete označit.",
++        "host.verify_waiting_photo": "Kontrola dokladu není zaznamenána. Osobní kontrolu můžete označit.",
+         "host.verify_done": "Doklad zkontrolován",
+         "host.verify_host_entry": (
+             "Když zadáváte hosta ručně, potvrzujete údaje proti dokladu na místě. Záznam se "
+@@ -1883,9 +1873,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "send.filled_forms": "Odeslat vyplněné formuláře",
+         "send.filled_forms_hint": "Odešle každý hotový formulář hosta na tomto pobytu do UbyPortu",
+         "send.guests_count": "Odeslat %(count)s host(y) na tomto pobytu",
+-        "status.ready_manual": "Připraveno — ručně",
++        "status.ready_manual": "Připraveno (ručně)",
+         "status.ready_manual_tip": "Formuláře jsou hotové. Klikněte na Odeslat, protože ubytování má ruční režim.",
+-        "status.ready_immediate": "Hotovo — odesílá se",
++        "status.ready_immediate": "Hotovo (odesílá se)",
+         "status.ready_immediate_tip": "Všechny nahlášené formuláře jsou hotové, proto UbyHost odešle automaticky bez čekání na ověření.",
+         "status.awaiting_verification": "Připraveno k hlášení",
+         "status.awaiting_verification_tip": "Doklad nezkontrolován (volitelné)",
+@@ -1896,7 +1886,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "status.waiting_guest_tip": "Formuláře hostů ještě nejsou hotové.",
+         "status.waiting_signature": "Čeká na podpis",
+         "status.waiting_signature_tip": "Formuláře ještě nejsou podepsané.",
+-        "status.ready_scheduled": "Připraveno — naplánováno",
++        "status.ready_scheduled": "Připraveno (naplánováno)",
+         "status.ready_scheduled_tip": "Odejde automaticky po zvolené prodlevě od dokončení všech nahlášených formulářů.",
+         "status.demo_preview": "Jen náhled",
+         "status.demo_preview_tip": "Ukázková data se na policii nikdy neodešlou.",
+@@ -1932,8 +1922,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "guide.legal.reporting_title": "Hlášení cizinců policii",
+         "guide.legal.reporting_body": (
+-            "Každého cizince nahlaste přes UbyPort do tří pracovních dnů od příjezdu (§ 100). "
+-            "Čeští hosté zůstávají jen v domovní knize — na cizineckou policii se nehlásí."
++            "Každého cizince nahlaste přes UbyPort do tří pracovních dnů od příjezdu (§ 100). Čeští hosté zůstávají jen v domovní knize a na cizineckou policii se nehlásí."
+         ),
+         "guide.legal.retention_title": "Uchovávání a GDPR",
+         "guide.legal.retention_body": (
+@@ -1979,9 +1968,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "legal.disclaimer_title": "Vyloučení odpovědnosti",
+         "legal.disclaimer_body": (
+-            "Software je poskytován bez záruky v rozsahu povoleném zákonem. Odpovědnost je omezena "
+-            "povinnými zákonnými pravidly. Tím se nemění, kdo musí hosty registrovat a vést domovní "
+-            "knihu — to zůstává na poskytovateli ubytování."
++            "Software je poskytován bez záruky v rozsahu povoleném zákonem. Odpovědnost je omezena povinnými zákonnými pravidly. Tím se nemění, kdo musí hosty registrovat a vést domovní knihu. To zůstává na poskytovateli ubytování."
+         ),
+         "legal.back_home": "Zpět na UbyHost",
+         "legal.back_login": "Zpět na přihlášení",
+@@ -2070,7 +2057,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "settings.audit.filter_support": "Relace podpory",
+         "notification.open_stay": "Otevřít pobyt",
+         "notification.open_property": "Otevřít ubytování",
+-        "notification.more": "Další upozornění: %(n)s — zobrazit v Přehledu",
++        "notification.more": "Další upozornění: %(n)s. Zobrazit v Přehledu",
+         "notification.stay_title": "%(property)s · %(dates)s",
+         "notification.reason.overdue_forms": "Po termínu o %(n)s dní · %(filled)s/%(expected)s",
+         "notification.reason.overdue_forms.one": "Po termínu o 1 den · %(filled)s/%(expected)s",
+@@ -2187,7 +2174,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.apartments.archived": "„%(name)s“ bylo archivováno. Historie zůstává zachována.",
+         "flash.apartments.restored": "Ubytování bylo obnoveno z archivu.",
+         "flash.apartments.connection_ok": (
+-            "Spojení funguje — UbyPort přijal vaše přihlašovací údaje."
++            "Spojení funguje. UbyPort přijal vaše přihlašovací údaje."
+         ),
+         "flash.apartments.codelists_refreshed": "Číselníky byly obnoveny z UbyPortu: %(countries)s zemí, %(purposes)s účelů, %(errors)s chybových kódů.",
+         "flash.feeds.added": "Kalendář byl přidán. Importováno %(count)s pobytů.",
+@@ -2208,7 +2195,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.reservations.restored": "Pobyt byl obnoven z archivu.",
+         "flash.reservations.access_reopened": "Přístup hosta byl znovu otevřen.",
+         "flash.reservations.claim_released": (
+-            "Přiřazení uvolněno — pobyt teď může převzít jiný e-mail."
++            "Přiřazení uvolněno. Pobyt teď může převzít jiný e-mail."
+         ),
+         "flash.reservations.accepted": "Přijato %(count)s hostů.",
+         "flash.reservations.accepted.one": "Přijato %(count)s host.",
+@@ -2257,7 +2244,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.error.stay_dates_required": "Vyberte ubytování a oba termíny.",
+         "flash.error.dates_order": "Odjezd musí být po příjezdu.",
+         "flash.error.nothing_ready": (
+-            "Zatím není nic připraveno k odeslání — otevřete pobyt a uvidíte, co chybí."
++            "Zatím není nic připraveno k odeslání. Otevřete pobyt a uvidíte, co chybí."
+         ),
+         "flash.error.nothing_sendable": (
+             "Nebylo co odeslat: všichni hosté jsou buď nedokončení, už nahlášení, "
+@@ -2266,31 +2253,25 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.error.nothing_to_send": "Nebylo co odeslat.",
+         "flash.error.not_sendable": "Tento pobyt teď nelze odeslat.",
+         "flash.error.record_not_sendable": (
+-            "Tento záznam zatím nelze odeslat — nejprve opravte chyby ve formuláři."
++            "Tento záznam zatím nelze odeslat. Nejprve opravte chyby ve formuláři."
+         ),
+         "flash.error.rejected": (
+-            "UbyPort odmítl záznamy hostů (%(count)s) — otevřete pobyt, opravte je a "
+-            "odešlete znovu."
++            "UbyPort odmítl záznamy hostů (%(count)s). Otevřete pobyt, opravte je a odešlete znovu."
+         ),
+         "flash.error.rejected.one": (
+-            "UbyPort odmítl záznam hosta (%(count)s) — otevřete pobyt, opravte jej a "
+-            "odešlete znovu."
++            "UbyPort odmítl záznam hosta (%(count)s). Otevřete pobyt, opravte jej a odešlete znovu."
+         ),
+         "flash.error.rejected.few": (
+-            "UbyPort odmítl záznamy hostů (%(count)s) — otevřete pobyt, opravte je a "
+-            "odešlete znovu."
++            "UbyPort odmítl záznamy hostů (%(count)s). Otevřete pobyt, opravte je a odešlete znovu."
+         ),
+         "flash.error.resent_rejected": (
+-            "Odesláno znovu, ale UbyPort záznam opět odmítl — podrobnosti najdete v "
+-            "Doručence."
++            "Odesláno znovu, ale UbyPort záznam opět odmítl. Podrobnosti najdete v Doručence."
+         ),
+         "flash.error.already_reported_duplicate": (
+-            "UbyPort tento záznam už má, takže opětovné odeslání nelze přijmout a "
+-            "počítalo by se jako další duplicita. Host je nahlášen — podrobnosti "
+-            "najdete v Doručence."
++            "UbyPort tento záznam už má, takže opětovné odeslání nelze přijmout a počítalo by se jako další duplicita. Host je nahlášen (podrobnosti najdete v Doručence)."
+         ),
+         "flash.error.reported_kept": (
+-            "Tento host už byl nahlášen policii — záznam musí zůstat v domovní knize."
++            "Tento host už byl nahlášen policii. Záznam musí zůstat v domovní knize."
+         ),
+         "flash.error.czech_no_verification": "U českých hostů se doklad nekontroluje.",
+         "flash.error.confirm_duplicate": (
+@@ -2301,28 +2282,26 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "než znovu odešlete přijaté záznamy."
+         ),
+         "flash.error.feeds_unreadable": (
+-            "Některé kalendáře nešly načíst — podrobnosti najdete u ubytování."
++            "Některé kalendáře nešly načíst. Podrobnosti najdete u ubytování."
+         ),
+         "flash.error.feed_added_unreadable": (
+-            "Kalendář byl přidán, ale nepodařilo se ho načíst — viz upozornění výše."
++            "Kalendář byl přidán, ale nepodařilo se ho načíst. Viz upozornění výše."
+         ),
+         "flash.error.codelists_refresh": (
+-            "Číselníky se nepodařilo obnovit — zkuste to za pár minut."
++            "Číselníky se nepodařilo obnovit. Zkuste to za pár minut."
+         ),
+         "flash.error.ubyport_not_configured": (
+-            "UbyPort není pro toto ubytování kompletně nastaven — zkontrolujte nastavení "
+-            "spojení."
++            "UbyPort není pro toto ubytování kompletně nastaven. Zkontrolujte nastavení spojení."
+         ),
+         "flash.error.ubyport_unreachable": (
+-            "UbyPort se nepodařilo kontaktovat — zkuste to za pár minut."
++            "UbyPort se nepodařilo kontaktovat. Zkuste to za pár minut."
+         ),
+         "flash.error.ubyport_outcome_unknown": (
+             "Odpověď UbyPortu nedorazila, takže není jisté, zda bylo hlášení podáno. "
+             "Než odešlete znovu, ověřte to v UbyPortu."
+         ),
+         "flash.error.connection_failed": (
+-            "Test spojení se nezdařil — zkontrolujte přihlašovací údaje k webové službě "
+-            "a zkuste to znovu."
++            "Test spojení se nezdařil. Zkontrolujte přihlašovací údaje k webové službě a zkuste to znovu."
+         ),
+         "flash.error.entity_has_properties": (
+             "Nejprve odpojte nebo archivujte ubytování přiřazená tomuto provozovateli."
+@@ -2352,7 +2331,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "flash.error.demo_missing": "Vestavěná demo data nebyla nalezena.",
+         "flash.error.demo_preview_only": (
+-            "Demo data jsou jen náhled — na policii se nikdy neodesílají."
++            "Demo data jsou jen náhled. Na policii se nikdy neodesílají."
+         ),
+         "flash.error.feed_url_malformed": (
+             "Tohle nevypadá jako odkaz na kalendář. Zkopírujte ho znovu z Airbnb nebo "
+@@ -2496,28 +2475,28 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "confirm.regenerate_pin": "Vygenerovat nový náhodný PIN?",
+         "confirm.disable_user": "Vypnout účet %(name)s? Nebude se moci přihlásit, dokud ho znovu nezapnete.",
+         "action.failed": "Otevřete pobyt, opravte odmítnutí a odešlete znovu.",
+-        "action.ready_immediate": "Všechny formuláře jsou hotové — UbyHost je odešle automaticky.",
++        "action.ready_immediate": "Všechny formuláře jsou hotové. UbyHost je odešle automaticky.",
+         "action.ready": "Údaje hostů jsou hotové. Otevřete pobyt a odešlete, až budete připraveni.",
+         "action.incomplete": "Otevřete pobyt a doplňte chybějící údaje hostů.",
+         "action.awaiting_guest": "Sdílejte odkaz pro hosty nebo údaje zadejte sami.",
+-        "action.awaiting_verification": "Formuláře hotové — označte kontrolu dokladu nebo odešlete z pobytu.",
++        "action.awaiting_verification": "Formuláře hotové. Označte kontrolu dokladu nebo odešlete z pobytu.",
+         "action.reported": "Všichni hosté jsou nahlášení. Není třeba nic dělat.",
+-        "action.not_required": "Jen čeští hosté — policii se nic nehlásí.",
++        "action.not_required": "Jen čeští hosté: policii se nic nehlásí.",
+         "action.check_missing": "Otevřete pobyt a zkontrolujte, co chybí.",
+         "hint.awaiting_verification": "Volitelně zaznamenejte osobní kontrolu dokladu",
+         "hint.awaiting_guest": "Pošlete hostovi odkaz pro check-in, nebo jeho údaje přidejte sami",
+         "hint.auto_immediate": "Odešle se automaticky po dokončení všech nahlášených formulářů",
+-        "hint.all_reported": "Všichni hosté jsou nahlášení — už není co odeslat.",
+-        "hint.nothing_duty": "Na pobytu jsou jen čeští hosté — policii se nic nehlásí.",
++        "hint.all_reported": "Všichni hosté jsou nahlášení. Už není co odeslat.",
++        "hint.nothing_duty": "Na pobytu jsou jen čeští hosté: policii se nic nehlásí.",
+         "hint.need_signature": "Každý cizinec se musí podepsat před odesláním do UbyPortu",
+         "hint.need_verification": "Ověřte každého hosta proti pasu před hlášením",
+         "hint.nothing_left": "Pro tento pobyt už nic k odeslání není",
+-        "hint.not_ready": "Některým hostům chybí údaje nebo podpis — viz označené hosty níže.",
++        "hint.not_ready": "Některým hostům chybí údaje nebo podpis. Viz označené hosty níže.",
+         "hint.missing_guests": "Formuláře hostů: %(filled)s/%(expected)s. Pošlete ostatním odkaz, zadejte je sami, nebo snižte počet hostů, pokud jich přijelo méně.",
+         "hint.ready_to_send": "Odeslat hotové záznamy hostů do UbyPortu",
+-        "hint.ready_id_optional": "Formuláře hotové — odešlete. Kontrola dokladu předem je volitelná.",
++        "hint.ready_id_optional": "Formuláře hotové. Odešlete. Kontrola dokladu předem je volitelná.",
+         "hint.failed": "UbyPort odmítl záznam hosta. Opravte údaje označené červeně níže a odešlete znovu.",
+-        "hint.demo_preview": "Ukázkové pobyty se neodesílají — pro hlášení použijte skutečnou nemovitost",
++        "hint.demo_preview": "Ukázkové pobyty se neodesílají. Pro hlášení použijte skutečnou nemovitost",
+         "deadline.arrives_days": "přijíždí za %(n)s dní",
+         "deadline.arrives_days.one": "přijíždí za 1 den",
+         "deadline.arrives_days.few": "přijíždí za %(n)s dny",
+@@ -2580,7 +2559,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "dashboard.section.needs_action": "Vyžaduje akci (%(count)s)",
+         "dashboard.section.waiting": "Čeká na hosty",
+         "dashboard.section.upcoming": "Nadcházející příjezdy",
+-        "dashboard.section.completed": "Hotovo — není třeba nic dělat",
++        "dashboard.section.completed": "Hotovo, není třeba nic dělat",
+         "dashboard.section.view_stays": "Všechny pobyty",
+         "dashboard.section.view_reports": "Zobrazit hlášení",
+         "dashboard.queue.empty.action": "Máte hotovo. Teď nic nevyžaduje akci.",
+@@ -2656,9 +2635,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stays.empty.no_apartments": "Zatím nemáte ubytování, takže není co zobrazit.",
+         "stays.empty.add_first": "Přidat první ubytování",
+         "stay.detail.back": "Zpět na pobyty",
+-        "stay.detail.banner.cancelled": "Tento pobyt je zrušený — UbyHost za něj nic neodesílá. Pokud jde o omyl, v Nastavení pobytu ho vraťte na Aktivní.",
+-        "stay.detail.banner.ignored": "Označeno, že nejde o pobyt hostů — skryto z denní práce.",
+-        "stay.detail.banner.archived": "Archivováno — skryto z denní práce. Pokud jde o omyl, obnovte pobyt v nabídce ⋯.",
++        "stay.detail.banner.cancelled": "Tento pobyt je zrušený. UbyHost za něj nic neodesílá. Pokud jde o omyl, v Nastavení pobytu ho vraťte na Aktivní.",
++        "stay.detail.banner.ignored": "Označeno, že nejde o pobyt hostů, a skryto z denní práce.",
++        "stay.detail.banner.archived": "Archivováno a skryto z denní práce. Pokud jde o omyl, obnovte pobyt v nabídce ⋯.",
+         "stay.claim.title": "Přiřazení hosta",
+         "stay.claim.unclaimed": "Tento pobyt zatím nikdo e-mailem nepřevzal.",
+         "stay.claim.provisional": "Čeká se na potvrzení e-mailu %(email)s.",
+@@ -2678,9 +2657,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay.detail.cta.add_guest": "Přidat hosta",
+         "stay.detail.next_step": "Další krok",
+         "stay.detail.change_guest_count": "Změnit počet hostů",
+-        "stay.detail.ready_count": "Připraveno k hlášení — hostů: %(count)s.",
+-        "stay.detail.ready_count.one": "Připraven k hlášení — hostů: %(count)s.",
+-        "stay.detail.ready_count.few": "Připraveno k hlášení — hostů: %(count)s.",
++        "stay.detail.ready_count": "Připraveno k hlášení (hostů: %(count)s).",
++        "stay.detail.ready_count.one": "Připraven k hlášení (hostů: %(count)s).",
++        "stay.detail.ready_count.few": "Připraveno k hlášení (hostů: %(count)s).",
+         "stay.detail.metric.deadline": "Termín hlášení",
+         "stay.detail.metric.deadline_note": "Lhůta tří pracovních dnů od příjezdu končí %(when)s.",
+         "stay.detail.metric.guests": "Formuláře hostů",
+@@ -2737,7 +2716,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay.detail.guests.note": "Poznámka: %(text)s",
+         "stay.detail.guests.empty": "Zatím žádný host nevyplnil formulář.",
+         "stay.detail.guests.empty_hint": "Zkopírujte odkaz pro hosty výše, nebo údaje zadejte sami.",
+-        "stay.detail.guests.placeholder": "Host č. %(n)s — zatím neregistrován",
++        "stay.detail.guests.placeholder": "Host č. %(n)s: zatím neregistrován",
+         "stay.detail.guests.add_by_hand": "Přidat ručně",
+         "stay.detail.money.title": "Platby",
+         "invoices.title": "Faktury",
+@@ -2823,7 +2802,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "invoice.detail.status": "Stav",
+         "invoice.state.paid": "Zaplaceno",
+         "invoice.state.unpaid": "Čeká na platbu",
+-        "invoice.detail.note_paid": "Faktura je zaplacena. PDF slouží jako doklad — uschovejte ho k papírům k pobytu.",
++        "invoice.detail.note_paid": "Faktura je zaplacena. PDF slouží jako doklad. Uschovejte ho k papírům k pobytu.",
+         "invoice.detail.note_unpaid": "Čeká se na platbu odběratele. Po přijetí peněz ji označte jako zaplacenou.",
+         "invoice.detail.note_storno": "Tento doklad ruší původní fakturu. Uschovejte obě PDF spolu.",
+         "invoice.detail.note_corrective": "Tento doklad opravuje původní fakturu. Uschovejte obě PDF spolu.",
+@@ -3021,7 +3000,7 @@ _INTERFACE_STRINGS = {
+         "automation.contact": "Contact at registration",
+         "automation.login": "Web-service login",
+         "automation.password": "Web-service password",
+-        "automation.password_saved": "Saved — not shown again.",
++        "automation.password_saved": "Saved. Not shown again.",
+         "automation.password_keep": "Leave empty to keep the saved password",
+         "automation.password_paste": "Paste from the police letter",
+         "automation.password_replace": "Fill this only when replacing the police-issued password. Otherwise leave it empty.",
+@@ -3031,7 +3010,7 @@ _INTERFACE_STRINGS = {
+         "automation.refresh": "Refresh code lists",
+         "automation.saved_credentials_help": "Refresh code lists uses the last saved credentials. Save first if you changed them.",
+         "automation.empty": "No active properties yet. Add a property, then configure reporting here.",
+-        "apartment.form.active.label": 'Active — sync calendars and report guests for this apartment',
++        "apartment.form.active.label": "Active: sync calendars and report guests for this apartment",
+         "apartment.form.addr.house_no": 'House number (č. popisné)',
+         "apartment.form.addr.house_no_hint": 'Up to 4 digits. For an evidence number use E123.',
+         "apartment.form.addr.obec": 'Municipality (obec)',
+@@ -3105,7 +3084,7 @@ _INTERFACE_STRINGS = {
+         "apartment.form.guest_link.reachback_hint": 'How far back a stay-specific link keeps working, so a guest who forgot to fill in the form can still finish it. The apartment link itself only lists upcoming stays. Set 1 to close old forms immediately.',
+         "apartment.form.guest_link.reachback_label": 'Keep past stay links open for (days)',
+         "apartment.form.guest_link.regenerate_link": 'Generate a new link',
+-        "apartment.form.guest_link.regenerate_link_help": 'Only if the old link leaked. This also creates a new PIN — update your portal messages.',
++        "apartment.form.guest_link.regenerate_link_help": "Only if the old link leaked. This also creates a new PIN. Update your portal messages.",
+         "apartment.form.guest_link.regenerate_pin_help": 'Keep the same link but change the PIN guests must enter.',
+         "apartment.form.guest_link.regenerate_pin_title": 'Generate a new PIN only',
+         "apartment.form.guest_link.window_hint": 'Only stays whose check-in date falls in this window are listed on the apartment link. A past stay keeps working through its own stay-specific link for the number of days set below.',
+@@ -3115,7 +3094,7 @@ _INTERFACE_STRINGS = {
+         "apartment.form.guest_message.placeholder": 'For example: Welcome! Please complete this form before arrival.',
+         "apartment.form.passport_policy.label": 'Passport or ID photo from the guest',
+         "apartment.form.passport_policy.hint": "Required asks foreign guests to upload a document photo for your review. It is never sent to the police.",
+-        "apartment.form.passport_policy.off": 'Off (default) — host checks the document at arrival',
++        "apartment.form.passport_policy.off": "Off (default): host checks the document at arrival",
+         "apartment.form.passport_policy.required": 'Required for foreign guests filling the online form',
+         "entity.signature_label": 'Signature for reports (PNG or JPEG, max 300 KB)',
+         "entity.signature_remove": 'Remove the stored signature',
+@@ -3133,12 +3112,12 @@ _INTERFACE_STRINGS = {
+         "apartment.form.nav.stay_fee": 'Stay fee',
+         "apartment.form.nav.ubyport": '3. UbyPort',
+         "apartment.form.new_property": 'New property',
+-        "apartment.form.notes.hint": 'Only you see this — never shown to guests.',
++        "apartment.form.notes.hint": "Only you see this and is never shown to guests.",
+         "apartment.form.notes.label": 'Your notes',
+         "apartment.form.needed_to_report": 'needed to report',
+         "apartment.form.notes.title": 'Private notes',
+         "apartment.form.stay_fee.heading": 'Stay fee (poplatek z pobytu)',
+-        "apartment.form.stay_fee.lede": 'Optional. Only for your report and payment to the municipality — guests never see it.',
++        "apartment.form.stay_fee.lede": "Optional. Only for your report and payment to the municipality. Guests never see it.",
+         "apartment.form.stay_fee.rate_label": 'Rate per person per night (Kč)',
+         "apartment.form.stay_fee.rate_hint": "From your municipality's decree (max 50 Kč). 0 turns the stay fee off.",
+         "apartment.form.stay_fee.cadence_label": 'Reporting period',
+@@ -3181,30 +3160,30 @@ _INTERFACE_STRINGS = {
+         "apartment.form.test_connection": 'Save and test connection',
+         "apartment.form.title_new": 'New apartment',
+         "apartment.form.ubyport.contact_hint": "E-mail or phone from your original UbyPort registration; often not on the web-service PDF. A wrong value can get reports rejected.",
+-        "apartment.form.ubyport.idub_hint": 'PDF line “IDUB:” — 12–14 digits, character for character.',
+-        "apartment.form.ubyport.intro": 'These are not your normal UbyPort portal login (ub…). Use the separate letter titled “Výpis z databáze přihlašovacích údajů” (web-service / robotické vkládání) — usually a PDF whose filename contains your IDUB and UBY-WS.',
+-        "apartment.form.ubyport.login_hint": 'PDF “Přihlašovací jméno:” — copy exactly (including _ or digits).',
++        "apartment.form.ubyport.idub_hint": "PDF line “IDUB:”, 12–14 digits, character for character.",
++        "apartment.form.ubyport.intro": "These are not your normal UbyPort portal login (ub…). Use the separate letter titled “Výpis z databáze přihlašovacích údajů” (web-service / robotické vkládání), usually a PDF whose filename contains your IDUB and UBY-WS.",
++        "apartment.form.ubyport.login_hint": "PDF “Přihlašovací jméno:”. Copy exactly (including _ or digits).",
+         "apartment.form.ubyport.mark_hint": "Five letters on file with the police, often the letters after UBY-WS_ in your login (UBY-WS_DEMO1 → DEMO1). Check the UbyPort portal if unsure.",
+         "apartment.form.ubyport.mark_label": 'Facility abbreviation (zkratka)',
+-        "apartment.form.ubyport.mismatch_help": 'UbyPort compares IDUB, zkratka, name, address, and contact to the register. A typo or an Airbnb listing name fails even when the web-service login works — you often only see that on the first real submission.',
+-        "apartment.form.ubyport.name_hint": 'PDF “Ubytovací zařízení:” — first line only, not your listing title; max 35 characters.',
++        "apartment.form.ubyport.mismatch_help": "UbyPort compares IDUB, zkratka, name, address, and contact to the register. A typo or an Airbnb listing name fails even when the web-service login works. You often only see that on the first real submission.",
++        "apartment.form.ubyport.name_hint": "PDF “Ubytovací zařízení:”. First line only, not your listing title; max 35 characters.",
+         "apartment.form.ubyport.password_edit_hint": 'Only type here if the Foreign Police sent you a new password. Saving the rest of this form without touching this field keeps the password you already stored.',
+         "apartment.form.ubyport.password_new_hint": 'Enter it once when you first set up reporting. It is encrypted before it is written to disk and is never displayed again after save.',
+-        "apartment.form.ubyport.password_saved": 'Saved — UbyHost keeps it encrypted and does not show it again.',
+-        "apartment.form.ubyport.sample_help": ' — fictional police letter with SAMPLE watermarks; shows every value to copy into UbyHost, including zkratka and contact that real WS PDFs often omit.',
+-        "common.none": '— none —',
++        "apartment.form.ubyport.password_saved": "Saved. UbyHost keeps it encrypted and does not show it again.",
++        "apartment.form.ubyport.sample_help": "A fictional police letter with SAMPLE watermarks. It shows every value to copy into UbyHost, including zkratka and contact that real WS PDFs often omit.",
++        "common.none": "(none)",
+         "common.remove": 'Remove',
+         "common.save_changes": 'Save changes',
+-        "common.select": '— select —',
++        "common.select": "(select)",
+         "guest.admin.back_to_stay": 'Back to stay',
+-        "guest.admin.banner.rejected_help": 'Correct the data and save — that puts it back in the queue.',
++        "guest.admin.banner.rejected_help": "Correct the data and save. That puts it back in the queue.",
+         "guest.admin.banner.rejected_title": 'UbyPort rejected this record.',
+         "guest.admin.banner.sent_help": "To correct it, file the correction directly in the UbyPort web application or contact the Foreign Police. UbyHost cannot change a filed record, so the reported details and the signature are locked here. The document type for the stay-fee register can still be changed.",
+         "guest.admin.banner.sent_title": 'Already reported to the Foreign Police.',
+         "guest.admin.banner.filed_by_hand": "Filed by hand in UbyPort %(at)s.",
+         "guest.admin.banner.sent_title_at": 'Already reported to the Foreign Police on %(at)s.',
+         "guest.admin.birth_date": 'Date of birth',
+-        "guest.admin.birth_date_hint": 'Type the 8 digits from the passport — dots are added automatically. Use 00 for an unknown day or month.',
++        "guest.admin.birth_date_hint": "Type the 8 digits from the passport. Dots are added automatically. Use 00 for an unknown day or month.",
+         "guest.admin.birth_date_ph": 'DD.MM.YYYY',
+         "guest.admin.danger.summary": 'Advanced and dangerous actions',
+         "guest.admin.document": 'Travel document number',
+@@ -3255,11 +3234,11 @@ _INTERFACE_STRINGS = {
+         "guest.admin.title_add": 'Add guest',
+         "guest.admin.title_edit": 'Edit guest',
+         "guest.admin.visa": 'Visa number',
+-        "settings.privacy.add_contact": 'add one',
++        "settings.privacy.add_contact": 'Add one',
+         "settings.privacy.no_contact_prefix": 'No contact e-mail on:',
+         "settings.privacy.no_contact_suffix": ' so guests can exercise their rights.',
+         "settings.privacy.no_entity_prefix": 'No operator on:',
+-        "settings.privacy.no_entity_suffix": '— guests cannot be told who controls their data.',
++        "settings.privacy.no_entity_suffix": "(guests cannot be told who controls their data).",
+         "settings.version_line": 'UbyHost %(version)s',
+         "users.create.lede": 'A secure temporary password is generated for you. Copy it before creating the account.',
+         "users.create.name": 'Name',
+@@ -3402,7 +3381,7 @@ _INTERFACE_STRINGS = {
+         "entities.invoice_next.hint": "Use this if you already issued invoices this year in another tool. The next UbyHost invoice gets this number.",
+         "entities.invoice_due.label": "Default payment term (days)",
+         "entities.invoice.snapshot_hint": "Changes apply to new invoices only; issued invoices keep the details they were issued with.",
+-        "entities.lede": "Who runs the accommodation — a company or a self-employed person.",
++        "entities.lede": "Who runs the accommodation: a company or a self-employed person.",
+         "entities.back": "Back to properties",
+         "entities.explainer": "An operator can be a property manager, the guest data controller, or both. Keep its registered seat and contact details current.",
+         "entities.edit": "Edit %(name)s",
+@@ -3496,7 +3475,7 @@ _INTERFACE_STRINGS = {
+             "That username and password don't match. Check for typos and Caps Lock."
+         ),
+         "auth.error.code_invalid": (
+-            "That code didn't work. Codes change every 30 seconds — enter the one showing now."
++            "That code didn't work. Codes change every 30 seconds. Enter the one showing now."
+         ),
+         "auth.error.code_locked": (
+             "Too many wrong codes. Wait 15 minutes, then log in again from the start."
+@@ -3504,8 +3483,7 @@ _INTERFACE_STRINGS = {
+         "auth.error.code_locked_again": "Log in again",
+         "auth.error.current_password_wrong": "Your current password isn't right.",
+         "auth.error.locked": (
+-            "Too many unsuccessful attempts. Try again in 15 minutes — or, if you've "
+-            "forgotten your password, email %(email)s."
++            "Too many unsuccessful attempts. Try again in 15 minutes or, if you've forgotten your password, email %(email)s."
+         ),
+         "auth.error.own_disable": "You cannot disable your own administrator account.",
+         "auth.error.own_password": "Change your own password from your account page.",
+@@ -3566,10 +3544,10 @@ _INTERFACE_STRINGS = {
+         "account.2fa.enable": "Enable two-factor authentication",
+         "account.2fa.recovery_title": "Save your recovery codes",
+         "account.2fa.recovery_lede": "If you ever lose the phone with your authenticator app, each of these codes lets you log in once. Keep them in a password manager or print them.",
+-        "account.2fa.recovery_once": "Save them before you leave this page — they can't be shown again.",
++        "account.2fa.recovery_once": "Save them before you leave this page. They can't be shown again.",
+         "account.2fa.recovery_copy_all": "Copy all",
+         "account.2fa.recovery_print": "Print",
+-        "account.2fa.recovery_continue": "I saved them — continue",
++        "account.2fa.recovery_continue": "I saved them, continue",
+         "settings.technical.title": "Technical details",
+         "settings.destination.title": "Where reports go",
+         "settings.destination.deployment": "Deployment",
+@@ -3699,7 +3677,7 @@ _INTERFACE_STRINGS = {
+         "automation.contact": "Kontaktní osoba při registraci",
+         "automation.login": "Přihlášení webové služby",
+         "automation.password": "Heslo webové služby",
+-        "automation.password_saved": "Uloženo — znovu se nezobrazuje.",
++        "automation.password_saved": "Uloženo. Znovu se nezobrazuje.",
+         "automation.password_keep": "Prázdné pole zachová uložené heslo",
+         "automation.password_paste": "Vložte heslo z dopisu policie",
+         "automation.password_replace": "Vyplňte jen při výměně hesla vydaného policií. Jinak ponechte prázdné.",
+@@ -3709,7 +3687,7 @@ _INTERFACE_STRINGS = {
+         "automation.refresh": "Obnovit číselníky",
+         "automation.saved_credentials_help": "Obnovení číselníků používá naposledy uložené údaje. Po změně je nejprve uložte.",
+         "automation.empty": "Zatím nejsou aktivní ubytování. Přidejte ubytování a nastavte hlášení.",
+-        "apartment.form.active.label": 'Aktivní — synchronizovat kalendáře a hlásit hosty pro toto ubytování',
++        "apartment.form.active.label": "Aktivní: synchronizovat kalendáře a hlásit hosty pro toto ubytování",
+         "apartment.form.addr.house_no": 'Číslo popisné',
+         "apartment.form.addr.house_no_hint": 'Nejvýše 4 číslice. Pro evidenční číslo použijte E123.',
+         "apartment.form.addr.obec": 'Obec',
+@@ -3757,7 +3735,7 @@ _INTERFACE_STRINGS = {
+         "apartment.form.codelists_bundled": 'Do první obnovy se používá vestavěný seznam států.',
+         "apartment.form.codelists_cached": 'Číselníky uloženy %(date)s.',
+         "apartment.form.create": 'Vytvořit ubytování',
+-        "apartment.form.credentials_actions_help": 'Obnovení číselníků používá uložené údaje — nejprve je uložte.',
++        "apartment.form.credentials_actions_help": "Obnovení číselníků používá uložené údaje. Nejprve je uložte.",
+         "apartment.form.entity.hint": 'Správce objektu / provozovatel registrovaný v UbyPortu pro tuto adresu. Hosté používají jeho telefon a e-mail pro dotazy k pobytu.',
+         "apartment.form.entity.label": 'Správce objektu / provozovatel',
+         "apartment.form.controller.same_label": 'Správce objektu je také správcem osobních údajů hostů a kontaktní osobou',
+@@ -3783,7 +3761,7 @@ _INTERFACE_STRINGS = {
+         "apartment.form.guest_link.reachback_hint": 'Jak dlouho zpětně funguje odkaz konkrétního pobytu, aby host, který zapomněl formulář vyplnit, mohl vše dokončit. Odkaz bytu sám zobrazuje jen nadcházející pobyty. Nastavte 1, pokud chcete staré formuláře zavřít okamžitě.',
+         "apartment.form.guest_link.reachback_label": 'Ponechat odkazy minulých pobytů otevřené (dní)',
+         "apartment.form.guest_link.regenerate_link": 'Vygenerovat nový odkaz',
+-        "apartment.form.guest_link.regenerate_link_help": 'Jen pokud odkaz unikl. Vytvoří se i nový PIN — aktualizujte zprávy na portálech.',
++        "apartment.form.guest_link.regenerate_link_help": "Jen pokud odkaz unikl. Vytvoří se i nový PIN. Aktualizujte zprávy na portálech.",
+         "apartment.form.guest_link.regenerate_pin_help": 'Ponechat odkaz, změnit PIN pro hosty.',
+         "apartment.form.guest_link.regenerate_pin_title": 'Vygenerovat jen nový PIN',
+         "apartment.form.guest_link.window_hint": 'Na odkazu bytu se zobrazí jen pobyty, jejichž datum příjezdu spadá do tohoto okna. Minulý pobyt zůstává dostupný přes odkaz konkrétního pobytu po počet dní nastavený níže.',
+@@ -3793,7 +3771,7 @@ _INTERFACE_STRINGS = {
+         "apartment.form.guest_message.placeholder": 'Například: Vítejte! Vyplňte prosím tento formulář před příjezdem.',
+         "apartment.form.passport_policy.label": 'Fotografie pasu nebo dokladu od hosta',
+         "apartment.form.passport_policy.hint": "Povinné: cizinci nahrají fotku dokladu k vaší kontrole. Policii se nikdy neposílá.",
+-        "apartment.form.passport_policy.off": 'Vypnuto (výchozí) — doklad zkontrolujete při příjezdu',
++        "apartment.form.passport_policy.off": "Vypnuto (výchozí): doklad zkontrolujete při příjezdu",
+         "apartment.form.passport_policy.required": 'Povinné pro cizince vyplňující online formulář',
+         "entity.signature_label": 'Podpis na hlášení (PNG nebo JPEG, max. 300 KB)',
+         "entity.signature_remove": 'Odstranit uložený podpis',
+@@ -3811,12 +3789,12 @@ _INTERFACE_STRINGS = {
+         "apartment.form.nav.stay_fee": 'Poplatek z pobytu',
+         "apartment.form.nav.ubyport": '3. UbyPort',
+         "apartment.form.new_property": 'Nové ubytování',
+-        "apartment.form.notes.hint": 'Vidíte jen vy — hostům se nezobrazuje.',
++        "apartment.form.notes.hint": "Vidíte jen vy. Hostům se nezobrazuje.",
+         "apartment.form.notes.label": 'Vaše poznámky',
+         "apartment.form.needed_to_report": 'nutné pro hlášení',
+         "apartment.form.notes.title": 'Soukromé poznámky',
+         "apartment.form.stay_fee.heading": 'Poplatek z pobytu',
+-        "apartment.form.stay_fee.lede": 'Volitelné. Jen pro vaše hlášení a platbu obci — hosté ho nikdy neuvidí.',
++        "apartment.form.stay_fee.lede": "Volitelné. Jen pro vaše hlášení a platbu obci. Hosté ho nikdy neuvidí.",
+         "apartment.form.stay_fee.rate_label": 'Sazba za osobu a noc (Kč)',
+         "apartment.form.stay_fee.rate_hint": 'Podle vyhlášky vaší obce (max. 50 Kč). 0 poplatek vypne.',
+         "apartment.form.stay_fee.cadence_label": 'Období hlášení',
+@@ -3859,30 +3837,30 @@ _INTERFACE_STRINGS = {
+         "apartment.form.test_connection": 'Uložit a otestovat spojení',
+         "apartment.form.title_new": 'Nové ubytování',
+         "apartment.form.ubyport.contact_hint": "E-mail nebo telefon z původní registrace v UbyPortu; na PDF webové služby často chybí. Špatná hodnota může vést k odmítnutí hlášení.",
+-        "apartment.form.ubyport.idub_hint": 'Řádek „IDUB:“ v PDF — 12–14 číslic znak po znaku.',
+-        "apartment.form.ubyport.intro": 'Nejde o běžné přihlášení do portálu UbyPort (ub…). Použijte samostatný dopis „Výpis z databáze přihlašovacích údajů“ (webová služba / robotické vkládání) — obvykle PDF, v jehož názvu je IDUB a UBY-WS.',
+-        "apartment.form.ubyport.login_hint": '„Přihlašovací jméno:“ v PDF — kopírujte přesně (včetně _ nebo číslic).',
++        "apartment.form.ubyport.idub_hint": "Řádek „IDUB:“ v PDF, 12–14 číslic znak po znaku.",
++        "apartment.form.ubyport.intro": "Nejde o běžné přihlášení do portálu UbyPort (ub…). Použijte samostatný dopis „Výpis z databáze přihlašovacích údajů“ (webová služba / robotické vkládání), obvykle PDF, v jehož názvu je IDUB a UBY-WS.",
++        "apartment.form.ubyport.login_hint": "„Přihlašovací jméno:“ v PDF. Kopírujte přesně (včetně _ nebo číslic).",
+         "apartment.form.ubyport.mark_hint": "Pět písmen v evidenci policie, často písmena za UBY-WS_ v přihlášení (UBY-WS_DEMO1 → DEMO1). Při nejistotě ověřte v portálu UbyPort.",
+         "apartment.form.ubyport.mark_label": 'Zkratka ubytovacího zařízení',
+-        "apartment.form.ubyport.mismatch_help": 'UbyPort porovnává IDUB, zkratku, název, adresu a kontakt s registrem. Překlep nebo název z Airbnb selže i když přihlášení webové služby funguje — často to vidíte při prvním skutečném odeslání.',
+-        "apartment.form.ubyport.name_hint": '„Ubytovací zařízení:“ v PDF — jen první řádek, ne název inzerátu; max. 35 znaků.',
++        "apartment.form.ubyport.mismatch_help": "UbyPort porovnává IDUB, zkratku, název, adresu a kontakt s registrem. Překlep nebo název z Airbnb selže i když přihlášení webové služby funguje. Často to vidíte při prvním skutečném odeslání.",
++        "apartment.form.ubyport.name_hint": "„Ubytovací zařízení:“ v PDF. Jen první řádek, ne název inzerátu; max. 35 znaků.",
+         "apartment.form.ubyport.password_edit_hint": 'Pište sem jen pokud policie cizinců poslala nové heslo. Uložení zbytku formuláře bez změny tohoto pole ponechá uložené heslo.',
+         "apartment.form.ubyport.password_new_hint": 'Zadejte jednou při prvním nastavení hlášení. Před zápisem na disk se šifruje a po uložení se nezobrazuje.',
+-        "apartment.form.ubyport.password_saved": 'Uloženo — UbyHost ho drží šifrovaně a znovu nezobrazuje.',
+-        "apartment.form.ubyport.sample_help": ' — ukázkový dopis policie se vodoznaky SAMPLE; ukazuje každou hodnotu pro UbyHost, včetně zkratky a kontaktu, které reálná PDF často neobsahují.',
+-        "common.none": '— žádná —',
++        "apartment.form.ubyport.password_saved": "Uloženo. UbyHost ho drží šifrovaně a znovu nezobrazuje.",
++        "apartment.form.ubyport.sample_help": "Ukázkový dopis policie s vodoznaky SAMPLE. Ukazuje každou hodnotu pro UbyHost, včetně zkratky a kontaktu, které reálná PDF často neobsahují.",
++        "common.none": "(žádná)",
+         "common.remove": 'Odebrat',
+         "common.save_changes": 'Uložit změny',
+-        "common.select": '— vyberte —',
++        "common.select": "(vyberte)",
+         "guest.admin.back_to_stay": 'Zpět na pobyt',
+-        "guest.admin.banner.rejected_help": 'Opravte údaje a uložte — záznam se vrátí do fronty.',
++        "guest.admin.banner.rejected_help": "Opravte údaje a uložte. Záznam se vrátí do fronty.",
+         "guest.admin.banner.rejected_title": 'UbyPort tento záznam odmítl.',
+         "guest.admin.banner.sent_help": "Opravu podejte přímo ve webové aplikaci UbyPort nebo se obraťte na cizineckou policii. UbyHost podaný záznam změnit nemůže, proto jsou nahlášené údaje a podpis zde uzamčené. Typ dokladu pro evidenci poplatku z pobytu lze měnit i nadále.",
+         "guest.admin.banner.sent_title": 'Již nahlášeno cizinecké policii.',
+         "guest.admin.banner.filed_by_hand": "Podáno ručně v UbyPortu %(at)s.",
+         "guest.admin.banner.sent_title_at": 'Již nahlášeno cizinecké policii %(at)s.',
+         "guest.admin.birth_date": 'Datum narození',
+-        "guest.admin.birth_date_hint": 'Zadejte 8 číslic z pasu — tečky se doplní samy. Pro neznámý den nebo měsíc použijte 00.',
++        "guest.admin.birth_date_hint": "Zadejte 8 číslic z pasu. Tečky se doplní samy. Pro neznámý den nebo měsíc použijte 00.",
+         "guest.admin.birth_date_ph": 'DD.MM.RRRR',
+         "guest.admin.danger.summary": 'Pokročilé a nebezpečné akce',
+         "guest.admin.document": 'Číslo cestovního dokladu',
+@@ -3933,11 +3911,11 @@ _INTERFACE_STRINGS = {
+         "guest.admin.title_add": 'Přidat hosta',
+         "guest.admin.title_edit": 'Upravit hosta',
+         "guest.admin.visa": 'Číslo víza',
+-        "settings.privacy.add_contact": 'doplňte ho',
++        "settings.privacy.add_contact": 'Doplňte ho',
+         "settings.privacy.no_contact_prefix": 'Bez kontaktního e-mailu u:',
+         "settings.privacy.no_contact_suffix": ', aby hosti mohli uplatnit svá práva.',
+         "settings.privacy.no_entity_prefix": 'Bez provozovatele u:',
+-        "settings.privacy.no_entity_suffix": '— hostům nelze sdělit, kdo údaje spravuje.',
++        "settings.privacy.no_entity_suffix": "(hostům nelze sdělit, kdo údaje spravuje).",
+         "settings.version_line": 'UbyHost %(version)s',
+         "users.create.lede": 'Vygeneruje se bezpečné dočasné heslo. Zkopírujte ho před vytvořením účtu.',
+         "users.create.name": 'Jméno',
+@@ -3949,7 +3927,7 @@ _INTERFACE_STRINGS = {
+         "users.create.username": 'Uživatelské jméno',
+         "users.create.username_hint": 'Malá písmena, číslice, tečky, pomlčky a podtržítka.',
+         "users.credential.choose_on_login": 'Při prvním přihlášení si zvolí vlastní heslo.',
+-        "users.credential.copy_now": 'Zkopírujte hned — v čitelné podobě se neukládá a znovu nezobrazí.',
++        "users.credential.copy_now": "Zkopírujte hned. V čitelné podobě se neukládá a znovu nezobrazí.",
+         "users.credential.created_title": 'Uživatel vytvořen',
+         "users.credential.next_steps": 'Pošlete jim adresu pro přihlášení %(url)s spolu s těmito údaji. Při prvním přihlášení si zvolí heslo a nastaví autentizační aplikaci.',
+         "users.credential.old_password_invalid": 'Původní heslo už neplatí.',
+@@ -3957,7 +3935,7 @@ _INTERFACE_STRINGS = {
+         "users.credential.reset_title": 'Heslo resetováno',
+         "users.credential.temporary_password": 'Dočasné heslo',
+         "users.credential.username": 'Uživatelské jméno',
+-        "users.lede": 'Vytvořte soukromý pracovní prostor pro každého hostitele. Hesla jsou bezpečně uložená — lze je jen resetovat, nikdy zobrazit.',
++        "users.lede": "Vytvořte soukromý pracovní prostor pro každého hostitele. Hesla jsou bezpečně uložená: lze je jen resetovat, nikdy zobrazit.",
+         "users.menu.aria": 'Akce uživatele',
+         "users.menu.disable": 'Zakázat',
+         "users.menu.enable": 'Povolit',
+@@ -4080,7 +4058,7 @@ _INTERFACE_STRINGS = {
+         "entities.invoice_next.hint": "Použijte, pokud jste letos už fakturovali jinde. Další faktura z UbyHost dostane toto číslo.",
+         "entities.invoice_due.label": "Výchozí splatnost (dny)",
+         "entities.invoice.snapshot_hint": "Změny platí jen pro nové faktury; vystavené faktury si ponechají původní údaje.",
+-        "entities.lede": "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba.",
++        "entities.lede": "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba.",
+         "entities.back": "Zpět na ubytování",
+         "entities.explainer": "Provozovatel může být správcem objektu, správcem údajů hostů nebo obojím. Udržujte jeho sídlo a kontaktní údaje aktuální.",
+         "entities.edit": "Upravit %(name)s",
+@@ -4174,7 +4152,7 @@ _INTERFACE_STRINGS = {
+             "Uživatelské jméno a heslo nesedí. Zkontrolujte překlepy a Caps Lock."
+         ),
+         "auth.error.code_invalid": (
+-            "Kód nefunguje. Kódy se mění každých 30 vteřin — zadejte ten, který vidíte teď."
++            "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď."
+         ),
+         "auth.error.code_locked": (
+             "Příliš mnoho chybných kódů. Počkejte 15 minut a pak se přihlaste znovu od začátku."
+@@ -4244,10 +4222,10 @@ _INTERFACE_STRINGS = {
+         "account.2fa.enable": "Zapnout dvoufázové ověření",
+         "account.2fa.recovery_title": "Uložte si obnovovací kódy",
+         "account.2fa.recovery_lede": "Pokud někdy přijdete o telefon s autentizační aplikací, každý z těchto kódů vás jednou přihlásí. Uložte si je do správce hesel nebo si je vytiskněte.",
+-        "account.2fa.recovery_once": "Uložte si je, než stránku opustíte — znovu je zobrazit nelze.",
++        "account.2fa.recovery_once": "Uložte si je, než stránku opustíte. Znovu je zobrazit nelze.",
+         "account.2fa.recovery_copy_all": "Kopírovat vše",
+         "account.2fa.recovery_print": "Vytisknout",
+-        "account.2fa.recovery_continue": "Mám je uložené — pokračovat",
++        "account.2fa.recovery_continue": "Mám je uložené, pokračovat",
+         "settings.technical.title": "Technické údaje",
+         "settings.destination.title": "Kam hlášení směřují",
+         "settings.destination.deployment": "Nasazení",
+diff --git a/App/app/i18n.py b/App/app/i18n.py
+index f268287..2b3fc51 100644
+--- a/App/app/i18n.py
++++ b/App/app/i18n.py
+@@ -173,8 +173,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "claim_submit": "Send me the form link",
+         "claim_sent_title": "Check your e-mail",
+         "claim_sent_body": (
+-            "We sent a link to %(email)s. Open it on this phone to continue — it works "
+-            "for 30 minutes. If it asks for the PIN again, enter the same PIN."
++            "We sent a link to %(email)s. Open it on this phone to continue. It works for 30 minutes. If it asks for the PIN again, enter the same PIN."
+         ),
+         "claim_sent_retry": (
+             "No e-mail after a few minutes? Check spam, or send it again"
+@@ -204,8 +203,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "error_party_size": "Please enter how many people are staying (1–60).",
+         "no_stays": "There's nothing to register yet",
+         "no_stays_help": (
+-            "Registration opens a few days before arrival. Come back to this same link then. "
+-            "Already arrived? Message your host — they can send you a direct link to your stay."
++            "Registration opens a few days before arrival. Come back to this same link then. Already arrived? Message your host. They can send you a direct link to your stay."
+         ),
+         "bad_link_title": "This guest link is not valid",
+         "bad_link_help": "It may be incomplete or may have been replaced. Please ask your host for a new link.",
+@@ -220,8 +218,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "rate_limited_title": "Too many attempts from your connection",
+         "rate_limited_help": (
+-            "Nothing was saved. Wait about 15 minutes and try again — if you are stuck, "
+-            "message your host."
++            "Nothing was saved. Wait about 15 minutes and try again. If you are stuck, message your host."
+         ),
+         "not_yours_title": "This form cannot be opened on this device",
+         "not_yours_help": (
+@@ -274,7 +271,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "previous_step": "Back",
+         "add_person": "Add a person",
+         "add_first_person": "Start with your own details",
+-        "saved_title": "Saved — thank you",
++        "saved_title": "Saved, thank you",
+         "saved_body": (
+             "Your details are saved. Next, add the next person in your group."
+         ),
+@@ -291,7 +288,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "completed": "completed",
+         "not_filled": "not filled in",
+         "edit": "Edit",
+-        "all_done_title": "Thank you — everyone is registered",
++        "all_done_title": "Thank you. Everyone is registered",
+         "all_done_body": (
+             "There is nothing more you need to do. You can close this page."
+         ),
+@@ -307,7 +304,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "birth_date": "Date of birth",
+         "birth_date_readback": "That is %(date)s.",
+         "residence_help": "Your permanent home address, as in your passport or ID card.",
+-        "residence_copied": "Copied from %(name)s — change it if this person lives elsewhere.",
++        "residence_copied": "Copied from %(name)s. Change it if this person lives elsewhere.",
+         "nationality": "Nationality",
+         "countries_common": "Most common",
+         "countries_all": "All countries",
+@@ -445,9 +442,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy_basis": "Legal basis",
+         "privacy_basis_body": (
+-            "Article 6(1)(c) GDPR — compliance with a legal obligation, namely §§ 101–103 of "
+-            "Act No. 326/1999 Coll., on the Residence of Foreign Nationals. Your consent is "
+-            "not asked for, because the duty applies whether or not you agree to it."
++            "Article 6(1)(c) GDPR: compliance with a legal obligation, namely §§ 101–103 of Act No. 326/1999 Coll., on the Residence of Foreign Nationals. Your consent is not asked for, because the duty applies whether or not you agree to it."
+         ),
+         "privacy_data": "What is collected",
+         "privacy_data_body": (
+@@ -559,7 +554,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "mail_claim_subject": "Confirm your stay at %(property)s (link valid 30 min)",
+         "mail_claim_resend_subject": "New link: confirm your stay at %(property)s",
+         "mail_claim_preheader": (
+-            "Tap the button, then fill in each guest — about 2 minutes per person."
++            "Tap the button, then fill in each guest (about 2 minutes per person)."
+         ),
+         "mail_claim_resend_preheader": (
+             "Your previous link has stopped working. Here is a new one."
+@@ -574,8 +569,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "If the button does not work, copy this address into your browser:"
+         ),
+         "mail_claim_expiry": (
+-            "The button works for 30 minutes. After you confirm, this phone or "
+-            "computer remembers your stay — you won't need the link again on it."
++            "The button works for 30 minutes. After you confirm, this phone or computer remembers your stay. You won't need the link again on it."
+         ),
+         "mail_claim_expiry_resend": (
+             "This new link replaces the previous one and works for 30 minutes."
+@@ -587,13 +581,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
+             "asked for a PIN, use the one from your host's message."
+         ),
+         "mail_claim_next_done": (
+-            "Everyone is already registered — the link just opens your stay page."
++            "Everyone is already registered. The link just opens your stay page."
+         ),
+         "mail_completion_subject": (
+-            "You're registered for %(property)s — nothing else to do"
++            "You're registered for %(property)s: nothing else to do"
+         ),
+         "mail_completion_preheader": (
+-            "Everyone on this stay is registered — nothing else to do."
++            "Everyone on this stay is registered. Nothing else to do."
+         ),
+         "mail_completion_heading": "You're all set",
+         "mail_completion_intro": (
+@@ -725,8 +719,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "claim_submit": "Pošlete mi odkaz na formulář",
+         "claim_sent_title": "Zkontrolujte e-mail",
+         "claim_sent_body": (
+-            "Poslali jsme odkaz na %(email)s. Otevřete ho v tomto telefonu a pokračujte — "
+-            "platí 30 minut. Pokud se znovu zeptá na PIN, zadejte stejný."
++            "Poslali jsme odkaz na %(email)s. Otevřete ho v tomto telefonu a pokračujte. Platí 30 minut. Pokud se znovu zeptá na PIN, zadejte stejný."
+         ),
+         "claim_sent_retry": (
+             "E-mail ani po pár minutách nepřišel? Zkontrolujte spam, nebo ho pošlete znovu"
+@@ -772,8 +765,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "rate_limited_title": "Příliš mnoho pokusů z vašeho připojení",
+         "rate_limited_help": (
+-            "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu — pokud se "
+-            "zaseknete, napište hostiteli."
++            "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu. Pokud se zaseknete, napište hostiteli."
+         ),
+         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
+         "not_yours_help": (
+@@ -824,7 +816,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "previous_step": "Zpět",
+         "add_person": "Přidat osobu",
+         "add_first_person": "Začněte svými údaji",
+-        "saved_title": "Uloženo — děkujeme",
++        "saved_title": "Uloženo, děkujeme",
+         "saved_body": (
+             "Vaše údaje jsou uložené. Teď přidejte další osobu ze skupiny."
+         ),
+@@ -841,7 +833,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "completed": "vyplněno",
+         "not_filled": "nevyplněno",
+         "edit": "Upravit",
+-        "all_done_title": "Děkujeme — všichni jsou zaregistrovaní",
++        "all_done_title": "Děkujeme. Všichni jsou zaregistrovaní",
+         "all_done_body": "Nic dalšího už dělat nemusíte. Stránku můžete zavřít.",
+         "all_done_receipt": "Potvrzení jsme poslali na %(email)s.",
+         "checkin_info": "Příjezd",
+@@ -965,7 +957,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy_title": "Informace o zpracování osobních údajů",
+         "privacy_intro": (
+-            "Co se děje s údaji, které vyplníte — podle článků 13 a 14 GDPR."
++            "Co se děje s údaji, které vyplníte (podle článků 13 a 14 GDPR)."
+         ),
+         "notice_version": "Verze oznámení o ochraně osobních údajů %(version)s",
+         "privacy_controller": "Správce vašich osobních údajů",
+@@ -989,9 +981,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy_basis": "Právní základ",
+         "privacy_basis_body": (
+-            "Čl. 6 odst. 1 písm. c) GDPR — splnění právní povinnosti, konkrétně § 101–103 "
+-            "zákona č. 326/1999 Sb., o pobytu cizinců. Souhlas se nevyžaduje, protože "
+-            "povinnost platí bez ohledu na něj."
++            "Čl. 6 odst. 1 písm. c) GDPR: splnění právní povinnosti, konkrétně § 101–103 zákona č. 326/1999 Sb., o pobytu cizinců. Souhlas se nevyžaduje, protože povinnost platí bez ohledu na něj."
+         ),
+         "privacy_data": "Jaké údaje se sbírají",
+         "privacy_data_body": (
+@@ -1254,7 +1244,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "claim_cookie_help": "Nur notwendige Cookies: PIN-Zugang (7 Tage), Ihre Sprache und dieser Aufenthalt (60 Tage).",
+         "claim_submit": "Formular-Link senden",
+         "claim_sent_title": "Prüfen Sie Ihre E-Mails",
+-        "claim_sent_body": "Wir haben einen Link an %(email)s gesendet. Öffnen Sie ihn auf diesem Telefon, um fortzufahren — er gilt 30 Minuten. Wenn erneut nach der PIN gefragt wird, geben Sie dieselbe PIN ein.",
++        "claim_sent_body": "Wir haben einen Link an %(email)s gesendet. Öffnen Sie ihn auf diesem Telefon, um fortzufahren. Er gilt 30 Minuten. Wenn erneut nach der PIN gefragt wird, geben Sie dieselbe PIN ein.",
+         "claim_sent_retry": "Nach ein paar Minuten keine E-Mail? Prüfen Sie den Spam-Ordner oder senden Sie sie erneut",
+         "claim_error_bad_email": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+         "claim_error_bad_party": "Bitte geben Sie an, wie viele Personen übernachten (1–60).",
+@@ -1280,7 +1270,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "error_no_stay": "Bitte wählen Sie Ihren Aufenthaltszeitraum.",
+         "error_party_size": "Bitte geben Sie an, wie viele Personen übernachten (1–60).",
+         "no_stays": "Noch nichts zu registrieren",
+-        "no_stays_help": "Die Registrierung öffnet einige Tage vor der Anreise. Kommen Sie dann über denselben Link zurück. Schon angekommen? Schreiben Sie Ihrem Gastgeber — er kann Ihnen einen direkten Link zu Ihrem Aufenthalt senden.",
++        "no_stays_help": "Die Registrierung öffnet einige Tage vor der Anreise. Kommen Sie dann über denselben Link zurück. Schon angekommen? Schreiben Sie Ihrem Gastgeber. Er kann Ihnen einen direkten Link zu Ihrem Aufenthalt senden.",
+         "bad_link_title": "Dieser Gast-Link ist ungültig",
+         "bad_link_help": "Er ist möglicherweise unvollständig oder wurde ersetzt. Bitte fragen Sie Ihren Gastgeber nach einem neuen Link.",
+         "stay_gone_title": "Für diesen Aufenthalt ist keine Registrierung mehr möglich",
+@@ -1288,7 +1278,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "form_expired_title": "Zeit für dieses Formular abgelaufen",
+         "form_expired_help": "Es wurde nichts gespeichert. Beginnen Sie erneut über den Link unten.",
+         "rate_limited_title": "Zu viele Versuche von Ihrer Verbindung",
+-        "rate_limited_help": "Es wurde nichts gespeichert. Warten Sie etwa 15 Minuten und versuchen Sie es erneut — wenn es nicht weitergeht, schreiben Sie Ihrem Gastgeber.",
++        "rate_limited_help": "Es wurde nichts gespeichert. Warten Sie etwa 15 Minuten und versuchen Sie es erneut. Wenn es nicht weitergeht, schreiben Sie Ihrem Gastgeber.",
+         "not_yours_title": "Dieses Formular kann auf diesem Gerät nicht geöffnet werden",
+         "not_yours_help": "Damit kein Gast die Passdaten eines anderen Gastes sieht, kann ein Formular nur auf dem Gerät erneut geöffnet werden, auf dem es ausgefüllt wurde. Für eine Korrektur schreiben Sie Ihrem Gastgeber.",
+         "already_filed_title": "Diese Angaben wurden bereits gemeldet",
+@@ -1326,7 +1316,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "previous_step": "Zurück",
+         "add_person": "Person hinzufügen",
+         "add_first_person": "Beginnen Sie mit Ihren eigenen Angaben",
+-        "saved_title": "Gespeichert — vielen Dank",
++        "saved_title": "Gespeichert, vielen Dank",
+         "saved_body": "Ihre Angaben sind gespeichert. Fügen Sie nun die nächste Person Ihrer Gruppe hinzu.",
+         "reported_title": "Angaben gesendet und gemeldet",
+         "reported_body": "Vielen Dank. Ihr Gastgeber hat diesen Eintrag bereits gemeldet. Wenden Sie sich an Ihren Gastgeber, falls unten etwas korrigiert werden muss.",
+@@ -1338,7 +1328,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "completed": "ausgefüllt",
+         "not_filled": "nicht ausgefüllt",
+         "edit": "Bearbeiten",
+-        "all_done_title": "Vielen Dank — alle sind registriert",
++        "all_done_title": "Vielen Dank. Alle sind registriert",
+         "all_done_body": "Sie müssen nichts weiter tun. Sie können diese Seite schließen.",
+         "all_done_receipt": "Wir haben eine Bestätigung an %(email)s gesendet.",
+         "checkin_info": "Check-in",
+@@ -1352,7 +1342,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "birth_date": "Geburtsdatum",
+         "birth_date_readback": "Das ist der %(date)s.",
+         "residence_help": "Ihre ständige Wohnanschrift wie in Ihrem Reisepass oder Personalausweis.",
+-        "residence_copied": "Von %(name)s übernommen — ändern Sie sie, falls diese Person woanders wohnt.",
++        "residence_copied": "Von %(name)s übernommen. Ändern Sie sie, falls diese Person woanders wohnt.",
+         "nationality": "Staatsangehörigkeit",
+         "countries_common": "Häufigste",
+         "countries_all": "Alle Länder",
+@@ -1436,7 +1426,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "privacy_purpose": "Warum die Daten erhoben werden",
+         "privacy_purpose_body": "Zur Erfüllung zweier gesetzlicher Pflichten eines Beherbergungsbetriebs in Tschechien: der Meldung beherbergter ausländischer Staatsangehöriger an die Fremdenpolizei und der Führung eines Hausbuchs (domovní kniha). Sie werden für keinen anderen Zweck verwendet.",
+         "privacy_basis": "Rechtsgrundlage",
+-        "privacy_basis_body": "Art. 6 Abs. 1 lit. c DSGVO — Erfüllung einer rechtlichen Verpflichtung, nämlich §§ 101–103 des Gesetzes Nr. 326/1999 Slg. über den Aufenthalt von Ausländern. Ihre Einwilligung wird nicht eingeholt, da die Pflicht unabhängig davon gilt, ob Sie zustimmen.",
++        "privacy_basis_body": "Art. 6 Abs. 1 lit. c DSGVO: erfüllung einer rechtlichen Verpflichtung, nämlich §§ 101–103 des Gesetzes Nr. 326/1999 Slg. über den Aufenthalt von Ausländern. Ihre Einwilligung wird nicht eingeholt, da die Pflicht unabhängig davon gilt, ob Sie zustimmen.",
+         "privacy_data": "Was erhoben wird",
+         "privacy_data_body": "Vor- und Nachname, Geburtsdatum, Staatsangehörigkeit, Nummer des Reisedokuments, Visumnummer (falls erteilt), ständige Wohnanschrift im Ausland, Aufenthaltszweck, Beginn und Ende Ihres Aufenthalts, Unterschrift, angegebene Personenzahl und die E-Mail-Adresse, mit der die Reservierung beansprucht wurde. Die Personenzahl dient dazu festzustellen, ob alle erwarteten Gastformulare vollständig sind, und wird mit dem Aufenthaltseintrag aufbewahrt.",
+         "privacy_data_body_no_email": "Vor- und Nachname, Geburtsdatum, Staatsangehörigkeit, Nummer des Reisedokuments, Visumnummer (falls erteilt), ständige Wohnanschrift im Ausland, Aufenthaltszweck, Beginn und Ende Ihres Aufenthalts, Unterschrift und angegebene Personenzahl. Diese Version des Formulars erhebt Ihre E-Mail-Adresse nicht. Die Personenzahl dient dazu festzustellen, ob alle erwarteten Gastformulare vollständig sind, und wird mit dem Aufenthaltseintrag aufbewahrt.",
+@@ -1471,20 +1461,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "back": "Zurück",
+         "mail_claim_subject": "Bestätigen Sie Ihren Aufenthalt in %(property)s (Link 30 Min. gültig)",
+         "mail_claim_resend_subject": "Neuer Link: Bestätigen Sie Ihren Aufenthalt in %(property)s",
+-        "mail_claim_preheader": "Tippen Sie auf die Schaltfläche und erfassen Sie dann jeden Gast — etwa 2 Minuten pro Person.",
++        "mail_claim_preheader": "Tippen Sie auf die Schaltfläche und erfassen Sie dann jeden Gast (etwa 2 Minuten pro Person).",
+         "mail_claim_resend_preheader": "Ihr vorheriger Link funktioniert nicht mehr. Hier ist ein neuer.",
+         "mail_claim_heading": "Aufenthalt bestätigen",
+         "mail_claim_resend_heading": "Hier ist Ihr neuer Link",
+         "mail_claim_intro": "Bestätigen Sie Ihren Aufenthalt in %(property)s (%(dates)s), indem Sie den Link unten öffnen.",
+         "mail_claim_action": "Aufenthalt bestätigen",
+         "mail_link_fallback": "Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser:",
+-        "mail_claim_expiry": "Die Schaltfläche funktioniert 30 Minuten lang. Nach der Bestätigung merkt sich dieses Telefon oder dieser Computer Ihren Aufenthalt — Sie brauchen den Link dort nicht mehr.",
++        "mail_claim_expiry": "Die Schaltfläche funktioniert 30 Minuten lang. Nach der Bestätigung merkt sich dieses Telefon oder dieser Computer Ihren Aufenthalt. Sie brauchen den Link dort nicht mehr.",
+         "mail_claim_expiry_resend": "Dieser neue Link ersetzt den vorherigen und funktioniert 30 Minuten lang.",
+         "mail_claim_next_label": "Wie es weitergeht",
+         "mail_claim_next_body": "Sie geben die Angaben aller Gäste dieses Aufenthalts ein und unterschreiben dann. Das dauert etwa zwei Minuten pro Gast und funktioniert auf dem Telefon. Wenn nach einer PIN gefragt wird, verwenden Sie die aus der Nachricht Ihres Gastgebers.",
+-        "mail_claim_next_done": "Alle sind bereits registriert — der Link öffnet nur Ihre Aufenthaltsseite.",
+-        "mail_completion_subject": "Sie sind für %(property)s registriert — nichts weiter zu tun",
+-        "mail_completion_preheader": "Alle Gäste dieses Aufenthalts sind registriert — nichts weiter zu tun.",
++        "mail_claim_next_done": "Alle sind bereits registriert. Der Link öffnet nur Ihre Aufenthaltsseite.",
++        "mail_completion_subject": "Sie sind für %(property)s registriert: nichts weiter zu tun",
++        "mail_completion_preheader": "Alle Gäste dieses Aufenthalts sind registriert. Nichts weiter zu tun.",
+         "mail_completion_heading": "Alles erledigt",
+         "mail_completion_intro": "Alle Gäste für %(property)s (%(dates)s) sind registriert. Sie müssen nichts weiter tun.",
+         "mail_completion_action": "Zur Aufenthaltsseite",
+@@ -1569,7 +1559,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "claim_cookie_help": "Solo cookies necesarias: acceso con PIN (7 días), su idioma y esta estancia (60 días).",
+         "claim_submit": "Enviarme el enlace",
+         "claim_sent_title": "Revise su e-mail",
+-        "claim_sent_body": "Hemos enviado un enlace a %(email)s. Ábralo en este teléfono para continuar — funciona durante 30 minutos. Si se le vuelve a pedir el PIN, introduzca el mismo.",
++        "claim_sent_body": "Hemos enviado un enlace a %(email)s. Ábralo en este teléfono para continuar. Funciona durante 30 minutos. Si se le vuelve a pedir el PIN, introduzca el mismo.",
+         "claim_sent_retry": "¿No ha recibido el e-mail tras unos minutos? Revise el spam o envíelo de nuevo",
+         "claim_error_bad_email": "Introduzca una dirección de e-mail válida.",
+         "claim_error_bad_party": "Indique cuántas personas se alojan (1–60).",
+@@ -1595,7 +1585,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "error_no_stay": "Seleccione las fechas de su estancia.",
+         "error_party_size": "Indique cuántas personas se alojan (1–60).",
+         "no_stays": "Todavía no hay nada que registrar",
+-        "no_stays_help": "El registro se abre unos días antes de la llegada. Vuelva entonces a este mismo enlace. ¿Ya ha llegado? Escriba a su anfitrión — puede enviarle un enlace directo a su estancia.",
++        "no_stays_help": "El registro se abre unos días antes de la llegada. Vuelva entonces a este mismo enlace. ¿Ya ha llegado? Escriba a su anfitrión. Puede enviarle un enlace directo a su estancia.",
+         "bad_link_title": "Este enlace de huésped no es válido",
+         "bad_link_help": "Puede estar incompleto o haber sido sustituido. Pida a su anfitrión un enlace nuevo.",
+         "stay_gone_title": "Esa estancia ya no está abierta al registro",
+@@ -1603,7 +1593,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "form_expired_title": "El formulario ha caducado",
+         "form_expired_help": "No se ha guardado nada. Vuelva a empezar desde el enlace de abajo.",
+         "rate_limited_title": "Demasiados intentos desde su conexión",
+-        "rate_limited_help": "No se ha guardado nada. Espere unos 15 minutos e inténtelo de nuevo — si no puede continuar, escriba a su anfitrión.",
++        "rate_limited_help": "No se ha guardado nada. Espere unos 15 minutos e inténtelo de nuevo. Si no puede continuar, escriba a su anfitrión.",
+         "not_yours_title": "Este formulario no se puede abrir en este dispositivo",
+         "not_yours_help": "Para que ningún huésped vea los datos del pasaporte de otro, un formulario solo puede volver a abrirse en el dispositivo en el que se rellenó. Si necesita una corrección, escriba a su anfitrión.",
+         "already_filed_title": "Estos datos ya se han comunicado",
+@@ -1641,7 +1631,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "previous_step": "Atrás",
+         "add_person": "Añadir persona",
+         "add_first_person": "Empiece con sus propios datos",
+-        "saved_title": "Guardado — gracias",
++        "saved_title": "Guardado, gracias",
+         "saved_body": "Sus datos se han guardado. Ahora añada a la siguiente persona de su grupo.",
+         "reported_title": "Datos enviados y comunicados",
+         "reported_body": "Gracias. Su anfitrión ya ha comunicado este registro. Contacte con su anfitrión si hay algo que corregir a continuación.",
+@@ -1653,7 +1643,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "completed": "completado",
+         "not_filled": "sin rellenar",
+         "edit": "Editar",
+-        "all_done_title": "Gracias — todos están registrados",
++        "all_done_title": "Gracias. Todos están registrados",
+         "all_done_body": "No necesita hacer nada más. Puede cerrar esta página.",
+         "all_done_receipt": "Hemos enviado una confirmación a %(email)s.",
+         "checkin_info": "Check-in",
+@@ -1667,7 +1657,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "birth_date": "Fecha de nacimiento",
+         "birth_date_readback": "Es decir, %(date)s.",
+         "residence_help": "Su domicilio permanente, tal como figura en su pasaporte o documento de identidad.",
+-        "residence_copied": "Copiado de %(name)s — cámbielo si esta persona vive en otro lugar.",
++        "residence_copied": "Copiado de %(name)s. Cámbielo si esta persona vive en otro lugar.",
+         "nationality": "Nacionalidad",
+         "countries_common": "Más frecuentes",
+         "countries_all": "Todos los países",
+@@ -1751,7 +1741,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "privacy_purpose": "Por qué se recogen los datos",
+         "privacy_purpose_body": "Para cumplir dos obligaciones legales de un proveedor de alojamiento en Chequia: comunicar los extranjeros alojados a la Policía de Extranjería y llevar un libro de registro (domovní kniha). No se utilizan para ningún otro fin.",
+         "privacy_basis": "Base jurídica",
+-        "privacy_basis_body": "Artículo 6, apartado 1, letra c, del RGPD — cumplimiento de una obligación legal, en concreto los §§ 101–103 de la Ley n.º 326/1999 Recop., sobre la residencia de extranjeros. No se le pide su consentimiento, porque la obligación se aplica tanto si está de acuerdo como si no.",
++        "privacy_basis_body": "Artículo 6, apartado 1, letra c, del RGPD: cumplimiento de una obligación legal, en concreto los §§ 101–103 de la Ley n.º 326/1999 Recop., sobre la residencia de extranjeros. No se le pide su consentimiento, porque la obligación se aplica tanto si está de acuerdo como si no.",
+         "privacy_data": "Qué datos se recogen",
+         "privacy_data_body": "Nombre y apellidos, fecha de nacimiento, nacionalidad, número del documento de viaje, número de visado si se expidió, domicilio permanente en el extranjero, motivo de la estancia, inicio y fin de la estancia, firma, número de personas declarado y la dirección de e-mail utilizada para reclamar la reserva. El número de personas se utiliza para determinar si están completos todos los formularios de huéspedes esperados y se conserva con el registro de la estancia.",
+         "privacy_data_body_no_email": "Nombre y apellidos, fecha de nacimiento, nacionalidad, número del documento de viaje, número de visado si se expidió, domicilio permanente en el extranjero, motivo de la estancia, inicio y fin de la estancia, firma y número de personas declarado. Esta versión del formulario no recoge su dirección de e-mail. El número de personas se utiliza para determinar si están completos todos los formularios de huéspedes esperados y se conserva con el registro de la estancia.",
+@@ -1786,20 +1776,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "back": "Atrás",
+         "mail_claim_subject": "Confirme su estancia en %(property)s (enlace válido 30 min)",
+         "mail_claim_resend_subject": "Nuevo enlace: confirme su estancia en %(property)s",
+-        "mail_claim_preheader": "Toque el botón y rellene los datos de cada huésped — unos 2 minutos por persona.",
++        "mail_claim_preheader": "Toque el botón y rellene los datos de cada huésped (unos 2 minutos por persona).",
+         "mail_claim_resend_preheader": "Su enlace anterior ha dejado de funcionar. Aquí tiene uno nuevo.",
+         "mail_claim_heading": "Confirme su estancia",
+         "mail_claim_resend_heading": "Aquí tiene su nuevo enlace",
+         "mail_claim_intro": "Confirme su estancia en %(property)s (%(dates)s) abriendo el enlace de abajo.",
+         "mail_claim_action": "Confirmar mi estancia",
+         "mail_link_fallback": "Si el botón no funciona, copie esta dirección en su navegador:",
+-        "mail_claim_expiry": "El botón funciona durante 30 minutos. Tras confirmar, este teléfono u ordenador recordará su estancia — no volverá a necesitar el enlace en él.",
++        "mail_claim_expiry": "El botón funciona durante 30 minutos. Tras confirmar, este teléfono u ordenador recordará su estancia. No volverá a necesitar el enlace en él.",
+         "mail_claim_expiry_resend": "Este nuevo enlace sustituye al anterior y funciona durante 30 minutos.",
+         "mail_claim_next_label": "Qué ocurre a continuación",
+         "mail_claim_next_body": "Introducirá los datos de cada huésped de esta estancia y después firmará. Se tarda unos dos minutos por huésped y funciona en el teléfono. Si se le pide un PIN, use el del mensaje de su anfitrión.",
+-        "mail_claim_next_done": "Todos ya están registrados — el enlace solo abre la página de su estancia.",
+-        "mail_completion_subject": "Registro completado para %(property)s — no tiene que hacer nada más",
+-        "mail_completion_preheader": "Todos los huéspedes de esta estancia están registrados — no tiene que hacer nada más.",
++        "mail_claim_next_done": "Todos ya están registrados. El enlace solo abre la página de su estancia.",
++        "mail_completion_subject": "Registro completado para %(property)s: no tiene que hacer nada más",
++        "mail_completion_preheader": "Todos los huéspedes de esta estancia están registrados. No tiene que hacer nada más.",
+         "mail_completion_heading": "Todo listo",
+         "mail_completion_intro": "Todos los huéspedes de %(property)s (%(dates)s) están registrados. No necesita hacer nada más.",
+         "mail_completion_action": "Ver la página de su estancia",
+@@ -1884,7 +1874,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "claim_cookie_help": "Uniquement des cookies nécessaires : accès par PIN (7 jours), votre langue et ce séjour (60 jours).",
+         "claim_submit": "M'envoyer le lien",
+         "claim_sent_title": "Consultez vos e-mails",
+-        "claim_sent_body": "Nous avons envoyé un lien à %(email)s. Ouvrez-le sur ce téléphone pour continuer — il est valable 30 minutes. Si le PIN vous est redemandé, saisissez le même.",
++        "claim_sent_body": "Nous avons envoyé un lien à %(email)s. Ouvrez-le sur ce téléphone pour continuer. Il est valable 30 minutes. Si le PIN vous est redemandé, saisissez le même.",
+         "claim_sent_retry": "Pas d'e-mail après quelques minutes ? Vérifiez vos spams ou renvoyez-le",
+         "claim_error_bad_email": "Veuillez saisir une adresse e-mail valide.",
+         "claim_error_bad_party": "Veuillez indiquer le nombre de personnes (1–60).",
+@@ -1910,7 +1900,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "error_no_stay": "Veuillez sélectionner les dates de votre séjour.",
+         "error_party_size": "Veuillez indiquer le nombre de personnes (1–60).",
+         "no_stays": "Rien à enregistrer pour l'instant",
+-        "no_stays_help": "L'enregistrement ouvre quelques jours avant l'arrivée. Revenez alors sur ce même lien. Déjà arrivé ? Écrivez à votre hôte — il peut vous envoyer un lien direct vers votre séjour.",
++        "no_stays_help": "L'enregistrement ouvre quelques jours avant l'arrivée. Revenez alors sur ce même lien. Déjà arrivé ? Écrivez à votre hôte. Il peut vous envoyer un lien direct vers votre séjour.",
+         "bad_link_title": "Ce lien n'est pas valide",
+         "bad_link_help": "Il est peut-être incomplet ou a été remplacé. Veuillez demander un nouveau lien à votre hôte.",
+         "stay_gone_title": "Ce séjour n'est plus ouvert à l'enregistrement",
+@@ -1918,7 +1908,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "form_expired_title": "Ce formulaire a expiré",
+         "form_expired_help": "Rien n'a été enregistré. Recommencez à partir du lien ci-dessous.",
+         "rate_limited_title": "Trop de tentatives depuis votre connexion",
+-        "rate_limited_help": "Rien n'a été enregistré. Patientez environ 15 minutes et réessayez — en cas de blocage, écrivez à votre hôte.",
++        "rate_limited_help": "Rien n'a été enregistré. Patientez environ 15 minutes et réessayez. En cas de blocage, écrivez à votre hôte.",
+         "not_yours_title": "Ce formulaire ne peut pas être ouvert sur cet appareil",
+         "not_yours_help": "Pour qu'aucun voyageur ne voie les données de passeport d'un autre, un formulaire ne peut être rouvert que sur l'appareil qui l'a rempli. Pour une correction, écrivez à votre hôte.",
+         "already_filed_title": "Ces informations ont déjà été déclarées",
+@@ -1956,7 +1946,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "previous_step": "Retour",
+         "add_person": "Ajouter une personne",
+         "add_first_person": "Commencez par vos propres informations",
+-        "saved_title": "Enregistré — merci",
++        "saved_title": "Enregistré, merci",
+         "saved_body": "Vos informations sont enregistrées. Ajoutez maintenant la personne suivante de votre groupe.",
+         "reported_title": "Informations envoyées et déclarées",
+         "reported_body": "Merci. Votre hôte a déjà déclaré cette fiche. Contactez-le si une information ci-dessous doit être corrigée.",
+@@ -1968,7 +1958,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "completed": "rempli",
+         "not_filled": "non rempli",
+         "edit": "Modifier",
+-        "all_done_title": "Merci — tout le monde est enregistré",
++        "all_done_title": "Merci. Tout le monde est enregistré",
+         "all_done_body": "Vous n'avez plus rien à faire. Vous pouvez fermer cette page.",
+         "all_done_receipt": "Nous avons envoyé une confirmation à %(email)s.",
+         "checkin_info": "Arrivée",
+@@ -1982,7 +1972,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "birth_date": "Date de naissance",
+         "birth_date_readback": "Soit le %(date)s.",
+         "residence_help": "Votre adresse de domicile permanent, comme sur votre passeport ou carte d'identité.",
+-        "residence_copied": "Copiée depuis %(name)s — modifiez-la si cette personne habite ailleurs.",
++        "residence_copied": "Copiée depuis %(name)s. Modifiez-la si cette personne habite ailleurs.",
+         "nationality": "Nationalité",
+         "countries_common": "Les plus courants",
+         "countries_all": "Tous les pays",
+@@ -2066,7 +2056,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "privacy_purpose": "Pourquoi les données sont collectées",
+         "privacy_purpose_body": "Pour remplir deux obligations légales d'un hébergeur en Tchéquie : déclarer les ressortissants étrangers hébergés à la police des étrangers et tenir un registre d'hébergement (domovní kniha). Elles ne sont utilisées à aucune autre fin.",
+         "privacy_basis": "Base juridique",
+-        "privacy_basis_body": "Article 6, paragraphe 1, point c), du RGPD — respect d'une obligation légale, à savoir les §§ 101–103 de la loi n° 326/1999 Rec. relative au séjour des étrangers. Votre consentement n'est pas demandé, car l'obligation s'applique que vous l'acceptiez ou non.",
++        "privacy_basis_body": "Article 6, paragraphe 1, point c), du RGPD : respect d'une obligation légale, à savoir les §§ 101–103 de la loi n° 326/1999 Rec. relative au séjour des étrangers. Votre consentement n'est pas demandé, car l'obligation s'applique que vous l'acceptiez ou non.",
+         "privacy_data": "Données collectées",
+         "privacy_data_body": "Prénom et nom, date de naissance, nationalité, numéro du document de voyage, numéro de visa s'il en a été délivré un, adresse de domicile permanent à l'étranger, motif du séjour, début et fin de votre séjour, signature, nombre de personnes déclaré et adresse e-mail utilisée pour revendiquer la réservation. Le nombre de personnes sert à déterminer si tous les formulaires attendus sont complets et est conservé avec la fiche du séjour.",
+         "privacy_data_body_no_email": "Prénom et nom, date de naissance, nationalité, numéro du document de voyage, numéro de visa s'il en a été délivré un, adresse de domicile permanent à l'étranger, motif du séjour, début et fin de votre séjour, signature et nombre de personnes déclaré. Cette version du formulaire ne collecte pas votre adresse e-mail. Le nombre de personnes sert à déterminer si tous les formulaires attendus sont complets et est conservé avec la fiche du séjour.",
+@@ -2101,20 +2091,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "back": "Retour",
+         "mail_claim_subject": "Confirmez votre séjour à %(property)s (lien valable 30 min)",
+         "mail_claim_resend_subject": "Nouveau lien : confirmez votre séjour à %(property)s",
+-        "mail_claim_preheader": "Touchez le bouton, puis remplissez chaque voyageur — environ 2 minutes par personne.",
++        "mail_claim_preheader": "Touchez le bouton, puis remplissez chaque voyageur (environ 2 minutes par personne).",
+         "mail_claim_resend_preheader": "Votre lien précédent ne fonctionne plus. En voici un nouveau.",
+         "mail_claim_heading": "Confirmez votre séjour",
+         "mail_claim_resend_heading": "Voici votre nouveau lien",
+         "mail_claim_intro": "Confirmez votre séjour à %(property)s (%(dates)s) en ouvrant le lien ci-dessous.",
+         "mail_claim_action": "Confirmer mon séjour",
+         "mail_link_fallback": "Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :",
+-        "mail_claim_expiry": "Le bouton fonctionne pendant 30 minutes. Après confirmation, ce téléphone ou cet ordinateur mémorise votre séjour — vous n'aurez plus besoin du lien sur cet appareil.",
++        "mail_claim_expiry": "Le bouton fonctionne pendant 30 minutes. Après confirmation, ce téléphone ou cet ordinateur mémorise votre séjour. Vous n'aurez plus besoin du lien sur cet appareil.",
+         "mail_claim_expiry_resend": "Ce nouveau lien remplace le précédent et fonctionne pendant 30 minutes.",
+         "mail_claim_next_label": "La suite",
+         "mail_claim_next_body": "Vous saisirez les informations de chaque voyageur de ce séjour, puis signerez. Cela prend environ deux minutes par voyageur et fonctionne sur téléphone. Si un PIN vous est demandé, utilisez celui du message de votre hôte.",
+-        "mail_claim_next_done": "Tout le monde est déjà enregistré — le lien ouvre simplement la page de votre séjour.",
+-        "mail_completion_subject": "Vous êtes enregistré pour %(property)s — rien d'autre à faire",
+-        "mail_completion_preheader": "Tous les voyageurs de ce séjour sont enregistrés — rien d'autre à faire.",
++        "mail_claim_next_done": "Tout le monde est déjà enregistré. Le lien ouvre simplement la page de votre séjour.",
++        "mail_completion_subject": "Vous êtes enregistré pour %(property)s : rien d'autre à faire",
++        "mail_completion_preheader": "Tous les voyageurs de ce séjour sont enregistrés. Rien d'autre à faire.",
+         "mail_completion_heading": "Tout est en ordre",
+         "mail_completion_intro": "Tous les voyageurs pour %(property)s (%(dates)s) sont enregistrés. Vous n'avez plus rien à faire.",
+         "mail_completion_action": "Voir la page du séjour",
+diff --git a/App/app/landing_i18n.py b/App/app/landing_i18n.py
+index b680a1b..fbe60e3 100644
+--- a/App/app/landing_i18n.py
++++ b/App/app/landing_i18n.py
+@@ -20,7 +20,7 @@ LANDING_STRINGS = {
+             "and keeps the guest book."
+         ),
+         "landing.cta": "Try UbyHost",
+-        "landing.cta.note": "Or write to support@ubyhost.com — we reply with next steps.",
++        "landing.cta.note": "Or write to support@ubyhost.com. We reply with next steps.",
+         "landing.contact": "How it works",
+         "landing.independent": "UbyHost is an independent private service. It is not operated or endorsed by the Czech Police or UbyPort.",
+         "landing.demo.label": "A quick tour of UbyHost",
+@@ -117,8 +117,7 @@ LANDING_STRINGS = {
+         "pricing.card.kicker": "What you get",
+         "pricing.card.price": "By agreement",
+         "pricing.card.summary": (
+-            "One plan with everything below. The monthly price depends on how many "
+-            "properties you run — write to us and we reply with a quote."
++            "One plan with everything below. The monthly price depends on how many properties you run. Write to us and we reply with a quote."
+         ),
+         "pricing.card.note": "Priced for what you actually run.",
+         "pricing.card.cta": "Request access and a price",
+@@ -231,7 +230,7 @@ LANDING_STRINGS = {
+             "ubytovací knihu."
+         ),
+         "landing.cta": "Vyzkoušet UbyHost",
+-        "landing.cta.note": "Nebo napište na support@ubyhost.com — ozveme se s dalším postupem.",
++        "landing.cta.note": "Nebo napište na support@ubyhost.com. Ozveme se s dalším postupem.",
+         "landing.contact": "Jak to funguje",
+         "landing.independent": "UbyHost je nezávislá soukromá služba. Neprovozuje ji ani nedoporučuje Policie ČR ani UbyPort.",
+         "landing.demo.label": "Rychlá ukázka UbyHostu",
+@@ -326,8 +325,7 @@ LANDING_STRINGS = {
+         "pricing.card.kicker": "Co dostanete",
+         "pricing.card.price": "Dle domluvy",
+         "pricing.card.summary": (
+-            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování "
+-            "— napište nám a pošleme nabídku."
++            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování. Napište nám a pošleme nabídku."
+         ),
+         "pricing.card.note": "Cenu nastavíme podle toho, co skutečně provozujete.",
+         "pricing.card.cta": "Požádat o přístup a cenu",
+diff --git a/App/app/privacy_policy_i18n.py b/App/app/privacy_policy_i18n.py
+index c69bbe4..10f3816 100644
+--- a/App/app/privacy_policy_i18n.py
++++ b/App/app/privacy_policy_i18n.py
+@@ -7,10 +7,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+     "en": {
+         "privacy.page_title": "Privacy Policy",
+         "privacy.page_lede": (
+-            "How %(name)s (the UbyHost software operator) processes personal data when you use "
+-            "the hosted service, visit public pages, or interact with us. This policy does not "
+-            "replace the guest privacy notice shown to your guests — that notice names the controller "
+-            "configured for the property, which may differ from its property manager."
++            "How %(name)s (the UbyHost software operator) processes personal data when you use the hosted service, visit public pages, or interact with us. This policy does not replace the guest privacy notice shown to your guests. That notice names the controller configured for the property, which may differ from its property manager."
+         ),
+         "privacy.effective": "Effective date: %(date)s. Version %(version)s.",
+         "privacy.cookies.table_intro": "The table below lists every cookie and item of local storage the service sets.",
+@@ -41,15 +38,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+         "terms.cross_privacy": "Privacy Policy",
+         "privacy.s01_title": "1. Scope and who should read this",
+         "privacy.s01_body": (
+-            "This Privacy Policy (\"Policy\") describes how %(name)s, identification number (IČO) "
+-            "%(ico)s (the \"Operator\"), processes personal data in connection with the UbyHost "
+-            "web application and related websites (the \"Service\"). It applies to: (a) accommodation "
+-            "providers and their staff who hold a Host account (\"Host Users\"); (b) visitors to "
+-            "public pages such as /login, /legal, /terms, and /privacy; and (c) technical processing "
+-            "of Guest Data on behalf of Hosts as described below. It does not govern the relationship "
+-            "between a Host and their Guests as controller and data subject — that is covered by the "
+-            "guest-facing privacy notice at each property link (/l/{token}/privacy) and by the Host's "
+-            "own policies."
++            "This Privacy Policy (\"Policy\") describes how %(name)s, identification number (IČO) %(ico)s (the \"Operator\"), processes personal data in connection with the UbyHost web application and related websites (the \"Service\"). It applies to: (a) accommodation providers and their staff who hold a Host account (\"Host Users\"); (b) visitors to public pages such as /login, /legal, /terms, and /privacy; and (c) technical processing of Guest Data on behalf of Hosts as described below. It does not govern the relationship between a Host and their Guests as controller and data subject. That is covered by the guest-facing privacy notice at each property link (/l/{token}/privacy) and by the Host's own policies."
+         ),
+         "privacy.s02_title": "2. Controller identity and contact",
+         "privacy.s02_body": (
+@@ -64,19 +53,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy.s03_title": "3. Roles: Operator, Host, and Guest",
+         "privacy.s03_body": (
+-            "For each property, the configured controller legal entity is the data controller for "
+-            "personal data about Guests (names, travel documents, stays, signatures, and related "
+-            "records). The operating property manager is the default controller and remains the "
+-            "practical point of contact for questions about the stay. If the Host selects a different "
+-            "controller, that entity must genuinely determine the purposes and means of processing; "
+-            "changing a label in the Service does not itself transfer legal responsibility. The "
+-            "Operator provides hosted software and processes Guest Data "
+-            "only on the Host's documented instructions to deliver the Service — typically as a data "
+-            "processor under GDPR Article 28. The Operator is not a joint controller with the Host "
+-            "unless expressly agreed in writing. The Operator is controller for its own business data "
+-            "(accounts, security, hosting). Guest Data processing terms are in the Data Processing "
+-            "Agreement at /dpa. Nothing in this Policy transfers statutory duties of accommodation "
+-            "providers or controllers to the Operator."
++            "For each property, the configured controller legal entity is the data controller for personal data about Guests (names, travel documents, stays, signatures, and related records). The operating property manager is the default controller and remains the practical point of contact for questions about the stay. If the Host selects a different controller, that entity must genuinely determine the purposes and means of processing; changing a label in the Service does not itself transfer legal responsibility. The Operator provides hosted software and processes Guest Data only on the Host's documented instructions to deliver the Service, typically as a data processor under GDPR Article 28. The Operator is not a joint controller with the Host unless expressly agreed in writing. The Operator is controller for its own business data (accounts, security, hosting). Guest Data processing terms are in the Data Processing Agreement at /dpa. Nothing in this Policy transfers statutory duties of accommodation providers or controllers to the Operator."
+         ),
+         "privacy.s04_title": "4. Categories of Host User data",
+         "privacy.s04_body": (
+@@ -193,21 +170,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy.s09_title": "9. Recipients and subprocessors",
+         "privacy.s09_body": (
+-            "Personal data is accessed by authorised Operator personnel and contractors bound by "
+-            "confidentiality. We use infrastructure subprocessors to host the Service, including "
+-            "Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), "
+-            "Render.com (demo hosting), DNS or "
+-            "CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential "
+-            "mitigation, client-side script monitoring, and HSTS when enabled for the production zone), "
+-            "Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a "
+-            "transactional e-mail provider (including Amazon SES when enabled) or support tools. "
+-            "Completion receipts may disclose the guest recipient address to the Host copied on the "
+-            "message. Guest Data may be transmitted to the Czech Police UbyPort "
+-            "systems or related endpoints when a Host enables reporting — that transmission occurs on "
+-            "the Host's instructions as processor. We require subprocessors that process personal data "
+-            "on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, "
+-            "purposes, possible data and transfer notes are at /subprocessors. Material changes are "
+-            "published there and reflected in this Policy."
++            "Personal data is accessed by authorised Operator personnel and contractors bound by confidentiality. We use infrastructure subprocessors to host the Service, including Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), Render.com (demo hosting), DNS or CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential mitigation, client-side script monitoring, and HSTS when enabled for the production zone), Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a transactional e-mail provider (including Amazon SES when enabled) or support tools. Completion receipts may disclose the guest recipient address to the Host copied on the message. Guest Data may be transmitted to the Czech Police UbyPort systems or related endpoints when a Host enables reporting. That transmission occurs on the Host's instructions as processor. We require subprocessors that process personal data on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, purposes, possible data and transfer notes are at /subprocessors. Material changes are published there and reflected in this Policy."
+         ),
+         "privacy.s10_title": "10. International transfers",
+         "privacy.s10_body": (
+@@ -324,10 +287,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+     "cs": {
+         "privacy.page_title": "Zásady ochrany osobních údajů",
+         "privacy.page_lede": (
+-            "Jak %(name)s (provozovatel softwaru UbyHost) zpracovává osobní údaje při používání "
+-            "hostované služby, návštěvě veřejných stránek nebo komunikaci s námi. Tyto zásady "
+-            "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
+-            "který se může lišit od správce objektu."
++            "Jak %(name)s (provozovatel softwaru UbyHost) zpracovává osobní údaje při používání hostované služby, návštěvě veřejných stránek nebo komunikaci s námi. Tyto zásady nenahrazují informaci pro hosty. V ní je uveden správce nastavený pro dané ubytování, který se může lišit od správce objektu."
+         ),
+         "privacy.effective": "Účinnost od: %(date)s. Verze %(version)s.",
+         "privacy.cookies.table_intro": "Tabulka níže uvádí všechny soubory cookie a položky místního úložiště, které služba nastavuje.",
+@@ -357,13 +317,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+         "terms.cross_privacy": "Zásady ochrany osobních údajů",
+         "privacy.s01_title": "1. Rozsah a komu je text určen",
+         "privacy.s01_body": (
+-            "Tyto zásady ochrany osobních údajů (\"Zásady\") popisují, jak %(name)s, IČO %(ico)s "
+-            "(\"Provozovatel\"), zpracovává osobní údaje v souvislosti s webovou aplikací UbyHost "
+-            "a souvisejícími stránkami (\"Služba\"). Platí pro: (a) poskytovatele ubytování a jejich "
+-            "pracovníky s účtem (\"Uživatelé účtu\"); (b) návštěvníky veřejných stránek (/login, "
+-            "/legal, /terms, /privacy); (c) technické zpracování údajů hostů na pokyn ubytovatele "
+-            "dle níže. Neupravují vztah ubytovatele a hosta jako správce a subjektu údajů — to řeší "
+-            "informace pro hosty u odkazu (/l/{token}/privacy) a vlastní dokumenty ubytovatele."
++            "Tyto zásady ochrany osobních údajů (\"Zásady\") popisují, jak %(name)s, IČO %(ico)s (\"Provozovatel\"), zpracovává osobní údaje v souvislosti s webovou aplikací UbyHost a souvisejícími stránkami (\"Služba\"). Platí pro: (a) poskytovatele ubytování a jejich pracovníky s účtem (\"Uživatelé účtu\"); (b) návštěvníky veřejných stránek (/login, /legal, /terms, /privacy); (c) technické zpracování údajů hostů na pokyn ubytovatele dle níže. Neupravují vztah ubytovatele a hosta jako správce a subjektu údajů. To řeší informace pro hosty u odkazu (/l/{token}/privacy) a vlastní dokumenty ubytovatele."
+         ),
+         "privacy.s02_title": "2. Identita správce a kontakt",
+         "privacy.s02_body": (
+@@ -375,15 +329,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "privacy.s03_title": "3. Role: provozovatel, ubytovatel a host",
+         "privacy.s03_body": (
+-            "Správcem údajů hostů (jména, cestovní doklady, pobyty, podpisy aj.) je právnická osoba "
+-            "nastavená pro konkrétní ubytování. Provozovatel/správce ubytování je výchozím správcem "
+-            "údajů a praktickým kontaktem pro otázky k pobytu. Je-li zvolen jiný správce údajů, musí "
+-            "skutečně určovat účely a prostředky zpracování; pouhá změna označení ve Službě právní "
+-            "odpovědnost nepřenáší. Provozovatel UbyHostu poskytuje software a údaje hostů "
+-            "zpracovává jen na dokumentovaný pokyn ubytovatele — obvykle jako zpracovatel dle čl. 28 "
+-            "GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. "
+-            "Provozovatel je správcem vlastních provozních údajů. Podmínky zpracování údajů hostů jsou "
+-            "v DPA na /dpa. Povinnosti ubytovatele podle zákona se na Provozovatele nepřenášejí."
++            "Správcem údajů hostů (jména, cestovní doklady, pobyty, podpisy aj.) je právnická osoba nastavená pro konkrétní ubytování. Provozovatel/správce ubytování je výchozím správcem údajů a praktickým kontaktem pro otázky k pobytu. Je-li zvolen jiný správce údajů, musí skutečně určovat účely a prostředky zpracování; pouhá změna označení ve Službě právní odpovědnost nepřenáší. Provozovatel UbyHostu poskytuje software a údaje hostů zpracovává jen na dokumentovaný pokyn ubytovatele, obvykle jako zpracovatel dle čl. 28 GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. Provozovatel je správcem vlastních provozních údajů. Podmínky zpracování údajů hostů jsou v DPA na /dpa. Povinnosti ubytovatele podle zákona se na Provozovatele nepřenášejí."
+         ),
+         "privacy.s04_title": "4. Kategorie údajů uživatelů účtu",
+         "privacy.s04_body": (
+diff --git a/App/app/templates/guide.html b/App/app/templates/guide.html
+index 271b2ce..d5c64aa 100644
+--- a/App/app/templates/guide.html
++++ b/App/app/templates/guide.html
+@@ -41,7 +41,7 @@
+       <h2>{{ t('guide.nav.setup') }}</h2>
+       <ol class="guide-steps">
+         {% for n in range(1, 6) %}
+-        <li><strong>{{ t('guide.setup.step' ~ n ~ '_title') }}</strong> — {{ t('guide.setup.step' ~ n) }}</li>
++        <li><strong>{{ t('guide.setup.step' ~ n ~ '_title') }}:</strong> {{ t('guide.setup.step' ~ n) }}</li>
+         {% endfor %}
+       </ol>
+     </section>
+diff --git a/App/app/templates/settings.html b/App/app/templates/settings.html
+index b182766..55e9da5 100644
+--- a/App/app/templates/settings.html
++++ b/App/app/templates/settings.html
+@@ -133,7 +133,7 @@
+           <dt>{{ t('settings.data.retention_last') }}</dt>
+           <dd>
+             {% if retention_last_run %}
+-              {{ retention_last_run.at }} —
++              {{ retention_last_run.at }},
+               {{ t('settings.data.dry_run') if retention_last_run.dry_run else t('settings.data.live') }}
+               {% if retention_last_run.counts %}
+                 <span class="small muted">
+@@ -149,7 +149,7 @@
+           {% if backup_status %}
+             <dt>{{ t('settings.data.backup') }}</dt>
+             <dd>
+-              {{ backup_status.at }} —
++              {{ backup_status.at }},
+               {{ t('settings.data.encrypted') if backup_status.encrypted else t('settings.data.not_encrypted') }}
+               <span class="small muted">{{ t('settings.data.retention_days', days=backup_status.retention_days) }}</span>
+             </dd>
+@@ -170,8 +170,8 @@
+             {% endif %}
+             {% if entities_without_contact %}
+               <small>{{ t('settings.privacy.no_contact_prefix') }}
+-                {% for entity in entities_without_contact %}{{ entity.name }}{{ ", " if not loop.last }}{% endfor %}
+-                — <a href="/entities">{{ t('settings.privacy.add_contact') }}</a>{{ t('settings.privacy.no_contact_suffix') }}</small>
++                {% for entity in entities_without_contact %}{{ entity.name }}{{ ", " if not loop.last }}{% endfor %}.
++                <a href="/entities">{{ t('settings.privacy.add_contact') }}</a>{{ t('settings.privacy.no_contact_suffix') }}</small>
+             {% endif %}
+           </div>
+         </div>
+diff --git a/App/app/templates/stay_fee_detail.html b/App/app/templates/stay_fee_detail.html
+index 542170b..190f4cf 100644
+--- a/App/app/templates/stay_fee_detail.html
++++ b/App/app/templates/stay_fee_detail.html
+@@ -1,6 +1,6 @@
+ {% extends "base.html" %}
+ {% set nav = 'stay_fees' %}
+-{% block title %}{{ apartment.internal_name }} — {{ ui_period }}{% endblock %}
++{% block title %}{{ apartment.internal_name }} ({{ ui_period }}){% endblock %}
+ {% block content %}
+ {% from "_components.html" import page_header, copy_button with context %}
+ <a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
+@@ -26,7 +26,7 @@
+     <button class="btn" type="button" disabled>{{ t('stay_fees.save_period') }}</button>
+   {% endif %}
+ {% endset %}
+-{{ page_header(apartment.internal_name ~ ' — ' ~ ui_period, '', '', '', t('nav.stay_fees'), actions) }}
++{{ page_header(apartment.internal_name ~ ' (' ~ ui_period ~ ')', '', '', '', t('nav.stay_fees'), actions) }}
+ 
+ {% if not frozen %}
+ <section class="panel" id="fee-adjust">
+@@ -74,7 +74,7 @@
+   <ul class="fee-adjust-list">
+     {% for row in period.adjustments %}
+     <li>
+-      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}{% if row.reason %} — {{ row.reason }}{% endif %}</span>
++      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}{% if row.reason %} ({{ row.reason }}){% endif %}</span>
+       {% if not row.filing_id %}
+       <form method="post" action="/stay-fees/{{ apartment.id }}/adjustment/{{ row.id }}/undo">
+         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+diff --git a/App/app/terms_i18n.py b/App/app/terms_i18n.py
+index 6a230c9..18e459b 100644
+--- a/App/app/terms_i18n.py
++++ b/App/app/terms_i18n.py
+@@ -69,20 +69,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
+         ),
+         "terms.s05_title": "5. Roles of the parties",
+         "terms.s05_body": (
+-            "The Host is solely responsible for compliance with obligations of an accommodation "
+-            "provider under Czech law, including Act No. 326/1999 Coll. on residence of foreign "
+-            "nationals, related decrees, house book rules, and GDPR duties as data controller. "
+-            "The Operator provides technical infrastructure and processes Guest Data on the "
+-            "Host's documented instructions to deliver the Service — as a data processor under "
+-            "GDPR Article 28 pursuant to the Data Processing Agreement at /dpa. Nothing in these "
+-            "Terms transfers statutory duties of the Host to the Operator. The Operator is not a "
+-            "joint controller unless expressly agreed in a separate written agreement. The Host "
+-            "is also solely responsible for the local stay fee (poplatek z pobytu) under Act No. "
+-            "565/1990 Coll. and the municipal ordinance: for collecting it, keeping the record "
+-            "book, reporting to the municipality and paying it. Where the Service calculates the "
+-            "fee or prepares a report, a register or a payment QR code, these are aids for the "
+-            "Host. The Operator does not file the report or pay the fee. The Host checks the "
+-            "figures before using them."
++            "The Host is solely responsible for compliance with obligations of an accommodation provider under Czech law, including Act No. 326/1999 Coll. on residence of foreign nationals, related decrees, house book rules, and GDPR duties as data controller. The Operator provides technical infrastructure and processes Guest Data on the Host's documented instructions to deliver the Service, as a data processor under GDPR Article 28 pursuant to the Data Processing Agreement at /dpa. Nothing in these Terms transfers statutory duties of the Host to the Operator. The Operator is not a joint controller unless expressly agreed in a separate written agreement. The Host is also solely responsible for the local stay fee (poplatek z pobytu) under Act No. 565/1990 Coll. and the municipal ordinance: for collecting it, keeping the record book, reporting to the municipality and paying it. Where the Service calculates the fee or prepares a report, a register or a payment QR code, these are aids for the Host. The Operator does not file the report or pay the fee. The Host checks the figures before using them."
+         ),
+         "terms.s06_title": "6. Account registration and security",
+         "terms.s06_body": (
+diff --git a/App/app/validation_i18n.py b/App/app/validation_i18n.py
+index ff7a2fc..67a1b94 100644
+--- a/App/app/validation_i18n.py
++++ b/App/app/validation_i18n.py
+@@ -153,7 +153,7 @@ GUEST_EN_MESSAGES: Dict[str, str] = {
+     "Month must be between 01 and 12.": "Date of birth: month must be between 01 and 12.",
+     "Day must be between 01 and 31.": "Date of birth: day must be between 01 and 31.",
+     "That date does not exist - please check day and month.": (
+-        "Date of birth: that date does not exist — check the day and month."
++        "Date of birth: that date does not exist. Check the day and month."
+     ),
+ }
+ 
+@@ -167,7 +167,7 @@ GUEST_CS_MESSAGES: Dict[str, str] = {
+     "Month must be between 01 and 12.": "Datum narození: měsíc musí být mezi 01 a 12.",
+     "Day must be between 01 and 31.": "Datum narození: den musí být mezi 01 a 31.",
+     "That date does not exist - please check day and month.": (
+-        "Datum narození: takové datum neexistuje — zkontrolujte den a měsíc."
++        "Datum narození: takové datum neexistuje. Zkontrolujte den a měsíc."
+     ),
+ }
+ 
+@@ -185,7 +185,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
+         "Year must be 1900 or later.": "Geburtsdatum: Das Jahr muss 1900 oder später sein.",
+         "Month must be between 01 and 12.": "Geburtsdatum: Der Monat muss zwischen 01 und 12 liegen.",
+         "Day must be between 01 and 31.": "Geburtsdatum: Der Tag muss zwischen 01 und 31 liegen.",
+-        "That date does not exist - please check day and month.": "Geburtsdatum: Dieses Datum existiert nicht — prüfen Sie Tag und Monat.",
++        "That date does not exist - please check day and month.": "Geburtsdatum: Dieses Datum existiert nicht. Prüfen Sie Tag und Monat.",
+         "Date of birth cannot be after your arrival date.": "Das Geburtsdatum darf nicht nach Ihrem Anreisedatum liegen.",
+         "Date of birth cannot be in the future.": "Das Geburtsdatum darf nicht in der Zukunft liegen.",
+         "Surname is required.": "Der Nachname ist erforderlich.",
+@@ -223,7 +223,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
+         "Year must be 1900 or later.": "Fecha de nacimiento: el año debe ser 1900 o posterior.",
+         "Month must be between 01 and 12.": "Fecha de nacimiento: el mes debe estar entre 01 y 12.",
+         "Day must be between 01 and 31.": "Fecha de nacimiento: el día debe estar entre 01 y 31.",
+-        "That date does not exist - please check day and month.": "Fecha de nacimiento: esa fecha no existe — revise el día y el mes.",
++        "That date does not exist - please check day and month.": "Fecha de nacimiento: esa fecha no existe. Revise el día y el mes.",
+         "Date of birth cannot be after your arrival date.": "La fecha de nacimiento no puede ser posterior a su fecha de llegada.",
+         "Date of birth cannot be in the future.": "La fecha de nacimiento no puede ser futura.",
+         "Surname is required.": "Los apellidos son obligatorios.",
+@@ -261,7 +261,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
+         "Year must be 1900 or later.": "Date de naissance : l'année doit être 1900 ou postérieure.",
+         "Month must be between 01 and 12.": "Date de naissance : le mois doit être compris entre 01 et 12.",
+         "Day must be between 01 and 31.": "Date de naissance : le jour doit être compris entre 01 et 31.",
+-        "That date does not exist - please check day and month.": "Date de naissance : cette date n'existe pas — vérifiez le jour et le mois.",
++        "That date does not exist - please check day and month.": "Date de naissance : cette date n'existe pas. Vérifiez le jour et le mois.",
+         "Date of birth cannot be after your arrival date.": "La date de naissance ne peut pas être postérieure à votre date d'arrivée.",
+         "Date of birth cannot be in the future.": "La date de naissance ne peut pas être dans le futur.",
+         "Surname is required.": "Le nom est obligatoire.",
+diff --git a/App/tests/test_claim_mail.py b/App/tests/test_claim_mail.py
+index 118065a..5828b79 100644
+--- a/App/tests/test_claim_mail.py
++++ b/App/tests/test_claim_mail.py
+@@ -673,7 +673,7 @@ def test_incomplete_stay_inside_the_reach_back_window_stays_reachable():
+         assert "There&#39;s nothing to register yet" in apartment_landing.text
+         assert (
+             "Registration opens a few days before arrival. Come back to this same link then. "
+-            "Already arrived? Message your host — they can send you a direct link to your stay."
++            "Already arrived? Message your host. They can send you a direct link to your stay."
+         ) in apartment_landing.text
+         assert f"/l/{TOKEN}/{past}" not in apartment_landing.text
+ 
+@@ -1480,7 +1480,7 @@ def test_the_sent_claim_page_confirms_the_address_and_folds_the_form_away(monkey
+         )["email_masked"]
+         assert masked
+         assert f"We sent a link to {masked}." in page.text
+-        assert "it works for 30 minutes" in page.text
++        assert "It works for 30 minutes" in page.text
+         assert "If it asks for the PIN again, enter the same PIN." in page.text
+         # The form is still there, but behind a closed disclosure.
+         assert '<details class="g-card g-fold">' in page.text
+diff --git a/App/tests/test_claim_resend_complete.py b/App/tests/test_claim_resend_complete.py
+index 2dba1e2..dc2f034 100644
+--- a/App/tests/test_claim_resend_complete.py
++++ b/App/tests/test_claim_resend_complete.py
+@@ -204,7 +204,7 @@ def test_the_first_link_for_a_stay_the_host_filled_in_is_not_a_form_promise(
+ def test_the_done_copy_names_no_guest_count_and_no_dead_link():
+     """The audit's copy is one sentence; nothing else leaks in beside it."""
+     assert DONE["en"] == (
+-        "Everyone is already registered \u2014 the link just opens your stay page."
++        "Everyone is already registered. The link just opens your stay page."
+     )
+     assert DONE["cs"] == (
+         "Všichni už jsou zaregistrovaní \u2013 odkaz jen otevře stránku vašeho pobytu."
+diff --git a/App/tests/test_dashboard_order.py b/App/tests/test_dashboard_order.py
+index 8073348..09b605c 100644
+--- a/App/tests/test_dashboard_order.py
++++ b/App/tests/test_dashboard_order.py
+@@ -123,7 +123,7 @@ def test_an_overdue_stay_comes_before_the_finish_card(host):
+ 
+     assert page.status_code == 200
+     focus = page.text.index('id="needs-action"')
+-    strip = page.text.index("Setup is done — your guest link and PIN are ready.")
++    strip = page.text.index("Setup is done. Your guest link and PIN are ready.")
+     assert focus < strip, "the finish card is still outranking an overdue stay"
+ 
+ 
+@@ -134,7 +134,7 @@ def test_an_overdue_stay_shrinks_the_finish_card_to_one_line(host):
+     page = host.get("/?lang=en")
+ 
+     assert 'class="onboarding-finish"' not in page.text, "the tall finish card is back"
+-    assert "Setup is done — your guest link and PIN are ready." in page.text
++    assert "Setup is done. Your guest link and PIN are ready." in page.text
+     assert "Show link" in page.text
+ 
+ 
+@@ -154,7 +154,7 @@ def test_the_finish_card_keeps_its_room_when_nothing_is_overdue(host):
+     page = host.get("/?lang=en")
+ 
+     assert 'class="onboarding-finish"' in page.text
+-    assert "Setup is done — your guest link and PIN are ready." not in page.text
++    assert "Setup is done. Your guest link and PIN are ready." not in page.text
+     queue = page.text.index('id="needs-action"')
+     finish = page.text.index('class="onboarding-finish"')
+     assert finish > queue, "the finish card still sits above the work queue"
+@@ -166,5 +166,5 @@ def test_the_one_line_finish_card_is_in_czech(host):
+ 
+     page = host.get("/?lang=cs")
+ 
+-    assert "Nastavení je hotové — odkaz a PIN pro hosty jsou připravené." in page.text
++    assert "Nastavení je hotové. Odkaz a PIN pro hosty jsou připravené." in page.text
+     assert "Zobrazit odkaz" in page.text
+diff --git a/App/tests/test_dashboard_queue_copy.py b/App/tests/test_dashboard_queue_copy.py
+index c3b2bf2..9c3bf16 100644
+--- a/App/tests/test_dashboard_queue_copy.py
++++ b/App/tests/test_dashboard_queue_copy.py
+@@ -214,22 +214,22 @@ def _queue_table_labels(page_text: str) -> list:
+ def test_the_new_next_actions_ship_the_audited_wording():
+     assert host_i18n.STRINGS["en"][REPORTED_KEY] == "All guests reported. Nothing to do."
+     assert host_i18n.STRINGS["en"][NOT_REQUIRED_KEY] == (
+-        "Only Czech guests — nothing to report."
++        "Only Czech guests: nothing to report."
+     )
+     assert host_i18n.STRINGS["cs"][REPORTED_KEY] == (
+         "Všichni hosté jsou nahlášení. Není třeba nic dělat."
+     )
+     assert host_i18n.STRINGS["cs"][NOT_REQUIRED_KEY] == (
+-        "Jen čeští hosté — policii se nic nehlásí."
++        "Jen čeští hosté: policii se nic nehlásí."
+     )
+ 
+ 
+ def test_the_completed_heading_is_renamed_in_both_languages():
+     assert host_i18n.STRINGS["en"]["dashboard.section.completed"] == (
+-        "Done — nothing to do"
++        "Done, nothing to do"
+     )
+     assert host_i18n.STRINGS["cs"]["dashboard.section.completed"] == (
+-        "Hotovo — není třeba nic dělat"
++        "Hotovo, není třeba nic dělat"
+     )
+ 
+ 
+diff --git a/App/tests/test_flash_next_step.py b/App/tests/test_flash_next_step.py
+index bea5806..f0d8e80 100644
+--- a/App/tests/test_flash_next_step.py
++++ b/App/tests/test_flash_next_step.py
+@@ -209,13 +209,13 @@ def _add_guest(client, reservation_id: int) -> int:
+         ),
+         (
+             "flash.apartments.connection_ok",
+-            "Connection works — UbyPort accepted your web-service login.",
+-            "Spojení funguje — UbyPort přijal vaše přihlašovací údaje.",
++            "Connection works. UbyPort accepted your web-service login.",
++            "Spojení funguje. UbyPort přijal vaše přihlašovací údaje.",
+         ),
+         (
+             "flash.reservations.claim_released",
+-            "Assignment released — another e-mail can now claim this stay.",
+-            "Přiřazení uvolněno — pobyt teď může převzít jiný e-mail.",
++            "Assignment released. Another e-mail can now claim this stay.",
++            "Přiřazení uvolněno. Pobyt teď může převzít jiný e-mail.",
+         ),
+     ],
+ )
+diff --git a/App/tests/test_guest_error_summary.py b/App/tests/test_guest_error_summary.py
+index 61fceb9..b5747e9 100644
+--- a/App/tests/test_guest_error_summary.py
++++ b/App/tests/test_guest_error_summary.py
+@@ -214,11 +214,11 @@ def test_the_czech_summary_links_the_same_way():
+ def test_a_bad_birth_date_reads_as_a_sentence_about_the_birth_date():
+     items = _items(_page("en", birth_date="31/02/1990"))
+     assert items["birth_date"] == (
+-        "Date of birth: that date does not exist — check the day and month."
++        "Date of birth: that date does not exist. Check the day and month."
+     )
+     items = _items(_page("cs", birth_date="31/02/1990"))
+     assert items["birth_date"] == (
+-        "Datum narození: takové datum neexistuje — zkontrolujte den a měsíc."
++        "Datum narození: takové datum neexistuje. Zkontrolujte den a měsíc."
+     )
+ 
+ 
+diff --git a/App/tests/test_guest_mail.py b/App/tests/test_guest_mail.py
+index 9762375..b953711 100644
+--- a/App/tests/test_guest_mail.py
++++ b/App/tests/test_guest_mail.py
+@@ -494,7 +494,7 @@ def test_the_completion_mail_closes_with_nothing_left_to_do():
+         (
+             "en",
+             "You're all set",
+-            "You're registered for Guest Mail Flat \u2014 nothing else to do",
++            "You're registered for Guest Mail Flat: nothing else to do",
+             "Everyone for Guest Mail Flat (2026-01-05 \u2013 2026-01-08) is registered.",
+             "Your host takes care of the official registration with the authorities.",
+             "See your stay page",
+diff --git a/App/tests/test_guest_residence_prefill.py b/App/tests/test_guest_residence_prefill.py
+index 1b494cf..4fdca75 100644
+--- a/App/tests/test_guest_residence_prefill.py
++++ b/App/tests/test_guest_residence_prefill.py
+@@ -23,7 +23,7 @@ from tests.conftest import complete_guest_claim
+ TOKEN = "resprefilltok"
+ EN_HELP = "Your permanent home address, as in your passport or ID card."
+ CS_HELP = "Adresa trvalého bydliště podle pasu nebo občanského průkazu."
+-EN_COPIED = "Copied from %(name)s — change it if this person lives elsewhere."
++EN_COPIED = "Copied from %(name)s. Change it if this person lives elsewhere."
+ CS_COPIED = "Převzato od: %(name)s. Pokud tato osoba bydlí jinde, adresu změňte."
+ SIGNATURE = "data:image/png;base64," + base64.b64encode(
+     bytes.fromhex(
+diff --git a/App/tests/test_no_em_dashes.py b/App/tests/test_no_em_dashes.py
+new file mode 100644
+index 0000000..3a3224b
+--- /dev/null
++++ b/App/tests/test_no_em_dashes.py
+@@ -0,0 +1,95 @@
++"""WP29: no em dash used as punctuation in user-visible copy.
++
++Every string in the translation catalogues (guest pages in all five
++languages, the host app, the guide, the legal pages, the public pages and the
++validation messages) and the visible text of the legal and mail templates
++must use a full stop, comma, colon or parentheses instead. A lone dash as an
++empty-cell placeholder in a template is fine, and so is a dash inside a
++template comment.
++"""
++from __future__ import annotations
++
++import importlib
++import pkgutil
++import re
++from pathlib import Path
++
++import app
++
++PUNCTUATION_DASHES = (" — ", "— ")
++TEMPLATES = Path(app.__file__).resolve().parent / "templates"
++LEGAL_AND_MAIL_TEMPLATES = (
++    "terms.html",
++    "privacy.html",
++    "dpa.html",
++    "legal.html",
++    "subprocessors.html",
++    "public_legal_base.html",
++    "_legal_toc.html",
++    "_cookie_table.html",
++    "mail_unsubscribe.html",
++)
++
++
++def _catalogue_modules():
++    names = sorted(
++        info.name for info in pkgutil.iter_modules(app.__path__) if info.name.endswith("_i18n")
++    )
++    assert {"i18n", "host_i18n", "guide_i18n", "validation_i18n"} <= set(names + ["i18n"])
++    return [importlib.import_module(f"app.{name}") for name in ["i18n", *names]]
++
++
++def _strings(value, path):
++    if isinstance(value, str):
++        yield path, value
++    elif isinstance(value, dict):
++        for key, item in value.items():
++            yield from _strings(item, f"{path}.{key}")
++    elif isinstance(value, (list, tuple)):
++        for index, item in enumerate(value):
++            yield from _strings(item, f"{path}[{index}]")
++
++
++def _offenders():
++    found = []
++    for module in _catalogue_modules():
++        for name, value in vars(module).items():
++            if name.startswith("__") or not isinstance(value, (dict, list, tuple)):
++                continue
++            for path, text in _strings(value, f"{module.__name__}.{name}"):
++                if any(dash in text for dash in PUNCTUATION_DASHES):
++                    found.append(f"{path}: {text[:80]}")
++    return found
++
++
++def test_no_catalogue_string_uses_an_em_dash_as_punctuation():
++    found = _offenders()
++    assert not found, "\n".join(found)
++
++
++def test_the_guest_catalogue_is_checked_in_every_language():
++    from app import i18n
++
++    assert set(i18n.LANGUAGES) >= {"en", "cs", "de", "es", "fr"}
++    for lang in i18n.LANGUAGES:
++        for key, text in i18n.STRINGS[lang].items():
++            assert not any(dash in text for dash in PUNCTUATION_DASHES), (lang, key)
++
++
++def test_the_check_catches_an_em_dash():
++    assert any(dash in "Saved \u2014 thank you" for dash in PUNCTUATION_DASHES)
++    assert any(dash in "\u2014 none \u2014" for dash in PUNCTUATION_DASHES)
++    assert not any(dash in "—" for dash in PUNCTUATION_DASHES)
++
++
++def test_legal_and_mail_templates_have_no_em_dash_in_their_text():
++    found = []
++    for name in LEGAL_AND_MAIL_TEMPLATES:
++        path = TEMPLATES / name
++        if not path.exists():
++            continue
++        text = re.sub(r"\{#.*?#\}", "", path.read_text(encoding="utf-8"), flags=re.S)
++        for number, line in enumerate(text.splitlines(), start=1):
++            if any(dash in line for dash in PUNCTUATION_DASHES):
++                found.append(f"{name}:{number}: {line.strip()[:80]}")
++    assert not found, "\n".join(found)
+diff --git a/App/tests/test_onboarding.py b/App/tests/test_onboarding.py
+index f28c382..938ba72 100644
+--- a/App/tests/test_onboarding.py
++++ b/App/tests/test_onboarding.py
+@@ -440,13 +440,13 @@ def test_the_calendar_step_offers_adding_a_stay_by_hand():
+     page = client.get("/onboarding?lang=en")
+ 
+     assert page.status_code == 200
+-    assert "Connect Airbnb or Booking.com — or add a direct booking by hand." in page.text
++    assert "Connect Airbnb or Booking.com, or add a direct booking by hand." in page.text
+     assert "Add a stay by hand" in page.text
+     assert 'href="/reservations#add-stay-panel"' in page.text
+ 
+     czech = client.get("/onboarding?lang=cs")
+ 
+-    assert "Připojte Airbnb nebo Booking.com — nebo přidejte přímou rezervaci ručně." in czech.text
++    assert "Připojte Airbnb nebo Booking.com, nebo přidejte přímou rezervaci ručně." in czech.text
+     assert "Přidat pobyt ručně" in czech.text
+ 
+ 
+diff --git a/App/tests/test_operator_naming.py b/App/tests/test_operator_naming.py
+index c604527..2c15acc 100644
+--- a/App/tests/test_operator_naming.py
++++ b/App/tests/test_operator_naming.py
+@@ -51,8 +51,8 @@ PINNED = [
+     ("nav.entities", "Operators", "Provozovatelé"),
+     ("onboarding.entity.title", "Operator", "Provozovatel"),
+     ("onboarding.entity.detail",
+-     "Who runs the accommodation — a company or a self-employed person.",
+-     "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba."),
++     "Who runs the accommodation: a company or a self-employed person.",
++     "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba."),
+     ("onboarding.entity.prepare",
+      "Have ready: name, IČO, registered address and a contact e-mail.",
+      "Připravte si: jméno nebo název, IČO, sídlo a kontaktní e-mail."),
+@@ -60,8 +60,8 @@ PINNED = [
+     ("apartments.table.entity", "Legal operator", "Právní provozovatel"),
+     ("entities.title", "Business & legal details", "Firma a právní údaje"),
+     ("entities.lede",
+-     "Who runs the accommodation — a company or a self-employed person.",
+-     "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba."),
++     "Who runs the accommodation: a company or a self-employed person.",
++     "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba."),
+     ("entities.add_action", "Add operator", "Přidat provozovatele"),
+     ("entities.email_hint",
+      "Shown to guests as your contact.",
+@@ -221,7 +221,7 @@ def test_the_operators_page_is_named_and_explained(host):
+     assert page.status_code == 200, page.text
+     assert "Business &amp; legal details" in page.text
+     assert (
+-        "Who runs the accommodation — a company or a self-employed person."
++        "Who runs the accommodation: a company or a self-employed person."
+         in page.text
+     )
+     assert "No operators yet. Add the first one here." in page.text
+@@ -232,7 +232,7 @@ def test_the_operators_page_is_named_and_explained(host):
+ def test_the_operators_page_is_named_and_explained_in_czech(host):
+     page = host.get("/entities?lang=cs")
+     assert "Firma a právní údaje" in page.text
+-    assert "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba." in page.text
++    assert "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba." in page.text
+     assert "Přidat provozovatele" in page.text
+     assert "Právnické osoby" not in page.text
+ 
+@@ -251,7 +251,7 @@ def test_the_onboarding_banner_asks_for_an_operator(host):
+     assert page.status_code == 200, page.text
+     assert "Operator" in page.text
+     assert (
+-        "Who runs the accommodation — a company or a self-employed person."
++        "Who runs the accommodation: a company or a self-employed person."
+         in page.text
+     )
+     assert "Add operator" in page.text
+@@ -261,7 +261,7 @@ def test_the_onboarding_banner_asks_for_an_operator(host):
+ def test_the_onboarding_banner_asks_for_an_operator_in_czech(host):
+     page = host.get("/?lang=cs")
+     assert "Provozovatel" in page.text
+-    assert "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba." in page.text
++    assert "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba." in page.text
+     assert "Přidat provozovatele" in page.text
+ 
+ 
+diff --git a/App/tests/test_overhaul.py b/App/tests/test_overhaul.py
+index 5e7d432..d9b20aa 100644
+--- a/App/tests/test_overhaul.py
++++ b/App/tests/test_overhaul.py
+@@ -375,7 +375,7 @@ def test_an_archived_stay_says_so():
+     try:
+         db.update("reservation", stays[0], {"archived_at": db.utcnow()})
+         page = _browser().get(f"/reservations/{stays[0]}")
+-        assert "Archived — hidden from your daily work." in page.text
++        assert "Archived and hidden from your daily work." in page.text
+         assert COPY_LINK_PRIMARY not in page.text
+         assert "Reporting deadline" not in page.text
+     finally:
+@@ -388,7 +388,7 @@ def test_a_live_stay_keeps_its_deadline_and_copy_link():
+         page = _browser().get(f"/reservations/{stays[0]}")
+         assert "This stay is cancelled" not in page.text
+         assert "Marked as not a guest stay" not in page.text
+-        assert "Archived — hidden from your daily work." not in page.text
++        assert "Archived and hidden from your daily work." not in page.text
+         assert COPY_LINK_PRIMARY in page.text
+         assert "Reporting deadline" in page.text
+         assert 'class="stay-metrics detail-hero inactive"' not in page.text
+diff --git a/App/tests/test_plural_helper.py b/App/tests/test_plural_helper.py
+index 821a534..728ec0f 100644
+--- a/App/tests/test_plural_helper.py
++++ b/App/tests/test_plural_helper.py
+@@ -199,8 +199,8 @@ def test_nights_read_correctly_in_czech():
+ def test_the_ready_count_reads_correctly_in_both_languages():
+     assert _tp("stay.detail.ready_count", 1) == "Ready to report: 1 guest."
+     assert _tp("stay.detail.ready_count", 4) == "Ready to report: 4 guests."
+-    assert _tp("stay.detail.ready_count", 1, "cs") == "Připraven k hlášení — hostů: 1."
+-    assert _tp("stay.detail.ready_count", 5, "cs") == "Připraveno k hlášení — hostů: 5."
++    assert _tp("stay.detail.ready_count", 1, "cs") == "Připraven k hlášení (hostů: 1)."
++    assert _tp("stay.detail.ready_count", 5, "cs") == "Připraveno k hlášení (hostů: 5)."
+ 
+ 
+ def test_every_counted_key_ships_all_three_forms_in_both_languages():
+@@ -216,7 +216,7 @@ def test_the_flashes_read_correctly_in_both_languages():
+     assert flash_plural(english, "flash.feeds.added", 4) == "Calendar added. 4 stays imported."
+     assert flash_plural(english, "flash.reservations.accepted", 1) == "1 guest accepted."
+     assert flash_plural(english, "flash.error.rejected", 1).startswith(
+-        "UbyPort rejected 1 guest record —"
++        "UbyPort rejected 1 guest record. Open"
+     )
+ 
+     czech = _FakeRequest("cs")
+@@ -335,7 +335,7 @@ def test_the_stay_detail_shows_the_czech_ready_count():
+     try:
+         page = _browser("cs").get(f"/reservations/{seeded['reservation_id']}")
+         assert page.status_code == 200
+-        assert "Připraveno k hlášení — hostů: 2." in html.unescape(page.text)
++        assert "Připraveno k hlášení (hostů: 2)." in html.unescape(page.text)
+         assert "záznam(ů)" not in page.text
+     finally:
+         _cleanup()
+diff --git a/App/tests/test_stay_fee_detail.py b/App/tests/test_stay_fee_detail.py
+index 63bf9ec..7ac7751 100644
+--- a/App/tests/test_stay_fee_detail.py
++++ b/App/tests/test_stay_fee_detail.py
+@@ -338,7 +338,7 @@ def test_charge_cannot_bill_known_minor_days(host):
+     )
+ 
+     before = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
+-    assert "Exempt — under 18" in before.text
++    assert "Exempt (under 18)" in before.text
+     assert "0\u00a0Kč" in before.text
+ 
+     response = _decide(client, apartment_id, guest_ids[0], "charge")
+@@ -364,7 +364,7 @@ def test_automatic_puts_the_guest_back_on_the_default_rule(host):
+     assert response.status_code == 200
+     stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
+     assert stored["fee_host_decision"] is None
+-    assert "Exempt — under 18" in response.text
++    assert "Exempt (under 18)" in response.text
+     assert "200\u00a0Kč" not in response.text
+ 
+ 
+@@ -453,7 +453,7 @@ def test_detail_heading_uses_the_host_language(host):
+     czech = client.get(f"/stay-fees/{apartment_id}?month=2026-08&lang=cs")
+ 
+     assert english.status_code == 200
+-    assert "Language Demo — August 2026" in english.text
++    assert "Language Demo (August 2026)" in english.text
+     assert "Srpen 2026" not in english.text
+     assert czech.status_code == 200
+-    assert "Language Demo — Srpen 2026" in czech.text
++    assert "Language Demo (Srpen 2026)" in czech.text
+diff --git a/App/tests/test_stay_missing_guest_rows.py b/App/tests/test_stay_missing_guest_rows.py
+index 581e6b6..0e95ce1 100644
+--- a/App/tests/test_stay_missing_guest_rows.py
++++ b/App/tests/test_stay_missing_guest_rows.py
+@@ -90,7 +90,7 @@ def test_the_rows_are_numbered_after_the_guests_that_exist(stay):
+ 
+     assert host_i18n.translate("en", "stay.detail.guests.placeholder", n=2) in page.text
+     assert host_i18n.translate("en", "stay.detail.guests.placeholder", n=3) in page.text
+-    assert "Guest 1 — not registered yet" not in page.text
++    assert "Guest 1: not registered yet" not in page.text
+ 
+ 
+ def test_a_czech_host_reads_the_rows_in_czech(stay):
+@@ -98,8 +98,8 @@ def test_a_czech_host_reads_the_rows_in_czech(stay):
+ 
+     page = client.get(f"/reservations/{reservation['id']}?lang=cs")
+ 
+-    assert "Host č. 2 — zatím neregistrován" in page.text
+-    assert "Host č. 3 — zatím neregistrován" in page.text
++    assert "Host č. 2: zatím neregistrován" in page.text
++    assert "Host č. 3: zatím neregistrován" in page.text
+ 
+ 
+ def test_each_row_carries_both_ways_to_fill_it(stay):
+@@ -151,10 +151,10 @@ def test_an_unknown_headcount_guesses_nothing(stay):
+ 
+ def test_the_copy_is_in_both_dictionaries():
+     assert host_i18n.STRINGS["en"]["stay.detail.guests.placeholder"] == (
+-        "Guest %(n)s — not registered yet"
++        "Guest %(n)s: not registered yet"
+     )
+     assert host_i18n.STRINGS["cs"]["stay.detail.guests.placeholder"] == (
+-        "Host č. %(n)s — zatím neregistrován"
++        "Host č. %(n)s: zatím neregistrován"
+     )
+     assert host_i18n.STRINGS["en"]["stay.detail.guests.add_by_hand"] == "Add by hand"
+     assert host_i18n.STRINGS["cs"]["stay.detail.guests.add_by_hand"] == "Přidat ručně"
+diff --git a/App/tests/test_two_factor_lockout.py b/App/tests/test_two_factor_lockout.py
+index b7d88fe..1bcf203 100644
+--- a/App/tests/test_two_factor_lockout.py
++++ b/App/tests/test_two_factor_lockout.py
+@@ -293,10 +293,10 @@ def test_the_expired_notice_is_translated():
+ 
+ def test_both_error_copies_match_the_audited_wording():
+     assert host_i18n.translate("en", "auth.error.code_invalid") == (
+-        "That code didn't work. Codes change every 30 seconds — enter the one showing now."
++        "That code didn't work. Codes change every 30 seconds. Enter the one showing now."
+     )
+     assert host_i18n.translate("cs", "auth.error.code_invalid") == (
+-        "Kód nefunguje. Kódy se mění každých 30 vteřin — zadejte ten, který vidíte teď."
++        "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď."
+     )
+     assert host_i18n.translate("en", "auth.error.code_locked") == (
+         "Too many wrong codes. Wait 15 minutes, then log in again from the start."
+diff --git a/App/tests/test_two_factor_setup_page.py b/App/tests/test_two_factor_setup_page.py
+index 45b9f02..a60c450 100644
+--- a/App/tests/test_two_factor_setup_page.py
++++ b/App/tests/test_two_factor_setup_page.py
+@@ -195,10 +195,10 @@ def test_the_recovery_copy_is_the_wording_the_audit_signed_off(host):
+         "kódů vás jednou přihlásí. Uložte si je do správce hesel nebo si je vytiskněte."
+     )
+     assert host_i18n.translate("en", "account.2fa.recovery_once") == (
+-        "Save them before you leave this page — they can't be shown again."
++        "Save them before you leave this page. They can't be shown again."
+     )
+     assert host_i18n.translate("cs", "account.2fa.recovery_once") == (
+-        "Uložte si je, než stránku opustíte — znovu je zobrazit nelze."
++        "Uložte si je, než stránku opustíte. Znovu je zobrazit nelze."
+     )
+ 
+ 
+diff --git a/App/tests/test_users_disable_confirm.py b/App/tests/test_users_disable_confirm.py
+index 82ae06c..9be41d3 100644
+--- a/App/tests/test_users_disable_confirm.py
++++ b/App/tests/test_users_disable_confirm.py
+@@ -29,7 +29,7 @@ COPY = {
+     },
+     "cs": {
+         "lede": "Vytvořte soukromý pracovní prostor pro každého hostitele. Hesla jsou "
+-        "bezpečně uložená — lze je jen resetovat, nikdy zobrazit.",
++        "bezpečně uložená: lze je jen resetovat, nikdy zobrazit.",
+         "confirm": "Vypnout účet %(name)s? Nebude se moci přihlásit, dokud ho znovu nezapnete.",
+     },
+ }
+-- 
+2.34.1
+

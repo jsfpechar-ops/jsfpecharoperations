@@ -1,0 +1,1456 @@
+From 8a9016d2c9d04f33e868430de7486cac96531244 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sat, 3 Oct 2026 23:51:54 +0200
+Subject: [PATCH 11/34] WP04: Admin access to guest data
+
+---
+ App/app/access.py                         |  39 ++
+ App/app/auth.py                           | 133 +++++-
+ App/app/host_i18n.py                      |  32 ++
+ App/app/routes/admin.py                   |  98 ++++-
+ App/app/routes/admin_accounts.py          |  34 +-
+ App/app/routes/exports.py                 |  47 +++
+ App/app/routes/stay_fees.py               |   6 +
+ App/app/templates/base.html               |   4 +
+ App/app/templates/guest_form_admin.html   |  47 ++-
+ App/app/templates/housebook.html          |   2 +-
+ App/app/templates/reservation_detail.html |   4 +-
+ App/app/templates/settings.html           |   5 +
+ App/app/templates/submission_detail.html  |   2 +-
+ App/app/templates/users.html              |   2 +
+ App/app/templating.py                     |  25 ++
+ App/tests/test_access_audit.py            |  10 +-
+ App/tests/test_accounts.py                |   4 +-
+ App/tests/test_admin_guest_data.py        | 471 ++++++++++++++++++++++
+ App/tests/test_legal_acceptance.py        |   4 +-
+ 19 files changed, 950 insertions(+), 19 deletions(-)
+ create mode 100644 App/tests/test_admin_guest_data.py
+
+diff --git a/App/app/access.py b/App/app/access.py
+index 03e72ba..f340127 100644
+--- a/App/app/access.py
++++ b/App/app/access.py
+@@ -11,6 +11,45 @@ from fastapi import Request
+ from . import auth, db
+ 
+ 
++# What a masked document or visa number keeps visible while an admin supports
++# a host: enough to match a guest's word on the phone, not enough to copy.
++MASK_KEEP = 3
++MASK_CHAR = "\u2022"
++
++
++def identity_visible(request: Request, guest_id: int | None = None) -> bool:
++    """Whether this request may see a guest's identity data in full.
++
++    Identity data means document and visa numbers, signatures, passport
++    photos, and every export that carries them. The host always sees it. An
++    admin inside the host's workspace sees it only for a guest revealed (with
++    a logged reason) in this impersonation; with no ``guest_id`` (bulk
++    exports, the workspace ZIP) the answer while impersonating is always no.
++    """
++    if not auth.impersonating(request):
++        return True
++    if guest_id is None:
++        return False
++    return int(guest_id) in auth.revealed_guest_ids(request)
++
++
++def mask_identifier(value) -> str:
++    """A document or visa number with all but its last characters hidden."""
++    text = str(value or "")
++    if not text:
++        return ""
++    if len(text) <= MASK_KEEP:
++        return MASK_CHAR * 3
++    return MASK_CHAR * 3 + text[-MASK_KEEP:]
++
++
++def identifier_for(request: Request, guest_id, value) -> str:
++    """``value`` in full when the guest's identity is visible, masked otherwise."""
++    if identity_visible(request, guest_id):
++        return "" if value is None else str(value)
++    return mask_identifier(value)
++
++
+ def owner_id(request: Request) -> int | None:
+     workspace = auth.workspace_user(request)
+     return int(workspace["id"]) if workspace else None
+diff --git a/App/app/auth.py b/App/app/auth.py
+index ba5471f..00d8a2f 100644
+--- a/App/app/auth.py
++++ b/App/app/auth.py
+@@ -28,6 +28,12 @@ SESSION_COOKIE = "ubyhost_session"
+ SESSION_MAX_AGE = 60 * 60 * 12
+ SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
+ TWO_FACTOR_PENDING_MAX_AGE = 10 * 60
++# An admin inside a host's workspace is sent back to their own view after this
++# long. The start time travels in the signed session payload ("ast").
++IMPERSONATION_MAX_AGE = 60 * 60
++# Guests whose identity the admin revealed in this impersonation ("rv"). The
++# cap keeps the cookie small; a reveal past it drops the oldest entry.
++MAX_REVEALED_GUESTS = 50
+ _PBKDF2_ROUNDS = 600_000
+ _USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,31}$")
+ _dummy_password_hash: Optional[str] = None
+@@ -233,12 +239,25 @@ def issue_session(
+     session_version: int,
+     workspace_user_id: Optional[int] = None,
+     remember: bool = False,
++    impersonation_started_at: Optional[int] = None,
++    revealed_guest_ids: Optional[list[int]] = None,
+ ) -> str:
+-    payload = {"uid": int(user_id), "sv": int(session_version)}
++    payload: dict[str, Any] = {"uid": int(user_id), "sv": int(session_version)}
+     if remember:
+         payload["rm"] = 1
+     if workspace_user_id and workspace_user_id != user_id:
+         payload["as"] = int(workspace_user_id)
++        payload["ast"] = int(
++            impersonation_started_at
++            if impersonation_started_at is not None
++            else time.time()
++        )
++        if revealed_guest_ids:
++            unique: list[int] = []
++            for guest_id in revealed_guest_ids:
++                if int(guest_id) not in unique:
++                    unique.append(int(guest_id))
++            payload["rv"] = unique[-MAX_REVEALED_GUESTS:]
+     return _serializer().dumps(payload)
+ 
+ 
+@@ -294,6 +313,11 @@ def workspace_user(request: Request):
+     payload = getattr(request.state, "session_payload", {}) or {}
+     target_id = payload.get("as")
+     if target_id and account["role"] == "admin":
++        if impersonation_expired(payload):
++            # The admin is back in their own view from this request on;
++            # require_login writes the stop row and replaces the cookie.
++            request.state.impersonation_expired_for = int(target_id)
++            return account
+         target = db.query_one(
+             "SELECT * FROM user_account WHERE id = ? AND active = 1", (target_id,)
+         )
+@@ -302,6 +326,110 @@ def workspace_user(request: Request):
+     return account
+ 
+ 
++SUPPORT_REASON_MIN = 5
++SUPPORT_REASON_MAX = 300
++
++
++def support_reason(value) -> Optional[str]:
++    """A reason for opening a workspace or revealing a guest, or None.
++
++    Whitespace (including line breaks) is folded to single spaces so the
++    reason sits on one line of the audit detail. 5 to 300 characters.
++    """
++    text = " ".join(str(value or "").split())
++    if not SUPPORT_REASON_MIN <= len(text) <= SUPPORT_REASON_MAX:
++        return None
++    return text
++
++
++def impersonation_expired(payload: Optional[dict[str, Any]]) -> bool:
++    """True once an impersonation has run for IMPERSONATION_MAX_AGE.
++
++    A payload with "as" but no usable start time (one issued before the limit
++    existed) counts as expired, so every session inside a host's workspace has
++    a reason and a clock.
++    """
++    if not payload or not payload.get("as"):
++        return False
++    started = payload.get("ast")
++    if not isinstance(started, int) or isinstance(started, bool):
++        return True
++    return time.time() - started >= IMPERSONATION_MAX_AGE
++
++
++def impersonating(request: Request) -> bool:
++    """Whether the signed-in admin is looking at another account's workspace.
++
++    Cached on the request: templates ask once per guest row, and the answer
++    cannot change while one request is being served.
++    """
++    cached = getattr(request.state, "impersonating", None)
++    if cached is not None:
++        return cached
++    account = current_user(request)
++    workspace = workspace_user(request)
++    result = bool(account and workspace and workspace["id"] != account["id"])
++    if account is not None:
++        request.state.impersonating = result
++    return result
++
++
++def impersonation_started_at(request: Request) -> Optional[int]:
++    if not impersonating(request):
++        return None
++    payload = getattr(request.state, "session_payload", None) or {}
++    started = payload.get("ast")
++    return started if isinstance(started, int) else None
++
++
++def impersonation_minutes_left(request: Request) -> Optional[int]:
++    """Whole minutes left in this impersonation, rounded up; None outside one."""
++    started = impersonation_started_at(request)
++    if started is None:
++        return None
++    remaining = IMPERSONATION_MAX_AGE - (time.time() - started)
++    return max(0, int(-(-remaining // 60)))
++
++
++def revealed_guest_ids(request: Request) -> list[int]:
++    if not impersonating(request):
++        return []
++    payload = getattr(request.state, "session_payload", None) or {}
++    values = payload.get("rv") or []
++    if not isinstance(values, list):
++        return []
++    return [int(value) for value in values if isinstance(value, int)]
++
++
++def end_expired_impersonation(request: Request) -> Optional[RedirectResponse]:
++    """Send an admin whose impersonation ran out back to their own view.
++
++    Writes ``impersonation_stopped`` (detail ``expired``) to the host's
++    workspace and to the admin's own, and swaps the cookie for a plain one.
++    """
++    target_id = getattr(request.state, "impersonation_expired_for", None)
++    account = current_user(request)
++    if not target_id or not account:
++        return None
++    request.state.impersonation_expired_for = None
++    db.set_current_actor(account["id"], account["username"], impersonating=True)
++    for owner_id in dict.fromkeys((int(target_id), int(account["id"]))):
++        db.audit(
++            "impersonation_stopped",
++            "expired",
++            actor=account["username"],
++            owner_user_id=owner_id,
++        )
++    notice = host_i18n.translate(
++        host_i18n.lang_from_request(request), "impersonation.expired"
++    )
++    response = RedirectResponse(
++        f"/admin/users?msg={quote(notice)}", status_code=303
++    )
++    attach_session(response, issue_session(account["id"], account["session_version"]))
++    return response
++
++
+ def session_remembers(request: Request) -> bool:
+     """Whether the session in this request was started with "Remember me".
+ 
+@@ -357,6 +485,9 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
+     ):
+         return RedirectResponse("/account/2fa/setup", status_code=303)
+     workspace = workspace_user(request)
++    expired = end_expired_impersonation(request)
++    if expired is not None:
++        return expired
+     # Acceptance evidence belongs to the real account, never to the workspace an
+     # admin is previewing, so an impersonating admin is not sent to the screen.
+     impersonating = bool(workspace and workspace["id"] != account["id"])
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 763d9be..aa6f097 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -613,6 +613,22 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "shortcuts.open_row": "Open selected row",
+         "impersonation.previewing": "Previewing workspace",
+         "impersonation.exit": "Exit preview",
++        "impersonation.minutes_left": "%(count)s minutes left",
++        "impersonation.minutes_left.one": "%(count)s minute left",
++        "impersonation.minutes_left.few": "%(count)s minutes left",
++        "impersonation.expired": "The workspace preview ended after 60 minutes. You are back in your own account.",
++        "identity.hidden": "Hidden while supporting",
++        "identity.hidden_help": "Document and visa numbers show only their last 3 characters; signatures, passport photos and identity downloads are hidden. Reveal this guest only if the support request needs it. The reveal and its reason are written to the host's audit log.",
++        "identity.reveal": "Reveal",
++        "identity.reveal_reason": "Reason for revealing this guest (5 to 300 characters)",
++        "flash.identity.revealed": "Identity revealed for this guest until the preview ends. The host's audit log records it.",
++        "flash.error.identity_hidden_export": "Hidden while supporting: downloads with guest documents, signatures or photos are blocked in a host's workspace.",
++        "flash.error.identity_hidden_guest": "Hidden while supporting: reveal this guest's identity first.",
++        "flash.error.support_reason": "Give a reason of %(min)s to %(max)s characters.",
++        "users.menu.open_workspace_reason": "Reason for opening (5 to 300 characters):",
++        "settings.audit.filter_label": "Show",
++        "settings.audit.filter_all": "All activity",
++        "settings.audit.filter_support": "Support sessions",
+         "notification.open_stay": "Open the stay",
+         "notification.open_property": "Open the property",
+         "notification.more": "%(n)s more alerts — see Overview",
+@@ -2043,6 +2059,22 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "shortcuts.open_row": "Otevřít vybraný řádek",
+         "impersonation.previewing": "Náhled pracovního prostoru",
+         "impersonation.exit": "Ukončit náhled",
++        "impersonation.minutes_left": "zbývá %(count)s minut",
++        "impersonation.minutes_left.one": "zbývá %(count)s minuta",
++        "impersonation.minutes_left.few": "zbývají %(count)s minuty",
++        "impersonation.expired": "Náhled pracovního prostoru po 60 minutách skončil. Jste zpět ve svém účtu.",
++        "identity.hidden": "Skryto během podpory",
++        "identity.hidden_help": "U čísel dokladů a víz jsou vidět jen poslední 3 znaky; podpisy, fotografie pasů a stahování s doklady jsou skryté. Hosta odkryjte, jen pokud to požadavek na podporu vyžaduje. Odkrytí i jeho důvod se zapíší do auditního záznamu hostitele.",
++        "identity.reveal": "Odkrýt",
++        "identity.reveal_reason": "Důvod odkrytí tohoto hosta (5 až 300 znaků)",
++        "flash.identity.revealed": "Údaje tohoto hosta jsou odkryté až do konce náhledu. V auditním záznamu hostitele je to zapsáno.",
++        "flash.error.identity_hidden_export": "Skryto během podpory: stahování s doklady, podpisy nebo fotografiemi hostů je v pracovním prostoru hostitele zablokované.",
++        "flash.error.identity_hidden_guest": "Skryto během podpory: nejprve odkryjte údaje tohoto hosta.",
++        "flash.error.support_reason": "Uveďte důvod o délce %(min)s až %(max)s znaků.",
++        "users.menu.open_workspace_reason": "Důvod otevření (5 až 300 znaků):",
++        "settings.audit.filter_label": "Zobrazit",
++        "settings.audit.filter_all": "Veškerá aktivita",
++        "settings.audit.filter_support": "Relace podpory",
+         "notification.open_stay": "Otevřít pobyt",
+         "notification.open_property": "Otevřít ubytování",
+         "notification.more": "Další upozornění: %(n)s — zobrazit v Přehledu",
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index e89493a..b5abfe9 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -1882,6 +1882,12 @@ def _render_host_guest_form(
+     *,
+     editing: bool,
+ ):
++    # A guest not yet saved has nothing stored to hide; what the form echoes
++    # back is what the person at the keyboard just typed.
++    identity_hidden = bool(
++        editing and guest and guest["id"]
++        and not access.identity_visible(request, int(guest["id"]))
++    )
+     return render(
+         request,
+         "guest_form_admin.html",
+@@ -1890,7 +1896,8 @@ def _render_host_guest_form(
+             "guest": guest,
+             "issues": issues,
+             "editing": editing,
+-            "signature_value": _signature_for_display(guest),
++            "identity_hidden": identity_hidden,
++            "signature_value": "" if identity_hidden else _signature_for_display(guest),
+             "doc_types": validation.DOC_TYPES,
+             "selected_doc_type": (
+                 stay_fee.doc_type_of(guest)
+@@ -2028,6 +2035,12 @@ async def guest_update(guest_id: int, request: Request):
+     form = await request.form()
+     payload = _guest_payload(form)
+     signature = _guest_signature_from_form(form, guest)
++    if not access.identity_visible(request, guest_id):
++        # The form showed these masked and without inputs, so the stored values
++        # stand: a masked number must never be saved over the real one.
++        payload["doc_number"] = guest["doc_number"]
++        payload["visa_number"] = guest["visa_number"]
++        signature = guest["signature_png"] or ""
+     preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
+     issues = reporting.guest_issues(preview, reservation)
+     if validation.errors_only(issues):
+@@ -2179,6 +2192,13 @@ def guest_passport_photo(guest_id: int, request: Request):
+     guest = access.guest(request, guest_id)
+     if not guest or not reporting.guest_has_passport_photo(guest):
+         return Response("Not found.", status_code=404)
++    if not access.identity_visible(request, guest_id):
++        return Response(
++            _flash(request, "identity.hidden"),
++            status_code=403,
++            media_type="text/plain",
++            headers={"Cache-Control": "no-store"},
++        )
+     payload = passport_photos.read_photo(guest_id)
+     if not payload:
+         return Response("Not found.", status_code=404)
+@@ -2194,6 +2214,57 @@ def guest_passport_photo(guest_id: int, request: Request):
+     )
+ 
+ 
++@router.post("/guests/{guest_id}/reveal-identity")
++async def guest_reveal_identity(guest_id: int, request: Request):
++    """Show one guest's identity data to a supporting admin, with a logged reason.
++
++    The reveal lasts for the rest of this impersonation (the guest id joins
++    the session payload) and is written to the host's own audit.
++    """
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    guest = access.guest(request, guest_id)
++    if not guest:
++        return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
++    form = await request.form()
++    return_to = security.safe_local_path(
++        str(form.get("return_to") or ""), f"/guests/{guest_id}"
++    )
++    if not auth.impersonating(request):
++        return _back(return_to)
++    reason = auth.support_reason(_form_str(form, "reason"))
++    if reason is None:
++        return _back(
++            return_to,
++            err=_flash(
++                request,
++                "flash.error.support_reason",
++                min=auth.SUPPORT_REASON_MIN,
++                max=auth.SUPPORT_REASON_MAX,
++            ),
++        )
++    account = auth.current_user(request)
++    workspace = auth.workspace_user(request)
++    response = _back(return_to, msg=_flash(request, "flash.identity.revealed"))
++    auth.attach_session(
++        response,
++        auth.issue_session(
++            account["id"],
++            account["session_version"],
++            workspace_user_id=workspace["id"],
++            impersonation_started_at=auth.impersonation_started_at(request),
++            revealed_guest_ids=[*auth.revealed_guest_ids(request), guest_id],
++        ),
++    )
++    db.audit(
++        "guest_identity_revealed",
++        f"guest_id={guest_id} reason={reason}",
++        owner_user_id=workspace["id"],
++    )
++    return response
++
++
+ @router.post("/guests/{guest_id}/archive")
+ async def guest_archive(guest_id: int, request: Request):
+     guard = auth.require_login(request)
+@@ -2476,11 +2547,27 @@ def dismiss_alert(alert_id: int, request: Request):
+     return RedirectResponse(_redirect_path_from_referer(request), status_code=303)
+ 
+ 
++SUPPORT_AUDIT_ACTIONS = (
++    "impersonation_started",
++    "impersonation_stopped",
++    "guest_identity_revealed",
++)
++
++
+ @router.get("/settings")
+ def settings_view(request: Request):
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    # "Support sessions": when an admin opened this workspace, left it or ran
++    # out of time, revealed a guest, and everything done in between.
++    audit_filter = "support" if request.query_params.get("audit") == "support" else ""
++    audit_where = ""
++    audit_params: tuple = ()
++    if audit_filter:
++        marks = ", ".join("?" for _ in SUPPORT_AUDIT_ACTIONS)
++        audit_where = f" AND (a.impersonator_user_id IS NOT NULL OR a.action IN ({marks}))"
++        audit_params = SUPPORT_AUDIT_ACTIONS
+     return render(
+         request,
+         "settings.html",
+@@ -2494,13 +2581,14 @@ def settings_view(request: Request):
+             "audit": db.query(
+                 "SELECT a.*, i.username AS impersonator_username FROM audit a "
+                 "LEFT JOIN user_account i ON i.id = a.impersonator_user_id "
+-                "WHERE a.owner_user_id IS ? ORDER BY a.id DESC LIMIT 500",
+-                (access.owner_id(request),),
++                f"WHERE a.owner_user_id IS ?{audit_where} ORDER BY a.id DESC LIMIT 500",
++                (access.owner_id(request), *audit_params),
+             ),
+             "audit_count": db.query_one(
+-                "SELECT COUNT(*) AS n FROM audit WHERE owner_user_id IS ?",
+-                (access.owner_id(request),),
++                f"SELECT COUNT(*) AS n FROM audit a WHERE a.owner_user_id IS ?{audit_where}",
++                (access.owner_id(request), *audit_params),
+             )["n"],
++            "audit_filter": audit_filter,
+             "poll_minutes": config.ICAL_POLL_MINUTES,
+             "sweep_minutes": config.SUBMIT_SWEEP_MINUTES,
+             "mail_backend": mail.backend_name(),
+diff --git a/App/app/routes/admin_accounts.py b/App/app/routes/admin_accounts.py
+index 4c1fa23..3ed97ea 100644
+--- a/App/app/routes/admin_accounts.py
++++ b/App/app/routes/admin_accounts.py
+@@ -14,6 +14,7 @@ from starlette.background import BackgroundTask
+ 
+ from .. import (
+     acceptance,
++    access,
+     auth,
+     config,
+     db,
+@@ -521,13 +522,25 @@ async def user_password_reset(user_id: int, request: Request):
+ 
+ 
+ @router.post("/admin/users/{user_id}/impersonate")
+-def user_impersonate(user_id: int, request: Request):
++async def user_impersonate(user_id: int, request: Request):
+     account, guard = _require_admin(request)
+     target = db.query_one(
+         "SELECT * FROM user_account WHERE id = ? AND active = 1", (user_id,)
+     )
+     if guard or not target:
+         return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
++    form = await request.form()
++    reason = auth.support_reason(_form_str(form, "reason"))
++    if reason is None:
++        return _back(
++            "/admin/users",
++            err=_flash(
++                request,
++                "flash.error.support_reason",
++                min=auth.SUPPORT_REASON_MIN,
++                max=auth.SUPPORT_REASON_MAX,
++            ),
++        )
+     response = RedirectResponse("/", status_code=303)
+     auth.attach_session(
+         response,
+@@ -535,7 +548,7 @@ def user_impersonate(user_id: int, request: Request):
+     )
+     db.audit(
+         "impersonation_started",
+-        f"admin={account['username']}",
++        f"admin={account['username']} reason={reason}",
+         actor=account["username"],
+         owner_user_id=user_id,
+     )
+@@ -575,9 +588,21 @@ def stop_impersonating(request: Request):
+     account, guard = _require_admin(request)
+     if guard:
+         return guard
++    workspace = auth.workspace_user(request)
+     response = RedirectResponse("/admin/users", status_code=303)
+     auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
+-    db.audit("impersonation_stopped", actor=account["username"], owner_user_id=account["id"])
++    # The host sees the end of a support session in their own Settings audit,
++    # not only the start; the admin's own workspace keeps its copy too.
++    owners = [account["id"]]
++    if workspace and workspace["id"] != account["id"]:
++        owners.insert(0, workspace["id"])
++    for owner_id in owners:
++        db.audit(
++            "impersonation_stopped",
++            "exit",
++            actor=account["username"],
++            owner_user_id=owner_id,
++        )
+     return response
+ 
+ 
+@@ -666,6 +691,9 @@ def user_workspace_export(user_id: int, request: Request):
+     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+     if not target:
+         return _back("/admin/users", err=_flash(request, "flash.error.no_such_user"))
++    if not access.identity_visible(request):
++        # Inside a host's workspace the ZIP is as blocked here as in Settings.
++        return _back("/", err=_flash(request, "flash.error.identity_hidden_export"))
+     path = workspace_export.build_workspace_zip(user_id)
+     db.audit(
+         "workspace_exported",
+diff --git a/App/app/routes/exports.py b/App/app/routes/exports.py
+index 7a7a65f..c698a4d 100644
+--- a/App/app/routes/exports.py
++++ b/App/app/routes/exports.py
+@@ -43,6 +43,23 @@ router = APIRouter()
+ ARCHIVED_TYPES = ("all", "stays", "properties", "housebook", "entities")
+ 
+ 
++def _identity_hidden(request: Request, back_path: str, guest_id: Optional[int] = None):
++    """A redirect with the reason when this download would show hidden identity data.
++
++    While an admin is inside a host's workspace, a download that carries
++    document or visa numbers, signatures or passport images is refused: a
++    bulk one always, a single guest's until that guest is revealed.
++    """
++    if access.identity_visible(request, guest_id):
++        return None
++    key = (
++        "flash.error.identity_hidden_guest"
++        if guest_id is not None
++        else "flash.error.identity_hidden_export"
++    )
++    return _back(back_path, err=_flash(request, key))
++
++
+ @router.get("/reservations.csv")
+ def reservations_export(request: Request):
+     guard = auth.require_login(request)
+@@ -75,6 +92,9 @@ def guest_form_pdf(guest_id: int, request: Request):
+         return guard
+     if not access.guest(request, guest_id):
+         return _back("/reservations", err=_flash(request, "flash.error.no_such_guest"))
++    hidden = _identity_hidden(request, f"/guests/{guest_id}", guest_id)
++    if hidden:
++        return hidden
+     try:
+         pdf = housebook.registration_form_pdf(guest_id)
+     except ValueError:
+@@ -95,6 +115,9 @@ def guest_export_json(guest_id: int, request: Request):
+         return guard
+     if not access.guest(request, guest_id):
+         return Response("Not found.", status_code=404, media_type="text/plain")
++    hidden = _identity_hidden(request, f"/guests/{guest_id}", guest_id)
++    if hidden:
++        return hidden
+     bundle = dsr.guest_export(guest_id)
+     if bundle is None:
+         return Response("Not found.", status_code=404, media_type="text/plain")
+@@ -142,6 +165,11 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    # A Doručenka is the police's own PDF of the filed records; it cannot be
++    # masked, so it is held back while an admin is supporting the host.
++    hidden = _identity_hidden(request, "/submissions")
++    if hidden:
++        return hidden
+     owner_id = access.owner_id(request)
+     date_from = _query_date(request, "from")
+     date_to = _query_date(request, "to")
+@@ -206,6 +234,9 @@ def submission_receipt(submission_id: int, request: Request):
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
++    if hidden:
++        return hidden
+     owned = access.submission(request, submission_id)
+     row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
+     if owned:
+@@ -218,6 +249,9 @@ def submission_errors(submission_id: int, request: Request):
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
++    if hidden:
++        return hidden
+     owned = access.submission(request, submission_id)
+     row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
+     if owned:
+@@ -232,6 +266,10 @@ def submission_xml(submission_id: int, which: str, request: Request):
+         return guard
+     if which not in ("request", "response"):
+         return Response("Unknown document.", status_code=404, media_type="text/plain")
++    # The request envelope carries every reported guest's document number.
++    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
++    if hidden:
++        return hidden
+     owned = access.submission(request, submission_id)
+     if not owned:
+         return Response("Not found.", status_code=404, media_type="text/plain")
+@@ -247,6 +285,9 @@ def housebook_download(request: Request):
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    hidden = _identity_hidden(request, "/housebook")
++    if hidden:
++        return hidden
+     stamp = datetime.now().strftime("%Y%m%d")
+     rows = housebook.housebook_rows(
+         _query_int(request, "apartment"),
+@@ -267,6 +308,9 @@ def housebook_pdfs_download(request: Request, background_tasks: BackgroundTasks)
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    hidden = _identity_hidden(request, "/housebook")
++    if hidden:
++        return hidden
+     rows = housebook.housebook_rows(
+         _query_int(request, "apartment"),
+         _query_date(request, "from") or None,
+@@ -303,6 +347,9 @@ def settings_workspace_export(request: Request, background_tasks: BackgroundTask
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    hidden = _identity_hidden(request, "/settings")
++    if hidden:
++        return hidden
+     owner_id = access.owner_id(request)
+     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+     if not account or not account["deletion_due_at"]:
+diff --git a/App/app/routes/stay_fees.py b/App/app/routes/stay_fees.py
+index 320b74a..707c1df 100644
+--- a/App/app/routes/stay_fees.py
++++ b/App/app/routes/stay_fees.py
+@@ -390,6 +390,12 @@ def stay_fee_csv_download(apartment_id: int, request: Request):
+     guard = auth.require_login(request)
+     if guard:
+         return guard
++    # The register CSV lists every guest's document number.
++    if not access.identity_visible(request):
++        return _back(
++            f"/stay-fees/{apartment_id}",
++            err=_flash(request, "flash.error.identity_hidden_export"),
++        )
+ 
+     today = claim.prague_today()
+     default_month = _default_month(today)
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index 985146f..46c2a0e 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -122,6 +122,10 @@
+         <span class="impersonation-eyebrow">{{ t('impersonation.previewing') }}</span>
+         <strong>{{ workspace_user.display_name or workspace_user.username }}</strong>
+         <span class="impersonation-handle">@{{ workspace_user.username }}</span>
++        {% set support_minutes = impersonation_minutes_left() %}
++        {% if support_minutes is not none %}
++          <span class="impersonation-handle" data-impersonation-minutes="{{ support_minutes }}">{{ tp('impersonation.minutes_left', support_minutes) }}</span>
++        {% endif %}
+       </div>
+       <form method="post" action="/admin/stop-impersonating">
+         <button class="btn small" type="submit">{{ t('impersonation.exit') }}</button>
+diff --git a/App/app/templates/guest_form_admin.html b/App/app/templates/guest_form_admin.html
+index bf29df0..ae2107c 100644
+--- a/App/app/templates/guest_form_admin.html
++++ b/App/app/templates/guest_form_admin.html
+@@ -9,6 +9,15 @@
+   {% endfor %}
+ {% endmacro %}
+ {% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
++{# While an admin supports the host, identity data waits behind a logged
++   reveal. The reveal form renders after the main form (forms cannot nest);
++   the reason field and the buttons join it through the form attribute. #}
++{% macro identity_placeholder() %}
++  <div class="identity-hidden" data-identity-hidden>
++    <p class="small muted" style="margin:0 0 8px"><strong>{{ t('identity.hidden') }}</strong></p>
++    <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
++  </div>
++{% endmacro %}
+ {% macro field_val(name) %}{{ guest[name] if guest and guest[name] is not none else '' }}{% endmacro %}
+ 
+ {% block content %}
+@@ -43,6 +52,21 @@
+   </div>
+ {% endif %}
+ 
++{% if identity_hidden %}
++  <div class="banner warning" id="identity-hidden-note" role="status">
++    <div class="grow">
++      <strong>{{ t('identity.hidden') }}</strong>
++      <small>{{ t('identity.hidden_help') }}</small>
++      <div class="field" style="margin:10px 0 0">
++        <label for="reveal-reason">{{ t('identity.reveal_reason') }}</label>
++        <input type="text" id="reveal-reason" name="reason" form="reveal-identity"
++               minlength="5" maxlength="300" required>
++      </div>
++    </div>
++    <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
++  </div>
++{% endif %}
++
+ <form method="post" action="{{ ('/guests/' ~ guest.id) if editing else ('/reservations/' ~ reservation.id ~ '/guests') }}">
+   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+   <div class="panel">
+@@ -97,15 +121,23 @@
+       </div>
+       <div class="field">
+         <label for="doc_number">{{ t('guest.admin.document') }}</label>
++        {% if identity_hidden %}
++        <input type="text" id="doc_number" value="{{ guest_identifier(guest.doc_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
++        {% else %}
+         <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
+                value="{{ field_val('doc_number') }}">
++        {% endif %}
+         <div class="hint">{{ t('guest.admin.document_hint') }}</div>
+         {{ err_for('doc_number') }}
+       </div>
+       <div class="field">
+         <label for="visa_number">{{ t('guest.admin.visa') }} <span class="opt">{{ t('common.optional') }}</span></label>
++        {% if identity_hidden %}
++        <input type="text" id="visa_number" value="{{ guest_identifier(guest.visa_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
++        {% else %}
+         <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
+                value="{{ field_val('visa_number') }}">
++        {% endif %}
+         {{ err_for('visa_number') }}
+       </div>
+     </div>
+@@ -175,7 +207,9 @@
+ 
+   {% if editing and needs_verification %}
+   <div class="panel verify-panel tight">
+-    {% if has_passport_photo %}
++    {% if has_passport_photo and identity_hidden %}
++      {{ identity_placeholder() }}
++    {% elif has_passport_photo %}
+       <div class="passport-preview compact">
+         {% if passport_is_pdf %}
+           <iframe class="passport-preview-pdf" src="/guests/{{ guest.id }}/passport-photo"
+@@ -205,6 +239,9 @@
+ 
+   <div class="panel">
+     <h2 style="margin-top:0">{{ t('host.signature_title') }}</h2>
++    {% if identity_hidden %}
++    {{ identity_placeholder() }}
++    {% else %}
+     <p class="small muted">{{ t('host.signature_help') }}</p>
+     <div class="signature-pad">
+       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('host.signature_title') }}"
+@@ -218,6 +255,7 @@
+     </div>
+     <input type="hidden" id="signature" name="signature"
+            value="{{ signature_value }}">
++    {% endif %}
+     {{ err_for('signature') }}
+   </div>
+ 
+@@ -238,6 +276,13 @@
+   </div>
+ </form>
+ 
++{% if identity_hidden %}
++<form id="reveal-identity" method="post" action="/guests/{{ guest.id }}/reveal-identity">
++  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
++  <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
++</form>
++{% endif %}
++
+ {% if editing and needs_verification %}
+ <form id="verify-{{ guest.id }}" method="post" action="/guests/{{ guest.id }}/verify-identity">
+   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+diff --git a/App/app/templates/housebook.html b/App/app/templates/housebook.html
+index 4ed8d67..0b4e317 100644
+--- a/App/app/templates/housebook.html
++++ b/App/app/templates/housebook.html
+@@ -57,7 +57,7 @@
+           <span class="small">{{ row.first_name }}</span></td>
+         <td class="nowrap small" data-label="{{ t('housebook.born') }}">{{ row.birth_date }}</td>
+         <td class="small" data-label="{{ t('housebook.nationality') }}">{{ row.nationality }}</td>
+-        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ row.doc_number }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=row.visa_number) }}{% endif %}</td>
++        <td class="mono small" data-label="{{ t('housebook.document') }}">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</td>
+         <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
+         <td class="small col-purpose" data-label="{{ t('housebook.purpose') }}">{{ row.purpose }}</td>
+         <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="pill green">{{ t('housebook.signed_yes') }}</span>
+diff --git a/App/app/templates/reservation_detail.html b/App/app/templates/reservation_detail.html
+index 8a6bdc9..d233374 100644
+--- a/App/app/templates/reservation_detail.html
++++ b/App/app/templates/reservation_detail.html
+@@ -201,8 +201,8 @@
+         </div>
+         <div>
+           <dt>{{ t('stay.detail.guests.document') }}</dt>
+-          <dd><span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ (guest.doc_type or '') %}{{ t(doc_key) if t(doc_key) != doc_key else (guest.doc_type or '—') }} </span><span class="mono">{{ guest.doc_number or '—' }}{% if guest.visa_number %}
+-            <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest.visa_number) }}</span>{% endif %}</span></dd>
++          <dd><span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ (guest.doc_type or '') %}{{ t(doc_key) if t(doc_key) != doc_key else (guest.doc_type or '—') }} </span><span class="mono">{{ guest_identifier(guest.doc_number, guest.id) or '—' }}{% if guest.visa_number %}
++            <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest_identifier(guest.visa_number, guest.id)) }}</span>{% endif %}</span></dd>
+         </div>
+         <div>
+           <dt>{{ t('stay.detail.guests.purpose') }}</dt>
+diff --git a/App/app/templates/settings.html b/App/app/templates/settings.html
+index dbb2e7c..1a15018 100644
+--- a/App/app/templates/settings.html
++++ b/App/app/templates/settings.html
+@@ -182,6 +182,11 @@
+       <summary>{{ t('settings.nav.audit') }}</summary>
+       <p class="small muted">{{ t('settings.audit.help') }}</p>
+       <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
++      <p class="small" data-audit-filter>{{ t('settings.audit.filter_label') }}:
++        {% if audit_filter %}<a href="/settings#settings-audit">{{ t('settings.audit.filter_all') }}</a>{% else %}<strong aria-current="true">{{ t('settings.audit.filter_all') }}</strong>{% endif %}
++        &middot;
++        {% if audit_filter == 'support' %}<strong aria-current="true">{{ t('settings.audit.filter_support') }}</strong>{% else %}<a href="/settings?audit=support#settings-audit">{{ t('settings.audit.filter_support') }}</a>{% endif %}
++      </p>
+       <div class="scroll-x">
+         <table class="table-cards">
+           <thead><tr><th>{{ t('settings.audit.when') }}</th><th>{{ t('settings.audit.who') }}</th><th>{{ t('settings.audit.action') }}</th><th>{{ t('settings.audit.detail') }}</th></tr></thead>
+diff --git a/App/app/templates/submission_detail.html b/App/app/templates/submission_detail.html
+index 023274d..511c7c8 100644
+--- a/App/app/templates/submission_detail.html
++++ b/App/app/templates/submission_detail.html
+@@ -103,7 +103,7 @@
+         <td data-label="{{ t('reports.detail.guest') }}">
+           <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
+           {% if guest.restricted_at %}<span class="pill amber">{{ t('guest.restricted_badge') }}</span>{% endif %}
+-          <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest.doc_number }}</div>
++          <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest_identifier(guest.doc_number, guest.id) }}</div>
+         </td>
+         <td data-label="{{ t('reports.detail.result') }}">
+           {% if guest.result == 'duplicate' %}
+diff --git a/App/app/templates/users.html b/App/app/templates/users.html
+index b4f8849..8a2fdae 100644
+--- a/App/app/templates/users.html
++++ b/App/app/templates/users.html
+@@ -53,6 +53,8 @@
+               {% if user.id != current_user.id %}
+                 {{ row_menu_begin(t('users.menu.aria')) }}
+                   <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
++                    <label class="small muted" for="support-reason-{{ user.id }}">{{ t('users.menu.open_workspace_reason') }}</label>
++                    <input type="text" id="support-reason-{{ user.id }}" name="reason" minlength="5" maxlength="300" required>
+                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.open_workspace') }}</button>
+                   </form>
+                   <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form"{% if user.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=user.display_name or user.username) }}"{% endif %}>
+diff --git a/App/app/templating.py b/App/app/templating.py
+index b9e0e95..6e1d66a 100644
+--- a/App/app/templating.py
++++ b/App/app/templating.py
+@@ -131,6 +131,28 @@ def _template_plural(context, base: str, n: int, **kwargs) -> str:
+     return host_i18n.translate_plural(lang, base, n, **kwargs)
+ 
+ 
++@pass_context
++def _template_identity_visible(context, guest_id=None) -> bool:
++    """``access.identity_visible`` for templates; see there."""
++    request = context.get("request")
++    return access.identity_visible(request, guest_id) if request else False
++
++
++@pass_context
++def _template_guest_identifier(context, value, guest_id) -> str:
++    """A document or visa number as this request may see it."""
++    request = context.get("request")
++    if request is None:
++        return access.mask_identifier(value)
++    return access.identifier_for(request, guest_id, value)
++
++
++@pass_context
++def _template_impersonation_minutes_left(context):
++    request = context.get("request")
++    return auth.impersonation_minutes_left(request) if request else None
++
++
+ @pass_context
+ def _template_time_left(context, check_in) -> str:
+     """The deadline countdown, in the host's language.
+@@ -285,6 +307,9 @@ templates.env.filters["from_json"] = _from_json
+ templates.env.filters["legal_links"] = _legal_links
+ templates.env.globals["t"] = _template_translate
+ templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
++templates.env.globals["identity_visible"] = _template_identity_visible
++templates.env.globals["guest_identifier"] = _template_guest_identifier
++templates.env.globals["impersonation_minutes_left"] = _template_impersonation_minutes_left
+ templates.env.globals.update(
+     app_version=__version__,
+     operator=operator.details,
+diff --git a/App/tests/test_access_audit.py b/App/tests/test_access_audit.py
+index e2257ae..5629934 100644
+--- a/App/tests/test_access_audit.py
++++ b/App/tests/test_access_audit.py
+@@ -175,14 +175,18 @@ def test_an_impersonated_export_names_the_admin_and_the_workspace():
+     try:
+         client = _login("audit-admin")
+         started = client.post(
+-            f"/admin/users/{owner}/impersonate", follow_redirects=False
++            f"/admin/users/{owner}/impersonate",
++            data={"reason": "Support ticket 123"},
++            follow_redirects=False
+         )
+         assert started.status_code == 303
+-        response = client.get(f"/submissions/{submission}/receipt.pdf")
++        # The Doručenka is held back while supporting (WP04); a stays export
++        # carries no identity data and still shows who acted.
++        response = client.get("/reservations.csv?from=2026-01-01&to=2026-12-31")
+         assert response.status_code == 200
+ 
+         row = db.query_one(
+-            "SELECT * FROM audit WHERE action = 'export_submission_pdf' "
++            "SELECT * FROM audit WHERE action = 'export_reservations_csv' "
+             "AND owner_user_id = ? ORDER BY id DESC LIMIT 1",
+             (owner,),
+         )
+diff --git a/App/tests/test_accounts.py b/App/tests/test_accounts.py
+index 0af3723..730b5a2 100644
+--- a/App/tests/test_accounts.py
++++ b/App/tests/test_accounts.py
+@@ -256,7 +256,9 @@ def test_admin_can_open_a_host_workspace_without_knowing_the_password():
+         assert PASSWORD not in users.text
+ 
+         response = admin.post(
+-            f"/admin/users/{host_id}/impersonate", follow_redirects=False
++            f"/admin/users/{host_id}/impersonate",
++            data={"reason": "Support ticket 123"},
++            follow_redirects=False
+         )
+         assert response.status_code == 303
+         workspace = admin.get("/")
+diff --git a/App/tests/test_admin_guest_data.py b/App/tests/test_admin_guest_data.py
+new file mode 100644
+index 0000000..17ae981
+--- /dev/null
++++ b/App/tests/test_admin_guest_data.py
+@@ -0,0 +1,471 @@
++"""WP04: an admin inside a host's workspace sees guest identity only after a logged reveal.
++
++Covers the reason on opening a workspace, the 60-minute limit, the stop row in
++the host's audit, masking on every page and download that carries document or
++visa numbers, signatures or passport photos, the per-guest reveal, and the
++Support sessions filter in the host's Settings.
++"""
++from __future__ import annotations
++
++import base64
++import time
++from urllib.parse import unquote
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import access, auth, db, demo, host_i18n, passport_photos
++from app.main import app
++
++PASSWORD = "Secure-Password-123"
++PNG_BYTES = base64.b64decode(
++    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
++    "DQottAAAAABJRU5ErkJggg=="
++)
++DOC_A = "PA1234567"
++VISA_A = "VZ7654321"
++DOC_B = "PB9876543"
++REASON = "Host ticket 42: check the stay"
++
++
++def _cleanup():
++    for row in db.query("SELECT id FROM user_account WHERE username LIKE 'wp04-%'"):
++        user_id = row["id"]
++        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
++        for apartment in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (user_id,)):
++            apartment_id = apartment["id"]
++            for reservation in db.query(
++                "SELECT id FROM reservation WHERE apartment_id = ?", (apartment_id,)
++            ):
++                for guest in db.query(
++                    "SELECT id FROM guest WHERE reservation_id = ?", (reservation["id"],)
++                ):
++                    passport_photos.delete_photo(guest["id"])
++                db.execute("DELETE FROM guest WHERE reservation_id = ?", (reservation["id"],))
++            db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment_id,))
++            db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
++            db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
++        db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (user_id,))
++        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
++
++
++@pytest.fixture()
++def seeded():
++    db.init_db()
++    _cleanup()
++    owner = auth.create_account("wp04-host", PASSWORD, "WP04 Host", must_change_password=False)
++    admin = auth.create_account(
++        "wp04-admin", PASSWORD, "WP04 Admin", role="admin", must_change_password=False
++    )
++    now = db.utcnow()
++    entity = db.insert(
++        "legal_entity", {"name": "WP04 entity", "owner_user_id": owner, "created_at": now}
++    )
++    apartment = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity,
++            "owner_user_id": owner,
++            "internal_name": "WP04 flat",
++            "permalink_token": "wp04tok",
++            "automation_mode": "manual",
++            "default_purpose": "10",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    reservation = db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment,
++            "uid": "wp04-stay",
++            "date_from": "2026-01-01",
++            "date_to": "2026-01-03",
++            "status": "active",
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++
++    def guest(surname, doc, visa=None):
++        return db.insert(
++            "guest",
++            {
++                "reservation_id": reservation,
++                "surname": surname,
++                "first_name": "Jane",
++                "birth_date": "01011990",
++                "nationality": "GBR",
++                "doc_number": doc,
++                "visa_number": visa,
++                "purpose": "10",
++                "entered_by": "guest",
++                "signature_png": demo.DEMO_SIGNATURE,
++                "signed_at": now,
++                "passport_photo_at": now,
++                "created_at": now,
++                "updated_at": now,
++            },
++        )
++
++    guest_a = guest("Alpha", DOC_A, VISA_A)
++    guest_b = guest("Bravo", DOC_B)
++    passport_photos.save_photo(guest_a, PNG_BYTES, "image/png")
++    passport_photos.save_photo(guest_b, PNG_BYTES, "image/png")
++    submission = db.insert(
++        "submission",
++        {
++            "apartment_id": apartment,
++            "created_at": now,
++            "state": "ok",
++            "guest_ids": f"[{guest_a}, {guest_b}]",
++            "receipt_pdf": base64.b64encode(b"%PDF-1.4 receipt").decode(),
++            "error_pdf": base64.b64encode(b"%PDF-1.4 errors").decode(),
++            "request_xml": f"<request><doc>{DOC_A}</doc></request>",
++            "response_xml": "<response>ok</response>",
++            "pseudo_stamp": "STAMP",
++        },
++    )
++    # The host's own ZIP is offered only while deletion is scheduled.
++    db.update("user_account", owner, {"deletion_due_at": "2099-01-01T00:00:00+00:00"})
++    yield {
++        "owner": owner,
++        "admin": admin,
++        "apartment": apartment,
++        "reservation": reservation,
++        "guest_a": guest_a,
++        "guest_b": guest_b,
++        "submission": submission,
++    }
++    _cleanup()
++
++
++def _login(username: str) -> TestClient:
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en",
++        data={"username": username, "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    return client
++
++
++def _impersonate(client: TestClient, owner: int, reason: str = REASON):
++    return client.post(
++        f"/admin/users/{owner}/impersonate",
++        data={"reason": reason},
++        follow_redirects=False,
++    )
++
++
++def _supporting(seeded) -> TestClient:
++    client = _login("wp04-admin")
++    assert _impersonate(client, seeded["owner"]).status_code == 303
++    assert "Previewing workspace" in client.get("/").text
++    return client
++
++
++def _audit(owner: int, action: str):
++    return db.query(
++        "SELECT * FROM audit WHERE owner_user_id = ? AND action = ? ORDER BY id",
++        (owner, action),
++    )
++
++
++def _pages(seeded):
++    return [
++        f"/reservations/{seeded['reservation']}",
++        "/housebook",
++        f"/submissions/{seeded['submission']}",
++        f"/guests/{seeded['guest_a']}",
++        f"/guests/{seeded['guest_b']}",
++    ]
++
++
++def _downloads(seeded):
++    a, s = seeded["guest_a"], seeded["submission"]
++    return [
++        ("get", f"/guests/{a}/form.pdf"),
++        ("get", f"/guests/{a}/export.json"),
++        ("get", f"/guests/{a}/passport-photo"),
++        ("get", "/housebook.csv"),
++        ("get", "/housebook/pdfs.zip"),
++        ("get", "/submissions/receipts.zip"),
++        ("get", f"/submissions/{s}/receipt.pdf"),
++        ("get", f"/submissions/{s}/errors.pdf"),
++        ("get", f"/submissions/{s}/request.xml"),
++        ("get", f"/submissions/{s}/response.xml"),
++        ("post", "/settings/workspace-export"),
++    ]
++
++
++# --- starting, the reason ---------------------------------------------------
++
++def test_opening_a_workspace_without_a_reason_is_refused(seeded):
++    client = _login("wp04-admin")
++    for reason in ("", "   ", "abcd", "x" * 301):
++        response = _impersonate(client, seeded["owner"], reason)
++        assert response.status_code == 303
++        assert "err=" in response.headers["location"]
++        assert "Previewing workspace" not in client.get("/").text
++    assert _audit(seeded["owner"], "impersonation_started") == []
++
++    assert _impersonate(client, seeded["owner"], "  Host   ticket\n42  ").status_code == 303
++    rows = _audit(seeded["owner"], "impersonation_started")
++    assert len(rows) == 1
++    assert rows[0]["detail"] == "admin=wp04-admin reason=Host ticket 42"
++
++
++def test_the_bar_shows_the_minutes_left(seeded):
++    client = _supporting(seeded)
++    page = client.get("/").text
++    assert 'data-impersonation-minutes="60"' in page
++    assert "60 minutes left" in page
++
++
++def test_a_session_without_a_start_time_is_treated_as_expired(seeded):
++    payload = {"as": seeded["owner"]}
++    assert auth.impersonation_expired(payload)
++    assert not auth.impersonation_expired({"as": seeded["owner"], "ast": int(time.time())})
++    assert not auth.impersonation_expired({})
++
++
++# --- the 60-minute limit and the stop row -------------------------------------
++
++def test_after_sixty_minutes_the_next_request_ends_the_impersonation(seeded, monkeypatch):
++    client = _supporting(seeded)
++    started = time.time()
++    monkeypatch.setattr(
++        auth.time, "time", lambda: started + auth.IMPERSONATION_MAX_AGE + 1
++    )
++    response = client.get(f"/reservations/{seeded['reservation']}", follow_redirects=False)
++    assert response.status_code == 303
++    location = unquote(response.headers["location"])
++    assert location.startswith("/admin/users?msg=")
++    assert host_i18n.translate("en", "impersonation.expired") in location
++
++    host_rows = _audit(seeded["owner"], "impersonation_stopped")
++    admin_rows = _audit(seeded["admin"], "impersonation_stopped")
++    assert [row["detail"] for row in host_rows] == ["expired"]
++    assert [row["detail"] for row in admin_rows] == ["expired"]
++    assert host_rows[0]["actor"] == "wp04-admin"
++
++    # The replaced cookie is the admin's own: no preview, no second stop row.
++    page = client.get("/")
++    assert "Previewing workspace" not in page.text
++    assert DOC_A not in client.get("/housebook").text
++    assert len(_audit(seeded["owner"], "impersonation_stopped")) == 1
++
++
++def test_before_sixty_minutes_the_impersonation_holds(seeded, monkeypatch):
++    client = _supporting(seeded)
++    started = time.time()
++    monkeypatch.setattr(auth.time, "time", lambda: started + auth.IMPERSONATION_MAX_AGE - 120)
++    page = client.get("/")
++    assert "Previewing workspace" in page.text
++    assert 'data-impersonation-minutes="2"' in page.text
++    assert _audit(seeded["owner"], "impersonation_stopped") == []
++
++
++def test_exiting_writes_the_stop_row_to_the_host_and_the_admin(seeded):
++    client = _supporting(seeded)
++    response = client.post("/admin/stop-impersonating", follow_redirects=False)
++    assert response.status_code == 303
++    assert [row["detail"] for row in _audit(seeded["owner"], "impersonation_stopped")] == ["exit"]
++    assert [row["detail"] for row in _audit(seeded["admin"], "impersonation_stopped")] == ["exit"]
++
++
++# --- masking ------------------------------------------------------------------
++
++def test_the_host_sees_full_identity_data(seeded):
++    client = _login("wp04-host")
++    for path in _pages(seeded):
++        assert client.get(path).status_code == 200, path
++    assert DOC_A in client.get(f"/reservations/{seeded['reservation']}").text
++    assert VISA_A in client.get("/housebook").text
++    assert DOC_B in client.get(f"/submissions/{seeded['submission']}").text
++    form = client.get(f"/guests/{seeded['guest_a']}").text
++    assert DOC_A in form and VISA_A in form
++    assert demo.DEMO_SIGNATURE in form
++    assert f"/guests/{seeded['guest_a']}/passport-photo" in form
++    assert host_i18n.translate("en", "identity.hidden") not in form
++    for method, path in _downloads(seeded):
++        response = getattr(client, method)(path, follow_redirects=False)
++        assert response.status_code == 200, (path, response.status_code)
++
++
++def test_every_identity_route_is_masked_or_blocked_while_supporting(seeded):
++    client = _supporting(seeded)
++    hidden = host_i18n.translate("en", "identity.hidden")
++    for path in _pages(seeded):
++        response = client.get(path)
++        assert response.status_code == 200, path
++        for secret in (DOC_A, VISA_A, DOC_B):
++            assert secret not in response.text, (path, secret)
++    # The last three characters stay, for matching a guest's word on the phone.
++    assert "•••567" in client.get(f"/reservations/{seeded['reservation']}").text
++    assert "•••321" in client.get("/housebook").text
++    assert "•••543" in client.get(f"/submissions/{seeded['submission']}").text
++    form = client.get(f"/guests/{seeded['guest_a']}").text
++    assert hidden in form
++    assert demo.DEMO_SIGNATURE not in form
++    assert f'src="/guests/{seeded["guest_a"]}/passport-photo"' not in form
++    assert 'id="sig-canvas"' not in form
++    assert 'name="doc_number"' not in form
++    # Names, nationality and status stay visible for support.
++    assert "Alpha" in form
++
++    for method, path in _downloads(seeded):
++        response = getattr(client, method)(path, follow_redirects=False)
++        if path.endswith("/passport-photo"):
++            assert response.status_code == 403
++            assert response.content != PNG_BYTES
++            continue
++        assert response.status_code == 303, (path, response.status_code)
++        assert "err=" in response.headers["location"], path
++        assert DOC_A.encode() not in response.content
++
++    stay_fee_csv = client.get(f"/stay-fees/{seeded['apartment']}/csv", follow_redirects=False)
++    assert stay_fee_csv.status_code == 303
++    assert "err=" in stay_fee_csv.headers["location"]
++    admin_zip = client.post(f"/admin/users/{seeded['owner']}/export", follow_redirects=False)
++    assert admin_zip.status_code == 303
++    assert "err=" in admin_zip.headers["location"]
++    assert _audit(seeded["owner"], "workspace_exported") == []
++
++
++def test_saving_a_masked_guest_keeps_the_stored_identity(seeded):
++    client = _supporting(seeded)
++    guest_id = seeded["guest_a"]
++    response = client.post(
++        f"/guests/{guest_id}",
++        data={
++            "surname": "Alpha",
++            "first_name": "Janet",
++            "birth_date": "01011990",
++            "nationality": "GBR",
++            "doc_type": "pas",
++            "doc_number": "•••567",
++            "visa_number": "",
++            "purpose": "10",
++            "res_street": "Baker Street 1",
++            "res_city": "London",
++            "res_country": "GBR",
++            "signature": "",
++        },
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    row = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
++    assert row["doc_number"] == DOC_A
++    assert row["visa_number"] == VISA_A
++    assert row["signature_png"] == demo.DEMO_SIGNATURE
++
++
++# --- reveal -------------------------------------------------------------------
++
++def test_reveal_needs_a_reason_writes_the_audit_row_and_unmasks_only_that_guest(seeded):
++    client = _supporting(seeded)
++    a, b = seeded["guest_a"], seeded["guest_b"]
++
++    refused = client.post(f"/guests/{a}/reveal-identity", data={"reason": "no"},
++                          follow_redirects=False)
++    assert refused.status_code == 303 and "err=" in refused.headers["location"]
++    assert _audit(seeded["owner"], "guest_identity_revealed") == []
++    assert DOC_A not in client.get(f"/guests/{a}").text
++
++    revealed = client.post(
++        f"/guests/{a}/reveal-identity",
++        data={"reason": "Guest says the passport number is wrong"},
++        follow_redirects=False,
++    )
++    assert revealed.status_code == 303
++    rows = _audit(seeded["owner"], "guest_identity_revealed")
++    assert len(rows) == 1
++    assert rows[0]["detail"] == f"guest_id={a} reason=Guest says the passport number is wrong"
++    assert rows[0]["impersonator_user_id"] == seeded["admin"]
++
++    form_a = client.get(f"/guests/{a}").text
++    assert DOC_A in form_a and VISA_A in form_a
++    assert demo.DEMO_SIGNATURE in form_a
++    assert client.get(f"/guests/{a}/passport-photo").content == PNG_BYTES
++    assert client.get(f"/guests/{a}/form.pdf").status_code == 200
++
++    form_b = client.get(f"/guests/{b}").text
++    assert DOC_B not in form_b
++    assert client.get(f"/guests/{b}/passport-photo").status_code == 403
++    housebook = client.get("/housebook").text
++    assert DOC_A in housebook and DOC_B not in housebook
++    # Bulk downloads stay blocked even with one guest revealed.
++    assert client.get("/housebook.csv", follow_redirects=False).status_code == 303
++    # The reveal does not restart the clock or end the preview.
++    assert 'data-impersonation-minutes="60"' in client.get("/").text
++
++
++def test_reveal_ends_with_the_impersonation(seeded):
++    client = _supporting(seeded)
++    a = seeded["guest_a"]
++    client.post(f"/guests/{a}/reveal-identity", data={"reason": REASON}, follow_redirects=False)
++    client.post("/admin/stop-impersonating", follow_redirects=False)
++    assert _impersonate(client, seeded["owner"]).status_code == 303
++    assert DOC_A not in client.get(f"/guests/{a}").text
++
++
++def test_the_reveal_keeps_the_original_start_time(seeded, monkeypatch):
++    client = _supporting(seeded)
++    started = time.time()
++    monkeypatch.setattr(auth.time, "time", lambda: started + 50 * 60)
++    client.post(
++        f"/guests/{seeded['guest_a']}/reveal-identity",
++        data={"reason": REASON},
++        follow_redirects=False,
++    )
++    monkeypatch.setattr(auth.time, "time", lambda: started + auth.IMPERSONATION_MAX_AGE + 1)
++    assert client.get("/", follow_redirects=False).status_code == 303
++    assert [r["detail"] for r in _audit(seeded["owner"], "impersonation_stopped")] == ["expired"]
++
++
++def test_identity_helpers():
++    assert access.mask_identifier("") == ""
++    assert access.mask_identifier(None) == ""
++    assert access.mask_identifier("AB") == "•••"
++    assert access.mask_identifier("123456789") == "•••789"
++    assert auth.support_reason("abcd") is None
++    assert auth.support_reason("abcde") == "abcde"
++    assert auth.support_reason("x" * 300) == "x" * 300
++    assert auth.support_reason("x" * 301) is None
++
++
++# --- the host's Settings ------------------------------------------------------
++
++def test_the_host_sees_start_stop_and_reveal_in_settings(seeded):
++    admin = _supporting(seeded)
++    admin.post(
++        f"/guests/{seeded['guest_a']}/reveal-identity",
++        data={"reason": "Checking the visa number"},
++        follow_redirects=False,
++    )
++    admin.post("/admin/stop-impersonating", follow_redirects=False)
++    db.audit("apartment_updated", "id=1", actor="wp04-host", owner_user_id=seeded["owner"])
++
++    host = _login("wp04-host")
++    page = host.get("/settings").text
++    for text in (
++        "impersonation_started",
++        f"reason={REASON}",
++        "impersonation_stopped",
++        "guest_identity_revealed",
++        "reason=Checking the visa number",
++        "as admin wp04-admin",
++        "apartment_updated",
++        "Support sessions",
++    ):
++        assert text in page, text
++
++    support = host.get("/settings?audit=support").text
++    assert "impersonation_started" in support
++    assert "impersonation_stopped" in support
++    assert "guest_identity_revealed" in support
++    assert "apartment_updated" not in support
+diff --git a/App/tests/test_legal_acceptance.py b/App/tests/test_legal_acceptance.py
+index db28610..5e315fc 100644
+--- a/App/tests/test_legal_acceptance.py
++++ b/App/tests/test_legal_acceptance.py
+@@ -184,7 +184,9 @@ def test_an_impersonating_admin_is_not_sent_to_the_screen(real_acceptance_pendin
+     assert acceptance.pending(target_id) == ["terms", "privacy", "dpa"]
+ 
+     started = client.post(
+-        f"/admin/users/{target_id}/impersonate", follow_redirects=False
++        f"/admin/users/{target_id}/impersonate",
++            data={"reason": "Support ticket 123"},
++            follow_redirects=False
+     )
+     assert started.status_code == 303
+     page = client.get("/", follow_redirects=False)
+-- 
+2.34.1
+

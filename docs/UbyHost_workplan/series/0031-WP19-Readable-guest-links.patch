@@ -1,0 +1,1806 @@
+From 0ff456948ad64936fb089a0e6a3e163872d8c4e1 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:05:18 +0200
+Subject: [PATCH 31/34] WP19: Readable guest links
+
+Integration with WP18 (numbered migrations): the apartment_slug table and its partial unique index moved from db.SCHEMA into App/app/migrations/0002_apartment_slug.sql (CREATE ... IF NOT EXISTS), as AGENTS.md now requires; init_db runs guest_slug.backfill(conn) after apply_migrations. tests/test_migrations.py now runs on a copy of the shipped migration files and numbers its demo files after the latest one, so it keeps working as files are added. host_i18n.py: kept WP17's removal of apartment.form.guest_link.lede (the form uses guest_links.lede) and added WP19's name_label and name_hint in EN and CS. retention._delete_workspace keeps WP19's explicit apartment_slug delete, with WP18's plain = comparison. Test fix: tests/test_guest_slugs.py cleanup also removes the test owner's apartments, because the regenerate-link test replaces permalink_token and the leftover apartment made test_demo_seed fail when run after it (this also failed on the WP19 branch alone).
+
+Query budget (WP14): onboarding reads the current slug in its apartment query, so the finished onboarding panel does not add a per-page apartment_slug query; this kept /reservations under the 20-query budget in tests/test_query_budget.py.
+
+Conflict resolution: routes/guest.py import list: WP19's guest_slug added to WP26's list (WP26 already dropped host_i18n there). _components.html: the onboarding finish card keeps WP28's show_toggle switch and links the preview to WP19's finish.link_key. tests/test_guest_browser_e2e.py: WP19's shared _register_a_group_of_three helper now takes the guest language, so WP26's en/de/es/fr runs (no ?lang= for de/es/fr, privacy-page check) and WP19's readable-link runs share it on main's arrival-lane flow.
+---
+ App/app/auth.py                            |  12 +-
+ App/app/db.py                              |   6 +
+ App/app/demo.py                            |   1 +
+ App/app/guest_slug.py                      | 282 ++++++++++++++++
+ App/app/host_i18n.py                       |  10 +
+ App/app/migrations/0002_apartment_slug.sql |  11 +
+ App/app/onboarding.py                      |  12 +-
+ App/app/retention.py                       |   3 +
+ App/app/routes/admin.py                    |  42 ++-
+ App/app/routes/api.py                      |   4 +-
+ App/app/routes/guest.py                    | 186 ++++++++---
+ App/app/templates/_components.html         |   2 +-
+ App/app/templates/apartment_form.html      |  13 +
+ App/app/templates/guest_links.html         |   2 +-
+ App/app/templates/reservations.html        |   4 +-
+ App/tests/test_guest_browser_e2e.py        |  25 +-
+ App/tests/test_guest_links_bilingual.py    |   7 +-
+ App/tests/test_guest_links_preview.py      |  14 +-
+ App/tests/test_guest_slugs.py              | 357 +++++++++++++++++++++
+ App/tests/test_migrations.py               |  40 ++-
+ App/tests/test_onboarding.py               |  10 +-
+ App/tests/test_overhaul.py                 |  10 +-
+ docs/SECURITY.md                           |   2 +-
+ 23 files changed, 953 insertions(+), 102 deletions(-)
+ create mode 100644 App/app/guest_slug.py
+ create mode 100644 App/app/migrations/0002_apartment_slug.sql
+ create mode 100644 App/tests/test_guest_slugs.py
+
+diff --git a/App/app/auth.py b/App/app/auth.py
+index 00d8a2f..dc717e5 100644
+--- a/App/app/auth.py
++++ b/App/app/auth.py
+@@ -634,10 +634,14 @@ def ensure_bootstrap_admin() -> Optional[str]:
+     return generated_password
+ 
+ 
++# No l, 0 or 1: a link read aloud or copied by hand stays unambiguous. The
++# readable guest link's code (``guest_slug``) draws from the same letters.
++PERMALINK_ALPHABET = "abcdefghijkmnopqrstuvwxyz23456789"
++
++
+ def new_permalink_token() -> str:
+     """Short, unguessable, and readable enough to paste into a message."""
+-    alphabet = "abcdefghijkmnopqrstuvwxyz23456789"
+-    return "".join(secrets.choice(alphabet) for _ in range(20))
++    return "".join(secrets.choice(PERMALINK_ALPHABET) for _ in range(20))
+ 
+ 
+ def new_permalink_pin() -> str:
+@@ -671,6 +675,10 @@ def _pin_serializer() -> URLSafeTimedSerializer:
+ def pin_fingerprint(token: str, pin: str) -> str:
+     """Keyed digest of one (link, PIN) pair.
+ 
++    ``token`` is always the apartment's permanent ``permalink_token``, never a
++    readable slug from the URL: the guest routes resolve the slug first, so the
++    PIN cookie and the lockout are the same whichever link the guest opened.
++
+     Safe to keep outside the PIN's own column — the key lives in ``SECRET_KEY``
+     and the digest cannot be walked back — and stable enough to scope a lockout
+     to the exact PIN it was earned against.
+diff --git a/App/app/db.py b/App/app/db.py
+index c99b548..94368d1 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -1258,6 +1258,12 @@ def _init_db_locked() -> None:
+             (BASELINE_VERSION, "baseline", utcnow()),
+         )
+         apply_migrations(conn)
++        # WP19: every apartment gets a readable guest link. After the
++        # migrations, because 0002 creates the apartment_slug table.
++        # Imported here: guest_slug uses this module's helpers.
++        from . import guest_slug
++
++        guest_slug.backfill(conn)
+     finally:
+         conn.close()
+ 
+diff --git a/App/app/demo.py b/App/app/demo.py
+index 49277e0..b192053 100644
+--- a/App/app/demo.py
++++ b/App/app/demo.py
+@@ -622,6 +622,7 @@ def clear(owner_user_id: Optional[int] = None) -> bool:
+         for guest in guests:
+             passport_photos.delete_photo(int(guest["id"]))
+         db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
++        db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (apartment["id"],))
+         db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
+     for entity_id in entity_ids:
+         db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
+diff --git a/App/app/guest_slug.py b/App/app/guest_slug.py
+new file mode 100644
+index 0000000..261da88
+--- /dev/null
++++ b/App/app/guest_slug.py
+@@ -0,0 +1,282 @@
++"""Readable guest links: ``/l/{readable}-{code}`` beside the permanent token.
++
++The permanent ``apartment.permalink_token`` stays the secret every guest-side
++control is keyed on (the PIN cookie, the PIN fingerprint, the lockout and the
++rate limits). A slug is only another name for it, resolved back to the
++apartment before anything else happens, so a guest who switches between the
++old and the new link is never asked for the PIN twice and cannot reset the
++lockout by switching.
++
++* The readable part comes from the property's name: accents folded, lower
++  case, ``a-z0-9-``, at most 40 characters cut at a word boundary.
++* The code is six characters from the token alphabet. It is never edited; the
++  host may rename the readable part, and every earlier slug keeps redirecting
++  to the current one.
++* Generating a new guest link (the "link leaked" button) retires every slug
++  with the token, because an old slug that still redirected would hand the new
++  link to whoever held the leaked one.
++"""
++from __future__ import annotations
++
++import re
++import secrets
++import sqlite3
++import unicodedata
++from typing import Optional
++
++from . import auth, db
++
++CODE_LENGTH = 6
++READABLE_MAX = 40
++# Used when a property name folds to nothing (only symbols or a script with no
++# Latin form) or to a reserved word.
++FALLBACK_READABLE = "stay"
++# Every path segment under /l/{key}/ today. Never a readable part, so a slug
++# can never be mistaken for one in a log, a test or a hand-typed link.
++RESERVED = frozenset(
++    {"pin", "privacy", "claim", "confirm", "party", "another", "new", "edit", "save"}
++)
++
++# Letters NFKD does not split into a base letter and an accent.
++_FOLD_EXTRA = str.maketrans(
++    {
++        "ß": "ss", "æ": "ae", "Æ": "ae", "œ": "oe", "Œ": "oe", "ø": "o", "Ø": "o",
++        "ł": "l", "Ł": "l", "đ": "d", "Đ": "d", "ð": "d", "þ": "th", "ı": "i",
++    }
++)
++_NOT_SLUG = re.compile(r"[^a-z0-9]+")
++_SLUG_SHAPE = re.compile(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\Z")
++
++
++def fold(text: Optional[str]) -> str:
++    """``"Vinohrady – Studio Žižkov"`` -> ``"vinohrady-studio-zizkov"``, uncut."""
++    value = (text or "").translate(_FOLD_EXTRA)
++    value = unicodedata.normalize("NFKD", value)
++    value = "".join(ch for ch in value if not unicodedata.combining(ch))
++    return _NOT_SLUG.sub("-", value.lower()).strip("-")
++
++
++def readable_part(text: Optional[str]) -> str:
++    """The readable part for a name, or ``""`` if nothing usable is left.
++
++    Cut at the last word boundary inside the limit, so a long name loses whole
++    words rather than ending in half of one. A single word longer than the
++    limit is cut hard; there is no boundary to respect.
++    """
++    value = fold(text)
++    if len(value) > READABLE_MAX:
++        head = value[: READABLE_MAX + 1]
++        if head.endswith("-"):
++            value = head[:-1]
++        elif "-" in head[:READABLE_MAX]:
++            value = head[:READABLE_MAX].rsplit("-", 1)[0]
++        else:
++            value = value[:READABLE_MAX]
++    return value.strip("-")
++
++
++def is_reserved(readable: str) -> bool:
++    return readable in RESERVED
++
++
++def validate_readable(text: Optional[str]) -> tuple[str, str]:
++    """Normalise a host's input. Returns ``(readable, error)``; error is ``""``,
++    ``"empty"`` or ``"reserved"``."""
++    readable = readable_part(text)
++    if not readable:
++        return "", "empty"
++    if is_reserved(readable):
++        return readable, "reserved"
++    return readable, ""
++
++
++def new_code() -> str:
++    return "".join(secrets.choice(auth.PERMALINK_ALPHABET) for _ in range(CODE_LENGTH))
++
++
++def compose(readable: str, code: str) -> str:
++    return f"{readable}-{code}"
++
++
++def code_of(slug: str) -> str:
++    return slug.rsplit("-", 1)[-1]
++
++
++def readable_of(slug: str) -> str:
++    return slug.rsplit("-", 1)[0]
++
++
++def looks_like_slug(key: str) -> bool:
++    """Cheap shape check before the database is asked."""
++    if not key or len(key) > READABLE_MAX + 1 + CODE_LENGTH or "-" not in key:
++        return False
++    return bool(_SLUG_SHAPE.match(key)) and len(code_of(key)) == CODE_LENGTH
++
++
++def _generated_readable(name: Optional[str]) -> str:
++    readable = readable_part(name)
++    if not readable or is_reserved(readable):
++        return FALLBACK_READABLE
++    return readable
++
++
++# --- lookups -------------------------------------------------------------
++
++def lookup(key: str):
++    """The ``apartment_slug`` row for a key, matched case-insensitively."""
++    key = (key or "").strip().lower()
++    if not looks_like_slug(key):
++        return None
++    return db.query_one(
++        "SELECT slug, apartment_id, is_current FROM apartment_slug WHERE slug = ?",
++        (key,),
++    )
++
++
++def current(apartment_id: int) -> Optional[str]:
++    row = db.query_one(
++        "SELECT slug FROM apartment_slug WHERE apartment_id = ? AND is_current = 1",
++        (apartment_id,),
++    )
++    return row["slug"] if row else None
++
++
++def link_key(apartment) -> str:
++    """What goes after ``/l/`` in a link the host copies: the slug if one
++    exists, else the permanent token (which keeps working for ever)."""
++    if not apartment:
++        return ""
++    return ensure(apartment) or (apartment["permalink_token"] or "")
++
++
++# --- writes --------------------------------------------------------------
++
++def _insert_current(cur, apartment_id: int, readable: str) -> str:
++    """Insert a fresh current slug on an open cursor. Retries a code clash."""
++    for _ in range(8):
++        slug = compose(readable, new_code())
++        if cur.execute(
++            "SELECT 1 FROM apartment_slug WHERE slug = ?", (slug,)
++        ).fetchone():
++            continue
++        cur.execute(
++            "INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at) "
++            "VALUES (?, ?, 1, ?)",
++            (slug, apartment_id, db.utcnow()),
++        )
++        return slug
++    raise RuntimeError("could not find a free guest link code")
++
++
++def ensure(apartment) -> Optional[str]:
++    """The apartment's current slug, created from its name if it has none.
++
++    Rows inserted before this feature, by the demo seed or by a test fixture
++    have no slug until something asks; asking is what creates it.
++    """
++    if not apartment or not apartment["permalink_token"]:
++        return None
++    existing = current(int(apartment["id"]))
++    if existing:
++        return existing
++    try:
++        with db.immediate() as cur:
++            row = cur.execute(
++                "SELECT slug FROM apartment_slug WHERE apartment_id = ? AND is_current = 1",
++                (int(apartment["id"]),),
++            ).fetchone()
++            if row:
++                return row["slug"]
++            return _insert_current(
++                cur, int(apartment["id"]), _generated_readable(apartment["internal_name"])
++            )
++    except sqlite3.IntegrityError:
++        # Another request created it between our read and our write.
++        return current(int(apartment["id"]))
++
++
++def rename(apartment_id: int, readable: str) -> Optional[str]:
++    """Point the apartment at ``{readable}-{same code}``; the old slug redirects.
++
++    ``readable`` must already have passed ``validate_readable``. Renaming back
++    to an earlier name reuses that row. Returns the current slug, or ``None``
++    if the name is taken by another property with the same code (rare: the
++    code is random, not unique per apartment).
++    """
++    existing = current(apartment_id)
++    if not existing:
++        return None
++    target = compose(readable, code_of(existing))
++    if target == existing:
++        return existing
++    try:
++        with db.immediate() as cur:
++            row = cur.execute(
++                "SELECT apartment_id FROM apartment_slug WHERE slug = ?", (target,)
++            ).fetchone()
++            if row and int(row["apartment_id"]) != int(apartment_id):
++                return None
++            cur.execute(
++                "UPDATE apartment_slug SET is_current = 0 "
++                "WHERE apartment_id = ? AND is_current = 1",
++                (apartment_id,),
++            )
++            if row:
++                cur.execute(
++                    "UPDATE apartment_slug SET is_current = 1 WHERE slug = ?", (target,)
++                )
++            else:
++                cur.execute(
++                    "INSERT INTO apartment_slug (slug, apartment_id, is_current, created_at) "
++                    "VALUES (?, ?, 1, ?)",
++                    (target, apartment_id, db.utcnow()),
++                )
++    except sqlite3.IntegrityError:
++        return None
++    return target
++
++
++def rotate(apartment_id: int, readable: Optional[str] = None) -> str:
++    """Drop every slug of the apartment and issue one with a new code.
++
++    For "Generate a new link": the old token stops working, so its slugs must
++    stop too, not redirect to the replacement.
++    """
++    with db.immediate() as cur:
++        if readable is None:
++            row = cur.execute(
++                "SELECT slug FROM apartment_slug WHERE apartment_id = ? AND is_current = 1",
++                (apartment_id,),
++            ).fetchone()
++            name = cur.execute(
++                "SELECT internal_name FROM apartment WHERE id = ?", (apartment_id,)
++            ).fetchone()
++            readable = (
++                readable_of(row["slug"])
++                if row
++                else _generated_readable(name["internal_name"] if name else "")
++            )
++        cur.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (apartment_id,))
++        return _insert_current(cur, apartment_id, readable)
++
++
++def backfill(conn) -> int:
++    """Give every apartment without a current slug one; returns how many.
++
++    Runs from ``db.init_db`` on its own connection, so it cannot use the
++    pooled helpers. Idempotent: an apartment that has a slug is not selected.
++    """
++    rows = conn.execute(
++        "SELECT a.id, a.internal_name FROM apartment a "
++        "WHERE a.permalink_token IS NOT NULL AND NOT EXISTS ("
++        "  SELECT 1 FROM apartment_slug s WHERE s.apartment_id = a.id AND s.is_current = 1)"
++    ).fetchall()
++    for row in rows:
++        conn.execute("BEGIN IMMEDIATE")
++        try:
++            _insert_current(conn, int(row["id"]), _generated_readable(row["internal_name"]))
++            conn.execute("COMMIT")
++        except Exception:
++            conn.execute("ROLLBACK")
++            raise
++    return len(rows)
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 169075a..25c9a9b 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -782,6 +782,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.error.not_archived": "It isn't archived, so there's nothing to restore.",
+         "flash.error.name_required": "Please enter a name.",
+         "flash.error.pin_six_digits": "The PIN must be exactly 6 digits.",
++        "flash.error.link_name_empty": "The link name needs at least one letter or digit.",
++        "flash.error.link_name_reserved": "The guest pages already use that word. Choose another link name.",
++        "flash.error.link_name_taken": "That link name is taken. Choose another one.",
+         "flash.error.stay_dates_required": "Pick a property and both dates.",
+         "flash.error.dates_order": "Departure must be after arrival.",
+         "flash.error.nothing_ready": (
+@@ -2248,6 +2251,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.error.not_archived": "Není v archivu, takže není co obnovit.",
+         "flash.error.name_required": "Vyplňte prosím název.",
+         "flash.error.pin_six_digits": "PIN musí mít přesně 6 číslic.",
++        "flash.error.link_name_empty": "Název odkazu musí obsahovat aspoň jedno písmeno nebo číslici.",
++        "flash.error.link_name_reserved": "Toto slovo už používají stránky pro hosty. Zvolte jiný název odkazu.",
++        "flash.error.link_name_taken": "Tento název odkazu je obsazený. Zvolte jiný.",
+         "flash.error.stay_dates_required": "Vyberte ubytování a oba termíny.",
+         "flash.error.dates_order": "Odjezd musí být po příjezdu.",
+         "flash.error.nothing_ready": (
+@@ -3090,6 +3096,8 @@ _INTERFACE_STRINGS = {
+         "apartment.form.feed.status.ok": 'OK',
+         "apartment.form.feed.status.suspect": 'Incomplete',
+         "apartment.form.feed.url": 'URL',
++        "apartment.form.guest_link.name_label": 'Readable part of the link',
++        "apartment.form.guest_link.name_hint": 'Letters, digits and hyphens; accents are removed. The code at the end never changes, and every earlier link keeps working.',
+         "apartment.form.guest_link.message_help": 'Paste the same text on Airbnb, Booking.com and in direct-booking e-mails. There is nothing portal-specific to change.',
+         "apartment.form.guest_link.new_help": 'A unique guest link and PIN are generated once you save the apartment.',
+         "apartment.form.guest_link.pin_hint": 'Six digits guests enter before the form opens. Change it here, or generate a random one below.',
+@@ -3766,6 +3774,8 @@ _INTERFACE_STRINGS = {
+         "apartment.form.feed.status.ok": 'OK',
+         "apartment.form.feed.status.suspect": 'Neúplný',
+         "apartment.form.feed.url": 'URL',
++        "apartment.form.guest_link.name_label": 'Čitelná část odkazu',
++        "apartment.form.guest_link.name_hint": 'Písmena, číslice a pomlčky, diakritika se odstraní. Kód na konci se nikdy nemění a všechny dřívější odkazy dál fungují.',
+         "apartment.form.guest_link.message_help": 'Stejný text vložte na Airbnb, Booking.com a do e-mailů přímých rezervací. Není co měnit podle portálu.',
+         "apartment.form.guest_link.new_help": 'Jedinečný odkaz a PIN se vygenerují po uložení ubytování.',
+         "apartment.form.guest_link.pin_hint": 'Šest číslic, které host zadá před formulářem. Změňte zde nebo vygenerujte níže.',
+diff --git a/App/app/migrations/0002_apartment_slug.sql b/App/app/migrations/0002_apartment_slug.sql
+new file mode 100644
+index 0000000..cba6b0b
+--- /dev/null
++++ b/App/app/migrations/0002_apartment_slug.sql
+@@ -0,0 +1,11 @@
++-- Readable guest links (WP19): "/l/{slug}" beside the permanent
++-- "/l/{permalink_token}". One current slug per apartment; renamed slugs keep
++-- their row with is_current = 0 and redirect to the current one.
++CREATE TABLE IF NOT EXISTS apartment_slug (
++    slug          TEXT PRIMARY KEY,
++    apartment_id  INTEGER NOT NULL REFERENCES apartment(id) ON DELETE CASCADE,
++    is_current    INTEGER NOT NULL DEFAULT 1,
++    created_at    TEXT NOT NULL
++);
++CREATE UNIQUE INDEX IF NOT EXISTS idx_slug_current
++    ON apartment_slug (apartment_id) WHERE is_current = 1;
+diff --git a/App/app/onboarding.py b/App/app/onboarding.py
+index c9976aa..7891c5d 100644
+--- a/App/app/onboarding.py
++++ b/App/app/onboarding.py
+@@ -3,7 +3,7 @@ from __future__ import annotations
+ 
+ from typing import Any, Dict, List, Optional
+ 
+-from . import config, db, validation
++from . import config, db, guest_slug, validation
+ 
+ 
+ def _dismissed_key(owner_user_id: int) -> str:
+@@ -47,7 +47,10 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
+     )
+     apartments = db.query(
+         "SELECT a.*, "
+-        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
++        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
++        # WP19 slug read here, so the finished panel needs no query per page (WP14 budget).
++        "  (SELECT s.slug FROM apartment_slug s "
++        "   WHERE s.apartment_id = a.id AND s.is_current = 1) AS permalink_slug "
+         "FROM apartment a "
+         f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
+         "ORDER BY a.id",
+@@ -130,13 +133,14 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
+     finished = completed == len(steps)
+     finish = None
+     if finished and first_apartment:
+-        token = first_apartment["permalink_token"] or ""
++        token = first_apartment["permalink_slug"] or guest_slug.link_key(first_apartment)
+         policy = first_apartment["passport_photo_policy"] or "off"
+         finish = {
+             "apartment_id": first_apartment["id"],
+             "name": first_apartment["internal_name"],
+             "permalink": f"{config.PUBLIC_BASE_URL}/l/{token}",
+-            "permalink_token": token,
++            "permalink_token": first_apartment["permalink_token"] or "",
++            "link_key": token,
+             "pin": first_apartment["permalink_pin"] or "",
+             "passport_policy": policy,
+             "communication_url": f"/apartments/{first_apartment['id']}#communication",
+diff --git a/App/app/retention.py b/App/app/retention.py
+index 61254bc..2a4e894 100644
+--- a/App/app/retention.py
++++ b/App/app/retention.py
+@@ -301,6 +301,9 @@ def _delete_workspace(owner_id: int) -> None:
+             f"DELETE FROM email_outbox WHERE owner_user_id = ? OR apartment_id IN {apartments}",
+             (owner_id, owner_id),
+         )
++        # Also cascades from apartment; explicit so it never depends on the
++        # foreign_keys pragma of whichever database runs this.
++        cur.execute(f"DELETE FROM apartment_slug WHERE apartment_id IN {apartments}", (owner_id,))
+         cur.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
+         cur.execute(f"DELETE FROM invoice_sequence WHERE legal_entity_id IN {entities}", (owner_id,))
+         cur.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index 1f22eb9..622020b 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -31,6 +31,7 @@ from .. import (
+     db,
+     deadlines,
+     demo,
++    guest_slug,
+     host_i18n,
+     housebook,
+     icalsync,
+@@ -289,11 +290,13 @@ def guest_links(request: Request):
+     rows = []
+     for apartment in apartments:
+         apartment = _ensure_apartment_pin(apartment)
++        link_key = guest_slug.link_key(apartment)
+         rows.append(
+             {
+                 "apartment": apartment,
+                 "issues": validation.errors_only(_apartment_issues(apartment)),
+-                "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
++                "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
++                "link_key": link_key,
+                 "pin": apartment["permalink_pin"] or "",
+             }
+         )
+@@ -787,6 +790,7 @@ async def apartment_create(request: Request):
+     password = _form_str(form, "uby_ws_password")
+     payload["uby_ws_password_enc"] = db.encrypt_secret(password) if password else None
+     apartment_id = db.insert("apartment", payload)
++    guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
+     db.audit("apartment_created", f"id={apartment_id}")
+     return _back(
+         f"/apartments/{apartment_id}#calendars",
+@@ -809,6 +813,7 @@ def apartment_detail(apartment_id: int, request: Request):
+     issues = _apartment_issues(apartment)
+     # A connected calendar or a hand-typed stay both mean guests are on their
+     # way, which is all the "Ready to invite guests" list asks about.
++    link_key = guest_slug.link_key(apartment)
+     has_stays = any(feed["active"] for feed in feeds) or bool(
+         db.query_one(
+             "SELECT 1 AS present FROM reservation WHERE apartment_id = ? LIMIT 1",
+@@ -825,7 +830,14 @@ def apartment_detail(apartment_id: int, request: Request):
+             "issues": issues,
+             "readiness": _readiness(apartment, entities, issues, has_stays),
+             "purposes": codelists.purpose_options("en"),
+-            "permalink": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
++            "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
++            "link_base": f"{config.PUBLIC_BASE_URL}/l/",
++            "link_readable": (
++                guest_slug.readable_of(link_key) if link_key != apartment["permalink_token"] else ""
++            ),
++            "link_code": (
++                guest_slug.code_of(link_key) if link_key != apartment["permalink_token"] else ""
++            ),
+             "pin": apartment["permalink_pin"] or "",
+             "has_password": bool(apartment["uby_ws_password_enc"]),
+             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
+@@ -891,6 +903,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
+         if not pin or len(pin) != 6:
+             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
+         payload["permalink_pin"] = pin
++    link_readable = None
++    if "guest_link_name" in form:
++        link_readable, link_error = guest_slug.validate_readable(_form_str(form, "guest_link_name"))
++        if link_error:
++            return _back(
++                f"/apartments/{apartment_id}#communication",
++                err=_flash(request, f"flash.error.link_name_{link_error}"),
++            )
+     raw_account = payload.pop("_stay_fee_account_raw", None)
+     if raw_account is not None:
+         if raw_account.strip():
+@@ -913,6 +933,13 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
+     credentials_changed = bool(password) or (
+         (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
+     )
++    if link_readable:
++        guest_slug.ensure(apartment)
++        if guest_slug.rename(apartment_id, link_readable) is None:
++            return _back(
++                f"/apartments/{apartment_id}#communication",
++                err=_flash(request, "flash.error.link_name_taken"),
++            )
+     db.update("apartment", apartment_id, payload)
+     if credentials_changed:
+         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
+@@ -957,6 +984,9 @@ async def regenerate_link(apartment_id: int, request: Request):
+             "permalink_pin": auth.new_permalink_pin(),
+         },
+     )
++    # The old slugs go with the old token: one that still redirected would hand
++    # the new link to whoever holds the leaked one.
++    guest_slug.rotate(apartment_id)
+     db.audit("permalink_rotated", f"apartment={apartment_id}")
+     return _back(
+         _form_return_to(form, "/guest-links"),
+@@ -1340,7 +1370,9 @@ def reservations_list(request: Request):
+         date_from = date_to = ""
+ 
+     sql = (
+-        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
++        "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours, "
++        "  (SELECT s.slug FROM apartment_slug s "
++        "   WHERE s.apartment_id = a.id AND s.is_current = 1) AS permalink_slug "
+         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+         f"WHERE {db.null_safe_eq('a.owner_user_id')}"
+     )
+@@ -1615,7 +1647,9 @@ def reservation_detail(reservation_id: int, request: Request):
+             "submissions": submissions,
+             "return_to": _safe_return_to(request, "/reservations"),
+             "guest_link": (
+-                f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
++                f"{config.PUBLIC_BASE_URL}/l/"
++                f"{guest_slug.link_key(apartment) if apartment else reservation['permalink_token']}"
++                f"/{reservation_id}"
+             ),
+             "stay_claim": claim.ensure_row(reservation_id),
+             "hand_filing": reporting.hand_filing_view(progress),
+diff --git a/App/app/routes/api.py b/App/app/routes/api.py
+index 8cb4558..264e217 100644
+--- a/App/app/routes/api.py
++++ b/App/app/routes/api.py
+@@ -12,7 +12,7 @@ from typing import Any, Dict, List
+ from fastapi import APIRouter, Request
+ from fastapi.responses import JSONResponse
+ 
+-from .. import access, auth, config, db, host_i18n
++from .. import access, auth, config, db, guest_slug, host_i18n
+ 
+ router = APIRouter()
+ 
+@@ -67,7 +67,7 @@ def command_palette(request: Request):
+             items.append({
+                 "label": t("command.copy_property_link", property=apartment["internal_name"]),
+                 "group": t("command.group.actions"),
+-                "copy": f"{config.PUBLIC_BASE_URL}/l/{apartment['permalink_token']}",
++                "copy": f"{config.PUBLIC_BASE_URL}/l/{guest_slug.link_key(apartment)}",
+                 "tone": int(apartment["id"]) % 10,
+                 "keywords": "guest permalink pin",
+             })
+diff --git a/App/app/routes/guest.py b/App/app/routes/guest.py
+index c26e771..42dbc52 100644
+--- a/App/app/routes/guest.py
++++ b/App/app/routes/guest.py
+@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
+ 
+ import posixpath
+ import re
+-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
++from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, guest_slug, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+ from ..templating import render_guest
+ from .admin_helpers import guest_form_raw as _guest_form_raw
+ from .admin_helpers import kept_signature as _kept_signature
+@@ -382,11 +382,11 @@ def _localize_issues(issues, lang: str):
+     ]
+ 
+ 
+-def _apartment_by_token(token: str):
++def _live_apartment(column: str, value):
+     row = db.query_one(
+-        "SELECT * FROM apartment WHERE permalink_token = ? AND active = 1 "
++        f"SELECT * FROM apartment WHERE {column} = ? AND active = 1 "
+         "AND archived_at IS NULL",
+-        (token,),
++        (value,),
+     )
+     if not row:
+         return None
+@@ -397,14 +397,84 @@ def _apartment_by_token(token: str):
+     return row
+ 
+ 
++def _apartment_by_token(token: str):
++    return _live_apartment("permalink_token", token)
++
++
++def _resolve_key(key: str):
++    """Map the ``/l/{key}`` segment to ``(apartment, link key, moved)``.
++
++    ``key`` is either the permanent token, which keeps working for ever, or a
++    readable slug (WP19). The link key is what the pages put back into their
++    own links: the token for a token visitor, the *current* slug for a slug
++    visitor. ``moved`` is true when the key was an earlier slug, or the current
++    one in other letter case, so a GET can be redirected to the current one.
++    """
++    apartment = _apartment_by_token(key)
++    if apartment:
++        return apartment, key, False
++    row = guest_slug.lookup(key)
++    if not row:
++        return None, key, False
++    apartment = _live_apartment("id", int(row["apartment_id"]))
++    if not apartment or not apartment["permalink_token"]:
++        return None, key, False
++    if row["is_current"]:
++        link = row["slug"]
++    else:
++        link = guest_slug.current(int(apartment["id"])) or apartment["permalink_token"]
++    return apartment, link, link != key
++
++
++def _apartment_for_key(key: str):
++    return _resolve_key(key)[0] if key else None
++
++
++def _lock_token(key: str) -> str:
++    """The permanent token behind a link key: what every PIN cookie, PIN
++    fingerprint, lockout and rate-limit key is built from, so switching
++    between ``/l/{token}`` and ``/l/{slug}`` neither asks for the PIN again
++    nor starts a fresh failure budget."""
++    apartment = _apartment_for_key(key)
++    return apartment["permalink_token"] if apartment else key
++
++
++def _open_link(request: Request, key: str, lang: str):
++    """The one resolver every ``/l/{key}`` route starts with.
++
++    Returns ``(apartment, link key, response)``. ``response`` is set when the
++    route must answer with it straight away: the "bad link" page (404) for a
++    key nothing matches, including a slug with a wrong code, or a 301 to the
++    current slug for a GET on an earlier one. A POST on an earlier slug is
++    served in place, because a redirect would drop its body.
++    """
++    apartment, link, moved = _resolve_key(key)
++    if not apartment:
++        return None, key, _unavailable(request, lang)
++    if moved and request.method in ("GET", "HEAD"):
++        prefix = f"/l/{key}"
++        path = request.url.path
++        rest = path[len(prefix):] if path.startswith(prefix) else ""
++        target = f"/l/{link}{rest}"
++        if request.url.query:
++            target += "?" + request.url.query
++        response = RedirectResponse(target, status_code=301)
++        # A host may rename back to an earlier name. A 301 a browser cached for
++        # ever would then point the current slug at an old one and loop.
++        response.headers["Cache-Control"] = "no-store"
++        return apartment, link, response
++    return apartment, link, None
++
++
+ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
+-    failures = rate_limit.pin_failure_count(rate_limit.client_key(request, token))
+-    apartment = _apartment_by_token(token)
++    apartment = _apartment_for_key(token)
++    lock_token = apartment["permalink_token"] if apartment else token
++    failures = rate_limit.pin_failure_count(rate_limit.client_key(request, lock_token))
+     context = _shared(request, token, lang, apartment)
+     context.update(
+         {
+             "error": error,
+-            "require_turnstile": failures >= 3 or _link_challenged(token, apartment),
++            "require_turnstile": failures >= 3 or _link_challenged(apartment),
+             "return_to": request.url.path
+             + (("?" + str(request.url.query)) if request.url.query else ""),
+         }
+@@ -412,7 +482,7 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
+     return _with_lang(render_guest(request, "guest/pin.html", context), lang)
+ 
+ 
+-def _link_challenged(token: str, apartment) -> bool:
++def _link_challenged(apartment) -> bool:
+     """A link guessed at from many addresses asks every visitor for the check.
+ 
+     With Turnstile on, a locked link is challenged rather than refused, so one
+@@ -421,6 +491,7 @@ def _link_challenged(token: str, apartment) -> bool:
+     if not apartment or not turnstile.required():
+         return False
+     expected = apartment["permalink_pin"] or ""
++    token = apartment["permalink_token"]
+     return rate_limit.pin_token_blocked(f"{token}:{auth.pin_fingerprint(token, expected)}")
+ 
+ 
+@@ -438,10 +509,12 @@ def _host_owns_apartment(request: Request, apartment) -> bool:
+ def _require_pin(request: Request, token: str, lang: str):
+     if not config.GUEST_PIN_REQUIRED:
+         return None
+-    apartment = _apartment_by_token(token)
++    apartment = _apartment_for_key(token)
+     if apartment and (
+         _host_owns_apartment(request, apartment)
+-        or auth.pin_session_valid(request, token, apartment["permalink_pin"] or "")
++        or auth.pin_session_valid(
++            request, apartment["permalink_token"], apartment["permalink_pin"] or ""
++        )
+     ):
+         return None
+     return _pin_page(request, token, lang)
+@@ -567,7 +640,7 @@ def _unavailable(
+         "server_error": ("server_error_title", "server_error_help"),
+     }
+     title_key, body_key = titles.get(reason, titles["bad_link"])
+-    apartment = _apartment_by_token(token) if token else None
++    apartment = _apartment_for_key(token) if token else None
+     # "Start again" only helps where starting again can change something. On a
+     # locked, already-reported or wrong-device form the picker leads straight
+     # back to this page.
+@@ -813,7 +886,7 @@ def _form_back_url(token: str, apartment, reservation_id: int, lang: str, editin
+ def _require_claim_session(request: Request, reservation, token: str, lang: str):
+     if not mail.mail_enabled():
+         return None
+-    apartment = _apartment_by_token(token)
++    apartment = _apartment_for_key(token)
+     if _host_owns_apartment(request, apartment):
+         return None
+     row = claim.ensure_row(reservation["id"])
+@@ -846,14 +919,16 @@ def _set_declared_guests(reservation, count: int) -> None:
+ @router.post("/l/{token}/pin")
+ async def verify_pin(token: str, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     form = await request.form()
+     entered = (form.get("pin") or "").strip()
+     expected = apartment["permalink_pin"] or ""
+-    pin_key = rate_limit.client_key(request, token)
+-    pin_lock_key = f"{token}:{auth.pin_fingerprint(token, expected)}"
++    # Keyed on the permanent token, never on the slug in the URL (WP19).
++    lock_token = apartment["permalink_token"]
++    pin_key = rate_limit.client_key(request, lock_token)
++    pin_lock_key = f"{lock_token}:{auth.pin_fingerprint(lock_token, expected)}"
+     link_locked = rate_limit.pin_token_blocked(pin_lock_key)
+     if link_locked and not turnstile.required():
+         return _pin_page(
+@@ -875,7 +950,7 @@ async def verify_pin(token: str, request: Request):
+             lang,
+             error=i18n.translator(lang)("pin_rate_limited"),
+         )
+-    if not auth.pin_matches(token, entered, expected):
++    if not auth.pin_matches(lock_token, entered, expected):
+         rate_limit.record_pin_failure(pin_key, pin_lock_key)
+         # A lockout spread over many addresses is invisible in the per-IP count,
+         # so the host is told the moment the link itself burns its budget: every
+@@ -935,7 +1010,7 @@ async def verify_pin(token: str, request: Request):
+         return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
+     return_to = _safe_return_to(form.get("return_to"), token, lang)
+     response = RedirectResponse(return_to, status_code=303)
+-    auth.attach_pin_session(response, token, expected)
++    auth.attach_pin_session(response, lock_token, expected)
+     return _with_lang(response, lang)
+ 
+ 
+@@ -944,9 +1019,9 @@ async def verify_pin(token: str, request: Request):
+ @router.get("/l/{token}/privacy")
+ def privacy_notice(token: str, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+         return pin_guard
+@@ -967,9 +1042,9 @@ def privacy_notice(token: str, request: Request):
+ @router.get("/l/{token}")
+ def pick_stay(token: str, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     _alert_controller_missing(apartment)
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+@@ -1014,9 +1089,9 @@ def pick_stay(token: str, request: Request):
+ @router.get("/l/{token}/{reservation_id}")
+ def stay_overview(token: str, reservation_id: int, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+         return pin_guard
+@@ -1104,9 +1179,9 @@ def stay_overview(token: str, reservation_id: int, request: Request):
+ @router.get("/l/{token}/{reservation_id}/claim")
+ def claim_landing(token: str, reservation_id: int, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     _alert_controller_missing(apartment)
+     if not mail.mail_enabled():
+         return _with_lang(
+@@ -1149,7 +1224,7 @@ def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
+     guest's allowance and a shared address cannot be exhausted by a single link.
+     Returns the response to send, or None to carry on.
+     """
+-    key = rate_limit.client_key(request, f"guest:{token}")
++    key = rate_limit.client_key(request, f"guest:{_lock_token(token)}")
+     if rate_limit.blocked(scope, key, GUEST_POST_MAX_ATTEMPTS):
+         return _unavailable(request, lang, "rate_limited", 429, token)
+     rate_limit.record(scope, key)
+@@ -1159,9 +1234,9 @@ def _throttle_guest_post(request: Request, token: str, scope: str, lang: str):
+ @router.post("/l/{token}/{reservation_id}/claim/confirm")
+ async def claim_confirm(token: str, reservation_id: int, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     if not mail.mail_enabled():
+         return _with_lang(
+             RedirectResponse(
+@@ -1177,7 +1252,7 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
+         return _unavailable(request, lang, "stay_gone", 404, token)
+     form = await request.form()
+     secret = (form.get("secret") or "").strip()
+-    key = rate_limit.client_key(request, f"claim:{token}")
++    key = rate_limit.client_key(request, f"claim:{apartment['permalink_token']}")
+     if rate_limit.blocked("claim_confirm", key, 20):
+         return _unavailable(request, lang, "stay_gone", 429, token)
+     rate_limit.record("claim_confirm", key)
+@@ -1200,9 +1275,9 @@ async def claim_confirm(token: str, reservation_id: int, request: Request):
+ async def set_party_size(token: str, reservation_id: int, request: Request):
+     """Claim the stay with party size and e-mail, or change headcount later."""
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+         return pin_guard
+@@ -1254,7 +1329,7 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
+         # hammering, not mail volume (the mail caps in claim.py do that), so it
+         # is deliberately loose: a guest fumbling the form must not be locked
+         # out after a couple of tries.
+-        key = rate_limit.client_key(request, f"claim:{token}")
++        key = rate_limit.client_key(request, f"claim:{apartment['permalink_token']}")
+         if rate_limit.blocked("claim_start", key, 10):
+             return _with_lang(
+                 RedirectResponse(
+@@ -1312,9 +1387,9 @@ async def set_party_size(token: str, reservation_id: int, request: Request):
+ async def add_another_person(token: str, reservation_id: int, request: Request):
+     """Raise the declared headcount by one so another guest can fill the form."""
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+         return pin_guard
+@@ -1353,8 +1428,10 @@ def _form_context(
+     values=None,
+     back_url: Optional[str] = None,
+     residence_copied_from: Optional[str] = None,
++    token: Optional[str] = None,
+ ) -> Dict[str, Any]:
+-    token = apartment["permalink_token"]
++    # The key the guest is on (token or slug), so the form's own links stay on it.
++    token = token or apartment["permalink_token"]
+     progress = reporting.reservation_progress(reservation)
+     expected = progress["expected"]
+     remaining = (expected - progress["filled"]) if expected is not None else None
+@@ -1423,9 +1500,9 @@ def _form_context(
+ @router.get("/l/{token}/{reservation_id}/new")
+ def guest_form_new(token: str, reservation_id: int, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     _alert_controller_missing(apartment)
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+@@ -1457,6 +1534,7 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
+                 lang,
+                 values=prefill,
+                 residence_copied_from=copied_from,
++                token=token,
+                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=False),
+             ),
+         ),
+@@ -1467,9 +1545,9 @@ def guest_form_new(token: str, reservation_id: int, request: Request):
+ @router.get("/l/{token}/{reservation_id}/edit/{guest_id}")
+ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+         return pin_guard
+@@ -1501,6 +1579,7 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
+                 guest,
+                 lang,
+                 back_url=_form_back_url(token, apartment, reservation_id, lang, editing=True),
++                token=token,
+             ),
+         ),
+         lang,
+@@ -1510,9 +1589,9 @@ def guest_form_edit(token: str, reservation_id: int, guest_id: int, request: Req
+ @router.post("/l/{token}/{reservation_id}/save")
+ async def guest_form_save(token: str, reservation_id: int, request: Request):
+     lang = _language(request)
+-    apartment = _apartment_by_token(token)
+-    if not apartment:
+-        return _unavailable(request, lang)
++    apartment, token, early = _open_link(request, token, lang)
++    if early:
++        return early
+     pin_guard = _require_pin(request, token, lang)
+     if pin_guard:
+         return pin_guard
+@@ -1662,6 +1741,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
+             issues=issues,
+             values=values,
+             back_url=_form_back_url(token, apartment, reservation_id, lang, editing=bool(existing)),
++            token=token,
+         )
+         context["values"].update(
+             {
+diff --git a/App/app/templates/_components.html b/App/app/templates/_components.html
+index 054e80b..5e81680 100644
+--- a/App/app/templates/_components.html
++++ b/App/app/templates/_components.html
+@@ -312,7 +312,7 @@
+       </ul>
+       <div class="onboarding-finish-actions">
+         <a class="btn primary" href="{{ finish.communication_url }}">{{ t('onboarding.finish_open_communication') }}</a>
+-        <a class="btn" href="/l/{{ finish.permalink_token }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
++        <a class="btn" href="/l/{{ finish.link_key }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
+         {# On /onboarding the header meter already carries Skip / Reopen, so the
+            finish card leaves it out instead of printing the same button twice. #}
+         {% if not show_toggle %}
+diff --git a/App/app/templates/apartment_form.html b/App/app/templates/apartment_form.html
+index c10cbd6..60421ec 100644
+--- a/App/app/templates/apartment_form.html
++++ b/App/app/templates/apartment_form.html
+@@ -300,6 +300,19 @@
+         <input type="text" id="permalink" readonly value="{{ permalink }}">
+         {{ copy_button('permalink') }}
+       </div>
++      {% if link_code %}
++      <div class="field" style="max-width:520px">
++        <label for="guest_link_name">{{ t('apartment.form.guest_link.name_label') }}</label>
++        <div style="display:flex;align-items:center;gap:4px">
++          <span class="small muted mono" aria-hidden="true">/l/</span>
++          <input type="text" id="guest_link_name" name="guest_link_name" value="{{ link_readable }}"
++                 class="mono" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false"
++                 aria-describedby="guest_link_name_hint">
++          <span class="small muted mono" aria-hidden="true">-{{ link_code }}</span>
++        </div>
++        <div class="hint" id="guest_link_name_hint">{{ t('apartment.form.guest_link.name_hint') }}</div>
++      </div>
++      {% endif %}
+       <div class="field" style="max-width:280px">
+         <label for="permalink_pin">{{ t('guest_links.pin') }}</label>
+         <div class="copyrow pin-row">
+diff --git a/App/app/templates/guest_links.html b/App/app/templates/guest_links.html
+index 1dcb662..954e5fb 100644
+--- a/App/app/templates/guest_links.html
++++ b/App/app/templates/guest_links.html
+@@ -56,7 +56,7 @@
+         <a class="btn small" href="/apartments/{{ apartment.id }}">{{ t('guest_links.property_setup') }}</a>
+         {# The link lives on this page, so the preview of what a guest sees
+            belongs here too, not only on the onboarding finish card. #}
+-        <a class="btn small ghost" href="/l/{{ apartment.permalink_token }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
++        <a class="btn small ghost" href="/l/{{ row.link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+         {{ row_menu_begin(t('guest_links.options')) }}
+           <button class="row-menu-item" type="button" role="menuitem" data-copy="message-en-{{ apartment.id }}"
+                   data-copy-label="{{ t('guest_links.copy_message_en') }}"
+diff --git a/App/app/templates/reservations.html b/App/app/templates/reservations.html
+index acfc970..56d8989 100644
+--- a/App/app/templates/reservations.html
++++ b/App/app/templates/reservations.html
+@@ -170,14 +170,14 @@
+           {{ row_reporting_actions(reservation, row.controls, return_to) }}
+           {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
+             {{ copy_inline('stay-link-' ~ reservation.id,
+-                public_base_url ~ '/l/' ~ reservation.permalink_token ~ '/' ~ reservation.id,
++                public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id,
+                 t('dashboard.focus.copy_link')) }}
+           {% endif %}
+           {{ row_menu_begin() }}
+             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to }}" role="menuitem">{{ t('stays.row.open') }}</a>
+             <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stays.row.add_guest') }}</a>
+             {% if reservation.permalink_token %}
+-            <a class="row-menu-item" href="/l/{{ reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('stays.row.open_guest_form') }}</a>
++            <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('stays.row.open_guest_form') }}</a>
+             {% endif %}
+             {% if show_archive %}
+               <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
+diff --git a/App/tests/test_guest_browser_e2e.py b/App/tests/test_guest_browser_e2e.py
+index e5592a0..89acd4e 100644
+--- a/App/tests/test_guest_browser_e2e.py
++++ b/App/tests/test_guest_browser_e2e.py
+@@ -37,7 +37,7 @@ if REQUIRE_BROWSER:
+ else:
+     sync_api = pytest.importorskip("playwright.sync_api")
+ 
+-from app import claim, db, i18n, mail  # noqa: E402
++from app import claim, db, guest_slug, i18n, mail  # noqa: E402
+ 
+ 
+ # Layout rules every guest screen must meet. Each returns a sentence per
+@@ -314,19 +314,36 @@ _RUNS = [("en", width) for width in (320, 375, 1280)] + [
+ 
+ @pytest.mark.parametrize(("lang", "width"), _RUNS)
+ def test_a_group_of_three_registers_everyone_on_one_phone(live_server, browser, lang, width):
+-    token = f"browser-e2e-{lang}-{width}"
++    _register_a_group_of_three(
++        live_server, browser, width, f"browser-e2e-{lang}-{width}", readable=False, lang=lang
++    )
++
++
++@pytest.mark.parametrize("width", [320, 360, 390])
++def test_the_readable_link_takes_the_group_through_the_same_flow(live_server, browser, width):
++    """WP19: the guest opens /l/{slug}; the claim mail still carries the token
++    link, so the flow also crosses from one link to the other mid-way."""
++    _register_a_group_of_three(live_server, browser, width, f"browser-slug-{width}", readable=True)
++
++
++def _register_a_group_of_three(live_server, browser, width, token, readable, lang="en"):
+     db.execute("DELETE FROM rate_limit_event")
+     stay = _seed(token)
++    key = token
++    if readable:
++        apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (token,))
++        key = guest_slug.ensure(apartment)
++        assert key.startswith("browser-loft-")
+     context = browser.new_context(viewport={"width": width, "height": 812}, locale=_LOCALES[lang])
+     page = context.new_page()
+     script_errors = []
+     page.on("pageerror", lambda error: script_errors.append(str(error)))
+     guest = Guest(page, width, lang)
+     try:
+-        page.goto(f"{live_server}/l/{token}" + ("?lang=en" if lang == "en" else ""))
++        page.goto(f"{live_server}/l/{key}" + ("?lang=en" if lang == "en" else ""))
+         assert page.get_attribute("html", "lang") == lang
+         guest.check_layout("pick")
+-        page.locator(f"a[href*='/l/{token}/{stay}']").first.click()
++        page.locator(f"a[href*='/l/{key}/{stay}']").first.click()
+         page.wait_for_load_state()
+         guest.check_layout("claim")
+ 
+diff --git a/App/tests/test_guest_links_bilingual.py b/App/tests/test_guest_links_bilingual.py
+index bbcc785..1a72169 100644
+--- a/App/tests/test_guest_links_bilingual.py
++++ b/App/tests/test_guest_links_bilingual.py
+@@ -12,7 +12,7 @@ import html
+ import pytest
+ from fastapi.testclient import TestClient
+ 
+-from app import auth, db, host_i18n
++from app import auth, db, guest_slug, host_i18n
+ from app.main import app
+ 
+ PASSWORD = "Secure-Password-123"
+@@ -137,9 +137,10 @@ def test_the_message_carries_the_link_and_the_pin(host):
+ 
+     message = _message_block(page.text, f"message-{apartment_id}")
+     english, czech = message.split(CS_OPENING, 1)
+-    assert f"/l/{TOKEN}" in english
++    slug = guest_slug.current(apartment_id)
++    assert slug and f"/l/{slug}" in english
+     assert PIN in english
+-    assert f"/l/{TOKEN}" in czech
++    assert f"/l/{slug}" in czech
+     assert PIN in czech
+ 
+ 
+diff --git a/App/tests/test_guest_links_preview.py b/App/tests/test_guest_links_preview.py
+index d394e28..be51b1e 100644
+--- a/App/tests/test_guest_links_preview.py
++++ b/App/tests/test_guest_links_preview.py
+@@ -5,12 +5,18 @@ onboarding finish card - two screens away, and gone once onboarding is done.
+ """
+ from __future__ import annotations
+ 
+-from app import host_i18n
++from app import db, guest_slug, host_i18n
+ from tests.test_guest_links_bilingual import TOKEN, _apartment_id, host  # noqa: F401
+ 
+ 
++def _preview_href() -> str:
++    """The preview opens the readable link (WP19), which resolves to TOKEN."""
++    row = db.query_one("SELECT id FROM apartment WHERE permalink_token = ?", (TOKEN,))
++    return f'href="/l/{guest_slug.current(row["id"])}"'
++
++
+ def _preview_anchor(text: str) -> str:
+-    marker = f'href="/l/{TOKEN}"'
++    marker = _preview_href()
+     assert marker in text, "no preview link to the guest picker"
+     anchor = text.split(marker, 1)[1]
+     return marker + anchor.split("</a>", 1)[0]
+@@ -22,7 +28,7 @@ def test_the_page_offers_a_preview_of_the_guest_picker(host):  # noqa: F811
+     page = host.get("/guest-links?lang=en")
+ 
+     assert page.status_code == 200
+-    assert 'href="/l/' + TOKEN + '"' in page.text
++    assert _preview_href() in page.text
+     assert host_i18n.STRINGS["en"]["guest_links.preview"] in page.text
+ 
+ 
+@@ -62,7 +68,7 @@ def test_the_preview_targets_the_guest_side_not_the_host_property_page(host):  #
+     anchor = _preview_anchor(host.get("/guest-links?lang=en").text)
+ 
+     assert f"/apartments/{apartment_id}" not in anchor
+-    assert anchor.endswith(f'href="/l/{TOKEN}" target="_blank" rel="noopener">'
++    assert anchor.endswith(f'{_preview_href()} target="_blank" rel="noopener">'
+                            f'{host_i18n.STRINGS["en"]["guest_links.preview"]}')
+ 
+ 
+diff --git a/App/tests/test_guest_slugs.py b/App/tests/test_guest_slugs.py
+new file mode 100644
+index 0000000..f143246
+--- /dev/null
++++ b/App/tests/test_guest_slugs.py
+@@ -0,0 +1,357 @@
++"""Readable guest links (WP19): /l/{readable}-{code} beside /l/{token}.
++
++The token stays the secret every guest-side control is keyed on. These tests
++pin what a guest and a host can see: both links open the same pages, an
++earlier slug redirects, a wrong code is a 404, and the PIN cookie and the
++lockout do not care which of the two links the guest used.
++"""
++from __future__ import annotations
++
++from datetime import timedelta
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, claim, db, guest_slug, rate_limit
++from app.main import app
++
++TOKEN = "slugtesttoken23456789"
++PIN = "731905"
++USERNAME = "slug-host"
++PASSWORD = "Secure-Password-123"
++
++
++@pytest.fixture
++def pin_required(monkeypatch):
++    monkeypatch.setattr("app.config.GUEST_PIN_REQUIRED", True)
++
++
++def _cleanup():
++    # By owner too: "Generate a new link" replaces permalink_token, and a
++    # leftover apartment makes demo.seed() (test_demo_seed) refuse to seed.
++    for row in db.query(
++        "SELECT id, legal_entity_id FROM apartment WHERE permalink_token = ? "
++        "OR owner_user_id IN (SELECT id FROM user_account WHERE username = ?)",
++        (TOKEN, USERNAME),
++    ):
++        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (row["id"],))
++        db.execute("DELETE FROM alert WHERE apartment_id = ?", (row["id"],))
++        db.execute("DELETE FROM apartment WHERE id = ?", (row["id"],))
++        db.execute("DELETE FROM legal_entity WHERE id = ?", (row["legal_entity_id"],))
++    db.execute("DELETE FROM rate_limit_event")
++
++
++def _owner() -> int:
++    """The host account is kept between tests: other rows reference it."""
++    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
++    if row:
++        return int(row["id"])
++    return auth.create_account(USERNAME, PASSWORD, "Slug Host", must_change_password=False)
++
++
++@pytest.fixture
++def flat():
++    """One property named in Czech, with a stay starting today."""
++    db.init_db()
++    _cleanup()
++    now = db.utcnow()
++    today = claim.prague_today()
++    owner = _owner()
++    entity = db.insert("legal_entity", {"name": "Slug s.r.o.", "owner_user_id": owner, "created_at": now})
++    apartment_id = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity,
++            "owner_user_id": owner,
++            "internal_name": "Vinohrady Studio – Žižkov",
++            "permalink_token": TOKEN,
++            "permalink_pin": PIN,
++            "permalink_window_days": 14,
++            "default_purpose": "10",
++            "automation_mode": "manual",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    stay = db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment_id,
++            "source": "manual",
++            "uid": "slug-test-stay",
++            "date_from": today.isoformat(),
++            "date_to": (today + timedelta(days=2)).isoformat(),
++            "status": "active",
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
++    slug = guest_slug.ensure(apartment)
++    try:
++        yield {"id": apartment_id, "stay": stay, "slug": slug, "owner": owner}
++    finally:
++        _cleanup()
++
++
++def _host_client() -> TestClient:
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en",
++        data={"username": USERNAME, "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303, response.text
++    return client
++
++
++# --- slug generation -------------------------------------------------------
++
++def test_czech_names_are_folded_to_plain_letters():
++    assert guest_slug.readable_part("Příliš žluťoučký kůň úpěl ďábelské ódy") == (
++        "prilis-zlutoucky-kun-upel-dabelske-ody"
++    )
++    assert guest_slug.readable_part("Byt U Tří Růží, 2+kk") == "byt-u-tri-ruzi-2-kk"
++    assert guest_slug.readable_part("ŘEČNÍ  Ťulpas -- Ďáblice") == "recni-tulpas-dablice"
++    assert guest_slug.readable_part("Straße Łódź Ørsted") == "strasse-lodz-orsted"
++
++
++def test_the_readable_part_is_cut_at_a_word_boundary():
++    name = "Apartmán s výhledem na Pražský hrad a Karlův most"
++    readable = guest_slug.readable_part(name)
++    assert len(readable) <= guest_slug.READABLE_MAX
++    assert readable == "apartman-s-vyhledem-na-prazsky-hrad-a"
++    # Exactly at the limit nothing is dropped.
++    assert guest_slug.readable_part("a" * 40) == "a" * 40
++    # One word longer than the limit has no boundary, so it is cut hard.
++    assert guest_slug.readable_part("b" * 55) == "b" * 40
++
++
++def test_reserved_words_are_never_a_readable_part():
++    for word in ("pin", "claim", "party", "privacy", "another", "new", "edit", "save", "confirm"):
++        assert guest_slug.validate_readable(word) == (word, "reserved")
++        assert guest_slug.validate_readable(word.upper())[1] == "reserved"
++    assert guest_slug.validate_readable("pin flat") == ("pin-flat", "")
++    # A property called "Party" still gets a link, just not that word.
++    assert guest_slug._generated_readable("Party") == guest_slug.FALLBACK_READABLE
++
++
++def test_a_name_with_nothing_usable_is_rejected_or_falls_back():
++    assert guest_slug.validate_readable("  ★ — ★ ") == ("", "empty")
++    assert guest_slug._generated_readable("★") == guest_slug.FALLBACK_READABLE
++
++
++def test_the_code_uses_the_token_alphabet_and_six_characters(flat):
++    readable, code = flat["slug"].rsplit("-", 1)
++    assert readable == "vinohrady-studio-zizkov"
++    assert len(code) == 6
++    assert set(code) <= set(auth.PERMALINK_ALPHABET)
++
++
++def test_the_migration_gives_every_property_a_slug(flat):
++    db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (flat["id"],))
++    db.init_db()
++    first = guest_slug.current(flat["id"])
++    assert first and first.startswith("vinohrady-studio-zizkov-")
++    db.init_db()  # idempotent: the existing slug is kept
++    assert guest_slug.current(flat["id"]) == first
++    assert db.query_one(
++        "SELECT COUNT(*) AS n FROM apartment_slug WHERE apartment_id = ?", (flat["id"],)
++    )["n"] == 1
++
++
++def test_deleting_the_property_removes_its_slugs(flat):
++    db.execute("DELETE FROM reservation WHERE apartment_id = ?", (flat["id"],))
++    db.execute("DELETE FROM apartment WHERE id = ?", (flat["id"],))
++    assert guest_slug.lookup(flat["slug"]) is None
++
++
++# --- routing ---------------------------------------------------------------
++
++def test_the_old_token_link_still_opens_the_picker(flat):
++    page = TestClient(app).get(f"/l/{TOKEN}?lang=en")
++    assert page.status_code == 200
++    # A token visitor's own links stay on the token.
++    assert f"/l/{TOKEN}/{flat['stay']}" in page.text
++
++
++def test_the_current_slug_opens_the_same_picker(flat):
++    page = TestClient(app).get(f"/l/{flat['slug']}?lang=en", follow_redirects=False)
++    assert page.status_code == 200
++    assert f"/l/{flat['slug']}/{flat['stay']}" in page.text
++    assert f"/l/{TOKEN}" not in page.text
++
++
++def test_every_sub_route_resolves_the_slug(flat):
++    client = TestClient(app)
++    privacy = client.get(f"/l/{flat['slug']}/privacy?lang=en", follow_redirects=False)
++    assert privacy.status_code == 200
++    stay = client.get(f"/l/{flat['slug']}/{flat['stay']}?lang=en", follow_redirects=False)
++    # Mail is on in tests, so an unclaimed stay shows the claim page in place.
++    assert stay.status_code == 200
++    assert f"/l/{flat['slug']}/{flat['stay']}/party" in stay.text
++
++
++def test_an_old_slug_redirects_permanently_to_the_current_one(flat):
++    new = guest_slug.rename(flat["id"], "garden-loft")
++    assert new == "garden-loft-" + guest_slug.code_of(flat["slug"])
++    client = TestClient(app)
++    for suffix in ("", "/privacy", f"/{flat['stay']}", f"/{flat['stay']}/new"):
++        response = client.get(f"/l/{flat['slug']}{suffix}?lang=cs&x=1", follow_redirects=False)
++        assert response.status_code == 301, suffix
++        assert response.headers["location"] == f"/l/{new}{suffix}?lang=cs&x=1"
++        assert response.headers["cache-control"] == "no-store"
++    assert client.get(f"/l/{new}?lang=en", follow_redirects=False).status_code == 200
++
++
++def test_renaming_back_reuses_the_earlier_slug(flat):
++    guest_slug.rename(flat["id"], "garden-loft")
++    back = guest_slug.rename(flat["id"], guest_slug.readable_of(flat["slug"]))
++    assert back == flat["slug"]
++    assert TestClient(app).get(f"/l/{flat['slug']}", follow_redirects=False).status_code == 200
++
++
++def test_matching_is_case_insensitive_and_lands_on_lower_case(flat):
++    response = TestClient(app).get(f"/l/{flat['slug'].upper()}?lang=en", follow_redirects=False)
++    assert response.status_code == 301
++    assert response.headers["location"] == f"/l/{flat['slug']}?lang=en"
++
++
++def test_a_wrong_code_is_not_found(flat):
++    readable = guest_slug.readable_of(flat["slug"])
++    code = guest_slug.code_of(flat["slug"])
++    wrong = "".join("z" if ch != "z" else "y" for ch in code)
++    client = TestClient(app)
++    for key in (f"{readable}-{wrong}", f"other-name-{code}", readable, f"{readable}-{code}x"):
++        assert client.get(f"/l/{key}", follow_redirects=False).status_code == 404, key
++        assert client.get(f"/l/{key}/privacy", follow_redirects=False).status_code == 404, key
++
++
++def test_an_archived_property_is_not_found_by_slug_either(flat):
++    db.update("apartment", flat["id"], {"archived_at": db.utcnow()})
++    assert TestClient(app).get(f"/l/{flat['slug']}", follow_redirects=False).status_code == 404
++
++
++def test_a_post_on_an_old_slug_is_served_not_redirected(flat, pin_required):
++    guest_slug.rename(flat["id"], "garden-loft")
++    response = TestClient(app).post(
++        f"/l/{flat['slug']}/pin",
++        data={"pin": PIN, "return_to": f"/l/{flat['slug']}"},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    assert response.headers["location"].startswith("/l/garden-loft-")
++
++
++# --- PIN continuity and lockout -----------------------------------------
++
++def _enter_pin(client: TestClient, key: str, pin: str = PIN):
++    return client.post(
++        f"/l/{key}/pin",
++        data={"pin": pin, "return_to": f"/l/{key}"},
++        follow_redirects=False,
++    )
++
++
++def test_a_pin_entered_on_the_token_link_opens_the_slug_link(flat, pin_required):
++    client = TestClient(app)
++    assert "pin" in client.get(f"/l/{flat['slug']}?lang=en").text.lower()
++    assert _enter_pin(client, TOKEN).status_code == 303
++    page = client.get(f"/l/{flat['slug']}?lang=en", follow_redirects=False)
++    assert page.status_code == 200
++    assert f'action="/l/{flat["slug"]}/pin' not in page.text
++    assert f"/l/{flat['slug']}/{flat['stay']}" in page.text
++
++
++def test_a_pin_entered_on_the_slug_link_opens_the_token_link(flat, pin_required):
++    client = TestClient(app)
++    assert _enter_pin(client, flat["slug"]).status_code == 303
++    page = client.get(f"/l/{TOKEN}?lang=en", follow_redirects=False)
++    assert page.status_code == 200
++    assert f'action="/l/{TOKEN}/pin' not in page.text
++
++
++def test_the_pin_cookie_carries_the_token_not_the_slug(flat, pin_required):
++    client = TestClient(app)
++    response = _enter_pin(client, flat["slug"])
++    raw = response.cookies.get(auth.PIN_COOKIE) or client.cookies.get(auth.PIN_COOKIE)
++    payload = auth._pin_serializer().loads(raw)
++    assert payload["token"] == TOKEN
++    assert payload["pin"] == auth.pin_fingerprint(TOKEN, PIN)
++
++
++def test_wrong_pins_count_against_one_budget_on_both_links(flat, pin_required):
++    client = TestClient(app)
++    assert _enter_pin(client, TOKEN, "000000").status_code == 200
++    assert _enter_pin(client, flat["slug"], "000000").status_code == 200
++    assert _enter_pin(client, flat["slug"].upper(), "000000").status_code == 200
++    lock_key = f"{TOKEN}:{auth.pin_fingerprint(TOKEN, PIN)}"
++    assert rate_limit.pin_failure_count(f"testclient:{TOKEN}") == 3
++    assert rate_limit._count("pin_fail_token", lock_key, rate_limit._PIN_TOKEN_LOCK_SECONDS) == 3
++    # Nothing was counted under the slug, so switching links resets nothing.
++    assert rate_limit.pin_failure_count(f"testclient:{flat['slug']}") == 0
++
++
++def test_a_link_locked_on_the_token_is_locked_on_the_slug(flat, pin_required):
++    lock_key = f"{TOKEN}:{auth.pin_fingerprint(TOKEN, PIN)}"
++    for _ in range(rate_limit._PIN_TOKEN_MAX_FAILURES):
++        rate_limit.record_pin_failure(f"198.51.100.7:{TOKEN}", lock_key)
++    response = _enter_pin(TestClient(app), flat["slug"])
++    assert response.status_code == 200
++    assert auth.PIN_COOKIE not in response.cookies
++
++
++# --- host side -------------------------------------------------------------
++
++def test_the_guest_links_page_and_stay_page_copy_the_slug(flat):
++    client = _host_client()
++    links = client.get("/guest-links?lang=en").text
++    assert f"/l/{flat['slug']}" in links
++    assert f"/l/{TOKEN}" not in links
++    detail = client.get(f"/reservations/{flat['stay']}?lang=en").text
++    assert f"/l/{flat['slug']}/{flat['stay']}" in detail
++    listing = client.get("/reservations?range=all&lang=en").text
++    assert f"/l/{flat['slug']}/{flat['stay']}" in listing
++
++
++def test_the_host_renames_the_readable_part_and_keeps_the_code(flat):
++    client = _host_client()
++    form = client.get(f"/apartments/{flat['id']}?lang=en").text
++    assert 'name="guest_link_name"' in form
++    assert 'value="vinohrady-studio-zizkov"' in form
++    response = client.post(
++        f"/apartments/{flat['id']}",
++        data={"internal_name": "Vinohrady Studio – Žižkov", "guest_link_name": "Zahradní Loft"},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    current = guest_slug.current(flat["id"])
++    assert current == "zahradni-loft-" + guest_slug.code_of(flat["slug"])
++    assert guest_slug.lookup(flat["slug"])["is_current"] == 0
++
++
++def test_the_host_cannot_pick_a_reserved_or_empty_name(flat):
++    client = _host_client()
++    for value, key in (("Claim", "flash.error.link_name_reserved"), ("★★", "flash.error.link_name_empty")):
++        response = client.post(
++            f"/apartments/{flat['id']}",
++            data={"internal_name": "Vinohrady Studio – Žižkov", "guest_link_name": value},
++            follow_redirects=False,
++        )
++        assert response.status_code == 303
++        assert "err=" in response.headers["location"]
++        assert guest_slug.current(flat["id"]) == flat["slug"]
++
++
++def test_a_new_link_retires_every_slug(flat):
++    guest_slug.rename(flat["id"], "garden-loft")
++    old_current = guest_slug.current(flat["id"])
++    client = _host_client()
++    response = client.post(f"/apartments/{flat['id']}/regenerate-link", follow_redirects=False)
++    assert response.status_code == 303
++    fresh = guest_slug.current(flat["id"])
++    assert fresh.startswith("garden-loft-") and fresh != old_current
++    guest = TestClient(app)
++    for gone in (flat["slug"], old_current, TOKEN):
++        assert guest.get(f"/l/{gone}", follow_redirects=False).status_code == 404, gone
++    assert guest.get(f"/l/{fresh}", follow_redirects=False).status_code == 200
+diff --git a/App/tests/test_migrations.py b/App/tests/test_migrations.py
+index e56d998..5163d8f 100644
+--- a/App/tests/test_migrations.py
++++ b/App/tests/test_migrations.py
+@@ -15,11 +15,20 @@ import pytest
+ from app import codelists, config, db
+ 
+ 
++# The migration files the app ships (WP19 on). Each test runs on a copy of
++# them, so a test can add its own file with the next free number.
++SHIPPED = db.migration_files()
++LATEST = max([db.BASELINE_VERSION] + [version for version, _n, _p in SHIPPED])
++NEXT = f"{LATEST + 1:04d}"
++
++
+ @pytest.fixture
+ def fresh(tmp_path, monkeypatch):
+     monkeypatch.setattr(config, "DB_PATH", tmp_path / "fresh.db")
+     monkeypatch.setattr(db, "MIGRATIONS_DIR", tmp_path / "migrations")
+     (tmp_path / "migrations").mkdir()
++    for _version, _name, path in SHIPPED:
++        (tmp_path / "migrations" / path.name).write_text(path.read_text(encoding="utf-8"))
+     return tmp_path
+ 
+ 
+@@ -63,12 +72,14 @@ def _pre_wp18_database(path: Path) -> None:
+ 
+ def test_an_empty_database_is_created_at_the_baseline(fresh):
+     db.init_db()
+-    assert db.schema_version() == db.BASELINE_VERSION
++    assert db.schema_version() == LATEST
+     tables = {row["name"] for row in db.query("SELECT name FROM sqlite_master WHERE type = 'table'")}
+     assert {"guest", "submission", "schema_migrations", "legal_acceptance"} <= tables
+     db.init_db()
+-    rows = db.query("SELECT version, name FROM schema_migrations")
+-    assert [(row["version"], row["name"]) for row in rows] == [(1, "baseline")]
++    rows = db.query("SELECT version, name FROM schema_migrations ORDER BY version")
++    assert [(row["version"], row["name"]) for row in rows] == [(1, "baseline")] + [
++        (version, name) for version, name, _path in SHIPPED
++    ]
+ 
+ 
+ def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
+@@ -79,8 +90,11 @@ def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
+ 
+     db.init_db()
+ 
+-    assert db.schema_version() == db.BASELINE_VERSION
+-    assert _schema(current) == before, "marking the version must not change the schema"
++    assert db.schema_version() == LATEST
++    after = _schema(current)
++    # Marking the baseline changes nothing that was there; the shipped
++    # migrations only add to it.
++    assert {key: after.get(key) for key in before} == before
+     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
+ 
+ 
+@@ -94,39 +108,39 @@ def test_an_empty_and_an_upgraded_database_end_with_the_same_schema(fresh, tmp_p
+ 
+ 
+ def test_a_numbered_migration_is_applied_once_and_recorded(fresh):
+-    (fresh / "migrations" / "0002_demo_column.sql").write_text(
++    (fresh / "migrations" / f"{NEXT}_demo_column.sql").write_text(
+         "-- a demo migration\n"
+         "ALTER TABLE settings ADD COLUMN demo_note TEXT;\n"
+         "CREATE INDEX IF NOT EXISTS idx_settings_demo ON settings (demo_note);\n"
+     )
+     db.init_db()
+     db.init_db()
+-    assert db.schema_version() == 2
++    assert db.schema_version() == LATEST + 1
+     columns = [row["name"] for row in db.query("PRAGMA table_info(settings)")]
+     assert columns.count("demo_note") == 1
+-    row = db.query_one("SELECT name FROM schema_migrations WHERE version = 2")
++    row = db.query_one("SELECT name FROM schema_migrations WHERE version = ?", (LATEST + 1,))
+     assert row["name"] == "demo_column"
+ 
+ 
+ def test_an_existing_database_gets_later_migrations_on_top_of_the_baseline(fresh):
+     _pre_wp18_database(config.DB_PATH)
+-    (fresh / "migrations" / "0002_demo_column.sql").write_text(
++    (fresh / "migrations" / f"{NEXT}_demo_column.sql").write_text(
+         "ALTER TABLE settings ADD COLUMN demo_note TEXT;\n"
+     )
+     db.init_db()
+-    assert db.schema_version() == 2
++    assert db.schema_version() == LATEST + 1
+     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
+ 
+ 
+ def test_a_failing_migration_leaves_nothing_behind_and_is_not_recorded(fresh):
+     db.init_db()
+-    (fresh / "migrations" / "0002_broken.sql").write_text(
++    (fresh / "migrations" / f"{NEXT}_broken.sql").write_text(
+         "ALTER TABLE settings ADD COLUMN half_done TEXT;\n"
+         "ALTER TABLE no_such_table ADD COLUMN x TEXT;\n"
+     )
+     with pytest.raises(sqlite3.OperationalError):
+         db.init_db()
+-    assert db.schema_version() == 1
++    assert db.schema_version() == LATEST
+     columns = [row["name"] for row in db.query("PRAGMA table_info(settings)")]
+     assert "half_done" not in columns
+ 
+@@ -141,7 +155,7 @@ def test_files_that_are_not_migrations_are_ignored(fresh):
+     (fresh / "migrations" / ".gitkeep").write_text("")
+     (fresh / "migrations" / "notes.txt").write_text("not sql")
+     db.init_db()
+-    assert db.schema_version() == 1
++    assert db.schema_version() == LATEST
+ 
+ 
+ # --- RETURNING, ON CONFLICT, null-safe comparison ----------------------------
+diff --git a/App/tests/test_onboarding.py b/App/tests/test_onboarding.py
+index 1020698..f28c382 100644
+--- a/App/tests/test_onboarding.py
++++ b/App/tests/test_onboarding.py
+@@ -6,7 +6,7 @@ import re
+ 
+ from fastapi.testclient import TestClient
+ 
+-from app import auth, db, onboarding
++from app import auth, db, guest_slug, onboarding
+ from app.host_i18n import STRINGS as HOST_STRINGS
+ from app.main import app
+ 
+@@ -256,7 +256,9 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
+     progress = onboarding.progress(owner_id)
+     assert progress["finished"] is True
+     assert progress["finish"]["pin"] == "246810"
+-    assert progress["finish"]["permalink"].endswith("/l/finishlink99")
++    # The copied link is the readable one (WP19); the token behind it is unchanged.
++    assert progress["finish"]["permalink"].endswith(f"/l/{guest_slug.current(apartment_id)}")
++    assert progress["finish"]["link_key"].startswith("ready-studio-")
+     assert progress["finish"]["communication_url"] == f"/apartments/{apartment_id}#communication"
+ 
+     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+@@ -270,7 +272,7 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
+     assert dashboard.status_code == 200
+     assert 'class="onboarding-finish"' in dashboard.text
+     assert "Guest link and PIN are live" in dashboard.text
+-    assert "finishlink99" in dashboard.text
++    assert guest_slug.current(apartment_id) in dashboard.text
+     assert "246810" in dashboard.text
+     assert "edit host message" in dashboard.text
+     assert "Open communication settings" in dashboard.text
+@@ -406,7 +408,7 @@ def test_a_hand_typed_stay_also_lets_the_guest_link_step_finish():
+ 
+     assert progress["finished"] is True
+     assert progress["completed"] == progress["total"] == 5
+-    assert progress["finish"]["permalink"].endswith("/l/manualtoken2")
++    assert progress["finish"]["permalink"].endswith(f"/l/{guest_slug.current(apartment_id)}")
+ 
+ 
+ def test_a_cancelled_hand_typed_stay_does_not_satisfy_the_calendar_step():
+diff --git a/App/tests/test_overhaul.py b/App/tests/test_overhaul.py
+index c2fff43..5e7d432 100644
+--- a/App/tests/test_overhaul.py
++++ b/App/tests/test_overhaul.py
+@@ -5,7 +5,7 @@ import re
+ 
+ from fastapi.testclient import TestClient
+ 
+-from app import auth, claim, db
++from app import auth, claim, db, guest_slug
+ from app import alerts
+ from app import demo
+ from app import housebook
+@@ -324,7 +324,8 @@ def test_reservation_detail_shows_direct_guest_link():
+     try:
+         page = _browser().get(f"/reservations/{stays[0]}")
+         assert page.status_code == 200
+-        assert f"/l/{TOKEN}/{stays[0]}" in page.text
++        # The copied stay link is the readable one (WP19).
++        assert f"/l/{guest_slug.current(apartment_id)}/{stays[0]}" in page.text
+         assert "Copy guest link for this stay" in page.text
+         assert "Next step" in page.text
+         assert "Edit stay details" in page.text
+@@ -502,8 +503,9 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
+ 
+         links = browser.get("/guest-links")
+         assert links.status_code == 200
+-        assert f"/l/{TOKEN}" in links.text
+-        assert f"/l/{TOKEN}/{stays[0]}" not in links.text
++        slug = guest_slug.current(apartment_id)
++        assert f"/l/{slug}" in links.text
++        assert f"/l/{slug}/{stays[0]}" not in links.text
+         assert "Suggested portal message" in links.text
+     finally:
+         _cleanup()
+diff --git a/docs/SECURITY.md b/docs/SECURITY.md
+index cc670aa..3f7ece2 100644
+--- a/docs/SECURITY.md
++++ b/docs/SECURITY.md
+@@ -10,7 +10,7 @@ summarises the threat model, controls, and known limitations.
+ | **Transport** | HTTPS in production (`Secure` cookies are forced for production); Cloudflare **HSTS** (6 months, no preload) on `ubyhost.com` |
+ | **Host auth** | Signed session cookie, `HttpOnly`, `SameSite=Strict`, `Secure` on HTTPS, session-version invalidation |
+ | **Host 2FA** | Authenticator-app TOTP required in production; one-use recovery codes |
+-| **Guest access** | 100-bit permalink token + optional six-digit PIN + signed PIN cookie bound to token and current PIN; the claim secret is stored hashed and never written into a mail body |
++| **Guest access** | 100-bit permalink token + optional six-digit PIN + signed PIN cookie bound to token and current PIN; the claim secret is stored hashed and never written into a mail body. The readable link `/l/{name}-{6-character code}` (about 30 bits) is resolved to the same token before any check, so the PIN cookie, PIN fingerprint, lockout and rate limits are keyed on the token whichever link a guest opens. Guessing a readable link reveals only the PIN page (property name and host card), never guest data |
+ | **Multi-tenant** | All host routes resolve resources through `access.*` joins on `owner_user_id` |
+ | **Secrets** | UbyPort passwords, host TOTP secrets, guest travel-document numbers, birth date, street and town of residence, signatures, the UbyPort request envelope and queued claim secrets encrypted at rest (MultiFernet over `UBYHOST_DATA_KEYS`, separate from the session secret; the old key derived from `SECRET_KEY` is kept for decryption until `scripts/reencrypt.py` has run); `SECRET_KEY` in `data/secret_key` |
+ | **Uploads** | Passport photos/PDFs: type/size/magic-byte checks; host-only download route |
+-- 
+2.34.1
+

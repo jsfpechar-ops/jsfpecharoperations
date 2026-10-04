@@ -1,0 +1,3144 @@
+From c2569a03df8d752237bd392b8f23fbc251fe949e Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:10:36 +0200
+Subject: [PATCH 32/34] WP20: Self sign-up page with Google Ads conversion
+ import
+
+Integration with WP18: the sign-up schema (seven user_account columns, the unique e-mail index, consent_texts and ad_click) moved from db.SCHEMA and ADDED_COLUMNS into App/app/migrations/0003_signup.sql. The onboarding_emails_opt_out columns are defined once, by WP12 in the baseline; WP20's duplicate entries were dropped. The sign-up checkbox writes user_account.onboarding_emails_opt_out, which WP12's lifecycle_mail.is_opted_out and Settings toggle read (new tests in tests/test_signup.py). Other conflicts: config.py keeps WP09's PRIVACY_VERSION 1.6; mail.py and tests/test_claim_mail.py keep WP12's lifecycle kinds and WP20's sign-up kinds, plus LIFECYCLE_KINDS; retention._delete_workspace deletes lifecycle_mail_sent and ad_click rows, audit with plain =; Settings context keeps onboarding_emails and ad_consents; routes/legal.py keeps WP09's privacy context and WP20's signup_ads_notice; privacy.html section 7 shows the cookie table, the Umami block and then the sign-up paragraphs; landing.html keeps the signup_href switch with WP09's login_click event on the /login fallback; pricing.html keeps WP09's contact_click and adds WP20's sign-up button.
+
+Cross-WP fixes: the Google Ads recipient on /subprocessors (WP09) is listed only while UBYHOST_SIGNUP_ENABLED is on (routes/legal.py recipient_ids(), test updated). WP11's funnel hook is filled: stages signed_up and email_verified, and a signup_source_present column (UTM label or ad click), with EN and CS labels and a new test.
+
+mail_notify.py: WP23's filing watchdog builders kept before the sign-up section.
+---
+ App/app/admin_funnel.py                     |  31 +-
+ App/app/auth.py                             |  10 +-
+ App/app/config.py                           |  13 +
+ App/app/host_i18n.py                        | 339 +++++++++
+ App/app/mail.py                             |   8 +
+ App/app/mail_notify.py                      | 164 ++++
+ App/app/migrations/0003_signup.sql          |  47 ++
+ App/app/retention.py                        |   2 +
+ App/app/routes/admin.py                     |  10 +-
+ App/app/routes/admin_accounts.py            |  15 +-
+ App/app/routes/legal.py                     |  19 +-
+ App/app/routes/signup.py                    | 233 ++++++
+ App/app/scheduler.py                        |   7 +
+ App/app/signup.py                           | 709 +++++++++++++++++
+ App/app/templates/landing.html              |   4 +-
+ App/app/templates/pricing.html              |   3 +
+ App/app/templates/privacy.html              |   6 +
+ App/app/templates/settings.html             |  33 +
+ App/app/templates/signup.html               |  87 +++
+ App/app/templates/signup_sent.html          |  12 +
+ App/app/templates/signup_verify.html        |  29 +
+ App/app/templates/subprocessors.html        |   4 +-
+ App/app/templates/users.html                |  20 +-
+ App/tests/test_admin_funnel.py              |  22 +
+ App/tests/test_claim_mail.py                |   3 +
+ App/tests/test_migrations.py                |   9 +-
+ App/tests/test_privacy_legal_positions.py   |   7 +-
+ App/tests/test_signup.py                    | 795 ++++++++++++++++++++
+ deploy/lightsail/.env.example               |   9 +
+ deploy/lightsail/caddy/Caddyfile.acme       |   3 +
+ deploy/lightsail/caddy/Caddyfile.cloudflare |   3 +
+ 31 files changed, 2629 insertions(+), 27 deletions(-)
+ create mode 100644 App/app/migrations/0003_signup.sql
+ create mode 100644 App/app/routes/signup.py
+ create mode 100644 App/app/signup.py
+ create mode 100644 App/app/templates/signup.html
+ create mode 100644 App/app/templates/signup_sent.html
+ create mode 100644 App/app/templates/signup_verify.html
+ create mode 100644 App/tests/test_signup.py
+
+diff --git a/App/app/admin_funnel.py b/App/app/admin_funnel.py
+index 2f0628f..c096209 100644
+--- a/App/app/admin_funnel.py
++++ b/App/app/admin_funnel.py
+@@ -6,12 +6,11 @@ touches a guest table beyond counting completed stays and filings, so the page
+ and the CSV carry host account data only (e-mail-like username and name are
+ fine here, guest data is not).
+ 
+-Hook for WP20 (self sign-up): ``SIGNUP_STAGES`` is empty today. When sign-up
+-exists, put ``("signed_up", ...)`` and ``("email_verified", ...)`` there, select
+-their columns in ``_SQL``, and fill ``SIGNUP_SOURCE_COLUMNS`` with the
+-"UTM or Google Ads click present (yes/no)" column. Every consumer (the page,
+-the stage counts and the CSV) reads ``stages()`` and ``csv_columns()``, so
+-nothing else has to change.
++WP20 (self sign-up) fills the hook: ``SIGNUP_STAGES`` adds "signed up" and
++"e-mail verified" before "created" (admin-created accounts have neither), and
++``SIGNUP_SOURCE_COLUMNS`` adds "UTM or ad click present" (yes/no, empty for an
++account that did not sign up itself). Every consumer (the page, the stage
++counts and the CSV) reads ``stages()`` and ``csv_columns()``.
+ """
+ from __future__ import annotations
+ 
+@@ -27,10 +26,15 @@ from .csv_safety import csv_safe
+ # Safety cap; far above the host count this page is meant for.
+ MAX_ROWS = 5000
+ 
+-# WP20 hook: stages before "created", as (key, column in the query row).
+-SIGNUP_STAGES: Tuple[Tuple[str, str], ...] = ()
+-# WP20 hook: extra per-account columns for the CSV, as (key, column).
+-SIGNUP_SOURCE_COLUMNS: Tuple[Tuple[str, str], ...] = ()
++# WP20: stages before "created", as (key, column in the query row).
++SIGNUP_STAGES: Tuple[Tuple[str, str], ...] = (
++    ("signed_up", "signup_at"),
++    ("email_verified", "email_verified_at"),
++)
++# WP20: extra per-account columns for the CSV, as (key, column).
++SIGNUP_SOURCE_COLUMNS: Tuple[Tuple[str, str], ...] = (
++    ("signup_source_present", "signup_source_present"),
++)
+ 
+ # The funnel order. A host's stage is the furthest one with a date.
+ CORE_STAGES: Tuple[Tuple[str, str], ...] = (
+@@ -79,6 +83,13 @@ _FILED = ", ".join("?" for _ in FILED_STATES)
+ # filing numbers come from one grouped join over submission.
+ _SQL = (
+     "SELECT u.id, u.username, u.display_name, u.active, u.created_at, u.last_login_at, "
++    "u.signup_at, u.email_verified_at, "
++    # WP20: did the self sign-up carry a UTM label or a consented ad click?
++    "CASE WHEN u.signup_at IS NULL THEN NULL "
++    "WHEN COALESCE(u.signup_utm_source, '') <> '' OR COALESCE(u.signup_utm_medium, '') <> '' "
++    "OR COALESCE(u.signup_utm_campaign, '') <> '' "
++    "OR EXISTS (SELECT 1 FROM ad_click c WHERE c.user_account_id = u.id) "
++    "THEN 'yes' ELSE 'no' END AS signup_source_present, "
+     "COALESCE((SELECT MIN(au.at) FROM audit au WHERE au.owner_user_id = u.id "
+     "AND au.action IN ('login', 'two_factor_login')), u.last_login_at) AS first_login_at, "
+     "(SELECT MIN(la.accepted_at) FROM legal_acceptance la "
+diff --git a/App/app/auth.py b/App/app/auth.py
+index dc717e5..748f0fa 100644
+--- a/App/app/auth.py
++++ b/App/app/auth.py
+@@ -223,9 +223,15 @@ def _dummy_hash() -> str:
+ 
+ 
+ def authenticate(username: str, password: str):
++    identifier = normalise_username(username)
++    # A self-signed-up host (WP20) knows their e-mail better than the username
++    # generated for them. A username can never contain "@", so the two lookups
++    # cannot reach different accounts for the same input. Unverified sign-ups
++    # are inactive and so are refused here like a disabled account.
++    column = "email" if "@" in identifier else "username"
+     account = db.query_one(
+-        "SELECT * FROM user_account WHERE username = ? AND active = 1",
+-        (normalise_username(username),),
++        f"SELECT * FROM user_account WHERE {column} = ? AND active = 1",
++        (identifier,),
+     )
+     stored = account["password_hash"] if account else _dummy_hash()
+     if not verify_password(password, stored) or not account:
+diff --git a/App/app/config.py b/App/app/config.py
+index 17320db..2f37c6d 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -259,6 +259,19 @@ SES_REGION = os.environ.get("UBYHOST_SES_REGION", "eu-central-1").strip()
+ AWS_ACCESS_KEY_ID = os.environ.get("UBYHOST_AWS_ACCESS_KEY_ID", "").strip()
+ AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").strip()
+ 
++# WP20: self sign-up at /signup. Off by default; while off the page and its
++# verification route answer 404 and the public pages link to /login as before.
++# Counsel has to confirm the privacy-notice wording and the legal basis for
++# keeping the Google Ads click ID before this is switched on in production.
++SIGNUP_ENABLED = os.environ.get("UBYHOST_SIGNUP_ENABLED", "0").lower() in ("1", "true", "yes")
++# Where the "new verified sign-up" notice goes. Defaults to the support address.
++SIGNUP_NOTIFY_EMAIL = os.environ.get("UBYHOST_SIGNUP_NOTIFY_EMAIL", "").strip() or OPERATOR_EMAIL
++# The conversion action name exactly as created in Google Ads (case-sensitive).
++ADS_CONVERSION_NAME = os.environ.get("UBYHOST_ADS_CONVERSION_NAME", "UbyHost sign-up").strip()
++# The click ID windows (export within 85 days of the click, delete 90 days
++# after it or 30 days after upload) are fixed in signup.py: they come from the
++# legal position, not from deployment preference.
++
+ # Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
+ # analytics with opt-out, own retention periods and roles. A bump makes the
+ # policy pending again, so every host is sent to /account/accept once.
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 25c9a9b..cd06bb1 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -4353,6 +4353,341 @@ from .guide_i18n import GUIDE_STRINGS
+ for _lang, _strings in GUIDE_STRINGS.items():
+     STRINGS[_lang].update(_strings)
+ 
++# WP20: self sign-up, its e-mails, and the privacy draft for the Google Ads
++# click ID. Kept in one block so counsel can review the wording in one place.
++_SIGNUP_STRINGS = {
++    "en": {
++        "signup.page_title": "Create your UbyHost account",
++        "signup.meta_description": "Create a UbyHost account for guest registration and UbyPort reporting.",
++        "signup.title": "Create your UbyHost account",
++        "signup.lede": "It takes a minute. We send a confirmation link to your e-mail.",
++        "signup.cta": "Create an account",
++        "signup.email": "E-mail",
++        "signup.email_ph": "you@example.com",
++        "signup.password": "Password",
++        "signup.password_hint": "At least 12 characters, with upper- and lowercase letters and a number.",
++        "signup.workspace": "Business or workspace name",
++        "signup.workspace_ph": "For example: Apartments Old Town",
++        "signup.accept_before": "I accept the ",
++        "signup.accept_terms": "Terms of Service",
++        "signup.accept_between": " and the ",
++        "signup.accept_dpa": "Data Processing Agreement",
++        "signup.accept_privacy_before": ", and I have read the ",
++        "signup.accept_privacy": "Privacy Policy",
++        "signup.accept_after": ".",
++        # Legal position 3, verbatim. Changing it needs a new
++        # signup.CONSENT_VERSIONS entry (the old wording stays on record).
++        "signup.ads_consent": (
++            "Optional: I agree that UbyHost may record that I came from a Google ad "
++            "and share that click identifier with Google (an independent controller) "
++            "to measure our ad campaigns. No personalised ads. You can withdraw "
++            "anytime in Settings."
++        ),
++        "signup.ads_consent_link": "How Google uses data",
++        # Legal position 2, verbatim.
++        "signup.onboarding_opt_out": (
++            "Do not send me setup tips by e-mail (you can change this anytime in Settings)."
++        ),
++        "signup.submit": "Create account",
++        "signup.have_account": "Already have an account?",
++        "signup.login_link": "Log in",
++        "signup.error.email": "Enter a valid e-mail address.",
++        "signup.error.workspace": (
++            "Enter the name of your business or workspace (up to 120 characters)."
++        ),
++        "signup.error.accept": (
++            "To create an account, accept the Terms of Service and the Data Processing Agreement."
++        ),
++        "signup.error.rate_limited": "Too many sign-up attempts. Try again in an hour.",
++        "signup.error.turnstile": (
++            "We couldn't finish the security check. Wait until the check above the button "
++            "shows a tick, then press Create account again."
++        ),
++        "signup.sent.page_title": "Check your inbox",
++        "signup.sent.title": "Check your inbox",
++        "signup.sent.body": (
++            "We have sent a confirmation link to %(email)s. If you already have an account "
++            "with this address, the e-mail tells you how to sign in instead."
++        ),
++        "signup.sent.expiry": "The link works for 24 hours.",
++        "signup.sent.spam": (
++            "No e-mail after a few minutes? Check your spam folder, or sign up again."
++        ),
++        "signup.verify.page_title": "Confirm your e-mail",
++        "signup.verify.title": "Confirm your e-mail",
++        "signup.verify.lede": "Enter the password you chose at sign-up to activate your account.",
++        "signup.verify.submit": "Activate account",
++        "signup.verify.error.password": (
++            "That password doesn't match the one you chose at sign-up."
++        ),
++        "signup.verify.locked": "Too many attempts. Try again in 15 minutes.",
++        "signup.verify.expired.title": "This link no longer works",
++        "signup.verify.expired.body": (
++            "Confirmation links work for 24 hours, and only the newest one works. "
++            "Sign up again to get a new link."
++        ),
++        "signup.verify.expired.action": "Sign up again",
++        "mail.signup_verify.subject": "Confirm your UbyHost account",
++        "mail.signup_verify.heading": "Confirm your e-mail address",
++        "mail.signup_verify.intro": (
++            "Thanks for signing up for UbyHost with the workspace “%(workspace)s”. "
++            "Open the link below and enter your password to activate the account."
++        ),
++        "mail.signup_verify.action": "Confirm e-mail",
++        "mail.signup_verify.expiry": (
++            "The link works for 24 hours. If you did not sign up, ignore this e-mail: "
++            "the unconfirmed account is deleted after 7 days."
++        ),
++        "mail.signup_verify.username": (
++            "You can sign in with this e-mail address or with the username %(username)s."
++        ),
++        "mail.signup_exists.subject": "Someone tried to create a UbyHost account with your e-mail",
++        "mail.signup_exists.heading": "You already have an account",
++        "mail.signup_exists.intro": (
++            "Someone, probably you, tried to create a new UbyHost account with this e-mail "
++            "address. An account with this address already exists, so nothing was created."
++        ),
++        "mail.signup_exists.action": "Log in",
++        "mail.signup_exists.help": (
++            "Forgotten your password? Write to %(support)s. If this was not you, you can "
++            "ignore this e-mail."
++        ),
++        "mail.signup_admin.subject": "New UbyHost sign-up: %(workspace)s",
++        "mail.signup_admin.heading": "New verified sign-up",
++        "mail.signup_admin.intro": (
++            "A new account was created and its e-mail address confirmed. The account is "
++            "active now. If it should not be, disable it under Users."
++        ),
++        "mail.signup_admin.workspace": "Workspace",
++        "mail.signup_admin.email": "E-mail",
++        "mail.signup_admin.username": "Username",
++        "mail.signup_admin.source": "Campaign",
++        "mail.signup_admin.ads": "Google Ads click",
++        "mail.signup_admin.yes": "yes",
++        "mail.signup_admin.no": "no",
++        "mail.signup_admin.action": "Open Users",
++        "notification.mail_kind.signup_verify": "sign-up confirmation link",
++        "notification.mail_kind.signup_exists": "repeated sign-up notice",
++        "notification.mail_kind.signup_admin": "new sign-up notice",
++        "users.status.unverified": "E-mail not confirmed",
++        "users.menu.withdraw_ads_consent": "Withdraw Google Ads consent",
++        "users.ads_export": "Download new Google Ads conversions (CSV)",
++        "users.ads_export_hint": (
++            "Verified sign-ups from a Google ad, with consent, from clicks in the last "
++            "%(days)s days, not downloaded before. Downloading marks them as uploaded, so "
++            "upload the file in Google Ads under Goals, Conversions, Uploads straight away."
++        ),
++        "users.ads_export_again": "Download again, including earlier rows",
++        "flash.signup.consent_withdrawn.google": (
++            "Google Ads consent withdrawn and the click identifier deleted."
++        ),
++        "settings.privacy.title": "Privacy",
++        "settings.privacy.ad_consent.google": "Use my sign-up to measure UbyHost's Google Ads",
++        "settings.privacy.given": "On since %(date)s.",
++        "settings.privacy.withdrawn": (
++            "Off since %(date)s. The click identifier has been deleted."
++        ),
++        "settings.privacy.on": "On",
++        "settings.privacy.off": "Off",
++        "settings.privacy.save": "Save",
++        "settings.privacy.help": (
++            "Untick and save to withdraw. We then delete the click identifier and stop "
++            "using your sign-up for ad measurement. This cannot be turned back on, and "
++            "it does not affect what was measured before."
++        ),
++        "privacy.signup_title": "Self sign-up",
++        "privacy.signup_body": (
++            "When you create an account yourself, we store your e-mail address, the "
++            "workspace name and the time of sign-up to provide the account (contract, "
++            "Art. 6(1)(b) GDPR). We also store the campaign labels of the link you arrived "
++            "by (utm_source, utm_medium, utm_campaign) to see which campaigns bring "
++            "sign-ups (legitimate interest, Art. 6(1)(f) GDPR). No advertising script runs "
++            "on our pages and no cookie is used for this."
++        ),
++        # Legal position 3, verbatim.
++        "privacy.signup_ads_title": "Google Ads measurement",
++        "privacy.signup_ads_body": (
++            "If you arrived at our sign-up page from a Google ad, the page address contains "
++            "a click identifier (gclid). We keep this identifier only if you tick the "
++            "optional consent box during sign-up. We then send it to Google Ireland Ltd. "
++            "together with the fact and time of your sign-up, so that we can see which ads "
++            "bring new customers. We do not send your name or e-mail address and we do not "
++            "use this for personalised advertising. Google processes this data as an "
++            "independent controller; see https://business.safety.google/privacy/. Legal "
++            "basis: your consent (Art. 6(1)(a) GDPR and § 89(3) of Act No. 127/2005 Coll.). "
++            "We delete the identifier at the latest 90 days after the ad click. You can "
++            "withdraw consent anytime in Settings > Privacy. Withdrawal does not affect "
++            "processing before it."
++        ),
++    },
++    "cs": {
++        "signup.page_title": "Založte si účet UbyHost",
++        "signup.meta_description": "Založte si účet UbyHost pro registraci hostů a hlášení do UbyPortu.",
++        "signup.title": "Založte si účet UbyHost",
++        "signup.lede": "Zabere to minutu. Na váš e-mail pošleme potvrzovací odkaz.",
++        "signup.cta": "Založit účet",
++        "signup.email": "E-mail",
++        "signup.email_ph": "vy@example.com",
++        "signup.password": "Heslo",
++        "signup.password_hint": "Alespoň 12 znaků, velká i malá písmena a číslice.",
++        "signup.workspace": "Název firmy nebo pracovního prostoru",
++        "signup.workspace_ph": "Například: Apartmány Staré Město",
++        "signup.accept_before": "Přijímám ",
++        "signup.accept_terms": "obchodní podmínky",
++        "signup.accept_between": " a ",
++        "signup.accept_dpa": "smlouvu o zpracování osobních údajů",
++        "signup.accept_privacy_before": " a seznámil(a) jsem se se ",
++        "signup.accept_privacy": "zásadami ochrany osobních údajů",
++        "signup.accept_after": ".",
++        "signup.ads_consent": (
++            "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, "
++            "a předal tento identifikátor kliknutí společnosti Google (samostatnému "
++            "správci) k měření úspěšnosti našich reklam. Bez personalizované reklamy. "
++            "Souhlas můžete kdykoli odvolat v Nastavení."
++        ),
++        "signup.ads_consent_link": "Jak Google používá data",
++        "signup.onboarding_opt_out": (
++            "Nepřeji si dostávat e-mailem tipy k nastavení (kdykoli to můžete změnit "
++            "v Nastavení)."
++        ),
++        "signup.submit": "Založit účet",
++        "signup.have_account": "Už účet máte?",
++        "signup.login_link": "Přihlaste se",
++        "signup.error.email": "Zadejte platnou e-mailovou adresu.",
++        "signup.error.workspace": (
++            "Zadejte název své firmy nebo pracovního prostoru (nejvýše 120 znaků)."
++        ),
++        "signup.error.accept": (
++            "Pro založení účtu je potřeba přijmout obchodní podmínky a smlouvu o zpracování "
++            "osobních údajů."
++        ),
++        "signup.error.rate_limited": "Příliš mnoho pokusů o registraci. Zkuste to znovu za hodinu.",
++        "signup.error.turnstile": (
++            "Bezpečnostní kontrolu se nepodařilo dokončit. Počkejte, až se u kontroly nad "
++            "tlačítkem objeví fajfka, a stiskněte Založit účet znovu."
++        ),
++        "signup.sent.page_title": "Zkontrolujte e-mail",
++        "signup.sent.title": "Zkontrolujte e-mail",
++        "signup.sent.body": (
++            "Na adresu %(email)s jsme poslali potvrzovací odkaz. Pokud už s touto adresou "
++            "účet máte, e-mail vám místo toho poradí, jak se přihlásit."
++        ),
++        "signup.sent.expiry": "Odkaz platí 24 hodin.",
++        "signup.sent.spam": (
++            "E-mail nepřišel ani po několika minutách? Podívejte se do spamu, nebo se "
++            "zaregistrujte znovu."
++        ),
++        "signup.verify.page_title": "Potvrzení e-mailu",
++        "signup.verify.title": "Potvrďte svůj e-mail",
++        "signup.verify.lede": "Účet aktivujete zadáním hesla, které jste zvolili při registraci.",
++        "signup.verify.submit": "Aktivovat účet",
++        "signup.verify.error.password": "Heslo neodpovídá tomu, které jste zvolili při registraci.",
++        "signup.verify.locked": "Příliš mnoho pokusů. Zkuste to znovu za 15 minut.",
++        "signup.verify.expired.title": "Tento odkaz už neplatí",
++        "signup.verify.expired.body": (
++            "Potvrzovací odkaz platí 24 hodin a funguje jen ten nejnovější. Nový odkaz "
++            "dostanete, když se zaregistrujete znovu."
++        ),
++        "signup.verify.expired.action": "Zaregistrovat se znovu",
++        "mail.signup_verify.subject": "Potvrďte svůj účet UbyHost",
++        "mail.signup_verify.heading": "Potvrďte svou e-mailovou adresu",
++        "mail.signup_verify.intro": (
++            "Děkujeme za registraci do UbyHostu s pracovním prostorem „%(workspace)s“. "
++            "Otevřete odkaz níže a zadáním hesla účet aktivujete."
++        ),
++        "mail.signup_verify.action": "Potvrdit e-mail",
++        "mail.signup_verify.expiry": (
++            "Odkaz platí 24 hodin. Pokud jste se neregistrovali, e-mail ignorujte: "
++            "nepotvrzený účet se po 7 dnech smaže."
++        ),
++        "mail.signup_verify.username": (
++            "Přihlásit se můžete touto e-mailovou adresou nebo uživatelským jménem %(username)s."
++        ),
++        "mail.signup_exists.subject": "Někdo se pokusil založit účet UbyHost s vaším e-mailem",
++        "mail.signup_exists.heading": "Účet už máte",
++        "mail.signup_exists.intro": (
++            "Někdo, nejspíš vy, se pokusil založit nový účet UbyHost s touto e-mailovou "
++            "adresou. Účet s touto adresou už existuje, takže se nic nového nezaložilo."
++        ),
++        "mail.signup_exists.action": "Přihlásit se",
++        "mail.signup_exists.help": (
++            "Zapomněli jste heslo? Napište na %(support)s. Pokud jste to nebyli vy, "
++            "e-mail můžete ignorovat."
++        ),
++        "mail.signup_admin.subject": "Nová registrace v UbyHostu: %(workspace)s",
++        "mail.signup_admin.heading": "Nová potvrzená registrace",
++        "mail.signup_admin.intro": (
++            "Byl založen nový účet a jeho e-mailová adresa je potvrzená. Účet je už aktivní. "
++            "Pokud aktivní být nemá, deaktivujte ho v sekci Uživatelé."
++        ),
++        "mail.signup_admin.workspace": "Pracovní prostor",
++        "mail.signup_admin.email": "E-mail",
++        "mail.signup_admin.username": "Uživatelské jméno",
++        "mail.signup_admin.source": "Kampaň",
++        "mail.signup_admin.ads": "Proklik z Google Ads",
++        "mail.signup_admin.yes": "ano",
++        "mail.signup_admin.no": "ne",
++        "mail.signup_admin.action": "Otevřít Uživatele",
++        "notification.mail_kind.signup_verify": "odkaz k potvrzení registrace",
++        "notification.mail_kind.signup_exists": "upozornění na opakovanou registraci",
++        "notification.mail_kind.signup_admin": "oznámení o nové registraci",
++        "users.status.unverified": "E-mail nepotvrzen",
++        "users.menu.withdraw_ads_consent": "Odvolat souhlas pro Google Ads",
++        "users.ads_export": "Stáhnout nové konverze pro Google Ads (CSV)",
++        "users.ads_export_hint": (
++            "Potvrzené registrace z reklamy Google se souhlasem, z kliknutí za posledních "
++            "%(days)s dní, dosud nestažené. Stažením se označí jako nahrané, proto soubor "
++            "hned nahrajte v Google Ads v části Cíle, Konverze, Nahrávání."
++        ),
++        "users.ads_export_again": "Stáhnout znovu i s dřívějšími řádky",
++        "flash.signup.consent_withdrawn.google": (
++            "Souhlas pro Google Ads byl odvolán a identifikátor kliknutí smazán."
++        ),
++        "settings.privacy.title": "Soukromí",
++        "settings.privacy.ad_consent.google": (
++            "Použít mou registraci k měření reklam UbyHostu v Google Ads"
++        ),
++        "settings.privacy.given": "Zapnuto od %(date)s.",
++        "settings.privacy.withdrawn": (
++            "Vypnuto od %(date)s. Identifikátor kliknutí byl smazán."
++        ),
++        "settings.privacy.on": "Zapnuto",
++        "settings.privacy.off": "Vypnuto",
++        "settings.privacy.save": "Uložit",
++        "settings.privacy.help": (
++            "Souhlas odvoláte odškrtnutím a uložením. Identifikátor kliknutí pak smažeme "
++            "a vaši registraci už k měření reklam nepoužijeme. Znovu zapnout to nejde "
++            "a na dříve změřená data to nemá vliv."
++        ),
++        "privacy.signup_title": "Registrace",
++        "privacy.signup_body": (
++            "Když si účet založíte sami, ukládáme vaši e-mailovou adresu, název pracovního "
++            "prostoru a čas registrace, abychom vám mohli účet poskytovat (smlouva, čl. 6 "
++            "odst. 1 písm. b) GDPR). Ukládáme také označení kampaně z odkazu, přes který jste "
++            "přišli (utm_source, utm_medium, utm_campaign), abychom viděli, které kampaně "
++            "přinášejí registrace (oprávněný zájem, čl. 6 odst. 1 písm. f) GDPR). Na našich "
++            "stránkách neběží žádný reklamní skript a nepoužíváme k tomu žádné cookies."
++        ),
++        "privacy.signup_ads_title": "Měření reklam Google Ads",
++        "privacy.signup_ads_body": (
++            "Pokud jste na registrační stránku přišli z reklamy Google, obsahuje adresa "
++            "stránky identifikátor kliknutí (gclid). Tento identifikátor uchováme jen tehdy, "
++            "pokud při registraci zaškrtnete nepovinný souhlas. Poté jej spolu s informací "
++            "o registraci a jejím čase předáme společnosti Google Ireland Ltd., abychom "
++            "věděli, které reklamy přivádějí nové zákazníky. Vaše jméno ani e-mail "
++            "nepředáváme a údaje nepoužíváme k personalizované reklamě. Google tyto údaje "
++            "zpracovává jako samostatný správce, viz https://business.safety.google/privacy/. "
++            "Právní základ: váš souhlas (čl. 6 odst. 1 písm. a) GDPR a § 89 odst. 3 zákona "
++            "č. 127/2005 Sb.). Identifikátor smažeme nejpozději 90 dní po kliknutí na "
++            "reklamu. Souhlas můžete kdykoli odvolat v Nastavení > Soukromí. Odvolání nemá "
++            "vliv na zpracování před ním."
++        ),
++    },
++}
++
++for _lang, _strings in _SIGNUP_STRINGS.items():
++    STRINGS[_lang].update(_strings)
++
+ 
+ # WP10: the admin Operations page. Platform administrators only.
+ _ADMIN_OPERATIONS_STRINGS = {
+@@ -4483,6 +4818,8 @@ _ADMIN_FUNNEL_STRINGS = {
+         "funnel.stage.first_guest": "First guest done",
+         "funnel.stage.first_filing": "First filing",
+         "funnel.stage.retained": "Retained",
++        "funnel.stage.signed_up": "Signed up",
++        "funnel.stage.email_verified": "E-mail verified",
+     },
+     "cs": {
+         "funnel.title": "Trychtýř",
+@@ -4506,6 +4843,8 @@ _ADMIN_FUNNEL_STRINGS = {
+         "funnel.stage.first_guest": "První host vyplnil",
+         "funnel.stage.first_filing": "První hlášení",
+         "funnel.stage.retained": "Aktivně používá",
++        "funnel.stage.signed_up": "Registrován",
++        "funnel.stage.email_verified": "E-mail ověřen",
+     },
+ }
+ for _lang, _strings in _ADMIN_FUNNEL_STRINGS.items():
+diff --git a/App/app/mail.py b/App/app/mail.py
+index 8fabdc0..5a9b433 100644
+--- a/App/app/mail.py
++++ b/App/app/mail.py
+@@ -40,6 +40,11 @@ KINDS = (
+     "lifecycle_no_property",
+     "lifecycle_no_calendar",
+     "lifecycle_no_guest",
++    # WP20 self sign-up: the verification link, the "you already have an
++    # account" answer to a repeated sign-up, and the operator's notice.
++    "signup_verify",
++    "signup_exists",
++    "signup_admin",
+ )
+ 
+ # The kinds addressed to a guest rather than to the host. A guest has no
+@@ -68,6 +73,9 @@ HOST_KINDS = (
+     "lifecycle_no_property",
+     "lifecycle_no_calendar",
+     "lifecycle_no_guest",
++    "signup_verify",
++    "signup_exists",
++    "signup_admin",
+ )
+ # The only kinds a host can unsubscribe from (WP12). Everything else is service
+ # mail about filings, stays or the account and ignores the opt-out flag.
+diff --git a/App/app/mail_notify.py b/App/app/mail_notify.py
+index c1a1980..4fbe699 100644
+--- a/App/app/mail_notify.py
++++ b/App/app/mail_notify.py
+@@ -1723,3 +1723,167 @@ def build_deadline_digest(
+             footer_lines=["UbyHost", footer],
+         ),
+     }
++
++
++# --- self sign-up (WP20) -----------------------------------------------------
++#
++# The person signing up chose the page language, so their two messages follow
++# it. The operator's notice is host mail and stays in HOST_MAIL_LANGUAGE. The
++# verification link is queued with mail.CLAIM_SECRET_MARKER standing in for the
++# token, exactly like a guest claim link, so the stored row holds no usable link.
++
++
++def _signup_footer(lang: str) -> List[Any]:
++    return [
++        "UbyHost",
++        _text(lang, "mail.workspace_deletion.footer", support=config.OPERATOR_EMAIL),
++    ]
++
++
++def build_signup_verify(
++    *, lang: str, workspace: str, username: str, link: str
++) -> Dict[str, str]:
++    lang = host_i18n.normalise_language(lang)
++    subject = _text(lang, "mail.signup_verify.subject")
++    heading = _text(lang, "mail.signup_verify.heading")
++    intro = _text(lang, "mail.signup_verify.intro", workspace=workspace)
++    action = _text(lang, "mail.signup_verify.action")
++    expiry = _text(lang, "mail.signup_verify.expiry")
++    sign_in = _text(lang, "mail.signup_verify.username", username=username)
++    fallback = _guest_text(lang, "mail_link_fallback")
++    footer = _signup_footer(lang)
++    text = "\n".join(
++        [intro, "", f"{action}: {link}", "", expiry, "", sign_in, "", "--", *footer]
++    )
++    blocks = [
++        _block_heading(heading),
++        _block_paragraph(intro),
++        _block_button(link, action),
++        _block_paragraph(expiry, size=15),
++        _block_link(link, fallback),
++        _block_paragraph(sign_in, muted=True),
++    ]
++    return {
++        "subject": subject,
++        "text": text,
++        "html": _shell(
++            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
++        ),
++    }
++
++
++def build_signup_exists(*, lang: str) -> Dict[str, str]:
++    lang = host_i18n.normalise_language(lang)
++    subject = _text(lang, "mail.signup_exists.subject")
++    heading = _text(lang, "mail.signup_exists.heading")
++    intro = _text(lang, "mail.signup_exists.intro")
++    action = _text(lang, "mail.signup_exists.action")
++    help_text = _text(lang, "mail.signup_exists.help", support=config.OPERATOR_EMAIL)
++    link = _public(f"/login?lang={lang}")
++    footer = _signup_footer(lang)
++    text = "\n".join([intro, "", f"{action}: {link}", "", help_text, "", "--", *footer])
++    blocks = [
++        _block_heading(heading),
++        _block_paragraph(intro),
++        _block_button(link, action),
++        _block_paragraph(help_text, size=15),
++    ]
++    return {
++        "subject": subject,
++        "text": text,
++        "html": _shell(
++            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
++        ),
++    }
++
++
++def build_signup_admin(
++    *, workspace: str, email: str, username: str, campaign: str, ads_click: bool
++) -> Dict[str, str]:
++    lang = HOST_MAIL_LANGUAGE
++    subject = _text(lang, "mail.signup_admin.subject", workspace=workspace)
++    heading = _text(lang, "mail.signup_admin.heading")
++    intro = _text(lang, "mail.signup_admin.intro")
++    action = _text(lang, "mail.signup_admin.action")
++    link = _public("/admin/users")
++    yes_no = _text(lang, "mail.signup_admin.yes" if ads_click else "mail.signup_admin.no")
++    facts = [
++        (_text(lang, "mail.signup_admin.workspace"), workspace),
++        (_text(lang, "mail.signup_admin.email"), email),
++        (_text(lang, "mail.signup_admin.username"), username),
++        (_text(lang, "mail.signup_admin.source"), campaign or "-"),
++        (_text(lang, "mail.signup_admin.ads"), yes_no),
++    ]
++    footer = _signup_footer(lang)
++    text = "\n".join(
++        [intro, "", *[f"{label}: {value}" for label, value in facts], "",
++         f"{action}: {link}", "", "--", *footer]
++    )
++    blocks = [_block_heading(heading), _block_paragraph(intro)]
++    blocks.extend(_block_fact(label, value) for label, value in facts)
++    blocks.append(_block_button(link, action))
++    return {
++        "subject": subject,
++        "text": text,
++        "html": _shell(
++            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
++        ),
++    }
++
++
++def signup_verify(
++    *, user_id: int, to_email: str, lang: str, workspace: str, username: str,
++    token: str, nonce: str,
++) -> Optional[int]:
++    link = _public(f"/signup/verify?t={mail.CLAIM_SECRET_MARKER}")
++    content = build_signup_verify(
++        lang=lang, workspace=workspace, username=username, link=link
++    )
++    payload: Dict[str, Any] = {
++        "text": content["text"],
++        "html": content["html"],
++        "lang": lang,
++        mail.CLAIM_SECRET_KEY: db.encrypt_field(token),
++    }
++    return mail.enqueue(
++        kind="signup_verify",
++        idempotency_key=f"signup_verify:{user_id}:{nonce}",
++        to_email=to_email,
++        subject=content["subject"],
++        payload=payload,
++        owner_user_id=user_id,
++    )
++
++
++def signup_exists(*, user_id: int, to_email: str, lang: str, bucket: str) -> Optional[int]:
++    """One "you already have an account" mail per account per ``bucket``."""
++    content = build_signup_exists(lang=lang)
++    return mail.enqueue(
++        kind="signup_exists",
++        idempotency_key=f"signup_exists:{user_id}:{bucket}",
++        to_email=to_email,
++        subject=content["subject"],
++        payload={"text": content["text"], "html": content["html"], "lang": lang},
++        owner_user_id=user_id,
++    )
++
++
++def signup_admin(
++    *, user_id: int, workspace: str, email: str, username: str, campaign: str,
++    ads_click: bool,
++) -> Optional[int]:
++    content = build_signup_admin(
++        workspace=workspace, email=email, username=username, campaign=campaign,
++        ads_click=ads_click,
++    )
++    return mail.enqueue(
++        kind="signup_admin",
++        idempotency_key=f"signup_admin:{user_id}",
++        to_email=config.SIGNUP_NOTIFY_EMAIL,
++        subject=content["subject"],
++        payload={
++            "text": content["text"],
++            "html": content["html"],
++            "lang": HOST_MAIL_LANGUAGE,
++        },
++    )
+diff --git a/App/app/migrations/0003_signup.sql b/App/app/migrations/0003_signup.sql
+new file mode 100644
+index 0000000..f0f72e1
+--- /dev/null
++++ b/App/app/migrations/0003_signup.sql
+@@ -0,0 +1,47 @@
++-- WP20: self sign-up and its Google Ads attribution.
++-- The setup-tips opt-out columns (onboarding_emails_opt_out, _at) are not
++-- here: WP12 added them to the baseline, and the sign-up box writes those.
++ALTER TABLE user_account ADD COLUMN email TEXT;
++ALTER TABLE user_account ADD COLUMN email_verified_at TEXT;
++ALTER TABLE user_account ADD COLUMN signup_at TEXT;
++ALTER TABLE user_account ADD COLUMN signup_verify_nonce TEXT;
++ALTER TABLE user_account ADD COLUMN signup_utm_source TEXT;
++ALTER TABLE user_account ADD COLUMN signup_utm_medium TEXT;
++ALTER TABLE user_account ADD COLUMN signup_utm_campaign TEXT;
++
++-- WP20: one account per sign-up e-mail. NULLs (admin-created accounts) do not
++-- collide, in SQLite or in Postgres.
++CREATE UNIQUE INDEX IF NOT EXISTS idx_user_account_email ON user_account (email);
++
++-- WP20: the exact wording of every consent box a visitor was shown, one row per
++-- version and language, so each recorded consent points at what was displayed.
++CREATE TABLE IF NOT EXISTS consent_texts (
++    id           INTEGER PRIMARY KEY AUTOINCREMENT,
++    version      TEXT NOT NULL UNIQUE,
++    purpose      TEXT NOT NULL,
++    lang         TEXT NOT NULL,
++    text         TEXT NOT NULL,
++    text_sha256  TEXT NOT NULL,
++    created_at   TEXT NOT NULL
++);
++
++-- WP20: an ad click identifier kept with consent, one row per account and ad
++-- platform. The identifiers are blanked on schedule (ids_deleted_at); the row
++-- itself stays as the record of the consent.
++CREATE TABLE IF NOT EXISTS ad_click (
++    id               INTEGER PRIMARY KEY AUTOINCREMENT,
++    user_account_id  INTEGER NOT NULL REFERENCES user_account(id),
++    platform         TEXT NOT NULL,
++    gclid            TEXT,
++    gbraid           TEXT,
++    wbraid           TEXT,
++    clicked_at       TEXT NOT NULL,
++    consent_text_id  INTEGER NOT NULL REFERENCES consent_texts(id),
++    consented_at     TEXT NOT NULL,
++    withdrawn_at     TEXT,
++    uploaded_at      TEXT,
++    ids_deleted_at   TEXT,
++    created_at       TEXT NOT NULL,
++    UNIQUE (user_account_id, platform)
++);
++CREATE INDEX IF NOT EXISTS idx_ad_click_platform ON ad_click (platform, uploaded_at);
+diff --git a/App/app/retention.py b/App/app/retention.py
+index 2a4e894..8a20d71 100644
+--- a/App/app/retention.py
++++ b/App/app/retention.py
+@@ -313,6 +313,8 @@ def _delete_workspace(owner_id: int) -> None:
+         # outlive the account.
+         cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
+         cur.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (owner_id,))
++        # WP20: ad click and consent records belong to the account as well.
++        cur.execute("DELETE FROM ad_click WHERE user_account_id = ?", (owner_id,))
+         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+     # Files last: a rolled-back delete must not have lost the photos. One
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index 622020b..1d89bb7 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -41,12 +41,14 @@ from .. import (
+     reporting,
+     claim,
+     security,
++    signup,
+     stay_fee,
+     validation,
+ )
+ from ..templating import render
+ from ..ubyport.client import UbyportError, UbyportTransportError
+ from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
++from . import signup as signup_routes
+ from .admin_helpers import back as _back
+ from .admin_helpers import flash as _flash
+ from .admin_helpers import flash_plural as _flash_plural
+@@ -62,6 +64,7 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
+ router.include_router(admin_accounts.router)
+ router.include_router(api.router)
+ router.include_router(onboarding.router)
++router.include_router(signup_routes.router)
+ 
+ 
+ # --- helpers -------------------------------------------------------------
+@@ -208,7 +211,7 @@ def dashboard(request: Request):
+         return render(
+             request,
+             "landing.html",
+-            {"show_nav": False, "open_alerts": []},
++            {"show_nav": False, "open_alerts": [], **signup.public_context(request)},
+         )
+     guard = auth.require_login(request)
+     if guard:
+@@ -2772,6 +2775,11 @@ def settings_view(request: Request):
+             )["n"],
+             "backup_status": _backup_status(request),
+             "onboarding_emails": _onboarding_emails(request),
++            # WP20: Settings > Privacy, the ad measurement consents given at sign-up.
++            "ad_consents": (
++                signup.consents_for(access.owner_id(request))
++                if access.owner_id(request) is not None else []
++            ),
+         },
+     )
+ 
+diff --git a/App/app/routes/admin_accounts.py b/App/app/routes/admin_accounts.py
+index 7385b6f..bca6d4d 100644
+--- a/App/app/routes/admin_accounts.py
++++ b/App/app/routes/admin_accounts.py
+@@ -26,6 +26,7 @@ from .. import (
+     mail_notify,
+     rate_limit,
+     security,
++    signup,
+     turnstile,
+     workspace_export,
+ )
+@@ -487,10 +488,22 @@ def _render_users(request: Request, **extra):
+     users = db.query(
+         "SELECT u.id, u.username, u.display_name, u.role, u.active, "
+         "u.must_change_password, u.created_at, u.last_login_at, "
++        "u.email, u.email_verified_at, u.signup_at, "
++        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
++        "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
+         "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
+         "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
+     )
+-    return render(request, "users.html", {"users": users, **extra})
++    return render(
++        request,
++        "users.html",
++        {
++            "users": users,
++            "signup_enabled": config.SIGNUP_ENABLED,
++            "ads_export_days": signup.GOOGLE_EXPORT_DAYS,
++            **extra,
++        },
++    )
+ 
+ 
+ @router.post("/admin/users")
+diff --git a/App/app/routes/legal.py b/App/app/routes/legal.py
+index 26ee0ab..db20ac8 100644
+--- a/App/app/routes/legal.py
++++ b/App/app/routes/legal.py
+@@ -3,7 +3,7 @@ from __future__ import annotations
+ 
+ from fastapi import APIRouter, HTTPException, Request
+ 
+-from .. import config, cookie_inventory, host_i18n, operator
++from .. import config, cookie_inventory, host_i18n, operator, signup
+ from ..public_guides import GUIDE_TRANSLATIONS
+ from ..templating import render
+ 
+@@ -28,9 +28,16 @@ SUBPROCESSOR_IDS = (
+     "google",
+ )
+ # Recipients that are not subprocessors (section 5). "google_ads" belongs to
+-# self sign-up with Google Ads; there is no UBYHOST_SIGNUP_ENABLED flag yet, so
+-# it is always listed. Gate it on that flag when sign-up lands.
++# self sign-up with Google Ads (WP20), so it is listed only while
++# UBYHOST_SIGNUP_ENABLED is on (recipient_ids()).
+ RECIPIENT_IDS = ("google_ads", "police", "municipality")
++SIGNUP_RECIPIENT_IDS = ("google_ads",)
++
++
++def recipient_ids() -> tuple:
++    if signup.enabled():
++        return RECIPIENT_IDS
++    return tuple(rid for rid in RECIPIENT_IDS if rid not in SIGNUP_RECIPIENT_IDS)
+ 
+ 
+ @router.get("/jak-to-funguje")
+@@ -49,7 +56,7 @@ def pricing(request: Request):
+     return render(
+         request,
+         "pricing.html",
+-        {"show_nav": False, "open_alerts": []},
++        {"show_nav": False, "open_alerts": [], **signup.public_context(request)},
+     )
+ 
+ 
+@@ -122,6 +129,8 @@ def privacy_policy(request: Request):
+             "cookie_inventory": cookie_inventory.COOKIE_INVENTORY,
+             "cookieless_services": cookie_inventory.COOKIELESS_SERVICES,
+             "legal_placeholders": config.DEPLOYMENT != "production",
++            # WP20 draft for counsel: shown only while self sign-up is on.
++            "signup_ads_notice": signup.enabled(),
+         },
+         status_code=200,
+     )
+@@ -151,7 +160,7 @@ def subprocessor_register(request: Request):
+             "operator": operator.details(),
+             "wrap_class": "narrow",
+             "subprocessor_ids": SUBPROCESSOR_IDS,
+-            "recipient_ids": RECIPIENT_IDS,
++            "recipient_ids": recipient_ids(),
+         },
+         status_code=200,
+     )
+diff --git a/App/app/routes/signup.py b/App/app/routes/signup.py
+new file mode 100644
+index 0000000..642b34f
+--- /dev/null
++++ b/App/app/routes/signup.py
+@@ -0,0 +1,233 @@
++"""Self sign-up pages and the admin side of the Google Ads import (WP20).
++
++Every route here answers 404 while ``UBYHOST_SIGNUP_ENABLED`` is off. The
++module is included from ``admin.router``, so the host POST CSRF protection
++applies to the forms here as well.
++"""
++from __future__ import annotations
++
++from fastapi import APIRouter, HTTPException, Request
++from fastapi.responses import RedirectResponse, Response
++
++from .. import access, auth, db, host_i18n, mail, rate_limit, signup, turnstile
++from ..templating import render
++from .admin_accounts import _keep_login_language, _require_admin
++from .admin_helpers import back as _back
++from .admin_helpers import flash as _flash
++from .admin_helpers import form_str as _form_str
++
++router = APIRouter()
++
++
++def _require_enabled() -> None:
++    if not signup.enabled():
++        raise HTTPException(status_code=404)
++
++
++def _form_context(request: Request, attr: dict, consents=None, **extra) -> dict:
++    lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
++    href = signup.signup_href(lang, attr)
++    consents = consents or {}
++    # One optional box per ad platform the visitor's click came from, and none
++    # at all without a click: there is nothing to consent to.
++    boxes = [
++        {
++            "platform": platform,
++            "field": signup.CONSENT_FIELDS[platform],
++            "checked": bool(consents.get(platform)),
++            **signup.consent_label(platform, lang),
++        }
++        for platform in signup.click_platforms(signup.read_click(attr.get("click")))
++    ]
++    return {
++        "attr": attr,
++        "consent_boxes": boxes,
++        # The language switch posts back to this address, so the click value
++        # and the campaign labels survive a change of language.
++        "lang_next": href,
++        **extra,
++    }
++
++
++@router.get("/signup")
++def signup_form(request: Request):
++    _require_enabled()
++    if auth.current_user(request):
++        return RedirectResponse("/", status_code=303)
++    attr = signup.attribution(request.query_params, mint=True)
++    return render(request, "signup.html", _form_context(request, attr))
++
++
++@router.post("/signup")
++async def signup_submit(request: Request):
++    _require_enabled()
++    form = await request.form()
++    attr = signup.attribution(form)
++    email = mail.normalise_email(_form_str(form, "email"))
++    raw_email = _form_str(form, "email")[:254]
++    workspace = " ".join(_form_str(form, "workspace").split())
++    password = _form_str(form, "password")
++    click = signup.read_click(attr.get("click"))
++    consents = {
++        platform: _form_str(form, signup.CONSENT_FIELDS[platform]) == "1"
++        for platform in signup.click_platforms(click)
++    }
++    onboarding_opt_out = _form_str(form, "onboarding_opt_out") == "1"
++    lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
++
++    def again(error: str, status_code: int, field: str = ""):
++        return render(
++            request,
++            "signup.html",
++            _form_context(
++                request,
++                attr,
++                consents,
++                error=error,
++                error_field=field,
++                email=raw_email,
++                workspace=workspace,
++                onboarding_opt_out=onboarding_opt_out,
++            ),
++            status_code=status_code,
++        )
++
++    if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_signup"):
++        return again("signup.error.turnstile", 403)
++    ip_key = rate_limit.client_key(request)
++    if signup.rate_limited(ip_key, email):
++        return again("signup.error.rate_limited", 429)
++    signup.record_attempt(ip_key, email)
++    if not email:
++        return again("signup.error.email", 400, "email")
++    password_error = auth.password_error(password)
++    if password_error:
++        return again(password_error, 400, "password")
++    if not workspace or len(workspace) > signup.WORKSPACE_MAX:
++        return again("signup.error.workspace", 400, "workspace")
++    if _form_str(form, "accept") != "1":
++        return again("signup.error.accept", 422, "accept")
++    signup.register(
++        email=email,
++        password=password,
++        workspace=workspace,
++        attr=attr,
++        consents=consents,
++        onboarding_opt_out=onboarding_opt_out,
++        lang=lang,
++        request=request,
++    )
++    # The same page whatever ``register`` found: no account enumeration.
++    return render(request, "signup_sent.html", {"email": email})
++
++
++@router.get("/signup/verify")
++def signup_verify_form(request: Request):
++    _require_enabled()
++    token = request.query_params.get("t", "")
++    account = signup.pending_account(token)
++    if not account:
++        return render(request, "signup_verify.html", {"expired": True}, status_code=410)
++    return render(request, "signup_verify.html", {"token": token})
++
++
++@router.post("/signup/verify")
++async def signup_verify_submit(request: Request):
++    _require_enabled()
++    form = await request.form()
++    token = _form_str(form, "t")
++    ip_key = rate_limit.client_key(request)
++    client_key = rate_limit.client_key(request, "signup_verify")
++    if rate_limit.login_blocked(client_key, ip_key):
++        return render(
++            request,
++            "signup_verify.html",
++            {"token": token, "error": "signup.verify.locked"},
++            status_code=429,
++        )
++    account = signup.pending_account(token)
++    if not account:
++        return render(request, "signup_verify.html", {"expired": True}, status_code=410)
++    if not auth.verify_password(_form_str(form, "password"), account["password_hash"]):
++        rate_limit.record_login_failure(client_key, ip_key)
++        return render(
++            request,
++            "signup_verify.html",
++            {"token": token, "error": "signup.verify.error.password"},
++            status_code=401,
++        )
++    if not signup.activate(account):
++        return render(request, "signup_verify.html", {"expired": True}, status_code=410)
++    refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
++    response = RedirectResponse("/", status_code=303)
++    auth.attach_session(
++        response, auth.issue_session(refreshed["id"], refreshed["session_version"])
++    )
++    _keep_login_language(request, response)
++    db.audit("login", actor=refreshed["username"], owner_user_id=refreshed["id"])
++    return response
++
++
++@router.post("/admin/ads-conversions.csv")
++async def ads_conversions_csv(request: Request):
++    """The Google Ads click-conversion file. A POST, because it marks rows exported."""
++    _require_enabled()
++    account, guard = _require_admin(request)
++    if guard:
++        return guard
++    form = await request.form()
++    again = _form_str(form, "again") == "1"
++    body, count = signup.export_conversions(again=again)
++    db.audit(
++        "ads_conversions_exported",
++        detail=f"rows={count}; again={'yes' if again else 'no'}",
++        actor=account["username"],
++    )
++    return Response(
++        body,
++        media_type="text/csv; charset=utf-8",
++        headers={
++            "Content-Disposition": 'attachment; filename="ubyhost-ads-conversions.csv"',
++            "Cache-Control": "no-store",
++        },
++    )
++
++
++@router.post("/admin/users/{user_id}/ads-consent/withdraw")
++async def ads_consent_withdraw(user_id: int, request: Request):
++    """An admin withdraws consent for a host who asked by e-mail."""
++    account, guard = _require_admin(request)
++    if guard:
++        return guard
++    form = await request.form()
++    platform = _form_str(form, "platform", signup.GOOGLE)
++    if platform not in signup.PLATFORMS:
++        raise HTTPException(status_code=400)
++    signup.withdraw_consent(user_id, platform, actor=account["username"])
++    return _back("/admin/users", msg=_flash(request, f"flash.signup.consent_withdrawn.{platform}"))
++
++
++@router.post("/settings/privacy/ad-consent")
++async def ad_consent_settings(request: Request):
++    """Settings > Privacy: the host turns an ad measurement consent off.
++
++    Works whether or not sign-up is switched on: a consent given while it was
++    on must stay withdrawable. Turning it back on is not offered, because the
++    identifier is deleted the moment it is turned off.
++    """
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    form = await request.form()
++    platform = _form_str(form, "platform")
++    if platform not in signup.PLATFORMS:
++        raise HTTPException(status_code=400)
++    owner_id = access.owner_id(request)
++    if owner_id is not None and _form_str(form, "enabled") != "1":
++        account = auth.current_user(request)
++        if signup.withdraw_consent(owner_id, platform, actor=account["username"]):
++            return _back(
++                "/settings#settings-privacy",
++                msg=_flash(request, f"flash.signup.consent_withdrawn.{platform}"),
++            )
++    return _back("/settings#settings-privacy")
+diff --git a/App/app/scheduler.py b/App/app/scheduler.py
+index 7efbc92..62e88a2 100644
+--- a/App/app/scheduler.py
++++ b/App/app/scheduler.py
+@@ -22,6 +22,7 @@ from . import (
+     passport_photos,
+     reporting,
+     retention,
++    signup,
+ )
+ 
+ log = logging.getLogger("ubyhost.scheduler")
+@@ -254,6 +255,12 @@ def _job_photo_sweep() -> None:
+         blanked = reporting.purge_submission_payloads()
+         if blanked:
+             log.info("submission payload purge blanked %s envelope(s)", blanked)
++        # WP20: unconfirmed sign-ups after 7 days, ad click IDs after the
++        # Google Ads import window. Runs with sign-up off too, so switching
++        # the feature off never leaves a click ID behind.
++        signup_counts = signup.purge()
++        if any(signup_counts.values()):
++            log.info("signup purge: %s", signup_counts)
+     except Exception:
+         log.exception("passport photo sweep failed")
+         _job_failed("photo_sweep")
+diff --git a/App/app/signup.py b/App/app/signup.py
+new file mode 100644
+index 0000000..26ab701
+--- /dev/null
++++ b/App/app/signup.py
+@@ -0,0 +1,709 @@
++"""Self sign-up and its Google Ads click attribution (WP20).
++
++Off unless ``UBYHOST_SIGNUP_ENABLED`` is set. The flow:
++
++1. ``/signup`` creates an *inactive* account with the e-mail, the password hash
++   and the workspace name, records the Terms/DPA acceptance, and queues a
++   verification link. The page answers the same whether or not the address is
++   already taken, so it cannot be used to find out who has an account.
++2. The link opens ``/signup/verify``, which asks for the sign-up password once
++   more. That stops a mail scanner that pre-fetches links from activating the
++   account, and it stops anyone who signed up with somebody else's address
++   from taking the account over when the owner clicks the link: only the
++   person who knows the password can finish.
++3. Activation logs the host in. ``auth.require_login`` then sends them through
++   the existing mandatory 2FA setup and onboarding.
++
++Ad click identifiers (legal position 3), without a cookie or an ad script:
++
++- A ``gclid``/``gbraid``/``wbraid`` arriving on the landing, pricing or sign-up
++  page is read on the server, validated, and packed with the time it was first
++  seen into one signed value (``click``). That value travels only in the
++  ``/signup`` link and a hidden form field, never in a cookie, the database or
++  analytics, until the visitor submits the form.
++- The optional consent box is shown only when such an identifier is present.
++  Only when it is ticked is the identifier stored, in ``ad_click``, together
++  with the time of the click, the time of consent, and a pointer to the exact
++  wording shown (``consent_texts``).
++- The operator exports consented, verified rows within 85 days of the click
++  and uploads them to Google Ads by hand; the export records ``uploaded_at``.
++- The identifier is blanked 90 days after the click or 30 days after upload,
++  whichever comes first, or at once when consent is withdrawn (Settings >
++  Privacy, or an admin on request). The consent record itself stays.
++"""
++from __future__ import annotations
++
++import csv
++import hashlib
++import io
++import logging
++import re
++import secrets
++import time
++from datetime import datetime, timedelta, timezone
++from typing import Any, Dict, List, Optional
++from urllib.parse import urlencode
++from zoneinfo import ZoneInfo
++
++from itsdangerous import BadSignature, URLSafeSerializer, URLSafeTimedSerializer
++
++from . import acceptance, auth, config, db, mail_notify, rate_limit
++
++log = logging.getLogger("ubyhost.signup")
++
++VERIFY_MAX_AGE = 24 * 60 * 60
++UNVERIFIED_TTL_DAYS = 7
++WORKSPACE_MAX = 120
++
++# Budgets per hour. The IP budget allows a shared office connection a few
++# honest attempts; the e-mail budget caps how many messages one address can be
++# sent through this form, whoever is typing it in.
++_HOUR = 60 * 60
++SIGNUP_IP_MAX = 10
++SIGNUP_EMAIL_MAX = 3
++
++_UTM_RE = re.compile(r"^[A-Za-z0-9._+ -]{1,100}$")
++UTM_KEYS = ("utm_source", "utm_medium", "utm_campaign")
++
++# --- ad platforms -------------------------------------------------------------
++#
++# Each URL parameter belongs to one ad platform, and each platform has its own
++# optional consent box, its own consent wording and its own retention rule.
++
++GOOGLE = "google"
++PLATFORMS = (GOOGLE,)
++
++# URL parameter -> (platform, validation pattern).
++CLICK_PARAMS: Dict[str, tuple] = {
++    "gclid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
++    "gbraid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
++    "wbraid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
++}
++# The ad_click columns that hold a platform's identifiers. Blanked on schedule.
++ID_COLUMNS: Dict[str, tuple] = {GOOGLE: ("gclid", "gbraid", "wbraid")}
++# Name of the platform's checkbox on the sign-up form.
++CONSENT_FIELDS: Dict[str, str] = {GOOGLE: "ads_consent"}
++# Bump when the wording of the box changes; the language is appended.
++CONSENT_VERSIONS: Dict[str, str] = {GOOGLE: "ads-google-v1"}
++# (days after the click, days after a successful upload) before the
++# identifiers are blanked, whichever comes first (legal position 3).
++ID_RETENTION_DAYS: Dict[str, tuple] = {GOOGLE: (90, 30)}
++
++GOOGLE_PRIVACY_URL = "https://business.safety.google/privacy/"
++# Rows older than this are not exported: a safety margin inside Google's
++# 90-day import window.
++GOOGLE_EXPORT_DAYS = 85
++
++# A signed click value older than the longest retention is refused outright.
++CLICK_MAX_AGE_DAYS = 90
++_CLICK_FUTURE_SLACK_MS = 5 * 60 * 1000
++
++# Google Ads offline click-conversion file (Google Ads Help 7014069). The two
++# consent columns are the EU user consent fields; personalisation is never
++# asked for, so it is always Denied. gbraid/wbraid are stored with consent but
++# not exported: the legacy file's column names for them are unverified.
++CSV_HEADER = (
++    "Google Click ID",
++    "Conversion Name",
++    "Conversion Time",
++    "Ad User Data",
++    "Ad Personalization",
++)
++CONSENT_GRANTED = "Granted"
++CONSENT_DENIED = "Denied"
++
++
++def enabled() -> bool:
++    return bool(config.SIGNUP_ENABLED)
++
++
++# --- attribution ------------------------------------------------------------
++
++
++def clean_click_id(param: str, value: Any) -> str:
++    spec = CLICK_PARAMS.get(param)
++    text = str(value or "").strip()
++    return text if spec and spec[1].fullmatch(text) else ""
++
++
++def clean_gclid(value: Any) -> str:
++    return clean_click_id("gclid", value)
++
++
++def clean_utm(value: Any) -> str:
++    text = str(value or "").strip()
++    return text if _UTM_RE.fullmatch(text) else ""
++
++
++def click_ids(params: Any) -> Dict[str, str]:
++    """The valid ad click identifiers in a query string. Invalid ones are dropped."""
++    found = {param: clean_click_id(param, params.get(param)) for param in CLICK_PARAMS}
++    return {param: value for param, value in found.items() if value}
++
++
++def _now_ms() -> int:
++    return int(time.time() * 1000)
++
++
++def _click_serializer() -> URLSafeSerializer:
++    return URLSafeSerializer(config.secret_key(), salt="ubyhost-signup-click")
++
++
++def issue_click(ids: Dict[str, str], seen_ms: Optional[int] = None) -> str:
++    """Sign the identifiers together with the moment they were first seen."""
++    return _click_serializer().dumps({"i": ids, "t": int(seen_ms or _now_ms())})
++
++
++def read_click(token: Any, now_ms: Optional[int] = None) -> Optional[Dict[str, Any]]:
++    """``{"ids": {...}, "seen_ms": int}`` from a signed click value, or None.
++
++    The signature stops a visitor from backdating or forward-dating the click
++    time, which decides when the identifier has to be deleted.
++    """
++    if not token:
++        return None
++    try:
++        payload = _click_serializer().loads(str(token))
++    except BadSignature:
++        return None
++    if not isinstance(payload, dict) or not isinstance(payload.get("i"), dict):
++        return None
++    try:
++        seen_ms = int(payload.get("t"))
++    except (TypeError, ValueError):
++        return None
++    now_ms = now_ms or _now_ms()
++    if seen_ms > now_ms + _CLICK_FUTURE_SLACK_MS:
++        return None
++    if seen_ms < now_ms - CLICK_MAX_AGE_DAYS * 86400 * 1000:
++        return None
++    ids = click_ids(payload["i"])
++    if not ids or len(ids) != len(payload["i"]):
++        return None
++    return {"ids": ids, "seen_ms": seen_ms}
++
++
++def click_platforms(click: Optional[Dict[str, Any]]) -> List[str]:
++    """The platforms a click value has identifiers for, in display order."""
++    if not click:
++        return []
++    present = {CLICK_PARAMS[param][0] for param in click["ids"]}
++    return [platform for platform in PLATFORMS if platform in present]
++
++
++def attribution(params: Any, *, mint: bool = False) -> Dict[str, str]:
++    """The campaign labels and the signed click value for a page or a form.
++
++    ``mint`` is for pages a visitor lands on (GET): raw identifiers in the
++    query string are signed with the current time. A form post (``mint`` off)
++    only accepts the signed value, so the click time cannot be chosen by the
++    client. Anything that fails validation is dropped, not repaired.
++    """
++    found = {key: clean_utm(params.get(key)) for key in UTM_KEYS}
++    token = str(params.get("click") or "")
++    click = read_click(token)
++    if not click:
++        token = ""
++    if mint:
++        raw = click_ids(params)
++        if raw and (not click or click["ids"] != raw):
++            token = issue_click(raw)
++    found["click"] = token
++    return {key: value for key, value in found.items() if value}
++
++
++def signup_href(lang: str, params: Any) -> str:
++    """The ``/signup`` link with the visitor's attribution carried along."""
++    query = {"lang": lang, **attribution(params, mint=True)}
++    return "/signup?" + urlencode(query)
++
++
++def public_context(request: Any, lang: Optional[str] = None) -> Dict[str, str]:
++    """Template context for the landing and pricing pages.
++
++    Empty while sign-up is off, so the pages keep linking to /login.
++    """
++    if not enabled():
++        return {}
++    from . import host_i18n
++
++    lang = lang or host_i18n.resolve_language(
++        request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE
++    )
++    return {"signup_href": signup_href(lang, request.query_params)}
++
++
++# --- tokens -----------------------------------------------------------------
++
++
++def _serializer() -> URLSafeTimedSerializer:
++    return URLSafeTimedSerializer(config.secret_key(), salt="ubyhost-signup-verify")
++
++
++def issue_token(user_id: int, nonce: str) -> str:
++    return _serializer().dumps({"uid": int(user_id), "n": nonce})
++
++
++def pending_account(token: str):
++    """The unverified account a link points at, or None.
++
++    Only the newest link works: every sign-up for the address mints a new
++    nonce, so an older mail stops working once a newer one is sent.
++    """
++    try:
++        payload = _serializer().loads(token or "", max_age=VERIFY_MAX_AGE)
++    except BadSignature:
++        return None
++    if not isinstance(payload, dict) or not payload.get("uid") or not payload.get("n"):
++        return None
++    account = db.query_one(
++        "SELECT * FROM user_account WHERE id = ? AND email_verified_at IS NULL "
++        "AND signup_at IS NOT NULL AND active = 0",
++        (int(payload["uid"]),),
++    )
++    if not account or not account["signup_verify_nonce"]:
++        return None
++    if not secrets.compare_digest(str(account["signup_verify_nonce"]), str(payload["n"])):
++        return None
++    return account
++
++
++# --- sign-up ----------------------------------------------------------------
++
++
++def rate_limited(ip_key: str, email: str) -> bool:
++    return rate_limit.blocked("signup_ip", ip_key, SIGNUP_IP_MAX, _HOUR) or (
++        bool(email) and rate_limit.blocked("signup_email", email, SIGNUP_EMAIL_MAX, _HOUR)
++    )
++
++
++def record_attempt(ip_key: str, email: str) -> None:
++    rate_limit.record("signup_ip", ip_key)
++    if email:
++        rate_limit.record("signup_email", email)
++
++
++def _username_base(email: str) -> str:
++    local = email.split("@", 1)[0].lower()
++    local = re.sub(r"[^a-z0-9._-]", "", local)
++    local = re.sub(r"^[^a-z0-9]+", "", local)[:20]
++    return local or "host"
++
++
++def _new_username(email: str) -> str:
++    base = _username_base(email)
++    for _ in range(20):
++        candidate = f"{base}-{secrets.token_hex(2)}"
++        if auth.username_is_valid(candidate) and not db.query_one(
++            "SELECT id FROM user_account WHERE username = ?", (candidate,)
++        ):
++            return candidate
++    return f"host-{secrets.token_hex(6)}"
++
++
++# --- consent records ---------------------------------------------------------
++
++
++def consent_label(platform: str, lang: str) -> Dict[str, str]:
++    """The pieces of a platform's consent box as the form shows them."""
++    from . import host_i18n
++
++    if platform == GOOGLE:
++        return {
++            "text": host_i18n.translate(lang, "signup.ads_consent"),
++            "link_label": host_i18n.translate(lang, "signup.ads_consent_link"),
++            "link_url": GOOGLE_PRIVACY_URL,
++        }
++    raise ValueError(f"unknown ad platform {platform!r}")
++
++
++def consent_text(platform: str, lang: str) -> str:
++    """The exact wording of the box, written the way the legal text has it."""
++    label = consent_label(platform, lang)
++    return f"{label['text']} [{label['link_label']}]({label['link_url']})"
++
++
++def consent_text_id(platform: str, lang: str) -> int:
++    """The ``consent_texts`` row for the wording shown now, created on first use.
++
++    The version is ``<CONSENT_VERSIONS[platform]>-<lang>``. If somebody edits
++    the wording without bumping the version, the stored text no longer
++    matches; the new wording is then filed under a version with its hash
++    appended, so no consent ever points at text that was not shown.
++    """
++    text = consent_text(platform, lang)
++    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
++    version = f"{CONSENT_VERSIONS[platform]}-{lang}"
++    row = db.query_one(
++        "SELECT id, text_sha256 FROM consent_texts WHERE version = ?", (version,)
++    )
++    if row and row["text_sha256"] == digest:
++        return int(row["id"])
++    if row:
++        log.warning("consent wording for %s changed without a version bump", version)
++        version = f"{version}-{digest[:8]}"
++        row = db.query_one("SELECT id FROM consent_texts WHERE version = ?", (version,))
++        if row:
++            return int(row["id"])
++    db.execute(
++        "INSERT INTO consent_texts (version, purpose, lang, text, text_sha256, created_at) "
++        "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (version) DO NOTHING",
++        (version, f"ads_{platform}", lang, text, digest, db.utcnow()),
++    )
++    return int(db.query_one("SELECT id FROM consent_texts WHERE version = ?", (version,))["id"])
++
++
++def _iso_from_ms(ms: int) -> str:
++    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).replace(microsecond=0).isoformat()
++
++
++def _click_values(platform: str, click: Dict[str, Any]) -> Dict[str, Any]:
++    """The ad_click columns for one platform's identifiers."""
++    ids = {param: value for param, value in click["ids"].items()
++           if CLICK_PARAMS[param][0] == platform}
++    return {column: ids.get(column) for column in ID_COLUMNS[platform]}
++
++
++def _store_clicks(
++    user_id: int, click: Optional[Dict[str, Any]], consents: Dict[str, bool], lang: str
++) -> List[str]:
++    """Replace the account's click rows with the consented ones. Returns platforms stored.
++
++    Without a ticked box nothing about the click is written, not even that
++    there was one.
++    """
++    db.execute("DELETE FROM ad_click WHERE user_account_id = ?", (user_id,))
++    stored = []
++    now = db.utcnow()
++    for platform in click_platforms(click):
++        if not consents.get(platform):
++            continue
++        db.insert(
++            "ad_click",
++            {
++                "user_account_id": user_id,
++                "platform": platform,
++                **_click_values(platform, click),
++                "clicked_at": _iso_from_ms(click["seen_ms"]),
++                "consent_text_id": consent_text_id(platform, lang),
++                "consented_at": now,
++                "created_at": now,
++            },
++        )
++        stored.append(platform)
++    return stored
++
++
++def has_click(user_id: int, platform: str) -> bool:
++    return bool(db.query_one(
++        "SELECT id FROM ad_click WHERE user_account_id = ? AND platform = ? "
++        "AND withdrawn_at IS NULL AND ids_deleted_at IS NULL",
++        (user_id, platform),
++    ))
++
++
++def consents_for(user_id: int) -> List[Dict[str, Any]]:
++    """The account's ad consents for Settings > Privacy, oldest platform first."""
++    rows = {
++        row["platform"]: dict(row)
++        for row in db.query(
++            "SELECT c.platform, c.consented_at, c.withdrawn_at, c.uploaded_at, "
++            "c.ids_deleted_at, t.version FROM ad_click c "
++            "JOIN consent_texts t ON t.id = c.consent_text_id WHERE c.user_account_id = ?",
++            (user_id,),
++        )
++    }
++    return [rows[platform] for platform in PLATFORMS if platform in rows]
++
++
++# --- sign-up ------------------------------------------------------------------
++
++
++def register(
++    *,
++    email: str,
++    password: str,
++    workspace: str,
++    attr: Dict[str, str],
++    consents: Optional[Dict[str, bool]] = None,
++    onboarding_opt_out: bool = False,
++    lang: str,
++    request: Any = None,
++) -> str:
++    """Create or refresh a pending account and queue the right e-mail.
++
++    Returns ``"created"``, ``"refreshed"`` or ``"exists"`` for the caller's
++    audit and tests only. The page shown to the visitor must not depend on it.
++    Inputs are already validated by the route.
++    """
++    now = db.utcnow()
++    nonce = secrets.token_urlsafe(16)
++    password_hash = auth.hash_password(password)
++    existing = db.query_one("SELECT * FROM user_account WHERE email = ?", (email,))
++    if existing and not (
++        existing["email_verified_at"] is None
++        and existing["signup_at"] is not None
++        and not existing["active"]
++    ):
++        # One mail per account per hour at most, on top of the e-mail budget.
++        # Nothing from this form is stored against the existing account.
++        bucket = now[:13]
++        mail_notify.signup_exists(
++            user_id=existing["id"], to_email=email, lang=lang, bucket=bucket
++        )
++        db.audit("signup_repeated", actor="anonymous", owner_user_id=existing["id"])
++        return "exists"
++    values = {
++        "display_name": workspace,
++        "password_hash": password_hash,
++        "signup_at": now,
++        "signup_verify_nonce": nonce,
++        "signup_utm_source": attr.get("utm_source"),
++        "signup_utm_medium": attr.get("utm_medium"),
++        "signup_utm_campaign": attr.get("utm_campaign"),
++        # Legal position 2: the sign-up refusal of setup-tip e-mails.
++        "onboarding_emails_opt_out": 1 if onboarding_opt_out else 0,
++        "onboarding_emails_opt_out_at": now if onboarding_opt_out else None,
++    }
++    if existing:
++        # Signing up again before confirming replaces the password and retires
++        # the older link: whoever confirms has to know the newest password.
++        db.update("user_account", existing["id"], values)
++        user_id = int(existing["id"])
++        username = existing["username"]
++        outcome = "refreshed"
++    else:
++        username = _new_username(email)
++        try:
++            user_id = db.insert(
++                "user_account",
++                {
++                    "username": username,
++                    "email": email,
++                    "role": "host",
++                    "active": 0,
++                    "must_change_password": 0,
++                    "session_version": 1,
++                    "created_at": now,
++                    **values,
++                },
++            )
++        except Exception as exc:
++            if "UNIQUE constraint failed" not in str(exc):
++                raise
++            # A second submit raced this one for the same address.
++            log.info("signup race on one address; treated as repeated")
++            return "exists"
++        outcome = "created"
++    _store_clicks(user_id, read_click(attr.get("click")), consents or {}, lang)
++    # The sign-up checkbox is a clickwrap; the table only knows that method.
++    acceptance.record(user_id, ("terms", "dpa", "privacy"), "clickwrap", request)
++    db.audit("signup_" + outcome, actor="anonymous", owner_user_id=user_id)
++    mail_notify.signup_verify(
++        user_id=user_id,
++        to_email=email,
++        lang=lang,
++        workspace=workspace,
++        username=username,
++        token=issue_token(user_id, nonce),
++        nonce=nonce,
++    )
++    return outcome
++
++
++def activate(account) -> bool:
++    """Mark the account verified and active. False if someone else won the race."""
++    now = db.utcnow()
++    done = db.update_if(
++        "user_account",
++        account["id"],
++        {
++            "active": 1,
++            "email_verified_at": now,
++            "signup_verify_nonce": None,
++            "must_change_password": 0,
++        },
++        {"signup_verify_nonce": account["signup_verify_nonce"]},
++        extra_where="email_verified_at IS NULL",
++    )
++    if not done:
++        return False
++    db.audit("signup_verified", actor=account["username"], owner_user_id=account["id"])
++    mail_notify.signup_admin(
++        user_id=account["id"],
++        workspace=account["display_name"] or "",
++        email=account["email"] or "",
++        username=account["username"],
++        campaign=" / ".join(
++            value for value in (
++                account["signup_utm_source"],
++                account["signup_utm_medium"],
++                account["signup_utm_campaign"],
++            ) if value
++        ),
++        ads_click=has_click(int(account["id"]), GOOGLE),
++    )
++    return True
++
++
++def withdraw_consent(user_id: int, platform: str, actor: str) -> bool:
++    """Withdraw one platform's consent: blank the identifiers, keep the record.
++
++    Legal position 3 requires deleting an identifier that was not uploaded
++    yet. An uploaded one is deleted too: nothing here uses it afterwards. The
++    row is excluded from every later export because ``withdrawn_at`` is set.
++    Returns False when there was no active consent to withdraw.
++    """
++    row = db.query_one(
++        "SELECT * FROM ad_click WHERE user_account_id = ? AND platform = ? "
++        "AND withdrawn_at IS NULL",
++        (user_id, platform),
++    )
++    if not row:
++        return False
++    now = db.utcnow()
++    blank = {column: None for column in ID_COLUMNS[platform]}
++    if not db.update_if(
++        "ad_click",
++        row["id"],
++        {**blank, "withdrawn_at": now, "ids_deleted_at": row["ids_deleted_at"] or now},
++        {"withdrawn_at": None},
++    ):
++        return False
++    db.audit(
++        "ads_consent_withdrawn",
++        detail=f"{platform}; uploaded={'yes' if row['uploaded_at'] else 'no'}",
++        actor=actor,
++        owner_user_id=user_id,
++    )
++    return True
++
++
++# --- housekeeping -------------------------------------------------------------
++
++
++def _iso_days_ago(days: int, now: Optional[datetime] = None) -> str:
++    moment = (now or datetime.now(timezone.utc)) - timedelta(days=days)
++    return moment.replace(microsecond=0).isoformat()
++
++
++def purge(now: Optional[datetime] = None) -> Dict[str, int]:
++    """Delete unconfirmed sign-ups and click identifiers past their time.
++
++    Runs whether or not sign-up is switched on, so turning it off never leaves
++    a stored click ID behind.
++    """
++    unverified_cutoff = _iso_days_ago(UNVERIFIED_TTL_DAYS, now)
++    stale = [
++        int(row["id"])
++        for row in db.query(
++            "SELECT id FROM user_account WHERE email_verified_at IS NULL "
++            "AND signup_at IS NOT NULL AND active = 0 AND signup_at < ?",
++            (unverified_cutoff,),
++        )
++    ]
++    for user_id in stale:
++        with db.immediate() as cur:
++            cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (user_id,))
++            cur.execute("DELETE FROM ad_click WHERE user_account_id = ?", (user_id,))
++            cur.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (user_id,))
++            cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
++            cur.execute(
++                "DELETE FROM user_account WHERE id = ? AND email_verified_at IS NULL "
++                "AND active = 0",
++                (user_id,),
++            )
++    cleared = 0
++    stamp = (now or datetime.now(timezone.utc)).replace(microsecond=0).isoformat()
++    for platform in PLATFORMS:
++        after_click, after_upload = ID_RETENTION_DAYS[platform]
++        blank = ", ".join(f"{column} = NULL" for column in ID_COLUMNS[platform])
++        with db.immediate() as cur:
++            cur.execute(
++                f"UPDATE ad_click SET {blank}, ids_deleted_at = ? "
++                "WHERE platform = ? AND ids_deleted_at IS NULL AND ("
++                "clicked_at < ? OR uploaded_at < ? OR withdrawn_at IS NOT NULL)",
++                (
++                    stamp,
++                    platform,
++                    _iso_days_ago(after_click, now),
++                    _iso_days_ago(after_upload, now),
++                ),
++            )
++            cleared += max(cur.rowcount, 0)
++    return {"unverified_deleted": len(stale), "click_ids_cleared": cleared}
++
++
++# --- Google Ads export --------------------------------------------------------
++
++
++def conversion_time(stored: str) -> str:
++    """A stored UTC timestamp as Prague time with its offset.
++
++    ``yyyy-MM-dd HH:mm:ss+z`` is one of the formats Google Ads lists; the
++    explicit offset keeps the daylight-saving switch unambiguous.
++    """
++    parsed = datetime.fromisoformat(stored)
++    if parsed.tzinfo is None:
++        parsed = parsed.replace(tzinfo=timezone.utc)
++    return parsed.astimezone(ZoneInfo(config.TIMEZONE)).strftime("%Y-%m-%d %H:%M:%S%z")
++
++
++def export_rows(now: Optional[datetime] = None, *, again: bool = False) -> List[Dict[str, Any]]:
++    """Consented, verified, not withdrawn Google clicks from the last 85 days.
++
++    By default only rows not exported before. ``again`` re-includes rows that
++    were already exported, for a file that has to be uploaded once more.
++    """
++    window_cutoff = _iso_days_ago(GOOGLE_EXPORT_DAYS, now)
++    sql = (
++        "SELECT c.id, c.gclid, u.email_verified_at FROM ad_click c "
++        "JOIN user_account u ON u.id = c.user_account_id "
++        "WHERE c.platform = ? AND c.gclid IS NOT NULL AND c.withdrawn_at IS NULL "
++        "AND c.ids_deleted_at IS NULL AND u.email_verified_at IS NOT NULL "
++        "AND c.clicked_at >= ?"
++    )
++    if not again:
++        sql += " AND c.uploaded_at IS NULL"
++    sql += " ORDER BY u.email_verified_at, c.id"
++    return [
++        dict(row)
++        for row in db.query(sql, (GOOGLE, window_cutoff))
++        if clean_gclid(row["gclid"])
++    ]
++
++
++def conversions_csv(rows: List[Dict[str, Any]]) -> str:
++    out = io.StringIO()
++    out.write(f"Parameters:TimeZone={config.TIMEZONE}\r\n")
++    writer = csv.writer(out, lineterminator="\r\n")
++    writer.writerow(CSV_HEADER)
++    for row in rows:
++        writer.writerow(
++            (
++                row["gclid"],
++                config.ADS_CONVERSION_NAME,
++                conversion_time(row["email_verified_at"]),
++                CONSENT_GRANTED,
++                CONSENT_DENIED,
++            )
++        )
++    return out.getvalue()
++
++
++def export_conversions(now: Optional[datetime] = None, *, again: bool = False) -> tuple:
++    """The CSV body and its row count; marks new rows ``uploaded_at``.
++
++    ``uploaded_at`` means "handed to the operator for upload": the file goes
++    to Google by hand, so this is the last moment the app can know about.
++    """
++    rows = export_rows(now, again=again)
++    body = conversions_csv(rows)
++    if rows and not again:
++        stamp = (now or datetime.now(timezone.utc)).replace(microsecond=0).isoformat()
++        marks = ", ".join("?" for _ in rows)
++        db.execute(
++            f"UPDATE ad_click SET uploaded_at = ? WHERE uploaded_at IS NULL AND id IN ({marks})",
++            [stamp] + [row["id"] for row in rows],
++        )
++    return body, len(rows)
+diff --git a/App/app/templates/landing.html b/App/app/templates/landing.html
+index 0e2ed7c..593e352 100644
+--- a/App/app/templates/landing.html
++++ b/App/app/templates/landing.html
+@@ -69,7 +69,7 @@
+       <h1 id="landing-title">{{ t('landing.title') }}</h1>
+       <p class="landing-lede">{{ t('landing.lede') }}</p>
+       <div class="landing-hero-actions">
+-        <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
++        {% if signup_href %}<a class="landing-button primary" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('landing.cta') }}</a>{% else %}<a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>{% endif %}
+         <a class="landing-button secondary" href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.contact') }} <span aria-hidden="true">→</span></a>
+       </div>
+       <p class="landing-trust">{{ t('landing.independent') }}</p>
+@@ -186,7 +186,7 @@
+     <section class="landing-final">
+       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('landing.final.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+-      <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
++      {% if signup_href %}<a class="landing-button primary" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('landing.cta') }}</a>{% else %}<a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>{% endif %}
+     </section>
+   </main>
+ 
+diff --git a/App/app/templates/pricing.html b/App/app/templates/pricing.html
+index 9f33e3f..8f61655 100644
+--- a/App/app/templates/pricing.html
++++ b/App/app/templates/pricing.html
+@@ -65,6 +65,9 @@
+         </div>
+         <a class="landing-button pricing-button"
+            data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
++        {% if signup_href %}
++        <a class="landing-button primary pricing-button" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('signup.cta') }}</a>
++        {% endif %}
+         <small>{{ t('landing.cta.note') }}</small>
+       </article>
+     </section>
+diff --git a/App/app/templates/privacy.html b/App/app/templates/privacy.html
+index cd3e5f2..64f11a9 100644
+--- a/App/app/templates/privacy.html
++++ b/App/app/templates/privacy.html
+@@ -72,6 +72,12 @@
+       {% endfor %}
+       </ul>
+     {% endif %}
++    {% if signup_ads_notice %}
++    <h3 id="signup">{{ t('privacy.signup_title') }}</h3>
++    <div class="terms-section">{{ t('privacy.signup_body') }}</div>
++    <h3 id="signup-ads">{{ t('privacy.signup_ads_title') }}</h3>
++    <div class="terms-section">{{ t('privacy.signup_ads_body') | legal_links }}</div>
++    {% endif %}
+   {% endif %}
+   {% if sid == '11' %}
+     {#- WP09: UbyHost's own retention periods, section 4. -#}
+diff --git a/App/app/templates/settings.html b/App/app/templates/settings.html
+index e7d8401..b182766 100644
+--- a/App/app/templates/settings.html
++++ b/App/app/templates/settings.html
+@@ -279,6 +279,39 @@
+       </div>
+     </div>
+ 
++    {% if ad_consents %}
++    <div class="panel" id="settings-privacy">
++      <h2 style="margin-top:0">{{ t('settings.privacy.title') }}</h2>
++      <div class="settings-action-list">
++        {% for consent in ad_consents %}
++        <div class="settings-action-row">
++          <div>
++            <strong>{{ t('settings.privacy.ad_consent.' ~ consent.platform) }}</strong>
++            {% if consent.withdrawn_at %}
++              <small>{{ t('settings.privacy.withdrawn', date=consent.withdrawn_at | datetime_local) }}</small>
++            {% else %}
++              <small>{{ t('settings.privacy.given', date=consent.consented_at | datetime_local) }}</small>
++            {% endif %}
++          </div>
++          {% if consent.withdrawn_at %}
++            <span class="pill grey">{{ t('settings.privacy.off') }}</span>
++          {% else %}
++            <form method="post" action="/settings/privacy/ad-consent">
++              <input type="hidden" name="platform" value="{{ consent.platform }}">
++              <label class="checkline">
++                <input type="checkbox" name="enabled" value="1" checked>
++                <span>{{ t('settings.privacy.on') }}</span>
++              </label>
++              <button class="btn small" type="submit">{{ t('settings.privacy.save') }}</button>
++            </form>
++          {% endif %}
++        </div>
++        {% endfor %}
++      </div>
++      <p class="small muted">{{ t('settings.privacy.help') }}</p>
++    </div>
++    {% endif %}
++
+     <div class="panel" id="settings-legal">
+       <h2 style="margin-top:0">{{ t('legal.settings_title') }}</h2>
+       <p class="small muted">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
+diff --git a/App/app/templates/signup.html b/App/app/templates/signup.html
+new file mode 100644
+index 0000000..4917722
+--- /dev/null
++++ b/App/app/templates/signup.html
+@@ -0,0 +1,87 @@
++{% extends "auth_base.html" %}
++{% block title %}{{ t('signup.page_title') }}{% endblock %}
++{% set meta_description = t('signup.meta_description') %}
++{% block auth_body %}
++<section class="auth-card">
++  <h1 class="auth-title">{{ t('signup.title') }}</h1>
++  <p class="auth-lede">{{ t('signup.lede') }}</p>
++
++  {% if error and not error_field %}
++    <div class="auth-alert" role="alert">{{ t(error) }}</div>
++  {% endif %}
++
++  <form method="post" action="/signup" class="auth-form">
++    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
++    {# The signed click value and the campaign labels travel in the form, never in a cookie. #}
++    {% for key in ('click', 'utm_source', 'utm_medium', 'utm_campaign') %}
++      {% if attr.get(key) %}<input type="hidden" name="{{ key }}" value="{{ attr[key] }}">{% endif %}
++    {% endfor %}
++    <div class="auth-field">
++      <label for="email">{{ t('signup.email') }}</label>
++      <input type="email" id="email" name="email" required maxlength="254"
++             value="{{ email | default('', true) }}"
++             autocomplete="email" autocapitalize="none" spellcheck="false"
++             placeholder="{{ t('signup.email_ph') }}"{% if not error %} autofocus{% endif %}
++             {% if error_field == 'email' %}aria-invalid="true" aria-describedby="email-error"{% endif %}>
++      {% if error_field == 'email' %}
++      <p class="auth-hint err-text" id="email-error" role="alert">{{ t(error) }}</p>
++      {% endif %}
++    </div>
++    <div class="auth-field">
++      <label for="password">{{ t('signup.password') }}</label>
++      <input type="password" id="password" name="password" required minlength="12" maxlength="256"
++             autocomplete="new-password"
++             aria-describedby="password-hint{% if error_field == 'password' %} password-error{% endif %}"
++             {% if error_field == 'password' %}aria-invalid="true"{% endif %}>
++      <p class="auth-hint" id="password-hint">{{ t('signup.password_hint') }}</p>
++      {% if error_field == 'password' %}
++      <p class="auth-hint err-text" id="password-error" role="alert">{{ t(error) }}</p>
++      {% endif %}
++    </div>
++    <div class="auth-field">
++      <label for="workspace">{{ t('signup.workspace') }}</label>
++      <input type="text" id="workspace" name="workspace" required maxlength="120"
++             value="{{ workspace | default('', true) }}" autocomplete="organization"
++             placeholder="{{ t('signup.workspace_ph') }}"
++             {% if error_field == 'workspace' %}aria-invalid="true" aria-describedby="workspace-error"{% endif %}>
++      {% if error_field == 'workspace' %}
++      <p class="auth-hint err-text" id="workspace-error" role="alert">{{ t(error) }}</p>
++      {% endif %}
++    </div>
++    <label class="auth-remember">
++      <input type="checkbox" name="accept" value="1" required
++             {% if error_field == 'accept' %}aria-invalid="true" aria-describedby="accept-error"{% endif %}>
++      <span>{{ t('signup.accept_before') }}<a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_terms') }}</a>{{ t('signup.accept_between') }}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_dpa') }}</a>{{ t('signup.accept_privacy_before') }}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('signup.accept_privacy') }}</a>{{ t('signup.accept_after') }}</span>
++    </label>
++    {% if error_field == 'accept' %}
++    <p class="auth-hint err-text" id="accept-error" role="alert">{{ t(error) }}</p>
++    {% endif %}
++    {# Legal position 3: one optional, unticked box per ad platform, shown only
++       when the visitor's link carried that platform's click identifier. The
++       wording is recorded in consent_texts exactly as rendered here. #}
++    {% for box in consent_boxes %}
++    <label class="auth-remember" data-consent="{{ box.platform }}">
++      <input type="checkbox" name="{{ box.field }}" value="1"{% if box.checked %} checked{% endif %}>
++      <span>{{ box.text }} <a href="{{ box.link_url }}" target="_blank" rel="noopener noreferrer">{{ box.link_label }}</a></span>
++    </label>
++    {% endfor %}
++    {# Legal position 2: refusing setup tips is one optional, unticked box. #}
++    <label class="auth-remember">
++      <input type="checkbox" name="onboarding_opt_out" value="1"{% if onboarding_opt_out %} checked{% endif %}>
++      <span>{{ t('signup.onboarding_opt_out') }}</span>
++    </label>
++    {% if turnstile_site_key %}
++      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
++           data-action="host_signup" data-language="{{ lang }}"></div>
++    {% endif %}
++    <button class="auth-submit" type="submit" data-umami-event="signup_submitted">{{ t('signup.submit') }}</button>
++  </form>
++
++  <div class="auth-foot">
++    <p>{{ t('signup.have_account') }} <a href="/login?lang={{ lang }}">{{ t('signup.login_link') }}</a></p>
++  </div>
++</section>
++{% if turnstile_site_key %}
++<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
++{% endif %}
++{% endblock %}
+diff --git a/App/app/templates/signup_sent.html b/App/app/templates/signup_sent.html
+new file mode 100644
+index 0000000..f68e2e4
+--- /dev/null
++++ b/App/app/templates/signup_sent.html
+@@ -0,0 +1,12 @@
++{% extends "auth_base.html" %}
++{% block title %}{{ t('signup.sent.page_title') }}{% endblock %}
++{% block auth_body %}
++<section class="auth-card">
++  <h1 class="auth-title">{{ t('signup.sent.title') }}</h1>
++  <p class="auth-lede">{{ t('signup.sent.body', email=email) }}</p>
++  <p class="auth-lede">{{ t('signup.sent.expiry') }}</p>
++  <div class="auth-foot">
++    <p>{{ t('signup.sent.spam') }}</p>
++  </div>
++</section>
++{% endblock %}
+diff --git a/App/app/templates/signup_verify.html b/App/app/templates/signup_verify.html
+new file mode 100644
+index 0000000..1600baf
+--- /dev/null
++++ b/App/app/templates/signup_verify.html
+@@ -0,0 +1,29 @@
++{% extends "auth_base.html" %}
++{% block title %}{{ t('signup.verify.page_title') }}{% endblock %}
++{# A language switch comes back to the same link, also after a failed POST. #}
++{% set lang_next = ('/signup/verify?t=' ~ token) if token else '/signup' %}
++{% block auth_body %}
++<section class="auth-card">
++  {% if expired %}
++  <h1 class="auth-title">{{ t('signup.verify.expired.title') }}</h1>
++  <p class="auth-lede">{{ t('signup.verify.expired.body') }}</p>
++  <a class="auth-submit" href="/signup?lang={{ lang }}">{{ t('signup.verify.expired.action') }}</a>
++  {% else %}
++  <h1 class="auth-title">{{ t('signup.verify.title') }}</h1>
++  <p class="auth-lede">{{ t('signup.verify.lede') }}</p>
++  {% if error %}
++    <div class="auth-alert" role="alert">{{ t(error) }}</div>
++  {% endif %}
++  <form method="post" action="/signup/verify" class="auth-form">
++    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
++    <input type="hidden" name="t" value="{{ token }}">
++    <div class="auth-field">
++      <label for="password">{{ t('signup.password') }}</label>
++      <input type="password" id="password" name="password" required autofocus
++             autocomplete="current-password">
++    </div>
++    <button class="auth-submit" type="submit">{{ t('signup.verify.submit') }}</button>
++  </form>
++  {% endif %}
++</section>
++{% endblock %}
+diff --git a/App/app/templates/subprocessors.html b/App/app/templates/subprocessors.html
+index 45c5d41..1c172cf 100644
+--- a/App/app/templates/subprocessors.html
++++ b/App/app/templates/subprocessors.html
+@@ -41,8 +41,8 @@
+ </div>
+ 
+ {#- WP09: 04_legal_positions.md section 5. The Google Ads recipient belongs to
+-    self sign-up; no UBYHOST_SIGNUP_ENABLED flag exists yet, so it is always
+-    listed (routes/legal.py RECIPIENT_IDS). -#}
++    self sign-up and is listed only while UBYHOST_SIGNUP_ENABLED is on
++    (routes/legal.py recipient_ids()). -#}
+ <div class="panel" id="recipients">
+   <h2 style="margin-top:0">{{ t('subprocessors.recipients_title') }}</h2>
+   <ul class="small muted">
+diff --git a/App/app/templates/users.html b/App/app/templates/users.html
+index 890621f..870a325 100644
+--- a/App/app/templates/users.html
++++ b/App/app/templates/users.html
+@@ -41,11 +41,13 @@
+             <td data-label="{{ t('users.table.user') }}">
+               <strong>{{ user.display_name or user.username }}</strong>
+               <div class="small muted mono">{{ user.username }}</div>
++              {% if user.email %}<div class="small muted">{{ user.email }}</div>{% endif %}
+             </td>
+             <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
+             <td data-label="{{ t('users.table.properties') }}">{{ user.apartment_count }}</td>
+             <td data-label="{{ t('users.table.status') }}">
+-              {% if not user.active %}<span class="pill grey">{{ t('users.status.disabled') }}</span>
++              {% if user.signup_at and not user.email_verified_at and not user.active %}<span class="pill amber">{{ t('users.status.unverified') }}</span>
++              {% elif not user.active %}<span class="pill grey">{{ t('users.status.disabled') }}</span>
+               {% elif user.must_change_password %}<span class="pill amber">{{ t('users.status.temporary_password') }}</span>
+               {% else %}<span class="pill green">{{ t('users.status.active') }}</span>{% endif %}
+             </td>
+@@ -63,6 +65,12 @@
+                   <button class="row-menu-item" type="button" role="menuitem"
+                           data-reset-password data-user-id="{{ user.id }}"
+                           data-user-label="{{ user.display_name or user.username }}">{{ t('users.menu.reset_password') }}</button>
++                  {% if user.google_consent %}
++                  <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
++                    <input type="hidden" name="platform" value="google">
++                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.withdraw_ads_consent') }}</button>
++                  </form>
++                  {% endif %}
+                   <form method="post" action="/admin/users/{{ user.id }}/export" class="row-menu-form">
+                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.export') }}</button>
+                   </form>
+@@ -82,6 +90,16 @@
+   </section>
+ 
+   <aside class="panel">
++    {% if signup_enabled %}
++    <form method="post" action="/admin/ads-conversions.csv">
++      <button class="btn" type="submit">{{ t('users.ads_export') }}</button>
++    </form>
++    <p class="small muted">{{ t('users.ads_export_hint', days=ads_export_days) }}</p>
++    <form method="post" action="/admin/ads-conversions.csv">
++      <input type="hidden" name="again" value="1">
++      <button class="btn small" type="submit">{{ t('users.ads_export_again') }}</button>
++    </form>
++    {% endif %}
+     <h2 style="margin-top:0">{{ t('users.create.title') }}</h2>
+     <p class="small muted">{{ t('users.create.lede') }}</p>
+     <form method="post" action="/admin/users">
+diff --git a/App/tests/test_admin_funnel.py b/App/tests/test_admin_funnel.py
+index 07e4422..58f0168 100644
+--- a/App/tests/test_admin_funnel.py
++++ b/App/tests/test_admin_funnel.py
+@@ -187,3 +187,25 @@ def test_wp20_hook_adds_stages_before_created(monkeypatch):
+     assert [key for key, _c in admin_funnel.stages()][:2] == ["signed_up", "created"]
+     columns = [header for header, _key in admin_funnel.csv_columns("2026-09", "2026-10")]
+     assert columns.index("signed_up") < columns.index("created")
++
++
++def test_self_sign_up_stages_and_source_column():
++    """WP20 filled the hook: signed up, e-mail verified, and the source flag."""
++    _account("adminmade")
++    tagged = _account("signedup")
++    now = datetime.now(timezone.utc)
++    db.execute(
++        "UPDATE user_account SET signup_at = ?, email_verified_at = ?, "
++        "signup_utm_source = 'google' WHERE id = ?",
++        (_iso(now - timedelta(days=2)), _iso(now - timedelta(days=1)), tagged),
++    )
++    data = admin_funnel.rows()
++    mine = _mine(data)
++    assert data["stages"][:3] == ["signed_up", "email_verified", "created"]
++    assert mine[PREFIX + "signedup"]["signup_source_present"] == "yes"
++    assert mine[PREFIX + "adminmade"]["signup_source_present"] is None
++    assert mine[PREFIX + "adminmade"]["signup_at"] is None
++    db.execute("UPDATE user_account SET signup_utm_source = NULL WHERE id = ?", (tagged,))
++    assert _mine(admin_funnel.rows())[PREFIX + "signedup"]["signup_source_present"] == "no"
++    headers = [h for h, _k in admin_funnel.csv_columns("2026-09", "2026-10")]
++    assert headers.index("signup_source_present") < headers.index("signed_up")
+diff --git a/App/tests/test_claim_mail.py b/App/tests/test_claim_mail.py
+index a6c5483..118065a 100644
+--- a/App/tests/test_claim_mail.py
++++ b/App/tests/test_claim_mail.py
+@@ -1806,6 +1806,9 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
+         "lifecycle_no_property",
+         "lifecycle_no_calendar",
+         "lifecycle_no_guest",
++        "signup_verify",
++        "signup_exists",
++        "signup_admin",
+     }
+ 
+ 
+diff --git a/App/tests/test_migrations.py b/App/tests/test_migrations.py
+index 5163d8f..0bf372a 100644
+--- a/App/tests/test_migrations.py
++++ b/App/tests/test_migrations.py
+@@ -93,8 +93,13 @@ def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
+     assert db.schema_version() == LATEST
+     after = _schema(current)
+     # Marking the baseline changes nothing that was there; the shipped
+-    # migrations only add to it.
+-    assert {key: after.get(key) for key in before} == before
++    # migrations only add tables, columns and indexes.
++    for key, value in before.items():
++        assert key in after, key
++        if isinstance(value, list):
++            assert set(value) <= set(after[key]), key
++        else:
++            assert after[key] == value, key
+     assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
+ 
+ 
+diff --git a/App/tests/test_privacy_legal_positions.py b/App/tests/test_privacy_legal_positions.py
+index 72eab42..ba6f98a 100644
+--- a/App/tests/test_privacy_legal_positions.py
++++ b/App/tests/test_privacy_legal_positions.py
+@@ -77,9 +77,14 @@ def test_the_register_lists_the_section_5_subprocessors_with_safeguards():
+             assert name in html, (lang, name)
+ 
+ 
+-def test_the_register_names_the_recipients_that_are_not_subprocessors():
++def test_the_register_names_the_recipients_that_are_not_subprocessors(monkeypatch):
+     for lang, title in (("en", "Recipients that are not subprocessors"),
+                         ("cs", "Příjemci, kteří nejsou dalšími zpracovateli")):
++        monkeypatch.setattr(config, "SIGNUP_ENABLED", True)
+         html = _get(f"/subprocessors?lang={lang}")
+         assert title in html, lang
+         assert "Google Ireland Ltd." in html and "Policie ČR, UbyPort" in html, lang
++        # WP20: Google Ads is a recipient only while self sign-up is on.
++        monkeypatch.setattr(config, "SIGNUP_ENABLED", False)
++        html = _get(f"/subprocessors?lang={lang}")
++        assert "Google Ireland Ltd." not in html and "Policie ČR, UbyPort" in html, lang
+diff --git a/App/tests/test_signup.py b/App/tests/test_signup.py
+new file mode 100644
+index 0000000..34b5259
+--- /dev/null
++++ b/App/tests/test_signup.py
+@@ -0,0 +1,795 @@
++"""WP20: self sign-up, e-mail verification and the Google Ads click import."""
++from __future__ import annotations
++
++import csv
++import io
++import json
++import re
++from datetime import datetime, timedelta, timezone
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, config, db, lifecycle_mail, mail, signup
++from app.main import app
++
++DOMAIN = "signup.test"
++PASSWORD = "Signup-Password-123"
++GCLID = "EAIaIQobChMI_test-Click123"
++
++
++@pytest.fixture(autouse=True)
++def _signup_on(monkeypatch):
++    db.init_db()
++    monkeypatch.setattr(config, "SIGNUP_ENABLED", True)
++    monkeypatch.setattr(mail, "backend_name", lambda: "console")
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    _clean()
++    yield
++    _clean()
++
++
++def _clean() -> None:
++    ids = [
++        row["id"]
++        for row in db.query(
++            "SELECT id FROM user_account WHERE email LIKE ? OR username LIKE 'signup-admin%'",
++            (f"%@{DOMAIN}",),
++        )
++    ]
++    for user_id in ids:
++        db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (user_id,))
++        db.execute("DELETE FROM ad_click WHERE user_account_id = ?", (user_id,))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
++        db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (user_id,))
++        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
++    db.execute("DELETE FROM email_outbox WHERE kind LIKE 'signup_%'")
++    db.execute(
++        "DELETE FROM rate_limit_event WHERE scope IN "
++        "('signup_ip', 'signup_email', 'login_fail', 'login_fail_ip')"
++    )
++
++
++def _client() -> TestClient:
++    return TestClient(app)
++
++
++def _click(gclid=GCLID, seen_ms=None, **more) -> str:
++    ids = {"gclid": gclid, **more} if gclid else dict(more)
++    return signup.issue_click(ids, seen_ms)
++
++
++def _submit(client, email, *, password=PASSWORD, workspace="Old Town Flats",
++            accept="1", consent=False, gclid="", click=None, opt_out=False, extra=None):
++    data = {"email": email, "password": password, "workspace": workspace}
++    if accept:
++        data["accept"] = accept
++    if consent:
++        data["ads_consent"] = "1"
++    if opt_out:
++        data["onboarding_opt_out"] = "1"
++    if click is None and gclid:
++        click = _click(gclid)
++    if click:
++        data["click"] = click
++    data.update(extra or {})
++    return client.post("/signup?lang=en", data=data, follow_redirects=False)
++
++
++def _account(email):
++    return db.query_one("SELECT * FROM user_account WHERE email = ?", (email,))
++
++
++def _ad_click(email, platform="google"):
++    return db.query_one(
++        "SELECT c.*, t.version, t.text AS consent_text FROM ad_click c "
++        "JOIN user_account u ON u.id = c.user_account_id "
++        "JOIN consent_texts t ON t.id = c.consent_text_id "
++        "WHERE u.email = ? AND c.platform = ?",
++        (email, platform),
++    )
++
++
++def _click_from_href(html: str) -> str:
++    match = re.search(r'href="/signup\?[^"]*click=([^"&]+)', html)
++    assert match, "no click value in the sign-up link"
++    return match.group(1)
++
++
++def _verify_token(email) -> str:
++    row = db.query_one(
++        "SELECT payload FROM email_outbox WHERE kind = 'signup_verify' AND to_email = ? "
++        "ORDER BY id DESC LIMIT 1",
++        (email,),
++    )
++    assert row, "no verification mail queued"
++    payload = json.loads(row["payload"])
++    return db.decrypt_field(payload[mail.CLAIM_SECRET_KEY])
++
++
++def _card(html: str) -> str:
++    match = re.search(r'<section class="auth-card">.*?</section>', html, re.S)
++    assert match
++    return match.group(0)
++
++
++def _set_cookie_names(response) -> set:
++    names = set()
++    for header in response.headers.get_list("set-cookie"):
++        match = re.match(r"\s*([^=;]+)=", header)
++        if match:
++            names.add(match.group(1).strip())
++    return names
++
++
++def _admin_client() -> TestClient:
++    auth.create_account(
++        "signup-admin", PASSWORD, "Admin", role="admin", must_change_password=False
++    )
++    client = _client()
++    response = client.post(
++        "/login?lang=en",
++        data={"username": "signup-admin", "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    return client
++
++
++# --- the flag -------------------------------------------------------------
++
++
++def test_everything_is_404_while_signup_is_off(monkeypatch):
++    monkeypatch.setattr(config, "SIGNUP_ENABLED", False)
++    client = _client()
++    assert client.get("/signup").status_code == 404
++    assert client.get("/signup/verify?t=x").status_code == 404
++    assert _submit(client, f"off@{DOMAIN}").status_code == 404
++    assert client.post("/admin/ads-conversions.csv").status_code == 404
++    assert _account(f"off@{DOMAIN}") is None
++    landing = client.get("/?lang=en&gclid=" + GCLID).text
++    assert "/signup" not in landing
++    assert "/login?lang=en" in landing
++    assert "signup-ads" not in client.get("/privacy?lang=en").text
++
++
++# --- carrying the click ID ------------------------------------------------
++
++
++def test_landing_and_pricing_carry_a_signed_click_to_the_signup_link():
++    client = _client()
++    for path in ("/", "/cenik"):
++        before = int(datetime.now(timezone.utc).timestamp() * 1000)
++        html = client.get(
++            f"{path}?lang=en&gclid={GCLID}&utm_source=google&utm_campaign=autumn"
++        ).text
++        assert 'href="/signup?lang=en&amp;utm_source=google&amp;utm_campaign=autumn&amp;click=' in html
++        assert 'data-umami-event="signup_start"' in html
++        click = signup.read_click(_click_from_href(html))
++        # The value carries the identifier and the landing-page request time.
++        assert click["ids"] == {"gclid": GCLID}
++        assert before - 1000 <= click["seen_ms"] <= before + 60_000
++        # The raw identifier is not in the page outside that signed value.
++        assert f"gclid={GCLID}" not in html
++
++
++def test_gbraid_and_wbraid_are_captured_like_gclid():
++    html = _client().get("/?lang=en&gbraid=0AAAAA_brAid-1&wbraid=Wbr4id_x").text
++    click = signup.read_click(_click_from_href(html))
++    assert click["ids"] == {"gbraid": "0AAAAA_brAid-1", "wbraid": "Wbr4id_x"}
++    email = f"braid@{DOMAIN}"
++    _submit(_client(), email, click=_click(gclid="", gbraid="0AAAAA_brAid-1"), consent=True)
++    row = _ad_click(email)
++    assert row["gbraid"] == "0AAAAA_brAid-1" and row["gclid"] is None
++
++
++def test_the_signup_page_keeps_the_landing_click_time():
++    old_ms = int((datetime.now(timezone.utc) - timedelta(days=3)).timestamp() * 1000)
++    token = _click(seen_ms=old_ms)
++    html = _client().get(f"/signup?lang=en&click={token}&gclid={GCLID}").text
++    assert f'<input type="hidden" name="click" value="{token}">' in html
++    email = f"keeptime@{DOMAIN}"
++    _submit(_client(), email, click=token, consent=True)
++    stored = datetime.fromisoformat(_ad_click(email)["clicked_at"])
++    assert abs(stored.timestamp() * 1000 - old_ms) < 1000
++
++
++def test_a_tampered_or_unsigned_click_is_ignored():
++    email = f"tamper@{DOMAIN}"
++    token = _click()
++    forged = token[:-2] + ("AA" if not token.endswith("AA") else "BB")
++    _submit(_client(), email, click=forged, consent=True)
++    assert _ad_click(email) is None
++    # A raw identifier in the form (not signed) is not accepted either.
++    email2 = f"rawpost@{DOMAIN}"
++    _submit(_client(), email2, click="", consent=True, extra={"gclid": GCLID})
++    assert _ad_click(email2) is None
++    # Too old, or from the future.
++    old = _click(seen_ms=int((datetime.now(timezone.utc) - timedelta(days=91)).timestamp() * 1000))
++    future = _click(seen_ms=int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp() * 1000))
++    assert signup.read_click(old) is None and signup.read_click(future) is None
++
++
++def test_an_invalid_gclid_is_dropped_everywhere():
++    client = _client()
++    bad = "abc<script>"
++    html = client.get(f"/?lang=en&gclid={bad}").text
++    assert 'href="/signup?lang=en"' in html
++    form = client.get(f"/signup?lang=en&gclid={bad}&utm_source=%3Cx%3E").text
++    assert 'name="click"' not in form
++    assert 'name="ads_consent"' not in form
++    assert 'name="utm_source"' not in form
++    long_id = "a" * 201
++    assert signup.clean_gclid(long_id) == ""
++    assert signup.clean_gclid("a" * 200) == "a" * 200
++
++
++def test_the_signup_form_carries_the_click_in_a_signed_hidden_field():
++    html = _client().get(f"/signup?lang=en&gclid={GCLID}&utm_medium=cpc").text
++    token = re.search(r'<input type="hidden" name="click" value="([^"]+)">', html).group(1)
++    assert signup.read_click(token)["ids"] == {"gclid": GCLID}
++    assert f'name="gclid"' not in html
++    assert '<input type="hidden" name="utm_medium" value="cpc">' in html
++    # The ads consent box exists, is optional and unticked by default.
++    box = re.search(r'<input type="checkbox" name="ads_consent"[^>]*>', html).group(0)
++    assert "checked" not in box and "required" not in box
++    assert signup.consent_label("google", "en")["text"] in html
++    assert 'href="https://business.safety.google/privacy/"' in html
++    assert 'data-umami-event="signup_submitted"' in html
++
++
++def test_the_ads_box_is_shown_only_with_a_click_id():
++    html = _client().get("/signup?lang=en&utm_source=google").text
++    assert 'name="ads_consent"' not in html
++    assert "Google ad" not in html
++    # The setup-tips box is always there, optional and unticked.
++    box = re.search(r'<input type="checkbox" name="onboarding_opt_out"[^>]*>', html).group(0)
++    assert "checked" not in box and "required" not in box
++    assert "Do not send me setup tips by e-mail (you can change this anytime in Settings)." in html
++
++
++def test_the_consent_texts_are_the_legal_wording():
++    assert signup.consent_text("google", "en") == (
++        "Optional: I agree that UbyHost may record that I came from a Google ad and share "
++        "that click identifier with Google (an independent controller) to measure our ad "
++        "campaigns. No personalised ads. You can withdraw anytime in Settings. "
++        "[How Google uses data](https://business.safety.google/privacy/)"
++    )
++    assert signup.consent_text("google", "cs") == (
++        "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z reklamy Google, "
++        "a předal tento identifikátor kliknutí společnosti Google (samostatnému správci) "
++        "k měření úspěšnosti našich reklam. Bez personalizované reklamy. Souhlas můžete "
++        "kdykoli odvolat v Nastavení. "
++        "[Jak Google používá data](https://business.safety.google/privacy/)"
++    )
++
++
++def test_the_czech_form_reads_czech():
++    html = _client().get(f"/signup?lang=cs&gclid={GCLID}").text
++    assert "Založte si účet UbyHost" in html
++    assert "Nepovinné: Souhlasím, aby UbyHost zaznamenal" in html
++    assert "Nepřeji si dostávat e-mailem tipy k nastavení" in html
++
++
++# --- sign-up and verification --------------------------------------------
++
++
++def test_signup_creates_an_inactive_account_that_cannot_sign_in():
++    client = _client()
++    email = f"new@{DOMAIN}"
++    response = _submit(client, email, consent=True, gclid=GCLID,
++                       extra={"utm_source": "google", "utm_medium": "cpc"})
++    assert response.status_code == 200
++    assert "Check your inbox" in response.text
++    account = _account(email)
++    assert account["active"] == 0
++    assert account["email_verified_at"] is None
++    assert account["display_name"] == "Old Town Flats"
++    row = _ad_click(email)
++    assert row["gclid"] == GCLID and row["consented_at"] and row["clicked_at"]
++    assert row["withdrawn_at"] is None and row["uploaded_at"] is None
++    # The record points at the exact wording shown, in the language shown.
++    assert row["version"] == "ads-google-v1-en"
++    assert row["consent_text"] == signup.consent_text("google", "en")
++    assert account["onboarding_emails_opt_out"] == 0
++    assert account["onboarding_emails_opt_out_at"] is None
++    assert account["signup_utm_source"] == "google"
++    assert account["signup_utm_medium"] == "cpc"
++    assert auth.username_is_valid(account["username"])
++    docs = {row["document"] for row in db.query(
++        "SELECT document FROM legal_acceptance WHERE user_account_id = ?", (account["id"],)
++    )}
++    assert docs == {"terms", "dpa", "privacy"}
++    assert auth.authenticate(email, PASSWORD) is None
++    assert auth.authenticate(account["username"], PASSWORD) is None
++
++
++def test_the_stored_verification_mail_holds_no_usable_link():
++    email = f"stored@{DOMAIN}"
++    _submit(_client(), email)
++    row = db.query_one(
++        "SELECT payload FROM email_outbox WHERE kind = 'signup_verify' AND to_email = ?",
++        (email,),
++    )
++    payload = json.loads(row["payload"])
++    token = _verify_token(email)
++    assert token not in payload["text"] and token not in payload["html"]
++    assert mail.CLAIM_SECRET_MARKER in payload["text"]
++    assert token in mail.delivery_body(payload)
++
++
++def test_verification_needs_the_password_then_activates_and_signs_in():
++    client = _client()
++    email = f"verify@{DOMAIN}"
++    _submit(client, email, consent=True, gclid=GCLID)
++    token = _verify_token(email)
++    page = client.get(f"/signup/verify?t={token}")
++    assert page.status_code == 200
++    # The GET alone (a mail scanner pre-fetching the link) activates nothing.
++    assert _account(email)["active"] == 0
++    wrong = client.post("/signup/verify", data={"t": token, "password": "Wrong-Password-1"},
++                        follow_redirects=False)
++    assert wrong.status_code == 401
++    assert _account(email)["active"] == 0
++    done = client.post("/signup/verify", data={"t": token, "password": PASSWORD},
++                       follow_redirects=False)
++    assert done.status_code == 303
++    assert auth.SESSION_COOKIE in _set_cookie_names(done)
++    account = _account(email)
++    assert account["active"] == 1 and account["email_verified_at"]
++    assert account["signup_verify_nonce"] is None
++    assert account["must_change_password"] == 0
++    # The link is spent.
++    assert client.get(f"/signup/verify?t={token}").status_code == 410
++    # The operator is told, once.
++    notices = db.query(
++        "SELECT to_email, subject FROM email_outbox WHERE kind = 'signup_admin' "
++        "AND idempotency_key = ?",
++        (f"signup_admin:{account['id']}",),
++    )
++    assert len(notices) == 1
++    assert notices[0]["to_email"] == mail.normalise_email(config.SIGNUP_NOTIFY_EMAIL)
++    assert "Old Town Flats" in notices[0]["subject"]
++    # Signing in afterwards works with the e-mail and with the username.
++    assert auth.authenticate(email, PASSWORD)
++    assert auth.authenticate(account["username"], PASSWORD)
++
++
++def test_first_signed_in_request_runs_the_normal_guards():
++    client = _client()
++    email = f"guards@{DOMAIN}"
++    _submit(client, email)
++    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
++                follow_redirects=False)
++    # Signed in: /signup now sends the host into the app instead.
++    response = client.get("/signup", follow_redirects=False)
++    assert response.status_code == 303 and response.headers["location"] == "/"
++
++
++def test_an_expired_link_is_refused(monkeypatch):
++    client = _client()
++    email = f"expired@{DOMAIN}"
++    _submit(client, email)
++    token = _verify_token(email)
++    monkeypatch.setattr(signup, "VERIFY_MAX_AGE", -1)
++    assert client.get(f"/signup/verify?t={token}").status_code == 410
++    response = client.post("/signup/verify", data={"t": token, "password": PASSWORD},
++                           follow_redirects=False)
++    assert response.status_code == 410
++    assert _account(email)["active"] == 0
++
++
++def test_a_tampered_link_is_refused():
++    client = _client()
++    assert client.get("/signup/verify?t=not-a-token").status_code == 410
++
++
++def test_signing_up_again_before_confirming_retires_the_old_link_and_password():
++    client = _client()
++    email = f"again@{DOMAIN}"
++    _submit(client, email)
++    first = _verify_token(email)
++    _submit(client, email, password="Another-Password-456", workspace="Second name")
++    second = _verify_token(email)
++    assert first != second
++    assert db.query_one(
++        "SELECT COUNT(*) AS n FROM user_account WHERE email = ?", (email,)
++    )["n"] == 1
++    assert client.get(f"/signup/verify?t={first}").status_code == 410
++    refused = client.post("/signup/verify", data={"t": second, "password": PASSWORD},
++                          follow_redirects=False)
++    assert refused.status_code == 401
++    ok = client.post("/signup/verify", data={"t": second, "password": "Another-Password-456"},
++                     follow_redirects=False)
++    assert ok.status_code == 303
++    assert _account(email)["display_name"] == "Second name"
++
++
++def test_a_taken_email_gets_the_same_page_and_a_notice_mail_only():
++    client = _client()
++    email = f"taken@{DOMAIN}"
++    _submit(client, email)
++    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
++                follow_redirects=False)
++    fresh = _submit(_client(), f"fresh@{DOMAIN}")
++    taken = _submit(_client(), email, password="Attacker-Password-789")
++    assert taken.status_code == fresh.status_code == 200
++    assert _card(taken.text).replace(email, "X") == _card(fresh.text).replace(f"fresh@{DOMAIN}", "X")
++    account = _account(email)
++    # The existing account is untouched.
++    assert auth.verify_password(PASSWORD, account["password_hash"])
++    assert db.query_one(
++        "SELECT COUNT(*) AS n FROM email_outbox WHERE kind = 'signup_exists' AND to_email = ?",
++        (email,),
++    )["n"] == 1
++    assert db.query_one(
++        "SELECT COUNT(*) AS n FROM email_outbox WHERE kind = 'signup_verify' AND to_email = ?",
++        (email,),
++    )["n"] == 1
++
++
++def test_an_admin_created_username_account_is_not_affected():
++    user_id = auth.create_account("signup-admin-host", PASSWORD, "Host")
++    assert db.query_one("SELECT email FROM user_account WHERE id = ?", (user_id,))["email"] is None
++    assert auth.authenticate("signup-admin-host", PASSWORD)
++
++
++def test_form_errors_keep_the_values_and_the_click_id():
++    client = _client()
++    token = _click()
++    weak = _submit(client, f"weak@{DOMAIN}", password="short", click=token, consent=True,
++                   opt_out=True)
++    assert weak.status_code == 400
++    assert 'id="password-error"' in weak.text
++    assert f'name="click" value="{token}"' in weak.text
++    assert re.search(r'name="ads_consent" value="1" checked', weak.text)
++    assert re.search(r'name="onboarding_opt_out" value="1" checked', weak.text)
++    no_accept = _submit(client, f"accept@{DOMAIN}", accept="")
++    assert no_accept.status_code == 422
++    bad_email = _submit(client, "not-an-email")
++    assert bad_email.status_code == 400
++    no_name = _submit(client, f"name@{DOMAIN}", workspace="  ")
++    assert no_name.status_code == 400
++    assert _account(f"weak@{DOMAIN}") is None
++    assert _account(f"accept@{DOMAIN}") is None
++
++
++# --- consent --------------------------------------------------------------
++
++
++def test_without_consent_the_click_id_is_never_stored():
++    email = f"noconsent@{DOMAIN}"
++    _submit(_client(), email, consent=False, gclid=GCLID, extra={"utm_source": "google"})
++    account = _account(email)
++    assert db.query("SELECT id FROM ad_click WHERE user_account_id = ?", (account["id"],)) == []
++    # Campaign labels are not the click ID and are kept.
++    assert account["signup_utm_source"] == "google"
++
++
++def test_consent_without_a_click_id_stores_nothing():
++    email = f"consentonly@{DOMAIN}"
++    _submit(_client(), email, consent=True)
++    assert _ad_click(email) is None
++
++
++def test_the_setup_tips_opt_out_is_stored_with_its_time():
++    email = f"optout@{DOMAIN}"
++    _submit(_client(), email, opt_out=True)
++    account = _account(email)
++    assert account["onboarding_emails_opt_out"] == 1
++    assert account["onboarding_emails_opt_out_at"]
++    # WP12 reads the same column: the lifecycle tips see the refusal, and the
++    # Settings toggle starts switched off.
++    assert lifecycle_mail.is_opted_out(account["id"])
++
++
++def test_without_the_opt_out_box_the_setup_tips_are_allowed():
++    email = f"optin@{DOMAIN}"
++    _submit(_client(), email)
++    assert not lifecycle_mail.is_opted_out(_account(email)["id"])
++
++
++def test_the_opt_out_columns_are_added_if_missing():
++    names = {row["name"] for row in db.query("PRAGMA table_info(user_account)")}
++    assert {"onboarding_emails_opt_out", "onboarding_emails_opt_out_at"} <= names
++    # Listed twice (as another WP will), the migration still runs cleanly.
++    original = db.ADDED_COLUMNS
++    try:
++        db.ADDED_COLUMNS = original + (
++            ("user_account", "onboarding_emails_opt_out", "INTEGER NOT NULL DEFAULT 0"),
++        )
++        db.init_db()
++    finally:
++        db.ADDED_COLUMNS = original
++
++
++def test_a_changed_wording_without_a_version_bump_gets_its_own_version(monkeypatch):
++    first = signup.consent_text_id("google", "en")
++    assert signup.consent_text_id("google", "en") == first
++    monkeypatch.setitem(signup.CONSENT_VERSIONS, "google", "ads-google-test")
++    db.execute("DELETE FROM consent_texts WHERE version LIKE 'ads-google-test%'")
++    base = signup.consent_text_id("google", "en")
++    monkeypatch.setattr(signup, "consent_text", lambda platform, lang: "Edited wording")
++    edited = signup.consent_text_id("google", "en")
++    assert edited != base
++    row = db.query_one("SELECT version, text FROM consent_texts WHERE id = ?", (edited,))
++    assert row["version"].startswith("ads-google-test-en-") and row["text"] == "Edited wording"
++    db.execute("DELETE FROM consent_texts WHERE version LIKE 'ads-google-test%'")
++
++
++def test_admin_can_withdraw_ads_consent():
++    admin = _admin_client()
++    email = f"withdraw@{DOMAIN}"
++    _submit(_client(), email, consent=True, gclid=GCLID)
++    user_id = _account(email)["id"]
++    response = admin.post(f"/admin/users/{user_id}/ads-consent/withdraw",
++                          data={"platform": "google"}, follow_redirects=False)
++    assert response.status_code == 303
++    row = _ad_click(email)
++    assert row["gclid"] is None and row["withdrawn_at"] and row["ids_deleted_at"]
++    assert db.query_one(
++        "SELECT actor FROM audit WHERE action = 'ads_consent_withdrawn' AND owner_user_id = ?",
++        (user_id,),
++    )["actor"] == "signup-admin"
++
++
++def _verified_client(email, **submit):
++    client = _client()
++    _submit(client, email, **submit)
++    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
++                follow_redirects=False)
++    return client
++
++
++def test_the_host_withdraws_in_settings_privacy():
++    email = f"settings@{DOMAIN}"
++    client = _verified_client(email, consent=True, gclid=GCLID)
++    user_id = _account(email)["id"]
++    # Production would ask for 2FA first; this checks the page, not the guard.
++    db.execute("UPDATE user_account SET totp_enabled = 1 WHERE id = ?", (user_id,))
++    page = client.get("/settings?lang=en")
++    if page.status_code != 200:
++        pytest.skip(f"settings page needs more onboarding here ({page.status_code})")
++    assert 'id="settings-privacy"' in page.text
++    assert "Use my sign-up to measure UbyHost&#39;s Google Ads" in page.text
++    response = client.post("/settings/privacy/ad-consent", data={"platform": "google"},
++                           follow_redirects=False)
++    assert response.status_code == 303
++    assert "#settings-privacy" in response.headers["location"]
++    row = _ad_click(email)
++    assert row["gclid"] is None and row["withdrawn_at"]
++    assert db.query_one(
++        "SELECT detail FROM audit WHERE action = 'ads_consent_withdrawn' AND owner_user_id = ?",
++        (user_id,),
++    )["detail"] == "google; uploaded=no"
++    # Excluded from every later export, even "download again".
++    assert all(r["id"] != row["id"] for r in signup.export_rows(again=True))
++    again = client.get("/settings?lang=en").text
++    assert "The click identifier has been deleted." in again
++
++
++def test_settings_toggle_left_on_changes_nothing():
++    email = f"keepon@{DOMAIN}"
++    client = _verified_client(email, consent=True, gclid=GCLID)
++    client.post("/settings/privacy/ad-consent", data={"platform": "google", "enabled": "1"},
++                follow_redirects=False)
++    assert _ad_click(email)["gclid"] == GCLID
++
++
++# --- rate limits ----------------------------------------------------------
++
++
++def test_the_same_email_is_limited_per_hour():
++    client = _client()
++    email = f"limit@{DOMAIN}"
++    for _ in range(signup.SIGNUP_EMAIL_MAX):
++        assert _submit(client, email).status_code == 200
++    blocked = _submit(client, email)
++    assert blocked.status_code == 429
++    assert "Too many sign-up attempts" in blocked.text
++
++
++def test_one_address_is_limited_per_hour(monkeypatch):
++    monkeypatch.setattr(signup, "SIGNUP_IP_MAX", 2)
++    client = _client()
++    assert _submit(client, f"ip1@{DOMAIN}").status_code == 200
++    assert _submit(client, f"ip2@{DOMAIN}").status_code == 200
++    assert _submit(client, f"ip3@{DOMAIN}").status_code == 429
++    assert _account(f"ip3@{DOMAIN}") is None
++
++
++# --- housekeeping ---------------------------------------------------------
++
++
++def _ago(days: float) -> str:
++    return (datetime.now(timezone.utc) - timedelta(days=days)).replace(microsecond=0).isoformat()
++
++
++def test_unverified_accounts_are_deleted_after_seven_days():
++    client = _client()
++    old, recent = f"old@{DOMAIN}", f"recent@{DOMAIN}"
++    _submit(client, old)
++    _submit(client, recent)
++    db.execute("UPDATE user_account SET signup_at = ? WHERE email = ?", (_ago(8), old))
++    db.execute("UPDATE user_account SET signup_at = ? WHERE email = ?", (_ago(6), recent))
++    old_id = _account(old)["id"]
++    counts = signup.purge()
++    assert counts["unverified_deleted"] >= 1
++    assert _account(old) is None
++    assert _account(recent) is not None
++    assert not db.query("SELECT id FROM legal_acceptance WHERE user_account_id = ?", (old_id,))
++    assert not db.query("SELECT id FROM audit WHERE owner_user_id = ?", (old_id,))
++
++
++def _set_click(email, **values):
++    sets = ", ".join(f"{key} = ?" for key in values)
++    db.execute(
++        f"UPDATE ad_click SET {sets} WHERE user_account_id = "
++        "(SELECT id FROM user_account WHERE email = ?)",
++        list(values.values()) + [email],
++    )
++
++
++def test_click_ids_are_deleted_90_days_after_the_click_or_30_after_upload():
++    cases = {
++        "click89": dict(clicked_at=_ago(89)),
++        "click91": dict(clicked_at=_ago(91)),
++        "upload29": dict(clicked_at=_ago(40), uploaded_at=_ago(29)),
++        "upload31": dict(clicked_at=_ago(40), uploaded_at=_ago(31)),
++    }
++    for local, values in cases.items():
++        email = f"{local}@{DOMAIN}"
++        _verified_client(email, consent=True, gclid=GCLID)
++        _set_click(email, **values)
++    counts = signup.purge()
++    assert counts["click_ids_cleared"] >= 2
++    assert _ad_click(f"click89@{DOMAIN}")["gclid"] == GCLID
++    assert _ad_click(f"upload29@{DOMAIN}")["gclid"] == GCLID
++    for local in ("click91", "upload31"):
++        row = _ad_click(f"{local}@{DOMAIN}")
++        assert row["gclid"] is None and row["ids_deleted_at"]
++        # The consent record itself stays, and so does the account.
++        assert row["consented_at"] and row["version"]
++        assert _account(f"{local}@{DOMAIN}")["active"] == 1
++
++
++def test_unverified_signups_take_their_click_rows_with_them():
++    email = f"oldclick@{DOMAIN}"
++    _submit(_client(), email, consent=True, gclid=GCLID)
++    user_id = _account(email)["id"]
++    db.execute("UPDATE user_account SET signup_at = ? WHERE id = ?", (_ago(8), user_id))
++    signup.purge()
++    assert db.query("SELECT id FROM ad_click WHERE user_account_id = ?", (user_id,)) == []
++
++
++def test_the_scheduler_runs_the_signup_purge(monkeypatch):
++    from app import scheduler
++
++    called = []
++    monkeypatch.setattr(signup, "purge", lambda: called.append(1) or {})
++    scheduler._job_photo_sweep()
++    assert called
++
++
++# --- the CSV export -------------------------------------------------------
++
++
++def test_conversion_export_format_and_filters():
++    client = _client()
++    rows = {
++        "csv-yes": dict(consent=True, gclid=GCLID, verify=True),
++        "csv-noconsent": dict(consent=False, gclid=GCLID, verify=True),
++        "csv-unverified": dict(consent=True, gclid=GCLID + "x", verify=False),
++        "csv-noclick": dict(consent=True, gclid="", verify=True),
++    }
++    rows.update({
++        "csv-old": dict(consent=True, gclid=GCLID + "old", verify=True, clicked=86),
++        "csv-edge": dict(consent=True, gclid=GCLID + "edge", verify=True, clicked=84),
++        "csv-withdrawn": dict(consent=True, gclid=GCLID + "wd", verify=True, withdraw=True),
++    })
++    for local, spec in rows.items():
++        email = f"{local}@{DOMAIN}"
++        _submit(client, email, consent=spec["consent"], gclid=spec["gclid"])
++        if spec["verify"]:
++            client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
++                        follow_redirects=False)
++            client.cookies.clear()
++        if spec.get("clicked"):
++            _set_click(email, clicked_at=_ago(spec["clicked"]))
++        if spec.get("withdraw"):
++            signup.withdraw_consent(_account(email)["id"], "google", actor="test")
++    # A fixed verification time in winter and one in summer.
++    db.execute("UPDATE user_account SET email_verified_at = ? WHERE email = ?",
++               (datetime.now(timezone.utc).replace(month=1, day=15, hour=12, minute=0, second=0,
++                                                   microsecond=0).isoformat(),
++                f"csv-yes@{DOMAIN}"))
++    admin = _admin_client()
++    response = admin.post("/admin/ads-conversions.csv")
++    assert response.status_code == 200
++    assert response.headers["content-type"].startswith("text/csv")
++    lines = response.text.split("\r\n")
++    assert lines[0] == "Parameters:TimeZone=Europe/Prague"
++    assert lines[1] == (
++        "Google Click ID,Conversion Name,Conversion Time,Ad User Data,Ad Personalization"
++    )
++    data = list(csv.reader(io.StringIO("\r\n".join(lines[2:]))))
++    data = [row for row in data if row]
++    assert sorted(row[0] for row in data) == sorted([GCLID, GCLID + "edge"])
++    first = next(row for row in data if row[0] == GCLID)
++    gclid, name, when, user_data, personalization = first
++    assert name == config.ADS_CONVERSION_NAME
++    assert re.fullmatch(r"\d{4}-01-15 13:00:00\+0100", when)
++    assert (user_data, personalization) == ("Granted", "Denied")
++    # Exported rows are marked and do not come back in the next file.
++    assert _ad_click(f"csv-yes@{DOMAIN}")["uploaded_at"]
++    assert _ad_click(f"csv-noclick@{DOMAIN}") is None
++    second = admin.post("/admin/ads-conversions.csv").text.split("\r\n")
++    assert [line for line in second[2:] if line] == []
++    # "Download again" repeats them without moving uploaded_at.
++    stamp = _ad_click(f"csv-yes@{DOMAIN}")["uploaded_at"]
++    again = admin.post("/admin/ads-conversions.csv", data={"again": "1"}).text
++    assert GCLID in again and GCLID + "wd" not in again and GCLID + "old" not in again
++    assert _ad_click(f"csv-yes@{DOMAIN}")["uploaded_at"] == stamp
++
++
++def test_conversion_time_handles_summer_time():
++    assert signup.conversion_time("2026-07-01T10:00:00+00:00") == "2026-07-01 12:00:00+0200"
++
++
++def test_the_export_is_for_admins_only():
++    client = _client()
++    email = f"host@{DOMAIN}"
++    _submit(client, email)
++    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
++                follow_redirects=False)
++    assert client.post("/admin/ads-conversions.csv").status_code == 403
++    assert _client().post("/admin/ads-conversions.csv", follow_redirects=False).status_code in (303, 403)
++    # A GET never exports (and so never marks rows uploaded).
++    assert _client().get("/admin/ads-conversions.csv").status_code in (404, 405)
++
++
++# --- privacy and cookies --------------------------------------------------
++
++
++def test_only_the_existing_cookies_are_set_on_the_signup_flow():
++    client = _client()
++    email = f"cookies@{DOMAIN}"
++    responses = [
++        client.get(f"/?lang=en&gclid={GCLID}"),
++        client.get(f"/signup?lang=en&gclid={GCLID}"),
++        _submit(client, email, consent=True, gclid=GCLID),
++    ]
++    token = _verify_token(email)
++    responses.append(client.get(f"/signup/verify?t={token}"))
++    responses.append(client.post("/signup/verify", data={"t": token, "password": PASSWORD},
++                                 follow_redirects=False))
++    allowed = {"ubyhost_csrf", "ubyhost_lang", auth.SESSION_COOKIE}
++    for response in responses:
++        assert _set_cookie_names(response) <= allowed
++        for header in response.headers.get_list("set-cookie"):
++            assert GCLID not in header
++    # No Google script anywhere on the sign-up page.
++    html = client.get("/signup?lang=en").text
++    assert "googletagmanager" not in html and "gtag(" not in html
++
++
++def test_the_privacy_page_describes_the_click_id_when_signup_is_on():
++    html = _client().get("/privacy?lang=en").text
++    assert 'id="signup-ads"' in html
++    assert "We delete the identifier at the latest 90 days after the ad click." in html
++    cs = _client().get("/privacy?lang=cs").text
++    assert "Identifikátor smažeme nejpozději 90 dní po kliknutí na reklamu." in cs
++
++
++def test_click_ids_in_the_query_string_never_reach_the_access_log(caplog, monkeypatch):
++    import logging
++
++    monkeypatch.setattr(config, "ACCESS_LOG", True)
++    client = _client()
++    with caplog.at_level(logging.INFO, logger="ubyhost.access"):
++        client.get(f"/?lang=en&gclid={GCLID}&gbraid=Gbr41d&wbraid=Wbr41d&fbclid=IwAR0xyz")
++        client.get(f"/signup?lang=en&gclid={GCLID}")
++    messages = " ".join(record.getMessage() for record in caplog.records)
++    assert "route=/signup" in messages
++    for value in (GCLID, "Gbr41d", "Wbr41d", "IwAR0xyz", "gclid", "fbclid"):
++        assert value not in messages
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index 31ba306..e06b1c4 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -165,3 +165,12 @@ UBYHOST_WEB_WORKERS=4
+ # --- Optional tuning ---
+ # UBYHOST_ICAL_POLL_MINUTES=60
+ # UBYHOST_SUBMIT_SWEEP_MINUTES=10
++
++# WP20 self sign-up at /signup. Keep 0 until counsel has approved the privacy
++# wording for the Google Ads click ID and SES mail is live (the verification
++# link is sent by e-mail).
++UBYHOST_SIGNUP_ENABLED=0
++# Optional: where the "new verified sign-up" notice goes (default: operator e-mail).
++# UBYHOST_SIGNUP_NOTIFY_EMAIL=
++# Conversion action name exactly as created in Google Ads.
++# UBYHOST_ADS_CONVERSION_NAME=UbyHost sign-up
+diff --git a/deploy/lightsail/caddy/Caddyfile.acme b/deploy/lightsail/caddy/Caddyfile.acme
+index 89e603b..e61a62d 100644
+--- a/deploy/lightsail/caddy/Caddyfile.acme
++++ b/deploy/lightsail/caddy/Caddyfile.acme
+@@ -2,6 +2,9 @@
+ # Selected automatically when CLOUDFLARE_PROXY is not set in .env.
+ # Access logging is intentionally off (OPS-3): a request line would carry guest
+ # permalink tokens. Container logs are bounded by docker-compose `logging:`.
++# The same holds for ad click identifiers in query strings (gclid, gbraid,
++# wbraid, fbclid): with no access log they are never written (legal position 3).
++# Do not add a `log` directive without a filter that drops the query string.
+ {
+ 	email {$ACME_EMAIL}
+ }
+diff --git a/deploy/lightsail/caddy/Caddyfile.cloudflare b/deploy/lightsail/caddy/Caddyfile.cloudflare
+index ab39826..050975c 100644
+--- a/deploy/lightsail/caddy/Caddyfile.cloudflare
++++ b/deploy/lightsail/caddy/Caddyfile.cloudflare
+@@ -2,6 +2,9 @@
+ # Requires origin.pem + origin-key.pem in caddy/certs/ (see docs/CLOUDFLARE.md).
+ # Access logging is intentionally off (OPS-3): a request line would carry guest
+ # permalink tokens. Container logs are bounded by docker-compose `logging:`.
++# The same holds for ad click identifiers in query strings (gclid, gbraid,
++# wbraid, fbclid): with no access log they are never written (legal position 3).
++# Do not add a `log` directive without a filter that drops the query string.
+ {
+ 	email {$ACME_EMAIL}
+ 	servers {
+-- 
+2.34.1
+

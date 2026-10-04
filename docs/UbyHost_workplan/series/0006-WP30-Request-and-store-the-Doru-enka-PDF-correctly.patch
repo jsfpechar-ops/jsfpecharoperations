@@ -1,0 +1,633 @@
+From 0016882a2669826a4e336b3727a7b8b0e740e147 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 10:56:16 +0200
+Subject: [PATCH 06/34] =?UTF-8?q?WP30:=20Request=20and=20store=20the=20Dor?=
+ =?UTF-8?q?u=C4=8Denka=20PDF=20correctly?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ App/app/ubyport/client.py           |  14 ++
+ App/app/ubyport/soap.py             |  95 ++++++++-
+ App/mock_ubyport/server.py          |  53 ++++-
+ App/tests/test_soap.py              |   9 +-
+ App/tests/test_ubyport_dorucenka.py | 311 ++++++++++++++++++++++++++++
+ 5 files changed, 463 insertions(+), 19 deletions(-)
+ create mode 100644 App/tests/test_ubyport_dorucenka.py
+
+diff --git a/App/app/ubyport/client.py b/App/app/ubyport/client.py
+index 08f8fa9..aea0ec0 100644
+--- a/App/app/ubyport/client.py
++++ b/App/app/ubyport/client.py
+@@ -1,6 +1,7 @@
+ """HTTP/NTLM transport for the UbyPort web service."""
+ from __future__ import annotations
+ 
++import logging
+ import os
+ import xml.etree.ElementTree as ET
+ from dataclasses import dataclass, field
+@@ -16,6 +17,8 @@ try:
+ except ImportError:  # pragma: no cover - dependency is declared
+     HttpNtlmAuth = None
+ 
++log = logging.getLogger("ubyhost.ubyport")
++
+ 
+ def include_wsa_header() -> bool:
+     """Whether to send the WS-Addressing header, read per call.
+@@ -213,6 +216,17 @@ class UbyportClient:
+             )
+             err.request_xml = envelope
+             raise err from exc
++        # Element names and sizes only, never values: this is what tells the
++        # owner, on a real filing, where (and whether) the Dorucenka came back.
++        log.info(
++            "ZapisUbytovane response: elements=%s receipt_pdf_bytes=%d error_pdf_bytes=%d "
++            "pdf_problems=%s stamp=%s",
++            ",".join(soap.response_element_names(text)) or "-",
++            len(parsed["receipt_pdf"]) * 3 // 4,
++            len(parsed["error_pdf"]) * 3 // 4,
++            ",".join(f"{k}:{v}" for k, v in sorted(parsed["pdf_problems"].items())) or "none",
++            "yes" if parsed["pseudo_stamp"] else "no",
++        )
+         if len(parsed["record_errors"]) != len(guests):
+             err = UbyportOutcomeUnknownError(
+                 "UbyPort returned an incomplete result: "
+diff --git a/App/app/ubyport/soap.py b/App/app/ubyport/soap.py
+index c4e38ca..3ba43f2 100644
+--- a/App/app/ubyport/soap.py
++++ b/App/app/ubyport/soap.py
+@@ -5,12 +5,25 @@ emits members in alphabetical order, which is what the wire example in
+ appendix 5 section 5.1.1 shows. Appendix 5 section 7 explicitly warns against
+ renaming or reordering nodes when the body is built by hand, so the field
+ order below is fixed and deliberate.
++
++"Alphabetical" means the ordinal (byte) comparison DataContractSerializer
++uses, so every member starting with an upper-case letter comes before every
++member starting with a lower-case one. The 5.1.1 wire example shows exactly
++that: ``Ubytovani`` first, then ``uCont`` .. ``uStr``. ``VracetPDF`` (added
++by the December 2016 change request, so absent from that example) sorts
++between them: ``Ubytovani`` < ``VracetPDF`` < ``uCont``. DataContractSerializer
++reads members strictly in that order and silently skips an element that
++arrives after a later member, so a ``VracetPDF`` sent after ``uStr`` is
++dropped and defaults to false: the service then answers without the
++Dorucenka (DokumentPotvrzeni) while still returning the stamp.
+ """
+ from __future__ import annotations
+ 
++import base64
++import binascii
+ import re
+ import xml.etree.ElementTree as ET
+-from typing import Any, Dict, List, Optional
++from typing import Any, Dict, List, Optional, Tuple
+ from xml.sax.saxutils import escape
+ 
+ NS_SOAP = "http://schemas.xmlsoap.org/soap/envelope/"
+@@ -25,7 +38,10 @@ ACTION_PREFIX = "http://UBY.pcr.cz/WS_UBY/IWS_UBY/"
+ # whole UbyPort batch unparseable for every guest in it.
+ _XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+ 
+-# Alphabetical, exactly as the service serialises SeznamUbytovanych.
++# Alphabetical (ordinal), exactly as the service serialises SeznamUbytovanych:
++# Ubytovani, VracetPDF, then these. See the module docstring.
++SEZNAM_LIST_FIELD = "Ubytovani"
++SEZNAM_PDF_FLAG = "VracetPDF"
+ HEADER_FIELDS = (
+     "uCont",
+     "uHomN",
+@@ -99,9 +115,11 @@ def build_zapis_ubytovane(
+ 
+     seznam = (
+         f'<Seznam xmlns:d="{NS_DATA}" xmlns:i="{NS_XSI}">'
+-        f"<d:Ubytovani>{''.join(guest_xml)}</d:Ubytovani>"
++        f"<d:{SEZNAM_LIST_FIELD}>{''.join(guest_xml)}</d:{SEZNAM_LIST_FIELD}>"
++        # Always true: the Dorucenka is the receipt the host must keep. It must
++        # sit here, before the lower-case header members, or WCF ignores it.
++        + _node("d", SEZNAM_PDF_FLAG, True)
+         + "".join(_node("d", name, header.get(name)) for name in HEADER_FIELDS)
+-        + _node("d", "VracetPDF", True)
+         + "</Seznam>"
+     )
+     body = (
+@@ -169,8 +187,64 @@ def parse_fault(xml_text: str) -> Optional[str]:
+     return " / ".join(parts) or "Unspecified SOAP fault"
+ 
+ 
++# A Dorucenka is a few kB to a few hundred kB. Anything far larger is not a
++# receipt we want in a TEXT column; it is dropped and logged instead.
++MAX_PDF_BYTES = 10 * 1024 * 1024
++
++_B64_WHITESPACE = re.compile(r"\s+")
++
++
++def clean_pdf_base64(text: Optional[str]) -> Tuple[str, str]:
++    """Validate a base64 PDF from the Chyby class and return it ready to store.
++
++    Returns ``(base64_text, problem)``. On success ``base64_text`` is the
++    canonical base64 of the decoded bytes (line breaks removed, which is what
++    the submission columns and every download route expect) and ``problem``
++    is empty. On failure ``base64_text`` is empty and ``problem`` names why,
++    without echoing any of the content.
++    """
++    compact = _B64_WHITESPACE.sub("", text or "")
++    if not compact:
++        return "", "empty"
++    # Cheap bound before decoding: base64 is 4/3 of the payload.
++    if len(compact) > (MAX_PDF_BYTES * 4) // 3 + 4:
++        return "", "too_large"
++    try:
++        raw = base64.b64decode(compact, validate=True)
++    except (binascii.Error, ValueError):
++        return "", "not_base64"
++    if len(raw) > MAX_PDF_BYTES:
++        return "", "too_large"
++    if not raw.startswith(b"%PDF"):
++        return "", "not_pdf"
++    return base64.b64encode(raw).decode("ascii"), ""
++
++
++def response_element_names(xml_text: str) -> List[str]:
++    """Local names of the members inside ZapisUbytovaneResult, in wire order.
++
++    Names only, never values, so it is safe to log: it shows where (and
++    whether) the service put the Dorucenka without exposing guest data.
++    """
++    try:
++        root = ET.fromstring(xml_text)
++    except ET.ParseError:
++        return []
++    result = _find(root, "ZapisUbytovaneResult")
++    if result is None:
++        return []
++    return [_local(child.tag) for child in result]
++
++
+ def parse_zapis_response(xml_text: str) -> Dict[str, Any]:
+-    """Extract the Chyby class returned by ZapisUbytovane."""
++    """Extract the Chyby class returned by ZapisUbytovane.
++
++    Appendix 5, section 4.2, class Chyby: ChybyHlavicky, ChybyZaznamu,
++    DokumentPotvrzeni ("PDF dokument ve tvaru basecode64 obsahujici potvrzeni
++    o zpracovani dat"), DokumentChybyPotvrzeni (the same for errors) and
++    PseudoRazitko. Elements are matched by local name, so the namespace prefix
++    and member order do not matter here.
++    """
+     root = ET.fromstring(xml_text)
+     result: Dict[str, Any] = {
+         "header_errors": "",
+@@ -178,6 +252,8 @@ def parse_zapis_response(xml_text: str) -> Dict[str, Any]:
+         "receipt_pdf": "",
+         "error_pdf": "",
+         "pseudo_stamp": "",
++        # key -> reason a document element was present but unusable.
++        "pdf_problems": {},
+     }
+ 
+     el = _find(root, "ChybyHlavicky")
+@@ -194,8 +270,13 @@ def parse_zapis_response(xml_text: str) -> Dict[str, Any]:
+         ("error_pdf", "DokumentChybyPotvrzeni"),
+     ):
+         el = _find(root, tag)
+-        if el is not None and not _is_nil(el):
+-            result[key] = (el.text or "").strip()
++        if el is None or _is_nil(el):
++            continue
++        cleaned, problem = clean_pdf_base64(el.text)
++        if problem:
++            result["pdf_problems"][key] = problem
++        else:
++            result[key] = cleaned
+ 
+     # The specification text spells this both "PseudoRazitko" and
+     # "PseudoRazirko"; accept either.
+diff --git a/App/mock_ubyport/server.py b/App/mock_ubyport/server.py
+index 7986427..e4ad5ee 100644
+--- a/App/mock_ubyport/server.py
++++ b/App/mock_ubyport/server.py
+@@ -328,6 +328,35 @@ def _escape(value: str) -> str:
+     )
+ 
+ 
++# SeznamUbytovanych members in the order WCF's DataContractSerializer expects
++# them: ordinal sort, so upper-case names first (appendix 5, section 5.1.1).
++SEZNAM_MEMBER_ORDER = (
++    "Ubytovani", "VracetPDF",
++    "uCont", "uHomN", "uIdub", "uMark", "uName", "uOb", "uObCa", "uOkr", "uOriN", "uPsc", "uStr",
++)
++
++
++def _dcs_members_read(seznam: ET.Element) -> List[str]:
++    """Which Seznam members a DataContractSerializer would actually bind.
++
++    It reads members strictly in contract order: for each element it searches
++    forward from the last bound member, and an element whose slot has already
++    passed is skipped as unknown. That is how a VracetPDF sent after uStr is
++    silently lost on the real service, and the mock must lose it too.
++    """
++    bound: List[str] = []
++    position = -1
++    for child in seznam:
++        name = _local(child.tag)
++        try:
++            index = SEZNAM_MEMBER_ORDER.index(name, position + 1)
++        except ValueError:
++            continue
++        bound.append(name)
++        position = index
++    return bound
++
++
+ def _zapis(root: ET.Element) -> str:
+     header = _find(root, "Seznam")
+     if header is None:
+@@ -339,7 +368,12 @@ def _zapis(root: ET.Element) -> str:
+ 
+     idub = _text(header, "uIdub") or ""
+     mark = _text(header, "uMark") or ""
+-    want_pdf = (_text(header, "VracetPDF") or "false").lower() == "true"
++    # Only honoured where the real service would read it; out of order it is
++    # dropped and defaults to false, exactly like WCF.
++    pdf_flag_bound = "VracetPDF" in _dcs_members_read(header)
++    want_pdf = pdf_flag_bound and (_text(header, "VracetPDF") or "false").lower() == "true"
++    if _text(header, "VracetPDF") and not pdf_flag_bound:
++        log.warning("ZapisUbytovane: VracetPDF out of contract order, ignored (no Dorucenka)")
+ 
+     container = _find(header, "Ubytovani")
+     guests = [child for child in container] if container is not None else []
+@@ -380,19 +414,22 @@ def _zapis(root: ET.Element) -> str:
+         _save_state(state)
+ 
+     stamp = _pseudo_stamp()
++    # The Chyby members in the order the real service serialises them
++    # (alphabetical, appendix 5 sections 4.2 and 5.1.1).
+     parts = [f"<a:ChybyHlavicky>{''.join(f'{c};' for c in header_codes)}</a:ChybyHlavicky>"]
+-
+-    if want_pdf:
+-        receipt = _receipt_pdf(idub, mark, rows, stamp)
+-        parts.append(f"<a:DokumentPotvrzeni>{receipt}</a:DokumentPotvrzeni>")
+-        if header_codes or any(row["status"] == "bad" for row in rows):
+-            parts.append(f"<a:DokumentChybyPotvrzeni>{receipt}</a:DokumentChybyPotvrzeni>")
+-
+     strings = "".join(f"<b:string>{value}</b:string>" for value in record_errors)
+     parts.append(
+         '<a:ChybyZaznamu xmlns:b="http://schemas.microsoft.com/2003/10/Serialization/Arrays">'
+         f"{strings}</a:ChybyZaznamu>"
+     )
++    if want_pdf:
++        receipt = _receipt_pdf(idub, mark, rows, stamp)
++        if header_codes or any(row["status"] == "bad" for row in rows):
++            parts.append(f"<a:DokumentChybyPotvrzeni>{receipt}</a:DokumentChybyPotvrzeni>")
++        parts.append(f"<a:DokumentPotvrzeni>{receipt}</a:DokumentPotvrzeni>")
++    else:
++        parts.append('<a:DokumentChybyPotvrzeni i:nil="true" />')
++        parts.append('<a:DokumentPotvrzeni i:nil="true" />')
+     parts.append(f"<a:PseudoRazitko>{stamp}</a:PseudoRazitko>")
+ 
+     log.info(
+diff --git a/App/tests/test_soap.py b/App/tests/test_soap.py
+index 727e91a..34bcd37 100644
+--- a/App/tests/test_soap.py
++++ b/App/tests/test_soap.py
+@@ -62,14 +62,15 @@ def test_guest_fields_are_in_datacontract_alphabetical_order():
+     assert local_names(guest) == sorted(local_names(guest), key=str.lower)
+ 
+ 
+-def test_header_fields_are_in_expected_order_with_vracetpdf_last():
++def test_seznam_members_are_in_datacontract_ordinal_order():
++    """WP30: VracetPDF sorts between Ubytovani and uCont, or WCF drops it."""
+     envelope = soap.build_zapis_ubytovane(HEADER, [GUEST])
+     root = ET.fromstring(envelope)
+     seznam = next(el for el in root.iter() if el.tag.endswith("Seznam"))
+     names = local_names(seznam)
+-    assert names[0] == "Ubytovani"
+-    assert names[1:-1] == list(soap.HEADER_FIELDS)
+-    assert names[-1] == "VracetPDF"
++    assert names == ["Ubytovani", "VracetPDF", *soap.HEADER_FIELDS]
++    # Ordinal sort, the one DataContractSerializer uses (not case-insensitive).
++    assert names == sorted(names)
+ 
+ 
+ def test_the_receipt_pdf_is_always_requested():
+diff --git a/App/tests/test_ubyport_dorucenka.py b/App/tests/test_ubyport_dorucenka.py
+new file mode 100644
+index 0000000..d0c20c1
+--- /dev/null
++++ b/App/tests/test_ubyport_dorucenka.py
+@@ -0,0 +1,311 @@
++"""WP30: the Dorucenka PDF is requested, parsed and stored as the contract says.
++
++Source of truth: "Technicky popis webove sluzby Ubyport", appendix 5 to the
++Ubyport operating rules (policie.gov.cz, update of 19 June 2019). Section 4.2
++defines class Chyby with DokumentPotvrzeni ("PDF dokument ve tvaru basecode64
++obsahujici potvrzeni o zpracovani dat"); section 5.1.1 shows the wire format.
++"""
++from __future__ import annotations
++
++import base64
++import logging
++import xml.etree.ElementTree as ET
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, db, reporting
++from app.main import app
++from app.ubyport import soap
++from app.ubyport.client import UbyportClient
++from mock_ubyport import server as mock_server
++
++PASSWORD = "Secure-Password-123"
++
++HEADER = {
++    "uIdub": "100227887600",
++    "uMark": "ABCDE",
++    "uName": "Apartment Example",
++    "uCont": "host@example.com",
++    "uOkr": "Praha",
++    "uOb": "Praha",
++    "uObCa": "Vinohrady",
++    "uStr": "Example",
++    "uHomN": "1234",
++    "uOriN": "12",
++    "uPsc": "12000",
++}
++
++GUEST = {
++    "cFrom": "2026-09-10T00:00:00",
++    "cUntil": "2026-09-15T00:00:00",
++    "cSurN": "SAMPLEGUEST",
++    "cFirstN": "JOHN",
++    "cDate": "01011990",
++    "cPlac": None,
++    "cNati": "GBR",
++    "cDocN": "P1234567",
++    "cVisN": None,
++    "cResi": "Example Street 1, London",
++    "cPurp": 10,
++    "cSpz": None,
++    "cNote": None,
++}
++
++PDF_BYTES = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
++PDF_B64 = base64.b64encode(PDF_BYTES).decode()
++# The service may wrap long base64 (the 5.1.4 sample is broken across lines).
++PDF_B64_WRAPPED = "\n".join(PDF_B64[i:i + 20] for i in range(0, len(PDF_B64), 20))
++
++# Shaped exactly like appendix 5 section 5.1.1 (namespaces, prefixes), with the
++# Chyby members of section 4.2 in the alphabetical order WCF serialises them.
++DOCUMENTED_RESPONSE = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
++  <s:Header />
++  <s:Body>
++    <ZapisUbytovaneResponse xmlns="http://UBY.pcr.cz/WS_UBY">
++      <ZapisUbytovaneResult xmlns:a="http://schemas.datacontract.org/2004/07/WS_UBY"
++ xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
++        <a:ChybyHlavicky></a:ChybyHlavicky>
++        <a:ChybyZaznamu xmlns:b="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
++          <b:string>;</b:string>
++        </a:ChybyZaznamu>
++        <a:DokumentChybyPotvrzeni i:nil="true" />
++        <a:DokumentPotvrzeni>{pdf}</a:DokumentPotvrzeni>
++        <a:PseudoRazitko>F8EA613D-C8C5-4671-924D-EE4F8588E08D</a:PseudoRazitko>
++      </ZapisUbytovaneResult>
++    </ZapisUbytovaneResponse>
++  </s:Body>
++</s:Envelope>"""
++
++# Appendix 5 section 5.1.1 response, verbatim apart from whitespace: no PDF.
++DOCUMENTED_RESPONSE_WITHOUT_PDF = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
++  <s:Header />
++  <s:Body>
++    <ZapisUbytovaneResponse xmlns="http://UBY.pcr.cz/WS_UBY">
++      <ZapisUbytovaneResult xmlns:a="http://schemas.datacontract.org/2004/07/WS_UBY"
++ xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
++        <a:ChybyHlavicky>5;6;7;8;9;10;11;12;13;</a:ChybyHlavicky>
++        <a:ChybyZaznamu xmlns:b="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
++          <b:string>;112;106;</b:string>
++        </a:ChybyZaznamu>
++      </ZapisUbytovaneResult>
++    </ZapisUbytovaneResponse>
++  </s:Body>
++</s:Envelope>"""
++
++
++def _seznam_names(envelope: str):
++    root = ET.fromstring(envelope)
++    seznam = next(el for el in root.iter() if el.tag.endswith("Seznam"))
++    return [child.tag.rsplit("}", 1)[-1] for child in seznam]
++
++
++# --- request ---------------------------------------------------------------
++
++def test_vracetpdf_sits_where_datacontractserializer_reads_it():
++    names = _seznam_names(soap.build_zapis_ubytovane(HEADER, [GUEST]))
++    assert names.index("VracetPDF") == names.index("Ubytovani") + 1
++    assert names.index("VracetPDF") < names.index("uCont")
++    assert names == sorted(names)
++
++
++def test_seznam_uses_the_documented_data_contract_namespace():
++    root = ET.fromstring(soap.build_zapis_ubytovane(HEADER, [GUEST]))
++    seznam = next(el for el in root.iter() if el.tag.endswith("Seznam"))
++    assert seznam.tag == "{http://UBY.pcr.cz/WS_UBY}Seznam"
++    for child in seznam:
++        assert child.tag.startswith("{http://schemas.datacontract.org/2004/07/WS_UBY}")
++    vracet = next(c for c in seznam if c.tag.endswith("VracetPDF"))
++    assert vracet.text == "true"
++
++
++# --- parsing ---------------------------------------------------------------
++
++def test_parser_extracts_the_dorucenka_from_the_documented_response():
++    parsed = soap.parse_zapis_response(DOCUMENTED_RESPONSE.format(pdf=PDF_B64_WRAPPED))
++    assert base64.b64decode(parsed["receipt_pdf"]) == PDF_BYTES
++    # Stored canonical: no line breaks in the column.
++    assert parsed["receipt_pdf"] == PDF_B64
++    assert parsed["error_pdf"] == ""
++    assert parsed["pseudo_stamp"] == "F8EA613D-C8C5-4671-924D-EE4F8588E08D"
++    assert parsed["record_errors"] == [";"]
++    assert parsed["pdf_problems"] == {}
++
++
++def test_a_response_without_pdf_is_handled():
++    parsed = soap.parse_zapis_response(DOCUMENTED_RESPONSE_WITHOUT_PDF)
++    assert parsed["receipt_pdf"] == ""
++    assert parsed["error_pdf"] == ""
++    assert parsed["pdf_problems"] == {}
++    assert parsed["header_errors"] == "5;6;7;8;9;10;11;12;13;"
++
++
++@pytest.mark.parametrize(
++    "content, problem",
++    [
++        ("not base64 !!!", "not_base64"),
++        (base64.b64encode(b"<html>error</html>").decode(), "not_pdf"),
++        ("", "empty"),
++    ],
++)
++def test_an_unusable_document_is_dropped_not_stored(content, problem):
++    parsed = soap.parse_zapis_response(DOCUMENTED_RESPONSE.format(pdf=content))
++    assert parsed["receipt_pdf"] == ""
++    assert parsed["pdf_problems"] == {"receipt_pdf": problem}
++
++
++def test_an_oversized_document_is_dropped(monkeypatch):
++    monkeypatch.setattr(soap, "MAX_PDF_BYTES", 16)
++    parsed = soap.parse_zapis_response(DOCUMENTED_RESPONSE.format(pdf=PDF_B64))
++    assert parsed["receipt_pdf"] == ""
++    assert parsed["pdf_problems"] == {"receipt_pdf": "too_large"}
++
++
++def test_response_element_names_are_logged_without_values(monkeypatch, caplog):
++    client = UbyportClient("https://ubyport.invalid", use_ntlm=False)
++    monkeypatch.setattr(
++        client, "_post", lambda *_a: DOCUMENTED_RESPONSE.format(pdf=PDF_B64)
++    )
++    with caplog.at_level(logging.INFO, logger="ubyhost.ubyport"):
++        result = client.submit(HEADER, [GUEST])
++    assert result.receipt_pdf == PDF_B64
++    text = caplog.text
++    assert (
++        "elements=ChybyHlavicky,ChybyZaznamu,DokumentChybyPotvrzeni,"
++        "DokumentPotvrzeni,PseudoRazitko" in text
++    )
++    assert f"receipt_pdf_bytes={len(PDF_BYTES)}" in text
++    assert PDF_B64 not in text
++    assert "SAMPLEGUEST" not in text and "P1234567" not in text
++    assert "F8EA613D" not in text
++
++
++# --- mock follows the real contract ----------------------------------------
++
++def _call_mock(envelope: str) -> str:
++    with TestClient(mock_server.app) as mock:
++        mock.post("/reset")
++        response = mock.post(
++            "/ws_uby_test/ws_uby.svc",
++            content=envelope.encode(),
++            headers={
++                "Content-Type": "text/xml; charset=utf-8",
++                "SOAPAction": f"{soap.ACTION_PREFIX}ZapisUbytovane",
++            },
++        )
++    assert response.status_code == 200
++    return response.text
++
++
++def test_mock_returns_the_dorucenka_for_a_correctly_ordered_request(tmp_path, monkeypatch):
++    monkeypatch.setattr(mock_server, "STATE_FILE", tmp_path / "state.json")
++    text = _call_mock(soap.build_zapis_ubytovane(HEADER, [GUEST]))
++    parsed = soap.parse_zapis_response(text)
++    assert base64.b64decode(parsed["receipt_pdf"]).startswith(b"%PDF")
++    names = soap.response_element_names(text)
++    assert names == sorted(names)
++
++
++def test_mock_ignores_vracetpdf_sent_after_the_header_like_wcf(tmp_path, monkeypatch):
++    """The pre-WP30 order: VracetPDF last. WCF skips it, so no Dorucenka."""
++    monkeypatch.setattr(mock_server, "STATE_FILE", tmp_path / "state.json")
++    envelope = soap.build_zapis_ubytovane(HEADER, [GUEST])
++    flag = "<d:VracetPDF>true</d:VracetPDF>"
++    assert flag in envelope
++    old_order = envelope.replace(flag, "").replace("</Seznam>", flag + "</Seznam>")
++    parsed = soap.parse_zapis_response(_call_mock(old_order))
++    assert parsed["receipt_pdf"] == ""
++    assert parsed["pseudo_stamp"]
++
++
++# --- storage and download --------------------------------------------------
++
++def _seed_owned(username: str, token: str):
++    from tests.test_send_controls import _seed
++
++    db.init_db()
++    existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
++    owner_id = existing["id"] if existing else auth.create_account(
++        username, PASSWORD, "Receipt Owner", must_change_password=False
++    )
++    apartment, _reservation, guest_id = _seed("manual", token, owner_user_id=owner_id)
++    return apartment, guest_id
++
++
++def _cleanup(apartment):
++    """Leave the database as found: the end-to-end suite expects it empty."""
++    apartment_id = apartment["id"]
++    db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment_id,))
++    db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment_id,))
++    db.execute(
++        "DELETE FROM guest WHERE reservation_id IN "
++        "(SELECT id FROM reservation WHERE apartment_id = ?)",
++        (apartment_id,),
++    )
++    db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
++    db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
++    db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
++
++
++def _submit_with_response(monkeypatch, apartment, response_xml):
++    real = UbyportClient("https://ubyport.invalid", use_ntlm=False)
++    monkeypatch.setattr(real, "_post", lambda *_a: response_xml)
++    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: real)
++    monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
++    pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
++    return reporting.submit_batch(apartment, pairs, mode="manual")
++
++
++def _login(username):
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en",
++        data={"username": username, "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    return client
++
++
++def test_the_dorucenka_is_stored_and_downloads_as_pdf(monkeypatch):
++    apartment, guest_id = _seed_owned("wp30-receipt", "tok-wp30-receipt")
++    try:
++        _submit_with_response(
++            monkeypatch, apartment, DOCUMENTED_RESPONSE.format(pdf=PDF_B64_WRAPPED)
++        )
++        submission = db.query_one(
++            "SELECT * FROM submission WHERE apartment_id = ? ORDER BY id DESC",
++            (apartment["id"],),
++        )
++        assert submission["state"] == "ok"
++        assert submission["receipt_pdf"] == PDF_B64
++        guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
++        assert guest["receipt_submission_id"] == submission["id"]
++
++        response = _login("wp30-receipt").get(f"/submissions/{submission['id']}/receipt.pdf")
++        assert response.status_code == 200
++        assert response.headers["content-type"] == "application/pdf"
++        assert response.content == PDF_BYTES
++    finally:
++        _cleanup(apartment)
++
++
++def test_an_accept_without_pdf_stores_nothing_and_download_says_so(monkeypatch):
++    apartment, _guest_id = _seed_owned("wp30-nopdf", "tok-wp30-nopdf")
++    no_pdf = DOCUMENTED_RESPONSE.replace(
++        "<a:DokumentPotvrzeni>{pdf}</a:DokumentPotvrzeni>",
++        '<a:DokumentPotvrzeni i:nil="true" />',
++    )
++    try:
++        _submit_with_response(monkeypatch, apartment, no_pdf)
++        submission = db.query_one(
++            "SELECT * FROM submission WHERE apartment_id = ? ORDER BY id DESC",
++            (apartment["id"],),
++        )
++        assert submission["state"] == "ok"
++        assert submission["receipt_pdf"] is None
++        assert submission["pseudo_stamp"]
++        response = _login("wp30-nopdf").get(f"/submissions/{submission['id']}/receipt.pdf")
++        assert response.status_code == 404
++    finally:
++        _cleanup(apartment)
+-- 
+2.34.1
+

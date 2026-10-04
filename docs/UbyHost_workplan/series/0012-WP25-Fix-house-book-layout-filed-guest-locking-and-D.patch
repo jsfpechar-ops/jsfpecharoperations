@@ -1,0 +1,1111 @@
+From 9d8db82fcf91ebbcf3c02309fde3ac03fa9ab0e3 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 10:27:18 +0200
+Subject: [PATCH 12/34] =?UTF-8?q?WP25:=20Fix=20house=20book=20layout,=20fi?=
+ =?UTF-8?q?led-guest=20locking=20and=20Doru=C4=8Denka=20download?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Conflict resolution: guest_form_admin.html banner: PR 230's main has no hand-filing yet in this order (WP23 comes later), so the banner keeps main's sent/submitted_at title and only gains WP25's id="filed-lock-note"; WP23 adds its filed-by-hand title in its own step. reporting.py: the small _field() helper that guest_is_filed() uses came from WP23 on golive; it is defined here now. tests/test_wp25_reported_bugs.py: the hand-filed variants (manual_filed_at) move to the WP23 step; here the filed guest covers the lock, and the stay-page test declares one guest. Cross-WP text: with filed guests locked, the moved-after-report notice (notification.reason.moved_after_report) and the guide's date-change paragraph now send the host to the UbyPort web application for a correction instead of "resend" (EN, CS; tests/test_notification_copy.py updated). WP25's open point about the VracetPDF order is settled by WP30, which comes earlier in this series.
+---
+ App/app/guide_i18n.py                     |   4 +-
+ App/app/host_i18n.py                      |  42 ++-
+ App/app/reporting.py                      |  44 +++
+ App/app/routes/admin.py                   |  40 ++-
+ App/app/static/host.css                   |  86 ++++++
+ App/app/templates/_components.html        |   8 +-
+ App/app/templates/base.html               |   2 +-
+ App/app/templates/guest_form_admin.html   |  47 ++-
+ App/app/templates/housebook.html          |  17 +-
+ App/app/templates/reservation_detail.html |  11 +-
+ App/app/templates/submission_detail.html  |  22 +-
+ App/tests/test_notification_copy.py       |   8 +-
+ App/tests/test_wp25_reported_bugs.py      | 354 ++++++++++++++++++++++
+ 13 files changed, 628 insertions(+), 57 deletions(-)
+ create mode 100644 App/tests/test_wp25_reported_bugs.py
+
+diff --git a/App/app/guide_i18n.py b/App/app/guide_i18n.py
+index 9b6403e..5d3a7d0 100644
+--- a/App/app/guide_i18n.py
++++ b/App/app/guide_i18n.py
+@@ -51,7 +51,7 @@ GUIDE_STRINGS = {
+         "guide.stays.body": "Stays come from your calendars, or you add them with Add stay. Update calendars fetches all feeds now. Filter by property, state and dates, save a view in this browser, and export the filtered stays as CSV.",
+         "guide.stays.detail": "Open a stay to add or remove guests, copy the guest link, send the report, change the expected number of guests, set the state (active, cancelled, ignored), reopen guest access or release the assignment, and create an invoice.",
+         "guide.stays.cancelled": "If a booking disappears from the calendar or is cancelled, the stay is cancelled and never reported. If guests had already filled in forms, you get a warning in UbyHost and by e-mail: when the booking only moved, set the stay back to Active.",
+-        "guide.stays.dates_changed": "If a booking's dates change in the calendar, the stay changes with it and guests do not sign again. UbyHost shortens each guest's dates to fit inside the new booking; a guest whose dates fall completely outside it gets the new booking dates. Each change is written to the activity log. A guest who was already reported keeps the dates that were filed, and you get a warning to check the booking and send again.",
++        "guide.stays.dates_changed": "If a booking's dates change in the calendar, the stay changes with it and guests do not sign again. UbyHost shortens each guest's dates to fit inside the new booking; a guest whose dates fall completely outside it gets the new booking dates. Each change is written to the activity log. A guest who was already reported keeps the dates that were filed, and you get a warning: check the booking, and if the filed dates are wrong, correct them in the UbyPort web application.",
+ 
+         "guide.guests.body": "Guests open your property link on their phone and follow these steps:",
+         "guide.guests.step_pin": "Enter the PIN you sent them.",
+@@ -159,7 +159,7 @@ GUIDE_STRINGS = {
+         "guide.stays.body": "Pobyty přicházejí z kalendářů, nebo je přidáte tlačítkem Přidat pobyt. Aktualizovat kalendáře je načte hned. Filtrujte podle ubytování, stavu a dat, uložte si pohled v tomto prohlížeči a vyfiltrované pobyty exportujte do CSV.",
+         "guide.stays.detail": "Na pobytu přidáte nebo odeberete hosty, zkopírujete odkaz pro hosty, odešlete hlášení, změníte očekávaný počet hostů, nastavíte stav (aktivní, zrušený, ignorovaný), znovu otevřete přístup hostům nebo uvolníte přiřazení a vystavíte fakturu.",
+         "guide.stays.cancelled": "Když rezervace z kalendáře zmizí nebo je zrušená, pobyt se zruší a nikdy se nenahlásí. Pokud už hosté vyplnili formuláře, dostanete upozornění v UbyHostu a e-mailem: když se rezervace jen přesunula, nastavte pobyt zpět na Aktivní.",
+-        "guide.stays.dates_changed": "Když se v kalendáři změní data rezervace, pobyt se změní s ní a hosté znovu nepodepisují. UbyHost zkrátí data každého hosta tak, aby se vešla do nové rezervace; host, jehož data leží úplně mimo ni, dostane data nové rezervace. Každá změna se zapíše do protokolu aktivit. Host, který už byl nahlášen, si ponechá podaná data a dostanete upozornění, abyste rezervaci zkontrolovali a hlášení odeslali znovu.",
++        "guide.stays.dates_changed": "Když se v kalendáři změní data rezervace, pobyt se změní s ní a hosté znovu nepodepisují. UbyHost zkrátí data každého hosta tak, aby se vešla do nové rezervace; host, jehož data leží úplně mimo ni, dostane data nové rezervace. Každá změna se zapíše do protokolu aktivit. Host, který už byl nahlášen, si ponechá podaná data a dostanete upozornění: zkontrolujte rezervaci, a pokud jsou podaná data špatně, opravte je ve webové aplikaci UbyPort.",
+ 
+         "guide.guests.body": "Hosté otevřou odkaz vašeho ubytování v telefonu a projdou tyto kroky:",
+         "guide.guests.step_pin": "Zadají PIN, který jste jim poslali.",
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index aa6f097..2b4ea9e 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -344,13 +344,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "reports.detail.header_help": "Header errors come from the property settings, not the guest data.",
+         "reports.detail.header_help_link": "Open property reporting details",
+         "reports.detail.fix_stay": "Open the stay to fix",
+-        "reports.detail.download_receipt": "Download the Doručenka",
++        "reports.detail.download_receipt": "Download Doručenka (PDF)",
++        "reports.detail.receipt_missing": "UbyPort did not send a PDF receipt for this report. The receipt stamp below is your proof that it was accepted.",
+         "reports.detail.download_errors": "Download the error report",
+-        "reports.detail.note_ok": "UbyPort accepted this report. Keep the Doručenka — it is the proof that you reported.",
++        "reports.detail.note_ok": "UbyPort accepted this report. Keep the Doručenka as your proof that you reported.",
+         "reports.detail.note_duplicate": "The register already had these guests, so no new record was created. The Doručenka of the first report stays valid.",
+         "reports.detail.note_partial": "UbyPort accepted some guests and refused the rest. Fix the refused guests on the stay, then send the report again.",
+         "reports.detail.note_rejected": "UbyPort refused this report. Fix the guest details on the stay, then send it again.",
+-        "reports.detail.note_failed": "The report did not reach UbyPort — the connection failed. Nothing was reported yet; send it again.",
++        "reports.detail.note_failed": "The report did not reach UbyPort because the connection failed. Nothing was reported yet; send it again.",
+         "reports.detail.note_outcome_unknown": "UbyPort may have received this report, but its answer never arrived. Check the guests in the UbyPort web application before sending again: a second copy counts as a duplicate.",
+         "reports.detail.note_running": "The report is being sent to UbyPort right now.",
+         "reports.detail.note_noop": "There was nothing to send in this batch.",
+@@ -358,9 +359,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "reports.detail.guests_empty": "Nothing reached UbyPort, so no guest was processed.",
+         "reports.detail.guest": "Guest",
+         "reports.detail.result": "Result",
+-        "reports.detail.receipt_elsewhere": "Already in the register — the Doručenka is on",
++        "reports.detail.receipt_elsewhere": "Already in the register. The Doručenka is on",
+         "reports.detail.receipt_none": (
+-            "Already in the register — no Doručenka is stored for it."
++            "Already in the register. No Doručenka is stored for it."
+         ),
+         "reports.detail.technical": "Technical details",
+         "reports.detail.technical_help": "The exact computer messages exchanged with UbyPort. You normally only need these when support investigates a rejection.",
+@@ -401,6 +402,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "host.signature_missing": "Please sign before saving.",
+         "host.signature_kept": "Signature saved. Sign again only if you need to change it.",
+         "host.signature_clear": "Clear",
++        "host.signature_signed_on": "Signed on %(date)s.",
++        "host.signature_signed": "Signed.",
++        "host.signature_none_filed": "No signature is stored for this record.",
++        "host.signature_locked": "The record is already reported, so the signature can no longer be changed.",
++        "host.signature_saved_alt": "The guest's saved signature",
+         "host.verify_title": "ID check",
+         "host.verify_in_person": (
+             "You are responsible for accurate records. Compare the travel document when you can; "
+@@ -648,7 +654,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "notification.reason.feed_duplicate_uid": "The calendar returns the same booking ID more than once. Only the first entry of each was imported – check the portal, because one of the two stays may be missing.",
+         "notification.feed_recurring_event.title": "%(property)s: a booking repeats.",
+         "notification.reason.feed_recurring_event": "The calendar repeats a booking, but only the first occurrence was imported. Add the other stays by hand.",
+-        "notification.reason.moved_after_report": "The calendar moved this stay after it was reported to the police. The filed record names the old dates – check the new dates with the guests and resend.",
++        "notification.reason.moved_after_report": "The calendar moved this stay after it was reported to the police. The filed record names the old dates. Check the new dates with the guests; a filed record is corrected in the UbyPort web application.",
+         "notification.reason.submission_stuck": "UbyPort refused these guests several times in a row, so automatic sending has stopped for them. Check the guest data, then send the stay again by hand.",
+         "notification.job_failed.title": "Background job '%(job)s' failed.",
+         "notification.job_failed.detail": "Automatic reporting may be delayed until it runs again.",
+@@ -1792,13 +1798,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "reports.detail.header_help": "Chyby záhlaví pocházejí z nastavení ubytování, nikoli z údajů hosta.",
+         "reports.detail.header_help_link": "Otevřít údaje pro hlášení",
+         "reports.detail.fix_stay": "Otevřít pobyt a opravit",
+-        "reports.detail.download_receipt": "Stáhnout Doručenku",
++        "reports.detail.download_receipt": "Stáhnout doručenku (PDF)",
++        "reports.detail.receipt_missing": "UbyPort k tomuto hlášení neposlal PDF doručenku. Dokladem o přijetí je razítko doručenky níže.",
+         "reports.detail.download_errors": "Stáhnout chybový protokol",
+-        "reports.detail.note_ok": "UbyPort toto hlášení přijal. Uschovejte doručenku — je důkazem o nahlášení.",
++        "reports.detail.note_ok": "UbyPort toto hlášení přijal. Doručenku si uschovejte jako doklad o nahlášení.",
+         "reports.detail.note_duplicate": "Registr tyto hosty již měl, nový záznam nevznikl. Platná zůstává doručenka původního hlášení.",
+         "reports.detail.note_partial": "UbyPort přijal část hostů a ostatní odmítl. Opravte odmítnuté hosty na pobytu a hlášení odešlete znovu.",
+         "reports.detail.note_rejected": "UbyPort toto hlášení odmítl. Opravte údaje hostů na pobytu a odešlete jej znovu.",
+-        "reports.detail.note_failed": "Hlášení se k UbyPortu nedostalo — přenos selhal. Zatím nebylo nic nahlášeno; odešlete jej znovu.",
++        "reports.detail.note_failed": "Hlášení se k UbyPortu nedostalo, protože přenos selhal. Zatím nebylo nic nahlášeno; odešlete jej znovu.",
+         "reports.detail.note_outcome_unknown": "UbyPort hlášení možná přijal, ale jeho odpověď nedorazila. Než ho odešlete znovu, ověřte hosty ve webové aplikaci UbyPort: druhé odeslání se počítá jako duplicita.",
+         "reports.detail.note_running": "Hlášení se právě odesílá na UbyPort.",
+         "reports.detail.note_noop": "V této dávce nebylo co odesílat.",
+@@ -1806,9 +1813,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "reports.detail.guests_empty": "Do UbyPortu nic nedorazilo, žádný host nebyl zpracován.",
+         "reports.detail.guest": "Host",
+         "reports.detail.result": "Výsledek",
+-        "reports.detail.receipt_elsewhere": "Již v evidenci — doručenka je u",
++        "reports.detail.receipt_elsewhere": "Již v evidenci. Doručenka je u",
+         "reports.detail.receipt_none": (
+-            "Již v evidenci — doručenka k němu není uložena."
++            "Již v evidenci. Doručenka k němu není uložena."
+         ),
+         "reports.detail.technical": "Technické podrobnosti",
+         "reports.detail.technical_help": "Přesné zprávy mezi UbyHostem a UbyPortem. Potřebujete je obvykle jen při řešení odmítnutí.",
+@@ -1849,6 +1856,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "host.signature_missing": "Před uložením se prosím podepište.",
+         "host.signature_kept": "Podpis je uložený. Podepište znovu jen při změně.",
+         "host.signature_clear": "Vymazat",
++        "host.signature_signed_on": "Podepsáno %(date)s.",
++        "host.signature_signed": "Podepsáno.",
++        "host.signature_none_filed": "K tomuto záznamu není uložen žádný podpis.",
++        "host.signature_locked": "Záznam je už nahlášený, podpis proto nelze změnit.",
++        "host.signature_saved_alt": "Uložený podpis hosta",
+         "host.verify_title": "Kontrola dokladu",
+         "host.verify_in_person": (
+             "Za správnost údajů odpovídáte vy. Porovnejte doklad, když můžete; odeslání do UbyPortu "
+@@ -2094,7 +2106,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "notification.reason.feed_duplicate_uid": "Kalendář vrací stejné ID rezervace vícekrát. Importoval se vždy jen první záznam – zkontrolujte portál, jeden z pobytů může chybět.",
+         "notification.feed_recurring_event.title": "%(property)s: rezervace se opakuje.",
+         "notification.reason.feed_recurring_event": "Kalendář opakuje rezervaci, ale importoval se jen první výskyt. Ostatní pobyty zadejte ručně.",
+-        "notification.reason.moved_after_report": "Kalendář posunul tento pobyt poté, co byl nahlášen policii. Odeslaný záznam uvádí původní termíny – zkontrolujte s hosty nové termíny a odešlete znovu.",
++        "notification.reason.moved_after_report": "Kalendář posunul tento pobyt poté, co byl nahlášen policii. Odeslaný záznam uvádí původní termíny. Zkontrolujte s hosty nové termíny; podaný záznam se opravuje ve webové aplikaci UbyPort.",
+         "notification.reason.submission_stuck": "UbyPort tyto hosty několikrát za sebou odmítl, proto se u nich automatické odesílání zastavilo. Zkontrolujte údaje hostů a odešlete pobyt znovu ručně.",
+         "notification.job_failed.title": "Úloha na pozadí '%(job)s' selhala.",
+         "notification.job_failed.detail": "Automatické hlášení se může zpozdit, dokud úloha neproběhne znovu.",
+@@ -3157,7 +3169,7 @@ _INTERFACE_STRINGS = {
+         "guest.admin.back_to_stay": 'Back to stay',
+         "guest.admin.banner.rejected_help": 'Correct the data and save — that puts it back in the queue.',
+         "guest.admin.banner.rejected_title": 'UbyPort rejected this record.',
+-        "guest.admin.banner.sent_help": 'Editing changes the house book only. Sending it again creates a duplicate, which the police count against you, so it needs a deliberate confirmation below.',
++        "guest.admin.banner.sent_help": "To correct it, file the correction directly in the UbyPort web application or contact the Foreign Police. UbyHost cannot change a filed record, so the reported details and the signature are locked here. The document type for the stay-fee register can still be changed.",
+         "guest.admin.banner.sent_title": 'Already reported to the Foreign Police.',
+         "guest.admin.banner.sent_title_at": 'Already reported to the Foreign Police on %(at)s.',
+         "guest.admin.birth_date": 'Date of birth',
+@@ -3186,6 +3198,7 @@ _INTERFACE_STRINGS = {
+         "flash.guest.restricted": "Processing restricted. The record is read-only until you lift it.",
+         "flash.guest.unrestricted": "Restriction lifted.",
+         "flash.error.guest_restricted": "This record is restricted. Lift the restriction before editing it.",
++        "flash.error.guest_filed_locked": "Not saved. This guest is already reported to the police, so the reported details and the signature cannot be changed here. File a correction in the UbyPort web application.",
+         "guest.admin.given_names": 'Given name(s)',
+         "guest.admin.identity.title": 'Identity',
+         "guest.admin.nationality_hint": 'Czech nationals are recorded in the house book but never sent to the police.',
+@@ -3841,7 +3854,7 @@ _INTERFACE_STRINGS = {
+         "guest.admin.back_to_stay": 'Zpět na pobyt',
+         "guest.admin.banner.rejected_help": 'Opravte údaje a uložte — záznam se vrátí do fronty.',
+         "guest.admin.banner.rejected_title": 'UbyPort tento záznam odmítl.',
+-        "guest.admin.banner.sent_help": 'Úprava mění jen domovní knihu. Opětovné odeslání vytvoří duplicitu, kterou policie započítává, proto je potřeba potvrzení níže.',
++        "guest.admin.banner.sent_help": "Opravu podejte přímo ve webové aplikaci UbyPort nebo se obraťte na cizineckou policii. UbyHost podaný záznam změnit nemůže, proto jsou nahlášené údaje a podpis zde uzamčené. Typ dokladu pro evidenci poplatku z pobytu lze měnit i nadále.",
+         "guest.admin.banner.sent_title": 'Již nahlášeno cizinecké policii.',
+         "guest.admin.banner.sent_title_at": 'Již nahlášeno cizinecké policii %(at)s.',
+         "guest.admin.birth_date": 'Datum narození',
+@@ -3870,6 +3883,7 @@ _INTERFACE_STRINGS = {
+         "flash.guest.restricted": "Zpracování omezeno. Záznam je jen pro čtení, dokud omezení nezrušíte.",
+         "flash.guest.unrestricted": "Omezení zrušeno.",
+         "flash.error.guest_restricted": "Záznam je omezen. Před úpravou zrušte omezení.",
++        "flash.error.guest_filed_locked": "Neuloženo. Host je už nahlášen policii, nahlášené údaje a podpis proto nelze zde měnit. Opravu podejte ve webové aplikaci UbyPort.",
+         "guest.admin.given_names": 'Jméno(a)',
+         "guest.admin.identity.title": 'Identita',
+         "guest.admin.nationality_hint": 'Čeští státní příslušníci jsou v domovní knize, ale policii se neodesílají.',
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index 5d4cb1f..b8b41a5 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -151,6 +151,50 @@ def guest_payload(guest, reservation) -> Dict[str, Any]:
+     }
+ 
+ 
++# The guest columns guest_payload() puts on the wire. Once a guest is filed
++# (submit_state 'sent', by UbyHost or by hand) these are what the police hold,
++# and UbyPort has no call that corrects a filed record, so the host form keeps
++# them read-only. Anything not listed here (doc_type for the stay-fee register,
++# for example) stays editable.
++FILED_FIELDS = (
++    "surname",
++    "first_name",
++    "birth_date",
++    "nationality",
++    "doc_number",
++    "visa_number",
++    "res_street",
++    "res_city",
++    "res_country",
++    "purpose",
++    "note",
++    "stay_from",
++    "stay_to",
++)
++
++
++def _field(row, key: str) -> Any:
++    """``row[key]``, or None for a row (or test dict) without that column."""
++    try:
++        return row[key]
++    except (KeyError, IndexError):
++        return None
++
++
++def guest_is_filed(guest) -> bool:
++    """True once the record is in the police register, including filed by hand."""
++    return bool(guest) and _field(guest, "submit_state") == SENT
++
++
++def filed_record_changed(stored, proposed, reservation) -> bool:
++    """Would saving ``proposed`` make the house book differ from what was filed?
++
++    Compared as the UbyPort record, so a stay date left empty (which files the
++    booking's dates) is not mistaken for a change.
++    """
++    return guest_payload(stored, reservation) != guest_payload(proposed, reservation)
++
++
+ # --- readiness -----------------------------------------------------------
+ 
+ def guest_dict(guest) -> Dict[str, Optional[str]]:
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index b5abfe9..a270e79 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -1566,8 +1566,12 @@ def reservation_detail(reservation_id: int, request: Request):
+         "       (receipt_pdf IS NOT NULL AND TRIM(receipt_pdf) != '') AS has_receipt "
+         "FROM submission WHERE id IN ("
+         "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
++        # A duplicate answer moves submission_id to the refused resend; the
++        # report that holds the Doručenka is kept in receipt_submission_id.
++        "  UNION SELECT DISTINCT receipt_submission_id FROM guest"
++        "  WHERE reservation_id = ? AND receipt_submission_id IS NOT NULL"
+         ") AND apartment_id = ? ORDER BY created_at DESC",
+-        (reservation_id, reservation["apartment_id"]),
++        (reservation_id, reservation_id, reservation["apartment_id"]),
+     )
+     return render(
+         request,
+@@ -2041,9 +2045,32 @@ async def guest_update(guest_id: int, request: Request):
+         payload["doc_number"] = guest["doc_number"]
+         payload["visa_number"] = guest["visa_number"]
+         signature = guest["signature_png"] or ""
++    if reporting.guest_is_filed(guest):
++        # Filed (by UbyHost or by hand): the police hold this record and UbyPort
++        # has no call that corrects it, so the reported fields and the signature
++        # are read-only here. The form posts none of them (they render
++        # disabled); a post that does carry them, from an old tab or by hand,
++        # must match what was filed or nothing is saved.
++        for field in reporting.FILED_FIELDS:
++            if field not in form:
++                payload[field] = guest[field]
++        posted_signature = _form_str(form, "signature")
++        signature_changed = bool(
++            posted_signature
++            and validation.is_valid_signature(posted_signature)
++            and posted_signature != (guest["signature_png"] or "")
++        )
++        if signature_changed or reporting.filed_record_changed(
++            guest, {**dict(guest), **payload}, reservation
++        ):
++            db.audit("guest_update_refused_filed", f"id={guest_id} by=host")
++            return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.guest_filed_locked"))
++        # Only what never went to the police is saved.
++        payload = {"doc_type": payload["doc_type"]}
++        signature = guest["signature_png"] or ""
+     preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
+     issues = reporting.guest_issues(preview, reservation)
+-    if validation.errors_only(issues):
++    if validation.errors_only(issues) and not reporting.guest_is_filed(guest):
+         return _render_host_guest_form(
+             request,
+             reservation,
+@@ -2052,10 +2079,15 @@ async def guest_update(guest_id: int, request: Request):
+             editing=True,
+         )
+     payload["signature_png"] = signature
+-    if signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
++    if reporting.guest_is_filed(guest):
++        payload.pop("signature_png")
++    elif signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
+         payload["signed_at"] = db.utcnow()
+     payload["updated_at"] = db.utcnow()
+-    if validation.guest_is_reportable(payload["nationality"]):
++    if reporting.guest_is_filed(guest):
++        # Changing the stay-fee document type attests nothing about identity.
++        pass
++    elif validation.guest_is_reportable(payload["nationality"]):
+         payload["identity_verified_at"] = db.utcnow()
+         payload["identity_verified_by"] = access.owner_id(request)
+     if guest["submit_state"] == reporting.SENT:
+diff --git a/App/app/static/host.css b/App/app/static/host.css
+index 7ea0aa2..d6e88a3 100644
+--- a/App/app/static/host.css
++++ b/App/app/static/host.css
+@@ -292,3 +292,89 @@ body.host-workspace {
+   .host-workspace .list-filter .field { flex: 1 1 100%; max-width: none; }
+   .host-workspace .list-filter .filter-actions-end { margin-left: 0; }
+ }
++
++/* House book register (WP25). The workspace lets table cells break anywhere so
++   card facts never overflow on a phone, but in the eleven-column register that
++   let the browser shrink a column to one letter per line. Words stay whole
++   here; the floors below keep each column readable and the panel scrolls
++   sideways when the row is wider than the viewport. */
++.host-workspace .panel.tight.scroll-x { overflow-x: auto; position: relative; }
++.host-workspace .housebook-table td { overflow-wrap: normal; word-break: normal; }
++.host-workspace .housebook-table th,
++.host-workspace .housebook-table td { padding-left: 7px; padding-right: 7px; }
++.host-workspace .housebook-table th:first-child,
++.host-workspace .housebook-table td:first-child { padding-left: 12px; }
++/* Headings may wrap between words ("Date of / birth"), never inside one. */
++.host-workspace .housebook-table th { white-space: normal; overflow-wrap: normal; letter-spacing: .02em; }
++.housebook-table .col-stay, .housebook-table .col-born { white-space: nowrap; }
++.housebook-table .col-name { min-width: 92px; }
++.housebook-table .col-address { min-width: 120px; }
++.housebook-table .col-purpose { min-width: 64px; }
++.housebook-table .col-reported { min-width: 92px; }
++.housebook-table td.col-reported { white-space: normal; }
++.host-workspace .housebook-table td.row-actions { padding-left: 4px; padding-right: 8px; }
++.housebook-table .property-identity.truncate { gap: 6px; }
++.housebook-table td.col-reported .pill { white-space: normal; text-align: left; border-radius: 10px; }
++.property-identity.truncate { max-width: 100%; }
++.property-identity.truncate .property-identity-name {
++  display: block; min-width: 0; max-width: 5.75rem;
++  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
++}
++/* Scroll shadows: the shaded edge appears only on a side that has more
++   columns behind it (the cover gradients scroll with the content). */
++.housebook-scroll {
++  background:
++    linear-gradient(to right, var(--surface) 30%, transparent) left center / 32px 100% no-repeat local,
++    linear-gradient(to left, var(--surface) 30%, transparent) right center / 32px 100% no-repeat local,
++    linear-gradient(to right, rgba(20, 20, 18, 0.12), transparent) left center / 12px 100% no-repeat scroll,
++    linear-gradient(to left, rgba(20, 20, 18, 0.12), transparent) right center / 12px 100% no-repeat scroll,
++    var(--surface);
++}
++.host-workspace .panel.housebook-scroll { background-color: var(--surface); }
++.housebook-scroll:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
++@media (max-width: 720px) {
++  .property-identity.truncate .property-identity-name { max-width: none; white-space: normal; }
++  /* The card layout spaces facts with the row's grid gap; the workspace's
++     desktop cell padding (14px 16px) outranked app.css's reset here and
++     doubled every gap on a phone. */
++  .host-workspace .table-cards td,
++  .host-workspace .housebook-table td,
++  .host-workspace .housebook-table td:first-child { padding: 0; }
++  .housebook-scroll { background: var(--surface); }
++}
++@media print {
++  .housebook-scroll { overflow: visible !important; background: none; }
++  .property-identity.truncate .property-identity-name { max-width: none; white-space: normal; overflow: visible; }
++}
++
++/* A filed guest's signature is shown, not offered for re-signing (WP25). */
++.signature-saved { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 12px; }
++.signature-saved img { display: block; width: 100%; height: 140px; object-fit: contain; }
++.signature-saved-note { margin: 8px 0 0; }
++.host-workspace .panel.verify-panel.tight { padding: 16px 20px; }
++
++/* Report outcome accent follows the outcome level, not the brand (WP25). */
++.host-workspace .stay-command-panel.outcome-done { border-left-color: var(--green); }
++.host-workspace .stay-command-panel.outcome-action { border-left-color: var(--amber); }
++.host-workspace .stay-command-panel.outcome-critical { border-left-color: var(--status-critical-border); }
++.host-workspace .stay-command-panel.outcome-waiting { border-left-color: var(--teal); }
++.host-workspace .stay-command-panel.outcome-neutral { border-left-color: var(--line-2); }
++/* The stamp is one monospace line where the tile allows it; when it does not,
++   it breaks cleanly and the copy button stays centred beside it. */
++.report-stamp-value { display: flex; align-items: center; gap: 8px; }
++.report-stamp-value .report-stamp {
++  flex: 0 1 auto; min-width: 0;
++  font-family: var(--font-mono); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere;
++}
++.report-stamp-value .btn-icon { flex: 0 0 auto; }
++@media (min-width: 1101px) {
++  .report-metrics { grid-template-columns: minmax(120px, 1fr) minmax(300px, 1.8fr) minmax(150px, 1fr) minmax(120px, 1fr); }
++}
++.report-receipt-missing { margin: 6px 0 0; }
++/* Locked fields read as locked: a disabled text box must not look editable. */
++.host-workspace input:disabled:not([type=checkbox]):not([type=radio]),
++.host-workspace select:disabled,
++.host-workspace textarea:disabled {
++  background: var(--canvas); color: var(--ink-secondary); border-color: var(--line);
++  cursor: not-allowed; opacity: 1; -webkit-text-fill-color: var(--ink-secondary);
++}
+diff --git a/App/app/templates/_components.html b/App/app/templates/_components.html
+index c8297d3..e0ed60d 100644
+--- a/App/app/templates/_components.html
++++ b/App/app/templates/_components.html
+@@ -249,10 +249,12 @@
+   </div>
+ {% endmacro %}
+ 
+-{% macro property_identity(id, name, compact=false) %}
+-  <span class="property-identity">
++{# ``truncate`` keeps a dense table row on one line: the name ends in an
++   ellipsis and the full name stays in the tooltip and for screen readers. #}
++{% macro property_identity(id, name, compact=false, truncate=false) %}
++  <span class="property-identity{{ ' truncate' if truncate }}"{% if truncate %} title="{{ name }}"{% endif %}>
+     <span class="property-mark property-tone-{{ id % 10 }}" aria-hidden="true">{{ name[:1] }}</span>
+-    <span class="{{ 'small' if compact }}">{{ name }}</span>
++    <span class="{{ 'small' if compact }}{{ ' property-identity-name' if truncate }}">{{ name }}</span>
+   </span>
+ {% endmacro %}
+ 
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index 46c2a0e..9f7312a 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -12,7 +12,7 @@
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+   <link rel="stylesheet" href="/static/app.css?v=20261004a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+-  {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261002a">{% endif %}
++  {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261004w25">{% endif %}
+ </head>
+ <body class="layout-host {{ 'host-workspace' if show_nav | default(true) }} {{ 'no-nav' if not (show_nav | default(true)) }}">
+ <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
+diff --git a/App/app/templates/guest_form_admin.html b/App/app/templates/guest_form_admin.html
+index ae2107c..386bd2d 100644
+--- a/App/app/templates/guest_form_admin.html
++++ b/App/app/templates/guest_form_admin.html
+@@ -18,6 +18,11 @@
+     <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
+   </div>
+ {% endmacro %}
++{# Filed guests (submit_state 'sent', by UbyHost or by hand): the reported
++   fields and the signature are what the police hold, so they render disabled
++   and the save route refuses a change to them. #}
++{% set filed = editing and guest and guest.submit_state == 'sent' %}
++{% macro lock() %}{% if filed %} disabled aria-describedby="filed-lock-note"{% endif %}{% endmacro %}
+ {% macro field_val(name) %}{{ guest[name] if guest and guest[name] is not none else '' }}{% endmacro %}
+ 
+ {% block content %}
+@@ -47,7 +52,7 @@
+   <div class="banner info">
+     <div class="grow">
+       <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
+-      <small>{{ t('guest.admin.banner.sent_help') }}</small>
++      <small id="filed-lock-note">{{ t('guest.admin.banner.sent_help') }}</small>
+     </div>
+   </div>
+ {% endif %}
+@@ -74,13 +79,13 @@
+     <div class="grid two">
+       <div class="field">
+         <label for="surname">{{ t('guest.admin.surname') }}</label>
+-        <input class="{{ bad('surname') }}" type="text" id="surname" name="surname" maxlength="50" required
++        <input class="{{ bad('surname') }}" type="text" id="surname" name="surname"{{ lock() }} maxlength="50" required
+                value="{{ field_val('surname') }}">
+         {{ err_for('surname') }}
+       </div>
+       <div class="field">
+         <label for="first_name">{{ t('guest.admin.given_names') }}</label>
+-        <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name" maxlength="24"
++        <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name"{{ lock() }} maxlength="24"
+                value="{{ field_val('first_name') }}">
+         {{ err_for('first_name') }}
+       </div>
+@@ -88,7 +93,7 @@
+     <div class="grid">
+       <div class="field">
+         <label for="birth_date">{{ t('guest.admin.birth_date') }}</label>
+-        <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
++        <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"{{ lock() }}
+                data-birth-date inputmode="numeric" placeholder="{{ t('guest.admin.birth_date_ph') }}" maxlength="10"
+                autocomplete="bday"
+                value="{{ display_birth_date(guest.birth_date) if guest and guest.birth_date else '' }}">
+@@ -97,7 +102,7 @@
+       </div>
+       <div class="field">
+         <label for="nationality">{{ t('stay.detail.guests.nationality') }}</label>
+-        <select class="{{ bad('nationality') }}" id="nationality" name="nationality" required>
++        <select class="{{ bad('nationality') }}" id="nationality" name="nationality"{{ lock() }} required>
+           <option value="">{{ t('common.select') }}</option>
+           {% for country in countries %}
+             <option value="{{ country.code }}"
+@@ -124,7 +129,7 @@
+         {% if identity_hidden %}
+         <input type="text" id="doc_number" value="{{ guest_identifier(guest.doc_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
+         {% else %}
+-        <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
++        <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number"{{ lock() }} maxlength="30"
+                value="{{ field_val('doc_number') }}">
+         {% endif %}
+         <div class="hint">{{ t('guest.admin.document_hint') }}</div>
+@@ -135,7 +140,7 @@
+         {% if identity_hidden %}
+         <input type="text" id="visa_number" value="{{ guest_identifier(guest.visa_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
+         {% else %}
+-        <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
++        <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number"{{ lock() }} maxlength="15"
+                value="{{ field_val('visa_number') }}">
+         {% endif %}
+         {{ err_for('visa_number') }}
+@@ -148,19 +153,19 @@
+     <div class="grid">
+       <div class="field">
+         <label for="res_street">{{ t('guest.admin.res_street') }} <span class="opt">{{ t('common.optional') }}</span></label>
+-        <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street" maxlength="42"
++        <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street"{{ lock() }} maxlength="42"
+                value="{{ field_val('res_street') }}">
+         {{ err_for('res_street') }}
+       </div>
+       <div class="field">
+         <label for="res_city">{{ t('guest.admin.res_city') }}</label>
+-        <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city" maxlength="42"
++        <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city"{{ lock() }} maxlength="42"
+                value="{{ field_val('res_city') }}">
+         {{ err_for('res_city') }}
+       </div>
+       <div class="field">
+         <label for="res_country">{{ t('guest.admin.res_country') }}</label>
+-        <select class="{{ bad('res_country') }}" id="res_country" name="res_country">
++        <select class="{{ bad('res_country') }}" id="res_country" name="res_country"{{ lock() }}>
+           <option value="">{{ t('common.select') }}</option>
+           {% for country in countries %}
+             <option value="{{ country.code }}"
+@@ -178,18 +183,18 @@
+     <div class="grid">
+       <div class="field">
+         <label for="stay_from">{{ t('guest.admin.stay_from') }}</label>
+-        <input type="date" id="stay_from" name="stay_from"
++        <input type="date" id="stay_from" name="stay_from"{{ lock() }}
+                value="{{ (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
+       </div>
+       <div class="field">
+         <label for="stay_to">{{ t('guest.admin.stay_to') }}</label>
+-        <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"
++        <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"{{ lock() }}
+                value="{{ (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
+         {{ err_for('stay_to') }}
+       </div>
+       <div class="field">
+         <label for="purpose">{{ t('stay.detail.guests.purpose') }}</label>
+-        <select id="purpose" name="purpose">
++        <select id="purpose" name="purpose"{{ lock() }}>
+           {% for purpose in purposes %}
+             <option value="{{ purpose.code }}"
+               {% if (guest and guest.purpose == purpose.code) or (not guest and purpose.code == reservation.default_purpose) %}selected{% endif %}>
+@@ -200,7 +205,7 @@
+     </div>
+     <div class="field">
+       <label for="note">{{ t('guest.admin.note') }} <span class="opt">{{ t('guest.admin.note_optional') }}</span></label>
+-      <textarea class="{{ bad('note') }}" id="note" name="note" maxlength="255">{{ field_val('note') }}</textarea>
++      <textarea class="{{ bad('note') }}" id="note" name="note"{{ lock() }} maxlength="255">{{ field_val('note') }}</textarea>
+       {{ err_for('note') }}
+     </div>
+   </div>
+@@ -241,6 +246,19 @@
+     <h2 style="margin-top:0">{{ t('host.signature_title') }}</h2>
+     {% if identity_hidden %}
+     {{ identity_placeholder() }}
++    {% elif filed %}
++    {# Read-only: no pad, no Clear, and no hidden field to post a new one. #}
++    {% if signature_value %}
++    <div class="signature-saved">
++      <img src="{{ signature_value }}" alt="{{ t('host.signature_saved_alt') }}">
++    </div>
++    {% endif %}
++    <p class="small muted signature-saved-note">
++      {% if signature_value and guest.signed_at %}{{ t('host.signature_signed_on', date=guest.signed_at | datetime_local) }}
++      {% elif signature_value %}{{ t('host.signature_signed') }}
++      {% else %}{{ t('host.signature_none_filed') }}{% endif %}
++      {{ t('host.signature_locked') }}
++    </p>
+     {% else %}
+     <p class="small muted">{{ t('host.signature_help') }}</p>
+     <div class="signature-pad">
+@@ -263,7 +281,6 @@
+     <button class="btn primary" type="submit">{{ t('common.save_changes') if editing else t('guest.admin.submit_add') }}</button>
+     <a class="btn" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
+     {% if editing and guest.id %}
+-      <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
+       <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
+       <a class="btn" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
+       <a class="btn" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>
+diff --git a/App/app/templates/housebook.html b/App/app/templates/housebook.html
+index 0b4e317..a50151a 100644
+--- a/App/app/templates/housebook.html
++++ b/App/app/templates/housebook.html
+@@ -37,21 +37,24 @@
+ </form>
+ 
+ {% if rows %}
+-<div class="panel tight scroll-x">
+-  <table class="table-cards">
++{# The register is eleven columns of legal record. It keeps every word whole
++   and scrolls sideways inside its own panel when the viewport is narrower
++   than the row; the shaded edge shows there is more to the right. #}
++<div class="panel tight scroll-x housebook-scroll" tabindex="0" role="region" aria-label="{{ t('housebook.title') }}">
++  <table class="table-cards housebook-table">
+     <thead>
+       <tr>
+-        <th>{{ t('housebook.stay') }}</th><th>{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th>{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
+-        <th>{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
++        <th class="col-stay">{{ t('housebook.stay') }}</th><th class="col-property">{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th class="col-born">{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
++        <th class="col-doc">{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
+         <th class="col-purpose">{{ t('housebook.purpose') }}</th><th>{{ t('housebook.signed') }}</th>
+-        <th>{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
++        <th class="col-reported">{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
+       </tr>
+     </thead>
+     <tbody>
+     {% for row in rows %}
+       <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
+         <td class="nowrap small" data-label="{{ t('housebook.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
+-        <td class="small" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
++        <td class="small col-property" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true, truncate=true) }}</td>
+         {# Two deliberate lines beat three ragged ones in a column this narrow. #}
+         <td class="col-name" data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong><br>
+           <span class="small">{{ row.first_name }}</span></td>
+@@ -64,7 +67,7 @@
+           {% else %}<span class="pill amber">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
+         {# The stored values double as the CSV column, which the importer reads
+            back, so they stay as they are and only the label changes here. #}
+-        <td class="small nowrap" data-label="{{ t('housebook.reported') }}">
++        <td class="small col-reported" data-label="{{ t('housebook.reported') }}">
+           {% if row.reported == 'yes' %}<span class="pill green">{{ t('status.reported') }}</span>
+             <div class="small muted">{{ row.reported_at[:10] }}</div>
+           {% elif row.reported.startswith('not required') %}<span class="pill grey">{{ t('status.not_required') }}</span>
+diff --git a/App/app/templates/reservation_detail.html b/App/app/templates/reservation_detail.html
+index d233374..65d9278 100644
+--- a/App/app/templates/reservation_detail.html
++++ b/App/app/templates/reservation_detail.html
+@@ -79,7 +79,16 @@
+       {% elif progress.status == 'failed' %}
+         <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
+       {% elif progress.status == 'reported' and submissions %}
+-        <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
++        {# The Doručenka is the proof of filing, so once the stay is reported
++           it is the first thing offered. The route keeps WP04's block while an
++           admin views the workspace. #}
++        {% set receipt_report = submissions | selectattr('has_receipt') | first %}
++        {% if receipt_report %}
++          <a class="btn accent primary" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
++          <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
++        {% else %}
++          <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
++        {% endif %}
+       {% elif not stay_inactive %}
+         <button class="btn primary" type="button" data-copy="stay-link"
+                 data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
+diff --git a/App/app/templates/submission_detail.html b/App/app/templates/submission_detail.html
+index 511c7c8..597f9b7 100644
+--- a/App/app/templates/submission_detail.html
++++ b/App/app/templates/submission_detail.html
+@@ -2,7 +2,7 @@
+ {% set nav = 'submissions' %}
+ {% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
+ {% block content %}
+-{% from "_components.html" import page_header, submission_pill, row_menu_begin, row_menu_end with context %}
++{% from "_components.html" import page_header, submission_pill, row_menu_begin, row_menu_end, copy_button with context %}
+ 
+ {% set outcome_notes = {
+   'ok': t('reports.detail.note_ok'),
+@@ -27,11 +27,22 @@
+ {# The report detail follows the stay page's grammar (C-16 [UX-81]): the Now
+    panel answers outcome and next step, the guests follow, and the operator
+    diagnostics fold last. #}
+-<section class="panel stay-command-panel" id="now">
++{# The accent bar carries the outcome level (tokens.css criticality), so an
++   accepted report is not framed in the alarm colour. #}
++{% set outcome_levels = {
++  'ok': 'done', 'ok_duplicate': 'done', 'partial': 'action', 'not_configured': 'action',
++  'error': 'critical', 'failed': 'critical', 'transport_error': 'critical',
++  'outcome_unknown': 'critical', 'running': 'waiting', 'noop': 'neutral'
++} %}
++{% set accepted = submission.state in ('ok', 'ok_duplicate', 'partial') %}
++<section class="panel stay-command-panel outcome-{{ outcome_levels.get(submission.state, 'critical') }}" id="now">
+   <div class="stay-command-main">
+     <div>
+       <div class="eyebrow">{{ t('reports.outcome') }}</div>
+       <p class="stay-command-note">{{ outcome_notes.get(submission.state, '') }}</p>
++      {% if accepted and not submission.receipt_pdf %}
++        <p class="small muted report-receipt-missing" data-receipt-missing>{{ t('reports.detail.receipt_missing') }}</p>
++      {% endif %}
+     </div>
+     <div class="stay-command-actions">
+       <div class="actions">
+@@ -66,18 +77,17 @@
+     </div>
+   {% endif %}
+ 
+-  <div class="stay-metrics detail-hero">
++  <div class="stay-metrics detail-hero report-metrics">
+     <div class="detail-metric">
+       <div class="metric-label">{{ t('reports.outcome') }}</div>
+       <div class="metric-value small-value">{{ submission_pill(submission.state) }}</div>
+     </div>
+     <div class="detail-metric">
+       <div class="metric-label">{{ t('reports.stamp') }}</div>
+-      <div class="metric-value small-value">
++      <div class="metric-value small-value report-stamp-value">
+         {% if submission.pseudo_stamp %}
+           <span class="mono report-stamp" id="report-stamp">{{ submission.pseudo_stamp }}</span>
+-          <button class="btn small report-stamp-copy" type="button" data-copy="report-stamp"
+-                  data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
++          {{ copy_button('report-stamp') }}
+         {% else %}&mdash;{% endif %}
+       </div>
+     </div>
+diff --git a/App/tests/test_notification_copy.py b/App/tests/test_notification_copy.py
+index df0b9aa..07f57b0 100644
+--- a/App/tests/test_notification_copy.py
++++ b/App/tests/test_notification_copy.py
+@@ -209,14 +209,14 @@ def test_a_stay_moved_after_reporting_gets_a_reason_line(monkeypatch):
+     assert en["display_title"] == "Vinohrady Studio (demo) · 19.09.2026 – 21.09.2026"
+     assert en["display_detail"] == (
+         "The calendar moved this stay after it was reported to the police. The "
+-        "filed record names the old dates – check the new dates with the guests "
+-        "and resend."
++        "filed record names the old dates. Check the new dates with the guests; "
++        "a filed record is corrected in the UbyPort web application."
+     )
+     cs = alerts.present(alert, "cs")
+     assert "Vinohrady Studio (demo)" in cs["display_title"]
+     assert cs["display_detail"] == (
+         "Kalendář posunul tento pobyt poté, co byl nahlášen policii. Odeslaný "
+-        "záznam uvádí původní termíny – zkontrolujte s hosty nové termíny a "
+-        "odešlete znovu."
++        "záznam uvádí původní termíny. Zkontrolujte s hosty nové termíny; "
++        "podaný záznam se opravuje ve webové aplikaci UbyPort."
+     )
+     assert "english log copy" not in (cs["display_title"] + cs["display_detail"])
+diff --git a/App/tests/test_wp25_reported_bugs.py b/App/tests/test_wp25_reported_bugs.py
+new file mode 100644
+index 0000000..a2a5afc
+--- /dev/null
++++ b/App/tests/test_wp25_reported_bugs.py
+@@ -0,0 +1,354 @@
++"""WP25: the owner's reported bugs on the house book, guest and report pages.
++
++* The house book keeps every word whole and truncates the property name with
++  the full name in a tooltip, inside a sideways-scrolling panel.
++* A filed guest shows one "Download signed
++  form" button, a read-only signature with no Clear, and disabled reported
++  fields; the save route refuses a change to any of them even when the form
++  is posted by hand, and still saves what never went to the police.
++* The report page offers "Download Doručenka (PDF)" when UbyPort sent one and
++  says so when it did not; the outcome accent follows the outcome level.
++"""
++from __future__ import annotations
++
++import base64
++import re
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, db, demo, host_i18n
++from app.main import app
++
++PASSWORD = "Secure-Password-123"
++OTHER_SIGNATURE = "data:image/png;base64," + base64.b64encode(base64.b64decode(
++    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
++    "DQottAAAAABJRU5ErkJggg=="
++)).decode()
++LONG_PROPERTY = "Downtown Comfort Apartment with a very long name"
++
++
++def _cleanup():
++    for row in db.query("SELECT id FROM user_account WHERE username LIKE 'wp25-%'"):
++        user_id = row["id"]
++        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (user_id,))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
++        for apartment in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (user_id,)):
++            apartment_id = apartment["id"]
++            db.execute(
++                "DELETE FROM guest WHERE reservation_id IN "
++                "(SELECT id FROM reservation WHERE apartment_id = ?)",
++                (apartment_id,),
++            )
++            db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment_id,))
++            db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
++            db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
++        db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (user_id,))
++        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
++
++
++@pytest.fixture()
++def seeded():
++    db.init_db()
++    _cleanup()
++    owner = auth.create_account("wp25-host", PASSWORD, "WP25 Host", must_change_password=False)
++    now = db.utcnow()
++    entity = db.insert("legal_entity", {"name": "WP25 entity", "owner_user_id": owner, "created_at": now})
++    apartment = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity,
++            "owner_user_id": owner,
++            "internal_name": LONG_PROPERTY,
++            "permalink_token": "wp25tok",
++            "automation_mode": "manual",
++            "default_purpose": "10",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    reservation = db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment,
++            "uid": "wp25-stay",
++            "date_from": "2026-01-01",
++            "date_to": "2026-01-03",
++            "status": "active",
++            "declared_guests": 3,
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++
++    def guest(surname, **extra):
++        return db.insert(
++            "guest",
++            {
++                "reservation_id": reservation,
++                "surname": surname,
++                "first_name": "JANE",
++                "birth_date": "01011990",
++                "nationality": "GBR",
++                "doc_number": "PA1234567",
++                "res_street": "Baker Street 221B",
++                "res_city": "London",
++                "res_country": "GBR",
++                "purpose": "10",
++                "entered_by": "guest",
++                "signature_png": demo.DEMO_SIGNATURE,
++                "signed_at": "2026-01-01T10:00:00+00:00",
++                "created_at": now,
++                "updated_at": now,
++                **extra,
++            },
++        )
++
++    filed = guest("FILED", submit_state="sent", submitted_at=now)
++    pending = guest("PENDING", submit_state="pending")
++    with_pdf = db.insert(
++        "submission",
++        {
++            "apartment_id": apartment,
++            "created_at": now,
++            "finished_at": now,
++            "state": "ok",
++            "guest_ids": f"[{filed}]",
++            "receipt_pdf": base64.b64encode(b"%PDF-1.4 receipt").decode(),
++            "pseudo_stamp": "A94208F8-DA48-4F07-BBF9-95CB757B41F7",
++        },
++    )
++    without_pdf = db.insert(
++        "submission",
++        {
++            "apartment_id": apartment,
++            "created_at": now,
++            "finished_at": now,
++            "state": "ok",
++            "guest_ids": f"[{filed}]",
++            "pseudo_stamp": "B94208F8-DA48-4F07-BBF9-95CB757B41F7",
++        },
++    )
++    rejected = db.insert(
++        "submission",
++        {
++            "apartment_id": apartment,
++            "created_at": now,
++            "finished_at": now,
++            "state": "error",
++            "guest_ids": f"[{pending}]",
++            "record_errors": '[";101;"]',
++        },
++    )
++    db.update("guest", filed, {"submission_id": with_pdf})
++    yield {
++        "owner": owner,
++        "reservation": reservation,
++        "filed": filed,
++        "pending": pending,
++        "with_pdf": with_pdf,
++        "without_pdf": without_pdf,
++        "rejected": rejected,
++    }
++    _cleanup()
++
++
++@pytest.fixture()
++def client(seeded):
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en",
++        data={"username": "wp25-host", "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    return client
++
++
++def _form_from_page(guest) -> dict:
++    """What an old tab of the pre-WP25 form would post back: every field."""
++    return {
++        "surname": guest["surname"],
++        "first_name": guest["first_name"],
++        "birth_date": "01.01.1990",
++        "nationality": guest["nationality"],
++        "doc_type": "pas",
++        "doc_number": guest["doc_number"],
++        "visa_number": "",
++        "res_street": guest["res_street"],
++        "res_city": guest["res_city"],
++        "res_country": guest["res_country"],
++        "stay_from": "2026-01-01",
++        "stay_to": "2026-01-03",
++        "purpose": guest["purpose"],
++        "note": "",
++        "signature": "",
++    }
++
++
++def _guest(guest_id):
++    return db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
++
++
++# --- guest page ------------------------------------------------------------
++
++def test_download_signed_form_appears_once(client, seeded):
++    for key in ("filed", "pending"):
++        page = client.get(f"/guests/{seeded[key]}?lang=en").text
++        assert page.count(f'href="/guests/{seeded[key]}/form.pdf"') == 1
++
++
++@pytest.mark.parametrize("key", ["filed"])
++def test_filed_guest_shows_signature_read_only(client, seeded, key):
++    page = client.get(f"/guests/{seeded[key]}?lang=en").text
++    en = host_i18n.STRINGS["en"]
++    assert 'id="sig-clear"' not in page
++    assert 'id="sig-canvas"' not in page
++    assert 'name="signature"' not in page
++    assert 'class="signature-saved"' in page
++    assert "Signed on" in page
++    assert en["guest.admin.banner.sent_help"] in page
++    for field in ("surname", "first_name", "birth_date", "doc_number", "res_city", "stay_from", "note"):
++        assert re.search(rf'id="{field}" name="{field}" disabled', page), field
++    for field in ("nationality", "res_country", "purpose"):
++        assert re.search(rf'id="{field}" name="{field}" disabled', page), field
++    # Not sent to the police, so still editable.
++    assert re.search(r'<select id="doc_type" name="doc_type">', page)
++
++
++def test_filed_guest_page_in_czech(client, seeded):
++    page = client.get(f"/guests/{seeded['filed']}?lang=cs").text
++    assert "Podepsáno" in page
++    assert host_i18n.STRINGS["cs"]["guest.admin.banner.sent_help"] in page
++
++
++def test_pending_guest_keeps_the_signature_pad(client, seeded):
++    page = client.get(f"/guests/{seeded['pending']}?lang=en").text
++    assert 'id="sig-clear"' in page
++    assert 'name="signature"' in page
++    assert ' disabled aria-describedby="filed-lock-note"' not in page
++
++
++@pytest.mark.parametrize("key", ["filed"])
++@pytest.mark.parametrize(
++    "change",
++    [
++        {"surname": "CHANGED"},
++        {"doc_number": "ZZ9999999"},
++        {"birth_date": "02.02.1991"},
++        {"res_city": "Paris"},
++        {"stay_to": "2026-01-05"},
++        {"note": "added later"},
++        {"signature": OTHER_SIGNATURE},
++    ],
++)
++def test_server_refuses_changes_to_a_filed_record(client, seeded, key, change):
++    guest_id = seeded[key]
++    before = dict(_guest(guest_id))
++    form = {**_form_from_page(before), **change}
++    response = client.post(f"/guests/{guest_id}", data=form, follow_redirects=False)
++    assert response.status_code == 303
++    assert "err=" in response.headers["location"]
++    after = dict(_guest(guest_id))
++    for column in ("surname", "doc_number", "birth_date", "res_city", "stay_to", "note",
++                   "signature_png", "signed_at", "submit_state", "updated_at"):
++        assert after[column] == before[column], column
++    assert db.query_one(
++        "SELECT 1 AS x FROM audit WHERE action = 'guest_update_refused_filed' AND detail = ?",
++        (f"id={guest_id} by=host",),
++    )
++
++
++def test_filed_record_unchanged_post_saves_only_the_unreported_field(client, seeded):
++    guest_id = seeded["filed"]
++    before = dict(_guest(guest_id))
++    form = {**_form_from_page(before), "doc_type": "op"}
++    response = client.post(f"/guests/{guest_id}", data=form, follow_redirects=False)
++    assert response.status_code == 303
++    assert "msg=" in response.headers["location"]
++    after = dict(_guest(guest_id))
++    assert after["doc_type"] == "op"
++    for column in ("surname", "doc_number", "signature_png", "signed_at", "submit_state",
++                   "submission_id", "identity_verified_at"):
++        assert after[column] == before[column], column
++
++
++def test_disabled_form_post_saves_the_document_type(client, seeded):
++    """The locked form posts no reported field at all; that is not a change."""
++    guest_id = seeded["filed"]
++    before = dict(_guest(guest_id))
++    response = client.post(
++        f"/guests/{guest_id}", data={"doc_type": "op"}, follow_redirects=False
++    )
++    assert "msg=" in response.headers["location"]
++    after = dict(_guest(guest_id))
++    assert after["doc_type"] == "op"
++    assert after["surname"] == before["surname"]
++    assert after["submit_state"] == before["submit_state"]
++
++
++def test_pending_guest_can_still_be_corrected(client, seeded):
++    guest_id = seeded["pending"]
++    form = {**_form_from_page(dict(_guest(guest_id))), "surname": "CORRECTED"}
++    response = client.post(f"/guests/{guest_id}", data=form, follow_redirects=False)
++    assert "msg=" in response.headers["location"]
++    assert _guest(guest_id)["surname"] == "CORRECTED"
++
++
++# --- report and stay pages --------------------------------------------------
++
++def test_report_offers_the_doručenka_download(client, seeded):
++    page = client.get(f"/submissions/{seeded['with_pdf']}?lang=en").text
++    assert f'href="/submissions/{seeded["with_pdf"]}/receipt.pdf">Download Doručenka (PDF)</a>' in page
++    assert "data-receipt-missing" not in page
++    assert "stay-command-panel outcome-done" in page
++    cs = client.get(f"/submissions/{seeded['with_pdf']}?lang=cs").text
++    assert "Stáhnout doručenku (PDF)" in cs
++
++
++def test_report_without_a_pdf_says_so(client, seeded):
++    page = client.get(f"/submissions/{seeded['without_pdf']}?lang=en").text
++    assert "/receipt.pdf" not in page
++    assert host_i18n.STRINGS["en"]["reports.detail.receipt_missing"] in page
++    assert "B94208F8-DA48-4F07-BBF9-95CB757B41F7" in page
++    cs = client.get(f"/submissions/{seeded['without_pdf']}?lang=cs").text
++    assert host_i18n.STRINGS["cs"]["reports.detail.receipt_missing"] in cs
++
++
++def test_outcome_accent_follows_the_outcome(client, seeded):
++    page = client.get(f"/submissions/{seeded['rejected']}?lang=en").text
++    assert "stay-command-panel outcome-critical" in page
++    assert "data-receipt-missing" not in page
++
++
++def test_stamp_sits_beside_an_icon_copy_button(client, seeded):
++    page = client.get(f"/submissions/{seeded['with_pdf']}?lang=en").text
++    assert 'class="metric-value small-value report-stamp-value"' in page
++    assert 'data-copy="report-stamp"' in page
++
++
++def test_report_texts_have_no_em_dash():
++    for lang in ("en", "cs"):
++        strings = host_i18n.STRINGS[lang]
++        for key in ("reports.detail.note_ok", "reports.detail.note_failed",
++                    "reports.detail.receipt_elsewhere", "reports.detail.receipt_none",
++                    "reports.detail.receipt_missing", "guest.admin.banner.sent_help"):
++            assert "—" not in strings[key], (lang, key)
++
++
++def test_stay_page_offers_the_doručenka(client, seeded):
++    # Everyone on the stay filed: the next step is the proof.
++    db.execute("DELETE FROM guest WHERE id = ?", (seeded["pending"],))
++    db.update("reservation", seeded["reservation"], {"declared_guests": 1})
++    page = client.get(f"/reservations/{seeded['reservation']}?lang=en").text
++    assert f'href="/submissions/{seeded["with_pdf"]}/receipt.pdf">Download Doručenka (PDF)</a>' in page
++
++
++# --- house book -------------------------------------------------------------
++
++def test_housebook_truncates_the_property_with_a_tooltip(client, seeded):
++    page = client.get("/housebook?lang=en").text
++    assert 'class="table-cards housebook-table"' in page
++    assert 'class="panel tight scroll-x housebook-scroll"' in page
++    assert f'class="property-identity truncate" title="{LONG_PROPERTY}"' in page
++    assert 'class="small col-reported"' in page
+-- 
+2.34.1
+

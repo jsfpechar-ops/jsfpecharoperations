@@ -1,0 +1,614 @@
+From 6a14e6c15db674009742afde5d23e9f9bc027f5a Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:05:18 +0200
+Subject: [PATCH 27/34] WP11: Admin funnel page and CSV export
+
+Integration: import-list conflict in App/app/routes/admin_accounts.py with WP04 (access); kept both access and admin_funnel.
+---
+ App/app/admin_funnel.py                 | 189 ++++++++++++++++++++++++
+ App/app/host_i18n.py                    |  53 +++++++
+ App/app/routes/admin_accounts.py        |  28 +++-
+ App/app/templates/_host_navigation.html |   2 +-
+ App/app/templates/admin_funnel.html     |  56 +++++++
+ App/app/templates/base.html             |   1 +
+ App/tests/test_admin_funnel.py          | 189 ++++++++++++++++++++++++
+ 7 files changed, 516 insertions(+), 2 deletions(-)
+ create mode 100644 App/app/admin_funnel.py
+ create mode 100644 App/app/templates/admin_funnel.html
+ create mode 100644 App/tests/test_admin_funnel.py
+
+diff --git a/App/app/admin_funnel.py b/App/app/admin_funnel.py
+new file mode 100644
+index 0000000..2f0628f
+--- /dev/null
++++ b/App/app/admin_funnel.py
+@@ -0,0 +1,189 @@
++"""Host funnel for the admin, read from rows that already exist (WP11, review 5.2).
++
++No new tracking: every stage is the first row of some table the product writes
++anyway. One aggregate query returns one row per host account; nothing here
++touches a guest table beyond counting completed stays and filings, so the page
++and the CSV carry host account data only (e-mail-like username and name are
++fine here, guest data is not).
++
++Hook for WP20 (self sign-up): ``SIGNUP_STAGES`` is empty today. When sign-up
++exists, put ``("signed_up", ...)`` and ``("email_verified", ...)`` there, select
++their columns in ``_SQL``, and fill ``SIGNUP_SOURCE_COLUMNS`` with the
++"UTM or Google Ads click present (yes/no)" column. Every consumer (the page,
++the stage counts and the CSV) reads ``stages()`` and ``csv_columns()``, so
++nothing else has to change.
++"""
++from __future__ import annotations
++
++import csv
++import io
++from datetime import datetime, timezone
++from typing import Any, Dict, Iterator, List, Optional, Tuple
++from zoneinfo import ZoneInfo
++
++from . import config, db
++from .csv_safety import csv_safe
++
++# Safety cap; far above the host count this page is meant for.
++MAX_ROWS = 5000
++
++# WP20 hook: stages before "created", as (key, column in the query row).
++SIGNUP_STAGES: Tuple[Tuple[str, str], ...] = ()
++# WP20 hook: extra per-account columns for the CSV, as (key, column).
++SIGNUP_SOURCE_COLUMNS: Tuple[Tuple[str, str], ...] = ()
++
++# The funnel order. A host's stage is the furthest one with a date.
++CORE_STAGES: Tuple[Tuple[str, str], ...] = (
++    ("created", "created_at"),
++    ("first_login", "first_login_at"),
++    ("legal_accepted", "legal_accepted_at"),
++    ("first_entity", "first_entity_at"),
++    ("first_property", "first_property_at"),
++    ("first_calendar", "first_calendar_at"),
++    ("first_guest", "first_guest_at"),
++    ("first_filing", "first_filing_at"),
++    ("retained", "retained_at"),
++)
++
++FILED_STATES = ("ok", "ok_duplicate", "partial")
++
++
++def stages() -> Tuple[Tuple[str, str], ...]:
++    return SIGNUP_STAGES + CORE_STAGES
++
++
++def _month_starts(now: Optional[datetime] = None) -> Tuple[str, str, str, str]:
++    """UTC ISO bounds of the previous and current local calendar month.
++
++    Returns (previous start, current start, previous label, current label).
++    """
++    zone = ZoneInfo(config.TIMEZONE)
++    local = (now or datetime.now(timezone.utc)).astimezone(zone)
++    current = local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
++    previous = (
++        current.replace(year=current.year - 1, month=12)
++        if current.month == 1
++        else current.replace(month=current.month - 1)
++    )
++
++    def utc(moment: datetime) -> str:
++        return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat()
++
++    return utc(previous), utc(current), previous.strftime("%Y-%m"), current.strftime("%Y-%m")
++
++
++_FILED = ", ".join("?" for _ in FILED_STATES)
++
++# Correlated subqueries keyed on owner_user_id use the existing owner indexes
++# (idx_audit_owner, idx_entity_owner, idx_apartment_owner); the per-host
++# filing numbers come from one grouped join over submission.
++_SQL = (
++    "SELECT u.id, u.username, u.display_name, u.active, u.created_at, u.last_login_at, "
++    "COALESCE((SELECT MIN(au.at) FROM audit au WHERE au.owner_user_id = u.id "
++    "AND au.action IN ('login', 'two_factor_login')), u.last_login_at) AS first_login_at, "
++    "(SELECT MIN(la.accepted_at) FROM legal_acceptance la "
++    "WHERE la.user_account_id = u.id) AS legal_accepted_at, "
++    "(SELECT MIN(le.created_at) FROM legal_entity le "
++    "WHERE le.owner_user_id = u.id) AS first_entity_at, "
++    "(SELECT MIN(a.created_at) FROM apartment a "
++    "WHERE a.owner_user_id = u.id) AS first_property_at, "
++    "(SELECT MIN(f.created_at) FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
++    "WHERE a.owner_user_id = u.id AND f.last_status = 'ok') AS first_calendar_at, "
++    "(SELECT MIN(r.registration_completed_at) FROM reservation r "
++    "JOIN apartment a ON a.id = r.apartment_id "
++    "WHERE a.owner_user_id = u.id AND r.registration_completed_at IS NOT NULL) AS first_guest_at, "
++    "fs.first_filing_at, fs.last_filing_at, "
++    "COALESCE(fs.filings_previous, 0) AS filings_previous, "
++    "COALESCE(fs.filings_current, 0) AS filings_current "
++    "FROM user_account u "
++    "LEFT JOIN ("
++    "SELECT a.owner_user_id, "
++    "MIN(COALESCE(s.finished_at, s.created_at)) AS first_filing_at, "
++    "MAX(COALESCE(s.finished_at, s.created_at)) AS last_filing_at, "
++    "SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? THEN 1 ELSE 0 END) AS filings_previous, "
++    "SUM(CASE WHEN s.created_at >= ? THEN 1 ELSE 0 END) AS filings_current "
++    "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
++    f"WHERE s.state IN ({_FILED}) GROUP BY a.owner_user_id"
++    ") fs ON fs.owner_user_id = u.id "
++    "WHERE u.role = 'host' ORDER BY u.created_at, u.id LIMIT ?"
++)
++
++
++def rows(now: Optional[datetime] = None) -> Dict[str, Any]:
++    """One dict per host account, the stage counts, and the month labels."""
++    previous_start, current_start, previous_label, current_label = _month_starts(now)
++    raw = db.query(
++        _SQL,
++        (previous_start, current_start, current_start, *FILED_STATES, MAX_ROWS),
++    )
++    order = stages()
++    items: List[Dict[str, Any]] = []
++    for row in raw:
++        item = dict(row)
++        # Retained: filed in both of the last two calendar months.
++        item["retained_at"] = (
++            item["last_filing_at"]
++            if item["filings_previous"] and item["filings_current"]
++            else None
++        )
++        stage, stage_at = "", None
++        for key, column in order:
++            if item.get(column):
++                stage, stage_at = key, item[column]
++        item["stage"] = stage
++        item["stage_at"] = stage_at
++        items.append(item)
++    counts = {key: 0 for key, _column in order}
++    for item in items:
++        for key, column in order:
++            if item.get(column):
++                counts[key] += 1
++    return {
++        "rows": items,
++        "counts": counts,
++        "stages": [key for key, _column in order],
++        "stage_columns": list(order),
++        "previous_month": previous_label,
++        "current_month": current_label,
++    }
++
++
++def csv_columns(previous_month: str, current_month: str) -> List[Tuple[str, str]]:
++    """(header, row key) pairs, the same columns as the page table."""
++    columns: List[Tuple[str, str]] = [
++        ("account_id", "id"),
++        ("username", "username"),
++        ("name", "display_name"),
++        ("active", "active"),
++    ]
++    columns += [(key, column) for key, column in SIGNUP_SOURCE_COLUMNS]
++    columns += [(key, column) for key, column in stages()]
++    columns += [
++        (f"filings_{previous_month}", "filings_previous"),
++        (f"filings_{current_month}", "filings_current"),
++        ("last_login", "last_login_at"),
++        ("last_filing", "last_filing_at"),
++        ("stage", "stage"),
++        ("stage_at", "stage_at"),
++    ]
++    return columns
++
++
++def iter_csv(data: Dict[str, Any]) -> Iterator[str]:
++    columns = csv_columns(data["previous_month"], data["current_month"])
++    buffer = io.StringIO()
++    writer = csv.writer(buffer)
++
++    def flush() -> str:
++        value = buffer.getvalue()
++        buffer.seek(0)
++        buffer.truncate(0)
++        return value
++
++    writer.writerow([header for header, _key in columns])
++    yield flush()
++    for item in data["rows"]:
++        writer.writerow(
++            [csv_safe("" if item.get(key) is None else item.get(key)) for _header, key in columns]
++        )
++        yield flush()
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index b7c51b6..7b42ec1 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -4449,6 +4449,59 @@ for _lang, _strings in _ADMIN_OPERATIONS_STRINGS.items():
+     STRINGS[_lang].update(_strings)
+ 
+ 
++# WP11: the admin funnel page. Platform administrators only.
++_ADMIN_FUNNEL_STRINGS = {
++    "en": {
++        "funnel.title": "Funnel",
++        "funnel.lede": "How far each host account has got, read from the records the app already keeps. Host account data only; no guest data.",
++        "funnel.export_csv": "Export CSV",
++        "funnel.counts_title": "Accounts per stage",
++        "funnel.counts_help": "An account is counted at every stage it has reached. First login falls back to the last login once old audit rows have expired.",
++        "funnel.empty": "No host accounts yet.",
++        "funnel.col.account": "Account",
++        "funnel.col.filings_month": "Filings %(month)s",
++        "funnel.col.last_login": "Last login",
++        "funnel.col.last_filing": "Last filing",
++        "funnel.col.stage": "Stage reached",
++        "funnel.stage.": "None",
++        "funnel.stage.created": "Created",
++        "funnel.stage.first_login": "First login",
++        "funnel.stage.legal_accepted": "Terms accepted",
++        "funnel.stage.first_entity": "First business",
++        "funnel.stage.first_property": "First property",
++        "funnel.stage.first_calendar": "Calendar connected",
++        "funnel.stage.first_guest": "First guest done",
++        "funnel.stage.first_filing": "First filing",
++        "funnel.stage.retained": "Retained",
++    },
++    "cs": {
++        "funnel.title": "Trychtýř",
++        "funnel.lede": "Jak daleko se který účet hostitele dostal, podle záznamů, které aplikace už vede. Jen údaje o účtech hostitelů, žádné údaje hostů.",
++        "funnel.export_csv": "Export CSV",
++        "funnel.counts_title": "Účty podle fáze",
++        "funnel.counts_help": "Účet se započítá do každé fáze, které dosáhl. Po vypršení starých auditních záznamů se jako první přihlášení použije poslední přihlášení.",
++        "funnel.empty": "Zatím žádné účty hostitelů.",
++        "funnel.col.account": "Účet",
++        "funnel.col.filings_month": "Hlášení %(month)s",
++        "funnel.col.last_login": "Poslední přihlášení",
++        "funnel.col.last_filing": "Poslední hlášení",
++        "funnel.col.stage": "Dosažená fáze",
++        "funnel.stage.": "Žádná",
++        "funnel.stage.created": "Založen",
++        "funnel.stage.first_login": "První přihlášení",
++        "funnel.stage.legal_accepted": "Podmínky přijaty",
++        "funnel.stage.first_entity": "První subjekt",
++        "funnel.stage.first_property": "První ubytování",
++        "funnel.stage.first_calendar": "Kalendář připojen",
++        "funnel.stage.first_guest": "První host vyplnil",
++        "funnel.stage.first_filing": "První hlášení",
++        "funnel.stage.retained": "Aktivně používá",
++    },
++}
++for _lang, _strings in _ADMIN_FUNNEL_STRINGS.items():
++    STRINGS[_lang].update(_strings)
++
++
+ def normalise_language(value: str | None) -> str:
+     value = (value or "").lower()[:2]
+     return value if value in LANGUAGES else DEFAULT_LANGUAGE
+diff --git a/App/app/routes/admin_accounts.py b/App/app/routes/admin_accounts.py
+index a463ccd..7706df9 100644
+--- a/App/app/routes/admin_accounts.py
++++ b/App/app/routes/admin_accounts.py
+@@ -9,12 +9,13 @@ from datetime import datetime, timedelta, timezone
+ import pyotp
+ import qrcode
+ from fastapi import APIRouter, Request
+-from fastapi.responses import FileResponse, RedirectResponse, Response
++from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
+ from starlette.background import BackgroundTask
+ 
+ from .. import (
+     acceptance,
+     access,
++    admin_funnel,
+     admin_ops,
+     auth,
+     config,
+@@ -642,6 +643,31 @@ def operations_admin(request: Request):
+     return render(request, "admin_operations.html", {"ops": admin_ops.overview()})
+ 
+ 
++@router.get("/admin/funnel")
++def funnel_admin(request: Request):
++    """One row per host account: how far each got, from existing rows (WP11)."""
++    account, guard = _require_admin(request)
++    if guard:
++        return guard
++    return render(request, "admin_funnel.html", {"funnel": admin_funnel.rows()})
++
++
++@router.get("/admin/funnel.csv")
++def funnel_admin_csv(request: Request):
++    """The funnel table as CSV, for pasting into a CRM. Host accounts only."""
++    account, guard = _require_admin(request)
++    if guard:
++        return guard
++    data = admin_funnel.rows()
++    db.audit("export_funnel_csv", f"rows={len(data['rows'])}", actor=account["username"])
++    stamp = datetime.now().strftime("%Y%m%d")
++    return StreamingResponse(
++        admin_funnel.iter_csv(data),
++        media_type="text/csv; charset=utf-8",
++        headers={"Content-Disposition": f'attachment; filename="funnel-{stamp}.csv"'},
++    )
++
++
+ @router.post("/admin/incidents")
+ async def incident_create(request: Request):
+     account, guard = _require_admin(request)
+diff --git a/App/app/templates/_host_navigation.html b/App/app/templates/_host_navigation.html
+index e4c9b85..339ea27 100644
+--- a/App/app/templates/_host_navigation.html
++++ b/App/app/templates/_host_navigation.html
+@@ -6,7 +6,7 @@
+   {% set host_links = [('/apartments', 'nav.properties', nav == 'apartments'), ('/entities', 'host.business', nav == 'entities')] %}
+ {% elif nav == 'invoices' %}
+   {% set host_links = [('/invoices', 'nav.invoices', request.url.path != '/invoices/settings'), ('/invoices/settings', 'host.invoice_settings', request.url.path == '/invoices/settings')] %}
+-{% elif nav in ('settings', 'privacy_requests', 'users', 'incidents', 'operations') %}
++{% elif nav in ('settings', 'privacy_requests', 'users', 'incidents', 'operations', 'funnel') %}
+   {% set host_links = [('/settings', 'nav.settings', nav == 'settings' and request.url.path == '/settings'), ('/settings/archived', 'settings.nav.archive', request.url.path == '/settings/archived'), ('/privacy-requests', 'nav.privacy_requests', nav == 'privacy_requests')] %}
+ {% endif %}
+ {% if host_links %}
+diff --git a/App/app/templates/admin_funnel.html b/App/app/templates/admin_funnel.html
+new file mode 100644
+index 0000000..0d3566d
+--- /dev/null
++++ b/App/app/templates/admin_funnel.html
+@@ -0,0 +1,56 @@
++{% extends "base.html" %}
++{% set nav = 'funnel' %}
++{% block title %}{{ t('funnel.title') }}{% endblock %}
++{% block content %}
++{% from "_components.html" import page_header with context %}
++{% macro day(value) -%}{{ value[:10] if value else '' }}{%- endmacro %}
++{{ page_header(
++  t('funnel.title'),
++  t('funnel.lede'),
++  actions='<a class="btn" href="/admin/funnel.csv">' ~ t('funnel.export_csv') ~ '</a>'
++) }}
++
++<section class="panel" id="funnel-counts">
++  <h2 style="margin-top:0">{{ t('funnel.counts_title') }}</h2>
++  <ol class="funnel-counts">
++    {% for stage in funnel.stages %}
++    <li><span class="muted">{{ t('funnel.stage.' ~ stage) }}</span> <strong data-stage="{{ stage }}">{{ funnel.counts[stage] }}</strong></li>
++    {% endfor %}
++  </ol>
++  <p class="small muted">{{ t('funnel.counts_help') }}</p>
++</section>
++
++<section class="panel tight scroll-x" id="funnel-table">
++  {% if funnel.rows %}
++  <table class="table-cards">
++    <thead><tr>
++      <th>{{ t('funnel.col.account') }}</th>
++      {% for stage in funnel.stages %}<th>{{ t('funnel.stage.' ~ stage) }}</th>{% endfor %}
++      <th>{{ t('funnel.col.filings_month', month=funnel.previous_month) }}</th>
++      <th>{{ t('funnel.col.filings_month', month=funnel.current_month) }}</th>
++      <th>{{ t('funnel.col.last_login') }}</th>
++      <th>{{ t('funnel.col.last_filing') }}</th>
++      <th>{{ t('funnel.col.stage') }}</th>
++    </tr></thead>
++    <tbody>
++    {% for row in funnel.rows %}
++      <tr data-account="{{ row.id }}">
++        <td data-label="{{ t('funnel.col.account') }}">
++          <a href="/admin/users#user-{{ row.id }}"><strong>{{ row.display_name or row.username }}</strong></a>
++          <div class="small muted mono">{{ row.username }}{% if not row.active %} &middot; {{ t('users.status.disabled') }}{% endif %}</div>
++        </td>
++        {% for stage, column in funnel.stage_columns %}
++        <td data-label="{{ t('funnel.stage.' ~ stage) }}">{{ day(row[column]) }}</td>
++        {% endfor %}
++        <td data-label="{{ t('funnel.col.filings_month', month=funnel.previous_month) }}">{{ row.filings_previous }}</td>
++        <td data-label="{{ t('funnel.col.filings_month', month=funnel.current_month) }}">{{ row.filings_current }}</td>
++        <td data-label="{{ t('funnel.col.last_login') }}">{{ day(row.last_login_at) }}</td>
++        <td data-label="{{ t('funnel.col.last_filing') }}">{{ day(row.last_filing_at) }}</td>
++        <td data-label="{{ t('funnel.col.stage') }}" data-stage="{{ row.stage }}">{{ t('funnel.stage.' ~ row.stage) }} <span class="small muted">{{ day(row.stage_at) }}</span></td>
++      </tr>
++    {% endfor %}
++    </tbody>
++  </table>
++  {% else %}<p class="muted">{{ t('funnel.empty') }}</p>{% endif %}
++</section>
++{% endblock %}
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index 447dedc..75eea0d 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -85,6 +85,7 @@
+         <a href="/admin/users">{{ t('nav.users') }}</a>
+         <a href="/admin/incidents">{{ t('users.incidents_link') }}</a>
+         <a href="/admin/operations">{{ t('ops.title') }}</a>
++        <a href="/admin/funnel">{{ t('funnel.title') }}</a>
+         {% endif %}
+         <div class="host-menu-rule"></div>
+         <form method="post" action="/language" class="lang-switch compact">
+diff --git a/App/tests/test_admin_funnel.py b/App/tests/test_admin_funnel.py
+new file mode 100644
+index 0000000..07e4422
+--- /dev/null
++++ b/App/tests/test_admin_funnel.py
+@@ -0,0 +1,189 @@
++"""WP11: the admin funnel is computed from existing rows, admin only, and the
++CSV export carries the same rows as the page."""
++from __future__ import annotations
++
++import csv
++import io
++from datetime import datetime, timedelta, timezone
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import admin_funnel, auth, db
++from app.main import app
++
++PASSWORD = "Secure-Password-123"
++PREFIX = "wp11-funnel-"
++NOW = datetime(2026, 10, 15, 12, 0, tzinfo=timezone.utc)
++
++
++def _iso(moment: datetime) -> str:
++    return moment.replace(microsecond=0).isoformat()
++
++
++def _cleanup() -> None:
++    for row in db.query("SELECT id FROM user_account WHERE username LIKE ?", (PREFIX + "%",)):
++        uid = row["id"]
++        apartments = [a["id"] for a in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (uid,))]
++        for apartment_id in apartments:
++            db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment_id,))
++            db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
++            db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
++            db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
++        db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (uid,))
++        db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (uid,))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (uid,))
++        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (uid,))
++        db.execute("DELETE FROM user_account WHERE id = ?", (uid,))
++
++
++@pytest.fixture(autouse=True)
++def _database():
++    db.init_db()
++    _cleanup()
++    yield
++    _cleanup()
++
++
++def _account(name: str, role: str = "host") -> int:
++    return auth.create_account(
++        PREFIX + name, PASSWORD, name.title(), role=role, must_change_password=False
++    )
++
++
++def _login(name: str) -> TestClient:
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en",
++        data={"username": PREFIX + name, "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303, response.text
++    return client
++
++
++def _seed_host_at(level: int) -> int:
++    """A host that has reached the first ``level`` + 1 core stages."""
++    uid = _account(f"level{level}")
++    at = _iso(NOW - timedelta(days=60))
++    if level >= 1:
++        db.insert("audit", {"at": at, "actor": "x", "action": "login", "owner_user_id": uid})
++    if level >= 2:
++        db.insert(
++            "legal_acceptance",
++            {"user_account_id": uid, "document": "terms", "version": "1", "accepted_at": at, "method": "clickwrap"},
++        )
++    if level >= 3:
++        db.insert("legal_entity", {"name": "Biz", "owner_user_id": uid, "created_at": at})
++    apartment_id = None
++    if level >= 4:
++        apartment_id = db.insert(
++            "apartment", {"internal_name": f"Flat {level}", "owner_user_id": uid, "created_at": at}
++        )
++        # A broken calendar never counts as connected.
++        db.insert(
++            "ical_feed",
++            {"apartment_id": apartment_id, "url": "https://example.test/a.ics", "last_status": "error", "created_at": at},
++        )
++    if level >= 5:
++        db.insert(
++            "ical_feed",
++            {"apartment_id": apartment_id, "url": "https://example.test/b.ics", "last_status": "ok", "created_at": at},
++        )
++    if level >= 6:
++        db.insert(
++            "reservation",
++            {
++                "apartment_id": apartment_id, "uid": f"{PREFIX}{level}", "date_from": "2026-08-01",
++                "date_to": "2026-08-03", "registration_completed_at": at,
++                "created_at": at, "updated_at": at,
++            },
++        )
++        # Failed filings never count.
++        db.insert("submission", {"apartment_id": apartment_id, "created_at": at, "state": "error"})
++    if level >= 7:
++        db.insert(
++            "submission",
++            {"apartment_id": apartment_id, "created_at": at, "finished_at": at, "state": "ok"},
++        )
++    if level >= 8:
++        for moment in (datetime(2026, 9, 20, tzinfo=timezone.utc), datetime(2026, 10, 2, tzinfo=timezone.utc)):
++            db.insert(
++                "submission",
++                {"apartment_id": apartment_id, "created_at": _iso(moment), "finished_at": _iso(moment), "state": "partial"},
++            )
++    return uid
++
++
++def _mine(data):
++    return {row["username"]: row for row in data["rows"] if row["username"].startswith(PREFIX)}
++
++
++def test_each_seeded_host_lands_on_its_stage():
++    expected = [key for key, _column in admin_funnel.CORE_STAGES]
++    ids = {level: _seed_host_at(level) for level in range(len(expected))}
++    data = admin_funnel.rows(now=NOW)
++    mine = _mine(data)
++    assert data["previous_month"] == "2026-09" and data["current_month"] == "2026-10"
++    for level, uid in ids.items():
++        row = mine[f"{PREFIX}level{level}"]
++        assert row["id"] == uid
++        assert row["stage"] == expected[level], (level, row["stage"])
++        assert row["stage_at"]
++    retained = mine[f"{PREFIX}level8"]
++    assert (retained["filings_previous"], retained["filings_current"]) == (1, 1)
++    assert retained["last_filing_at"].startswith("2026-10-02")
++    assert mine[f"{PREFIX}level7"]["filings_current"] == 0
++    assert mine[f"{PREFIX}level7"]["retained_at"] is None
++    # The error-state calendar and the failed filing were not counted.
++    assert mine[f"{PREFIX}level4"]["first_calendar_at"] is None
++    assert mine[f"{PREFIX}level6"]["first_filing_at"] is None
++    # Stage counts include every stage reached; this test's hosts alone give 9..1.
++    for index, key in enumerate(expected):
++        assert data["counts"][key] >= len(expected) - index
++
++
++def test_admins_are_not_in_the_funnel():
++    _account("boss", role="admin")
++    assert f"{PREFIX}boss" not in _mine(admin_funnel.rows(now=NOW))
++
++
++def test_host_cannot_open_the_funnel_or_the_csv():
++    _account("plainhost")
++    client = _login("plainhost")
++    assert client.get("/admin/funnel", follow_redirects=False).status_code == 403
++    assert client.get("/admin/funnel.csv", follow_redirects=False).status_code == 403
++
++
++def test_csv_has_the_same_rows_as_the_page():
++    for level in (0, 4, 8):
++        _seed_host_at(level)
++    _account("admin", role="admin")
++    client = _login("admin")
++    page = client.get("/admin/funnel?lang=en")
++    assert page.status_code == 200
++    assert "funnel.stage." not in page.text and "funnel.col." not in page.text
++    exported = client.get("/admin/funnel.csv")
++    assert exported.status_code == 200
++    assert exported.headers["content-type"].startswith("text/csv")
++    reader = list(csv.DictReader(io.StringIO(exported.text)))
++    data = admin_funnel.rows()
++    assert [row["account_id"] for row in reader] == [str(row["id"]) for row in data["rows"]]
++    assert [row["stage"] for row in reader] == [row["stage"] for row in data["rows"]]
++    for row in data["rows"]:
++        assert f'data-account="{row["id"]}"' in page.text
++    by_name = {row["username"]: row for row in reader}
++    assert by_name[f"{PREFIX}level4"]["stage"] == "first_property"
++    assert by_name[f"{PREFIX}level8"]["stage"] == "retained"
++    header = list(reader[0].keys())
++    assert header[:4] == ["account_id", "username", "name", "active"]
++    assert "created" in header and "first_filing" in header
++    czech = client.get("/admin/funnel?lang=cs").text
++    assert "Účty podle fáze" in czech
++
++
++def test_wp20_hook_adds_stages_before_created(monkeypatch):
++    monkeypatch.setattr(admin_funnel, "SIGNUP_STAGES", (("signed_up", "created_at"),))
++    assert [key for key, _c in admin_funnel.stages()][:2] == ["signed_up", "created"]
++    columns = [header for header, _key in admin_funnel.csv_columns("2026-09", "2026-10")]
++    assert columns.index("signed_up") < columns.index("created")
+-- 
+2.34.1
+

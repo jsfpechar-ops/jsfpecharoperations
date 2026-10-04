@@ -1,0 +1,445 @@
+From c4984e724e2aaea27eae7a0854ea067e3e1c32b9 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 11:56:54 +0200
+Subject: [PATCH 05/34] WP32: Size the containers for the 8 GB server
+
+Production moved to Lightsail 8 GB RAM, 2 vCPUs, 160 GB SSD.
+
+- Web workers: the Dockerfile CMD reads UBYHOST_WEB_WORKERS (default 2)
+  instead of the hard-coded --workers 2. docker-entrypoint.sh and
+  preflight.sh refuse anything but a whole number from 1 to 16.
+  .env.example sets 4 for the 8 GB / 2 vCPU server.
+- mem_limit per container from .env with compose defaults: web
+  ${UBYHOST_WEB_MEM:-2g}, worker ${UBYHOST_WORKER_MEM:-1g}, litestream
+  ${UBYHOST_LITESTREAM_MEM:-256m}, caddy ${UBYHOST_CADDY_MEM:-256m} (Caddy
+  had no limit before). The staging example sets the old 2 GB values.
+- Local snapshots: documented UBYHOST_BACKUP_RETENTION_DAYS=7 once
+  Litestream replicates. The code default stays 30.
+- docs/LIGHTSAIL.md: a sizing table for the server and a note that
+  mem_limit does not affect `docker compose build` speed. README and
+  ENVIRONMENT.md updated.
+- SQLite: no PRAGMA changes (WP14 keeps connections per thread).
+
+Test: tests/test_wp32_container_sizing.py parses the compose file as YAML
+(docker compose config cannot run here), checks the variables and their
+defaults, the Dockerfile CMD, the entrypoint's worker-count check and the
+docs.
+---
+ App/tests/test_wp32_container_sizing.py | 128 ++++++++++++++++++++++++
+ Dockerfile                              |   9 +-
+ deploy/lightsail/.env.example           |  17 +++-
+ deploy/lightsail/README.md              |   7 ++
+ deploy/lightsail/docker-compose.yml     |  17 ++--
+ deploy/lightsail/scripts/preflight.sh   |  15 ++-
+ docker-entrypoint.sh                    |  11 ++
+ docs/ENVIRONMENT.md                     |   4 +-
+ docs/LIGHTSAIL.md                       |  31 +++++-
+ 9 files changed, 222 insertions(+), 17 deletions(-)
+ create mode 100644 App/tests/test_wp32_container_sizing.py
+
+diff --git a/App/tests/test_wp32_container_sizing.py b/App/tests/test_wp32_container_sizing.py
+new file mode 100644
+index 0000000..502747d
+--- /dev/null
++++ b/App/tests/test_wp32_container_sizing.py
+@@ -0,0 +1,128 @@
++"""WP32: container sizing for the 8 GB / 2 vCPU Lightsail server.
++
++`docker compose config` cannot run in CI, so the compose file is parsed as YAML
++and the variable substitutions are checked against the documented defaults.
++"""
++
++from __future__ import annotations
++
++import os
++import re
++import subprocess
++from pathlib import Path
++
++import pytest
++
++yaml = pytest.importorskip("yaml")
++
++REPO_ROOT = Path(__file__).resolve().parents[2]
++COMPOSE = REPO_ROOT / "deploy" / "lightsail" / "docker-compose.yml"
++DOCKERFILE = REPO_ROOT / "Dockerfile"
++ENTRYPOINT = REPO_ROOT / "docker-entrypoint.sh"
++ENV_EXAMPLE = REPO_ROOT / "deploy" / "lightsail" / ".env.example"
++LIGHTSAIL_DOC = REPO_ROOT / "docs" / "LIGHTSAIL.md"
++
++EXPECTED_MEM = {
++    "ubyhost": "${UBYHOST_WEB_MEM:-2g}",
++    "worker": "${UBYHOST_WORKER_MEM:-1g}",
++    "litestream": "${UBYHOST_LITESTREAM_MEM:-256m}",
++    "caddy": "${UBYHOST_CADDY_MEM:-256m}",
++}
++
++_SUBST = re.compile(r"\$\{([A-Z0-9_]+):-([^}]*)\}")
++
++
++def _compose() -> dict:
++    return yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))
++
++
++def _expand(value: str, env: dict[str, str]) -> str:
++    """Compose's `${VAR:-default}`: the default when VAR is unset or empty."""
++    return _SUBST.sub(lambda m: env.get(m.group(1)) or m.group(2), value)
++
++
++def test_compose_file_is_valid_yaml_with_the_expected_services():
++    services = _compose()["services"]
++    for name in ("ubyhost", "worker", "litestream", "caddy", "mock-ubyport"):
++        assert name in services
++
++
++def test_memory_limits_use_env_variables_with_the_documented_defaults():
++    services = _compose()["services"]
++    for name, expected in EXPECTED_MEM.items():
++        assert services[name]["mem_limit"] == expected, name
++
++
++def test_memory_defaults_expand_and_can_be_lowered_from_env():
++    services = _compose()["services"]
++    defaults = {n: _expand(services[n]["mem_limit"], {}) for n in EXPECTED_MEM}
++    assert defaults == {
++        "ubyhost": "2g",
++        "worker": "1g",
++        "litestream": "256m",
++        "caddy": "256m",
++    }
++    staging = {
++        "UBYHOST_WEB_MEM": "896m",
++        "UBYHOST_WORKER_MEM": "448m",
++        "UBYHOST_LITESTREAM_MEM": "128m",
++        "UBYHOST_CADDY_MEM": "128m",
++    }
++    lowered = {n: _expand(services[n]["mem_limit"], staging) for n in EXPECTED_MEM}
++    assert lowered == {
++        "ubyhost": "896m",
++        "worker": "448m",
++        "litestream": "128m",
++        "caddy": "128m",
++    }
++
++
++def test_no_hard_coded_worker_count_in_the_image():
++    text = DOCKERFILE.read_text(encoding="utf-8")
++    assert '"--workers", "2"' not in text
++    assert "UBYHOST_WEB_WORKERS=2" in text
++    cmd = [line for line in text.splitlines() if line.startswith("CMD ")]
++    assert len(cmd) == 1
++    assert '--workers \\"${UBYHOST_WEB_WORKERS:-2}\\"' in cmd[0]
++
++
++def _run_entrypoint(workers: str | None) -> subprocess.CompletedProcess:
++    env = {k: v for k, v in os.environ.items() if k != "UBYHOST_WEB_WORKERS"}
++    if workers is not None:
++        env["UBYHOST_WEB_WORKERS"] = workers
++    # Stop before env_guard: only the worker-count check is under test.
++    script = ENTRYPOINT.read_text(encoding="utf-8").split("python -c", 1)[0]
++    return subprocess.run(
++        ["sh", "-c", script + "\necho checked"],
++        env=env,
++        capture_output=True,
++        text=True,
++        timeout=10,
++    )
++
++
++@pytest.mark.parametrize("workers", [None, "1", "2", "4", "16"])
++def test_entrypoint_accepts_a_sane_worker_count(workers):
++    result = _run_entrypoint(workers)
++    assert result.returncode == 0, result.stderr
++    assert "checked" in result.stdout
++
++
++@pytest.mark.parametrize("workers", ["0", "17", "two", "4x", "-1", "04"])
++def test_entrypoint_refuses_a_bad_worker_count(workers):
++    result = _run_entrypoint(workers)
++    assert result.returncode != 0
++    assert "UBYHOST_WEB_WORKERS" in result.stderr
++
++
++def test_env_example_and_docs_describe_the_8gb_server():
++    env_example = ENV_EXAMPLE.read_text(encoding="utf-8")
++    assert "UBYHOST_WEB_WORKERS=4" in env_example
++    for var in ("UBYHOST_WEB_MEM", "UBYHOST_WORKER_MEM", "UBYHOST_LITESTREAM_MEM", "UBYHOST_CADDY_MEM"):
++        assert var in env_example
++    # The code default for local snapshots stays 30; 7 is documented.
++    assert "UBYHOST_BACKUP_RETENTION_DAYS=30" in env_example
++    doc = LIGHTSAIL_DOC.read_text(encoding="utf-8")
++    assert "## Sizing (WP32)" in doc
++    assert "docker compose build" in doc
++    assert "UBYHOST_BACKUP_RETENTION_DAYS" in doc
+diff --git a/Dockerfile b/Dockerfile
+index 7a934ed..3728b42 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -8,7 +8,8 @@ WORKDIR /app
+ ENV PYTHONDONTWRITEBYTECODE=1 \
+     PYTHONUNBUFFERED=1 \
+     UBYHOST_DATA_DIR=/data \
+-    PORT=8080
++    PORT=8080 \
++    UBYHOST_WEB_WORKERS=2
+ 
+ RUN apt-get update \
+     && apt-get install -y --no-install-recommends ca-certificates sqlite3 age \
+@@ -35,9 +36,11 @@ ENTRYPOINT ["docker-entrypoint.sh"]
+ # --no-access-log: uvicorn's own access log writes the raw request line, which
+ # includes guest permalink tokens and query strings. The app logs one PII-free
+ # line per request instead (see app/main.py, OPS-3).
+-# Two web workers (WP06). UBYHOST_ROLE defaults to web, so neither starts the
++# Web workers (WP06): UBYHOST_WEB_WORKERS, default 2 (WP32; 4 on the 8 GB /
++# 2 vCPU Lightsail server). docker-entrypoint.sh checks it is a whole number
++# from 1 to 16. UBYHOST_ROLE defaults to web, so neither starts the
+ # scheduler: the background jobs run in a separate container from this image
+ # (`python -m app.worker`, UBYHOST_ROLE=worker; see deploy/lightsail). SQLite
+ # still has one writer at a time; writers queue on its lock (timeout=30) and
+ # the start-up migrations are serialised by an flock (app/db.py startup_lock).
+-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2", "--no-access-log"]
++CMD ["sh", "-c", "exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers \"${UBYHOST_WEB_WORKERS:-2}\" --no-access-log"]
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index ef6dc15..72df4da 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -50,6 +50,9 @@ UBYHOST_SECRET_KEY=
+ # Required in production: preflight.sh refuses to deploy while it is empty.
+ UBYHOST_BACKUP_AGE_RECIPIENT=
+ # Time-based retention for local snapshots (days); the newest is always kept.
++# WP32: once Litestream replicates to S3 (status.sh shows it, the heartbeat is
++# green) set 7. Litestream plus S3 versioning is the long-term copy; 30 local
++# full copies only fill the disk.
+ UBYHOST_BACKUP_RETENTION_DAYS=30
+ # Required in production: pinged after each successful daily backup; preflight.sh refuses to deploy while it is empty.
+ UBYHOST_BACKUP_PING_URL=
+@@ -118,6 +121,18 @@ UBYHOST_ENABLE_SCHEDULER=1
+ # worker=worker); do not set it here.
+ UBYHOST_BOOTSTRAP_ADMIN=1
+ 
+-# --- Optional tuning (defaults are fine on the 2 GB Lightsail bundle) ---
++# --- Server sizing (WP32; defaults fit the 8 GB / 2 vCPU production server) ---
++# uvicorn workers in the web container. Image default 2; 4 on the 8 GB server.
++# Each worker holds its own copy of the app (about 150 to 250 MB).
++UBYHOST_WEB_WORKERS=4
++# Memory caps per container (docker-compose.yml defaults shown). Caps, not
++# reservations. A smaller staging server sets lower values, for example
++# 896m / 448m / 128m / 128m on 2 GB, with UBYHOST_WEB_WORKERS=2.
++# UBYHOST_WEB_MEM=2g
++# UBYHOST_WORKER_MEM=1g
++# UBYHOST_LITESTREAM_MEM=256m
++# UBYHOST_CADDY_MEM=256m
++
++# --- Optional tuning ---
+ # UBYHOST_ICAL_POLL_MINUTES=60
+ # UBYHOST_SUBMIT_SWEEP_MINUTES=10
+diff --git a/deploy/lightsail/README.md b/deploy/lightsail/README.md
+index 8e665e9..e164807 100644
+--- a/deploy/lightsail/README.md
++++ b/deploy/lightsail/README.md
+@@ -38,6 +38,8 @@ Before the first production backup:
+    backup **fails closed** without it, so no unencrypted copy is ever written.
+ 3. Optionally set `UBYHOST_BACKUP_RETENTION_DAYS` (default **30**). Snapshots
+    older than the window are removed on each run; the newest is always kept.
++   Once Litestream replicates to S3, set **7**: Litestream plus S3 versioning
++   is the long-term copy, and 30 local full copies only fill the disk.
+ 
+ The snapshot folder then holds a single `ubyhost-backup.tar.age`. Restore it
+ with the private identity on the host:
+@@ -278,6 +280,11 @@ UBYHOST_PUBLIC_BASE_URL=https://staging.example.com
+ LITESTREAM_S3_PATH=staging/ubyhost        # its own prefix, its own IAM user
+ UBYHOST_MAIL_BACKEND=console              # claim links appear in Settings
+ UBYHOST_ALLOW_SMALL_HOST=1                # 1 GB bundle; limits are caps, traffic is tiny
++UBYHOST_WEB_WORKERS=2                     # WP32: smaller than production
++UBYHOST_WEB_MEM=896m
++UBYHOST_WORKER_MEM=448m
++UBYHOST_LITESTREAM_MEM=128m
++UBYHOST_CADDY_MEM=128m
+ ```
+ 
+ `preflight.sh` refuses a staging `.env` whose UbyPort is neither `mock` nor
+diff --git a/deploy/lightsail/docker-compose.yml b/deploy/lightsail/docker-compose.yml
+index 47c8cf8..b285aa8 100644
+--- a/deploy/lightsail/docker-compose.yml
++++ b/deploy/lightsail/docker-compose.yml
+@@ -18,7 +18,9 @@ services:
+     environment:
+       UBYHOST_DATA_DIR: /data
+       PORT: "8080"
+-      # WP06: two uvicorn workers that only serve HTTP; jobs run in `worker`.
++      # WP06: uvicorn workers that only serve HTTP; jobs run in `worker`.
++      # WP32: the number comes from UBYHOST_WEB_WORKERS in .env (image default
++      # 2; 4 on the 8 GB / 2 vCPU server, see docs/LIGHTSAIL.md).
+       UBYHOST_ROLE: web
+     volumes:
+       - ubyhost-data:/data
+@@ -36,9 +38,11 @@ services:
+       timeout: 5s
+       retries: 3
+       start_period: 25s
+-    # 2 GB bundle (WP06): web 896m + worker 448m + litestream 128m + Caddy
+-    # leaves about 450 MB for the OS and Docker.
+-    mem_limit: 896m
++    # WP32: sized for the 8 GB / 2 vCPU production server. Web 2g + worker 1g
++    # + litestream 256m + caddy 256m leaves over 4 GB for the OS, Docker and
++    # the page cache that serves SQLite reads. Each limit is a cap, not a
++    # reservation; a smaller server (staging) sets lower values in .env.
++    mem_limit: ${UBYHOST_WEB_MEM:-2g}
+     # OPS-3: bound container logs so they cannot grow without limit. Rotated
+     # lines are gone for good; capture anything needed during an incident.
+     logging:
+@@ -80,7 +84,7 @@ services:
+       timeout: 5s
+       retries: 3
+       start_period: 30s
+-    mem_limit: 448m
++    mem_limit: ${UBYHOST_WORKER_MEM:-1g}
+     logging:
+       driver: json-file
+       options:
+@@ -117,7 +121,7 @@ services:
+     volumes:
+       - ubyhost-data:/data
+       - ./litestream.yml:/etc/litestream.yml:ro
+-    mem_limit: 128m
++    mem_limit: ${UBYHOST_LITESTREAM_MEM:-256m}
+     logging:
+       driver: json-file
+       options:
+@@ -174,6 +178,7 @@ services:
+       - ./caddy/certs:/etc/caddy/certs:ro
+       - caddy-data:/data
+       - caddy-config:/config
++    mem_limit: ${UBYHOST_CADDY_MEM:-256m}
+     # OPS-3: bound Caddy's container logs too. Caddy access logging itself stays
+     # off (see caddy/Caddyfile.cloudflare), so this only bounds lifecycle noise.
+     logging:
+diff --git a/deploy/lightsail/scripts/preflight.sh b/deploy/lightsail/scripts/preflight.sh
+index 09f7c86..4084292 100755
+--- a/deploy/lightsail/scripts/preflight.sh
++++ b/deploy/lightsail/scripts/preflight.sh
+@@ -49,7 +49,14 @@ if [ "${DEPLOYMENT}" = "staging" ]; then
+       ;;
+     *) die "UBYHOST_DEPLOYMENT=staging requires UBYHOST_UBYPORT_ENV=mock or test" ;;
+   esac
+-  case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
++  case "${UBYHOST_WEB_WORKERS:-2}" in
++  ''|*[!0-9]*|0|0*) die "UBYHOST_WEB_WORKERS must be a whole number from 1 to 16" ;;
++esac
++if [ "${UBYHOST_WEB_WORKERS:-2}" -gt 16 ]; then
++  die "UBYHOST_WEB_WORKERS must be a whole number from 1 to 16"
++fi
++
++case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
+     *production*) die "staging must replicate to its own LITESTREAM_S3_PATH, not ${LITESTREAM_S3_PATH:-ubyhost/production}" ;;
+   esac
+ elif [ "${DEPLOYMENT}" != "production" ]; then
+@@ -108,8 +115,10 @@ if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ];
+   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
+ fi
+ 
+-# WP06: web (2 workers) + scheduler worker + litestream + Caddy need the 2 GB
+-# bundle; on 1 GB their memory limits add up to more than the machine has.
++# WP06: web + scheduler worker + litestream + Caddy need at least the 2 GB
++# bundle. WP32: the compose defaults (web 2g, worker 1g, litestream 256m,
++# caddy 256m) are sized for the 8 GB production server; a smaller server sets
++# lower UBYHOST_*_MEM values in .env (see docs/LIGHTSAIL.md, Sizing).
+ mem_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+ if [ "${mem_kb:-0}" -gt 0 ] && [ "${mem_kb}" -lt 1700000 ]; then
+   if [ "${UBYHOST_ALLOW_SMALL_HOST:-0}" = "1" ]; then
+diff --git a/docker-entrypoint.sh b/docker-entrypoint.sh
+index 75bbf14..24851dc 100755
+--- a/docker-entrypoint.sh
++++ b/docker-entrypoint.sh
+@@ -6,6 +6,17 @@ if [ "${UBYHOST_DEPLOYMENT:-}" = "production" ] && [ -z "${UBYHOST_PUBLIC_BASE_U
+   echo "WARNING: UBYHOST_PUBLIC_BASE_URL is not set — guest permalinks may be wrong." >&2
+ fi
+ 
++# WP32: the web container's uvicorn worker count (Dockerfile CMD).
++case "${UBYHOST_WEB_WORKERS:-2}" in
++  ''|*[!0-9]*|0|0*)
++    echo "ERROR: UBYHOST_WEB_WORKERS must be a whole number from 1 to 16." >&2
++    exit 1 ;;
++esac
++if [ "${UBYHOST_WEB_WORKERS:-2}" -gt 16 ]; then
++  echo "ERROR: UBYHOST_WEB_WORKERS must be a whole number from 1 to 16." >&2
++  exit 1
++fi
++
+ python -c "from app.env_guard import apply; apply()"
+ 
+ exec "$@"
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index ff315f1..c64c248 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -42,6 +42,8 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
+ | --- | --- | --- |
+ | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
+ | `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
++| `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
++| `UBYHOST_WEB_MEM`, `UBYHOST_WORKER_MEM`, `UBYHOST_LITESTREAM_MEM`, `UBYHOST_CADDY_MEM` | `2g`, `1g`, `256m`, `256m` | Lightsail compose `mem_limit` per container (WP32). Read by `docker compose` from `deploy/lightsail/.env`. Staging on 2 GB: `896m`, `448m`, `128m`, `128m`. |
+ | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
+ | `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
+ | `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
+@@ -173,7 +175,7 @@ them; Render does.
+ | `UBYHOST_BACKUP_DIR` | `$UBYHOST_DATA_DIR/backups` | `App/scripts/backup_data.sh` |
+ | `UBYHOST_SECRET_KEY` | unset | `App/scripts/backup_data.sh` — written into the snapshot when there is no `data/secret_key` file, so an off-site restore can be decrypted |
+ | `UBYHOST_BACKUP_AGE_RECIPIENT` | unset | `App/scripts/backup_data.sh` — public `age1...` recipient the snapshot is encrypted to. **Required when `UBYHOST_DEPLOYMENT=production`**; the run fails closed without it |
+-| `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept |
++| `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept. Set `7` once Litestream replicates (WP32) |
+ | `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup. Required in production: `preflight.sh` refuses to deploy while it is empty. |
+ | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
+ | `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |
+diff --git a/docs/LIGHTSAIL.md b/docs/LIGHTSAIL.md
+index d923335..08efcd5 100644
+--- a/docs/LIGHTSAIL.md
++++ b/docs/LIGHTSAIL.md
+@@ -12,7 +12,8 @@ on a small Frankfurt VM.
+ |------------|------|--------------|-----|
+ | **~10 properties, busy weeks** | **Micro** | **$7/mo** | 1 GB |
+ | Growing toward 25+ properties | Small | $12/mo | 2 GB |
+-| **Not supported** | Nano | $5/mo | 512 MB — the app container has `mem_limit: 768m` |
++| **Not supported** | Nano | $5/mo | 512 MB |
++| **Production (WP32)** | 8 GB, 2 vCPUs, 160 GB SSD | | 8 GB; see [Sizing](#sizing-wp32) |
+ 
+ Use **Frankfurt (`eu-central-1`)** or your nearest EU region. Enable the **static
+ IP** (included). Do **not** buy Lightsail managed MySQL — UbyHost uses SQLite on
+@@ -248,8 +249,32 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
+ in the separate `worker` container (`UBYHOST_ROLE=worker`, `python -m
+ app.worker`); the `ubyhost` container runs two uvicorn workers with
+ `UBYHOST_ROLE=web` and never starts it. `./scripts/logs.sh worker` must show
+-`scheduler started` exactly once per deploy. The stack needs the **2 GB**
+-bundle (Small): memory limits are web 896m, worker 448m, litestream 128m.
++`scheduler started` exactly once per deploy. The stack needs at least the
++**2 GB** bundle; production runs on the 8 GB server (see **Sizing** below).
++
++## Sizing (WP32)
++
++Production: Lightsail **8 GB RAM, 2 vCPUs, 160 GB SSD**. Every value is set in
++`.env`; the compose file holds the defaults.
++
++| Setting | `.env` variable | Production (8 GB) | Staging (2 GB) |
++|---------|-----------------|-------------------|----------------|
++| Web workers (uvicorn) | `UBYHOST_WEB_WORKERS` | `4` (image default `2`) | `2` |
++| Web `mem_limit` | `UBYHOST_WEB_MEM` | `2g` (default) | `896m` |
++| Worker `mem_limit` | `UBYHOST_WORKER_MEM` | `1g` (default) | `448m` |
++| Litestream `mem_limit` | `UBYHOST_LITESTREAM_MEM` | `256m` (default) | `128m` |
++| Caddy `mem_limit` | `UBYHOST_CADDY_MEM` | `256m` (default) | `128m` |
++| Local snapshots kept | `UBYHOST_BACKUP_RETENTION_DAYS` | `7` once Litestream replicates (default `30`) | `7` |
++
++- Four workers on two vCPUs: requests mostly wait on SQLite, UbyPort or mail,
++  so two per core keeps the CPUs busy. SQLite still has one writer at a time.
++- The caps add up to 3.5 GB; the rest is for the OS, Docker and the page cache
++  that serves SQLite reads. A cap is a ceiling, not a reservation.
++- `mem_limit` applies only to running containers. It has no effect on
++  `docker compose build` speed: the build runs in BuildKit outside these
++  limits, and is bound by the CPUs, the disk and the network.
++- After changing a value: `./scripts/deploy.sh` (or `docker compose up -d`),
++  then `docker stats --no-stream` shows the new limits.
+ 
+ | Job | Interval |
+ |-----|----------|
+-- 
+2.34.1
+

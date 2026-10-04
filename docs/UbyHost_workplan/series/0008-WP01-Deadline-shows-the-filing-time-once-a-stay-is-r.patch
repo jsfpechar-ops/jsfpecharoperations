@@ -1,0 +1,627 @@
+From 9a6c78bb29f38922efbec3080e0d7adb1f6d092a Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sat, 3 Oct 2026 23:28:33 +0200
+Subject: [PATCH 08/34] WP01: Deadline shows the filing time once a stay is
+ reported
+
+Integration: bumped the app.css?v= cache key (20261002a to 20261004a) in base.html, auth_base.html and public_legal_base.html, as the notes asked, so the new deadline badge styles are not served from an old cached CSS.
+---
+ App/app/host_i18n.py                       |  11 +
+ App/app/reporting.py                       |  60 +++++
+ App/app/routes/admin.py                    |   1 -
+ App/app/static/app.css                     |   5 +
+ App/app/templates/_components.html         |  17 ++
+ App/app/templates/auth_base.html           |   2 +-
+ App/app/templates/base.html                |   2 +-
+ App/app/templates/dashboard.html           |  11 +-
+ App/app/templates/public_legal_base.html   |   2 +-
+ App/app/templates/reservation_detail.html  |   9 +-
+ App/app/templates/reservations.html        |   4 +-
+ App/app/templating.py                      |   1 +
+ App/tests/test_deadline_after_reporting.py | 285 +++++++++++++++++++++
+ 13 files changed, 394 insertions(+), 16 deletions(-)
+ create mode 100644 App/tests/test_deadline_after_reporting.py
+
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index f5cb1f2..763d9be 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -1027,6 +1027,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "deadline.overdue_days.few": "overdue by %(n)s days",
+         "deadline.hours_left": "%(n)s h left",
+         "deadline.overdue_hours": "overdue by %(n)s h",
++        # Once a stay is reported the deadline cell records the filing instead.
++        "deadline.filed_at": "Reported %(when)s",
++        "deadline.filed_late_hours": "Reported %(n)s h late",
++        "deadline.filed_late_days": "Reported %(n)s days late",
++        "deadline.filed_late_days.one": "Reported 1 day late",
++        "deadline.filed_late_days.few": "Reported %(n)s days late",
+         "env.mock_title": "Nothing is being reported to the police",
+         "env.mock_body": (
+             "This workspace is pointed at the practice server, so records marked "
+@@ -2453,6 +2459,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "deadline.overdue_days.few": "po termínu o %(n)s dny",
+         "deadline.hours_left": "zbývá %(n)s h",
+         "deadline.overdue_hours": "po termínu o %(n)s h",
++        "deadline.filed_at": "Nahlášeno %(when)s",
++        "deadline.filed_late_hours": "Nahlášeno %(n)s h po termínu",
++        "deadline.filed_late_days": "Nahlášeno %(n)s dní po termínu",
++        "deadline.filed_late_days.one": "Nahlášeno 1 den po termínu",
++        "deadline.filed_late_days.few": "Nahlášeno %(n)s dny po termínu",
+         "env.mock_title": "Policii se nic nehlásí",
+         "env.mock_body": (
+             "Tento účet je nastavený na cvičný server, takže záznamy označené jako "
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index 1191544..5d4cb1f 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -525,6 +525,61 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
+     }
+ 
+ 
++def filed_at(progress: Dict[str, Any]) -> Optional[datetime]:
++    """When the stay was filed: the latest ``submitted_at`` of its reportable guests.
++
++    Naive Czech civil time, so it compares directly with
++    ``deadlines.reporting_deadline``. None when no reportable guest carries a
++    filing time.
++    """
++    stamps = [_as_utc(guest["submitted_at"]) for guest in progress.get("reportable") or []]
++    stamps = [stamp for stamp in stamps if stamp is not None]
++    if not stamps:
++        return None
++    return deadlines.local_now(max(stamps))
++
++
++def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[str, Any]:
++    """What the deadline cell shows for a stay, in one place for every page.
++
++    A stay still to be filed counts down to the deadline. Once it is reported
++    the deadline is history, so the cell records when it was filed and, if that
++    was after the deadline, by how much. A stay with only Czech guests has no
++    deadline at all.
++
++    ``state`` is ``countdown``, ``filed_on_time``, ``filed_late`` or ``none``;
++    ``level`` is the CSS level of the badge.
++    """
++    status = progress.get("status")
++    cell: Dict[str, Any] = {
++        "state": "countdown",
++        "level": deadlines.urgency(check_in) if check_in else "future",
++        "check_in": check_in,
++        "filed_at": None,
++        "late_hours": 0,
++    }
++    if status == "not_required":
++        cell.update(state="none", level="none")
++        return cell
++    if status != "reported":
++        return cell
++    when = filed_at(progress)
++    if when is None:
++        # Reported without a filing time on record (an import, say). The status
++        # pill already says it is reported; a countdown would claim it is late.
++        cell.update(state="none", level="none")
++        return cell
++    cell["filed_at"] = when
++    due = deadlines.reporting_deadline(check_in) if check_in else None
++    if due is not None and when > due:
++        # Never "0 h late": anything past the deadline is at least an hour.
++        hours = max(1, int((when - due).total_seconds() // 3600))
++        cell.update(state="filed_late", level="neutral", late_hours=hours)
++    else:
++        cell.update(state="filed_on_time", level="done")
++    return cell
++
++
+ def dashboard_rows(
+     days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
+ ) -> List[Dict[str, Any]]:
+@@ -555,6 +610,7 @@ def dashboard_rows(
+                 continue
+         apartment = access.apartment_for_reservation(reservation, owner_user_id)
+         controls = send_controls(reservation, apartment, progress) if apartment else {}
++        cell = deadline_cell(progress, check_in)
+         out.append(
+             {
+                 "reservation": reservation,
+@@ -563,6 +619,10 @@ def dashboard_rows(
+                 "urgency": level,
+                 "check_in": check_in,
+                 "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
++                "deadline_cell": cell,
++                "deadline_state": cell["state"],
++                "filed_at": cell["filed_at"],
++                "late_hours": cell["late_hours"],
+             }
+         )
+     out.sort(
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index 99cbafa..e89493a 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -1579,7 +1579,6 @@ def reservation_detail(reservation_id: int, request: Request):
+             "guest_rows": guest_rows,
+             "check_in": check_in,
+             "deadline": deadlines.reporting_deadline(check_in) if check_in else None,
+-            "urgency_level": deadlines.urgency(check_in) if check_in else "future",
+             "submissions": submissions,
+             "return_to": _safe_return_to(request, "/reservations"),
+             "guest_link": (
+diff --git a/App/app/static/app.css b/App/app/static/app.css
+index 82794ce..341a534 100644
+--- a/App/app/static/app.css
++++ b/App/app/static/app.css
+@@ -1005,6 +1005,11 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
+ .deadline.soon { color: var(--status-action-ink); }
+ .deadline.ok { color: var(--status-done-ink); }
+ .deadline.future { color: var(--muted); font-weight: 500; }
++/* A reported stay: the deadline is a record now, not a countdown. On time
++   is quiet; late is neutral, since nothing can be fixed after the fact. */
++.deadline.done { color: var(--muted); font-weight: 500; }
++.deadline.neutral { color: var(--status-neutral-ink); font-weight: 500; }
++.metric-value.deadline.done { color: var(--status-done-ink); }
+ 
+ /* --- forms ------------------------------------------------------------- */
+ 
+diff --git a/App/app/templates/_components.html b/App/app/templates/_components.html
+index aede213..c8297d3 100644
+--- a/App/app/templates/_components.html
++++ b/App/app/templates/_components.html
+@@ -224,6 +224,23 @@
+   <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
+ {% endmacro %}
+ 
++{# The deadline cell of a stay, from ``deadline_cell(progress, check_in)``.
++   Before filing it counts down; once reported it records when the stay was
++   filed, and whether that was late. Nothing for a stay with no deadline. #}
++{% macro deadline_badge(cell, tag='span', extra_class='') -%}
++  {%- set classes = (' ' ~ extra_class) if extra_class else '' -%}
++  {%- if cell.state == 'filed_on_time' -%}
++    <{{ tag }} class="deadline{{ classes }} done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
++  {%- elif cell.state == 'filed_late' -%}
++    <{{ tag }} class="deadline{{ classes }} neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
++      {%- if cell.late_hours < 48 %}{{ t('deadline.filed_late_hours', n=cell.late_hours) }}
++      {%- else %}{{ tp('deadline.filed_late_days', cell.late_hours // 24) }}{% endif -%}
++    </{{ tag }}>
++  {%- elif cell.state == 'countdown' -%}
++    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ describe_time_left(cell.check_in) if cell.check_in else '—' }}</{{ tag }}>
++  {%- endif -%}
++{%- endmacro %}
++
+ {% macro empty_state(title, body='', action_url='', action_label='') %}
+   <div class="panel empty">
+     <h2>{{ title }}</h2>
+diff --git a/App/app/templates/auth_base.html b/App/app/templates/auth_base.html
+index ddf90af..15f94e9 100644
+--- a/App/app/templates/auth_base.html
++++ b/App/app/templates/auth_base.html
+@@ -10,7 +10,7 @@
+   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+-  <link rel="stylesheet" href="/static/app.css?v=20261002a">
++  <link rel="stylesheet" href="/static/app.css?v=20261004a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+ </head>
+ <body class="auth-page">
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index aaf773c..985146f 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -10,7 +10,7 @@
+   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+-  <link rel="stylesheet" href="/static/app.css?v=20261002a">
++  <link rel="stylesheet" href="/static/app.css?v=20261004a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+   {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261002a">{% endif %}
+ </head>
+diff --git a/App/app/templates/dashboard.html b/App/app/templates/dashboard.html
+index f9f96be..9bfd074 100644
+--- a/App/app/templates/dashboard.html
++++ b/App/app/templates/dashboard.html
+@@ -2,18 +2,19 @@
+ {% set nav = 'dashboard' %}
+ {% block title %}{{ t('dashboard.title') }}{% endblock %}
+ {% block content %}
+-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, property_identity, sync_calendars_button, guest_count with context %}
++{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, copy_inline, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, sync_calendars_button, guest_count with context %}
+ 
+ {% macro queue_table(items, empty_key='dashboard.queue.empty.default') %}
+ {% if items %}
+ <div class="host-task-list">
+ {% for row in items %}
+   {% set reservation = row.reservation %}{% set progress = row.progress %}
+-  <article data-stay-id="{{ reservation.id }}" class="host-task {{ 'is-urgent' if row.urgency in ('urgent', 'overdue') }}">
++  {% set cell = row.deadline_cell %}
++  <article data-stay-id="{{ reservation.id }}" class="host-task {{ 'is-urgent' if cell.level in ('urgent', 'overdue') }}">
+     <div class="host-task-main">
+       <div class="host-task-context"><span>{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</span>
+-        <span class="deadline {{ row.urgency }}">{{ describe_time_left(row.check_in) }}</span>
+-        {% if row.deadline and row.urgency != 'future' %}<span>{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</span>{% endif %}
++        {{ deadline_badge(cell) }}
++        {% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}<span>{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</span>{% endif %}
+         {{ guest_count(progress) }}
+       </div>
+       <a href="/reservations/{{ reservation.id }}?return_to=/">{{ property_identity(reservation.apartment_id, reservation.internal_name, true) }}</a>
+@@ -25,7 +26,7 @@
+       </div>
+     </div>
+     <div class="host-task-actions">
+-      <a class="btn {{ 'primary' if row.urgency in ('urgent', 'overdue') else '' }}" href="/reservations/{{ reservation.id }}?return_to=/">{{ t('dashboard.row.open_stay') }} →</a>
++      <a class="btn {{ 'primary' if cell.level in ('urgent', 'overdue') else '' }}" href="/reservations/{{ reservation.id }}?return_to=/">{{ t('dashboard.row.open_stay') }} →</a>
+       {{ row_menu_begin() }}
+         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
+         {% if reservation.permalink_token %}<a class="row-menu-item" href="/l/{{ reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>{% endif %}
+diff --git a/App/app/templates/public_legal_base.html b/App/app/templates/public_legal_base.html
+index eee22f2..8b023d2 100644
+--- a/App/app/templates/public_legal_base.html
++++ b/App/app/templates/public_legal_base.html
+@@ -25,7 +25,7 @@
+   {#- landing.css first so app.css keeps the reading typography and the link
+       colour; it is here only for the shared header and footer. -#}
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+-  <link rel="stylesheet" href="/static/app.css?v=20261002a">
++  <link rel="stylesheet" href="/static/app.css?v=20261004a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+ </head>
+ <body class="layout-host no-nav">
+diff --git a/App/app/templates/reservation_detail.html b/App/app/templates/reservation_detail.html
+index 72e7acd..8a6bdc9 100644
+--- a/App/app/templates/reservation_detail.html
++++ b/App/app/templates/reservation_detail.html
+@@ -2,7 +2,7 @@
+ {% set nav = 'reservations' %}
+ {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
+ {% block content %}
+-{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count with context %}
++{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge with context %}
+ <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
+ {{ page_header(
+   reservation.internal_name,
+@@ -303,12 +303,11 @@
+   <div class="section-heading"><h2>{{ t('host.reporting') }}</h2></div>
+   <div class="panel tight">
+   <div class="stay-metrics detail-hero{% if stay_inactive %} inactive{% endif %}">
+-    {% if not stay_inactive %}
++    {% set cell = deadline_cell(progress, check_in) %}
++    {% if not stay_inactive and cell.state != 'none' %}
+     <div class="detail-metric">
+       <div class="metric-label">{{ t('stay.detail.metric.deadline') }}</div>
+-      <div class="metric-value deadline {{ urgency_level }}">
+-        {{ describe_time_left(check_in) if check_in else '—' }}
+-      </div>
++      {{ deadline_badge(cell, tag='div', extra_class='metric-value') }}
+       {% if deadline %}
+         <div class="metric-note">{{ t('stay.detail.metric.deadline_note', when=deadline.strftime('%d.%m.%Y %H:%M')) }}</div>
+       {% endif %}
+diff --git a/App/app/templates/reservations.html b/App/app/templates/reservations.html
+index 9d5ec52..339d9e6 100644
+--- a/App/app/templates/reservations.html
++++ b/App/app/templates/reservations.html
+@@ -3,7 +3,7 @@
+ {% block title %}{{ t('stays.title') }}{% endblock %}
+ {% block content %}
+ <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
+-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count with context %}
++{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge with context %}
+ {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
+ {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
+ {% if apartments %}
+@@ -163,7 +163,7 @@
+         </td>
+         <td class="nowrap" data-label="{{ t('stays.table.deadline') }}">
+           {% if check_in and reservation.status == 'active' %}
+-            <span class="deadline {{ urgency(check_in) }}">{{ describe_time_left(check_in) }}</span>
++            {{ deadline_badge(deadline_cell(progress, check_in)) }}
+           {% else %}—{% endif %}
+         </td>
+         <td class="nowrap row-actions" data-label="">
+diff --git a/App/app/templating.py b/App/app/templating.py
+index fff7a1c..b9e0e95 100644
+--- a/App/app/templating.py
++++ b/App/app/templating.py
+@@ -297,6 +297,7 @@ templates.env.globals.update(
+     urgency=deadlines.urgency,
+     reporting_deadline=deadlines.reporting_deadline,
+     deadline_anchor=reporting.reservation_deadline_anchor,
++    deadline_cell=reporting.deadline_cell,
+     purpose_label=validation.purpose_label,
+     country_name=validation.country_name,
+     format_birth_date=validation.format_birth_date,
+diff --git a/App/tests/test_deadline_after_reporting.py b/App/tests/test_deadline_after_reporting.py
+new file mode 100644
+index 0000000..2b7453e
+--- /dev/null
++++ b/App/tests/test_deadline_after_reporting.py
+@@ -0,0 +1,285 @@
++"""Once a stay is reported, its deadline records the filing instead of counting down.
++
++The badge used to be computed from the arrival date alone, so a stay the
++police register had already accepted read "overdue by 42 h" on the stays list
++and the stay page for ever. These tests pin the four cases: filed on time,
++filed late, not filed yet and past the deadline (still red), and Czech guests
++only (no deadline at all).
++"""
++from __future__ import annotations
++
++import re
++from datetime import date, datetime, timedelta, timezone
++from zoneinfo import ZoneInfo
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, config, db, deadlines, host_i18n, reporting
++from app.main import app
++
++PASSWORD = "Secure-Password-123"
++USERNAME = "deadline-filed-host"
++TOKEN = "deadlinefiledtoken"
++
++_ENTITY_ID: int | None = None
++
++DEADLINE_SPAN = re.compile(r'class="deadline(?: [a-z-]+)* ([a-z]+)"[^>]*>([^<]*)<')
++
++
++# --- the cell itself -------------------------------------------------------
++
++def _utc_iso(local: datetime) -> str:
++    """A naive Prague time, stored the way submit_batch stores it (UTC)."""
++    aware = local.replace(tzinfo=ZoneInfo(config.TIMEZONE))
++    return aware.astimezone(timezone.utc).replace(microsecond=0).isoformat()
++
++
++def _progress(status: str, submitted: list[str | None]) -> dict:
++    return {
++        "status": status,
++        "reportable": [{"submitted_at": stamp} for stamp in submitted],
++    }
++
++
++CHECK_IN = date(2026, 5, 11)  # a Monday; the deadline is Wednesday 13.05. 23:59:59
++
++
++def test_filed_at_is_the_latest_reportable_filing_in_prague_time():
++    early = _utc_iso(datetime(2026, 5, 12, 9, 0))
++    late = _utc_iso(datetime(2026, 5, 12, 14, 32))
++    progress = _progress("reported", [late, early, None])
++
++    assert reporting.filed_at(progress) == datetime(2026, 5, 12, 14, 32)
++
++
++def test_a_stay_filed_before_the_deadline_records_the_filing_time():
++    progress = _progress("reported", [_utc_iso(datetime(2026, 5, 12, 14, 32))])
++
++    cell = reporting.deadline_cell(progress, CHECK_IN)
++
++    assert cell["state"] == "filed_on_time"
++    assert cell["level"] == "done"
++    assert cell["filed_at"] == datetime(2026, 5, 12, 14, 32)
++
++
++def test_a_stay_filed_after_the_deadline_is_late_by_whole_hours():
++    due = deadlines.reporting_deadline(CHECK_IN)
++    progress = _progress("reported", [_utc_iso(due + timedelta(hours=6, minutes=10))])
++
++    cell = reporting.deadline_cell(progress, CHECK_IN)
++
++    assert cell["state"] == "filed_late"
++    assert cell["level"] == "neutral"
++    assert cell["late_hours"] == 6
++
++
++def test_a_filing_minutes_after_the_deadline_is_never_zero_hours_late():
++    due = deadlines.reporting_deadline(CHECK_IN)
++    progress = _progress("reported", [_utc_iso(due + timedelta(minutes=5))])
++
++    assert reporting.deadline_cell(progress, CHECK_IN)["late_hours"] == 1
++
++
++def test_a_stay_still_to_be_filed_keeps_its_countdown():
++    for status in ("awaiting_guest", "incomplete", "ready", "failed", "awaiting_verification"):
++        cell = reporting.deadline_cell(_progress(status, []), CHECK_IN)
++        assert cell["state"] == "countdown"
++        assert cell["level"] == deadlines.urgency(CHECK_IN)
++
++
++def test_a_stay_with_only_czech_guests_has_no_deadline():
++    cell = reporting.deadline_cell(_progress("not_required", []), CHECK_IN)
++
++    assert cell["state"] == "none"
++
++
++@pytest.mark.parametrize("lang", ["en", "cs"])
++def test_the_late_wording_counts_hours_then_days(lang):
++    hours = host_i18n.translate(lang, "deadline.filed_late_hours", n=6)
++    two_days = host_i18n.translate_plural(lang, "deadline.filed_late_days", 2)
++    five_days = host_i18n.translate_plural(lang, "deadline.filed_late_days", 5)
++    assert "6" in hours and "2" in two_days and "5" in five_days
++    if lang == "en":
++        assert hours == "Reported 6 h late"
++        assert two_days == "Reported 2 days late"
++    else:
++        assert hours == "Nahlášeno 6 h po termínu"
++        assert two_days == "Nahlášeno 2 dny po termínu"
++        assert five_days == "Nahlášeno 5 dní po termínu"
++
++
++# --- the three pages -------------------------------------------------------
++
++def _cleanup():
++    apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
++    if apartment:
++        db.execute(
++            "DELETE FROM guest WHERE reservation_id IN "
++            "(SELECT id FROM reservation WHERE apartment_id = ?)",
++            (apartment["id"],),
++        )
++        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
++        db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
++    global _ENTITY_ID
++    if _ENTITY_ID is not None:
++        db.execute("DELETE FROM legal_entity WHERE id = ?", (_ENTITY_ID,))
++        _ENTITY_ID = None
++
++
++def _recent_past_deadline_arrival() -> date:
++    """An arrival the dashboard still lists whose (one-day) deadline has passed.
++
++    The dashboard drops a finished stay three days after arrival, so the test
++    shortens the window to one working day and picks the latest arrival in
++    the last three days that is already past it.
++    """
++    now = deadlines.local_now()
++    for back in (1, 2, 3):
++        candidate = date.today() - timedelta(days=back)
++        if deadlines.reporting_deadline(candidate) < now:
++            return candidate
++    pytest.skip("no working day in the last three days (holiday cluster)")
++
++
++def _seed(*, nationality: str, sent: bool, filed: datetime | None):
++    db.init_db()
++    _cleanup()
++    now = db.utcnow()
++    check_in = _recent_past_deadline_arrival()
++    existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
++    user_id = (
++        existing["id"]
++        if existing
++        else auth.create_account(USERNAME, PASSWORD, "Deadline Host", must_change_password=False)
++    )
++    global _ENTITY_ID
++    _ENTITY_ID = db.insert(
++        "legal_entity",
++        {"name": "Deadline s.r.o.", "owner_user_id": user_id, "created_at": now},
++    )
++    apartment_id = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": _ENTITY_ID,
++            "owner_user_id": user_id,
++            "internal_name": "Deadline 1",
++            "permalink_token": TOKEN,
++            "automation_mode": "manual",
++            "default_purpose": "10",
++            "uby_mark": "DEMO1",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    reservation_id = db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment_id,
++            "source": "airbnb",
++            "uid": "deadline-stay",
++            "date_from": check_in.isoformat(),
++            "date_to": (date.today() + timedelta(days=2)).isoformat(),
++            "status": "active",
++            "expected_guests_override": 1,
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++    db.insert(
++        "guest",
++        {
++            "reservation_id": reservation_id,
++            "surname": "NGUYEN",
++            "first_name": "MINH",
++            "birth_date": "01011990",
++            "nationality": nationality,
++            "doc_number": "P9988771",
++            "res_street": "Le Loi 5",
++            "res_city": "Hanoi",
++            "res_country": nationality,
++            "purpose": "10",
++            "is_lead": 1,
++            "entered_by": "guest",
++            "signature_png": "imported",
++            "signed_at": now,
++            "passport_photo_at": now,
++            "identity_verified_at": now,
++            "submit_state": reporting.SENT if sent else reporting.PENDING,
++            "submitted_at": _utc_iso(filed) if filed else None,
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++    client = TestClient(app)
++    client.post("/login", data={"username": USERNAME, "password": PASSWORD}, follow_redirects=False)
++    client.cookies.set(host_i18n.LANG_COOKIE, "en")
++    return client, reservation_id, check_in
++
++
++@pytest.fixture
++def one_day_window(monkeypatch):
++    monkeypatch.setattr(deadlines, "REPORTING_WORKING_DAYS", 1)
++    yield
++    _cleanup()
++
++
++def _pages(client, reservation_id):
++    return {
++        "dashboard": client.get("/").text,
++        "stays list": client.get("/reservations?range=all").text,
++        "stay page": client.get(f"/reservations/{reservation_id}").text,
++    }
++
++
++def _badges(page: str) -> list[tuple[str, str]]:
++    return [(level, text.strip()) for level, text in DEADLINE_SPAN.findall(page)]
++
++
++def test_a_reported_stay_past_its_deadline_shows_no_overdue(one_day_window):
++    check_in = _recent_past_deadline_arrival()
++    filed = deadlines.reporting_deadline(check_in) - timedelta(hours=3)
++    client, reservation_id, _ = _seed(nationality="VNM", sent=True, filed=filed)
++    expected = f"Reported {filed.strftime('%d.%m. %H:%M')}"
++
++    for name, page in _pages(client, reservation_id).items():
++        badges = _badges(page)
++        assert ("done", expected) in badges, f"{name}: {badges}"
++        assert not any(level == "overdue" for level, _ in badges), name
++        assert "overdue by" not in page, name
++
++
++def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
++    check_in = _recent_past_deadline_arrival()
++    filed = deadlines.reporting_deadline(check_in) + timedelta(hours=6, minutes=30)
++    if filed > deadlines.local_now():
++        pytest.skip("the deadline passed less than seven hours ago")
++    client, reservation_id, _ = _seed(nationality="VNM", sent=True, filed=filed)
++
++    for name, page in _pages(client, reservation_id).items():
++        badges = _badges(page)
++        assert ("neutral", "Reported 6 h late") in badges, f"{name}: {badges}"
++        assert "overdue by" not in page, name
++
++
++def test_a_stay_not_reported_past_its_deadline_is_still_critical(one_day_window):
++    client, reservation_id, _ = _seed(nationality="VNM", sent=False, filed=None)
++
++    for name, page in _pages(client, reservation_id).items():
++        badges = _badges(page)
++        assert any(level == "overdue" and "overdue by" in text for level, text in badges), (
++            f"{name}: {badges}"
++        )
++
++
++def test_a_czech_only_stay_shows_no_deadline(one_day_window):
++    client, reservation_id, _ = _seed(nationality="CZE", sent=False, filed=None)
++    progress = reporting.reservation_progress(
++        db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
++    )
++    assert progress["status"] == "not_required"
++
++    pages = _pages(client, reservation_id)
++    assert _badges(pages["stays list"]) == []
++    assert _badges(pages["stay page"]) == []
++    assert _badges(pages["dashboard"]) == []
+-- 
+2.34.1
+

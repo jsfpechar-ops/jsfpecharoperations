@@ -1,0 +1,1406 @@
+From 181749f98530452b608d196f61f61ed1f32d03ed Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sat, 3 Oct 2026 23:46:16 +0200
+Subject: [PATCH 29/34] WP16: Separate data-encryption key and more encrypted
+ fields
+
+Integration: ADDED_COLUMNS conflict in db.py (WP15, WP12) kept all columns; the secret-handling section kept WP22's audit_retention above it. main.py conflict with WP06/WP08: kept WP06's role check and startup_lock block and WP08's image bound, and call db.check_data_keys() inside the lock right after config.secret_key(). app/worker.py (WP06) now calls db.check_data_keys() at start too, so a bad key also stops the worker. Cross-WP fix: tests/test_retention_alignment.py (WP22) read SELECT request_xml directly; with request_xml now encrypted it reads the decrypted value through SELECT *.
+
+Added test_the_worker_refuses_to_start_with_a_malformed_data_key to tests/test_worker.py.
+---
+ App/app/config.py                     |  32 +-
+ App/app/db.py                         | 167 +++++++--
+ App/app/main.py                       |   4 +
+ App/app/reporting.py                  |   6 +-
+ App/app/routes/exports.py             |   9 +-
+ App/app/worker.py                     |   3 +
+ App/scripts/reencrypt.py              | 475 ++++++++++++++++++++++++++
+ App/tests/test_data_keys.py           | 381 +++++++++++++++++++++
+ App/tests/test_retention.py           |   5 +-
+ App/tests/test_retention_alignment.py |   5 +-
+ App/tests/test_worker.py              |  14 +
+ deploy/lightsail/.env.example         |   6 +
+ docs/ENVIRONMENT.md                   |   4 +-
+ docs/SECURITY.md                      |   2 +-
+ 14 files changed, 1070 insertions(+), 43 deletions(-)
+ create mode 100644 App/scripts/reencrypt.py
+ create mode 100644 App/tests/test_data_keys.py
+
+diff --git a/App/app/config.py b/App/app/config.py
+index f2bcdcf..17320db 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -13,7 +13,7 @@ import os
+ import secrets
+ from datetime import date
+ from pathlib import Path
+-from typing import Optional
++from typing import List, Optional
+ 
+ BASE_DIR = Path(__file__).resolve().parent
+ PROJECT_DIR = BASE_DIR.parent
+@@ -21,8 +21,8 @@ DATA_DIR = Path(os.environ.get("UBYHOST_DATA_DIR", PROJECT_DIR / "data"))
+ 
+ DB_PATH = Path(os.environ.get("UBYHOST_DB", DATA_DIR / "ubyhost.db"))
+ 
+-# The secret key signs session cookies and derives the key that encrypts
+-# UbyPort passwords at rest. Losing it means re-entering those passwords.
++# The secret key signs session cookies. Until UBYHOST_DATA_KEYS is set it also
++# derives the key that encrypts data at rest (see data_keys() below).
+ _SECRET_FILE = DATA_DIR / "secret_key"
+ 
+ 
+@@ -99,6 +99,32 @@ def require_secret_key() -> str:
+     return secret_key()
+ 
+ 
++def data_keys() -> List[str]:
++    """The data-encryption keys from ``UBYHOST_DATA_KEYS``, newest first.
++
++    Comma-separated Fernet keys (``Fernet.generate_key()``). The first one
++    encrypts everything written from now on; every key in the list is tried
++    when reading. They are separate from ``UBYHOST_SECRET_KEY`` so that the
++    session-signing secret can be rotated without making stored data
++    unreadable. Read on every call rather than cached, so a test or a tool can
++    change the environment; the cost is a string split.
++    """
++    raw = os.environ.get("UBYHOST_DATA_KEYS", "")
++    return [part.strip() for part in raw.split(",") if part.strip()]
++
++
++def legacy_data_key_enabled() -> bool:
++    """Whether the old key derived from the session secret is still tried.
++
++    On by default, and forced on while no ``UBYHOST_DATA_KEYS`` is set, because
++    then it is the only key there is. Turn it off with
++    ``UBYHOST_DATA_KEY_LEGACY=0`` once ``scripts/reencrypt.py`` has moved every
++    value to the new key and its ``--check`` reports nothing left.
++    """
++    value = os.environ.get("UBYHOST_DATA_KEY_LEGACY", "1").strip().lower()
++    return value not in {"0", "false", "no", "off"}
++
++
+ # "mock" | "test" | "prod".  Controls which UbyPort endpoint submissions go to.
+ UBYPORT_ENV = os.environ.get("UBYHOST_UBYPORT_ENV", "mock").lower()
+ 
+diff --git a/App/app/db.py b/App/app/db.py
+index 37f6a0b..d53bd09 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -1,4 +1,4 @@
+-"""SQLite access layer plus at-rest encryption for UbyPort passwords."""
++"""SQLite access layer plus at-rest encryption of secrets and guest fields."""
+ from __future__ import annotations
+ 
+ import base64
+@@ -16,7 +16,7 @@ from contextvars import ContextVar
+ from datetime import datetime, timezone
+ from typing import Any, Dict, Iterable, List, Optional
+ 
+-from cryptography.fernet import Fernet, InvalidToken
++from cryptography.fernet import Fernet, InvalidToken, MultiFernet
+ 
+ from . import config
+ 
+@@ -1023,6 +1023,11 @@ ADDED_COLUMNS = (
+     # land first.
+     ("user_account", "onboarding_emails_opt_out", "INTEGER NOT NULL DEFAULT 0"),
+     ("user_account", "onboarding_emails_opt_out_at", "TEXT"),
++    # WP16: more fields encrypted at rest (see ENCRYPTED_COLUMNS).
++    ("guest", "birth_date_enc", "TEXT"),
++    ("guest", "res_street_enc", "TEXT"),
++    ("guest", "res_city_enc", "TEXT"),
++    ("submission", "request_xml_enc", "TEXT"),
+ )
+ 
+ # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
+@@ -1178,32 +1183,36 @@ def is_decrypted(row: Any) -> bool:
+ 
+ 
+ def _hydrate(row: sqlite3.Row) -> Any:
+-    """Merge decrypted guest fields into a row, leaving other rows untouched.
++    """Merge decrypted fields into a row, leaving other rows untouched.
+ 
+     A row only qualifies when it actually selected one of the encrypted
+-    columns, so the cost is paid by guest reads and nothing else.
++    columns, so the cost is paid by guest and submission reads and nothing
++    else. A query that wants a decrypted field selects its ``*_enc`` column
++    under its own name (``SELECT *`` does that).
+     """
+     keys = row.keys()
+-    present = [name for name, enc in ENCRYPTED_GUEST_COLUMNS.items() if enc in keys]
++    present = [(name, enc) for name, enc in _ENCRYPTED_PAIRS if enc in keys]
+     if not present:
+         return row
+     values: Dict[str, Any] = dict(row)
+-    for name in present:
+-        values[name] = decrypt_field(
+-            row[ENCRYPTED_GUEST_COLUMNS[name]], row[name] if name in keys else None
+-        )
++    for name, enc in present:
++        values[name] = decrypt_field(row[enc], row[name] if name in keys else None)
+     return _HydratedRow(values, keys)
+ 
+ 
+-def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
+-    """Redirect a guest field to its encrypted column and blank the plaintext.
++def _write_values(table: str, values: Dict[str, Any]) -> Dict[str, Any]:
++    """Redirect an encrypted field to its ``*_enc`` column and blank the plaintext.
+ 
+     Blanking on write means an existing row loses the copy the backfill has not
+-    reached yet the first time anything saves it again.
++    reached yet the first time anything saves it again. Tables with no
++    encrypted fields pass through unchanged.
+     """
++    columns = ENCRYPTED_COLUMNS.get(table)
++    if not columns:
++        return values
+     out: Dict[str, Any] = {}
+     for key, value in values.items():
+-        enc = ENCRYPTED_GUEST_COLUMNS.get(key)
++        enc = columns.get(key)
+         if enc is None:
+             out[key] = value
+         else:
+@@ -1252,8 +1261,7 @@ def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
+ 
+ 
+ def insert(table: str, values: Dict[str, Any]) -> int:
+-    if table == "guest":
+-        values = _guest_write_values(values)
++    values = _write_values(table, values)
+     cols = ", ".join(values)
+     marks = ", ".join("?" for _ in values)
+     return execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(values.values()))
+@@ -1262,8 +1270,7 @@ def insert(table: str, values: Dict[str, Any]) -> int:
+ def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
+     if not values:
+         return
+-    if table == "guest":
+-        values = _guest_write_values(values)
++    values = _write_values(table, values)
+     sets = ", ".join(f"{k} = ?" for k in values)
+     execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
+ 
+@@ -1281,12 +1288,11 @@ def update_if(
+     Compare-and-set for rows a background job may change between a request's
+     read and its write. ``expected`` values compare with IS, so None matches
+     NULL. ``extra_where`` is a trusted SQL fragment (never user input).
+-    Guest values are encrypted exactly as in update().
++    Encrypted fields are handled exactly as in update().
+     """
+     if not values:
+         return False
+-    if table == "guest":
+-        values = _guest_write_values(values)
++    values = _write_values(table, values)
+     sets = ", ".join(f"{k} = ?" for k in values)
+     clauses = ["id = ?"] + [f"{k} IS ?" for k in expected]
+     if extra_where:
+@@ -1301,8 +1307,7 @@ def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:
+     """update(), but on a cursor from cursor()/immediate(), inside its transaction."""
+     if not values:
+         return
+-    if table == "guest":
+-        values = _guest_write_values(values)
++    values = _write_values(table, values)
+     sets = ", ".join(f"{k} = ?" for k in values)
+     cur.execute(f"UPDATE {table} SET {sets} WHERE id = ?", list(values.values()) + [row_id])
+ 
+@@ -1404,22 +1409,107 @@ def audit_retention(
+ 
+ 
+ # --- secret handling -----------------------------------------------------
++#
++# Everything encrypted at rest goes through one MultiFernet. Its keys, in
++# order: every key in UBYHOST_DATA_KEYS (the first one encrypts), then, while
++# the migration to those keys is not finished, the legacy key that is the
++# SHA-256 of the session secret. With no UBYHOST_DATA_KEYS the legacy key is
++# the only key, which is exactly how every release before this one worked.
++
++_fernet_cache: Dict[tuple, MultiFernet] = {}
++
++
++class DataKeyError(RuntimeError):
++    """UBYHOST_DATA_KEYS / UBYHOST_DATA_KEY_LEGACY cannot give a usable key."""
++
++
++def _legacy_fernet(secret: str) -> Fernet:
++    digest = hashlib.sha256(secret.encode("utf-8")).digest()
++    return Fernet(base64.urlsafe_b64encode(digest))
+ 
+-_fernet_cache: Dict[str, Fernet] = {}
++
++def _key_material() -> tuple:
++    keys = tuple(config.data_keys())
++    legacy = config.legacy_data_key_enabled()
++    if not keys and not legacy:
++        raise DataKeyError(
++            "UBYHOST_DATA_KEY_LEGACY=0 needs at least one key in UBYHOST_DATA_KEYS"
++        )
++    # Only touch the session secret when the legacy key is actually in use:
++    # config.secret_key() can mint a file, and a deployment that has finished
++    # the migration has no reason to depend on it for data any more.
++    secret = config.secret_key() if (legacy or not keys) else None
++    return keys, secret
+ 
+ 
+-def _fernet() -> Fernet:
+-    secret = config.secret_key()
+-    cached = _fernet_cache.get(secret)
++def _fernet() -> MultiFernet:
++    keys, secret = _key_material()
++    cache_key = (keys, secret)
++    cached = _fernet_cache.get(cache_key)
+     if cached is not None:
+         return cached
+-    digest = hashlib.sha256(secret.encode("utf-8")).digest()
+-    cached = Fernet(base64.urlsafe_b64encode(digest))
++    fernets: List[Fernet] = []
++    for position, key in enumerate(keys, start=1):
++        try:
++            fernets.append(Fernet(key.encode("ascii")))
++        except (ValueError, UnicodeEncodeError) as exc:
++            # Never echo the value: it is a secret even when it is malformed.
++            raise DataKeyError(
++                f"UBYHOST_DATA_KEYS entry {position} is not a valid Fernet key"
++            ) from exc
++    if secret is not None:
++        fernets.append(_legacy_fernet(secret))
++    cached = MultiFernet(fernets)
+     _fernet_cache.clear()
+-    _fernet_cache[secret] = cached
++    _fernet_cache[cache_key] = cached
+     return cached
+ 
+ 
++def _primary_fernet() -> Fernet:
++    keys, secret = _key_material()
++    if keys:
++        _fernet()  # validates every key with a clear error
++        return Fernet(keys[0].encode("ascii"))
++    return _legacy_fernet(secret)
++
++
++def check_data_keys() -> None:
++    """Build the key list once, so a bad key stops the app at startup."""
++    _fernet()
++
++
++def token_is_current(token: Any) -> bool:
++    """True when ``token`` is encrypted under the key new data is written with.
++
++    Fernet tokens do not name their key, so this tries the primary key alone.
++    ``scripts/reencrypt.py`` uses it to skip work already done, which is what
++    makes a re-run resume instead of starting over.
++    """
++    primary = _primary_fernet()
++    try:
++        raw = token if isinstance(token, bytes) else str(token).encode("ascii")
++        primary.decrypt(raw)
++        return True
++    except (InvalidToken, ValueError):
++        return False
++
++
++def rotate_token(token: Any) -> Any:
++    """Re-encrypt ``token`` under the primary key; same type out as in.
++
++    Raises ``DecryptionError`` when no configured key can read it, so the
++    caller can count it instead of silently writing garbage back.
++    """
++    as_bytes = isinstance(token, bytes)
++    cipher = _fernet()
++    try:
++        raw = token if as_bytes else str(token).encode("ascii")
++        rotated = cipher.rotate(raw)
++    except (InvalidToken, ValueError) as exc:
++        raise DecryptionError("stored value could not be decrypted with any key") from exc
++    return rotated if as_bytes else rotated.decode("ascii")
++
++
+ def encrypt_secret(plain: str) -> str:
+     if not plain:
+         return ""
+@@ -1451,7 +1541,26 @@ ENCRYPTED_GUEST_COLUMNS = {
+     "signature_png": "signature_png_enc",
+     # Stay-fee exemption category (may be disability). Plaintext is a read fallback only.
+     "fee_host_reason": "fee_host_reason_enc",
++    # WP16: birth date and the street and town of residence. Nothing filters or
++    # sorts on them in SQL; the stay-fee age rule reads them in Python. The
++    # residence country stays plain, like nationality: it is a country code,
++    # and the stay-fee "resident of this municipality" rule reads it.
++    "birth_date": "birth_date_enc",
++    "res_street": "res_street_enc",
++    "res_city": "res_city_enc",
++}
++
++# Every table with fields that are stored encrypted, plaintext name -> column.
++# The query helpers decrypt any row that selected one of these columns and the
++# write helpers encrypt on the way in, so callers keep using the plain name.
++ENCRYPTED_COLUMNS: Dict[str, Dict[str, str]] = {
++    "guest": ENCRYPTED_GUEST_COLUMNS,
++    # WP16: the request envelope carries every reported guest's passport number.
++    "submission": {"request_xml": "request_xml_enc"},
+ }
++_ENCRYPTED_PAIRS = tuple(
++    (name, enc) for columns in ENCRYPTED_COLUMNS.values() for name, enc in columns.items()
++)
+ 
+ 
+ def encrypt_blob(data: bytes) -> bytes:
+diff --git a/App/app/main.py b/App/app/main.py
+index 52e3082..e1a7ed8 100644
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -102,6 +102,10 @@ async def lifespan(_app: FastAPI):
+         # answered 200 while /login answered 500, so the deploy's health check
+         # passed and the broken release went live.
+         config.secret_key()
++        # Same reason for the data-encryption keys (WP16): a malformed
++        # UBYHOST_DATA_KEYS must stop the boot, not the first page that reads
++        # a guest.
++        db.check_data_keys()
+         db.init_db()
+         bootstrap_password = auth.ensure_bootstrap_admin()
+         rotate_weak_permalinks()
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index 978c92b..c736585 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -2300,7 +2300,8 @@ def purge_submission_payloads(
+         f"JOIN apartment a ON a.id = s.apartment_id "
+         f"WHERE s.created_at < ? AND s.state IN ({marks}) "
+         f"AND (? IS NULL OR a.owner_user_id = ?) "
+-        f"AND (s.request_xml IS NOT NULL OR s.response_xml IS NOT NULL)",
++        f"AND (s.request_xml IS NOT NULL OR s.request_xml_enc IS NOT NULL "
++        f"OR s.response_xml IS NOT NULL)",
+         (cutoff, *TERMINAL_SUBMISSION_STATES, owner_user_id, owner_user_id),
+     )
+     if not rows:
+@@ -2309,7 +2310,8 @@ def purge_submission_payloads(
+     ids = [row["id"] for row in rows]
+     id_marks = ", ".join("?" for _ in ids)
+     db.execute(
+-        f"UPDATE submission SET request_xml = NULL, response_xml = NULL "
++        f"UPDATE submission SET request_xml = NULL, request_xml_enc = NULL, "
++        f"response_xml = NULL "
+         f"WHERE id IN ({id_marks})",
+         ids,
+     )
+diff --git a/App/app/routes/exports.py b/App/app/routes/exports.py
+index c698a4d..d7606a4 100644
+--- a/App/app/routes/exports.py
++++ b/App/app/routes/exports.py
+@@ -273,11 +273,16 @@ def submission_xml(submission_id: int, which: str, request: Request):
+     owned = access.submission(request, submission_id)
+     if not owned:
+         return Response("Not found.", status_code=404, media_type="text/plain")
++    # request_xml_enc is selected so the query helper decrypts the request
++    # envelope (WP16); the response carries no guest identity and stays plain.
+     row = db.query_one(
+-        f"SELECT {which}_xml AS body FROM submission WHERE id = ?", (submission_id,)
++        "SELECT request_xml, request_xml_enc, response_xml FROM submission WHERE id = ?",
++        (submission_id,),
+     )
+     db.audit("export_submission_xml", f"submission_id={submission_id} which={which}")
+-    return Response((row["body"] if row else "") or "", media_type="application/xml")
++    return Response(
++        (row[f"{which}_xml"] if row else "") or "", media_type="application/xml"
++    )
+ 
+ 
+ @router.get("/housebook.csv")
+diff --git a/App/app/worker.py b/App/app/worker.py
+index 6de3c75..6750ccf 100644
+--- a/App/app/worker.py
++++ b/App/app/worker.py
+@@ -56,6 +56,9 @@ def prepare() -> None:
+     config.ensure_data_dir()
+     with db.startup_lock():
+         config.secret_key()
++        # WP16: a malformed UBYHOST_DATA_KEYS stops the worker at start, as it
++        # stops the web process, not the first job that reads a guest.
++        db.check_data_keys()
+         db.init_db()
+     env_guard.apply()
+ 
+diff --git a/App/scripts/reencrypt.py b/App/scripts/reencrypt.py
+new file mode 100644
+index 0000000..1e2d226
+--- /dev/null
++++ b/App/scripts/reencrypt.py
+@@ -0,0 +1,475 @@
++#!/usr/bin/env python3
++"""Re-encrypt everything stored encrypted under the current data key (WP16).
++
++Run from ``App/`` with the same environment as the app (``UBYHOST_DB``,
++``UBYHOST_DATA_DIR``, ``UBYHOST_SECRET_KEY``, ``UBYHOST_DATA_KEYS``)::
++
++    .venv/bin/python scripts/reencrypt.py --dry-run
++    .venv/bin/python scripts/reencrypt.py --backup /path/to/fresh/ubyhost.db
++    .venv/bin/python scripts/reencrypt.py --check
++
++What it does, table by table and in batches of ``--batch-size`` rows:
++
++* every ``*_enc`` column, the stay-fee filing PDF/CSV blobs and the claim
++  secret inside queued mail are re-encrypted under the first key in
++  ``UBYHOST_DATA_KEYS``; a value already under that key is skipped;
++* a field that is still in its plaintext column (rows saved before its
++  ``*_enc`` column existed, for example birth date, street, town and the
++  UbyPort request envelope) is encrypted into the ``*_enc`` column and the
++  plaintext is blanked;
++* passport photo files are re-encrypted in place; a legacy unencrypted file is
++  encrypted and the plaintext file removed.
++
++Idempotent and resumable: nothing records progress, because a value already
++under the current key is simply skipped, so a run that is interrupted is
++finished by running it again. Every write is compare-and-set against the value
++that was read, so the app can keep running; a row the app changed in between
++is counted as ``changed_meanwhile`` and picked up by the next run.
++
++A value no configured key can decrypt is never touched; it is counted as
++``unreadable`` and the run exits non-zero.
++
++Writing runs refuse to start without ``--backup`` naming a backup file that
++exists, is not empty, is not the live database, and is younger than
++``--max-backup-age-hours``. ``--dry-run`` and ``--check`` write nothing and do
++not need one.
++
++``--rollback-new-fields`` is for going back to a release older than WP16 while
++that release's key is still the only key in use: it moves birth date, street,
++town and the request envelope back into their plaintext columns, which is all
++an older release reads.
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import os
++import sys
++import time
++from dataclasses import dataclass, field
++from pathlib import Path
++from typing import Any, Dict, Iterable, List, Optional, Tuple
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
++
++from app import config, db, mail, passport_photos  # noqa: E402
++
++# Columns that hold a Fernet token and nothing else. The *_enc columns of
++# db.ENCRYPTED_COLUMNS are added below, so a field encrypted by a later
++# release is covered without editing this list.
++TOKEN_COLUMNS: Tuple[Tuple[str, str], ...] = (
++    ("apartment", "uby_ws_password_enc"),
++    ("user_account", "totp_secret_enc"),
++    ("legal_entity", "signature_png_enc"),
++    ("stay_fee_adjustment", "reason_enc"),
++    ("stay_fee_filing", "payload_enc"),
++    ("stay_fee_filing", "pdf_enc"),
++    ("stay_fee_filing", "csv_enc"),
++)
++
++# The fields WP16 started encrypting. Only these are moved back by
++# --rollback-new-fields: the older fields were encrypted by earlier releases,
++# which already read them from their *_enc columns.
++WP16_FIELDS: Tuple[Tuple[str, str, str], ...] = (
++    ("guest", "birth_date", "birth_date_enc"),
++    ("guest", "res_street", "res_street_enc"),
++    ("guest", "res_city", "res_city_enc"),
++    ("submission", "request_xml", "request_xml_enc"),
++)
++
++DEFAULT_BATCH = 200
++DEFAULT_MAX_BACKUP_AGE_HOURS = 3.0
++
++
++@dataclass
++class Counts:
++    scanned: int = 0
++    current: int = 0
++    rotated: int = 0
++    encrypted: int = 0
++    blanked: int = 0
++    restored: int = 0
++    unreadable: int = 0
++    changed_meanwhile: int = 0
++
++    def pending(self) -> int:
++        """What a writing run would still change, plus what it cannot."""
++        return self.rotated + self.encrypted + self.blanked + self.unreadable
++
++
++@dataclass
++class Report:
++    dry_run: bool
++    targets: Dict[str, Counts] = field(default_factory=dict)
++
++    def counts(self, name: str) -> Counts:
++        return self.targets.setdefault(name, Counts())
++
++    @property
++    def unreadable(self) -> int:
++        return sum(c.unreadable for c in self.targets.values())
++
++    @property
++    def pending(self) -> int:
++        return sum(c.pending() for c in self.targets.values())
++
++    def lines(self) -> List[str]:
++        out = []
++        for name in sorted(self.targets):
++            c = self.targets[name]
++            out.append(
++                f"{name}: scanned={c.scanned} current={c.current} rotated={c.rotated} "
++                f"encrypted={c.encrypted} blanked={c.blanked} restored={c.restored} "
++                f"unreadable={c.unreadable} changed_meanwhile={c.changed_meanwhile}"
++            )
++        return out
++
++
++def token_targets() -> List[Tuple[str, str]]:
++    targets = list(TOKEN_COLUMNS)
++    for table, columns in db.ENCRYPTED_COLUMNS.items():
++        for enc in columns.values():
++            targets.append((table, enc))
++    return targets
++
++
++# --- preconditions -------------------------------------------------------
++
++def check_backup(
++    path: Optional[str],
++    max_age_hours: float = DEFAULT_MAX_BACKUP_AGE_HOURS,
++    now: Optional[float] = None,
++) -> Path:
++    """The backup file, or SystemExit saying why it is not good enough."""
++    if not path:
++        raise SystemExit(
++            "Refusing to write: pass --backup with the path of a backup taken just now "
++            "(for example the ubyhost.db or the .tar/.tar.age from scripts/backup_data.sh)."
++        )
++    backup = Path(path).expanduser()
++    if not backup.is_file():
++        raise SystemExit(f"Refusing to write: backup {backup} does not exist or is not a file.")
++    if backup.stat().st_size == 0:
++        raise SystemExit(f"Refusing to write: backup {backup} is empty.")
++    try:
++        if backup.resolve() == Path(config.DB_PATH).resolve():
++            raise SystemExit("Refusing to write: --backup points at the live database.")
++    except OSError:
++        pass
++    age_hours = ((now if now is not None else time.time()) - backup.stat().st_mtime) / 3600
++    if age_hours > max_age_hours:
++        raise SystemExit(
++            f"Refusing to write: backup {backup} is {age_hours:.1f} hours old; take a new "
++            f"one (limit {max_age_hours:g} hours, see --max-backup-age-hours)."
++        )
++    return backup
++
++
++def require_keys(writing: bool) -> None:
++    """Stop before encrypting under a key the running app does not have."""
++    if config.legacy_data_key_enabled():
++        try:
++            config.require_secret_key()
++        except RuntimeError as exc:
++            raise SystemExit(
++                f"Refusing to run: {exc}. Without the app's session secret the legacy key "
++                "cannot be derived and nothing old can be read."
++            ) from exc
++    try:
++        db.check_data_keys()
++    except db.DataKeyError as exc:
++        raise SystemExit(f"Refusing to run: {exc}.") from exc
++    if writing and not config.data_keys():
++        raise SystemExit(
++            "Refusing to write: UBYHOST_DATA_KEYS is not set, so there is no new key to "
++            "re-encrypt to. Set it in the app's .env first (see the runbook)."
++        )
++
++
++def open_database() -> None:
++    """Make sure UBYHOST_DB is an existing UbyHost database, then add new columns."""
++    path = Path(config.DB_PATH)
++    if not path.exists():
++        raise SystemExit(f"No database at {path}. Point UBYHOST_DB at the file the app uses.")
++    found = db.query_one(
++        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'guest'"
++    )
++    if not found:
++        raise SystemExit(f"{path} does not look like a UbyHost database.")
++    db.init_db()
++
++
++# --- the work ------------------------------------------------------------
++
++def _batches(sql: str, batch_size: int, extra: Iterable[Any] = ()) -> Iterable[List[Any]]:
++    """Rows of ``sql`` (which must filter ``id > ?`` and end in ``LIMIT ?``) by id."""
++    last = 0
++    while True:
++        rows = db.query(sql, (*extra, last, batch_size))
++        if not rows:
++            return
++        last = int(rows[-1]["id"])
++        yield rows
++
++
++def _write(statements: List[Tuple[str, Tuple[Any, ...], str]], counts: Counts) -> None:
++    """Run one batch of compare-and-set UPDATEs in one short transaction.
++
++    Each statement names the counter it was counted under; one that matched no
++    row (the app changed the value since it was read) moves to
++    ``changed_meanwhile`` and is left for the next run.
++    """
++    if not statements:
++        return
++    with db.immediate() as cur:
++        for sql, params, done in statements:
++            cur.execute(sql, params)
++            if cur.rowcount != 1:
++                setattr(counts, done, getattr(counts, done) - 1)
++                counts.changed_meanwhile += 1
++
++
++def rotate_column(table: str, column: str, report: Report, batch_size: int) -> None:
++    counts = report.counts(f"{table}.{column}")
++    # The alias keeps the query helper from decrypting the row: this needs the
++    # raw token, not the value.
++    sql = (
++        f"SELECT id, {column} AS token FROM {table} "
++        f"WHERE {column} IS NOT NULL AND id > ? ORDER BY id LIMIT ?"
++    )
++    for rows in _batches(sql, batch_size):
++        statements = []
++        for row in rows:
++            token = row["token"]
++            if not token:
++                continue
++            counts.scanned += 1
++            if db.token_is_current(token):
++                counts.current += 1
++                continue
++            try:
++                fresh = db.rotate_token(token)
++            except db.DecryptionError:
++                counts.unreadable += 1
++                continue
++            counts.rotated += 1
++            statements.append((
++                f"UPDATE {table} SET {column} = ? WHERE id = ? AND {column} = ?",
++                (fresh, row["id"], token),
++                "rotated",
++            ))
++        if not report.dry_run:
++            _write(statements, counts)
++
++
++def encrypt_plaintext(table: str, name: str, enc: str, report: Report, batch_size: int) -> None:
++    """Move a field still in its plaintext column into its *_enc column."""
++    counts = report.counts(f"{table}.{name}")
++    sql = (
++        f"SELECT id, {name} AS plain, {enc} AS token FROM {table} "
++        f"WHERE {name} IS NOT NULL AND {name} <> '' AND id > ? ORDER BY id LIMIT ?"
++    )
++    for rows in _batches(sql, batch_size):
++        statements = []
++        for row in rows:
++            counts.scanned += 1
++            if row["token"]:
++                # Already encrypted; the plaintext is a stale copy. The token
++                # itself is handled by rotate_column.
++                counts.blanked += 1
++                statements.append((
++                    f"UPDATE {table} SET {name} = NULL WHERE id = ? AND {name} = ?",
++                    (row["id"], row["plain"]),
++                    "blanked",
++                ))
++                continue
++            counts.encrypted += 1
++            statements.append((
++                f"UPDATE {table} SET {enc} = ?, {name} = NULL "
++                f"WHERE id = ? AND {name} = ? AND {enc} IS NULL",
++                (db.encrypt_field(row["plain"]), row["id"], row["plain"]),
++                "encrypted",
++            ))
++        if not report.dry_run:
++            _write(statements, counts)
++
++
++def rotate_outbox(report: Report, batch_size: int) -> None:
++    """The claim secret queued mail keeps beside its body, inside the JSON payload."""
++    counts = report.counts(f"email_outbox.payload[{mail.CLAIM_SECRET_KEY}]")
++    sql = (
++        "SELECT id, payload FROM email_outbox WHERE payload LIKE ? "
++        "AND id > ? ORDER BY id LIMIT ?"
++    )
++    for rows in _batches(sql, batch_size, extra=(f"%{mail.CLAIM_SECRET_KEY}%",)):
++        statements = []
++        for row in rows:
++            try:
++                payload = json.loads(row["payload"] or "{}")
++            except ValueError:
++                continue
++            token = payload.get(mail.CLAIM_SECRET_KEY) if isinstance(payload, dict) else None
++            if not token:
++                continue
++            counts.scanned += 1
++            if db.token_is_current(token):
++                counts.current += 1
++                continue
++            try:
++                payload[mail.CLAIM_SECRET_KEY] = db.rotate_token(token)
++            except db.DecryptionError:
++                counts.unreadable += 1
++                continue
++            counts.rotated += 1
++            statements.append((
++                "UPDATE email_outbox SET payload = ? WHERE id = ? AND payload = ?",
++                (json.dumps(payload), row["id"], row["payload"]),
++                "rotated",
++            ))
++        if not report.dry_run:
++            _write(statements, counts)
++
++
++def _write_private(target: Path, data: bytes) -> None:
++    tmp = target.with_name(target.name + ".reencrypt-tmp")
++    tmp.write_bytes(data)
++    try:
++        tmp.chmod(0o600)
++    except OSError:
++        pass
++    os.replace(tmp, target)
++
++
++def rotate_photos(report: Report) -> None:
++    counts = report.counts("passport_photos (files)")
++    directory = passport_photos.PHOTOS_DIR
++    if not directory.is_dir():
++        return
++    for path in sorted(directory.iterdir()):
++        if not path.is_file() or path.name.endswith(".reencrypt-tmp"):
++            continue
++        if path.name.endswith(passport_photos.ENC_SUFFIX):
++            counts.scanned += 1
++            token = path.read_bytes()
++            if db.token_is_current(token):
++                counts.current += 1
++                continue
++            try:
++                fresh = db.rotate_token(token)
++            except db.DecryptionError:
++                counts.unreadable += 1
++                continue
++            counts.rotated += 1
++            if not report.dry_run:
++                _write_private(path, fresh)
++        elif path.suffix.lower() in passport_photos.ALL_EXTENSIONS:
++            counts.scanned += 1
++            target = path.with_name(path.name + passport_photos.ENC_SUFFIX)
++            counts.encrypted += 1
++            if report.dry_run:
++                continue
++            if not target.exists():
++                _write_private(target, db.encrypt_blob(path.read_bytes()))
++            path.unlink()
++
++
++def run(dry_run: bool, batch_size: int = DEFAULT_BATCH, vacuum: bool = True) -> Report:
++    report = Report(dry_run=dry_run)
++    # Plaintext first, so a field it encrypts is already under the new key and
++    # the token pass finds it current.
++    for table, columns in db.ENCRYPTED_COLUMNS.items():
++        for name, enc in columns.items():
++            encrypt_plaintext(table, name, enc, report, batch_size)
++    for table, column in token_targets():
++        rotate_column(table, column, report, batch_size)
++    rotate_outbox(report, batch_size)
++    rotate_photos(report)
++    blanked = sum(c.encrypted + c.blanked for c in report.targets.values())
++    if vacuum and blanked and not dry_run:
++        # secure_delete overwrites freed pages, but VACUUM is what makes sure
++        # the old plaintext and the old ciphertext are not left in the file.
++        db.execute("VACUUM")
++    return report
++
++
++def rollback_new_fields(dry_run: bool, batch_size: int = DEFAULT_BATCH) -> Report:
++    """Decrypt the WP16 fields back into their plaintext columns and clear *_enc."""
++    report = Report(dry_run=dry_run)
++    for table, name, enc in WP16_FIELDS:
++        counts = report.counts(f"{table}.{name}")
++        sql = (
++            f"SELECT id, {enc} AS token FROM {table} "
++            f"WHERE {enc} IS NOT NULL AND id > ? ORDER BY id LIMIT ?"
++        )
++        for rows in _batches(sql, batch_size):
++            statements = []
++            for row in rows:
++                counts.scanned += 1
++                try:
++                    plain = db.decrypt_field(row["token"])
++                except db.DecryptionError:
++                    counts.unreadable += 1
++                    continue
++                counts.restored += 1
++                statements.append((
++                    f"UPDATE {table} SET {name} = ?, {enc} = NULL WHERE id = ? AND {enc} = ?",
++                    (plain, row["id"], row["token"]),
++                    "restored",
++                ))
++            if not dry_run:
++                _write(statements, counts)
++    return report
++
++
++def main(argv: Optional[List[str]] = None) -> int:
++    parser = argparse.ArgumentParser(
++        description="Re-encrypt stored data under the first key in UBYHOST_DATA_KEYS."
++    )
++    parser.add_argument("--backup", help="path of a backup taken just before this run")
++    parser.add_argument("--dry-run", action="store_true", help="count, write nothing")
++    parser.add_argument(
++        "--check",
++        action="store_true",
++        help="exit non-zero while anything is not under the current key or still plaintext",
++    )
++    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH)
++    parser.add_argument(
++        "--max-backup-age-hours", type=float, default=DEFAULT_MAX_BACKUP_AGE_HOURS
++    )
++    parser.add_argument("--no-vacuum", action="store_true", help="skip the final VACUUM")
++    parser.add_argument(
++        "--rollback-new-fields",
++        action="store_true",
++        help="move the WP16 fields back to plaintext, before deploying an older release",
++    )
++    args = parser.parse_args(argv)
++    if args.batch_size < 1:
++        parser.error("--batch-size must be at least 1")
++
++    read_only = args.dry_run or args.check
++    if not read_only:
++        check_backup(args.backup, args.max_backup_age_hours)
++    require_keys(writing=not read_only and not args.rollback_new_fields)
++    open_database()
++
++    if args.rollback_new_fields:
++        report = rollback_new_fields(dry_run=read_only, batch_size=args.batch_size)
++    else:
++        report = run(
++            dry_run=read_only, batch_size=args.batch_size, vacuum=not args.no_vacuum
++        )
++    for line in report.lines():
++        print(line)
++    if read_only:
++        print("Dry run: nothing was written.")
++    if report.unreadable:
++        print(f"{report.unreadable} value(s) could not be decrypted with any configured key.")
++        return 2
++    if args.check and report.pending:
++        print(f"{report.pending} value(s) still need re-encryption.")
++        return 1
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/App/tests/test_data_keys.py b/App/tests/test_data_keys.py
+new file mode 100644
+index 0000000..82e2ed3
+--- /dev/null
++++ b/App/tests/test_data_keys.py
+@@ -0,0 +1,381 @@
++"""WP16: a data-encryption key of its own, and more fields encrypted at rest.
++
++The Fernet key used to be the SHA-256 of the session secret, so rotating the
++session secret made every encrypted field unreadable. UBYHOST_DATA_KEYS now
++holds the data keys (first one encrypts, all of them decrypt) and the old
++derived key stays as the last decryption key until scripts/reencrypt.py has
++moved everything across.
++"""
++from __future__ import annotations
++
++import base64
++import hashlib
++import importlib.util
++import json
++import os
++import sqlite3
++import sys
++import time
++from datetime import date
++from pathlib import Path
++
++import pytest
++from cryptography.fernet import Fernet
++
++from app import config, db, mail, passport_photos, stay_fee
++
++TOOL_PATH = Path(__file__).resolve().parent.parent / "scripts" / "reencrypt.py"
++NEW_KEY = Fernet.generate_key().decode("ascii")
++NEWER_KEY = Fernet.generate_key().decode("ascii")
++BIRTH = "24121990"
++STREET = "Ukázková 12"
++CITY = "Demoville"
++DOC = "ZZ1234567"
++REQUEST = "<request><cDocN>ZZ1234567</cDocN><cDate>24121990</cDate></request>"
++
++
++def _tool():
++    spec = importlib.util.spec_from_file_location("reencrypt_tool", TOOL_PATH)
++    module = importlib.util.module_from_spec(spec)
++    # dataclasses look their module up in sys.modules while the class is built.
++    sys.modules[spec.name] = module
++    spec.loader.exec_module(module)
++    return module
++
++
++def _legacy() -> Fernet:
++    digest = hashlib.sha256(config.secret_key().encode("utf-8")).digest()
++    return Fernet(base64.urlsafe_b64encode(digest))
++
++
++@pytest.fixture
++def keys(monkeypatch):
++    """Start from the pre-WP16 state: no data keys, legacy key on."""
++    monkeypatch.delenv("UBYHOST_DATA_KEYS", raising=False)
++    monkeypatch.delenv("UBYHOST_DATA_KEY_LEGACY", raising=False)
++    return monkeypatch
++
++
++@pytest.fixture
++def scratch_db(tmp_path, monkeypatch, keys):
++    """A database of its own, so re-encrypting it cannot touch other tests' rows."""
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "scratch.db")
++    monkeypatch.setattr(passport_photos, "PHOTOS_DIR", tmp_path / "passport_photos")
++    db.init_db()
++    return tmp_path
++
++
++def _seed(owner_name: str = "wp16-owner") -> dict:
++    now = db.utcnow()
++    owner = db.insert("user_account", {
++        "username": owner_name, "password_hash": "x", "created_at": now,
++        "totp_secret_enc": db.encrypt_secret("TOTPSECRETDEMO"),
++    })
++    apartment = db.insert("apartment", {
++        "internal_name": "Demo flat", "owner_user_id": owner, "created_at": now,
++        "uby_ws_password_enc": db.encrypt_secret("demo-password"),
++    })
++    reservation = db.insert("reservation", {
++        "apartment_id": apartment, "uid": f"wp16-{owner_name}", "date_from": "2026-08-10",
++        "date_to": "2026-08-14", "created_at": now, "updated_at": now,
++    })
++    guest = db.insert("guest", {
++        "reservation_id": reservation, "surname": "NOVAK", "first_name": "JOSEF",
++        "birth_date": BIRTH, "doc_number": DOC, "res_street": STREET, "res_city": CITY,
++        "res_country": "DEU", "created_at": now, "updated_at": now,
++    })
++    submission = db.insert("submission", {
++        "apartment_id": apartment, "created_at": now, "state": "ok",
++        "request_xml": REQUEST, "response_xml": "<response/>",
++    })
++    outbox = db.insert("email_outbox", {
++        "idempotency_key": f"wp16-{owner_name}", "kind": "claim", "state": "queued",
++        "payload": json.dumps({"text": "x", mail.CLAIM_SECRET_KEY: db.encrypt_field("claim-s")}),
++        "created_at": now, "updated_at": now,
++    })
++    return {"owner": owner, "apartment": apartment, "reservation": reservation,
++            "guest": guest, "submission": submission, "outbox": outbox}
++
++
++def _raw(sql: str, params=()):
++    conn = sqlite3.connect(str(config.DB_PATH))
++    conn.row_factory = sqlite3.Row
++    try:
++        return conn.execute(sql, params).fetchone()
++    finally:
++        conn.close()
++
++
++def _read_back(ids: dict) -> dict:
++    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (ids["guest"],))
++    submission = db.query_one("SELECT * FROM submission WHERE id = ?", (ids["submission"],))
++    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (ids["owner"],))
++    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (ids["apartment"],))
++    outbox = db.query_one("SELECT payload FROM email_outbox WHERE id = ?", (ids["outbox"],))
++    return {
++        "birth_date": guest["birth_date"], "res_street": guest["res_street"],
++        "res_city": guest["res_city"], "res_country": guest["res_country"],
++        "doc_number": guest["doc_number"], "request_xml": submission["request_xml"],
++        "totp": db.decrypt_secret(account["totp_secret_enc"]),
++        "password": db.decrypt_secret(apartment["uby_ws_password_enc"]),
++        "claim": db.decrypt_field(json.loads(outbox["payload"])[mail.CLAIM_SECRET_KEY]),
++    }
++
++
++EXPECTED = {
++    "birth_date": BIRTH, "res_street": STREET, "res_city": CITY, "res_country": "DEU",
++    "doc_number": DOC, "request_xml": REQUEST, "totp": "TOTPSECRETDEMO",
++    "password": "demo-password", "claim": "claim-s",
++}
++
++
++# --- keys --------------------------------------------------------------------
++
++def test_without_data_keys_the_legacy_derived_key_is_used(keys):
++    token = db.encrypt_field("hello")
++    assert _legacy().decrypt(token.encode()).decode() == "hello"
++
++
++def test_old_data_stays_readable_after_a_new_key_is_added(keys):
++    old = db.encrypt_field("hello")
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    assert db.decrypt_field(old) == "hello"
++    fresh = db.encrypt_field("hello")
++    assert Fernet(NEW_KEY.encode()).decrypt(fresh.encode()).decode() == "hello"
++    assert db.token_is_current(fresh) and not db.token_is_current(old)
++
++
++def test_a_second_key_reads_the_first_keys_data(keys):
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    first = db.encrypt_field("hello")
++    keys.setenv("UBYHOST_DATA_KEYS", f"{NEWER_KEY},{NEW_KEY}")
++    assert db.decrypt_field(first) == "hello"
++    assert Fernet(NEWER_KEY.encode()).decrypt(db.encrypt_field("x").encode()) == b"x"
++
++
++def test_rotating_the_session_secret_no_longer_affects_encrypted_data(keys):
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    token = db.encrypt_field(DOC)
++    blob = db.encrypt_blob(b"%PDF-1.4 demo")
++    secret = db.encrypt_secret("demo-password")
++    keys.setattr(config, "_SECRET_KEY", "a-completely-different-session-secret-0123456789")
++    assert db.decrypt_field(token) == DOC
++    assert db.decrypt_blob(blob) == b"%PDF-1.4 demo"
++    assert db.decrypt_secret(secret) == "demo-password"
++    keys.setenv("UBYHOST_DATA_KEY_LEGACY", "0")
++    assert db.decrypt_field(token) == DOC
++
++
++def test_with_the_legacy_key_switched_off_legacy_tokens_no_longer_read(keys):
++    old = db.encrypt_field(DOC)
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    keys.setenv("UBYHOST_DATA_KEY_LEGACY", "0")
++    with pytest.raises(db.DecryptionError):
++        db.decrypt_field(old)
++
++
++def test_a_malformed_data_key_stops_startup_without_echoing_it(keys):
++    keys.setenv("UBYHOST_DATA_KEYS", "not-a-fernet-key-SECRETVALUE")
++    with pytest.raises(db.DataKeyError) as caught:
++        db.check_data_keys()
++    assert "SECRETVALUE" not in str(caught.value)
++    assert "entry 1" in str(caught.value)
++
++
++def test_legacy_off_without_any_data_key_is_refused(keys):
++    keys.setenv("UBYHOST_DATA_KEY_LEGACY", "0")
++    with pytest.raises(db.DataKeyError):
++        db.check_data_keys()
++
++
++# --- newly encrypted fields --------------------------------------------------
++
++def test_birth_date_address_and_request_xml_are_stored_encrypted(scratch_db):
++    ids = _seed()
++    raw_guest = _raw("SELECT * FROM guest WHERE id = ?", (ids["guest"],))
++    for name in ("birth_date", "res_street", "res_city"):
++        assert raw_guest[name] is None, f"{name} is still stored in the clear"
++        assert db.decrypt_field(raw_guest[f"{name}_enc"]) == EXPECTED[name]
++    assert raw_guest["res_country"] == "DEU", "the country code stays plain, like nationality"
++    raw_sub = _raw("SELECT * FROM submission WHERE id = ?", (ids["submission"],))
++    assert raw_sub["request_xml"] is None
++    assert db.decrypt_field(raw_sub["request_xml_enc"]) == REQUEST
++    assert raw_sub["response_xml"] == "<response/>"
++    assert _read_back(ids) == EXPECTED
++    data = Path(config.DB_PATH).read_bytes()
++    for plain in (BIRTH, STREET, "ZZ1234567"):
++        assert plain.encode() not in data
++
++
++def test_a_row_saved_before_wp16_still_reads_from_its_plaintext_column(scratch_db):
++    ids = _seed()
++    db.execute(
++        "UPDATE guest SET birth_date = ?, birth_date_enc = NULL WHERE id = ?", (BIRTH, ids["guest"])
++    )
++    guest = db.query_one("SELECT * FROM guest WHERE id = ?", (ids["guest"],))
++    assert guest["birth_date"] == BIRTH
++
++
++def test_stay_fee_age_rule_is_unchanged_with_an_encrypted_birth_date(scratch_db):
++    """A child exempt by age stays exempt when the birth date comes from *_enc."""
++    ids = _seed()
++    now = db.utcnow()
++    db.update("apartment", ids["apartment"], {
++        "stay_fee_rate_czk": 50, "stay_fee_cadence": "monthly", "stay_fee_vs": "1234567890",
++    })
++    child = db.insert("guest", {
++        "reservation_id": ids["reservation"], "surname": "NOVAK", "first_name": "ANNA",
++        "birth_date": "01012015", "nationality": "DEU", "created_at": now, "updated_at": now,
++    })
++    assert _raw("SELECT birth_date FROM guest WHERE id = ?", (child,))["birth_date"] is None
++    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (ids["reservation"],))
++    first, last = date(2026, 8, 1), date(2026, 8, 31)
++    stored = db.query_one("SELECT * FROM guest WHERE id = ?", (child,))
++    plain = dict(stored)
++    plain["birth_date"] = "01012015"
++    assert stay_fee.guest_period(stored, reservation, first, last) == stay_fee.guest_period(
++        plain, reservation, first, last
++    )
++    share = stay_fee.guest_period(stored, reservation, first, last)
++    assert share["exempt_nights"] == 4 and share["liable_nights"] == 0
++    adult = db.query_one("SELECT * FROM guest WHERE id = ?", (ids["guest"],))
++    assert stay_fee.guest_period(adult, reservation, first, last)["liable_nights"] == 4
++
++
++def test_the_payload_purge_clears_the_encrypted_envelope(scratch_db):
++    from app import reporting
++
++    ids = _seed()
++    db.execute(
++        "UPDATE submission SET created_at = '2020-01-01T00:00:00+00:00' WHERE id = ?",
++        (ids["submission"],),
++    )
++    assert reporting.purge_submission_payloads() == 1
++    raw_sub = _raw("SELECT * FROM submission WHERE id = ?", (ids["submission"],))
++    assert raw_sub["request_xml_enc"] is None and raw_sub["request_xml"] is None
++
++
++# --- scripts/reencrypt.py ------------------------------------------------------
++
++def _backup(tmp_path: Path, age_hours: float = 0) -> Path:
++    path = tmp_path / "backup.db"
++    path.write_bytes(b"SQLite format 3\x00demo")
++    stamp = time.time() - age_hours * 3600
++    os.utime(path, (stamp, stamp))
++    return path
++
++
++def _photo(guest_id: int, token: bytes) -> Path:
++    passport_photos.PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
++    path = passport_photos.PHOTOS_DIR / f"{guest_id}.jpg{passport_photos.ENC_SUFFIX}"
++    path.write_bytes(token)
++    return path
++
++
++def test_reencrypt_moves_everything_to_the_new_key_and_values_stay_equal(scratch_db, keys):
++    tool = _tool()
++    ids = _seed()
++    photo = _photo(ids["guest"], db.encrypt_blob(b"\xff\xd8\xff demo image"))
++    # A row saved before WP16: plaintext only.
++    other = db.insert("guest", {
++        "reservation_id": ids["reservation"], "surname": "B", "created_at": db.utcnow(),
++        "updated_at": db.utcnow(),
++    })
++    db.execute("UPDATE guest SET birth_date = ?, res_city = ? WHERE id = ?", (BIRTH, CITY, other))
++
++    filing = db.insert("stay_fee_filing", {
++        "apartment_id": ids["apartment"], "period_key": "2026-08", "cadence": "monthly",
++        "rate_czk": 50, "liable_days": 4, "exempt_days": 0, "total_due_czk": 200,
++        "total_collected_czk": 200, "pdf_enc": db.encrypt_blob(b"%PDF-1.4 filing"),
++        "csv_enc": db.encrypt_blob(b"a;b"), "payload_enc": db.encrypt_field("{}"),
++        "created_at": db.utcnow(),
++    })
++
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    backup = _backup(scratch_db)
++    assert tool.main(["--backup", str(backup), "--batch-size", "1"]) == 0
++
++    keys.setenv("UBYHOST_DATA_KEY_LEGACY", "0")
++    assert _read_back(ids) == EXPECTED
++    assert db.decrypt_blob(photo.read_bytes()) == b"\xff\xd8\xff demo image"
++    sealed = _raw("SELECT pdf_enc, csv_enc, payload_enc FROM stay_fee_filing WHERE id = ?", (filing,))
++    assert isinstance(sealed["pdf_enc"], bytes), "a BLOB stays a BLOB"
++    assert db.decrypt_blob(sealed["pdf_enc"]) == b"%PDF-1.4 filing"
++    assert db.decrypt_blob(sealed["csv_enc"]) == b"a;b"
++    assert db.decrypt_field(sealed["payload_enc"]) == "{}"
++    migrated = db.query_one("SELECT * FROM guest WHERE id = ?", (other,))
++    assert (migrated["birth_date"], migrated["res_city"]) == (BIRTH, CITY)
++    assert _raw("SELECT birth_date FROM guest WHERE id = ?", (other,))["birth_date"] is None
++    assert tool.main(["--check"]) == 0
++
++
++def test_reencrypt_is_resumable_and_a_second_run_changes_nothing(scratch_db, keys):
++    tool = _tool()
++    ids = _seed()
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    first = tool.run(dry_run=False, batch_size=2)
++    assert first.targets["guest.doc_number_enc"].rotated == 1
++    before = _raw("SELECT doc_number_enc FROM guest WHERE id = ?", (ids["guest"],))[0]
++    second = tool.run(dry_run=False, batch_size=2)
++    assert second.pending == 0
++    assert second.targets["guest.doc_number_enc"].current == 1
++    after = _raw("SELECT doc_number_enc FROM guest WHERE id = ?", (ids["guest"],))[0]
++    assert before == after, "a value already under the current key is not rewritten"
++
++
++def test_reencrypt_dry_run_counts_and_writes_nothing(scratch_db, keys):
++    tool = _tool()
++    ids = _seed()
++    before = _raw("SELECT doc_number_enc, birth_date_enc FROM guest WHERE id = ?", (ids["guest"],))
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    assert tool.main(["--check"]) == 1
++    report = tool.run(dry_run=True)
++    assert report.targets["guest.doc_number_enc"].rotated == 1
++    assert report.targets["apartment.uby_ws_password_enc"].rotated == 1
++    assert report.targets["submission.request_xml_enc"].rotated == 1
++    after = _raw("SELECT doc_number_enc, birth_date_enc FROM guest WHERE id = ?", (ids["guest"],))
++    assert tuple(before) == tuple(after)
++
++
++def test_reencrypt_refuses_to_write_without_a_fresh_backup(scratch_db, keys):
++    tool = _tool()
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    with pytest.raises(SystemExit, match="--backup"):
++        tool.main([])
++    with pytest.raises(SystemExit, match="does not exist"):
++        tool.main(["--backup", str(scratch_db / "missing.db")])
++    with pytest.raises(SystemExit, match="hours old"):
++        tool.main(["--backup", str(_backup(scratch_db, age_hours=30))])
++    with pytest.raises(SystemExit, match="live database"):
++        tool.main(["--backup", str(config.DB_PATH)])
++
++
++def test_reencrypt_refuses_to_write_without_a_new_key(scratch_db, keys):
++    tool = _tool()
++    with pytest.raises(SystemExit, match="UBYHOST_DATA_KEYS is not set"):
++        tool.main(["--backup", str(_backup(scratch_db))])
++
++
++def test_reencrypt_leaves_an_unreadable_value_alone_and_fails(scratch_db, keys):
++    tool = _tool()
++    ids = _seed()
++    stranger = Fernet(Fernet.generate_key()).encrypt(b"x").decode()
++    db.execute("UPDATE guest SET visa_number_enc = ? WHERE id = ?", (stranger, ids["guest"]))
++    keys.setenv("UBYHOST_DATA_KEYS", NEW_KEY)
++    assert tool.main(["--backup", str(_backup(scratch_db))]) == 2
++    assert _raw("SELECT visa_number_enc FROM guest WHERE id = ?", (ids["guest"],))[0] == stranger
++
++
++def test_rollback_new_fields_puts_them_back_in_plaintext(scratch_db, keys):
++    tool = _tool()
++    ids = _seed()
++    report = tool.rollback_new_fields(dry_run=False)
++    assert report.targets["guest.birth_date"].restored == 1
++    raw_guest = _raw("SELECT * FROM guest WHERE id = ?", (ids["guest"],))
++    assert (raw_guest["birth_date"], raw_guest["res_street"], raw_guest["res_city"]) == (
++        BIRTH, STREET, CITY,
++    )
++    assert raw_guest["birth_date_enc"] is None
++    assert raw_guest["doc_number_enc"], "fields encrypted before WP16 are left alone"
++    raw_sub = _raw("SELECT * FROM submission WHERE id = ?", (ids["submission"],))
++    assert raw_sub["request_xml"] == REQUEST and raw_sub["request_xml_enc"] is None
+diff --git a/App/tests/test_retention.py b/App/tests/test_retention.py
+index 2fcfa3d..3a4bbb6 100644
+--- a/App/tests/test_retention.py
++++ b/App/tests/test_retention.py
+@@ -269,6 +269,7 @@ def test_an_old_submission_keeps_its_receipt_but_loses_its_envelope():
+ 
+     row = db.query_one("SELECT * FROM submission WHERE id = ?", (submission_id,))
+     assert row["request_xml"] is None, "the passport numbers are still on disk"
++    assert row["request_xml_enc"] is None
+     assert row["response_xml"] is None
+     assert row["receipt_pdf"] == RECEIPT_B64, (
+         "the Dorucenka is the evidence the host must still be able to produce"
+@@ -341,10 +342,10 @@ def test_purging_one_owner_leaves_another_owners_envelope_alone():
+     assert reporting.purge_submission_payloads(owner_user_id=mine) == 1
+ 
+     assert db.query_one(
+-        "SELECT request_xml FROM submission WHERE id = ?", (my_submission,)
++        "SELECT request_xml, request_xml_enc FROM submission WHERE id = ?", (my_submission,)
+     )["request_xml"] is None
+     assert db.query_one(
+-        "SELECT request_xml FROM submission WHERE id = ?", (their_submission,)
++        "SELECT request_xml, request_xml_enc FROM submission WHERE id = ?", (their_submission,)
+     )["request_xml"] == SUBMISSION_REQUEST, (
+         "one host's purge blanked another host's submission envelope"
+     )
+diff --git a/App/tests/test_retention_alignment.py b/App/tests/test_retention_alignment.py
+index 37e965e..5e2dc02 100644
+--- a/App/tests/test_retention_alignment.py
++++ b/App/tests/test_retention_alignment.py
+@@ -381,9 +381,8 @@ def test_raw_xml_goes_after_ninety_days_and_the_receipt_row_stays():
+     assert row["apartment_id"] and row["guest_ids"] == "[1]"
+     assert row["created_at"] and row["state"] == "ok"
+     assert row["pseudo_stamp"] == "REF-0001" and row["receipt_pdf"]
+-    assert db.query_one("SELECT request_xml FROM submission WHERE id = ?", (recent,))[
+-        "request_xml"
+-    ]
++    # WP16 keeps the envelope in request_xml_enc; SELECT * decrypts it.
++    assert db.query_one("SELECT * FROM submission WHERE id = ?", (recent,))["request_xml"]
+ 
+     line = _retention_lines("ubyport_xml")[0]
+     assert line["count"] == 1
+diff --git a/App/tests/test_worker.py b/App/tests/test_worker.py
+index e37a01d..cad6480 100644
+--- a/App/tests/test_worker.py
++++ b/App/tests/test_worker.py
+@@ -151,3 +151,17 @@ def test_second_worker_process_exits_while_the_first_holds_the_lock(tmp_path):
+         )
+     assert proc.returncode == worker.EXIT_LOCK_HELD
+     assert "refusing to start a second scheduler" in proc.stderr + proc.stdout
++
++
++def test_the_worker_refuses_to_start_with_a_malformed_data_key(monkeypatch, tmp_path):
++    # WP16 + WP06: the worker files reports and reads guests, so a bad
++    # UBYHOST_DATA_KEYS must stop it at start, as it stops the web process.
++    _private_data(monkeypatch, tmp_path)
++    monkeypatch.setattr(config, "ROLE", "worker")
++    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
++    monkeypatch.setenv("UBYHOST_DATA_KEYS", "not-a-fernet-key")
++    started = []
++    monkeypatch.setattr(scheduler, "start", lambda: started.append(1) or True)
++    with pytest.raises(db.DataKeyError):
++        worker.run(threading.Event())
++    assert started == []
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index b6b83b4..31ba306 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -40,6 +40,12 @@ UBYHOST_ADMIN_PASSWORD=change-me-to-a-long-random-password
+ 
+ # --- Security (generate: python -c "import secrets; print(secrets.token_urlsafe(48))") ---
+ UBYHOST_SECRET_KEY=
++# Data-encryption keys (WP16), comma-separated, newest first. Generate one with:
++#   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
++# Keep a copy outside the server: a backup cannot be read without these keys.
++UBYHOST_DATA_KEYS=
++# Set to 0 only after scripts/reencrypt.py --check reports nothing left.
++UBYHOST_DATA_KEY_LEGACY=1
+ 
+ # --- Backups (OPS-1) ---
+ # Public age recipient (age1...) the daily snapshot is encrypted to. Required in
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index dc73dea..c52e550 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -20,7 +20,9 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
+ | --- | --- | --- |
+ | `UBYHOST_DATA_DIR` | `App/data` | Database, secret key, passport photos. Created at import time with mode `0700`. |
+ | `UBYHOST_DB` | `$UBYHOST_DATA_DIR/ubyhost.db` | Full path override for the SQLite file. `App/scripts/backup_data.sh` honours it too, so if you set one you must set it for the backup script as well. |
+-| `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and derives the Fernet key for UbyPort passwords **and host TOTP secrets**. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
++| `UBYHOST_SECRET_KEY` | generated once into `$UBYHOST_DATA_DIR/secret_key` | Minimum 32 characters; the process refuses to start if shorter. Signs session/PIN/claim cookies and CSRF tokens, and, while `UBYHOST_DATA_KEY_LEGACY` is on, derives the legacy Fernet key for data at rest. See [OPERATIONS.md](OPERATIONS.md#if-the-secret-key-is-lost-or-rotated). |
++| `UBYHOST_DATA_KEYS` | unset | Comma-separated Fernet keys for data at rest, newest first. The first encrypts; all decrypt. Unset means the legacy key derived from `UBYHOST_SECRET_KEY` is the only key. A malformed entry stops the app at startup. Rotate with `App/scripts/reencrypt.py`. |
++| `UBYHOST_DATA_KEY_LEGACY` | `1` | Whether the legacy key derived from `UBYHOST_SECRET_KEY` is still tried for decryption. Set `0` only after `scripts/reencrypt.py --check` exits 0; refused while `UBYHOST_DATA_KEYS` is empty. |
+ | `UBYHOST_DEPLOYMENT` | `local` | `local`, `staging` or `production`. Gates real behaviour, not just labels: host CSRF enforcement, Turnstile, SES, and secure cookie flags are all conditional on `production`. |
+ | `PORT` | `8080` (Lightsail) / Render-supplied | Read by `App/render_start.sh` and `deploy/lightsail/docker-compose.yml`, not by the app. |
+ 
+diff --git a/docs/SECURITY.md b/docs/SECURITY.md
+index f6dfe5d..cc670aa 100644
+--- a/docs/SECURITY.md
++++ b/docs/SECURITY.md
+@@ -12,7 +12,7 @@ summarises the threat model, controls, and known limitations.
+ | **Host 2FA** | Authenticator-app TOTP required in production; one-use recovery codes |
+ | **Guest access** | 100-bit permalink token + optional six-digit PIN + signed PIN cookie bound to token and current PIN; the claim secret is stored hashed and never written into a mail body |
+ | **Multi-tenant** | All host routes resolve resources through `access.*` joins on `owner_user_id` |
+-| **Secrets** | UbyPort passwords, host TOTP secrets, guest travel-document numbers and queued claim secrets encrypted at rest (Fernet); `SECRET_KEY` in `data/secret_key` |
++| **Secrets** | UbyPort passwords, host TOTP secrets, guest travel-document numbers, birth date, street and town of residence, signatures, the UbyPort request envelope and queued claim secrets encrypted at rest (MultiFernet over `UBYHOST_DATA_KEYS`, separate from the session secret; the old key derived from `SECRET_KEY` is kept for decryption until `scripts/reencrypt.py` has run); `SECRET_KEY` in `data/secret_key` |
+ | **Uploads** | Passport photos/PDFs: type/size/magic-byte checks; host-only download route |
+ 
+ ## Hardening (application)
+-- 
+2.34.1
+

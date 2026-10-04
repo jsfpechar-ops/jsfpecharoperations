@@ -1,0 +1,1699 @@
+From 757d062a5b44a7a5888c765dd2c58291cab67fbc Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 01:19:17 +0200
+Subject: [PATCH 33/34] WP21: Meta Conversions API sign-up conversion
+ (server-side, consent-gated)
+
+Integration with WP18: the WP21 columns (user_account.signup_source, the ad_click outbox columns) and the send index moved into App/app/migrations/0004_meta_capi.sql. config.py keeps WP09's PRIVACY_VERSION 1.6 next to the META_* settings. routes/legal.py and subprocessors.html: one recipients panel (WP09's list); Meta Platforms Ireland is a new recipient_meta_ads entry (EN, CS) listed while sign-up is on and the Conversions API is configured, so WP21's separate panel strings and its duplicate recipients_title were dropped. scheduler.py: meta_capi joins job_intervals (10 min) so the WP10 Operations page tracks it, and the job writes a WP13 run line. admin_funnel.py (WP11) also exports signup_source. New test: the sign-up pages carry no Umami tag (tests/test_umami_guard.py).
+
+Owner decision applied: the Meta event includes client_user_agent. The User-Agent header of the sign-up submit is stored on the meta ad_click row (new column ad_click.client_user_agent, printable ASCII, at most 512 characters) only when the Meta box is ticked, sent as user_data.client_user_agent, and blanked with fbc on every deletion path (withdrawal, purge after sending, failure, expiry, 90 days), and deleted with the row. The consent box and the Meta privacy paragraph (EN, CS) now name the browser type string, so the Meta consent version is ads-meta-v2. 04_legal_positions.md section 6 updated to match. tests/test_meta_capi.py updated, plus tests for UA only with consent, an event without UA, and the privacy wording.
+---
+ App/app/admin_funnel.py               |   7 +-
+ App/app/config.py                     |  17 +
+ App/app/host_i18n.py                  | 145 +++++++
+ App/app/mail_notify.py                |  11 +-
+ App/app/meta_capi.py                  | 277 +++++++++++++
+ App/app/migrations/0004_meta_capi.sql |  13 +
+ App/app/routes/admin_accounts.py      |   4 +-
+ App/app/routes/legal.py               |  17 +-
+ App/app/scheduler.py                  |  28 ++
+ App/app/signup.py                     | 143 ++++++-
+ App/app/subprocessors_i18n.py         |   8 +
+ App/app/templates/privacy.html        |   6 +
+ App/app/templates/subprocessors.html  |   7 +-
+ App/app/templates/users.html          |   7 +
+ App/tests/test_admin_funnel.py        |   3 +
+ App/tests/test_meta_capi.py           | 573 ++++++++++++++++++++++++++
+ App/tests/test_umami_guard.py         |   9 +
+ deploy/lightsail/.env.example         |   9 +
+ 18 files changed, 1254 insertions(+), 30 deletions(-)
+ create mode 100644 App/app/meta_capi.py
+ create mode 100644 App/app/migrations/0004_meta_capi.sql
+ create mode 100644 App/tests/test_meta_capi.py
+
+diff --git a/App/app/admin_funnel.py b/App/app/admin_funnel.py
+index c096209..242c0cb 100644
+--- a/App/app/admin_funnel.py
++++ b/App/app/admin_funnel.py
+@@ -9,7 +9,8 @@ fine here, guest data is not).
+ WP20 (self sign-up) fills the hook: ``SIGNUP_STAGES`` adds "signed up" and
+ "e-mail verified" before "created" (admin-created accounts have neither), and
+ ``SIGNUP_SOURCE_COLUMNS`` adds "UTM or ad click present" (yes/no, empty for an
+-account that did not sign up itself). Every consumer (the page, the stage
++account that did not sign up itself); WP21 adds the stored source (google,
++meta or none). Every consumer (the page, the stage
+ counts and the CSV) reads ``stages()`` and ``csv_columns()``.
+ """
+ from __future__ import annotations
+@@ -34,6 +35,8 @@ SIGNUP_STAGES: Tuple[Tuple[str, str], ...] = (
+ # WP20: extra per-account columns for the CSV, as (key, column).
+ SIGNUP_SOURCE_COLUMNS: Tuple[Tuple[str, str], ...] = (
+     ("signup_source_present", "signup_source_present"),
++    # WP21: google, meta or none (signup.signup_source).
++    ("signup_source", "signup_source"),
+ )
+ 
+ # The funnel order. A host's stage is the furthest one with a date.
+@@ -83,7 +86,7 @@ _FILED = ", ".join("?" for _ in FILED_STATES)
+ # filing numbers come from one grouped join over submission.
+ _SQL = (
+     "SELECT u.id, u.username, u.display_name, u.active, u.created_at, u.last_login_at, "
+-    "u.signup_at, u.email_verified_at, "
++    "u.signup_at, u.email_verified_at, u.signup_source, "
+     # WP20: did the self sign-up carry a UTM label or a consented ad click?
+     "CASE WHEN u.signup_at IS NULL THEN NULL "
+     "WHEN COALESCE(u.signup_utm_source, '') <> '' OR COALESCE(u.signup_utm_medium, '') <> '' "
+diff --git a/App/app/config.py b/App/app/config.py
+index 2f37c6d..0094d69 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -272,6 +272,23 @@ ADS_CONVERSION_NAME = os.environ.get("UBYHOST_ADS_CONVERSION_NAME", "UbyHost sig
+ # after it or 30 days after upload) are fixed in signup.py: they come from the
+ # legal position, not from deployment preference.
+ 
++# WP21: Meta (Facebook/Instagram) Conversions API, server-side only: no Meta
++# Pixel and no cookie. Off unless both the dataset (pixel) ID and the access
++# token are set; while off, the Meta consent box is not shown either.
++META_DATASET_ID = os.environ.get("UBYHOST_META_DATASET_ID", "").strip()
++META_ACCESS_TOKEN = os.environ.get("UBYHOST_META_ACCESS_TOKEN", "").strip()
++# Events Manager > Test events. Only for trying the integration on staging;
++# Meta says to remove it for production traffic.
++META_TEST_EVENT_CODE = os.environ.get("UBYHOST_META_TEST_EVENT_CODE", "").strip()
++# Graph API version for graph.facebook.com/<version>/<dataset>/events.
++# v26.0 was the latest on 4 Oct 2026 (Graph API changelog).
++META_GRAPH_VERSION = os.environ.get("UBYHOST_META_GRAPH_VERSION", "v26.0").strip()
++
++
++def meta_capi_enabled() -> bool:
++    return bool(META_DATASET_ID and META_ACCESS_TOKEN)
++
++
+ # Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
+ # analytics with opt-out, own retention periods and roles. A bump makes the
+ # policy pending again, so every host is sent to /account/accept once.
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index cd06bb1..fcc2117 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -4688,6 +4688,151 @@ _SIGNUP_STRINGS = {
+ for _lang, _strings in _SIGNUP_STRINGS.items():
+     STRINGS[_lang].update(_strings)
+ 
++# WP21: Meta (Facebook/Instagram) Conversions API. The consent and privacy
++# wording is legal position 6 (04_legal_positions.md), verbatim.
++_META_STRINGS = {
++    "en": {
++        "signup.meta_consent": (
++            "Optional: I agree that UbyHost may record that I came from Facebook "
++            "or Instagram and send that click identifier and my browser type "
++            "string, with the fact and time of my sign-up, to Meta Platforms "
++            "Ireland Ltd. to measure our campaigns. Meta receives it as a joint "
++            "controller and then uses it as its own controller. You can withdraw "
++            "anytime in Settings."
++        ),
++        "signup.meta_consent_link": "How Meta uses data",
++        "mail.signup_admin.meta": "Facebook/Instagram click (with consent)",
++        "notification.job_name.meta_capi": "Meta conversion sending",
++        "notification.meta_capi_config.title": (
++            "Meta Conversions API refused the access token or dataset."
++        ),
++        "notification.meta_capi_config.detail": (
++            "Sign-up events to Meta are held back and retried for up to 7 days. "
++            "Check UBYHOST_META_DATASET_ID and UBYHOST_META_ACCESS_TOKEN. Meta said: %(error)s"
++        ),
++        "settings.privacy.ad_consent.meta": (
++            "Use my sign-up to measure UbyHost's Facebook and Instagram campaigns"
++        ),
++        "flash.signup.consent_withdrawn.meta": (
++            "Meta consent withdrawn and the click identifier deleted."
++        ),
++        "users.menu.withdraw_meta_consent": "Withdraw Meta consent",
++        "users.source": "Source: %(source)s",
++        "users.source.google": "Google",
++        "users.source.meta": "Facebook/Instagram",
++        "users.source.none": "direct or other",
++        "privacy.signup_meta_title": "Facebook and Instagram measurement",
++        "privacy.signup_meta_body": (
++            "If you arrived at our sign-up page from Facebook or Instagram, from "
++            "an ad or from an ordinary post or group, the page address usually "
++            "contains a click identifier (fbclid). We keep it only if you tick the "
++            "optional Meta consent box during sign-up. After you confirm your "
++            "e-mail address, our server sends Meta Platforms Ireland Ltd. one "
++            "sign-up event with this identifier, your browser type string (the "
++            "User-Agent your browser sent with the sign-up form), the time of "
++            "sign-up, a random event number and the address of our sign-up page. "
++            "We do not send your name, e-mail address, phone number or IP address, "
++            "we do not use the Meta Pixel, and we set no cookie for this. We mark "
++            "the event for measurement only, so that Meta uses it to report on our "
++            "campaigns and not to optimise ad delivery. For collecting and sending "
++            "these data, we and Meta Platforms Ireland Ltd. are joint controllers "
++            "under Art. 26 GDPR (Meta Controller Addendum, "
++            "https://www.facebook.com/legal/controller_addendum). Meta is "
++            "responsible for your rights under Art. 15 to 20 GDPR for the data it "
++            "stores after receiving them, and it processes them further as an "
++            "independent controller; see https://www.facebook.com/privacy/policy/. "
++            "Legal basis: your consent (Art. 6(1)(a) GDPR and § 89(3) of Act No. "
++            "127/2005 Coll.). We delete the identifier and the browser type string "
++            "7 days after they were sent, and if they were never sent, at the "
++            "latest 90 days after the click. You can withdraw consent anytime in "
++            "Settings > Privacy. Withdrawal does not affect processing before it."
++        ),
++        "privacy.signup_recipients_title": "Recipients for ad measurement",
++        "privacy.signup_recipients_body": (
++            "Only with your consent, and not as our processors: Google Ireland Ltd. "
++            "(Google Ads conversion measurement, independent controller)."
++        ),
++        "privacy.signup_recipients_meta": (
++            "Also only with your consent: Meta Platforms Ireland Ltd. (Facebook and "
++            "Instagram conversion measurement, joint controller for collection and "
++            "sending, then independent controller)."
++        ),
++    },
++    "cs": {
++        "signup.meta_consent": (
++            "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z "
++            "Facebooku nebo Instagramu, a předal tento identifikátor kliknutí a "
++            "údaj o typu mého prohlížeče spolu s informací o mé registraci a jejím "
++            "čase společnosti Meta Platforms Ireland Ltd. k měření úspěšnosti "
++            "našich kampaní. Meta je při předání společným správcem a dále údaje "
++            "zpracovává jako samostatný správce. Souhlas můžete kdykoli odvolat v "
++            "Nastavení."
++        ),
++        "signup.meta_consent_link": "Jak Meta používá data",
++        "mail.signup_admin.meta": "Proklik z Facebooku/Instagramu (se souhlasem)",
++        "notification.job_name.meta_capi": "odesílání konverzí do Mety",
++        "notification.meta_capi_config.title": (
++            "Conversions API společnosti Meta odmítlo přístupový token nebo dataset."
++        ),
++        "notification.meta_capi_config.detail": (
++            "Události registrace pro Metu se zadržují a zkoušejí se odeslat nejvýše 7 dní. "
++            "Zkontrolujte UBYHOST_META_DATASET_ID a UBYHOST_META_ACCESS_TOKEN. Meta uvedla: "
++            "%(error)s"
++        ),
++        "settings.privacy.ad_consent.meta": (
++            "Použít mou registraci k měření kampaní UbyHostu na Facebooku a Instagramu"
++        ),
++        "flash.signup.consent_withdrawn.meta": (
++            "Souhlas pro Metu byl odvolán a identifikátor kliknutí smazán."
++        ),
++        "users.menu.withdraw_meta_consent": "Odvolat souhlas pro Metu",
++        "users.source": "Zdroj: %(source)s",
++        "users.source.google": "Google",
++        "users.source.meta": "Facebook/Instagram",
++        "users.source.none": "přímo nebo jinak",
++        "privacy.signup_meta_title": "Měření na Facebooku a Instagramu",
++        "privacy.signup_meta_body": (
++            "Pokud jste na registrační stránku přišli z Facebooku nebo Instagramu, "
++            "ať už z reklamy, nebo z běžného příspěvku či skupiny, obsahuje adresa "
++            "stránky obvykle identifikátor kliknutí (fbclid). Uchováme jej jen "
++            "tehdy, pokud při registraci zaškrtnete nepovinný souhlas pro Metu. Po "
++            "potvrzení vaší e-mailové adresy odešle náš server společnosti Meta "
++            "Platforms Ireland Ltd. jednu událost registrace s tímto "
++            "identifikátorem, údajem o typu vašeho prohlížeče (User-Agent, který "
++            "prohlížeč odeslal s registračním formulářem), časem registrace, "
++            "náhodným číslem události a adresou naší registrační stránky. Vaše "
++            "jméno, e-mail, telefon ani IP adresu nepředáváme, nepoužíváme Meta "
++            "Pixel a nenastavujeme k tomu žádné cookies. Událost označujeme jen "
++            "pro měření, aby ji Meta použila k vykázání výsledků našich kampaní, a "
++            "ne k optimalizaci doručování reklam. Pro shromáždění a odeslání "
++            "těchto údajů jsme my a společnost Meta Platforms Ireland Ltd. "
++            "společnými správci podle čl. 26 GDPR (Dodatek o správcích společnosti "
++            "Meta, https://www.facebook.com/legal/controller_addendum). Za vaše "
++            "práva podle čl. 15 až 20 GDPR k údajům, které Meta po přijetí "
++            "uchovává, odpovídá Meta, která je dále zpracovává jako samostatný "
++            "správce, viz https://www.facebook.com/privacy/policy/. Právní základ: "
++            "váš souhlas (čl. 6 odst. 1 písm. a) GDPR a § 89 odst. 3 zákona č. "
++            "127/2005 Sb.). Identifikátor a údaj o typu prohlížeče smažeme 7 dní "
++            "po odeslání, a pokud odeslány nebyly, nejpozději 90 dní po kliknutí. "
++            "Souhlas můžete kdykoli odvolat v Nastavení > Soukromí. Odvolání nemá "
++            "vliv na zpracování před ním."
++        ),
++        "privacy.signup_recipients_title": "Příjemci pro měření reklam",
++        "privacy.signup_recipients_body": (
++            "Jen s vaším souhlasem a nikoli jako naši zpracovatelé: Google Ireland Ltd. "
++            "(měření konverzí Google Ads, samostatný správce)."
++        ),
++        "privacy.signup_recipients_meta": (
++            "Rovněž jen s vaším souhlasem: Meta Platforms Ireland Ltd. (měření konverzí "
++            "z Facebooku a Instagramu, společný správce pro shromáždění a odeslání, poté "
++            "samostatný správce)."
++        ),
++    },
++}
++
++for _lang, _strings in _META_STRINGS.items():
++    STRINGS[_lang].update(_strings)
++
+ 
+ # WP10: the admin Operations page. Platform administrators only.
+ _ADMIN_OPERATIONS_STRINGS = {
+diff --git a/App/app/mail_notify.py b/App/app/mail_notify.py
+index 4fbe699..a927b21 100644
+--- a/App/app/mail_notify.py
++++ b/App/app/mail_notify.py
+@@ -1798,7 +1798,8 @@ def build_signup_exists(*, lang: str) -> Dict[str, str]:
+ 
+ 
+ def build_signup_admin(
+-    *, workspace: str, email: str, username: str, campaign: str, ads_click: bool
++    *, workspace: str, email: str, username: str, campaign: str, ads_click: bool,
++    meta_click: bool = False,
+ ) -> Dict[str, str]:
+     lang = HOST_MAIL_LANGUAGE
+     subject = _text(lang, "mail.signup_admin.subject", workspace=workspace)
+@@ -1813,6 +1814,10 @@ def build_signup_admin(
+         (_text(lang, "mail.signup_admin.username"), username),
+         (_text(lang, "mail.signup_admin.source"), campaign or "-"),
+         (_text(lang, "mail.signup_admin.ads"), yes_no),
++        (
++            _text(lang, "mail.signup_admin.meta"),
++            _text(lang, "mail.signup_admin.yes" if meta_click else "mail.signup_admin.no"),
++        ),
+     ]
+     footer = _signup_footer(lang)
+     text = "\n".join(
+@@ -1870,11 +1875,11 @@ def signup_exists(*, user_id: int, to_email: str, lang: str, bucket: str) -> Opt
+ 
+ def signup_admin(
+     *, user_id: int, workspace: str, email: str, username: str, campaign: str,
+-    ads_click: bool,
++    ads_click: bool, meta_click: bool = False,
+ ) -> Optional[int]:
+     content = build_signup_admin(
+         workspace=workspace, email=email, username=username, campaign=campaign,
+-        ads_click=ads_click,
++        ads_click=ads_click, meta_click=meta_click,
+     )
+     return mail.enqueue(
+         kind="signup_admin",
+diff --git a/App/app/meta_capi.py b/App/app/meta_capi.py
+new file mode 100644
+index 0000000..e998e71
+--- /dev/null
++++ b/App/app/meta_capi.py
+@@ -0,0 +1,277 @@
++"""Meta Conversions API: the sign-up event, sent from the server (WP21).
++
++No Meta Pixel and no cookie. A visitor who arrived with ``fbclid`` and ticked
++the optional Meta box at sign-up has an ``ad_click`` row with ``fbc`` (see
++``signup``). Once the e-mail address is confirmed, ``enqueue`` marks that row
++``pending``; ``send_pending`` (scheduler job ``meta_capi``) posts one
++``CompleteRegistration`` event per row to
++``graph.facebook.com/<version>/<dataset>/events``, outbox style:
++
++- the row is claimed with a compare-and-set, the HTTP call happens with no
++  database transaction open, and the answer is written afterwards;
++- network errors, 5xx, 429 and errors Meta marks transient are retried with
++  backoff; anything else, or too many attempts, ends as ``failed``;
++- Meta refuses an ``event_time`` more than 7 days old, so an event that could
++  not be sent by then is ``expired`` instead of retried forever.
++
++The event carries ``fbc``, ``client_user_agent`` (the browser type string of
++the sign-up submit; Meta requires it for website events), ``event_time``,
++``event_id`` (random, for Meta's deduplication), ``action_source``,
++``event_source_url`` (the sign-up page, no query string) and ``opt_out``
++(measurement only). No e-mail, phone, name or IP address.
++"""
++from __future__ import annotations
++
++import json
++import logging
++import secrets
++from datetime import datetime, timedelta, timezone
++from typing import Any, Dict, Optional
++
++import requests
++
++from . import alerts, config, db
++
++log = logging.getLogger("ubyhost.meta_capi")
++
++EVENT_NAME = "CompleteRegistration"
++ACTION_SOURCE = "website"
++GRAPH_HOST = "https://graph.facebook.com"
++TIMEOUT_SECONDS = 10
++MAX_ATTEMPTS = 8
++# Meta rejects the whole request if an event_time is older than 7 days.
++# Stop an hour early so a slow retry cannot land just past the edge.
++SEND_WINDOW = timedelta(days=7) - timedelta(hours=1)
++# A claimed row whose worker died is handed back after this long.
++STALE_SENDING = timedelta(minutes=10)
++# Graph API error codes that mean "try again later": unknown/service errors,
++# rate limits, temporarily unavailable.
++_TRANSIENT_CODES = {1, 2, 4, 17, 32, 341, 613, 80004}
++# The token or the dataset is wrong: a configuration problem the owner can fix,
++# so keep retrying (until the window closes) and raise an alert.
++_CONFIG_CODES = {10, 190, 200, 803}
++
++PENDING, SENDING, SENT, FAILED, EXPIRED = "pending", "sending", "sent", "failed", "expired"
++
++
++class _Retry(Exception):
++    """A send that may succeed later."""
++
++
++class _Fatal(Exception):
++    """A send that will never succeed as it is."""
++
++
++def enabled() -> bool:
++    return config.meta_capi_enabled()
++
++
++def _iso(moment: datetime) -> str:
++    return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat()
++
++
++def _parse(stored: str) -> datetime:
++    parsed = datetime.fromisoformat(str(stored).replace("Z", "+00:00"))
++    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
++
++
++def enqueue(user_id: int) -> bool:
++    """Queue the sign-up event for a just-verified account, if it consented.
++
++    Called from ``signup.activate``. Only writes the database.
++    """
++    row = db.query_one(
++        "SELECT id FROM ad_click WHERE user_account_id = ? AND platform = 'meta' "
++        "AND withdrawn_at IS NULL AND fbc IS NOT NULL AND send_state IS NULL",
++        (user_id,),
++    )
++    if not row:
++        return False
++    return db.update_if(
++        "ad_click",
++        row["id"],
++        {
++            "send_state": PENDING,
++            "event_id": secrets.token_hex(16),
++            "next_attempt_at": db.utcnow(),
++        },
++        {"send_state": None},
++    )
++
++
++def event_source_url() -> str:
++    """The page the conversion happened on, without any query string."""
++    return f"{config.PUBLIC_BASE_URL}/signup"
++
++
++def _user_data(row: Any) -> Dict[str, Any]:
++    data: Dict[str, Any] = {"fbc": row["fbc"]}
++    # Meta requires client_user_agent for website events. Stored with the
++    # Meta consent; a browser that sent none simply leaves it out.
++    if row["client_user_agent"]:
++        data["client_user_agent"] = row["client_user_agent"]
++    return data
++
++
++def build_payload(row: Any) -> Dict[str, Any]:
++    """The exact request body (before form encoding) for one row."""
++    event = {
++        "event_name": EVENT_NAME,
++        "event_time": int(_parse(row["email_verified_at"]).timestamp()),
++        "event_id": row["event_id"],
++        "action_source": ACTION_SOURCE,
++        "event_source_url": event_source_url(),
++        # Meta: "we only use the event for attribution", not for ad delivery
++        # optimisation. The consent is for measuring campaigns.
++        "opt_out": True,
++        "user_data": _user_data(row),
++    }
++    body: Dict[str, Any] = {"data": [event]}
++    if config.META_TEST_EVENT_CODE:
++        body["test_event_code"] = config.META_TEST_EVENT_CODE
++    return body
++
++
++def endpoint() -> str:
++    return f"{GRAPH_HOST}/{config.META_GRAPH_VERSION}/{config.META_DATASET_ID}/events"
++
++
++def _post(body: Dict[str, Any]) -> None:
++    """One HTTP call. Raises _Retry or _Fatal; returns on success.
++
++    Form-encoded like Meta's own curl example, with the token in the body so
++    it never appears in a URL that a proxy might log.
++    """
++    form = {"data": json.dumps(body["data"], separators=(",", ":")),
++            "access_token": config.META_ACCESS_TOKEN}
++    if "test_event_code" in body:
++        form["test_event_code"] = body["test_event_code"]
++    try:
++        response = requests.post(endpoint(), data=form, timeout=TIMEOUT_SECONDS)
++    except requests.RequestException as exc:
++        raise _Retry(f"network: {type(exc).__name__}") from None
++    try:
++        answer = response.json()
++    except ValueError:
++        answer = {}
++    if response.status_code == 200 and int(answer.get("events_received") or 0) >= 1:
++        return
++    error = answer.get("error") if isinstance(answer, dict) else None
++    error = error if isinstance(error, dict) else {}
++    code = error.get("code")
++    summary = f"HTTP {response.status_code}" + (f", code {code}" if code is not None else "")
++    message = str(error.get("message") or "")[:200]
++    detail = f"{summary}: {message}" if message else summary
++    if (
++        response.status_code >= 500
++        or response.status_code == 429
++        or error.get("is_transient")
++        or code in _TRANSIENT_CODES
++    ):
++        raise _Retry(detail)
++    if code in _CONFIG_CODES:
++        alerts.raise_alert(
++            "warning",
++            "meta_capi_config",
++            "Meta Conversions API refused the access token or dataset.",
++            detail,
++            dedupe_key="meta_capi_config",
++            params={"error": detail},
++        )
++        raise _Retry(detail)
++    raise _Fatal(detail)
++
++
++def _delay(attempts: int) -> timedelta:
++    return timedelta(seconds=min(6 * 60 * 60, 60 * (2 ** min(attempts, 8))))
++
++
++def expire_unsendable(now: Optional[datetime] = None) -> int:
++    """Mark events Meta would refuse as too old. Runs with the API off too."""
++    now = now or datetime.now(timezone.utc)
++    cutoff = _iso(now - SEND_WINDOW)
++    with db.immediate() as cur:
++        cur.execute(
++            "UPDATE ad_click SET send_state = ?, last_error = ? "
++            "WHERE platform = 'meta' AND send_state = ? AND user_account_id IN ("
++            "SELECT id FROM user_account WHERE email_verified_at < ?)",
++            (EXPIRED, "older than Meta's 7-day event window", PENDING, cutoff),
++        )
++        return max(cur.rowcount, 0)
++
++
++def send_pending(now: Optional[datetime] = None, limit: int = 20) -> Dict[str, int]:
++    """Send the due sign-up events. The scheduler's ``meta_capi`` job."""
++    summary = {"sent": 0, "retry": 0, "failed": 0, "expired": 0}
++    if not enabled():
++        return summary
++    now = now or datetime.now(timezone.utc)
++    db.execute(
++        "UPDATE ad_click SET send_state = ? WHERE send_state = ? AND next_attempt_at < ?",
++        (PENDING, SENDING, _iso(now - STALE_SENDING)),
++    )
++    summary["expired"] = expire_unsendable(now)
++    rows = db.query(
++        "SELECT c.id FROM ad_click c WHERE c.platform = 'meta' AND c.send_state = ? "
++        "AND c.next_attempt_at <= ? ORDER BY c.id LIMIT ?",
++        (PENDING, _iso(now), limit),
++    )
++    for candidate in rows:
++        # Claim, then read what we claimed: a withdrawal that landed in
++        # between leaves nothing to send.
++        if not db.update_if(
++            "ad_click",
++            candidate["id"],
++            {"send_state": SENDING, "next_attempt_at": _iso(now)},
++            {"send_state": PENDING},
++            extra_where="withdrawn_at IS NULL AND fbc IS NOT NULL",
++        ):
++            continue
++        row = db.query_one(
++            "SELECT c.*, u.email_verified_at FROM ad_click c "
++            "JOIN user_account u ON u.id = c.user_account_id WHERE c.id = ?",
++            (candidate["id"],),
++        )
++        attempts = int(row["attempts"] or 0) + 1
++        try:
++            _post(build_payload(row))
++        except _Retry as exc:
++            terminal = attempts >= MAX_ATTEMPTS
++            db.update_if(
++                "ad_click",
++                row["id"],
++                {
++                    "send_state": FAILED if terminal else PENDING,
++                    "attempts": attempts,
++                    "last_error": str(exc)[:400],
++                    "next_attempt_at": _iso(now + _delay(attempts)),
++                },
++                {"send_state": SENDING},
++            )
++            summary["failed" if terminal else "retry"] += 1
++            log.warning("meta event %s not sent (attempt %s): %s", row["id"], attempts, exc)
++            continue
++        except _Fatal as exc:
++            db.update_if(
++                "ad_click",
++                row["id"],
++                {"send_state": FAILED, "attempts": attempts, "last_error": str(exc)[:400]},
++                {"send_state": SENDING},
++            )
++            summary["failed"] += 1
++            log.warning("meta event %s refused: %s", row["id"], exc)
++            continue
++        db.update_if(
++            "ad_click",
++            row["id"],
++            {
++                "send_state": SENT,
++                "attempts": attempts,
++                "last_error": None,
++                # Retention counts from here: fbc is deleted 7 days later.
++                "uploaded_at": db.utcnow(),
++            },
++            {"send_state": SENDING},
++        )
++        summary["sent"] += 1
++    return summary
+diff --git a/App/app/migrations/0004_meta_capi.sql b/App/app/migrations/0004_meta_capi.sql
+new file mode 100644
+index 0000000..c4cbe7b
+--- /dev/null
++++ b/App/app/migrations/0004_meta_capi.sql
+@@ -0,0 +1,13 @@
++-- WP21: Meta Conversions API outbox on ad_click, and the sign-up source.
++ALTER TABLE user_account ADD COLUMN signup_source TEXT;
++ALTER TABLE ad_click ADD COLUMN fbc TEXT;
++ALTER TABLE ad_click ADD COLUMN event_id TEXT;
++ALTER TABLE ad_click ADD COLUMN send_state TEXT;
++ALTER TABLE ad_click ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0;
++ALTER TABLE ad_click ADD COLUMN next_attempt_at TEXT;
++ALTER TABLE ad_click ADD COLUMN last_error TEXT;
++-- The browser's User-Agent string, captured at sign-up submit only when the
++-- Meta box is ticked (Meta requires client_user_agent for website events).
++-- Blanked together with fbc, and deleted with the row.
++ALTER TABLE ad_click ADD COLUMN client_user_agent TEXT;
++CREATE INDEX IF NOT EXISTS idx_ad_click_send ON ad_click (send_state, next_attempt_at);
+diff --git a/App/app/routes/admin_accounts.py b/App/app/routes/admin_accounts.py
+index bca6d4d..1d9acc7 100644
+--- a/App/app/routes/admin_accounts.py
++++ b/App/app/routes/admin_accounts.py
+@@ -488,9 +488,11 @@ def _render_users(request: Request, **extra):
+     users = db.query(
+         "SELECT u.id, u.username, u.display_name, u.role, u.active, "
+         "u.must_change_password, u.created_at, u.last_login_at, "
+-        "u.email, u.email_verified_at, u.signup_at, "
++        "u.email, u.email_verified_at, u.signup_at, u.signup_source, "
+         "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
+         "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
++        "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
++        "AND c.platform = 'meta' AND c.withdrawn_at IS NULL) AS meta_consent, "
+         "(SELECT COUNT(*) FROM apartment a WHERE a.owner_user_id = u.id "
+         "AND a.archived_at IS NULL) AS apartment_count FROM user_account u ORDER BY u.username"
+     )
+diff --git a/App/app/routes/legal.py b/App/app/routes/legal.py
+index db20ac8..2217d14 100644
+--- a/App/app/routes/legal.py
++++ b/App/app/routes/legal.py
+@@ -30,14 +30,18 @@ SUBPROCESSOR_IDS = (
+ # Recipients that are not subprocessors (section 5). "google_ads" belongs to
+ # self sign-up with Google Ads (WP20), so it is listed only while
+ # UBYHOST_SIGNUP_ENABLED is on (recipient_ids()).
+-RECIPIENT_IDS = ("google_ads", "police", "municipality")
+-SIGNUP_RECIPIENT_IDS = ("google_ads",)
++# "meta_ads" (WP21) is listed only while sign-up is on and the Meta
++# Conversions API is configured.
++RECIPIENT_IDS = ("google_ads", "meta_ads", "police", "municipality")
+ 
+ 
+ def recipient_ids() -> tuple:
+-    if signup.enabled():
+-        return RECIPIENT_IDS
+-    return tuple(rid for rid in RECIPIENT_IDS if rid not in SIGNUP_RECIPIENT_IDS)
++    hidden = set()
++    if not signup.enabled():
++        hidden.update(("google_ads", "meta_ads"))
++    elif not config.meta_capi_enabled():
++        hidden.add("meta_ads")
++    return tuple(rid for rid in RECIPIENT_IDS if rid not in hidden)
+ 
+ 
+ @router.get("/jak-to-funguje")
+@@ -131,6 +135,8 @@ def privacy_policy(request: Request):
+             "legal_placeholders": config.DEPLOYMENT != "production",
+             # WP20 draft for counsel: shown only while self sign-up is on.
+             "signup_ads_notice": signup.enabled(),
++            # WP21: the Meta paragraph only once the Conversions API is configured.
++            "signup_meta_notice": signup.enabled() and config.meta_capi_enabled(),
+         },
+         status_code=200,
+     )
+@@ -161,6 +167,7 @@ def subprocessor_register(request: Request):
+             "wrap_class": "narrow",
+             "subprocessor_ids": SUBPROCESSOR_IDS,
+             "recipient_ids": recipient_ids(),
++            "signup_meta_notice": signup.enabled() and config.meta_capi_enabled(),
+         },
+         status_code=200,
+     )
+diff --git a/App/app/scheduler.py b/App/app/scheduler.py
+index 62e88a2..ba2de95 100644
+--- a/App/app/scheduler.py
++++ b/App/app/scheduler.py
+@@ -19,6 +19,7 @@ from . import (
+     icalsync,
+     lifecycle_mail,
+     mail,
++    meta_capi,
+     passport_photos,
+     reporting,
+     retention,
+@@ -38,6 +39,7 @@ _JOB_LEVELS = {
+     "mail": "warning",
+     "photo_sweep": "warning",
+     "retention": "warning",
++    "meta_capi": "warning",
+ }
+ 
+ 
+@@ -69,6 +71,7 @@ def job_intervals() -> dict:
+         "deadlines": 30,
+         "mail": 5,
+         "photo_sweep": 12 * 60,
++        "meta_capi": 10,
+         "retention": 24 * 60,
+     }
+ 
+@@ -270,6 +273,27 @@ def _job_photo_sweep() -> None:
+     _log_run("photo_sweep", started, True, {"photos": removed or 0, "payloads": blanked or 0})
+ 
+ 
++def _job_meta_capi() -> None:
++    """WP21: send queued Meta sign-up events. Does nothing while Meta is off."""
++    started = time.perf_counter()
++    try:
++        summary = meta_capi.send_pending()
++        if any(summary.values()):
++            log.info("meta conversions: %s", summary)
++    except Exception:
++        log.exception("meta conversions job failed")
++        _job_failed("meta_capi")
++        _log_run("meta_capi", started, False)
++        return
++    _job_ok("meta_capi")
++    # WP13: one run line per job, counts only.
++    _log_run(
++        "meta_capi", started, True,
++        {key: value for key, value in summary.items()
++         if isinstance(value, int) and not isinstance(value, bool)},
++    )
++
++
+ def _job_retention() -> None:
+     """Compute (and, once enabled, apply) the retention schedule.
+ 
+@@ -342,6 +366,10 @@ def start() -> bool:
+         _job_photo_sweep, "interval", minutes=minutes["photo_sweep"], id="photo_sweep",
+         max_instances=1, coalesce=True, next_run_time=_soon(),
+     )
++    _scheduler.add_job(
++        _job_meta_capi, "interval", minutes=minutes["meta_capi"], id="meta_capi",
++        max_instances=1, coalesce=True,
++    )
+     _scheduler.add_job(
+         _job_retention, "cron", hour=3, minute=30, id="retention",
+         max_instances=1, coalesce=True,
+diff --git a/App/app/signup.py b/App/app/signup.py
+index 26ab701..f6ddd3d 100644
+--- a/App/app/signup.py
++++ b/App/app/signup.py
+@@ -30,6 +30,11 @@ Ad click identifiers (legal position 3), without a cookie or an ad script:
+ - The identifier is blanked 90 days after the click or 30 days after upload,
+   whichever comes first, or at once when consent is withdrawn (Settings >
+   Privacy, or an admin on request). The consent record itself stays.
++
++WP21 adds ``fbclid`` (Meta) the same way: its own unticked box, shown only when
++the link carried an ``fbclid`` and the Conversions API is configured, stored as
++``fbc``, sent once by ``meta_capi`` after e-mail verification, and blanked 7
++days after sending or 90 days after the click.
+ """
+ from __future__ import annotations
+ 
+@@ -71,25 +76,40 @@ UTM_KEYS = ("utm_source", "utm_medium", "utm_campaign")
+ # optional consent box, its own consent wording and its own retention rule.
+ 
+ GOOGLE = "google"
+-PLATFORMS = (GOOGLE,)
++META = "meta"
++PLATFORMS = (GOOGLE, META)
+ 
+ # URL parameter -> (platform, validation pattern).
+ CLICK_PARAMS: Dict[str, tuple] = {
+     "gclid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
+     "gbraid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
+     "wbraid": (GOOGLE, re.compile(r"^[A-Za-z0-9_-]{1,200}$")),
++    # WP21. Facebook adds fbclid to outbound links from ads and from ordinary
++    # posts and groups alike, so it means "came from Facebook or Instagram",
++    # not "came from an ad". Case-sensitive; never altered.
++    "fbclid": (META, re.compile(r"^[A-Za-z0-9_-]{1,500}$")),
+ }
+ # The ad_click columns that hold a platform's identifiers. Blanked on schedule.
+-ID_COLUMNS: Dict[str, tuple] = {GOOGLE: ("gclid", "gbraid", "wbraid")}
++# Blanked together on every deletion path (withdrawal, purge). For Meta that
++# includes the browser's User-Agent string, which is sent as
++# client_user_agent (Meta requires it for website events; owner decision).
++ID_COLUMNS: Dict[str, tuple] = {
++    GOOGLE: ("gclid", "gbraid", "wbraid"),
++    META: ("fbc", "client_user_agent"),
++}
++# The User-Agent kept for the Meta event: printable ASCII only, capped.
++USER_AGENT_MAX = 512
+ # Name of the platform's checkbox on the sign-up form.
+-CONSENT_FIELDS: Dict[str, str] = {GOOGLE: "ads_consent"}
++CONSENT_FIELDS: Dict[str, str] = {GOOGLE: "ads_consent", META: "meta_consent"}
+ # Bump when the wording of the box changes; the language is appended.
+-CONSENT_VERSIONS: Dict[str, str] = {GOOGLE: "ads-google-v1"}
+-# (days after the click, days after a successful upload) before the
+-# identifiers are blanked, whichever comes first (legal position 3).
+-ID_RETENTION_DAYS: Dict[str, tuple] = {GOOGLE: (90, 30)}
++# v2 of the Meta text names the browser type string (client_user_agent).
++CONSENT_VERSIONS: Dict[str, str] = {GOOGLE: "ads-google-v1", META: "ads-meta-v2"}
++# (days after the click, days after a successful upload or send) before the
++# identifiers are blanked, whichever comes first (legal positions 3 and 6).
++ID_RETENTION_DAYS: Dict[str, tuple] = {GOOGLE: (90, 30), META: (90, 7)}
+ 
+ GOOGLE_PRIVACY_URL = "https://business.safety.google/privacy/"
++META_PRIVACY_URL = "https://www.facebook.com/privacy/policy/"
+ # Rows older than this are not exported: a safety margin inside Google's
+ # 90-day import window.
+ GOOGLE_EXPORT_DAYS = 85
+@@ -183,12 +203,23 @@ def read_click(token: Any, now_ms: Optional[int] = None) -> Optional[Dict[str, A
+     return {"ids": ids, "seen_ms": seen_ms}
+ 
+ 
++def platform_active(platform: str) -> bool:
++    """Whether consent for a platform may be asked for at all.
++
++    Meta only once the Conversions API is configured: asking for consent to
++    something the app would never do is not a valid consent request.
++    """
++    if platform == META:
++        return config.meta_capi_enabled()
++    return True
++
++
+ def click_platforms(click: Optional[Dict[str, Any]]) -> List[str]:
+-    """The platforms a click value has identifiers for, in display order."""
++    """The active platforms a click value has identifiers for, in display order."""
+     if not click:
+         return []
+     present = {CLICK_PARAMS[param][0] for param in click["ids"]}
+-    return [platform for platform in PLATFORMS if platform in present]
++    return [p for p in PLATFORMS if p in present and platform_active(p)]
+ 
+ 
+ def attribution(params: Any, *, mint: bool = False) -> Dict[str, str]:
+@@ -314,6 +345,12 @@ def consent_label(platform: str, lang: str) -> Dict[str, str]:
+             "link_label": host_i18n.translate(lang, "signup.ads_consent_link"),
+             "link_url": GOOGLE_PRIVACY_URL,
+         }
++    if platform == META:
++        return {
++            "text": host_i18n.translate(lang, "signup.meta_consent"),
++            "link_label": host_i18n.translate(lang, "signup.meta_consent_link"),
++            "link_url": META_PRIVACY_URL,
++        }
+     raise ValueError(f"unknown ad platform {platform!r}")
+ 
+ 
+@@ -357,15 +394,39 @@ def _iso_from_ms(ms: int) -> str:
+     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).replace(microsecond=0).isoformat()
+ 
+ 
+-def _click_values(platform: str, click: Dict[str, Any]) -> Dict[str, Any]:
++def clean_user_agent(value: Optional[str]) -> Optional[str]:
++    """The User-Agent header as stored for Meta: printable ASCII, at most 512 chars."""
++    if not value:
++        return None
++    text = "".join(ch for ch in str(value) if " " <= ch <= "~").strip()
++    return text[:USER_AGENT_MAX] or None
++
++
++def _click_values(
++    platform: str, click: Dict[str, Any], user_agent: Optional[str] = None
++) -> Dict[str, Any]:
+     """The ad_click columns for one platform's identifiers."""
+     ids = {param: value for param, value in click["ids"].items()
+            if CLICK_PARAMS[param][0] == platform}
++    if platform == META:
++        # Meta's ClickID format: fb.<subdomain index>.<creation ms>.<fbclid>.
++        # Index 1 because the value is built on the server and no _fbc cookie
++        # is set; creation time is when the fbclid was first seen. The
++        # User-Agent of the sign-up submit goes with it (client_user_agent),
++        # only because the Meta box was ticked.
++        return {
++            "fbc": f"fb.1.{int(click['seen_ms'])}.{ids['fbclid']}",
++            "client_user_agent": clean_user_agent(user_agent),
++        }
+     return {column: ids.get(column) for column in ID_COLUMNS[platform]}
+ 
+ 
+ def _store_clicks(
+-    user_id: int, click: Optional[Dict[str, Any]], consents: Dict[str, bool], lang: str
++    user_id: int,
++    click: Optional[Dict[str, Any]],
++    consents: Dict[str, bool],
++    lang: str,
++    user_agent: Optional[str] = None,
+ ) -> List[str]:
+     """Replace the account's click rows with the consented ones. Returns platforms stored.
+ 
+@@ -383,7 +444,7 @@ def _store_clicks(
+             {
+                 "user_account_id": user_id,
+                 "platform": platform,
+-                **_click_values(platform, click),
++                **_click_values(platform, click, user_agent),
+                 "clicked_at": _iso_from_ms(click["seen_ms"]),
+                 "consent_text_id": consent_text_id(platform, lang),
+                 "consented_at": now,
+@@ -416,6 +477,29 @@ def consents_for(user_id: int) -> List[Dict[str, Any]]:
+     return [rows[platform] for platform in PLATFORMS if platform in rows]
+ 
+ 
++_SOURCE_UTM = {
++    GOOGLE: ("google", "adwords", "googleads", "google_ads"),
++    META: ("facebook", "fb", "instagram", "ig", "meta"),
++}
++
++
++def signup_source(stored: List[str], attr: Dict[str, str]) -> str:
++    """``google``, ``meta`` or ``none`` for the admin funnel.
++
++    A consented click decides first. Otherwise the campaign label the owner
++    put into the ad link. An identifier without consent counts for nothing:
++    nothing about it is stored, not even that it was there.
++    """
++    for platform in PLATFORMS:
++        if platform in stored:
++            return platform
++    label = (attr.get("utm_source") or "").strip().lower()
++    for platform, names in _SOURCE_UTM.items():
++        if label in names:
++            return platform
++    return "none"
++
++
+ # --- sign-up ------------------------------------------------------------------
+ 
+ 
+@@ -495,7 +579,13 @@ def register(
+             log.info("signup race on one address; treated as repeated")
+             return "exists"
+         outcome = "created"
+-    _store_clicks(user_id, read_click(attr.get("click")), consents or {}, lang)
++    # The User-Agent is read here, at form submit, and stored only on a Meta
++    # row, which exists only when the Meta box was ticked.
++    user_agent = request.headers.get("user-agent") if request is not None else None
++    stored = _store_clicks(
++        user_id, read_click(attr.get("click")), consents or {}, lang, user_agent
++    )
++    db.update("user_account", user_id, {"signup_source": signup_source(stored, attr)})
+     # The sign-up checkbox is a clickwrap; the table only knows that method.
+     acceptance.record(user_id, ("terms", "dpa", "privacy"), "clickwrap", request)
+     db.audit("signup_" + outcome, actor="anonymous", owner_user_id=user_id)
+@@ -542,7 +632,13 @@ def activate(account) -> bool:
+             ) if value
+         ),
+         ads_click=has_click(int(account["id"]), GOOGLE),
++        meta_click=has_click(int(account["id"]), META),
+     )
++    # WP21: queue the Meta sign-up event. The background job sends it; this
++    # request never talks to Meta.
++    from . import meta_capi
++
++    meta_capi.enqueue(int(account["id"]))
+     return True
+ 
+ 
+@@ -566,7 +662,14 @@ def withdraw_consent(user_id: int, platform: str, actor: str) -> bool:
+     if not db.update_if(
+         "ad_click",
+         row["id"],
+-        {**blank, "withdrawn_at": now, "ids_deleted_at": row["ids_deleted_at"] or now},
++        {
++            **blank,
++            "withdrawn_at": now,
++            "ids_deleted_at": row["ids_deleted_at"] or now,
++            # A Meta event not sent yet is never sent.
++            "send_state": "withdrawn" if row["send_state"] in ("pending", "sending")
++            else row["send_state"],
++        },
+         {"withdrawn_at": None},
+     ):
+         return False
+@@ -615,6 +718,9 @@ def purge(now: Optional[datetime] = None) -> Dict[str, int]:
+             )
+     cleared = 0
+     stamp = (now or datetime.now(timezone.utc)).replace(microsecond=0).isoformat()
++    from . import meta_capi
++
++    expired = meta_capi.expire_unsendable(now)
+     for platform in PLATFORMS:
+         after_click, after_upload = ID_RETENTION_DAYS[platform]
+         blank = ", ".join(f"{column} = NULL" for column in ID_COLUMNS[platform])
+@@ -622,7 +728,8 @@ def purge(now: Optional[datetime] = None) -> Dict[str, int]:
+             cur.execute(
+                 f"UPDATE ad_click SET {blank}, ids_deleted_at = ? "
+                 "WHERE platform = ? AND ids_deleted_at IS NULL AND ("
+-                "clicked_at < ? OR uploaded_at < ? OR withdrawn_at IS NOT NULL)",
++                "clicked_at < ? OR uploaded_at < ? OR withdrawn_at IS NOT NULL "
++                "OR send_state IN ('failed', 'expired'))",
+                 (
+                     stamp,
+                     platform,
+@@ -631,7 +738,11 @@ def purge(now: Optional[datetime] = None) -> Dict[str, int]:
+                 ),
+             )
+             cleared += max(cur.rowcount, 0)
+-    return {"unverified_deleted": len(stale), "click_ids_cleared": cleared}
++    return {
++        "unverified_deleted": len(stale),
++        "click_ids_cleared": cleared,
++        "meta_events_expired": expired,
++    }
+ 
+ 
+ # --- Google Ads export --------------------------------------------------------
+diff --git a/App/app/subprocessors_i18n.py b/App/app/subprocessors_i18n.py
+index e30d129..924a754 100644
+--- a/App/app/subprocessors_i18n.py
++++ b/App/app/subprocessors_i18n.py
+@@ -91,6 +91,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
+             "Google Ireland Ltd. (Google Ads conversion measurement, independent controller, only "
+             "with consent)"
+         ),
++        "subprocessors.recipient_meta_ads": (
++            "Meta Platforms Ireland Ltd. (Facebook and Instagram conversion measurement, joint "
++            "controller for collection and sending, then independent controller, only with consent)"
++        ),
+         "subprocessors.recipient_police": (
+             "Policie ČR, UbyPort (statutory reporting on the host's behalf)"
+         ),
+@@ -195,6 +199,10 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
+         "subprocessors.recipient_google_ads": (
+             "Google Ireland Ltd. (měření konverzí Google Ads, samostatný správce, jen se souhlasem)"
+         ),
++        "subprocessors.recipient_meta_ads": (
++            "Meta Platforms Ireland Ltd. (měření konverzí z Facebooku a Instagramu, společný "
++            "správce pro shromáždění a odeslání, poté samostatný správce, jen se souhlasem)"
++        ),
+         "subprocessors.recipient_police": (
+             "Policie ČR, UbyPort (zákonné hlášení jménem ubytovatele)"
+         ),
+diff --git a/App/app/templates/privacy.html b/App/app/templates/privacy.html
+index 64f11a9..2366bfc 100644
+--- a/App/app/templates/privacy.html
++++ b/App/app/templates/privacy.html
+@@ -77,6 +77,12 @@
+     <div class="terms-section">{{ t('privacy.signup_body') }}</div>
+     <h3 id="signup-ads">{{ t('privacy.signup_ads_title') }}</h3>
+     <div class="terms-section">{{ t('privacy.signup_ads_body') | legal_links }}</div>
++    {% if signup_meta_notice %}
++    <h3 id="signup-meta">{{ t('privacy.signup_meta_title') }}</h3>
++    <div class="terms-section">{{ t('privacy.signup_meta_body') | legal_links }}</div>
++    {% endif %}
++    <h3 id="signup-recipients">{{ t('privacy.signup_recipients_title') }}</h3>
++    <div class="terms-section">{{ t('privacy.signup_recipients_body') | legal_links }}{% if signup_meta_notice %} {{ t('privacy.signup_recipients_meta') }}{% endif %}</div>
+     {% endif %}
+   {% endif %}
+   {% if sid == '11' %}
+diff --git a/App/app/templates/subprocessors.html b/App/app/templates/subprocessors.html
+index 1c172cf..db19f27 100644
+--- a/App/app/templates/subprocessors.html
++++ b/App/app/templates/subprocessors.html
+@@ -40,9 +40,10 @@
+   </div>
+ </div>
+ 
+-{#- WP09: 04_legal_positions.md section 5. The Google Ads recipient belongs to
+-    self sign-up and is listed only while UBYHOST_SIGNUP_ENABLED is on
+-    (routes/legal.py recipient_ids()). -#}
++{#- WP09: 04_legal_positions.md section 5. The Google Ads recipient (WP20) is
++    listed only while UBYHOST_SIGNUP_ENABLED is on, the Meta one (WP21) only
++    while the Conversions API is configured too (routes/legal.py
++    recipient_ids()). -#}
+ <div class="panel" id="recipients">
+   <h2 style="margin-top:0">{{ t('subprocessors.recipients_title') }}</h2>
+   <ul class="small muted">
+diff --git a/App/app/templates/users.html b/App/app/templates/users.html
+index 870a325..42d45d5 100644
+--- a/App/app/templates/users.html
++++ b/App/app/templates/users.html
+@@ -42,6 +42,7 @@
+               <strong>{{ user.display_name or user.username }}</strong>
+               <div class="small muted mono">{{ user.username }}</div>
+               {% if user.email %}<div class="small muted">{{ user.email }}</div>{% endif %}
++              {% if user.signup_source %}<div class="small muted">{{ t('users.source', source=t('users.source.' ~ user.signup_source)) }}</div>{% endif %}
+             </td>
+             <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
+             <td data-label="{{ t('users.table.properties') }}">{{ user.apartment_count }}</td>
+@@ -65,6 +66,12 @@
+                   <button class="row-menu-item" type="button" role="menuitem"
+                           data-reset-password data-user-id="{{ user.id }}"
+                           data-user-label="{{ user.display_name or user.username }}">{{ t('users.menu.reset_password') }}</button>
++                  {% if user.meta_consent %}
++                  <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
++                    <input type="hidden" name="platform" value="meta">
++                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.withdraw_meta_consent') }}</button>
++                  </form>
++                  {% endif %}
+                   {% if user.google_consent %}
+                   <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
+                     <input type="hidden" name="platform" value="google">
+diff --git a/App/tests/test_admin_funnel.py b/App/tests/test_admin_funnel.py
+index 58f0168..fff6dd8 100644
+--- a/App/tests/test_admin_funnel.py
++++ b/App/tests/test_admin_funnel.py
+@@ -207,5 +207,8 @@ def test_self_sign_up_stages_and_source_column():
+     assert mine[PREFIX + "adminmade"]["signup_at"] is None
+     db.execute("UPDATE user_account SET signup_utm_source = NULL WHERE id = ?", (tagged,))
+     assert _mine(admin_funnel.rows())[PREFIX + "signedup"]["signup_source_present"] == "no"
++    db.execute("UPDATE user_account SET signup_source = 'meta' WHERE id = ?", (tagged,))
++    assert _mine(admin_funnel.rows())[PREFIX + "signedup"]["signup_source"] == "meta"
+     headers = [h for h, _k in admin_funnel.csv_columns("2026-09", "2026-10")]
+     assert headers.index("signup_source_present") < headers.index("signed_up")
++    assert "signup_source" in headers
+diff --git a/App/tests/test_meta_capi.py b/App/tests/test_meta_capi.py
+new file mode 100644
+index 0000000..677de58
+--- /dev/null
++++ b/App/tests/test_meta_capi.py
+@@ -0,0 +1,573 @@
++"""WP21: Meta Conversions API sign-up event, server-side, consent-gated."""
++from __future__ import annotations
++
++import json
++import re
++import sqlite3
++from datetime import datetime, timedelta, timezone
++
++import pytest
++import requests
++from fastapi.testclient import TestClient
++
++from app import auth, config, db, mail, meta_capi, signup
++from app.main import app
++
++DOMAIN = "meta-capi.test"
++PASSWORD = "Signup-Password-123"
++FBCLID = "IwAR2F4-dbP0l7Mn1IawQQGCINEz7PYXQvwjNwB_qa2ofrHyiLjcbCRxTDMgk"
++DATASET = "1234567890"
++TOKEN = "placeholder-access-token"
++
++
++class _Answer:
++    def __init__(self, status=200, body=None):
++        self.status_code = status
++        self._body = {"events_received": 1, "messages": []} if body is None else body
++
++    def json(self):
++        if isinstance(self._body, Exception):
++            raise self._body
++        return self._body
++
++
++class _Graph:
++    """Stands in for graph.facebook.com and records every call."""
++
++    def __init__(self, *answers):
++        self.answers = list(answers)
++        self.calls = []
++
++    def __call__(self, url, data=None, timeout=None, **kwargs):
++        self.calls.append({"url": url, "data": data, "timeout": timeout, "kwargs": kwargs})
++        answer = self.answers.pop(0) if self.answers else _Answer()
++        if isinstance(answer, Exception):
++            raise answer
++        return answer
++
++
++@pytest.fixture(autouse=True)
++def _meta_on(monkeypatch):
++    db.init_db()
++    monkeypatch.setattr(config, "SIGNUP_ENABLED", True)
++    monkeypatch.setattr(config, "META_DATASET_ID", DATASET)
++    monkeypatch.setattr(config, "META_ACCESS_TOKEN", TOKEN)
++    monkeypatch.setattr(config, "META_TEST_EVENT_CODE", "")
++    monkeypatch.setattr(config, "META_GRAPH_VERSION", "v26.0")
++    monkeypatch.setattr(mail, "backend_name", lambda: "console")
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++
++    def _no_network(*args, **kwargs):
++        raise AssertionError("unexpected HTTP call to Meta")
++
++    monkeypatch.setattr(meta_capi.requests, "post", _no_network)
++    _clean()
++    yield
++    _clean()
++
++
++def _clean() -> None:
++    for row in db.query("SELECT id FROM user_account WHERE email LIKE ?", (f"%@{DOMAIN}",)):
++        for table, column in (("legal_acceptance", "user_account_id"),
++                              ("ad_click", "user_account_id"),
++                              ("audit", "owner_user_id"),
++                              ("email_outbox", "owner_user_id")):
++            db.execute(f"DELETE FROM {table} WHERE {column} = ?", (row["id"],))
++        db.execute("DELETE FROM user_account WHERE id = ?", (row["id"],))
++    db.execute("DELETE FROM email_outbox WHERE kind LIKE 'signup_%'")
++    db.execute("DELETE FROM alert WHERE dedupe_key = 'meta_capi_config'")
++    db.execute(
++        "DELETE FROM rate_limit_event WHERE scope IN "
++        "('signup_ip', 'signup_email', 'login_fail', 'login_fail_ip')"
++    )
++
++
++def _ms(moment: datetime) -> int:
++    return int(moment.timestamp() * 1000)
++
++
++def _click(seen_ms=None, **ids) -> str:
++    return signup.issue_click(ids or {"fbclid": FBCLID}, seen_ms)
++
++
++# The browser type string the sign-up form is submitted with.
++USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) ExampleBrowser/1.0"
++
++
++def _submit(client, email, *, consent=False, click=None, extra=None, user_agent=USER_AGENT):
++    data = {"email": email, "password": PASSWORD, "workspace": "Lake Flats", "accept": "1"}
++    if consent:
++        data["meta_consent"] = "1"
++    if click:
++        data["click"] = click
++    data.update(extra or {})
++    return client.post("/signup?lang=en", data=data, follow_redirects=False,
++                       headers={"User-Agent": user_agent})
++
++
++def _verify(client, email):
++    row = db.query_one(
++        "SELECT payload FROM email_outbox WHERE kind = 'signup_verify' AND to_email = ? "
++        "ORDER BY id DESC LIMIT 1",
++        (email,),
++    )
++    token = db.decrypt_field(json.loads(row["payload"])[mail.CLAIM_SECRET_KEY])
++    return client.post("/signup/verify", data={"t": token, "password": PASSWORD},
++                       follow_redirects=False)
++
++
++def _row(email):
++    return db.query_one(
++        "SELECT c.*, t.version, t.text AS consent_text FROM ad_click c "
++        "JOIN user_account u ON u.id = c.user_account_id "
++        "JOIN consent_texts t ON t.id = c.consent_text_id "
++        "WHERE u.email = ? AND c.platform = 'meta'",
++        (email,),
++    )
++
++
++def _account(email):
++    return db.query_one("SELECT * FROM user_account WHERE email = ?", (email,))
++
++
++def _signed_up(email, *, consent=True, seen_ms=None, verify=True):
++    client = TestClient(app)
++    _submit(client, email, consent=consent, click=_click(seen_ms))
++    if verify:
++        assert _verify(client, email).status_code == 303
++    return client
++
++
++def _set(email, **values):
++    sets = ", ".join(f"{key} = ?" for key in values)
++    db.execute(
++        f"UPDATE ad_click SET {sets} WHERE platform = 'meta' AND user_account_id = "
++        "(SELECT id FROM user_account WHERE email = ?)",
++        list(values.values()) + [email],
++    )
++
++
++def _ago(**delta) -> str:
++    return (datetime.now(timezone.utc) - timedelta(**delta)).replace(microsecond=0).isoformat()
++
++
++def _consent_box(html):
++    match = re.search(r'<input type="checkbox" name="meta_consent"[^>]*>', html)
++    return match.group(0) if match else None
++
++
++# --- capture and consent ----------------------------------------------------
++
++
++def test_fbclid_is_captured_server_side_and_carried_signed():
++    client = TestClient(app)
++    html = client.get(f"/?lang=en&fbclid={FBCLID}&utm_source=facebook").text
++    token = re.search(r'href="/signup\?[^"]*click=([^"&]+)', html).group(1)
++    assert signup.read_click(token)["ids"] == {"fbclid": FBCLID}
++    assert f"fbclid={FBCLID}" not in html
++    form = client.get(f"/signup?lang=en&click={token}").text
++    assert f'<input type="hidden" name="click" value="{token}">' in form
++    box = _consent_box(form)
++    assert box and "checked" not in box and "required" not in box
++    assert signup.consent_label("meta", "en")["text"] in form
++    assert 'href="https://www.facebook.com/privacy/policy/"' in form
++    # Only the Meta box: the click carried no Google identifier.
++    assert 'name="ads_consent"' not in form
++
++
++def test_the_meta_box_needs_an_fbclid_and_a_configured_api(monkeypatch):
++    assert _consent_box(TestClient(app).get("/signup?lang=en").text) is None
++    monkeypatch.setattr(config, "META_ACCESS_TOKEN", "")
++    html = TestClient(app).get(f"/signup?lang=en&fbclid={FBCLID}").text
++    assert _consent_box(html) is None
++    # And a ticked box posted anyway stores nothing while Meta is off.
++    email = f"off@{DOMAIN}"
++    _submit(TestClient(app), email, consent=True, click=_click())
++    assert db.query_one(
++        "SELECT COUNT(*) AS n FROM ad_click WHERE user_account_id = ?", (_account(email)["id"],)
++    )["n"] == 0
++
++
++def test_the_wording_says_facebook_or_instagram_not_an_ad():
++    for lang in ("en", "cs"):
++        text = signup.consent_text("meta", lang)
++        assert ("Facebook or Instagram" in text) if lang == "en" else ("Facebooku nebo Instagramu" in text)
++        assert " ad" not in text.replace("advert", "")
++        assert "reklam" not in text
++        assert text.startswith("Optional:" if lang == "en" else "Nepovinné:")
++        assert "Meta Platforms Ireland Ltd." in text
++
++
++def test_consent_stores_fbc_in_metas_format_with_the_wording():
++    seen = datetime.now(timezone.utc) - timedelta(hours=2)
++    email = f"yes@{DOMAIN}"
++    _signed_up(email, seen_ms=_ms(seen), verify=False)
++    row = _row(email)
++    assert row["fbc"] == f"fb.1.{_ms(seen)}.{FBCLID}"
++    # Owner decision: the browser type string of the submit, kept with consent.
++    assert row["client_user_agent"] == USER_AGENT
++    assert row["version"] == "ads-meta-v2-en"
++    assert row["consent_text"] == signup.consent_text("meta", "en")
++    assert row["consented_at"] and row["withdrawn_at"] is None
++    assert row["send_state"] is None  # nothing is sent before e-mail verification
++    assert _account(email)["signup_source"] == "meta"
++
++
++def test_without_consent_nothing_about_the_click_is_stored():
++    email = f"no@{DOMAIN}"
++    TestClient(app).post("/signup?lang=en", data={
++        "email": email, "password": PASSWORD, "workspace": "Lake Flats", "accept": "1",
++        "click": _click(), "utm_source": "newsletter",
++    })
++    account = _account(email)
++    assert db.query("SELECT id FROM ad_click WHERE user_account_id = ?", (account["id"],)) == []
++    assert account["signup_source"] == "none"
++
++
++def test_the_source_flag():
++    assert signup.signup_source(["google"], {}) == "google"
++    assert signup.signup_source(["meta"], {"utm_source": "google"}) == "meta"
++    assert signup.signup_source([], {"utm_source": "Facebook"}) == "meta"
++    assert signup.signup_source([], {"utm_source": "ig"}) == "meta"
++    assert signup.signup_source([], {"utm_source": "google"}) == "google"
++    assert signup.signup_source([], {}) == "none"
++
++
++# --- queueing and sending ---------------------------------------------------
++
++
++def test_verification_queues_the_event_and_makes_no_http_call():
++    email = f"queue@{DOMAIN}"
++    _signed_up(email)  # requests.post raises if anything calls Meta here
++    row = _row(email)
++    assert row["send_state"] == "pending"
++    assert re.fullmatch(r"[0-9a-f]{32}", row["event_id"])
++    assert row["uploaded_at"] is None
++
++
++def test_the_payload_has_exactly_the_agreed_fields(monkeypatch):
++    email = f"payload@{DOMAIN}"
++    _signed_up(email)
++    graph = _Graph(_Answer())
++    monkeypatch.setattr(meta_capi.requests, "post", graph)
++    assert meta_capi.send_pending()["sent"] == 1
++    assert len(graph.calls) == 1
++    call = graph.calls[0]
++    assert call["url"] == f"https://graph.facebook.com/v26.0/{DATASET}/events"
++    assert call["timeout"] == meta_capi.TIMEOUT_SECONDS
++    # Form fields as in Meta's curl example; the token is in the body, not the URL.
++    assert set(call["data"]) == {"data", "access_token"}
++    assert call["data"]["access_token"] == TOKEN
++    assert TOKEN not in call["url"]
++    row = _row(email)
++    verified = datetime.fromisoformat(_account(email)["email_verified_at"])
++    assert json.loads(call["data"]["data"]) == [{
++        "event_name": "CompleteRegistration",
++        "event_time": int(verified.timestamp()),
++        "event_id": row["event_id"],
++        "action_source": "website",
++        "event_source_url": f"{config.PUBLIC_BASE_URL}/signup",
++        "opt_out": True,
++        "user_data": {"fbc": row["fbc"], "client_user_agent": USER_AGENT},
++    }]
++    # Nothing that identifies the person beyond the click identifier and the
++    # browser type string Meta requires for website events.
++    sent = call["data"]["data"]
++    assert email not in sent and "Lake Flats" not in sent
++    assert '"em"' not in sent and '"ph"' not in sent and "client_ip_address" not in sent
++    assert row["send_state"] == "sent" and row["uploaded_at"] and row["attempts"] == 1
++
++
++def test_the_test_event_code_is_added_when_configured(monkeypatch):
++    monkeypatch.setattr(config, "META_TEST_EVENT_CODE", "TEST12345")
++    _signed_up(f"testcode@{DOMAIN}")
++    graph = _Graph()
++    monkeypatch.setattr(meta_capi.requests, "post", graph)
++    meta_capi.send_pending()
++    assert graph.calls[0]["data"]["test_event_code"] == "TEST12345"
++
++
++def test_network_errors_and_5xx_are_retried_with_backoff(monkeypatch):
++    email = f"retry@{DOMAIN}"
++    _signed_up(email)
++    graph = _Graph(requests.ConnectionError("down"))
++    monkeypatch.setattr(meta_capi.requests, "post", graph)
++    assert meta_capi.send_pending()["retry"] == 1
++    row = _row(email)
++    assert row["send_state"] == "pending" and row["attempts"] == 1
++    assert "network" in row["last_error"]
++    assert row["next_attempt_at"] > db.utcnow()
++    # Not due yet: the next run does nothing.
++    assert meta_capi.send_pending() == {"sent": 0, "retry": 0, "failed": 0, "expired": 0}
++    # Due again: a 500, then success.
++    _set(email, next_attempt_at=_ago(minutes=1))
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph(_Answer(503, {"error": {"code": 2}})))
++    assert meta_capi.send_pending()["retry"] == 1
++    _set(email, next_attempt_at=_ago(minutes=1))
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph(_Answer()))
++    assert meta_capi.send_pending()["sent"] == 1
++    row = _row(email)
++    assert row["send_state"] == "sent" and row["attempts"] == 3 and row["last_error"] is None
++
++
++def test_a_transient_flag_or_rate_limit_is_retried(monkeypatch):
++    email = f"transient@{DOMAIN}"
++    _signed_up(email)
++    answer = _Answer(400, {"error": {"code": 999, "is_transient": True, "message": "later"}})
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph(answer))
++    assert meta_capi.send_pending()["retry"] == 1
++    _set(email, next_attempt_at=_ago(minutes=1))
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph(_Answer(400, {"error": {"code": 17}})))
++    assert meta_capi.send_pending()["retry"] == 1
++
++
++def test_an_invalid_event_fails_without_retry(monkeypatch):
++    email = f"invalid@{DOMAIN}"
++    _signed_up(email)
++    answer = _Answer(400, {"error": {"code": 100, "message": "Invalid parameter"}})
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph(answer))
++    assert meta_capi.send_pending()["failed"] == 1
++    row = _row(email)
++    assert row["send_state"] == "failed" and "code 100" in row["last_error"]
++    # A failed event's identifier is deleted at the next purge.
++    signup.purge()
++    assert _row(email)["fbc"] is None
++
++
++def test_too_many_attempts_end_as_failed(monkeypatch):
++    email = f"attempts@{DOMAIN}"
++    _signed_up(email)
++    _set(email, attempts=meta_capi.MAX_ATTEMPTS - 1)
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph(_Answer(500, {})))
++    assert meta_capi.send_pending()["failed"] == 1
++    assert _row(email)["send_state"] == "failed"
++
++
++def test_a_bad_token_is_retried_and_raises_an_alert(monkeypatch):
++    email = f"token@{DOMAIN}"
++    _signed_up(email)
++    answer = _Answer(400, {"error": {"code": 190, "message": "Invalid OAuth access token"}})
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph(answer))
++    assert meta_capi.send_pending()["retry"] == 1
++    assert db.query_one(
++        "SELECT id FROM alert WHERE dedupe_key = 'meta_capi_config' AND resolved_at IS NULL"
++    )
++
++
++def test_events_older_than_metas_window_expire_unsent(monkeypatch):
++    email = f"old@{DOMAIN}"
++    _signed_up(email)
++    db.execute("UPDATE user_account SET email_verified_at = ? WHERE email = ?",
++               (_ago(days=7), email))
++    summary = meta_capi.send_pending()  # requests.post would raise
++    assert summary["expired"] == 1
++    assert _row(email)["send_state"] == "expired"
++    signup.purge()
++    assert _row(email)["fbc"] is None
++
++
++def test_expiry_also_runs_while_the_api_is_off(monkeypatch):
++    email = f"offexpire@{DOMAIN}"
++    _signed_up(email)
++    monkeypatch.setattr(config, "META_DATASET_ID", "")
++    assert meta_capi.send_pending() == {"sent": 0, "retry": 0, "failed": 0, "expired": 0}
++    db.execute("UPDATE user_account SET email_verified_at = ? WHERE email = ?",
++               (_ago(days=8), email))
++    assert signup.purge()["meta_events_expired"] == 1
++    assert _row(email)["fbc"] is None
++
++
++def test_no_database_transaction_is_open_during_the_http_call(monkeypatch):
++    _signed_up(f"lock@{DOMAIN}")
++    seen = []
++
++    def _check_lock(url, data=None, timeout=None, **kwargs):
++        conn = sqlite3.connect(str(config.DB_PATH), timeout=0.2, isolation_level=None)
++        try:
++            conn.execute("BEGIN IMMEDIATE")
++            conn.execute("ROLLBACK")
++            seen.append("free")
++        finally:
++            conn.close()
++        return _Answer()
++
++    monkeypatch.setattr(meta_capi.requests, "post", _check_lock)
++    assert meta_capi.send_pending()["sent"] == 1
++    assert seen == ["free"]
++
++
++def test_a_stale_claim_is_handed_back(monkeypatch):
++    email = f"stale@{DOMAIN}"
++    _signed_up(email)
++    _set(email, send_state="sending", next_attempt_at=_ago(minutes=11))
++    monkeypatch.setattr(meta_capi.requests, "post", _Graph())
++    assert meta_capi.send_pending()["sent"] == 1
++
++
++# --- deletion and withdrawal ------------------------------------------------
++
++
++def test_fbc_is_deleted_7_days_after_sending_or_90_after_the_click():
++    sent_recent, sent_old, never = (f"{n}@{DOMAIN}" for n in ("sent6", "sent8", "never91"))
++    for email in (sent_recent, sent_old):
++        _signed_up(email)
++    _set(sent_recent, send_state="sent", uploaded_at=_ago(days=6))
++    _set(sent_old, send_state="sent", uploaded_at=_ago(days=8))
++    _signed_up(never)
++    _set(never, send_state=None, clicked_at=_ago(days=91))
++    signup.purge()
++    assert _row(sent_recent)["fbc"] and _row(sent_recent)["client_user_agent"]
++    for email in (sent_old, never):
++        row = _row(email)
++        assert row["fbc"] is None and row["client_user_agent"] is None and row["ids_deleted_at"]
++        assert row["version"] and row["consented_at"]  # the consent record stays
++
++
++def test_withdrawing_before_sending_means_it_is_never_sent(monkeypatch):
++    email = f"withdraw@{DOMAIN}"
++    client = _signed_up(email)
++    response = client.post("/settings/privacy/ad-consent", data={"platform": "meta"},
++                           follow_redirects=False)
++    assert response.status_code == 303
++    row = _row(email)
++    assert row["fbc"] is None and row["withdrawn_at"] and row["send_state"] == "withdrawn"
++    assert row["client_user_agent"] is None
++    assert meta_capi.send_pending()["sent"] == 0  # requests.post would raise
++    assert db.query_one(
++        "SELECT detail FROM audit WHERE action = 'ads_consent_withdrawn' AND owner_user_id = ?",
++        (_account(email)["id"],),
++    )["detail"] == "meta; uploaded=no"
++
++
++def test_the_settings_page_offers_the_meta_toggle():
++    email = f"page@{DOMAIN}"
++    client = _signed_up(email)
++    db.execute("UPDATE user_account SET totp_enabled = 1 WHERE email = ?", (email,))
++    page = client.get("/settings?lang=en")
++    if page.status_code != 200:
++        pytest.skip(f"settings page needs more onboarding here ({page.status_code})")
++    assert "Use my sign-up to measure UbyHost&#39;s Facebook and Instagram campaigns" in page.text
++
++
++def test_an_admin_can_withdraw_meta_consent():
++    email = f"adminwd@{DOMAIN}"
++    _signed_up(email)
++    auth.create_account(f"metaadmin@{DOMAIN}".replace("@", "-").replace(".", "-")[:30],
++                        PASSWORD, "Admin", role="admin", must_change_password=False)
++    username = f"metaadmin@{DOMAIN}".replace("@", "-").replace(".", "-")[:30]
++    admin = TestClient(app)
++    admin.post("/login?lang=en", data={"username": username, "password": PASSWORD})
++    user_id = _account(email)["id"]
++    response = admin.post(f"/admin/users/{user_id}/ads-consent/withdraw",
++                          data={"platform": "meta"}, follow_redirects=False)
++    assert response.status_code == 303
++    assert _row(email)["withdrawn_at"]
++    admin_id = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))["id"]
++    db.execute("DELETE FROM audit WHERE owner_user_id = ? OR actor_user_id = ?", (admin_id, admin_id))
++    db.execute("DELETE FROM user_account WHERE id = ?", (admin_id,))
++
++
++# --- no cookies, no pixel ---------------------------------------------------
++
++
++def test_no_cookie_and_no_meta_script_along_the_flow():
++    client = TestClient(app)
++    email = f"cookies@{DOMAIN}"
++    responses = [
++        client.get(f"/?lang=en&fbclid={FBCLID}"),
++        client.get(f"/signup?lang=en&fbclid={FBCLID}"),
++    ]
++    token = re.search(r'name="click" value="([^"]+)"', responses[1].text).group(1)
++    responses.append(_submit(client, email, consent=True, click=token))
++    responses.append(_verify(client, email))
++    allowed = {"ubyhost_csrf", "ubyhost_lang", auth.SESSION_COOKIE}
++    for response in responses:
++        for header in response.headers.get_list("set-cookie"):
++            name = header.split("=", 1)[0].strip()
++            assert name in allowed and not name.startswith("_fb")
++            assert FBCLID not in header
++    for html in (responses[0].text, responses[1].text):
++        assert "connect.facebook.net" not in html and "fbq(" not in html
++
++
++def test_the_privacy_page_and_register_name_meta_when_configured(monkeypatch):
++    html = TestClient(app).get("/privacy?lang=en").text
++    assert 'id="signup-meta"' in html
++    assert "Meta Platforms Ireland Ltd." in html
++    cs = TestClient(app).get("/privacy?lang=cs").text
++    assert "Měření na Facebooku a Instagramu" in cs
++    sub = TestClient(app).get("/subprocessors?lang=en").text
++    assert "Recipients that are not subprocessors" in sub and "Meta Platforms Ireland" in sub
++    monkeypatch.setattr(config, "META_DATASET_ID", "")
++    assert 'id="signup-meta"' not in TestClient(app).get("/privacy?lang=en").text
++
++
++def test_the_scheduler_runs_the_meta_job(monkeypatch):
++    from app import scheduler
++
++    called = []
++    monkeypatch.setattr(meta_capi, "send_pending", lambda: called.append(1) or {})
++    scheduler._job_meta_capi()
++    assert called
++    assert "meta_capi" in scheduler._JOB_LEVELS
++
++
++def test_the_meta_wording_is_legal_position_6_verbatim():
++    assert signup.consent_text("meta", "en") == (
++        "Optional: I agree that UbyHost may record that I came from Facebook or Instagram "
++        "and send that click identifier and my browser type string, with the fact and "
++        "time of my sign-up, to Meta Platforms Ireland Ltd. to measure our campaigns. "
++        "Meta receives it as a joint controller and then uses it as its own controller. "
++        "You can withdraw anytime in Settings. "
++        "[How Meta uses data](https://www.facebook.com/privacy/policy/)"
++    )
++    assert signup.consent_text("meta", "cs") == (
++        "Nepovinné: Souhlasím, aby UbyHost zaznamenal, že jsem přišel z Facebooku nebo "
++        "Instagramu, a předal tento identifikátor kliknutí a údaj o typu mého prohlížeče "
++        "spolu s informací o mé registraci a jejím čase společnosti Meta Platforms "
++        "Ireland Ltd. k měření úspěšnosti našich kampaní. Meta je při předání společným "
++        "správcem a dále údaje zpracovává jako samostatný správce. Souhlas můžete kdykoli "
++        "odvolat v Nastavení. "
++        "[Jak Meta používá data](https://www.facebook.com/privacy/policy/)"
++    )
++
++
++def test_the_user_agent_is_kept_only_with_the_meta_consent():
++    """Owner decision: client_user_agent only when the Meta box is ticked."""
++    without = f"noua@{DOMAIN}"
++    TestClient(app).post("/signup?lang=en", data={
++        "email": without, "password": PASSWORD, "workspace": "Lake Flats", "accept": "1",
++        "click": _click(),
++    }, headers={"User-Agent": USER_AGENT})
++    assert db.query(
++        "SELECT id FROM ad_click WHERE user_account_id = ?", (_account(without)["id"],)
++    ) == []
++    # Control characters are dropped and the value is capped.
++    noisy = f"noisy@{DOMAIN}"
++    _signed_up(noisy, verify=False)
++    assert signup.clean_user_agent("A\x00B\tC" + "x" * 900) == ("ABC" + "x" * 900)[:512]
++    assert signup.clean_user_agent("") is None and signup.clean_user_agent(None) is None
++    assert _row(noisy)["client_user_agent"] == USER_AGENT
++
++
++def test_an_event_without_a_user_agent_leaves_it_out(monkeypatch):
++    email = f"blankua@{DOMAIN}"
++    client = TestClient(app)
++    _submit(client, email, consent=True, click=_click(), user_agent="")
++    assert _verify(client, email).status_code == 303
++    assert _row(email)["client_user_agent"] is None
++    graph = _Graph(_Answer())
++    monkeypatch.setattr(meta_capi.requests, "post", graph)
++    assert meta_capi.send_pending()["sent"] == 1
++    event = json.loads(graph.calls[0]["data"]["data"])[0]
++    assert event["user_data"] == {"fbc": _row(email)["fbc"]}
++
++
++def test_the_privacy_paragraph_names_the_browser_type_string():
++    from app import host_i18n
++
++    en = host_i18n.translate("en", "privacy.signup_meta_body")
++    cs = host_i18n.translate("cs", "privacy.signup_meta_body")
++    assert "browser type string" in en and "IP address or browser details" not in en
++    assert "údajem o typu vašeho prohlížeče" in cs and "údaje o prohlížeči nepředáváme" not in cs
++    assert "the browser type string 7 days after" in en
+diff --git a/App/tests/test_umami_guard.py b/App/tests/test_umami_guard.py
+index 53a548d..28c3560 100644
+--- a/App/tests/test_umami_guard.py
++++ b/App/tests/test_umami_guard.py
+@@ -281,6 +281,15 @@ def test_auth_pages_never_carry_umami(umami_on, path):
+     assert response.headers.get("content-security-policy") == _CSP, path
+ 
+ 
++def test_the_sign_up_pages_never_carry_umami(umami_on, monkeypatch):
++    # WP20/WP21: /signup reads gclid and fbclid; it is an auth page, no tag.
++    monkeypatch.setattr(config, "SIGNUP_ENABLED", True)
++    for path in ("/signup?lang=en&gclid=TEST123&fbclid=TEST456", "/signup/verify?t=x"):
++        response = TestClient(app).get(path, follow_redirects=True)
++        assert not _markers(response.text), (path, _markers(response.text))
++        assert response.headers.get("content-security-policy") == _CSP, path
++
++
+ def test_app_and_guest_pages_never_carry_umami(umami_on):
+     owner_id, stay_id = hg._host_stay()
+     try:
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index e06b1c4..b804cb9 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -174,3 +174,12 @@ UBYHOST_SIGNUP_ENABLED=0
+ # UBYHOST_SIGNUP_NOTIFY_EMAIL=
+ # Conversion action name exactly as created in Google Ads.
+ # UBYHOST_ADS_CONVERSION_NAME=UbyHost sign-up
++
++# WP21 Meta Conversions API (sign-up conversions from Facebook/Instagram,
++# server-side, no Meta Pixel). Leave empty to keep it off; the Meta consent box
++# on the sign-up form only appears once both values are set.
++# UBYHOST_META_DATASET_ID=
++# UBYHOST_META_ACCESS_TOKEN=
++# Staging only: the code from Events Manager > Test events.
++# UBYHOST_META_TEST_EVENT_CODE=
++# UBYHOST_META_GRAPH_VERSION=v26.0
+-- 
+2.34.1
+

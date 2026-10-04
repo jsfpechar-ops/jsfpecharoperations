@@ -1,0 +1,1268 @@
+From 529cc76e4bc3b72548828f15a12d1d5f52986064 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:19:57 +0200
+Subject: [PATCH 30/34] WP18: Prepare a later Postgres move
+
+Integration: db.py conflicts with WP06, WP13, WP14 and WP22. Kept WP06's startup_lock next to the migration runner. db.execute() follows WP18 (returns the row count) but runs on WP14's per-thread connection through _helper_conn(), so WP13's counters still apply; WP14's execute_rowcount() is kept as an alias and its _inserts() helper is gone. db.insert() runs its INSERT ... RETURNING id on _helper_conn() instead of a private connect(). Kept WP22's invoices.expired_ids query (already null-safe without IS ?), WP12's lifecycle_mail_sent delete in retention._delete_workspace with plain = for the audit delete, and WP14's execute_rowcount call in routes/admin.py and WP04's audit filter, both with db.null_safe_eq. AGENTS.md keeps both new sections (WP17 copy rules, WP18 database access). WP12, WP15, WP16 and WP23 columns precede WP18 in this series and are part of the frozen baseline. Updated tests/test_connection_reuse.py (WP14) for the row-count contract.
+
+Conflict resolution: db._init_db_locked: kept PR 230's _resolve_legacy_resign_alerts(conn) right after _reset_reverted_stay_fee, before WP18 records the baseline and applies the numbered migrations; PR 230's submission.retried_at column is part of the frozen baseline. Cross-WP fix for PR 230: workspace_export.py's stay-fee filing query (the ZIP now carries the filings) used a bare owner_user_id IS ?, which WP18's portability guard rejects; it now uses db.null_safe_eq like the other export queries.
+---
+ AGENTS.md                          |  18 +++
+ App/app/acceptance.py              |  10 +-
+ App/app/access.py                  |  20 +--
+ App/app/codelists.py               |   9 +-
+ App/app/db.py                      | 202 +++++++++++++++++++++++----
+ App/app/dsr.py                     |   4 +-
+ App/app/invoices.py                |   5 +-
+ App/app/mail.py                    |   2 +-
+ App/app/migrations/.gitkeep        |   0
+ App/app/onboarding.py              |   8 +-
+ App/app/reporting.py               |   4 +-
+ App/app/retention.py               |  24 ++--
+ App/app/routes/admin.py            |  38 +++---
+ App/app/routes/exports.py          |  16 +--
+ App/app/routes/invoices.py         |   8 +-
+ App/app/routes/stay_fees.py        |   2 +-
+ App/app/stay_fee.py                |   2 +-
+ App/app/stay_fee_filing.py         |   4 +-
+ App/app/workspace_export.py        |   8 +-
+ App/tests/test_connection_reuse.py |  20 ++-
+ App/tests/test_migrations.py       | 212 +++++++++++++++++++++++++++++
+ 21 files changed, 506 insertions(+), 110 deletions(-)
+ create mode 100644 App/app/migrations/.gitkeep
+ create mode 100644 App/tests/test_migrations.py
+
+diff --git a/AGENTS.md b/AGENTS.md
+index cb1c7f3..c1e3588 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -110,6 +110,24 @@ Two rules for every string you add to `i18n.py`, `host_i18n.py` or a template:
+ Legal text is the exception: keep the guest legal notice, its acknowledgement
+ and the GDPR Article 13 privacy notice complete even if they overlap with
+ other copy.
++## Database access — keep a later Postgres move mechanical
++
++Permanent rules (UbyHost runs on SQLite; Postgres comes only when a second app
++server is needed):
++
++- All SQL goes through the `App/app/db.py` helpers, parameterised. No string
++  formatting of values into SQL; f-strings only build placeholder lists or name
++  trusted columns.
++- No new triggers and no new SQLite-only syntax: no `INSERT OR IGNORE` /
++  `INSERT OR REPLACE` (use `INSERT ... ON CONFLICT ... DO NOTHING / DO UPDATE`),
++  no `lastrowid` (`db.insert` uses `RETURNING id`), no bare `x IS ?` (use
++  `db.null_safe_eq("x")`, or plain `x = ?` where the value is never NULL).
++- Schema changes are numbered files in `App/app/migrations/`
++  (`NNNN_short_name.sql`, next free number), applied once by `db.init_db` and
++  recorded in `schema_migrations`. Do not add to `db.SCHEMA` or
++  `db.ADDED_COLUMNS`; those are the frozen baseline (version 1).
++- Keep `with db.immediate()` blocks small. Never call UbyPort or fetch a feed
++  inside an open transaction. No logic may rely on there being only one writer.
+ 
+ ## Changing a guest page (anything in `App/app/templates/guest/`, `guest*.css`, `ticket.js`, `signature.js`)
+ 
+diff --git a/App/app/acceptance.py b/App/app/acceptance.py
+index 5fcc0d9..29351f5 100644
+--- a/App/app/acceptance.py
++++ b/App/app/acceptance.py
+@@ -94,9 +94,10 @@ def record(
+ 
+     for doc in wanted:
+         db.execute(
+-            "INSERT OR IGNORE INTO legal_acceptance "
++            "INSERT INTO legal_acceptance "
+             "(user_account_id, document, version, accepted_at, method, ip, user_agent) "
+-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
++            "VALUES (?, ?, ?, ?, ?, ?, ?) "
++            "ON CONFLICT (user_account_id, document, version) DO NOTHING",
+             (user_id, doc, versions[doc], accepted_at, method, ip, user_agent),
+         )
+ 
+@@ -133,9 +134,10 @@ def backfill_from_audit() -> int:
+             continue
+         for doc in DOCUMENTS:
+             if db.execute(
+-                "INSERT OR IGNORE INTO legal_acceptance "
++                "INSERT INTO legal_acceptance "
+                 "(user_account_id, document, version, accepted_at, method) "
+-                "VALUES (?, ?, ?, ?, 'backfill')",
++                "VALUES (?, ?, ?, ?, 'backfill') "
++                "ON CONFLICT (user_account_id, document, version) DO NOTHING",
+                 (row["owner_user_id"], doc, match.group(doc), row["at"]),
+             ):
+                 inserted += 1
+diff --git a/App/app/access.py b/App/app/access.py
+index f340127..af17647 100644
+--- a/App/app/access.py
++++ b/App/app/access.py
+@@ -57,14 +57,14 @@ def owner_id(request: Request) -> int | None:
+ 
+ def apartment(request: Request, apartment_id: int):
+     return db.query_one(
+-        "SELECT * FROM apartment WHERE id = ? AND owner_user_id IS ?",
++        f"SELECT * FROM apartment WHERE id = ? AND {db.null_safe_eq('owner_user_id')}",
+         (apartment_id, owner_id(request)),
+     )
+ 
+ 
+ def entity(request: Request, entity_id: int):
+     return db.query_one(
+-        "SELECT * FROM legal_entity WHERE id = ? AND owner_user_id IS ?",
++        f"SELECT * FROM legal_entity WHERE id = ? AND {db.null_safe_eq('owner_user_id')}",
+         (entity_id, owner_id(request)),
+     )
+ 
+@@ -78,7 +78,7 @@ def apartment_for_reservation(reservation, owner_user_id: int | None = None):
+     this module rather than a bare ``SELECT * FROM apartment``.
+     """
+     return db.query_one(
+-        "SELECT * FROM apartment WHERE id = ? AND (? IS NULL OR owner_user_id IS ?)",
++        f"SELECT * FROM apartment WHERE id = ? AND (? IS NULL OR {db.null_safe_eq('owner_user_id')})",
+         (reservation["apartment_id"], owner_user_id, owner_user_id),
+     )
+ 
+@@ -93,7 +93,7 @@ def reservation(request: Request, reservation_id: int, columns: str = "r.*"):
+     """
+     return db.query_one(
+         f"SELECT {columns} FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+-        "WHERE r.id = ? AND a.owner_user_id IS ?",
++        f"WHERE r.id = ? AND {db.null_safe_eq('a.owner_user_id')}",
+         (reservation_id, owner_id(request)),
+     )
+ 
+@@ -103,7 +103,7 @@ def guest(request: Request, guest_id: int):
+         "SELECT g.* FROM guest g "
+         "JOIN reservation r ON r.id = g.reservation_id "
+         "JOIN apartment a ON a.id = r.apartment_id "
+-        "WHERE g.id = ? AND a.owner_user_id IS ?",
++        f"WHERE g.id = ? AND {db.null_safe_eq('a.owner_user_id')}",
+         (guest_id, owner_id(request)),
+     )
+ 
+@@ -112,7 +112,7 @@ def submission(request: Request, submission_id: int, columns: str = "s.*"):
+     """One submission, reached through its apartment's owner (see ``reservation``)."""
+     return db.query_one(
+         f"SELECT {columns} FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+-        "WHERE s.id = ? AND a.owner_user_id IS ?",
++        f"WHERE s.id = ? AND {db.null_safe_eq('a.owner_user_id')}",
+         (submission_id, owner_id(request)),
+     )
+ 
+@@ -120,20 +120,20 @@ def submission(request: Request, submission_id: int, columns: str = "s.*"):
+ def feed(request: Request, feed_id: int):
+     return db.query_one(
+         "SELECT f.* FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
+-        "WHERE f.id = ? AND a.owner_user_id IS ?",
++        f"WHERE f.id = ? AND {db.null_safe_eq('a.owner_user_id')}",
+         (feed_id, owner_id(request)),
+     )
+ 
+ 
+ def alert(request: Request, alert_id: int):
+     return db.query_one(
+-        "SELECT * FROM alert WHERE id = ? AND owner_user_id IS ?",
++        f"SELECT * FROM alert WHERE id = ? AND {db.null_safe_eq('owner_user_id')}",
+         (alert_id, owner_id(request)),
+     )
+ 
+ 
+ def apartments(request: Request, columns: str = "*", include_archived: bool = False):
+-    sql = f"SELECT {columns} FROM apartment WHERE owner_user_id IS ?"
++    sql = f"SELECT {columns} FROM apartment WHERE {db.null_safe_eq('owner_user_id')}"
+     if not include_archived:
+         sql += " AND archived_at IS NULL"
+     sql += " ORDER BY internal_name"
+@@ -141,7 +141,7 @@ def apartments(request: Request, columns: str = "*", include_archived: bool = Fa
+ 
+ 
+ def entities(request: Request, include_archived: bool = False):
+-    sql = "SELECT * FROM legal_entity WHERE owner_user_id IS ?"
++    sql = f"SELECT * FROM legal_entity WHERE {db.null_safe_eq('owner_user_id')}"
+     if not include_archived:
+         sql += " AND archived_at IS NULL"
+     sql += " ORDER BY name"
+diff --git a/App/app/codelists.py b/App/app/codelists.py
+index 98e7433..bad2e8d 100644
+--- a/App/app/codelists.py
++++ b/App/app/codelists.py
+@@ -54,8 +54,13 @@ def store(kind: str, rows: List[Dict[str, str]]) -> int:
+             if not code:
+                 continue
+             cur.execute(
+-                "INSERT OR REPLACE INTO codelist (kind, code, text_cs, text_en, extra, fetched_at) "
+-                "VALUES (?, ?, ?, ?, ?, ?)",
++                # An upsert, not OR REPLACE: the same result here (every column
++                # is written, nothing references codelist rows, no triggers),
++                # and the spelling both SQLite and Postgres accept.
++                "INSERT INTO codelist (kind, code, text_cs, text_en, extra, fetched_at) "
++                "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (kind, code) DO UPDATE SET "
++                "text_cs = excluded.text_cs, text_en = excluded.text_en, "
++                "extra = excluded.extra, fetched_at = excluded.fetched_at",
+                 (kind, code, text_cs, text_en, (row.get("Kod2") or "").strip(), now),
+             )
+             written += 1
+diff --git a/App/app/db.py b/App/app/db.py
+index d53bd09..c99b548 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -7,6 +7,7 @@ import hashlib
+ import json
+ import logging
+ import os
++import re
+ import sqlite3
+ import threading
+ import time
+@@ -14,6 +15,7 @@ import weakref
+ from contextlib import contextmanager
+ from contextvars import ContextVar
+ from datetime import datetime, timezone
++from pathlib import Path
+ from typing import Any, Dict, Iterable, List, Optional
+ 
+ from cryptography.fernet import Fernet, InvalidToken, MultiFernet
+@@ -916,6 +918,8 @@ def close_connections() -> None:
+ 
+ # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
+ # existing database untouched, so every later column has to be added by hand.
++# Frozen since WP18: this list is part of the baseline (schema version 1). A new
++# column is a numbered file in app/migrations instead (see init_db).
+ ADDED_COLUMNS = (
+     ("user_account", "totp_secret_enc", "TEXT"),
+     ("user_account", "totp_enabled", "INTEGER NOT NULL DEFAULT 0"),
+@@ -1113,6 +1117,118 @@ def startup_lock():
+                 _startup_handle = None
+ 
+ 
++# --- numbered migrations -------------------------------------------------
++#
++# Every schema change from WP18 on is a numbered SQL file in app/migrations,
++# ``NNNN_short_name.sql``, applied once, in order, and recorded in
++# schema_migrations. Version 1 is the baseline: SCHEMA plus ADDED_COLUMNS
++# above, which stay as they are (idempotent, run on every start) so a database
++# from any earlier release still reaches the baseline first. Do not add to
++# SCHEMA or ADDED_COLUMNS any more; write the next numbered file instead.
++# A database that predates this table is detected by not having a baseline row
++# and is marked as at the baseline once the idempotent pass has run.
++
++MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
++BASELINE_VERSION = 1
++_MIGRATION_NAME = re.compile(r"^(\d{4})_([a-z0-9_]+)\.sql$")
++
++_MIGRATIONS_TABLE = """
++CREATE TABLE IF NOT EXISTS schema_migrations (
++    version    INTEGER PRIMARY KEY,
++    name       TEXT NOT NULL,
++    applied_at TEXT NOT NULL
++)
++"""
++
++
++def migration_files(directory: Optional[Path] = None) -> List[tuple]:
++    """``(version, name, path)`` for every migration file, in version order."""
++    folder = directory or MIGRATIONS_DIR
++    found: List[tuple] = []
++    if not folder.is_dir():
++        return found
++    for path in folder.iterdir():
++        match = _MIGRATION_NAME.match(path.name)
++        if not match:
++            continue
++        version = int(match.group(1))
++        if version <= BASELINE_VERSION:
++            raise RuntimeError(
++                f"migration {path.name}: versions up to {BASELINE_VERSION} are the baseline"
++            )
++        found.append((version, match.group(2), path))
++    found.sort()
++    versions = [version for version, _name, _path in found]
++    if len(versions) != len(set(versions)):
++        raise RuntimeError("two migration files share a version number")
++    return found
++
++
++def _statements(script: str) -> List[str]:
++    """Split a migration script into statements, the way sqlite3 itself does."""
++    statements: List[str] = []
++    buffer = ""
++    for line in script.splitlines(keepends=True):
++        buffer += line
++        if sqlite3.complete_statement(buffer):
++            if buffer.strip():
++                statements.append(buffer.strip())
++            buffer = ""
++    if buffer.strip() and not all(
++        part.strip().startswith("--") or not part.strip() for part in buffer.splitlines()
++    ):
++        raise RuntimeError("migration ends with an incomplete statement")
++    return statements
++
++
++def schema_version(conn: Optional[sqlite3.Connection] = None) -> int:
++    """The highest applied migration, 0 when the database has none recorded."""
++    own = conn is None
++    conn = conn or connect()
++    try:
++        exists = conn.execute(
++            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'"
++        ).fetchone()
++        if not exists:
++            return 0
++        row = conn.execute("SELECT MAX(version) AS v FROM schema_migrations").fetchone()
++        return int(row["v"] or 0)
++    finally:
++        if own:
++            conn.close()
++
++
++def apply_migrations(conn: sqlite3.Connection, directory: Optional[Path] = None) -> List[int]:
++    """Apply every migration file not yet recorded; the versions applied.
++
++    Each file runs in its own write transaction together with its
++    schema_migrations row, so a failing file leaves nothing behind and is
++    retried on the next start. The check runs inside the lock, so two
++    processes starting together apply a file once.
++    """
++    applied: List[int] = []
++    for version, name, path in migration_files(directory):
++        script = path.read_text(encoding="utf-8")
++        conn.execute("BEGIN IMMEDIATE")
++        try:
++            done = conn.execute(
++                "SELECT 1 FROM schema_migrations WHERE version = ?", (version,)
++            ).fetchone()
++            if not done:
++                for statement in _statements(script):
++                    conn.execute(statement)
++                conn.execute(
++                    "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
++                    (version, name, utcnow()),
++                )
++                applied.append(version)
++            conn.execute("COMMIT")
++        except Exception:
++            conn.execute("ROLLBACK")
++            raise
++    return applied
++
++
+ def init_db() -> None:
+     # The data directory has to exist before sqlite opens the database inside
+     # it, and creating it is no longer an import-time side effect of config.
+@@ -1134,6 +1250,14 @@ def _init_db_locked() -> None:
+         _add_missing_columns(conn)
+         _reset_reverted_stay_fee(conn)
+         _resolve_legacy_resign_alerts(conn)
++        # The baseline is reached; record it, then apply the numbered files.
++        conn.execute(_MIGRATIONS_TABLE)
++        conn.execute(
++            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) "
++            "ON CONFLICT (version) DO NOTHING",
++            (BASELINE_VERSION, "baseline", utcnow()),
++        )
++        apply_migrations(conn)
+     finally:
+         conn.close()
+ 
+@@ -1232,39 +1356,67 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
+     return rows[0] if rows else None
+ 
+ 
+-def _inserts(sql: str) -> bool:
+-    head = sql.lstrip()[:7].upper()
+-    return head.startswith("INSERT") or head.startswith("REPLACE")
+-
+-
+ def execute(sql: str, params: Iterable[Any] = ()) -> int:
+-    """Run one statement. Returns the new row's id when it inserted a row, else 0.
+-
+-    On a fresh connection ``lastrowid`` was 0 unless this very statement
+-    inserted, and callers rely on that (``INSERT OR IGNORE`` counts inserts by
+-    it). A shared connection remembers the previous insert, so the value is
+-    reduced to what a fresh connection reported. One case cannot be told apart:
+-    an upsert (``ON CONFLICT ... DO UPDATE``) that updated reports the
+-    connection's previous id. No caller reads the result of an upsert.
++    """Run one statement on this thread's connection; the number of rows it changed.
++
++    The row count rather than ``lastrowid`` (WP18): it means the same thing on
++    every engine, and ``INSERT ... ON CONFLICT DO NOTHING`` answers 0 when the
++    row was already there. Use ``insert()`` for a new row's id. The row count is
++    also independent of what the shared per-thread connection (WP14) inserted
++    before.
+     """
+     with _helper_conn() as conn:
+-        cur = conn.execute(sql, tuple(params))
+-        if not _inserts(sql) or cur.rowcount <= 0:
+-            return 0
+-        return cur.lastrowid
++        return conn.execute(sql, tuple(params)).rowcount
+ 
+ 
+ def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
+-    """execute(), returning the number of rows the statement changed."""
+-    with _helper_conn() as conn:
+-        return conn.execute(sql, tuple(params)).rowcount
++    """Same as execute() since WP18; kept for the callers WP14 added."""
++    return execute(sql, params)
++
++
++# Tables keyed by something other than an ``id`` column. insert() cannot ask
++# them for ``RETURNING id``, and nobody needs an id back from them.
++_TABLES_WITHOUT_ID = frozenset({
++    "settings", "codelist", "invoice_sequence", "submission_claim",
++    "reservation_claim", "schema_migrations",
++})
++
+ 
++def insert(table: str, values: Dict[str, Any]) -> Optional[int]:
++    """INSERT one row; its id, from ``RETURNING id`` (SQLite 3.35+, Postgres).
+ 
+-def insert(table: str, values: Dict[str, Any]) -> int:
++    ``None`` for the tables in ``_TABLES_WITHOUT_ID``.
++    """
+     values = _write_values(table, values)
+     cols = ", ".join(values)
+     marks = ", ".join("?" for _ in values)
+-    return execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(values.values()))
++    sql = f"INSERT INTO {table} ({cols}) VALUES ({marks})"
++    if table in _TABLES_WITHOUT_ID:
++        execute(sql, list(values.values()))
++        return None
++    with _helper_conn() as conn:
++        # fetchall, not fetchone: the statement has to run to completion
++        # before the autocommit transaction it opened is committed (and before
++        # _helper_conn checks that the shared connection is idle again).
++        rows = conn.execute(sql + " RETURNING id", list(values.values())).fetchall()
++    return int(rows[0][0])
++
++
++# SQLite's ``IS`` is null-safe equality: ``owner_user_id IS ?`` matches NULL
++# when the parameter is None, where ``=`` would match nothing. Postgres spells
++# it ``IS NOT DISTINCT FROM`` (SQLite only learnt that spelling in 3.39, newer
++# than some hosts this still runs on). Every such comparison goes through this
++# helper, so moving engines changes this one constant.
++NULL_SAFE_EQ = "IS"
++
++
++def null_safe_eq(column: str) -> str:
++    """``column`` compared null-safely with one ``?`` parameter.
++
++    ``column`` is trusted SQL (a column name written in the code), never input.
++    Use plain ``column = ?`` where the value can never be None.
++    """
++    return f"{column} {NULL_SAFE_EQ} ?"
+ 
+ 
+ def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
+@@ -1286,15 +1438,15 @@ def update_if(
+     """UPDATE the row only if it still holds ``expected``; True when it did.
+ 
+     Compare-and-set for rows a background job may change between a request's
+-    read and its write. ``expected`` values compare with IS, so None matches
+-    NULL. ``extra_where`` is a trusted SQL fragment (never user input).
++    read and its write. ``expected`` values compare null-safely
++    (``null_safe_eq``), so None matches NULL. ``extra_where`` is a trusted SQL fragment (never user input).
+     Encrypted fields are handled exactly as in update().
+     """
+     if not values:
+         return False
+     values = _write_values(table, values)
+     sets = ", ".join(f"{k} = ?" for k in values)
+-    clauses = ["id = ?"] + [f"{k} IS ?" for k in expected]
++    clauses = ["id = ?"] + [null_safe_eq(k) for k in expected]
+     if extra_where:
+         clauses.append(extra_where)
+     sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)
+diff --git a/App/app/dsr.py b/App/app/dsr.py
+index e42a645..10ab213 100644
+--- a/App/app/dsr.py
++++ b/App/app/dsr.py
+@@ -39,7 +39,7 @@ def one_month_later(iso: str) -> str:
+ 
+ def list_for_owner(owner_user_id: Optional[int]) -> List[Any]:
+     return db.query(
+-        "SELECT * FROM data_subject_request WHERE owner_user_id IS ? "
++        f"SELECT * FROM data_subject_request WHERE {db.null_safe_eq('owner_user_id')} "
+         "ORDER BY (status IN ('open','extended')) DESC, due_at, id",
+         (owner_user_id,),
+     )
+@@ -114,7 +114,7 @@ def guest_export(guest_id: int) -> Optional[Dict[str, Any]]:
+     # "id=N" and the guest form writes "guest=N", so all three are matched.
+     by_id, by_guest, by_form = f"guest_id={guest_id}", f"id={guest_id}", f"guest={guest_id}"
+     audit_rows = db.query(
+-        "SELECT at, actor, action, detail FROM audit WHERE owner_user_id IS ? AND ("
++        f"SELECT at, actor, action, detail FROM audit WHERE {db.null_safe_eq('owner_user_id')} AND ("
+         "detail = ? OR detail LIKE ? "
+         "OR (action LIKE 'guest\\_%' ESCAPE '\\' AND (detail = ? OR detail LIKE ?)) "
+         "OR (action = 'guest_form_saved' AND (detail = ? OR detail LIKE ?))"
+diff --git a/App/app/invoices.py b/App/app/invoices.py
+index d179773..4056b57 100644
+--- a/App/app/invoices.py
++++ b/App/app/invoices.py
+@@ -414,10 +414,11 @@ def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
+         seq_year, seq_no, number, vs = allocate_number(cur, entity, year)
+         columns = _invoice_columns(draft, number, vs, seq_year, seq_no)
+         cur.execute(
+-            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)})",
++            f"INSERT INTO invoice ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)}) "
++            "RETURNING id",
+             list(columns.values()),
+         )
+-        invoice_id = cur.lastrowid
++        invoice_id = int(cur.fetchall()[0][0])
+         for position, item in enumerate(draft["items"], start=1):
+             cur.execute(
+                 "INSERT INTO invoice_item (invoice_id, position, kind, description, quantity, "
+diff --git a/App/app/mail.py b/App/app/mail.py
+index e150589..8fabdc0 100644
+--- a/App/app/mail.py
++++ b/App/app/mail.py
+@@ -559,7 +559,7 @@ def recent_console_messages(
+         rows = db.query(
+             f"SELECT {columns} FROM console_mail_log l "
+             "JOIN email_outbox o ON o.id = l.outbox_id "
+-            "WHERE o.owner_user_id IS ? "
++            f"WHERE {db.null_safe_eq('o.owner_user_id')} "
+             "ORDER BY l.id DESC LIMIT ?",
+             (owner_user_id, limit),
+         )
+diff --git a/App/app/migrations/.gitkeep b/App/app/migrations/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/App/app/onboarding.py b/App/app/onboarding.py
+index 2127706..c9976aa 100644
+--- a/App/app/onboarding.py
++++ b/App/app/onboarding.py
+@@ -31,14 +31,14 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
+     """Return setup steps and the next action for a workspace."""
+     entity_count = int(
+         db.query_one(
+-            "SELECT COUNT(*) AS n FROM legal_entity WHERE owner_user_id IS ?",
++            f"SELECT COUNT(*) AS n FROM legal_entity WHERE {db.null_safe_eq('owner_user_id')}",
+             (owner_user_id,),
+         )["n"]
+     )
+     ready_entity_count = int(
+         db.query_one(
+             "SELECT COUNT(*) AS n FROM legal_entity "
+-            "WHERE owner_user_id IS ? AND TRIM(COALESCE(name, '')) != '' "
++            f"WHERE {db.null_safe_eq('owner_user_id')} AND TRIM(COALESCE(name, '')) != '' "
+             "AND TRIM(COALESCE(seat, '')) != '' "
+             "AND TRIM(COALESCE(ico, '')) != '' "
+             "AND TRIM(COALESCE(contact_email, '')) != ''",
+@@ -49,7 +49,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
+         "SELECT a.*, "
+         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
+         "FROM apartment a "
+-        "WHERE a.archived_at IS NULL AND a.owner_user_id IS ? "
++        f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
+         "ORDER BY a.id",
+         (owner_user_id,),
+     )
+@@ -61,7 +61,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
+         db.query_one(
+             "SELECT COUNT(*) AS n FROM reservation r "
+             "JOIN apartment a ON a.id = r.apartment_id "
+-            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL "
++            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL "
+             "AND r.status = 'active' AND r.source = 'manual'",
+             (owner_user_id,),
+         )["n"]
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index c736585..c6cbf1e 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -1241,8 +1241,8 @@ def claim_sendable(
+             ):
+                 continue
+             cur.execute(
+-                "INSERT OR IGNORE INTO submission_claim (guest_id, claim_token, claimed_at) "
+-                "VALUES (?, ?, ?)",
++                "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
++                "VALUES (?, ?, ?) ON CONFLICT (guest_id) DO NOTHING",
+                 (guest["id"], token, time.time()),
+             )
+             if cur.rowcount == 1:
+diff --git a/App/app/retention.py b/App/app/retention.py
+index 244890a..61254bc 100644
+--- a/App/app/retention.py
++++ b/App/app/retention.py
+@@ -257,13 +257,13 @@ def _delete_workspace(owner_id: int) -> None:
+     One transaction: a failure part-way used to leave the account and its
+     entities behind with the guests already gone, and fail again every night.
+     """
+-    apartments = "(SELECT id FROM apartment WHERE owner_user_id IS ?)"
+-    entities = "(SELECT id FROM legal_entity WHERE owner_user_id IS ?)"
++    apartments = "(SELECT id FROM apartment WHERE owner_user_id = ?)"
++    entities = "(SELECT id FROM legal_entity WHERE owner_user_id = ?)"
+     with db.immediate() as cur:
+         # Read inside the lock so a guest saved a moment earlier keeps no photo.
+         cur.execute(
+             "SELECT g.id AS id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+-            "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id IS ?",
++            "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id = ?",
+             (owner_id,),
+         )
+         guest_ids = [row["id"] for row in cur.fetchall()]
+@@ -285,32 +285,32 @@ def _delete_workspace(owner_id: int) -> None:
+         # Corrections first: they reference the invoice they correct.
+         cur.execute(
+             "DELETE FROM invoice_item WHERE invoice_id IN "
+-            "(SELECT id FROM invoice WHERE owner_user_id IS ?)",
++            "(SELECT id FROM invoice WHERE owner_user_id = ?)",
+             (owner_id,),
+         )
+         cur.execute(
+-            "DELETE FROM invoice WHERE owner_user_id IS ? AND corrects_invoice_id IS NOT NULL",
++            "DELETE FROM invoice WHERE owner_user_id = ? AND corrects_invoice_id IS NOT NULL",
+             (owner_id,),
+         )
+-        cur.execute("DELETE FROM invoice WHERE owner_user_id IS ?", (owner_id,))
++        cur.execute("DELETE FROM invoice WHERE owner_user_id = ?", (owner_id,))
+         cur.execute(
+             "UPDATE settings SET value = '' WHERE key = 'invoice_purge_unlock'"
+         )
+         # Queued mail carries guest addresses and must not outlive the workspace.
+         cur.execute(
+-            f"DELETE FROM email_outbox WHERE owner_user_id IS ? OR apartment_id IN {apartments}",
++            f"DELETE FROM email_outbox WHERE owner_user_id = ? OR apartment_id IN {apartments}",
+             (owner_id, owner_id),
+         )
+-        cur.execute("DELETE FROM apartment WHERE owner_user_id IS ?", (owner_id,))
++        cur.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
+         cur.execute(f"DELETE FROM invoice_sequence WHERE legal_entity_id IN {entities}", (owner_id,))
+-        cur.execute("DELETE FROM legal_entity WHERE owner_user_id IS ?", (owner_id,))
+-        cur.execute("DELETE FROM data_subject_request WHERE owner_user_id IS ?", (owner_id,))
+-        cur.execute("DELETE FROM alert WHERE owner_user_id IS ?", (owner_id,))
++        cur.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))
++        cur.execute("DELETE FROM data_subject_request WHERE owner_user_id = ?", (owner_id,))
++        cur.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner_id,))
+         # legal_acceptance has a NOT NULL account reference, so it cannot
+         # outlive the account.
+         cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
+         cur.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (owner_id,))
+-        cur.execute("DELETE FROM audit WHERE owner_user_id IS ?", (owner_id,))
++        cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+     # Files last: a rolled-back delete must not have lost the photos. One
+     # failing file must not stop the rest; the orphan sweep retries it.
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index 916f32f..1f22eb9 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -233,7 +233,7 @@ def dashboard(request: Request):
+         db.query_one(
+             "SELECT COUNT(*) AS n FROM ical_feed f "
+             "JOIN apartment a ON a.id = f.apartment_id "
+-            "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
++            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL AND f.active = 1",
+             (owner_user_id,),
+         )["n"]
+     )
+@@ -282,7 +282,7 @@ def guest_links(request: Request):
+         "SELECT a.*, e.name AS entity_name, "
+         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
+         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
+-        "WHERE a.active = 1 AND a.archived_at IS NULL AND a.owner_user_id IS ? "
++        f"WHERE a.active = 1 AND a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
+         "ORDER BY a.internal_name",
+         (access.owner_id(request),),
+     )
+@@ -311,13 +311,13 @@ def entities(request: Request):
+     rows = db.query(
+         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+         "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
+-        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NULL ORDER BY e.name",
++        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NULL ORDER BY e.name",
+         (owner_user_id,),
+     )
+     archived = db.query(
+         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+         "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
+-        "FROM legal_entity e WHERE e.owner_user_id IS ? AND e.archived_at IS NOT NULL "
++        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NOT NULL "
+         "ORDER BY e.archived_at DESC",
+         (owner_user_id,),
+     )
+@@ -562,7 +562,7 @@ def archive_entity(entity_id: int, request: Request):
+         return _back("/entities", err=_flash(request, "flash.error.already_archived"))
+     used = db.query_one(
+         "SELECT COUNT(*) AS n FROM apartment WHERE "
+-        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
++        f"(legal_entity_id = ? OR data_controller_entity_id = ?) AND {db.null_safe_eq('owner_user_id')}",
+         (entity_id, entity_id, access.owner_id(request)),
+     )
+     if used and used["n"]:
+@@ -604,7 +604,7 @@ def delete_entity(entity_id: int, request: Request):
+         return _back("/entities", err=_flash(request, "flash.error.archive_entity_first"))
+     used = db.query_one(
+         "SELECT COUNT(*) AS n FROM apartment WHERE "
+-        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND owner_user_id IS ?",
++        f"(legal_entity_id = ? OR data_controller_entity_id = ?) AND {db.null_safe_eq('owner_user_id')}",
+         (entity_id, entity_id, access.owner_id(request)),
+     )
+     if used and used["n"]:
+@@ -631,7 +631,7 @@ def apartments_list(request: Request):
+         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
+         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
+         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
+-        "WHERE a.archived_at IS NULL AND a.owner_user_id IS ? ORDER BY a.internal_name",
++        f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.internal_name",
+         (access.owner_id(request),),
+     )
+     archived = db.query(
+@@ -639,7 +639,7 @@ def apartments_list(request: Request):
+         "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds, "
+         "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id AND r.status = 'active') AS reservations "
+         "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
+-        "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? ORDER BY a.archived_at DESC",
++        f"WHERE a.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.archived_at DESC",
+         (access.owner_id(request),),
+     )
+     enriched = [
+@@ -1342,7 +1342,7 @@ def reservations_list(request: Request):
+     sql = (
+         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode, a.submit_after_hours "
+         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+-        "WHERE a.owner_user_id IS ?"
++        f"WHERE {db.null_safe_eq('a.owner_user_id')}"
+     )
+     params: List[Any] = [access.owner_id(request)]
+     if show_archive:
+@@ -1432,7 +1432,7 @@ def reservations_list(request: Request):
+             "next_page_url": page_url(page + 1) if page < page_count else "",
+             "has_any": bool(db.query_one(
+                 "SELECT 1 AS x FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+-                "WHERE a.owner_user_id IS ? LIMIT 1",
++                f"WHERE {db.null_safe_eq('a.owner_user_id')} LIMIT 1",
+                 (access.owner_id(request),),
+             )),
+             # Without a feed there is nothing to sync, so an empty list offers
+@@ -1441,7 +1441,7 @@ def reservations_list(request: Request):
+                 db.query_one(
+                     "SELECT COUNT(*) AS n FROM ical_feed f "
+                     "JOIN apartment a ON a.id = f.apartment_id "
+-                    "WHERE a.owner_user_id IS ? AND a.archived_at IS NULL AND f.active = 1",
++                    f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.archived_at IS NULL AND f.active = 1",
+                     (access.owner_id(request),),
+                 )["n"]
+             ),
+@@ -1512,7 +1512,7 @@ async def reservations_submit_ready(request: Request):
+     reservations = db.query(
+         "SELECT r.* FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
+-        "AND a.archived_at IS NULL AND a.owner_user_id IS ?",
++        f"AND a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')}",
+         (access.owner_id(request),),
+     )
+     sent_stays = 0
+@@ -1687,7 +1687,7 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
+         "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+         "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
+         "AND archived_at IS NULL) < ? "
+-        "AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS ?)",
++        f"AND apartment_id IN (SELECT id FROM apartment WHERE {db.null_safe_eq('owner_user_id')})",
+         (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
+     )
+     if not changed:
+@@ -2526,7 +2526,7 @@ def submissions_list(request: Request):
+         "       (s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != '') AS has_receipt, "
+         "       a.internal_name "
+         "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+-        "WHERE a.owner_user_id IS ? ORDER BY s.created_at DESC LIMIT 200",
++        f"WHERE {db.null_safe_eq('a.owner_user_id')} ORDER BY s.created_at DESC LIMIT 200",
+         (access.owner_id(request),),
+     )
+     receipt_count = sum(1 for row in rows if row["has_receipt"])
+@@ -2692,11 +2692,11 @@ def settings_view(request: Request):
+             "audit": db.query(
+                 "SELECT a.*, i.username AS impersonator_username FROM audit a "
+                 "LEFT JOIN user_account i ON i.id = a.impersonator_user_id "
+-                f"WHERE a.owner_user_id IS ?{audit_where} ORDER BY a.id DESC LIMIT 500",
++                f"WHERE {db.null_safe_eq('a.owner_user_id')}{audit_where} ORDER BY a.id DESC LIMIT 500",
+                 (access.owner_id(request), *audit_params),
+             ),
+             "audit_count": db.query_one(
+-                f"SELECT COUNT(*) AS n FROM audit a WHERE a.owner_user_id IS ?{audit_where}",
++                f"SELECT COUNT(*) AS n FROM audit a WHERE {db.null_safe_eq('a.owner_user_id')}{audit_where}",
+                 (access.owner_id(request), *audit_params),
+             )["n"],
+             "audit_filter": audit_filter,
+@@ -2711,13 +2711,13 @@ def settings_view(request: Request):
+             ),
+             "entities_without_contact": db.query(
+                 "SELECT id, name FROM legal_entity "
+-                "WHERE owner_user_id IS ? AND archived_at IS NULL AND "
++                f"WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL AND "
+                 "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
+                 (access.owner_id(request),),
+             ),
+             "apartments_without_entity": db.query(
+                 "SELECT id, internal_name FROM apartment "
+-                "WHERE owner_user_id IS ? AND legal_entity_id IS NULL AND active = 1 "
++                f"WHERE {db.null_safe_eq('owner_user_id')} AND legal_entity_id IS NULL AND active = 1 "
+                 "ORDER BY internal_name",
+                 (access.owner_id(request),),
+             ),
+@@ -2733,7 +2733,7 @@ def settings_view(request: Request):
+             ),
+             "open_dsr_count": db.query_one(
+                 "SELECT COUNT(*) AS n FROM data_subject_request "
+-                "WHERE owner_user_id IS ? AND status IN ('open','extended')",
++                f"WHERE {db.null_safe_eq('owner_user_id')} AND status IN ('open','extended')",
+                 (access.owner_id(request),),
+             )["n"],
+             "backup_status": _backup_status(request),
+diff --git a/App/app/routes/exports.py b/App/app/routes/exports.py
+index d7606a4..1005889 100644
+--- a/App/app/routes/exports.py
++++ b/App/app/routes/exports.py
+@@ -178,7 +178,7 @@ def submissions_receipts_zip(request: Request, background_tasks: BackgroundTasks
+         # pull both SOAP envelopes and the error PDF as well.
+         "SELECT s.id, s.created_at, s.pseudo_stamp, s.receipt_pdf "
+         "FROM submission s JOIN apartment a ON a.id = s.apartment_id "
+-        "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
++        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND s.receipt_pdf IS NOT NULL AND TRIM(s.receipt_pdf) != ''"
+     )
+     params: List[Any] = [owner_id]
+     if date_from:
+@@ -389,14 +389,14 @@ def settings_archived_view(request: Request):
+             db.query_one(
+                 "SELECT COUNT(*) AS n FROM reservation r "
+                 "JOIN apartment a ON a.id = r.apartment_id "
+-                "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ?",
++                f"WHERE r.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')}",
+                 (owner_id,),
+             )["n"]
+         ),
+         "properties": int(
+             db.query_one(
+                 "SELECT COUNT(*) AS n FROM apartment "
+-                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
++                f"WHERE archived_at IS NOT NULL AND {db.null_safe_eq('owner_user_id')}",
+                 (owner_id,),
+             )["n"]
+         ),
+@@ -405,14 +405,14 @@ def settings_archived_view(request: Request):
+                 "SELECT COUNT(*) AS n FROM guest g "
+                 "JOIN reservation r ON r.id = g.reservation_id "
+                 "JOIN apartment a ON a.id = r.apartment_id "
+-                "WHERE g.archived_at IS NOT NULL AND a.owner_user_id IS ?",
++                f"WHERE g.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')}",
+                 (owner_id,),
+             )["n"]
+         ),
+         "entities": int(
+             db.query_one(
+                 "SELECT COUNT(*) AS n FROM legal_entity "
+-                "WHERE archived_at IS NOT NULL AND owner_user_id IS ?",
++                f"WHERE archived_at IS NOT NULL AND {db.null_safe_eq('owner_user_id')}",
+                 (owner_id,),
+             )["n"]
+         ),
+@@ -428,7 +428,7 @@ def settings_archived_view(request: Request):
+         archived_stays = db.query(
+             "SELECT r.*, a.internal_name FROM reservation r "
+             "JOIN apartment a ON a.id = r.apartment_id "
+-            "WHERE r.archived_at IS NOT NULL AND a.owner_user_id IS ? "
++            f"WHERE r.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} "
+             "ORDER BY r.archived_at DESC, r.id DESC",
+             (owner_id,),
+         )
+@@ -437,7 +437,7 @@ def settings_archived_view(request: Request):
+             "SELECT a.*, "
+             "  (SELECT COUNT(*) FROM reservation r WHERE r.apartment_id = a.id) AS reservations "
+             "FROM apartment a "
+-            "WHERE a.archived_at IS NOT NULL AND a.owner_user_id IS ? "
++            f"WHERE a.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} "
+             "ORDER BY a.archived_at DESC",
+             (owner_id,),
+         )
+@@ -446,7 +446,7 @@ def settings_archived_view(request: Request):
+     if item_type in ("all", "entities"):
+         archived_entities = db.query(
+             "SELECT e.* FROM legal_entity e "
+-            "WHERE e.archived_at IS NOT NULL AND e.owner_user_id IS ? "
++            f"WHERE e.archived_at IS NOT NULL AND {db.null_safe_eq('e.owner_user_id')} "
+             "ORDER BY e.archived_at DESC",
+             (owner_id,),
+         )
+diff --git a/App/app/routes/invoices.py b/App/app/routes/invoices.py
+index 274bfe1..e917c46 100644
+--- a/App/app/routes/invoices.py
++++ b/App/app/routes/invoices.py
+@@ -52,14 +52,14 @@ def _invoice_columns() -> str:
+ 
+ def _load_invoice(request: Request, invoice_id: int):
+     return db.query_one(
+-        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND owner_user_id IS ?",
++        f"SELECT {_invoice_columns()} FROM invoice WHERE id = ? AND {db.null_safe_eq('owner_user_id')}",
+         (invoice_id, access.owner_id(request)),
+     )
+ 
+ 
+ def _entities(request: Request):
+     return db.query(
+-        "SELECT * FROM legal_entity WHERE archived_at IS NULL AND owner_user_id IS ? "
++        f"SELECT * FROM legal_entity WHERE archived_at IS NULL AND {db.null_safe_eq('owner_user_id')} "
+         "ORDER BY name",
+         (access.owner_id(request),),
+     )
+@@ -187,7 +187,7 @@ def invoices_list(request: Request):
+     today = claim.prague_today()
+     owner_id = access.owner_id(request)
+     properties = db.query(
+-        "SELECT id, internal_name FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
++        f"SELECT id, internal_name FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
+         "ORDER BY internal_name, id",
+         (owner_id,),
+     )
+@@ -203,7 +203,7 @@ def invoices_list(request: Request):
+         page_no = max(int(request.query_params.get("page") or "1"), 1)
+     except ValueError:
+         page_no = 1
+-    where, params = ["owner_user_id IS ?"], [owner_id]
++    where, params = [f"{db.null_safe_eq('owner_user_id')}"], [owner_id]
+     if view.month:
+         first, last = stay_fee.period_bounds("monthly", view.month)
+         where.append("issue_date >= ? AND issue_date <= ?")
+diff --git a/App/app/routes/stay_fees.py b/App/app/routes/stay_fees.py
+index 714fec7..f118a07 100644
+--- a/App/app/routes/stay_fees.py
++++ b/App/app/routes/stay_fees.py
+@@ -106,7 +106,7 @@ def stay_fees_list(request: Request):
+     today = claim.prague_today()
+     owner_id = access.owner_id(request)
+     apartments = db.query(
+-        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
++        f"SELECT * FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
+         "AND active = 1 ORDER BY internal_name, id",
+         (owner_id,),
+     )
+diff --git a/App/app/stay_fee.py b/App/app/stay_fee.py
+index d30fcb2..621a07e 100644
+--- a/App/app/stay_fee.py
++++ b/App/app/stay_fee.py
+@@ -368,7 +368,7 @@ def _apply_adjustments(period: Dict[str, Any], month: date) -> Dict[str, Any]:
+ def owner_periods(owner_user_id, month: date) -> List[Dict[str, Any]]:
+     """The list page: active properties, plus disabled ones that still have a sealed period."""
+     rows = db.query(
+-        "SELECT * FROM apartment WHERE owner_user_id IS ? AND archived_at IS NULL "
++        f"SELECT * FROM apartment WHERE {db.null_safe_eq('owner_user_id')} AND archived_at IS NULL "
+         "AND (stay_fee_rate_czk > 0 OR id IN ("
+         "SELECT apartment_id FROM stay_fee_filing WHERE superseded_at IS NULL)) "
+         "ORDER BY internal_name, id",
+diff --git a/App/app/stay_fee_filing.py b/App/app/stay_fee_filing.py
+index c3a9b71..eeff855 100644
+--- a/App/app/stay_fee_filing.py
++++ b/App/app/stay_fee_filing.py
+@@ -154,14 +154,14 @@ def save(
+             "INSERT INTO stay_fee_filing ("
+             "apartment_id, period_key, version, cadence, rate_czk, liable_days, exempt_days, "
+             "total_due_czk, total_collected_czk, pdf_enc, csv_enc, payload_enc, created_at, "
+-            "superseded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
++            "superseded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL) RETURNING id",
+             (
+                 apartment["id"], key, version, group["cadence"], rate_czk,
+                 group["liable_nights"], group["exempt_nights"], due, collected_total,
+                 db.encrypt_blob(pdf), db.encrypt_blob(csv), payload_enc, now,
+             ),
+         )
+-        filing_id = int(cur.lastrowid)
++        filing_id = int(cur.fetchall()[0][0])
+         cur.execute(
+             "UPDATE stay_fee_adjustment SET filing_id = ? "
+             "WHERE apartment_id = ? AND period_key = ? AND reversed_at IS NULL "
+diff --git a/App/app/workspace_export.py b/App/app/workspace_export.py
+index 528cd95..9d56b91 100644
+--- a/App/app/workspace_export.py
++++ b/App/app/workspace_export.py
+@@ -25,7 +25,7 @@ def guest_ids(owner_user_id: int) -> List[int]:
+         row["id"]
+         for row in db.query(
+             "SELECT g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+-            "JOIN apartment a ON a.id = r.apartment_id WHERE a.owner_user_id IS ?",
++            f"JOIN apartment a ON a.id = r.apartment_id WHERE {db.null_safe_eq('a.owner_user_id')}",
+             (owner_user_id,),
+         )
+     ]
+@@ -64,7 +64,7 @@ def build_workspace_zip(owner_user_id: int) -> str:
+         for submission in db.query(
+             "SELECT s.id, s.receipt_pdf FROM submission s "
+             "JOIN apartment a ON a.id = s.apartment_id "
+-            "WHERE a.owner_user_id IS ? AND s.receipt_pdf IS NOT NULL",
++            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND s.receipt_pdf IS NOT NULL",
+             (owner_user_id,),
+         ):
+             pdf = _safe_pdf(submission["receipt_pdf"])
+@@ -74,7 +74,7 @@ def build_workspace_zip(owner_user_id: int) -> str:
+         for row in db.query(
+             "SELECT f.* FROM stay_fee_filing f "
+             "JOIN apartment a ON a.id = f.apartment_id "
+-            "WHERE a.owner_user_id IS ? AND f.superseded_at IS NULL",
++            f"WHERE {db.null_safe_eq('a.owner_user_id')} AND f.superseded_at IS NULL",
+             (owner_user_id,),
+         ):
+             pdf = stay_fee_filing.pdf_bytes(row)
+@@ -91,7 +91,7 @@ def build_workspace_zip(owner_user_id: int) -> str:
+             if pdf or csv:
+                 counts["stay_fee_filings"] += 1
+         for invoice in db.query(
+-            "SELECT id, pdf_blob FROM invoice WHERE owner_user_id IS ?", (owner_user_id,)
++            f"SELECT id, pdf_blob FROM invoice WHERE {db.null_safe_eq('owner_user_id')}", (owner_user_id,)
+         ):
+             blob = invoice["pdf_blob"]
+             if not blob:
+diff --git a/App/tests/test_connection_reuse.py b/App/tests/test_connection_reuse.py
+index 7da5107..010616b 100644
+--- a/App/tests/test_connection_reuse.py
++++ b/App/tests/test_connection_reuse.py
+@@ -163,14 +163,20 @@ def test_a_nested_read_block_uses_its_own_connection(fresh_db):
+     assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 8
+ 
+ 
+-def test_execute_reports_an_id_only_for_a_row_it_inserted(fresh_db):
+-    new_id = db.execute("INSERT INTO counter (n) VALUES (1)")
++def test_execute_reports_the_rows_it_changed_not_a_previous_insert(fresh_db):
++    # WP18: execute() returns the row count. On the shared connection (WP14)
++    # it must not leak the previous statement's insert.
++    new_id = db.insert("counter", {"n": 1})
+     assert new_id > 1
+-    # A fresh connection reported 0 here; the shared one must too.
+-    assert db.execute("INSERT OR IGNORE INTO counter (id, n) VALUES (1, 0)") == 0
+-    assert db.execute("UPDATE counter SET n = n + 1 WHERE id = 1") == 0
+-    assert db.execute("DELETE FROM counter WHERE id = ?", (new_id,)) == 0
+-    assert db.execute_rowcount("UPDATE counter SET n = 0") == 1
++    assert db.execute("INSERT INTO counter (n) VALUES (2)") == 1
++    assert (
++        db.execute("INSERT INTO counter (id, n) VALUES (1, 0) ON CONFLICT (id) DO NOTHING")
++        == 0
++    )
++    assert db.execute("UPDATE counter SET n = n + 1 WHERE id = 1") == 1
++    assert db.execute("UPDATE counter SET n = n + 1 WHERE id = -1") == 0
++    assert db.execute("DELETE FROM counter WHERE id = ?", (new_id,)) == 1
++    assert db.execute_rowcount("UPDATE counter SET n = 0") == 2
+ 
+ 
+ # --- concurrency ----------------------------------------------------------------
+diff --git a/App/tests/test_migrations.py b/App/tests/test_migrations.py
+new file mode 100644
+index 0000000..e56d998
+--- /dev/null
++++ b/App/tests/test_migrations.py
+@@ -0,0 +1,212 @@
++"""WP18: numbered migrations, RETURNING id, ON CONFLICT and null-safe comparisons.
++
++None of this adds Postgres. It makes the later move mechanical: schema changes
++are numbered files recorded in schema_migrations, ids come from RETURNING,
++upserts use ON CONFLICT, and null-safe equality is one helper.
++"""
++from __future__ import annotations
++
++import re
++import sqlite3
++from pathlib import Path
++
++import pytest
++
++from app import codelists, config, db
++
++
++@pytest.fixture
++def fresh(tmp_path, monkeypatch):
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "fresh.db")
++    monkeypatch.setattr(db, "MIGRATIONS_DIR", tmp_path / "migrations")
++    (tmp_path / "migrations").mkdir()
++    return tmp_path
++
++
++def _schema(path: Path) -> dict:
++    """Every table's columns and every index/trigger's SQL, schema_migrations aside."""
++    conn = sqlite3.connect(str(path))
++    try:
++        out = {}
++        for kind, name, sql in conn.execute(
++            "SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' "
++            "AND name != 'schema_migrations' ORDER BY type, name"
++        ):
++            if kind == "table":
++                out[name] = sorted(
++                    (row[1], row[2], row[3], row[4], row[5])
++                    for row in conn.execute(f"PRAGMA table_info({name})")
++                )
++            else:
++                out[f"{kind}:{name}"] = sql
++        return out
++    finally:
++        conn.close()
++
++
++def _pre_wp18_database(path: Path) -> None:
++    """A database as the release before WP18 left it: no schema_migrations."""
++    conn = sqlite3.connect(str(path), isolation_level=None)
++    conn.row_factory = sqlite3.Row
++    try:
++        db._add_missing_columns(conn)
++        conn.executescript(db.SCHEMA)
++        db._add_missing_columns(conn)
++        db._reset_reverted_stay_fee(conn)
++        conn.execute(
++            "INSERT INTO user_account (username, password_hash, created_at) "
++            "VALUES ('pre-wp18', 'x', '2026-01-01T00:00:00+00:00')"
++        )
++    finally:
++        conn.close()
++
++
++def test_an_empty_database_is_created_at_the_baseline(fresh):
++    db.init_db()
++    assert db.schema_version() == db.BASELINE_VERSION
++    tables = {row["name"] for row in db.query("SELECT name FROM sqlite_master WHERE type = 'table'")}
++    assert {"guest", "submission", "schema_migrations", "legal_acceptance"} <= tables
++    db.init_db()
++    rows = db.query("SELECT version, name FROM schema_migrations")
++    assert [(row["version"], row["name"]) for row in rows] == [(1, "baseline")]
++
++
++def test_an_existing_database_is_marked_at_the_current_version_unchanged(fresh):
++    current = fresh / "fresh.db"
++    _pre_wp18_database(current)
++    before = _schema(current)
++    assert db.schema_version() == 0, "the old release had no schema_migrations"
++
++    db.init_db()
++
++    assert db.schema_version() == db.BASELINE_VERSION
++    assert _schema(current) == before, "marking the version must not change the schema"
++    assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
++
++
++def test_an_empty_and_an_upgraded_database_end_with_the_same_schema(fresh, tmp_path, monkeypatch):
++    db.init_db()
++    created = _schema(config.DB_PATH)
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "upgraded.db")
++    _pre_wp18_database(config.DB_PATH)
++    db.init_db()
++    assert _schema(config.DB_PATH) == created
++
++
++def test_a_numbered_migration_is_applied_once_and_recorded(fresh):
++    (fresh / "migrations" / "0002_demo_column.sql").write_text(
++        "-- a demo migration\n"
++        "ALTER TABLE settings ADD COLUMN demo_note TEXT;\n"
++        "CREATE INDEX IF NOT EXISTS idx_settings_demo ON settings (demo_note);\n"
++    )
++    db.init_db()
++    db.init_db()
++    assert db.schema_version() == 2
++    columns = [row["name"] for row in db.query("PRAGMA table_info(settings)")]
++    assert columns.count("demo_note") == 1
++    row = db.query_one("SELECT name FROM schema_migrations WHERE version = 2")
++    assert row["name"] == "demo_column"
++
++
++def test_an_existing_database_gets_later_migrations_on_top_of_the_baseline(fresh):
++    _pre_wp18_database(config.DB_PATH)
++    (fresh / "migrations" / "0002_demo_column.sql").write_text(
++        "ALTER TABLE settings ADD COLUMN demo_note TEXT;\n"
++    )
++    db.init_db()
++    assert db.schema_version() == 2
++    assert db.query_one("SELECT username FROM user_account WHERE username = 'pre-wp18'")
++
++
++def test_a_failing_migration_leaves_nothing_behind_and_is_not_recorded(fresh):
++    db.init_db()
++    (fresh / "migrations" / "0002_broken.sql").write_text(
++        "ALTER TABLE settings ADD COLUMN half_done TEXT;\n"
++        "ALTER TABLE no_such_table ADD COLUMN x TEXT;\n"
++    )
++    with pytest.raises(sqlite3.OperationalError):
++        db.init_db()
++    assert db.schema_version() == 1
++    columns = [row["name"] for row in db.query("PRAGMA table_info(settings)")]
++    assert "half_done" not in columns
++
++
++def test_a_migration_numbered_inside_the_baseline_is_refused(fresh):
++    (fresh / "migrations" / "0001_too_low.sql").write_text("SELECT 1;\n")
++    with pytest.raises(RuntimeError, match="baseline"):
++        db.init_db()
++
++
++def test_files_that_are_not_migrations_are_ignored(fresh):
++    (fresh / "migrations" / ".gitkeep").write_text("")
++    (fresh / "migrations" / "notes.txt").write_text("not sql")
++    db.init_db()
++    assert db.schema_version() == 1
++
++
++# --- RETURNING, ON CONFLICT, null-safe comparison ----------------------------
++
++def test_insert_returns_the_new_id_and_execute_the_row_count(fresh):
++    db.init_db()
++    first = db.insert("user_account", {"username": "a", "password_hash": "x",
++                                       "created_at": db.utcnow()})
++    second = db.insert("user_account", {"username": "b", "password_hash": "x",
++                                        "created_at": db.utcnow()})
++    assert second == first + 1
++    assert db.query_one("SELECT username FROM user_account WHERE id = ?", (second,))["username"] == "b"
++    assert db.insert("settings", {"key": "k", "value": "v"}) is None
++    assert db.execute("UPDATE user_account SET display_name = 'x'") == 2
++
++
++def test_the_send_claim_still_refuses_a_second_holder(fresh):
++    db.init_db()
++    sql = (
++        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES (?, ?, ?) "
++        "ON CONFLICT (guest_id) DO NOTHING"
++    )
++    conn = db.connect()
++    try:
++        # No guest row is needed to test the conflict rule itself.
++        conn.execute("PRAGMA foreign_keys = OFF")
++        assert conn.execute(sql, (7, "first", 1.0)).rowcount == 1
++        assert conn.execute(sql, (7, "second", 2.0)).rowcount == 0
++        token = conn.execute("SELECT claim_token FROM submission_claim WHERE guest_id = 7").fetchone()
++    finally:
++        conn.close()
++    assert token[0] == "first", "the claim that got there first keeps the guest"
++
++
++def test_the_codelist_upsert_keeps_one_row_with_the_latest_values(fresh, monkeypatch):
++    db.init_db()
++    rows = [{"Kod": "CZE", "TextCZ": "Česko", "TextKratkyEN": "Czechia old"},
++            {"Kod": "CZE", "TextCZ": "Česko", "TextKratkyEN": "Czechia"}]
++    monkeypatch.setattr(codelists, "_code_and_texts", lambda kind, row: (
++        row["Kod"], row["TextCZ"], row["TextKratkyEN"]))
++    codelists.store("Staty", rows)
++    stored = db.query("SELECT code, text_en FROM codelist WHERE kind = 'Staty'")
++    assert [(row["code"], row["text_en"]) for row in stored] == [("CZE", "Czechia")]
++
++
++def test_null_safe_eq_matches_null_the_way_is_did(fresh):
++    db.init_db()
++    now = db.utcnow()
++    owned = db.insert("apartment", {"internal_name": "owned", "owner_user_id": None,
++                                    "created_at": now})
++    sql = f"SELECT id FROM apartment WHERE {db.null_safe_eq('owner_user_id')}"
++    assert [row["id"] for row in db.query(sql, (None,))] == [owned]
++    assert db.query(sql, (12345,)) == []
++    assert db.null_safe_eq("a.owner_user_id") == "a.owner_user_id IS ?"
++
++
++def test_no_sqlite_only_insert_variants_or_bare_is_comparisons_remain():
++    app_dir = Path(__file__).resolve().parent.parent / "app"
++    offenders = []
++    for path in app_dir.rglob("*.py"):
++        text = path.read_text(encoding="utf-8")
++        for needle in ("INSERT OR IGNORE", "INSERT OR REPLACE", ".lastrowid"):
++            if needle in text:
++                offenders.append(f"{path.name}: {needle}")
++        # db.py defines the helper and explains it in prose.
++        if path.name != "db.py" and re.search(r"[\w)] IS \?", text):
++            offenders.append(f"{path.name}: x IS ? (use db.null_safe_eq)")
++    assert offenders == []
+-- 
+2.34.1
+

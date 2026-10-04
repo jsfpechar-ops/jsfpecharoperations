@@ -1,0 +1,2768 @@
+From d546733bb63f1dc000e98db08a89ac63bc692fe2 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 02:11:03 +0200
+Subject: [PATCH 18/34] WP23: Filing watchdog
+
+Every run of the deadline job (30 min) finds the stays that may miss their
+police deadline: at least one reportable (non-Czech, EU included) guest not
+accepted by UbyPort (submit_state != 'sent'), stay active and not archived,
+property active, and deadlines.reporting_deadline from the earliest guest
+arrival less than 24 hours away or passed.
+
+- Host: one deadline_at_risk mail per stay (reservation.at_risk_mailed_at),
+  with property, arrival, unfiled count, stay link and the manual UbyPort
+  fallback. reminder_host is the check-in day nudge about guest forms, so a
+  new kind.
+- Operator: deadline_digest to UBYHOST_OPERATOR_EMAIL at most every 6 hours
+  (settings key filing_watchdog_digest_sent_at), no guest names.
+- UBYHOST_HEARTBEAT_FILING_URL: <url> when nothing is at risk, <url>/fail
+  when something is or the deadline watch failed; no ping when the
+  watchdog itself fails.
+- Guide: "If UbyHost cannot file in time" (EN, CS).
+
+Filed by hand: on the stay page the host can record "I filed this stay by
+hand in UbyPort" with the filing time (default now) and an optional receipt
+or reference. The stay's unfiled reportable guests become submit_state
+'sent', so every existing filed-check and double-filing guard holds, with
+guest.manual_filed_at, manual_reference, manual_marked_at and
+manual_prev_state. collect_sendable never offers them (not even as a
+resend), claim_sendable drops them, a guest under a live submission claim is
+not marked. Status, the WP01 deadline badge ("Filed by hand 30.09. 14:32"),
+the watchdog and the house book CSV and PDF treat and label them as filed by
+hand. Audit stay_filed_manually; undo within 24 hours of the mark, audited
+as stay_filed_manually_undone.
+
+Unknown risk: a stay whose guests have arrived, with no guest entered, not
+cancelled or ignored, and less than 24 hours to its deadline (or up to 7
+days past it) gets the host mail once in a "no guest details yet" variant
+and its own section in the operator digest. It never makes the heartbeat
+/fail, because Czech guests owe no report.
+
+Conflict resolution: db.py ADDED_COLUMNS, mail.py KINDS and HOST_KINDS, tests/test_claim_mail.py: kept PR 230's submission.retried_at column and cancelled_with_guests mail kind next to WP23's columns and kinds. guest_form_admin.html: WP23's filed-by-hand banner title with WP25's id="filed-lock-note". reporting.py: WP25 (earlier in this order) already defines _field(), so WP23's second copy is dropped. Carried in from earlier steps: tests/test_wp25_reported_bugs.py gets back its hand-filed variants (manual_filed_at), and the two hand-filing panels in reservation_detail.html use WP28's class="panel" (not panel tight), as WP28's padding fix requires.
+
+PR 230 retry state: a guest on an outcome_unknown batch with retried_at still empty is waiting for the sweep's one automatic resend. filing_watchdog.at_risk_stays now joins the guest's submission; a stay whose every unfiled guest is in that state, before its deadline, is "awaiting the automatic resend" for at most RETRY_GRACE (two sweep intervals) from the batch's finish time: no host mail, no digest line, no heartbeat /fail. After the grace, after the resend (retried_at set), with any other unfiled guest, or once the deadline has passed, it is at risk as before. run() reports awaiting_retry; the scheduler logs it. New tests in tests/test_filing_watchdog.py; one existing stub takes the new keyword.
+
+Owner change: no SMS. config.py, deploy/lightsail/.env.example and docs/plans/UbyHost_Audit_and_Cursor_Plan_2026-09-28.md now say the healthchecks.io filing check notifies the owner by e-mail (sent by healthchecks.io, so it arrives when UbyHost's own mail is broken). No code change.
+
+Conflict resolution (WP31, earlier in this order): the sweep's one automatic resend has submission.mode 'auto_resend' and is never resent itself. The module docstring says so, and a new test checks that a stay held on an unclear resend is awaiting only within its grace and at risk after it, and still at risk five grace windows later. The watchdog code is unchanged.
+---
+ App/app/celebrations.py                       |   2 +
+ App/app/config.py                             |   8 +
+ App/app/db.py                                 |  12 +
+ App/app/filing_watchdog.py                    | 362 +++++++++
+ App/app/guide_i18n.py                         |  14 +
+ App/app/host_i18n.py                          | 119 +++
+ App/app/housebook.py                          |  25 +-
+ App/app/mail.py                               |   6 +
+ App/app/mail_notify.py                        | 206 ++++++
+ App/app/reporting.py                          | 217 +++++-
+ App/app/routes/admin.py                       |  47 ++
+ App/app/scheduler.py                          |  27 +-
+ App/app/templates/_components.html            |   5 +-
+ App/app/templates/guest_form_admin.html       |   2 +-
+ App/app/templates/guide.html                  |   8 +
+ App/app/templates/reservation_detail.html     |  38 +-
+ App/tests/test_claim_mail.py                  |   2 +
+ App/tests/test_filed_by_hand.py               | 347 +++++++++
+ App/tests/test_filing_watchdog.py             | 698 ++++++++++++++++++
+ App/tests/test_wp25_reported_bugs.py          |  14 +-
+ deploy/lightsail/.env.example                 |   7 +
+ docs/ENVIRONMENT.md                           |   1 +
+ docs/OPERATIONS.md                            |   2 +-
+ docs/SES.md                                   |   6 +-
+ ...byHost_Audit_and_Cursor_Plan_2026-09-28.md |   2 +-
+ 25 files changed, 2146 insertions(+), 31 deletions(-)
+ create mode 100644 App/app/filing_watchdog.py
+ create mode 100644 App/tests/test_filed_by_hand.py
+ create mode 100644 App/tests/test_filing_watchdog.py
+
+diff --git a/App/app/celebrations.py b/App/app/celebrations.py
+index 43edf27..4939ff0 100644
+--- a/App/app/celebrations.py
++++ b/App/app/celebrations.py
+@@ -17,6 +17,8 @@ def sent_guest_count(owner_user_id: Optional[int] = None) -> int:
+         JOIN reservation r ON r.id = g.reservation_id
+         JOIN apartment a ON a.id = r.apartment_id
+         WHERE g.submit_state = 'sent'
++          -- WP23: a guest filed by hand in UbyPort saved the host nothing.
++          AND g.manual_filed_at IS NULL
+           AND (? IS NULL OR a.owner_user_id = ?)
+         """,
+         (owner_user_id, owner_user_id),
+diff --git a/App/app/config.py b/App/app/config.py
+index 6f440b7..69f0d3c 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -126,6 +126,14 @@ SUBMIT_SWEEP_MINUTES = int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10"))
+ HEARTBEAT_URL = os.environ.get("UBYHOST_HEARTBEAT_URL", "").strip()
+ HEARTBEAT_ICAL_URL = os.environ.get("UBYHOST_HEARTBEAT_ICAL_URL", "").strip()
+ HEARTBEAT_MAIL_URL = os.environ.get("UBYHOST_HEARTBEAT_MAIL_URL", "").strip()
++# Filing watchdog (WP23). Unlike the three above, this one is pinged on every
++# run of the deadline job: <url> while no stay is at risk of missing its police
++# deadline, <url>/fail while at least one is (healthchecks.io semantics). The
++# healthchecks.io check then notifies the owner by e-mail. That mail comes from
++# healthchecks.io, not from UbyHost's own mail, so it still arrives when
++# UbyHost's mail is broken, and it fires on the missing ping when the VM is
++# down. Empty disables it.
++HEARTBEAT_FILING_URL = os.environ.get("UBYHOST_HEARTBEAT_FILING_URL", "").strip()
+ 
+ # Used to build the guest permalink shown to hosts for copy/paste.
+ PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
+diff --git a/App/app/db.py b/App/app/db.py
+index ae190b7..b14df4d 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -713,6 +713,18 @@ ADDED_COLUMNS = (
+     ("guest", "fee_host_reason_enc", "TEXT"),
+     ("guest", "fee_host_reason_reference", "TEXT"),
+     ("submission", "retried_at", "TEXT"),
++    # WP23: when the filing watchdog mailed the host that this stay may miss
++    # its police deadline. Set once; the host is warned once per stay.
++    ("reservation", "at_risk_mailed_at", "TEXT"),
++    # WP23: a guest the host filed by hand in the UbyPort web application. The
++    # guest is then ``sent`` like any filed guest, so every "already filed"
++    # guard holds; these columns say it was by hand, when (UTC), with which
++    # receipt or reference, when the mark was made (for the 24 hour undo) and
++    # which state the undo restores.
++    ("guest", "manual_filed_at", "TEXT"),
++    ("guest", "manual_reference", "TEXT"),
++    ("guest", "manual_marked_at", "TEXT"),
++    ("guest", "manual_prev_state", "TEXT"),
+ )
+ 
+ # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
+diff --git a/App/app/filing_watchdog.py b/App/app/filing_watchdog.py
+new file mode 100644
+index 0000000..ac3db24
+--- /dev/null
++++ b/App/app/filing_watchdog.py
+@@ -0,0 +1,362 @@
++"""Filing watchdog: stays that may miss their police deadline (WP23).
++
++The deadline job (every 30 minutes) asks one question on top of the in-app
++``deadline`` alert: which stays have a foreign guest UbyPort has not accepted,
++with less than 24 hours left or the deadline already gone? It then
++
++- mails the host once per stay, the first time the stay is at risk
++  (``deadline_at_risk``, a kind of its own: ``reminder_host`` is the check-in
++  day nudge about missing guest forms and knows nothing about the deadline);
++- mails the operator (``config.OPERATOR_EMAIL``) at most one digest per six
++  hours, listing every stay at risk across all workspaces, without guest names;
++- reports the overall answer to ``scheduler``, which pings the
++  ``UBYHOST_HEARTBEAT_FILING_URL`` dead-man switch with it.
++
++"Reportable" is the existing rule, ``validation.guest_is_reportable``: every
++nationality except Czech, EU citizens included. "Accepted" means
++``submit_state == 'sent'``; a refused (``error`` or ``blocked``) or pending
++guest still has to be filed. A stay that is cancelled, ignored or archived, or
++whose property is switched off, is not watched, the same set the deadline alert
++watches. A guest the host filed by hand in UbyPort is ``sent`` too, so it is
++not at risk.
++
++A guest whose send got no clear answer sits on an ``outcome_unknown`` batch.
++PR 230's sweep resends such a batch once on its own (``retried_at`` marks it).
++While that one resend is still to come, the guest is not filed but nothing is
++wrong yet either: the stay is "awaiting the automatic resend". If the deadline
++has not passed, it is left out of the host mail, the digest and the heartbeat
++for at most ``RETRY_GRACE`` after the unclear answer, which gives the sweep two
++runs to resend. After that, or once the deadline has passed, it counts as at
++risk like any other unfiled guest. The grace is measured from the batch's own
++finish time. WP31: the resend (``submission.mode = 'auto_resend'``) is never
++resent itself, so when it comes back unclear too the stay is at risk once that
++one grace is over, and stays at risk until the host files it.
++
++A stay with no guest entered at all is a second, weaker case ("unknown risk"):
++the guests have arrived (arrival today or earlier), the deadline is less than
++24 hours away or passed, and nobody is on file. UbyHost cannot tell whether a
++report is due, because Czech guests owe none. Such a stay gets the host mail
++once ("no guest details yet") and a section of the operator digest, but it
++never sets the heartbeat to ``/fail``: that is kept for guests known to be
++reportable, so a stay of Czech guests nobody typed in does not page anyone.
++"""
++from __future__ import annotations
++
++import logging
++from datetime import date, datetime, timedelta, timezone
++from typing import Any, Dict, List, Optional
++from zoneinfo import ZoneInfo
++
++from . import config, db, deadlines, mail, mail_notify, reporting, validation
++
++log = logging.getLogger("ubyhost.filing_watchdog")
++
++# A stay is at risk from this long before its deadline, and stays at risk
++# after the deadline until it is filed or no longer active.
++AT_RISK_WINDOW = timedelta(hours=24)
++DIGEST_INTERVAL = timedelta(hours=6)
++DIGEST_SETTING = "filing_watchdog_digest_sent_at"
++# A stay with no guest on file drops off the lists this long after its
++# deadline. A known reportable guest never does; an empty stay that old is a
++# calendar entry nobody is going to fill in, not news.
++UNKNOWN_RISK_MAX_OVERDUE = timedelta(days=7)
++# How long a guest on an unclear (outcome_unknown) batch that the sweep has not
++# resent yet is treated as "awaiting the automatic resend" rather than at risk:
++# two sweep intervals, so one missed sweep run does not raise the alarm.
++RETRY_GRACE = timedelta(minutes=2 * max(1, config.SUBMIT_SWEEP_MINUTES))
++
++
++def _awaiting_retry(row, current_utc: datetime) -> bool:
++    """Is this unfiled guest on an unclear batch whose one resend is still due?"""
++    if row["sub_state"] != "outcome_unknown" or row["sub_retried_at"]:
++        return False
++    try:
++        finished = datetime.fromisoformat(str(row["sub_finished_at"]))
++    except (TypeError, ValueError):
++        return False
++    if finished.tzinfo is None:
++        finished = finished.replace(tzinfo=timezone.utc)
++    return timedelta(0) <= current_utc - finished <= RETRY_GRACE
++
++
++def _utc(now: Optional[datetime]) -> datetime:
++    """``now`` as an aware UTC time. A naive value is Prague civil time."""
++    if now is None:
++        return datetime.now(timezone.utc)
++    if now.tzinfo is None:
++        now = now.replace(tzinfo=ZoneInfo(config.TIMEZONE))
++    return now.astimezone(timezone.utc)
++
++
++def at_risk_stays(
++    now: Optional[datetime] = None, *, include_awaiting_retry: bool = False
++) -> List[Dict[str, Any]]:
++    """Every stay at risk of missing its police deadline, soonest deadline first.
++
++    A stay whose every unfiled guest is awaiting the automatic resend and whose
++    deadline has not passed is left out, unless ``include_awaiting_retry``;
++    it then carries ``awaiting_retry=True``.
++    """
++    local = deadlines.local_now(now)
++    current_utc = _utc(now)
++    # Only the columns the answer needs: nationality and submit_state are
++    # plain columns, so no guest field is decrypted here.
++    rows = db.query(
++        "SELECT r.id AS reservation_id, r.date_from, r.at_risk_mailed_at, "
++        "r.apartment_id, a.internal_name, a.legal_entity_id, a.owner_user_id, "
++        "u.username AS workspace, g.nationality, "
++        "s.state AS sub_state, s.retried_at AS sub_retried_at, "
++        "s.finished_at AS sub_finished_at "
++        "FROM reservation r "
++        "JOIN apartment a ON a.id = r.apartment_id "
++        "JOIN guest g ON g.reservation_id = r.id "
++        "LEFT JOIN submission s ON s.id = g.submission_id "
++        "LEFT JOIN user_account u ON u.id = a.owner_user_id "
++        "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
++        "AND g.archived_at IS NULL AND g.submit_state != ? "
++        "AND g.nationality IS NOT NULL AND g.nationality != '' "
++        "ORDER BY r.id",
++        (reporting.SENT,),
++    )
++    grouped: Dict[int, Dict[str, Any]] = {}
++    for row in rows:
++        if not validation.guest_is_reportable(row["nationality"]):
++            continue
++        stay = grouped.get(row["reservation_id"])
++        if stay is None:
++            stay = grouped[row["reservation_id"]] = {
++                "reservation_id": row["reservation_id"],
++                "date_from": row["date_from"],
++                "apartment_id": row["apartment_id"],
++                "property": row["internal_name"] or "",
++                "legal_entity_id": row["legal_entity_id"],
++                "owner_user_id": row["owner_user_id"],
++                "workspace": row["workspace"] or "",
++                "mailed_at": row["at_risk_mailed_at"],
++                "unfiled": 0,
++                "awaiting_retry_guests": 0,
++            }
++        stay["unfiled"] += 1
++        if _awaiting_retry(row, current_utc):
++            stay["awaiting_retry_guests"] += 1
++    found: List[Dict[str, Any]] = []
++    for stay in grouped.values():
++        # The deadline runs from the earliest guest arrival, as everywhere else.
++        anchor = reporting.reservation_deadline_anchor(
++            {"id": stay["reservation_id"], "date_from": stay["date_from"]}
++        )
++        if not anchor:
++            continue
++        due = deadlines.reporting_deadline(anchor)
++        if due - local > AT_RISK_WINDOW:
++            continue
++        stay["arrival"] = anchor
++        stay["deadline"] = due
++        stay["overdue"] = due < local
++        stay["awaiting_retry"] = (
++            not stay["overdue"] and stay["awaiting_retry_guests"] == stay["unfiled"]
++        )
++        if stay["awaiting_retry"] and not include_awaiting_retry:
++            continue
++        found.append(stay)
++    found.sort(key=lambda stay: (stay["deadline"], stay["reservation_id"]))
++    return found
++
++
++def unknown_risk_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
++    """Stays with no guest on file whose guests have arrived and whose deadline is near.
++
++    Same stay set as ``at_risk_stays`` (active, not archived, property
++    active). The deadline runs from the stay's arrival, as for any stay
++    without guests.
++    """
++    local = deadlines.local_now(now)
++    today = local.date()
++    # The deadline is at most a few working days after arrival, so stays that
++    # arrived long ago cannot qualify; this bounds the scan.
++    earliest = today - UNKNOWN_RISK_MAX_OVERDUE - timedelta(days=21)
++    rows = db.query(
++        "SELECT r.id AS reservation_id, r.date_from, r.at_risk_mailed_at, "
++        "r.apartment_id, a.internal_name, a.legal_entity_id, a.owner_user_id, "
++        "u.username AS workspace "
++        "FROM reservation r "
++        "JOIN apartment a ON a.id = r.apartment_id "
++        "LEFT JOIN user_account u ON u.id = a.owner_user_id "
++        "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
++        "AND r.date_from <= ? AND r.date_from >= ? "
++        "AND NOT EXISTS (SELECT 1 FROM guest g "
++        "WHERE g.reservation_id = r.id AND g.archived_at IS NULL) "
++        "ORDER BY r.id",
++        (today.isoformat(), earliest.isoformat()),
++    )
++    found: List[Dict[str, Any]] = []
++    for row in rows:
++        try:
++            arrival = date.fromisoformat(str(row["date_from"])[:10])
++        except ValueError:
++            continue
++        due = deadlines.reporting_deadline(arrival)
++        if due - local > AT_RISK_WINDOW or local - due > UNKNOWN_RISK_MAX_OVERDUE:
++            continue
++        found.append(
++            {
++                "reservation_id": row["reservation_id"],
++                "date_from": row["date_from"],
++                "apartment_id": row["apartment_id"],
++                "property": row["internal_name"] or "",
++                "legal_entity_id": row["legal_entity_id"],
++                "owner_user_id": row["owner_user_id"],
++                "workspace": row["workspace"] or "",
++                "mailed_at": row["at_risk_mailed_at"],
++                "unfiled": 0,
++                "no_guests": True,
++                "arrival": arrival,
++                "deadline": due,
++                "overdue": due < local,
++            }
++        )
++    found.sort(key=lambda stay: (stay["deadline"], stay["reservation_id"]))
++    return found
++
++
++def _stay_url(reservation_id: int) -> str:
++    return f"{config.PUBLIC_BASE_URL.rstrip('/')}/reservations/{reservation_id}"
++
++
++def notify_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) -> int:
++    """Queue the host warning for each stay not warned yet. Returns how many.
++
++    One warning per stay, whichever variant comes first: a stay mailed as "no
++    guest details yet" is not mailed again when its guests are entered.
++    """
++    queued = 0
++    for stay in stays:
++        if stay.get("mailed_at"):
++            continue
++        try:
++            to_email = mail_notify._entity_contact_email(stay["legal_entity_id"])
++            if not to_email:
++                continue
++            lang = mail_notify.HOST_MAIL_LANGUAGE
++            content = mail_notify.build_deadline_at_risk(
++                property_name=stay["property"],
++                arrival=stay["arrival"].strftime("%d.%m.%Y"),
++                deadline=stay["deadline"],
++                unfiled=stay["unfiled"],
++                stay_url=_stay_url(stay["reservation_id"]),
++                lang=lang,
++                no_guests=bool(stay.get("no_guests")),
++            )
++            outbox_id = mail.enqueue(
++                kind="deadline_at_risk",
++                idempotency_key=f"deadline_at_risk:{stay['reservation_id']}",
++                to_email=to_email,
++                subject=content["subject"],
++                payload={"text": content["text"], "html": content["html"], "lang": lang},
++                reservation_id=stay["reservation_id"],
++                apartment_id=stay["apartment_id"],
++                owner_user_id=stay["owner_user_id"],
++            )
++            if not outbox_id:
++                # Mail is switched off or the address is unusable: try again on
++                # the next run rather than marking a warning nobody got.
++                continue
++            stamp = _utc(now).replace(microsecond=0).isoformat()
++            db.execute(
++                "UPDATE reservation SET at_risk_mailed_at = ? "
++                "WHERE id = ? AND at_risk_mailed_at IS NULL",
++                (stamp, stay["reservation_id"]),
++            )
++            stay["mailed_at"] = stamp
++            queued += 1
++        except Exception:
++            log.exception(
++                "deadline_at_risk mail failed reservation_id=%s", stay["reservation_id"]
++            )
++    return queued
++
++
++def send_operator_digest(
++    stays: List[Dict[str, Any]],
++    now: Optional[datetime] = None,
++    unknown: Optional[List[Dict[str, Any]]] = None,
++) -> bool:
++    """Queue the operator digest unless one went out in the last six hours.
++
++    ``unknown`` (stays with no guest on file) is listed in its own section.
++    """
++    unknown = unknown or []
++    if not stays and not unknown:
++        return False
++    to_email = mail.normalise_email(config.OPERATOR_EMAIL or "")
++    if not to_email:
++        return False
++    current = _utc(now).replace(microsecond=0)
++    last_raw = db.get_setting(DIGEST_SETTING)
++    if last_raw:
++        try:
++            last = datetime.fromisoformat(last_raw)
++        except ValueError:
++            last = None
++        # A stamp from the future (a clock set back) does not block the digest.
++        if last is not None and timedelta(0) <= current - last < DIGEST_INTERVAL:
++            return False
++    lang = mail_notify.HOST_MAIL_LANGUAGE
++    content = mail_notify.build_deadline_digest(stays, lang=lang, unknown=unknown)
++    stamp = current.isoformat()
++    outbox_id = mail.enqueue(
++        kind="deadline_digest",
++        idempotency_key=f"deadline_digest:{stamp}",
++        to_email=to_email,
++        subject=content["subject"],
++        payload={"text": content["text"], "html": content["html"], "lang": lang},
++    )
++    if not outbox_id:
++        return False
++    db.set_setting(DIGEST_SETTING, stamp)
++    return True
++
++
++def run(now: Optional[datetime] = None) -> Dict[str, int]:
++    """One watchdog pass. Raises only if the at-risk query itself fails.
++
++    ``at_risk`` counts only stays with known reportable guests; it alone
++    decides the heartbeat. ``unknown_risk`` (no guest on file) does not.
++    ``awaiting_retry`` counts the stays left out because their one automatic
++    resend is still due (see the module docstring); they do not decide the
++    heartbeat and get no mail yet.
++    """
++    every = at_risk_stays(now, include_awaiting_retry=True)
++    stays = [stay for stay in every if not stay["awaiting_retry"]]
++    awaiting = len(every) - len(stays)
++    try:
++        unknown = unknown_risk_stays(now)
++    except Exception:
++        # The weaker check must not silence the real one or its heartbeat.
++        log.exception("unknown-risk query failed")
++        unknown = []
++    host_mails = notify_hosts(stays + unknown, now)
++    try:
++        digest = send_operator_digest(stays, now, unknown=unknown)
++    except Exception:
++        log.exception("deadline digest failed")
++        digest = False
++    return {
++        "at_risk": len(stays),
++        "unknown_risk": len(unknown),
++        "awaiting_retry": awaiting,
++        "host_mails": host_mails,
++        "digest": int(digest),
++    }
++
++
++def heartbeat_url(at_risk: bool) -> str:
++    """The URL to ping for this run, or "" when the switch is not configured.
++
++    healthchecks.io semantics: the base URL reports success, ``<url>/fail``
++    reports a failure and alerts at once.
++    """
++    url = (config.HEARTBEAT_FILING_URL or "").strip().rstrip("/")
++    if not url:
++        return ""
++    return f"{url}/fail" if at_risk else url
+diff --git a/App/app/guide_i18n.py b/App/app/guide_i18n.py
+index 5d3a7d0..f67c764 100644
+--- a/App/app/guide_i18n.py
++++ b/App/app/guide_i18n.py
+@@ -74,6 +74,13 @@ GUIDE_STRINGS = {
+         "guide.reporting.filed": "After a stay is reported, its deadline shows when it was filed, or how late if that was after the deadline.",
+         "guide.reporting.failure": "If UbyPort is down, UbyHost retries on its own and alerts you. If UbyPort refuses the login, automatic sending for that property pauses until you save or test new credentials. If a send gets no clear answer, you get an alert and UbyHost sends that batch once more on its own at the next automatic check. A guest the police already hold counts as reported, so nothing is filed twice.",
+         "guide.reporting.receipts": "Police reports lists every report with its Doručenka receipt. You can download receipts one by one or as a ZIP for a date range.",
++        "guide.reporting.manual_filing_title": "If UbyHost cannot file in time",
++        "guide.reporting.manual_filing_lede": "When a stay is less than 24 hours from its deadline and still not reported, UbyHost e-mails you once for that stay. If UbyHost cannot send it in time, file it yourself:",
++        "guide.reporting.manual_filing_step1": "Sign in to the UbyPort web application of the Foreign Police with your own access as the host.",
++        "guide.reporting.manual_filing_step2": "Enter each guest who is not reported yet.",
++        "guide.reporting.manual_filing_step3": "Keep the receipt UbyPort gives you, as proof that the report was made in time.",
++        "guide.reporting.manual_filing_step4": "Open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\". Enter when you filed and, if you like, the receipt number. UbyHost then counts those guests as reported and never sends them. If you marked a stay by mistake, you can undo it within 24 hours.",
++        "guide.reporting.manual_filing_duty": "The legal duty to report stays with you as the host, also when UbyHost cannot file. UbyHost does not check a report made by hand; the mark is your record of it.",
+ 
+         "guide.filters.body": "Stay fees and Invoices share the same filter. Changes apply as soon as you pick them.",
+         "guide.filters.month": "Month: use the arrows for the previous or next month. Stay fees always show one period (the last finished month by default). Invoices show all dates until you pick a month.",
+@@ -182,6 +189,13 @@ GUIDE_STRINGS = {
+         "guide.reporting.filed": "Po nahlášení pobytu se místo termínu ukazuje, kdy bylo hlášení podáno, případně o kolik po termínu.",
+         "guide.reporting.failure": "Když UbyPort nefunguje, UbyHost to zkouší znovu sám a upozorní vás. Když UbyPort odmítne přihlášení, automatické odesílání pro toto ubytování se zastaví, dokud neuložíte nebo neotestujete nové údaje. Když na odeslání nepřijde jasná odpověď, dostanete upozornění a UbyHost tuto dávku při příští automatické kontrole jednou zopakuje sám. Host, kterého už policie má, se počítá jako nahlášený, takže se nic nepodá dvakrát.",
+         "guide.reporting.receipts": "Hlášení policii obsahují každé hlášení s doručenkou. Doručenky stáhnete jednotlivě nebo jako ZIP za zvolené období.",
++        "guide.reporting.manual_filing_title": "Když UbyHost nestihne hlášení podat",
++        "guide.reporting.manual_filing_lede": "Když do termínu zbývá méně než 24 hodin a pobyt stále není nahlášený, UbyHost vám k tomuto pobytu jednou pošle e-mail. Pokud ho UbyHost nemůže včas odeslat, podejte hlášení sami:",
++        "guide.reporting.manual_filing_step1": "Přihlaste se do webové aplikace UbyPort cizinecké policie svým vlastním přístupem ubytovatele.",
++        "guide.reporting.manual_filing_step2": "Zadejte každého hosta, který ještě není nahlášený.",
++        "guide.reporting.manual_filing_step3": "Uschovejte si doručenku, kterou UbyPort vrátí, jako doklad, že hlášení bylo podáno včas.",
++        "guide.reporting.manual_filing_step4": "V UbyHostu otevřete pobyt a zvolte „Tento pobyt jsem nahlásil(a) ručně v UbyPortu“. Zadejte, kdy jste hlášení podali, a případně číslo doručenky. UbyHost pak tyto hosty počítá jako nahlášené a už je nikdy neodešle. Pokud jste pobyt označili omylem, můžete to do 24 hodin vrátit.",
++        "guide.reporting.manual_filing_duty": "Zákonná povinnost hlásit zůstává na vás jako na ubytovateli, i když UbyHost hlášení podat nemůže. Ručně podané hlášení UbyHost nekontroluje; označení je váš záznam o něm.",
+ 
+         "guide.filters.body": "Poplatky z pobytu a Faktury mají stejný filtr. Změny se použijí hned po výběru.",
+         "guide.filters.month": "Měsíc: šipkami přejdete na předchozí nebo další měsíc. Poplatky vždy ukazují jedno období (výchozí je poslední skončený měsíc). Faktury ukazují všechna data, dokud měsíc nevyberete.",
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 1a1067a..802878e 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -714,6 +714,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "notification.mail_kind.submission_problem": "police report problem",
+         "notification.mail_kind.invoice_issued": "invoice to the customer",
+         "notification.mail_kind.workspace_deletion": "workspace deletion notice",
++        "notification.mail_kind.deadline_at_risk": "police deadline warning",
++        "notification.mail_kind.deadline_digest": "operator digest of stays at risk",
+         "notification.turnstile_unavailable.title": "The security check could not be reached, so it was skipped.",
+         "notification.turnstile_unavailable.detail": "Cloudflare Turnstile did not answer. Guests were let through without the check for a short while; the alert clears itself once verification works again.",
+         "notification.guest_pin_rotated.title": "The guest link PIN was replaced with a new six-digit PIN.",
+@@ -803,6 +805,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.accounts.disabled": "%(username)s disabled.",
+         "flash.error.no_such_apartment": "This property no longer exists.",
+         "flash.error.no_such_stay": "This stay no longer exists.",
++        "flash.hand_filing.marked": "Marked as filed by hand. These guests count as reported.",
++        "flash.hand_filing.undone": "The mark is undone. These guests count as not reported again.",
++        "flash.error.hand_filing_nothing": "There is no guest on this stay left to report.",
++        "flash.error.hand_filing_busy": "UbyHost is sending this stay right now. Wait a few minutes and check the result first.",
++        "flash.error.hand_filing_time": "Enter the time you filed in UbyPort. It cannot be in the future or more than 60 days ago.",
++        "flash.error.hand_filing_undo_closed": "This mark can no longer be undone. It can be undone only within 24 hours.",
+         "flash.error.no_such_guest": "This guest no longer exists.",
+         "flash.error.resign_card_locked": "This card clears by itself when the guests sign again, or when you send the stay by hand.",
+         "flash.error.guest_changed_retry": "This guest was being sent to UbyPort at that moment. Open the guest again and repeat your change.",
+@@ -999,6 +1007,42 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "mail.reminder_host.next_steps_unclaimed": "Nobody has opened the registration yet. Send the guest the registration link and PIN again — copy the link from the stay page.",
+         "mail.reminder_host.action_stay": "Open the stay",
+         "mail.reminder_host.footer": "You are receiving this because check-in is today and the registration is incomplete.",
++        # WP23 filing watchdog: one warning per stay, to the host.
++        "mail.deadline_at_risk.subject": "Not reported to the police yet: %(property)s, deadline %(deadline)s",
++        "mail.deadline_at_risk.preheader": "Guests not filed with UbyPort yet: %(count)s",
++        "mail.deadline_at_risk.heading": "This stay may miss its police deadline",
++        "mail.deadline_at_risk.intro": "%(property)s, arrival %(arrival)s: foreign guests of this stay are not reported to the police yet. The deadline is %(deadline)s.",
++        "mail.deadline_at_risk.property_label": "Property",
++        "mail.deadline_at_risk.arrival_label": "Arrival",
++        "mail.deadline_at_risk.unfiled_label": "Guests not filed yet",
++        "mail.deadline_at_risk.deadline_label": "Deadline",
++        "mail.deadline_at_risk.next_label": "What to do next",
++        "mail.deadline_at_risk.next_steps": "Open the stay, complete what is missing and send it.",
++        "mail.deadline_at_risk.manual_label": "If UbyHost cannot file in time",
++        "mail.deadline_at_risk.manual": "Sign in to the UbyPort web application with your own access, enter the guests by hand and keep the receipt. Then open the stay in UbyHost and choose \"I filed this stay by hand in UbyPort\", so UbyHost never sends it again. The duty to report stays with you as the host.",
++        "mail.deadline_at_risk.action_stay": "Open the stay",
++        "mail.deadline_at_risk.footer": "You get this e-mail once per stay, when its police deadline is less than 24 hours away or has passed and the stay is still not reported.",
++        # WP23 filing watchdog: the operator digest. No guest names.
++        "mail.deadline_digest.subject": "Filing watchdog: stays at risk (%(count)s)",
++        "mail.deadline_digest.heading": "Stays that may miss the police deadline",
++        "mail.deadline_digest.intro": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 6 hours while any stay is at risk.",
++        "mail.deadline_digest.col_workspace": "Workspace",
++        "mail.deadline_digest.col_property": "Property",
++        "mail.deadline_digest.col_arrival": "Arrival",
++        "mail.deadline_digest.col_deadline": "Deadline",
++        "mail.deadline_digest.col_unfiled": "Not filed",
++        "mail.deadline_digest.more": "And %(count)s more stays.",
++        "mail.deadline_digest.footer": "Sent to UBYHOST_OPERATOR_EMAIL by the deadline job. It contains no guest names.",
++        # WP23: the at-risk variant for a stay with no guest entered yet.
++        "mail.deadline_at_risk.no_guests.subject": "No guest details yet: %(property)s, police deadline %(deadline)s",
++        "mail.deadline_at_risk.no_guests.preheader": "UbyHost cannot tell whether this stay must be reported.",
++        "mail.deadline_at_risk.no_guests.heading": "No guest details for this stay yet",
++        "mail.deadline_at_risk.no_guests.intro": "%(property)s, arrival %(arrival)s: no guest details are entered yet, so UbyHost cannot tell whether the stay must be reported to the police. If any guest is not a Czech citizen, the deadline is %(deadline)s.",
++        "mail.deadline_at_risk.no_guests.next_steps": "Open the stay and enter the guests, or send the guest link again. If all guests are Czech citizens, enter them for the house book; nothing has to be reported.",
++        "mail.deadline_at_risk.no_guests.footer": "You get this e-mail once per stay, when the guests have arrived, the police deadline is less than 24 hours away or has passed, and no guest details are entered yet.",
++        "mail.deadline_digest.subject_unknown": "Filing watchdog: stays at risk (%(count)s), without guest details (%(unknown)s)",
++        "mail.deadline_digest.unknown_heading": "Stays without guest details (status unknown)",
++        "mail.deadline_digest.unknown_intro": "No guest is entered for these stays. The arrival has passed and the deadline is less than 24 hours away or has passed. If the guests are Czech citizens nothing has to be reported, so these stays do not set the filing heartbeat to failed.",
+         "confirm.cancel": "Cancel",
+         "confirm.proceed": "Confirm",
+         "confirm.archive_stay": "Archive this stay? It moves to Archive and can be restored later.",
+@@ -1056,6 +1100,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "deadline.filed_late_days": "Reported %(n)s days late",
+         "deadline.filed_late_days.one": "Reported 1 day late",
+         "deadline.filed_late_days.few": "Reported %(n)s days late",
++        # WP23: a stay the host filed by hand in the UbyPort web application.
++        "deadline.filed_by_hand": "Filed by hand %(when)s",
+         "env.mock_title": "Nothing is being reported to the police",
+         "env.mock_body": (
+             "This workspace is pointed at the practice server, so records marked "
+@@ -1220,6 +1266,21 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay.detail.guests.title": "Guests",
+         "stay.detail.guests.lead": "main guest",
+         "stay.detail.guests.reported": "Reported",
++        "stay.detail.guests.filed_by_hand": "Filed by hand",
++        # WP23: the "filed by hand" mark on the stay page.
++        "stay.hand_filing.title": "Filed by hand in UbyPort",
++        "stay.hand_filing.lede": "If UbyHost could not file this stay, file it yourself in the UbyPort web application and record it here. UbyHost then counts its foreign guests as reported and never sends them.",
++        "stay.hand_filing.open": "I filed this stay by hand in UbyPort",
++        "stay.hand_filing.filed_at": "Filed at",
++        "stay.hand_filing.reference": "Receipt or reference (optional)",
++        "stay.hand_filing.reference_hint": "For example the number on the UbyPort receipt.",
++        "stay.hand_filing.covers": "Guests this covers: %(count)s",
++        "stay.hand_filing.confirm": "Mark as filed by hand",
++        "stay.hand_filing.done": "Filed by hand in UbyPort %(when)s.",
++        "stay.hand_filing.done_reference": "Receipt or reference: %(reference)s",
++        "stay.hand_filing.undo": "Undo, this was a mistake",
++        "stay.hand_filing.undo_until": "You can undo this until %(when)s.",
++        "stay.hand_filing.undo_confirm": "Undo the mark? UbyHost will count these guests as not reported again and may send them.",
+         "stay.detail.guests.exempt": "Exempt from reporting",
+         "stay.detail.guests.rejected": "Rejected",
+         "stay.detail.guests.rejected_final": "Rejected, final",
+@@ -2163,6 +2224,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "notification.mail_kind.claim_resend": "odkaz k registraci, znovu",
+         "notification.mail_kind.reminder_guest": "připomínka hostovi",
+         "notification.mail_kind.reminder_host": "připomínka ubytovateli",
++        "notification.mail_kind.deadline_at_risk": "upozornění na termín hlášení",
++        "notification.mail_kind.deadline_digest": "přehled ohrožených pobytů pro provozovatele",
+         "notification.mail_kind.completion": "potvrzení registrace",
+         "notification.mail_kind.submission_problem": "problém s hlášením na policii",
+         "notification.mail_kind.invoice_issued": "faktura odběrateli",
+@@ -2254,6 +2317,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "flash.accounts.disabled": "Uživatel %(username)s byl vypnut.",
+         "flash.error.no_such_apartment": "Toto ubytování už neexistuje.",
+         "flash.error.no_such_stay": "Tento pobyt už neexistuje.",
++        "flash.hand_filing.marked": "Označeno jako podané ručně. Tito hosté se počítají jako nahlášení.",
++        "flash.hand_filing.undone": "Označení je vrácené. Tito hosté se znovu počítají jako nenahlášení.",
++        "flash.error.hand_filing_nothing": "U tohoto pobytu už není žádný host k nahlášení.",
++        "flash.error.hand_filing_busy": "UbyHost tento pobyt právě odesílá. Počkejte několik minut a nejdřív zkontrolujte výsledek.",
++        "flash.error.hand_filing_time": "Zadejte čas, kdy jste hlášení podali v UbyPortu. Nesmí být v budoucnu ani starší než 60 dní.",
++        "flash.error.hand_filing_undo_closed": "Toto označení už nejde vrátit. Vrátit ho lze jen do 24 hodin.",
+         "flash.error.no_such_guest": "Tento host už neexistuje.",
+         "flash.error.resign_card_locked": "Tato karta zmizí sama, až hosté znovu podepíší, nebo až pobyt odešlete ručně.",
+         "flash.error.guest_changed_retry": "Tento host se právě odesílal do UbyPortu. Otevřete ho znovu a změnu zopakujte.",
+@@ -2459,6 +2528,39 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "mail.reminder_host.next_steps_unclaimed": "Registraci zatím nikdo neotevřel. Pošlete hostovi znovu odkaz k registraci a PIN – odkaz zkopírujete na stránce pobytu.",
+         "mail.reminder_host.action_stay": "Otevřít pobyt",
+         "mail.reminder_host.footer": "Tento e-mail dostáváte, protože je dnes příjezd a registrace není dokončená.",
++        "mail.deadline_at_risk.subject": "Zatím nenahlášeno policii: %(property)s, termín %(deadline)s",
++        "mail.deadline_at_risk.preheader": "Hosté, kteří ještě nejsou podáni do UbyPortu: %(count)s",
++        "mail.deadline_at_risk.heading": "Tento pobyt může nestihnout termín hlášení policii",
++        "mail.deadline_at_risk.intro": "%(property)s, příjezd %(arrival)s: cizinci z tohoto pobytu zatím nejsou nahlášeni policii. Termín je %(deadline)s.",
++        "mail.deadline_at_risk.property_label": "Ubytování",
++        "mail.deadline_at_risk.arrival_label": "Příjezd",
++        "mail.deadline_at_risk.unfiled_label": "Dosud nenahlášení hosté",
++        "mail.deadline_at_risk.deadline_label": "Termín",
++        "mail.deadline_at_risk.next_label": "Co udělat dál",
++        "mail.deadline_at_risk.next_steps": "Otevřete pobyt, doplňte, co chybí, a odešlete ho.",
++        "mail.deadline_at_risk.manual_label": "Když UbyHost hlášení nestihne podat",
++        "mail.deadline_at_risk.manual": "Přihlaste se do webové aplikace UbyPort svým vlastním přístupem, zadejte hosty ručně a uschovejte si doručenku. Pak v UbyHostu otevřete pobyt a zvolte „Tento pobyt jsem nahlásil(a) ručně v UbyPortu“, aby ho UbyHost už znovu neodeslal. Povinnost hlásit zůstává na vás jako na ubytovateli.",
++        "mail.deadline_at_risk.action_stay": "Otevřít pobyt",
++        "mail.deadline_at_risk.footer": "Tento e-mail dostanete jednou za pobyt, když do termínu hlášení policii zbývá méně než 24 hodin nebo už uplynul a pobyt stále není nahlášený.",
++        "mail.deadline_digest.subject": "Hlídání hlášení: ohrožené pobyty (%(count)s)",
++        "mail.deadline_digest.heading": "Pobyty, které mohou nestihnout termín hlášení policii",
++        "mail.deadline_digest.intro": "Každý pobyt níže má cizince, které UbyPort zatím nepřijal, a do termínu zbývá méně než 24 hodin nebo už uplynul. Tento přehled chodí nejvýše jednou za 6 hodin, dokud je některý pobyt ohrožený.",
++        "mail.deadline_digest.col_workspace": "Pracovní prostor",
++        "mail.deadline_digest.col_property": "Ubytování",
++        "mail.deadline_digest.col_arrival": "Příjezd",
++        "mail.deadline_digest.col_deadline": "Termín",
++        "mail.deadline_digest.col_unfiled": "Nenahlášeno",
++        "mail.deadline_digest.more": "A další pobyty: %(count)s.",
++        "mail.deadline_digest.footer": "Odesláno na UBYHOST_OPERATOR_EMAIL úlohou hlídání termínů. Neobsahuje jména hostů.",
++        "mail.deadline_at_risk.no_guests.subject": "Zatím bez údajů o hostech: %(property)s, termín hlášení %(deadline)s",
++        "mail.deadline_at_risk.no_guests.preheader": "UbyHost nepozná, jestli se tento pobyt musí hlásit.",
++        "mail.deadline_at_risk.no_guests.heading": "U tohoto pobytu zatím nejsou údaje o hostech",
++        "mail.deadline_at_risk.no_guests.intro": "%(property)s, příjezd %(arrival)s: zatím nejsou zadané žádné údaje o hostech, takže UbyHost nepozná, jestli se pobyt musí hlásit policii. Pokud některý host není občanem České republiky, termín je %(deadline)s.",
++        "mail.deadline_at_risk.no_guests.next_steps": "Otevřete pobyt a zadejte hosty, nebo jim znovu pošlete odkaz. Pokud jsou všichni hosté občané České republiky, zapište je do domovní knihy; hlásit nic nemusíte.",
++        "mail.deadline_at_risk.no_guests.footer": "Tento e-mail dostanete jednou za pobyt, když hosté už přijeli, do termínu hlášení policii zbývá méně než 24 hodin nebo už uplynul a údaje o hostech stále nejsou zadané.",
++        "mail.deadline_digest.subject_unknown": "Hlídání hlášení: ohrožené pobyty (%(count)s), bez údajů o hostech (%(unknown)s)",
++        "mail.deadline_digest.unknown_heading": "Pobyty bez údajů o hostech (stav neznámý)",
++        "mail.deadline_digest.unknown_intro": "U těchto pobytů není zadaný žádný host. Příjezd už proběhl a do termínu zbývá méně než 24 hodin nebo už uplynul. Pokud jsou hosté občané České republiky, hlásit se nic nemusí, proto tyto pobyty heartbeat hlídání hlášení neoznačí jako selhaný.",
+         "confirm.cancel": "Zrušit",
+         "confirm.proceed": "Potvrdit",
+         "confirm.archive_stay": "Archivovat tento pobyt? Přesune se do archivu a později ho můžete obnovit.",
+@@ -2513,6 +2615,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "deadline.filed_late_days": "Nahlášeno %(n)s dní po termínu",
+         "deadline.filed_late_days.one": "Nahlášeno 1 den po termínu",
+         "deadline.filed_late_days.few": "Nahlášeno %(n)s dny po termínu",
++        "deadline.filed_by_hand": "Podáno ručně %(when)s",
+         "env.mock_title": "Policii se nic nehlásí",
+         "env.mock_body": (
+             "Tento účet je nastavený na cvičný server, takže záznamy označené jako "
+@@ -2677,6 +2780,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "stay.detail.guests.title": "Hosté",
+         "stay.detail.guests.lead": "hlavní host",
+         "stay.detail.guests.reported": "Nahlášeno",
++        "stay.detail.guests.filed_by_hand": "Podáno ručně",
++        "stay.hand_filing.title": "Podáno ručně v UbyPortu",
++        "stay.hand_filing.lede": "Pokud UbyHost tento pobyt nahlásit nemohl, nahlaste ho sami ve webové aplikaci UbyPort a zaznamenejte to tady. UbyHost pak jeho cizince počítá jako nahlášené a už je nikdy neodešle.",
++        "stay.hand_filing.open": "Tento pobyt jsem nahlásil(a) ručně v UbyPortu",
++        "stay.hand_filing.filed_at": "Čas podání",
++        "stay.hand_filing.reference": "Doručenka nebo číslo podání (nepovinné)",
++        "stay.hand_filing.reference_hint": "Například číslo z doručenky UbyPortu.",
++        "stay.hand_filing.covers": "Zahrnutí hosté: %(count)s",
++        "stay.hand_filing.confirm": "Označit jako podané ručně",
++        "stay.hand_filing.done": "Podáno ručně v UbyPortu %(when)s.",
++        "stay.hand_filing.done_reference": "Doručenka nebo číslo podání: %(reference)s",
++        "stay.hand_filing.undo": "Vrátit zpět, byla to chyba",
++        "stay.hand_filing.undo_until": "Vrátit to můžete do %(when)s.",
++        "stay.hand_filing.undo_confirm": "Vrátit označení zpět? UbyHost bude tyto hosty znovu počítat jako nenahlášené a může je odeslat.",
+         "stay.detail.guests.exempt": "Nehlásí se",
+         "stay.detail.guests.rejected": "Odmítnuto",
+         "stay.detail.guests.rejected_final": "Odmítnuto, finální",
+@@ -3180,6 +3297,7 @@ _INTERFACE_STRINGS = {
+         "guest.admin.banner.rejected_title": 'UbyPort rejected this record.',
+         "guest.admin.banner.sent_help": "To correct it, file the correction directly in the UbyPort web application or contact the Foreign Police. UbyHost cannot change a filed record, so the reported details and the signature are locked here. The document type for the stay-fee register can still be changed.",
+         "guest.admin.banner.sent_title": 'Already reported to the Foreign Police.',
++        "guest.admin.banner.filed_by_hand": "Filed by hand in UbyPort %(at)s.",
+         "guest.admin.banner.sent_title_at": 'Already reported to the Foreign Police on %(at)s.',
+         "guest.admin.birth_date": 'Date of birth',
+         "guest.admin.birth_date_hint": 'Type the 8 digits from the passport — dots are added automatically. Use 00 for an unknown day or month.',
+@@ -3867,6 +3985,7 @@ _INTERFACE_STRINGS = {
+         "guest.admin.banner.rejected_title": 'UbyPort tento záznam odmítl.',
+         "guest.admin.banner.sent_help": "Opravu podejte přímo ve webové aplikaci UbyPort nebo se obraťte na cizineckou policii. UbyHost podaný záznam změnit nemůže, proto jsou nahlášené údaje a podpis zde uzamčené. Typ dokladu pro evidenci poplatku z pobytu lze měnit i nadále.",
+         "guest.admin.banner.sent_title": 'Již nahlášeno cizinecké policii.',
++        "guest.admin.banner.filed_by_hand": "Podáno ručně v UbyPortu %(at)s.",
+         "guest.admin.banner.sent_title_at": 'Již nahlášeno cizinecké policii %(at)s.',
+         "guest.admin.birth_date": 'Datum narození',
+         "guest.admin.birth_date_hint": 'Zadejte 8 číslic z pasu — tečky se doplní samy. Pro neznámý den nebo měsíc použijte 00.',
+diff --git a/App/app/housebook.py b/App/app/housebook.py
+index e6277a8..057f69a 100644
+--- a/App/app/housebook.py
++++ b/App/app/housebook.py
+@@ -120,8 +120,14 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
+         "blocked": "NO - rejected, cannot be corrected",
+         "pending": "not yet",
+     }.get(row["submit_state"], row["submit_state"])
++    by_hand = reporting.guest_filed_by_hand(row)
++    if by_hand:
++        # WP23: the host filed this guest in the UbyPort web application.
++        reported = "yes - filed by hand in UbyPort"
+     stamp = ""
+-    if row["submission_id"]:
++    if by_hand:
++        stamp = row["manual_reference"] or ""
++    elif row["submission_id"]:
+         sub = db.query_one("SELECT pseudo_stamp FROM submission WHERE id = ?", (row["submission_id"],))
+         stamp = (sub["pseudo_stamp"] if sub else "") or ""
+     return {
+@@ -142,7 +148,7 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
+         "note": row["note"] or "",
+         "signed": "yes" if reporting.guest_has_signature(row) else "no",
+         "reported": reported,
+-        "reported_at": row["submitted_at"] or "",
++        "reported_at": (row["manual_filed_at"] if by_hand else row["submitted_at"]) or "",
+         "stamp": stamp,
+         "_guest_id": row["id"],
+         "_apartment_id": row["apartment_id"],
+@@ -376,11 +382,18 @@ def registration_form_pdf(guest_id: int) -> bytes:
+     }
+     pdf.setFont(FONT_REGULAR, 9)
+     pdf.setFillGray(0)
+-    pdf.drawRightString(width - 20 * mm, y - 7 * mm,
+-                        status_map.get(guest["submit_state"], guest["submit_state"]))
+-    if guest["submitted_at"]:
++    by_hand = reporting.guest_filed_by_hand(guest)
++    status = status_map.get(guest["submit_state"], guest["submit_state"])
++    if by_hand:
++        status = "Reported to the Foreign Police (filed by hand in UbyPort)"
++    pdf.drawRightString(width - 20 * mm, y - 7 * mm, status)
++    filed = guest["manual_filed_at"] if by_hand else guest["submitted_at"]
++    if filed:
+         pdf.setFillGray(0.4)
+-        pdf.drawRightString(width - 20 * mm, y - 12 * mm, f"at {guest['submitted_at']}")
++        line = f"at {filed}"
++        if by_hand and guest["manual_reference"]:
++            line += f", ref. {guest['manual_reference']}"
++        pdf.drawRightString(width - 20 * mm, y - 12 * mm, line)
+ 
+     if guest["notice_version"]:
+         pdf.setFont(FONT_REGULAR, 7)
+diff --git a/App/app/mail.py b/App/app/mail.py
+index db0427b..e44e399 100644
+--- a/App/app/mail.py
++++ b/App/app/mail.py
+@@ -35,6 +35,8 @@ KINDS = (
+     "invoice_issued",
+     "workspace_deletion",
+     "cancelled_with_guests",
++    "deadline_at_risk",
++    "deadline_digest",
+ )
+ 
+ # The kinds addressed to a guest rather than to the host. A guest has no
+@@ -56,6 +58,10 @@ HOST_KINDS = (
+     "submission_problem",
+     "workspace_deletion",
+     "cancelled_with_guests",
++    # WP23 filing watchdog: the host's one warning per stay, and the operator's
++    # digest. Neither goes to a guest.
++    "deadline_at_risk",
++    "deadline_digest",
+ )
+ 
+ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+diff --git a/App/app/mail_notify.py b/App/app/mail_notify.py
+index 91c2481..e6e846a 100644
+--- a/App/app/mail_notify.py
++++ b/App/app/mail_notify.py
+@@ -1387,3 +1387,209 @@ def build_reminder_host(
+             footer_lines=["UbyHost", footer],
+         ),
+     }
++
++
++# --- filing watchdog (WP23) ---------------------------------------------------
++#
++# filing_watchdog.py decides which stays are at risk and when to write; the
++# wording and the markup live here with the rest of the host mail.
++
++
++def _deadline_text(deadline: Any) -> str:
++    """The deadline as the mail prints it: the Czech date and the end of day."""
++    return f"{deadline.strftime('%d.%m.%Y')} {deadline.strftime('%H:%M')}"
++
++
++def build_deadline_at_risk(
++    *,
++    property_name: str,
++    arrival: str,
++    deadline: Any,
++    unfiled: int,
++    stay_url: str,
++    lang: Optional[str] = None,
++    no_guests: bool = False,
++) -> Dict[str, str]:
++    """The host's one warning that a stay may miss its police deadline.
++
++    ``no_guests`` is the variant for a stay with no guest on file yet, where
++    UbyHost cannot tell whether a report is due at all.
++    """
++    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
++    due = _deadline_text(deadline)
++    variant = "mail.deadline_at_risk.no_guests" if no_guests else "mail.deadline_at_risk"
++    subject = _text(lang, f"{variant}.subject", property=property_name, deadline=due)
++    preheader = _text(lang, f"{variant}.preheader", count=unfiled)
++    heading = _text(lang, f"{variant}.heading")
++    intro = _text(
++        lang, f"{variant}.intro",
++        property=property_name, arrival=arrival, deadline=due,
++    )
++    facts = [
++        (_text(lang, "mail.deadline_at_risk.property_label"), property_name),
++        (_text(lang, "mail.deadline_at_risk.arrival_label"), arrival),
++    ]
++    if not no_guests:
++        facts.append((_text(lang, "mail.deadline_at_risk.unfiled_label"), str(unfiled)))
++    facts.append((_text(lang, "mail.deadline_at_risk.deadline_label"), due))
++    next_label = _text(lang, "mail.deadline_at_risk.next_label")
++    next_steps = _text(lang, f"{variant}.next_steps")
++    manual_label = _text(lang, "mail.deadline_at_risk.manual_label")
++    manual = _text(lang, "mail.deadline_at_risk.manual")
++    action = _text(lang, "mail.deadline_at_risk.action_stay")
++    fallback = _guest_text(lang, "mail_link_fallback")
++    footer = _text(lang, f"{variant}.footer")
++
++    extra_blocks = [_block_link(stay_url, fallback)]
++    extra_blocks += [_block_fact(label, value) for label, value in facts]
++    extra_blocks.append(_block_section(next_label, next_steps))
++    extra_blocks.append(_block_note(manual_label, manual))
++    blocks = _guest_blocks(
++        heading=heading,
++        intro=intro,
++        action_url=stay_url,
++        action_label=action,
++        extra_blocks=extra_blocks,
++    )
++    text_lines = [intro, ""]
++    text_lines += [f"{label}: {value}" for label, value in facts]
++    text_lines += [
++        "",
++        f"{next_label}: {next_steps}",
++        "",
++        f"{manual_label}: {manual}",
++        "",
++        f"{action}: {stay_url}",
++        "",
++        "--",
++        "UbyHost",
++        footer,
++    ]
++    return {
++        "subject": subject,
++        "text": "\n".join(text_lines),
++        "html": _shell(
++            lang=lang,
++            title=property_name,
++            preheader=preheader,
++            blocks=blocks,
++            footer_lines=["UbyHost", footer],
++        ),
++    }
++
++
++# The digest lists at most this many stays; the rest are counted. A longer
++# list would mean something is broken for everyone, and the count says so.
++DEADLINE_DIGEST_MAX_ROWS = 50
++
++
++def _block_table(header: List[str], rows: List[List[str]]) -> str:
++    cell = f"padding:6px 8px;border-bottom:1px solid {LINE};text-align:left;"
++    head = "".join(
++        f'<th style="{cell}font:600 13px/1.4 {_FONT};color:{INK};">{_esc(h)}</th>'
++        for h in header
++    )
++    body = "".join(
++        "<tr>"
++        + "".join(
++            f'<td style="{cell}font:400 13px/1.4 {_FONT};color:{INK_SECONDARY};">{_esc(v)}</td>'
++            for v in row
++        )
++        + "</tr>"
++        for row in rows
++    )
++    return (
++        '<tr><td style="padding:20px 24px 0 24px;">'
++        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
++        'border="0" style="border-collapse:collapse;">'
++        f"<tr>{head}</tr>{body}</table></td></tr>"
++    )
++
++
++def _digest_section(
++    lang: str, stays: List[Dict[str, Any]], columns: Tuple[str, ...]
++) -> Tuple[List[str], List[List[str]], str]:
++    """Header, rows (at most DEADLINE_DIGEST_MAX_ROWS) and the "and N more" line."""
++    header = [_text(lang, f"mail.deadline_digest.col_{column}") for column in columns]
++    shown = stays[:DEADLINE_DIGEST_MAX_ROWS]
++    rows = []
++    for stay in shown:
++        values = {
++            "workspace": stay.get("workspace") or "",
++            "property": stay.get("property") or "",
++            "arrival": stay["arrival"].strftime("%d.%m.%Y"),
++            "deadline": _deadline_text(stay["deadline"]),
++            "unfiled": str(stay.get("unfiled", 0)),
++        }
++        rows.append([values[column] for column in columns])
++    hidden = len(stays) - len(shown)
++    more = _text(lang, "mail.deadline_digest.more", count=hidden) if hidden else ""
++    return header, rows, more
++
++
++def build_deadline_digest(
++    stays: List[Dict[str, Any]],
++    lang: Optional[str] = None,
++    unknown: Optional[List[Dict[str, Any]]] = None,
++) -> Dict[str, str]:
++    """The operator's digest of every stay at risk, across all workspaces.
++
++    Each row names the workspace, the property, the arrival, the deadline and
++    how many guests are not filed. It never names a guest. ``unknown`` lists
++    stays with no guest on file in a section of their own, without a count.
++    """
++    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
++    unknown = unknown or []
++    if unknown:
++        subject = _text(
++            lang, "mail.deadline_digest.subject_unknown", count=len(stays), unknown=len(unknown)
++        )
++    else:
++        subject = _text(lang, "mail.deadline_digest.subject", count=len(stays))
++    heading = _text(lang, "mail.deadline_digest.heading")
++    intro = _text(lang, "mail.deadline_digest.intro")
++    footer = _text(lang, "mail.deadline_digest.footer")
++    blocks = [_block_heading(heading)]
++    text_lines: List[str] = []
++    if stays:
++        header, rows, more = _digest_section(
++            lang, stays, ("workspace", "property", "arrival", "deadline", "unfiled")
++        )
++        blocks += [_block_paragraph(intro), _block_table(header, rows)]
++        if more:
++            blocks.append(_block_paragraph(more, muted=True))
++        text_lines += [intro, "", " | ".join(header)]
++        text_lines += [" | ".join(row) for row in rows]
++        if more:
++            text_lines += ["", more]
++    if unknown:
++        unknown_heading = _text(lang, "mail.deadline_digest.unknown_heading")
++        unknown_intro = _text(lang, "mail.deadline_digest.unknown_intro")
++        header, rows, more = _digest_section(
++            lang, unknown, ("workspace", "property", "arrival", "deadline")
++        )
++        blocks += [
++            _block_heading(unknown_heading),
++            _block_paragraph(unknown_intro),
++            _block_table(header, rows),
++        ]
++        if more:
++            blocks.append(_block_paragraph(more, muted=True))
++        if text_lines:
++            text_lines.append("")
++        text_lines += [unknown_heading, unknown_intro, "", " | ".join(header)]
++        text_lines += [" | ".join(row) for row in rows]
++        if more:
++            text_lines += ["", more]
++    text_lines += ["", "--", "UbyHost", footer]
++    return {
++        "subject": subject,
++        "text": "\n".join(text_lines),
++        "html": _shell(
++            lang=lang,
++            title=heading,
++            preheader=intro if stays else _text(lang, "mail.deadline_digest.unknown_intro"),
++            blocks=blocks,
++            footer_lines=["UbyHost", footer],
++        ),
++    }
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index cb3a3da..b507833 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -50,6 +50,11 @@ ERROR = "error"
+ BLOCKED = "blocked"  # rejected in a way that resending cannot fix
+ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
+ 
++# A guest the host filed by hand in the UbyPort web application (WP23) is
++# ``SENT`` like any filed guest, so every guard that keeps UbyHost from filing a
++# record twice (collect_sendable, claim_sendable, the sweep, the watchdog)
++# already holds. ``guest.manual_filed_at`` marks it as filed by hand.
++
+ AUTOMATION_MODES = ("immediate", "scheduled", "manual")
+ SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
+ 
+@@ -350,7 +355,11 @@ def reservation_progress(reservation) -> Dict[str, Any]:
+         (reservation["id"],),
+     )
+     expected = expected_guest_count(reservation)
+-    complete = [g for g in guests if guest_is_complete(g, reservation)]
++    # A guest the host filed by hand in UbyPort is done, whatever UbyHost still
++    # lacks for it (a signature, say): the register has the record.
++    complete = [
++        g for g in guests if guest_filed_by_hand(g) or guest_is_complete(g, reservation)
++    ]
+     complete_ids = {g["id"] for g in complete}
+     reportable = [g for g in complete if validation.guest_is_reportable(g["nationality"])]
+     unverified = [g for g in reportable if not guest_identity_verified(g)]
+@@ -569,18 +578,33 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
+     }
+ 
+ 
++def _filing_stamp(guest) -> Optional[datetime]:
++    """When this guest was filed: by hand if the host marked it, else by UbyPort."""
++    return _as_utc(_field(guest, "manual_filed_at") or _field(guest, "submitted_at"))
++
++
++def _latest_filing(progress: Dict[str, Any]) -> Tuple[Optional[datetime], bool]:
++    """The latest filing time of the stay's reportable guests, and whether it was by hand."""
++    latest: Optional[datetime] = None
++    by_hand = False
++    for guest in progress.get("reportable") or []:
++        stamp = _filing_stamp(guest)
++        if stamp is not None and (latest is None or stamp > latest):
++            latest = stamp
++            by_hand = bool(_field(guest, "manual_filed_at"))
++    return latest, by_hand
++
++
+ def filed_at(progress: Dict[str, Any]) -> Optional[datetime]:
+-    """When the stay was filed: the latest ``submitted_at`` of its reportable guests.
++    """When the stay was filed: the latest filing time of its reportable guests.
+ 
+-    Naive Czech civil time, so it compares directly with
++    That is ``submitted_at``, or ``manual_filed_at`` for a guest the host filed
++    by hand in UbyPort. Naive Czech civil time, so it compares directly with
+     ``deadlines.reporting_deadline``. None when no reportable guest carries a
+     filing time.
+     """
+-    stamps = [_as_utc(guest["submitted_at"]) for guest in progress.get("reportable") or []]
+-    stamps = [stamp for stamp in stamps if stamp is not None]
+-    if not stamps:
+-        return None
+-    return deadlines.local_now(max(stamps))
++    latest, _by_hand = _latest_filing(progress)
++    return deadlines.local_now(latest) if latest is not None else None
+ 
+ 
+ def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[str, Any]:
+@@ -592,7 +616,8 @@ def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[st
+     deadline at all.
+ 
+     ``state`` is ``countdown``, ``filed_on_time``, ``filed_late`` or ``none``;
+-    ``level`` is the CSS level of the badge.
++    ``level`` is the CSS level of the badge. ``by_hand`` is true when the
++    latest filing was the host's own, in the UbyPort web application.
+     """
+     status = progress.get("status")
+     cell: Dict[str, Any] = {
+@@ -601,6 +626,7 @@ def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[st
+         "check_in": check_in,
+         "filed_at": None,
+         "late_hours": 0,
++        "by_hand": False,
+     }
+     if status == "not_required":
+         cell.update(state="none", level="none")
+@@ -608,6 +634,7 @@ def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[st
+     if status != "reported":
+         return cell
+     when = filed_at(progress)
++    cell["by_hand"] = _latest_filing(progress)[1]
+     if when is None:
+         # Reported without a filing time on record (an import, say). The status
+         # pill already says it is reported; a countdown would claim it is late.
+@@ -1068,7 +1095,10 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
+             if guest["submit_state"] not in (NOT_REQUIRED, SENT):
+                 db.update("guest", guest["id"], {"submit_state": NOT_REQUIRED, "updated_at": db.utcnow()})
+             continue
+-        if guest["submit_state"] == SENT and not allow_resend:
++        # A guest the host filed by hand is never sent by UbyHost, not even as
++        # a resend: the register already has the record. The host undoes the
++        # mark first if it was a mistake.
++        if guest["submit_state"] == SENT and (not allow_resend or guest_filed_by_hand(guest)):
+             continue
+         if guest["submit_state"] == BLOCKED and not allow_resend:
+             continue
+@@ -1126,7 +1156,8 @@ def claim_sendable(
+         )
+         for guest, _reservation in pairs:
+             cur.execute(
+-                "SELECT submit_state, archived_at FROM guest WHERE id = ?", (guest["id"],)
++                "SELECT submit_state, archived_at, manual_filed_at FROM guest WHERE id = ?",
++                (guest["id"],),
+             )
+             row = cur.fetchone()
+             # Only a row that *moved on* since the list was built is dropped.
+@@ -1137,6 +1168,7 @@ def claim_sendable(
+             if (
+                 row is None
+                 or row["archived_at"]
++                or row["manual_filed_at"]
+                 or row["submit_state"] != guest["submit_state"]
+             ):
+                 continue
+@@ -1818,6 +1850,169 @@ def sweep(owner_user_id: Optional[int] = None) -> Dict[str, Any]:
+     return summary
+ 
+ 
++
++# --- filed by hand (WP23) -------------------------------------------------
++#
++# When UbyHost cannot file a stay in time, the host files it in the UbyPort web
++# application and marks it here. The guests become ``SENT``, so nothing files
++# them again, and keep ``manual_filed_at`` (the filing time the host gave),
++# ``manual_reference`` (receipt or reference, optional), ``manual_marked_at``
++# (when the mark was made) and ``manual_prev_state`` (what an undo restores).
++
++# The host may take the mark back, if it was a mistake, for this long.
++MANUAL_UNDO_WINDOW = timedelta(hours=24)
++MANUAL_REFERENCE_MAX = 200
++# A filing time ahead of the clock by more than this is a typo.
++MANUAL_FILED_AT_MAX_AHEAD = timedelta(minutes=5)
++# And one older than this is not a filing of a stay UbyHost is still watching.
++MANUAL_FILED_AT_MAX_AGE = timedelta(days=60)
++_HAND_FILABLE_STATES = (PENDING, ERROR, BLOCKED)
++
++
++def guest_filed_by_hand(guest) -> bool:
++    """True for a guest the host filed by hand in the UbyPort web application."""
++    return guest["submit_state"] == SENT and bool(_field(guest, "manual_filed_at"))
++
++
++def hand_filing_candidates(guests: List[Any]) -> List[Any]:
++    """Guests a "filed by hand" mark would cover: reportable and not filed yet."""
++    return [
++        guest
++        for guest in guests
++        if guest["submit_state"] in _HAND_FILABLE_STATES
++        and validation.guest_is_reportable(guest["nationality"])
++    ]
++
++
++def parse_manual_filed_at(raw: str, now: Optional[datetime] = None) -> Optional[str]:
++    """The form's local ``YYYY-MM-DDTHH:MM`` as a stored UTC stamp, or None if invalid.
++
++    Empty means now. A time in the future or more than 60 days back is refused.
++    """
++    current = datetime.now(timezone.utc) if now is None else now
++    if current.tzinfo is None:
++        current = current.replace(tzinfo=ZoneInfo(config.TIMEZONE))
++    current = current.astimezone(timezone.utc)
++    raw = (raw or "").strip()
++    if not raw:
++        return current.replace(microsecond=0).isoformat()
++    try:
++        local = datetime.fromisoformat(raw)
++    except ValueError:
++        return None
++    if local.tzinfo is None:
++        local = local.replace(tzinfo=ZoneInfo(config.TIMEZONE))
++    when = local.astimezone(timezone.utc).replace(microsecond=0)
++    if when - current > MANUAL_FILED_AT_MAX_AHEAD or current - when > MANUAL_FILED_AT_MAX_AGE:
++        return None
++    return when.isoformat()
++
++
++def clean_manual_reference(raw: Optional[str]) -> Optional[str]:
++    """The optional receipt or reference text: one line, at most 200 characters."""
++    text = " ".join((raw or "").split())
++    return text[:MANUAL_REFERENCE_MAX] or None
++
++
++def mark_filed_by_hand(
++    reservation_id: int, filed_at_utc: str, reference: Optional[str]
++) -> Dict[str, Any]:
++    """Mark the stay's unfiled reportable guests as filed by hand.
++
++    One write transaction re-reads every guest, so a guest filed or changed
++    meanwhile is left alone. A guest UbyHost is filing at this moment (a live
++    ``submission_claim``) is skipped too and counted in ``busy``: marking it
++    while the batch is in flight would hide the batch's own result.
++    """
++    marked_at = db.utcnow()
++    live_after = time.time() - SUBMISSION_CLAIM_TTL_SECONDS
++    marked: List[int] = []
++    busy = 0
++    with db.immediate() as cur:
++        cur.execute(
++            "SELECT id, submit_state, nationality FROM guest "
++            "WHERE reservation_id = ? AND archived_at IS NULL ORDER BY id",
++            (reservation_id,),
++        )
++        for row in hand_filing_candidates(cur.fetchall()):
++            cur.execute(
++                "SELECT 1 FROM submission_claim WHERE guest_id = ? AND claimed_at >= ?",
++                (row["id"], live_after),
++            )
++            if cur.fetchone():
++                busy += 1
++                continue
++            cur.execute(
++                "UPDATE guest SET submit_state = ?, manual_filed_at = ?, "
++                "manual_reference = ?, manual_marked_at = ?, manual_prev_state = ? "
++                "WHERE id = ? AND submit_state = ?",
++                (SENT, filed_at_utc, reference, marked_at, row["submit_state"],
++                 row["id"], row["submit_state"]),
++            )
++            if cur.rowcount == 1:
++                marked.append(row["id"])
++    return {"marked": len(marked), "busy": busy, "guest_ids": marked}
++
++
++def _undo_open(guest, now: datetime) -> bool:
++    marked = _as_utc(_field(guest, "manual_marked_at"))
++    return marked is not None and timedelta(0) <= now - marked <= MANUAL_UNDO_WINDOW
++
++
++def undo_filed_by_hand(reservation_id: int, now: Optional[datetime] = None) -> List[int]:
++    """Take back a "filed by hand" mark made in the last 24 hours.
++
++    Each guest gets back the state it had before the mark. A mark older than
++    24 hours stays: by then it is the record of a filing, not a slip.
++    """
++    current = datetime.now(timezone.utc) if now is None else now.astimezone(timezone.utc)
++    undone: List[int] = []
++    with db.immediate() as cur:
++        cur.execute(
++            "SELECT id, submit_state, manual_filed_at, manual_marked_at, manual_prev_state "
++            "FROM guest WHERE reservation_id = ? AND submit_state = ? "
++            "AND manual_filed_at IS NOT NULL ORDER BY id",
++            (reservation_id, SENT),
++        )
++        for row in cur.fetchall():
++            if not _undo_open(row, current):
++                continue
++            previous = row["manual_prev_state"]
++            if previous not in _HAND_FILABLE_STATES:
++                previous = PENDING
++            cur.execute(
++                "UPDATE guest SET submit_state = ?, manual_filed_at = NULL, "
++                "manual_reference = NULL, manual_marked_at = NULL, manual_prev_state = NULL "
++                "WHERE id = ? AND submit_state = ? AND manual_marked_at = ?",
++                (previous, row["id"], SENT, row["manual_marked_at"]),
++            )
++            if cur.rowcount == 1:
++                undone.append(row["id"])
++    return undone
++
++
++def hand_filing_view(progress: Dict[str, Any], now: Optional[datetime] = None) -> Dict[str, Any]:
++    """What the stay page shows about filing by hand."""
++    current = datetime.now(timezone.utc) if now is None else now.astimezone(timezone.utc)
++    guests = progress.get("guests") or []
++    by_hand = [guest for guest in guests if guest_filed_by_hand(guest)]
++    latest = max(by_hand, key=lambda guest: guest["manual_filed_at"], default=None)
++    undoable = [guest for guest in by_hand if _undo_open(guest, current)]
++    undo_until = None
++    if undoable:
++        last_mark = max(_as_utc(guest["manual_marked_at"]) for guest in undoable)
++        undo_until = deadlines.local_now(last_mark + MANUAL_UNDO_WINDOW)
++    return {
++        "candidates": len(hand_filing_candidates(guests)),
++        "count": len(by_hand),
++        "filed_at": deadlines.local_now(_as_utc(latest["manual_filed_at"])) if latest else None,
++        "reference": latest["manual_reference"] if latest else None,
++        "can_undo": bool(undoable),
++        "undo_until": undo_until,
++        "default_filed_at": deadlines.local_now(current).strftime("%Y-%m-%dT%H:%M"),
++    }
++
++
+ # --- deadline monitoring -------------------------------------------------
+ 
+ def reservation_deadline_anchor(reservation: Dict[str, Any]) -> Optional[date]:
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index 5026b83..7d09256 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -1589,6 +1589,7 @@ def reservation_detail(reservation_id: int, request: Request):
+                 f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
+             ),
+             "stay_claim": claim.ensure_row(reservation_id),
++            "hand_filing": reporting.hand_filing_view(progress),
+         },
+     )
+ 
+@@ -1765,6 +1766,52 @@ async def reservation_release_claim(reservation_id: int, request: Request):
+     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.claim_released"))
+ 
+ 
++@router.post("/reservations/{reservation_id}/filed-by-hand")
++async def reservation_filed_by_hand(reservation_id: int, request: Request):
++    """WP23: the host filed this stay in the UbyPort web application."""
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    reservation = access.reservation(request, reservation_id)
++    if not reservation:
++        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
++    back = f"/reservations/{reservation_id}#reports"
++    form = await request.form()
++    filed_at = reporting.parse_manual_filed_at(_form_str(form, "filed_at") or "")
++    if not filed_at:
++        return _back(back, err=_flash(request, "flash.error.hand_filing_time"))
++    reference = reporting.clean_manual_reference(_form_str(form, "reference"))
++    result = reporting.mark_filed_by_hand(reservation_id, filed_at, reference)
++    if not result["marked"]:
++        key = "flash.error.hand_filing_busy" if result["busy"] else "flash.error.hand_filing_nothing"
++        return _back(back, err=_flash(request, key))
++    # No guest data in the audit row: ids, counts and the host's own reference.
++    db.audit(
++        "stay_filed_manually",
++        f"reservation={reservation_id} guests={result['marked']} filed_at={filed_at}"
++        + (f" busy={result['busy']}" if result["busy"] else "")
++        + (f" reference={reference}" if reference else ""),
++    )
++    return _back(back, msg=_flash(request, "flash.hand_filing.marked"))
++
++
++@router.post("/reservations/{reservation_id}/filed-by-hand/undo")
++async def reservation_filed_by_hand_undo(reservation_id: int, request: Request):
++    """WP23: take back a "filed by hand" mark made by mistake, within 24 hours."""
++    guard = auth.require_login(request)
++    if guard:
++        return guard
++    reservation = access.reservation(request, reservation_id)
++    if not reservation:
++        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
++    back = f"/reservations/{reservation_id}#reports"
++    undone = reporting.undo_filed_by_hand(reservation_id)
++    if not undone:
++        return _back(back, err=_flash(request, "flash.error.hand_filing_undo_closed"))
++    db.audit("stay_filed_manually_undone", f"reservation={reservation_id} guests={len(undone)}")
++    return _back(back, msg=_flash(request, "flash.hand_filing.undone"))
++
++
+ @router.post("/reservations/{reservation_id}/submit")
+ async def reservation_submit(reservation_id: int, request: Request):
+     guard = auth.require_login(request)
+diff --git a/App/app/scheduler.py b/App/app/scheduler.py
+index 86c301b..b4cc525 100644
+--- a/App/app/scheduler.py
++++ b/App/app/scheduler.py
+@@ -12,6 +12,7 @@ from . import (
+     claim,
+     config,
+     dsr,
++    filing_watchdog,
+     host_i18n,
+     icalsync,
+     mail,
+@@ -97,6 +98,7 @@ def _ping(url: str, job_id: str) -> None:
+ 
+ 
+ def _job_deadlines() -> None:
++    watch_ok = True
+     try:
+         raised = reporting.check_deadlines()
+         due_requests = dsr.raise_due_alerts()
+@@ -109,8 +111,31 @@ def _job_deadlines() -> None:
+     except Exception:
+         log.exception("deadline watch failed")
+         _job_failed("deadlines")
++        watch_ok = False
++    # WP23: the filing watchdog runs even when the alert pass above failed,
++    # because its mails and its heartbeat are what reach the owner when the
++    # app itself is not being looked at.
++    try:
++        watchdog = filing_watchdog.run()
++        if (
++            watchdog["at_risk"] or watchdog.get("unknown_risk") or watchdog.get("awaiting_retry")
++            or watchdog["host_mails"] or watchdog["digest"]
++        ):
++            log.info("filing watchdog: %s", watchdog)
++    except Exception:
++        # No ping at all: the external monitor alerts on the missing ping.
++        log.exception("filing watchdog failed")
++        _job_failed("deadlines")
+         return
+-    _job_ok("deadlines")
++    if watch_ok:
++        _job_ok("deadlines")
++    # A failed deadline watch counts as a failure too: nobody is being told.
++    _filing_heartbeat(watchdog["at_risk"] > 0 or not watch_ok)
++
++
++def _filing_heartbeat(at_risk: bool) -> None:
++    """Ping the filing dead-man switch: <url> when all is well, <url>/fail if not."""
++    _ping(filing_watchdog.heartbeat_url(at_risk), "filing")
+ 
+ 
+ def _job_mail() -> None:
+diff --git a/App/app/templates/_components.html b/App/app/templates/_components.html
+index 3264f51..c59fe25 100644
+--- a/App/app/templates/_components.html
++++ b/App/app/templates/_components.html
+@@ -229,7 +229,10 @@
+    filed, and whether that was late. Nothing for a stay with no deadline. #}
+ {% macro deadline_badge(cell, tag='span', extra_class='') -%}
+   {%- set classes = (' ' ~ extra_class) if extra_class else '' -%}
+-  {%- if cell.state == 'filed_on_time' -%}
++  {%- if cell.by_hand and cell.state in ('filed_on_time', 'filed_late') -%}
++    {#- Filed by the host in the UbyPort web application: say so, late or not. -#}
++    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ t('deadline.filed_by_hand', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
++  {%- elif cell.state == 'filed_on_time' -%}
+     <{{ tag }} class="deadline{{ classes }} done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+   {%- elif cell.state == 'filed_late' -%}
+     <{{ tag }} class="deadline{{ classes }} neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
+diff --git a/App/app/templates/guest_form_admin.html b/App/app/templates/guest_form_admin.html
+index c37c372..6871d6a 100644
+--- a/App/app/templates/guest_form_admin.html
++++ b/App/app/templates/guest_form_admin.html
+@@ -51,7 +51,7 @@
+ {% if editing and guest.submit_state == 'sent' %}
+   <div class="banner info">
+     <div class="grow">
+-      <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
++      <strong>{% if guest.manual_filed_at %}{{ t('guest.admin.banner.filed_by_hand', at=guest.manual_filed_at | datetime_local) }}{% elif guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
+       <small id="filed-lock-note">{{ t('guest.admin.banner.sent_help') }}</small>
+     </div>
+   </div>
+diff --git a/App/app/templates/guide.html b/App/app/templates/guide.html
+index 1e28f3e..76be334 100644
+--- a/App/app/templates/guide.html
++++ b/App/app/templates/guide.html
+@@ -79,6 +79,14 @@
+       <p>{{ t('guide.reporting.filed') }}</p>
+       <p>{{ t('guide.reporting.failure') }}</p>
+       <p class="small muted">{{ t('guide.reporting.receipts') }}</p>
++      <h3 id="manual-filing">{{ t('guide.reporting.manual_filing_title') }}</h3>
++      <p>{{ t('guide.reporting.manual_filing_lede') }}</p>
++      <ol>
++        {% for step in ['step1', 'step2', 'step3', 'step4'] %}
++        <li>{{ t('guide.reporting.manual_filing_' ~ step) }}</li>
++        {% endfor %}
++      </ol>
++      <p>{{ t('guide.reporting.manual_filing_duty') }}</p>
+     </section>
+ 
+     <section class="guide-section panel" id="filters">
+diff --git a/App/app/templates/reservation_detail.html b/App/app/templates/reservation_detail.html
+index c7b9ffd..f80c017 100644
+--- a/App/app/templates/reservation_detail.html
++++ b/App/app/templates/reservation_detail.html
+@@ -170,7 +170,10 @@
+           {% if guest.restricted_at %}
+             <span class="pill amber">{{ t('guest.restricted_badge') }}</span>
+           {% endif %}
+-          {% if guest.submit_state == 'sent' %}
++          {% if guest.submit_state == 'sent' and guest.manual_filed_at %}
++            <span class="pill green">{{ t('stay.detail.guests.filed_by_hand') }}</span>
++            <span class="small muted">{{ guest.manual_filed_at | datetime_local }}</span>
++          {% elif guest.submit_state == 'sent' %}
+             <span class="pill green">{{ t('stay.detail.guests.reported') }}</span>
+             {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at | datetime_local }}</span>{% endif %}
+           {% elif guest.submit_state == 'not_required' %}
+@@ -331,6 +334,39 @@
+     </div>
+   </div>
+   </div>
++  {# WP23: the host filed this stay in the UbyPort web application. #}
++  {% if hand_filing.count %}
++  <div class="panel" id="filed-by-hand">
++    <p><strong>{{ t('stay.hand_filing.done', when=hand_filing.filed_at.strftime('%d.%m.%Y %H:%M')) }}</strong></p>
++    {% if hand_filing.reference %}<p class="small muted">{{ t('stay.hand_filing.done_reference', reference=hand_filing.reference) }}</p>{% endif %}
++    {% if hand_filing.can_undo %}
++    <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand/undo" class="inline"
++          data-confirm data-confirm-message="{{ t('stay.hand_filing.undo_confirm') }}">
++      <button class="btn small" type="submit">{{ t('stay.hand_filing.undo') }}</button>
++      <span class="small muted">{{ t('stay.hand_filing.undo_until', when=hand_filing.undo_until.strftime('%d.%m. %H:%M')) }}</span>
++    </form>
++    {% endif %}
++  </div>
++  {% endif %}
++  {% if hand_filing.candidates and not stay_inactive %}
++  <details class="panel" id="file-by-hand">
++    <summary>{{ t('stay.hand_filing.open') }}</summary>
++    <p class="small muted">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
++    <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">
++      <div class="field">
++        <label for="hand_filed_at">{{ t('stay.hand_filing.filed_at') }}</label>
++        <input type="datetime-local" id="hand_filed_at" name="filed_at" value="{{ hand_filing.default_filed_at }}" max="{{ hand_filing.default_filed_at }}" required>
++      </div>
++      <div class="field">
++        <label for="hand_reference">{{ t('stay.hand_filing.reference') }}</label>
++        <input type="text" id="hand_reference" name="reference" maxlength="200" autocomplete="off">
++        <div class="hint">{{ t('stay.hand_filing.reference_hint') }}</div>
++      </div>
++      <p class="small muted">{{ t('stay.hand_filing.covers', count=hand_filing.candidates) }}</p>
++      <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('stay.hand_filing.confirm') }}</button></div>
++    </form>
++  </details>
++  {% endif %}
+   {% if submissions %}
+   <div class="panel tight scroll-x">
+     <table class="table-cards">
+diff --git a/App/tests/test_claim_mail.py b/App/tests/test_claim_mail.py
+index c03e44d..9edfc2f 100644
+--- a/App/tests/test_claim_mail.py
++++ b/App/tests/test_claim_mail.py
+@@ -1799,6 +1799,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
+         "invoice_issued",
+         "workspace_deletion",
+         "cancelled_with_guests",
++        "deadline_at_risk",
++        "deadline_digest",
+     }
+ 
+ 
+diff --git a/App/tests/test_filed_by_hand.py b/App/tests/test_filed_by_hand.py
+new file mode 100644
+index 0000000..7e83170
+--- /dev/null
++++ b/App/tests/test_filed_by_hand.py
+@@ -0,0 +1,347 @@
++"""WP23: a stay the host filed by hand in the UbyPort web application.
++
++When UbyHost cannot file a stay in time, the host files it in UbyPort and
++marks it on the stay page. The guests then count as filed everywhere: status,
++deadline badge, watchdog, sweep (never sent afterwards) and house book. The
++mark can be taken back within 24 hours if it was a mistake. Time is frozen by
++passing ``now``; the routes use the real clock and their stamps are set
++relative to it.
++"""
++from __future__ import annotations
++
++import time
++from datetime import datetime, timedelta, timezone
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, db, deadlines, filing_watchdog, host_i18n, housebook, reporting
++from tests.test_filing_watchdog import PASSWORD, USERNAME, world as world  # noqa: F401
++from tests.test_filing_watchdog import FRIDAY, _mine
++
++# A filing time on Wednesday 30.09.2026 at 14:32 Prague time (CEST, UTC+2).
++FILED_UTC = "2026-09-30T12:32:00+00:00"
++NOW = datetime(2026, 9, 30, 15, 0, tzinfo=timezone.utc)
++
++
++def _states(rid):
++    return {
++        row["nationality"]: row
++        for row in db.query(
++            "SELECT * FROM guest WHERE reservation_id = ? ORDER BY id", (rid,)
++        )
++    }
++
++
++def _reservation(rid):
++    return db.query_one("SELECT * FROM reservation WHERE id = ?", (rid,))
++
++
++@pytest.fixture
++def client(world):
++    from app.main import app
++
++    with TestClient(app) as test_client:
++        response = test_client.post(
++            "/login", data={"username": USERNAME, "password": PASSWORD}, follow_redirects=False
++        )
++        assert response.status_code == 303 and "err=" not in response.headers["location"]
++        yield test_client
++    db.execute("DELETE FROM audit WHERE action LIKE 'stay_filed_manually%'")
++
++
++# --- the mark itself ------------------------------------------------------------
++
++
++def test_the_mark_covers_the_unfiled_reportable_guests_only(world):
++    rid = world["add_stay"](
++        [("DEU", "pending"), ("USA", "error"), ("UKR", "blocked"),
++         ("CZE", "not_required"), ("FRA", "sent")]
++    )
++    result = reporting.mark_filed_by_hand(rid, FILED_UTC, "UP-123")
++    assert result["marked"] == 3 and result["busy"] == 0
++
++    guests = _states(rid)
++    for nationality, previous in (("DEU", "pending"), ("USA", "error"), ("UKR", "blocked")):
++        guest = guests[nationality]
++        assert guest["submit_state"] == reporting.SENT
++        assert guest["manual_filed_at"] == FILED_UTC
++        assert guest["manual_reference"] == "UP-123"
++        assert guest["manual_marked_at"]
++        assert guest["manual_prev_state"] == previous
++        assert reporting.guest_filed_by_hand(guest)
++    assert guests["CZE"]["submit_state"] == "not_required" and not guests["CZE"]["manual_filed_at"]
++    assert guests["FRA"]["submit_state"] == "sent" and not guests["FRA"]["manual_filed_at"]
++
++    # Nothing left to mark: a second mark changes nothing.
++    assert reporting.mark_filed_by_hand(rid, FILED_UTC, None)["marked"] == 0
++
++
++def test_a_stay_filed_by_hand_is_reported_even_without_a_signature(world):
++    # The test guests carry no signature, so UbyHost would call them incomplete.
++    rid = world["add_stay"]([("DEU", "pending"), ("USA", "error")])
++    assert reporting.reservation_progress(_reservation(rid))["status"] != "reported"
++    reporting.mark_filed_by_hand(rid, FILED_UTC, None)
++    progress = reporting.reservation_progress(_reservation(rid))
++    assert progress["status"] == "reported"
++    assert reporting.send_controls(_reservation(rid), db.query_one(
++        "SELECT * FROM apartment WHERE id = ?", (world["apartment_id"],)
++    ), progress)["send_enabled"] is False
++
++
++def test_the_deadline_badge_says_filed_by_hand(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++    reporting.mark_filed_by_hand(rid, FILED_UTC, None)
++    progress = reporting.reservation_progress(_reservation(rid))
++    cell = reporting.deadline_cell(progress, FRIDAY)
++    assert cell["by_hand"] is True
++    assert cell["state"] == "filed_on_time"
++    assert cell["filed_at"] == datetime(2026, 9, 30, 14, 32)
++
++
++def test_a_late_filing_by_hand_is_still_marked_by_hand(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++    reporting.mark_filed_by_hand(rid, "2026-10-02T08:00:00+00:00", None)
++    cell = reporting.deadline_cell(reporting.reservation_progress(_reservation(rid)), FRIDAY)
++    assert cell["state"] == "filed_late" and cell["by_hand"] is True
++
++
++def test_a_stay_filed_by_hand_is_not_at_risk(world):
++    rid = world["add_stay"]([("DEU", "pending"), ("USA", "error")])
++    now = datetime(2026, 10, 1, 9, 0)
++    assert rid in _mine(filing_watchdog.at_risk_stays(now), {rid})
++    reporting.mark_filed_by_hand(rid, FILED_UTC, None)
++    assert rid not in _mine(filing_watchdog.at_risk_stays(now), {rid})
++    assert rid not in _mine(filing_watchdog.unknown_risk_stays(now), {rid})
++
++
++def test_the_sweep_never_sends_a_guest_filed_by_hand(world, monkeypatch):
++    # Only the state may decide here, so every guest counts as complete.
++    monkeypatch.setattr(reporting, "guest_is_complete", lambda guest, reservation: True)
++    rid = world["add_stay"]([("DEU", "pending")])
++    apartment_id = world["apartment_id"]
++
++    def sendable(**kwargs):
++        pairs = reporting.collect_sendable(apartment_id, ignore_automation=True, **kwargs)
++        return [guest["id"] for guest, _reservation in pairs if guest["reservation_id"] == rid]
++
++    assert len(sendable()) == 1
++    # A list built before the mark, as a running sweep would hold it.
++    stale = [
++        pair for pair in reporting.collect_sendable(apartment_id, ignore_automation=True)
++        if pair[0]["reservation_id"] == rid
++    ]
++    reporting.mark_filed_by_hand(rid, FILED_UTC, None)
++    assert sendable() == []
++    # Not even as a deliberate resend: the register already has the record.
++    assert sendable(allow_resend=True) == []
++    # And the claim, the only double-filing guard, drops the stale pair.
++    token, claimed = reporting.claim_sendable(stale)
++    reporting.release_sendable_claim(token)
++    assert claimed == []
++
++
++def test_a_guest_ubyhost_is_sending_right_now_is_not_marked(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++    guest_id = _states(rid)["DEU"]["id"]
++    db.execute(
++        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) VALUES (?, ?, ?)",
++        (guest_id, "watchdog-live-claim", time.time()),
++    )
++    try:
++        result = reporting.mark_filed_by_hand(rid, FILED_UTC, None)
++    finally:
++        db.execute("DELETE FROM submission_claim WHERE claim_token = ?", ("watchdog-live-claim",))
++    assert result == {"marked": 0, "busy": 1, "guest_ids": []}
++    assert _states(rid)["DEU"]["submit_state"] == "pending"
++
++
++# --- undo -----------------------------------------------------------------------
++
++
++def test_undo_within_24_hours_restores_the_previous_states(world):
++    rid = world["add_stay"]([("DEU", "pending"), ("USA", "error"), ("UKR", "blocked")])
++    reporting.mark_filed_by_hand(rid, FILED_UTC, "UP-1")
++    marked = datetime.fromisoformat(_states(rid)["DEU"]["manual_marked_at"])
++
++    assert reporting.undo_filed_by_hand(rid, now=marked + timedelta(hours=25)) == []
++    assert _states(rid)["DEU"]["submit_state"] == "sent"
++
++    undone = reporting.undo_filed_by_hand(rid, now=marked + timedelta(hours=23, minutes=59))
++    assert len(undone) == 3
++    guests = _states(rid)
++    assert {n: g["submit_state"] for n, g in guests.items()} == {
++        "DEU": "pending", "USA": "error", "UKR": "blocked",
++    }
++    for guest in guests.values():
++        assert guest["manual_filed_at"] is None and guest["manual_reference"] is None
++        assert guest["manual_marked_at"] is None and guest["manual_prev_state"] is None
++
++
++def test_undo_leaves_a_guest_ubyport_accepted_alone(world):
++    rid = world["add_stay"]([("FRA", "sent"), ("DEU", "pending")])
++    reporting.mark_filed_by_hand(rid, FILED_UTC, None)
++    reporting.undo_filed_by_hand(rid)
++    guests = _states(rid)
++    assert guests["FRA"]["submit_state"] == "sent"
++    assert guests["DEU"]["submit_state"] == "pending"
++
++
++# --- the filing time ------------------------------------------------------------
++
++
++def test_the_filing_time_is_read_as_prague_time_and_checked():
++    assert reporting.parse_manual_filed_at("2026-09-30T14:32", NOW) == FILED_UTC
++    assert reporting.parse_manual_filed_at("", NOW) == NOW.isoformat()
++    # A few minutes ahead is clock skew; more is a typo.
++    assert reporting.parse_manual_filed_at("2026-09-30T17:04", NOW)
++    assert reporting.parse_manual_filed_at("2026-09-30T17:30", NOW) is None
++    assert reporting.parse_manual_filed_at("2026-07-30T12:00", NOW) is None
++    assert reporting.parse_manual_filed_at("yesterday", NOW) is None
++
++
++def test_the_reference_is_one_short_line():
++    assert reporting.clean_manual_reference("  UP\n 123 ") == "UP 123"
++    assert reporting.clean_manual_reference("") is None
++    assert len(reporting.clean_manual_reference("x" * 500)) == reporting.MANUAL_REFERENCE_MAX
++
++
++# --- house book -----------------------------------------------------------------
++
++
++def test_the_house_book_notes_a_filing_by_hand(world):
++    rid = world["add_stay"]([("DEU", "pending"), ("FRA", "sent")])
++    reporting.mark_filed_by_hand(rid, FILED_UTC, "UP-777")
++    rows = {
++        row["nationality"]: row
++        for row in housebook.housebook_rows(apartment_id=world["apartment_id"])
++    }
++    assert rows["DEU"]["reported"] == "yes - filed by hand in UbyPort"
++    assert rows["DEU"]["reported_at"] == FILED_UTC
++    assert rows["DEU"]["stamp"] == "UP-777"
++    assert rows["FRA"]["reported"] == "yes"
++    # The registration form PDF builds with the note.
++    pdf = housebook.registration_form_pdf(_states(rid)["DEU"]["id"])
++    assert pdf.startswith(b"%PDF")
++
++
++# --- the stay page --------------------------------------------------------------
++
++
++def test_the_host_marks_the_stay_on_its_page_and_can_undo(world, client):
++    rid = world["add_stay"]([("DEU", "pending")])
++    page = client.get(f"/reservations/{rid}").text
++    assert host_i18n.translate("cs", "stay.hand_filing.open") in page
++    assert 'action="/reservations/%d/filed-by-hand"' % rid in page
++
++    response = client.post(
++        f"/reservations/{rid}/filed-by-hand",
++        data={"filed_at": deadlines.local_now().strftime("%Y-%m-%dT%H:%M"),
++              "reference": "UP-2026-42"},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303 and "msg=" in response.headers["location"]
++    guest = _states(rid)["DEU"]
++    assert guest["submit_state"] == "sent" and guest["manual_reference"] == "UP-2026-42"
++    audit = db.query_one(
++        "SELECT * FROM audit WHERE action = 'stay_filed_manually' AND detail LIKE ?",
++        (f"reservation={rid} %",),
++    )
++    assert audit and "guests=1" in audit["detail"] and "UP-2026-42" in audit["detail"]
++
++    page = client.get(f"/reservations/{rid}").text
++    when = deadlines.local_now(datetime.fromisoformat(guest["manual_filed_at"]))
++    assert host_i18n.translate("cs", "deadline.filed_by_hand", when=when.strftime("%d.%m. %H:%M")) in page
++    assert host_i18n.translate("cs", "stay.detail.guests.filed_by_hand") in page
++    assert "UP-2026-42" in page
++    assert host_i18n.translate("cs", "stay.hand_filing.undo") in page
++    # Nothing is left to mark, so the form is gone.
++    assert 'action="/reservations/%d/filed-by-hand"' % rid not in page
++
++    response = client.post(f"/reservations/{rid}/filed-by-hand/undo", follow_redirects=False)
++    assert response.status_code == 303 and "msg=" in response.headers["location"]
++    assert _states(rid)["DEU"]["submit_state"] == "pending"
++    assert db.query_one(
++        "SELECT 1 FROM audit WHERE action = 'stay_filed_manually_undone' AND detail = ?",
++        (f"reservation={rid} guests=1",),
++    )
++
++
++def test_undo_after_24_hours_is_refused(world, client):
++    rid = world["add_stay"]([("DEU", "pending")])
++    reporting.mark_filed_by_hand(rid, FILED_UTC, None)
++    old = (datetime.now(timezone.utc) - timedelta(hours=25)).replace(microsecond=0).isoformat()
++    db.execute("UPDATE guest SET manual_marked_at = ? WHERE reservation_id = ?", (old, rid))
++
++    page = client.get(f"/reservations/{rid}").text
++    assert host_i18n.translate("cs", "stay.hand_filing.undo") not in page
++    response = client.post(f"/reservations/{rid}/filed-by-hand/undo", follow_redirects=False)
++    assert "err=" in response.headers["location"]
++    assert _states(rid)["DEU"]["submit_state"] == "sent"
++    assert not db.query_one(
++        "SELECT 1 FROM audit WHERE action = 'stay_filed_manually_undone' AND detail LIKE ?",
++        (f"reservation={rid} %",),
++    )
++
++
++def test_a_filing_time_in_the_future_is_refused(world, client):
++    rid = world["add_stay"]([("DEU", "pending")])
++    future = (deadlines.local_now() + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M")
++    response = client.post(
++        f"/reservations/{rid}/filed-by-hand", data={"filed_at": future}, follow_redirects=False
++    )
++    assert "err=" in response.headers["location"]
++    assert _states(rid)["DEU"]["submit_state"] == "pending"
++
++
++def test_a_stay_of_another_workspace_cannot_be_marked(world, client):
++    other_user = db.query_one("SELECT id FROM user_account WHERE username = ?", ("filed-by-hand-other",))
++    other_id = other_user["id"] if other_user else auth.create_account(
++        "filed-by-hand-other", PASSWORD, "Other Host", must_change_password=False
++    )
++    now = db.utcnow()
++    apartment_id = db.insert(
++        "apartment",
++        {"owner_user_id": other_id, "internal_name": "Other Loft",
++         "permalink_token": "filingwatchdog-other", "active": 1, "created_at": now},
++    )
++    rid = db.insert(
++        "reservation",
++        {"apartment_id": apartment_id, "source": "manual", "uid": "filed-by-hand-other",
++         "date_from": FRIDAY.isoformat(), "date_to": (FRIDAY + timedelta(days=2)).isoformat(),
++         "status": "active", "created_at": now, "updated_at": now},
++    )
++    guest_id = db.insert(
++        "guest",
++        {"reservation_id": rid, "nationality": "DEU", "submit_state": "pending",
++         "created_at": now, "updated_at": now},
++    )
++    response = client.post(
++        f"/reservations/{rid}/filed-by-hand", data={"filed_at": ""}, follow_redirects=False
++    )
++    assert "err=" in response.headers["location"]
++    assert db.query_one("SELECT submit_state FROM guest WHERE id = ?", (guest_id,))["submit_state"] == "pending"
++
++
++@pytest.mark.parametrize("lang", ["en", "cs"])
++def test_the_new_strings_exist_in_both_languages(lang):
++    keys = [
++        "deadline.filed_by_hand", "stay.detail.guests.filed_by_hand",
++        "stay.hand_filing.title", "stay.hand_filing.lede", "stay.hand_filing.open",
++        "stay.hand_filing.filed_at", "stay.hand_filing.reference",
++        "stay.hand_filing.reference_hint", "stay.hand_filing.covers",
++        "stay.hand_filing.confirm", "stay.hand_filing.done",
++        "stay.hand_filing.done_reference", "stay.hand_filing.undo",
++        "stay.hand_filing.undo_until", "stay.hand_filing.undo_confirm",
++        "flash.hand_filing.marked", "flash.hand_filing.undone",
++        "flash.error.hand_filing_nothing", "flash.error.hand_filing_busy",
++        "flash.error.hand_filing_time", "flash.error.hand_filing_undo_closed",
++        "guest.admin.banner.filed_by_hand", "guide.reporting.manual_filing_step4",
++    ]
++    for key in keys:
++        assert key in host_i18n.STRINGS[lang], key
++    if lang == "cs":
++        assert host_i18n.STRINGS["cs"]["deadline.filed_by_hand"] == "Podáno ručně %(when)s"
++        assert "ručně v UbyPortu" in host_i18n.STRINGS["cs"]["stay.hand_filing.open"]
++    else:
++        assert host_i18n.STRINGS["en"]["stay.hand_filing.open"] == "I filed this stay by hand in UbyPort"
+diff --git a/App/tests/test_filing_watchdog.py b/App/tests/test_filing_watchdog.py
+new file mode 100644
+index 0000000..e51f71c
+--- /dev/null
++++ b/App/tests/test_filing_watchdog.py
+@@ -0,0 +1,698 @@
++"""WP23: the filing watchdog.
++
++Every run of the deadline job finds the stays that may miss their police
++deadline, warns the host once per stay, sends the operator a digest at most
++every six hours and pings an external dead-man switch: ``<url>`` when nothing
++is at risk, ``<url>/fail`` when something is. Time is frozen by passing
++``now`` explicitly, as the deadline code itself does.
++"""
++from __future__ import annotations
++
++import json
++
++from datetime import date, datetime, timedelta, timezone
++
++import pytest
++
++from app import auth, config, db, filing_watchdog, host_i18n, mail, mail_notify, scheduler
++from tests.test_submission_retry_cap import host as host  # noqa: F401
++
++USERNAME = "filing-watchdog-host"
++PASSWORD = "Secure-Password-123"
++TOKEN_PREFIX = "filingwatchdog"
++CONTACT = "watchdog-host@example.invalid"
++GUEST_SURNAME = "WATCHDOGSURNAME"
++
++# Friday 25.09.2026. Monday 28.09. is a public holiday (Den české státnosti),
++# so the three working days are Fri 25, Tue 29 and Wed 30: the deadline is
++# Wednesday 30.09.2026 23:59:59, one day later than without the holiday.
++FRIDAY = date(2026, 9, 25)
++DEADLINE = datetime(2026, 9, 30, 23, 59, 59)
++
++
++def _cleanup() -> None:
++    apartments = db.query(
++        "SELECT id, legal_entity_id FROM apartment WHERE permalink_token LIKE ?",
++        (f"{TOKEN_PREFIX}%",),
++    )
++    for apartment in apartments:
++        db.execute(
++            "DELETE FROM email_outbox WHERE reservation_id IN "
++            "(SELECT id FROM reservation WHERE apartment_id = ?)",
++            (apartment["id"],),
++        )
++        db.execute(
++            "DELETE FROM guest WHERE reservation_id IN "
++            "(SELECT id FROM reservation WHERE apartment_id = ?)",
++            (apartment["id"],),
++        )
++        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
++        db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))
++        db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
++        if apartment["legal_entity_id"]:
++            db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
++    db.execute("DELETE FROM email_outbox WHERE kind = 'deadline_digest'")
++    db.set_setting(filing_watchdog.DIGEST_SETTING, None)
++
++
++@pytest.fixture
++def world():
++    """One host, one property, and a helper that adds a stay with guests."""
++    db.init_db()
++    _cleanup()
++    now = db.utcnow()
++    existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
++    user_id = (
++        existing["id"]
++        if existing
++        else auth.create_account(USERNAME, PASSWORD, "Watchdog Host", must_change_password=False)
++    )
++    entity_id = db.insert(
++        "legal_entity",
++        {"name": "Watchdog s.r.o.", "owner_user_id": user_id, "contact_email": CONTACT,
++         "created_at": now},
++    )
++    apartment_id = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity_id,
++            "owner_user_id": user_id,
++            "internal_name": "Watchdog Loft",
++            "permalink_token": f"{TOKEN_PREFIX}1",
++            "automation_mode": "manual",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    counter = {"n": 0}
++
++    def add_stay(guests, *, arrival=FRIDAY, status="active"):
++        counter["n"] += 1
++        reservation_id = db.insert(
++            "reservation",
++            {
++                "apartment_id": apartment_id,
++                "source": "airbnb",
++                "uid": f"watchdog-{counter['n']}",
++                "date_from": arrival.isoformat(),
++                "date_to": (arrival + timedelta(days=3)).isoformat(),
++                "status": status,
++                "created_at": now,
++                "updated_at": now,
++            },
++        )
++        for nationality, state in guests:
++            db.insert(
++                "guest",
++                {
++                    "reservation_id": reservation_id,
++                    "surname": GUEST_SURNAME,
++                    "first_name": "ANNA",
++                    "nationality": nationality,
++                    "stay_from": arrival.isoformat(),
++                    "stay_to": (arrival + timedelta(days=3)).isoformat(),
++                    "submit_state": state,
++                    "created_at": now,
++                    "updated_at": now,
++                },
++            )
++        return reservation_id
++
++    yield {"add_stay": add_stay, "user_id": user_id, "apartment_id": apartment_id}
++    _cleanup()
++
++
++def _mine(stays, ids):
++    return {stay["reservation_id"]: stay for stay in stays if stay["reservation_id"] in ids}
++
++
++# --- at-risk detection ----------------------------------------------------------
++
++
++def test_a_friday_arrival_before_a_public_holiday_gets_the_extra_day(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++
++    # Tuesday noon: without the holiday the deadline would be tonight, so the
++    # stay would be at risk. With it, 36 hours are left.
++    assert rid not in _mine(filing_watchdog.at_risk_stays(datetime(2026, 9, 29, 12, 0)), {rid})
++
++    stays = _mine(filing_watchdog.at_risk_stays(datetime(2026, 9, 30, 8, 0)), {rid})
++    assert rid in stays
++    assert stays[rid]["deadline"] == DEADLINE
++    assert stays[rid]["arrival"] == FRIDAY
++    assert stays[rid]["overdue"] is False
++
++    late = _mine(filing_watchdog.at_risk_stays(datetime(2026, 10, 2, 9, 0)), {rid})
++    assert late[rid]["overdue"] is True
++
++
++def test_the_window_opens_exactly_24_hours_before_the_deadline(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++    edge = DEADLINE - timedelta(hours=24)
++    assert rid in _mine(filing_watchdog.at_risk_stays(edge), {rid})
++    assert rid not in _mine(filing_watchdog.at_risk_stays(edge - timedelta(seconds=1)), {rid})
++
++
++def test_an_eu_guest_is_reportable(world):
++    rid = world["add_stay"]([("SVK", "pending"), ("CZE", "not_required")])
++    stays = _mine(filing_watchdog.at_risk_stays(datetime(2026, 9, 30, 8, 0)), {rid})
++    assert stays[rid]["unfiled"] == 1
++
++
++def test_a_czech_only_stay_is_not_at_risk(world):
++    rid = world["add_stay"]([("CZE", "pending"), ("cze", "not_required")])
++    assert rid not in _mine(filing_watchdog.at_risk_stays(datetime(2026, 10, 5, 8, 0)), {rid})
++
++
++def test_a_cancelled_stay_is_not_at_risk(world):
++    cancelled = world["add_stay"]([("DEU", "pending")], status="cancelled")
++    ignored = world["add_stay"]([("DEU", "pending")], status="ignored")
++    found = _mine(filing_watchdog.at_risk_stays(datetime(2026, 10, 5, 8, 0)), {cancelled, ignored})
++    assert found == {}
++
++
++def test_a_filed_stay_is_not_at_risk_and_a_partly_filed_one_counts_the_rest(world):
++    filed = world["add_stay"]([("DEU", "sent"), ("USA", "sent"), ("CZE", "not_required")])
++    partly = world["add_stay"]([("DEU", "sent"), ("USA", "error"), ("UKR", "blocked")])
++    found = _mine(filing_watchdog.at_risk_stays(datetime(2026, 10, 5, 8, 0)), {filed, partly})
++    assert filed not in found
++    assert found[partly]["unfiled"] == 2
++
++
++def test_a_stay_with_a_far_deadline_is_not_at_risk(world):
++    rid = world["add_stay"]([("DEU", "pending")], arrival=date(2026, 10, 12))
++    assert rid not in _mine(filing_watchdog.at_risk_stays(datetime(2026, 10, 12, 9, 0)), {rid})
++
++
++# --- host mail ------------------------------------------------------------------
++
++
++def _outbox(kind, reservation_id=None):
++    if reservation_id is None:
++        return db.query("SELECT * FROM email_outbox WHERE kind = ? ORDER BY id", (kind,))
++    return db.query(
++        "SELECT * FROM email_outbox WHERE kind = ? AND reservation_id = ? ORDER BY id",
++        (kind, reservation_id),
++    )
++
++
++def test_the_host_is_mailed_once_per_stay(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    rid = world["add_stay"]([("DEU", "pending"), ("FRA", "pending")])
++    now = datetime(2026, 9, 30, 8, 0)
++
++    stays = list(_mine(filing_watchdog.at_risk_stays(now), {rid}).values())
++    assert filing_watchdog.notify_hosts(stays, now) == 1
++    # The next runs, half an hour apart, and a day later: still one mail.
++    for later in (now + timedelta(minutes=30), now + timedelta(days=1)):
++        stays = list(_mine(filing_watchdog.at_risk_stays(later), {rid}).values())
++        assert stays and stays[0]["mailed_at"]
++        assert filing_watchdog.notify_hosts(stays, later) == 0
++
++    rows = _outbox("deadline_at_risk", rid)
++    assert len(rows) == 1
++    row = rows[0]
++    assert row["to_email"] == CONTACT
++    assert db.query_one(
++        "SELECT at_risk_mailed_at FROM reservation WHERE id = ?", (rid,)
++    )["at_risk_mailed_at"]
++    payload = json.loads(row["payload"])
++    text = payload["text"]
++    assert "Watchdog Loft" in row["subject"] and "30.09.2026 23:59" in row["subject"]
++    assert "25.09.2026" in text
++    assert "Guests not filed yet: 2" in text
++    assert f"{config.PUBLIC_BASE_URL.rstrip('/')}/reservations/{rid}" in text
++    assert host_i18n.translate("en", "mail.deadline_at_risk.manual") in text
++    assert "UbyPort web application" in text
++    assert GUEST_SURNAME not in text and GUEST_SURNAME not in payload["html"]
++
++
++def test_no_mail_is_marked_sent_while_mail_is_off(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: False)
++    rid = world["add_stay"]([("DEU", "pending")])
++    now = datetime(2026, 9, 30, 8, 0)
++    stays = list(_mine(filing_watchdog.at_risk_stays(now), {rid}).values())
++    assert filing_watchdog.notify_hosts(stays, now) == 0
++    assert db.query_one(
++        "SELECT at_risk_mailed_at FROM reservation WHERE id = ?", (rid,)
++    )["at_risk_mailed_at"] is None
++
++
++@pytest.mark.parametrize("lang", ["en", "cs"])
++def test_the_host_mail_is_translated(lang):
++    content = mail_notify.build_deadline_at_risk(
++        property_name="Loft", arrival="25.09.2026", deadline=DEADLINE, unfiled=2,
++        stay_url="https://example.invalid/reservations/1", lang=lang,
++    )
++    assert "mail.deadline_at_risk" not in content["text"] + content["subject"] + content["html"]
++    if lang == "cs":
++        assert "UbyPort" in content["text"] and "doručenku" in content["text"]
++
++
++# --- operator digest ------------------------------------------------------------
++
++
++def test_the_operator_digest_is_throttled_to_one_per_six_hours(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    monkeypatch.setattr(config, "OPERATOR_EMAIL", "operator@example.invalid")
++    rid = world["add_stay"]([("DEU", "pending")])
++    start = datetime(2026, 9, 30, 8, 0)
++    stays = list(_mine(filing_watchdog.at_risk_stays(start), {rid}).values())
++
++    assert filing_watchdog.send_operator_digest(stays, start) is True
++    for minutes in (30, 60, 5 * 60 + 59):
++        assert filing_watchdog.send_operator_digest(stays, start + timedelta(minutes=minutes)) is False
++    assert filing_watchdog.send_operator_digest(stays, start + timedelta(hours=6)) is True
++
++    rows = _outbox("deadline_digest")
++    assert len(rows) == 2
++    assert {row["to_email"] for row in rows} == {"operator@example.invalid"}
++    text = json.loads(rows[0]["payload"])["text"]
++    assert USERNAME in text and "Watchdog Loft" in text
++    assert "25.09.2026" in text and "30.09.2026 23:59" in text
++    assert GUEST_SURNAME not in text and "ANNA" not in text
++
++
++def test_no_digest_without_stays_at_risk(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    assert filing_watchdog.send_operator_digest([], datetime(2026, 9, 30, 8, 0)) is False
++    assert _outbox("deadline_digest") == []
++
++
++def test_the_digest_stamp_is_utc(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    rid = world["add_stay"]([("DEU", "pending")])
++    now = datetime(2026, 9, 30, 8, 0)
++    stays = list(_mine(filing_watchdog.at_risk_stays(now), {rid}).values())
++    filing_watchdog.send_operator_digest(stays, now)
++    stamp = datetime.fromisoformat(db.get_setting(filing_watchdog.DIGEST_SETTING))
++    assert stamp == datetime(2026, 9, 30, 6, 0, tzinfo=timezone.utc)  # CEST is UTC+2
++
++
++# --- heartbeat ------------------------------------------------------------------
++
++
++@pytest.fixture
++def pings(monkeypatch):
++    calls = []
++    monkeypatch.setattr(scheduler.requests, "get", lambda url, timeout: calls.append(url))
++    monkeypatch.setattr(scheduler.reporting, "check_deadlines", lambda: 0)
++    monkeypatch.setattr(scheduler.dsr, "raise_due_alerts", lambda: 0)
++    return calls
++
++
++def _watchdog_returns(monkeypatch, at_risk):
++    monkeypatch.setattr(
++        filing_watchdog, "run",
++        lambda now=None: {"at_risk": at_risk, "host_mails": 0, "digest": 0},
++    )
++
++
++def test_the_heartbeat_reports_success_when_nothing_is_at_risk(pings, monkeypatch):
++    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc/")
++    _watchdog_returns(monkeypatch, 0)
++    scheduler._job_deadlines()
++    assert pings == ["https://hc-ping.example.invalid/abc"]
++
++
++def test_the_heartbeat_reports_fail_when_a_stay_is_at_risk(pings, monkeypatch):
++    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
++    _watchdog_returns(monkeypatch, 2)
++    scheduler._job_deadlines()
++    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
++
++
++def test_the_heartbeat_reports_fail_when_the_deadline_watch_breaks(pings, monkeypatch):
++    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
++    _watchdog_returns(monkeypatch, 0)
++
++    def boom():
++        raise RuntimeError("deadline watch broke")
++
++    monkeypatch.setattr(scheduler.reporting, "check_deadlines", boom)
++    monkeypatch.setattr(scheduler, "_job_failed", lambda job_id: None)
++    scheduler._job_deadlines()
++    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
++
++
++def test_no_ping_when_the_watchdog_itself_fails(pings, monkeypatch):
++    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
++
++    def boom(now=None):
++        raise RuntimeError("watchdog broke")
++
++    monkeypatch.setattr(filing_watchdog, "run", boom)
++    failed = []
++    monkeypatch.setattr(scheduler, "_job_failed", failed.append)
++    scheduler._job_deadlines()
++    assert pings == []
++    assert failed == ["deadlines"]
++
++
++def test_nothing_is_sent_when_the_url_is_empty(pings, monkeypatch):
++    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "")
++    for at_risk in (0, 3):
++        _watchdog_returns(monkeypatch, at_risk)
++        scheduler._job_deadlines()
++    assert pings == []
++
++
++def test_the_real_watchdog_runs_inside_the_deadline_job(world, pings, monkeypatch):
++    """No stub for run(): the job computes the answer and pings with it."""
++    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
++    rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
++    scheduler._job_deadlines()
++    assert pings == ["https://hc-ping.example.invalid/abc/fail"]
++    assert rid in _mine(filing_watchdog.at_risk_stays(), {rid})
++
++
++# --- stays with no guest on file ("unknown risk") --------------------------------
++
++
++def test_a_stay_without_guests_is_unknown_risk_once_the_guests_have_arrived(world):
++    rid = world["add_stay"]([])
++
++    def unknown(now):
++        return _mine(filing_watchdog.unknown_risk_stays(now), {rid})
++
++    # Before the arrival nothing is due yet, whatever the deadline.
++    assert rid not in unknown(datetime(2026, 9, 24, 23, 0))
++    # Tuesday noon: 36 hours left (holiday on Monday), not yet.
++    assert rid not in unknown(datetime(2026, 9, 29, 12, 0))
++    found = unknown(datetime(2026, 9, 30, 8, 0))
++    assert found[rid]["deadline"] == DEADLINE and found[rid]["no_guests"] is True
++    assert found[rid]["overdue"] is False
++    assert unknown(datetime(2026, 10, 2, 9, 0))[rid]["overdue"] is True
++    # A week after the deadline an empty stay drops off.
++    assert rid not in unknown(DEADLINE + timedelta(days=7, hours=1))
++    # It is never a known risk: there is no guest to call reportable.
++    assert rid not in _mine(filing_watchdog.at_risk_stays(datetime(2026, 9, 30, 8, 0)), {rid})
++
++
++def test_an_arrival_today_counts_when_the_deadline_is_near(world):
++    # An ordinary Wednesday arrival: the window opens 24 hours before its
++    # deadline, by then the guests have long arrived.
++    wednesday = date(2026, 10, 7)
++    rid = world["add_stay"]([], arrival=wednesday)
++    due = filing_watchdog.deadlines.reporting_deadline(wednesday)
++    assert rid in _mine(filing_watchdog.unknown_risk_stays(due - timedelta(hours=23)), {rid})
++    assert rid not in _mine(filing_watchdog.unknown_risk_stays(due - timedelta(hours=25)), {rid})
++
++
++def test_a_cancelled_or_filled_stay_is_not_unknown_risk(world):
++    cancelled = world["add_stay"]([], status="cancelled")
++    ignored = world["add_stay"]([], status="ignored")
++    czech = world["add_stay"]([("CZE", "not_required")])
++    now = datetime(2026, 9, 30, 8, 0)
++    assert _mine(filing_watchdog.unknown_risk_stays(now), {cancelled, ignored, czech}) == {}
++
++
++def test_the_host_gets_the_no_guest_details_mail_once(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    rid = world["add_stay"]([])
++    now = datetime(2026, 9, 30, 8, 0)
++    stays = list(_mine(filing_watchdog.unknown_risk_stays(now), {rid}).values())
++    assert filing_watchdog.notify_hosts(stays, now) == 1
++    later = now + timedelta(minutes=30)
++    stays = list(_mine(filing_watchdog.unknown_risk_stays(later), {rid}).values())
++    assert stays[0]["mailed_at"] and filing_watchdog.notify_hosts(stays, later) == 0
++
++    rows = _outbox("deadline_at_risk", rid)
++    assert len(rows) == 1
++    text = json.loads(rows[0]["payload"])["text"]
++    expected_subject = host_i18n.translate(
++        mail_notify.HOST_MAIL_LANGUAGE, "mail.deadline_at_risk.no_guests.subject",
++        property="Watchdog Loft", deadline="30.09.2026 23:59",
++    )
++    assert rows[0]["subject"] == expected_subject
++    assert host_i18n.translate(
++        mail_notify.HOST_MAIL_LANGUAGE, "mail.deadline_at_risk.no_guests.next_steps"
++    ) in text
++
++    # Guests are entered later and are not filed: the stay is now a known
++    # risk, but the host was already warned for it.
++    db.insert("guest", {"reservation_id": rid, "nationality": "DEU", "submit_state": "pending",
++                        "created_at": db.utcnow(), "updated_at": db.utcnow()})
++    stays = list(_mine(filing_watchdog.at_risk_stays(later), {rid}).values())
++    assert stays and filing_watchdog.notify_hosts(stays, later) == 0
++    assert len(_outbox("deadline_at_risk", rid)) == 1
++
++
++@pytest.mark.parametrize("lang", ["en", "cs"])
++def test_the_no_guest_details_mail_is_translated(lang):
++    content = mail_notify.build_deadline_at_risk(
++        property_name="Loft", arrival="25.09.2026", deadline=DEADLINE, unfiled=0,
++        stay_url="https://example.invalid/reservations/1", lang=lang, no_guests=True,
++    )
++    blob = content["text"] + content["subject"] + content["html"]
++    assert "mail.deadline_at_risk" not in blob
++    # No "guests not filed: 0" line in this variant.
++    label = host_i18n.translate(lang, "mail.deadline_at_risk.unfiled_label")
++    assert label not in content["text"]
++    if lang == "cs":
++        assert "občanem České republiky" in content["text"]
++
++
++def test_the_digest_lists_stays_without_guests_in_their_own_section(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    monkeypatch.setattr(config, "OPERATOR_EMAIL", "operator@example.invalid")
++    known = world["add_stay"]([("DEU", "pending")])
++    empty = world["add_stay"]([])
++    now = datetime(2026, 9, 30, 8, 0)
++    stays = list(_mine(filing_watchdog.at_risk_stays(now), {known}).values())
++    unknown = list(_mine(filing_watchdog.unknown_risk_stays(now), {empty}).values())
++    assert filing_watchdog.send_operator_digest(stays, now, unknown=unknown) is True
++
++    row = _outbox("deadline_digest")[0]
++    lang = mail_notify.HOST_MAIL_LANGUAGE
++    assert row["subject"] == host_i18n.translate(
++        lang, "mail.deadline_digest.subject_unknown", count=1, unknown=1
++    )
++    text = json.loads(row["payload"])["text"]
++    heading = host_i18n.translate(lang, "mail.deadline_digest.unknown_heading")
++    assert heading in text
++    known_part, unknown_part = text.split(heading)
++    assert "Watchdog Loft" in known_part and "Watchdog Loft" in unknown_part
++    assert GUEST_SURNAME not in text
++
++
++def test_a_digest_goes_out_for_stays_without_guests_alone(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    monkeypatch.setattr(config, "OPERATOR_EMAIL", "operator@example.invalid")
++    empty = world["add_stay"]([])
++    now = datetime(2026, 9, 30, 8, 0)
++    unknown = list(_mine(filing_watchdog.unknown_risk_stays(now), {empty}).values())
++    assert filing_watchdog.send_operator_digest([], now, unknown=unknown) is True
++    text = json.loads(_outbox("deadline_digest")[0]["payload"])["text"]
++    assert host_i18n.translate(
++        mail_notify.HOST_MAIL_LANGUAGE, "mail.deadline_digest.intro"
++    ) not in text
++
++
++def test_stays_without_guests_never_fail_the_heartbeat(world, pings, monkeypatch):
++    """Czech guests owe no report, so an empty stay is no reason to page anyone."""
++    monkeypatch.setattr(config, "HEARTBEAT_FILING_URL", "https://hc-ping.example.invalid/abc")
++    # Only this test's stays: the shared database may hold other tests' stays.
++    monkeypatch.setattr(filing_watchdog, "at_risk_stays", lambda now=None, **_kwargs: [])
++    # The latest arrival whose deadline is in the window (the real clock runs here).
++    local = filing_watchdog.deadlines.local_now()
++    arrival = next(
++        date.today() - timedelta(days=back)
++        for back in range(0, 14)
++        if filing_watchdog.deadlines.reporting_deadline(date.today() - timedelta(days=back))
++        - local <= filing_watchdog.AT_RISK_WINDOW
++    )
++    rid = world["add_stay"]([], arrival=arrival)
++    result = filing_watchdog.run()
++    assert result["at_risk"] == 0 and result["unknown_risk"] >= 1
++    assert rid in _mine(filing_watchdog.unknown_risk_stays(), {rid})
++    scheduler._job_deadlines()
++    assert pings == ["https://hc-ping.example.invalid/abc"]
++
++
++def test_a_broken_unknown_risk_query_does_not_silence_the_watchdog(world, monkeypatch):
++    def boom(now=None):
++        raise RuntimeError("unknown-risk query broke")
++
++    monkeypatch.setattr(filing_watchdog, "unknown_risk_stays", boom)
++    rid = world["add_stay"]([("DEU", "pending")], arrival=date.today() - timedelta(days=10))
++    result = filing_watchdog.run()
++    assert result["at_risk"] >= 1 and result["unknown_risk"] == 0
++    assert rid in _mine(filing_watchdog.at_risk_stays(), {rid})
++
++
++# --- guide ----------------------------------------------------------------------
++
++
++def test_the_guide_explains_filing_by_hand():
++    from app.guide_i18n import GUIDE_STRINGS
++
++    en, cs = GUIDE_STRINGS["en"], GUIDE_STRINGS["cs"]
++    assert en["guide.reporting.manual_filing_title"] == "If UbyHost cannot file in time"
++    assert "UbyPort web application" in en["guide.reporting.manual_filing_step1"]
++    assert "receipt" in en["guide.reporting.manual_filing_step3"]
++    assert "duty" in en["guide.reporting.manual_filing_duty"]
++    assert "webové aplikace UbyPort" in cs["guide.reporting.manual_filing_step1"]
++    assert "doručenku" in cs["guide.reporting.manual_filing_step3"]
++    assert "povinnost" in cs["guide.reporting.manual_filing_duty"]
++
++
++def test_the_guide_page_shows_the_manual_filing_section(host):
++    for lang in ("en", "cs"):
++        page = host.get(f"/guide?lang={lang}").text
++        assert 'id="manual-filing"' in page
++        for key in ("title", "step1", "step2", "step3"):
++            text = host_i18n.translate(lang, f"guide.reporting.manual_filing_{key}")
++            assert text[:40] in page, (lang, key)
++
++
++# --- a stay waiting for PR 230's one automatic resend ---------------------------
++
++# Wednesday 30.09.2026 08:00 Prague (06:00 UTC): the deadline is tonight.
++WEDNESDAY_MORNING = datetime(2026, 9, 30, 8, 0)
++WEDNESDAY_MORNING_UTC = datetime(2026, 9, 30, 6, 0, tzinfo=timezone.utc)
++
++
++def _unclear_batch(world, reservation_id, *, finished_ago, retried=False):
++    """Put every guest of the stay on an outcome_unknown batch."""
++    guest_ids = [
++        row["id"]
++        for row in db.query("SELECT id FROM guest WHERE reservation_id = ?", (reservation_id,))
++    ]
++    finished = (WEDNESDAY_MORNING_UTC - finished_ago).replace(microsecond=0).isoformat()
++    submission_id = db.insert(
++        "submission",
++        {
++            "apartment_id": world["apartment_id"],
++            "created_at": finished,
++            "finished_at": finished,
++            "mode": "auto",
++            "state": "outcome_unknown",
++            "guest_ids": json.dumps(guest_ids),
++            "error_text": "no answer",
++            "retried_at": finished if retried else None,
++        },
++    )
++    for guest_id in guest_ids:
++        db.update("guest", guest_id, {"submission_id": submission_id})
++    return submission_id
++
++
++def test_a_stay_awaiting_its_one_automatic_resend_is_not_at_risk_yet(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++    _unclear_batch(world, rid, finished_ago=timedelta(minutes=5))
++
++    assert rid not in _mine(filing_watchdog.at_risk_stays(WEDNESDAY_MORNING), {rid})
++    waiting = _mine(
++        filing_watchdog.at_risk_stays(WEDNESDAY_MORNING, include_awaiting_retry=True), {rid}
++    )
++    assert waiting[rid]["awaiting_retry"] is True
++    assert waiting[rid]["awaiting_retry_guests"] == 1
++
++
++def test_the_resend_wait_is_bounded_by_the_grace(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++    _unclear_batch(
++        world, rid, finished_ago=filing_watchdog.RETRY_GRACE + timedelta(minutes=1)
++    )
++    stays = _mine(filing_watchdog.at_risk_stays(WEDNESDAY_MORNING), {rid})
++    assert stays[rid]["awaiting_retry"] is False
++
++
++def test_a_batch_already_resent_is_at_risk(world):
++    """The sweep resends a batch once; after that it is the host's to settle."""
++    rid = world["add_stay"]([("DEU", "pending")])
++    _unclear_batch(world, rid, finished_ago=timedelta(minutes=5), retried=True)
++    assert rid in _mine(filing_watchdog.at_risk_stays(WEDNESDAY_MORNING), {rid})
++
++
++def test_a_missed_deadline_is_at_risk_even_while_a_resend_is_due(world):
++    rid = world["add_stay"]([("DEU", "pending")])
++    _unclear_batch(world, rid, finished_ago=timedelta(minutes=5))
++    thursday = WEDNESDAY_MORNING + timedelta(days=1)
++    # The batch finished five minutes before Wednesday morning; move it along.
++    db.execute(
++        "UPDATE submission SET finished_at = ? WHERE apartment_id = ?",
++        (
++            (WEDNESDAY_MORNING_UTC + timedelta(days=1) - timedelta(minutes=5)).isoformat(),
++            world["apartment_id"],
++        ),
++    )
++    stays = _mine(filing_watchdog.at_risk_stays(thursday), {rid})
++    assert stays[rid]["overdue"] is True
++    assert stays[rid]["awaiting_retry"] is False
++
++
++def test_a_stay_with_one_guest_waiting_and_one_refused_is_at_risk(world):
++    rid = world["add_stay"]([("DEU", "pending"), ("FRA", "error")])
++    guest_ids = [
++        row["id"]
++        for row in db.query(
++            "SELECT id FROM guest WHERE reservation_id = ? ORDER BY id", (rid,)
++        )
++    ]
++    _unclear_batch(world, rid, finished_ago=timedelta(minutes=5))
++    db.update("guest", guest_ids[1], {"submission_id": None})
++    stays = _mine(filing_watchdog.at_risk_stays(WEDNESDAY_MORNING), {rid})
++    assert stays[rid]["awaiting_retry"] is False
++    assert stays[rid]["unfiled"] == 2
++
++
++def test_the_run_neither_mails_nor_fails_while_the_resend_is_due(world, monkeypatch):
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    monkeypatch.setattr(config, "OPERATOR_EMAIL", "operator@example.invalid")
++    rid = world["add_stay"]([("DEU", "pending")])
++    _unclear_batch(world, rid, finished_ago=timedelta(minutes=5))
++
++    result = filing_watchdog.run(WEDNESDAY_MORNING)
++    assert result["awaiting_retry"] >= 1
++    assert not db.query_one(
++        "SELECT 1 AS x FROM email_outbox WHERE kind = 'deadline_at_risk' AND reservation_id = ?",
++        (rid,),
++    )
++    assert db.query_one(
++        "SELECT at_risk_mailed_at FROM reservation WHERE id = ?", (rid,)
++    )["at_risk_mailed_at"] is None
++
++    # Once the grace is over the same stay is mailed like any other.
++    later = WEDNESDAY_MORNING + filing_watchdog.RETRY_GRACE + timedelta(minutes=1)
++    result = filing_watchdog.run(later)
++    assert result["at_risk"] >= 1
++    assert db.query_one(
++        "SELECT 1 AS x FROM email_outbox WHERE kind = 'deadline_at_risk' AND reservation_id = ?",
++        (rid,),
++    )
++
++
++
++def test_a_stay_held_on_an_unclear_automatic_resend_is_at_risk_after_the_grace(world):
++    """WP31: the one automatic resend came back unclear too; nothing more is due."""
++    rid = world["add_stay"]([("DEU", "pending")])
++    original = _unclear_batch(
++        world, rid, finished_ago=timedelta(minutes=15), retried=True
++    )
++    guest_ids = json.loads(
++        db.query_one("SELECT guest_ids FROM submission WHERE id = ?", (original,))["guest_ids"]
++    )
++    finished = (WEDNESDAY_MORNING_UTC - timedelta(minutes=5)).replace(microsecond=0).isoformat()
++    resend = db.insert(
++        "submission",
++        {
++            "apartment_id": world["apartment_id"],
++            "created_at": finished,
++            "finished_at": finished,
++            "mode": "auto_resend",
++            "state": "outcome_unknown",
++            "guest_ids": json.dumps(guest_ids),
++            "error_text": "no answer",
++        },
++    )
++    for guest_id in guest_ids:
++        db.update("guest", guest_id, {"submission_id": resend})
++
++    after_grace = WEDNESDAY_MORNING + filing_watchdog.RETRY_GRACE
++    stays = _mine(filing_watchdog.at_risk_stays(after_grace), {rid})
++    assert stays[rid]["awaiting_retry"] is False
++    # No later resend can move the finish time on, so it stays at risk.
++    much_later = WEDNESDAY_MORNING + 5 * filing_watchdog.RETRY_GRACE
++    assert rid in _mine(filing_watchdog.at_risk_stays(much_later), {rid})
+diff --git a/App/tests/test_wp25_reported_bugs.py b/App/tests/test_wp25_reported_bugs.py
+index a2a5afc..cb4b6bf 100644
+--- a/App/tests/test_wp25_reported_bugs.py
++++ b/App/tests/test_wp25_reported_bugs.py
+@@ -2,7 +2,7 @@
+ 
+ * The house book keeps every word whole and truncates the property name with
+   the full name in a tooltip, inside a sideways-scrolling panel.
+-* A filed guest shows one "Download signed
++* A filed guest (sent by UbyHost or filed by hand) shows one "Download signed
+   form" button, a read-only signature with no Clear, and disabled reported
+   fields; the save route refuses a change to any of them even when the form
+   is posted by hand, and still saves what never went to the police.
+@@ -105,6 +105,7 @@ def seeded():
+         )
+ 
+     filed = guest("FILED", submit_state="sent", submitted_at=now)
++    by_hand = guest("BYHAND", submit_state="sent", manual_filed_at=now)
+     pending = guest("PENDING", submit_state="pending")
+     with_pdf = db.insert(
+         "submission",
+@@ -145,6 +146,7 @@ def seeded():
+         "owner": owner,
+         "reservation": reservation,
+         "filed": filed,
++        "by_hand": by_hand,
+         "pending": pending,
+         "with_pdf": with_pdf,
+         "without_pdf": without_pdf,
+@@ -198,7 +200,7 @@ def test_download_signed_form_appears_once(client, seeded):
+         assert page.count(f'href="/guests/{seeded[key]}/form.pdf"') == 1
+ 
+ 
+-@pytest.mark.parametrize("key", ["filed"])
++@pytest.mark.parametrize("key", ["filed", "by_hand"])
+ def test_filed_guest_shows_signature_read_only(client, seeded, key):
+     page = client.get(f"/guests/{seeded[key]}?lang=en").text
+     en = host_i18n.STRINGS["en"]
+@@ -229,7 +231,7 @@ def test_pending_guest_keeps_the_signature_pad(client, seeded):
+     assert ' disabled aria-describedby="filed-lock-note"' not in page
+ 
+ 
+-@pytest.mark.parametrize("key", ["filed"])
++@pytest.mark.parametrize("key", ["filed", "by_hand"])
+ @pytest.mark.parametrize(
+     "change",
+     [
+@@ -275,7 +277,7 @@ def test_filed_record_unchanged_post_saves_only_the_unreported_field(client, see
+ 
+ def test_disabled_form_post_saves_the_document_type(client, seeded):
+     """The locked form posts no reported field at all; that is not a change."""
+-    guest_id = seeded["filed"]
++    guest_id = seeded["by_hand"]
+     before = dict(_guest(guest_id))
+     response = client.post(
+         f"/guests/{guest_id}", data={"doc_type": "op"}, follow_redirects=False
+@@ -284,7 +286,7 @@ def test_disabled_form_post_saves_the_document_type(client, seeded):
+     after = dict(_guest(guest_id))
+     assert after["doc_type"] == "op"
+     assert after["surname"] == before["surname"]
+-    assert after["submit_state"] == before["submit_state"]
++    assert after["manual_filed_at"] == before["manual_filed_at"]
+ 
+ 
+ def test_pending_guest_can_still_be_corrected(client, seeded):
+@@ -339,7 +341,7 @@ def test_report_texts_have_no_em_dash():
+ def test_stay_page_offers_the_doručenka(client, seeded):
+     # Everyone on the stay filed: the next step is the proof.
+     db.execute("DELETE FROM guest WHERE id = ?", (seeded["pending"],))
+-    db.update("reservation", seeded["reservation"], {"declared_guests": 1})
++    db.update("reservation", seeded["reservation"], {"declared_guests": 2})
+     page = client.get(f"/reservations/{seeded['reservation']}?lang=en").text
+     assert f'href="/submissions/{seeded["with_pdf"]}/receipt.pdf">Download Doručenka (PDF)</a>' in page
+ 
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index bbd563c..6b99a2a 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -68,6 +68,13 @@ UBYHOST_HEARTBEAT_URL=
+ UBYHOST_HEARTBEAT_ICAL_URL=
+ # After each mail run in which every step succeeded (every 5 min):
+ UBYHOST_HEARTBEAT_MAIL_URL=
++# Filing watchdog (WP23), pinged on EVERY deadline-job run (every 30 min):
++# <url> while no stay is at risk of missing its police deadline, <url>/fail
++# while at least one is. Set the check period to 30 min, grace about 30 min,
++# and let healthchecks.io notify the owner by e-mail. That mail is sent by
++# healthchecks.io, so it still arrives when UbyHost's own mail is broken, and
++# it fires on the missing ping when the VM is down.
++UBYHOST_HEARTBEAT_FILING_URL=
+ 
+ # --- Continuous S3 replica (WP05, Litestream) ---
+ # The litestream service streams every database change to this bucket within
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index 9977954..847c2a4 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -56,6 +56,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
+ | `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
+ | `UBYHOST_HEARTBEAT_ICAL_URL` | unset | Pinged after each successful calendar sync (WP07). |
+ | `UBYHOST_HEARTBEAT_MAIL_URL` | unset | Pinged after each mail run in which every step succeeded (WP07). |
++| `UBYHOST_HEARTBEAT_FILING_URL` | unset | Filing watchdog (WP23, `app/filing_watchdog.py`). Pinged on every deadline-job run: `<url>` when no stay is at risk of missing its police deadline, `<url>/fail` when at least one stay with a known reportable guest is (healthchecks.io semantics). Stays with no guest entered never cause `/fail`. Not pinged when the watchdog itself fails. The operator digest of at-risk stays goes to `UBYHOST_OPERATOR_EMAIL`, at most every 6 hours. |
+ 
+ The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
+ (12 h) intervals are not configurable. See
+diff --git a/docs/OPERATIONS.md b/docs/OPERATIONS.md
+index d880179..3b4a900 100644
+--- a/docs/OPERATIONS.md
++++ b/docs/OPERATIONS.md
+@@ -31,7 +31,7 @@ when `UBYHOST_ENABLE_SCHEDULER=0`.
+ | --- | --- | --- |
+ | `ical` | `UBYHOST_ICAL_POLL_MINUTES` (60) | Re-reads every active calendar feed and reconciles reservations. |
+ | `submit` | `UBYHOST_SUBMIT_SWEEP_MINUTES` (10) | Sends everything currently sendable for apartments not in `manual` mode. |
+-| `deadlines` | 30 min | Raises and clears `deadline` alerts for stays running out of statutory time. |
++| `deadlines` | 30 min | Raises and clears `deadline` alerts for stays running out of statutory time. Then runs the filing watchdog (WP23, `app/filing_watchdog.py`): a stay with a foreign guest UbyPort has not accepted and less than 24 h to its deadline (or past it) gets one `deadline_at_risk` mail to the host, the operator gets a `deadline_digest` at most every 6 h, and `UBYHOST_HEARTBEAT_FILING_URL` is pinged (`<url>` if none at risk, `<url>/fail` otherwise). A guest the host marked "filed by hand in UbyPort" on the stay page counts as filed. A stay whose guests have arrived, with no guest entered and less than 24 h to its deadline, is "unknown risk": the host gets the `deadline_at_risk` mail once in its "no guest details yet" variant and the digest lists it in its own section, but it never makes the heartbeat `/fail` (Czech guests owe no report). |
+ | `mail` | 5 min | Expires 30-minute claim holds, drains the guest e-mail outbox, sends day-before reminders, purges mail rows older than 14 days. |
+ | `photo_sweep` | 12 h | Deletes passport images for stays that ended more than 30 days ago, plus orphaned files, and blanks the request/response envelopes on submissions older than 90 days. |
+ | `retention` | daily 03:30 | Computes the retention schedule (BE-2/BE-3): counts the guest rows past the six-year cutoff, the invoices past ten years, and the claim e-mail / reservation contact / submitter-IP minimisation sets; audits the counts; and raises the "records reach the end of their retention period soon" notice. **Changes nothing** unless `UBYHOST_RETENTION_AUTOPURGE=1`. |
+diff --git a/docs/SES.md b/docs/SES.md
+index 30332a8..b63b8bf 100644
+--- a/docs/SES.md
++++ b/docs/SES.md
+@@ -16,8 +16,10 @@ fetched resource other than the logo: no tracking pixel, no link rewriting, no
+ `@media` rules and no dark-mode styling.
+ 
+ Kinds that carry HTML today: `claim`, `claim_resend`, `completion`,
+-`reminder_guest`, `reminder_host`, `submission_problem`, `invoice_issued` and
+-`workspace_deletion`. Every kind the app
++`reminder_guest`, `reminder_host`, `submission_problem`, `invoice_issued`,
++`workspace_deletion`, `deadline_at_risk` and `deadline_digest` (WP23 filing
++watchdog: the host's one warning per stay at risk, and the operator digest to
++`UBYHOST_OPERATOR_EMAIL`). Every kind the app
+ can send is in that list: there is no plain-text-only message. The
+ **host submission-problem** notice additionally names the
+ reason UbyPort gave and links to each affected stay and to the Doručenka; see
+diff --git a/docs/plans/UbyHost_Audit_and_Cursor_Plan_2026-09-28.md b/docs/plans/UbyHost_Audit_and_Cursor_Plan_2026-09-28.md
+index f160435..a4c0b17 100644
+--- a/docs/plans/UbyHost_Audit_and_Cursor_Plan_2026-09-28.md
++++ b/docs/plans/UbyHost_Audit_and_Cursor_Plan_2026-09-28.md
+@@ -404,7 +404,7 @@ RULES FOR THIS TASK — follow exactly.
+   - Protect `main`: require PRs and require the `test` and `smoke` checks to pass.
+ - **O-5 (AR-41): Cursor's Cloudflare access.** Before running this plan, remove the write-capable Cloudflare MCP server from `.cursor/mcp.json` in your local Cursor settings, or authorise it with a read-only token.
+ - **O-6 (AR-16, AR-31): monitoring and off-site copies.**
+-  - Create an external uptime check on `https://ubyhost.com/healthz` (UptimeRobot, Better Stack or a Cloudflare health check) that alerts you by e-mail or SMS.
++  - Create an external uptime check on `https://ubyhost.com/healthz` (UptimeRobot, Better Stack or a Cloudflare health check) that alerts you by e-mail.
+   - Create two dead-man checks (e.g. healthchecks.io): "backup-daily", with a 26 h period, and "submit-sweep", with a 30 min period. Keep the ping URLs for tasks 5.2 and 5.3.
+   - Enable Lightsail automatic snapshots.
+   - Decide the off-site cadence (daily recommended) and install that cron by hand.
+-- 
+2.34.1
+

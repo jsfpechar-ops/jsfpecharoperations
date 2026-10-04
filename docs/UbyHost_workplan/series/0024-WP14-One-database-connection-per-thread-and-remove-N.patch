@@ -1,0 +1,1498 @@
+From c3f2bb164e9a588900caf00e2c31261a9023b85f Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:38:18 +0200
+Subject: [PATCH 24/34] WP14: One database connection per thread, and remove
+ N+1 queries
+
+Integration with WP13 (per-request counters): db.py conflicts resolved by keeping WP14's per-thread connection code and moving WP13's instrumentation into it. _helper_conn() and _transaction() run inside _timed(), so db_ms covers every helper call and every block; lock_ms is measured around cur.execute("BEGIN IMMEDIATE") in _transaction(); the shared per-thread connection always carries the statement-count trace callback (it does nothing outside a request), because it outlives the request that opened it, while a private connect() connection gets it only inside a request. Added test_a_shared_connection_opened_before_the_request_still_counts to tests/test_perf_logging.py. Also merged with WP06: app/worker.py now calls db.close_connections() after scheduler.shutdown(), as main.py does.
+---
+ App/app/alerts.py                   |  63 +++++-
+ App/app/celebrations.py             |  15 +-
+ App/app/db.py                       | 310 +++++++++++++++++++++++-----
+ App/app/main.py                     |   2 +
+ App/app/reporting.py                | 114 ++++++++--
+ App/app/routes/admin.py             |  34 +--
+ App/app/routes/stay_fees.py         |   6 +-
+ App/app/stay_fee.py                 |  27 ++-
+ App/app/templates/reservations.html |   2 +-
+ App/app/worker.py                   |   2 +
+ App/tests/test_alert_language.py    |   8 +-
+ App/tests/test_connection_reuse.py  | 283 +++++++++++++++++++++++++
+ App/tests/test_notification_copy.py |   4 +-
+ App/tests/test_perf_logging.py      |  15 ++
+ App/tests/test_query_budget.py      | 205 ++++++++++++++++++
+ 15 files changed, 985 insertions(+), 105 deletions(-)
+ create mode 100644 App/tests/test_connection_reuse.py
+ create mode 100644 App/tests/test_query_budget.py
+
+diff --git a/App/app/alerts.py b/App/app/alerts.py
+index fb5da52..a624bad 100644
+--- a/App/app/alerts.py
++++ b/App/app/alerts.py
+@@ -152,6 +152,37 @@ def _reservation_row(reservation_id: Any) -> Any:
+     )
+ 
+ 
++def _preload_stays(alerts: List[Any]) -> Dict[str, Dict[Any, Any]]:
++    """The stays (and their guests) behind a list of computed alerts, in two queries.
++
++    Every page renders the open alerts, and each stay card used to read its
++    reservation and its guests on its own. A stay missing from the result is
++    read the old way by ``_present_computed``.
++    """
++    rows = [dict(alert) for alert in alerts]
++    ids = list(dict.fromkeys(
++        row["reservation_id"] for row in rows
++        if (row.get("kind") or "") in _COMPUTED_ALERT_KINDS and row.get("reservation_id")
++    ))
++    if not ids:
++        return {"reservations": {}, "guests": {}}
++    from . import reporting
++
++    reservations: List[Any] = []
++    for start in range(0, len(ids), reporting.IN_CHUNK):
++        chunk = ids[start:start + reporting.IN_CHUNK]
++        marks = ", ".join("?" for _ in chunk)
++        reservations.extend(db.query(
++            "SELECT r.*, a.internal_name FROM reservation r "
++            f"JOIN apartment a ON a.id = r.apartment_id WHERE r.id IN ({marks})",
++            chunk,
++        ))
++    return {
++        "reservations": {row["id"]: row for row in reservations},
++        "guests": reporting.preload_guests(reservations),
++    }
++
++
+ def _title_key(kind: str, params: Dict[str, Any], lang: str) -> str:
+     """The title key for a kind, allowing a ``variant`` to pick a wording.
+ 
+@@ -193,8 +224,13 @@ def _present_stored(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]
+     return row
+ 
+ 
+-def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, Any]:
+-    """Rebuild the card of an alert whose text is derived from live data."""
++def _present_computed(
++    row: Dict[str, Any], kind: str, lang: str, stays: Optional[Dict[str, Dict[Any, Any]]] = None
++) -> Dict[str, Any]:
++    """Rebuild the card of an alert whose text is derived from live data.
++
++    ``stays`` is ``_preload_stays`` output when presenting a whole list.
++    """
+     if kind == "job_failed":
+         job_id = (row.get("dedupe_key") or "").split(":", 1)[-1]
+         row["display_title"] = host_i18n.translate(
+@@ -215,7 +251,13 @@ def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, An
+         )
+         row["display_detail"] = host_i18n.translate(lang, f"notification.reason.{kind}")
+         return row
+-    reservation = _reservation_row(row["reservation_id"]) if row.get("reservation_id") else None
++    reservation_id = row.get("reservation_id")
++    if not reservation_id:
++        reservation = None
++    elif stays and reservation_id in stays["reservations"]:
++        reservation = stays["reservations"][reservation_id]
++    else:
++        reservation = _reservation_row(reservation_id)
+     if not reservation:
+         row["display_title"] = row.get("message") or ""
+         row["display_detail"] = row.get("detail") or ""
+@@ -229,14 +271,16 @@ def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, An
+         return row
+     from . import reporting
+ 
+-    progress = reporting.reservation_progress(reservation)
++    progress = reporting.reservation_progress(
++        reservation, stays["guests"].get(reservation["id"]) if stays else None
++    )
+     if kind == "headcount_mismatch":
+         filled, expected = _forms_count(progress)
+         row["display_detail"] = host_i18n.translate(
+             lang, "notification.reason.headcount_mismatch", filled=filled, expected=expected
+         )
+         return row
+-    start = reporting.reservation_deadline_anchor(reservation)
++    start = reporting.reservation_deadline_anchor(reservation, progress.get("guests"))
+     if start:
+         row["display_detail"] = deadline_reason(lang, start, progress)
+     else:
+@@ -250,7 +294,9 @@ def _present_computed(row: Dict[str, Any], kind: str, lang: str) -> Dict[str, An
+     return row
+ 
+ 
+-def present(alert: Any, lang: str) -> Dict[str, Any]:
++def present(
++    alert: Any, lang: str, stays: Optional[Dict[str, Dict[Any, Any]]] = None
++) -> Dict[str, Any]:
+     """Compact title + reason for the notification card.
+ 
+     Stay alerts are rebuilt from the reservation so hosts see short EN/CS copy
+@@ -260,7 +306,7 @@ def present(alert: Any, lang: str) -> Dict[str, Any]:
+     row = dict(alert)
+     kind = row.get("kind") or ""
+     if kind in _COMPUTED_ALERT_KINDS:
+-        return _present_computed(row, kind, lang)
++        return _present_computed(row, kind, lang, stays)
+     return _present_stored(row, kind, lang)
+ 
+ 
+@@ -274,8 +320,9 @@ def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
+     """
+     cards: List[Dict[str, Any]] = []
+     seen: Dict[Any, int] = {}
++    stays = _preload_stays(alerts)
+     for alert in alerts:
+-        card = present(alert, lang)
++        card = present(alert, lang, stays)
+         reservation_id = card.get("reservation_id")
+         if not reservation_id:
+             cards.append(card)
+diff --git a/App/app/celebrations.py b/App/app/celebrations.py
+index 4939ff0..bcbeac1 100644
+--- a/App/app/celebrations.py
++++ b/App/app/celebrations.py
+@@ -34,9 +34,13 @@ def _last_celebrated(owner_user_id: int) -> int:
+     return int(db.get_setting(f"celebration_{owner_user_id}", "0") or 0)
+ 
+ 
+-def pending_milestone(owner_user_id: int) -> Optional[int]:
+-    """Highest milestone reached but not yet congratulated."""
+-    count = sent_guest_count(owner_user_id)
++def pending_milestone(owner_user_id: int, count: Optional[int] = None) -> Optional[int]:
++    """Highest milestone reached but not yet congratulated.
++
++    ``count`` is ``sent_guest_count(owner_user_id)`` when the caller has it.
++    """
++    if count is None:
++        count = sent_guest_count(owner_user_id)
+     last = _last_celebrated(owner_user_id)
+     reached = [m for m in MILESTONES if count >= m]
+     if not reached:
+@@ -50,6 +54,7 @@ def acknowledge(owner_user_id: int, milestone: int) -> None:
+ 
+ 
+ def celebration_context(owner_user_id: int) -> Tuple[Optional[int], int, int]:
+-    milestone = pending_milestone(owner_user_id)
++    # One count for all three numbers; it used to be counted three times.
+     count = sent_guest_count(owner_user_id)
+-    return milestone, count, minutes_saved(owner_user_id)
++    milestone = pending_milestone(owner_user_id, count)
++    return milestone, count, count * MINUTES_PER_MANUAL_REPORT
+diff --git a/App/app/db.py b/App/app/db.py
+index e6e638d..71ea71d 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -5,9 +5,12 @@ import base64
+ import fcntl
+ import hashlib
+ import json
++import logging
++import os
+ import sqlite3
+ import threading
+ import time
++import weakref
+ from contextlib import contextmanager
+ from contextvars import ContextVar
+ from datetime import datetime, timezone
+@@ -17,6 +20,7 @@ from cryptography.fernet import Fernet, InvalidToken
+ 
+ from . import config
+ 
++log = logging.getLogger("ubyhost.db")
+ _current_owner_id: ContextVar[Optional[int]] = ContextVar("ubyhost_owner_id", default=None)
+ # (user_id, username, impersonator_id) of whoever is acting in this request.
+ _current_actor: ContextVar[Optional[tuple]] = ContextVar("ubyhost_actor", default=None)
+@@ -638,15 +642,24 @@ def utcnow() -> str:
+     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+ 
+ 
+-def connect() -> sqlite3.Connection:
+-    conn = sqlite3.connect(str(config.DB_PATH), timeout=30, isolation_level=None)
++def _open(factory=sqlite3.Connection, check_same_thread: bool = True) -> sqlite3.Connection:
++    conn = sqlite3.connect(
++        str(config.DB_PATH),
++        timeout=30,
++        isolation_level=None,
++        factory=factory,
++        check_same_thread=check_same_thread,
++    )
+     try:
+         config.DB_PATH.chmod(0o600)
+     except OSError:
+         pass
+     conn.row_factory = sqlite3.Row
+-    if _request_stats.get() is not None:
+-        # Only inside a request; the scheduler and the CLI pay nothing.
++    if factory is _ThreadConnection or _request_stats.get() is not None:
++        # WP13: count statements per request. A shared per-thread connection
++        # (WP14) outlives the request that opened it, so it always carries the
++        # callback; _count_statement does nothing outside a request. A private
++        # connection only gets it inside a request.
+         conn.set_trace_callback(_count_statement)
+     conn.execute("PRAGMA foreign_keys = ON")
+     conn.execute("PRAGMA journal_mode = WAL")
+@@ -657,43 +670,229 @@ def connect() -> sqlite3.Connection:
+     return conn
+ 
+ 
++def connect() -> sqlite3.Connection:
++    """A new connection of the caller's own, which the caller must close.
++
++    The helpers below do not use this: they share one connection per thread
++    (``_thread_conn``). It stays for the schema setup and for code that needs a
++    connection outside the shared one.
++    """
++    return _open()
++
++
++# --- one connection per thread ---------------------------------------------
++#
++# Opening a connection and running its three PRAGMAs cost far more than the
++# query it was opened for, and every helper call used to do it. Each thread now
++# keeps one connection and reuses it. Bound to the thread, not the request:
++# FastAPI runs a request's sync dependencies and endpoint in pool threads that
++# need not be the same one, and the scheduler has its own threads.
++#
++# Transaction semantics are unchanged. Connections are in autocommit mode
++# (isolation_level=None), so a helper call is its own statement-level
++# transaction, and cursor()/immediate() open an explicit one that is always
++# committed or rolled back before the block returns. No transaction is ever
++# left open on a shared connection; _check_idle enforces it.
++
++
++class _ThreadConnection(sqlite3.Connection):
++    """A shared per-thread connection (a subclass only so it can be weakly referenced)."""
++
++
++_local = threading.local()
++_registry_lock = threading.Lock()
++# Every live shared connection, so shutdown can close them. Weak, so a pool
++# thread that exits takes its connection with it.
++_registry: "weakref.WeakSet[_ThreadConnection]" = weakref.WeakSet()
++# Bumped by close_connections(); a thread whose cached connection is from an
++# older generation opens a new one.
++_generation = 0
++
++
++def _file_identity(path: str) -> Optional[tuple]:
++    """Which file ``path`` is now, so a replaced or deleted database is noticed."""
++    try:
++        stat = os.stat(path)
++    except OSError:
++        return None
++    return (stat.st_dev, stat.st_ino)
++
++
++def _discard(conn: sqlite3.Connection) -> None:
++    with _registry_lock:
++        _registry.discard(conn)
++    try:
++        conn.close()
++    except sqlite3.Error:
++        pass
++
++
++def _drop_thread_conn() -> None:
++    cached = getattr(_local, "conn", None)
++    _local.conn = None
++    if cached is not None:
++        _discard(cached[0])
++
++
++def _thread_conn() -> sqlite3.Connection:
++    """This thread's connection to ``config.DB_PATH``, opened on first use.
++
++    Keyed by the database path and the file behind it: a test (or a restore)
++    that points DB_PATH elsewhere, or replaces the file, gets a fresh
++    connection instead of one still reading the old file.
++    """
++    path = str(config.DB_PATH)
++    cached = getattr(_local, "conn", None)
++    if cached is not None:
++        conn, cached_path, identity, generation = cached
++        if (
++            cached_path == path
++            and generation == _generation
++            and identity is not None
++            and _file_identity(path) == identity
++        ):
++            if conn.in_transaction and not getattr(_local, "depth", 0):
++                # Something left a transaction open outside a block. Never let
++                # it swallow the next caller's writes.
++                log.error("db: shared connection had an open transaction; rolled back")
++                if not _rollback(conn):
++                    return _thread_conn()
++            return conn
++        _drop_thread_conn()
++    conn = _open(factory=_ThreadConnection, check_same_thread=False)
++    with _registry_lock:
++        _registry.add(conn)
++    _local.conn = (conn, path, _file_identity(path), _generation)
++    return conn
++
++
++def _rollback(conn: sqlite3.Connection) -> bool:
++    """Roll back an open transaction. False when the connection had to be dropped."""
++    try:
++        if conn.in_transaction:
++            conn.execute("ROLLBACK")
++    except sqlite3.Error:
++        log.exception("db: rollback failed; dropping the connection")
++    if conn.in_transaction:
++        _drop_if_cached(conn)
++        return False
++    return True
++
++
++def _drop_if_cached(conn: sqlite3.Connection) -> None:
++    cached = getattr(_local, "conn", None)
++    if cached is not None and cached[0] is conn:
++        _drop_thread_conn()
++    else:
++        _discard(conn)
++
++
++def _check_idle(conn: sqlite3.Connection) -> None:
++    """A helper call must not leave a transaction open on the shared connection."""
++    if conn.in_transaction:
++        _rollback(conn)
++        raise RuntimeError("a database helper left a transaction open; it was rolled back")
++
++
+ @contextmanager
+-def cursor():
++def _helper_conn():
++    """The connection a one-statement helper runs on.
++
++    Normally the thread's shared connection. Inside a cursor()/immediate()
++    block on the same thread a helper gets a connection of its own, exactly as
++    before connections were shared, so a stray helper call never becomes part
++    of (or commits) the block's transaction.
++    """
++    # WP13: the whole helper call counts as database time for the request.
+     with _timed():
+-        conn = connect()
+-        try:
+-            cur = conn.cursor()
+-            cur.execute("BEGIN")
++        if getattr(_local, "depth", 0):
++            conn = _open()
+             try:
+-                yield cur
+-                cur.execute("COMMIT")
+-            except Exception:
+-                cur.execute("ROLLBACK")
+-                raise
++                yield conn
++            finally:
++                conn.close()
++            return
++        conn = _thread_conn()
++        try:
++            yield conn
+         finally:
++            _check_idle(conn)
++
++
++@contextmanager
++def _transaction(begin: str):
++    # WP13: the whole block counts as database time for the request.
++    with _timed():
++        with _transaction_inner(begin) as cur:
++            yield cur
++
++
++@contextmanager
++def _transaction_inner(begin: str):
++    nested = bool(getattr(_local, "depth", 0))
++    # A block opened inside another block on the same thread gets its own
++    # connection, as every block did before connections were shared. (It will
++    # wait on the outer block's lock if it writes, exactly as it always did.)
++    conn = _open() if nested else _thread_conn()
++    cur = conn.cursor()
++    try:
++        # WP13: lock_ms is the wait for the write lock in BEGIN IMMEDIATE.
++        stats = _request_stats.get() if begin == "BEGIN IMMEDIATE" else None
++        waited_from = time.perf_counter()
++        cur.execute(begin)
++        if stats is not None:
++            stats.lock_seconds += time.perf_counter() - waited_from
++        if not nested:
++            _local.depth = 1
++        try:
++            yield cur
++        except BaseException:
++            _rollback(conn)
++            raise
++        try:
++            cur.execute("COMMIT")
++        except BaseException:
++            _rollback(conn)
++            raise
++        _check_idle(conn)
++    finally:
++        cur.close()
++        if nested:
+             conn.close()
++        else:
++            _local.depth = 0
++
++
++@contextmanager
++def cursor():
++    """A deferred transaction on this thread's connection: committed or rolled back."""
++    with _transaction("BEGIN") as cur:
++        yield cur
+ 
+ 
+ @contextmanager
+ def immediate():
+     """Like cursor(), but takes the write lock before the first read."""
+-    with _timed():
+-        conn = connect()
++    with _transaction("BEGIN IMMEDIATE") as cur:
++        yield cur
++
++
++def close_connections() -> None:
++    """Close every shared connection (shutdown, and between tests).
++
++    Threads that run again afterwards open a new one on first use.
++    """
++    global _generation
++    with _registry_lock:
++        _generation += 1
++        conns = list(_registry)
++        _registry.clear()
++    _local.conn = None
++    for conn in conns:
+         try:
+-            cur = conn.cursor()
+-            stats = _request_stats.get()
+-            waited_from = time.perf_counter()
+-            cur.execute("BEGIN IMMEDIATE")
+-            if stats is not None:
+-                stats.lock_seconds += time.perf_counter() - waited_from
+-            try:
+-                yield cur
+-                cur.execute("COMMIT")
+-            except Exception:
+-                cur.execute("ROLLBACK")
+-                raise
+-        finally:
+             conn.close()
++        except sqlite3.Error:
++            pass
+ 
+ 
+ # Columns added after the first release. CREATE TABLE IF NOT EXISTS leaves an
+@@ -943,6 +1142,11 @@ class _HydratedRow(dict):
+         return iter(dict.__getitem__(self, name) for name in self._order)
+ 
+ 
++def is_decrypted(row: Any) -> bool:
++    """True when ``row`` came from a helper that already decrypted its guest fields."""
++    return isinstance(row, _HydratedRow)
++
++
+ def _hydrate(row: sqlite3.Row) -> Any:
+     """Merge decrypted guest fields into a row, leaving other rows untouched.
+ 
+@@ -979,12 +1183,8 @@ def _guest_write_values(values: Dict[str, Any]) -> Dict[str, Any]:
+ 
+ 
+ def query(sql: str, params: Iterable[Any] = ()) -> List[sqlite3.Row]:
+-    with _timed():
+-        conn = connect()
+-        try:
+-            rows = conn.execute(sql, tuple(params)).fetchall()
+-        finally:
+-            conn.close()
++    with _helper_conn() as conn:
++        rows = conn.execute(sql, tuple(params)).fetchall()
+     return [_hydrate(row) for row in rows]
+ 
+ 
+@@ -993,14 +1193,32 @@ def query_one(sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
+     return rows[0] if rows else None
+ 
+ 
++def _inserts(sql: str) -> bool:
++    head = sql.lstrip()[:7].upper()
++    return head.startswith("INSERT") or head.startswith("REPLACE")
++
++
+ def execute(sql: str, params: Iterable[Any] = ()) -> int:
+-    with _timed():
+-        conn = connect()
+-        try:
+-            cur = conn.execute(sql, tuple(params))
+-            return cur.lastrowid
+-        finally:
+-            conn.close()
++    """Run one statement. Returns the new row's id when it inserted a row, else 0.
++
++    On a fresh connection ``lastrowid`` was 0 unless this very statement
++    inserted, and callers rely on that (``INSERT OR IGNORE`` counts inserts by
++    it). A shared connection remembers the previous insert, so the value is
++    reduced to what a fresh connection reported. One case cannot be told apart:
++    an upsert (``ON CONFLICT ... DO UPDATE``) that updated reports the
++    connection's previous id. No caller reads the result of an upsert.
++    """
++    with _helper_conn() as conn:
++        cur = conn.execute(sql, tuple(params))
++        if not _inserts(sql) or cur.rowcount <= 0:
++            return 0
++        return cur.lastrowid
++
++
++def execute_rowcount(sql: str, params: Iterable[Any] = ()) -> int:
++    """execute(), returning the number of rows the statement changed."""
++    with _helper_conn() as conn:
++        return conn.execute(sql, tuple(params)).rowcount
+ 
+ 
+ def insert(table: str, values: Dict[str, Any]) -> int:
+@@ -1045,12 +1263,8 @@ def update_if(
+         clauses.append(extra_where)
+     sql = f"UPDATE {table} SET {sets} WHERE " + " AND ".join(clauses)
+     params = list(values.values()) + [row_id] + list(expected.values()) + list(extra_params)
+-    with _timed():
+-        conn = connect()
+-        try:
+-            return conn.execute(sql, params).rowcount == 1
+-        finally:
+-            conn.close()
++    with _helper_conn() as conn:
++        return conn.execute(sql, params).rowcount == 1
+ 
+ 
+ def update_in(cur, table: str, row_id: int, values: Dict[str, Any]) -> None:
+diff --git a/App/app/main.py b/App/app/main.py
+index 59c9602..6758418 100644
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -142,6 +142,8 @@ async def lifespan(_app: FastAPI):
+         yield
+     finally:
+         scheduler.shutdown()
++        # After the scheduler, whose threads use them too.
++        db.close_connections()
+ 
+ 
+ app = FastAPI(title="UbyHost", docs_url=None, redoc_url=None, lifespan=lifespan)
+diff --git a/App/app/reporting.py b/App/app/reporting.py
+index b507833..978c92b 100644
+--- a/App/app/reporting.py
++++ b/App/app/reporting.py
+@@ -34,7 +34,7 @@ import secrets
+ import time
+ import zipfile
+ from datetime import date, datetime, timedelta, timezone
+-from typing import Any, Dict, List, Optional, Tuple
++from typing import Any, Dict, Iterable, List, Optional, Tuple
+ from zoneinfo import ZoneInfo
+ 
+ from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
+@@ -347,13 +347,56 @@ def expected_guest_count(reservation) -> Optional[int]:
+     return reservation["declared_guests"]
+ 
+ 
+-def reservation_progress(reservation) -> Dict[str, Any]:
+-    """How far along this reservation is, for the dashboard."""
+-    guests = db.query(
+-        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+-        "ORDER BY is_lead DESC, id",
+-        (reservation["id"],),
+-    )
++# Well under SQLite's bound-parameter limit (999 on old builds).
++IN_CHUNK = 500
++
++
++def guests_by_reservation(reservation_ids: Iterable[int]) -> Dict[int, List[Any]]:
++    """The live guests of many stays, in the order reservation_progress reads them.
++
++    One ``IN (...)`` query per chunk instead of one query per stay. Every
++    requested stay is in the result, with an empty list when it has no guests.
++    Raises ``db.DecryptionError`` like the per-stay read; callers that skip one
++    unreadable stay fall back to that read (see dashboard_rows).
++    """
++    ids = list(dict.fromkeys(int(rid) for rid in reservation_ids))
++    out: Dict[int, List[Any]] = {rid: [] for rid in ids}
++    for start in range(0, len(ids), IN_CHUNK):
++        chunk = ids[start:start + IN_CHUNK]
++        marks = ", ".join("?" for _ in chunk)
++        for guest in db.query(
++            f"SELECT * FROM guest WHERE reservation_id IN ({marks}) AND archived_at IS NULL "
++            "ORDER BY reservation_id, is_lead DESC, id",
++            chunk,
++        ):
++            out[guest["reservation_id"]].append(guest)
++    return out
++
++
++def preload_guests(reservations: Iterable[Any]) -> Dict[int, List[Any]]:
++    """guests_by_reservation for a page of stays, or {} when one will not decrypt.
++
++    An empty result makes every stay read its own guests again, so the one
++    unreadable stay fails on its own, exactly as before, instead of the page.
++    """
++    try:
++        return guests_by_reservation(row["id"] for row in reservations)
++    except db.DecryptionError:
++        return {}
++
++
++def reservation_progress(reservation, guests: Optional[List[Any]] = None) -> Dict[str, Any]:
++    """How far along this reservation is, for the dashboard.
++
++    ``guests`` is the stay's live guests when the caller already loaded them
++    (``guests_by_reservation``); otherwise they are read here.
++    """
++    if guests is None:
++        guests = db.query(
++            "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
++            "ORDER BY is_lead DESC, id",
++            (reservation["id"],),
++        )
+     expected = expected_guest_count(reservation)
+     # A guest the host filed by hand in UbyPort is done, whatever UbyHost still
+     # lacks for it (a signature, say): the register has the record.
+@@ -652,9 +695,17 @@ def deadline_cell(progress: Dict[str, Any], check_in: Optional[date]) -> Dict[st
+ 
+ 
+ def dashboard_rows(
+-    days_ahead: int = 21, days_back: int = 45, owner_user_id: Optional[int] = None
++    days_ahead: int = 21,
++    days_back: int = 45,
++    owner_user_id: Optional[int] = None,
++    apartments: Optional[List[Any]] = None,
+ ) -> List[Dict[str, Any]]:
+-    """Every stay worth looking at, ordered by how urgent it is."""
++    """Every stay worth looking at, ordered by how urgent it is.
++
++    ``apartments`` is the owner's apartment rows (``SELECT *``) when the caller
++    already loaded them; a stay whose apartment is not among them is looked up
++    as before.
++    """
+     start = (date.today() - timedelta(days=days_back)).isoformat()
+     end = (date.today() + timedelta(days=days_ahead)).isoformat()
+     rows = db.query(
+@@ -667,10 +718,22 @@ def dashboard_rows(
+         (owner_user_id, owner_user_id, start, end),
+     )
+     out: List[Dict[str, Any]] = []
++    preloaded = preload_guests(rows)
++    apartments_by_id: Dict[int, Any] = {}
++    if apartments:
++        if owner_user_id is None:
++            apartments_by_id = {apartment["id"]: apartment for apartment in apartments}
++        else:
++            apartments_by_id = {
++                apartment["id"]: apartment
++                for apartment in apartments
++                if apartment["owner_user_id"] == owner_user_id
++            }
+     for reservation in rows:
+-        check_in = reservation_deadline_anchor(reservation)
++        guests = preloaded.get(reservation["id"])
++        check_in = reservation_deadline_anchor(reservation, guests)
+         try:
+-            progress = reservation_progress(reservation)
++            progress = reservation_progress(reservation, guests)
+         except db.DecryptionError:
+             log.exception("dashboard skipped reservation_id=%s", reservation["id"])
+             continue
+@@ -679,7 +742,12 @@ def dashboard_rows(
+         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
+             if check_in and check_in < date.today() - timedelta(days=3):
+                 continue
+-        apartment = access.apartment_for_reservation(reservation, owner_user_id)
++        apartment_id = reservation["apartment_id"]
++        if apartment_id not in apartments_by_id:
++            apartments_by_id[apartment_id] = access.apartment_for_reservation(
++                reservation, owner_user_id
++            )
++        apartment = apartments_by_id[apartment_id]
+         controls = send_controls(reservation, apartment, progress) if apartment else {}
+         cell = deadline_cell(progress, check_in)
+         out.append(
+@@ -2015,19 +2083,27 @@ def hand_filing_view(progress: Dict[str, Any], now: Optional[datetime] = None) -
+ 
+ # --- deadline monitoring -------------------------------------------------
+ 
+-def reservation_deadline_anchor(reservation: Dict[str, Any]) -> Optional[date]:
++def reservation_deadline_anchor(
++    reservation: Dict[str, Any], guests: Optional[List[Any]] = None
++) -> Optional[date]:
+     """The date the statutory clock starts from.
+ 
+     The record filed with the police carries each guest's own ``stay_from``, so
+     the deadline has to run from the earliest of those. Earliest, because the
+     clock starts at the first arrival. Falls back to the reservation's own
+     ``date_from`` when no guest has given a date.
++
++    ``guests`` is the stay's live (unarchived) guests when the caller already
++    has them, for example ``reservation_progress(...)["guests"]``.
+     """
+-    rows = db.query(
+-        "SELECT stay_from FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
+-        "AND stay_from IS NOT NULL AND stay_from != ''",
+-        (reservation["id"],),
+-    )
++    if guests is None:
++        rows = db.query(
++            "SELECT stay_from FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
++            "AND stay_from IS NOT NULL AND stay_from != ''",
++            (reservation["id"],),
++        )
++    else:
++        rows = [guest for guest in guests if guest["stay_from"]]
+     starts = [validation.parse_iso_date(row["stay_from"]) for row in rows]
+     starts = [start for start in starts if start]
+     if starts:
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index a11d76c..7c0856d 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -214,7 +214,7 @@ def dashboard(request: Request):
+         return guard
+     owner_user_id = access.owner_id(request)
+     apartments = access.apartments(request)
+-    rows = reporting.dashboard_rows(owner_user_id=owner_user_id)
++    rows = reporting.dashboard_rows(owner_user_id=owner_user_id, apartments=apartments)
+     queue = reporting.queue_groups(rows)
+     counts = reporting.queue_counts(rows, queue)
+     needs_action, waiting = queue["needs_action"][:20], queue["waiting"][:20]
+@@ -1385,9 +1385,15 @@ def reservations_list(request: Request):
+     sql += " ORDER BY r.date_from ASC, r.date_to ASC, r.id ASC LIMIT ? OFFSET ?"
+     reservations = db.query(sql, [*params, RESERVATION_PAGE_SIZE, offset])
+     rows = []
++    # One guest query for the page, and each property read once, instead of
++    # both again for every stay on it.
++    preloaded = reporting.preload_guests(reservations)
++    apartments_by_id: Dict[int, Any] = {}
+     for row in reservations:
+-        apartment = access.apartment(request, row["apartment_id"])
+-        progress = reporting.reservation_progress(row)
++        if row["apartment_id"] not in apartments_by_id:
++            apartments_by_id[row["apartment_id"]] = access.apartment(request, row["apartment_id"])
++        apartment = apartments_by_id[row["apartment_id"]]
++        progress = reporting.reservation_progress(row, preloaded.get(row["id"]))
+         rows.append(
+             {
+                 "reservation": row,
+@@ -1675,19 +1681,15 @@ async def reservation_remove_empty_slot(reservation_id: int, request: Request):
+     back = f"/reservations/{reservation_id}#guests"
+     if expected is None or not 2 <= expected <= 60:
+         return _back(back, err=_flash(request, "host.count_changed"))
+-    conn = db.connect()
+-    try:
+-        changed = conn.execute(
+-            "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
+-            "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
+-            "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
+-            "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
+-            "AND archived_at IS NULL) < ? "
+-            "AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS ?)",
+-            (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
+-        ).rowcount
+-    finally:
+-        conn.close()
++    changed = db.execute_rowcount(
++        "UPDATE reservation SET expected_guests_override = ?, updated_at = ? "
++        "WHERE id = ? AND status = 'active' AND archived_at IS NULL "
++        "AND COALESCE(NULLIF(expected_guests_override, 0), declared_guests) = ? "
++        "AND (SELECT COUNT(*) FROM guest WHERE reservation_id = reservation.id "
++        "AND archived_at IS NULL) < ? "
++        "AND apartment_id IN (SELECT id FROM apartment WHERE owner_user_id IS ?)",
++        (expected - 1, db.utcnow(), reservation_id, expected, expected, access.owner_id(request)),
++    )
+     if not changed:
+         return _back(back, err=_flash(request, "host.count_changed"))
+     db.audit("reservation_headcount_corrected", f"id={reservation_id} expected={expected - 1}")
+diff --git a/App/app/routes/stay_fees.py b/App/app/routes/stay_fees.py
+index 707c1df..714fec7 100644
+--- a/App/app/routes/stay_fees.py
++++ b/App/app/routes/stay_fees.py
+@@ -124,7 +124,7 @@ def stay_fees_list(request: Request):
+         group = stay_fee.report_group(apartment, selected_month, period=period)
+         issues = stay_fee.report_issues(group, today)
+         if not period.get("frozen") and period.get("first") and stay_fee.unsigned_stays(
+-            apartment["id"], period["first"], period["last"]
++            apartment["id"], period["first"], period["last"], period
+         ):
+             issues.append("stay_fees.issue.unsigned")
+         rows.append({
+@@ -284,7 +284,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
+     issues: list[str] = []
+     if not frozen:
+         issues = stay_fee.report_issues(group, today)
+-        if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"]):
++        if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"], period):
+             issues.append("stay_fees.issue.unsigned")
+         issues = list(dict.fromkeys(issues))
+     pay = stay_fee.payment_details(group) if frozen else None
+@@ -618,7 +618,7 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
+         apartment, calc_month, live_only=True, period=period, cadence=cadence
+     )
+     issues = stay_fee.report_issues(group, today)
+-    if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"]):
++    if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"], period):
+         issues.append("stay_fees.issue.unsigned")
+     if issues:
+         return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
+diff --git a/App/app/stay_fee.py b/App/app/stay_fee.py
+index ae4586d..d30fcb2 100644
+--- a/App/app/stay_fee.py
++++ b/App/app/stay_fee.py
+@@ -232,7 +232,9 @@ def guest_period(guest, reservation, first: date, last: date) -> Optional[Dict[s
+     elif liable:
+         status = "liable"
+     reason = guest["fee_host_reason"] or ""
+-    if guest.get("fee_host_reason_enc"):
++    # A row from the db helpers already carries the decrypted reason; decrypting
++    # it a second time per guest and period was most of the list page's work.
++    if guest.get("fee_host_reason_enc") and not db.is_decrypted(guest):
+         reason = db.decrypt_field(guest["fee_host_reason_enc"]) or reason
+     return {
+         "guest_id": guest["id"],
+@@ -304,8 +306,12 @@ def property_period(
+     first, last = period_bounds(chosen, month)
+     rate = int(apartment["stay_fee_rate_czk"]) if rate is None else int(rate)
+     lines: List[Dict[str, Any]] = []
++    # Counted in the same pass so the pages need not read (and decrypt) the
++    # period's guests a second time for unsigned_stays().
++    unsigned = 0
+     for row in db.query(_GUESTS_SQL, (apartment["id"], last.isoformat(), first.isoformat())):
+         if not reporting.guest_has_signature(row):
++            unsigned += 1
+             continue
+         share = guest_period(row, {"date_from": row["res_from"], "date_to": row["res_to"]},
+                              first, last)
+@@ -336,6 +342,7 @@ def property_period(
+         "total_czk": liable * rate,
+         "adjustment_bed_days": 0,
+         "adjustments": [],
++        "unsigned_guests": unsigned,
+     }
+     return _apply_adjustments(period, month)
+ 
+@@ -451,7 +458,23 @@ def _period_line_issues(apartment, period) -> List[str]:
+     return issues
+ 
+ 
+-def unsigned_stays(apartment_id: int, first: date, last: date) -> int:
++def unsigned_stays(
++    apartment_id: int, first: date, last: date, period: Optional[Dict[str, Any]] = None
++) -> int:
++    """Guests in the period with no signature yet (they are left out of the fee).
++
++    ``period`` is the live ``property_period`` for the same property and dates
++    when the caller has it; its count comes from the same rows, so no second
++    read is needed.
++    """
++    if (
++        period is not None
++        and "unsigned_guests" in period
++        and period.get("first") == first
++        and period.get("last") == last
++        and period["apartment"]["id"] == apartment_id
++    ):
++        return period["unsigned_guests"]
+     rows = db.query(
+         "SELECT g.* FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+         "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
+diff --git a/App/app/templates/reservations.html b/App/app/templates/reservations.html
+index 339d9e6..a8d363d 100644
+--- a/App/app/templates/reservations.html
++++ b/App/app/templates/reservations.html
+@@ -133,7 +133,7 @@
+     {% for row in rows %}
+       {% set reservation = row.reservation %}
+       {% set progress = row.progress %}
+-      {% set check_in = deadline_anchor(reservation) %}
++      {% set check_in = deadline_anchor(reservation, progress.guests) %}
+       {% set check_out = parse_iso_date(reservation.date_to) %}
+       <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to }}"
+           tabindex="0" role="link"
+diff --git a/App/app/worker.py b/App/app/worker.py
+index c223b56..6de3c75 100644
+--- a/App/app/worker.py
++++ b/App/app/worker.py
+@@ -90,6 +90,8 @@ def run(stop: Optional[threading.Event] = None) -> int:
+     finally:
+         log.info("worker stopping; waiting for running jobs to finish")
+         scheduler.shutdown()
++        # WP14: after the scheduler, whose threads use the shared connections.
++        db.close_connections()
+         try:
+             alive_path().unlink()
+         except OSError:
+diff --git a/App/tests/test_alert_language.py b/App/tests/test_alert_language.py
+index e35052c..a0e6f12 100644
+--- a/App/tests/test_alert_language.py
++++ b/App/tests/test_alert_language.py
+@@ -370,10 +370,14 @@ def test_a_computed_card_is_rendered_from_live_data_in_both_languages(kind, monk
+     monkeypatch.setattr(alerts.db, "query_one", fake_query_one)
+     monkeypatch.setattr(
+         "app.reporting.reservation_progress",
+-        lambda _r: {"filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True},
++        lambda _r, _guests=None: {
++            "filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True,
++            "guests": [],
++        },
+     )
+     monkeypatch.setattr(
+-        "app.reporting.reservation_deadline_anchor", lambda _r: date(2026, 9, 19)
++        "app.reporting.reservation_deadline_anchor",
++        lambda _r, _guests=None: date(2026, 9, 19),
+     )
+ 
+     alert = {
+diff --git a/App/tests/test_connection_reuse.py b/App/tests/test_connection_reuse.py
+new file mode 100644
+index 0000000..7da5107
+--- /dev/null
++++ b/App/tests/test_connection_reuse.py
+@@ -0,0 +1,283 @@
++"""WP14: one database connection per thread, with unchanged transaction semantics.
++
++Every test here runs on its own temporary database, so the shared test
++database and its fixtures are never touched.
++"""
++from __future__ import annotations
++
++import sqlite3
++import threading
++from concurrent.futures import ThreadPoolExecutor
++
++import pytest
++
++from app import config, db, invoices, reporting
++
++
++@pytest.fixture
++def fresh_db(monkeypatch, tmp_path):
++    db.close_connections()
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "wp14.sqlite3")
++    db.init_db()
++    db.execute("CREATE TABLE counter (id INTEGER PRIMARY KEY, n INTEGER NOT NULL)")
++    db.execute("INSERT INTO counter (id, n) VALUES (1, 0)")
++    yield tmp_path
++    db.close_connections()
++
++
++def _thread_conn():
++    return db._thread_conn()
++
++
++# --- reuse and keying ---------------------------------------------------------
++
++
++def test_helpers_reuse_one_connection_per_thread(fresh_db, monkeypatch):
++    opened = []
++    real_open = db._open
++
++    def counting_open(*args, **kwargs):
++        conn = real_open(*args, **kwargs)
++        opened.append(threading.get_ident())
++        return conn
++
++    db.close_connections()
++    monkeypatch.setattr(db, "_open", counting_open)
++    for _ in range(20):
++        db.query("SELECT 1 AS x")
++        db.execute("UPDATE counter SET n = n + 1 WHERE id = 1")
++    assert opened == [threading.get_ident()]
++
++    def other_thread():
++        db.query_one("SELECT n FROM counter WHERE id = 1")
++        return _thread_conn()
++
++    with ThreadPoolExecutor(max_workers=1) as pool:
++        theirs = pool.submit(other_thread).result()
++    assert theirs is not _thread_conn()
++    assert len(opened) == 2
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 20
++
++
++def test_changing_db_path_switches_connection(fresh_db, monkeypatch):
++    first = _thread_conn()
++    db.insert("settings", {"key": "where", "value": "first"})
++
++    monkeypatch.setattr(config, "DB_PATH", fresh_db / "second.sqlite3")
++    db.init_db()
++    assert db.get_setting("where") is None
++    assert _thread_conn() is not first
++    db.set_setting("where", "second")
++
++    monkeypatch.setattr(config, "DB_PATH", fresh_db / "wp14.sqlite3")
++    assert db.get_setting("where") == "first"
++
++
++def test_a_replaced_database_file_is_reopened(fresh_db):
++    db.set_setting("marker", "old")
++    path = config.DB_PATH
++    replacement = fresh_db / "replacement.sqlite3"
++    conn = sqlite3.connect(replacement)
++    conn.execute("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)")
++    conn.execute("INSERT INTO settings VALUES ('marker', 'new')")
++    conn.commit()
++    conn.close()
++    replacement.replace(path)
++    for suffix in ("-wal", "-shm"):
++        stale = path.with_name(path.name + suffix)
++        if stale.exists():
++            stale.unlink()
++    assert db.get_setting("marker") == "new"
++
++
++def test_close_connections_reopens_on_next_use(fresh_db):
++    conn = _thread_conn()
++    db.close_connections()
++    with pytest.raises(sqlite3.ProgrammingError):
++        conn.execute("SELECT 1")
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 0
++
++
++# --- transaction semantics ----------------------------------------------------
++
++
++def test_no_transaction_is_left_open(fresh_db):
++    conn = _thread_conn()
++    db.query("SELECT * FROM counter")
++    assert not conn.in_transaction
++    db.update("counter", 1, {"n": 5})
++    assert not conn.in_transaction
++    with db.immediate() as cur:
++        cur.execute("UPDATE counter SET n = n + 1 WHERE id = 1")
++        assert conn.in_transaction
++    assert not conn.in_transaction
++    with db.cursor() as cur:
++        cur.execute("UPDATE counter SET n = n + 1 WHERE id = 1")
++    assert not conn.in_transaction
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 7
++
++
++def test_an_error_inside_immediate_rolls_back_and_keeps_the_connection(fresh_db):
++    conn = _thread_conn()
++    with pytest.raises(RuntimeError):
++        with db.immediate() as cur:
++            cur.execute("UPDATE counter SET n = 99 WHERE id = 1")
++            raise RuntimeError("boom")
++    assert not conn.in_transaction
++    assert _thread_conn() is conn
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 0
++    with pytest.raises(sqlite3.IntegrityError):
++        with db.immediate() as cur:
++            cur.execute("UPDATE counter SET n = 1 WHERE id = 1")
++            cur.execute("INSERT INTO counter (id, n) VALUES (1, 1)")
++    assert not conn.in_transaction
++    db.execute("UPDATE counter SET n = 3 WHERE id = 1")
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 3
++
++
++def test_a_helper_that_opens_a_transaction_is_rolled_back(fresh_db):
++    conn = _thread_conn()
++    with pytest.raises(RuntimeError, match="left a transaction open"):
++        db.execute("BEGIN")
++    assert not conn.in_transaction
++    db.execute("UPDATE counter SET n = 4 WHERE id = 1")
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 4
++
++
++def test_a_helper_inside_a_block_does_not_join_its_transaction(fresh_db):
++    """As before sharing: a helper inside a block has a connection of its own."""
++    with db.immediate() as cur:
++        cur.execute("UPDATE counter SET n = 42 WHERE id = 1")
++        # A separate connection still reads the committed value.
++        assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 0
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 42
++
++
++def test_a_nested_read_block_uses_its_own_connection(fresh_db):
++    with db.immediate() as outer:
++        outer.execute("UPDATE counter SET n = 8 WHERE id = 1")
++        with db.cursor() as inner:
++            inner.execute("SELECT n FROM counter WHERE id = 1")
++            assert inner.fetchone()["n"] == 0
++    assert not _thread_conn().in_transaction
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 8
++
++
++def test_execute_reports_an_id_only_for_a_row_it_inserted(fresh_db):
++    new_id = db.execute("INSERT INTO counter (n) VALUES (1)")
++    assert new_id > 1
++    # A fresh connection reported 0 here; the shared one must too.
++    assert db.execute("INSERT OR IGNORE INTO counter (id, n) VALUES (1, 0)") == 0
++    assert db.execute("UPDATE counter SET n = n + 1 WHERE id = 1") == 0
++    assert db.execute("DELETE FROM counter WHERE id = ?", (new_id,)) == 0
++    assert db.execute_rowcount("UPDATE counter SET n = 0") == 1
++
++
++# --- concurrency ----------------------------------------------------------------
++
++
++def _run_threads(target, count):
++    barrier = threading.Barrier(count)
++    errors = []
++    results = [None] * count
++
++    def run(index):
++        try:
++            barrier.wait()
++            results[index] = target(index)
++        except Exception as exc:  # collected for the assertion below
++            errors.append(exc)
++
++    threads = [threading.Thread(target=run, args=(i,)) for i in range(count)]
++    for thread in threads:
++        thread.start()
++    for thread in threads:
++        thread.join(60)
++    assert not errors, errors
++    return results
++
++
++def test_concurrent_read_modify_write_blocks_lose_no_update(fresh_db):
++    per_thread = 25
++
++    def work(_index):
++        for _ in range(per_thread):
++            with db.immediate() as cur:
++                cur.execute("SELECT n FROM counter WHERE id = 1")
++                value = cur.fetchone()["n"]
++                cur.execute("UPDATE counter SET n = ? WHERE id = 1", (value + 1,))
++            # Autocommit writes from the same threads, interleaved.
++            db.insert("audit", {"at": db.utcnow(), "actor": "t", "action": "wp14", "detail": ""})
++            assert not _thread_conn().in_transaction
++
++    _run_threads(work, 8)
++    assert db.query_one("SELECT n FROM counter WHERE id = 1")["n"] == 8 * per_thread
++    assert db.query_one("SELECT COUNT(*) AS n FROM audit WHERE action = 'wp14'")["n"] == 8 * per_thread
++    assert all(not conn.in_transaction for conn in list(db._registry))
++
++
++def _draft(entity_id):
++    return {
++        "legal_entity_id": entity_id, "apartment_id": None, "reservation_id": None,
++        "kind": "invoice", "lang": "cs", "vat_status": "non_payer",
++        "issue_date": "2026-09-26", "duzp": None, "due_date": None,
++        "paid_on": None, "paid_via": None,
++        "seller": {
++            "name": "Seller", "seat": "Praha", "ico": "04656679", "dic": "", "registry": "ŽR",
++            "bank_account": "", "iban": "", "bic": "", "email": "", "phone": "",
++        },
++        "buyer": {
++            "name": "Buyer", "street": "", "city": "", "zip": "", "country": "CZE",
++            "ico": "", "dic": "", "email": "",
++        },
++        "stay_from": "2026-09-10", "stay_to": "2026-09-14", "stay_label": "Flat",
++        "items": [{
++            "kind": "accommodation", "description": "Ubytování", "quantity": 1, "unit": "pobyt",
++            "vat_rate": None, "base_haler": None, "vat_haler": None, "gross_haler": 10000,
++        }],
++        "total_base_haler": None, "total_vat_haler": None, "total_haler": 10000,
++    }
++
++
++def test_concurrent_invoice_numbering_has_no_gaps_or_duplicates(fresh_db):
++    entity_id = db.insert("legal_entity", {
++        "name": "WP14 Test s.r.o.", "seat": "Praha", "ico": "04656679",
++        "registry_entry": "ŽR", "vat_status": "non_payer", "invoice_due_days": 14,
++        "created_at": db.utcnow(),
++    })
++
++    def work(_index):
++        return [invoices.issue(_draft(entity_id), actor_user_id=None) for _ in range(4)]
++
++    ids = [invoice_id for batch in _run_threads(work, 8) for invoice_id in batch]
++    numbers = sorted(
++        row["seq_no"] for row in db.query(
++            "SELECT seq_no FROM invoice WHERE legal_entity_id = ?", (entity_id,)
++        )
++    )
++    assert len(set(ids)) == 32
++    assert numbers == list(range(1, 33))
++
++
++def test_concurrent_claim_sendable_leases_each_guest_once(fresh_db):
++    now = db.utcnow()
++    apartment_id = db.insert("apartment", {"internal_name": "WP14 flat", "created_at": now})
++    reservation_id = db.insert("reservation", {
++        "apartment_id": apartment_id, "uid": "wp14", "date_from": "2026-09-10",
++        "date_to": "2026-09-12", "created_at": now, "updated_at": now,
++    })
++    for _ in range(30):
++        db.insert("guest", {"reservation_id": reservation_id, "created_at": now, "updated_at": now})
++    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
++    pairs = [
++        (guest, reservation)
++        for guest in db.query("SELECT * FROM guest WHERE reservation_id = ?", (reservation_id,))
++    ]
++
++    def work(_index):
++        _token, claimed = reporting.claim_sendable(pairs)
++        return [guest["id"] for guest, _reservation in claimed]
++
++    claimed = [guest_id for batch in _run_threads(work, 8) for guest_id in batch]
++    assert sorted(claimed) == sorted(guest["id"] for guest, _r in pairs)
++    assert len(claimed) == len(set(claimed)) == 30
+diff --git a/App/tests/test_notification_copy.py b/App/tests/test_notification_copy.py
+index 07f57b0..8620ba6 100644
+--- a/App/tests/test_notification_copy.py
++++ b/App/tests/test_notification_copy.py
+@@ -79,7 +79,9 @@ def test_present_rebuilds_stay_title_with_czech_dates(monkeypatch):
+     )
+     monkeypatch.setattr(
+         "app.reporting.reservation_progress",
+-        lambda _res: {"filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True},
++        lambda _res, _guests=None: {
++            "filled": 0, "expected": 2, "status": "awaiting_guest", "incomplete": True,
++        },
+     )
+ 
+     alert = {
+diff --git a/App/tests/test_perf_logging.py b/App/tests/test_perf_logging.py
+index 00ebf5f..9eaa376 100644
+--- a/App/tests/test_perf_logging.py
++++ b/App/tests/test_perf_logging.py
+@@ -105,6 +105,21 @@ def test_lock_wait_is_measured_on_begin_immediate():
+     assert stats.queries == 1  # BEGIN, COMMIT and the PRAGMAs are not counted
+ 
+ 
++def test_a_shared_connection_opened_before_the_request_still_counts():
++    # WP14 keeps one connection per thread. One opened outside any request
++    # (startup, a previous job) must still count the next request's statements.
++    db.init_db()
++    db.close_connections()
++    db.query("SELECT 1")  # opens this thread's shared connection, no counter
++    stats = db.start_request_stats()
++    db.query("SELECT 1")
++    db.query_one("SELECT 2")
++    with db.cursor() as cur:
++        cur.execute("SELECT 3")
++    assert stats.queries == 3
++    assert stats.db_seconds > 0
++
++
+ def test_no_token_query_string_or_guest_data_in_the_line(caplog):
+     db.init_db()
+     token = "z9y8x7w6v5u4t3s2r1q0" * 2
+diff --git a/App/tests/test_query_budget.py b/App/tests/test_query_budget.py
+new file mode 100644
+index 0000000..7a1efae
+--- /dev/null
++++ b/App/tests/test_query_budget.py
+@@ -0,0 +1,205 @@
++"""WP14 part B: host pages read guests in batches, and render the same as before.
++
++The demo seed is loaded into a temporary database. Query counts are taken from
++SQLite's own statement trace, so they include every helper and template call.
++"""
++from __future__ import annotations
++
++import re
++from datetime import date
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import alerts, auth, config, db, demo, reporting, stay_fee
++from app.main import app
++
++PASSWORD = "Budget-Password-123"
++_CSRF = re.compile(r'((?:name="csrf-token" content|name="_csrf" value)=")[^"]*')
++
++
++@pytest.fixture(scope="module")
++def seeded(tmp_path_factory):
++    patcher = pytest.MonkeyPatch()
++    db.close_connections()
++    patcher.setattr(config, "DB_PATH", tmp_path_factory.mktemp("wp14") / "budget.sqlite3")
++    patcher.setattr(config, "UBYPORT_ENV", "mock")
++
++    def _no_network(*_args, **_kwargs):
++        raise AssertionError("the demo seed must not fetch the sample calendar")
++
++    patcher.setattr(demo.icalsync, "fetch_feed", _no_network)
++    db.init_db()
++    owner = auth.create_account("budget-host", PASSWORD, "Budget", must_change_password=False)
++    assert demo.seed(owner)
++    # Stay fees on, and one guest without a signature, so the stay-fee pages
++    # have periods, lines and the "unsigned" issue to render.
++    db.execute("UPDATE apartment SET stay_fee_rate_czk = 50 WHERE owner_user_id = ?", (owner,))
++    unsigned = db.query_one(
++        "SELECT g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
++        "ORDER BY r.date_from DESC, g.id LIMIT 1"
++    )
++    db.update("guest", unsigned["id"], {"signature_png": None})
++    client = TestClient(app)
++    response = client.post(
++        "/login?lang=en",
++        data={"username": "budget-host", "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303
++    try:
++        yield client
++    finally:
++        db.close_connections()
++        patcher.undo()
++
++
++def _pages():
++    month = date.today().strftime("%Y-%m")
++    stays = [row["id"] for row in db.query("SELECT id FROM reservation ORDER BY id")]
++    apartments = [row["id"] for row in db.query("SELECT id FROM apartment ORDER BY id")]
++    pages = {
++        "dashboard": "/",
++        "reservations": "/reservations",
++        "reservations_all": "/reservations?range=all",
++        "stay_fees": "/stay-fees",
++        "stay_fees_month": f"/stay-fees?month={month}",
++        "invoices": "/invoices",
++    }
++    pages.update({f"stay_{sid}": f"/reservations/{sid}" for sid in stays})
++    pages.update({f"fee_{aid}": f"/stay-fees/{aid}?month={month}" for aid in apartments})
++    return pages
++
++
++def _counted_get(client, path, monkeypatch):
++    statements = []
++    real_open = db._open
++
++    def traced_open(*args, **kwargs):
++        conn = real_open(*args, **kwargs)
++        conn.set_trace_callback(statements.append)
++        return conn
++
++    db.close_connections()
++    monkeypatch.setattr(db, "_open", traced_open)
++    try:
++        response = client.get(path, follow_redirects=False)
++    finally:
++        monkeypatch.setattr(db, "_open", real_open)
++        db.close_connections()
++    queries = [
++        sql for sql in statements
++        if sql.split(None, 1)[0].upper() not in ("PRAGMA", "BEGIN", "COMMIT", "ROLLBACK")
++    ]
++    return response, queries
++
++
++@pytest.mark.parametrize("path", ["/", "/reservations"])
++def test_dashboard_and_stays_list_stay_under_twenty_queries(seeded, monkeypatch, path):
++    seeded.get(path)  # first view may write one-off state (onboarding, alerts)
++    response, queries = _counted_get(seeded, path, monkeypatch)
++    assert response.status_code == 200
++    assert len(queries) < 20, "\n".join(queries)
++    per_stay_guest_reads = [
++        sql for sql in queries if re.search(r"FROM guest WHERE reservation_id = \d", sql)
++    ]
++    # The notification cards and the list share one batched read each.
++    assert not per_stay_guest_reads, per_stay_guest_reads
++
++
++def test_stay_fee_list_reads_each_period_once(seeded, monkeypatch):
++    month = date.today().strftime("%Y-%m")
++    seeded.get(f"/stay-fees?month={month}")
++    response, queries = _counted_get(seeded, f"/stay-fees?month={month}", monkeypatch)
++    assert response.status_code == 200
++    guest_reads = [sql for sql in queries if "FROM guest g JOIN reservation r" in sql]
++    properties = db.query_one("SELECT COUNT(*) AS n FROM apartment WHERE stay_fee_rate_czk > 0")["n"]
++    assert len(guest_reads) == properties, guest_reads
++
++
++def _normalised(text):
++    return _CSRF.sub(r"\1", text)
++
++
++def _render_all(client):
++    pages = _pages()
++    out = {}
++    for name, path in pages.items():
++        response = client.get(path, follow_redirects=False)
++        assert response.status_code == 200, (name, response.status_code)
++        out[name] = _normalised(response.text)
++    return out
++
++
++def test_batched_pages_render_exactly_as_the_per_stay_path(seeded, monkeypatch):
++    """Every changed page, rendered with the batching and with the old per-stay reads."""
++    _render_all(seeded)  # settle one-off writes from first views
++    batched = _render_all(seeded)
++
++    def per_stay(_ids):
++        # The documented fallback: every stay reads its own guests again.
++        raise db.DecryptionError("force the per-stay path")
++
++    real_unsigned = stay_fee.unsigned_stays
++    monkeypatch.setattr(reporting, "guests_by_reservation", per_stay)
++    monkeypatch.setattr(
++        alerts, "_preload_stays", lambda _alerts: {"reservations": {}, "guests": {}}
++    )
++    monkeypatch.setattr(
++        stay_fee, "unsigned_stays",
++        lambda apartment_id, first, last, period=None: real_unsigned(apartment_id, first, last),
++    )
++    monkeypatch.setattr(db, "is_decrypted", lambda _row: False)
++    old_path = _render_all(seeded)
++
++    assert batched.keys() == old_path.keys()
++    differing = [name for name in batched if batched[name] != old_path[name]]
++    assert not differing, differing
++    # The pages are not trivially empty.
++    assert "Vinohrady Studio (demo)" in batched["dashboard"]
++    assert "Vinohrady Studio (demo)" in batched["reservations"]
++
++
++def test_one_unreadable_stay_still_only_skips_that_stay(seeded, monkeypatch):
++    """A guest that will not decrypt must not take the whole dashboard down."""
++    target = db.query_one(
++        "SELECT g.id, g.reservation_id FROM guest g WHERE g.doc_number_enc IS NOT NULL LIMIT 1"
++    )
++    original = db.query_one("SELECT doc_number_enc FROM guest WHERE id = ?", (target["id"],))
++    db.execute("UPDATE guest SET doc_number_enc = 'not-a-token' WHERE id = ?", (target["id"],))
++    try:
++        rows = reporting.dashboard_rows(
++            owner_user_id=db.query_one(
++                "SELECT id FROM user_account WHERE username = 'budget-host'"
++            )["id"]
++        )
++        assert target["reservation_id"] not in {row["reservation"]["id"] for row in rows}
++        assert rows
++    finally:
++        db.execute(
++            "UPDATE guest SET doc_number_enc = ? WHERE id = ?",
++            (original["doc_number_enc"], target["id"]),
++        )
++
++
++def test_guests_by_reservation_matches_the_per_stay_read(seeded):
++    ids = [row["id"] for row in db.query("SELECT id FROM reservation")]
++    batched = reporting.guests_by_reservation(ids + [10_000_000])
++    assert batched[10_000_000] == []
++    for reservation_id in ids:
++        single = db.query(
++            "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
++            "ORDER BY is_lead DESC, id",
++            (reservation_id,),
++        )
++        assert [dict(g) for g in batched[reservation_id]] == [dict(g) for g in single]
++
++
++def test_guests_by_reservation_chunks_long_id_lists(seeded, monkeypatch):
++    monkeypatch.setattr(reporting, "IN_CHUNK", 2)
++    ids = [row["id"] for row in db.query("SELECT id FROM reservation")]
++    assert len(ids) > 4
++    batched = reporting.guests_by_reservation(ids)
++    assert sum(len(v) for v in batched.values()) == db.query_one(
++        "SELECT COUNT(*) AS n FROM guest WHERE archived_at IS NULL"
++    )["n"]
+-- 
+2.34.1
+

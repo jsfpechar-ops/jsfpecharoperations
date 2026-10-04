@@ -1,0 +1,512 @@
+From e215aa118e8c0cbf08984efd257f725b3ecb415d Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sat, 3 Oct 2026 23:38:27 +0200
+Subject: [PATCH 01/34] WP05: Litestream continuous backup to S3
+
+---
+ .github/workflows/deploy-preflight.yml   |   5 +
+ deploy/lightsail/.env.example            |  18 ++++
+ deploy/lightsail/README.md               | 111 +++++++++++++++++++-
+ deploy/lightsail/docker-compose.yml      |  37 +++++++
+ deploy/lightsail/litestream.yml          |  61 +++++++++++
+ deploy/lightsail/scripts/preflight.sh    |  16 +++
+ deploy/lightsail/scripts/restore.sh      |  14 ++-
+ deploy/lightsail/scripts/restore_test.sh | 126 +++++++++++++++++++++++
+ 8 files changed, 386 insertions(+), 2 deletions(-)
+ create mode 100644 deploy/lightsail/litestream.yml
+ create mode 100755 deploy/lightsail/scripts/restore_test.sh
+
+diff --git a/.github/workflows/deploy-preflight.yml b/.github/workflows/deploy-preflight.yml
+index 4f1ccbe..67cba71 100644
+--- a/.github/workflows/deploy-preflight.yml
++++ b/.github/workflows/deploy-preflight.yml
+@@ -61,6 +61,11 @@ jobs:
+             echo "UBYHOST_ADMIN_PASSWORD=$(present UBYHOST_ADMIN_PASSWORD)"
+             echo "UBYHOST_SECRET_KEY=$(present UBYHOST_SECRET_KEY)"
+             echo "UBYHOST_BACKUP_PING_URL=$(present UBYHOST_BACKUP_PING_URL)"
++            echo "LITESTREAM_S3_BUCKET=$(present LITESTREAM_S3_BUCKET)"
++            echo "LITESTREAM_S3_PATH=$(value LITESTREAM_S3_PATH)"
++            echo "LITESTREAM_ACCESS_KEY_ID=$(present LITESTREAM_ACCESS_KEY_ID)"
++            echo "LITESTREAM_SECRET_ACCESS_KEY=$(present LITESTREAM_SECRET_ACCESS_KEY)"
++            echo "LITESTREAM_HEARTBEAT_URL=$(present LITESTREAM_HEARTBEAT_URL)"
+             echo "UBYHOST_OPERATOR_NAME=$(present UBYHOST_OPERATOR_NAME)"
+             echo "UBYHOST_OPERATOR_ICO=$(present UBYHOST_OPERATOR_ICO)"
+             echo "UBYHOST_OPERATOR_ADDRESS=$(present UBYHOST_OPERATOR_ADDRESS)"
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index 61fad1a..7ce742e 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -44,6 +44,24 @@ UBYHOST_BACKUP_RETENTION_DAYS=30
+ # Required in production: pinged after each successful daily backup; preflight.sh refuses to deploy while it is empty.
+ UBYHOST_BACKUP_PING_URL=
+ 
++# --- Continuous S3 replica (WP05, Litestream) ---
++# The litestream service streams every database change to this bucket within
++# about 10 s. Required in production: preflight.sh refuses to deploy while the
++# bucket or the keys are empty. Use a dedicated IAM user limited to this bucket
++# and prefix (README.md, "Litestream"); never reuse the SES or backup keys.
++# The replica is not client-side encrypted (Litestream 0.5 has no such option);
++# the bucket must have default encryption and Block Public Access on.
++LITESTREAM_S3_BUCKET=
++LITESTREAM_S3_REGION=eu-central-1
++# Prefix inside the bucket, no leading or trailing slash. Change it to a new
++# value after any restore so the old and the new history never mix.
++LITESTREAM_S3_PATH=ubyhost/production
++LITESTREAM_ACCESS_KEY_ID=
++LITESTREAM_SECRET_ACCESS_KEY=
++# Optional dead-man switch (e.g. healthchecks.io, period 5 min): Litestream
++# pings it only while replication is healthy.
++LITESTREAM_HEARTBEAT_URL=
++
+ # --- Software operator (host-admin support is support@ubyhost.com) ---
+ # Required in production: the app refuses to start while name, IČO or address is empty.
+ # Fill these in on the server only. Never commit real values (this repo is public).
+diff --git a/deploy/lightsail/README.md b/deploy/lightsail/README.md
+index d855eb1..437303a 100644
+--- a/deploy/lightsail/README.md
++++ b/deploy/lightsail/README.md
+@@ -21,7 +21,7 @@ chmod +x scripts/*.sh
+ ./scripts/deploy.sh
+ ```
+ 
+-Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/smoke-remote.sh`.
++Useful later: `./scripts/status.sh`, `./scripts/backup.sh`, `./scripts/restore.sh`, `./scripts/restore_test.sh`, `./scripts/smoke-remote.sh`.
+ 
+ 
+ ## Encrypted backups (OPS-1)
+@@ -148,3 +148,112 @@ Weekly cron (example; set your bucket name):
+ You can use **both** Drive and S3 (two cron lines). Pick one off-site copy if you want bare minimum.
+ 
+ </details>
++
++## Litestream: continuous S3 replica (WP05)
++
++The `litestream` service (image `litestream/litestream:0.5.17`, config
++`litestream.yml`) streams every change of `/data/ubyhost.db` to
++`s3://$LITESTREAM_S3_BUCKET/$LITESTREAM_S3_PATH` in `eu-central-1`, about
++every 10 seconds. That is the data-loss window if the VM is lost. The nightly
++age-encrypted backup above stays as a second, independent copy.
++
++What the replica does **not** hold:
++
++- the secret key (`UBYHOST_SECRET_KEY` in `.env` or `/data/secret_key`). It
++  decrypts document numbers, signatures, TOTP secrets and UbyPort passwords.
++  Keep a copy in the owner's password manager. Without it a restored database
++  opens but every encrypted field is unreadable;
++- passport photos under `/data/passport_photos` (short-lived by design);
++- client-side encryption. Litestream 0.5 has none. The bucket's default
++  encryption (SSE-S3), Block Public Access and the dedicated IAM user protect
++  it. Guest names and stay dates are in it in the clear, like in the live file.
++
++### One-time AWS setup
++
++1. S3 → Create bucket, for example `ubyhost-litestream-<suffix>`, region
++   **eu-central-1**. Block all public access: **on**. Bucket versioning:
++   **enable**. Default encryption: **SSE-S3**.
++2. Bucket → Management → Lifecycle rule `expire-noncurrent`, whole bucket:
++   "Permanently delete noncurrent versions of objects" after **30** days, and
++   "Delete expired object delete markers". Do not add a rule that expires
++   current versions: Litestream removes old files itself (7-day window).
++3. IAM → Users → Create user `ubyhost-litestream` (no console access). Attach
++   an inline policy (replace the bucket name; the prefix must match
++   `LITESTREAM_S3_PATH`; `ubyhost/*` also covers the new prefix you switch to
++   after a restore):
++
++   ```json
++   {
++     "Version": "2012-10-17",
++     "Statement": [
++       {
++         "Sid": "ListReplicaPrefix",
++         "Effect": "Allow",
++         "Action": "s3:ListBucket",
++         "Resource": "arn:aws:s3:::ubyhost-litestream-SUFFIX",
++         "Condition": {"StringLike": {"s3:prefix": ["ubyhost/*", "ubyhost"]}}
++       },
++       {
++         "Sid": "ReadWriteReplicaObjects",
++         "Effect": "Allow",
++         "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
++         "Resource": "arn:aws:s3:::ubyhost-litestream-SUFFIX/ubyhost/*"
++       }
++     ]
++   }
++   ```
++
++4. Create an access key for that user ("Application running outside AWS").
++   Put it in the server `.env` as `LITESTREAM_ACCESS_KEY_ID` and
++   `LITESTREAM_SECRET_ACCESS_KEY`, and the bucket as `LITESTREAM_S3_BUCKET`.
++5. Optional: a healthchecks.io check with period 5 min and grace 10 min; put
++   its ping URL in `LITESTREAM_HEARTBEAT_URL`.
++
++Then `./scripts/deploy.sh` (preflight refuses a production deploy while the
++bucket or keys are empty), and:
++
++```bash
++docker compose logs --tail=30 litestream   # expect "snapshot complete"
++./scripts/restore_test.sh                  # must end with "Restore drill passed"
++```
++
++Run `./scripts/restore_test.sh` again once per quarter. It restores the
++newest replica into a temporary file inside a throwaway container, checks
++`PRAGMA integrity_check`, compares row counts of the main tables with the live
++database and deletes the copy. Non-zero exit on any mismatch.
++
++### Runbook: the VM is lost
++
++1. Create a new Lightsail instance (Frankfurt, same bundle) and follow
++   [docs/LIGHTSAIL.md](../../docs/LIGHTSAIL.md) up to, but not including,
++   `./scripts/deploy.sh`. Restore `.env` from the password manager, including
++   `UBYHOST_SECRET_KEY`. If production kept the key only in
++   `/data/secret_key`, set `UBYHOST_SECRET_KEY` in `.env` to the saved copy.
++2. Build the image and create the data volume with the app's ownership,
++   without starting the app (an app start would create an empty database):
++
++   ```bash
++   cd /opt/ubyhost/deploy/lightsail
++   docker compose build
++   docker compose run --rm --no-deps --entrypoint true ubyhost
++   ```
++
++3. Restore the newest replica into the volume:
++
++   ```bash
++   docker compose run --rm --no-deps litestream \
++     restore -config /etc/litestream.yml -integrity-check full /data/ubyhost.db
++   ```
++
++   For a point in time, add `-timestamp 2026-10-01T12:00:00Z`.
++4. In `.env`, set `LITESTREAM_S3_PATH` to a new prefix, for example
++   `ubyhost/production-YYYYMMDD`. The new server must never replicate into
++   the old prefix: two histories under one path can make it unrestorable.
++5. `./scripts/deploy.sh`, sign in, open one stay, then
++   `./scripts/restore_test.sh`.
++6. Move the static IP (or DNS) to the new instance.
++
++If the replica is unusable, fall back to the newest age-encrypted snapshot
++(`restore.sh`, or the S3/Drive off-site copy). `restore.sh` stops Litestream
++and leaves it stopped; set a new `LITESTREAM_S3_PATH`, then
++`docker compose up -d litestream`.
+diff --git a/deploy/lightsail/docker-compose.yml b/deploy/lightsail/docker-compose.yml
+index c6739c6..f11f362 100644
+--- a/deploy/lightsail/docker-compose.yml
++++ b/deploy/lightsail/docker-compose.yml
+@@ -45,6 +45,43 @@ services:
+     networks:
+       - web
+ 
++  # WP05: continuous replication of the SQLite database to S3. Runs as the
++  # app's uid on the same volume, so it can read the database and write its
++  # .ubyhost.db-litestream metadata next to it. Only the variables it needs are
++  # passed in, not the whole .env (which holds the app's secret key).
++  litestream:
++    # Pinned by tag and digest (multi-arch index of litestream/litestream:0.5.17).
++    image: litestream/litestream:0.5.17@sha256:4b02b9859a6b6b4087d8b8944e15f7e984bd7957cba322bbeee38b0e27b9656a
++    restart: unless-stopped
++    user: "10001:10001"
++    command: ["replicate", "-config", "/etc/litestream.yml"]
++    # Litestream pushes the last WAL frames on SIGTERM (shutdown-sync-timeout 30s).
++    stop_grace_period: 40s
++    environment:
++      LITESTREAM_DB_PATH: ${UBYHOST_DB:-/data/ubyhost.db}
++      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID:-}
++      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY:-}
++      LITESTREAM_S3_BUCKET: ${LITESTREAM_S3_BUCKET:-}
++      LITESTREAM_S3_PATH: ${LITESTREAM_S3_PATH:-ubyhost/production}
++      LITESTREAM_S3_REGION: ${LITESTREAM_S3_REGION:-eu-central-1}
++      LITESTREAM_HEARTBEAT_URL: ${LITESTREAM_HEARTBEAT_URL:-}
++    volumes:
++      - ubyhost-data:/data
++      - ./litestream.yml:/etc/litestream.yml:ro
++    mem_limit: 128m
++    logging:
++      driver: json-file
++      options:
++        max-size: "10m"
++        max-file: "5"
++    # The app creates the database (and the volume with uid 10001 ownership)
++    # on first start; Litestream must not start before that.
++    depends_on:
++      ubyhost:
++        condition: service_healthy
++    networks:
++      - web
++
+   caddy:
+     image: caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+     restart: unless-stopped
+diff --git a/deploy/lightsail/litestream.yml b/deploy/lightsail/litestream.yml
+new file mode 100644
+index 0000000..d636b62
+--- /dev/null
++++ b/deploy/lightsail/litestream.yml
+@@ -0,0 +1,61 @@
++# Litestream 0.5.x: continuous replication of the UbyHost SQLite database to S3
++# (WP05). Mounted read-only into the `litestream` service as
++# /etc/litestream.yml. Pinned image: see docker-compose.yml.
++#
++# Every ${VAR} below is expanded by Litestream from the container environment,
++# which docker-compose.yml fills from .env. Credentials are not written here:
++# Litestream reads LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY
++# from the environment on its own.
++#
++# Encryption: Litestream 0.5 has no client-side encryption (the 0.3 `age:`
++# block is rejected at startup since 0.5.1). Replicas are protected by S3
++# server-side encryption (bucket default SSE-S3), Block Public Access and a
++# dedicated IAM user. Document numbers, visa numbers and signatures are
++# encrypted inside the database with a key derived from UBYHOST_SECRET_KEY,
++# which is never in the database and therefore never in this replica.
++
++logging:
++  level: info
++  type: text
++  stderr: true
++
++# A full snapshot every 6 hours keeps a restore short (fewer LTX files to
++# replay); snapshots and the LTX files between them are kept for 7 days, so a
++# point-in-time restore can go back a week. Durations accept s, m and h only.
++snapshot:
++  interval: 6h
++  retention: 168h
++
++# Litestream deletes LTX files and snapshots that fall out of the window above.
++# Bucket versioning keeps a deleted object as a non-current version for 30
++# days (lifecycle rule), so a leaked key cannot destroy the history at once.
++retention:
++  enabled: true
++
++# Check the replica's LTX chain for gaps and overlaps a few times a day.
++validation:
++  interval: 6h
++
++# Dead-man switch: pinged only while every database has synced successfully
++# within the interval, so a missed ping means replication is unhealthy. Empty
++# (the default) disables it.
++heartbeat-url: ${LITESTREAM_HEARTBEAT_URL}
++heartbeat-interval: 5m
++
++# On SIGTERM, push what is left in the WAL before exiting.
++# docker-compose.yml gives the container a longer stop_grace_period.
++shutdown-sync-timeout: 30s
++
++dbs:
++  - path: ${LITESTREAM_DB_PATH}
++    # The app's own connections wait up to 30 s (sqlite3 timeout=30); this is
++    # how long Litestream waits for a lock during its checkpoints.
++    busy-timeout: 5s
++    replica:
++      type: s3
++      bucket: ${LITESTREAM_S3_BUCKET}
++      path: ${LITESTREAM_S3_PATH}
++      region: ${LITESTREAM_S3_REGION}
++      # Writes are pushed every 10 s: that is the data-loss window if the VM
++      # dies. 1 s (the default) costs about 10x the PUT requests for little gain.
++      sync-interval: 10s
+diff --git a/deploy/lightsail/scripts/preflight.sh b/deploy/lightsail/scripts/preflight.sh
+index 978e85d..a1ecaa4 100755
+--- a/deploy/lightsail/scripts/preflight.sh
++++ b/deploy/lightsail/scripts/preflight.sh
+@@ -77,6 +77,22 @@ if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ];
+   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
+ fi
+ 
++# WP05: the litestream service replicates the database to S3 continuously.
++# Without these it crash-loops and the only off-site copy is a day old.
++if [ "${DEPLOYMENT}" = "production" ]; then
++  for var in LITESTREAM_S3_BUCKET LITESTREAM_ACCESS_KEY_ID LITESTREAM_SECRET_ACCESS_KEY; do
++    if [ -z "${!var:-}" ]; then
++      die "${var} is empty — Litestream cannot replicate the database to S3 (see README.md, Litestream)"
++    fi
++  done
++  if [ -z "${LITESTREAM_HEARTBEAT_URL:-}" ]; then
++    warn "LITESTREAM_HEARTBEAT_URL is empty — stalled replication would go unnoticed"
++  fi
++fi
++case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
++  /*|*/) die "LITESTREAM_S3_PATH must not start or end with a slash" ;;
++esac
++
+ if [ -n "${UBYHOST_SECRET_KEY:-}" ] && [ "${#UBYHOST_SECRET_KEY}" -lt 32 ]; then
+   die "UBYHOST_SECRET_KEY must be at least 32 characters (or leave empty for auto-generate)"
+ fi
+diff --git a/deploy/lightsail/scripts/restore.sh b/deploy/lightsail/scripts/restore.sh
+index 15f3960..36e8d8a 100755
+--- a/deploy/lightsail/scripts/restore.sh
++++ b/deploy/lightsail/scripts/restore.sh
+@@ -87,7 +87,12 @@ if [ -z "${CONTAINER}" ]; then
+   exit 1
+ fi
+ 
+-echo "==> Stopping ubyhost (Caddy stays up and will 502 until restart)"
++# WP05: Litestream must not replicate the restored (older) file into the
++# existing replica: mixing two histories under one S3 path can make the
++# replica unrestorable. Stop it here; it stays stopped until LITESTREAM_S3_PATH
++# points at a new prefix (see the end of this script and README.md).
++echo "==> Stopping litestream and ubyhost (Caddy stays up and will 502 until restart)"
++docker compose stop litestream 2>/dev/null || true
+ docker compose stop ubyhost
+ 
+ if [ "${LAYOUT}" = "encrypted" ]; then
+@@ -110,6 +115,7 @@ if [ "${LAYOUT}" = "encrypted" ]; then
+       set -euo pipefail
+       if [ -f /data/ubyhost.db ]; then cp -a /data/ubyhost.db /data/ubyhost.db.before-restore-\$(date -u +%Y%m%dT%H%M%SZ); fi
+       rm -f /data/ubyhost.db-wal /data/ubyhost.db-shm
++      rm -rf /data/.ubyhost.db-litestream
+       cp -a /restore/ubyhost.db /data/ubyhost.db
+       if [ -f /restore/secret_key ]; then
+         cp -a /restore/secret_key /data/secret_key
+@@ -132,6 +138,7 @@ else
+     fi
+     if [ -f /data/ubyhost.db ]; then cp -a /data/ubyhost.db /data/ubyhost.db.before-restore-\$(date -u +%Y%m%dT%H%M%SZ); fi
+     rm -f /data/ubyhost.db-wal /data/ubyhost.db-shm
++    rm -rf /data/.ubyhost.db-litestream
+     cp -a \"\${SRC}/ubyhost.db\" /data/ubyhost.db
+     if [ -f \"\${SRC}/secret_key\" ]; then
+       cp -a \"\${SRC}/secret_key\" /data/secret_key
+@@ -153,6 +160,11 @@ for _ in $(seq 1 30); do
+     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)" \
+     >/dev/null 2>&1; then
+     echo "Restore complete. Sign in and open one stay to confirm data."
++    echo ""
++    echo "Litestream is STOPPED. Point it at a fresh replica prefix before restarting it:"
++    echo "  1. In .env set LITESTREAM_S3_PATH to a new value, e.g. ubyhost/production-$(date -u +%Y%m%d)"
++    echo "  2. docker compose up -d litestream"
++    echo "  3. ./scripts/restore_test.sh"
+     exit 0
+   fi
+   sleep 2
+diff --git a/deploy/lightsail/scripts/restore_test.sh b/deploy/lightsail/scripts/restore_test.sh
+new file mode 100755
+index 0000000..4e6b674
+--- /dev/null
++++ b/deploy/lightsail/scripts/restore_test.sh
+@@ -0,0 +1,126 @@
++#!/usr/bin/env bash
++# Restore drill for the Litestream replica (WP05). Run once after the first
++# deploy with Litestream and then once per quarter.
++#
++# It restores the newest replica from S3 into a temporary file inside a
++# throwaway litestream container, runs PRAGMA integrity_check on it, prints the
++# row counts of the main tables next to the live database's counts and deletes
++# the temporary file. Nothing is written to the data volume or to the host, and
++# only counts are printed, never row contents.
++#
++# Usage (from deploy/lightsail):
++#   ./scripts/restore_test.sh
++#   RESTORE_TEST_SETTLE_SECONDS=30 ./scripts/restore_test.sh
++#
++# Exit code: 0 when the restore is intact and every count matches, 1 otherwise.
++#
++# A count "matches" when the restored value lies between the live counts read
++# just before and just after the restore. The app keeps writing during the
++# drill, and the replica trails the live file by up to one sync-interval
++# (10 s), so the script waits RESTORE_TEST_SETTLE_SECONDS (default 15) after the
++# first live reading before it restores.
++#
++# RESTORE_TEST_LOCAL=1 runs the same steps with the litestream and sqlite3
++# binaries on PATH instead of through docker compose (used to test the script
++# against a local S3 emulator). It then needs LITESTREAM_CONFIG and the
++# variables litestream.yml expands.
++set -euo pipefail
++
++ROOT="$(cd "$(dirname "$0")/.." && pwd)"
++cd "${ROOT}"
++
++TABLES="user_account legal_entity apartment reservation guest submission"
++SETTLE="${RESTORE_TEST_SETTLE_SECONDS:-15}"
++case "${SETTLE}" in
++  ''|*[!0-9]*) echo "RESTORE_TEST_SETTLE_SECONDS must be a whole number of seconds." >&2; exit 1 ;;
++esac
++
++# The drill itself, as a POSIX sh script fed on stdin, so that it runs
++# unchanged inside the litestream image (Debian, has sh and sqlite3).
++drill() {
++  cat <<'DRILL'
++set -eu
++tables="$1"
++settle="$2"
++db="${LITESTREAM_DB_PATH:?LITESTREAM_DB_PATH is not set}"
++cfg="${LITESTREAM_CONFIG:-/etc/litestream.yml}"
++
++if [ ! -f "${db}" ]; then
++  echo "No live database at ${db}." >&2
++  exit 1
++fi
++
++work="$(mktemp -d)"
++trap 'rm -rf "${work}"' EXIT INT TERM
++restored="${work}/restore-test.db"
++
++count() {
++  sqlite3 -readonly "$1" "SELECT COUNT(*) FROM $2;"
++}
++
++for t in ${tables}; do
++  echo "${t} $(count "${db}" "${t}")"
++done > "${work}/before"
++
++echo "==> Waiting ${settle}s so the replica catches up with the live database"
++sleep "${settle}"
++
++echo "==> Restoring the newest replica into a temporary file"
++started="$(date +%s)"
++litestream restore -config "${cfg}" -o "${restored}" "${db}"
++echo "Restore took $(( $(date +%s) - started ))s"
++
++integrity="$(sqlite3 -readonly "${restored}" 'PRAGMA integrity_check;')"
++echo "integrity_check: ${integrity}"
++
++for t in ${tables}; do
++  echo "${t} $(count "${db}" "${t}")"
++done > "${work}/after"
++
++status=0
++[ "${integrity}" = "ok" ] || status=1
++
++printf '%-16s %10s %10s %10s  %s\n' table live_before restored live_after result
++paste -d ' ' "${work}/before" "${work}/after" > "${work}/counts"
++while read -r t b _t a; do
++  r="$(count "${restored}" "${t}" 2>/dev/null || echo missing)"
++  lo="${b}"; hi="${a}"
++  if [ "${a}" -lt "${b}" ]; then lo="${a}"; hi="${b}"; fi
++  if [ "${r}" != "missing" ] && [ "${r}" -ge "${lo}" ] && [ "${r}" -le "${hi}" ]; then
++    result=ok
++  else
++    result=MISMATCH
++    status=1
++  fi
++  printf '%-16s %10s %10s %10s  %s\n' "${t}" "${b}" "${r}" "${a}" "${result}"
++done < "${work}/counts"
++
++rm -f "${restored}" "${restored}-wal" "${restored}-shm"
++if [ "${status}" -eq 0 ]; then
++  echo "Restore drill passed. The temporary copy was deleted."
++else
++  echo "Restore drill FAILED. The temporary copy was deleted." >&2
++fi
++exit "${status}"
++DRILL
++}
++
++if [ "${RESTORE_TEST_LOCAL:-0}" = "1" ]; then
++  drill | sh -s -- "${TABLES}" "${SETTLE}"
++  exit $?
++fi
++
++if [ ! -f .env ]; then
++  echo "Missing .env in ${ROOT}" >&2
++  exit 1
++fi
++
++if ! docker compose ps --status running --services 2>/dev/null | grep -qx litestream; then
++  echo "WARNING: the litestream service is not running; the replica may be stale." >&2
++fi
++
++# A one-off container of the litestream service: same image, user, volume,
++# config and S3 credentials, removed when the drill ends (--rm). The temporary
++# restore lives in that container's /tmp only.
++drill | docker compose run --rm --no-deps -T --entrypoint sh litestream \
++  -s -- "${TABLES}" "${SETTLE}"
+-- 
+2.34.1
+

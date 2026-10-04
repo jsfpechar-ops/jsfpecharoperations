@@ -1,0 +1,1676 @@
+From e5cf01490b233ee81f239749810da9bcb850b40c Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:19:14 +0200
+Subject: [PATCH 15/34] WP09: Umami on public pages only
+
+Tracker on public marketing and legal pages only, with opt-out on /privacy, the legal positions' privacy paragraphs (analytics, own retention, roles), privacy policy 1.6 and the section 5 subprocessor register.
+---
+ App/app/analytics.py                      | 123 +++++++++
+ App/app/config.py                         |  19 +-
+ App/app/cookie_inventory.py               |  52 ++++
+ App/app/main.py                           |  42 ++-
+ App/app/privacy_policy_i18n.py            |  93 ++++++-
+ App/app/routes/legal.py                   |  19 +-
+ App/app/static/umami-optout.js            |  47 ++++
+ App/app/subprocessors_i18n.py             | 181 +++++++-----
+ App/app/templates/_public_footer.html     |   4 +-
+ App/app/templates/_public_header.html     |   2 +-
+ App/app/templates/_umami.html             |  13 +
+ App/app/templates/dpa.html                |   2 +-
+ App/app/templates/landing.html            |   5 +-
+ App/app/templates/legal.html              |   2 +-
+ App/app/templates/pricing.html            |   5 +-
+ App/app/templates/privacy.html            |  39 ++-
+ App/app/templates/product.html            |   5 +-
+ App/app/templates/public_guide.html       |   3 +-
+ App/app/templates/public_legal_base.html  |   1 +
+ App/app/templates/subprocessors.html      |  14 +
+ App/app/templating.py                     |   5 +
+ App/tests/test_accounts.py                |   3 +-
+ App/tests/test_legal_contents.py          |   8 +-
+ App/tests/test_no_tracking.py             |   4 +
+ App/tests/test_privacy_legal_positions.py |  85 ++++++
+ App/tests/test_umami_guard.py             | 321 ++++++++++++++++++++++
+ deploy/lightsail/.env.example             |  12 +
+ docs/ENVIRONMENT.md                       |  19 +-
+ 28 files changed, 1029 insertions(+), 99 deletions(-)
+ create mode 100644 App/app/analytics.py
+ create mode 100644 App/app/static/umami-optout.js
+ create mode 100644 App/app/templates/_umami.html
+ create mode 100644 App/tests/test_privacy_legal_positions.py
+ create mode 100644 App/tests/test_umami_guard.py
+
+diff --git a/App/app/analytics.py b/App/app/analytics.py
+new file mode 100644
+index 0000000..ee38db8
+--- /dev/null
++++ b/App/app/analytics.py
+@@ -0,0 +1,123 @@
++"""Umami page analytics on the public marketing and legal pages only (WP09).
++
++Permanent rule: no analytics or third-party script on app pages, guest pages
++(``/l/...``, including ``pick.html``) or auth pages. Three things enforce it:
++
++* ``PUBLIC_ANALYTICS_TEMPLATES`` names the only page templates that may carry
++  the tag. ``templating.render`` marks a response as a public analytics page
++  only when it renders one of them; guest pages use ``render_guest`` and are
++  never marked.
++* ``_umami.html`` renders the tag only when that mark is set, so including the
++  partial anywhere else prints nothing.
++* ``main._harden`` adds the Umami origins to the CSP only for marked responses;
++  every other page keeps the strict policy, so even a stray tag would be
++  blocked by the browser.
++
++``tests/test_umami_guard.py`` checks all three.
++"""
++from __future__ import annotations
++
++from typing import Optional, Tuple
++from urllib.parse import urlsplit
++
++from . import config
++
++PUBLIC_ANALYTICS_TEMPLATES = frozenset(
++    {
++        "landing.html",
++        "product.html",
++        "pricing.html",
++        "public_guide.html",
++        # Everything below extends public_legal_base.html.
++        "legal.html",
++        "terms.html",
++        "privacy.html",
++        "dpa.html",
++        "subprocessors.html",
++    }
++)
++
++# Where the Umami Cloud tracker sends events when no data-host-url is set. Read
++# from https://cloud.umami.is/script.js on 2026-10-03: the script posts to
++# "https://gateway.umami.is/api/send", not to its own origin. The CSP needs it.
++UMAMI_CLOUD_SCRIPT_ORIGIN = "https://cloud.umami.is"
++UMAMI_CLOUD_DEFAULT_ENDPOINT = "https://gateway.umami.is"
++
++STATE_FLAG = "public_analytics_page"
++
++
++def _https_origin(url: str) -> Optional[str]:
++    """``https://host[:port]`` of an absolute https URL, else None."""
++    try:
++        parts = urlsplit(url)
++    except ValueError:
++        return None
++    if parts.scheme != "https" or not parts.hostname:
++        return None
++    host = parts.hostname
++    if parts.port:
++        host = f"{host}:{parts.port}"
++    return f"https://{host}"
++
++
++def _domains() -> str:
++    if config.UMAMI_DOMAINS:
++        return ",".join(d.strip() for d in config.UMAMI_DOMAINS.split(",") if d.strip())
++    return urlsplit(config.PUBLIC_BASE_URL).hostname or ""
++
++
++def enabled() -> bool:
++    return bool(
++        config.UMAMI_WEBSITE_ID
++        and config.UMAMI_SCRIPT_URL
++        and _https_origin(config.UMAMI_SCRIPT_URL)
++    )
++
++
++def script_origin() -> Optional[str]:
++    return _https_origin(config.UMAMI_SCRIPT_URL) if enabled() else None
++
++
++def connect_origins() -> Tuple[str, ...]:
++    """Every origin the tracker may send events to, for CSP connect-src."""
++    origin = script_origin()
++    if not origin:
++        return ()
++    origins = [origin]
++    if config.UMAMI_HOST_URL:
++        host = _https_origin(config.UMAMI_HOST_URL)
++        if host:
++            origins.append(host)
++    elif origin == UMAMI_CLOUD_SCRIPT_ORIGIN:
++        origins.append(UMAMI_CLOUD_DEFAULT_ENDPOINT)
++    return tuple(dict.fromkeys(origins))
++
++
++def tag() -> Optional[dict]:
++    """The attributes of the tracker tag, or None when analytics is off.
++
++    No distinct ID, no tag, no performance or replay options: page views and
++    the anonymous ``data-umami-event`` clicks only. Search and hash are left
++    out so an ad click id or a token in a URL never reaches Umami.
++    """
++    if not enabled():
++        return None
++    host_url = _https_origin(config.UMAMI_HOST_URL) if config.UMAMI_HOST_URL else None
++    return {
++        "src": config.UMAMI_SCRIPT_URL,
++        "website_id": config.UMAMI_WEBSITE_ID,
++        "domains": _domains(),
++        "host_url": config.UMAMI_HOST_URL if host_url else "",
++    }
++
++
++def mark_public_page(request, template_name: str) -> bool:
++    """Flag the request when it renders an allowed public page. Returns the flag."""
++    allowed = template_name in PUBLIC_ANALYTICS_TEMPLATES and enabled()
++    if allowed:
++        setattr(request.state, STATE_FLAG, True)
++    return allowed
++
++
++def is_public_page(request) -> bool:
++    return bool(getattr(request.state, STATE_FLAG, False))
+diff --git a/App/app/config.py b/App/app/config.py
+index 08e5a36..6f440b7 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -194,6 +194,19 @@ TURNSTILE_HOSTNAMES = {
+ }
+ TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET and TURNSTILE_HOSTNAMES)
+ 
++# Umami Cloud page analytics, public marketing and legal pages only (WP09).
++# Both values empty by default; set them only in the production .env, copied
++# from the tracking-code snippet in the Umami website settings. The tag and the
++# CSP allowance appear only when both are set (see analytics.py).
++UMAMI_WEBSITE_ID = os.environ.get("UMAMI_WEBSITE_ID", "").strip()
++UMAMI_SCRIPT_URL = os.environ.get("UMAMI_SCRIPT_URL", "").strip()
++# Optional: Umami's data-host-url, where the tracker sends its events. Empty
++# means "the tracker's own default"; see analytics.py for what that is.
++UMAMI_HOST_URL = os.environ.get("UMAMI_HOST_URL", "").strip().rstrip("/")
++# data-domains: the hostnames the tracker may run on. Defaults to the host of
++# UBYHOST_PUBLIC_BASE_URL, so a staging copy never reports into production.
++UMAMI_DOMAINS = os.environ.get("UMAMI_DOMAINS", "").strip()
++
+ # Bumped when Terms of Service change materially (logged on host login).
+ TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.5")
+ 
+@@ -205,8 +218,10 @@ SES_REGION = os.environ.get("UBYHOST_SES_REGION", "eu-central-1").strip()
+ AWS_ACCESS_KEY_ID = os.environ.get("UBYHOST_AWS_ACCESS_KEY_ID", "").strip()
+ AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").strip()
+ 
+-# Bumped when the public Privacy Policy changes materially.
+-PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.5")
++# Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
++# analytics with opt-out, own retention periods and roles. A bump makes the
++# policy pending again, so every host is sent to /account/accept once.
++PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.6")
+ 
+ # Bumped when the Data Processing Agreement changes materially.
+ DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.5")
+diff --git a/App/app/cookie_inventory.py b/App/app/cookie_inventory.py
+index a454ebf..66651f7 100644
+--- a/App/app/cookie_inventory.py
++++ b/App/app/cookie_inventory.py
+@@ -127,6 +127,31 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
+         },
+         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
+     },
++    {
++        # WP09: written only when a visitor clicks the opt-out on /privacy
++        # (static/umami-optout.js). The Umami tracker reads it and then counts
++        # nothing in this browser; the opt-back-in link removes it.
++        "name": "umami.disabled",
++        "set_by": "static/umami-optout.js",
++        "party": "first",
++        "kind": "localStorage",
++        "surface": "public",
++        "purpose": {
++            "en": (
++                "Cookieless analytics (Umami): no cookies are set. This optional key is stored "
++                "only after you turn measurement off on the Privacy Policy page"
++            ),
++            "cs": (
++                "Měření návštěvnosti bez cookies (Umami): žádné cookies se nenastavují. Tento "
++                "nepovinný klíč se uloží jen poté, co měření vypnete na stránce Zásad ochrany "
++                "osobních údajů"
++            ),
++        },
++        "lifetime": {
++            "en": "Until you turn measurement back on or clear it",
++            "cs": "Dokud měření znovu nezapnete nebo klíč nevymažete",
++        },
++    },
+     {
+         "name": "__cf_bm",
+         "set_by": "Cloudflare edge",
+@@ -154,5 +179,32 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
+ )
+ 
+ 
++# Third-party services on the public pages that set no cookie, listed so the
++# privacy page can say so (WP09, 04_legal_positions.md section 1). Umami itself
++# writes nothing; the only storage key involved is the visitor's own opt-out,
++# "umami.disabled", which is a COOKIE_INVENTORY row above because our
++# umami-optout.js writes it.
++COOKIELESS_SERVICES: Tuple[Dict[str, object], ...] = (
++    {
++        "name": "Umami Cloud",
++        "surface": "public",
++        "party": "Umami Software, Inc.",
++        "note": {
++            "en": (
++                "Cookieless analytics, no cookies set; optional localStorage key umami.disabled "
++                "only after opt-out. Public marketing and legal pages only, data stored in the EU. "
++                "Never loaded in the app, on sign-in or on guest pages."
++            ),
++            "cs": (
++                "Měření návštěvnosti bez cookies, žádné cookies se nenastavují; nepovinný klíč "
++                "umami.disabled v localStorage jen po vypnutí měření. Jen veřejné marketingové a "
++                "právní stránky, data uložená v EU. V aplikaci, při přihlášení ani na stránkách "
++                "pro hosty se nikdy nenačítá."
++            ),
++        },
++    },
++)
++
++
+ def names() -> Tuple[str, ...]:
+     return tuple(str(row["name"]) for row in COOKIE_INVENTORY)
+diff --git a/App/app/main.py b/App/app/main.py
+index df8bce3..5bc3b79 100644
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -14,6 +14,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
+ 
+ from . import (
+     alerts,
++    analytics,
+     auth,
+     client_ip,
+     config,
+@@ -156,22 +157,43 @@ def _wants_html(request: Request) -> bool:
+     return not request.url.path.startswith("/api/") and "text/html" in request.headers.get("accept", "")
+ 
+ 
+-_CSP = (
+-    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+-    "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+-    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
+-    "frame-src https://challenges.cloudflare.com; "
+-    "connect-src 'self' https://challenges.cloudflare.com"
+-)
++def _csp(extra_script: tuple = (), extra_connect: tuple = ()) -> str:
++    script = " ".join(("'self' 'unsafe-inline' https://challenges.cloudflare.com",) + extra_script)
++    connect = " ".join(("'self' https://challenges.cloudflare.com",) + extra_connect)
++    return (
++        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
++        "form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
++        f"script-src {script}; "
++        "frame-src https://challenges.cloudflare.com; "
++        f"connect-src {connect}"
++    )
++
++
++# Host, guest and auth pages: no third-party origin beyond Turnstile, ever.
++_CSP = _csp()
++
+ 
++def _public_csp() -> str:
++    """WP09: the CSP for the public pages that carry the Umami tag.
+ 
+-def _harden(response):
++    Derived from UMAMI_SCRIPT_URL (and UMAMI_HOST_URL), never hard-coded, so
++    the policy always matches the tag that templating rendered.
++    """
++    origin = analytics.script_origin()
++    if not origin:
++        return _CSP
++    return _csp((origin,), analytics.connect_origins())
++
++
++def _harden(response, public_analytics: bool = False):
+     """Headers every page needs. The 500 handler runs outside the middleware."""
+     response.headers.setdefault("X-Content-Type-Options", "nosniff")
+     response.headers.setdefault("X-Frame-Options", "DENY")
+     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+     response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=()")
+-    response.headers.setdefault("Content-Security-Policy", _CSP)
++    response.headers.setdefault(
++        "Content-Security-Policy", _public_csp() if public_analytics else _CSP
++    )
+     return response
+ 
+ 
+@@ -218,7 +240,7 @@ async def cloudflare_connecting_ip(request: Request, call_next):
+     started = time.perf_counter()
+     response = await call_next(request)
+     security.attach_csrf_cookie(request, response)
+-    _harden(response)
++    _harden(response, public_analytics=analytics.is_public_page(request))
+     # Everything outside /static carries passport numbers, addresses and
+     # signatures. Guests hand the phone back and hosts share laptops, so these
+     # pages must not sit in history, the back/forward cache, or a proxy.
+diff --git a/App/app/privacy_policy_i18n.py b/App/app/privacy_policy_i18n.py
+index 04dcdb4..8050d62 100644
+--- a/App/app/privacy_policy_i18n.py
++++ b/App/app/privacy_policy_i18n.py
+@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+             "replace the guest privacy notice shown to your guests — that notice names the controller "
+             "configured for the property, which may differ from its property manager."
+         ),
+-        "privacy.effective": "Effective date: 19 September 2026. Version 1.5.",
++        "privacy.effective": "Effective date: 4 October 2026. Version 1.6.",
+         "privacy.cookies.table_intro": "The table below lists every cookie and item of local storage the service sets.",
+         "cookies.table.name": "Name",
+         "cookies.table.party": "Set by",
+@@ -135,6 +135,52 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+             "login. Browsers may also honour HTTP Strict Transport Security (HSTS) so this hostname "
+             "is opened only over HTTPS for a limited period."
+         ),
++        # WP09: owner's final wording from 04_legal_positions.md, sections 1, 4
++        # and 5. analytics_* and optout_* are shown on /privacy only while
++        # Umami is configured; roles_* sits in section 3, own_retention_* in 11.
++        "privacy.analytics_title": "Website analytics",
++        "privacy.analytics_body": (
++            "On our public pages (not in the app) we use Umami Cloud, operated by Umami Software, "
++            "Inc., with data stored in the EU, to count visits. Umami does not set cookies and does "
++            "not store your IP address. It derives a short-lived anonymous visit identifier from "
++            "your IP address, browser type and our website ID, and we see only aggregated "
++            "statistics (pages viewed, referring site, browser, device type, country). We do not "
++            "combine this data with account data and we do not use it for advertising. Legal "
++            "basis: our legitimate interest in understanding how our website is used (Art. 6(1)(f) "
++            "GDPR). The exemption under § 89(3) of Act No. 127/2005 Coll. applies because the "
++            "measurement serves only anonymous traffic statistics. You can switch measurement off "
++            "in your browser here:"
++        ),
++        "privacy.analytics_dnt": "We also respect your browser's Do Not Track setting.",
++        "privacy.optout_lede": (
++            "We measure visits to our public pages with Umami, without cookies."
++        ),
++        "privacy.optout_disable": "Turn off measurement in this browser",
++        "privacy.optout_off_note": "Measurement is off in this browser.",
++        "privacy.optout_enable": "Turn measurement back on",
++        "privacy.own_retention_title": "How long we keep data",
++        "privacy.own_retention_body": (
++            "Invoices: 10 years from the end of the year of issue (Act No. 235/2004 Coll., § 35). "
++            "Account data: while your account is active and 3 years after closure. Sign-up click "
++            "identifier from Google Ads: at most 90 days after the click. Consent records: while "
++            "your account is active and 3 years after. Backups are overwritten within 30 days."
++        ),
++        "privacy.roles_title": "Who is responsible",
++        "privacy.roles_body": (
++            "For your account, invoices, our website statistics and Google Ads measurement, "
++            "%(name)s, IČO %(ico)s, %(address)s is the controller. For the data of your guests "
++            "(guest book, stay-fee records, reports to the foreign police through UbyPort and any "
++            "document photos), you as the accommodation provider are the controller and we "
++            "process the data only on your instructions as your processor, under our data "
++            "processing agreement. Our subprocessors are listed at /subprocessors. Google Ireland "
++            "Ltd. receives the Google Ads click identifier only if you consent, and it processes "
++            "this as an independent controller."
++        ),
++        # Shown only outside production when an UBYHOST_OPERATOR_* value is
++        # empty; production refuses to start without them (env_guard).
++        "privacy.placeholder_name": "[Company name]",
++        "privacy.placeholder_ico": "[xxxxxxxx]",
++        "privacy.placeholder_address": "[registered address]",
+         "privacy.s08_title": "8. Server logs and security monitoring",
+         "privacy.s08_body": (
+             "Our infrastructure automatically logs technical data: IP addresses, timestamps, request "
+@@ -283,7 +329,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+             "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
+             "který se může lišit od správce objektu."
+         ),
+-        "privacy.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
++        "privacy.effective": "Účinnost od: 4. října 2026. Verze 1.6.",
+         "privacy.cookies.table_intro": "Tabulka níže uvádí všechny soubory cookie a položky místního úložiště, které služba nastavuje.",
+         "cookies.table.name": "Název",
+         "cookies.table.party": "Nastavuje",
+@@ -385,6 +431,49 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
+             "cookie přihlášení nefunguje. Prohlížeče mohou také dodržovat HTTP Strict Transport "
+             "Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
+         ),
++        # WP09: konečné znění provozovatele z 04_legal_positions.md, oddíly 1,
++        # 4 a 5. analytics_* a optout_* jen při zapnutém Umami.
++        "privacy.analytics_title": "Měření návštěvnosti",
++        "privacy.analytics_body": (
++            "Na veřejných stránkách webu (ne v aplikaci) používáme nástroj Umami Cloud provozovaný "
++            "společností Umami Software, Inc. s ukládáním dat v EU, abychom zjistili počet návštěv. "
++            "Umami nepoužívá cookies a neukládá vaši IP adresu. Z IP adresy, typu prohlížeče a "
++            "identifikátoru našeho webu vytváří krátkodobý anonymní identifikátor návštěvy a my "
++            "vidíme pouze souhrnné statistiky (zobrazené stránky, odkazující web, prohlížeč, typ "
++            "zařízení, země). Tato data nespojujeme s údaji z vašeho účtu a nepoužíváme je k "
++            "reklamě. Právní základ: náš oprávněný zájem porozumět používání webu (čl. 6 odst. 1 "
++            "písm. f) GDPR). Jde o měření nezbytné pro provoz webu ve smyslu § 89 odst. 3 zákona "
++            "č. 127/2005 Sb., protože slouží jen k anonymní statistice návštěvnosti. Měření můžete "
++            "ve svém prohlížeči vypnout zde:"
++        ),
++        "privacy.analytics_dnt": "Respektujeme také nastavení Do Not Track ve vašem prohlížeči.",
++        "privacy.optout_lede": (
++            "Návštěvnost veřejných stránek měříme nástrojem Umami bez cookies."
++        ),
++        "privacy.optout_disable": "Vypnout měření v tomto prohlížeči",
++        "privacy.optout_off_note": "Měření je v tomto prohlížeči vypnuté.",
++        "privacy.optout_enable": "Znovu zapnout měření",
++        "privacy.own_retention_title": "Jak dlouho údaje uchováváme",
++        "privacy.own_retention_body": (
++            "Faktury: 10 let od konce roku vystavení (§ 35 zákona č. 235/2004 Sb.). Údaje účtu: po "
++            "dobu trvání účtu a 3 roky po jeho zrušení. Identifikátor kliknutí z Google Ads: "
++            "nejvýše 90 dní od kliknutí. Záznamy o souhlasech: po dobu trvání účtu a 3 roky poté. "
++            "Zálohy se přepisují do 30 dní."
++        ),
++        "privacy.roles_title": "Kdo odpovídá za zpracování",
++        "privacy.roles_body": (
++            "Za údaje vašeho účtu, faktury, statistiky návštěvnosti webu a měření reklam Google "
++            "Ads je správcem %(name)s, IČO %(ico)s, %(address)s. Za údaje vašich hostů (domovní "
++            "kniha, evidence k poplatku z pobytu, hlášení cizinecké policii přes UbyPort a "
++            "případné fotografie dokladů) jste správcem vy jako ubytovatel a my je zpracováváme "
++            "pouze podle vašich pokynů jako zpracovatel na základě zpracovatelské smlouvy. Seznam "
++            "našich subzpracovatelů najdete na /subprocessors. Společnost Google Ireland Ltd. "
++            "obdrží identifikátor kliknutí z Google Ads jen s vaším souhlasem a zpracovává jej "
++            "jako samostatný správce."
++        ),
++        "privacy.placeholder_name": "[Obchodní firma]",
++        "privacy.placeholder_ico": "[xxxxxxxx]",
++        "privacy.placeholder_address": "[sídlo]",
+         "privacy.s08_title": "8. Serverové logy a bezpečnost",
+         "privacy.s08_body": (
+             "Infrastruktura automaticky zaznamenává IP adresy, čas, cesty požadavků, user agent, chyby "
+diff --git a/App/app/routes/legal.py b/App/app/routes/legal.py
+index 1e10b75..12db91a 100644
+--- a/App/app/routes/legal.py
++++ b/App/app/routes/legal.py
+@@ -12,7 +12,21 @@ router = APIRouter()
+ TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
+ PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
+ DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
+-SUBPROCESSOR_IDS = ("aws", "cloudflare", "render", "google")
++# WP09: the five rows of 04_legal_positions.md section 5 first, then the two
++# conditional providers the repo still documents (Render demo, Drive backups).
++SUBPROCESSOR_IDS = (
++    "aws_lightsail",
++    "aws_ses",
++    "aws_s3",
++    "cloudflare",
++    "umami",
++    "render",
++    "google",
++)
++# Recipients that are not subprocessors (section 5). "google_ads" belongs to
++# self sign-up with Google Ads; there is no UBYHOST_SIGNUP_ENABLED flag yet, so
++# it is always listed. Gate it on that flag when sign-up lands.
++RECIPIENT_IDS = ("google_ads", "police", "municipality")
+ 
+ 
+ @router.get("/jak-to-funguje")
+@@ -102,6 +116,8 @@ def privacy_policy(request: Request):
+             "wrap_class": "narrow",
+             "privacy_sections": PRIVACY_SECTION_IDS,
+             "cookie_inventory": cookie_inventory.COOKIE_INVENTORY,
++            "cookieless_services": cookie_inventory.COOKIELESS_SERVICES,
++            "legal_placeholders": config.DEPLOYMENT != "production",
+         },
+         status_code=200,
+     )
+@@ -131,6 +147,7 @@ def subprocessor_register(request: Request):
+             "operator": operator.details(),
+             "wrap_class": "narrow",
+             "subprocessor_ids": SUBPROCESSOR_IDS,
++            "recipient_ids": RECIPIENT_IDS,
+         },
+         status_code=200,
+     )
+diff --git a/App/app/static/umami-optout.js b/App/app/static/umami-optout.js
+new file mode 100644
+index 0000000..b6e88ec
+--- /dev/null
++++ b/App/app/static/umami-optout.js
+@@ -0,0 +1,47 @@
++/* WP09: opt-out and opt-back-in for website analytics, loaded only on /privacy
++ * and only while Umami is configured. The Umami tracker counts nothing while
++ * localStorage "umami.disabled" is set ("Exclude my own visits" in the Umami
++ * docs). The key is written only when the visitor clicks the link, so no
++ * consent is needed for it. Listed in cookie_inventory.py. */
++(function () {
++  "use strict";
++  var KEY = "umami.disabled";
++  var root = document.getElementById("analytics-optout");
++  if (!root) return;
++
++  function isOff() {
++    try {
++      return window.localStorage.getItem(KEY) !== null;
++    } catch (err) {
++      return false;
++    }
++  }
++
++  function render() {
++    var off = isOff();
++    var states = root.querySelectorAll("[data-optout-when]");
++    for (var i = 0; i < states.length; i++) {
++      states[i].hidden = (states[i].getAttribute("data-optout-when") === "off") !== off;
++    }
++  }
++
++  root.addEventListener("click", function (event) {
++    var link = event.target.closest("[data-optout-action]");
++    if (!link) return;
++    event.preventDefault();
++    try {
++      if (link.getAttribute("data-optout-action") === "disable") {
++        window.localStorage.setItem(KEY, "1");
++      } else {
++        window.localStorage.removeItem(KEY);
++      }
++    } catch (err) {
++      /* Storage blocked: nothing to change, the state below stays truthful. */
++    }
++    render();
++    var shown = root.querySelector("[data-optout-when]:not([hidden]) [data-optout-action]");
++    if (shown) shown.focus();
++  });
++
++  render();
++})();
+diff --git a/App/app/subprocessors_i18n.py b/App/app/subprocessors_i18n.py
+index e8e40a0..e30d129 100644
+--- a/App/app/subprocessors_i18n.py
++++ b/App/app/subprocessors_i18n.py
+@@ -11,7 +11,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
+             "The service providers that may process personal data for UbyHost, what they do, "
+             "and when they are used. This register forms part of the Data Processing Agreement."
+         ),
+-        "subprocessors.effective": "Effective date: 28 September 2026. Version 1.1.",
++        "subprocessors.effective": "Effective date: 4 October 2026. Version 1.2.",
+         "subprocessors.controller_note_title": "Who appoints these providers",
+         "subprocessors.controller_note": (
+             "For Guest Data, the accommodation provider or alternate controller configured for the "
+@@ -26,50 +26,76 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
+             "Enabled services, account regions, and contractual transfer mechanisms are documented "
+             "for the supported deployment paths."
+         ),
+-        "subprocessors.table_provider": "Provider",
++        "subprocessors.table_provider": "Subprocessor",
+         "subprocessors.table_purpose": "Purpose",
+-        "subprocessors.table_data": "Potential data",
+-        "subprocessors.table_location": "Location / transfer note",
+-        "subprocessors.aws_provider": "Amazon Web Services (AWS)",
+-        "subprocessors.aws_purpose": (
+-            "Production hosting on Lightsail; transactional e-mail through SES when enabled; "
+-            "optional S3 backups."
+-        ),
+-        "subprocessors.aws_data": (
+-            "Host accounts, property and stay data, Guest Data, encrypted integration credentials, "
+-            "technical logs; e-mail addresses and message content for SES."
+-        ),
+-        "subprocessors.aws_location": (
+-            "Production is configured for the EU (Frankfurt/eu-central-1). Provider support and "
+-            "security operations may involve international access subject to the provider DPA and "
+-            "lawful GDPR Chapter V safeguards where required."
+-        ),
+-        "subprocessors.cloudflare_provider": "Cloudflare",
+-        "subprocessors.cloudflare_purpose": (
+-            "DNS, CDN/proxy, TLS and edge security, including Turnstile and managed challenges."
+-        ),
+-        "subprocessors.cloudflare_data": (
+-            "IP address, request metadata, security signals, and content transiting the proxy as "
+-            "necessary to deliver and protect the Service."
+-        ),
+-        "subprocessors.cloudflare_location": (
+-            "Global network. Transfers outside the EEA are covered by the provider's applicable "
+-            "DPA and lawful safeguards such as adequacy mechanisms or Standard Contractual Clauses."
+-        ),
++        "subprocessors.table_data": "Data",
++        "subprocessors.table_location": "Location",
++        "subprocessors.table_safeguard": "Transfer safeguard",
++        # WP09: rows from 04_legal_positions.md section 5 (owner's decision).
++        # Backup rows must not call the off-site copies encrypted until OPS-2
++        # ships (LD-4, tests/test_legal_contents.py).
++        "subprocessors.aws_lightsail_provider": "Amazon Web Services EMEA SARL (AWS Lightsail)",
++        "subprocessors.aws_lightsail_purpose": "Application hosting and database.",
++        "subprocessors.aws_lightsail_data": "All app data, including Guest Data.",
++        "subprocessors.aws_lightsail_location": "EU, Frankfurt (eu-central-1).",
++        "subprocessors.aws_lightsail_safeguard": (
++            "AWS GDPR Data Processing Addendum in the AWS Service Terms, Standard Contractual "
++            "Clauses."
++        ),
++        "subprocessors.aws_ses_provider": "Amazon Web Services EMEA SARL (Amazon SES)",
++        "subprocessors.aws_ses_purpose": "Sending e-mail.",
++        "subprocessors.aws_ses_data": "Recipient address, e-mail content.",
++        "subprocessors.aws_ses_location": "eu-central-1 (Frankfurt).",
++        "subprocessors.aws_ses_safeguard": "Same as AWS Lightsail.",
++        "subprocessors.aws_s3_provider": "Amazon Web Services EMEA SARL (Amazon S3)",
++        "subprocessors.aws_s3_purpose": "Off-site backups, later file storage.",
++        "subprocessors.aws_s3_data": "Backup archives of all app data, including Guest Data.",
++        "subprocessors.aws_s3_location": "eu-central-1 (Frankfurt).",
++        "subprocessors.aws_s3_safeguard": "Same as AWS Lightsail.",
++        "subprocessors.cloudflare_provider": "Cloudflare, Inc.",
++        "subprocessors.cloudflare_purpose": "Turnstile bot protection; optional CDN and proxy.",
++        "subprocessors.cloudflare_data": "IP address, browser signals, request metadata.",
++        "subprocessors.cloudflare_location": "Global network, US company.",
++        "subprocessors.cloudflare_safeguard": (
++            "Cloudflare DPA, EU Standard Contractual Clauses, EU-US Data Privacy Framework."
++        ),
++        "subprocessors.umami_provider": "Umami Software, Inc. (Umami Cloud)",
++        "subprocessors.umami_purpose": "Website statistics, marketing pages only.",
++        "subprocessors.umami_data": (
++            "Page views, referrer, browser, device, country, short-lived visit hash. No Guest Data."
++        ),
++        "subprocessors.umami_location": "EU region. Used only while the Operator enables it.",
++        "subprocessors.umami_safeguard": "Umami DPA.",
+         "subprocessors.render_provider": "Render",
+         "subprocessors.render_purpose": "Demo hosting.",
+         "subprocessors.render_data": "Demo and test data plus technical logs.",
+         "subprocessors.render_location": (
+             "Conditional; not part of the production Guest Data path."
+         ),
++        "subprocessors.render_safeguard": (
++            "Provider DPA and lawful GDPR Chapter V safeguards where required."
++        ),
+         "subprocessors.google_provider": "Google Drive (Google)",
+         "subprocessors.google_purpose": "Optional off-site production backups.",
+         "subprocessors.google_data": (
+             "Backup archives that may contain account, property, stay and Guest Data."
+         ),
+         "subprocessors.google_location": (
+-            "Conditional; used only when the Operator configures the documented backup job. "
+-            "Provider DPA and lawful GDPR Chapter V safeguards apply where required."
++            "Conditional; used only when the Operator configures the documented backup job."
++        ),
++        "subprocessors.google_safeguard": (
++            "Provider DPA and lawful GDPR Chapter V safeguards where required."
++        ),
++        "subprocessors.recipients_title": "Recipients that are not subprocessors",
++        "subprocessors.recipient_google_ads": (
++            "Google Ireland Ltd. (Google Ads conversion measurement, independent controller, only "
++            "with consent)"
++        ),
++        "subprocessors.recipient_police": (
++            "Policie ČR, UbyPort (statutory reporting on the host's behalf)"
++        ),
++        "subprocessors.recipient_municipality": (
++            "The municipality (stay-fee reports, if the host uses that feature)"
+         ),
+         "subprocessors.change_title": "Changes and objections",
+         "subprocessors.change_body": (
+@@ -93,7 +119,7 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
+             "Poskytovatelé, kteří mohou pro UbyHost zpracovávat osobní údaje, účel jejich zapojení "
+             "a podmínky použití. Tento seznam je součástí zpracovatelské smlouvy."
+         ),
+-        "subprocessors.effective": "Účinnost od: 28. září 2026. Verze 1.1.",
++        "subprocessors.effective": "Účinnost od: 4. října 2026. Verze 1.2.",
+         "subprocessors.controller_note_title": "Kdo tyto poskytovatele zapojuje",
+         "subprocessors.controller_note": (
+             "Správcem údajů hostů je ubytovatel nebo alternativní správce nastavený pro dané "
+@@ -107,50 +133,73 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
+             "služby, regiony účtů a smluvní mechanismy předání jsou popsané pro podporované "
+             "způsoby nasazení."
+         ),
+-        "subprocessors.table_provider": "Poskytovatel",
++        "subprocessors.table_provider": "Další zpracovatel",
+         "subprocessors.table_purpose": "Účel",
+-        "subprocessors.table_data": "Možné údaje",
+-        "subprocessors.table_location": "Umístění / předání",
+-        "subprocessors.aws_provider": "Amazon Web Services (AWS)",
+-        "subprocessors.aws_purpose": (
+-            "Produkční hosting Lightsail; transakční e-mail přes SES po zapnutí; volitelné "
+-            "zálohy S3."
+-        ),
+-        "subprocessors.aws_data": (
+-            "Účty ubytovatelů, údaje o ubytování a pobytech, údaje hostů, šifrované integrační "
+-            "přihlašovací údaje a technické logy; u SES e-mailové adresy a obsah zpráv."
+-        ),
+-        "subprocessors.aws_location": (
+-            "Produkce je nastavena v EU (Frankfurt/eu-central-1). Podpora a bezpečnostní provoz "
+-            "poskytovatele mohou zahrnovat mezinárodní přístup podle jeho DPA a zákonných záruk "
+-            "kapitoly V GDPR, jsou-li nutné."
+-        ),
+-        "subprocessors.cloudflare_provider": "Cloudflare",
+-        "subprocessors.cloudflare_purpose": (
+-            "DNS, CDN/proxy, TLS a ochrana na hraně sítě včetně Turnstile a řízených výzev."
+-        ),
+-        "subprocessors.cloudflare_data": (
+-            "IP adresa, metadata požadavku, bezpečnostní signály a obsah procházející proxy v rozsahu "
+-            "nutném pro doručení a ochranu Služby."
+-        ),
+-        "subprocessors.cloudflare_location": (
+-            "Globální síť. Předání mimo EHP se řídí příslušnou DPA poskytovatele a zákonnými zárukami, "
+-            "například rozhodnutím o odpovídající ochraně nebo standardními smluvními doložkami."
+-        ),
++        "subprocessors.table_data": "Údaje",
++        "subprocessors.table_location": "Umístění",
++        "subprocessors.table_safeguard": "Záruky při předání",
++        "subprocessors.aws_lightsail_provider": "Amazon Web Services EMEA SARL (AWS Lightsail)",
++        "subprocessors.aws_lightsail_purpose": "Hosting aplikace a databáze.",
++        "subprocessors.aws_lightsail_data": "Všechna data aplikace včetně údajů hostů.",
++        "subprocessors.aws_lightsail_location": "EU, Frankfurt (eu-central-1).",
++        "subprocessors.aws_lightsail_safeguard": (
++            "Dodatek AWS o zpracování údajů podle GDPR v AWS Service Terms, standardní smluvní "
++            "doložky."
++        ),
++        "subprocessors.aws_ses_provider": "Amazon Web Services EMEA SARL (Amazon SES)",
++        "subprocessors.aws_ses_purpose": "Odesílání e-mailů.",
++        "subprocessors.aws_ses_data": "Adresa příjemce, obsah e-mailu.",
++        "subprocessors.aws_ses_location": "eu-central-1 (Frankfurt).",
++        "subprocessors.aws_ses_safeguard": "Stejně jako u AWS Lightsail.",
++        "subprocessors.aws_s3_provider": "Amazon Web Services EMEA SARL (Amazon S3)",
++        "subprocessors.aws_s3_purpose": "Zálohy mimo server, později ukládání souborů.",
++        "subprocessors.aws_s3_data": "Záložní archivy všech dat aplikace včetně údajů hostů.",
++        "subprocessors.aws_s3_location": "eu-central-1 (Frankfurt).",
++        "subprocessors.aws_s3_safeguard": "Stejně jako u AWS Lightsail.",
++        "subprocessors.cloudflare_provider": "Cloudflare, Inc.",
++        "subprocessors.cloudflare_purpose": "Ochrana proti botům Turnstile; volitelně CDN a proxy.",
++        "subprocessors.cloudflare_data": "IP adresa, signály prohlížeče, metadata požadavků.",
++        "subprocessors.cloudflare_location": "Globální síť, americká společnost.",
++        "subprocessors.cloudflare_safeguard": (
++            "DPA Cloudflare, standardní smluvní doložky EU, rámec EU-US Data Privacy Framework."
++        ),
++        "subprocessors.umami_provider": "Umami Software, Inc. (Umami Cloud)",
++        "subprocessors.umami_purpose": "Statistiky návštěvnosti webu, jen marketingové stránky.",
++        "subprocessors.umami_data": (
++            "Zobrazení stránek, odkazující web, prohlížeč, zařízení, země, krátkodobý hash "
++            "návštěvy. Žádné údaje hostů."
++        ),
++        "subprocessors.umami_location": "Region EU. Používá se, jen pokud jej Provozovatel zapne.",
++        "subprocessors.umami_safeguard": "DPA Umami.",
+         "subprocessors.render_provider": "Render",
+         "subprocessors.render_purpose": "Ukázkový provoz.",
+         "subprocessors.render_data": "Ukázková a testovací data a technické logy.",
+         "subprocessors.render_location": (
+-            "Podmíněné použití; není součástí produkční cesty údajů hostů."
++            "Podmíněné použití; není součástí produkčního zpracování údajů hostů."
++        ),
++        "subprocessors.render_safeguard": (
++            "DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
+         ),
+         "subprocessors.google_provider": "Google Drive (Google)",
+         "subprocessors.google_purpose": "Volitelné zálohy produkce mimo server.",
+         "subprocessors.google_data": (
+-            "Záložní archivy, které mohou obsahovat účty, ubytování, pobyty a údaje hostů."
++            "Záložní archivy, které mohou obsahovat údaje účtů, ubytování, pobytů a hostů."
+         ),
+         "subprocessors.google_location": (
+-            "Podmíněné použití pouze po nastavení dokumentované zálohovací úlohy Provozovatelem. "
+-            "Použije se DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
++            "Podmíněné použití pouze po nastavení dokumentované zálohovací úlohy Provozovatelem."
++        ),
++        "subprocessors.google_safeguard": (
++            "DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
++        ),
++        "subprocessors.recipients_title": "Příjemci, kteří nejsou dalšími zpracovateli",
++        "subprocessors.recipient_google_ads": (
++            "Google Ireland Ltd. (měření konverzí Google Ads, samostatný správce, jen se souhlasem)"
++        ),
++        "subprocessors.recipient_police": (
++            "Policie ČR, UbyPort (zákonné hlášení jménem ubytovatele)"
++        ),
++        "subprocessors.recipient_municipality": (
++            "Obec (hlášení k poplatku z pobytu, pokud ubytovatel tuto funkci používá)"
+         ),
+         "subprocessors.change_title": "Změny a námitky",
+         "subprocessors.change_body": (
+diff --git a/App/app/templates/_public_footer.html b/App/app/templates/_public_footer.html
+index 57745bc..533a7ec 100644
+--- a/App/app/templates/_public_footer.html
++++ b/App/app/templates/_public_footer.html
+@@ -14,7 +14,7 @@
+       <a href="/privacy?lang={{ lang }}">{{ t('privacy.footer_short') }}</a>
+       <a href="/dpa?lang={{ lang }}">{{ t('dpa.footer_short') }}</a>
+       <a href="/subprocessors?lang={{ lang }}">{{ t('subprocessors.footer_short') }}</a>
+-      <a href="/login?lang={{ lang }}">{{ t('landing.footer.login') }}</a>
++      <a href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.footer.login') }}</a>
+     </nav>
+-    <a href="mailto:support@ubyhost.com">support@ubyhost.com</a>
++    <a href="mailto:support@ubyhost.com" data-umami-event="contact_click">support@ubyhost.com</a>
+   </footer>
+diff --git a/App/app/templates/_public_header.html b/App/app/templates/_public_header.html
+index 7f183ca..0c07d1c 100644
+--- a/App/app/templates/_public_header.html
++++ b/App/app/templates/_public_header.html
+@@ -30,7 +30,7 @@
+         <a href="{{ switch_path }}?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}"{% if lang == 'cs' %} aria-current="true"{% endif %}>CZ</a>
+         <a href="{{ switch_path }}?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
+       </nav>
+-      <a class="landing-login" href="/login?lang={{ lang }}">{{ t('landing.nav.login') }}</a>
++      <a class="landing-login" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.nav.login') }}</a>
+     </div>
+     {#- Below 900px the nav above is hidden; this is the only way through it. -#}
+     <details class="landing-menu">
+diff --git a/App/app/templates/_umami.html b/App/app/templates/_umami.html
+new file mode 100644
+index 0000000..1e915df
+--- /dev/null
++++ b/App/app/templates/_umami.html
+@@ -0,0 +1,13 @@
++{#- WP09: the only template that may contain the Umami tag. It prints nothing
++    unless templating.render marked this response as an allowed public page
++    (analytics.PUBLIC_ANALYTICS_TEMPLATES) and both UMAMI_* values are set.
++    Never include it from an app, guest or auth template; the guard test fails. -#}
++{%- if umami_tag -%}
++<script defer src="{{ umami_tag.src }}"
++  data-website-id="{{ umami_tag.website_id }}"
++  {%- if umami_tag.domains %} data-domains="{{ umami_tag.domains }}"{% endif %}
++  {%- if umami_tag.host_url %} data-host-url="{{ umami_tag.host_url }}"{% endif %}
++  data-do-not-track="true"
++  data-exclude-search="true"
++  data-exclude-hash="true"></script>
++{%- endif -%}
+diff --git a/App/app/templates/dpa.html b/App/app/templates/dpa.html
+index a4b35fd..322f4a2 100644
+--- a/App/app/templates/dpa.html
++++ b/App/app/templates/dpa.html
+@@ -24,7 +24,7 @@
+     <dd>{{ operator.address }}</dd>
+     {% if operator.email %}
+       <dt>{{ t('legal.operator_contact') }}</dt>
+-      <dd><a href="mailto:{{ operator.email }}">{{ operator.email }}</a></dd>
++      <dd><a href="mailto:{{ operator.email }}" data-umami-event="contact_click">{{ operator.email }}</a></dd>
+     {% endif %}
+     <dt>{{ t('legal.operator_registry') }}</dt>
+     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">{{ t('legal.registry_link') }}</a></dd>
+diff --git a/App/app/templates/landing.html b/App/app/templates/landing.html
+index 5dbeaef..6ae17e6 100644
+--- a/App/app/templates/landing.html
++++ b/App/app/templates/landing.html
+@@ -57,6 +57,7 @@
+     "inLanguage": ["cs", "en"]
+   } | tojson }}
+   </script>
++  {% include "_umami.html" %}
+ </head>
+ <body>
+ {% set active = 'home' %}{% set switch_path = '/' %}
+@@ -68,7 +69,7 @@
+       <h1 id="landing-title">{{ t('landing.title') }}</h1>
+       <p class="landing-lede">{{ t('landing.lede') }}</p>
+       <div class="landing-hero-actions">
+-        <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
++        <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+         <a class="landing-button secondary" href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.contact') }} <span aria-hidden="true">→</span></a>
+       </div>
+       <p class="landing-trust">{{ t('landing.independent') }}</p>
+@@ -183,7 +184,7 @@
+     <section class="landing-final">
+       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('landing.final.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+-      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
++      <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+     </section>
+   </main>
+ 
+diff --git a/App/app/templates/legal.html b/App/app/templates/legal.html
+index 03fb0ae..e960e73 100644
+--- a/App/app/templates/legal.html
++++ b/App/app/templates/legal.html
+@@ -20,7 +20,7 @@
+     <dd>{{ operator.address }}</dd>
+     {% if operator.email %}
+       <dt>{{ t('legal.operator_contact') }}</dt>
+-      <dd><a href="mailto:{{ operator.email }}">{{ operator.email }}</a></dd>
++      <dd><a href="mailto:{{ operator.email }}" data-umami-event="contact_click">{{ operator.email }}</a></dd>
+     {% endif %}
+     <dt>{{ t('legal.operator_registry') }}</dt>
+     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">{{ t('legal.registry_link') }}</a></dd>
+diff --git a/App/app/templates/pricing.html b/App/app/templates/pricing.html
+index 153300f..3da6ff7 100644
+--- a/App/app/templates/pricing.html
++++ b/App/app/templates/pricing.html
+@@ -34,6 +34,7 @@
+     "isPartOf": {"@type": "WebSite", "name": "UbyHost", "url": public_base_url ~ "/"}
+   } | tojson }}
+   </script>
++  {% include "_umami.html" %}
+ </head>
+ <body>
+ {% set active = 'pricing' %}{% set switch_path = '/cenik' %}
+@@ -63,7 +64,7 @@
+           </ul>
+         </div>
+         <a class="landing-button pricing-button"
+-           href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
++           data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
+         <small>{{ t('landing.cta.note') }}</small>
+       </article>
+     </section>
+@@ -83,7 +84,7 @@
+     <section class="landing-final pricing-final">
+       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
+-      <a class="landing-button primary" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
++      <a class="landing-button primary" data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
+     </section>
+   </main>
+ 
+diff --git a/App/app/templates/privacy.html b/App/app/templates/privacy.html
+index 31fc1e3..864421c 100644
+--- a/App/app/templates/privacy.html
++++ b/App/app/templates/privacy.html
+@@ -2,6 +2,14 @@
+ {% block title %}{{ t('privacy.page_title') }}{% endblock %}
+ {% block content %}
+ {% from "_components.html" import page_header with context %}
++{#- WP09: the controller named in the roles paragraph. Production refuses to
++    start without UBYHOST_OPERATOR_NAME / _ICO / _ADDRESS (env_guard), so the
++    visible placeholders can only appear outside production. -#}
++{%- set controller = {
++  'name': operator.name or (t('privacy.placeholder_name') if legal_placeholders else ''),
++  'ico': operator.ico or (t('privacy.placeholder_ico') if legal_placeholders else ''),
++  'address': operator.address or (t('privacy.placeholder_address') if legal_placeholders else ''),
++} -%}
+ 
+ {{ page_header(t('privacy.page_title'), t('privacy.page_lede', name=operator.name)) }}
+ 
+@@ -24,7 +32,7 @@
+     <dd>{{ operator.address }}</dd>
+     {% if operator.email %}
+       <dt>{{ t('legal.operator_contact') }}</dt>
+-      <dd><a href="mailto:{{ operator.email }}">{{ operator.email }}</a></dd>
++      <dd><a href="mailto:{{ operator.email }}" data-umami-event="contact_click">{{ operator.email }}</a></dd>
+     {% endif %}
+     <dt>{{ t('legal.operator_registry') }}</dt>
+     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">{{ t('legal.registry_link') }}</a></dd>
+@@ -37,8 +45,37 @@
+ <section class="legal-section" id="s{{ sid }}">
+   <h2>{{ t('privacy.s' ~ sid ~ '_title') }}</h2>
+   <div class="terms-section">{{ t('privacy.s' ~ sid ~ '_body', name=operator.name, ico=operator.ico) | legal_links }}</div>
++  {% if sid == '03' %}
++    {#- WP09: roles, 04_legal_positions.md section 5. -#}
++    <h3>{{ t('privacy.roles_title') }}</h3>
++    <div class="terms-section">{{ t('privacy.roles_body', name=controller.name, ico=controller.ico, address=controller.address) | legal_links }}</div>
++  {% endif %}
+   {% if sid == '07' %}
+     {% include "_cookie_table.html" %}
++    {% if umami_tag %}
++      {#- WP09: described only while the tag is actually served (section 1). -#}
++      <h3 id="analytics">{{ t('privacy.analytics_title') }}</h3>
++      <p>{{ t('privacy.analytics_body') }}</p>
++      {#- Opt-out and opt-back-in; umami-optout.js toggles localStorage
++          "umami.disabled". Only this page loads that script. -#}
++      <div class="panel quiet" id="analytics-optout" aria-live="polite">
++        <p>{{ t('privacy.optout_lede') }}</p>
++        <p data-optout-when="on" style="margin-bottom:0"><a href="#analytics-optout" role="button" data-optout-action="disable">{{ t('privacy.optout_disable') }}</a></p>
++        <p data-optout-when="off" style="margin-bottom:0" hidden>{{ t('privacy.optout_off_note') }} <a href="#analytics-optout" role="button" data-optout-action="enable">{{ t('privacy.optout_enable') }}</a></p>
++      </div>
++      <script src="/static/umami-optout.js?v=20261004a" defer></script>
++      <p>{{ t('privacy.analytics_dnt') }}</p>
++      <ul class="small muted">
++      {% for service in cookieless_services %}
++        <li><strong>{{ service.name }}</strong> ({{ service.party }}): {{ service.note[lang] }}</li>
++      {% endfor %}
++      </ul>
++    {% endif %}
++  {% endif %}
++  {% if sid == '11' %}
++    {#- WP09: UbyHost's own retention periods, section 4. -#}
++    <h3>{{ t('privacy.own_retention_title') }}</h3>
++    <p>{{ t('privacy.own_retention_body') }}</p>
+   {% endif %}
+   <p class="legal-back"><a href="#legal-contents">{{ t('legal.back_to_toc') }} <span aria-hidden="true">&uarr;</span></a></p>
+ </section>
+diff --git a/App/app/templates/product.html b/App/app/templates/product.html
+index ebfb21e..91f2047 100644
+--- a/App/app/templates/product.html
++++ b/App/app/templates/product.html
+@@ -35,6 +35,7 @@
+     ]
+   } | tojson }}
+   </script>
++  {% include "_umami.html" %}
+ </head>
+ <body>
+ {% set active = 'how' %}{% set switch_path = '/jak-to-funguje' %}
+@@ -45,7 +46,7 @@
+       <p class="landing-eyebrow">{{ t('product.eyebrow') }}</p>
+       <h1>{{ t('product.title') }}</h1>
+       <p>{{ t('product.lede') }}</p>
+-      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
++      <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+     </header>
+ 
+     <section class="product-feature-section" id="features" aria-labelledby="feature-title">
+@@ -107,7 +108,7 @@
+     <section class="landing-final product-final">
+       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('product.cta.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+-      <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
++      <a class="landing-button primary" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+     </section>
+   </main>
+ 
+diff --git a/App/app/templates/public_guide.html b/App/app/templates/public_guide.html
+index 1988339..74d857d 100644
+--- a/App/app/templates/public_guide.html
++++ b/App/app/templates/public_guide.html
+@@ -36,6 +36,7 @@
+     "publisher": {"@type": "Organization", "name": "UbyHost", "url": public_base_url ~ "/"}
+   } | tojson }}
+   </script>
++  {% include "_umami.html" %}
+ </head>
+ <body>
+ {% set active = 'guides' if current_slug == 'hlaseni-cizincu-ubyport' else '' %}
+@@ -73,7 +74,7 @@
+               <li><span aria-hidden="true">✓</span>{{ item }}</li>
+             {% endfor %}
+           </ul>
+-          <a href="/login?lang={{ lang }}" class="landing-button primary">{{ t('landing.cta') }}</a>
++          <a href="/login?lang={{ lang }}" class="landing-button primary" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+           <a href="/jak-to-funguje?lang={{ lang }}" class="guide-product-link">{{ t('landing.details.link') }} →</a>
+         </aside>
+       </div>
+diff --git a/App/app/templates/public_legal_base.html b/App/app/templates/public_legal_base.html
+index 6c8d291..b63992b 100644
+--- a/App/app/templates/public_legal_base.html
++++ b/App/app/templates/public_legal_base.html
+@@ -27,6 +27,7 @@
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+   <link rel="stylesheet" href="/static/app.css?v=20261004y">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
++  {% include "_umami.html" %}
+ </head>
+ <body class="layout-host no-nav">
+ {#- No nav item names a legal page, and the language switch comes back here. -#}
+diff --git a/App/app/templates/subprocessors.html b/App/app/templates/subprocessors.html
+index 4d351f1..45c5d41 100644
+--- a/App/app/templates/subprocessors.html
++++ b/App/app/templates/subprocessors.html
+@@ -22,6 +22,7 @@
+           <th>{{ t('subprocessors.table_purpose') }}</th>
+           <th>{{ t('subprocessors.table_data') }}</th>
+           <th>{{ t('subprocessors.table_location') }}</th>
++          <th>{{ t('subprocessors.table_safeguard') }}</th>
+         </tr>
+       </thead>
+       <tbody>
+@@ -31,6 +32,7 @@
+           <td data-label="{{ t('subprocessors.table_purpose') }}">{{ t('subprocessors.' ~ sid ~ '_purpose') }}</td>
+           <td data-label="{{ t('subprocessors.table_data') }}">{{ t('subprocessors.' ~ sid ~ '_data') }}</td>
+           <td data-label="{{ t('subprocessors.table_location') }}">{{ t('subprocessors.' ~ sid ~ '_location') }}</td>
++          <td data-label="{{ t('subprocessors.table_safeguard') }}">{{ t('subprocessors.' ~ sid ~ '_safeguard') }}</td>
+         </tr>
+       {% endfor %}
+       </tbody>
+@@ -38,6 +40,18 @@
+   </div>
+ </div>
+ 
++{#- WP09: 04_legal_positions.md section 5. The Google Ads recipient belongs to
++    self sign-up; no UBYHOST_SIGNUP_ENABLED flag exists yet, so it is always
++    listed (routes/legal.py RECIPIENT_IDS). -#}
++<div class="panel" id="recipients">
++  <h2 style="margin-top:0">{{ t('subprocessors.recipients_title') }}</h2>
++  <ul class="small muted">
++  {% for rid in recipient_ids %}
++    <li>{{ t('subprocessors.recipient_' ~ rid) }}</li>
++  {% endfor %}
++  </ul>
++</div>
++
+ <div class="panel">
+   <h2 style="margin-top:0">{{ t('subprocessors.change_title') }}</h2>
+   <p class="small muted">{{ t('subprocessors.change_body') }}</p>
+diff --git a/App/app/templating.py b/App/app/templating.py
+index 6e1d66a..84baa15 100644
+--- a/App/app/templating.py
++++ b/App/app/templating.py
+@@ -17,6 +17,7 @@ from . import (
+     __version__,
+     access,
+     alerts,
++    analytics,
+     auth,
+     config,
+     deadlines,
+@@ -383,6 +384,9 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
+     data.setdefault("demo_available", config.UBYPORT_ENV == "mock")
+     if workspace and workspace["id"]:
+         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
++    # WP09: set here, never from a route's context, so only the allowed public
++    # templates can ever get a tag (and the matching CSP in main._harden).
++    data["umami_tag"] = analytics.tag() if analytics.mark_public_page(request, name) else None
+     response = templates.TemplateResponse(request, name, data, status_code=status_code)
+     # Arriving on a ?lang= link (the hreflang URLs search engines index) is as
+     # much a choice as clicking the switcher, so it survives the next click.
+@@ -398,6 +402,7 @@ def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]]
+     data["request"] = request
+     data["csrf_token"] = security.csrf_token(request)
+     data["open_alerts"] = []
++    data["umami_tag"] = None  # permanent rule: guest pages are never measured
+     data.setdefault("flash", request.query_params.get("msg"))
+     data.setdefault("flash_error", request.query_params.get("err"))
+     return templates.TemplateResponse(request, name, data, status_code=status_code)
+diff --git a/App/tests/test_accounts.py b/App/tests/test_accounts.py
+index 42ea2cd..7de0dcc 100644
+--- a/App/tests/test_accounts.py
++++ b/App/tests/test_accounts.py
+@@ -649,7 +649,8 @@ def test_dpa_page_shows_operator_and_article_28():
+ 
+ def test_release_legal_versions_are_coordinated():
+     assert config.TERMS_VERSION == "1.5"
+-    assert config.PRIVACY_VERSION == "1.5"
++    # WP09 bumped only the privacy policy (analytics, own retention, roles).
++    assert config.PRIVACY_VERSION == "1.6"
+     assert config.DPA_VERSION == "1.5"
+ 
+ 
+diff --git a/App/tests/test_legal_contents.py b/App/tests/test_legal_contents.py
+index 345f72b..23408b7 100644
+--- a/App/tests/test_legal_contents.py
++++ b/App/tests/test_legal_contents.py
+@@ -204,10 +204,12 @@ def test_the_anchor_clears_the_sticky_public_header_without_doubling_up():
+ #
+ # When OPS-1 and OPS-2 ship, update the copy *and* this test together, citing
+ # the vendor evidence file (`docs/vendors/README.md`, LD-9). The four keys
+-# below are the backup rows: AWS' S3 purpose and Google's purpose and data.
++# below are the backup rows: S3's and Google's purpose and data (WP09 split
++# the AWS row into Lightsail, SES and S3).
+ 
+ REGISTER_BACKUP_KEYS = (
+-    "subprocessors.aws_purpose",
++    "subprocessors.aws_s3_purpose",
++    "subprocessors.aws_s3_data",
+     "subprocessors.google_purpose",
+     "subprocessors.google_data",
+ )
+@@ -230,5 +232,5 @@ def test_the_register_does_not_claim_unencrypted_backups_are_encrypted():
+ 
+ def test_the_register_records_the_corrective_version():
+     client = _client()
+-    for lang, effective in (("en", "Version 1.1"), ("cs", "Verze 1.1")):
++    for lang, effective in (("en", "Version 1.2"), ("cs", "Verze 1.2")):
+         assert effective in client.get(f"/subprocessors?lang={lang}").text, lang
+diff --git a/App/tests/test_no_tracking.py b/App/tests/test_no_tracking.py
+index 34c8ac9..ee166aa 100644
+--- a/App/tests/test_no_tracking.py
++++ b/App/tests/test_no_tracking.py
+@@ -5,6 +5,10 @@ CDN fonts, and the CSP blocks third-party scripts except Turnstile. This test is
+ the guardrail: adding Google Analytics, a Meta pixel, a CDN font or a chat widget
+ fails CI here, and widening the CSP fails the exact-string assertion (which MK-5
+ requires be changed in the same PR as any CMP).
++
++WP09: Umami may appear on the public marketing and legal pages, but only when
++UMAMI_WEBSITE_ID and UMAMI_SCRIPT_URL are both set. They are unset here, so
++this contract still holds; tests/test_umami_guard.py covers the configured case.
+ """
+ from __future__ import annotations
+ 
+diff --git a/App/tests/test_privacy_legal_positions.py b/App/tests/test_privacy_legal_positions.py
+new file mode 100644
+index 0000000..72eab42
+--- /dev/null
++++ b/App/tests/test_privacy_legal_positions.py
+@@ -0,0 +1,85 @@
++"""WP09: the privacy policy and subprocessor register carry the owner's final
++legal positions (04_legal_positions.md sections 1, 4 and 5)."""
++from __future__ import annotations
++
++from pathlib import Path
++
++from fastapi.testclient import TestClient
++
++from app import config, db
++from app.main import app
++from app.privacy_policy_i18n import PRIVACY_STRINGS
++from app.routes import legal
++from app.subprocessors_i18n import SUBPROCESSOR_STRINGS
++
++APP = Path(__file__).resolve().parents[1] / "app"
++
++
++def _get(path: str) -> str:
++    db.init_db()
++    response = TestClient(app).get(path)
++    assert response.status_code == 200, path
++    return response.text
++
++
++def test_the_roles_paragraph_names_the_configured_operator():
++    for lang, lead in (("en", "is the controller"), ("cs", "je správcem")):
++        html = _get(f"/privacy?lang={lang}")
++        assert PRIVACY_STRINGS[lang]["privacy.roles_title"] in html, lang
++        assert lead in html, lang
++        sentence = f"{config.OPERATOR_NAME}, IČO {config.OPERATOR_ICO}, {config.OPERATOR_ADDRESS}"
++        assert sentence in html, lang
++        assert 'href="/subprocessors"' in html
++        assert PRIVACY_STRINGS[lang]["privacy.placeholder_name"] not in html, lang
++
++
++def test_missing_operator_identity_shows_a_placeholder_outside_production(monkeypatch):
++    monkeypatch.setattr(config, "OPERATOR_NAME", "")
++    monkeypatch.setattr(config, "OPERATOR_ICO", "")
++    monkeypatch.setattr(config, "OPERATOR_ADDRESS", "")
++    monkeypatch.setattr(config, "DEPLOYMENT", "local")
++    html = _get("/privacy?lang=cs")
++    assert "[Obchodní firma], IČO [xxxxxxxx], [sídlo]" in html
++    html = _get("/privacy?lang=en")
++    assert "[Company name], IČO [xxxxxxxx], [registered address]" in html
++
++
++def test_the_own_retention_periods_are_published():
++    for lang, needle in (("en", "10 years from the end of the year of issue"),
++                         ("cs", "10 let od konce roku vystavení")):
++        html = _get(f"/privacy?lang={lang}")
++        assert PRIVACY_STRINGS[lang]["privacy.own_retention_title"] in html, lang
++        assert needle in html, lang
++
++
++def test_the_privacy_version_is_bumped_and_shown():
++    assert config.PRIVACY_VERSION == "1.6"
++    assert f"Version {config.PRIVACY_VERSION}." in _get("/privacy?lang=en")
++    assert f"Verze {config.PRIVACY_VERSION}." in _get("/privacy?lang=cs")
++
++
++def test_no_draft_markers_remain():
++    for name in ("privacy_policy_i18n.py", "subprocessors_i18n.py", "cookie_inventory.py"):
++        source = (APP / name).read_text(encoding="utf-8")
++        assert "DRAFT" not in source and "NÁVRH" not in source, name
++    assert "Draft" not in (APP / "templates" / "privacy.html").read_text(encoding="utf-8")
++
++
++def test_the_register_lists_the_section_5_subprocessors_with_safeguards():
++    assert legal.SUBPROCESSOR_IDS[:5] == ("aws_lightsail", "aws_ses", "aws_s3", "cloudflare", "umami")
++    for lang in ("en", "cs"):
++        html = _get(f"/subprocessors?lang={lang}")
++        for sid in legal.SUBPROCESSOR_IDS:
++            for field in ("provider", "purpose", "data", "location", "safeguard"):
++                value = SUBPROCESSOR_STRINGS[lang][f"subprocessors.{sid}_{field}"]
++                assert value.replace("'", "&#39;") in html, (lang, sid, field)
++        for name in ("AWS Lightsail", "Amazon SES", "Amazon S3", "Cloudflare, Inc.", "Umami Cloud"):
++            assert name in html, (lang, name)
++
++
++def test_the_register_names_the_recipients_that_are_not_subprocessors():
++    for lang, title in (("en", "Recipients that are not subprocessors"),
++                        ("cs", "Příjemci, kteří nejsou dalšími zpracovateli")):
++        html = _get(f"/subprocessors?lang={lang}")
++        assert title in html, lang
++        assert "Google Ireland Ltd." in html and "Policie ČR, UbyPort" in html, lang
+diff --git a/App/tests/test_umami_guard.py b/App/tests/test_umami_guard.py
+new file mode 100644
+index 0000000..53a548d
+--- /dev/null
++++ b/App/tests/test_umami_guard.py
+@@ -0,0 +1,321 @@
++"""WP09 guard: Umami only on the public marketing and legal pages.
++
++Permanent rule (plan README, rule 6): no analytics or third-party script on app
++pages, guest pages (``/l/...``, including ``pick.html``) or auth pages. With
++Umami fully configured, this renders the app and fails if the tag, the website
++ID or the Umami origin reaches any of those pages or their CSP, or if a
++template other than the allowed public shells can pull the tag in.
++"""
++from __future__ import annotations
++
++import re
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import analytics, config, db
++from app.main import _CSP, app
++from app.public_guides import GUIDE_TRANSLATIONS
++from tests import test_host_guest_form as hg
++
++TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
++
++# Placeholders only. The script host is a stand-in on purpose, so the test
++# proves the CSP is derived from config and not hard-coded.
++WEBSITE_ID = "00000000-0000-4000-8000-000000000000"
++SCRIPT_URL = "https://analytics.example.invalid/script.js"
++SCRIPT_ORIGIN = "https://analytics.example.invalid"
++HOST_URL = "https://events.example.invalid"
++
++# The page shells allowed to include _umami.html. Every public page extends or
++# is one of these.
++ALLOWED_SHELLS = {
++    "landing.html",
++    "product.html",
++    "pricing.html",
++    "public_guide.html",
++    "public_legal_base.html",
++}
++
++PUBLIC_PATHS = [
++    "/",
++    "/jak-to-funguje",
++    "/cenik",
++    f"/pruvodce/{sorted(GUIDE_TRANSLATIONS['en'])[0]}",
++    "/legal",
++    "/terms",
++    "/privacy",
++    "/dpa",
++    "/subprocessors",
++]
++
++AUTH_PATHS = ["/login", "/login/2fa", "/account/password", "/healthz"]
++
++
++def _markers(text: str) -> list[str]:
++    return [m for m in (WEBSITE_ID, SCRIPT_ORIGIN, HOST_URL, "data-website-id", "umami.is")
++            if m in text]
++
++
++@pytest.fixture
++def umami_on(monkeypatch):
++    monkeypatch.setattr(config, "UMAMI_WEBSITE_ID", WEBSITE_ID)
++    monkeypatch.setattr(config, "UMAMI_SCRIPT_URL", SCRIPT_URL)
++    monkeypatch.setattr(config, "UMAMI_HOST_URL", HOST_URL)
++    monkeypatch.setattr(config, "UMAMI_DOMAINS", "ubyhost.com,www.ubyhost.com")
++    db.init_db()
++
++
++# --- static: which templates can ever carry the tag -------------------------
++
++def _template_sources() -> dict[str, str]:
++    return {
++        str(p.relative_to(TEMPLATES)): p.read_text(encoding="utf-8")
++        for p in TEMPLATES.rglob("*.html")
++    }
++
++
++def test_only_the_partial_contains_the_tag():
++    for name, source in _template_sources().items():
++        if name == "_umami.html":
++            continue
++        assert "data-website-id" not in source, name
++        assert "umami.is" not in source, name
++        assert "umami_tag." not in source, name
++
++
++def test_only_the_public_shells_include_the_partial():
++    including = {
++        name for name, source in _template_sources().items()
++        if re.search(r"""include\s+["']_umami\.html["']""", source)
++    }
++    assert including == ALLOWED_SHELLS
++
++
++def test_every_template_that_reaches_the_partial_is_a_public_page():
++    """Follow extends/include edges: nothing app, guest or auth reaches it."""
++    sources = _template_sources()
++    edges = {
++        name: set(re.findall(r"""(?:extends|include)\s+["']([^"']+)["']""", src))
++        for name, src in sources.items()
++    }
++
++    def reaches(name: str, seen=None) -> bool:
++        seen = seen or set()
++        if name in seen:
++            return False
++        seen.add(name)
++        return any(t == "_umami.html" or reaches(t, seen) for t in edges.get(name, ()))
++
++    reaching = {n for n in sources if n != "_umami.html" and reaches(n)}
++    allowed = ALLOWED_SHELLS | (analytics.PUBLIC_ANALYTICS_TEMPLATES)
++    assert reaching <= allowed, sorted(reaching - allowed)
++    assert not any(n.startswith("guest/") for n in reaching)
++    for name in ("base.html", "auth_base.html", "login.html", "error.html"):
++        assert name not in reaching, name
++
++
++def test_the_allowed_page_templates_are_public_only():
++    assert analytics.PUBLIC_ANALYTICS_TEMPLATES.isdisjoint(
++        {"base.html", "auth_base.html", "login.html", "error.html", "dashboard.html"}
++    )
++    assert not any(n.startswith("guest/") for n in analytics.PUBLIC_ANALYTICS_TEMPLATES)
++
++
++# --- rendered: public pages carry it, everything else does not -------------
++
++def test_nothing_is_rendered_and_the_csp_is_strict_while_unconfigured(monkeypatch):
++    monkeypatch.setattr(config, "UMAMI_WEBSITE_ID", "")
++    monkeypatch.setattr(config, "UMAMI_SCRIPT_URL", SCRIPT_URL)
++    db.init_db()
++    client = TestClient(app)
++    for path in PUBLIC_PATHS:
++        response = client.get(path)
++        assert response.status_code == 200, path
++        assert not _markers(response.text), path
++        assert response.headers["content-security-policy"] == _CSP, path
++
++
++def test_a_non_https_script_url_is_refused(monkeypatch):
++    monkeypatch.setattr(config, "UMAMI_WEBSITE_ID", WEBSITE_ID)
++    monkeypatch.setattr(config, "UMAMI_SCRIPT_URL", "http://analytics.example.invalid/s.js")
++    assert not analytics.enabled()
++    assert analytics.tag() is None
++
++
++@pytest.mark.parametrize("lang", ("cs", "en"))
++@pytest.mark.parametrize("path", PUBLIC_PATHS)
++def test_public_pages_carry_the_tag_and_a_matching_csp(umami_on, path, lang):
++    response = TestClient(app).get(f"{path}?lang={lang}")
++    assert response.status_code == 200, path
++    html = response.text
++    assert f'src="{SCRIPT_URL}"' in html
++    assert f'data-website-id="{WEBSITE_ID}"' in html
++    assert 'data-domains="ubyhost.com,www.ubyhost.com"' in html
++    assert f'data-host-url="{HOST_URL}"' in html
++    for attr in ("data-do-not-track", "data-exclude-search", "data-exclude-hash"):
++        assert f'{attr}="true"' in html, attr
++    assert html.count("data-website-id") == 1
++    csp = response.headers["content-security-policy"]
++    script_src = re.search(r"script-src ([^;]+)", csp).group(1).split()
++    connect_src = re.search(r"connect-src ([^;]+)", csp).group(1).split()
++    assert SCRIPT_ORIGIN in script_src
++    assert SCRIPT_ORIGIN in connect_src and HOST_URL in connect_src
++    assert HOST_URL not in script_src
++
++
++def test_cloud_script_without_host_url_allows_the_cloud_gateway(monkeypatch):
++    monkeypatch.setattr(config, "UMAMI_WEBSITE_ID", WEBSITE_ID)
++    monkeypatch.setattr(config, "UMAMI_SCRIPT_URL", "https://cloud.umami.is/script.js")
++    monkeypatch.setattr(config, "UMAMI_HOST_URL", "")
++    assert analytics.connect_origins() == (
++        "https://cloud.umami.is",
++        analytics.UMAMI_CLOUD_DEFAULT_ENDPOINT,
++    )
++
++
++def test_the_events_carry_no_properties(umami_on):
++    client = TestClient(app)
++    landing = client.get("/?lang=en").text
++    assert landing.count('data-umami-event="login_click"') >= 2
++    assert 'data-umami-event="contact_click"' in landing  # footer mailto
++    pricing = client.get("/cenik?lang=en").text
++    assert 'data-umami-event="contact_click"' in pricing
++    for html in (landing, pricing):
++        # data-umami-event-<name> would attach a property; none is allowed.
++        assert not re.search(r"data-umami-event-[\w-]+=", html)
++
++
++def test_privacy_and_subprocessors_describe_umami(umami_on):
++    client = TestClient(app)
++    for lang, needle in (("en", "Act No. 127/2005 Coll."), ("cs", "zákona č. 127/2005 Sb.")):
++        privacy = client.get(f"/privacy?lang={lang}").text
++        assert "Umami Cloud" in privacy and needle in privacy, lang
++        register = client.get(f"/subprocessors?lang={lang}").text
++        assert "Umami Software, Inc. (Umami Cloud)" in register, lang
++
++
++def test_the_tag_attributes_follow_the_legal_configuration(umami_on):
++    """Section 1 of the legal positions: every privacy attribute, nothing more."""
++    html = TestClient(app).get("/?lang=en").text
++    tag = re.search(r"<script defer src=\"[^\"]+\"[^>]*></script>", html).group(0)
++    attrs = dict(re.findall(r'(data-[\w-]+)="([^"]*)"', tag))
++    assert attrs == {
++        "data-website-id": WEBSITE_ID,
++        "data-domains": "ubyhost.com,www.ubyhost.com",
++        "data-host-url": HOST_URL,
++        "data-do-not-track": "true",
++        "data-exclude-search": "true",
++        "data-exclude-hash": "true",
++    }
++
++
++def test_the_domains_default_to_the_public_base_url(umami_on, monkeypatch):
++    monkeypatch.setattr(config, "UMAMI_DOMAINS", "")
++    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://placeholder.example.invalid")
++    assert analytics.tag()["domains"] == "placeholder.example.invalid"
++    html = TestClient(app).get("/?lang=en").text
++    assert 'data-domains="placeholder.example.invalid"' in html
++
++
++# --- opt-out on /privacy -----------------------------------------------------
++
++OPTOUT_SCRIPT = "/static/umami-optout.js"
++OPTOUT_TEXT = {
++    "en": ("Turn off measurement in this browser", "Turn measurement back on"),
++    "cs": ("Vypnout měření v tomto prohlížeči", "Znovu zapnout měření"),
++}
++
++
++@pytest.mark.parametrize("lang", ("cs", "en"))
++def test_privacy_offers_the_opt_out_and_opt_back_in(umami_on, lang):
++    response = TestClient(app).get(f"/privacy?lang={lang}")
++    html = response.text
++    off, on = OPTOUT_TEXT[lang]
++    assert 'id="analytics-optout"' in html
++    assert 'data-optout-action="disable"' in html and off in html
++    assert 'data-optout-action="enable"' in html and on in html
++    assert f'src="{OPTOUT_SCRIPT}' in html
++    # A same-origin script: the public CSP needs no inline allowance for it.
++    assert "'self'" in re.search(r"script-src ([^;]+)", response.headers["content-security-policy"]).group(1)
++
++
++def test_the_opt_out_script_toggles_the_umami_key():
++    source = (Path(__file__).resolve().parents[1] / "app" / "static" / "umami-optout.js").read_text(
++        encoding="utf-8"
++    )
++    assert 'var KEY = "umami.disabled"' in source
++    assert "localStorage.setItem(KEY" in source and "localStorage.removeItem(KEY" in source
++
++
++def test_only_the_privacy_page_loads_the_opt_out_script():
++    loading = {
++        name for name, source in _template_sources().items() if "umami-optout.js" in source
++    }
++    assert loading == {"privacy.html"}
++
++
++def test_no_opt_out_while_umami_is_unconfigured(monkeypatch):
++    monkeypatch.setattr(config, "UMAMI_WEBSITE_ID", "")
++    db.init_db()
++    html = TestClient(app).get("/privacy?lang=en").text
++    assert 'id="analytics-optout"' not in html
++    assert OPTOUT_SCRIPT not in html
++
++
++def test_other_public_pages_carry_no_opt_out(umami_on):
++    client = TestClient(app)
++    for path in PUBLIC_PATHS:
++        if path == "/privacy":
++            continue
++        html = client.get(f"{path}?lang=en").text
++        assert OPTOUT_SCRIPT not in html, path
++        assert 'id="analytics-optout"' not in html, path
++
++
++@pytest.mark.parametrize("path", AUTH_PATHS)
++def test_auth_pages_never_carry_umami(umami_on, path):
++    response = TestClient(app).get(path, follow_redirects=True)
++    assert not _markers(response.text), (path, _markers(response.text))
++    assert response.headers.get("content-security-policy") == _CSP, path
++
++
++def test_app_and_guest_pages_never_carry_umami(umami_on):
++    owner_id, stay_id = hg._host_stay()
++    try:
++        host = hg._host_client(owner_id)
++        app_paths = [
++            "/",  # the dashboard when signed in, not the landing page
++            "/reservations",
++            f"/reservations/{stay_id}",
++            "/apartments",
++            "/housebook",
++            "/settings",
++            "/admin/users",
++            "/admin/incidents",
++            # A signed-in host on the guest form is still a guest page.
++            f"/l/{hg.TOKEN}/{stay_id}",
++        ]
++        for path in app_paths:
++            response = host.get(path, follow_redirects=True)
++            assert response.status_code < 500, path
++            assert not _markers(response.text), (path, _markers(response.text))
++            assert response.headers.get("content-security-policy") == _CSP, path
++        assert "data-website-id" not in host.get("/").text
++
++        # An anonymous guest: the PIN page, the claimed form and the privacy note.
++        anonymous = TestClient(app)
++        for path in (f"/l/{hg.TOKEN}", f"/l/{hg.TOKEN}/{stay_id}", f"/l/{hg.TOKEN}/privacy"):
++            response = anonymous.get(path, follow_redirects=True)
++            assert response.status_code < 500, path
++            assert not _markers(response.text), (path, _markers(response.text))
++            assert response.headers.get("content-security-policy") == _CSP, path
++        guest = hg._claimed_guest(stay_id)
++        for path in (f"/l/{hg.TOKEN}/{stay_id}", f"/l/{hg.TOKEN}/{stay_id}/new"):
++            response = guest.get(path, follow_redirects=True)
++            assert response.status_code < 500, path
++            assert not _markers(response.text), (path, _markers(response.text))
++            assert response.headers.get("content-security-policy") == _CSP, path
++    finally:
++        hg._cleanup()
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index 72df4da..bbd563c 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -101,6 +101,18 @@ TURNSTILE_SITE_KEY=0x4AAAAAAE0LDM2eoIjssN00
+ TURNSTILE_SECRET=
+ TURNSTILE_HOSTNAMES=ubyhost.com,www.ubyhost.com
+ 
++# --- Page analytics: Umami Cloud, public marketing and legal pages only ---
++# Leave empty to serve no analytics at all. Copy both values from the tracking
++# code in the Umami website settings (account created in the EU region).
++# The CSP for public pages is derived from these URLs.
++UMAMI_WEBSITE_ID=
++UMAMI_SCRIPT_URL=
++# Optional data-host-url. Empty = the tracker default; for the Umami Cloud
++# script that is https://gateway.umami.is, which the CSP already allows.
++UMAMI_HOST_URL=
++# Optional, comma-separated; defaults to the host of UBYHOST_PUBLIC_BASE_URL.
++UMAMI_DOMAINS=
++
+ # --- Guest e-mail ---
+ # Production runs UBYHOST_MAIL_BACKEND=ses (live since 2026-09-21). A fresh copy
+ # starts disabled so the stack boots before the AWS credentials exist: ses
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index c64c248..9977954 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -77,6 +77,23 @@ Turnstile is **inert unless all three of the `TURNSTILE_*` values are set**.
+ When it is active, an unreachable Cloudflare fails open a bounded number of
+ times per address and raises `turnstile_unavailable`.
+ 
++## Page analytics (Umami)
++
++| Variable | Default | Notes |
++|---|---|---|
++| `UMAMI_WEBSITE_ID` | unset | Website ID from the Umami website settings. |
++| `UMAMI_SCRIPT_URL` | unset | Exact `src` of the tracking code from the Umami website settings. Must be `https://`. |
++| `UMAMI_HOST_URL` | unset | Optional `data-host-url`. Unset uses the tracker default; for the Umami Cloud script that is `https://gateway.umami.is`. |
++| `UMAMI_DOMAINS` | host of `UBYHOST_PUBLIC_BASE_URL` | `data-domains`, comma-separated. |
++
++The tag is rendered **only when both `UMAMI_WEBSITE_ID` and `UMAMI_SCRIPT_URL`
++are set**, and only on the public marketing and legal pages listed in
++`app/analytics.py`. Those pages get a CSP that adds the script origin to
++`script-src` and the event endpoint to `connect-src`; app, guest and auth pages
++keep the strict CSP. `tests/test_umami_guard.py` enforces this.
++While it is on, `/privacy` shows the analytics paragraph with an opt-out and
++opt-back-in link (`static/umami-optout.js`, localStorage key `umami.disabled`).
++
+ ## Reverse proxy and client IP
+ 
+ | Variable | Default | Notes |
+@@ -138,7 +155,7 @@ own public-register entry, or the legal pages will name the wrong company.
+ | Variable | Default |
+ | --- | --- |
+ | `UBYHOST_TERMS_VERSION` | `1.5` |
+-| `UBYHOST_PRIVACY_VERSION` | `1.5` |
++| `UBYHOST_PRIVACY_VERSION` | `1.6` |
+ | `UBYHOST_DPA_VERSION` | `1.5` |
+ 
+ These override the version number displayed and logged against user acceptance.
+-- 
+2.34.1
+

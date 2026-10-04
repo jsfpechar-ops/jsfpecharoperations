@@ -1,0 +1,663 @@
+From 83939192f9ba38ae3e21f48d5dc1658934c1971a Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 10:13:56 +0200
+Subject: [PATCH 16/34] WP27: Privacy first
+
+Conflict resolution: privacy.html header. WP24's legal_effective() global comes later in this order, so the privacy-first line goes above main's existing effective-date line (t('privacy.effective')); WP24's step switches that line to legal_effective('privacy').
+---
+ AGENTS.md                             |  30 +++
+ App/app/cookie_inventory.py           |  27 +++
+ App/app/i18n.py                       |   9 +
+ App/app/landing_i18n.py               |  52 +++++
+ App/app/templates/_privacy_first.html |  16 ++
+ App/app/templates/guest/base.html     |   1 +
+ App/app/templates/landing.html        |   2 +
+ App/app/templates/pricing.html        |   2 +
+ App/app/templates/privacy.html        |   1 +
+ App/app/templates/product.html        |   2 +
+ App/tests/test_cookie_inventory.py    |   8 +-
+ App/tests/test_privacy_first.py       | 277 ++++++++++++++++++++++++++
+ docs/DESIGN.md                        |  46 +++++
+ 13 files changed, 472 insertions(+), 1 deletion(-)
+ create mode 100644 App/app/templates/_privacy_first.html
+ create mode 100644 App/tests/test_privacy_first.py
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 373e969..3c3256a 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -6,6 +6,36 @@ Before changing UbyHost’s user interface, read **[docs/DESIGN.md](docs/DESIGN.
+ `prefers-color-scheme` dark styling unless the product owner explicitly requests
+ it in the current task. UbyHost is light-mode only by policy.
+ 
++## Privacy first — a product principle
++
++UbyHost is a privacy-first app. The owner's words: "We do not store anything
++extra, only what is needed." Full rules in
++[docs/DESIGN.md](docs/DESIGN.md#privacy-first). In short:
++
++- **Store only what the law or the feature needs.** Guest-book fields
++  (§ 102 zákon 326/1999 Sb.) and stay-fee fields (§ 3g zákon 565/1990 Sb.) are
++  required by law; anything else needs a feature that cannot work without it.
++- **No tracking cookies.** The app sets only the strictly necessary cookies in
++  `App/app/cookie_inventory.py` (`STRICTLY_NECESSARY_COOKIES`).
++  `tests/test_privacy_first.py` crawls host, guest and public pages and fails on
++  any other cookie name. Never write "no cookies" in copy: say "no tracking
++  cookies".
++- **No third-party scripts in the app or on guest pages.** The one exception is
++  the Cloudflare Turnstile bot check on sign-in and the guest PIN/claim pages,
++  when `TURNSTILE_*` is configured. No analytics, ads or fonts from a CDN.
++- **Analytics only cookieless, only on public pages** (Umami, `analytics.py`).
++- **Ads measurement only with explicit consent and server-side** (unticked
++  box, click id only, no pixel, no cookie).
++- **Every new personal-data field needs a purpose and a retention line in
++  `App/app/retention.py`** (or the module that purges it, referenced from
++  there), in the same PR.
++- **Every new outbound request needs a reason in the PR description**: what is
++  sent, to whom, and why.
++- **Brand claims must be true for the code.** If you change behaviour behind a
++  claim on the landing, pricing, product or privacy page (`privacy_first.*` in
++  `landing_i18n.py`, `privacy_first_line` in `i18n.py`), fix the copy in the
++  same commit.
++
+ ## Secrets, keys, and personal data — non-negotiable
+ 
+ This repository is **public**. Everything committed to any branch is
+diff --git a/App/app/cookie_inventory.py b/App/app/cookie_inventory.py
+index 66651f7..80bac85 100644
+--- a/App/app/cookie_inventory.py
++++ b/App/app/cookie_inventory.py
+@@ -127,6 +127,20 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
+         },
+         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
+     },
++    {
++        # WP27: the house book shows its legal intro once per browser; this
++        # key remembers that it was dismissed. It holds "1" and nothing else.
++        "name": "ubyhost_housebook_legal_v1",
++        "set_by": "templates/housebook.html",
++        "party": "first",
++        "kind": "localStorage",
++        "surface": "host",
++        "purpose": {
++            "en": "Remembers that you closed the house book introduction",
++            "cs": "Pamatuje si, že jste zavřeli úvod k domovní knize",
++        },
++        "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
++    },
+     {
+         # WP09: written only when a visitor clicks the opt-out on /privacy
+         # (static/umami-optout.js). The Umami tracker reads it and then counts
+@@ -208,3 +222,16 @@ COOKIELESS_SERVICES: Tuple[Dict[str, object], ...] = (
+ 
+ def names() -> Tuple[str, ...]:
+     return tuple(str(row["name"]) for row in COOKIE_INVENTORY)
++
++
++# WP27 (privacy first): the only cookies the app itself ever sets. Every one is
++# strictly necessary: sign-in, CSRF protection, the guest PIN and claim, the
++# guest's own submitted forms, and the language the visitor chose. There is no
++# analytics, advertising or other tracking cookie. ``tests/test_privacy_first.py``
++# crawls host, guest and public pages and fails if the set of Set-Cookie names
++# differs from this one. The Cloudflare rows are set by the edge, not the app.
++STRICTLY_NECESSARY_COOKIES = frozenset(
++    str(row["name"])
++    for row in COOKIE_INVENTORY
++    if row["kind"] == "cookie" and row["party"] == "first"
++)
+diff --git a/App/app/i18n.py b/App/app/i18n.py
+index 2316f5f..e1bbf22 100644
+--- a/App/app/i18n.py
++++ b/App/app/i18n.py
+@@ -399,6 +399,11 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "skip_to_form": "Skip to the form",
+         "loading": "Loading…",
+         "privacy_link": "How your data is handled",
++        # WP27: privacy first, shown in the guest footer.
++        "privacy_first_line": (
++            "UbyHost collects only what Czech law and your registration need, and does "
++            "not use tracking cookies."
++        ),
+         "privacy_title": "Privacy notice",
+         "privacy_intro": (
+             "What happens to the details you enter, as required by Articles 13 and 14 of the "
+@@ -1008,6 +1013,10 @@ STRINGS: Dict[str, Dict[str, str]] = {
+         "skip_to_form": "Přejít na formulář",
+         "loading": "Načítá se…",
+         "privacy_link": "Jak nakládáme s vašimi údaji",
++        "privacy_first_line": (
++            "UbyHost shromažďuje jen to, co vyžaduje český zákon a vaše registrace, "
++            "a nepoužívá sledovací cookies."
++        ),
+         "privacy_title": "Informace o zpracování osobních údajů",
+         "privacy_intro": (
+             "Co se děje s údaji, které vyplníte — podle článků 13 a 14 GDPR."
+diff --git a/App/app/landing_i18n.py b/App/app/landing_i18n.py
+index 44ce44d..b680a1b 100644
+--- a/App/app/landing_i18n.py
++++ b/App/app/landing_i18n.py
+@@ -53,6 +53,33 @@ LANDING_STRINGS = {
+         "landing.benefit.guest.body": "Guests fill in and sign their details through one private link.",
+         "landing.benefit.ubyport.title": "UbyPort gets the report",
+         "landing.benefit.ubyport.body": "Send it and keep the real delivery receipt.",
++        # WP27: privacy first. Every claim here is true for the code; see
++        # tests/test_privacy_first.py and notes WP27 before changing one.
++        "privacy_first.eyebrow": "Privacy first",
++        "privacy_first.title": "Only what the law asks for. Nothing extra.",
++        "privacy_first.lede": "We store as little as we can, and say exactly what and for how long.",
++        "privacy_first.link": "Privacy policy",
++        "privacy_first.law.title": "Only the fields Czech law asks for",
++        "privacy_first.law.body": (
++            "The guest form asks for the guest-book and stay-fee details, plus an e-mail "
++            "for the guest's private link."
++        ),
++        "privacy_first.cookies.title": "No tracking cookies",
++        "privacy_first.cookies.body": "Only the cookies that keep you signed in and protect your forms.",
++        "privacy_first.trackers.title": "No trackers in the app",
++        "privacy_first.trackers.body": (
++            "No ad or analytics scripts in the app or on guest pages. Website statistics "
++            "run on public pages only."
++        ),
++        "privacy_first.photos.title": "Passport photos deleted after check-in",
++        "privacy_first.photos.body": (
++            "Optional and off by default. Deleted as soon as you verify the guest, otherwise "
++            "automatically 7 days after check-in."
++        ),
++        "privacy_first.line": (
++            "UbyHost collects only what Czech law and the service itself need, and does not "
++            "use tracking cookies."
++        ),
+         "landing.steps.title": "From booking to reported in three moves.",
+         "landing.steps.1": "Connect your calendar",
+         "landing.steps.2": "Share the guest link",
+@@ -237,6 +264,31 @@ LANDING_STRINGS = {
+         "landing.benefit.guest.body": "Hosté vše vyplní a podepíší přes jeden soukromý odkaz.",
+         "landing.benefit.ubyport.title": "UbyPort dostane hlášení",
+         "landing.benefit.ubyport.body": "Odešlete ho a uchovejte skutečnou doručenku.",
++        "privacy_first.eyebrow": "Soukromí na prvním místě",
++        "privacy_first.title": "Jen to, co žádá zákon. Nic navíc.",
++        "privacy_first.lede": "Ukládáme co nejméně a přesně říkáme co a jak dlouho.",
++        "privacy_first.link": "Zásady ochrany osobních údajů",
++        "privacy_first.law.title": "Jen údaje, které žádá český zákon",
++        "privacy_first.law.body": (
++            "Formulář pro hosty chce jen údaje do domovní knihy a k poplatku z pobytu, "
++            "k tomu e-mail pro soukromý odkaz hosta."
++        ),
++        "privacy_first.cookies.title": "Žádné sledovací cookies",
++        "privacy_first.cookies.body": "Jen cookies, které vás udrží přihlášené a chrání formuláře.",
++        "privacy_first.trackers.title": "V aplikaci nic nesleduje",
++        "privacy_first.trackers.body": (
++            "V aplikaci ani na stránkách pro hosty nejsou reklamní ani analytické skripty. "
++            "Návštěvnost webu měříme jen na veřejných stránkách."
++        ),
++        "privacy_first.photos.title": "Fotky dokladů se po příjezdu mažou",
++        "privacy_first.photos.body": (
++            "Nepovinné a ve výchozím stavu vypnuté. Smažou se, jakmile hosta ověříte, "
++            "jinak automaticky 7 dní po příjezdu."
++        ),
++        "privacy_first.line": (
++            "UbyHost shromažďuje jen to, co vyžaduje český zákon a samotná služba, "
++            "a nepoužívá sledovací cookies."
++        ),
+         "landing.steps.title": "Od rezervace k hlášení ve třech krocích.",
+         "landing.steps.1": "Propojte kalendář",
+         "landing.steps.2": "Sdílejte odkaz pro hosty",
+diff --git a/App/app/templates/_privacy_first.html b/App/app/templates/_privacy_first.html
+new file mode 100644
+index 0000000..8f9fdae
+--- /dev/null
++++ b/App/app/templates/_privacy_first.html
+@@ -0,0 +1,16 @@
++{#- WP27: the "Privacy first" block on the landing, product and pricing pages.
++    It reuses the landing benefit list, so it adds no CSS. Every claim must stay
++    true for the code (tests/test_privacy_first.py); EN and CS live in
++    landing_i18n.py under privacy_first.*. -#}
++    <section class="landing-section benefits privacy-first" id="privacy-first" aria-labelledby="privacy-first-title">
++      <div class="landing-section-head">
++        <p class="landing-eyebrow">{{ t('privacy_first.eyebrow') }}</p>
++        <h2 id="privacy-first-title">{{ t('privacy_first.title') }}</h2>
++        <p>{{ t('privacy_first.lede') }} <a href="/privacy?lang={{ lang }}">{{ t('privacy_first.link') }} →</a></p>
++      </div>
++      <ol class="benefit-list">
++        {% for name in ('law', 'cookies', 'trackers', 'photos') %}
++        <li><span>0{{ loop.index }}</span><div><h3>{{ t('privacy_first.' ~ name ~ '.title') }}</h3><p>{{ t('privacy_first.' ~ name ~ '.body') }}</p></div></li>
++        {% endfor %}
++      </ol>
++    </section>
+diff --git a/App/app/templates/guest/base.html b/App/app/templates/guest/base.html
+index cb0955d..0ba0270 100644
+--- a/App/app/templates/guest/base.html
++++ b/App/app/templates/guest/base.html
+@@ -52,6 +52,7 @@
+ 
+   <div class="g-foot">
+     <p>{{ t('privacy') }}</p>
++    <p>{{ t('privacy_first_line') }}</p>
+     {% if privacy_url %}<p><a href="{{ privacy_url }}">{{ t('privacy_link') }}</a></p>{% endif %}
+   </div>
+ </div>
+diff --git a/App/app/templates/landing.html b/App/app/templates/landing.html
+index 6ae17e6..0e2ed7c 100644
+--- a/App/app/templates/landing.html
++++ b/App/app/templates/landing.html
+@@ -181,6 +181,8 @@
+       <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.details.link') }} →</a>
+     </section>
+ 
++    {% include "_privacy_first.html" %}
++
+     <section class="landing-final">
+       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('landing.final.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+diff --git a/App/app/templates/pricing.html b/App/app/templates/pricing.html
+index 3da6ff7..9f33e3f 100644
+--- a/App/app/templates/pricing.html
++++ b/App/app/templates/pricing.html
+@@ -81,6 +81,8 @@
+       </ol>
+     </section>
+ 
++    {% include "_privacy_first.html" %}
++
+     <section class="landing-final pricing-final">
+       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
+diff --git a/App/app/templates/privacy.html b/App/app/templates/privacy.html
+index 864421c..ab41de1 100644
+--- a/App/app/templates/privacy.html
++++ b/App/app/templates/privacy.html
+@@ -13,6 +13,7 @@
+ 
+ {{ page_header(t('privacy.page_title'), t('privacy.page_lede', name=operator.name)) }}
+ 
++<p class="lede">{{ t('privacy_first.line') }}</p>
+ <p class="small muted">{{ t('privacy.effective') }}</p>
+ 
+ {% with sections = privacy_sections, prefix = 'privacy' %}{% include "_legal_toc.html" %}{% endwith %}
+diff --git a/App/app/templates/product.html b/App/app/templates/product.html
+index 91f2047..16bb39f 100644
+--- a/App/app/templates/product.html
++++ b/App/app/templates/product.html
+@@ -105,6 +105,8 @@
+       </div>
+     </section>
+ 
++    {% include "_privacy_first.html" %}
++
+     <section class="landing-final product-final">
+       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('product.cta.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+diff --git a/App/tests/test_cookie_inventory.py b/App/tests/test_cookie_inventory.py
+index 0693223..ed0088b 100644
+--- a/App/tests/test_cookie_inventory.py
++++ b/App/tests/test_cookie_inventory.py
+@@ -45,12 +45,18 @@ def test_every_set_cookie_names_a_declared_inventory_row():
+ 
+ def test_every_local_storage_key_is_declared():
+     declared = set(cookie_inventory.names())
+-    for path in (APP / "static").glob("*.js"):
++    # WP27: inline scripts in templates write storage too (the house book
++    # intro did, undeclared), so they are scanned with the static files.
++    sources = sorted((APP / "static").glob("*.js")) + sorted((APP / "templates").rglob("*.html"))
++    seen = set()
++    for path in sources:
+         source = path.read_text(encoding="utf-8")
+         keys = dict(_JS_ASSIGN.findall(source))
+         for identifier in _JS_SET.findall(source):
+             name = keys.get(identifier, identifier)
++            seen.add(name)
+             assert name in declared, f"{path.name} writes undeclared storage {name}"
++    assert "ubyhost_housebook_legal_v1" in seen, "the template scan found nothing"
+ 
+ 
+ def test_the_published_lifetimes_match_the_code_constants():
+diff --git a/App/tests/test_privacy_first.py b/App/tests/test_privacy_first.py
+new file mode 100644
+index 0000000..d8d1979
+--- /dev/null
++++ b/App/tests/test_privacy_first.py
+@@ -0,0 +1,277 @@
++"""WP27 (privacy first): the app sets no cookie beyond the strictly necessary set.
++
++The brand says "no tracking cookies". This test makes that claim checkable: it
++crawls every parameter-free GET page anonymously and signed in (host and
++platform admin), walks a guest through the PIN, claim and form, switches the
++language, and records the name of every ``Set-Cookie`` header the app sent. The
++set must equal ``cookie_inventory.STRICTLY_NECESSARY_COOKIES``, which is what
++the privacy page publishes. A new cookie, from any route, fails here until it
++is justified, documented in ``cookie_inventory.py`` and added to the set.
++"""
++from __future__ import annotations
++
++import base64
++import io
++import re
++from datetime import timedelta
++from http.cookies import SimpleCookie
++from typing import Iterable, Set
++
++import pytest
++from fastapi.testclient import TestClient
++from PIL import Image
++
++from app import auth, claim, cookie_inventory, db, i18n, landing_i18n, public_guides
++from app.main import app
++from tests.conftest import complete_guest_claim
++
++TOKEN = "privacyfirsttoken"
++PIN = "2468"
++PASSWORD = "Privacy-First-Pass-1"
++_PATH_PARAM = re.compile(r"\{[^}]+\}")
++
++
++def _png_data_url() -> str:
++    buffer = io.BytesIO()
++    image = Image.new("RGB", (300, 120), "white")
++    for x in range(20, 280):
++        image.putpixel((x, 60), (0, 0, 0))
++    image.save(buffer, format="PNG")
++    return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
++
++
++def _get_paths() -> Set[str]:
++    """Every GET path without a path parameter, nested routers included."""
++    found: Set[str] = set()
++
++    def walk(routes: Iterable, prefix: str = "") -> None:
++        for route in routes:
++            nested = getattr(route, "original_router", None)
++            if nested is not None:
++                context = getattr(route, "include_context", None)
++                walk(nested.routes, prefix + (getattr(context, "prefix", "") or ""))
++                continue
++            path = getattr(route, "path", None)
++            methods = getattr(route, "methods", None) or ()
++            if path is None:
++                continue
++            if "GET" in methods and not _PATH_PARAM.search(path):
++                found.add(prefix + path)
++            elif hasattr(route, "routes") and not methods and not path.startswith("/static"):
++                walk(route.routes, prefix + path)
++
++    walk(app.router.routes)
++    return found
++
++
++class _Recorder:
++    """Collect the cookie names of every response a client receives."""
++
++    def __init__(self) -> None:
++        self.names: Set[str] = set()
++
++    def __call__(self, response) -> None:
++        for header in response.headers.get_list("set-cookie"):
++            parsed = SimpleCookie()
++            parsed.load(header)
++            self.names.update(parsed.keys())
++
++    def client(self) -> TestClient:
++        client = TestClient(app)
++        client.event_hooks["response"].append(self)
++        return client
++
++
++def _cleanup() -> None:
++    apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
++    if apartment:
++        stays = "(SELECT id FROM reservation WHERE apartment_id = ?)"
++        db.execute(f"DELETE FROM reservation_claim WHERE reservation_id IN {stays}", (apartment["id"],))
++        db.execute(f"DELETE FROM guest WHERE reservation_id IN {stays}", (apartment["id"],))
++        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
++        db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
++        db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
++
++
++def _account(username: str, role: str) -> int:
++    """Accounts are kept between tests: audit rows point at them."""
++    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
++    if row:
++        return int(row["id"])
++    return auth.create_account(
++        username, PASSWORD, username.title(), role=role, must_change_password=False
++    )
++
++
++def _fixture():
++    db.init_db()
++    _cleanup()
++    host_id = _account("privacyfirst-host", "host")
++    _account("privacyfirst-admin", "admin")
++    now = db.utcnow()
++    today = claim.prague_today()
++    entity_id = db.insert(
++        "legal_entity", {"name": "Privacy first", "owner_user_id": host_id, "created_at": now}
++    )
++    apartment_id = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity_id,
++            "owner_user_id": host_id,
++            "internal_name": "Privacy flat",
++            "permalink_token": TOKEN,
++            "permalink_pin": PIN,
++            "permalink_window_days": 14,
++            "default_purpose": "10",
++            "automation_mode": "manual",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    stay_id = db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment_id,
++            "source": "manual",
++            "uid": "privacy-first-stay",
++            "date_from": today.isoformat(),
++            "date_to": (today + timedelta(days=3)).isoformat(),
++            "status": "active",
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++    return stay_id, apartment_id
++
++
++def _crawl(client: TestClient, paths: Iterable[str]) -> None:
++    for path in sorted(paths):
++        for lang in ("en", "cs"):
++            client.get(f"{path}?lang={lang}", follow_redirects=True)
++
++
++def _sign_in(client: TestClient, username: str) -> None:
++    response = client.post(
++        "/login?lang=en",
++        data={"username": username, "password": PASSWORD, "remember": "1"},
++        follow_redirects=False,
++    )
++    assert response.status_code == 303, response.text
++
++
++@pytest.fixture
++def guest_pin_on(monkeypatch):
++    monkeypatch.setattr("app.config.GUEST_PIN_REQUIRED", True)
++
++
++def test_a_full_crawl_sets_exactly_the_strictly_necessary_cookies(guest_pin_on):
++    stay_id, apartment_id = _fixture()
++    recorder = _Recorder()
++    paths = _get_paths()
++    assert {"/", "/privacy", "/cenik", "/jak-to-funguje", "/housebook", "/settings"} <= paths
++    try:
++        # Public and auth pages, anonymous.
++        guides = {f"/pruvodce/{slug}" for slug in public_guides.GUIDES}
++        _crawl(recorder.client(), paths | guides)
++
++        # Host app and platform admin, signed in, then signed out.
++        for username in ("privacyfirst-host", "privacyfirst-admin"):
++            host = recorder.client()
++            _sign_in(host, username)
++            _crawl(host, paths | {f"/reservations/{stay_id}", f"/apartments/{apartment_id}"})
++            host.post("/language", data={"lang": "cs", "next": "/"}, follow_redirects=True)
++            host.post("/logout", follow_redirects=True)
++
++        # Guest: PIN, stay page, claim, form, confirmation, privacy notice.
++        guest = recorder.client()
++        guest.get(f"/l/{TOKEN}?lang=cs", follow_redirects=True)
++        pinned = guest.post(
++            f"/l/{TOKEN}/pin?lang=en",
++            data={"pin": PIN, "return_to": f"/l/{TOKEN}"},
++            follow_redirects=False,
++        )
++        assert pinned.status_code == 303, pinned.text
++        guest.get(f"/l/{TOKEN}/{stay_id}?lang=en", follow_redirects=True)
++        complete_guest_claim(guest, TOKEN, stay_id, party_size=1)
++        saved = guest.post(
++            f"/l/{TOKEN}/{stay_id}/save?lang=en",
++            data={
++                "surname": "Novak",
++                "first_name": "Demo",
++                "birth_date": "1.1.1990",
++                "nationality": "CZE",
++                "doc_number": "123456789",
++                "res_street": "Demo Street 1",
++                "res_city": "Demo City",
++                "res_country": "CZE",
++                "purpose": "10",
++                "party_size": "1",
++                "signature": _png_data_url(),
++                "legal_ack": "1",
++            },
++            follow_redirects=True,
++        )
++        assert saved.status_code == 200, saved.text
++        guest.get(f"/l/{TOKEN}/privacy?lang=cs", follow_redirects=True)
++    finally:
++        _cleanup()
++
++    assert recorder.names == cookie_inventory.STRICTLY_NECESSARY_COOKIES, (
++        "The app set a cookie outside the documented strictly necessary set, or the "
++        "crawl no longer reaches one of them. A new cookie needs a purpose, a lifetime "
++        "and a row in cookie_inventory.py, and UbyHost sets no tracking cookie. "
++        f"Unexpected: {sorted(recorder.names - cookie_inventory.STRICTLY_NECESSARY_COOKIES)}; "
++        f"not reached: {sorted(cookie_inventory.STRICTLY_NECESSARY_COOKIES - recorder.names)}"
++    )
++
++
++def test_the_strictly_necessary_set_is_the_first_party_cookie_inventory():
++    assert cookie_inventory.STRICTLY_NECESSARY_COOKIES == {
++        "ubyhost_session",
++        "ubyhost_csrf",
++        "ubyhost_lang",
++        "ubyhost_pin",
++        "ubyhost_owned",
++        "ubyhost_claim",
++        "ubyhost_guest_lang",
++    }
++
++
++def test_the_privacy_first_section_is_on_the_marketing_pages():
++    db.init_db()
++    client = TestClient(app)
++    for path in ("/", "/cenik", "/jak-to-funguje"):
++        for lang in ("en", "cs"):
++            html = client.get(f"{path}?lang={lang}").text
++            strings = landing_i18n.LANDING_STRINGS[lang]
++            assert strings["privacy_first.title"] in html, (path, lang)
++            assert 'href="/privacy?lang=' + lang + '"' in html, (path, lang)
++            for name in ("law", "cookies", "trackers", "photos"):
++                assert strings[f"privacy_first.{name}.title"] in html, (path, lang, name)
++
++
++def test_the_privacy_first_line_is_on_the_privacy_and_guest_pages():
++    stay_id, _apartment_id = _fixture()
++    try:
++        client = TestClient(app)
++        for lang in ("en", "cs"):
++            line = landing_i18n.LANDING_STRINGS[lang]["privacy_first.line"]
++            assert line in client.get(f"/privacy?lang={lang}").text, lang
++            guest_line = i18n.STRINGS[lang]["privacy_first_line"]
++            page = client.get(f"/l/{TOKEN}/{stay_id}?lang={lang}", follow_redirects=True).text
++            assert guest_line in page, lang
++            notice = client.get(f"/l/{TOKEN}/privacy?lang={lang}", follow_redirects=True).text
++            assert guest_line in notice, lang
++    finally:
++        _cleanup()
++
++
++def test_the_claims_never_say_no_cookies_in_absolute_terms():
++    """The app does use strictly necessary cookies; the copy says "no tracking"."""
++    for lang in ("en", "cs"):
++        texts = [v for k, v in landing_i18n.LANDING_STRINGS[lang].items() if k.startswith("privacy_first")]
++        texts.append(i18n.STRINGS[lang]["privacy_first_line"])
++        for text in texts:
++            lowered = text.lower()
++            assert "no cookies" not in lowered and "žádné cookies" not in lowered, text
++            assert "bez cookies" not in lowered, text
+diff --git a/docs/DESIGN.md b/docs/DESIGN.md
+index 452d8f0..8fd0622 100644
+--- a/docs/DESIGN.md
++++ b/docs/DESIGN.md
+@@ -315,6 +315,51 @@ size, a signature pad that saved nothing and a date of birth a line too low.
+ - Don't copy a competitor's colours, gradients or layout.
+ - Don't add dark mode.
+ 
++## Privacy first
++
++UbyHost is privacy first, and that is part of the brand on every surface.
++Owner decision (WP27): "We do not store anything extra, only what is needed."
++
++**Rules for every change**
++
++1. **Store only what the law or the feature needs.** The guest form collects
++   the guest-book fields of § 102 zákon 326/1999 Sb. and the stay-fee fields of
++   § 3g zákon 565/1990 Sb.; everything else must name the feature that cannot
++   work without it. If a field is "nice to have", do not add it.
++2. **No tracking cookies.** The only cookies the app sets are the strictly
++   necessary ones in `cookie_inventory.STRICTLY_NECESSARY_COOKIES`: session,
++   CSRF, language choice, guest PIN, guest claim, the guest's own submitted
++   forms and the guest's language. `tests/test_privacy_first.py` fails if a
++   crawl sees any other Set-Cookie name. Cloudflare's own `__cf_bm` and
++   `cf_clearance` are set by the edge for bot protection and are listed too.
++3. **No third-party scripts in the app or on guest pages.** The single
++   exception is the Cloudflare Turnstile bot check on sign-in and on the guest
++   PIN and claim pages, loaded only when Turnstile is configured. No CDN fonts,
++   no embeds, no pixels.
++4. **Analytics only cookieless and only on public pages** (Umami, see
++   `analytics.PUBLIC_ANALYTICS_TEMPLATES`), with an opt-out on the privacy page.
++5. **Ads measurement only with explicit consent and server-side**: an unticked
++   box, the click id only, no pixel, no cookie.
++6. **Every new personal-data field needs a purpose and a retention line** in
++   `retention.py` (or a purge step it references) in the same PR.
++7. **Every new outbound request needs a reason in the PR**: what is sent, to
++   whom, why, and whether it carries personal data.
++
++**How we say it**
++
++- Say "no tracking cookies", never "no cookies": the app needs session and
++  CSRF cookies to work.
++- Say only what the code does today. The public copy lives in
++  `landing_i18n.py` (`privacy_first.*`, shown by `_privacy_first.html` on the
++  landing, product and pricing pages, and `privacy_first.line` on the privacy
++  page) and in `i18n.py` (`privacy_first_line`, the guest footer). Do not claim
++  "all data in the EU" until the hosting region is confirmed
++  (04_legal_positions.md, open item 2), and do not claim automatic deletion of
++  guest records while `UBYHOST_RETENTION_AUTOPURGE` is off by default.
++- The "Privacy first" block reuses the landing benefit list (`benefit-list`)
++  and adds no CSS and no images. It was added with the owner's go-ahead in WP27;
++  the rest of the public site stays locked.
++
+ ## Public marketing site: locked
+ 
+ The current public site is **approved as it is**: short, catchy and punchy, in the style of Notion. That covers `landing.html`, `product.html`, `pricing.html`, the guides, the public header and footer, `landing.css` and `landing.js`.
+@@ -325,6 +370,7 @@ The current public site is **approved as it is**: short, catchy and punchy, in t
+   - legal or factual accuracy fixes (prices, the "not operated or endorsed by the Czech Police or UbyPort" line);
+   - broken-link, accessibility and performance fixes;
+   - SEO metadata.
++- The "Privacy first" block (`_privacy_first.html`, WP27) is part of the approved site.
+ - If a new page or section is needed, it must reuse the existing `landing.css` classes and match the current voice: one short headline, one line of support, one button.
+ - Any other change needs Joe's written go-ahead in the task.
+ 
+-- 
+2.34.1
+

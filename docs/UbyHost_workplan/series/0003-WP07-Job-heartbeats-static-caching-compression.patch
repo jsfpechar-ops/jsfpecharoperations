@@ -1,0 +1,779 @@
+From a4946695adaf5302f6ec4ac3ce47a593d0375ea7 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:28:17 +0200
+Subject: [PATCH 03/34] WP07: Job heartbeats, static caching, compression
+
+Conflict resolution: guest/base.html and guest/pin.html. PR 230 archived the ticket-wallet guest UI (guest-ticket.css, ticket.js, the tw classes). Kept main's stylesheets and guest-enhancements.js, dropped the guest-ticket.css and ticket.js lines, kept WP07's ?v= on the favicons and the load_signature_js switch (form and PIN page). tests/test_wp07_cache_heartbeats.py: the guest script order is checked against guest-enhancements.js instead of ticket.js, and the versioned-URL scan skips templates/guest/archive/ (reference copies no route renders).
+---
+ App/app/config.py                           |   5 +
+ App/app/main.py                             |  15 ++
+ App/app/scheduler.py                        |  13 +-
+ App/app/templates/_components.html          |   2 +-
+ App/app/templates/_public_footer.html       |   2 +-
+ App/app/templates/_public_header.html       |   2 +-
+ App/app/templates/apartment_form.html       |   2 +-
+ App/app/templates/auth_base.html            |   8 +-
+ App/app/templates/automation.html           |   2 +-
+ App/app/templates/base.html                 |   8 +-
+ App/app/templates/guest/base.html           |   8 +-
+ App/app/templates/guest/form.html           |   1 +
+ App/app/templates/guest/pin.html            |   1 +
+ App/app/templates/landing.html              |   8 +-
+ App/app/templates/pricing.html              |   8 +-
+ App/app/templates/product.html              |   6 +-
+ App/app/templates/public_guide.html         |   4 +-
+ App/app/templates/public_legal_base.html    |   4 +-
+ App/tests/test_logo_placements.py           |  18 +-
+ App/tests/test_wp07_cache_heartbeats.py     | 234 ++++++++++++++++++++
+ deploy/lightsail/.env.example               |  12 +
+ deploy/lightsail/caddy/Caddyfile.acme       |   2 +-
+ deploy/lightsail/caddy/Caddyfile.cloudflare |   2 +-
+ docs/ENVIRONMENT.md                         |   2 +
+ 24 files changed, 324 insertions(+), 45 deletions(-)
+ create mode 100644 App/tests/test_wp07_cache_heartbeats.py
+
+diff --git a/App/app/config.py b/App/app/config.py
+index e7fb970..08e5a36 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -120,7 +120,12 @@ UBYPORT_TIMEOUT = int(os.environ.get("UBYHOST_UBYPORT_TIMEOUT", "60"))
+ 
+ ICAL_POLL_MINUTES = int(os.environ.get("UBYHOST_ICAL_POLL_MINUTES", "60"))
+ SUBMIT_SWEEP_MINUTES = int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10"))
++# Dead-man switches (for example healthchecks.io), each pinged after a
++# successful run of its job: the submission sweep, the calendar sync and the
++# mail job (WP07). Empty disables the ping.
+ HEARTBEAT_URL = os.environ.get("UBYHOST_HEARTBEAT_URL", "").strip()
++HEARTBEAT_ICAL_URL = os.environ.get("UBYHOST_HEARTBEAT_ICAL_URL", "").strip()
++HEARTBEAT_MAIL_URL = os.environ.get("UBYHOST_HEARTBEAT_MAIL_URL", "").strip()
+ 
+ # Used to build the guest permalink shown to hosts for copy/paste.
+ PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
+diff --git a/App/app/main.py b/App/app/main.py
+index 514172e..fdca688 100644
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -219,11 +219,26 @@ async def cloudflare_connecting_ip(request: Request, call_next):
+     # pages must not sit in history, the back/forward cache, or a proxy.
+     if not request.url.path.startswith("/static/"):
+         response.headers.setdefault("Cache-Control", "no-store, private")
++    elif response.status_code in (200, 304):
++        response.headers.setdefault("Cache-Control", _static_cache_control(request))
+     if config.ACCESS_LOG:
+         _log_access(request, response.status_code, started)
+     return response
+ 
+ 
++# WP07: every /static URL in the templates carries ?v=<key>, and the key is
++# bumped whenever the file changes, so a versioned asset may be cached for a
++# year without revalidation. A request without ?v= (the /favicon.ico redirect,
++# the logo in e-mails, a crawler fetching og:image) gets one day only, so a
++# changed unversioned file is never stuck in a cache for a year.
++_STATIC_VERSIONED = "public, max-age=31536000, immutable"
++_STATIC_UNVERSIONED = "public, max-age=86400"
++
++
++def _static_cache_control(request: Request) -> str:
++    return _STATIC_VERSIONED if request.query_params.get("v") else _STATIC_UNVERSIONED
++
++
+ def _access_route(request: Request) -> str:
+     """The matched route template, or a constant when nothing matched.
+ 
+diff --git a/App/app/scheduler.py b/App/app/scheduler.py
+index e7e6371..86c301b 100644
+--- a/App/app/scheduler.py
++++ b/App/app/scheduler.py
+@@ -65,6 +65,7 @@ def _job_sync_calendars() -> None:
+         _job_failed("ical")
+         return
+     _job_ok("ical")
++    _ping(config.HEARTBEAT_ICAL_URL, "ical")
+ 
+ 
+ def _job_submit() -> None:
+@@ -82,12 +83,17 @@ def _job_submit() -> None:
+ 
+ def _heartbeat() -> None:
+     """Tell an external dead-man switch the submission sweep is alive."""
+-    if not config.HEARTBEAT_URL:
++    _ping(config.HEARTBEAT_URL, "submit")
++
++
++def _ping(url: str, job_id: str) -> None:
++    """Ping one job's dead-man switch; a failed ping is logged, never raised."""
++    if not url:
+         return
+     try:
+-        requests.get(config.HEARTBEAT_URL, timeout=5)
++        requests.get(url, timeout=5)
+     except Exception:
+-        log.warning("heartbeat ping failed", exc_info=True)
++        log.warning("heartbeat ping for %s failed", job_id, exc_info=True)
+ 
+ 
+ def _job_deadlines() -> None:
+@@ -126,6 +132,7 @@ def _job_mail() -> None:
+         _job_failed("mail")
+     else:
+         _job_ok("mail")
++        _ping(config.HEARTBEAT_MAIL_URL, "mail")
+ 
+ 
+ def _job_photo_sweep() -> None:
+diff --git a/App/app/templates/_components.html b/App/app/templates/_components.html
+index da55de5..aede213 100644
+--- a/App/app/templates/_components.html
++++ b/App/app/templates/_components.html
+@@ -353,7 +353,7 @@
+   {% set compact_list = compact and onboarding.current and not onboarding.finished %}
+   <section class="onboarding-welcome">
+     <header class="onboarding-intro">
+-      <img class="onboarding-logo" src="/static/ubyhost-mark.png" alt="">
++      <img class="onboarding-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div>
+         <p class="onboarding-kicker">{{ t('onboarding.kicker') }}</p>
+         <h1>{{ t('onboarding.welcome_title') }}</h1>
+diff --git a/App/app/templates/_public_footer.html b/App/app/templates/_public_footer.html
+index e1a0e69..57745bc 100644
+--- a/App/app/templates/_public_footer.html
++++ b/App/app/templates/_public_footer.html
+@@ -3,7 +3,7 @@
+     page and every guide. Every string comes from landing_i18n.py, so the
+     parity test can see it and the page never renders English on the CS side. -#}
+   <footer class="landing-footer">
+-    <a class="landing-brand" href="/?lang={{ lang }}"><img src="/static/ubyhost-logo.png" alt="UbyHost"></a>
++    <a class="landing-brand" href="/?lang={{ lang }}"><img src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost"></a>
+     <nav aria-label="{{ t('legal.footer_nav_label') }}">
+       <a href="/jak-to-funguje?lang={{ lang }}">{{ t('landing.nav.how') }}</a>
+       <a href="/cenik?lang={{ lang }}">{{ t('landing.nav.pricing') }}</a>
+diff --git a/App/app/templates/_public_header.html b/App/app/templates/_public_header.html
+index 6d79df3..7f183ca 100644
+--- a/App/app/templates/_public_header.html
++++ b/App/app/templates/_public_header.html
+@@ -18,7 +18,7 @@
+   <a class="landing-skip" href="#content">{{ t('a11y.skip_to_content') }}</a>
+   <header class="landing-header">
+     <a class="landing-brand" href="/?lang={{ lang }}" aria-label="UbyHost">
+-      <img src="/static/ubyhost-logo.png" alt="UbyHost">
++      <img src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost">
+     </a>
+     <nav class="landing-nav" aria-label="{{ t('a11y.main_navigation') }}">
+       {%- for href, key, names in nav_items %}
+diff --git a/App/app/templates/apartment_form.html b/App/app/templates/apartment_form.html
+index da1709b..6ab6701 100644
+--- a/App/app/templates/apartment_form.html
++++ b/App/app/templates/apartment_form.html
+@@ -178,7 +178,7 @@
+       {{ t('apartment.form.ubyport.intro') }}
+     </p>
+     <p class="small" style="margin:12px 0">
+-      <a class="btn small" href="/static/docs/ubyport-ws-credential-sample.pdf" target="_blank" rel="noopener">
++      <a class="btn small" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">
+         {{ t('automation.sample_pdf') }}</a>
+       <span class="muted">{{ t('apartment.form.ubyport.sample_help') }}</span>
+     </p>
+diff --git a/App/app/templates/auth_base.html b/App/app/templates/auth_base.html
+index 16b8981..ddf90af 100644
+--- a/App/app/templates/auth_base.html
++++ b/App/app/templates/auth_base.html
+@@ -7,8 +7,8 @@
+   <meta name="csrf-token" content="{{ csrf_token }}">
+   <title>{% block title %}UbyHost{% endblock %}</title>
+   {% include "_seo_head.html" %}
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+   <link rel="stylesheet" href="/static/app.css?v=20261002a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+@@ -18,7 +18,7 @@
+   <div class="auth-layout">
+     <section id="main-content" class="auth-panel">
+       <header class="auth-brand">
+-        <img class="auth-logo" src="/static/ubyhost-logo.png" alt="UbyHost">
++        <img class="auth-logo" src="/static/ubyhost-logo.png?v=20261004a" alt="UbyHost">
+       </header>
+       {% block lang_switch %}
+       <form method="post" action="/language" class="lang-switch auth-lang-switch">
+@@ -59,7 +59,7 @@
+     </section>
+     <aside class="auth-hero" aria-hidden="true">
+       <div class="auth-hero-inner">
+-        <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png" alt="">
++        <img class="auth-hero-mark" src="/static/ubyhost-logo-stacked.png?v=20261004a" alt="">
+         <h2>{{ t('login.hero_title') }}</h2>
+         <p>{{ t('login.hero_body') }}</p>
+         <div class="auth-product-card">
+diff --git a/App/app/templates/automation.html b/App/app/templates/automation.html
+index aa2d165..78e8c1c 100644
+--- a/App/app/templates/automation.html
++++ b/App/app/templates/automation.html
+@@ -72,7 +72,7 @@
+         <h3 style="margin-top:22px">{{ t('automation.credentials_title') }}</h3>
+         <p class="small muted">
+           {{ t('automation.credentials_help') }}
+-          <a href="/static/docs/ubyport-ws-credential-sample.pdf" target="_blank" rel="noopener">{{ t('automation.sample_pdf') }}</a>
++          <a href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('automation.sample_pdf') }}</a>
+           {{ t('automation.or_use') }}
+           <a href="/apartments/{{ apartment.id }}#ubyport">{{ t('automation.full_setup') }}</a>.
+         </p>
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index 8d4b2a0..aaf773c 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -7,8 +7,8 @@
+   <meta name="csrf-token" content="{{ csrf_token }}">
+   <title>{% block title %}UbyHost{% endblock %}</title>
+   {% include "_seo_head.html" %}
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+   <link rel="stylesheet" href="/static/app.css?v=20261002a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+@@ -22,7 +22,7 @@
+   <button class="nav-toggle" type="button" data-nav-toggle aria-controls="app-sidebar" aria-label="{{ t('a11y.open_menu') }}" aria-expanded="false">
+     <span aria-hidden="true">☰</span>
+   </button>
+-  <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png" alt=""></a>
++  <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt=""></a>
+   {% if current_user %}
+     <a class="appbar-help" href="/guide">{{ t('nav.guide') }}</a>
+   {% endif %}
+@@ -39,7 +39,7 @@
+   <div class="sidebar-brand">
+     <div class="sidebar-brand-row">
+       <a class="brand plain" href="/">
+-        <img class="brand-logo" src="/static/ubyhost-mark.png" alt="">
++        <img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">
+         <span class="brand-word">UbyHost</span>
+       </a>
+       <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true"
+diff --git a/App/app/templates/guest/base.html b/App/app/templates/guest/base.html
+index cca6793..236f621 100644
+--- a/App/app/templates/guest/base.html
++++ b/App/app/templates/guest/base.html
+@@ -8,8 +8,8 @@
+   <meta name="csrf-token" content="{{ csrf_token }}">
+   <meta name="theme-color" content="#f7f7f5">
+   <title>{{ t('title') }}</title>
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261003a">
+   <link rel="stylesheet" href="/static/guest.css?v=20261003d">
+ </head>
+@@ -56,7 +56,9 @@
+   </div>
+ </div>
+ <script src="/static/skeleton.js?v=20261003a"></script>
+-<script src="/static/signature.js?v=20260930a"></script>
++{# WP07: signature.js (signature pad, wizard, date of birth, PIN return) runs
++   only on the form and the PIN page; those set load_signature_js. #}
++{% if load_signature_js %}<script src="/static/signature.js?v=20260930a"></script>{% endif %}
+ <script src="/static/guest-enhancements.js?v=20261003a"></script>
+ <script src="/static/csrf.js?v=20260915a"></script>
+ </body>
+diff --git a/App/app/templates/guest/form.html b/App/app/templates/guest/form.html
+index 4799133..27b842d 100644
+--- a/App/app/templates/guest/form.html
++++ b/App/app/templates/guest/form.html
+@@ -1,4 +1,5 @@
+ {% extends "guest/base.html" %}
++{% set load_signature_js = true %}
+ 
+ {% macro val(name, fallback='') %}{{ values.get(name) if values.get(name) is not none else (guest[name] if guest and name in guest.keys() and guest[name] else fallback) }}{% endmacro %}
+ {% macro err_for(field) %}
+diff --git a/App/app/templates/guest/pin.html b/App/app/templates/guest/pin.html
+index ff1f149..ac907bb 100644
+--- a/App/app/templates/guest/pin.html
++++ b/App/app/templates/guest/pin.html
+@@ -1,4 +1,5 @@
+ {% extends "guest/base.html" %}
++{% set load_signature_js = true %}
+ {% block content %}
+ <div class="g-card">
+   <h2>{{ t('pin_title') }}</h2>
+diff --git a/App/app/templates/landing.html b/App/app/templates/landing.html
+index 8064bbd..5dbeaef 100644
+--- a/App/app/templates/landing.html
++++ b/App/app/templates/landing.html
+@@ -21,8 +21,8 @@
+   <meta name="twitter:card" content="summary">
+   <meta name="twitter:title" content="{{ t('landing.page_title') }}">
+   <meta name="twitter:description" content="{{ t('landing.meta_description') }}">
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+   <script type="application/ld+json">
+@@ -91,7 +91,7 @@
+         </div>
+         <div class="reel-screen">
+           <div class="reel-side" aria-hidden="true">
+-            <img src="/static/ubyhost-mark.png" alt="">
++            <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+             <i class="is-active"></i><i></i><i></i><i></i>
+           </div>
+           <div class="reel-scenes" role="img" aria-label="{{ t('landing.demo.label') }}">
+@@ -181,7 +181,7 @@
+     </section>
+ 
+     <section class="landing-final">
+-      <img src="/static/ubyhost-mark.png" alt="">
++      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('landing.final.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+       <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+     </section>
+diff --git a/App/app/templates/pricing.html b/App/app/templates/pricing.html
+index a38bdd0..153300f 100644
+--- a/App/app/templates/pricing.html
++++ b/App/app/templates/pricing.html
+@@ -19,8 +19,8 @@
+   <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
+   <meta property="og:image" content="{{ public_base_url }}/static/apple-touch-icon.png">
+   <meta name="twitter:card" content="summary">
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+   <script type="application/ld+json">
+@@ -49,7 +49,7 @@
+       <article class="pricing-card">
+         <div class="pricing-card-head">
+           <span>{{ t('pricing.card.kicker') }}</span>
+-          <img src="/static/ubyhost-mark.png" alt="">
++          <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+         </div>
+         <strong class="pricing-price">{{ t('pricing.card.price') }}</strong>
+         <p class="pricing-note">{{ t('pricing.card.summary') }}</p>
+@@ -81,7 +81,7 @@
+     </section>
+ 
+     <section class="landing-final pricing-final">
+-      <img src="/static/ubyhost-mark.png" alt="">
++      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
+       <a class="landing-button primary" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
+     </section>
+diff --git a/App/app/templates/product.html b/App/app/templates/product.html
+index a7fe3e7..ebfb21e 100644
+--- a/App/app/templates/product.html
++++ b/App/app/templates/product.html
+@@ -19,8 +19,8 @@
+   <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
+   <meta property="og:image" content="{{ public_base_url }}/static/apple-touch-icon.png">
+   <meta name="twitter:card" content="summary">
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+   <script type="application/ld+json">
+@@ -105,7 +105,7 @@
+     </section>
+ 
+     <section class="landing-final product-final">
+-      <img src="/static/ubyhost-mark.png" alt="">
++      <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+       <div><h2>{{ t('product.cta.title') }}</h2><p>{{ t('landing.final.body') }}</p></div>
+       <a class="landing-button primary" href="/login?lang={{ lang }}">{{ t('landing.cta') }}</a>
+     </section>
+diff --git a/App/app/templates/public_guide.html b/App/app/templates/public_guide.html
+index 9f38bd1..1988339 100644
+--- a/App/app/templates/public_guide.html
++++ b/App/app/templates/public_guide.html
+@@ -18,8 +18,8 @@
+   <meta property="og:url" content="{{ canonical_url }}">
+   <meta property="og:locale" content="{{ 'cs_CZ' if lang == 'cs' else 'en_US' }}">
+   <meta name="twitter:card" content="summary">
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20260914d">
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+   <script type="application/ld+json">
+diff --git a/App/app/templates/public_legal_base.html b/App/app/templates/public_legal_base.html
+index a5a6e00..eee22f2 100644
+--- a/App/app/templates/public_legal_base.html
++++ b/App/app/templates/public_legal_base.html
+@@ -19,8 +19,8 @@
+   <meta name="theme-color" content="#f7f7f5">
+   <title>{% block title %}UbyHost{% endblock %}</title>
+   {% include "_seo_head.html" %}
+-  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
++  <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
++  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+   {#- landing.css first so app.css keeps the reading typography and the link
+       colour; it is here only for the shared header and footer. -#}
+diff --git a/App/tests/test_logo_placements.py b/App/tests/test_logo_placements.py
+index 8d6b21d..c95b5c3 100644
+--- a/App/tests/test_logo_placements.py
++++ b/App/tests/test_logo_placements.py
+@@ -16,15 +16,15 @@ def _read(name: str) -> str:
+ 
+ def test_auth_uses_horizontal_and_stacked_lockups():
+     html = _read("auth_base.html")
+-    assert 'src="/static/ubyhost-logo.png"' in html
+-    assert 'src="/static/ubyhost-logo-stacked.png"' in html
++    assert 'src="/static/ubyhost-logo.png?v=' in html
++    assert 'src="/static/ubyhost-logo-stacked.png?v=' in html
+     assert "ubyhost-logo-stacked.png" in html.split("auth-hero", 1)[1]
+     assert "ubyhost-logo.png" in html.split("auth-brand", 1)[1].split("auth-hero", 1)[0]
+ 
+ 
+ def test_host_chrome_uses_mark_only_with_live_wordmark():
+     html = _read("base.html")
+-    assert 'src="/static/ubyhost-mark.png"' in html
++    assert 'src="/static/ubyhost-mark.png?v=' in html
+     assert "brand-word" in html and "UbyHost" in html
+     # Horizontal/stacked lockups must not land in the sidebar.
+     sidebar = html.split('id="app-sidebar"', 1)[1].split("</aside>", 1)[0]
+@@ -45,24 +45,24 @@ def test_public_surfaces_use_horizontal_lockup_and_mark_accents():
+     footer = _read("_public_footer.html")
+     landing = _read("landing.html")
+     # The lockup now lives in the shared chrome every public page includes.
+-    assert header.count('src="/static/ubyhost-logo.png"') >= 1
+-    assert footer.count('src="/static/ubyhost-logo.png"') >= 1
+-    assert 'src="/static/ubyhost-mark.png"' in landing
++    assert header.count('src="/static/ubyhost-logo.png?v=') >= 1
++    assert footer.count('src="/static/ubyhost-logo.png?v=') >= 1
++    assert 'src="/static/ubyhost-mark.png?v=' in landing
+     for name in PUBLIC_PAGE_TEMPLATES + ("_public_header.html", "_public_footer.html"):
+         assert "ubyhost-logo-stacked.png" not in _read(name)
+ 
+ 
+ def test_onboarding_uses_mark_only():
+     html = _read("_components.html")
+-    assert 'class="onboarding-logo" src="/static/ubyhost-mark.png"' in html
++    assert 'class="onboarding-logo" src="/static/ubyhost-mark.png?v=' in html
+ 
+ 
+ def test_favicons_point_at_png_not_retired_svg():
+     for name in ("base.html", "auth_base.html", "guest/base.html", "landing.html", "public_guide.html"):
+         html = _read(name)
+-        assert 'href="/static/favicon.png"' in html
++        assert 'href="/static/favicon.png?v=' in html
+         assert "favicon.svg" not in html
+-        assert 'href="/static/apple-touch-icon.png"' in html
++        assert 'href="/static/apple-touch-icon.png?v=' in html
+ 
+ 
+ # --- UX-152 / D-21: the public display sizes and their doc rows -------------
+diff --git a/App/tests/test_wp07_cache_heartbeats.py b/App/tests/test_wp07_cache_heartbeats.py
+new file mode 100644
+index 0000000..777ffa0
+--- /dev/null
++++ b/App/tests/test_wp07_cache_heartbeats.py
+@@ -0,0 +1,234 @@
++"""WP07: long-lived caching for versioned static files, per-job heartbeats,
++and signature.js only where it is used."""
++from __future__ import annotations
++
++import re
++from datetime import timedelta
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import claim, config, db, icalsync, mail, scheduler
++from app.main import app
++from tests.conftest import complete_guest_claim
++
++TEMPLATES = Path(__file__).resolve().parent.parent / "app" / "templates"
++IMMUTABLE = "public, max-age=31536000, immutable"
++
++
++# --- static caching ----------------------------------------------------------
++
++
++def test_a_versioned_static_file_is_cached_for_a_year():
++    response = TestClient(app).get("/static/app.css?v=20261002a")
++    assert response.status_code == 200
++    assert response.headers["cache-control"] == IMMUTABLE
++
++
++def test_an_unversioned_static_file_is_cached_for_a_day_only():
++    response = TestClient(app).get("/static/favicon.png")
++    assert response.status_code == 200
++    assert response.headers["cache-control"] == "public, max-age=86400"
++    assert "immutable" not in response.headers["cache-control"]
++
++
++def test_a_missing_static_file_is_not_cached():
++    response = TestClient(app).get("/static/does-not-exist.css?v=1")
++    assert response.status_code == 404
++    assert "immutable" not in response.headers.get("cache-control", "")
++
++
++def test_html_pages_keep_no_store():
++    db.init_db()
++    response = TestClient(app).get("/login")
++    assert response.status_code == 200
++    assert response.headers["cache-control"] == "no-store, private"
++    assert "immutable" not in response.headers["cache-control"]
++
++
++def test_every_static_url_in_the_templates_carries_a_version():
++    """An unversioned URL would stay in browsers for a year after a change.
++
++    Absolute URLs built from ``public_base_url`` (og:image, JSON-LD) are for
++    crawlers and are exempt; they get the one-day header. The archived
++    Ticket Wallet templates are reference copies that no route renders.
++    """
++    missing = []
++    for path in TEMPLATES.rglob("*.html"):
++        if "archive" in path.relative_to(TEMPLATES).parts:
++            continue
++        text = path.read_text(encoding="utf-8")
++        for match in re.finditer(r'(?:src|href)="(/static/[^"]+)"', text):
++            if "?v=" not in match.group(1):
++                missing.append(f"{path.relative_to(TEMPLATES)}: {match.group(1)}")
++    assert not missing, missing
++
++
++# --- heartbeats ----------------------------------------------------------------
++
++
++@pytest.fixture
++def pings(monkeypatch, tmp_path):
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "heartbeat.sqlite3")
++    db.init_db()
++    calls = []
++    monkeypatch.setattr(
++        scheduler.requests, "get", lambda url, **kwargs: calls.append((url, kwargs))
++    )
++    return calls
++
++
++def test_a_successful_calendar_sync_pings_its_heartbeat(monkeypatch, pings):
++    monkeypatch.setattr(config, "HEARTBEAT_ICAL_URL", "https://heartbeat.example/ical")
++    monkeypatch.setattr(icalsync, "sync_all", lambda: {"feeds": 0})
++    scheduler._job_sync_calendars()
++    assert pings == [("https://heartbeat.example/ical", {"timeout": 5})]
++
++
++def test_a_failed_calendar_sync_does_not_ping(monkeypatch, pings):
++    monkeypatch.setattr(config, "HEARTBEAT_ICAL_URL", "https://heartbeat.example/ical")
++
++    def boom():
++        raise RuntimeError("sync blew up")
++
++    monkeypatch.setattr(icalsync, "sync_all", boom)
++    scheduler._job_sync_calendars()
++    assert pings == []
++
++
++def _quiet_mail_steps(monkeypatch):
++    monkeypatch.setattr(claim, "expire_holds", lambda: 0)
++    monkeypatch.setattr(mail, "drain", lambda: 0)
++    monkeypatch.setattr(claim, "sweep_reminders", lambda: 0)
++    monkeypatch.setattr(mail, "purge_old", lambda: 0)
++
++
++def test_a_successful_mail_run_pings_its_heartbeat(monkeypatch, pings):
++    monkeypatch.setattr(config, "HEARTBEAT_MAIL_URL", "https://heartbeat.example/mail")
++    _quiet_mail_steps(monkeypatch)
++    scheduler._job_mail()
++    assert pings == [("https://heartbeat.example/mail", {"timeout": 5})]
++
++
++def test_a_mail_run_with_a_failed_step_does_not_ping(monkeypatch, pings):
++    monkeypatch.setattr(config, "HEARTBEAT_MAIL_URL", "https://heartbeat.example/mail")
++    _quiet_mail_steps(monkeypatch)
++
++    def boom():
++        raise RuntimeError("drain blew up")
++
++    monkeypatch.setattr(mail, "drain", boom)
++    scheduler._job_mail()
++    assert pings == []
++
++
++def test_unset_heartbeat_urls_send_nothing(monkeypatch, pings):
++    monkeypatch.setattr(config, "HEARTBEAT_ICAL_URL", "")
++    monkeypatch.setattr(config, "HEARTBEAT_MAIL_URL", "")
++    monkeypatch.setattr(icalsync, "sync_all", lambda: {"feeds": 0})
++    _quiet_mail_steps(monkeypatch)
++    scheduler._job_sync_calendars()
++    scheduler._job_mail()
++    assert pings == []
++
++
++def test_a_failing_ping_is_logged_not_raised(monkeypatch, pings, caplog):
++    monkeypatch.setattr(config, "HEARTBEAT_MAIL_URL", "https://heartbeat.example/mail")
++    _quiet_mail_steps(monkeypatch)
++
++    def down(url, **kwargs):
++        raise OSError("network down")
++
++    monkeypatch.setattr(scheduler.requests, "get", down)
++    scheduler._job_mail()
++    assert "heartbeat ping for mail failed" in caplog.text
++
++
++# --- signature.js only on the form and PIN pages ------------------------------
++
++TOKEN = "wp07-sigjs-token"
++SIGNATURE_JS = "/static/signature.js"
++
++
++def _cleanup():
++    apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
++    if not apartment:
++        return
++    db.execute(
++        "DELETE FROM reservation_claim WHERE reservation_id IN "
++        "(SELECT id FROM reservation WHERE apartment_id = ?)",
++        (apartment["id"],),
++    )
++    db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
++    db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
++    db.execute("DELETE FROM legal_entity WHERE id = ?", (apartment["legal_entity_id"],))
++
++
++def _stay() -> int:
++    db.init_db()
++    _cleanup()
++    now = db.utcnow()
++    today = claim.prague_today()
++    entity_id = db.insert("legal_entity", {"name": "WP07 test", "created_at": now})
++    apartment_id = db.insert(
++        "apartment",
++        {
++            "legal_entity_id": entity_id,
++            "internal_name": "WP07 apartment",
++            "permalink_token": TOKEN,
++            "permalink_pin": "482915",
++            "permalink_window_days": 14,
++            "default_purpose": "10",
++            "automation_mode": "manual",
++            "active": 1,
++            "created_at": now,
++        },
++    )
++    return db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment_id,
++            "source": "airbnb",
++            "uid": "wp07-sigjs",
++            "date_from": today.isoformat(),
++            "date_to": (today + timedelta(days=3)).isoformat(),
++            "status": "active",
++            "created_at": now,
++            "updated_at": now,
++        },
++    )
++
++
++def test_signature_js_loads_on_the_form_but_not_on_the_stay_page():
++    reservation_id = _stay()
++    try:
++        browser = TestClient(app)
++        stay = browser.get(f"/l/{TOKEN}/{reservation_id}?lang=en")
++        assert stay.status_code == 200
++        assert "data-guest-wizard" not in stay.text
++        assert SIGNATURE_JS not in stay.text
++        assert "/static/guest-enhancements.js" in stay.text
++
++        complete_guest_claim(browser, TOKEN, reservation_id)
++        form = browser.get(f"/l/{TOKEN}/{reservation_id}?lang=en")
++        assert form.status_code == 200
++        assert "data-guest-wizard" in form.text
++        assert SIGNATURE_JS in form.text
++        assert form.text.index("/static/skeleton.js") < form.text.index(SIGNATURE_JS)
++        assert form.text.index(SIGNATURE_JS) < form.text.index("/static/guest-enhancements.js")
++    finally:
++        _cleanup()
++
++
++def test_signature_js_loads_on_the_pin_page(monkeypatch):
++    """initPinReturn in signature.js carries the claim secret across the PIN gate."""
++    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", True)
++    _stay()
++    try:
++        page = TestClient(app).get(f"/l/{TOKEN}?lang=en")
++        assert page.status_code == 200
++        assert 'action="/l/' + TOKEN + '/pin' in page.text
++        assert SIGNATURE_JS in page.text
++    finally:
++        _cleanup()
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index 88a4c07..c850d10 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -44,6 +44,18 @@ UBYHOST_BACKUP_RETENTION_DAYS=30
+ # Required in production: pinged after each successful daily backup; preflight.sh refuses to deploy while it is empty.
+ UBYHOST_BACKUP_PING_URL=
+ 
++# --- Dead-man switches (WP07; for example healthchecks.io, one check each) ---
++# Each URL is pinged (HTTP GET, 5 s timeout) only after a successful run, so a
++# missed ping means the job is failing or the worker is down. Empty disables it.
++# Suggested check periods: submit 10 min, iCal 60 min, mail 5 min, backup 1 day
++# (grace: about one period each).
++# After each successful UbyPort submission sweep (every UBYHOST_SUBMIT_SWEEP_MINUTES):
++UBYHOST_HEARTBEAT_URL=
++# After each successful calendar sync (every UBYHOST_ICAL_POLL_MINUTES):
++UBYHOST_HEARTBEAT_ICAL_URL=
++# After each mail run in which every step succeeded (every 5 min):
++UBYHOST_HEARTBEAT_MAIL_URL=
++
+ # --- Continuous S3 replica (WP05, Litestream) ---
+ # The litestream service streams every database change to this bucket within
+ # about 10 s. Required in production: preflight.sh refuses to deploy while the
+diff --git a/deploy/lightsail/caddy/Caddyfile.acme b/deploy/lightsail/caddy/Caddyfile.acme
+index 2d854cb..89e603b 100644
+--- a/deploy/lightsail/caddy/Caddyfile.acme
++++ b/deploy/lightsail/caddy/Caddyfile.acme
+@@ -14,7 +14,7 @@
+ 	request_body {
+ 		max_size 20MB
+ 	}
+-	encode gzip
++	encode zstd gzip
+ 	header Strict-Transport-Security "max-age=31536000"
+ 	reverse_proxy ubyhost:8080 {
+ 		# No Cloudflare in front: the TCP peer is the client.
+diff --git a/deploy/lightsail/caddy/Caddyfile.cloudflare b/deploy/lightsail/caddy/Caddyfile.cloudflare
+index e63447f..ab39826 100644
+--- a/deploy/lightsail/caddy/Caddyfile.cloudflare
++++ b/deploy/lightsail/caddy/Caddyfile.cloudflare
+@@ -21,7 +21,7 @@
+ 	request_body {
+ 		max_size 20MB
+ 	}
+-	encode gzip
++	encode zstd gzip
+ 	header Strict-Transport-Security "max-age=31536000"
+ 	reverse_proxy ubyhost:8080 {
+ 		# Always overwrite: a client-sent CF-Connecting-IP must never reach the app.
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index b897ad5..ff315f1 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -52,6 +52,8 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
+ | `UBYHOST_ICAL_POLL_MINUTES` | `60` | Calendar poll interval. |
+ | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | Automatic submission sweep interval. |
+ | `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
++| `UBYHOST_HEARTBEAT_ICAL_URL` | unset | Pinged after each successful calendar sync (WP07). |
++| `UBYHOST_HEARTBEAT_MAIL_URL` | unset | Pinged after each mail run in which every step succeeded (WP07). |
+ 
+ The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
+ (12 h) intervals are not configurable. See
+-- 
+2.34.1
+

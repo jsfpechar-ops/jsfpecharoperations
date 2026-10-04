@@ -1,0 +1,1538 @@
+From 88bb7be4894e9ad1d09a5945414c8fa7b819fcbd Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:34:37 +0200
+Subject: [PATCH 28/34] WP12: Three lifecycle e-mails
+
+Integration: ADDED_COLUMNS conflict in App/app/db.py with WP15; kept WP15's four ical_feed columns and WP12's two user_account columns.
+
+mail.py and tests/test_claim_mail.py: WP23's deadline_at_risk and deadline_digest kept next to the lifecycle kinds (all in HOST_KINDS).
+---
+ AGENTS.md                               |   4 +
+ App/app/config.py                       |   4 +
+ App/app/db.py                           |  24 ++
+ App/app/host_i18n.py                    |  79 +++++
+ App/app/lifecycle_mail.py               | 321 +++++++++++++++++
+ App/app/mail.py                         |  69 +++-
+ App/app/mail_notify.py                  | 130 +++++++
+ App/app/main.py                         |   4 +-
+ App/app/retention.py                    |   1 +
+ App/app/routes/admin.py                 |  15 +
+ App/app/routes/admin_accounts.py        |  25 ++
+ App/app/routes/mail_unsubscribe.py      |  66 ++++
+ App/app/scheduler.py                    |   3 +
+ App/app/templates/mail_unsubscribe.html |  20 ++
+ App/app/templates/settings.html         |  12 +
+ App/tests/test_claim_mail.py            |   4 +
+ App/tests/test_lifecycle_mail.py        | 454 ++++++++++++++++++++++++
+ docs/ENVIRONMENT.md                     |   1 +
+ 18 files changed, 1233 insertions(+), 3 deletions(-)
+ create mode 100644 App/app/lifecycle_mail.py
+ create mode 100644 App/app/routes/mail_unsubscribe.py
+ create mode 100644 App/app/templates/mail_unsubscribe.html
+ create mode 100644 App/tests/test_lifecycle_mail.py
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 7ec0efb..cb1c7f3 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -130,6 +130,10 @@ Also bump the `?v=` cache key in `guest/base.html` for each CSS/JS file you
+ touched. The full checklist is in `docs/DESIGN.md` ("Definition of done for
+ any guest-page change").
+ 
++## Onboarding e-mails (lifecycle tips)
++
++Content rule (legal position 2): the tips are about the host's own setup only, with no discounts, pricing or third-party offers; if marketing content is ever added, prefix the subject with "Novinky:" and treat the e-mail as a newsletter.
++
+ ## Merging a pull request
+ 
+ Branch protection is not available on this private plan, so GitHub does not
+diff --git a/App/app/config.py b/App/app/config.py
+index 79c33d3..f2bcdcf 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -156,6 +156,10 @@ ACCESS_LOG = os.environ.get("UBYHOST_ACCESS_LOG", "1") not in ("0", "false", "no
+ RETENTION_AUTOPURGE = os.environ.get("UBYHOST_RETENTION_AUTOPURGE", "0") in (
+     "1", "true", "yes",
+ )
++# WP12: the three lifecycle tips to hosts (no property, no calendar, no guest
++# yet). Off until counsel confirms the legal basis and the opt-out wording
++# under Czech Act 480/2004; service mail is not affected either way.
++LIFECYCLE_MAIL = os.environ.get("UBYHOST_LIFECYCLE_MAIL", "0").lower() in ("1", "true", "yes")
+ # How far ahead the "records reach the end of their retention period" notice looks.
+ RETENTION_NOTICE_DAYS = int(os.environ.get("UBYHOST_RETENTION_NOTICE_DAYS", "30"))
+ 
+diff --git a/App/app/db.py b/App/app/db.py
+index 7fa7027..37f6a0b 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -635,6 +635,25 @@ CREATE TABLE IF NOT EXISTS data_subject_request (
+     updated_at          TEXT NOT NULL
+ );
+ CREATE INDEX IF NOT EXISTS idx_dsr_owner_status ON data_subject_request (owner_user_id, status, due_at);
++
++-- WP12: one row per account and lifecycle tip that went out, so no tip is sent
++-- twice. Kept apart from email_outbox, which is purged after 14 days.
++CREATE TABLE IF NOT EXISTS lifecycle_mail_sent (
++    user_account_id INTEGER NOT NULL REFERENCES user_account(id) ON DELETE CASCADE,
++    kind            TEXT NOT NULL,
++    sent_at         TEXT NOT NULL,
++    PRIMARY KEY (user_account_id, kind)
++);
++
++-- WP12: addresses that refused a kind of optional mail (scope 'onboarding').
++-- Only a keyed hash of the normalised address is kept, never the address and
++-- never an account id, so the refusal outlives a deleted workspace.
++CREATE TABLE IF NOT EXISTS mail_suppression (
++    email_hash TEXT NOT NULL,
++    scope      TEXT NOT NULL,
++    created_at TEXT NOT NULL,
++    PRIMARY KEY (email_hash, scope)
++);
+ """
+ 
+ 
+@@ -999,6 +1018,11 @@ ADDED_COLUMNS = (
+     ("ical_feed", "last_modified", "TEXT"),
+     ("ical_feed", "body_sha256", "TEXT"),
+     ("ical_feed", "last_checked_at", "TEXT"),
++    # WP12: the host refused onboarding e-mails (never service mail). A sign-up
++    # WP adds the same two entries; a repeated entry is skipped, so either can
++    # land first.
++    ("user_account", "onboarding_emails_opt_out", "INTEGER NOT NULL DEFAULT 0"),
++    ("user_account", "onboarding_emails_opt_out_at", "TEXT"),
+ )
+ 
+ # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 7b42ec1..169075a 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -4502,6 +4502,85 @@ for _lang, _strings in _ADMIN_FUNNEL_STRINGS.items():
+     STRINGS[_lang].update(_strings)
+ 
+ 
++# WP12: lifecycle tips to hosts, the unsubscribe page and the Settings toggle.
++# The footer is the wording of legal position 2 (04_legal_positions.md); the
++# sender identity comes from UBYHOST_OPERATOR_*.
++_LIFECYCLE_MAIL_STRINGS = {
++    "en": {
++        "notification.mail_kind.lifecycle_no_property": "setup tip: add a property",
++        "notification.mail_kind.lifecycle_no_calendar": "setup tip: connect a calendar",
++        "notification.mail_kind.lifecycle_no_guest": "setup tip: send the guest link",
++        "mail.lifecycle.lifecycle_no_property.subject": "Add your first property to UbyHost",
++        "mail.lifecycle.lifecycle_no_property.heading": "Add your first property",
++        "mail.lifecycle.lifecycle_no_property.intro": "You signed in to UbyHost a few days ago but have not added a property yet.",
++        "mail.lifecycle.lifecycle_no_property.next": "It takes about five minutes: the address, your UbyPort access and what guests need to know on arrival. After that, UbyHost can collect guest details and file the police reports for you.",
++        "mail.lifecycle.lifecycle_no_property.action": "Add a property",
++        "mail.lifecycle.lifecycle_no_calendar.subject": "Connect your booking calendar",
++        "mail.lifecycle.lifecycle_no_calendar.heading": "Connect your booking calendar",
++        "mail.lifecycle.lifecycle_no_calendar.intro": "Your property is set up, but no booking calendar is connected yet.",
++        "mail.lifecycle.lifecycle_no_calendar.next": "Paste the iCal link from Airbnb, Booking.com or your channel manager into the property. UbyHost then picks up every stay on its own, so no guest is missed.",
++        "mail.lifecycle.lifecycle_no_calendar.action": "Connect a calendar",
++        "mail.lifecycle.lifecycle_no_guest.subject": "Send your guests the registration link",
++        "mail.lifecycle.lifecycle_no_guest.heading": "Send your guests the registration link",
++        "mail.lifecycle.lifecycle_no_guest.intro": "Your calendar is connected, but no guest has completed registration yet.",
++        "mail.lifecycle.lifecycle_no_guest.next": "Put the property's guest link in your booking message. Guests fill in their details on their phone, and UbyHost files the report.",
++        "mail.lifecycle.lifecycle_no_guest.action": "Open guest links",
++        "mail.lifecycle.signoff": "Questions? Reply to this e-mail or write to %(support)s.",
++        "mail.lifecycle.footer": "You are receiving this because you created a UbyHost account and have not finished setting it up. Don't want these setup tips? %(unsubscribe)s. You will still receive essential account and service e-mails. Sender: %(name)s, IČO %(ico)s, %(address)s. Privacy: %(privacy)s.",
++        "mail.lifecycle.unsubscribe_label": "Unsubscribe with one click",
++        "settings.account.onboarding_emails": "Setup tips by e-mail",
++        "settings.account.onboarding_emails_help": "Up to three short e-mails with help while your account is not fully set up. Account and service e-mails are not affected.",
++        "settings.account.onboarding_emails_save": "Save",
++        "flash.accounts.onboarding_emails_on": "Setup tips by e-mail are on.",
++        "flash.accounts.onboarding_emails_off": "Setup tips by e-mail are off.",
++        "unsubscribe.title": "Setup tips by e-mail",
++        "unsubscribe.lede": "Stop the occasional setup tips UbyHost sends to this account?",
++        "unsubscribe.confirm": "Unsubscribe from tips",
++        "unsubscribe.done": "Done. You will not get setup tips any more. You can turn them back on in Settings.",
++        "unsubscribe.service_mail": "You will still get the messages UbyHost needs to send about your account and your filings, such as a report the police did not accept.",
++        "unsubscribe.invalid": "This unsubscribe link is not valid. Copy the whole link from the e-mail, or write to support.",
++        "unsubscribe.too_many": "Too many attempts from this connection. Try again in an hour.",
++    },
++    "cs": {
++        "notification.mail_kind.lifecycle_no_property": "tip k nastavení: přidat ubytování",
++        "notification.mail_kind.lifecycle_no_calendar": "tip k nastavení: připojit kalendář",
++        "notification.mail_kind.lifecycle_no_guest": "tip k nastavení: poslat odkaz hostům",
++        "mail.lifecycle.lifecycle_no_property.subject": "Přidejte do UbyHost své první ubytování",
++        "mail.lifecycle.lifecycle_no_property.heading": "Přidejte své první ubytování",
++        "mail.lifecycle.lifecycle_no_property.intro": "Před několika dny jste se přihlásili do UbyHost, ale zatím jste nepřidali žádné ubytování.",
++        "mail.lifecycle.lifecycle_no_property.next": "Zabere to asi pět minut: adresa, přístup do UbyPortu a co hosté potřebují vědět při příjezdu. Potom za vás UbyHost může sbírat údaje hostů a podávat hlášení cizinecké policii.",
++        "mail.lifecycle.lifecycle_no_property.action": "Přidat ubytování",
++        "mail.lifecycle.lifecycle_no_calendar.subject": "Připojte svůj rezervační kalendář",
++        "mail.lifecycle.lifecycle_no_calendar.heading": "Připojte svůj rezervační kalendář",
++        "mail.lifecycle.lifecycle_no_calendar.intro": "Ubytování máte nastavené, ale zatím k němu není připojený žádný rezervační kalendář.",
++        "mail.lifecycle.lifecycle_no_calendar.next": "Vložte k ubytování odkaz iCal z Airbnb, Booking.com nebo ze svého channel manageru. UbyHost pak sám načte každý pobyt a žádný host vám neunikne.",
++        "mail.lifecycle.lifecycle_no_calendar.action": "Připojit kalendář",
++        "mail.lifecycle.lifecycle_no_guest.subject": "Pošlete hostům odkaz k registraci",
++        "mail.lifecycle.lifecycle_no_guest.heading": "Pošlete hostům odkaz k registraci",
++        "mail.lifecycle.lifecycle_no_guest.intro": "Kalendář máte připojený, ale zatím žádný host nedokončil registraci.",
++        "mail.lifecycle.lifecycle_no_guest.next": "Vložte odkaz pro hosty do zprávy k rezervaci. Hosté vyplní údaje v telefonu a UbyHost podá hlášení.",
++        "mail.lifecycle.lifecycle_no_guest.action": "Otevřít odkazy pro hosty",
++        "mail.lifecycle.signoff": "Máte dotaz? Odpovězte na tento e-mail nebo napište na %(support)s.",
++        "mail.lifecycle.footer": "Tento e-mail dostáváte, protože jste si založili účet UbyHost a ještě jste nedokončili jeho nastavení. Nechcete tyto tipy k nastavení dostávat? %(unsubscribe)s. Nezbytné e-maily k účtu a službě vám budeme posílat i nadále. Odesílatel: %(name)s, IČO %(ico)s, %(address)s. Ochrana osobních údajů: %(privacy)s.",
++        "mail.lifecycle.unsubscribe_label": "Odhlásit jedním kliknutím",
++        "settings.account.onboarding_emails": "Tipy k nastavení e-mailem",
++        "settings.account.onboarding_emails_help": "Nejvýše tři krátké e-maily s nápovědou, dokud účet nemáte celý nastavený. E-mailů k účtu a službě se to netýká.",
++        "settings.account.onboarding_emails_save": "Uložit",
++        "flash.accounts.onboarding_emails_on": "Tipy k nastavení e-mailem jsou zapnuté.",
++        "flash.accounts.onboarding_emails_off": "Tipy k nastavení e-mailem jsou vypnuté.",
++        "unsubscribe.title": "Tipy k nastavení e-mailem",
++        "unsubscribe.lede": "Přestat tomuto účtu posílat občasné tipy k nastavení UbyHost?",
++        "unsubscribe.confirm": "Odhlásit tipy",
++        "unsubscribe.done": "Hotovo. Tipy k nastavení už dostávat nebudete. V Nastavení je můžete znovu zapnout.",
++        "unsubscribe.service_mail": "Zprávy, které vám UbyHost musí posílat k účtu a k hlášením, budete dostávat dál, například když policie hlášení nepřijme.",
++        "unsubscribe.invalid": "Tento odkaz pro odhlášení není platný. Zkopírujte z e-mailu celý odkaz, nebo napište podpoře.",
++        "unsubscribe.too_many": "Z tohoto připojení bylo příliš mnoho pokusů. Zkuste to znovu za hodinu.",
++    },
++}
++for _lang, _strings in _LIFECYCLE_MAIL_STRINGS.items():
++    STRINGS[_lang].update(_strings)
++
++
+ def normalise_language(value: str | None) -> str:
+     value = (value or "").lower()[:2]
+     return value if value in LANGUAGES else DEFAULT_LANGUAGE
+diff --git a/App/app/lifecycle_mail.py b/App/app/lifecycle_mail.py
+new file mode 100644
+index 0000000..417b690
+--- /dev/null
++++ b/App/app/lifecycle_mail.py
+@@ -0,0 +1,321 @@
++"""Three lifecycle tips to hosts who stalled during setup (WP12, review 5.5).
++
++* ``lifecycle_no_property``: no property 3 days after the first login;
++* ``lifecycle_no_calendar``: no calendar 3 days after the first property;
++* ``lifecycle_no_guest``: no completed guest 14 days after the first calendar
++  connected (status ok).
++
++Each goes through the existing outbox at most once per account. The
++``lifecycle_mail_sent`` row is claimed before the mail is queued, so two runs
++cannot both send. A tip is only sent while its condition still holds, and not
++at all for a stall older than ``MAX_LATE_DAYS`` past the due point, so turning
++the switch on does not mail every dormant account at once.
++
++Off unless ``UBYHOST_LIFECYCLE_MAIL=1``. Built to the standard of section 7(3)
++of Czech Act 480/2004 (legal position 2): the host can refuse at sign-up, in
++Settings and with the link in every tip; every tip names the sender.
++
++Two things stop a tip. ``user_account.onboarding_emails_opt_out`` is the
++account's own choice (Settings, sign-up, the unsubscribe link). The
++``mail_suppression`` table keeps a keyed hash of every address that used the
++unsubscribe link (scope ``onboarding``), so the refusal also holds for that
++address on another account or after the workspace is deleted. Both are read
++only here: filing problems, reminders, invoices and account notices are
++service mail and keep going out.
++
++The unsubscribe link carries a signed token (itsdangerous, the app's secret
++key, its own salt) with the account id and the hash of the recipient address.
++"""
++from __future__ import annotations
++
++import hashlib
++import hmac
++import logging
++from datetime import datetime, timedelta, timezone
++from typing import Dict, List, Optional
++from zoneinfo import ZoneInfo
++
++from itsdangerous import BadSignature, URLSafeSerializer
++
++from . import config, db, mail, mail_notify
++
++log = logging.getLogger("ubyhost.lifecycle_mail")
++
++# (kind, days after the anchor). The anchor SQL is in ``_CANDIDATE_SQL``.
++TRIGGERS = (
++    ("lifecycle_no_property", 3),
++    ("lifecycle_no_calendar", 3),
++    ("lifecycle_no_guest", 14),
++)
++MAX_LATE_DAYS = 30
++# The daily check waits for the working day, so a tip never lands at midnight.
++SEND_HOUR_LOCAL = 9
++LAST_RUN_KEY = "lifecycle_mail_last_day"
++SUPPRESSION_SCOPE = "onboarding"
++
++_FIRST_LOGIN = (
++    "COALESCE((SELECT MIN(au.at) FROM audit au WHERE au.owner_user_id = u.id "
++    "AND au.action IN ('login', 'two_factor_login')), u.last_login_at)"
++)
++_FIRST_PROPERTY = "(SELECT MIN(a.created_at) FROM apartment a WHERE a.owner_user_id = u.id)"
++_FIRST_CALENDAR = (
++    "(SELECT MIN(f.created_at) FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
++    "WHERE a.owner_user_id = u.id AND f.last_status = 'ok')"
++)
++
++# Per kind: the anchor timestamp, and the condition that makes the tip moot.
++_RULES = {
++    "lifecycle_no_property": (
++        _FIRST_LOGIN,
++        "NOT EXISTS (SELECT 1 FROM apartment a WHERE a.owner_user_id = u.id)",
++    ),
++    "lifecycle_no_calendar": (
++        _FIRST_PROPERTY,
++        "NOT EXISTS (SELECT 1 FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
++        "WHERE a.owner_user_id = u.id AND f.active = 1)",
++    ),
++    "lifecycle_no_guest": (
++        _FIRST_CALENDAR,
++        "NOT EXISTS (SELECT 1 FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
++        "WHERE a.owner_user_id = u.id AND r.registration_completed_at IS NOT NULL)",
++    ),
++}
++
++
++def _iso(moment: datetime) -> str:
++    return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat()
++
++
++def _serializer() -> URLSafeSerializer:
++    # No expiry: an unsubscribe link has to keep working for as long as the
++    # mail sits in an inbox. Built on use, like invoice_links, because the key
++    # may not exist yet at import time.
++    return URLSafeSerializer(config.secret_key(), salt="ubyhost-lifecycle-unsubscribe")
++
++
++def email_hash(address: str) -> str:
++    """Keyed digest of the normalised address, as stored in ``mail_suppression``.
++
++    Keyed with the app secret like ``auth.recovery_code_hash``, so the table
++    cannot be matched against a list of known addresses. "" for a non-address.
++    """
++    normalised = mail.normalise_email(address)
++    if not normalised:
++        return ""
++    return hmac.new(
++        config.secret_key().encode(),
++        f"mail-suppression\0{normalised}".encode(),
++        hashlib.sha256,
++    ).hexdigest()
++
++
++def unsubscribe_token(user_id: int, address: str = "") -> str:
++    return _serializer().dumps({"u": int(user_id), "h": email_hash(address)})
++
++
++def read_unsubscribe_token(token: str) -> Optional[Dict[str, object]]:
++    """``{"u": account id, "h": address hash or ""}``, or None when forged."""
++    try:
++        data = _serializer().loads(token)
++    except BadSignature:
++        return None
++    if not isinstance(data, dict) or not isinstance(data.get("u"), int):
++        return None
++    digest = data.get("h") or ""
++    if not isinstance(digest, str):
++        return None
++    return {"u": data["u"], "h": digest}
++
++
++def unsubscribe_url(user_id: int, address: str, lang: str) -> str:
++    return f"{config.PUBLIC_BASE_URL}/mail/unsubscribe/{unsubscribe_token(user_id, address)}?lang={lang}"
++
++
++def set_opt_out(user_id: int, opted_out: bool, *, actor: str) -> bool:
++    """Record the account's choice. True when the account exists; idempotent."""
++    row = db.query_one(
++        "SELECT id, onboarding_emails_opt_out FROM user_account WHERE id = ?", (user_id,)
++    )
++    if not row:
++        return False
++    if bool(row["onboarding_emails_opt_out"]) != opted_out:
++        db.execute(
++            "UPDATE user_account SET onboarding_emails_opt_out = ?, "
++            "onboarding_emails_opt_out_at = ? WHERE id = ?",
++            (1 if opted_out else 0, db.utcnow(), user_id),
++        )
++        db.audit(
++            "onboarding_emails_opted_out" if opted_out else "onboarding_emails_opted_in",
++            actor=actor,
++            owner_user_id=user_id,
++        )
++    return True
++
++
++def suppress(digest: str) -> None:
++    if not digest:
++        return
++    db.execute(
++        "INSERT INTO mail_suppression (email_hash, scope, created_at) VALUES (?, ?, ?) "
++        "ON CONFLICT (email_hash, scope) DO NOTHING",
++        (digest, SUPPRESSION_SCOPE, db.utcnow()),
++    )
++
++
++def is_suppressed(address: str) -> bool:
++    digest = email_hash(address)
++    return bool(
++        digest
++        and db.query_one(
++            "SELECT 1 AS x FROM mail_suppression WHERE email_hash = ? AND scope = ?",
++            (digest, SUPPRESSION_SCOPE),
++        )
++    )
++
++
++def unsubscribe(user_id: int, digest: str = "") -> bool:
++    """The link in a tip: suppress the address and set the account flag."""
++    if not db.query_one("SELECT 1 AS x FROM user_account WHERE id = ?", (user_id,)):
++        return False
++    suppress(digest)
++    set_opt_out(user_id, True, actor="unsubscribe_link")
++    return True
++
++
++def resubscribe(user_id: int, *, actor: str) -> bool:
++    """The host turned tips back on in Settings.
++
++    That is a fresh choice by the account holder, so the suppression rows for
++    the workspace's current contact addresses go too; otherwise the toggle
++    would say on while nothing could ever be sent.
++    """
++    if not set_opt_out(user_id, False, actor=actor):
++        return False
++    for address in mail_notify.workspace_contact_emails(user_id):
++        db.execute(
++            "DELETE FROM mail_suppression WHERE email_hash = ? AND scope = ?",
++            (email_hash(address), SUPPRESSION_SCOPE),
++        )
++    return True
++
++
++def is_opted_out(user_id: int) -> bool:
++    row = db.query_one(
++        "SELECT onboarding_emails_opt_out FROM user_account WHERE id = ?", (user_id,)
++    )
++    return bool(row and row["onboarding_emails_opt_out"])
++
++
++def sender_identified() -> bool:
++    """Every tip names the sender (company, IČO, address); no tip without them."""
++    return bool(config.OPERATOR_NAME and config.OPERATOR_ICO and config.OPERATOR_ADDRESS)
++
++
++def candidates(kind: str, now: Optional[datetime] = None) -> List[int]:
++    """Host accounts due for ``kind`` right now. One aggregate query."""
++    anchor, moot = _RULES[kind]
++    days = dict(TRIGGERS)[kind]
++    moment = now or datetime.now(timezone.utc)
++    due_before = _iso(moment - timedelta(days=days))
++    too_late_before = _iso(moment - timedelta(days=days + MAX_LATE_DAYS))
++    rows = db.query(
++        f"SELECT u.id FROM user_account u WHERE u.role = 'host' AND u.active = 1 "
++        "AND u.deletion_due_at IS NULL AND COALESCE(u.onboarding_emails_opt_out, 0) = 0 "
++        "AND NOT EXISTS (SELECT 1 FROM lifecycle_mail_sent m "
++        "WHERE m.user_account_id = u.id AND m.kind = ?) "
++        f"AND {moot} "
++        f"AND {anchor} <= ? AND {anchor} >= ? "
++        "ORDER BY u.id LIMIT 500",
++        (kind, due_before, too_late_before),
++    )
++    return [int(row["id"]) for row in rows]
++
++
++def _claim(user_id: int, kind: str) -> bool:
++    """Write the sent marker first; False when another run already did."""
++    with db.cursor() as cur:
++        cur.execute(
++            "INSERT INTO lifecycle_mail_sent (user_account_id, kind, sent_at) VALUES (?, ?, ?) "
++            "ON CONFLICT (user_account_id, kind) DO NOTHING",
++            (user_id, kind, db.utcnow()),
++        )
++        return cur.rowcount == 1
++
++
++def _release(user_id: int, kind: str) -> None:
++    db.execute(
++        "DELETE FROM lifecycle_mail_sent WHERE user_account_id = ? AND kind = ?",
++        (user_id, kind),
++    )
++
++
++def send_one(user_id: int, kind: str) -> int:
++    """Queue ``kind`` to every contact address of the account. Returns how many."""
++    if is_opted_out(user_id):
++        return 0
++    addresses = [
++        address
++        for address in mail_notify.workspace_contact_emails(user_id)
++        if not is_suppressed(address)
++    ]
++    if not addresses:
++        # Nowhere to send yet. No marker, so a later run can still reach them.
++        return 0
++    if not _claim(user_id, kind):
++        return 0
++    lang = mail_notify.HOST_MAIL_LANGUAGE
++    queued = 0
++    for address in addresses:
++        link = unsubscribe_url(user_id, address, lang)
++        content = mail_notify.build_lifecycle(kind, unsubscribe_url=link, lang=lang)
++        payload = {
++            "text": content["text"],
++            "html": content["html"],
++            "lang": lang,
++            "reply_to": config.OPERATOR_EMAIL,
++            # mail._send_ses turns this into List-Unsubscribe and
++            # List-Unsubscribe-Post for the lifecycle kinds only.
++            "list_unsubscribe": link,
++        }
++        if mail.enqueue(
++            kind=kind,
++            idempotency_key=f"lifecycle:{kind}:{user_id}:{address}",
++            to_email=address,
++            subject=content["subject"],
++            payload=payload,
++            owner_user_id=user_id,
++        ):
++            queued += 1
++    if not queued:
++        _release(user_id, kind)
++    return queued
++
++
++def run(now: Optional[datetime] = None) -> Dict[str, int]:
++    """Evaluate every trigger once. Does nothing while the switch is off."""
++    summary = {kind: 0 for kind, _days in TRIGGERS}
++    if not config.LIFECYCLE_MAIL or not mail.mail_enabled():
++        return {}
++    if not sender_identified():
++        log.warning("lifecycle mail skipped: UBYHOST_OPERATOR_NAME, _ICO or _ADDRESS is empty")
++        return {}
++    for kind, _days in TRIGGERS:
++        for user_id in candidates(kind, now):
++            try:
++                if send_one(user_id, kind):
++                    summary[kind] += 1
++            except Exception:
++                log.exception("lifecycle mail failed kind=%s user=%s", kind, user_id)
++    return summary
++
++
++def run_daily(now: Optional[datetime] = None) -> Dict[str, int]:
++    """The mail job's step: at most one ``run`` per local day, after 09:00."""
++    if not config.LIFECYCLE_MAIL or not mail.mail_enabled():
++        return {}
++    local = (now or datetime.now(timezone.utc)).astimezone(ZoneInfo(config.TIMEZONE))
++    today = local.date().isoformat()
++    if local.hour < SEND_HOUR_LOCAL or db.get_setting(LAST_RUN_KEY) == today:
++        return {}
++    db.set_setting(LAST_RUN_KEY, today)
++    return run(now)
+diff --git a/App/app/mail.py b/App/app/mail.py
+index e44e399..e150589 100644
+--- a/App/app/mail.py
++++ b/App/app/mail.py
+@@ -37,6 +37,9 @@ KINDS = (
+     "cancelled_with_guests",
+     "deadline_at_risk",
+     "deadline_digest",
++    "lifecycle_no_property",
++    "lifecycle_no_calendar",
++    "lifecycle_no_guest",
+ )
+ 
+ # The kinds addressed to a guest rather than to the host. A guest has no
+@@ -62,6 +65,16 @@ HOST_KINDS = (
+     # digest. Neither goes to a guest.
+     "deadline_at_risk",
+     "deadline_digest",
++    "lifecycle_no_property",
++    "lifecycle_no_calendar",
++    "lifecycle_no_guest",
++)
++# The only kinds a host can unsubscribe from (WP12). Everything else is service
++# mail about filings, stays or the account and ignores the opt-out flag.
++LIFECYCLE_KINDS = (
++    "lifecycle_no_property",
++    "lifecycle_no_calendar",
++    "lifecycle_no_guest",
+ )
+ 
+ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+@@ -319,6 +332,41 @@ def _ses_client():
+     return boto3.client("ses", **kwargs)
+ 
+ 
++def _sesv2_client():
++    """SES API v2. Only its SendEmail takes extra headers on a Simple message.
++
++    The v1 SendEmail above has no header field, so the lifecycle tips, which
++    need List-Unsubscribe, go through this one. Same IAM action
++    (``ses:SendEmail``), same region and credentials.
++    """
++    import boto3
++
++    kwargs: Dict[str, Any] = {"region_name": config.SES_REGION or "eu-central-1"}
++    if config.AWS_ACCESS_KEY_ID and config.AWS_SECRET_ACCESS_KEY:
++        kwargs["aws_access_key_id"] = config.AWS_ACCESS_KEY_ID
++        kwargs["aws_secret_access_key"] = config.AWS_SECRET_ACCESS_KEY
++    return boto3.client("sesv2", **kwargs)
++
++
++def list_unsubscribe_headers(row, payload: Dict[str, Any]) -> List[Dict[str, str]]:
++    """RFC 2369 and RFC 8058 headers, for the lifecycle kinds only.
++
++    Every other kind is service mail with nothing to unsubscribe from, so it
++    never carries them. The URL must be https and printable ASCII (the SES v2
++    header rules); anything else is dropped rather than sent broken.
++    """
++    url = str(payload.get("list_unsubscribe") or "")
++    if row["kind"] not in LIFECYCLE_KINDS or not url.startswith("https://"):
++        return []
++    value = f"<{url}>"
++    if len(value) > 995 or not all(32 <= ord(ch) < 127 for ch in value):
++        return []
++    return [
++        {"Name": "List-Unsubscribe", "Value": value},
++        {"Name": "List-Unsubscribe-Post", "Value": "List-Unsubscribe=One-Click"},
++    ]
++
++
+ def display_from(address: Optional[str] = None) -> str:
+     """The envelope From, with a readable name in front of the address.
+ 
+@@ -335,7 +383,7 @@ def display_from(address: Optional[str] = None) -> str:
+ 
+ 
+ def _send_ses(row) -> str:
+-    """Deliver one outbox row through Amazon SES SendEmail."""
++    """Deliver one outbox row through Amazon SES SendEmail (v2 for lifecycle tips)."""
+     if backend_name() != "ses":
+         raise MailConfigError("SES sender invoked while UBYHOST_MAIL_BACKEND is not ses.")
+     if not config.MAIL_FROM:
+@@ -370,7 +418,24 @@ def _send_ses(row) -> str:
+     if reply_to:
+         kwargs["ReplyToAddresses"] = [reply_to]
+ 
+-    response = _ses_client().send_email(**kwargs)
++    headers = list_unsubscribe_headers(row, payload)
++    if headers:
++        v2: Dict[str, Any] = {
++            "FromEmailAddress": kwargs["Source"],
++            "Destination": destination,
++            "Content": {
++                "Simple": {
++                    "Subject": kwargs["Message"]["Subject"],
++                    "Body": ses_body,
++                    "Headers": headers,
++                }
++            },
++        }
++        if reply_to:
++            v2["ReplyToAddresses"] = [reply_to]
++        response = _sesv2_client().send_email(**v2)
++    else:
++        response = _ses_client().send_email(**kwargs)
+     message_id = (response or {}).get("MessageId") or ""
+     if not message_id:
+         raise MailConfigError("SES SendEmail returned no MessageId.")
+diff --git a/App/app/mail_notify.py b/App/app/mail_notify.py
+index e6e846a..c1a1980 100644
+--- a/App/app/mail_notify.py
++++ b/App/app/mail_notify.py
+@@ -23,6 +23,7 @@ from __future__ import annotations
+ import html
+ import json
+ import logging
++import re
+ from typing import Any, Dict, List, Optional, Tuple
+ 
+ from . import config, db, deadlines, host_i18n, i18n, mail, validation
+@@ -394,6 +395,54 @@ class _FooterLink:
+         self.href = href
+ 
+ 
++class _FooterSentence:
++    """A footer sentence with links inside it, such as the unsubscribe line.
++
++    ``text`` holds ``%(name)s`` markers; ``links`` maps each name to a
++    ``(label, href)`` pair. The text part prints "label (URL)", or the bare
++    URL when the label is empty; the HTML part makes that spot an anchor.
++    """
++
++    __slots__ = ("text", "links")
++
++    _MARKER = re.compile(r"%\((\w+)\)s")
++
++    def __init__(self, text: str, links: Dict[str, Tuple[str, str]]) -> None:
++        self.text = text
++        self.links = links
++
++    def _parts(self) -> List[Any]:
++        pieces = self._MARKER.split(self.text)
++        # re.split with one group alternates text and marker names.
++        return [
++            piece if index % 2 == 0 else self.links.get(piece, ("", ""))
++            for index, piece in enumerate(pieces)
++        ]
++
++    def plain(self) -> str:
++        out = []
++        for part in self._parts():
++            if isinstance(part, str):
++                out.append(part)
++            else:
++                label, href = part
++                out.append(f"{label} ({href})" if label else href)
++        return "".join(out)
++
++    def html(self) -> str:
++        out = []
++        for part in self._parts():
++            if isinstance(part, str):
++                out.append(_esc(part))
++            else:
++                label, href = part
++                out.append(
++                    f'<a href="{_esc(href)}" style="color:{INK_SECONDARY};'
++                    f'text-decoration:underline;">{_esc(label or href)}</a>'
++                )
++        return "".join(out)
++
++
+ # The same separator the guest pages use between two channels.
+ _FOOTER_SEPARATOR = " \u00b7 "
+ 
+@@ -404,6 +453,8 @@ def _footer_text(lines: List[Any]) -> List[str]:
+     for line in lines:
+         if isinstance(line, list):
+             rendered.append(_FOOTER_SEPARATOR.join(link.label for link in line))
++        elif isinstance(line, _FooterSentence):
++            rendered.append(line.plain())
+         else:
+             rendered.append(line)
+     return rendered
+@@ -411,6 +462,8 @@ def _footer_text(lines: List[Any]) -> List[str]:
+ 
+ def _footer_line_html(line: Any) -> str:
+     """One footer line as HTML. A list of ``_FooterLink`` becomes anchors."""
++    if isinstance(line, _FooterSentence):
++        return line.html()
+     if not isinstance(line, list):
+         return _esc(line)
+     return _FOOTER_SEPARATOR.join(
+@@ -988,6 +1041,83 @@ def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:
+     return queued
+ 
+ 
++# --- lifecycle tips (WP12) -------------------------------------------------
++#
++# lifecycle_mail.py decides who gets which tip and when; this is the wording.
++# Each tip says why the host receives it and carries an unsubscribe link that
++# needs no sign-in. Only these kinds honour the opt-out (mail.LIFECYCLE_KINDS).
++
++LIFECYCLE_ACTIONS = {
++    "lifecycle_no_property": "/apartments/new",
++    "lifecycle_no_calendar": "/apartments",
++    "lifecycle_no_guest": "/guest-links",
++}
++
++
++def build_lifecycle(kind: str, *, unsubscribe_url: str, lang: Optional[str] = None) -> Dict[str, str]:
++    if kind not in LIFECYCLE_ACTIONS:
++        raise ValueError(f"unknown lifecycle kind {kind}")
++    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
++    key = f"mail.lifecycle.{kind}"
++    subject = _text(lang, f"{key}.subject")
++    heading = _text(lang, f"{key}.heading")
++    intro = _text(lang, f"{key}.intro")
++    next_step = _text(lang, f"{key}.next")
++    action_label = _text(lang, f"{key}.action")
++    action_url = _public(LIFECYCLE_ACTIONS[kind])
++    signoff = _text(lang, "mail.lifecycle.signoff", support=config.OPERATOR_EMAIL)
++    # The sentence is the wording of legal position 2. The two links stay as
++    # markers through translate() and become anchors in the HTML part.
++    footer_sentence = _FooterSentence(
++        _text(
++            lang,
++            "mail.lifecycle.footer",
++            name=config.OPERATOR_NAME,
++            ico=config.OPERATOR_ICO,
++            address=config.OPERATOR_ADDRESS,
++            unsubscribe="%(unsubscribe)s",
++            privacy="%(privacy)s",
++        ),
++        {
++            "unsubscribe": (_text(lang, "mail.lifecycle.unsubscribe_label"), unsubscribe_url),
++            "privacy": ("", _public(f"/privacy?lang={lang}")),
++        },
++    )
++    footer_lines: List[Any] = ["UbyHost", footer_sentence]
++    text = "\n".join(
++        [
++            intro,
++            "",
++            next_step,
++            "",
++            f"{action_label}: {action_url}",
++            "",
++            signoff,
++            "",
++            "--",
++            *_footer_text(footer_lines),
++        ]
++    )
++    blocks = [
++        _block_heading(heading),
++        _block_paragraph(intro),
++        _block_paragraph(next_step),
++        _block_button(action_url, action_label),
++        _block_paragraph(signoff, muted=True),
++    ]
++    return {
++        "subject": subject,
++        "text": text,
++        "html": _shell(
++            lang=lang,
++            title=heading,
++            preheader=intro,
++            blocks=blocks,
++            footer_lines=footer_lines,
++        ),
++    }
++
++
+ # --- guest mail -------------------------------------------------------------
+ #
+ # claim.py decides when these go out; the wording and the markup live here with
+diff --git a/App/app/main.py b/App/app/main.py
+index 6758418..52e3082 100644
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -27,7 +27,7 @@ from . import (
+     seo,
+     templating,
+ )
+-from .routes import admin, guest, invoices, legal, stay_fees
++from .routes import admin, guest, invoices, legal, mail_unsubscribe, stay_fees
+ from .sample_calendar import sample_calendar_response
+ 
+ logging.basicConfig(
+@@ -323,6 +323,8 @@ app.include_router(admin.router)
+ app.include_router(invoices.router)
+ app.include_router(stay_fees.router)
+ app.include_router(legal.router)
++# Public, outside the host CSRF dependency: RFC 8058 one-click posts (WP12).
++app.include_router(mail_unsubscribe.router)
+ 
+ 
+ @app.get("/sample-airbnb.ics", include_in_schema=False)
+diff --git a/App/app/retention.py b/App/app/retention.py
+index a686564..244890a 100644
+--- a/App/app/retention.py
++++ b/App/app/retention.py
+@@ -309,6 +309,7 @@ def _delete_workspace(owner_id: int) -> None:
+         # legal_acceptance has a NOT NULL account reference, so it cannot
+         # outlive the account.
+         cur.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (owner_id,))
++        cur.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (owner_id,))
+         cur.execute("DELETE FROM audit WHERE owner_user_id IS ?", (owner_id,))
+         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+     # Files last: a rolled-back delete must not have lost the photos. One
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index 7c0856d..916f32f 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -2737,10 +2737,25 @@ def settings_view(request: Request):
+                 (access.owner_id(request),),
+             )["n"],
+             "backup_status": _backup_status(request),
++            "onboarding_emails": _onboarding_emails(request),
+         },
+     )
+ 
+ 
++def _onboarding_emails(request: Request):
++    """The "Setup tips by e-mail" toggle: True or False, None when hidden.
++
++    Only a host sees it, and only on their own account, not in a preview.
++    """
++    account = auth.current_user(request)
++    workspace = auth.workspace_user(request)
++    if not account or account["role"] != "host":
++        return None
++    if workspace and workspace["id"] != account["id"]:
++        return None
++    return not account["onboarding_emails_opt_out"]
++
++
+ def _backup_status(request: Request):
+     """The last backup marker, for platform admins only (FE-3)."""
+     account = auth.current_user(request)
+diff --git a/App/app/routes/admin_accounts.py b/App/app/routes/admin_accounts.py
+index 7706df9..7385b6f 100644
+--- a/App/app/routes/admin_accounts.py
++++ b/App/app/routes/admin_accounts.py
+@@ -22,6 +22,7 @@ from .. import (
+     db,
+     host_i18n,
+     incidents,
++    lifecycle_mail,
+     mail_notify,
+     rate_limit,
+     security,
+@@ -195,6 +196,30 @@ def logout(request: Request):
+     return response
+ 
+ 
++@router.post("/account/onboarding-emails")
++async def onboarding_emails_submit(request: Request):
++    """The Settings toggle "Setup tips by e-mail" (WP12, legal position 2).
++
++    Only the account holder changes it: an admin previewing a workspace does
++    not choose for the host.
++    """
++    account = auth.current_user(request)
++    if not account:
++        return RedirectResponse("/login", status_code=303)
++    workspace = auth.workspace_user(request)
++    if account["role"] != "host" or (workspace and workspace["id"] != account["id"]):
++        return _back("/settings#settings-account")
++    form = await request.form()
++    wanted = str(form.get("enabled", "")) == "1"
++    if wanted:
++        lifecycle_mail.resubscribe(int(account["id"]), actor=account["username"])
++        key = "flash.accounts.onboarding_emails_on"
++    else:
++        lifecycle_mail.set_opt_out(int(account["id"]), True, actor=account["username"])
++        key = "flash.accounts.onboarding_emails_off"
++    return _back("/settings#settings-account", msg=_flash(request, key))
++
++
+ def _pending_doc_rows(docs) -> list:
+     versions = acceptance.current_versions()
+     return [
+diff --git a/App/app/routes/mail_unsubscribe.py b/App/app/routes/mail_unsubscribe.py
+new file mode 100644
+index 0000000..2ffe135
+--- /dev/null
++++ b/App/app/routes/mail_unsubscribe.py
+@@ -0,0 +1,66 @@
++"""The unsubscribe link in a lifecycle tip (WP12, legal position 2).
++
++Public and without the host CSRF dependency on purpose. The signed token in
++the path is the only credential, and a mailbox provider acting on the
++``List-Unsubscribe-Post: List-Unsubscribe=One-Click`` header (RFC 8058) posts
++to the same URL from its own servers, with no cookie and no form token.
++
++GET only shows the page with one button: link scanners follow every link in a
++message and must not unsubscribe the host. POST unsubscribes.
++"""
++from __future__ import annotations
++
++from fastapi import APIRouter, Request
++
++from .. import db, lifecycle_mail, rate_limit
++from ..templating import render
++
++router = APIRouter()
++
++_SCOPE = "mail_unsubscribe"
++_LIMIT = 30
++_WINDOW_SECONDS = 3600
++
++
++def _page(request: Request, token: str, *, done: bool = False, status_code: int = 200):
++    # The message is a catalogue key, like every other auth-route error.
++    message = {404: "unsubscribe.invalid", 429: "unsubscribe.too_many"}.get(status_code, "")
++    return render(
++        request,
++        "mail_unsubscribe.html",
++        {"token": token, "done": done, "message": message, "open_alerts": []},
++        status_code=status_code,
++    )
++
++
++def _blocked(request: Request) -> bool:
++    return rate_limit.blocked(_SCOPE, rate_limit.client_key(request, _SCOPE), _LIMIT, _WINDOW_SECONDS)
++
++
++def _count(request: Request) -> None:
++    rate_limit.record(_SCOPE, rate_limit.client_key(request, _SCOPE))
++
++
++@router.get("/mail/unsubscribe/{token}")
++def mail_unsubscribe_form(token: str, request: Request):
++    if _blocked(request):
++        return _page(request, token, status_code=429)
++    _count(request)
++    data = lifecycle_mail.read_unsubscribe_token(token)
++    if not data or not db.query_one("SELECT 1 AS x FROM user_account WHERE id = ?", (data["u"],)):
++        return _page(request, token, status_code=404)
++    return _page(request, token, done=lifecycle_mail.is_opted_out(int(data["u"])))
++
++
++@router.post("/mail/unsubscribe/{token}")
++def mail_unsubscribe_submit(token: str, request: Request):
++    # A valid token always works: one-click posts come from a few provider
++    # addresses, and a limit there would drop real refusals. Only failed
++    # attempts count towards the limit.
++    data = lifecycle_mail.read_unsubscribe_token(token)
++    if data and lifecycle_mail.unsubscribe(int(data["u"]), str(data["h"])):
++        return _page(request, token, done=True)
++    if _blocked(request):
++        return _page(request, token, status_code=429)
++    _count(request)
++    return _page(request, token, status_code=404)
+diff --git a/App/app/scheduler.py b/App/app/scheduler.py
+index d5e81c6..7efbc92 100644
+--- a/App/app/scheduler.py
++++ b/App/app/scheduler.py
+@@ -17,6 +17,7 @@ from . import (
+     filing_watchdog,
+     host_i18n,
+     icalsync,
++    lifecycle_mail,
+     mail,
+     passport_photos,
+     reporting,
+@@ -214,6 +215,8 @@ def _job_mail() -> None:
+         ("expire_holds", claim.expire_holds),
+         ("drain", mail.drain),
+         ("reminders", claim.sweep_reminders),
++        # Once a day and only with UBYHOST_LIFECYCLE_MAIL=1 (WP12).
++        ("lifecycle", lifecycle_mail.run_daily),
+         ("purge", mail.purge_old),
+     ):
+         try:
+diff --git a/App/app/templates/mail_unsubscribe.html b/App/app/templates/mail_unsubscribe.html
+new file mode 100644
+index 0000000..2b30c52
+--- /dev/null
++++ b/App/app/templates/mail_unsubscribe.html
+@@ -0,0 +1,20 @@
++{% extends "auth_base.html" %}
++{% block title %}{{ t('unsubscribe.title') }}{% endblock %}
++{% block auth_body %}
++<section class="auth-card">
++  <h1 class="auth-title">{{ t('unsubscribe.title') }}</h1>
++  {% if message %}
++    <p class="auth-lede" role="alert">{{ t(message) }}</p>
++  {% elif done %}
++    <p class="auth-lede" role="status">{{ t('unsubscribe.done') }}</p>
++    <p class="small muted">{{ t('unsubscribe.service_mail') }}</p>
++  {% else %}
++    <p class="auth-lede">{{ t('unsubscribe.lede') }}</p>
++    <p class="small muted">{{ t('unsubscribe.service_mail') }}</p>
++    <form method="post" action="/mail/unsubscribe/{{ token }}" class="auth-form">
++      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
++      <button class="auth-submit" type="submit">{{ t('unsubscribe.confirm') }}</button>
++    </form>
++  {% endif %}
++</section>
++{% endblock %}
+diff --git a/App/app/templates/settings.html b/App/app/templates/settings.html
+index 921731c..e7d8401 100644
+--- a/App/app/templates/settings.html
++++ b/App/app/templates/settings.html
+@@ -255,6 +255,18 @@
+             </form>
+           </details>
+         {% endif %}
++        {% if onboarding_emails is not none %}
++          <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">
++            <div>
++              <label class="checkline">
++                <input type="checkbox" name="enabled" value="1"{% if onboarding_emails %} checked{% endif %}>
++                <strong>{{ t('settings.account.onboarding_emails') }}</strong>
++              </label>
++              <small>{{ t('settings.account.onboarding_emails_help') }}</small>
++            </div>
++            <button class="btn small" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
++          </form>
++        {% endif %}
+         {% if current_user.role == 'admin' %}
+           <div class="settings-action-row">
+             <div>
+diff --git a/App/tests/test_claim_mail.py b/App/tests/test_claim_mail.py
+index 819d072..a6c5483 100644
+--- a/App/tests/test_claim_mail.py
++++ b/App/tests/test_claim_mail.py
+@@ -1802,6 +1802,10 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
+         "cancelled_with_guests",
+         "deadline_at_risk",
+         "deadline_digest",
++        # WP12: the three lifecycle tips (lifecycle_mail.py, mail_notify.build_lifecycle).
++        "lifecycle_no_property",
++        "lifecycle_no_calendar",
++        "lifecycle_no_guest",
+     }
+ 
+ 
+diff --git a/App/tests/test_lifecycle_mail.py b/App/tests/test_lifecycle_mail.py
+new file mode 100644
+index 0000000..a0a6f61
+--- /dev/null
++++ b/App/tests/test_lifecycle_mail.py
+@@ -0,0 +1,454 @@
++"""WP12: three lifecycle tips, once each, behind UBYHOST_LIFECYCLE_MAIL.
++
++Each trigger fires once and only while its condition holds; the env switch,
++the per-account flag ``onboarding_emails_opt_out`` and the suppression list all
++stop it; the unsubscribe link works without a sign-in, also as an RFC 8058
++one-click POST, and never touches service mail. Built to legal position 2.
++"""
++from __future__ import annotations
++
++import json
++from datetime import datetime, timedelta, timezone
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, config, db, lifecycle_mail, mail, mail_notify, scheduler
++from app.main import app
++
++PASSWORD = "Secure-Password-123"
++PREFIX = "wp12-life-"
++NOW = datetime(2026, 10, 20, 10, 0, tzinfo=timezone.utc)
++
++
++def _iso(moment: datetime) -> str:
++    return moment.replace(microsecond=0).isoformat()
++
++
++def _cleanup() -> None:
++    for row in db.query("SELECT id FROM user_account WHERE username LIKE ?", (PREFIX + "%",)):
++        uid = row["id"]
++        for apartment in db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (uid,)):
++            db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment["id"],))
++            db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment["id"],))
++            db.execute("DELETE FROM apartment WHERE id = ?", (apartment["id"],))
++        db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (uid,))
++        db.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (uid,))
++        db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (uid,))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (uid,))
++        db.execute("DELETE FROM user_account WHERE id = ?", (uid,))
++    db.execute("DELETE FROM settings WHERE key = ?", (lifecycle_mail.LAST_RUN_KEY,))
++    db.execute("DELETE FROM rate_limit_event WHERE scope = 'mail_unsubscribe'")
++    db.execute("DELETE FROM mail_suppression WHERE email_hash IN (%s)" % ",".join("?" * len(_ADDRESSES)),
++               tuple(lifecycle_mail.email_hash(a) for a in _ADDRESSES))
++
++
++_ADDRESSES = [f"{n}@example.test" for n in (
++    "noprop", "nocal", "noguest", "early", "done", "connected", "finished", "stale", "switch",
++    "optout", "daily", "footer", "link", "forged", "oneclick", "suppressed", "settings",
++    "nosender", "other",
++)] + ["shared@example.test"]
++
++
++@pytest.fixture(autouse=True)
++def _database(monkeypatch):
++    db.init_db()
++    monkeypatch.setattr(config, "LIFECYCLE_MAIL", True)
++    monkeypatch.setattr(config, "MAIL_BACKEND", "console")
++    monkeypatch.setattr(config, "OPERATOR_NAME", "Example Operator s.r.o.")
++    monkeypatch.setattr(config, "OPERATOR_ICO", "00000000")
++    monkeypatch.setattr(config, "OPERATOR_ADDRESS", "Example Street 1, 110 00 Praha 1")
++    _cleanup()
++    yield
++    _cleanup()
++
++
++def _host(name: str, *, login_days_ago: float | None = 4, email: str | None = None) -> int:
++    uid = auth.create_account(
++        PREFIX + name, PASSWORD, name.title(), role="host", must_change_password=False
++    )
++    if login_days_ago is not None:
++        db.insert(
++            "audit",
++            {"at": _iso(NOW - timedelta(days=login_days_ago)), "actor": "x", "action": "login", "owner_user_id": uid},
++        )
++    db.insert(
++        "legal_entity",
++        {
++            "name": "Biz", "owner_user_id": uid, "created_at": _iso(NOW - timedelta(days=5)),
++            "contact_email": email or f"{name}@example.test",
++        },
++    )
++    return uid
++
++
++def _property(uid: int, days_ago: float) -> int:
++    return db.insert(
++        "apartment",
++        {"internal_name": "Flat", "owner_user_id": uid, "created_at": _iso(NOW - timedelta(days=days_ago))},
++    )
++
++
++def _feed(apartment_id: int, days_ago: float, status: str = "ok") -> int:
++    return db.insert(
++        "ical_feed",
++        {
++            "apartment_id": apartment_id, "url": "https://example.test/c.ics", "last_status": status,
++            "created_at": _iso(NOW - timedelta(days=days_ago)),
++        },
++    )
++
++
++def _queued(uid: int, kind: str | None = None):
++    if kind:
++        return db.query(
++            "SELECT * FROM email_outbox WHERE owner_user_id = ? AND kind = ?", (uid, kind)
++        )
++    return db.query("SELECT * FROM email_outbox WHERE owner_user_id = ?", (uid,))
++
++
++def test_each_trigger_fires_once():
++    no_property = _host("noprop")
++    no_calendar = _host("nocal", login_days_ago=10)
++    _property(no_calendar, days_ago=4)
++    no_guest = _host("noguest", login_days_ago=30)
++    _feed(_property(no_guest, days_ago=20), days_ago=15)
++
++    first = lifecycle_mail.run(NOW)
++    second = lifecycle_mail.run(NOW + timedelta(days=1))
++    assert first["lifecycle_no_property"] >= 1 and first["lifecycle_no_calendar"] >= 1
++    assert first["lifecycle_no_guest"] >= 1
++    for uid, kind in (
++        (no_property, "lifecycle_no_property"),
++        (no_calendar, "lifecycle_no_calendar"),
++        (no_guest, "lifecycle_no_guest"),
++    ):
++        rows = _queued(uid)
++        assert [row["kind"] for row in rows] == [kind], (uid, [r["kind"] for r in rows])
++        marker = db.query(
++            "SELECT kind FROM lifecycle_mail_sent WHERE user_account_id = ?", (uid,)
++        )
++        assert [row["kind"] for row in marker] == [kind]
++    assert not any(second.values())
++    # Even after the outbox row is purged, the marker keeps it from going again.
++    db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (no_property,))
++    lifecycle_mail.run(NOW + timedelta(days=2))
++    assert _queued(no_property) == []
++
++
++def test_not_due_yet_and_not_after_the_condition_is_met():
++    early = _host("early", login_days_ago=2)  # login only 2 days ago
++    done = _host("done")
++    _property(done, days_ago=1)  # has a property: no "no property" tip
++    connected = _host("connected", login_days_ago=10)
++    _feed(_property(connected, days_ago=5), days_ago=4, status="error")  # a feed exists
++    finished = _host("finished", login_days_ago=40)
++    apartment_id = _property(finished, days_ago=30)
++    _feed(apartment_id, days_ago=20)
++    db.insert(
++        "reservation",
++        {
++            "apartment_id": apartment_id, "uid": PREFIX + "r", "date_from": "2026-10-01",
++            "date_to": "2026-10-02", "registration_completed_at": _iso(NOW - timedelta(days=10)),
++            "created_at": _iso(NOW), "updated_at": _iso(NOW),
++        },
++    )
++    lifecycle_mail.run(NOW)
++    for uid in (early, done, connected, finished):
++        assert _queued(uid) == [], uid
++
++
++def test_a_stall_older_than_the_window_is_not_mailed():
++    stale = _host("stale", login_days_ago=3 + lifecycle_mail.MAX_LATE_DAYS + 1)
++    lifecycle_mail.run(NOW)
++    assert _queued(stale) == []
++
++
++def test_the_env_switch_stops_everything(monkeypatch):
++    uid = _host("switch")
++    monkeypatch.setattr(config, "LIFECYCLE_MAIL", False)
++    assert lifecycle_mail.run(NOW) == {}
++    assert lifecycle_mail.run_daily(NOW) == {}
++    assert _queued(uid) == []
++
++
++def test_default_is_off():
++    from pathlib import Path
++
++    source = Path(config.__file__).read_text(encoding="utf-8")
++    assert 'os.environ.get("UBYHOST_LIFECYCLE_MAIL", "0")' in source
++
++
++def test_opted_out_account_gets_no_tip_but_still_gets_service_mail():
++    uid = _host("optout")
++    assert lifecycle_mail.set_opt_out(uid, True, actor="test")
++    lifecycle_mail.run(NOW)
++    assert _queued(uid) == []
++    # Service mail ignores the flag.
++    assert mail_notify.workspace_deletion(uid, "2026-12-01T00:00:00+00:00", "scheduled") == 1
++    assert [row["kind"] for row in _queued(uid)] == ["workspace_deletion"]
++
++
++def test_run_daily_runs_once_per_local_day_after_nine():
++    uid = _host("daily")
++    before_nine = datetime(2026, 10, 20, 5, 0, tzinfo=timezone.utc)  # 07:00 in Prague
++    assert lifecycle_mail.run_daily(before_nine) == {}
++    assert _queued(uid) == []
++    assert lifecycle_mail.run_daily(NOW)["lifecycle_no_property"] >= 1
++    assert lifecycle_mail.run_daily(NOW + timedelta(hours=2)) == {}
++
++
++def test_the_mail_job_runs_the_lifecycle_step(monkeypatch):
++    calls = []
++    monkeypatch.setattr(scheduler.lifecycle_mail, "run_daily", lambda: calls.append(1) or {})
++    scheduler._job_mail()
++    assert calls
++
++
++def test_the_footer_is_the_legal_wording_with_sender_and_privacy_link():
++    uid = _host("footer")
++    lifecycle_mail.run(NOW)
++    (row,) = _queued(uid)
++    payload = json.loads(row["payload"])
++    text = payload["text"]
++    assert (
++        "You are receiving this because you created a UbyHost account and have not finished "
++        "setting it up. Don't want these setup tips? Unsubscribe with one click ("
++    ) in text
++    assert (
++        "). You will still receive essential account and service e-mails. "
++        "Sender: Example Operator s.r.o., IČO 00000000, Example Street 1, 110 00 Praha 1. "
++        f"Privacy: {config.PUBLIC_BASE_URL}/privacy?lang=en."
++    ) in text
++    url = text.split("Unsubscribe with one click (", 1)[1].split(")", 1)[0]
++    assert url.startswith(config.PUBLIC_BASE_URL + "/mail/unsubscribe/")
++    assert payload["list_unsubscribe"] == url
++    html = payload["html"].replace("&amp;", "&")
++    assert f'href="{url}"' in html and ">Unsubscribe with one click</a>" in html
++    assert f'href="{config.PUBLIC_BASE_URL}/privacy?lang=en"' in html
++    assert row["to_email"] == "footer@example.test"
++    czech = mail_notify.build_lifecycle(
++        "lifecycle_no_property", unsubscribe_url="https://x.test/u", lang="cs"
++    )
++    assert (
++        "Tento e-mail dostáváte, protože jste si založili účet UbyHost a ještě jste nedokončili "
++        "jeho nastavení. Nechcete tyto tipy k nastavení dostávat? Odhlásit jedním kliknutím "
++        "(https://x.test/u). Nezbytné e-maily k účtu a službě vám budeme posílat i nadále. "
++        "Odesílatel: Example Operator s.r.o., IČO 00000000, Example Street 1, 110 00 Praha 1. "
++        "Ochrana osobních údajů: "
++    ) in czech["text"]
++    assert ">Odhlásit jedním kliknutím</a>" in czech["html"]
++    assert czech["subject"] == "Přidejte do UbyHost své první ubytování"
++    for kind in mail.LIFECYCLE_KINDS:
++        assert kind in mail.HOST_KINDS and kind in mail.KINDS
++
++
++def test_no_tip_without_the_sender_identity(monkeypatch):
++    uid = _host("nosender")
++    monkeypatch.setattr(config, "OPERATOR_ICO", "")
++    assert lifecycle_mail.run(NOW) == {}
++    assert _queued(uid) == []
++
++
++def test_unsubscribe_works_without_login_and_only_on_post():
++    uid = _host("link")
++    token = lifecycle_mail.unsubscribe_token(uid, "link@example.test")
++    client = TestClient(app)  # signed out
++    page = client.get(f"/mail/unsubscribe/{token}?lang=en")
++    assert page.status_code == 200
++    assert "Unsubscribe from tips" in page.text
++    assert not lifecycle_mail.is_opted_out(uid)  # GET changes nothing
++    assert not lifecycle_mail.is_suppressed("link@example.test")
++    done = client.post(f"/mail/unsubscribe/{token}?lang=en")
++    assert done.status_code == 200
++    assert "will not get setup tips" in done.text
++    assert lifecycle_mail.is_opted_out(uid)
++    assert lifecycle_mail.is_suppressed("Link@Example.test")
++    account = db.query_one(
++        "SELECT onboarding_emails_opt_out, onboarding_emails_opt_out_at FROM user_account WHERE id = ?",
++        (uid,),
++    )
++    assert account["onboarding_emails_opt_out"] == 1 and account["onboarding_emails_opt_out_at"]
++    stored = db.query_one(
++        "SELECT * FROM mail_suppression WHERE email_hash = ?",
++        (lifecycle_mail.email_hash("link@example.test"),),
++    )
++    assert stored["scope"] == "onboarding" and stored["created_at"]
++    assert "link@example.test" not in json.dumps(dict(stored))
++    assert db.query_one(
++        "SELECT 1 AS x FROM audit WHERE owner_user_id = ? AND action = 'onboarding_emails_opted_out'",
++        (uid,),
++    )
++    czech = client.get(f"/mail/unsubscribe/{token}?lang=cs")
++    assert "Hotovo." in czech.text
++
++
++def test_one_click_post_from_a_mailbox_provider_needs_no_cookie_or_form_token():
++    uid = _host("oneclick")
++    lifecycle_mail.run(NOW)
++    (row,) = _queued(uid)
++    url = json.loads(row["payload"])["list_unsubscribe"]
++    path = url[len(config.PUBLIC_BASE_URL):]
++    provider = TestClient(app)
++    response = provider.post(
++        path,
++        content="List-Unsubscribe=One-Click",
++        headers={
++            "content-type": "application/x-www-form-urlencoded",
++            "origin": "https://mail-provider.example",
++        },
++    )
++    assert response.status_code == 200
++    assert lifecycle_mail.is_opted_out(uid)
++    assert lifecycle_mail.is_suppressed("oneclick@example.test")
++
++
++def test_a_suppressed_address_gets_no_tip_even_on_another_account():
++    lifecycle_mail.suppress(lifecycle_mail.email_hash("shared@example.test"))
++    uid = _host("suppressed", email="shared@example.test")
++    db.insert(
++        "legal_entity",
++        {"name": "Biz 2", "owner_user_id": uid, "created_at": _iso(NOW), "contact_email": "other@example.test"},
++    )
++    lifecycle_mail.run(NOW)
++    assert [row["to_email"] for row in _queued(uid)] == ["other@example.test"]
++    # Service mail still reaches the suppressed address.
++    assert mail_notify.workspace_deletion(uid, "2026-12-01T00:00:00+00:00", "scheduled") == 2
++
++
++def test_settings_toggle_is_bound_to_the_flag():
++    uid = _host("settings")
++    db.execute("UPDATE user_account SET must_change_password = 0 WHERE id = ?", (uid,))
++    client = TestClient(app)
++    login = client.post(
++        "/login?lang=en",
++        data={"username": PREFIX + "settings", "password": PASSWORD},
++        follow_redirects=False,
++    )
++    assert login.status_code == 303, login.text
++    page = client.get("/settings?lang=en")
++    assert "Setup tips by e-mail" in page.text
++    assert 'name="enabled" value="1" checked' in page.text
++    token = page.text.split('name="csrf-token" content="', 1)[1].split('"', 1)[0]
++    off = client.post("/account/onboarding-emails", data={"_csrf": token}, follow_redirects=False)
++    assert off.status_code == 303
++    assert lifecycle_mail.is_opted_out(uid)
++    page = client.get("/settings?lang=en")
++    assert 'name="enabled" value="1" checked' not in page.text
++    lifecycle_mail.suppress(lifecycle_mail.email_hash("settings@example.test"))
++    on = client.post(
++        "/account/onboarding-emails", data={"_csrf": token, "enabled": "1"}, follow_redirects=False
++    )
++    assert on.status_code == 303
++    assert not lifecycle_mail.is_opted_out(uid)
++    # Turning tips back on is a fresh choice: the workspace's addresses leave the list.
++    assert not lifecycle_mail.is_suppressed("settings@example.test")
++    czech = client.get("/settings?lang=cs")
++    assert "Tipy k nastavení e-mailem" in czech.text
++
++
++def test_the_flag_columns_are_added_once_even_when_listed_twice():
++    entries = [entry for entry in db.ADDED_COLUMNS if entry[1].startswith("onboarding_emails_opt_out")]
++    assert ("user_account", "onboarding_emails_opt_out", "INTEGER NOT NULL DEFAULT 0") in entries
++    assert ("user_account", "onboarding_emails_opt_out_at", "TEXT") in entries
++    conn = db.connect()
++    try:
++        original = db.ADDED_COLUMNS
++        try:
++            db.ADDED_COLUMNS = original + tuple(entries)  # a second WP adds the same columns
++            db._add_missing_columns(conn)
++        finally:
++            db.ADDED_COLUMNS = original
++    finally:
++        conn.close()
++
++
++def test_a_forged_or_foreign_token_is_refused():
++    uid = _host("forged")
++    client = TestClient(app)
++    refused = client.get("/mail/unsubscribe/not-a-token?lang=en")
++    assert refused.status_code == 404
++    assert "not valid" in refused.text
++    # A token signed by the app for something else must not work here.
++    from itsdangerous import URLSafeSerializer
++
++    foreign = URLSafeSerializer(config.secret_key(), salt="ubyhost-invoice-download").dumps({"u": uid})
++    assert client.post(f"/mail/unsubscribe/{foreign}").status_code == 404
++    assert not lifecycle_mail.is_opted_out(uid)
++
++
++def _outbox_row(kind: str, payload: dict):
++    now = db.utcnow()
++    outbox_id = db.insert(
++        "email_outbox",
++        {
++            "idempotency_key": f"wp12-ses:{kind}:{now}:{len(payload)}",
++            "kind": kind, "to_email": "host@example.test", "subject": "Tip",
++            "payload": json.dumps(payload), "state": mail.QUEUED, "attempts": 0,
++            "next_attempt_at": now, "created_at": now, "updated_at": now,
++        },
++    )
++    return db.query_one("SELECT * FROM email_outbox WHERE id = ?", (outbox_id,))
++
++
++def test_ses_sends_a_tip_through_v2_with_the_list_unsubscribe_headers(monkeypatch):
++    """The request is checked against the installed botocore model for SES v2."""
++    import boto3
++    from botocore.stub import ANY, Stubber
++
++    client = boto3.client(
++        "sesv2", region_name="eu-central-1", aws_access_key_id="x", aws_secret_access_key="x"
++    )
++    url = "https://ubyhost.example/mail/unsubscribe/abc.def?lang=en"
++    stubber = Stubber(client)
++    stubber.add_response(
++        "send_email",
++        {"MessageId": "v2-1"},
++        {
++            "FromEmailAddress": "UbyHost <noreply@example.test>",
++            "Destination": {"ToAddresses": ["host@example.test"]},
++            "ReplyToAddresses": ["support@example.test"],
++            "Content": {
++                "Simple": {
++                    "Subject": {"Data": "Tip", "Charset": "UTF-8"},
++                    "Body": ANY,
++                    "Headers": [
++                        {"Name": "List-Unsubscribe", "Value": f"<{url}>"},
++                        {"Name": "List-Unsubscribe-Post", "Value": "List-Unsubscribe=One-Click"},
++                    ],
++                }
++            },
++        },
++    )
++    monkeypatch.setattr(config, "MAIL_BACKEND", "ses")
++    monkeypatch.setattr(config, "MAIL_FROM", "noreply@example.test")
++    monkeypatch.setattr(mail, "_sesv2_client", lambda: client)
++    monkeypatch.setattr(mail, "_ses_client", lambda: pytest.fail("v1 used for a tip"))
++    row = _outbox_row(
++        "lifecycle_no_property",
++        {"text": "t", "html": "<p>t</p>", "reply_to": "support@example.test", "list_unsubscribe": url},
++    )
++    with stubber:
++        assert mail._send_ses(row) == "v2-1"
++    stubber.assert_no_pending_responses()
++    db.execute("DELETE FROM email_outbox WHERE id = ?", (row["id"],))
++
++
++def test_service_mail_never_carries_list_unsubscribe(monkeypatch):
++    calls = []
++
++    class _Fake:
++        def send_email(self, **kwargs):
++            calls.append(kwargs)
++            return {"MessageId": "v1-1"}
++
++    monkeypatch.setattr(config, "MAIL_BACKEND", "ses")
++    monkeypatch.setattr(config, "MAIL_FROM", "noreply@example.test")
++    monkeypatch.setattr(mail, "_ses_client", lambda: _Fake())
++    monkeypatch.setattr(mail, "_sesv2_client", lambda: pytest.fail("v2 used for service mail"))
++    row = _outbox_row(
++        "workspace_deletion", {"text": "t", "list_unsubscribe": "https://ubyhost.example/u"}
++    )
++    assert mail._send_ses(row) == "v1-1"
++    assert "Headers" not in json.dumps(calls[0])
++    db.execute("DELETE FROM email_outbox WHERE id = ?", (row["id"],))
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index 4294a86..dc73dea 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -47,6 +47,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
+ | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
+ | `UBYHOST_GUEST_LANGS` | `en,cs` | Guest form languages, comma-separated, picked from the browser language. English and Czech are always on. Add `de`, `es`, `fr` only after a native speaker has read that catalog in `App/app/i18n.py` (WP33). |
+ | `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
++| `UBYHOST_LIFECYCLE_MAIL` | `0` | `1` lets the mail job send the three setup tips to hosts once a day (no property, no calendar, no completed guest). Nothing is sent while `UBYHOST_OPERATOR_NAME`, `_ICO` or `_ADDRESS` is empty, because every tip names the sender. Service mail is not affected (WP12, legal position 2). |
+ | `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
+ | `UBYHOST_AUDIT_RETENTION_DAYS` | `1095` | Audit rows older than this go; `legal_accepted` evidence has its own rule (BE-4, G-D7). |
+ | `UBYHOST_ALERT_RETENTION_DAYS` | `365` | Resolved alerts older than this go (BE-4, G-D7). |
+-- 
+2.34.1
+

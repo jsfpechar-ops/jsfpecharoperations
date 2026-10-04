@@ -1,0 +1,931 @@
+From 055e2fcaa1cc2753393810f82bd663b18669d08b Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:03:40 +0200
+Subject: [PATCH 02/34] WP06: Scheduler in its own process, 2 web workers
+
+Conflict resolution: main.py lifespan. On this base WP08 is not applied yet, so the old 12 MP Image.MAX_IMAGE_PIXELS line is kept and WP06's role check and db.startup_lock() block (key, init_db, first admin, PIN rotation) are applied as written.
+---
+ App/app/config.py                     |   7 ++
+ App/app/db.py                         |  43 ++++++++
+ App/app/main.py                       |  30 +++--
+ App/app/scheduler.py                  |  21 +++-
+ App/app/worker.py                     | 118 ++++++++++++++++++++
+ App/render_start.sh                   |   3 +
+ App/run.sh                            |   3 +
+ App/tests/test_startup_concurrency.py | 139 +++++++++++++++++++++++
+ App/tests/test_worker.py              | 153 ++++++++++++++++++++++++++
+ Dockerfile                            |   8 +-
+ deploy/lightsail/.env.example         |   4 +-
+ deploy/lightsail/docker-compose.yml   |  51 ++++++++-
+ deploy/lightsail/scripts/deploy.sh    |  27 ++++-
+ deploy/lightsail/scripts/preflight.sh |  11 ++
+ deploy/lightsail/scripts/restore.sh   |   8 +-
+ deploy/lightsail/scripts/status.sh    |  12 +-
+ docs/ENVIRONMENT.md                   |   1 +
+ docs/LIGHTSAIL.md                     |   7 +-
+ 18 files changed, 623 insertions(+), 23 deletions(-)
+ create mode 100644 App/app/worker.py
+ create mode 100644 App/tests/test_startup_concurrency.py
+ create mode 100644 App/tests/test_worker.py
+
+diff --git a/App/app/config.py b/App/app/config.py
+index 1aea768..e7fb970 100644
+--- a/App/app/config.py
++++ b/App/app/config.py
+@@ -126,6 +126,13 @@ HEARTBEAT_URL = os.environ.get("UBYHOST_HEARTBEAT_URL", "").strip()
+ PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
+ 
+ ENABLE_SCHEDULER = os.environ.get("UBYHOST_ENABLE_SCHEDULER", "1") not in ("0", "false", "no")
++
++# WP06: what this process runs. "web" serves HTTP and never starts the
++# scheduler (production runs two uvicorn workers); "worker" runs only the
++# background jobs (``python -m app.worker``); "all" does both in one process,
++# for local development and the single-process Render staging service.
++ROLES = ("web", "worker", "all")
++ROLE = os.environ.get("UBYHOST_ROLE", "web").strip().lower() or "web"
+ # One PII-free access line per request (OPS-3). Off in production by the
+ # Dockerfile's --no-access-log; this flag is the app-level switch.
+ ACCESS_LOG = os.environ.get("UBYHOST_ACCESS_LOG", "1") not in ("0", "false", "no")
+diff --git a/App/app/db.py b/App/app/db.py
+index 3fa2b3a..3c9d5e7 100644
+--- a/App/app/db.py
++++ b/App/app/db.py
+@@ -2,8 +2,10 @@
+ from __future__ import annotations
+ 
+ import base64
++import fcntl
+ import hashlib
+ import sqlite3
++import threading
+ from contextlib import contextmanager
+ from contextvars import ContextVar
+ from datetime import datetime, timezone
+@@ -759,10 +761,51 @@ def _add_missing_columns(conn: sqlite3.Connection) -> None:
+             columns[table].add(column)
+ 
+ 
++# Start-up work that must run in one process at a time (WP06): two uvicorn
++# workers and the scheduler worker boot together after every deploy. Without
++# this, two of them can both see a column missing and both ALTER TABLE, or both
++# insert the one-off settings row or the first administrator, and the loser
++# crashes on start. An flock on a file in DATA_DIR, so it also holds across
++# containers that share the volume. Reentrant within one process, because
++# init_db() takes it and the lifespan wraps init_db() in it as well.
++STARTUP_LOCK_NAME = "startup.lock"
++_startup_guard = threading.RLock()
++_startup_handle = None
++_startup_depth = 0
++
++
++@contextmanager
++def startup_lock():
++    global _startup_handle, _startup_depth
++    with _startup_guard:
++        if _startup_depth == 0:
++            config.ensure_data_dir()
++            handle = open(config.DATA_DIR / STARTUP_LOCK_NAME, "a+")
++            try:
++                fcntl.flock(handle, fcntl.LOCK_EX)
++            except BaseException:
++                handle.close()
++                raise
++            _startup_handle = handle
++        _startup_depth += 1
++        try:
++            yield
++        finally:
++            _startup_depth -= 1
++            if _startup_depth == 0:
++                _startup_handle.close()  # closing the descriptor releases the flock
++                _startup_handle = None
++
++
+ def init_db() -> None:
+     # The data directory has to exist before sqlite opens the database inside
+     # it, and creating it is no longer an import-time side effect of config.
+     config.ensure_data_dir()
++    with startup_lock():
++        _init_db_locked()
++
++
++def _init_db_locked() -> None:
+     conn = connect()
+     try:
+         # Migrate before the schema, because SCHEMA also creates indexes over
+diff --git a/App/app/main.py b/App/app/main.py
+index 0addf75..514172e 100644
+--- a/App/app/main.py
++++ b/App/app/main.py
+@@ -80,15 +80,25 @@ async def lifespan(_app: FastAPI):
+     # Explicit startup work, because importing config no longer creates the data
+     # directory or writes the signing key to disk.
+     config.ensure_data_dir()
+-    # Read the key here, where a bad one stops the app from booting. Left lazy,
+-    # it raised on the first page that signed a cookie: /healthz answered 200
+-    # while /login answered 500, so the deploy's health check passed and the
+-    # broken release went live.
+-    config.secret_key()
+-    db.init_db()
++    if config.ROLE not in ("web", "all"):
++        raise RuntimeError(
++            f"UBYHOST_ROLE={config.ROLE!r} cannot serve HTTP; use web or all "
++            "(the background worker starts with: python -m app.worker)"
++        )
+     from PIL import Image
+     Image.MAX_IMAGE_PIXELS = 12_000_000  # every image we render is a signature or a QR code
+-    bootstrap_password = auth.ensure_bootstrap_admin()
++    # WP06: two web workers and the scheduler worker boot at the same moment.
++    # Key creation, migrations, the first administrator and the PIN rotation
++    # each assume they run alone, so they run one process at a time.
++    with db.startup_lock():
++        # Read the key here, where a bad one stops the app from booting. Left
++        # lazy, it raised on the first page that signed a cookie: /healthz
++        # answered 200 while /login answered 500, so the deploy's health check
++        # passed and the broken release went live.
++        config.secret_key()
++        db.init_db()
++        bootstrap_password = auth.ensure_bootstrap_admin()
++        rotate_weak_permalinks()
+     admin_username = auth.normalise_username(config.ADMIN_USERNAME) or "admin"
+     if bootstrap_password:
+         log.warning(
+@@ -101,7 +111,6 @@ async def lifespan(_app: FastAPI):
+             "Created the first administrator (%s). Log in using UBYHOST_ADMIN_PASSWORD.",
+             admin_username,
+         )
+-    rotate_weak_permalinks()
+     log.info("database ready at %s", config.DB_PATH)
+     log.info(
+         "deployment=%s ubyport=%s endpoint=%s",
+@@ -119,7 +128,10 @@ async def lifespan(_app: FastAPI):
+         log.warning(
+             "LIVE production reporting is active — submissions go to the real police register."
+         )
+-    scheduler.start()
++    if config.ROLE == "all":
++        scheduler.start()
++    elif config.ENABLE_SCHEDULER:
++        log.info("role=web: background jobs run in the worker process (python -m app.worker)")
+     try:
+         yield
+     finally:
+diff --git a/App/app/scheduler.py b/App/app/scheduler.py
+index 68f3749..e7e6371 100644
+--- a/App/app/scheduler.py
++++ b/App/app/scheduler.py
+@@ -183,13 +183,20 @@ def _acquire_single_instance_lock() -> bool:
+     return True
+ 
+ 
+-def start() -> None:
++def start() -> bool:
++    """Start the background jobs here; True when this process now runs them.
++
++    False when the scheduler is switched off or another process (or container
++    on the same volume) already holds the scheduler lock.
++    """
+     global _scheduler
+-    if _scheduler or not config.ENABLE_SCHEDULER:
+-        return
++    if _scheduler:
++        return True
++    if not config.ENABLE_SCHEDULER:
++        return False
+     if not _acquire_single_instance_lock():
+         log.warning("another process holds the scheduler lock; not starting a scheduler here")
+-        return
++        return False
+     _scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
+     _scheduler.add_job(
+         _job_sync_calendars, "interval", minutes=config.ICAL_POLL_MINUTES,
+@@ -219,6 +226,12 @@ def start() -> None:
+         config.ICAL_POLL_MINUTES,
+         config.SUBMIT_SWEEP_MINUTES,
+     )
++    return True
++
++
++def running() -> bool:
++    """Whether this process runs the scheduler and its thread is alive."""
++    return bool(_scheduler and _scheduler.running)
+ 
+ 
+ def _soon():
+diff --git a/App/app/worker.py b/App/app/worker.py
+new file mode 100644
+index 0000000..c223b56
+--- /dev/null
++++ b/App/app/worker.py
+@@ -0,0 +1,118 @@
++"""Background worker: the scheduler in its own process (WP06).
++
++Production runs the web app as two uvicorn workers with ``UBYHOST_ROLE=web``,
++which never start the scheduler, and this process with ``UBYHOST_ROLE=worker``:
++
++    python -m app.worker
++
++It prepares the database the same way the web app does (under the shared
++start-up lock), takes the existing scheduler lock on DATA_DIR/scheduler.lock,
++starts the jobs and blocks until SIGTERM or SIGINT. It refuses to run when
++another process already holds the scheduler lock, so two workers, or a worker
++next to a single-process ``UBYHOST_ROLE=all`` app on the same volume, can never
++both sweep and file the same guests.
++
++There is no HTTP server. While the scheduler runs, the process touches
++DATA_DIR/worker.alive every 30 s; the compose health check reads its age.
++"""
++from __future__ import annotations
++
++import logging
++import os
++import signal
++import sys
++import threading
++from pathlib import Path
++from typing import Optional
++
++from . import config, db, env_guard, scheduler
++
++log = logging.getLogger("ubyhost.worker")
++
++ALIVE_FILE = "worker.alive"
++ALIVE_INTERVAL_SECONDS = 30
++
++# Exit codes, so the compose logs and a supervisor can tell them apart.
++EXIT_OK = 0
++EXIT_LOCK_HELD = 3
++EXIT_BAD_ROLE = 4
++
++
++def alive_path() -> Path:
++    return config.DATA_DIR / ALIVE_FILE
++
++
++def _touch_alive() -> None:
++    path = alive_path()
++    try:
++        path.touch(mode=0o600, exist_ok=True)
++        os.utime(path, None)
++    except OSError:
++        log.warning("could not update %s", path, exc_info=True)
++
++
++def prepare() -> None:
++    """Start-up checks shared with the web app, safe next to booting web workers."""
++    config.ensure_data_dir()
++    with db.startup_lock():
++        config.secret_key()
++        db.init_db()
++    env_guard.apply()
++
++
++def run(stop: Optional[threading.Event] = None) -> int:
++    """Run the scheduler until ``stop`` is set. Returns a process exit code."""
++    if config.ROLE != "worker":
++        log.error("UBYHOST_ROLE=%s; the background worker needs UBYHOST_ROLE=worker", config.ROLE)
++        return EXIT_BAD_ROLE
++    stop = stop or threading.Event()
++    prepare()
++    log.info(
++        "worker starting (deployment=%s ubyport=%s)", config.DEPLOYMENT, config.UBYPORT_ENV
++    )
++    if config.ENABLE_SCHEDULER:
++        if not scheduler.start():
++            log.error(
++                "another process holds %s; refusing to start a second scheduler",
++                config.DATA_DIR / "scheduler.lock",
++            )
++            return EXIT_LOCK_HELD
++    else:
++        log.warning("UBYHOST_ENABLE_SCHEDULER=0: the worker is idle, no background job runs")
++    try:
++        while True:
++            if config.ENABLE_SCHEDULER and not scheduler.running():
++                log.error("the scheduler thread stopped; exiting so the container restarts")
++                return 1
++            _touch_alive()
++            if stop.wait(ALIVE_INTERVAL_SECONDS):
++                break
++    finally:
++        log.info("worker stopping; waiting for running jobs to finish")
++        scheduler.shutdown()
++        try:
++            alive_path().unlink()
++        except OSError:
++            pass
++    log.info("worker stopped")
++    return EXIT_OK
++
++
++def main() -> int:
++    logging.basicConfig(
++        level=logging.INFO,
++        format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
++    )
++    stop = threading.Event()
++
++    def _on_signal(signum, _frame):
++        log.info("received signal %s", signum)
++        stop.set()
++
++    signal.signal(signal.SIGTERM, _on_signal)
++    signal.signal(signal.SIGINT, _on_signal)
++    return run(stop)
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/App/render_start.sh b/App/render_start.sh
+index 749c751..994f2ff 100755
+--- a/App/render_start.sh
++++ b/App/render_start.sh
+@@ -11,6 +11,9 @@ else
+   PYTHON="python3"
+ fi
+ 
++# Single process: web app and background scheduler together (WP06). The
++# Lightsail stack runs them as separate containers instead.
++export UBYHOST_ROLE="${UBYHOST_ROLE:-all}"
+ PORT="${PORT:-10000}"
+ UBYPORT_ENV="${UBYHOST_UBYPORT_ENV:-mock}"
+ export UBYHOST_UBYPORT_ENV="${UBYPORT_ENV}"
+diff --git a/App/run.sh b/App/run.sh
+index dc504c3..0a5d3aa 100755
+--- a/App/run.sh
++++ b/App/run.sh
+@@ -16,6 +16,9 @@ export UBYHOST_PUBLIC_BASE_URL="${UBYHOST_PUBLIC_BASE_URL:-http://127.0.0.1:8080
+ if [ "$UBYHOST_UBYPORT_ENV" = "mock" ]; then
+   export UBYHOST_ICAL_ALLOW_PRIVATE="${UBYHOST_ICAL_ALLOW_PRIVATE:-1}"
+ fi
++# Single process: web app and background scheduler together (WP06). The
++# Lightsail stack runs them as separate containers instead.
++export UBYHOST_ROLE="${UBYHOST_ROLE:-all}"
+ PORT="${PORT:-8080}"
+ 
+ cleanup() {
+diff --git a/App/tests/test_startup_concurrency.py b/App/tests/test_startup_concurrency.py
+new file mode 100644
+index 0000000..35bb443
+--- /dev/null
++++ b/App/tests/test_startup_concurrency.py
+@@ -0,0 +1,139 @@
++"""Start-up work must be safe when several processes boot at once (WP06).
++
++Production runs two uvicorn workers and a scheduler worker on one volume. All
++three call ``db.init_db()`` (and the web workers create the first
++administrator) at the same moment after a deploy. Without a cross-process lock
++two of them can both see a column missing and both ``ALTER TABLE``, or both
++insert the one-off settings row, and the loser crashes on start.
++"""
++from __future__ import annotations
++
++import os
++import subprocess
++import sys
++import time
++from pathlib import Path
++
++from app import config, db
++
++APP_DIR = Path(__file__).resolve().parent.parent
++
++_BOOT = r"""
++import os, sys, time
++start = float(sys.argv[1])
++while time.time() < start:
++    pass
++from app import db
++db.init_db()
++if os.environ.get("BOOT_ADMIN") == "1":
++    from app import auth, main
++    with db.startup_lock():
++        auth.ensure_bootstrap_admin()
++        main.rotate_weak_permalinks()
++print("ok")
++"""
++
++
++def _env(tmp_path: Path, **extra: str) -> dict:
++    env = os.environ.copy()
++    env.update(
++        {
++            "UBYHOST_DATA_DIR": str(tmp_path),
++            "UBYHOST_DB": str(tmp_path / "race.db"),
++            "UBYHOST_SECRET_KEY": "test-secret-key-not-for-real-use",
++        }
++    )
++    env.update(extra)
++    return env
++
++
++def _boot_many(tmp_path: Path, count: int, **extra: str) -> list:
++    start = time.time() + 1.5
++    procs = [
++        subprocess.Popen(
++            [sys.executable, "-c", _BOOT, str(start)],
++            cwd=APP_DIR,
++            env=_env(tmp_path, **extra),
++            stdout=subprocess.PIPE,
++            stderr=subprocess.PIPE,
++            text=True,
++        )
++        for _ in range(count)
++    ]
++    return [(p.wait(timeout=60), *p.communicate()) for p in procs]
++
++
++def _columns(path: Path, table: str) -> set:
++    import sqlite3
++
++    conn = sqlite3.connect(path)
++    try:
++        return {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
++    finally:
++        conn.close()
++
++
++def test_init_db_from_many_processes_at_once_on_a_fresh_file(tmp_path):
++    for attempt in range(3):
++        target = tmp_path / f"run{attempt}"
++        target.mkdir()
++        results = _boot_many(target, 6)
++        failures = [err for code, _out, err in results if code != 0]
++        assert not failures, failures[0]
++        guest = _columns(target / "race.db", "guest")
++        assert {"doc_number_enc", "fee_host_reason_reference"} <= guest
++
++
++def test_bootstrap_admin_is_created_once_when_web_workers_race(tmp_path):
++    results = _boot_many(
++        tmp_path,
++        4,
++        BOOT_ADMIN="1",
++        UBYHOST_BOOTSTRAP_ADMIN="1",
++        UBYHOST_ADMIN_PASSWORD="Correct-Horse-Battery-Staple-42",
++    )
++    failures = [err for code, _out, err in results if code != 0]
++    assert not failures, failures[0]
++    import sqlite3
++
++    conn = sqlite3.connect(tmp_path / "race.db")
++    try:
++        admins = conn.execute("SELECT COUNT(*) FROM user_account WHERE role = 'admin'").fetchone()[0]
++    finally:
++        conn.close()
++    assert admins == 1
++
++
++def test_the_startup_lock_is_reentrant_in_one_process(monkeypatch, tmp_path):
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "reentrant.db")
++    with db.startup_lock():
++        with db.startup_lock():
++            db.init_db()
++    assert db.query_one("SELECT COUNT(*) AS n FROM settings") is not None
++
++
++def test_init_db_waits_for_a_lock_held_by_another_process(monkeypatch, tmp_path):
++    """The lock is real across processes: init_db blocks until it is released."""
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "blocked.db")
++    holder = subprocess.Popen(
++        [
++            sys.executable,
++            "-c",
++            "import fcntl, sys, time\n"
++            "h = open(sys.argv[1], 'a+')\n"
++            "fcntl.flock(h, fcntl.LOCK_EX)\n"
++            "print('held', flush=True)\n"
++            "time.sleep(1.5)\n",
++            str(config.DATA_DIR / db.STARTUP_LOCK_NAME),
++        ],
++        stdout=subprocess.PIPE,
++        text=True,
++    )
++    try:
++        assert holder.stdout.readline().strip() == "held"
++        started = time.monotonic()
++        db.init_db()
++        waited = time.monotonic() - started
++    finally:
++        holder.wait(timeout=10)
++    assert waited >= 1.0
+diff --git a/App/tests/test_worker.py b/App/tests/test_worker.py
+new file mode 100644
+index 0000000..e37a01d
+--- /dev/null
++++ b/App/tests/test_worker.py
+@@ -0,0 +1,153 @@
++"""WP06: the scheduler runs in its own process; web workers never start it."""
++from __future__ import annotations
++
++import fcntl
++import os
++import signal
++import subprocess
++import sys
++import threading
++import time
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import config, db, scheduler, worker
++from app.main import app
++
++APP_DIR = Path(__file__).resolve().parent.parent
++
++
++@pytest.fixture(autouse=True)
++def _no_scheduler_left_running():
++    yield
++    scheduler.shutdown()
++
++
++def _private_data(monkeypatch, tmp_path):
++    monkeypatch.setattr(config, "DATA_DIR", tmp_path)
++    monkeypatch.setattr(config, "DB_PATH", tmp_path / "worker.db")
++
++
++def test_web_role_lifespan_does_not_start_the_scheduler(monkeypatch):
++    monkeypatch.setattr(config, "ROLE", "web")
++    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
++    calls = []
++    monkeypatch.setattr(scheduler, "start", lambda: calls.append("start") or True)
++    with TestClient(app) as client:
++        assert client.get("/healthz").status_code == 200
++    assert calls == []
++    assert scheduler._scheduler is None
++
++
++def test_all_role_lifespan_still_starts_the_scheduler(monkeypatch):
++    """Local development and the single-process Render staging service."""
++    monkeypatch.setattr(config, "ROLE", "all")
++    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
++    calls = []
++    monkeypatch.setattr(scheduler, "start", lambda: calls.append("start") or True)
++    with TestClient(app):
++        pass
++    assert calls == ["start"]
++
++
++def test_worker_role_refuses_to_serve_http(monkeypatch):
++    monkeypatch.setattr(config, "ROLE", "worker")
++    with pytest.raises(RuntimeError, match="app.worker"):
++        with TestClient(app):
++            pass
++
++
++def test_the_worker_starts_the_scheduler_and_stops_on_request(monkeypatch, tmp_path):
++    _private_data(monkeypatch, tmp_path)
++    monkeypatch.setattr(config, "ROLE", "worker")
++    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
++    stop = threading.Event()
++    result = {}
++    thread = threading.Thread(target=lambda: result.update(code=worker.run(stop)))
++    thread.start()
++    try:
++        deadline = time.monotonic() + 15
++        while not (scheduler.running() and worker.alive_path().exists()):
++            assert time.monotonic() < deadline, "the worker never started the scheduler"
++            time.sleep(0.05)
++        assert {job.id for job in scheduler._scheduler.get_jobs()} >= {"ical", "submit", "mail"}
++        # The worker ran the same migrations as the web app.
++        assert db.query_one("SELECT COUNT(*) AS n FROM user_account") is not None
++    finally:
++        stop.set()
++        thread.join(timeout=30)
++    assert result["code"] == worker.EXIT_OK
++    assert not scheduler.running()
++    assert not worker.alive_path().exists()
++
++
++def test_the_worker_refuses_a_second_scheduler_while_the_lock_is_held(monkeypatch, tmp_path):
++    _private_data(monkeypatch, tmp_path)
++    monkeypatch.setattr(config, "ROLE", "worker")
++    monkeypatch.setattr(config, "ENABLE_SCHEDULER", True)
++    with open(tmp_path / "scheduler.lock", "a+") as held:
++        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
++        assert worker.run(threading.Event()) == worker.EXIT_LOCK_HELD
++    assert not scheduler.running()
++
++
++def test_the_worker_needs_the_worker_role(monkeypatch, tmp_path):
++    _private_data(monkeypatch, tmp_path)
++    monkeypatch.setattr(config, "ROLE", "web")
++    assert worker.run(threading.Event()) == worker.EXIT_BAD_ROLE
++
++
++def _worker_env(tmp_path: Path) -> dict:
++    env = os.environ.copy()
++    env.update(
++        {
++            "UBYHOST_DATA_DIR": str(tmp_path),
++            "UBYHOST_DB": str(tmp_path / "worker.db"),
++            "UBYHOST_ROLE": "worker",
++            "UBYHOST_ENABLE_SCHEDULER": "1",
++            "UBYHOST_SECRET_KEY": "test-secret-key-not-for-real-use",
++        }
++    )
++    return env
++
++
++def test_worker_process_exits_cleanly_on_sigterm(tmp_path):
++    proc = subprocess.Popen(
++        [sys.executable, "-m", "app.worker"],
++        cwd=APP_DIR,
++        env=_worker_env(tmp_path),
++        stdout=subprocess.PIPE,
++        stderr=subprocess.STDOUT,
++        text=True,
++    )
++    try:
++        deadline = time.monotonic() + 30
++        while not (tmp_path / worker.ALIVE_FILE).exists():
++            assert proc.poll() is None, proc.communicate()[0]
++            assert time.monotonic() < deadline, "worker never became alive"
++            time.sleep(0.1)
++        proc.send_signal(signal.SIGTERM)
++        output, _ = proc.communicate(timeout=60)
++    finally:
++        if proc.poll() is None:
++            proc.kill()
++    assert proc.returncode == worker.EXIT_OK, output
++    assert "scheduler started" in output
++    assert "worker stopped" in output
++
++
++def test_second_worker_process_exits_while_the_first_holds_the_lock(tmp_path):
++    with open(tmp_path / "scheduler.lock", "a+") as held:
++        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
++        proc = subprocess.run(
++            [sys.executable, "-m", "app.worker"],
++            cwd=APP_DIR,
++            env=_worker_env(tmp_path),
++            capture_output=True,
++            text=True,
++            timeout=60,
++        )
++    assert proc.returncode == worker.EXIT_LOCK_HELD
++    assert "refusing to start a second scheduler" in proc.stderr + proc.stdout
+diff --git a/Dockerfile b/Dockerfile
+index bc37113..7a934ed 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -35,5 +35,9 @@ ENTRYPOINT ["docker-entrypoint.sh"]
+ # --no-access-log: uvicorn's own access log writes the raw request line, which
+ # includes guest permalink tokens and query strings. The app logs one PII-free
+ # line per request instead (see app/main.py, OPS-3).
+-# One worker: the scheduler runs in-process and SQLite has one writer.
+-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]
++# Two web workers (WP06). UBYHOST_ROLE defaults to web, so neither starts the
++# scheduler: the background jobs run in a separate container from this image
++# (`python -m app.worker`, UBYHOST_ROLE=worker; see deploy/lightsail). SQLite
++# still has one writer at a time; writers queue on its lock (timeout=30) and
++# the start-up migrations are serialised by an flock (app/db.py startup_lock).
++CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2", "--no-access-log"]
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index 7ce742e..88a4c07 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -92,8 +92,10 @@ UBYHOST_MAIL_BACKEND=disabled
+ # --- Recommended production defaults ---
+ UBYHOST_GUEST_PIN=1
+ UBYHOST_ENABLE_SCHEDULER=1
++# UBYHOST_ROLE is set per service in docker-compose.yml (ubyhost=web,
++# worker=worker); do not set it here.
+ UBYHOST_BOOTSTRAP_ADMIN=1
+ 
+-# --- Optional tuning (10+ properties: defaults are fine on 1 GB Lightsail) ---
++# --- Optional tuning (defaults are fine on the 2 GB Lightsail bundle) ---
+ # UBYHOST_ICAL_POLL_MINUTES=60
+ # UBYHOST_SUBMIT_SWEEP_MINUTES=10
+diff --git a/deploy/lightsail/docker-compose.yml b/deploy/lightsail/docker-compose.yml
+index f11f362..cc901b8 100644
+--- a/deploy/lightsail/docker-compose.yml
++++ b/deploy/lightsail/docker-compose.yml
+@@ -18,6 +18,8 @@ services:
+     environment:
+       UBYHOST_DATA_DIR: /data
+       PORT: "8080"
++      # WP06: two uvicorn workers that only serve HTTP; jobs run in `worker`.
++      UBYHOST_ROLE: web
+     volumes:
+       - ubyhost-data:/data
+     expose:
+@@ -34,7 +36,9 @@ services:
+       timeout: 5s
+       retries: 3
+       start_period: 25s
+-    mem_limit: 768m
++    # 2 GB bundle (WP06): web 896m + worker 448m + litestream 128m + Caddy
++    # leaves about 450 MB for the OS and Docker.
++    mem_limit: 896m
+     # OPS-3: bound container logs so they cannot grow without limit. Rotated
+     # lines are gone for good; capture anything needed during an incident.
+     logging:
+@@ -45,6 +49,51 @@ services:
+     networks:
+       - web
+ 
++  # WP06: the background scheduler (iCal sync, UbyPort sweep, deadline watch,
++  # mail outbox, photo sweep, retention) in its own process. Same image, env
++  # and volume as the web app; it holds DATA_DIR/scheduler.lock, so a second
++  # scheduler anywhere on this volume refuses to start.
++  worker:
++    image: ubyhost:local
++    pull_policy: never
++    restart: unless-stopped
++    # A UbyPort batch already on the wire must record its answer.
++    stop_grace_period: 90s
++    env_file: .env
++    environment:
++      UBYHOST_DATA_DIR: /data
++      UBYHOST_ROLE: worker
++    command: ["python", "-m", "app.worker"]
++    volumes:
++      - ubyhost-data:/data
++    # No HTTP server: the worker touches /data/worker.alive every 30 s while
++    # its scheduler runs.
++    healthcheck:
++      test:
++        [
++          "CMD",
++          "python",
++          "-c",
++          "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/data/worker.alive') < 120 else 1)",
++        ]
++      interval: 30s
++      timeout: 5s
++      retries: 3
++      start_period: 30s
++    mem_limit: 448m
++    logging:
++      driver: json-file
++      options:
++        max-size: "10m"
++        max-file: "5"
++    # Built and migrated by the web service first; also creates the volume
++    # with the app's ownership on a fresh server.
++    depends_on:
++      ubyhost:
++        condition: service_healthy
++    networks:
++      - web
++
+   # WP05: continuous replication of the SQLite database to S3. Runs as the
+   # app's uid on the same volume, so it can read the database and write its
+   # .ubyhost.db-litestream metadata next to it. Only the variables it needs are
+diff --git a/deploy/lightsail/scripts/deploy.sh b/deploy/lightsail/scripts/deploy.sh
+index bf52371..c9177f1 100755
+--- a/deploy/lightsail/scripts/deploy.sh
++++ b/deploy/lightsail/scripts/deploy.sh
+@@ -166,11 +166,36 @@ if [ "${HEALTHY}" != "1" ]; then
+   if docker image inspect ubyhost:previous >/dev/null 2>&1; then
+     echo "==> Rolling back to ubyhost:previous" >&2
+     docker tag ubyhost:previous ubyhost:local
+-    docker compose up -d --no-build ubyhost
++    docker compose up -d --no-build ubyhost worker
+   fi
+   exit 1
+ fi
+ 
++# WP06: the scheduler runs only in the worker container. Wait until it reports
++# alive (it touches /data/worker.alive while its scheduler runs) and confirm
++# the web container did not start one.
++echo "==> Waiting for the background worker"
++WORKER_ALIVE=0
++for _ in $(seq 1 30); do
++  if docker compose exec -T worker python -c \
++    "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/data/worker.alive') < 120 else 1)" \
++    >/dev/null 2>&1; then
++    WORKER_ALIVE=1
++    break
++  fi
++  sleep 2
++done
++if [ "${WORKER_ALIVE}" != "1" ]; then
++  echo "The worker never started its scheduler. Logs:" >&2
++  docker compose logs --tail=50 worker >&2 || true
++  exit 1
++fi
++if docker compose logs ubyhost 2>/dev/null | grep -q "scheduler started"; then
++  echo "The web container started a scheduler; it must run only in the worker (UBYHOST_ROLE)." >&2
++  exit 1
++fi
++echo "Worker is running the scheduler (exactly one: the scheduler lock is held)."
++
+ echo ""
+ docker compose ps
+ echo ""
+diff --git a/deploy/lightsail/scripts/preflight.sh b/deploy/lightsail/scripts/preflight.sh
+index a1ecaa4..df45094 100755
+--- a/deploy/lightsail/scripts/preflight.sh
++++ b/deploy/lightsail/scripts/preflight.sh
+@@ -77,6 +77,17 @@ if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ];
+   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
+ fi
+ 
++# WP06: web (2 workers) + scheduler worker + litestream + Caddy need the 2 GB
++# bundle; on 1 GB their memory limits add up to more than the machine has.
++mem_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
++if [ "${mem_kb:-0}" -gt 0 ] && [ "${mem_kb}" -lt 1700000 ]; then
++  if [ "${UBYHOST_ALLOW_SMALL_HOST:-0}" = "1" ]; then
++    warn "only $((mem_kb / 1024)) MB RAM — the stack is sized for the 2 GB bundle"
++  else
++    die "only $((mem_kb / 1024)) MB RAM — move to the 2 GB Lightsail bundle first (or set UBYHOST_ALLOW_SMALL_HOST=1)"
++  fi
++fi
++
+ # WP05: the litestream service replicates the database to S3 continuously.
+ # Without these it crash-loops and the only off-site copy is a day old.
+ if [ "${DEPLOYMENT}" = "production" ]; then
+diff --git a/deploy/lightsail/scripts/restore.sh b/deploy/lightsail/scripts/restore.sh
+index 36e8d8a..bddb0e2 100755
+--- a/deploy/lightsail/scripts/restore.sh
++++ b/deploy/lightsail/scripts/restore.sh
+@@ -91,8 +91,10 @@ fi
+ # existing replica: mixing two histories under one S3 path can make the
+ # replica unrestorable. Stop it here; it stays stopped until LITESTREAM_S3_PATH
+ # points at a new prefix (see the end of this script and README.md).
+-echo "==> Stopping litestream and ubyhost (Caddy stays up and will 502 until restart)"
++echo "==> Stopping litestream, worker and ubyhost (Caddy stays up and will 502 until restart)"
+ docker compose stop litestream 2>/dev/null || true
++# WP06: the scheduler worker writes to the database too.
++docker compose stop worker 2>/dev/null || true
+ docker compose stop ubyhost
+ 
+ if [ "${LAYOUT}" = "encrypted" ]; then
+@@ -151,8 +153,8 @@ else
+   "
+ fi
+ 
+-echo "==> Starting ubyhost"
+-docker compose up -d ubyhost
++echo "==> Starting ubyhost and the worker"
++docker compose up -d ubyhost worker
+ 
+ echo "==> Waiting for health"
+ for _ in $(seq 1 30); do
+diff --git a/deploy/lightsail/scripts/status.sh b/deploy/lightsail/scripts/status.sh
+index a655a13..9ea33e6 100755
+--- a/deploy/lightsail/scripts/status.sh
++++ b/deploy/lightsail/scripts/status.sh
+@@ -10,13 +10,23 @@ docker compose ps
+ echo ""
+ echo "Internal runtime (not exposed on public /healthz in production):"
+ if docker compose exec -T ubyhost python -c \
+-  "from app import config; print('deployment=', config.DEPLOYMENT); print('ubyport_env=', config.UBYPORT_ENV); print('endpoint=', config.endpoint_for()); print('scheduler=', config.ENABLE_SCHEDULER); print('guest_pin=', config.GUEST_PIN_REQUIRED); print('public_base_url=', config.PUBLIC_BASE_URL); print('data_dir=', config.DATA_DIR)" \
++  "from app import config; print('deployment=', config.DEPLOYMENT); print('ubyport_env=', config.UBYPORT_ENV); print('endpoint=', config.endpoint_for()); print('scheduler=', config.ENABLE_SCHEDULER); print('role=', config.ROLE); print('guest_pin=', config.GUEST_PIN_REQUIRED); print('public_base_url=', config.PUBLIC_BASE_URL); print('data_dir=', config.DATA_DIR)" \
+   2>/dev/null; then
+   :
+ else
+   echo "(ubyhost not running — start with ./scripts/deploy.sh)"
+ fi
+ 
++echo ""
++echo "Background worker (WP06):"
++if docker compose exec -T worker python -c \
++  "import os, time; print('worker.alive age (s)=', int(time.time() - os.path.getmtime('/data/worker.alive')))" \
++  2>/dev/null; then
++  :
++else
++  echo "(worker not running or not alive — ./scripts/logs.sh worker)"
++fi
++
+ if [ -f .env ]; then
+   # shellcheck disable=SC1091
+   set -a
+diff --git a/docs/ENVIRONMENT.md b/docs/ENVIRONMENT.md
+index 97b9ea0..b897ad5 100644
+--- a/docs/ENVIRONMENT.md
++++ b/docs/ENVIRONMENT.md
+@@ -41,6 +41,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
+ | Variable | Default | Notes |
+ | --- | --- | --- |
+ | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
++| `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
+ | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
+ | `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
+ | `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
+diff --git a/docs/LIGHTSAIL.md b/docs/LIGHTSAIL.md
+index 85d9544..d923335 100644
+--- a/docs/LIGHTSAIL.md
++++ b/docs/LIGHTSAIL.md
+@@ -244,7 +244,12 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
+ 
+ ## Scheduler
+ 
+-`UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler:
++`UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler. Since WP06 it runs
++in the separate `worker` container (`UBYHOST_ROLE=worker`, `python -m
++app.worker`); the `ubyhost` container runs two uvicorn workers with
++`UBYHOST_ROLE=web` and never starts it. `./scripts/logs.sh worker` must show
++`scheduler started` exactly once per deploy. The stack needs the **2 GB**
++bundle (Small): memory limits are web 896m, worker 448m, litestream 128m.
+ 
+ | Job | Interval |
+ |-----|----------|
+-- 
+2.34.1
+

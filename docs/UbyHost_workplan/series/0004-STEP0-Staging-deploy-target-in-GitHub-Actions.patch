@@ -1,0 +1,637 @@
+From aa56c503e22bb105ed67007c3044ca70a257bbb3 Mon Sep 17 00:00:00 2001
+From: local <local@example.invalid>
+Date: Sun, 4 Oct 2026 00:39:17 +0200
+Subject: [PATCH 04/34] STEP0: Staging deploy target in GitHub Actions
+
+Integration (new order): the staging target can run on the real UbyPort test
+environment as well as on the mock. "Deploy staging" has a ubyport_env input
+(mock or test, default mock); the reusable deploy-lightsail.yml validates it,
+refuses it on production, and on the staging server writes it into .env as
+UBYHOST_UBYPORT_ENV after the identity check. preflight.sh accepts mock (with
+the mock-ubyport profile and URL) or test on staging, never prod. README,
+.env.example and DEPLOYMENT.md document the input.
+---
+ .github/workflows/deploy-lightsail.yml  | 179 ++++++++++++++++++++++++
+ .github/workflows/deploy-preflight.yml  |  18 ++-
+ .github/workflows/deploy-production.yml |  96 ++-----------
+ .github/workflows/deploy-staging.yml    |  59 ++++++++
+ deploy/lightsail/.env.example           |  10 ++
+ deploy/lightsail/README.md              |  43 ++++++
+ deploy/lightsail/docker-compose.yml     |  28 ++++
+ deploy/lightsail/scripts/preflight.sh   |  37 ++++-
+ docs/DEPLOYMENT.md                      |  10 +-
+ 9 files changed, 388 insertions(+), 92 deletions(-)
+ create mode 100644 .github/workflows/deploy-lightsail.yml
+ create mode 100644 .github/workflows/deploy-staging.yml
+
+diff --git a/.github/workflows/deploy-lightsail.yml b/.github/workflows/deploy-lightsail.yml
+new file mode 100644
+index 0000000..3827c9a
+--- /dev/null
++++ b/.github/workflows/deploy-lightsail.yml
+@@ -0,0 +1,179 @@
++name: Deploy to Lightsail (reusable)
++
++# Called by deploy-production.yml (environment production, main only) and
++# deploy-staging.yml (environment staging, any branch). Each GitHub environment
++# holds its own LIGHTSAIL_HOST, LIGHTSAIL_SSH_PRIVATE_KEY and
++# LIGHTSAIL_KNOWN_HOSTS secrets, and optionally a LIGHTSAIL_HEALTH_URL variable.
++#
++# Before anything on the server changes, the run reads the server's own .env
++# and refuses unless it matches the target: production needs
++# UBYHOST_DEPLOYMENT=production; staging needs UBYHOST_DEPLOYMENT=staging and a
++# UBYHOST_UBYPORT_ENV of mock or test. A staging run whose secrets point at the
++# production server therefore stops before it checks out a feature branch
++# there. On staging the run then writes its ubyport_env input (mock or test)
++# into the server .env; production's .env is never edited by this workflow.
++
++on:
++  workflow_call:
++    inputs:
++      environment:
++        description: "GitHub environment and target tier: production or staging"
++        required: true
++        type: string
++      ref:
++        description: "Branch to deploy (resolved to its current head commit)"
++        required: true
++        type: string
++      require_green_ci:
++        description: "Refuse to deploy a commit whose CI checks have not all passed"
++        required: false
++        type: boolean
++        default: true
++      ubyport_env:
++        description: "Staging only: mock or test, written to the server .env as UBYHOST_UBYPORT_ENV (empty on production)"
++        required: false
++        type: string
++        default: ""
++      health_url:
++        description: "Public /healthz URL to check after the deploy (default: environment variable LIGHTSAIL_HEALTH_URL)"
++        required: false
++        type: string
++        default: ""
++
++permissions:
++  contents: read
++  checks: read
++
++jobs:
++  lightsail:
++    environment: ${{ inputs.environment }}
++    runs-on: ubuntu-latest
++    steps:
++      - name: Deploy Lightsail (${{ inputs.environment }})
++        env:
++          TARGET: ${{ inputs.environment }}
++          DEPLOY_REF: ${{ inputs.ref }}
++          UBYPORT_TARGET: ${{ inputs.ubyport_env }}
++          REQUIRE_CI: ${{ inputs.require_green_ci }}
++          HEALTH_URL: ${{ inputs.health_url || vars.LIGHTSAIL_HEALTH_URL }}
++          REPO_SLUG: ${{ github.repository }}
++          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
++          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
++          LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
++          GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: |
++          set -euo pipefail
++          case "${TARGET}" in
++            production|staging) ;;
++            *) echo "Unknown deploy target '${TARGET}'." >&2; exit 1 ;;
++          esac
++          if [ "${TARGET}" = "staging" ]; then
++            UBYPORT_TARGET="${UBYPORT_TARGET:-mock}"
++            case "${UBYPORT_TARGET}" in
++              mock|test) ;;
++              *) echo "Staging UbyPort must be mock or test, not '${UBYPORT_TARGET}'." >&2; exit 1 ;;
++            esac
++          elif [ -n "${UBYPORT_TARGET}" ]; then
++            echo "ubyport_env is for staging only; production keeps the UbyPort set in its own .env." >&2
++            exit 1
++          fi
++          if ! printf '%s' "${DEPLOY_REF}" | grep -Eq '^[A-Za-z0-9._/-]+$'; then
++            echo "Branch name '${DEPLOY_REF}' has characters this workflow does not accept." >&2
++            exit 1
++          fi
++          # A manual dispatch runs from whatever branch it was started on, and
++          # github.sha would be that branch's HEAD. Resolve the requested branch
++          # to its current head commit instead, and deploy exactly that.
++          DEPLOY_SHA="$(git ls-remote \
++            "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" \
++            "refs/heads/${DEPLOY_REF}" | cut -f1)"
++          if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
++            echo "Branch '${DEPLOY_REF}' was not found (got '${DEPLOY_SHA}')." >&2
++            exit 1
++          fi
++          echo "Deploying ${DEPLOY_REF} at ${DEPLOY_SHA} to ${TARGET}${UBYPORT_TARGET:+ (UbyPort ${UBYPORT_TARGET})}"
++          if [ "${REQUIRE_CI}" = "true" ]; then
++            FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GH_DEPLOY_TOKEN}" \
++              -H "Accept: application/vnd.github+json" \
++              "https://api.github.com/repos/${REPO_SLUG}/commits/${DEPLOY_SHA}/check-runs?per_page=100" \
++              | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke","guest-browser","shellcheck","docker","secrets"]; bad=[n for n in need if n not in runs or runs[n]["conclusion"]!="success"]; print(" ".join(bad))')"
++            if [ -n "${FAILED_OR_MISSING}" ]; then
++              echo "CI has not passed for ${DEPLOY_SHA} (not green: ${FAILED_OR_MISSING}). Refusing to deploy." >&2
++              exit 1
++            fi
++          else
++            echo "WARNING: CI check skipped on request (staging only)."
++          fi
++          if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
++            echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY are not set in the ${TARGET} environment." >&2
++            echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git fetch origin ${DEPLOY_REF} && git reset --hard FETCH_HEAD && cd deploy/lightsail && ./scripts/deploy.sh'" >&2
++            exit 1
++          fi
++          install -m 700 -d ~/.ssh
++          printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
++          chmod 600 ~/.ssh/lightsail_deploy.pem
++          if [ -z "${LIGHTSAIL_KNOWN_HOSTS}" ]; then echo "LIGHTSAIL_KNOWN_HOSTS secret is missing." >&2; exit 1; fi
++          printf '%s\n' "${LIGHTSAIL_KNOWN_HOSTS}" > ~/.ssh/known_hosts
++          chmod 600 ~/.ssh/known_hosts
++          LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
++          LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
++          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
++          DEPLOY_SHA="${DEPLOY_SHA}"
++          TARGET="${TARGET}"
++          UBYPORT_TARGET="${UBYPORT_TARGET}"
++          set -euo pipefail
++          INSTALL=/opt/ubyhost
++          ENVF="\${INSTALL}/deploy/lightsail/.env"
++          # Identity check first: nothing on this server changes unless its own
++          # .env says it is the target this run was started for.
++          if [ ! -f "\${ENVF}" ]; then
++            echo "ERROR: \${ENVF} is missing; set the server up first (deploy/lightsail/README.md)." >&2
++            exit 1
++          fi
++          envval() { grep -E "^\$1=" "\${ENVF}" | tail -1 | cut -d= -f2- | tr -d "\"' \r"; }
++          SERVER_DEPLOYMENT="\$(envval UBYHOST_DEPLOYMENT)"
++          SERVER_UBYPORT="\$(envval UBYHOST_UBYPORT_ENV)"
++          if [ "\${SERVER_DEPLOYMENT}" != "\${TARGET}" ]; then
++            echo "ERROR: this server's .env has UBYHOST_DEPLOYMENT=\${SERVER_DEPLOYMENT:-unset}, not \${TARGET}. Wrong host in the \${TARGET} environment secrets?" >&2
++            exit 1
++          fi
++          if [ "\${TARGET}" = "staging" ]; then
++            case "\${SERVER_UBYPORT}" in
++              mock|test|"") ;;
++              *)
++                echo "ERROR: staging must run UBYHOST_UBYPORT_ENV=mock or test (server has \${SERVER_UBYPORT})." >&2
++                exit 1
++                ;;
++            esac
++            # The run's ubyport_env input decides which UbyPort staging talks
++            # to. .env is not tracked by git, so the reset below keeps it.
++            if grep -qE '^UBYHOST_UBYPORT_ENV=' "\${ENVF}"; then
++              sed -i -E "s|^UBYHOST_UBYPORT_ENV=.*|UBYHOST_UBYPORT_ENV=\${UBYPORT_TARGET}|" "\${ENVF}"
++            else
++              printf '\nUBYHOST_UBYPORT_ENV=%s\n' "\${UBYPORT_TARGET}" >> "\${ENVF}"
++            fi
++            echo "==> staging: UBYHOST_UBYPORT_ENV=\${UBYPORT_TARGET}"
++          fi
++          REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git"
++          if [ ! -d "\${INSTALL}/.git" ]; then
++            echo "==> No git repo at \${INSTALL}; bootstrapping for CI deploy"
++            cd "\${INSTALL}"
++            git init
++            git remote add origin "\${REPO}" 2>/dev/null || git remote set-url origin "\${REPO}"
++            git fetch --depth 1 origin "\${DEPLOY_SHA}"
++            git reset --hard "\${DEPLOY_SHA}"
++          fi
++          cd "\${INSTALL}"
++          git remote set-url origin "\${REPO}"
++          git fetch origin "\${DEPLOY_SHA}"
++          git reset --hard "\${DEPLOY_SHA}"
++          cd deploy/lightsail
++          chmod +x scripts/*.sh
++          ./scripts/deploy.sh
++          REMOTE
++          rm -f ~/.ssh/lightsail_deploy.pem
++          if [ -n "${HEALTH_URL}" ]; then
++            curl --fail --show-error --silent --retry 5 --retry-delay 5 "${HEALTH_URL}"
++          else
++            echo "WARNING: no health URL for ${TARGET} (set the LIGHTSAIL_HEALTH_URL environment variable)."
++          fi
+diff --git a/.github/workflows/deploy-preflight.yml b/.github/workflows/deploy-preflight.yml
+index 67cba71..77a6cef 100644
+--- a/.github/workflows/deploy-preflight.yml
++++ b/.github/workflows/deploy-preflight.yml
+@@ -1,25 +1,32 @@
+ name: Deploy preflight
+ 
+-# Read-only readiness check for the production server. Manual only. It prints
++# Read-only readiness check for the production or the staging server. Manual only. It prints
+ # the connection result and whether the required .env keys exist. It never
+ # prints a secret value.
+ 
+ on:
+-  workflow_dispatch: {}
++  workflow_dispatch:
++    inputs:
++      environment:
++        description: "Which server to check"
++        required: true
++        type: choice
++        options: [production, staging]
++        default: production
+ 
+ permissions:
+   contents: read
+ 
+ concurrency:
+-  group: deploy-preflight
++  group: deploy-preflight-${{ inputs.environment }}
+   cancel-in-progress: false
+ 
+ jobs:
+   preflight:
+-    environment: production
++    environment: ${{ inputs.environment }}
+     runs-on: ubuntu-latest
+     steps:
+-      - name: Check the production server (read-only)
++      - name: Check the ${{ inputs.environment }} server (read-only)
+         env:
+           LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+           LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+@@ -57,6 +64,7 @@ jobs:
+             echo "ACME_EMAIL=$(present ACME_EMAIL)"
+             echo "UBYHOST_DEPLOYMENT=$(value UBYHOST_DEPLOYMENT)"
+             echo "UBYHOST_UBYPORT_ENV=$(value UBYHOST_UBYPORT_ENV)"
++            echo "COMPOSE_PROFILES=$(value COMPOSE_PROFILES)"
+             echo "UBYHOST_ALLOW_PROD_MOCK=$(value UBYHOST_ALLOW_PROD_MOCK)"
+             echo "UBYHOST_ADMIN_PASSWORD=$(present UBYHOST_ADMIN_PASSWORD)"
+             echo "UBYHOST_SECRET_KEY=$(present UBYHOST_SECRET_KEY)"
+diff --git a/.github/workflows/deploy-production.yml b/.github/workflows/deploy-production.yml
+index e2305eb..7b29f95 100644
+--- a/.github/workflows/deploy-production.yml
++++ b/.github/workflows/deploy-production.yml
+@@ -1,12 +1,14 @@
+ name: Deploy production
+ 
+-# Production = AWS Lightsail (ubyhost.com). Staging = Render ubyhost-staging (mock).
++# Production = AWS Lightsail (ubyhost.com). Staging = the staging Lightsail
++# server (deploy-staging.yml, mock UbyPort) and Render ubyhost-staging (mock).
+ # See docs/DEPLOYMENT.md
+ #
+ # MANUAL ONLY. This deploy no longer runs automatically on a push to main. Every
+ # change reaches main through a reviewed pull request, and production is promoted
+ # by a person running this workflow (Actions → Deploy production → Run workflow)
+-# with force_confirm=DEPLOY. Staging is deployed separately (manual, in Render).
++# with force_confirm=DEPLOY. Staging is deployed separately: Actions → Deploy
++# staging (any branch), or manually in Render.
+ 
+ on:
+   workflow_dispatch:
+@@ -28,87 +30,19 @@ concurrency:
+   cancel-in-progress: false
+ 
+ jobs:
++  # The steps live in deploy-lightsail.yml, shared with deploy-staging.yml.
++  # It pins the run to the current head of main, refuses unless CI is green
++  # for that commit, and checks that the server's .env says production before
++  # anything on it changes.
+   lightsail:
+     if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
+-    environment: production
+-    runs-on: ubuntu-latest
+-    steps:
+-      - name: Deploy Lightsail (production)
+-        env:
+-          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+-          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+-          LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
+-          GH_DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+-          DEPLOY_SHA: ${{ github.sha }}
+-        run: |
+-          # A manual dispatch runs from whatever branch it was started on, and
+-          # github.sha would be that branch's HEAD — so a dispatch from a
+-          # feature branch could deploy it to production. Pin the run to main
+-          # instead: the input says "the current main revision", and this is how
+-          # it is made true.
+-          DEPLOY_SHA="$(git ls-remote \
+-            "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git" \
+-            refs/heads/main | cut -f1)"
+-          echo "Manual deploy pinned to main: ${DEPLOY_SHA}"
+-          FAILED_OR_MISSING="$(curl -fsS -H "Authorization: Bearer ${GH_DEPLOY_TOKEN}" \
+-            -H "Accept: application/vnd.github+json" \
+-            "https://api.github.com/repos/jsfpechar-ops/jsfpecharoperations/commits/${DEPLOY_SHA}/check-runs?per_page=100" \
+-            | python3 -c 'import json,sys; runs={r["name"]:r for r in json.load(sys.stdin)["check_runs"]}; need=["test","smoke","guest-browser","shellcheck","docker","secrets"]; bad=[n for n in need if n not in runs or runs[n]["conclusion"]!="success"]; print(" ".join(bad))')"
+-          if [ -n "${FAILED_OR_MISSING}" ]; then
+-            echo "CI has not passed for ${DEPLOY_SHA} (not green: ${FAILED_OR_MISSING}). Refusing to deploy." >&2
+-            exit 1
+-          fi
+-          if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ] || [ -z "${LIGHTSAIL_HOST}" ]; then
+-            echo "LIGHTSAIL_HOST / LIGHTSAIL_SSH_PRIVATE_KEY not set — skipping automated deploy."
+-            echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git pull origin main && cd deploy/lightsail && ./scripts/deploy.sh'"
+-            exit 1
+-          fi
+-          # Validate the SHA before it is interpolated into the remote shell.
+-          if ! printf '%s' "${DEPLOY_SHA}" | grep -Eq '^[0-9a-f]{40}$'; then
+-            echo "DEPLOY_SHA is not a 40-character lowercase hex SHA: '${DEPLOY_SHA}'" >&2
+-            exit 1
+-          fi
+-          install -m 700 -d ~/.ssh
+-          printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
+-          chmod 600 ~/.ssh/lightsail_deploy.pem
+-          if [ -z "${LIGHTSAIL_KNOWN_HOSTS}" ]; then echo "LIGHTSAIL_KNOWN_HOSTS secret is missing." >&2; exit 1; fi
+-          printf '%s\n' "${LIGHTSAIL_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+-          chmod 600 ~/.ssh/known_hosts
+-          LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
+-          LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
+-          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
+-          DEPLOY_SHA="${DEPLOY_SHA}"
+-          set -euo pipefail
+-          INSTALL=/opt/ubyhost
+-          REPO="https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/jsfpechar-ops/jsfpecharoperations.git"
+-          if [ ! -d "\${INSTALL}/.git" ]; then
+-            echo "==> No git repo at \${INSTALL}; bootstrapping for CI deploy"
+-            if [ -d "\${INSTALL}/deploy/lightsail" ]; then
+-              cd "\${INSTALL}"
+-              git init
+-              git remote add origin "\${REPO}" 2>/dev/null || git remote set-url origin "\${REPO}"
+-              git fetch --depth 1 origin "\${DEPLOY_SHA}"
+-              git reset --hard "\${DEPLOY_SHA}"
+-            elif [ ! -e "\${INSTALL}" ] || [ -z "\$(ls -A "\${INSTALL}" 2>/dev/null)" ]; then
+-              git clone --depth 1 "\${REPO}" "\${INSTALL}"
+-              cd "\${INSTALL}"
+-              git fetch --depth 1 origin "\${DEPLOY_SHA}"
+-              git reset --hard "\${DEPLOY_SHA}"
+-            else
+-              echo "ERROR: \${INSTALL} is not a git repo and layout is unexpected" >&2
+-              exit 1
+-            fi
+-          fi
+-          cd "\${INSTALL}"
+-          git remote set-url origin "\${REPO}"
+-          git fetch origin "\${DEPLOY_SHA}"
+-          git reset --hard "\${DEPLOY_SHA}"
+-          cd deploy/lightsail
+-          chmod +x scripts/*.sh
+-          ./scripts/deploy.sh
+-          REMOTE
+-          rm -f ~/.ssh/lightsail_deploy.pem
+-          curl --fail --show-error --silent --retry 5 --retry-delay 5 https://ubyhost.com/healthz
++    uses: ./.github/workflows/deploy-lightsail.yml
++    with:
++      environment: production
++      ref: main
++      require_green_ci: true
++      health_url: https://ubyhost.com/healthz
++    secrets: inherit
+ 
+   render-staging:
+     if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
+diff --git a/.github/workflows/deploy-staging.yml b/.github/workflows/deploy-staging.yml
+new file mode 100644
+index 0000000..9d77bcf
+--- /dev/null
++++ b/.github/workflows/deploy-staging.yml
+@@ -0,0 +1,59 @@
++name: Deploy staging
++
++# Deploys any branch to the staging Lightsail server (Step 0): its own
++# instance, domain, .env (UBYHOST_DEPLOYMENT=staging, COMPOSE_PROFILES=staging
++# for the mock UbyPort service) and its own Litestream prefix. Never real guest
++# data. Every HIGH RISK work package is deployed here and clicked through
++# before it is merged.
++#
++# The "ubyport_env" input picks the UbyPort this deploy talks to and is written
++# into the server's .env as UBYHOST_UBYPORT_ENV: "mock" (default, the
++# mock-ubyport service) or "test" (the real UbyPort test environment of the
++# police, with the property's own test web-service credentials). "prod" is
++# never possible here.
++#
++# MANUAL ONLY: Actions → Deploy staging → Run workflow, pick the branch in
++# "Use workflow from" (or type another branch below). Secrets come from the
++# GitHub environment "staging": LIGHTSAIL_HOST, LIGHTSAIL_SSH_PRIVATE_KEY,
++# LIGHTSAIL_KNOWN_HOSTS, and the variable LIGHTSAIL_HEALTH_URL.
++
++on:
++  workflow_dispatch:
++    inputs:
++      branch:
++        description: "Branch to deploy (empty: the branch selected above)"
++        required: false
++        type: string
++        default: ""
++      ubyport_env:
++        description: "UbyPort: mock (mock-ubyport service) or test (real UbyPort test environment)"
++        required: false
++        type: choice
++        options:
++          - mock
++          - test
++        default: mock
++      skip_ci_check:
++        description: "Deploy even if CI has not passed for the branch head"
++        required: false
++        type: boolean
++        default: false
++
++permissions:
++  contents: read
++  checks: read
++
++# One staging deploy at a time; never cancel one half-way.
++concurrency:
++  group: deploy-staging
++  cancel-in-progress: false
++
++jobs:
++  lightsail:
++    uses: ./.github/workflows/deploy-lightsail.yml
++    with:
++      environment: staging
++      ref: ${{ inputs.branch || github.ref_name }}
++      require_green_ci: ${{ !inputs.skip_ci_check }}
++      ubyport_env: ${{ inputs.ubyport_env || 'mock' }}
++    secrets: inherit
+diff --git a/deploy/lightsail/.env.example b/deploy/lightsail/.env.example
+index c850d10..ef6dc15 100644
+--- a/deploy/lightsail/.env.example
++++ b/deploy/lightsail/.env.example
+@@ -18,7 +18,17 @@ CLOUDFLARE_PROXY=1
+ UBYHOST_TRUSTED_PROXY_CIDRS=172.16.0.0/12
+ 
+ # --- Deployment tier ---
++# production on the production server. The staging Lightsail server (Step 0,
++# README.md "Staging server") uses staging, plus the lines below.
+ UBYHOST_DEPLOYMENT=production
++# Staging server only (never on production):
++# COMPOSE_PROFILES=staging
++# mock (default) or test (the real UbyPort test environment). A run of the
++# "Deploy staging" workflow overwrites this line with its ubyport_env input.
++# UBYHOST_UBYPORT_ENV=mock
++# UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc
++# LITESTREAM_S3_PATH=staging/ubyhost
++# UBYHOST_ALLOW_SMALL_HOST=1
+ 
+ # UbyPort: start on "test", switch to "prod" only after a signed-off test submission.
+ # Never set prod on Render. Lightsail .env must keep UBYHOST_DEPLOYMENT=production.
+diff --git a/deploy/lightsail/README.md b/deploy/lightsail/README.md
+index 437303a..8e665e9 100644
+--- a/deploy/lightsail/README.md
++++ b/deploy/lightsail/README.md
+@@ -5,6 +5,7 @@
+ | Environment | Platform | UbyPort |
+ |-------------|----------|---------|
+ | **Staging** | Render `ubyhost-staging` | `mock` |
++| **Staging (Lightsail)** | This stack on a second instance, `UBYHOST_DEPLOYMENT=staging` | `mock` (service `mock-ubyport`, default) or `test` |
+ | **Production** | This Lightsail stack | `test` → `prod` |
+ 
+ Production Docker stack with HTTPS. **Guides:**
+@@ -257,3 +258,45 @@ If the replica is unusable, fall back to the newest age-encrypted snapshot
+ (`restore.sh`, or the S3/Drive off-site copy). `restore.sh` stops Litestream
+ and leaves it stopped; set a new `LITESTREAM_S3_PATH`, then
+ `docker compose up -d litestream`.
++
++## Staging server (Step 0)
++
++A second Lightsail instance runs this same stack with
++`UBYHOST_DEPLOYMENT=staging`, and either the mock UbyPort (default) or the real
++UbyPort test environment. It never holds real guest data. Every HIGH RISK change is deployed here and clicked through before it is
++merged.
++
++Differences from production, all in the staging `.env`:
++
++```bash
++UBYHOST_DEPLOYMENT=staging
++UBYHOST_UBYPORT_ENV=mock                 # or test; each workflow run sets it
++COMPOSE_PROFILES=staging                 # starts the mock-ubyport service
++UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc
++UBYHOST_DOMAIN=staging.example.com        # its own domain
++UBYHOST_PUBLIC_BASE_URL=https://staging.example.com
++LITESTREAM_S3_PATH=staging/ubyhost        # its own prefix, its own IAM user
++UBYHOST_MAIL_BACKEND=console              # claim links appear in Settings
++UBYHOST_ALLOW_SMALL_HOST=1                # 1 GB bundle; limits are caps, traffic is tiny
++```
++
++`preflight.sh` refuses a staging `.env` whose UbyPort is neither `mock` nor
++`test`, a `mock` staging without the profile or the mock URL, or a Litestream
++prefix containing `production`, and refuses `COMPOSE_PROFILES=staging` on
++production.
++
++Deploy from GitHub: Actions → **Deploy staging** → Run workflow → pick the
++branch and the **ubyport_env** input:
++
++- `mock` (default): the `mock-ubyport` service answers. Use it for everything
++  that does not need the police server.
++- `test`: the real UbyPort test environment
++  (`https://ubyport.pcr.cz/ws_uby_test/ws_uby.svc`). Submissions use the test
++  web-service credentials saved on the staging property, so set those first.
++  Test data only, as everywhere on staging.
++
++The run uses the `staging` environment's secrets and checks, on the server,
++that `.env` says `UBYHOST_DEPLOYMENT=staging` and a UbyPort of `mock` or
++`test` before it changes anything. It then writes the chosen value into the
++server's `.env` as `UBYHOST_UBYPORT_ENV`. The mock service keeps running with
++`test`; it is simply not used.
+diff --git a/deploy/lightsail/docker-compose.yml b/deploy/lightsail/docker-compose.yml
+index cc901b8..47c8cf8 100644
+--- a/deploy/lightsail/docker-compose.yml
++++ b/deploy/lightsail/docker-compose.yml
+@@ -131,6 +131,34 @@ services:
+     networks:
+       - web
+ 
++  # Step 0: the mock UbyPort for the staging server only. Started only when
++  # .env sets COMPOSE_PROFILES=staging; production never runs it. The image
++  # leaves mock_ubyport out (.dockerignore), so the code is mounted from the
++  # checkout. Staging .env points the app at it with
++  # UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc.
++  mock-ubyport:
++    profiles: ["staging"]
++    image: ubyhost:local
++    pull_policy: never
++    restart: unless-stopped
++    entrypoint: ["python", "-m", "mock_ubyport.server"]
++    environment:
++      MOCK_UBYPORT_HOST: 0.0.0.0
++      MOCK_UBYPORT_PORT: "8081"
++      MOCK_UBYPORT_STATE: /tmp/mock_state.json
++    volumes:
++      - ../../App/mock_ubyport:/app/mock_ubyport:ro
++    expose:
++      - "8081"
++    mem_limit: 128m
++    logging:
++      driver: json-file
++      options:
++        max-size: "10m"
++        max-file: "5"
++    networks:
++      - web
++
+   caddy:
+     image: caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+     restart: unless-stopped
+diff --git a/deploy/lightsail/scripts/preflight.sh b/deploy/lightsail/scripts/preflight.sh
+index df45094..09f7c86 100755
+--- a/deploy/lightsail/scripts/preflight.sh
++++ b/deploy/lightsail/scripts/preflight.sh
+@@ -29,9 +29,40 @@ done
+ DEPLOYMENT="${UBYHOST_DEPLOYMENT:-local}"
+ UBYPORT="${UBYHOST_UBYPORT_ENV:-mock}"
+ 
+-if [ "${DEPLOYMENT}" != "production" ]; then
+-  warn "UBYHOST_DEPLOYMENT=${DEPLOYMENT} — this Lightsail stack is meant to be production"
+-fi
++if [ "${DEPLOYMENT}" = "staging" ]; then
++  # Step 0: the staging Lightsail server. Either the mock UbyPort, served by
++  # the mock-ubyport compose service (profile "staging"), or the real UbyPort
++  # test environment. Never prod (refused below as well).
++  case "${UBYPORT}" in
++    mock)
++      case ",${COMPOSE_PROFILES:-}," in
++        *,staging,*) ;;
++        *) die "staging on mock needs COMPOSE_PROFILES=staging in .env (starts the mock-ubyport service)" ;;
++      esac
++      case "${UBYHOST_MOCK_URL:-}" in
++        http://mock-ubyport:8081/*) ;;
++        *) die "staging on mock needs UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc" ;;
++      esac
++      ;;
++    test)
++      warn "staging talks to the real UbyPort test environment: test data and test credentials only"
++      ;;
++    *) die "UBYHOST_DEPLOYMENT=staging requires UBYHOST_UBYPORT_ENV=mock or test" ;;
++  esac
++  case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
++    *production*) die "staging must replicate to its own LITESTREAM_S3_PATH, not ${LITESTREAM_S3_PATH:-ubyhost/production}" ;;
++  esac
++elif [ "${DEPLOYMENT}" != "production" ]; then
++  warn "UBYHOST_DEPLOYMENT=${DEPLOYMENT} — this Lightsail stack is meant to be production or staging"
++fi
++
++case ",${COMPOSE_PROFILES:-}," in
++  *,staging,*)
++    if [ "${DEPLOYMENT}" = "production" ]; then
++      die "COMPOSE_PROFILES=staging on production would start the mock UbyPort"
++    fi
++    ;;
++esac
+ 
+ if [ "${UBYPORT}" = "prod" ] && [ "${DEPLOYMENT}" != "production" ]; then
+   die "UBYHOST_UBYPORT_ENV=prod requires UBYHOST_DEPLOYMENT=production"
+diff --git a/docs/DEPLOYMENT.md b/docs/DEPLOYMENT.md
+index 75bc781..82ef932 100644
+--- a/docs/DEPLOYMENT.md
++++ b/docs/DEPLOYMENT.md
+@@ -104,9 +104,13 @@ Use this whenever you ship a change that affects hosts or guests.
+ 
+ 1. **PR first.** Every change is pushed to a feature branch and opened as a pull
+    request. CI (tests + smoke) must pass on the PR.
+-2. **Staging** — Render → **`ubyhost-staging`** → Manual Deploy of the PR branch.
+-   Record the tested commit and obtain explicit product-owner approval using the
+-   checklist above.
++2. **Staging** — **Actions → Deploy staging → Run workflow** on the PR branch
++   (the staging Lightsail server; input `ubyport_env` is `mock` by default or
++   `test` for the real UbyPort test environment; see
++   `deploy/lightsail/README.md` "Staging server"), or Render →
++   **`ubyhost-staging`** → Manual Deploy. HIGH RISK changes always go to the
++   Lightsail staging server. Record the tested commit and obtain explicit
++   product-owner approval using the checklist above.
+ 3. **Merge the approved PR to `main`.** Nothing deploys on this merge: the
+    production workflow no longer runs on a push.
+ 4. **Production (Lightsail) — manual only.** Promote by running **Actions →
+-- 
+2.34.1
+
