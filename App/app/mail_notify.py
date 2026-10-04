@@ -1387,3 +1387,209 @@ def build_reminder_host(
             footer_lines=["UbyHost", footer],
         ),
     }
+
+
+# --- filing watchdog (WP23) ---------------------------------------------------
+#
+# filing_watchdog.py decides which stays are at risk and when to write; the
+# wording and the markup live here with the rest of the host mail.
+
+
+def _deadline_text(deadline: Any) -> str:
+    """The deadline as the mail prints it: the Czech date and the end of day."""
+    return f"{deadline.strftime('%d.%m.%Y')} {deadline.strftime('%H:%M')}"
+
+
+def build_deadline_at_risk(
+    *,
+    property_name: str,
+    arrival: str,
+    deadline: Any,
+    unfiled: int,
+    stay_url: str,
+    lang: Optional[str] = None,
+    no_guests: bool = False,
+) -> Dict[str, str]:
+    """The host's one warning that a stay may miss its police deadline.
+
+    ``no_guests`` is the variant for a stay with no guest on file yet, where
+    UbyHost cannot tell whether a report is due at all.
+    """
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    due = _deadline_text(deadline)
+    variant = "mail.deadline_at_risk.no_guests" if no_guests else "mail.deadline_at_risk"
+    subject = _text(lang, f"{variant}.subject", property=property_name, deadline=due)
+    preheader = _text(lang, f"{variant}.preheader", count=unfiled)
+    heading = _text(lang, f"{variant}.heading")
+    intro = _text(
+        lang, f"{variant}.intro",
+        property=property_name, arrival=arrival, deadline=due,
+    )
+    facts = [
+        (_text(lang, "mail.deadline_at_risk.property_label"), property_name),
+        (_text(lang, "mail.deadline_at_risk.arrival_label"), arrival),
+    ]
+    if not no_guests:
+        facts.append((_text(lang, "mail.deadline_at_risk.unfiled_label"), str(unfiled)))
+    facts.append((_text(lang, "mail.deadline_at_risk.deadline_label"), due))
+    next_label = _text(lang, "mail.deadline_at_risk.next_label")
+    next_steps = _text(lang, f"{variant}.next_steps")
+    manual_label = _text(lang, "mail.deadline_at_risk.manual_label")
+    manual = _text(lang, "mail.deadline_at_risk.manual")
+    action = _text(lang, "mail.deadline_at_risk.action_stay")
+    fallback = _guest_text(lang, "mail_link_fallback")
+    footer = _text(lang, f"{variant}.footer")
+
+    extra_blocks = [_block_link(stay_url, fallback)]
+    extra_blocks += [_block_fact(label, value) for label, value in facts]
+    extra_blocks.append(_block_section(next_label, next_steps))
+    extra_blocks.append(_block_note(manual_label, manual))
+    blocks = _guest_blocks(
+        heading=heading,
+        intro=intro,
+        action_url=stay_url,
+        action_label=action,
+        extra_blocks=extra_blocks,
+    )
+    text_lines = [intro, ""]
+    text_lines += [f"{label}: {value}" for label, value in facts]
+    text_lines += [
+        "",
+        f"{next_label}: {next_steps}",
+        "",
+        f"{manual_label}: {manual}",
+        "",
+        f"{action}: {stay_url}",
+        "",
+        "--",
+        "UbyHost",
+        footer,
+    ]
+    return {
+        "subject": subject,
+        "text": "\n".join(text_lines),
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=preheader,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }
+
+
+# The digest lists at most this many stays; the rest are counted. A longer
+# list would mean something is broken for everyone, and the count says so.
+DEADLINE_DIGEST_MAX_ROWS = 50
+
+
+def _block_table(header: List[str], rows: List[List[str]]) -> str:
+    cell = f"padding:6px 8px;border-bottom:1px solid {LINE};text-align:left;"
+    head = "".join(
+        f'<th style="{cell}font:600 13px/1.4 {_FONT};color:{INK};">{_esc(h)}</th>'
+        for h in header
+    )
+    body = "".join(
+        "<tr>"
+        + "".join(
+            f'<td style="{cell}font:400 13px/1.4 {_FONT};color:{INK_SECONDARY};">{_esc(v)}</td>'
+            for v in row
+        )
+        + "</tr>"
+        for row in rows
+    )
+    return (
+        '<tr><td style="padding:20px 24px 0 24px;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'border="0" style="border-collapse:collapse;">'
+        f"<tr>{head}</tr>{body}</table></td></tr>"
+    )
+
+
+def _digest_section(
+    lang: str, stays: List[Dict[str, Any]], columns: Tuple[str, ...]
+) -> Tuple[List[str], List[List[str]], str]:
+    """Header, rows (at most DEADLINE_DIGEST_MAX_ROWS) and the "and N more" line."""
+    header = [_text(lang, f"mail.deadline_digest.col_{column}") for column in columns]
+    shown = stays[:DEADLINE_DIGEST_MAX_ROWS]
+    rows = []
+    for stay in shown:
+        values = {
+            "workspace": stay.get("workspace") or "",
+            "property": stay.get("property") or "",
+            "arrival": stay["arrival"].strftime("%d.%m.%Y"),
+            "deadline": _deadline_text(stay["deadline"]),
+            "unfiled": str(stay.get("unfiled", 0)),
+        }
+        rows.append([values[column] for column in columns])
+    hidden = len(stays) - len(shown)
+    more = _text(lang, "mail.deadline_digest.more", count=hidden) if hidden else ""
+    return header, rows, more
+
+
+def build_deadline_digest(
+    stays: List[Dict[str, Any]],
+    lang: Optional[str] = None,
+    unknown: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, str]:
+    """The operator's digest of every stay at risk, across all workspaces.
+
+    Each row names the workspace, the property, the arrival, the deadline and
+    how many guests are not filed. It never names a guest. ``unknown`` lists
+    stays with no guest on file in a section of their own, without a count.
+    """
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    unknown = unknown or []
+    if unknown:
+        subject = _text(
+            lang, "mail.deadline_digest.subject_unknown", count=len(stays), unknown=len(unknown)
+        )
+    else:
+        subject = _text(lang, "mail.deadline_digest.subject", count=len(stays))
+    heading = _text(lang, "mail.deadline_digest.heading")
+    intro = _text(lang, "mail.deadline_digest.intro")
+    footer = _text(lang, "mail.deadline_digest.footer")
+    blocks = [_block_heading(heading)]
+    text_lines: List[str] = []
+    if stays:
+        header, rows, more = _digest_section(
+            lang, stays, ("workspace", "property", "arrival", "deadline", "unfiled")
+        )
+        blocks += [_block_paragraph(intro), _block_table(header, rows)]
+        if more:
+            blocks.append(_block_paragraph(more, muted=True))
+        text_lines += [intro, "", " | ".join(header)]
+        text_lines += [" | ".join(row) for row in rows]
+        if more:
+            text_lines += ["", more]
+    if unknown:
+        unknown_heading = _text(lang, "mail.deadline_digest.unknown_heading")
+        unknown_intro = _text(lang, "mail.deadline_digest.unknown_intro")
+        header, rows, more = _digest_section(
+            lang, unknown, ("workspace", "property", "arrival", "deadline")
+        )
+        blocks += [
+            _block_heading(unknown_heading),
+            _block_paragraph(unknown_intro),
+            _block_table(header, rows),
+        ]
+        if more:
+            blocks.append(_block_paragraph(more, muted=True))
+        if text_lines:
+            text_lines.append("")
+        text_lines += [unknown_heading, unknown_intro, "", " | ".join(header)]
+        text_lines += [" | ".join(row) for row in rows]
+        if more:
+            text_lines += ["", more]
+    text_lines += ["", "--", "UbyHost", footer]
+    return {
+        "subject": subject,
+        "text": "\n".join(text_lines),
+        "html": _shell(
+            lang=lang,
+            title=heading,
+            preheader=intro if stays else _text(lang, "mail.deadline_digest.unknown_intro"),
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }

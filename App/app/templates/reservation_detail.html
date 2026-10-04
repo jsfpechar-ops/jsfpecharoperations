@@ -170,7 +170,10 @@
           {% if guest.restricted_at %}
             <span class="pill amber">{{ t('guest.restricted_badge') }}</span>
           {% endif %}
-          {% if guest.submit_state == 'sent' %}
+          {% if guest.submit_state == 'sent' and guest.manual_filed_at %}
+            <span class="pill green">{{ t('stay.detail.guests.filed_by_hand') }}</span>
+            <span class="small muted">{{ guest.manual_filed_at | datetime_local }}</span>
+          {% elif guest.submit_state == 'sent' %}
             <span class="pill green">{{ t('stay.detail.guests.reported') }}</span>
             {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at | datetime_local }}</span>{% endif %}
           {% elif guest.submit_state == 'not_required' %}
@@ -331,6 +334,39 @@
     </div>
   </div>
   </div>
+  {# WP23: the host filed this stay in the UbyPort web application. #}
+  {% if hand_filing.count %}
+  <div class="panel" id="filed-by-hand">
+    <p><strong>{{ t('stay.hand_filing.done', when=hand_filing.filed_at.strftime('%d.%m.%Y %H:%M')) }}</strong></p>
+    {% if hand_filing.reference %}<p class="small muted">{{ t('stay.hand_filing.done_reference', reference=hand_filing.reference) }}</p>{% endif %}
+    {% if hand_filing.can_undo %}
+    <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand/undo" class="inline"
+          data-confirm data-confirm-message="{{ t('stay.hand_filing.undo_confirm') }}">
+      <button class="btn small" type="submit">{{ t('stay.hand_filing.undo') }}</button>
+      <span class="small muted">{{ t('stay.hand_filing.undo_until', when=hand_filing.undo_until.strftime('%d.%m. %H:%M')) }}</span>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if hand_filing.candidates and not stay_inactive %}
+  <details class="panel" id="file-by-hand">
+    <summary>{{ t('stay.hand_filing.open') }}</summary>
+    <p class="small muted">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
+    <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">
+      <div class="field">
+        <label for="hand_filed_at">{{ t('stay.hand_filing.filed_at') }}</label>
+        <input type="datetime-local" id="hand_filed_at" name="filed_at" value="{{ hand_filing.default_filed_at }}" max="{{ hand_filing.default_filed_at }}" required>
+      </div>
+      <div class="field">
+        <label for="hand_reference">{{ t('stay.hand_filing.reference') }}</label>
+        <input type="text" id="hand_reference" name="reference" maxlength="200" autocomplete="off">
+        <div class="hint">{{ t('stay.hand_filing.reference_hint') }}</div>
+      </div>
+      <p class="small muted">{{ t('stay.hand_filing.covers', count=hand_filing.candidates) }}</p>
+      <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('stay.hand_filing.confirm') }}</button></div>
+    </form>
+  </details>
+  {% endif %}
   {% if submissions %}
   <div class="panel tight scroll-x">
     <table class="table-cards">

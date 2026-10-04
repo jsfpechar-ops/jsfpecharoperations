@@ -126,6 +126,14 @@ SUBMIT_SWEEP_MINUTES = int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10"))
 HEARTBEAT_URL = os.environ.get("UBYHOST_HEARTBEAT_URL", "").strip()
 HEARTBEAT_ICAL_URL = os.environ.get("UBYHOST_HEARTBEAT_ICAL_URL", "").strip()
 HEARTBEAT_MAIL_URL = os.environ.get("UBYHOST_HEARTBEAT_MAIL_URL", "").strip()
+# Filing watchdog (WP23). Unlike the three above, this one is pinged on every
+# run of the deadline job: <url> while no stay is at risk of missing its police
+# deadline, <url>/fail while at least one is (healthchecks.io semantics). The
+# healthchecks.io check then notifies the owner by e-mail. That mail comes from
+# healthchecks.io, not from UbyHost's own mail, so it still arrives when
+# UbyHost's mail is broken, and it fires on the missing ping when the VM is
+# down. Empty disables it.
+HEARTBEAT_FILING_URL = os.environ.get("UBYHOST_HEARTBEAT_FILING_URL", "").strip()
 
 # Used to build the guest permalink shown to hosts for copy/paste.
 PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")

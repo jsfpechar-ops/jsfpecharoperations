@@ -1589,6 +1589,7 @@ def reservation_detail(reservation_id: int, request: Request):
                 f"{config.PUBLIC_BASE_URL}/l/{reservation['permalink_token']}/{reservation_id}"
             ),
             "stay_claim": claim.ensure_row(reservation_id),
+            "hand_filing": reporting.hand_filing_view(progress),
         },
     )
 
@@ -1763,6 +1764,52 @@ async def reservation_release_claim(reservation_id: int, request: Request):
     claim.release(reservation_id)
     db.audit("guest_claim_released", f"reservation={reservation_id}")
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.claim_released"))
+
+
+@router.post("/reservations/{reservation_id}/filed-by-hand")
+async def reservation_filed_by_hand(reservation_id: int, request: Request):
+    """WP23: the host filed this stay in the UbyPort web application."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    back = f"/reservations/{reservation_id}#reports"
+    form = await request.form()
+    filed_at = reporting.parse_manual_filed_at(_form_str(form, "filed_at") or "")
+    if not filed_at:
+        return _back(back, err=_flash(request, "flash.error.hand_filing_time"))
+    reference = reporting.clean_manual_reference(_form_str(form, "reference"))
+    result = reporting.mark_filed_by_hand(reservation_id, filed_at, reference)
+    if not result["marked"]:
+        key = "flash.error.hand_filing_busy" if result["busy"] else "flash.error.hand_filing_nothing"
+        return _back(back, err=_flash(request, key))
+    # No guest data in the audit row: ids, counts and the host's own reference.
+    db.audit(
+        "stay_filed_manually",
+        f"reservation={reservation_id} guests={result['marked']} filed_at={filed_at}"
+        + (f" busy={result['busy']}" if result["busy"] else "")
+        + (f" reference={reference}" if reference else ""),
+    )
+    return _back(back, msg=_flash(request, "flash.hand_filing.marked"))
+
+
+@router.post("/reservations/{reservation_id}/filed-by-hand/undo")
+async def reservation_filed_by_hand_undo(reservation_id: int, request: Request):
+    """WP23: take back a "filed by hand" mark made by mistake, within 24 hours."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    back = f"/reservations/{reservation_id}#reports"
+    undone = reporting.undo_filed_by_hand(reservation_id)
+    if not undone:
+        return _back(back, err=_flash(request, "flash.error.hand_filing_undo_closed"))
+    db.audit("stay_filed_manually_undone", f"reservation={reservation_id} guests={len(undone)}")
+    return _back(back, msg=_flash(request, "flash.hand_filing.undone"))
 
 
 @router.post("/reservations/{reservation_id}/submit")

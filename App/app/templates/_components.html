@@ -229,7 +229,10 @@
    filed, and whether that was late. Nothing for a stay with no deadline. #}
 {% macro deadline_badge(cell, tag='span', extra_class='') -%}
   {%- set classes = (' ' ~ extra_class) if extra_class else '' -%}
-  {%- if cell.state == 'filed_on_time' -%}
+  {%- if cell.by_hand and cell.state in ('filed_on_time', 'filed_late') -%}
+    {#- Filed by the host in the UbyPort web application: say so, late or not. -#}
+    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ t('deadline.filed_by_hand', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+  {%- elif cell.state == 'filed_on_time' -%}
     <{{ tag }} class="deadline{{ classes }} done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
   {%- elif cell.state == 'filed_late' -%}
     <{{ tag }} class="deadline{{ classes }} neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">

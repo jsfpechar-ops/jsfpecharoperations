@@ -2,7 +2,7 @@
 
 * The house book keeps every word whole and truncates the property name with
   the full name in a tooltip, inside a sideways-scrolling panel.
-* A filed guest shows one "Download signed
+* A filed guest (sent by UbyHost or filed by hand) shows one "Download signed
   form" button, a read-only signature with no Clear, and disabled reported
   fields; the save route refuses a change to any of them even when the form
   is posted by hand, and still saves what never went to the police.
@@ -105,6 +105,7 @@ def seeded():
         )
 
     filed = guest("FILED", submit_state="sent", submitted_at=now)
+    by_hand = guest("BYHAND", submit_state="sent", manual_filed_at=now)
     pending = guest("PENDING", submit_state="pending")
     with_pdf = db.insert(
         "submission",
@@ -145,6 +146,7 @@ def seeded():
         "owner": owner,
         "reservation": reservation,
         "filed": filed,
+        "by_hand": by_hand,
         "pending": pending,
         "with_pdf": with_pdf,
         "without_pdf": without_pdf,
@@ -198,7 +200,7 @@ def test_download_signed_form_appears_once(client, seeded):
         assert page.count(f'href="/guests/{seeded[key]}/form.pdf"') == 1
 
 
-@pytest.mark.parametrize("key", ["filed"])
+@pytest.mark.parametrize("key", ["filed", "by_hand"])
 def test_filed_guest_shows_signature_read_only(client, seeded, key):
     page = client.get(f"/guests/{seeded[key]}?lang=en").text
     en = host_i18n.STRINGS["en"]
@@ -229,7 +231,7 @@ def test_pending_guest_keeps_the_signature_pad(client, seeded):
     assert ' disabled aria-describedby="filed-lock-note"' not in page
 
 
-@pytest.mark.parametrize("key", ["filed"])
+@pytest.mark.parametrize("key", ["filed", "by_hand"])
 @pytest.mark.parametrize(
     "change",
     [
@@ -275,7 +277,7 @@ def test_filed_record_unchanged_post_saves_only_the_unreported_field(client, see
 
 def test_disabled_form_post_saves_the_document_type(client, seeded):
     """The locked form posts no reported field at all; that is not a change."""
-    guest_id = seeded["filed"]
+    guest_id = seeded["by_hand"]
     before = dict(_guest(guest_id))
     response = client.post(
         f"/guests/{guest_id}", data={"doc_type": "op"}, follow_redirects=False
@@ -284,7 +286,7 @@ def test_disabled_form_post_saves_the_document_type(client, seeded):
     after = dict(_guest(guest_id))
     assert after["doc_type"] == "op"
     assert after["surname"] == before["surname"]
-    assert after["submit_state"] == before["submit_state"]
+    assert after["manual_filed_at"] == before["manual_filed_at"]
 
 
 def test_pending_guest_can_still_be_corrected(client, seeded):
@@ -339,7 +341,7 @@ def test_report_texts_have_no_em_dash():
 def test_stay_page_offers_the_doručenka(client, seeded):
     # Everyone on the stay filed: the next step is the proof.
     db.execute("DELETE FROM guest WHERE id = ?", (seeded["pending"],))
-    db.update("reservation", seeded["reservation"], {"declared_guests": 1})
+    db.update("reservation", seeded["reservation"], {"declared_guests": 2})
     page = client.get(f"/reservations/{seeded['reservation']}?lang=en").text
     assert f'href="/submissions/{seeded["with_pdf"]}/receipt.pdf">Download Doručenka (PDF)</a>' in page
 

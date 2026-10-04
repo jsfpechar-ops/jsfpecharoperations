@@ -35,6 +35,8 @@ KINDS = (
     "invoice_issued",
     "workspace_deletion",
     "cancelled_with_guests",
+    "deadline_at_risk",
+    "deadline_digest",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -56,6 +58,10 @@ HOST_KINDS = (
     "submission_problem",
     "workspace_deletion",
     "cancelled_with_guests",
+    # WP23 filing watchdog: the host's one warning per stay, and the operator's
+    # digest. Neither goes to a guest.
+    "deadline_at_risk",
+    "deadline_digest",
 )
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")

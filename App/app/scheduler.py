@@ -12,6 +12,7 @@ from . import (
     claim,
     config,
     dsr,
+    filing_watchdog,
     host_i18n,
     icalsync,
     mail,
@@ -97,6 +98,7 @@ def _ping(url: str, job_id: str) -> None:
 
 
 def _job_deadlines() -> None:
+    watch_ok = True
     try:
         raised = reporting.check_deadlines()
         due_requests = dsr.raise_due_alerts()
@@ -109,8 +111,31 @@ def _job_deadlines() -> None:
     except Exception:
         log.exception("deadline watch failed")
         _job_failed("deadlines")
+        watch_ok = False
+    # WP23: the filing watchdog runs even when the alert pass above failed,
+    # because its mails and its heartbeat are what reach the owner when the
+    # app itself is not being looked at.
+    try:
+        watchdog = filing_watchdog.run()
+        if (
+            watchdog["at_risk"] or watchdog.get("unknown_risk") or watchdog.get("awaiting_retry")
+            or watchdog["host_mails"] or watchdog["digest"]
+        ):
+            log.info("filing watchdog: %s", watchdog)
+    except Exception:
+        # No ping at all: the external monitor alerts on the missing ping.
+        log.exception("filing watchdog failed")
+        _job_failed("deadlines")
         return
-    _job_ok("deadlines")
+    if watch_ok:
+        _job_ok("deadlines")
+    # A failed deadline watch counts as a failure too: nobody is being told.
+    _filing_heartbeat(watchdog["at_risk"] > 0 or not watch_ok)
+
+
+def _filing_heartbeat(at_risk: bool) -> None:
+    """Ping the filing dead-man switch: <url> when all is well, <url>/fail if not."""
+    _ping(filing_watchdog.heartbeat_url(at_risk), "filing")
 
 
 def _job_mail() -> None:

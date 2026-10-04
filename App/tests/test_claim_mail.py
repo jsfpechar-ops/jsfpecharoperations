@@ -1799,6 +1799,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "invoice_issued",
         "workspace_deletion",
         "cancelled_with_guests",
+        "deadline_at_risk",
+        "deadline_digest",
     }
 
 

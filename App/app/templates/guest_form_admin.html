@@ -51,7 +51,7 @@
 {% if editing and guest.submit_state == 'sent' %}
   <div class="banner info">
     <div class="grow">
-      <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
+      <strong>{% if guest.manual_filed_at %}{{ t('guest.admin.banner.filed_by_hand', at=guest.manual_filed_at | datetime_local) }}{% elif guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
       <small id="filed-lock-note">{{ t('guest.admin.banner.sent_help') }}</small>
     </div>
   </div>

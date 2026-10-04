@@ -120,8 +120,14 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "blocked": "NO - rejected, cannot be corrected",
         "pending": "not yet",
     }.get(row["submit_state"], row["submit_state"])
+    by_hand = reporting.guest_filed_by_hand(row)
+    if by_hand:
+        # WP23: the host filed this guest in the UbyPort web application.
+        reported = "yes - filed by hand in UbyPort"
     stamp = ""
-    if row["submission_id"]:
+    if by_hand:
+        stamp = row["manual_reference"] or ""
+    elif row["submission_id"]:
         sub = db.query_one("SELECT pseudo_stamp FROM submission WHERE id = ?", (row["submission_id"],))
         stamp = (sub["pseudo_stamp"] if sub else "") or ""
     return {
@@ -142,7 +148,7 @@ def _housebook_export_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "note": row["note"] or "",
         "signed": "yes" if reporting.guest_has_signature(row) else "no",
         "reported": reported,
-        "reported_at": row["submitted_at"] or "",
+        "reported_at": (row["manual_filed_at"] if by_hand else row["submitted_at"]) or "",
         "stamp": stamp,
         "_guest_id": row["id"],
         "_apartment_id": row["apartment_id"],
@@ -376,11 +382,18 @@ def registration_form_pdf(guest_id: int) -> bytes:
     }
     pdf.setFont(FONT_REGULAR, 9)
     pdf.setFillGray(0)
-    pdf.drawRightString(width - 20 * mm, y - 7 * mm,
-                        status_map.get(guest["submit_state"], guest["submit_state"]))
-    if guest["submitted_at"]:
+    by_hand = reporting.guest_filed_by_hand(guest)
+    status = status_map.get(guest["submit_state"], guest["submit_state"])
+    if by_hand:
+        status = "Reported to the Foreign Police (filed by hand in UbyPort)"
+    pdf.drawRightString(width - 20 * mm, y - 7 * mm, status)
+    filed = guest["manual_filed_at"] if by_hand else guest["submitted_at"]
+    if filed:
         pdf.setFillGray(0.4)
-        pdf.drawRightString(width - 20 * mm, y - 12 * mm, f"at {guest['submitted_at']}")
+        line = f"at {filed}"
+        if by_hand and guest["manual_reference"]:
+            line += f", ref. {guest['manual_reference']}"
+        pdf.drawRightString(width - 20 * mm, y - 12 * mm, line)
 
     if guest["notice_version"]:
         pdf.setFont(FONT_REGULAR, 7)

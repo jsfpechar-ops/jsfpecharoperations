@@ -713,6 +713,18 @@ ADDED_COLUMNS = (
     ("guest", "fee_host_reason_enc", "TEXT"),
     ("guest", "fee_host_reason_reference", "TEXT"),
     ("submission", "retried_at", "TEXT"),
+    # WP23: when the filing watchdog mailed the host that this stay may miss
+    # its police deadline. Set once; the host is warned once per stay.
+    ("reservation", "at_risk_mailed_at", "TEXT"),
+    # WP23: a guest the host filed by hand in the UbyPort web application. The
+    # guest is then ``sent`` like any filed guest, so every "already filed"
+    # guard holds; these columns say it was by hand, when (UTC), with which
+    # receipt or reference, when the mark was made (for the 24 hour undo) and
+    # which state the undo restores.
+    ("guest", "manual_filed_at", "TEXT"),
+    ("guest", "manual_reference", "TEXT"),
+    ("guest", "manual_marked_at", "TEXT"),
+    ("guest", "manual_prev_state", "TEXT"),
 )
 
 # The reverted 26 Sep 2026 stay-fee build (AR-55) used some of the same column

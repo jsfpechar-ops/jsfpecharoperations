@@ -17,6 +17,8 @@ def sent_guest_count(owner_user_id: Optional[int] = None) -> int:
         JOIN reservation r ON r.id = g.reservation_id
         JOIN apartment a ON a.id = r.apartment_id
         WHERE g.submit_state = 'sent'
+          -- WP23: a guest filed by hand in UbyPort saved the host nothing.
+          AND g.manual_filed_at IS NULL
           AND (? IS NULL OR a.owner_user_id = ?)
         """,
         (owner_user_id, owner_user_id),

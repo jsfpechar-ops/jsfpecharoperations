@@ -56,6 +56,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
 | `UBYHOST_HEARTBEAT_ICAL_URL` | unset | Pinged after each successful calendar sync (WP07). |
 | `UBYHOST_HEARTBEAT_MAIL_URL` | unset | Pinged after each mail run in which every step succeeded (WP07). |
+| `UBYHOST_HEARTBEAT_FILING_URL` | unset | Filing watchdog (WP23, `app/filing_watchdog.py`). Pinged on every deadline-job run: `<url>` when no stay is at risk of missing its police deadline, `<url>/fail` when at least one stay with a known reportable guest is (healthchecks.io semantics). Stays with no guest entered never cause `/fail`. Not pinged when the watchdog itself fails. The operator digest of at-risk stays goes to `UBYHOST_OPERATOR_EMAIL`, at most every 6 hours. |
 
 The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 (12 h) intervals are not configurable. See
