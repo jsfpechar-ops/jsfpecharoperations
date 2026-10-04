@@ -6,6 +6,8 @@ This file is the **reference** (tables, gates, preflight rules). Cursor applies 
 
 **Do first (not tied to a patch):** Ask the Foreign Police / UbyPort support for access to the **UbyPort test environment** so Gate 2 is not blocked waiting on them.
 
+**Core function (read once):** **[../../UBYPORT_CORE.md](../../UBYPORT_CORE.md)** — filing to UbyPort and receiving/storing the Doručenka PDF is the one thing that must never be wrong. Backups, Litestream, mail, and UI can wait; broken police reporting cannot.
+
 **Already true on production (ubyhost.com):** Guest and host mail via **SES** has been live since 2026-09-21. Keep `UBYHOST_MAIL_BACKEND=ses` and the existing SES variables in the server `.env`; do not revert to `disabled`. **healthchecks.io** dead-man pings are already configured if your checks are green—no need to send ping URLs to Cursor or commit them anywhere (they stay only in `.env` on the server).
 
 ---

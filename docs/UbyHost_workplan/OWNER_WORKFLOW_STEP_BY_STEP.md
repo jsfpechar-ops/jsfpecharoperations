@@ -9,6 +9,8 @@ Technical reference stays there; **do this document in order** when you roll out
 |-------|------------|-----------------|
 | **GitHub** | Code and deploy buttons | Merge PRs; deploy **production** |
 | **Render** | Staging website (fake police) | Test UI after changes |
+
+**Core function:** Police reporting through UbyPort (correct send, correct response, Doručenka PDF) is the only part of the product that must not break. Everything in this playbook supports that. Policy: **[../../UBYPORT_CORE.md](../../UBYPORT_CORE.md)**.
 | **Lightsail + SSH** | Production server | Edit `.env`, run restore test, read logs |
 
 Production site: **https://ubyhost.com** (Lightsail).  

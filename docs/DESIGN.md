@@ -3,6 +3,18 @@
 This document records product-owner decisions for anyone changing the interface
 (host app, guest forms, auth screens, e-mail HTML, or design tooling).
 
+## Core product function: UbyPort reporting
+
+The only part of UbyHost that **cannot break** is end-to-end **police
+reporting**: correct guest data sent to UbyPort, a correct response parsed
+(errors, stamp, Doručenka PDF), and the host shown truthful filing status.
+Design, mail, backups, and staging exist around that duty.
+
+Full rules, affected features, gates, and deploy expectations:
+**[UBYPORT_CORE.md](UBYPORT_CORE.md)**. Any guest-form or host-report change
+that could alter what gets filed or how success is shown must be checked against
+that document, not only against layout tests.
+
 ## Signed-in host app: selected redesign
 
 **[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.

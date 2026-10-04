@@ -1,6 +1,6 @@
 # UbyHost work plan for Cursor
 
-Read this file first, then `AGENTS.md`, then the notes for the work package (WP) you are asked to do.
+Read this file first, then `AGENTS.md` and **[../../UBYPORT_CORE.md](../../UBYPORT_CORE.md)** (police reporting is the core function and must not regress), then the notes for the work package (WP) you are asked to do.
 
 ## What is here
 
@@ -97,6 +97,7 @@ The owner is not a developer. Each gate is something he can see on staging. Do n
 
 ## Permanent rules
 
+0. **UbyPort filing correctness is non-negotiable.** Correct `ZapisUbytovane` requests, response parsing, Doručenka PDF storage, and no double-filing outweigh any other goal. See `docs/UBYPORT_CORE.md`. HIGH-risk WPs in the filing row (0006, 0007, 0018, …) need explicit filing tests and owner Gate 2 when the workplan says so.
 1. Do only what the WP says. Anything else that looks wrong goes in the PR under "Noticed, not changed".
 2. Match the existing code style. No new dependency.
 3. Never commit secrets, operator identity, real guest data or `.env` values (AGENTS.md).

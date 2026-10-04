@@ -15,6 +15,13 @@ staging instance kept its configured `mock` value; verify
 
 Use Render for mock demos and UX checks. Run live reporting only on Lightsail.
 
+**Core function:** UbyPort filing and Doručenka PDF handling must stay correct
+on every production deploy. See **[UBYPORT_CORE.md](UBYPORT_CORE.md)**. Do not
+treat green CI alone as enough when the release touches `ubyport/`, the worker
+submit path, or guest fields mapped to the police register — use UbyPort **test**
+and owner **Gate 2** (test filing + PDF download) before widening traffic or
+switching to `prod`.
+
 | Tier | Host | `UBYHOST_DEPLOYMENT` | `UBYHOST_UBYPORT_ENV` | Disk | Purpose |
 |------|------|----------------------|------------------------|------|---------|
 | **Local** | — | `local` (default) | `mock` | `./App/data` | Development on your laptop |

@@ -2,6 +2,13 @@
 
 Before changing UbyHost’s user interface, read **[docs/DESIGN.md](docs/DESIGN.md)**.
 
+**UbyPort filing is the core function.** Police reporting (`ZapisUbytovane`),
+correct SOAP, stored Doručenka PDFs, and honest submission state must not
+regress. Read **[docs/UBYPORT_CORE.md](docs/UBYPORT_CORE.md)** before any change
+to `App/app/ubyport/`, submission/claim/automation that files stays, or guest
+data that maps to UbyPort fields. Optional features (backups, mail, UI) never
+outrank filing correctness.
+
 **Dark mode:** Do not add or restore dark mode, system-theme switching, or
 `prefers-color-scheme` dark styling unless the product owner explicitly requests
 it in the current task. UbyHost is light-mode only by policy.
