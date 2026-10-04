@@ -27,7 +27,7 @@
 <div class="host-property-grid">
   {% for anchor, icon, key, hint in [('calendars', 'calendar', 'host.bookings', 'apartment.form.calendars.lede'), ('communication', 'link', 'nav.guest_links', ''), ('ubyport', 'report', 'host.reporting', ''), ('basics', 'entity', 'host.business', ''), ('stay-fee-settings', 'coins', 'host.fee', ''), ('address', 'property', 'host.property_details', '')] %}
   <a class="host-property-card" href="#{{ anchor }}">{{ nav_icon(icon) }}<div><strong>{{ t(key) }}</strong>
-    {% if anchor == 'calendars' %}<small>{{ feeds | length }} {{ t('apartments.table.calendars') | lower }}</small>{% endif %}
+    {% if anchor == 'calendars' %}<small>{{ tp('apartment.form.calendars_count', feeds | length) }}</small>{% endif %}
     {% if anchor == 'basics' %}{% for entity in entities %}{% if entity.id == apartment.legal_entity_id %}<small>{{ entity.name }}</small>{% endif %}{% endfor %}{% endif %}
     {% if anchor == 'stay-fee-settings' %}<small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small>{% endif %}
   </div><span aria-hidden="true">→</span></a>
@@ -467,7 +467,7 @@
   <div>
     {% if feeds %}
     <div class="panel tight scroll-x">
-      <table class="table-cards">
+      <table class="table-cards feed-table">
         <thead><tr><th>{{ t('apartment.form.feed.name') }}</th><th>{{ t('apartment.form.feed.portal') }}</th><th>{{ t('apartment.form.feed.last_sync') }}</th><th>{{ t('apartment.form.feed.url') }}</th><th></th></tr></thead>
         <tbody>
         {% for feed in feeds %}

@@ -945,6 +945,10 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .row-primary-link { color: var(--ink); font-weight: 650; text-decoration: none; }
 .clickable-row:hover .row-primary-link { color: var(--brand); }
 .scroll-x { overflow-x: auto; }
+/* .panel.tight clips its corners with overflow: hidden, which outranks the
+   single-class .scroll-x and cut off the right-hand columns (row actions)
+   of every wide table instead of letting it scroll. */
+.panel.tight.scroll-x { overflow-x: auto; }
 /* Eleven columns of legal record. The columns holding free text need a width
    floor of their own, or the browser spends the room on the short ones and
    folds every name onto three lines. Past that the table scrolls sideways. */
@@ -1018,7 +1022,8 @@ label { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink-2)
 label .opt { font-weight: 400; color: var(--faint); text-transform: none; }
 
 input:not([type]), input[type=text], input[type=password], input[type=date], input[type=number],
-input[type=email], input[type=url], input[type=file], select, textarea {
+input[type=email], input[type=url], input[type=file], input[type=tel],
+input[type=datetime-local], input[type=search]:not([data-command-input]), select, textarea {
   width: 100%;
   padding: 11px 13px;
   border: 1px solid var(--line-2);
@@ -1478,6 +1483,7 @@ textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
 .metric-value { font-size: 21px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink); margin-top: 6px; }
 .metric-value.small-value { font-size: 15px; font-weight: 600; }
 .metric-value.deadline { font-size: 21px; font-weight: 700; }
+.metric-value.deadline.overdue { display: inline-block; }  /* a pill, not a full-width bar */
 .metric-note { color: var(--muted); font-size: 13px; margin-top: 5px; }
 
 /* The stay page has one clear action area. Secondary metadata editing stays
@@ -1731,6 +1737,7 @@ details.raw pre {
 
 .message-template {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;  /* the guest link is one long word on a phone */
   padding: 14px;
   border-radius: var(--radius-sm);
   background: var(--surface-3);
@@ -1750,6 +1757,9 @@ details.raw pre {
 
 .err-text { color: var(--bad); }
 .truncate { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The calendar table shares its row with the connect form, so the feed URL
+   gives up width to keep the Remove button in view. */
+@media (min-width: 721px) { .feed-table .truncate { max-width: 200px; } }
 @media (max-width: 720px) { .truncate { max-width: none; white-space: normal; overflow-wrap: anywhere; } }
 
 .action-panel { margin-bottom: 18px; }
@@ -2834,6 +2844,9 @@ input[type=number],
 input[type=email],
 input[type=url],
 input[type=file],
+input[type=tel],
+input[type=datetime-local],
+input[type=search]:not([data-command-input]),
 select,
 textarea {
   min-height: 42px;

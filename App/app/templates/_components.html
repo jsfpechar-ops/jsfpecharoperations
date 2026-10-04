@@ -279,7 +279,7 @@
           title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
 {% endmacro %}
 
-{% macro onboarding_finish(onboarding) %}
+{% macro onboarding_finish(onboarding, show_toggle=True) %}
   {% if onboarding and onboarding.finished and onboarding.finish %}
     {% set finish = onboarding.finish %}
     <section class="onboarding-finish" aria-label="{{ t('onboarding.finish_title') }}">
@@ -310,7 +310,10 @@
       <div class="onboarding-finish-actions">
         <a class="btn primary" href="{{ finish.communication_url }}">{{ t('onboarding.finish_open_communication') }}</a>
         <a class="btn" href="/l/{{ finish.permalink_token }}" target="_blank" rel="noopener">{{ t('onboarding.finish_preview') }}</a>
-        {% if not onboarding.dismissed %}
+        {# On /onboarding the header meter already carries Skip / Reopen, so the
+           finish card leaves it out instead of printing the same button twice. #}
+        {% if not show_toggle %}
+        {% elif not onboarding.dismissed %}
           <form method="post" action="/onboarding/dismiss">
             <input type="hidden" name="return_to" value="{{ request.url.path }}">
             <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
@@ -398,7 +401,7 @@
     </header>
 
     {% if onboarding.finished %}
-      {{ onboarding_finish(onboarding) }}
+      {{ onboarding_finish(onboarding, show_toggle=False) }}
     {% elif onboarding.current %}
       <div class="onboarding-now">
         <div class="onboarding-now-label">

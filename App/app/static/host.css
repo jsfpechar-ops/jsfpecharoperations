@@ -63,7 +63,10 @@
 .host-workspace td { padding: 14px 16px; vertical-align: middle; }
 .host-workspace th { padding: 12px 16px; }
 .host-workspace .row-primary-link { font-weight: 700; }
-.host-workspace .table-cards td, .host-workspace .guest-facts dd { overflow-wrap: anywhere; }
+/* break-word, not anywhere: anywhere lets a table shrink a column below its
+   longest word, which printed "Airbn b" and split e-mail addresses. */
+.host-workspace .table-cards td { overflow-wrap: break-word; }
+.host-workspace .guest-facts dd { overflow-wrap: anywhere; }
 .host-workspace .mono { font-size: 12px; }
 .host-local-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--line); padding: 0 0 14px; margin-bottom: 26px; }
 .host-local-nav > a, .host-tools > summary { padding: 9px 12px; border-radius: 8px; color: var(--ink-secondary); text-decoration: none; font-size: 13px; font-weight: 650; min-height: 40px; cursor: pointer; }
@@ -98,7 +101,7 @@
 .host-workspace .guest-facts dt { font-size: 11px; color: var(--muted); }
 .host-workspace .guest-facts dd { font-size: 13px; color: var(--ink); margin-top: 4px; }
 .host-workspace .guest-card.placeholder { background: #fafbf8; border-style: dashed; }
-.host-workspace .guest-card.placeholder .guest-card-head { border: 0; }
+.host-workspace .guest-card.placeholder .guest-card-head { border: 0; padding-bottom: 16px; }
 .host-workspace .guest-card-note, .host-workspace .guest-card-action { margin: 12px 20px; }
 .host-property-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
 .host-property-card { background: white; padding: 20px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; display: flex; gap: 14px; align-items: center; }
@@ -151,6 +154,7 @@
   .host-workspace .btn, .host-workspace .btn.small { min-height: 44px; }
   .host-property-grid { grid-template-columns: 1fr; }
   .host-workspace .guest-card-head { padding: 15px; gap: 12px; }
+  .host-workspace .guest-card.placeholder .guest-card-head { padding-bottom: 15px; }
   .host-workspace .guest-facts { padding: 15px; gap: 14px; }
   .host-workspace .guest-facts .fact-wide { grid-column: 1 / -1; }
   .host-workspace .detail-metric { padding: 12px; }
@@ -293,12 +297,13 @@ body.host-workspace {
   .host-workspace .list-filter .filter-actions-end { margin-left: 0; }
 }
 
-/* House book register (WP25). The workspace lets table cells break anywhere so
-   card facts never overflow on a phone, but in the eleven-column register that
-   let the browser shrink a column to one letter per line. Words stay whole
-   here; the floors below keep each column readable and the panel scrolls
-   sideways when the row is wider than the viewport. */
-.host-workspace .panel.tight.scroll-x { overflow-x: auto; position: relative; }
+/* House book register (WP25). Workspace table cells may break long words
+   (break-word, WP28) so card facts never overflow on a phone; in the
+   eleven-column register even that let a column shrink too far. Words stay
+   whole here and the floors below keep each column readable. The sideways
+   scroll itself is the shared .panel.tight.scroll-x rule in app.css (WP28);
+   position: relative keeps the sr-only header from widening the page. */
+.host-workspace .panel.housebook-scroll { position: relative; }
 .host-workspace .housebook-table td { overflow-wrap: normal; word-break: normal; }
 .host-workspace .housebook-table th,
 .host-workspace .housebook-table td { padding-left: 7px; padding-right: 7px; }
@@ -378,3 +383,9 @@ body.host-workspace {
   background: var(--canvas); color: var(--ink-secondary); border-color: var(--line);
   cursor: not-allowed; opacity: 1; -webkit-text-fill-color: var(--ink-secondary);
 }
+
+/* The operator signature block was an unstyled browser fieldset. */
+.host-workspace .signature-block { min-width: 0; margin: 0 0 16px; padding: 14px 16px 2px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.host-workspace .signature-block > legend { padding: 0 6px; color: var(--ink); font-size: 14px; font-weight: 650; }
+.host-workspace .signature-block .action-group { margin: 10px 0 14px; }
+.host-workspace .signature-block .action-group > label.btn { margin: 0; }

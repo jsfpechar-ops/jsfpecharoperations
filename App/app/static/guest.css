@@ -1236,3 +1236,10 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* The privacy notice's cookie table: four columns do not fit a phone, so the
+   table scrolls inside its card instead of widening the whole page. */
+.scroll-x { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.scroll-x table { border-collapse: collapse; font-size: 13px; }
+.scroll-x th, .scroll-x td { padding: 6px 8px; text-align: left; vertical-align: top; }
+.scroll-x td:first-child { white-space: nowrap; }
