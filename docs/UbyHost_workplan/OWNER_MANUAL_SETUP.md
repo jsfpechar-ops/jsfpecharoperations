@@ -109,15 +109,11 @@ Add external uptime check on `/healthz` (healthchecks does not do HTTP probes). 
 
 ### 0004 — STEP0 Staging deploy target
 
-1. Second Lightsail instance (Frankfurt; 1–2 GB). Static IP. DNS `staging.<domain>` → IP (`docs/LIGHTSAIL.md`, Cloudflare or Let's Encrypt).
-2. Staging `.env`: `UBYHOST_DEPLOYMENT=staging`, `UBYHOST_UBYPORT_ENV=mock`, `COMPOSE_PROFILES=staging`, `UBYHOST_MOCK_URL=http://mock-ubyport:8081/ws_uby/ws_uby.svc`, own domain/URL, `UBYHOST_MAIL_BACKEND=console`, `UBYHOST_ALLOW_SMALL_HOST=1`, **new** `UBYHOST_SECRET_KEY` (never production), placeholder operator fields.
-3. Litestream: same bucket, `LITESTREAM_S3_PATH=staging/ubyhost`, IAM user `ubyhost-litestream-staging` limited to `staging/*`.
-4. GitHub **environment `staging`**: all branches; secrets `LIGHTSAIL_HOST`, `LIGHTSAIL_SSH_PRIVATE_KEY`, `LIGHTSAIL_KNOWN_HOSTS`; variable `LIGHTSAIL_HEALTH_URL`.
-5. GitHub **`production`**: restrict deploys to `main`; move `LIGHTSAIL_*` from repo-level into environment if needed.
-6. Actions → **Deploy preflight (staging)** → **Deploy staging** on a branch; sign in, file demo stay, check mock receipt.
-7. **Never** put real guest PII on staging.
+**Owner choice: staging on Render (recommended for you).** Follow **[STAGING_ON_RENDER_STEP_BY_STEP.md](STAGING_ON_RENDER_STEP_BY_STEP.md)** — click-by-click Render setup, what to put in Environment, manual deploy, and how staging differs from Lightsail production. Production SES and healthchecks stay on Lightsail; Render uses `console` mail and mock UbyPort only.
 
-For Gate 2 later: switch staging to `UBYHOST_UBYPORT_ENV=test` (and drop mock profile as appropriate) for real UbyPort test filing.
+**Optional alternative:** second **Lightsail** staging server + GitHub environment `staging` + Actions **Deploy staging** (see `notes/STEP0-staging-deploy.md`). Skip this if you use Render.
+
+**Never** put real guest PII on staging (Render or Lightsail).
 
 ### 0005 — WP32 Container sizing
 

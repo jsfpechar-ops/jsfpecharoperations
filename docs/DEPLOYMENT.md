@@ -104,13 +104,11 @@ Use this whenever you ship a change that affects hosts or guests.
 
 1. **PR first.** Every change is pushed to a feature branch and opened as a pull
    request. CI (tests + smoke) must pass on the PR.
-2. **Staging** — **Actions → Deploy staging → Run workflow** on the PR branch
-   (the staging Lightsail server; input `ubyport_env` is `mock` by default or
-   `test` for the real UbyPort test environment; see
-   `deploy/lightsail/README.md` "Staging server"), or Render →
-   **`ubyhost-staging`** → Manual Deploy. HIGH RISK changes always go to the
-   Lightsail staging server. Record the tested commit and obtain explicit
-   product-owner approval using the checklist above.
+2. **Staging** — **Render → `ubyhost-staging` → Manual Deploy** (see
+   `docs/UbyHost_workplan/STAGING_ON_RENDER_STEP_BY_STEP.md` for click-by-click
+   setup). Optional: **Actions → Deploy staging** on a Lightsail staging VM
+   (`deploy/lightsail/README.md` "Staging server"). Record the tested commit
+   and obtain explicit product-owner approval using the checklist above.
 3. **Merge the approved PR to `main`.** Nothing deploys on this merge: the
    production workflow no longer runs on a push.
 4. **Production (Lightsail) — manual only.** Promote by running **Actions →

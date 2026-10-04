@@ -17,6 +17,7 @@ Read this file first, then `AGENTS.md`, then the notes for the work package (WP)
 | `skills/` | Two skills the owner uses (poteto-mode, llm-council). Not part of the app. |
 | `OWNER_MANUAL_SETUP.md` | Consolidated owner secrets, server setup, and per-patch manual steps. |
 | `MERGE_SEQUENCE.md` | Prepared `cursor/wp-stack-NN-682e` branches and merge order for all 34 PRs. |
+| `STAGING_ON_RENDER_STEP_BY_STEP.md` | Owner click-by-click guide to recreate **ubyhost-staging** on Render. |
 
 Put the whole folder in the repo at `docs/plans/UbyHost_workplan/`, except `skills/`.
 
