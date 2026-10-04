@@ -18,7 +18,9 @@ services:
     environment:
       UBYHOST_DATA_DIR: /data
       PORT: "8080"
-      # WP06: two uvicorn workers that only serve HTTP; jobs run in `worker`.
+      # WP06: uvicorn workers that only serve HTTP; jobs run in `worker`.
+      # WP32: the number comes from UBYHOST_WEB_WORKERS in .env (image default
+      # 2; 4 on the 8 GB / 2 vCPU server, see docs/LIGHTSAIL.md).
       UBYHOST_ROLE: web
     volumes:
       - ubyhost-data:/data
@@ -36,9 +38,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 25s
-    # 2 GB bundle (WP06): web 896m + worker 448m + litestream 128m + Caddy
-    # leaves about 450 MB for the OS and Docker.
-    mem_limit: 896m
+    # WP32: sized for the 8 GB / 2 vCPU production server. Web 2g + worker 1g
+    # + litestream 256m + caddy 256m leaves over 4 GB for the OS, Docker and
+    # the page cache that serves SQLite reads. Each limit is a cap, not a
+    # reservation; a smaller server (staging) sets lower values in .env.
+    mem_limit: ${UBYHOST_WEB_MEM:-2g}
     # OPS-3: bound container logs so they cannot grow without limit. Rotated
     # lines are gone for good; capture anything needed during an incident.
     logging:
@@ -80,7 +84,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-    mem_limit: 448m
+    mem_limit: ${UBYHOST_WORKER_MEM:-1g}
     logging:
       driver: json-file
       options:
@@ -117,7 +121,7 @@ services:
     volumes:
       - ubyhost-data:/data
       - ./litestream.yml:/etc/litestream.yml:ro
-    mem_limit: 128m
+    mem_limit: ${UBYHOST_LITESTREAM_MEM:-256m}
     logging:
       driver: json-file
       options:
@@ -174,6 +178,7 @@ services:
       - ./caddy/certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
+    mem_limit: ${UBYHOST_CADDY_MEM:-256m}
     # OPS-3: bound Caddy's container logs too. Caddy access logging itself stays
     # off (see caddy/Caddyfile.cloudflare), so this only bounds lifecycle noise.
     logging:

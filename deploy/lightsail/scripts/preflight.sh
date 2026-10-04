@@ -49,7 +49,14 @@ if [ "${DEPLOYMENT}" = "staging" ]; then
       ;;
     *) die "UBYHOST_DEPLOYMENT=staging requires UBYHOST_UBYPORT_ENV=mock or test" ;;
   esac
-  case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
+  case "${UBYHOST_WEB_WORKERS:-2}" in
+  ''|*[!0-9]*|0|0*) die "UBYHOST_WEB_WORKERS must be a whole number from 1 to 16" ;;
+esac
+if [ "${UBYHOST_WEB_WORKERS:-2}" -gt 16 ]; then
+  die "UBYHOST_WEB_WORKERS must be a whole number from 1 to 16"
+fi
+
+case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
     *production*) die "staging must replicate to its own LITESTREAM_S3_PATH, not ${LITESTREAM_S3_PATH:-ubyhost/production}" ;;
   esac
 elif [ "${DEPLOYMENT}" != "production" ]; then
@@ -108,8 +115,10 @@ if [ "${DEPLOYMENT}" = "production" ] && [ -z "${UBYHOST_BACKUP_PING_URL:-}" ]; 
   die "UBYHOST_BACKUP_PING_URL is empty — a failing nightly backup would go unnoticed"
 fi
 
-# WP06: web (2 workers) + scheduler worker + litestream + Caddy need the 2 GB
-# bundle; on 1 GB their memory limits add up to more than the machine has.
+# WP06: web + scheduler worker + litestream + Caddy need at least the 2 GB
+# bundle. WP32: the compose defaults (web 2g, worker 1g, litestream 256m,
+# caddy 256m) are sized for the 8 GB production server; a smaller server sets
+# lower UBYHOST_*_MEM values in .env (see docs/LIGHTSAIL.md, Sizing).
 mem_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
 if [ "${mem_kb:-0}" -gt 0 ] && [ "${mem_kb}" -lt 1700000 ]; then
   if [ "${UBYHOST_ALLOW_SMALL_HOST:-0}" = "1" ]; then

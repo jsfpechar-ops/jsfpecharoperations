@@ -42,6 +42,8 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | --- | --- | --- |
 | `UBYHOST_ENABLE_SCHEDULER` | `1` | `0` stops **all** background work: calendar polling, automatic submission, the deadline watch, the guest e-mail outbox, claim-hold expiry and the passport-photo sweep. |
 | `UBYHOST_ROLE` | `web` | What the process runs (WP06). `web`: HTTP only, never starts the scheduler (the Docker image, two uvicorn workers). `worker`: only the background jobs, started with `python -m app.worker` (the Lightsail `worker` container). `all`: both in one process (`run.sh` and `render_start.sh` default to it). Only one scheduler can run per data directory: it holds `DATA_DIR/scheduler.lock`. |
+| `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
+| `UBYHOST_WEB_MEM`, `UBYHOST_WORKER_MEM`, `UBYHOST_LITESTREAM_MEM`, `UBYHOST_CADDY_MEM` | `2g`, `1g`, `256m`, `256m` | Lightsail compose `mem_limit` per container (WP32). Read by `docker compose` from `deploy/lightsail/.env`. Staging on 2 GB: `896m`, `448m`, `128m`, `128m`. |
 | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
 | `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
 | `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
@@ -173,7 +175,7 @@ them; Render does.
 | `UBYHOST_BACKUP_DIR` | `$UBYHOST_DATA_DIR/backups` | `App/scripts/backup_data.sh` |
 | `UBYHOST_SECRET_KEY` | unset | `App/scripts/backup_data.sh` — written into the snapshot when there is no `data/secret_key` file, so an off-site restore can be decrypted |
 | `UBYHOST_BACKUP_AGE_RECIPIENT` | unset | `App/scripts/backup_data.sh` — public `age1...` recipient the snapshot is encrypted to. **Required when `UBYHOST_DEPLOYMENT=production`**; the run fails closed without it |
-| `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept |
+| `UBYHOST_BACKUP_RETENTION_DAYS` | `30` | `App/scripts/backup_data.sh` — snapshots older than this many days are removed; the newest is always kept. Set `7` once Litestream replicates (WP32) |
 | `UBYHOST_BACKUP_PING_URL` | unset | `deploy/lightsail/scripts/backup.sh` — pinged after each successful daily backup. Required in production: `preflight.sh` refuses to deploy while it is empty. |
 | `AGE_IDENTITY_FILE` | unset | `restore.sh` — host path to the age private identity used to decrypt an encrypted snapshot; never inside the volume |
 | `RESTORE_CONFIRM` | unset | `restore.sh` — `yes` skips the interactive confirmation prompt |

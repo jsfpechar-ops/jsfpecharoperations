@@ -8,7 +8,8 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UBYHOST_DATA_DIR=/data \
-    PORT=8080
+    PORT=8080 \
+    UBYHOST_WEB_WORKERS=2
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates sqlite3 age \
@@ -35,9 +36,11 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 # --no-access-log: uvicorn's own access log writes the raw request line, which
 # includes guest permalink tokens and query strings. The app logs one PII-free
 # line per request instead (see app/main.py, OPS-3).
-# Two web workers (WP06). UBYHOST_ROLE defaults to web, so neither starts the
+# Web workers (WP06): UBYHOST_WEB_WORKERS, default 2 (WP32; 4 on the 8 GB /
+# 2 vCPU Lightsail server). docker-entrypoint.sh checks it is a whole number
+# from 1 to 16. UBYHOST_ROLE defaults to web, so neither starts the
 # scheduler: the background jobs run in a separate container from this image
 # (`python -m app.worker`, UBYHOST_ROLE=worker; see deploy/lightsail). SQLite
 # still has one writer at a time; writers queue on its lock (timeout=30) and
 # the start-up migrations are serialised by an flock (app/db.py startup_lock).
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2", "--no-access-log"]
+CMD ["sh", "-c", "exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers \"${UBYHOST_WEB_WORKERS:-2}\" --no-access-log"]

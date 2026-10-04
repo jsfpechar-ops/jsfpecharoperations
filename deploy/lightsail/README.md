@@ -39,6 +39,8 @@ Before the first production backup:
    backup **fails closed** without it, so no unencrypted copy is ever written.
 3. Optionally set `UBYHOST_BACKUP_RETENTION_DAYS` (default **30**). Snapshots
    older than the window are removed on each run; the newest is always kept.
+   Once Litestream replicates to S3, set **7**: Litestream plus S3 versioning
+   is the long-term copy, and 30 local full copies only fill the disk.
 
 The snapshot folder then holds a single `ubyhost-backup.tar.age`. Restore it
 with the private identity on the host:
@@ -279,6 +281,11 @@ UBYHOST_PUBLIC_BASE_URL=https://staging.example.com
 LITESTREAM_S3_PATH=staging/ubyhost        # its own prefix, its own IAM user
 UBYHOST_MAIL_BACKEND=console              # claim links appear in Settings
 UBYHOST_ALLOW_SMALL_HOST=1                # 1 GB bundle; limits are caps, traffic is tiny
+UBYHOST_WEB_WORKERS=2                     # WP32: smaller than production
+UBYHOST_WEB_MEM=896m
+UBYHOST_WORKER_MEM=448m
+UBYHOST_LITESTREAM_MEM=128m
+UBYHOST_CADDY_MEM=128m
 ```
 
 `preflight.sh` refuses a staging `.env` whose UbyPort is neither `mock` nor
