@@ -1,6 +1,7 @@
 # UbyHost on AWS Lightsail
 
-**Production** lives here (`UBYHOST_DEPLOYMENT=production`, real UbyPort).
+**Production** lives here (`UBYHOST_DEPLOYMENT=production`, real UbyPort) on
+Lightsail **General purpose 8 GB** (Frankfurt) — see [LIGHTSAIL.md](../../docs/LIGHTSAIL.md).
 
 | Environment | Platform | UbyPort |
 |-------------|----------|---------|

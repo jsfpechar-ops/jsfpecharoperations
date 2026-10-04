@@ -4,15 +4,37 @@
 `ubyhost-staging`** only for mock staging — see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Lightsail gives you Docker Compose, HTTPS (Caddy), and a persistent SQLite volume
-on a small Frankfurt VM.
+on a Frankfurt VM.
+
+## Production instance (ubyhost.com)
+
+Live production (October 2026) runs on a **General purpose** bundle. It replaced the
+previous **Micro (1 GB RAM)** host, which was **decommissioned in October 2026**
+after cutover to a new instance created from a snapshot (`Ubuntu-2`).
+
+| | |
+|--|--|
+| **RAM** | 8 GB |
+| **vCPUs** | 2 |
+| **Disk** | 160 GB SSD |
+| **Transfer** | 5 TB/month |
+| **Region** | Frankfurt (`eu-central-1`, zone **a**) |
+| **Lightsail bundle** | **$44 USD/month** (instance only; confirm in the console; static IP included in Lightsail pricing) |
+| **Instance snapshots** | Billed **separately** from the bundle (automatic daily snapshots are enabled in production) |
+
+Upgrades that create a **new** instance from a **snapshot** keep the disk (including
+the Docker volume `ubyhost-data`). Reattach the **same static IP**, update GitHub
+`LIGHTSAIL_KNOWN_HOSTS` if SSH host keys changed, and smoke-test — DNS stays
+unchanged when the IP is reused.
 
 ## Recommended Lightsail plan
 
-| Your scale | Plan | Price (IPv4) | RAM |
-|------------|------|--------------|-----|
-| **~10 properties, busy weeks** | **Micro** | **$7/mo** | 1 GB |
-| Growing toward 25+ properties | Small | $12/mo | 2 GB |
-| **Not supported** | Nano | $5/mo | 512 MB — the app container has `mem_limit: 768m` |
+| Your scale | Bundle | Price (IPv4, approx.) | RAM |
+|------------|--------|------------------------|-----|
+| **Production (ubyhost.com)** | **General purpose 8 GB** | **$44/mo** (bundle only) | **8 GB** |
+| Solo host / cost-conscious try-out | Micro | ~$7/mo | 1 GB |
+| Growing toward many properties on a budget | Small | ~$12/mo | 2 GB |
+| **Not supported** | Nano | ~$5/mo | 512 MB — the app container has `mem_limit: 768m` |
 
 Use **Frankfurt (`eu-central-1`)** or your nearest EU region. Enable the **static
 IP** (included). Do **not** buy Lightsail managed MySQL — UbyHost uses SQLite on
@@ -37,7 +59,8 @@ Internet → :443 Caddy (auto TLS) → ubyhost:8080 (FastAPI)
 
 1. [Lightsail](https://lightsail.aws.amazon.com/) → **Create instance**
 2. **Linux / Ubuntu 24.04**
-3. **Micro** (1 GB) or Small (2 GB)
+3. **General purpose 8 GB** for production-scale hosting, or **Micro** (1 GB) /
+   **Small** (2 GB) for a minimal try-out
 4. Attach a **static IP**
 5. Open firewall: **HTTP 80**, **HTTPS 443**, **SSH**
 
@@ -258,7 +281,7 @@ If you deploy with the scheduler **off**, calendars and automatic sends freeze u
 
 ## Disk, logs, photos
 
-Micro is **1 GB RAM / small root disk**. Watch:
+Production has **160 GB** root disk; smaller bundles have much less. Watch:
 
 ```bash
 df -h
@@ -325,12 +348,14 @@ If a wrong **prod** batch went out: do not spam retries. Download Doručenka, fo
 
 ## Scaling the instance
 
-When you outgrow 1 GB (heavy PDF ZIPs, 20+ properties):
+**Same instance, larger bundle:** Lightsail → **Change plan** → pick a bigger
+bundle → reboot if prompted. The Docker volume survives.
 
-1. Lightsail → instance → **Change plan** → Small (2 GB).
-2. Reboot if prompted — the Docker volume survives.
+**New instance from snapshot** (as in the October 2026 upgrade): create the larger
+instance from a snapshot, attach the static IP, start the stack, update
+`LIGHTSAIL_KNOWN_HOSTS` in GitHub, run **Deploy production** or `./scripts/deploy.sh`.
 
-No code changes required.
+No application code changes are required for either path.
 
 ## Troubleshooting
 
@@ -340,18 +365,21 @@ No code changes required.
 | Caddy / SSL errors | Cloudflare: Full (strict) + origin certs; or `CLOUDFLARE_PROXY=0` for Let's Encrypt |
 | Need to know `ubyport_env` | Public `/healthz` omits it in production. Use `./scripts/status.sh` or Settings |
 | `status.sh` shows `deployment=local` | Set `UBYHOST_DEPLOYMENT=production` in `.env`, redeploy |
-| Out of memory | Upgrade to Small plan or export PDFs in smaller date ranges |
+| Out of memory | On small bundles, upgrade the plan; the app container is capped at `768m` in Compose — raising that is optional on 8 GB hosts. Or export PDFs in smaller date ranges |
 | Guest links wrong host | `UBYHOST_PUBLIC_BASE_URL` must match your HTTPS domain exactly |
 | Container exits immediately | `UBYHOST_UBYPORT_ENV=prod` on Render-like env or without `production` — read `./scripts/logs.sh ubyhost` |
 
 ## Cost summary
 
-| Item | Monthly |
-|------|---------|
-| Lightsail Micro (1 GB) | $7 |
-| Static IP | included |
+| Item | Monthly (approx.) |
+|------|-------------------|
+| **Production: General purpose 8 GB bundle** | **$44** |
+| Automatic Lightsail instance snapshots | extra (not included in the $44 bundle) |
+| Minimal try-out: Micro (1 GB) | ~$7 |
+| Static IP | included with Lightsail instance |
 | Managed database | **not needed** |
-| **Typical total** | **~$7–9** (optional snapshots ~$1) |
 
-Compare with Render Starter (~$7 + disk) — Lightsail Micro gives **2× RAM** and
-**2 burstable vCPUs** for similar money.
+Production spend is the **$44** bundle plus snapshot storage. A solo operator on
+Micro is **~$7** for the bundle plus any snapshots they enable. Compare with
+Render Starter (~$7 + disk) for staging-only workloads — live UbyPort reporting
+stays on Lightsail.
