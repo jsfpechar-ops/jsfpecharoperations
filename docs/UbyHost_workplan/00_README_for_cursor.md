@@ -16,6 +16,7 @@ Read this file first, then `AGENTS.md`, then the notes for the work package (WP)
 | `UbyHost_architecture_review.md` | Background reasoning. Section 12 holds the owner decisions on infrastructure and analytics. |
 | `skills/` | Two skills the owner uses (poteto-mode, llm-council). Not part of the app. |
 | `OWNER_MANUAL_SETUP.md` | Consolidated owner secrets, server setup, and per-patch manual steps. |
+| `OWNER_WORKFLOW_STEP_BY_STEP.md` | Full owner playbook: where to click for GitHub, Render, AWS, Lightsail `.env`, all phases. |
 | `MERGE_SEQUENCE.md` | Prepared `cursor/wp-stack-NN-682e` branches and merge order for all 34 PRs. |
 | `STAGING_ON_RENDER_STEP_BY_STEP.md` | Owner click-by-click guide to recreate **ubyhost-staging** on Render. |
 
