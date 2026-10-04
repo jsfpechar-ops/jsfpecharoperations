@@ -1566,8 +1566,12 @@ def reservation_detail(reservation_id: int, request: Request):
         "       (receipt_pdf IS NOT NULL AND TRIM(receipt_pdf) != '') AS has_receipt "
         "FROM submission WHERE id IN ("
         "  SELECT DISTINCT submission_id FROM guest WHERE reservation_id = ? AND submission_id IS NOT NULL"
+        # A duplicate answer moves submission_id to the refused resend; the
+        # report that holds the Doručenka is kept in receipt_submission_id.
+        "  UNION SELECT DISTINCT receipt_submission_id FROM guest"
+        "  WHERE reservation_id = ? AND receipt_submission_id IS NOT NULL"
         ") AND apartment_id = ? ORDER BY created_at DESC",
-        (reservation_id, reservation["apartment_id"]),
+        (reservation_id, reservation_id, reservation["apartment_id"]),
     )
     return render(
         request,
@@ -2041,9 +2045,32 @@ async def guest_update(guest_id: int, request: Request):
         payload["doc_number"] = guest["doc_number"]
         payload["visa_number"] = guest["visa_number"]
         signature = guest["signature_png"] or ""
+    if reporting.guest_is_filed(guest):
+        # Filed (by UbyHost or by hand): the police hold this record and UbyPort
+        # has no call that corrects it, so the reported fields and the signature
+        # are read-only here. The form posts none of them (they render
+        # disabled); a post that does carry them, from an old tab or by hand,
+        # must match what was filed or nothing is saved.
+        for field in reporting.FILED_FIELDS:
+            if field not in form:
+                payload[field] = guest[field]
+        posted_signature = _form_str(form, "signature")
+        signature_changed = bool(
+            posted_signature
+            and validation.is_valid_signature(posted_signature)
+            and posted_signature != (guest["signature_png"] or "")
+        )
+        if signature_changed or reporting.filed_record_changed(
+            guest, {**dict(guest), **payload}, reservation
+        ):
+            db.audit("guest_update_refused_filed", f"id={guest_id} by=host")
+            return _back(f"/guests/{guest_id}", err=_flash(request, "flash.error.guest_filed_locked"))
+        # Only what never went to the police is saved.
+        payload = {"doc_type": payload["doc_type"]}
+        signature = guest["signature_png"] or ""
     preview = {**guest, **payload, "signature_png": signature, "entered_by": "host"}
     issues = reporting.guest_issues(preview, reservation)
-    if validation.errors_only(issues):
+    if validation.errors_only(issues) and not reporting.guest_is_filed(guest):
         return _render_host_guest_form(
             request,
             reservation,
@@ -2052,10 +2079,15 @@ async def guest_update(guest_id: int, request: Request):
             editing=True,
         )
     payload["signature_png"] = signature
-    if signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
+    if reporting.guest_is_filed(guest):
+        payload.pop("signature_png")
+    elif signature.startswith("data:image/") and signature != (guest["signature_png"] or ""):
         payload["signed_at"] = db.utcnow()
     payload["updated_at"] = db.utcnow()
-    if validation.guest_is_reportable(payload["nationality"]):
+    if reporting.guest_is_filed(guest):
+        # Changing the stay-fee document type attests nothing about identity.
+        pass
+    elif validation.guest_is_reportable(payload["nationality"]):
         payload["identity_verified_at"] = db.utcnow()
         payload["identity_verified_by"] = access.owner_id(request)
     if guest["submit_state"] == reporting.SENT:

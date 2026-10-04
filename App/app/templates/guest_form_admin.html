@@ -18,6 +18,11 @@
     <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
   </div>
 {% endmacro %}
+{# Filed guests (submit_state 'sent', by UbyHost or by hand): the reported
+   fields and the signature are what the police hold, so they render disabled
+   and the save route refuses a change to them. #}
+{% set filed = editing and guest and guest.submit_state == 'sent' %}
+{% macro lock() %}{% if filed %} disabled aria-describedby="filed-lock-note"{% endif %}{% endmacro %}
 {% macro field_val(name) %}{{ guest[name] if guest and guest[name] is not none else '' }}{% endmacro %}
 
 {% block content %}
@@ -47,7 +52,7 @@
   <div class="banner info">
     <div class="grow">
       <strong>{% if guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
-      <small>{{ t('guest.admin.banner.sent_help') }}</small>
+      <small id="filed-lock-note">{{ t('guest.admin.banner.sent_help') }}</small>
     </div>
   </div>
 {% endif %}
@@ -74,13 +79,13 @@
     <div class="grid two">
       <div class="field">
         <label for="surname">{{ t('guest.admin.surname') }}</label>
-        <input class="{{ bad('surname') }}" type="text" id="surname" name="surname" maxlength="50" required
+        <input class="{{ bad('surname') }}" type="text" id="surname" name="surname"{{ lock() }} maxlength="50" required
                value="{{ field_val('surname') }}">
         {{ err_for('surname') }}
       </div>
       <div class="field">
         <label for="first_name">{{ t('guest.admin.given_names') }}</label>
-        <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name" maxlength="24"
+        <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name"{{ lock() }} maxlength="24"
                value="{{ field_val('first_name') }}">
         {{ err_for('first_name') }}
       </div>
@@ -88,7 +93,7 @@
     <div class="grid">
       <div class="field">
         <label for="birth_date">{{ t('guest.admin.birth_date') }}</label>
-        <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"
+        <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"{{ lock() }}
                data-birth-date inputmode="numeric" placeholder="{{ t('guest.admin.birth_date_ph') }}" maxlength="10"
                autocomplete="bday"
                value="{{ display_birth_date(guest.birth_date) if guest and guest.birth_date else '' }}">
@@ -97,7 +102,7 @@
       </div>
       <div class="field">
         <label for="nationality">{{ t('stay.detail.guests.nationality') }}</label>
-        <select class="{{ bad('nationality') }}" id="nationality" name="nationality" required>
+        <select class="{{ bad('nationality') }}" id="nationality" name="nationality"{{ lock() }} required>
           <option value="">{{ t('common.select') }}</option>
           {% for country in countries %}
             <option value="{{ country.code }}"
@@ -124,7 +129,7 @@
         {% if identity_hidden %}
         <input type="text" id="doc_number" value="{{ guest_identifier(guest.doc_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
         {% else %}
-        <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number" maxlength="30"
+        <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number"{{ lock() }} maxlength="30"
                value="{{ field_val('doc_number') }}">
         {% endif %}
         <div class="hint">{{ t('guest.admin.document_hint') }}</div>
@@ -135,7 +140,7 @@
         {% if identity_hidden %}
         <input type="text" id="visa_number" value="{{ guest_identifier(guest.visa_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
         {% else %}
-        <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number" maxlength="15"
+        <input class="{{ bad('visa_number') }}" type="text" id="visa_number" name="visa_number"{{ lock() }} maxlength="15"
                value="{{ field_val('visa_number') }}">
         {% endif %}
         {{ err_for('visa_number') }}
@@ -148,19 +153,19 @@
     <div class="grid">
       <div class="field">
         <label for="res_street">{{ t('guest.admin.res_street') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street" maxlength="42"
+        <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street"{{ lock() }} maxlength="42"
                value="{{ field_val('res_street') }}">
         {{ err_for('res_street') }}
       </div>
       <div class="field">
         <label for="res_city">{{ t('guest.admin.res_city') }}</label>
-        <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city" maxlength="42"
+        <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city"{{ lock() }} maxlength="42"
                value="{{ field_val('res_city') }}">
         {{ err_for('res_city') }}
       </div>
       <div class="field">
         <label for="res_country">{{ t('guest.admin.res_country') }}</label>
-        <select class="{{ bad('res_country') }}" id="res_country" name="res_country">
+        <select class="{{ bad('res_country') }}" id="res_country" name="res_country"{{ lock() }}>
           <option value="">{{ t('common.select') }}</option>
           {% for country in countries %}
             <option value="{{ country.code }}"
@@ -178,18 +183,18 @@
     <div class="grid">
       <div class="field">
         <label for="stay_from">{{ t('guest.admin.stay_from') }}</label>
-        <input type="date" id="stay_from" name="stay_from"
+        <input type="date" id="stay_from" name="stay_from"{{ lock() }}
                value="{{ (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
       </div>
       <div class="field">
         <label for="stay_to">{{ t('guest.admin.stay_to') }}</label>
-        <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"
+        <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"{{ lock() }}
                value="{{ (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
         {{ err_for('stay_to') }}
       </div>
       <div class="field">
         <label for="purpose">{{ t('stay.detail.guests.purpose') }}</label>
-        <select id="purpose" name="purpose">
+        <select id="purpose" name="purpose"{{ lock() }}>
           {% for purpose in purposes %}
             <option value="{{ purpose.code }}"
               {% if (guest and guest.purpose == purpose.code) or (not guest and purpose.code == reservation.default_purpose) %}selected{% endif %}>
@@ -200,7 +205,7 @@
     </div>
     <div class="field">
       <label for="note">{{ t('guest.admin.note') }} <span class="opt">{{ t('guest.admin.note_optional') }}</span></label>
-      <textarea class="{{ bad('note') }}" id="note" name="note" maxlength="255">{{ field_val('note') }}</textarea>
+      <textarea class="{{ bad('note') }}" id="note" name="note"{{ lock() }} maxlength="255">{{ field_val('note') }}</textarea>
       {{ err_for('note') }}
     </div>
   </div>
@@ -241,6 +246,19 @@
     <h2 style="margin-top:0">{{ t('host.signature_title') }}</h2>
     {% if identity_hidden %}
     {{ identity_placeholder() }}
+    {% elif filed %}
+    {# Read-only: no pad, no Clear, and no hidden field to post a new one. #}
+    {% if signature_value %}
+    <div class="signature-saved">
+      <img src="{{ signature_value }}" alt="{{ t('host.signature_saved_alt') }}">
+    </div>
+    {% endif %}
+    <p class="small muted signature-saved-note">
+      {% if signature_value and guest.signed_at %}{{ t('host.signature_signed_on', date=guest.signed_at | datetime_local) }}
+      {% elif signature_value %}{{ t('host.signature_signed') }}
+      {% else %}{{ t('host.signature_none_filed') }}{% endif %}
+      {{ t('host.signature_locked') }}
+    </p>
     {% else %}
     <p class="small muted">{{ t('host.signature_help') }}</p>
     <div class="signature-pad">
@@ -263,7 +281,6 @@
     <button class="btn primary" type="submit">{{ t('common.save_changes') if editing else t('guest.admin.submit_add') }}</button>
     <a class="btn" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
     {% if editing and guest.id %}
-      <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
       <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
       <a class="btn" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
       <a class="btn" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>

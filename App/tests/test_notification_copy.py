@@ -209,14 +209,14 @@ def test_a_stay_moved_after_reporting_gets_a_reason_line(monkeypatch):
     assert en["display_title"] == "Vinohrady Studio (demo) · 19.09.2026 – 21.09.2026"
     assert en["display_detail"] == (
         "The calendar moved this stay after it was reported to the police. The "
-        "filed record names the old dates – check the new dates with the guests "
-        "and resend."
+        "filed record names the old dates. Check the new dates with the guests; "
+        "a filed record is corrected in the UbyPort web application."
     )
     cs = alerts.present(alert, "cs")
     assert "Vinohrady Studio (demo)" in cs["display_title"]
     assert cs["display_detail"] == (
         "Kalendář posunul tento pobyt poté, co byl nahlášen policii. Odeslaný "
-        "záznam uvádí původní termíny – zkontrolujte s hosty nové termíny a "
-        "odešlete znovu."
+        "záznam uvádí původní termíny. Zkontrolujte s hosty nové termíny; "
+        "podaný záznam se opravuje ve webové aplikaci UbyPort."
     )
     assert "english log copy" not in (cs["display_title"] + cs["display_detail"])

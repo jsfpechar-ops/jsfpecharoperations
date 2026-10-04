@@ -151,6 +151,50 @@ def guest_payload(guest, reservation) -> Dict[str, Any]:
     }
 
 
+# The guest columns guest_payload() puts on the wire. Once a guest is filed
+# (submit_state 'sent', by UbyHost or by hand) these are what the police hold,
+# and UbyPort has no call that corrects a filed record, so the host form keeps
+# them read-only. Anything not listed here (doc_type for the stay-fee register,
+# for example) stays editable.
+FILED_FIELDS = (
+    "surname",
+    "first_name",
+    "birth_date",
+    "nationality",
+    "doc_number",
+    "visa_number",
+    "res_street",
+    "res_city",
+    "res_country",
+    "purpose",
+    "note",
+    "stay_from",
+    "stay_to",
+)
+
+
+def _field(row, key: str) -> Any:
+    """``row[key]``, or None for a row (or test dict) without that column."""
+    try:
+        return row[key]
+    except (KeyError, IndexError):
+        return None
+
+
+def guest_is_filed(guest) -> bool:
+    """True once the record is in the police register, including filed by hand."""
+    return bool(guest) and _field(guest, "submit_state") == SENT
+
+
+def filed_record_changed(stored, proposed, reservation) -> bool:
+    """Would saving ``proposed`` make the house book differ from what was filed?
+
+    Compared as the UbyPort record, so a stay date left empty (which files the
+    booking's dates) is not mistaken for a change.
+    """
+    return guest_payload(stored, reservation) != guest_payload(proposed, reservation)
+
+
 # --- readiness -----------------------------------------------------------
 
 def guest_dict(guest) -> Dict[str, Optional[str]]:

@@ -2,7 +2,7 @@
 {% set nav = 'submissions' %}
 {% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, submission_pill, row_menu_begin, row_menu_end with context %}
+{% from "_components.html" import page_header, submission_pill, row_menu_begin, row_menu_end, copy_button with context %}
 
 {% set outcome_notes = {
   'ok': t('reports.detail.note_ok'),
@@ -27,11 +27,22 @@
 {# The report detail follows the stay page's grammar (C-16 [UX-81]): the Now
    panel answers outcome and next step, the guests follow, and the operator
    diagnostics fold last. #}
-<section class="panel stay-command-panel" id="now">
+{# The accent bar carries the outcome level (tokens.css criticality), so an
+   accepted report is not framed in the alarm colour. #}
+{% set outcome_levels = {
+  'ok': 'done', 'ok_duplicate': 'done', 'partial': 'action', 'not_configured': 'action',
+  'error': 'critical', 'failed': 'critical', 'transport_error': 'critical',
+  'outcome_unknown': 'critical', 'running': 'waiting', 'noop': 'neutral'
+} %}
+{% set accepted = submission.state in ('ok', 'ok_duplicate', 'partial') %}
+<section class="panel stay-command-panel outcome-{{ outcome_levels.get(submission.state, 'critical') }}" id="now">
   <div class="stay-command-main">
     <div>
       <div class="eyebrow">{{ t('reports.outcome') }}</div>
       <p class="stay-command-note">{{ outcome_notes.get(submission.state, '') }}</p>
+      {% if accepted and not submission.receipt_pdf %}
+        <p class="small muted report-receipt-missing" data-receipt-missing>{{ t('reports.detail.receipt_missing') }}</p>
+      {% endif %}
     </div>
     <div class="stay-command-actions">
       <div class="actions">
@@ -66,18 +77,17 @@
     </div>
   {% endif %}
 
-  <div class="stay-metrics detail-hero">
+  <div class="stay-metrics detail-hero report-metrics">
     <div class="detail-metric">
       <div class="metric-label">{{ t('reports.outcome') }}</div>
       <div class="metric-value small-value">{{ submission_pill(submission.state) }}</div>
     </div>
     <div class="detail-metric">
       <div class="metric-label">{{ t('reports.stamp') }}</div>
-      <div class="metric-value small-value">
+      <div class="metric-value small-value report-stamp-value">
         {% if submission.pseudo_stamp %}
           <span class="mono report-stamp" id="report-stamp">{{ submission.pseudo_stamp }}</span>
-          <button class="btn small report-stamp-copy" type="button" data-copy="report-stamp"
-                  data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
+          {{ copy_button('report-stamp') }}
         {% else %}&mdash;{% endif %}
       </div>
     </div>

@@ -79,7 +79,16 @@
       {% elif progress.status == 'failed' %}
         <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
       {% elif progress.status == 'reported' and submissions %}
-        <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+        {# The Doručenka is the proof of filing, so once the stay is reported
+           it is the first thing offered. The route keeps WP04's block while an
+           admin views the workspace. #}
+        {% set receipt_report = submissions | selectattr('has_receipt') | first %}
+        {% if receipt_report %}
+          <a class="btn accent primary" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+          <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+        {% else %}
+          <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+        {% endif %}
       {% elif not stay_inactive %}
         <button class="btn primary" type="button" data-copy="stay-link"
                 data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>

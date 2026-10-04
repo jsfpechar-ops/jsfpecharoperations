@@ -37,21 +37,24 @@
 </form>
 
 {% if rows %}
-<div class="panel tight scroll-x">
-  <table class="table-cards">
+{# The register is eleven columns of legal record. It keeps every word whole
+   and scrolls sideways inside its own panel when the viewport is narrower
+   than the row; the shaded edge shows there is more to the right. #}
+<div class="panel tight scroll-x housebook-scroll" tabindex="0" role="region" aria-label="{{ t('housebook.title') }}">
+  <table class="table-cards housebook-table">
     <thead>
       <tr>
-        <th>{{ t('housebook.stay') }}</th><th>{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th>{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
-        <th>{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
+        <th class="col-stay">{{ t('housebook.stay') }}</th><th class="col-property">{{ t('housebook.apartment') }}</th><th class="col-name">{{ t('housebook.guest') }}</th><th class="col-born">{{ t('housebook.born') }}</th><th>{{ t('housebook.nationality') }}</th>
+        <th class="col-doc">{{ t('housebook.document') }}</th><th class="col-address">{{ t('housebook.residence') }}</th>
         <th class="col-purpose">{{ t('housebook.purpose') }}</th><th>{{ t('housebook.signed') }}</th>
-        <th>{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
+        <th class="col-reported">{{ t('housebook.reported') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr>
     </thead>
     <tbody>
     {% for row in rows %}
       <tr class="clickable-row" data-href="/guests/{{ row._guest_id }}?return_to=/housebook" tabindex="0" role="link">
         <td class="nowrap small" data-label="{{ t('housebook.stay') }}">{{ row.stay_from | date_cz }}<br>{{ row.stay_to | date_cz }}</td>
-        <td class="small" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true) }}</td>
+        <td class="small col-property" data-label="{{ t('housebook.apartment') }}">{{ property_identity(row._apartment_id, row.apartment, true, truncate=true) }}</td>
         {# Two deliberate lines beat three ragged ones in a column this narrow. #}
         <td class="col-name" data-label="{{ t('housebook.guest') }}"><strong>{{ row.surname }}</strong><br>
           <span class="small">{{ row.first_name }}</span></td>
@@ -64,7 +67,7 @@
           {% else %}<span class="pill amber">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
         {# The stored values double as the CSV column, which the importer reads
            back, so they stay as they are and only the label changes here. #}
-        <td class="small nowrap" data-label="{{ t('housebook.reported') }}">
+        <td class="small col-reported" data-label="{{ t('housebook.reported') }}">
           {% if row.reported == 'yes' %}<span class="pill green">{{ t('status.reported') }}</span>
             <div class="small muted">{{ row.reported_at[:10] }}</div>
           {% elif row.reported.startswith('not required') %}<span class="pill grey">{{ t('status.not_required') }}</span>
