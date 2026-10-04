@@ -62,14 +62,15 @@ def test_guest_fields_are_in_datacontract_alphabetical_order():
     assert local_names(guest) == sorted(local_names(guest), key=str.lower)
 
 
-def test_header_fields_are_in_expected_order_with_vracetpdf_last():
+def test_seznam_members_are_in_datacontract_ordinal_order():
+    """WP30: VracetPDF sorts between Ubytovani and uCont, or WCF drops it."""
     envelope = soap.build_zapis_ubytovane(HEADER, [GUEST])
     root = ET.fromstring(envelope)
     seznam = next(el for el in root.iter() if el.tag.endswith("Seznam"))
     names = local_names(seznam)
-    assert names[0] == "Ubytovani"
-    assert names[1:-1] == list(soap.HEADER_FIELDS)
-    assert names[-1] == "VracetPDF"
+    assert names == ["Ubytovani", "VracetPDF", *soap.HEADER_FIELDS]
+    # Ordinal sort, the one DataContractSerializer uses (not case-insensitive).
+    assert names == sorted(names)
 
 
 def test_the_receipt_pdf_is_always_requested():

@@ -328,6 +328,35 @@ def _escape(value: str) -> str:
     )
 
 
+# SeznamUbytovanych members in the order WCF's DataContractSerializer expects
+# them: ordinal sort, so upper-case names first (appendix 5, section 5.1.1).
+SEZNAM_MEMBER_ORDER = (
+    "Ubytovani", "VracetPDF",
+    "uCont", "uHomN", "uIdub", "uMark", "uName", "uOb", "uObCa", "uOkr", "uOriN", "uPsc", "uStr",
+)
+
+
+def _dcs_members_read(seznam: ET.Element) -> List[str]:
+    """Which Seznam members a DataContractSerializer would actually bind.
+
+    It reads members strictly in contract order: for each element it searches
+    forward from the last bound member, and an element whose slot has already
+    passed is skipped as unknown. That is how a VracetPDF sent after uStr is
+    silently lost on the real service, and the mock must lose it too.
+    """
+    bound: List[str] = []
+    position = -1
+    for child in seznam:
+        name = _local(child.tag)
+        try:
+            index = SEZNAM_MEMBER_ORDER.index(name, position + 1)
+        except ValueError:
+            continue
+        bound.append(name)
+        position = index
+    return bound
+
+
 def _zapis(root: ET.Element) -> str:
     header = _find(root, "Seznam")
     if header is None:
@@ -339,7 +368,12 @@ def _zapis(root: ET.Element) -> str:
 
     idub = _text(header, "uIdub") or ""
     mark = _text(header, "uMark") or ""
-    want_pdf = (_text(header, "VracetPDF") or "false").lower() == "true"
+    # Only honoured where the real service would read it; out of order it is
+    # dropped and defaults to false, exactly like WCF.
+    pdf_flag_bound = "VracetPDF" in _dcs_members_read(header)
+    want_pdf = pdf_flag_bound and (_text(header, "VracetPDF") or "false").lower() == "true"
+    if _text(header, "VracetPDF") and not pdf_flag_bound:
+        log.warning("ZapisUbytovane: VracetPDF out of contract order, ignored (no Dorucenka)")
 
     container = _find(header, "Ubytovani")
     guests = [child for child in container] if container is not None else []
@@ -380,19 +414,22 @@ def _zapis(root: ET.Element) -> str:
         _save_state(state)
 
     stamp = _pseudo_stamp()
+    # The Chyby members in the order the real service serialises them
+    # (alphabetical, appendix 5 sections 4.2 and 5.1.1).
     parts = [f"<a:ChybyHlavicky>{''.join(f'{c};' for c in header_codes)}</a:ChybyHlavicky>"]
-
-    if want_pdf:
-        receipt = _receipt_pdf(idub, mark, rows, stamp)
-        parts.append(f"<a:DokumentPotvrzeni>{receipt}</a:DokumentPotvrzeni>")
-        if header_codes or any(row["status"] == "bad" for row in rows):
-            parts.append(f"<a:DokumentChybyPotvrzeni>{receipt}</a:DokumentChybyPotvrzeni>")
-
     strings = "".join(f"<b:string>{value}</b:string>" for value in record_errors)
     parts.append(
         '<a:ChybyZaznamu xmlns:b="http://schemas.microsoft.com/2003/10/Serialization/Arrays">'
         f"{strings}</a:ChybyZaznamu>"
     )
+    if want_pdf:
+        receipt = _receipt_pdf(idub, mark, rows, stamp)
+        if header_codes or any(row["status"] == "bad" for row in rows):
+            parts.append(f"<a:DokumentChybyPotvrzeni>{receipt}</a:DokumentChybyPotvrzeni>")
+        parts.append(f"<a:DokumentPotvrzeni>{receipt}</a:DokumentPotvrzeni>")
+    else:
+        parts.append('<a:DokumentChybyPotvrzeni i:nil="true" />')
+        parts.append('<a:DokumentPotvrzeni i:nil="true" />')
     parts.append(f"<a:PseudoRazitko>{stamp}</a:PseudoRazitko>")
 
     log.info(
