@@ -94,7 +94,7 @@ Log rotation for backup scripts (as root):
 ROTATE
 
 
-Production (ubyhost.com) uses General purpose 8 GB (2 vCPU, 160 GB SSD, ~\$44/mo).
+Production (ubyhost.com) uses General purpose 8 GB (2 vCPU, 160 GB SSD, \$44/mo bundle; snapshots extra).
 New try-outs can start on Micro (1 GB RAM, ~\$7/mo) — see docs/LIGHTSAIL.md.
 Point your domain A record at this instance's static IP before deploy.
 

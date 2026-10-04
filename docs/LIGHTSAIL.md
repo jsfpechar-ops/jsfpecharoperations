@@ -8,7 +8,9 @@ on a Frankfurt VM.
 
 ## Production instance (ubyhost.com)
 
-Live production (October 2026) runs on a **General purpose** bundle:
+Live production (October 2026) runs on a **General purpose** bundle. It replaced the
+previous **Micro (1 GB RAM)** host, which was **decommissioned in October 2026**
+after cutover to a new instance created from a snapshot (`Ubuntu-2`).
 
 | | |
 |--|--|
@@ -16,8 +18,9 @@ Live production (October 2026) runs on a **General purpose** bundle:
 | **vCPUs** | 2 |
 | **Disk** | 160 GB SSD |
 | **Transfer** | 5 TB/month |
-| **Region** | Frankfurt (`eu-central-1`) |
-| **Approx. price** | **~$44 USD/month** (confirm in the Lightsail console; static IP is included) |
+| **Region** | Frankfurt (`eu-central-1`, zone **a**) |
+| **Lightsail bundle** | **$44 USD/month** (instance only; confirm in the console; static IP included in Lightsail pricing) |
+| **Instance snapshots** | Billed **separately** from the bundle (automatic daily snapshots are enabled in production) |
 
 Upgrades that create a **new** instance from a **snapshot** keep the disk (including
 the Docker volume `ubyhost-data`). Reattach the **same static IP**, update GitHub
@@ -28,7 +31,7 @@ unchanged when the IP is reused.
 
 | Your scale | Bundle | Price (IPv4, approx.) | RAM |
 |------------|--------|------------------------|-----|
-| **Production (ubyhost.com)** | **General purpose 8 GB** | **~$44/mo** | **8 GB** |
+| **Production (ubyhost.com)** | **General purpose 8 GB** | **$44/mo** (bundle only) | **8 GB** |
 | Solo host / cost-conscious try-out | Micro | ~$7/mo | 1 GB |
 | Growing toward many properties on a budget | Small | ~$12/mo | 2 GB |
 | **Not supported** | Nano | ~$5/mo | 512 MB — the app container has `mem_limit: 768m` |
@@ -370,12 +373,13 @@ No application code changes are required for either path.
 
 | Item | Monthly (approx.) |
 |------|-------------------|
-| **Production: General purpose 8 GB** | **~$44** |
+| **Production: General purpose 8 GB bundle** | **$44** |
+| Automatic Lightsail instance snapshots | extra (not included in the $44 bundle) |
 | Minimal try-out: Micro (1 GB) | ~$7 |
-| Static IP | included |
+| Static IP | included with Lightsail instance |
 | Managed database | **not needed** |
-| Optional instance snapshots | ~$1+ depending on size |
 
-Production total is dominated by the 8 GB bundle. A solo operator on Micro is
-**~$7–9** including optional snapshots. Compare with Render Starter (~$7 + disk)
-for staging-only workloads — live UbyPort reporting stays on Lightsail.
+Production spend is the **$44** bundle plus snapshot storage. A solo operator on
+Micro is **~$7** for the bundle plus any snapshots they enable. Compare with
+Render Starter (~$7 + disk) for staging-only workloads — live UbyPort reporting
+stays on Lightsail.

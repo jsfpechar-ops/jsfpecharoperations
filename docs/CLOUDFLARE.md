@@ -429,7 +429,7 @@ Encrypt certificate automatically. You lose DDoS shielding and origin IP hiding.
 |------|----------------|
 | `.com` on Cloudflare | ~$10–11/year |
 | Cloudflare DNS + proxy (free plan) | $0 |
-| VPS (Lightsail production 8 GB) | ~$44/month |
+| VPS (Lightsail production 8 GB bundle) | $44/month (+ snapshots billed separately) |
 | VPS (Lightsail Micro try-out) | ~$7/month |
 | Origin certificate | $0 |
 
