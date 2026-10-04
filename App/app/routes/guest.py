@@ -659,7 +659,7 @@ def _lang_urls(request: Request, path: str = "") -> Dict[str, str]:
     keep = [(k, v) for k, v in request.query_params.multi_items() if k != "lang"]
     target = path or request.url.path
     out = {}
-    for code in i18n.LANGUAGES:
+    for code in i18n.enabled_languages():
         pairs = "".join(f"&{k}={quote(str(v))}" for k, v in keep)
         out[code] = f"{target}?lang={code}{pairs}"
     return out

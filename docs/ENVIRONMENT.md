@@ -45,6 +45,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_WEB_WORKERS` | `2` | uvicorn workers in the Docker image's web process (WP32). `4` on the 8 GB / 2 vCPU production server. `docker-entrypoint.sh` and `preflight.sh` refuse anything but 1 to 16. |
 | `UBYHOST_WEB_MEM`, `UBYHOST_WORKER_MEM`, `UBYHOST_LITESTREAM_MEM`, `UBYHOST_CADDY_MEM` | `2g`, `1g`, `256m`, `256m` | Lightsail compose `mem_limit` per container (WP32). Read by `docker compose` from `deploy/lightsail/.env`. Staging on 2 GB: `896m`, `448m`, `128m`, `128m`. |
 | `UBYHOST_ACCESS_LOG` | `1` | `0` stops the app's PII-free access line (`ubyhost.access`). The production image also passes uvicorn `--no-access-log`. See `docs/OPERATIONS.md` § Logs. |
+| `UBYHOST_GUEST_LANGS` | `en,cs` | Guest form languages, comma-separated, picked from the browser language. English and Czech are always on. Add `de`, `es`, `fr` only after a native speaker has read that catalog in `App/app/i18n.py` (WP33). |
 | `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` lets the daily `retention` job delete what the schedule covers. Off is a dry run: it audits the exact row set and deletes nothing (BE-2, G-D4). |
 | `UBYHOST_RETENTION_NOTICE_DAYS` | `30` | How far ahead the "records reach the end of their retention period" notice looks. |
 | `UBYHOST_AUDIT_RETENTION_DAYS` | `1095` | Audit rows older than this go; `legal_accepted` evidence has its own rule (BE-4, G-D7). |

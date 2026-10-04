@@ -1301,6 +1301,17 @@ RESERVATION_PAGE_SIZE = 50
 RESERVATION_RANGES = ("upcoming", "past", "all")
 
 
+def _overdue_unfinished_ids(request: Request) -> List[int]:
+    """Stays past their deadline that are not reported, the dashboard's own rule."""
+    rows = reporting.dashboard_rows(owner_user_id=access.owner_id(request))
+    return [
+        int(row["reservation"]["id"])
+        for row in rows
+        if row["urgency"] == "overdue"
+        and row["progress"]["status"] not in reporting.FINISHED_STATUSES
+    ]
+
+
 @router.get("/reservations")
 def reservations_list(request: Request):
     guard = auth.require_login(request)
@@ -1346,7 +1357,19 @@ def reservations_list(request: Request):
         params.append(apartment_id)
     # A stay counts as inside the window when it overlaps it, so a guest who is
     # in the flat right now still shows under "upcoming".
-    if date_from:
+    if date_from and date_range == "upcoming":
+        # WP33: a stay whose police deadline has passed with a guest still
+        # unfiled stays in the default view until it is filed, however long
+        # ago the guests left. Hiding it is how a host misses a fine.
+        overdue_ids = _overdue_unfinished_ids(request)
+        if overdue_ids:
+            marks = ",".join("?" for _ in overdue_ids)
+            sql += f" AND (r.date_to >= ? OR r.id IN ({marks}))"
+            params.extend([date_from, *overdue_ids])
+        else:
+            sql += " AND r.date_to >= ?"
+            params.append(date_from)
+    elif date_from:
         sql += " AND r.date_to >= ?"
         params.append(date_from)
     if date_to:

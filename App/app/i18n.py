@@ -12,15 +12,34 @@ lookup, no outside service, nothing new stored about the guest:
 2. the best match in the browser's ``Accept-Language`` header, q-values
    honoured (``de-AT`` -> de, ``es-MX`` -> es, ``fr-CA`` -> fr, ``sk`` -> cs),
 3. English.
+
+WP33: ``UBYHOST_GUEST_LANGS`` decides which of the catalogs guests are offered.
+English and Czech are always on. German, Spanish and French stay off until a
+native speaker has read the catalog, because a mistranslated sentence on a form
+that asks for passport details costs the host the guest's trust.
 """
 from __future__ import annotations
 
-from typing import Dict, Optional
+import os
+from typing import Dict, Optional, Tuple
 
 from . import host_i18n
 
 LANGUAGES = ("en", "cs", "de", "es", "fr")
 DEFAULT_LANGUAGE = "en"
+ALWAYS_ON = ("en", "cs")
+DEFAULT_GUEST_LANGS = "en,cs"
+
+
+def enabled_languages() -> Tuple[str, ...]:
+    """The guest languages switched on, in catalog order.
+
+    Read on every call, so the owner can turn a language on by editing ``.env``
+    and restarting, and a test can set it with ``monkeypatch.setenv``.
+    """
+    raw = os.environ.get("UBYHOST_GUEST_LANGS", DEFAULT_GUEST_LANGS)
+    wanted = {code.strip().lower() for code in raw.split(",") if code.strip()}
+    return tuple(code for code in LANGUAGES if code in ALWAYS_ON or code in wanted)
 
 # The switcher's labels: each language in its own name, which a foreigner can
 # read when the page is in a language they do not.
@@ -41,7 +60,7 @@ def supported_language(value: Optional[str]) -> Optional[str]:
     """The guest language code for ``value``, or None when we do not speak it."""
     code = (value or "").strip().lower().replace("_", "-").split("-")[0]
     code = _ACCEPT_ALIASES.get(code, code)
-    return code if code in LANGUAGES else None
+    return code if code in enabled_languages() else None
 
 
 def normalise_language(value: Optional[str]) -> str:
